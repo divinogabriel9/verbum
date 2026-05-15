@@ -76,6 +76,7 @@ def recommend_sections(
                     {
                         "id": hid,
                         "title": title,
+                        "author": str(item.get("author") or "").strip(),
                         "source": "local",
                         "language": str(item.get("language") or "English"),
                         "has_lyrics": bool(has_lyrics),
@@ -123,6 +124,7 @@ def section_candidates(
                 {
                     "id": hid,
                     "title": title,
+                    "author": str(item.get("author") or "").strip(),
                     "source": "local",
                     "language": str(item.get("language") or "English"),
                     "has_lyrics": bool(has_lyrics),
@@ -188,6 +190,13 @@ def get_hymn(section: str, hymn_id: str) -> Optional[dict[str, Any]]:
     for item in load_library().get(sec) or []:
         if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
             return item
+    # Same id may be stored under another Mass section; resolve library-wide.
+    for scan_sec in ("entrance", "offertory", "communion", "recessional", "meditation"):
+        if scan_sec == sec:
+            continue
+        for item in load_library().get(scan_sec) or []:
+            if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
+                return item
     # Fallback: web-discovered hymns cached during preview.
     if hid.startswith("web_") and _WEB_CACHE_PATH.is_file():
         try:

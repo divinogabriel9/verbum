@@ -8,7 +8,7 @@ from urllib.error import URLError
 from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
 
-from services.song_catalog import load_catalog, update_lyrics
+from services.song_catalog import find_catalog_row_by_id, load_catalog, update_lyrics
 from services.web_hymn_discovery import extract_representative_text
 
 _USER_AGENT = "church-media-generator/1.0"
@@ -138,22 +138,24 @@ def ensure_lyrics_for_song(section: str, hymn_id: str) -> bool:
     Ensure a song has lyrics in local catalog; attempts fetch when missing.
     Returns True if lyrics exist after the check.
     """
-    sec = (section or "").strip().lower()
+    preferred = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
-    if not sec or not hid:
+    if not hid:
         return False
-    lib = load_catalog()
-    for row in lib.get(sec, []):
-        if str(row.get("id") or "").strip() == hid:
-            if str(row.get("lyrics") or "").strip():
-                return True
-            break
-    res = fetch_and_store_for_selection({"section": sec, "id": hid})
+    sec_store, row = find_catalog_row_by_id(hid)
+    if not sec_store or not row:
+        return False
+    if preferred in ("entrance", "offertory", "communion", "recessional", "meditation"):
+        lib = load_catalog()
+        for r in lib.get(preferred, []) or []:
+            if str(r.get("id") or "").strip() == hid:
+                sec_store, row = preferred, r
+                break
+    if str(row.get("lyrics") or "").strip():
+        return True
+    res = fetch_and_store_for_selection({"section": sec_store, "id": hid})
     if not res.get("ok"):
         return False
-    lib2 = load_catalog()
-    for row in lib2.get(sec, []):
-        if str(row.get("id") or "").strip() == hid:
-            return bool(str(row.get("lyrics") or "").strip())
-    return False
+    _sec2, row2 = find_catalog_row_by_id(hid)
+    return bool(row2 and str(row2.get("lyrics") or "").strip())
 

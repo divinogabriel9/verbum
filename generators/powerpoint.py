@@ -1,8 +1,8 @@
 """
-GFCC full Mass deck content with ExampleForVerbum.pptx visual system (fonts, positions, #050907).
+GFCC-style full Mass deck (community footer, poster dividers). Readings from API/USCCB.
 
-1920×1080 landscape. Slide backgrounds and typography follow the parish Verbum template deck;
-content still comes from GFCC markers, prayers, readings, and hymn library.
+1920×1080 landscape. Slide fill uses the liturgical calendar color; body/muted/emphasis
+text colors are chosen for contrast (never matching the background).
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from pptx.util import Inches, Pt
 
 from services.community_config import get_community_name, get_logo_path
 from services.hymn_library import get_hymn
+from services.mass_text_format import clean_lyrics_for_projection, strip_reading_verse_markers
 from services.prayer_service import get_prayer
 
 from . import gfcc_flow_content as GFCC
@@ -26,60 +27,8 @@ from . import gfcc_flow_content as GFCC
 SLIDE_WIDTH = Inches(20)
 SLIDE_HEIGHT = Inches(11.25)
 
-MARGIN_SIDE = Inches(0.75)
-MARGIN_TOP = Inches(0.5)
-
-# --- ExampleForVerbum.pptx (measured from slide XML: slides 7, 9, 20, 23) ---
-_EMU_PER_IN = 914400
-
-
-def _verbum_inches(emu: int):
-    return Inches(emu / _EMU_PER_IN)
-
-
-# Logo + parish strip (same grpSp on dialogue / reading / hymn slides)
-_VERBUM_LOGO_LEFT = _verbum_inches(472727)
-_VERBUM_LOGO_TOP = _verbum_inches(284088)
-_VERBUM_LOGO_W = _verbum_inches(544090)
-_VERBUM_LOGO_H_MAX = _verbum_inches(538990)
-_VERBUM_NAME_LEFT = _verbum_inches(1073111)
-_VERBUM_NAME_TOP = _verbum_inches(293226)
-_VERBUM_NAME_W = _verbum_inches(1233900)
-_VERBUM_NAME_H = _verbum_inches(537900)
-_VERBUM_BRAND_GROUP_BOTTOM = _verbum_inches(284088 + 547038)
-_VERBUM_CONTENT_LEFT = _verbum_inches(1163709)
-_VERBUM_CONTENT_W = _verbum_inches(16253615)
-
-
-def _safe_content_lw() -> tuple[Any, Any]:
-    return _VERBUM_CONTENT_LEFT, _VERBUM_CONTENT_W
-
-
-_VERBUM_SECTION_TITLE_LEFT = _verbum_inches(2874744)
-_VERBUM_SECTION_TITLE_TOP = _verbum_inches(21037)
-_VERBUM_SECTION_TITLE_W = _verbum_inches(12538500)
-_VERBUM_SECTION_TITLE_H = _verbum_inches(1123500)
-
-_VERBUM_BG = RGBColor(5, 9, 7)
-_VERBUM_GOLD = RGBColor(255, 184, 0)
-_VERBUM_GOLD_SOFT = RGBColor(255, 222, 89)
-_VERBUM_WHITE = RGBColor(255, 255, 255)
-_VERBUM_READING_BODY = RGBColor(255, 248, 235)
-
-_FONT_POPPINS = "Poppins"
-_FONT_POPPINS_SEMIBOLD = "Poppins SemiBold"
-_FONT_POPPINS_BLACK = "Poppins Black"
-_FONT_LORA = "Lora"
-_FONT_ALICE = "Alice"
-_FONT_ALEGREYA_SC = "Alegreya Sans SC"
-
-_MARKED_BODY_PT = 54
-_MARKED_PRIEST_PT = 54
-_DIRECTION_PT = 45
-_COMMUNITY_NAME_PT = 12
-_READING_HEAD_PT = 46
-_READING_BODY_PT = 44
-_LOTW_HERO_PT = 52
+MARGIN_SIDE = Inches(1.0)
+MARGIN_TOP = Inches(0.58)
 
 _BG = RGBColor(18, 18, 22)
 _GOLD_FALLBACK = RGBColor(220, 170, 90)
@@ -93,23 +42,23 @@ _META_PT = 14
 _GREET_PT = 21
 _FOOTER_PT = 13
 
-_MAX_CHARS_READING = 900
+_MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
-# Hymn / lyrics slides (ExampleForVerbum slide 23: #050907, Lora gold title, Poppins white body)
+# Hymn / lyrics slides (black screen, gold title, white ALL CAPS body — projector style)
 _LYRIC_CHUNK = 360
-_LYRIC_TITLE_DISPLAY_PT = 73
-_LYRIC_BODY_DISPLAY_PT = 69
-_HYMN_BG = _VERBUM_BG
-_HYMN_GOLD_TITLE = _VERBUM_GOLD
-_HYMN_BODY_WHITE = _VERBUM_WHITE
-_HYMN_BRAND_WHITE = _VERBUM_WHITE
-_HYMN_FOOTER_MUTED = RGBColor(200, 200, 205)
-_HYMN_TITLE_FONT = _FONT_LORA
-_HYMN_BODY_FONT = _FONT_POPPINS
+_LYRIC_TITLE_DISPLAY_PT = 38
+_LYRIC_BODY_DISPLAY_PT = 55
+_HYMN_BG = RGBColor(0, 0, 0)
+_HYMN_GOLD_TITLE = RGBColor(255, 204, 77)
+_HYMN_BODY_WHITE = RGBColor(255, 255, 255)
+_HYMN_BRAND_WHITE = RGBColor(255, 255, 255)
+_HYMN_FOOTER_MUTED = RGBColor(140, 140, 145)
+_HYMN_TITLE_FONT = "Georgia"
+_HYMN_BODY_FONT = "Arial Black"
 _BRAND_BAND = Inches(1.05)
 _LOGO_MAX_W = Inches(0.95)
 _LOGO_MAX_H = Inches(0.42)
-_COMMUNITY_HEADER_PT = _COMMUNITY_NAME_PT
+_COMMUNITY_HEADER_PT = 15
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _OUTPUT_DIR = _PROJECT_ROOT / "outputs"
@@ -129,6 +78,10 @@ class SlideTheme:
 _ACTIVE_FONT = "Calibri"
 
 
+def _clamp_byte(x: float) -> int:
+    return max(0, min(255, int(round(x))))
+
+
 def _hex_to_rgb(value: Any) -> Optional[RGBColor]:
     text = str(value or "").strip().lstrip("#")
     if len(text) != 6:
@@ -139,31 +92,55 @@ def _hex_to_rgb(value: Any) -> Optional[RGBColor]:
         return None
 
 
+def _rel_lum(r: int, g: int, b: int) -> float:
+    def lin(c: int) -> float:
+        cs = c / 255.0
+        return cs / 12.92 if cs <= 0.03928 else ((cs + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+
+
 def _build_slide_theme(
     liturgical_color: Optional[Mapping[str, Any]],
     custom_theme: Optional[Mapping[str, Any]] = None,
 ) -> SlideTheme:
     """
-    Deck colors/fonts. Optional ``custom_theme`` hex overrides; otherwise the deck matches
-    ExampleForVerbum.pptx dark slides (#050907, gold/white, Poppins family).
+    Liturgical RGB fills the slide; foreground colors follow background luminance.
+    Cream/white seasons use near-black body text; darker greens/purples/reds use warm off-white
+    and a gold emphasis so roles never mirror the fill.
     """
-    del liturgical_color  # mass deck follows Verbum template visuals, not liturgical fill
     if custom_theme:
         bg = _hex_to_rgb(custom_theme.get("bg"))
         primary = _hex_to_rgb(custom_theme.get("text")) or _hex_to_rgb(custom_theme.get("primary"))
         emphasis = _hex_to_rgb(custom_theme.get("primary")) or _hex_to_rgb(custom_theme.get("accent"))
         muted = _hex_to_rgb(custom_theme.get("accent"))
         if bg and primary and emphasis and muted:
-            font_name = str(custom_theme.get("font") or _FONT_POPPINS).split(",")[0].strip() or _FONT_POPPINS
+            font_name = str(custom_theme.get("font") or "Calibri").split(",")[0].strip() or "Calibri"
             return SlideTheme(bg=bg, primary=primary, muted=muted, emphasis=emphasis, font_name=font_name)
 
-    return SlideTheme(
-        bg=_VERBUM_BG,
-        primary=_VERBUM_WHITE,
-        muted=_VERBUM_GOLD_SOFT,
-        emphasis=_VERBUM_GOLD,
-        font_name=_FONT_POPPINS,
-    )
+    if liturgical_color and "rgb" in liturgical_color:
+        r, g, b = liturgical_color["rgb"]
+        r, g, b = int(r), int(g), int(b)
+    else:
+        return SlideTheme(bg=_BG, primary=_BODY, muted=_MUTED, emphasis=_GOLD_FALLBACK)
+
+    bg = RGBColor(r, g, b)
+    light_bg = _rel_lum(r, g, b) > 0.55
+
+    if light_bg:
+        primary = RGBColor(26, 26, 30)
+        muted = RGBColor(95, 93, 104)
+        emphasis = RGBColor(
+            _clamp_byte(r * 0.28 + 18),
+            _clamp_byte(g * 0.27 + 16),
+            _clamp_byte(b * 0.30 + 20),
+        )
+    else:
+        primary = RGBColor(250, 248, 244)
+        muted = RGBColor(188, 186, 198)
+        emphasis = RGBColor(255, 218, 145)
+
+    return SlideTheme(bg=bg, primary=primary, muted=muted, emphasis=emphasis)
 
 
 def _accent(liturgical_color: Optional[Mapping[str, Any]]) -> RGBColor:
@@ -172,22 +149,26 @@ def _accent(liturgical_color: Optional[Mapping[str, Any]]) -> RGBColor:
 
 
 def _content_top():
-    """Vertical start for slide body text (below Verbum logo + parish name strip)."""
-    return _VERBUM_BRAND_GROUP_BOTTOM + Inches(0.1)
+    """Vertical start for slide body text (below logo + parish name)."""
+    return MARGIN_TOP + _BRAND_BAND
 
 
 def _apply_slide_branding(slide, theme: SlideTheme) -> None:
-    """Logo + parish name (ExampleForVerbum grpSp positions on slide)."""
+    """Top-left logo and parish name (GFCC reference deck style)."""
     logo = get_logo_path()
     name = get_community_name()
+    top = Inches(0.28)
+    cursor_left = MARGIN_SIDE
     if logo and logo.is_file():
-        pic = slide.shapes.add_picture(str(logo), _VERBUM_LOGO_LEFT, _VERBUM_LOGO_TOP, width=_VERBUM_LOGO_W)
-        if pic.height > _VERBUM_LOGO_H_MAX:
-            scale = _VERBUM_LOGO_H_MAX / pic.height
+        pic = slide.shapes.add_picture(str(logo), cursor_left, top, width=_LOGO_MAX_W)
+        if pic.height > _LOGO_MAX_H:
+            scale = _LOGO_MAX_H / pic.height
             pic.width = int(pic.width * scale)
             pic.height = int(pic.height * scale)
+        cursor_left = pic.left + pic.width + Inches(0.14)
 
-    nb = slide.shapes.add_textbox(_VERBUM_NAME_LEFT, _VERBUM_NAME_TOP, _VERBUM_NAME_W, _VERBUM_NAME_H)
+    name_w = SLIDE_WIDTH - cursor_left - MARGIN_SIDE
+    nb = slide.shapes.add_textbox(cursor_left, top, name_w, _LOGO_MAX_H)
     tf = nb.text_frame
     _prep_tf(tf)
     tf.clear()
@@ -195,13 +176,34 @@ def _apply_slide_branding(slide, theme: SlideTheme) -> None:
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     p0 = tf.paragraphs[0]
     p0.text = name
-    _style_para(p0, size_pt=_COMMUNITY_NAME_PT, color=theme.primary, bold=False, font_name=_FONT_POPPINS)
+    _style_para(p0, size_pt=_COMMUNITY_HEADER_PT, color=theme.primary, bold=True)
     p0.alignment = PP_ALIGN.LEFT
 
 
-def _apply_hymn_branding(slide, theme: SlideTheme) -> None:
-    """Same parish strip as dialogue slides (Verbum hymn slides use #050907, not black)."""
-    _apply_slide_branding(slide, theme)
+def _apply_hymn_branding(slide) -> None:
+    """Top-left logo + parish name on black hymn slides (white text)."""
+    logo = get_logo_path()
+    name = get_community_name()
+    top = Inches(0.28)
+    cursor_left = MARGIN_SIDE
+    if logo and logo.is_file():
+        pic = slide.shapes.add_picture(str(logo), cursor_left, top, width=_LOGO_MAX_W)
+        if pic.height > _LOGO_MAX_H:
+            scale = _LOGO_MAX_H / pic.height
+            pic.width = int(pic.width * scale)
+            pic.height = int(pic.height * scale)
+        cursor_left = pic.left + pic.width + Inches(0.14)
+    name_w = SLIDE_WIDTH - cursor_left - MARGIN_SIDE
+    nb = slide.shapes.add_textbox(cursor_left, top, name_w, _LOGO_MAX_H)
+    tf = nb.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p0 = tf.paragraphs[0]
+    p0.text = name
+    _style_para(p0, size_pt=_COMMUNITY_HEADER_PT, color=_HYMN_BRAND_WHITE, bold=True)
+    p0.alignment = PP_ALIGN.LEFT
 
 
 def _add_hymn_footer(slide, footer_section: str) -> None:
@@ -214,10 +216,10 @@ def _add_hymn_footer(slide, footer_section: str) -> None:
     tf.clear()
     p0 = tf.paragraphs[0]
     p0.text = get_community_name()
-    _style_para(p0, size_pt=_FOOTER_PT, color=_HYMN_FOOTER_MUTED, bold=True, font_name=_FONT_POPPINS)
+    _style_para(p0, size_pt=_FOOTER_PT, color=_HYMN_FOOTER_MUTED, bold=True)
     p1 = tf.add_paragraph()
     p1.text = footer_section
-    _style_para(p1, size_pt=_FOOTER_PT - 1, color=_HYMN_GOLD_TITLE, bold=False, font_name=_FONT_POPPINS)
+    _style_para(p1, size_pt=_FOOTER_PT - 1, color=_HYMN_GOLD_TITLE, bold=False)
     p1.space_before = Pt(2)
 
 
@@ -254,13 +256,12 @@ def _set_slide_bg(slide, rgb: RGBColor):
 
 
 def _prep_tf(tf):
-    """Text frame insets (Verbum txBody: zero margins, square wrap)."""
     tf.word_wrap = True
     tf.auto_size = MSO_AUTO_SIZE.NONE
-    tf.margin_left = Inches(0)
-    tf.margin_right = Inches(0)
-    tf.margin_top = Inches(0)
-    tf.margin_bottom = Inches(0)
+    tf.margin_left = Inches(0.12)
+    tf.margin_right = Inches(0.12)
+    tf.margin_top = Inches(0.08)
+    tf.margin_bottom = Inches(0.08)
 
 
 def _style_para(p, *, size_pt, color, bold=False, italic=False, font_name=None):
@@ -269,18 +270,6 @@ def _style_para(p, *, size_pt, color, bold=False, italic=False, font_name=None):
     p.font.bold = bold
     p.font.italic = italic
     p.font.color.rgb = color
-
-
-def _style_run(run, *, size_pt, color, bold=False, italic=False, font_name=None):
-    run.font.name = font_name or _ACTIVE_FONT
-    run.font.size = Pt(size_pt)
-    run.font.bold = bold
-    run.font.italic = italic
-    run.font.color.rgb = color
-
-
-def _marked_line_spacing(p) -> None:
-    p.line_spacing = 1.4
 
 
 def _add_community_footer(slide, footer_section: str, theme: SlideTheme):
@@ -293,10 +282,10 @@ def _add_community_footer(slide, footer_section: str, theme: SlideTheme):
     tf.clear()
     p0 = tf.paragraphs[0]
     p0.text = get_community_name()
-    _style_para(p0, size_pt=_FOOTER_PT, color=theme.primary, bold=True, font_name=_FONT_POPPINS)
+    _style_para(p0, size_pt=_FOOTER_PT, color=theme.muted, bold=True)
     p1 = tf.add_paragraph()
     p1.text = footer_section
-    _style_para(p1, size_pt=_FOOTER_PT - 1, color=theme.emphasis, bold=False, font_name=_FONT_POPPINS)
+    _style_para(p1, size_pt=_FOOTER_PT - 1, color=theme.emphasis, bold=False)
     p1.space_before = Pt(2)
 
 
@@ -319,61 +308,48 @@ def _parse_marked_lines(marked: str) -> List[Tuple[str, str]]:
     return out
 
 
+def _suppress_all_role_prefix(footer_section: str) -> bool:
+    """Kyrie / Gloria / Sanctus / Our Father / Lamb: congregation lines without an ``All:`` prefix."""
+    f = (footer_section or "").strip().lower()
+    keys = ("kyrie eleison", "gloria", "sanctus", "our father", "lamb of god")
+    return any(f.startswith(k) for k in keys)
+
+
 def _add_marked_slide(prs: Presentation, footer_section: str, marked_text: str, theme: SlideTheme) -> None:
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, theme.bg)
     _apply_slide_branding(slide, theme)
-    lx, w = _safe_content_lw()
-    top = _content_top()
-    body_h = SLIDE_HEIGHT - top - Inches(1.05)
+    lx, top, w = MARGIN_SIDE, _content_top(), SLIDE_WIDTH - 2 * MARGIN_SIDE
+    body_h = SLIDE_HEIGHT - top - Inches(1.1)
 
     box = slide.shapes.add_textbox(lx, top, w, body_h)
     tf = box.text_frame
     _prep_tf(tf)
     tf.clear()
     first = True
+    strip_all = _suppress_all_role_prefix(footer_section)
     for role, line in _parse_marked_lines(marked_text):
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
-        p.clear()
         if role == "priest":
-            r1 = p.add_run()
-            r1.text = "Priest"
-            _style_run(r1, size_pt=_MARKED_PRIEST_PT, color=_VERBUM_GOLD, bold=True, font_name=_FONT_POPPINS_SEMIBOLD)
-            r2 = p.add_run()
-            r2.text = f": {line}"
-            _style_run(r2, size_pt=_MARKED_PRIEST_PT, color=_VERBUM_WHITE, bold=True, font_name=_FONT_POPPINS_SEMIBOLD)
-            p.space_before = Pt(6)
-            p.alignment = PP_ALIGN.LEFT
+            p.text = f"Priest: {line}"
+            _style_para(p, size_pt=_BODY_PT + 1, color=theme.emphasis, bold=True)
+            p.space_before = Pt(4)
         elif role == "all":
-            r1 = p.add_run()
-            r1.text = f"ALL: {line}"
-            _style_run(r1, size_pt=_MARKED_BODY_PT, color=_VERBUM_WHITE, bold=True, font_name=_FONT_POPPINS_BLACK)
-            p.space_before = Pt(6)
-            p.alignment = PP_ALIGN.LEFT
+            p.text = line if strip_all else f"All: {line}"
+            _style_para(p, size_pt=_BODY_PT + 1, color=theme.primary, bold=True)
+            p.space_before = Pt(4)
         elif role == "direction":
             p.text = line
-            _style_para(
-                p,
-                size_pt=_DIRECTION_PT,
-                color=_VERBUM_GOLD_SOFT,
-                bold=False,
-                italic=True,
-                font_name=_FONT_LORA,
-            )
-            p.alignment = PP_ALIGN.JUSTIFY
+            _style_para(p, size_pt=_META_PT + 1, color=theme.emphasis, bold=False, italic=True)
         elif role == "hymn":
             p.text = line
-            _style_para(p, size_pt=_MARKED_BODY_PT, color=_VERBUM_WHITE, bold=True, font_name=_FONT_POPPINS)
-            p.alignment = PP_ALIGN.LEFT
+            _style_para(p, size_pt=_BODY_PT, color=theme.primary, bold=True)
         else:
             p.text = line
-            _style_para(p, size_pt=_MARKED_BODY_PT, color=_VERBUM_WHITE, bold=True, font_name=_FONT_POPPINS_SEMIBOLD)
-            p.alignment = PP_ALIGN.LEFT
-        _marked_line_spacing(p)
-        p.space_after = Pt(8)
-
-    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+            _style_para(p, size_pt=_BODY_PT, color=theme.primary, bold=False)
+        p.alignment = PP_ALIGN.CENTER
+        p.space_after = Pt(5)
 
     _add_community_footer(slide, footer_section, theme)
 
@@ -402,22 +378,91 @@ def _add_marked_chunked(prs: Presentation, footer: str, marked: str, theme: Slid
         _add_marked_slide(prs, foot, ch, theme)
 
 
+def _add_divider_cover(
+    prs: Presentation,
+    *,
+    celebrant: str,
+    date: str,
+    season: str,
+    lectionary_cycle: str,
+    gospel_reference: str,
+    gospel_quote: str,
+    quote_max_chars: int,
+    theme: SlideTheme,
+    background_image_path: Optional[Path] = None,
+    divider_poster_path: Optional[Path] = None,
+) -> None:
+    slide = prs.slides.add_slide(_layout_blank(prs))
+
+    cover: Optional[Path] = None
+    if divider_poster_path and Path(divider_poster_path).is_file():
+        cover = Path(divider_poster_path).resolve()
+    elif background_image_path and Path(background_image_path).is_file():
+        cover = Path(background_image_path).resolve()
+
+    # Add background image if provided, otherwise use solid color
+    if cover and cover.is_file():
+        slide.shapes.add_picture(
+            str(cover),
+            left=0,
+            top=0,
+            width=prs.slide_width,
+            height=prs.slide_height,
+        )
+    else:
+        _set_slide_bg(slide, theme.bg)
+    
+    _apply_slide_branding(slide, theme)
+    lx = MARGIN_SIDE
+    lw = SLIDE_WIDTH - 2 * MARGIN_SIDE
+    ty = _content_top() + Inches(0.35)
+
+    g_line = (gospel_quote or "").strip()
+    if quote_max_chars and len(g_line) > quote_max_chars:
+        g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
+    gref = (gospel_reference or "").strip() or "—"
+
+    lines = [
+        "MASS CELEBRANT:",
+        celebrant,
+        "",
+        "\n".join(get_community_name().split()),
+        "",
+        f"Gospel ({gref})",
+    ]
+    if g_line:
+        lines.append(f"\u201c{g_line}\u201d")
+    lines.extend(["", f"YEAR {(lectionary_cycle or '—').strip().upper()}", f"{date} · {(season or '').strip()}"])
+
+    blk = slide.shapes.add_textbox(lx, ty, lw, Inches(6.5))
+    tf = blk.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    first = True
+    for line in lines:
+        p = tf.paragraphs[0] if first else tf.add_paragraph()
+        first = False
+        p.text = line
+        bold = "CELEBRANT" in line or line.startswith("MASS")
+        _style_para(p, size_pt=_GREET_PT, color=theme.primary if not bold else theme.emphasis, bold=bold)
+        p.space_after = Pt(3)
+
+    _add_community_footer(slide, "Mass poster / divider", theme)
+
+
 def _add_section_card(prs: Presentation, big_lines: str, footer_section: str, theme: SlideTheme) -> None:
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, theme.bg)
     _apply_slide_branding(slide, theme)
-    lx, w = _safe_content_lw()
-    top = _content_top() + Inches(0.35)
-    box = slide.shapes.add_textbox(lx, top, w, Inches(4.8))
+    lx, top, w = MARGIN_SIDE, _content_top() + Inches(0.25), SLIDE_WIDTH - 2 * MARGIN_SIDE
+    box = slide.shapes.add_textbox(lx, top, w, Inches(4.5))
     tf = box.text_frame
     _prep_tf(tf)
     tf.clear()
     p = tf.paragraphs[0]
     p.text = big_lines
-    _style_para(p, size_pt=56, color=_VERBUM_WHITE, bold=True, font_name=_FONT_ALEGREYA_SC)
+    _style_para(p, size_pt=44, color=theme.emphasis, bold=True)
     p.alignment = PP_ALIGN.CENTER
-    _marked_line_spacing(p)
-    tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
     _add_community_footer(slide, footer_section, theme)
 
 
@@ -449,8 +494,7 @@ def _chunk_long_plain_segment(text: str, limit: int) -> List[str]:
 
 def _chunk_lyrics_display(text: str, limit: int = _LYRIC_CHUNK) -> List[str]:
     """Prefer stanza boundaries (blank lines), then size limits within each stanza."""
-    cleaned = (text or "").strip()
-    t = cleaned.strip() or "(No lyrics in library for this selection.)"
+    t = (text or "").strip() or "(No lyrics in library for this selection.)"
     stanzas = [s.strip() for s in re.split(r"\n\s*\n+", t) if s.strip()]
     if len(stanzas) <= 1:
         return _chunk_long_plain_segment(t, limit)
@@ -464,26 +508,26 @@ def _chunk_lyrics_display(text: str, limit: int = _LYRIC_CHUNK) -> List[str]:
 
 
 def _fill_hymn_body_caps(tf, chunk: str) -> None:
-    """Verbum hymn body: centered Poppins bold white (ExampleForVerbum slide 23), preserve casing."""
+    """Centered ALL CAPS bold sans-serif (white on black)."""
     lines = [ln.strip() for ln in chunk.split("\n") if ln.strip()]
     longest = max((len(ln) for ln in lines), default=0)
     line_count = len(lines)
     size_pt = _LYRIC_BODY_DISPLAY_PT
     if line_count >= 8 or longest >= 40:
-        size_pt = 56
-    if line_count >= 10 or longest >= 48:
         size_pt = 50
-    if line_count >= 12 or longest >= 56:
+    if line_count >= 10 or longest >= 48:
         size_pt = 44
-    if line_count >= 14 or longest >= 64:
+    if line_count >= 12 or longest >= 56:
         size_pt = 38
+    if line_count >= 14 or longest >= 64:
+        size_pt = 34
 
     tf.clear()
     first = True
     for raw in lines:
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
-        p.text = raw
+        p.text = raw.upper()
         _style_para(
             p,
             size_pt=size_pt,
@@ -492,11 +536,11 @@ def _fill_hymn_body_caps(tf, chunk: str) -> None:
             font_name=_HYMN_BODY_FONT,
         )
         p.alignment = PP_ALIGN.CENTER
-        p.space_after = Pt(10 if size_pt >= 38 else 8)
-        p.line_spacing = 1.4
+        p.space_after = Pt(10 if size_pt >= 34 else 8)
+        p.line_spacing = 1.05
     if first:
         p = tf.paragraphs[0]
-        p.text = (chunk or "").strip()
+        p.text = (chunk or "").strip().upper()
         _style_para(
             p,
             size_pt=size_pt,
@@ -505,7 +549,6 @@ def _fill_hymn_body_caps(tf, chunk: str) -> None:
             font_name=_HYMN_BODY_FONT,
         )
         p.alignment = PP_ALIGN.CENTER
-        p.line_spacing = 1.4
 
 
 def _add_hymn_lyric_slides(
@@ -516,8 +559,10 @@ def _add_hymn_lyric_slides(
     theme: SlideTheme,
 ) -> None:
     """
-    Verbum hymn slides (#050907): gold Lora title; lyrics in bold white Poppins, centered (slide 23).
+    Black screen: gold serif title; lyrics in white ALL CAPS bold sans, large and centered.
+    First slide: title at top center + first lyric block below; further slides continue lyrics.
     """
+    del theme  # hymn slides use fixed projector palette, not liturgical theme
     title = (hymn_title or "Hymn").strip()
     raw_lyrics = (lyrics or "").strip() or "(No lyrics in library for this hymn.)"
     chunks = _chunk_lyrics_display(raw_lyrics)
@@ -527,15 +572,14 @@ def _add_hymn_lyric_slides(
     first_chunk = chunks[0]
     rest_chunks = chunks[1:]
 
-    w = SLIDE_WIDTH - 2 * MARGIN_SIDE
-    lx_body = MARGIN_SIDE
-
+    # Slide 1: gold title + first lyrics
     slide0 = prs.slides.add_slide(_layout_blank(prs))
-    _set_slide_bg(slide0, theme.bg)
-    _apply_hymn_branding(slide0, theme)
+    _set_slide_bg(slide0, _HYMN_BG)
+    _apply_hymn_branding(slide0)
 
+    w = SLIDE_WIDTH - 2 * MARGIN_SIDE
     title_top = _content_top()
-    title_box = slide0.shapes.add_textbox(lx_body, title_top, w, Inches(1.05))
+    title_box = slide0.shapes.add_textbox(MARGIN_SIDE, title_top, w, Inches(0.95))
     tft = title_box.text_frame
     _prep_tf(tft)
     tft.clear()
@@ -545,35 +589,32 @@ def _add_hymn_lyric_slides(
         pt,
         size_pt=_LYRIC_TITLE_DISPLAY_PT,
         color=_HYMN_GOLD_TITLE,
-        bold=False,
+        bold=True,
         font_name=_HYMN_TITLE_FONT,
     )
     pt.alignment = PP_ALIGN.CENTER
-    _marked_line_spacing(pt)
 
-    body_top = title_top + Inches(1.15)
+    body_top = title_top + Inches(1.2)
     body_h = SLIDE_HEIGHT - body_top - Inches(0.95)
-    body_box = slide0.shapes.add_textbox(lx_body, body_top, w, body_h)
+    body_box = slide0.shapes.add_textbox(MARGIN_SIDE, body_top, w, body_h)
     tfb = body_box.text_frame
     _prep_tf(tfb)
     tfb.word_wrap = True
     tfb.vertical_anchor = MSO_ANCHOR.MIDDLE
     _fill_hymn_body_caps(tfb, first_chunk)
-    tfb.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
     _add_hymn_footer(slide0, footer_section)
 
     for chunk in rest_chunks:
         slide = prs.slides.add_slide(_layout_blank(prs))
-        _set_slide_bg(slide, theme.bg)
-        _apply_hymn_branding(slide, theme)
+        _set_slide_bg(slide, _HYMN_BG)
+        _apply_hymn_branding(slide)
         body_h2 = SLIDE_HEIGHT - _content_top() - Inches(0.95)
-        bx = slide.shapes.add_textbox(lx_body, _content_top(), w, body_h2)
+        bx = slide.shapes.add_textbox(MARGIN_SIDE, _content_top(), w, body_h2)
         tf = bx.text_frame
         _prep_tf(tf)
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         _fill_hymn_body_caps(tf, chunk)
-        tf.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
         _add_hymn_footer(slide, footer_section)
 
 
@@ -582,7 +623,7 @@ def _try_library_hymn(prs: Presentation, section: str, hymn_id: str, footer: str
     if not h:
         return False
     title = str(h.get("title") or "Hymn")
-    lyrics = str(h.get("lyrics") or "")
+    lyrics = clean_lyrics_for_projection(str(h.get("lyrics") or ""))
     _add_hymn_lyric_slides(prs, footer, title, lyrics, theme)
     return True
 
@@ -619,15 +660,13 @@ def chunk_plain_text(text: str, limit: int = _MAX_CHARS_READING) -> List[str]:
     return out if out else [norm[:limit]]
 
 
-def _fill_multipara(
-    tf,
-    text: str,
-    *,
-    size_pt: int,
-    color: RGBColor,
-    font_name: Optional[str] = None,
-    italic: bool = False,
-):
+def _paragraphs(tf, *, size_pt, color, bold=False):
+    tf.clear()
+    p = tf.paragraphs[0]
+    _style_para(p, size_pt=size_pt, color=color, bold=bold)
+
+
+def _fill_multipara(tf, text: str, *, size_pt: int, color: RGBColor):
     tf.clear()
     raw = (text or "").strip()
     parts = [b.strip() for b in raw.split("\n\n") if b.strip()] or ([raw] if raw else [""])
@@ -636,7 +675,7 @@ def _fill_multipara(
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         p.text = block
-        _style_para(p, size_pt=size_pt, color=color, bold=False, italic=italic, font_name=font_name)
+        _style_para(p, size_pt=size_pt, color=color)
         p.space_after = Pt(5)
 
 
@@ -652,94 +691,48 @@ def _add_reading_block(
     theme: SlideTheme,
 ) -> None:
     ref = (reference or "").strip() or "—"
-    main_text = (body or "").strip()
+    body = strip_reading_verse_markers((body or "").strip())
 
-    def one_slide(head: str, sub: str, main: str) -> None:
+    def one_slide(head: str, sub: str, main: str):
         slide = prs.slides.add_slide(_layout_blank(prs))
         _set_slide_bg(slide, theme.bg)
         _apply_slide_branding(slide, theme)
-        lx, w = _safe_content_lw()
-        cur_top = _content_top() + Inches(0.06)
-
-        if lotw_banner:
-            hero_h = Inches(1.2)
-            hero = slide.shapes.add_textbox(lx, cur_top, w, hero_h)
-            htf = hero.text_frame
-            _prep_tf(htf)
-            htf.clear()
-            hp = htf.paragraphs[0]
-            hp.text = "Liturgy of the Word"
-            _style_para(
-                hp,
-                size_pt=_LOTW_HERO_PT,
-                color=_VERBUM_WHITE,
-                bold=True,
-                font_name=_FONT_ALEGREYA_SC,
-            )
-            hp.alignment = PP_ALIGN.CENTER
-            _marked_line_spacing(hp)
-            cur_top += hero_h + Inches(0.08)
-
-        title_h = Inches(0.88)
-        title_box = slide.shapes.add_textbox(lx, cur_top, w, title_h)
+        lx, top, w = MARGIN_SIDE, _content_top(), SLIDE_WIDTH - 2 * MARGIN_SIDE
+        title_h = Inches(1.12) if lotw_banner else Inches(0.92)
+        title_box = slide.shapes.add_textbox(lx, top, w, title_h)
         tf_t = title_box.text_frame
         _prep_tf(tf_t)
         tf_t.clear()
-        p0 = tf_t.paragraphs[0]
         if lotw_banner:
-            p0.text = head if "continued" in head.lower() else f"{section} ({ref})"
+            p0 = tf_t.paragraphs[0]
+            p0.text = "Liturgy of the Word"
+            _style_para(p0, size_pt=_SECTION_PT - 2, color=theme.emphasis, bold=True)
+            p1 = tf_t.add_paragraph()
+            p1.text = head if "continued" in head.lower() else f"{section} ({ref})"
+            _style_para(p1, size_pt=_META_PT + 2, color=theme.muted, bold=False)
         else:
-            p0.text = head
-        _style_para(p0, size_pt=_READING_HEAD_PT, color=_VERBUM_GOLD, bold=True, font_name=_FONT_POPPINS)
-        p0.alignment = PP_ALIGN.CENTER
-        cur_top += title_h + Inches(0.06)
+            _paragraphs(tf_t, size_pt=_SECTION_PT, color=theme.emphasis, bold=True)
+            tf_t.paragraphs[0].text = head
 
-        sub_h = Inches(0.52)
-        sub_box = slide.shapes.add_textbox(lx, cur_top, w, sub_h)
+        sub_top = top + title_h + Inches(0.06)
+        sub_h = Inches(0.48)
+        sub_box = slide.shapes.add_textbox(lx, sub_top, w, sub_h)
         _prep_tf(sub_box.text_frame)
-        sub_box.text_frame.clear()
-        sp = sub_box.text_frame.paragraphs[0]
-        sp.text = sub
-        _style_para(sp, size_pt=22, color=_VERBUM_WHITE, bold=False, font_name=_FONT_POPPINS)
-        sp.alignment = PP_ALIGN.CENTER
-        cur_top += sub_h + Inches(0.12)
+        _paragraphs(sub_box.text_frame, size_pt=_META_PT, color=theme.muted)
+        sub_box.text_frame.paragraphs[0].text = sub
 
-        body_h = SLIDE_HEIGHT - cur_top - Inches(1.0)
-        bsh = slide.shapes.add_textbox(lx, cur_top, w, body_h)
+        body_top = sub_top + sub_h + Inches(0.12)
+        body_h = SLIDE_HEIGHT - body_top - Inches(1.0)
+        bsh = slide.shapes.add_textbox(lx, body_top, w, body_h)
         _prep_tf(bsh.text_frame)
-        main_stripped = (main or "").strip()
-        if not main_stripped:
-            bsh.text_frame.clear()
-            pz = bsh.text_frame.paragraphs[0]
-            pz.text = "\u00a0"
-            _style_para(
-                pz,
-                size_pt=_READING_BODY_PT,
-                color=_VERBUM_READING_BODY,
-                bold=False,
-                italic=True,
-                font_name=_FONT_ALICE,
-            )
-            pz.alignment = PP_ALIGN.CENTER
-        else:
-            _fill_multipara(
-                bsh.text_frame,
-                main_stripped,
-                size_pt=_READING_BODY_PT,
-                color=_VERBUM_READING_BODY,
-                font_name=_FONT_ALICE,
-                italic=True,
-            )
-            for para in bsh.text_frame.paragraphs:
-                para.alignment = PP_ALIGN.CENTER
-                _marked_line_spacing(para)
-        bsh.text_frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+        _paragraphs(bsh.text_frame, size_pt=_BODY_PT, color=theme.primary)
+        _fill_multipara(bsh.text_frame, main, size_pt=_BODY_PT, color=theme.primary)
         _add_community_footer(slide, footer_tag, theme)
 
-    if not main_text:
+    if not body:
         one_slide(section, ref, unavailable_note)
         return
-    chunks = chunk_plain_text(main_text)
+    chunks = chunk_plain_text(body)
     total = len(chunks)
     for i, chunk in enumerate(chunks):
         head = section if i == 0 else f"{section} (continued)"
@@ -768,19 +761,17 @@ def _add_title_slide(
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, theme.bg)
     _apply_slide_branding(slide, theme)
-    lx, w = _safe_content_lw()
-    y = _content_top() + Inches(0.12)
+    lx, w = MARGIN_SIDE, SLIDE_WIDTH - 2 * MARGIN_SIDE
+    y = _content_top() + Inches(0.15)
 
-    tb = slide.shapes.add_textbox(lx, y, w, Inches(1.15))
+    tb = slide.shapes.add_textbox(lx, y, w, Inches(1.05))
     tft = tb.text_frame
     _prep_tf(tft)
     tft.clear()
     p0 = tft.paragraphs[0]
     p0.text = title or "Mass"
-    _style_para(p0, size_pt=44, color=theme.emphasis, bold=False, font_name=_FONT_LORA)
+    _style_para(p0, size_pt=_TITLE_PT, color=theme.emphasis, bold=True)
     p0.alignment = PP_ALIGN.CENTER
-    _marked_line_spacing(p0)
-    tft.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
 
     g_line = (gospel_quote or "").strip()
     if quote_max_chars and len(g_line) > quote_max_chars:
@@ -797,26 +788,64 @@ def _add_title_slide(
     if liturgical_color:
         meta += f"\n\nLiturgical color: {liturgical_color.get('color_name', '')} ({liturgical_color.get('season', '')})"
 
-    mb = slide.shapes.add_textbox(lx, y + Inches(1.22), w, Inches(3.55))
+    mb = slide.shapes.add_textbox(lx, y + Inches(1.15), w, Inches(3.4))
     _prep_tf(mb.text_frame)
-    _fill_multipara(mb.text_frame, meta, size_pt=_GREET_PT, color=theme.primary, font_name=_FONT_POPPINS)
-    for para in mb.text_frame.paragraphs:
-        para.alignment = PP_ALIGN.CENTER
-    mb.text_frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
+    _fill_multipara(mb.text_frame, meta, size_pt=_GREET_PT, color=theme.primary)
 
     if quote_attribution and g_line:
         nb = slide.shapes.add_textbox(lx, SLIDE_HEIGHT - Inches(1.2), w, Inches(0.75))
         _prep_tf(nb.text_frame)
-        _fill_multipara(
-            nb.text_frame,
-            str(quote_attribution),
-            size_pt=_META_PT,
-            color=theme.muted,
-            font_name=_FONT_POPPINS,
-            italic=True,
-        )
+        _fill_multipara(nb.text_frame, str(quote_attribution), size_pt=_META_PT, color=theme.muted)
 
     _add_community_footer(slide, "Title", theme)
+
+
+def _add_full_bleed_png_slides(prs: Presentation, paths: List[Optional[Path]]) -> None:
+    for raw in paths or []:
+        if not raw:
+            continue
+        p = Path(raw)
+        if not p.is_file():
+            continue
+        slide = prs.slides.add_slide(_layout_blank(prs))
+        slide.shapes.add_picture(
+            str(p.resolve()),
+            left=0,
+            top=0,
+            width=prs.slide_width,
+            height=prs.slide_height,
+        )
+
+
+def _add_mass_collection_slide(
+    prs: Presentation,
+    theme: SlideTheme,
+    *,
+    amount: str,
+    date_label: str,
+) -> None:
+    lines = ["<<H>>MASS COLLECTION", "<<D>>Thank you for your generosity."]
+    if (amount or "").strip():
+        lines.append(f"<<D>>Amount: {amount.strip()}")
+    if (date_label or "").strip():
+        lines.append(f"<<D>>Date: {date_label.strip()}")
+    if len(lines) == 2:
+        lines.append("<<D>>(Enter collection amount and date in Mass Builder.)")
+    _add_marked_slide(prs, "Mass Collection", "\n".join(lines), theme)
+
+
+def _add_food_sponsors_slide(prs: Presentation, theme: SlideTheme, sponsors: List[str]) -> None:
+    lines: List[str] = ["<<H>>FOOD SPONSORS", "<<D>>The community thanks our food sponsors."]
+    have = False
+    for s in sponsors or []:
+        ss = (s or "").strip()
+        if not ss:
+            continue
+        have = True
+        lines.append(f"<<D>>• {ss}")
+    if not have:
+        lines.append("<<D>>(No sponsors listed — add names in Mass Builder.)")
+    _add_marked_slide(prs, "Food Sponsors", "\n".join(lines), theme)
 
 
 def generate_mass_ppt(
@@ -842,11 +871,11 @@ def generate_mass_ppt(
     song_selections: Optional[Mapping[str, Any]] = None,
     output_stem: str = "mass_presentation",
     liturgical_poster_png: Optional[Path] = None,
-    user_divider_png_paths: Optional[list[Path]] = None,
+    divider_poster_png: Optional[Path] = None,
+    announcement_image_paths: Optional[List[Path]] = None,
     mass_collection_amount: str = "",
-    mass_collection_for_date: str = "",
-    food_sponsors: Optional[list[str]] = None,
-    announcement_png_paths: Optional[list[Path]] = None,
+    mass_collection_date_label: str = "",
+    food_sponsors: Optional[List[str]] = None,
 ) -> tuple[int, Path]:
     global _ACTIVE_FONT
     prs = Presentation()
@@ -862,6 +891,19 @@ def generate_mass_ppt(
     unavail = (
         "Full text was not loaded from bible.usccb.org. "
         "Open today’s readings for this date and paste if needed."
+    )
+
+    ctx = dict(
+        celebrant=celebrant,
+        date=date,
+        season=season,
+        lectionary_cycle=lectionary_cycle,
+        gospel_reference=gospel_reference or "",
+        gospel_quote=g_line,
+        quote_max_chars=quote_max_chars,
+        theme=theme,
+        background_image_path=liturgical_poster_png,
+        divider_poster_path=divider_poster_png,
     )
 
     sel = song_selections or {}
@@ -900,10 +942,7 @@ def generate_mass_ppt(
             "<<D>>No Entrance hymn lyrics were selected. Choose one Entrance song in Mass Flow or save lyrics in Lyrics Studio before generating.",
             theme,
         )
-    for extra in user_divider_png_paths or []:
-        pp = Path(extra)
-        if pp.is_file():
-            _add_liturgical_poster_full_slide(prs, pp)
+    _add_divider_cover(prs, **ctx)
 
     # --- Introductory Rites ---
     _add_marked_slide(prs, "Introductory Rites", GFCC.SIGN_CROSS, theme)
@@ -949,30 +988,53 @@ def generate_mass_ppt(
 
     _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_SING, theme)
     _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_COMMENTATOR, theme)
-    _add_marked_slide(prs, "Gospel", GFCC.GOSPEL_INTRO, theme)
+    _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_INTRO, theme)
+
+    g_quote_intro = (g_line or "").strip()
+    if quote_max_chars and len(g_quote_intro) > quote_max_chars:
+        g_quote_intro = g_quote_intro[: quote_max_chars - 1].rstrip() + "\u2026"
+    if g_quote_intro:
+        _add_marked_slide(
+            prs,
+            "Gospel",
+            f"<<D>>{gospel_reference or '—'}\n<<D>>\n<<A>>\u201c{g_quote_intro}\u201d",
+            theme,
+        )
+    else:
+        _add_marked_slide(prs, "Gospel", f"<<D>>{gospel_reference or '—'}", theme)
+
+    g_body = strip_reading_verse_markers(
+        ((gospel_full_text or "").strip() or (gospel_quote or "").strip())
+    )
     _add_reading_block(
         prs,
         section="Gospel",
         reference=gospel_reference or "—",
-        body=(gospel_full_text or "").strip(),
+        body=g_body,
         unavailable_note=unavail,
-        lotw_banner=True,
-        footer_tag="Liturgy of the Word",
+        lotw_banner=False,
+        footer_tag="Gospel",
         theme=theme,
     )
-    _add_marked_slide(prs, "Gospel", GFCC.GOSPEL_END, theme)
 
+    _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_END, theme)
     _add_marked_slide(
         prs,
         "Homily",
         "<<D>>Time for the homily — Father will now preach.\n<<D>>Commentator may introduce the theme.",
         theme,
     )
+    _add_divider_cover(prs, **ctx)
+
     # --- Creed ---
     _add_marked_chunked(prs, "Nicene Creed", get_prayer("nicene_creed"), theme)
+    _add_divider_cover(prs, **ctx)
+
     # --- Prayer of the Faithful ---
     _add_marked_slide(prs, "Prayer of the Faithful", GFCC.PRAYER_FAITHFUL_1, theme)
     _add_marked_slide(prs, "Prayer of the Faithful", GFCC.PRAYER_FAITHFUL_2, theme)
+    _add_divider_cover(prs, **ctx)
+
     # --- Liturgy of the Eucharist ---
     off_id = str(sel.get("offertory") or "").strip()
     if not off_id or not _try_library_hymn(prs, "offertory", off_id, "Offertory", theme):
@@ -993,10 +1055,13 @@ def generate_mass_ppt(
     _add_section_card(prs, "LITURGY OF\nTHE EUCHARIST", "Liturgy of the Eucharist", theme)
     _add_marked_slide(prs, "Great Amen", GFCC.GREAT_AMEN, theme)
     _add_marked_chunked(prs, "Our Father", get_prayer("our_father"), theme)
+    _add_divider_cover(prs, **ctx)
     _add_marked_slide(prs, "The Communion Rite", GFCC.COMMUNION_RITE_DELIVER, theme)
+    _add_divider_cover(prs, **ctx)
     _add_marked_slide(prs, "Sign of Peace", GFCC.SIGN_PEACE, theme)
     _add_marked_slide(prs, "Lamb of God", get_prayer("lamb_of_god"), theme)
     _add_marked_slide(prs, "The Communion Rite", GFCC.COMMUNION_DIALOGUE, theme)
+    _add_divider_cover(prs, **ctx)
     c1 = str(sel.get("communion_1") or "").strip()
     c2 = str(sel.get("communion_2") or "").strip()
     comm_ok = False
@@ -1015,34 +1080,23 @@ def generate_mass_ppt(
     if med_id:
         _try_library_hymn(prs, "meditation", med_id, "Meditation", theme)
     _add_marked_slide(prs, "The Communion Rite", GFCC.POST_COMMUNION, theme)
-    # --- Announcements ---
-    _add_marked_slide(prs, "Announcements", GFCC.ANNOUNCEMENTS_TITLE, theme)
-    _add_marked_slide(prs, "Announcements", GFCC.WELCOME_NEWCOMERS, theme)
-    _add_marked_slide(prs, "Announcements", GFCC.CONFESSION_SLIDE, theme)
+    _add_divider_cover(prs, **ctx)
 
-    coll_lines: list[str] = []
-    if (mass_collection_amount or "").strip():
-        coll_lines.append(f"<<D>>Amount: {(mass_collection_amount or '').strip()}")
-    if (mass_collection_for_date or "").strip():
-        coll_lines.append(f"<<D>>For: {(mass_collection_for_date or '').strip()}")
-    if coll_lines:
-        _add_marked_slide(prs, "Announcements", "<<H>>Mass Collection\n" + "\n".join(coll_lines), theme)
-    else:
-        _add_marked_slide(prs, "Announcements", GFCC.COLLECTION_PLACEHOLDER, theme)
-
-    sponsors = [str(x).strip() for x in (food_sponsors or []) if str(x).strip()]
-    if sponsors:
-        sp_body = "\n".join(f"<<D>>{name}" for name in sponsors)
-        _add_marked_slide(prs, "Announcements", "<<H>>Food Sponsors\n" + sp_body, theme)
-    else:
-        _add_marked_slide(prs, "Announcements", GFCC.SPONSORSHIP, theme)
-
-    _add_marked_slide(prs, "Announcements", GFCC.FB_UPDATES, theme)
-
-    for ap in announcement_png_paths or []:
-        p = Path(ap)
-        if p.is_file():
-            _add_liturgical_poster_full_slide(prs, p)
+    # --- Stewardship, sponsors, announcement posters (before final blessing) ---
+    _add_mass_collection_slide(
+        prs,
+        theme,
+        amount=mass_collection_amount or "",
+        date_label=mass_collection_date_label or "",
+    )
+    _add_food_sponsors_slide(prs, theme, list(food_sponsors or []))
+    ann_paths: List[Optional[Path]] = list(announcement_image_paths or [])
+    _add_full_bleed_png_slides(prs, ann_paths)
+    if not ann_paths:
+        _add_marked_slide(prs, "Announcements", GFCC.ANNOUNCEMENTS_TITLE, theme)
+        _add_marked_slide(prs, "Announcements", GFCC.WELCOME_NEWCOMERS, theme)
+        _add_marked_slide(prs, "Announcements", GFCC.CONFESSION_SLIDE, theme)
+        _add_marked_slide(prs, "Announcements", GFCC.FB_UPDATES, theme)
 
     _add_marked_slide(prs, "Final Blessing", GFCC.FINAL_BLESSING, theme)
     rec_id = str(sel.get("recessional") or "").strip()
@@ -1053,6 +1107,8 @@ def generate_mass_ppt(
             "<<D>>No Recessional hymn lyrics were selected. Choose one Recessional song in Mass Flow or save lyrics in Lyrics Studio before generating.",
             theme,
         )
+    _add_divider_cover(prs, **ctx)
+
     # Full-screen 16×9 parish poster (generated before the deck — see pipeline order).
     if liturgical_poster_png is not None:
         _add_liturgical_poster_full_slide(prs, liturgical_poster_png)

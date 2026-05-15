@@ -42,21 +42,6 @@ def save_catalog(data: dict[str, list[dict[str, Any]]]) -> None:
     _LIBRARY_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-_SLUG_PAREN = re.compile(r"\s*\([^)]*_[^)]*\)\s*$")
-
-
-def display_title(title: str, _song_id: str = "") -> str:
-    """Strip trailing parentheticals that look like internal slugs, e.g. ``(awit_ng_paghahangad)``."""
-    t = str(title or "").strip()
-    if not t:
-        return ""
-    prev = None
-    while prev != t:
-        prev = t
-        t = _SLUG_PAREN.sub("", t).strip()
-    return t
-
-
 def make_song_id(title: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "_", (title or "").strip().lower()).strip("_")
     if not slug:
@@ -95,6 +80,7 @@ def import_titles(grouped_titles: dict[str, list[str]]) -> dict[str, Any]:
             row = {
                 "id": hid,
                 "title": title,
+                "author": "",
                 "language": "English",
                 "seasons": ["all"],
                 "lyrics": "",
@@ -165,6 +151,7 @@ def import_song_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         row = {
             "id": hid,
             "title": title,
+            "author": "",
             "language": language,
             "seasons": ["all"],
             "lyrics": "",
@@ -207,7 +194,7 @@ def save_lyrics_song(
     lyrics: str,
     sections: list[str],
     language: str = "English",
-    author: Optional[str] = None,
+    author: str = "",
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
     clean_title = str(title or "").strip()
@@ -248,9 +235,9 @@ def save_lyrics_song(
             target = {
                 "id": hid,
                 "title": clean_title,
+                "author": "",
                 "language": str(language or "English").strip() or "English",
                 "seasons": ["all"],
-                "updated": __import__("time").time(),
             }
             rows.append(target)
             created.append(sec)
@@ -259,26 +246,73 @@ def save_lyrics_song(
 
         target["lyrics"] = clean_lyrics
         target["source"] = "lyrics_dashboard"
-        target["updated"] = __import__("time").time()
-        if author is not None and str(author).strip():
-            target["author"] = str(author).strip()
-        elif author is not None:
-            target.pop("author", None)
+        auth = str(author or "").strip()
+        if auth:
+            target["author"] = auth
 
     save_catalog(data)
+    first_id = ""
+    for sec in wanted:
+        for row in data.get(sec) or []:
+            if str(row.get("title") or "").strip().lower() == clean_title.lower():
+                first_id = str(row.get("id") or "")
+                break
+        if first_id:
+            break
     return {
         "ok": True,
         "title": clean_title,
+        "id": first_id,
         "sections": wanted,
         "created": created,
         "updated": updated,
     }
 
 
-def update_song_entry(
+def find_catalog_row_by_id(hymn_id: str) -> tuple[Optional[str], Optional[dict[str, Any]]]:
+    """Return (section, row) for the first catalog entry with this id, or (None, None)."""
+    hid = str(hymn_id or "").strip()
+    if not hid:
+        return None, None
+    data = load_catalog()
+    for sec in _SECTIONS:
+        for row in data.get(sec) or []:
+            if not isinstance(row, dict):
+                continue
+            if str(row.get("id") or "").strip() == hid:
+                return sec, row
+    return None, None
+
+
+def catalog_for_api() -> dict[str, list[dict[str, Any]]]:
+    data = load_catalog()
+    out: dict[str, list[dict[str, Any]]] = {}
+    for sec in _SECTIONS:
+        rows: list[dict[str, Any]] = []
+        for item in data.get(sec) or []:
+            if not isinstance(item, dict):
+                continue
+            hid = str(item.get("id") or "").strip()
+            title = str(item.get("title") or "").strip()
+            if not hid or not title:
+                continue
+            rows.append(
+                {
+                    "id": hid,
+                    "title": title,
+                    "author": str(item.get("author") or "").strip(),
+                    "language": str(item.get("language") or "English"),
+                    "has_lyrics": bool(str(item.get("lyrics") or "").strip()),
+                }
+            )
+        out[sec] = rows
+    return out
+
+
+def update_catalog_song(
+    *,
     section: str,
     hymn_id: str,
-    *,
     title: Optional[str] = None,
     author: Optional[str] = None,
     lyrics: Optional[str] = None,
@@ -287,37 +321,31 @@ def update_song_entry(
     sec = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
     if sec not in _SECTIONS or not hid:
-        return {"ok": False, "error": "Invalid section or song id."}
+        return {"ok": False, "error": "Invalid section or id."}
     data = load_catalog()
-    rows = data.get(sec) or []
-    target = None
-    for row in rows:
-        if str(row.get("id") or "").strip() == hid:
-            target = row
-            break
-    if not target:
-        return {"ok": False, "error": "Song not found in that section."}
-    if title is not None and str(title).strip():
-        target["title"] = str(title).strip()
-    if author is not None:
-        a = str(author).strip()
-        if a:
-            target["author"] = a
-        else:
-            target.pop("author", None)
-    if lyrics is not None:
-        target["lyrics"] = str(lyrics)
-    if language is not None and str(language).strip():
-        target["language"] = str(language).strip()
-    save_catalog(data)
-    return {"ok": True, "song": target, "section": sec}
+    for item in data.get(sec) or []:
+        if str(item.get("id") or "").strip() != hid:
+            continue
+        if title is not None:
+            nt = str(title).strip()
+            if nt:
+                item["title"] = nt
+        if author is not None:
+            item["author"] = str(author).strip()
+        if lyrics is not None:
+            item["lyrics"] = str(lyrics)
+        if language is not None and str(language).strip():
+            item["language"] = str(language).strip()
+        save_catalog(data)
+        return {"ok": True}
+    return {"ok": False, "error": "Song not found."}
 
 
-def delete_song_entry(section: str, hymn_id: str) -> dict[str, Any]:
+def delete_catalog_song(*, section: str, hymn_id: str) -> dict[str, Any]:
     sec = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
     if sec not in _SECTIONS or not hid:
-        return {"ok": False, "error": "Invalid section or song id."}
+        return {"ok": False, "error": "Invalid section or id."}
     data = load_catalog()
     rows = data.get(sec) or []
     new_rows = [r for r in rows if str(r.get("id") or "").strip() != hid]
@@ -325,37 +353,5 @@ def delete_song_entry(section: str, hymn_id: str) -> dict[str, Any]:
         return {"ok": False, "error": "Song not found."}
     data[sec] = new_rows
     save_catalog(data)
-    return {"ok": True, "section": sec, "id": hid}
-
-
-def recent_songs(limit: int = 12) -> list[dict[str, Any]]:
-    """Most recently touched rows (by optional ``updated`` / ``created`` ts or file order)."""
-    data = load_catalog()
-    flat: list[tuple[float, str, dict[str, Any]]] = []
-    for sec in _SECTIONS:
-        for row in data.get(sec) or []:
-            ts = float(row.get("updated") or row.get("created") or 0)
-            flat.append((ts, sec, row))
-    flat.sort(key=lambda x: x[0], reverse=True)
-    seen: set[str] = set()
-    out: list[dict[str, Any]] = []
-    for _ts, sec, row in flat:
-        hid = str(row.get("id") or "")
-        if not hid or hid in seen:
-            continue
-        seen.add(hid)
-        out.append({"section": sec, **row})
-        if len(out) >= limit:
-            break
-    if not out:
-        for sec in _SECTIONS:
-            for row in (data.get(sec) or [])[-limit:]:
-                hid = str(row.get("id") or "")
-                if hid in seen:
-                    continue
-                seen.add(hid)
-                out.append({"section": sec, **row})
-                if len(out) >= limit:
-                    return out
-    return out
+    return {"ok": True}
 

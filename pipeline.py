@@ -28,6 +28,7 @@ from services.lectionary_service import get_liturgical_data
 from services.media_naming import mass_export_stem
 from services.web_hymn_discovery import discover_hymns_for_readings
 from services.lyrics_fetcher import ensure_lyrics_for_song
+from services.mass_text_format import synopsis_from_reading
 
 
 @dataclass
@@ -46,12 +47,11 @@ class PreviewPayload:
     gospel_quote: str = ""
     default_song_selections: dict[str, str] = field(default_factory=dict)
     estimated_slide_count: int = 0
-    first_reading: str = ""
-    first_reading_text: str = ""
-    psalm: str = ""
+    first_reading_reference: str = ""
+    first_reading_excerpt: str = ""
+    second_reading_reference: str = ""
+    second_reading_excerpt: str = ""
     psalm_text: str = ""
-    second_reading: str = ""
-    second_reading_text: str = ""
 
 
 def _merge_song_sections(
@@ -79,6 +79,7 @@ def _merge_song_sections(
                 {
                     "id": hid,
                     "title": title,
+                    "author": str(row.get("author") or "").strip(),
                     "source": str(row.get("source") or ""),
                     "language": str(row.get("language") or ""),
                     "has_lyrics": bool(row.get("has_lyrics", False)),
@@ -286,6 +287,9 @@ def fetch_preview(date: str) -> PreviewPayload:
     g_quote_preview = (first_sentence_slide_quote(base_quote) or "").strip()
     default_picks = default_song_selections_for_date(season_key)
     est_slides = 78 + min(12, len(sentences))
+    fr_txt = data.get("first_reading_text") or ""
+    sr_txt = data.get("second_reading_text") or ""
+    raw_psalm = (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
     return PreviewPayload(
         ok=True,
         title=data.get("title") or "Sunday Mass Celebration",
@@ -300,12 +304,11 @@ def fetch_preview(date: str) -> PreviewPayload:
         gospel_quote=g_quote_preview,
         default_song_selections=default_picks,
         estimated_slide_count=est_slides,
-        first_reading=str(data.get("first_reading") or ""),
-        first_reading_text=str(data.get("first_reading_text") or ""),
-        psalm=str(data.get("psalm") or ""),
-        psalm_text=str(data.get("psalm_text") or ""),
-        second_reading=str(data.get("second_reading") or ""),
-        second_reading_text=str(data.get("second_reading_text") or ""),
+        first_reading_reference=str(data.get("first_reading") or "").strip(),
+        first_reading_excerpt=synopsis_from_reading(fr_txt, max_chars=720) if fr_txt else "",
+        second_reading_reference=str(data.get("second_reading") or "").strip(),
+        second_reading_excerpt=synopsis_from_reading(sr_txt, max_chars=720) if sr_txt else "",
+        psalm_text=raw_psalm,
     )
 
 
@@ -351,12 +354,12 @@ def generate_mass_media(
     community_name: Optional[str] = None,
     song_selections: Optional[Mapping[str, str]] = None,
     custom_theme: Optional[Mapping[str, Any]] = None,
-    psalm_text_override: Optional[str] = None,
-    mass_collection_amount: str = "",
-    mass_collection_for_date: str = "",
+    divider_poster_path: Optional[Path] = None,
+    announcement_image_paths: Optional[list[Path]] = None,
+    mass_collection_amount: Optional[str] = None,
+    mass_collection_date_label: Optional[str] = None,
     food_sponsors: Optional[list[str]] = None,
-    user_divider_png_paths: Optional[list[Path]] = None,
-    announcement_png_paths: Optional[list[Path]] = None,
+    psalm_text_override: Optional[str] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -418,6 +421,8 @@ def generate_mass_media(
             comm_titles.append(t)
     communion_line = " · ".join(comm_titles)
 
+    psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+
     # Liturgical 16×9 poster PNG must exist before building the deck so it can be embedded as a slide.
     poster_path, poster_ppt_path = generate_mass_poster(
         title=title,
@@ -433,12 +438,6 @@ def generate_mass_media(
         communion_song_titles=communion_line,
         output_stem=stem,
     )
-
-    psalm_body = (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
-    if psalm_text_override is not None and str(psalm_text_override).strip():
-        psalm_body = str(psalm_text_override).strip()
-
-    sponsors = [str(x).strip() for x in (food_sponsors or []) if str(x).strip()]
 
     slide_count, pptx_path = generate_mass_ppt(
         title=title,
@@ -462,11 +461,11 @@ def generate_mass_media(
         song_selections=picks,
         output_stem=stem,
         liturgical_poster_png=poster_ppt_path,
-        user_divider_png_paths=user_divider_png_paths,
+        divider_poster_png=divider_poster_path,
+        announcement_image_paths=announcement_image_paths,
         mass_collection_amount=mass_collection_amount or "",
-        mass_collection_for_date=mass_collection_for_date or "",
-        food_sponsors=sponsors,
-        announcement_png_paths=announcement_png_paths,
+        mass_collection_date_label=mass_collection_date_label or "",
+        food_sponsors=food_sponsors,
     )
 
     _root = Path(__file__).resolve().parent

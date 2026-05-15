@@ -8,15 +8,16 @@ Run from project root:
 from __future__ import annotations
 
 import io
+import re
 import shutil
 import subprocess
-import tempfile
+import uuid
 import zipfile
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -36,20 +37,17 @@ from services.community_config import (
     update_community,
     uploads_dir,
 )
+from services.hymn_library import get_hymn
 from services.lyrics_fetcher import fetch_and_store_for_selection
-from services.mass_asset_utils import image_bytes_to_16x9_png
 from services.ppt_preview_render import render_ppt_preview_pngs
-from services.pptx_template_analyzer import analyze_pptx_bytes
-from services.saved_posters import delete_saved, list_saved, save_file as save_poster_file
+from services.ppt_template_analyze import analyze_pptx_theme
 from services.song_catalog import (
-    delete_song_entry,
-    display_title,
+    catalog_for_api,
+    delete_catalog_song,
     import_song_rows,
     import_titles,
-    load_catalog,
-    recent_songs,
     save_lyrics_song,
-    update_song_entry,
+    update_catalog_song,
 )
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
@@ -69,13 +67,49 @@ _PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
 
 _UPLOAD_DIR = uploads_dir()
 _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+_MASS_ASSET_DIR = _UPLOAD_DIR / "mass_assets"
+_MASS_ASSET_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_POSTER_DIR = _UPLOAD_DIR / "saved_posters"
+_SAVED_POSTER_DIR.mkdir(parents=True, exist_ok=True)
 
 _ALLOWED_LOGO_TYPES = frozenset(
     ("image/png", "image/jpeg", "image/webp", "image/gif", "image/x-png", "image/jpg")
 )
 _MAX_LOGO_BYTES = 2_500_000
+_MAX_ASSET_BYTES = 8_000_000
+_ALLOWED_IMAGE_TYPES = _ALLOWED_LOGO_TYPES
 
 _BUNDLE_NAME = "mass_bundle.zip"
+
+
+def _resolve_child_file(parent: Path, basename: str) -> Optional[Path]:
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        return None
+    cand = (parent / base).resolve()
+    try:
+        cand.relative_to(parent.resolve())
+    except ValueError:
+        return None
+    return cand if cand.is_file() else None
+
+
+async def _save_uploaded_image(file: UploadFile, dest_dir: Path, *, prefix: str) -> str:
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="Use a PNG, JPEG, WebP, or GIF image.")
+    raw = await file.read()
+    if len(raw) > _MAX_ASSET_BYTES:
+        raise HTTPException(status_code=400, detail="Image too large (max about 8 MB).")
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    orig = Path(file.filename or "upload").name
+    ext = Path(orig).suffix.lower()
+    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        ext = ".png"
+    name = f"{prefix}_{uuid.uuid4().hex}{ext}"
+    out = dest_dir / name
+    out.write_bytes(raw)
+    return name
 
 
 def _ai_poster_download_urls() -> dict[str, str]:
@@ -168,12 +202,11 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "gospel_quote": p.gospel_quote,
         "default_song_selections": p.default_song_selections,
         "estimated_slide_count": p.estimated_slide_count,
-        "first_reading": getattr(p, "first_reading", "") or "",
-        "first_reading_text": getattr(p, "first_reading_text", "") or "",
-        "psalm": getattr(p, "psalm", "") or "",
-        "psalm_text": getattr(p, "psalm_text", "") or "",
-        "second_reading": getattr(p, "second_reading", "") or "",
-        "second_reading_text": getattr(p, "second_reading_text", "") or "",
+        "first_reading_reference": p.first_reading_reference,
+        "first_reading_excerpt": p.first_reading_excerpt,
+        "second_reading_reference": p.second_reading_reference,
+        "second_reading_excerpt": p.second_reading_excerpt,
+        "psalm_text": p.psalm_text,
     }
 
 
@@ -216,10 +249,16 @@ class GenerateBody(BaseModel):
     community_name: Optional[str] = Field(None, max_length=240)
     songs: Optional[SongSelection] = None
     custom_theme: Optional[dict[str, Any]] = None
-    psalm_text_override: Optional[str] = Field(None, description="Editor override for Responsorial Psalm body text.")
-    mass_collection_amount: str = Field("", max_length=120)
-    mass_collection_for_date: str = Field("", max_length=120)
+    divider_poster_basename: Optional[str] = Field(
+        None,
+        max_length=200,
+        description="Basename of a file previously uploaded to mass_assets/.",
+    )
+    announcement_basenames: list[str] = Field(default_factory=list)
+    mass_collection_amount: Optional[str] = Field(None, max_length=120)
+    mass_collection_date_label: Optional[str] = Field(None, max_length=240)
     food_sponsors: list[str] = Field(default_factory=list)
+    psalm_text_override: Optional[str] = Field(None, max_length=12000)
 
 
 class RefreshSongsBody(BaseModel):
@@ -264,14 +303,12 @@ class SaveLyricsBody(BaseModel):
     lyrics: str = Field(..., min_length=1)
     sections: list[str] = Field(default_factory=list)
     language: str = Field("English", max_length=40)
-    author: Optional[str] = Field(None, max_length=200)
+    author: str = Field("", max_length=240)
 
 
-class SongPatchBody(BaseModel):
-    section: str = Field(..., min_length=3, max_length=40)
-    id: str = Field(..., min_length=1, max_length=160)
+class CatalogSongPatchBody(BaseModel):
     title: Optional[str] = Field(None, max_length=240)
-    author: Optional[str] = Field(None, max_length=200)
+    author: Optional[str] = Field(None, max_length=240)
     lyrics: Optional[str] = None
     language: Optional[str] = Field(None, max_length=40)
 
@@ -351,83 +388,6 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/api/library/songs-catalog")
-def api_library_songs_catalog() -> dict[str, Any]:
-    """All hymns saved in ``data/hymn_library.json``, grouped by mass section."""
-    raw = load_catalog()
-    enriched: dict[str, list[dict[str, Any]]] = {}
-    for sec, rows in raw.items():
-        enriched[sec] = []
-        for r in rows:
-            if not isinstance(r, dict):
-                continue
-            row = dict(r)
-            row["display_title"] = display_title(str(row.get("title") or ""), str(row.get("id") or ""))
-            enriched[sec].append(row)
-    return {"ok": True, "catalog": enriched}
-
-
-@app.get("/api/library/songs-recent")
-def api_library_songs_recent(limit: int = Query(12, ge=1, le=50)) -> dict[str, Any]:
-    return {"ok": True, "songs": recent_songs(limit)}
-
-
-@app.patch("/api/library/song")
-def api_library_patch_song(body: SongPatchBody) -> dict[str, Any]:
-    result = update_song_entry(
-        body.section,
-        body.id,
-        title=body.title,
-        author=body.author,
-        lyrics=body.lyrics,
-        language=body.language,
-    )
-    if not result.get("ok"):
-        raise HTTPException(status_code=400, detail=result.get("error") or "Update failed.")
-    return result
-
-
-@app.delete("/api/library/song")
-def api_library_delete_song(section: str = Query(..., min_length=3), song_id: str = Query(..., min_length=1, alias="id")) -> dict[str, Any]:
-    result = delete_song_entry(section, song_id)
-    if not result.get("ok"):
-        raise HTTPException(status_code=400, detail=result.get("error") or "Delete failed.")
-    return result
-
-
-@app.get("/api/media/posters-saved")
-def api_media_posters_saved() -> dict[str, Any]:
-    return {"ok": True, "posters": list_saved()}
-
-
-@app.post("/api/media/posters-saved")
-async def api_media_posters_save(file: UploadFile = File(...)) -> dict[str, Any]:
-    raw = await file.read()
-    if not raw:
-        raise HTTPException(status_code=400, detail="Empty file.")
-    name = (file.filename or "poster.png").strip()
-    info = save_poster_file(name, raw)
-    return {"ok": True, **info}
-
-
-@app.delete("/api/media/posters-saved/{poster_id}")
-def api_media_posters_delete(poster_id: str) -> dict[str, Any]:
-    if not delete_saved(poster_id):
-        raise HTTPException(status_code=404, detail="Poster not found.")
-    return {"ok": True}
-
-
-@app.post("/api/design/analyze-template")
-async def api_design_analyze_template(file: UploadFile = File(...)) -> dict[str, Any]:
-    raw = await file.read()
-    if len(raw) < 64 or raw[:2] != b"PK":
-        raise HTTPException(status_code=400, detail="Upload a valid .pptx file (ZIP archive).")
-    result = analyze_pptx_bytes(raw)
-    if not result.get("ok"):
-        raise HTTPException(status_code=400, detail=result.get("error") or "Could not analyze template.")
-    return result
-
-
 @app.get("/api/community")
 def api_community() -> dict[str, Any]:
     logo_exists = logo_file_absolute().is_file()
@@ -483,6 +443,112 @@ async def api_upload_logo(file: UploadFile = File(...)) -> dict[str, Any]:
     }
 
 
+@app.post("/api/upload/mass-divider")
+async def api_upload_mass_divider(file: UploadFile = File(...)) -> dict[str, Any]:
+    name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="divider")
+    return {"ok": True, "basename": name, "url": f"/uploads/mass_assets/{name}"}
+
+
+@app.post("/api/upload/announcement-slide")
+async def api_upload_announcement_slide(file: UploadFile = File(...)) -> dict[str, Any]:
+    name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="announce")
+    return {"ok": True, "basename": name, "url": f"/uploads/mass_assets/{name}"}
+
+
+@app.post("/api/upload/saved-poster")
+async def api_upload_saved_poster(file: UploadFile = File(...)) -> dict[str, Any]:
+    name = await _save_uploaded_image(file, _SAVED_POSTER_DIR, prefix="poster")
+    return {"ok": True, "basename": name, "url": f"/uploads/saved_posters/{name}"}
+
+
+@app.get("/api/saved-posters")
+def api_list_saved_posters() -> dict[str, Any]:
+    if not _SAVED_POSTER_DIR.is_dir():
+        return {"ok": True, "posters": []}
+    rows = []
+    for p in sorted(_SAVED_POSTER_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
+        if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+            rows.append({"basename": p.name, "url": f"/uploads/saved_posters/{p.name}"})
+    return {"ok": True, "posters": rows}
+
+
+@app.delete("/api/saved-posters/{basename}")
+def api_delete_saved_poster(basename: str) -> dict[str, Any]:
+    p = _resolve_child_file(_SAVED_POSTER_DIR, basename)
+    if not p:
+        raise HTTPException(status_code=404, detail="Poster not found.")
+    p.unlink(missing_ok=True)
+    return {"ok": True}
+
+
+@app.get("/api/catalog/songs")
+def api_catalog_songs() -> dict[str, Any]:
+    return {"ok": True, "catalog": catalog_for_api()}
+
+
+@app.get("/api/catalog/songs/{section}/{hymn_id:path}")
+def api_get_catalog_song(section: str, hymn_id: str) -> dict[str, Any]:
+    row = get_hymn(section.strip().lower(), hymn_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Song not found.")
+    return {
+        "ok": True,
+        "section": section.strip().lower(),
+        "song": {
+            "id": str(row.get("id") or ""),
+            "title": str(row.get("title") or ""),
+            "author": str(row.get("author") or ""),
+            "language": str(row.get("language") or "English"),
+            "lyrics": str(row.get("lyrics") or ""),
+        },
+    }
+
+
+@app.patch("/api/catalog/songs/{section}/{hymn_id:path}")
+def api_patch_catalog_song(section: str, hymn_id: str, body: CatalogSongPatchBody) -> dict[str, Any]:
+    res = update_catalog_song(
+        section=section,
+        hymn_id=hymn_id,
+        title=body.title,
+        author=body.author,
+        lyrics=body.lyrics,
+        language=body.language,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Update failed.")
+    return res
+
+
+@app.delete("/api/catalog/songs/{section}/{hymn_id:path}")
+def api_delete_catalog_song(section: str, hymn_id: str) -> dict[str, Any]:
+    res = delete_catalog_song(section=section, hymn_id=hymn_id)
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Delete failed.")
+    return res
+
+
+@app.post("/api/design/analyze-template")
+async def api_design_analyze_template(file: UploadFile = File(...)) -> dict[str, Any]:
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype not in {
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/octet-stream",
+    } and not (file.filename or "").lower().endswith(".pptx"):
+        raise HTTPException(status_code=400, detail="Upload a .pptx file.")
+    raw = await file.read()
+    if len(raw) > 25_000_000:
+        raise HTTPException(status_code=400, detail="Presentation too large.")
+    tmp = _UPLOAD_DIR / f"_analyze_{uuid.uuid4().hex}.pptx"
+    try:
+        tmp.write_bytes(raw)
+        result = analyze_pptx_theme(tmp)
+    finally:
+        tmp.unlink(missing_ok=True)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Analysis failed.")
+    return result
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> Any:
     # Starlette 0.28+: (request, name, context); request is injected into the template context.
@@ -493,15 +559,11 @@ def index(request: Request) -> Any:
     )
 
 
-@app.get("/media/presentation")
-def legacy_presentation_route() -> RedirectResponse:
-    return RedirectResponse(url="/mass/builder", status_code=301)
-
-
 @app.get("/home", response_class=HTMLResponse)
 @app.get("/mass/builder", response_class=HTMLResponse)
 @app.get("/mass/calendar", response_class=HTMLResponse)
 @app.get("/media/posters", response_class=HTMLResponse)
+@app.get("/media/presentation", response_class=HTMLResponse)
 @app.get("/media/history", response_class=HTMLResponse)
 @app.get("/library/songs", response_class=HTMLResponse)
 @app.get("/library/collections", response_class=HTMLResponse)
@@ -527,112 +589,89 @@ def api_preview(body: PreviewBody) -> Any:
 
 
 @app.post("/api/generate")
-async def api_generate(request: Request) -> Any:
-    divider_paths: list[Path] = []
-    announce_paths: list[Path] = []
-    ct = (request.headers.get("content-type") or "").lower()
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tdir = Path(tmpdir)
-        if "multipart/form-data" in ct:
-            form = await request.form()
-            raw_payload = form.get("payload")
-            if raw_payload is None:
-                raise HTTPException(status_code=400, detail="Missing multipart field: payload (JSON).")
-            if hasattr(raw_payload, "read"):
-                raw_payload = await raw_payload.read()
-            payload_text = (
-                raw_payload.decode("utf-8") if isinstance(raw_payload, (bytes, bytearray)) else str(raw_payload)
-            )
-            body = GenerateBody.model_validate_json(payload_text)
-            div = form.get("divider_poster")
-            if div is not None and getattr(div, "filename", None):
-                b = await div.read()
-                if b:
-                    outp = tdir / "divider.png"
-                    image_bytes_to_16x9_png(b, outp)
-                    divider_paths.append(outp)
-            ann_list = form.getlist("announcement_posters")
-            for i, item in enumerate(ann_list):
-                if item is None or not getattr(item, "filename", None):
-                    continue
-                b = await item.read()
-                if not b:
-                    continue
-                outp = tdir / f"announcement_{i}.png"
-                image_bytes_to_16x9_png(b, outp)
-                announce_paths.append(outp)
-        else:
-            try:
-                json_body = await request.json()
-            except Exception as exc:
-                raise HTTPException(status_code=400, detail="Expected JSON or multipart/form-data.") from exc
-            body = GenerateBody.model_validate(json_body)
-
-        song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
-        result = generate_mass_media(
-            body.date.strip(),
-            body.celebrant.strip(),
-            sentence_index=body.sentence_index,
-            poster_template=body.poster_template,
-            include_social_exports=body.include_social_exports,
-            include_gospel_art=body.include_gospel_art,
-            include_ai_mass_poster=body.include_ai_mass_poster,
-            ai_poster_style=body.ai_poster_style.strip() or "cinematic",
-            community_name=body.community_name.strip() if body.community_name else None,
-            song_selections=song_map,
-            custom_theme=body.custom_theme,
-            psalm_text_override=body.psalm_text_override,
-            mass_collection_amount=body.mass_collection_amount.strip(),
-            mass_collection_for_date=body.mass_collection_for_date.strip(),
-            food_sponsors=body.food_sponsors or [],
-            user_divider_png_paths=divider_paths or None,
-            announcement_png_paths=announce_paths or None,
-        )
-        if not result.ok:
-            raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
-        _write_mass_bundle_zip(result)
-        zip_ready = (_OUTPUT_DIR / _BUNDLE_NAME).is_file()
-        lc = result.liturgical_color
-        liturgical_payload: Optional[dict[str, Any]] = None
-        if lc:
-            liturgical_payload = {
-                "color_name": lc.get("color_name"),
-                "hex": lc.get("hex"),
-                "season": lc.get("season"),
-                "rgb": list(lc.get("rgb", ())),
-            }
-        poster_ppt = result.poster_ppt_path
-        ppt_url = f"/media/{result.pptx_path.name}" if result.pptx_path and result.pptx_path.is_file() else None
-        poster_url = f"/media/{result.poster_path.name}" if result.poster_path and result.poster_path.is_file() else None
-        poster_ppt_url = (
-            f"/media/{poster_ppt.name}" if poster_ppt and Path(poster_ppt).is_file() else None
-        )
-        payload: dict[str, Any] = {
-            "ok": True,
-            "title": result.title,
-            "gospel_reference": result.gospel_reference,
-            "slide_excerpt": result.slide_line_preview,
-            "gospel_quote": result.gospel_quote,
-            "liturgical_color": liturgical_payload,
-            "selected_songs": result.selected_songs,
-            "slide_count": result.slide_count,
-            "export_stem": result.export_stem,
+def api_generate(body: GenerateBody) -> Any:
+    song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    divider_path = None
+    if body.divider_poster_basename and str(body.divider_poster_basename).strip():
+        divider_path = _resolve_child_file(_MASS_ASSET_DIR, str(body.divider_poster_basename).strip())
+    ann_paths: list[Path] = []
+    for raw in body.announcement_basenames or []:
+        bn = str(raw).strip()
+        if not bn:
+            continue
+        p = _resolve_child_file(_MASS_ASSET_DIR, bn)
+        if p:
+            ann_paths.append(p)
+        if len(ann_paths) >= 24:
+            break
+    sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
+    psalm_override = (body.psalm_text_override or "").strip() or None
+    result = generate_mass_media(
+        body.date.strip(),
+        body.celebrant.strip(),
+        sentence_index=body.sentence_index,
+        poster_template=body.poster_template,
+        include_social_exports=body.include_social_exports,
+        include_gospel_art=body.include_gospel_art,
+        include_ai_mass_poster=body.include_ai_mass_poster,
+        ai_poster_style=body.ai_poster_style.strip() or "cinematic",
+        community_name=body.community_name.strip() if body.community_name else None,
+        song_selections=song_map,
+        custom_theme=body.custom_theme,
+        divider_poster_path=divider_path,
+        announcement_image_paths=ann_paths or None,
+        mass_collection_amount=body.mass_collection_amount.strip() if body.mass_collection_amount else None,
+        mass_collection_date_label=body.mass_collection_date_label.strip()
+        if body.mass_collection_date_label
+        else None,
+        food_sponsors=sponsors or None,
+        psalm_text_override=psalm_override,
+    )
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
+    _write_mass_bundle_zip(result)
+    zip_ready = (_OUTPUT_DIR / _BUNDLE_NAME).is_file()
+    lc = result.liturgical_color
+    liturgical_payload: Optional[dict[str, Any]] = None
+    if lc:
+        liturgical_payload = {
+            "color_name": lc.get("color_name"),
+            "hex": lc.get("hex"),
+            "season": lc.get("season"),
+            "rgb": list(lc.get("rgb", ())),
         }
-        if ppt_url:
-            payload["pptx_url"] = ppt_url
-        if poster_url:
-            payload["poster_url"] = poster_url
-        if poster_ppt_url:
-            payload["poster_ppt_url"] = poster_ppt_url
-        payload["ai_poster_urls"] = _ai_poster_download_urls()
-        return {
-            **payload,
-            **(
-                {"zip_url": f"/media/{_BUNDLE_NAME}"}
-                if zip_ready
-                else {}
-            ),
-        }
+    poster_ppt = result.poster_ppt_path
+    ppt_url = f"/media/{result.pptx_path.name}" if result.pptx_path and result.pptx_path.is_file() else None
+    poster_url = f"/media/{result.poster_path.name}" if result.poster_path and result.poster_path.is_file() else None
+    poster_ppt_url = (
+        f"/media/{poster_ppt.name}" if poster_ppt and Path(poster_ppt).is_file() else None
+    )
+    payload: dict[str, Any] = {
+        "ok": True,
+        "title": result.title,
+        "gospel_reference": result.gospel_reference,
+        "slide_excerpt": result.slide_line_preview,
+        "gospel_quote": result.gospel_quote,
+        "liturgical_color": liturgical_payload,
+        "selected_songs": result.selected_songs,
+        "slide_count": result.slide_count,
+        "export_stem": result.export_stem,
+    }
+    if ppt_url:
+        payload["pptx_url"] = ppt_url
+    if poster_url:
+        payload["poster_url"] = poster_url
+    if poster_ppt_url:
+        payload["poster_ppt_url"] = poster_ppt_url
+    payload["ai_poster_urls"] = _ai_poster_download_urls()
+    return {
+        **payload,
+        **(
+            {"zip_url": f"/media/{_BUNDLE_NAME}"}
+            if zip_ready
+            else {}
+        ),
+    }
 
 
 @app.post("/api/songs/refresh")
