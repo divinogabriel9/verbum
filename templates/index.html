@@ -1175,6 +1175,43 @@
       font-size: 0.88rem;
       line-height: 1.35;
     }
+    .mass-song-selected.has-selection {
+      border-color: rgba(109, 93, 252, 0.5);
+      background: linear-gradient(180deg, #f5f3ff 0%, #faf8ff 100%);
+      box-shadow: 0 0 0 1px rgba(109, 93, 252, 0.12);
+    }
+    .mass-song-picked-title {
+      font-size: 1.05rem;
+      font-weight: 850;
+      color: #4c3d9e;
+      letter-spacing: -0.01em;
+    }
+    .mass-song-picked-meta {
+      font-size: 0.78rem;
+      margin-top: 4px;
+    }
+    .mass-song-picked-warn {
+      font-size: 0.78rem;
+      margin-top: 5px;
+      color: var(--danger);
+      font-weight: 650;
+    }
+    .mass-song-slot.has-selection {
+      border-color: rgba(109, 93, 252, 0.35);
+    }
+    .collections-recent-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .collections-recent-label {
+      font-style: italic;
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
     .mass-song-results {
       margin-top: 8px;
       max-height: 240px;
@@ -2045,14 +2082,9 @@ Lord, hear our prayer</textarea>
       return "verse";
     }
 
-    function analyzeLyrics() {
-      const raw = $("lyrics-input").value.trim();
-      if (!raw) {
-        setLyricsStatus("Paste or upload lyrics first.", "error");
-        return;
-      }
+    function parseLyricsInputToBlocks(raw) {
       const chunks = raw.split(/\n\s*\n+/).map((part) => part.trim()).filter(Boolean);
-      lyricBlocks = chunks.map((chunk, index) => {
+      return chunks.map((chunk, index) => {
         const lines = chunk.split(/\n/).map((line) => line.trim()).filter(Boolean);
         const first = lines[0] || "";
         const headerMatch = /^(verse|chorus|refrain|bridge|response)\s*([\w\d]*)/i.test(first);
@@ -2061,8 +2093,25 @@ Lord, hear our prayer</textarea>
         const type = classifyLyricBlock(title, text, index);
         return { id: crypto.randomUUID(), type, title: title || typeLabels[type], text };
       });
+    }
+
+    function syncInputPanelToStructuredEditor(options) {
+      const quiet = options && options.quiet;
+      const raw = $("lyrics-input").value.trim();
+      if (!raw) {
+        if (!quiet) setLyricsStatus("Paste or upload lyrics first.", "error");
+        return false;
+      }
+      lyricBlocks = parseLyricsInputToBlocks(raw);
       renderLyrics();
-      setLyricsStatus("Detected " + lyricBlocks.length + " editable sections. Drag, split, merge, or reassign as needed.", "ok");
+      if (!quiet) {
+        setLyricsStatus("Detected " + lyricBlocks.length + " editable sections. Drag, split, merge, or reassign as needed.", "ok");
+      }
+      return true;
+    }
+
+    function analyzeLyrics() {
+      syncInputPanelToStructuredEditor({ quiet: false });
     }
 
     function setLyricsStatus(message, kind) {
@@ -2222,11 +2271,19 @@ Lord, hear our prayer</textarea>
     });
     $("btn-save-lyrics").addEventListener("click", async () => {
       const title = $("lyrics-save-title").value.trim();
+      if (!title) {
+        setLyricsStatus("Song title is required before saving.", "error");
+        return;
+      }
+      if ($("lyrics-input").value.trim()) {
+        syncInputPanelToStructuredEditor({ quiet: true });
+      }
       const lyrics = serializedLyrics();
-      if (!title || !lyrics) {
+      if (!lyrics) {
         setLyricsStatus("Song title and lyrics are required before saving.", "error");
         return;
       }
+      $("lyrics-input").value = lyrics;
       $("btn-save-lyrics").disabled = true;
       setLyricsStatus("Saving lyrics to the hymn library...", "");
       try {
@@ -2237,8 +2294,20 @@ Lord, hear our prayer</textarea>
           language: $("lyrics-save-language").value,
           author: ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "",
         });
+        const created = result.created || [];
+        const updated = result.updated || [];
+        const isNew = created.length > 0;
+        const isEdited = !isNew && updated.length > 0;
         setLyricsStatus("Saved lyrics for " + result.title + " in " + result.sections.join(", ") + ".", "ok");
-        pushRecentSong({ title: result.title, section: $("lyrics-save-section").value, id: result.id || "" });
+        if (isNew || isEdited) {
+          pushRecentSong({
+            title: result.title,
+            section: $("lyrics-save-section").value,
+            id: result.id || "",
+            isNew,
+            isEdited,
+          });
+        }
         await loadSongCatalog();
       } catch (error) {
         setLyricsStatus(error.message || "Could not save lyrics.", "error");
@@ -2570,12 +2639,16 @@ Lord, hear our prayer</textarea>
 
     function updateMassSlotChip(key) {
       const el = $("mass-song-picked-" + key);
+      const slot = document.querySelector(".mass-song-slot[data-slot-key=\"" + key + "\"]");
       if (!el) return;
       const id = selectedLyricsSongs[key] || "";
+      if (slot) slot.classList.toggle("has-selection", !!id);
       if (!id) {
+        el.classList.remove("has-selection");
         el.innerHTML = "<span class=\"muted\">No song selected</span>";
         return;
       }
+      el.classList.add("has-selection");
       let row = massPlanAllSongs.find((s) => String(s.id) === String(id));
       if (!row) {
         rebuildMassPlanSongPool();
@@ -2585,10 +2658,19 @@ Lord, hear our prayer</textarea>
         ? "<span class=\"pill\" style=\"font-size:0.68rem;margin-right:6px;vertical-align:middle;\">" + escapeHtml(row.section) + "</span>"
         : "";
       const title = row ? escapeHtml(row.title) : escapeHtml(id);
-      const meta = row && (row.author || row.language || row.has_lyrics)
-        ? "<div class=\"muted\" style=\"font-size:0.78rem;margin-top:4px;\">" + escapeHtml([row.author, row.language].filter(Boolean).join(" · ")) + (row.has_lyrics ? " · lyrics saved" : "") + "</div>"
-        : "";
-      el.innerHTML = secPill + "<strong>" + title + "</strong>" + meta;
+      let meta = "";
+      if (row) {
+        const bits = [row.author, row.language].filter(Boolean);
+        if (!row.has_lyrics) {
+          meta = "<div class=\"mass-song-picked-warn\">No lyrics saved — add lyrics in Song Library before generating slides.</div>";
+          if (bits.length) {
+            meta = "<div class=\"mass-song-picked-meta muted\">" + escapeHtml(bits.join(" · ")) + "</div>" + meta;
+          }
+        } else {
+          meta = "<div class=\"mass-song-picked-meta muted\">" + escapeHtml(bits.join(" · ")) + (bits.length ? " · " : "") + "lyrics saved</div>";
+        }
+      }
+      el.innerHTML = secPill + "<strong class=\"mass-song-picked-title\">" + title + "</strong>" + meta;
     }
 
     function renderMassSongResults(key, list) {
@@ -3224,14 +3306,31 @@ Lord, hear our prayer</textarea>
     let songCatalogFilter = "";
     const songCatalogExpanded = { entrance: false, offertory: false, communion: false, recessional: false, meditation: false };
 
+    function recentSongDedupeKey(r) {
+      const sec = String(r.section || "").trim().toLowerCase();
+      const id = String(r.id || "").trim();
+      if (sec && id) return sec + "\0" + id;
+      return sec + "\0" + String(r.title || "").trim().toLowerCase();
+    }
+
     function pushRecentSong(entry) {
+      if (!entry || (!entry.isNew && !entry.isEdited)) return;
       let raw = [];
       try {
         raw = JSON.parse(localStorage.getItem(RECENT_SONGS_KEY) || "[]");
       } catch (_e) {
         raw = [];
       }
-      raw.unshift(Object.assign({ t: Date.now() }, entry));
+      const key = recentSongDedupeKey(entry);
+      raw = raw.filter((r) => recentSongDedupeKey(r) !== key);
+      raw.unshift({
+        t: Date.now(),
+        title: entry.title || "",
+        section: entry.section || "",
+        id: entry.id || "",
+        isNew: !!entry.isNew,
+        isEdited: !!entry.isEdited,
+      });
       localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 24)));
       renderCollectionsRecent();
     }
@@ -3245,18 +3344,32 @@ Lord, hear our prayer</textarea>
       } catch (_e) {
         raw = [];
       }
-      if (!raw.length) {
-        el.textContent = "Nothing tracked yet — saving lyrics from Song Library adds entries here.";
+      const seen = new Set();
+      const rows = [];
+      raw.forEach((r) => {
+        if (!r || (!r.isNew && !r.isEdited)) return;
+        const key = recentSongDedupeKey(r);
+        if (seen.has(key)) return;
+        seen.add(key);
+        rows.push(r);
+      });
+      if (!rows.length) {
+        el.textContent = "Nothing tracked yet — saving a new song or editing lyrics in Song Library adds entries here.";
         return;
       }
-      el.innerHTML = raw.slice(0, 10).map((r) => {
+      el.innerHTML = rows.slice(0, 12).map((r) => {
         const hasId = r.id && r.section;
-        const btn = hasId
-          ? "<button type=\"button\" class=\"ghost\" style=\"font-size:0.76rem;white-space:nowrap;\" data-jump-song=\"" + escapeHtml(r.section) + "\" data-jump-id=\"" + escapeHtml(r.id) + "\">Edit</button>"
-          : "";
+        const rightBits = [];
+        if (r.isEdited) {
+          rightBits.push("<span class=\"collections-recent-label\">Edited</span>");
+        }
+        if (hasId) {
+          rightBits.push("<button type=\"button\" class=\"ghost\" style=\"font-size:0.76rem;white-space:nowrap;\" data-jump-song=\"" + escapeHtml(r.section) + "\" data-jump-id=\"" + escapeHtml(r.id) + "\">Edit</button>");
+        }
         return (
-          "<div style=\"display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px;\">" +
-            "<div><strong>" + escapeHtml(r.title || "Song") + "</strong> <span class=\"muted\">· " + escapeHtml(r.section || "") + "</span></div>" + btn +
+          "<div class=\"collections-recent-row\">" +
+            "<div><strong>" + escapeHtml(r.title || "Song") + "</strong> <span class=\"muted\">· " + escapeHtml(r.section || "") + "</span></div>" +
+            "<div style=\"display:flex;align-items:center;gap:8px;flex-shrink:0;\">" + rightBits.join("") + "</div>" +
           "</div>"
         );
       }).join("");

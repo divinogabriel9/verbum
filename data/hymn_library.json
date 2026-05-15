@@ -138,7 +138,7 @@
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nOh Diyos, Ikaw ang laging hanap\nLoob ko'y Ikaw ang tanging hangad\nNauuhaw akong parang tigang na lupa\nSa tubig ng 'Yong pag-aaruga\n\nVerse 2\nIka'y pagmamasdan sa dakong banal\nNang makita ko ang 'Yong pagkarangal\nDadalangin akong nakataas aking kamay\nMagagalak na aawit ng papuring iaalay\n\nVerse 3\nGunita ko'y Ikaw habang nahihimlay\nPagkat ang tulong Mo sa tuwina'y taglay\nSa lilim ng Iyong mga pakpak\nUmaawit akong buong galak\n\nVerse 6\nOutro\nUmaawit, umaawitUmaawit akong buong galak\n\nVerse 4\nAking kaluluwa'y kumakapit sa 'Yo\nKaligtasa'y t'yak kong hawak Mo ako\nMagdiriwang ang hari ang Diyos S'yang dahilan\nAng sa Iyo ay nangakong galak yaong makakamtan",
+      "lyrics": "Verse 1\nOh Diyos, Ikaw ang laging hanap\nLoob ko'y Ikaw ang tanging hangad\nNauuhaw akong parang tigang na lupa\nSa tubig ng 'Yong pag-aaruga\n\nVerse 2\nIka'y pagmamasdan sa dakong banal\nNang makita ko ang 'Yong pagkarangal\nDadalangin akong nakataas aking kamay\nMagagalak na aawit ng papuring iaalay\n\nVerse 3\nGunita ko'y Ikaw habang nahihimlay\nPagkat ang tulong Mo sa tuwina'y taglay\nSa lilim ng Iyong mga pakpak\nUmaawit akong buong galak\n\nVerse 4\nAking kaluluwa'y kumakapit sa 'Yo\nKaligtasa'y t'yak kong hawak Mo ako\nMagdiriwang ang hari ang Diyos S'yang dahilan\nAng sa Iyo ay nangakong galak yaong makakamtan\n\nChorus\nGunita ko'y Ikaw habang nahihimlay\nPagkat ang tulong Mo sa tuwina'y taglay\nSa lilim ng Iyong mga pakpak\nUmaawit akong buong galak\n\nVerse 6\nUmaawit, umaawit\nUmaawit akong buong galak",
       "source": "lyrics_dashboard"
     },
     {
@@ -341,15 +341,6 @@
         "ordinary_time"
       ],
       "lyrics": "Come to the feast of the Lord;\ncome to the table of plenty.\nGod will provide for all that we need,\nhere at the table of plenty.\n\nO come and sit at my table,\nfor here you will comfort the poor,\nand with the hungry share humble fare:\ncome and know life forevermore.\n\nO how abundant the welcome\nthat God has prepared for the least:\nlet all who are lonely and lost be restored\nat this table of love.\n\nCome to the feast of the Lord;\ncome to the table of plenty.\nGod will provide for all that we need,\nhere at the table of plenty.\n\nThis is the bread of rememberance,\nthe cup of the covenant poured.\nTaste and see how the Father adores:\nwe are his own."
-    },
-    {
-      "id": "panis_angelicus",
-      "title": "Panis Angelicus",
-      "seasons": [
-        "ordinary_time",
-        "easter"
-      ],
-      "lyrics": "Panis angelicus\nfit panis hominum;\ndat panis caelicus\nfiguris terminum.\n\nO res mirabilis!\nManducat Dominum\npauper, servus et humilis.\n\nTe trina Deitas\nunaque poscimus,\nsic nos tu visita,\nsicut te colimus.\n\nPer huius viam ductus\ntendimus ad lucem,\nquam in habitatione\nsancta tu inhabitas.\n\n(English singing translation, if used:\nBread of angels, become bread for mortals;\nthis heavenly bread ends our symbols.\nO wondrous thing! The poor, lowly servant eats the Lord.)"
     },
     {
       "id": "let_us_break_bread",
@@ -624,7 +615,7 @@
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\n[Verse 1]\nLord, the light of Your love is shining\nIn the midst of the darkness, shining\nJesus, light of the world, shine upon us\nSet us free by the truth You now bring us\nShine on me, shine on me\n\nVerse 2\n[Chorus]\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light\n\nVerse 3\n[Verse 2]\nLord, I come to Your awesome presence\nFrom the shadows into Your radiance\nBy the blood, I may enter Your brightness\nSearch me, try me, consume all my darkness\nShine on me, shine on me\n\nVerse 4\n[Chorus]\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light",
+      "lyrics": "Verse 1\nLord, the light of Your love is shining\nIn the midst of the darkness, shining\nJesus, light of the world, shine upon us\nSet us free by the truth You now bring us\nShine on me, shine on me\n\nVerse 2\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light\n\nVerse 3\nLord, I come to Your awesome presence\nFrom the shadows into Your radiance\nBy the blood, I may enter Your brightness\nSearch me, try me, consume all my darkness\nShine on me, shine on me\n\nVerse 4\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light\n\nVerse 3 copy\nAs we gaze on Your kingly brightness\nSo our faces display Your likeness\nEver changing from glory to glory\nMirrored here, may our lives tell Your story\nShine on me, shine on me\n\nVerse 5\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let, let there be light\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts, set them on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light!\n\nVerse 6\nLord, let there be light!\nLet there be light!",
       "source": "lyrics_dashboard"
     },
     {
