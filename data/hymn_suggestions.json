@@ -1,0 +1,63 @@
+{
+  "by_season": {
+    "advent": [
+      "O Come, O Come, Emmanuel",
+      "On Jordan's Bank",
+      "People, Look East",
+      "Maranatha! Come Lord Jesus",
+      "Wait for the Lord",
+      "Prepare the Way of the Lord"
+    ],
+    "christmas": [
+      "Hark! The Herald Angels Sing",
+      "Silent Night",
+      "Joy to the World",
+      "O Come, All Ye Faithful",
+      "Angels We Have Heard on High",
+      "Go, Tell It on the Mountain"
+    ],
+    "lent": [
+      "Lord, Who Throughout These Forty Days",
+      "Forty Days and Forty Nights",
+      "My Song Is Love Unknown",
+      "Jesus, Remember Me",
+      "Where Charity and Love Prevail",
+      "Save Your People"
+    ],
+    "easter": [
+      "Jesus Christ Is Risen Today",
+      "Ye Sons and Daughters",
+      "The Easter Song (Alleluia)",
+      "Hallelujah! Sing to Jesus",
+      "The Strife Is O'er",
+      "Thine Be the Glory"
+    ],
+    "ordinary_time": [
+      "All Creatures of Our God and King",
+      "Be Not Afraid",
+      "Here I Am, Lord",
+      "City of God",
+      "We Are Many Parts",
+      "The Church's One Foundation",
+      "Holy God, We Praise Thy Name"
+    ],
+    "pentecost": [
+      "Come, Holy Ghost",
+      "Veni, Sancte Spiritus (Hail, Holy Light)",
+      "Breathe on Me, Breath of God",
+      "Fire of God, Undying Flame",
+      "Strong, Sovereign, Source of Life"
+    ]
+  },
+  "by_cycle": {
+    "A": [
+      "Theme: Matthean discipleship & the Kingdom (e.g. “All Are Welcome” mood)"
+    ],
+    "B": [
+      "Theme: Mark — journey & the cross (consider hymns of perseverance)"
+    ],
+    "C": [
+      "Theme: Luke — mercy & table fellowship (consider hymns of healing & invitation)"
+    ]
+  }
+}

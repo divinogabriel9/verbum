@@ -1,0 +1,3330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --ink: #101827;
+      --muted: #617084;
+      --line: #dfe6ef;
+      --accent: #f15f3a;
+      --accent-2: #6d5dfc;
+      --good: #138a5d;
+      --warn: #bc6c25;
+      --danger: #b42342;
+      --radius: 22px;
+      --radius-sm: 14px;
+      --shadow: 0 24px 70px rgba(17, 24, 39, 0.12);
+      --shadow-sm: 0 12px 30px rgba(17, 24, 39, 0.08);
+      --font: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--font);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(109, 93, 252, 0.14), transparent 26rem),
+        radial-gradient(circle at 90% 14%, rgba(241, 95, 58, 0.15), transparent 24rem),
+        linear-gradient(135deg, #f7f9fd 0%, var(--bg) 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+    button {
+      border: 0;
+      cursor: pointer;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:disabled { cursor: not-allowed; opacity: 0.48; transform: none; }
+
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .side-nav {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 260px;
+      z-index: 40;
+      padding: 16px 12px 20px;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0;
+      background: linear-gradient(180deg, #0a101d 0%, #121b2d 55%, #0f1628 100%);
+      color: #dbe7ff;
+      box-shadow: 8px 0 32px rgba(8, 12, 24, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .side-nav-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 4px;
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-section-label {
+      margin: 14px 10px 6px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #6b7c9e;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      color: #b4c4e4;
+      font-weight: 600;
+      font-size: 0.86rem;
+      border: 1px solid transparent;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .nav-link.active {
+      background: rgba(109, 93, 252, 0.22);
+      border-color: rgba(109, 93, 252, 0.45);
+      color: #fff;
+    }
+
+    .nav-link.sub {
+      padding-left: 22px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #9eb0d4;
+    }
+
+    .nav-link.sub::before {
+      content: "";
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+      margin-right: 2px;
+    }
+
+    .side-brand {
+      padding: 8px 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+      flex-shrink: 0;
+    }
+    .side-brand strong {
+      display: block;
+      color: #ffffff;
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+    }
+    .side-brand span {
+      display: block;
+      margin-top: 4px;
+      color: #93a4c1;
+      font-size: 0.76rem;
+      line-height: 1.35;
+    }
+
+    .nav-item {
+      display: none;
+    }
+
+    .dashboard {
+      flex: 1;
+      min-width: 0;
+      margin-left: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px 24px 32px;
+      max-height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .topbar, .hero, .panel, .tool-card, .modal-box {
+      border: 1px solid rgba(223, 230, 239, 0.9);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar {
+      border-radius: 18px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 13px;
+      background: conic-gradient(from 140deg, #f15f3a, #ffbe76, #6d5dfc, #f15f3a);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+      flex: 0 0 auto;
+    }
+    .brand h1 { margin: 0; font-size: 1.02rem; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.82rem; }
+
+    .route-switcher {
+      display: none;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    .page { display: none; }
+    .page.active {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .hero {
+      border-radius: var(--radius);
+      padding: 22px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      overflow: hidden;
+      position: relative;
+    }
+    .hero:before {
+      content: "";
+      position: absolute;
+      inset: -40% -8% auto auto;
+      width: 360px;
+      height: 220px;
+      border-radius: 999px;
+      background: rgba(109, 93, 252, 0.12);
+      transform: rotate(-15deg);
+    }
+    .hero > * { position: relative; }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .hero h2 {
+      max-width: 850px;
+      margin: 0;
+      font-size: clamp(1.65rem, 2.8vw, 3.1rem);
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+    }
+    .hero p {
+      max-width: 760px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(86px, 1fr));
+      gap: 10px;
+      min-width: 330px;
+    }
+    .metric {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+    }
+    .metric strong { display: block; font-size: 1.2rem; }
+    .metric span { color: var(--muted); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.45fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .workspace.theme-workspace {
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    }
+    .workspace.flow-workspace {
+      grid-template-columns: minmax(360px, 0.95fr) minmax(0, 1.2fr);
+    }
+
+    .panel, .tool-card {
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .panel-head h3, .tool-card h3 { margin: 0; font-size: 1.02rem; letter-spacing: -0.02em; }
+    .panel-head p, .tool-card > p { margin: 5px 0 0; color: var(--muted); font-size: 0.86rem; line-height: 1.45; }
+
+    label {
+      display: block;
+      margin: 0 0 7px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    textarea, input[type="text"], input[type="date"], input[type="file"], select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      padding: 11px 12px;
+      outline: none;
+    }
+    textarea:focus, input:focus, select:focus {
+      border-color: rgba(109, 93, 252, 0.55);
+      box-shadow: 0 0 0 4px rgba(109, 93, 252, 0.12);
+    }
+    textarea {
+      min-height: 340px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+    input[type="color"] {
+      width: 48px;
+      height: 42px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .field { margin-bottom: 14px; }
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .actions, .inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      align-items: center;
+    }
+    .primary, .secondary, .ghost, .mini {
+      border-radius: 999px;
+      font-weight: 850;
+    }
+    .primary {
+      padding: 12px 17px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #ff855d);
+      box-shadow: 0 12px 22px rgba(241, 95, 58, 0.23);
+    }
+    .secondary {
+      padding: 11px 16px;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .ghost, .mini {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: #334155;
+    }
+    .ghost { padding: 10px 14px; }
+    .mini { padding: 7px 10px; font-size: 0.76rem; }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #475569;
+      font-size: 0.76rem;
+      font-weight: 850;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .block-list, .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .lyric-block, .timeline-block {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+    .lyric-block.dragging, .timeline-block.dragging { opacity: 0.48; }
+    .block-top, .timeline-top {
+      display: grid;
+      grid-template-columns: auto minmax(110px, 150px) minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      padding: 12px;
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+      border-bottom: 1px solid var(--line);
+    }
+    .drag-handle {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed #c9d4e3;
+      border-radius: 11px;
+      color: #758399;
+      cursor: grab;
+      user-select: none;
+    }
+    .block-title {
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      padding: 8px;
+      font-weight: 850;
+    }
+    .type-verse { --block: #6d5dfc; }
+    .type-chorus { --block: #f15f3a; }
+    .type-bridge { --block: #138a5d; }
+    .type-response { --block: #bc6c25; }
+    .lyric-block { border-left: 6px solid var(--block, var(--accent)); }
+    .block-body { padding: 12px; }
+    .block-body textarea { min-height: 130px; }
+    .block-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 12px 12px;
+    }
+    .empty-state {
+      border: 1px dashed #cbd5e1;
+      border-radius: 18px;
+      padding: 22px;
+      color: var(--muted);
+      background: rgba(248, 250, 252, 0.8);
+      text-align: center;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .theme-card-wrap {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .theme-card-wrap.active {
+      border-color: rgba(109, 93, 252, 0.65);
+      box-shadow: 0 0 0 4px rgba(109, 93, 252, 0.11), var(--shadow-sm);
+    }
+    .theme-card-wrap.lit-match {
+      box-shadow: 0 0 0 2px rgba(19, 138, 93, 0.45), var(--shadow-sm);
+    }
+    .theme-card {
+      min-height: 176px;
+      padding: 14px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      text-align: left;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      width: 100%;
+    }
+    .theme-swatch {
+      height: 74px;
+      border-radius: 16px;
+      display: grid;
+      grid-template-columns: 1.4fr 0.7fr 0.7fr;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+    }
+    .theme-card strong { display: block; margin-top: 12px; font-size: 0.98rem; }
+    .theme-card span { display: block; margin-top: 4px; color: var(--muted); font-size: 0.78rem; line-height: 1.35; }
+    .theme-mini-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .theme-mini {
+      font-size: 0.62rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .builder-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .color-field {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+    }
+    .color-field label {
+      margin: 0 0 2px;
+      font-size: 0.68rem;
+    }
+    .color-field input[type="text"] {
+      padding: 0;
+      border: 0;
+      box-shadow: none;
+      color: #475569;
+      font-size: 0.82rem;
+    }
+
+    .slide-preview {
+      aspect-ratio: 16 / 9;
+      border-radius: 22px;
+      padding: 28px;
+      color: var(--slide-text, #fff);
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--slide-bg, #172033), #000 8%), var(--slide-bg, #172033)),
+        var(--slide-bg, #172033);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+      font-family: var(--slide-font, Inter, sans-serif);
+    }
+    .slide-preview:before {
+      content: "";
+      position: absolute;
+      right: -70px;
+      top: -80px;
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      background: var(--slide-accent, #f15f3a);
+      opacity: 0.24;
+    }
+    .slide-preview > * { position: relative; }
+    .slide-kicker {
+      color: var(--slide-primary, #f8c66a);
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .slide-preview h4 {
+      max-width: 72%;
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 3.2rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+    .slide-preview p {
+      max-width: 70%;
+      margin: 14px 0 0;
+      color: color-mix(in srgb, var(--slide-text, #fff), transparent 18%);
+      line-height: 1.45;
+    }
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      color: color-mix(in srgb, var(--slide-text, #fff), transparent 25%);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(7, 12, 22, 0.68);
+      z-index: 50;
+    }
+    .modal.visible { display: flex; }
+    .modal-box {
+      width: min(980px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .global-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .flow-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+    .control-card {
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-size: 0.88rem;
+      font-weight: 800;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .toggle input { width: 18px; height: 18px; }
+
+    .timeline-block.disabled {
+      opacity: 0.58;
+      filter: grayscale(0.35);
+    }
+    .timeline-top {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .timeline-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .timeline-index {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #101827;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+    .timeline-title strong { display: block; }
+    .timeline-title small { display: block; color: var(--muted); font-weight: 750; }
+    .timeline-body {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      padding: 12px;
+    }
+    .timeline-list {
+      position: relative;
+      padding-left: 18px;
+    }
+    .timeline-list:before {
+      content: "";
+      position: absolute;
+      left: 7px;
+      top: 14px;
+      bottom: 14px;
+      width: 2px;
+      background: linear-gradient(var(--accent), var(--accent-2));
+      border-radius: 999px;
+    }
+    .timeline-block { position: relative; }
+    .timeline-block:before {
+      content: "";
+      position: absolute;
+      left: -18px;
+      top: 24px;
+      width: 14px;
+      height: 14px;
+      border: 3px solid #fff;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 1px rgba(241, 95, 58, 0.3);
+    }
+
+    .flow-preview {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #0f172a;
+      color: #e5edf8;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .flow-preview-head {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background:
+        radial-gradient(circle at top right, rgba(241, 95, 58, 0.3), transparent 14rem),
+        #111b31;
+    }
+    .flow-preview-head h3 { margin: 0; font-size: 1.35rem; }
+    .flow-preview-head p { margin: 6px 0 0; color: #9fb0ca; }
+    .preview-steps {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      max-height: 640px;
+      overflow: auto;
+    }
+    .preview-step {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+    .preview-step strong { display: block; color: #fff; }
+    .preview-step span { display: block; color: #a9b7cf; font-size: 0.82rem; margin-top: 2px; }
+    .duration-badge {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(241, 95, 58, 0.17);
+      color: #ffc2af;
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+
+    .notion-panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      max-height: min(72vh, 720px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .coll-search {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .coll-search input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .coll-scroll {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 220px;
+    }
+    .coll-sec { border-bottom: 1px solid var(--line); }
+    .coll-sec-head {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--ink);
+      text-align: left;
+    }
+    .coll-sec-head:hover { background: var(--surface-2); }
+    .coll-sec-count { font-size: 0.78rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .coll-sec-body { display: none; }
+    .coll-sec.open .coll-sec-body { display: block; }
+    .coll-row {
+      padding: 8px 12px 10px 18px;
+      border-top: 1px solid #eef2f7;
+      font-size: 0.85rem;
+    }
+    .coll-row-title { font-weight: 650; }
+    .coll-row-meta { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+    .coll-row-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .coll-row-actions button { font-size: 0.78rem; padding: 6px 10px; border-radius: 8px; }
+    .coll-detail { margin-top: 8px; display: none; }
+    .coll-detail.open { display: block; }
+    .coll-detail textarea { width: 100%; min-height: 100px; margin-top: 6px; }
+    .recent-songs-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: var(--surface-2);
+      margin-bottom: 16px;
+      font-size: 0.86rem;
+    }
+    .recent-songs-card ul { margin: 8px 0 0; padding-left: 18px; }
+      min-height: 1.2em;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    .status.ok { color: var(--good); }
+    .status.error { color: var(--danger); }
+    .download-row {
+      display: none;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .download-row.visible { display: flex; }
+    .admin-card {
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .admin-card h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+    .admin-card > p, .admin-card .muted {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+    .admin-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .btn-xl {
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .quick-actions button {
+      flex: 1 1 160px;
+    }
+    .snapshot-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .snapshot-tile {
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+    }
+    .snapshot-tile strong {
+      display: block;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .snapshot-tile span {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .mission-quote {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: var(--ink);
+      margin: 0 0 12px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .cal-dow {
+      text-align: center;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--muted);
+      padding: 4px;
+    }
+    .cal-cell {
+      aspect-ratio: 1;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .cal-cell.muted { opacity: 0.35; cursor: default; }
+    .cal-cell.sunday { border-color: rgba(241, 95, 58, 0.45); background: #fff8f5; }
+    .cal-cell.selected { outline: 2px solid var(--accent-2); }
+    .poster-preview-frame {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    .ppt-hero-dark {
+      border-radius: 16px;
+      background: #0a0a0c;
+      color: #f5f5f5;
+      padding: 28px;
+      border: 1px solid #2a2a32;
+    }
+    .ppt-hero-dark .gold { color: #ffc94d; font-weight: 700; }
+    .ppt-hero-dark .white { color: #f8fafc; }
+    .song-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .song-filter-row button {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .song-filter-row button.active {
+      background: #ede9fe;
+      border-color: #c4b5fd;
+      color: #5b21b6;
+    }
+    .theme-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .theme-card-actions button {
+      flex: 1 1 auto;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1120px) {
+      .side-nav { width: 240px; }
+      .dashboard { margin-left: 240px; }
+      .workspace, .workspace.theme-workspace, .workspace.flow-workspace { grid-template-columns: 1fr; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-metrics { min-width: 0; }
+    }
+    @media (max-width: 720px) {
+      .dashboard { padding: 12px; }
+      .side-nav {
+        width: min(280px, 88vw);
+        box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
+      }
+      .route-switcher { display: block; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .hero, .panel, .tool-card { padding: 15px; border-radius: 18px; }
+      .hero-metrics, .global-controls, .field-grid, .builder-grid, .theme-grid { grid-template-columns: 1fr; }
+      .block-top { grid-template-columns: auto minmax(0, 1fr); }
+      .block-top select, .block-top .inline-actions { grid-column: 1 / -1; }
+      .timeline-body { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="side-nav" id="admin-sidebar" aria-label="Dashboard navigation">
+      <div class="side-brand">
+        <strong>Church Media</strong>
+        <span>Sunday Mass media for your parish.</span>
+      </div>
+      <div class="side-nav-scroll">
+        <a class="nav-link" data-route="/home" href="/home">Home</a>
+
+        <div class="nav-section-label">Mass</div>
+        <a class="nav-link sub" data-route="/mass/builder" href="/mass/builder">Mass Builder</a>
+        <a class="nav-link sub" data-route="/mass/calendar" href="/mass/calendar">Liturgical Calendar</a>
+
+        <div class="nav-section-label">Media</div>
+        <a class="nav-link sub" data-route="/media/posters" href="/media/posters">Media / Poster</a>
+        <a class="nav-link sub" data-route="/media/history" href="/media/history">History</a>
+
+        <div class="nav-section-label">Library</div>
+        <a class="nav-link sub" data-route="/library/songs" href="/library/songs">Song Library</a>
+        <a class="nav-link sub" data-route="/library/collections" href="/library/collections">Collections</a>
+
+        <div class="nav-section-label">Design</div>
+        <a class="nav-link sub" data-route="/design/theme-lab" href="/design/theme-lab">Theme Lab</a>
+        <a class="nav-link sub" data-route="/design/templates" href="/design/templates">Templates</a>
+
+        <div class="nav-section-label">Settings</div>
+        <a class="nav-link sub" data-route="/settings/church" href="/settings/church">Church Profile</a>
+        <a class="nav-link sub" data-route="/settings/app" href="/settings/app">App Settings</a>
+      </div>
+    </aside>
+
+    <main class="dashboard">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div>
+            <h1 id="topbar-title">Church Media Generator</h1>
+            <p id="topbar-subtitle">Mission control for Sunday Mass preparation.</p>
+          </div>
+        </div>
+        <select class="route-switcher" id="route-switcher" aria-label="Switch dashboard">
+          <option value="/home">Home</option>
+          <option value="/mass/builder">Mass Builder</option>
+          <option value="/mass/calendar">Liturgical Calendar</option>
+          <option value="/media/posters">Media / Poster</option>
+          <option value="/media/history">History</option>
+          <option value="/library/songs">Song Library</option>
+          <option value="/library/collections">Library / Collections</option>
+          <option value="/design/theme-lab">Theme Lab</option>
+          <option value="/design/templates">Templates</option>
+          <option value="/settings/church">Church Profile</option>
+          <option value="/settings/app">App Settings</option>
+        </select>
+      </div>
+
+      <section class="page" id="home-page" data-route="/home">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Mission Control</p>
+            <h2>Everything for the upcoming Sunday Mass.</h2>
+            <p>Load lectionary context, generate posters and slides, and keep your parish branding consistent.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric"><strong id="home-days-until">—</strong><span>Until Sunday</span></div>
+            <div class="metric"><strong id="home-lectionary">—</strong><span>Lectionary</span></div>
+            <div class="metric"><strong id="home-season-chip">—</strong><span>Season</span></div>
+          </div>
+        </div>
+
+        <div class="admin-card-grid">
+          <div class="admin-card" style="grid-column: 1 / -1;">
+            <h3>Upcoming Sunday</h3>
+            <p class="muted" id="home-sunday-label">Loading…</p>
+            <p class="mission-quote" id="home-gospel-quote">Gospel excerpt will appear after refresh.</p>
+            <p class="muted"><strong id="home-gospel-ref">—</strong></p>
+            <div class="quick-actions" style="margin-top: 16px;">
+              <button type="button" class="primary btn-xl" id="btn-home-poster">Generate Poster</button>
+              <button type="button" class="primary btn-xl" id="btn-home-ppt">Open Mass Builder</button>
+              <button type="button" class="secondary btn-xl" id="btn-home-readings">View Readings</button>
+            </div>
+            <p class="status" id="home-mission-status" aria-live="polite"></p>
+          </div>
+
+          <div class="admin-card">
+            <h3>Quick Actions</h3>
+            <p class="muted">Jump straight into common tasks.</p>
+            <div class="quick-actions">
+              <button type="button" class="secondary btn-xl" id="btn-home-create-poster">Create Mass Poster</button>
+              <button type="button" class="secondary btn-xl" id="btn-home-gen-ppt">Open Mass Builder</button>
+              <button type="button" class="secondary btn-xl" id="btn-home-upload-song">Upload Song</button>
+              <button type="button" class="secondary btn-xl" id="btn-home-announce">Add Announcement</button>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <h3>Liturgical Snapshot</h3>
+            <p class="muted">Colors and seasons for this week.</p>
+            <div class="snapshot-row">
+              <div class="snapshot-tile"><strong>Season</strong><span id="home-snap-season">—</span></div>
+              <div class="snapshot-tile"><strong>Liturgical color</strong><span id="home-snap-color">—</span></div>
+              <div class="snapshot-tile"><strong>Liturgical year</strong><span id="home-snap-year">—</span></div>
+              <div class="snapshot-tile"><strong>Next feast</strong><span id="home-snap-feast">See calendar</span></div>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <h3>Recent Files</h3>
+            <p class="muted">Last generated downloads from this browser.</p>
+            <div id="home-recent-files" class="muted">No recent downloads yet. Generate a deck to populate this list.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="lyrics-page" data-route="/library/songs">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Song Library</p>
+            <h2>Structure lyrics into slide-ready blocks and save hymns to your parish library.</h2>
+            <p>Paste or upload text, analyze sections, then save to Entrance, Offertory, Communion, or Recessional slots for Mass Builder.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric"><strong id="lyrics-total">0</strong><span>Blocks</span></div>
+            <div class="metric"><strong id="lyrics-chorus">0</strong><span>Chorus</span></div>
+            <div class="metric"><strong id="lyrics-words">0</strong><span>Words</span></div>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <aside class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Input Panel</h3>
+                <p>Paste or upload text, analyze sections, then save to a hymn section for Mass Builder.</p>
+              </div>
+            </div>
+            <div class="field">
+              <label for="lyrics-input">Lyrics textarea</label>
+              <textarea id="lyrics-input" spellcheck="false" rows="6" placeholder="Paste lyrics here, then analyze."></textarea>
+            </div>
+            <div class="field">
+              <label for="lyrics-file">Upload file</label>
+              <input type="file" id="lyrics-file" accept=".txt,text/plain" />
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="lyrics-save-title">Song title</label>
+                <input type="text" id="lyrics-save-title" value="" placeholder="Song title" />
+              </div>
+              <div class="field">
+                <label for="lyrics-save-author">Author (optional)</label>
+                <input type="text" id="lyrics-save-author" placeholder="Composer or hymnal" maxlength="200" />
+              </div>
+              <div class="field">
+                <label for="lyrics-save-language">Language</label>
+                <select id="lyrics-save-language">
+                  <option value="English">English</option>
+                  <option value="Tagalog">Tagalog</option>
+                  <option value="Latin">Latin</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Hymn section (filters)</label>
+              <div class="song-filter-row" id="song-lib-filters"></div>
+            </div>
+            <div class="field">
+              <label for="lyrics-save-section">Save lyrics to hymn section</label>
+              <select id="lyrics-save-section">
+                <option value="entrance">Entrance</option>
+                <option value="offertory">Offertory</option>
+                <option value="communion">Communion</option>
+                <option value="recessional">Recessional</option>
+                <option value="meditation">Meditation</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button type="button" class="primary" id="btn-analyze-lyrics">Analyze lyrics</button>
+              <button type="button" class="secondary" id="btn-add-lyric-block">Add block</button>
+              <button type="button" class="secondary" id="btn-save-lyrics">Save lyrics</button>
+              <button type="button" class="ghost" id="btn-clear-lyrics">Clear editor</button>
+            </div>
+            <p class="status" id="lyrics-status" aria-live="polite"></p>
+            <div class="pill-row" id="lyrics-detected"></div>
+          </aside>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Structured Editor</h3>
+                <p>Drag blocks to reorder. Use section type dropdowns, split long blocks, or merge adjacent cards.</p>
+              </div>
+              <button type="button" class="secondary" id="btn-normalize-lyrics">Auto tidy</button>
+            </div>
+            <div class="block-list" id="lyrics-block-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page" id="theme-page" data-route="/design/theme-lab">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Theme Lab</p>
+            <h2>Liturgical visual system for slides, posters, and social graphics.</h2>
+            <p>Five preset seasons plus your saved customs. Preview, apply to exports, or open the builder to fine-tune colors and fonts.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric"><strong>5</strong><span>Presets</span></div>
+            <div class="metric"><strong id="custom-theme-count">0</strong><span>Saved</span></div>
+            <div class="metric"><strong id="active-theme-name">Advent</strong><span>Active</span></div>
+          </div>
+        </div>
+
+        <div class="workspace theme-workspace">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Theme Grid</h3>
+                <p>Interactive cards apply fonts, color systems, and preview styling immediately.</p>
+              </div>
+            </div>
+            <div class="theme-grid" id="theme-grid"></div>
+            <div class="field" style="margin-top:14px;">
+              <label for="saved-theme-dropdown">Additional saved themes</label>
+              <select id="saved-theme-dropdown">
+                <option value="">Choose a saved preset to apply…</option>
+              </select>
+            </div>
+          </section>
+
+          <aside class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Custom Theme Builder</h3>
+                <p>Choose real colors and typography, preview instantly, then save the theme locally.</p>
+              </div>
+            </div>
+            <div class="field">
+              <label for="custom-theme-name">Theme name</label>
+              <input type="text" id="custom-theme-name" value="Parish Evening" />
+            </div>
+            <div class="builder-grid">
+              <div class="color-field">
+                <input type="color" id="theme-bg" value="#182033" />
+                <div><label for="theme-bg-text">Background</label><input type="text" id="theme-bg-text" value="#182033" /></div>
+              </div>
+              <div class="color-field">
+                <input type="color" id="theme-primary" value="#f8c66a" />
+                <div><label for="theme-primary-text">Primary</label><input type="text" id="theme-primary-text" value="#f8c66a" /></div>
+              </div>
+              <div class="color-field">
+                <input type="color" id="theme-accent" value="#f15f3a" />
+                <div><label for="theme-accent-text">Accent</label><input type="text" id="theme-accent-text" value="#f15f3a" /></div>
+              </div>
+              <div class="color-field">
+                <input type="color" id="theme-text" value="#ffffff" />
+                <div><label for="theme-text-text">Text</label><input type="text" id="theme-text-text" value="#ffffff" /></div>
+              </div>
+            </div>
+            <div class="field" style="margin-top:14px;">
+              <label for="theme-font">Font selector</label>
+              <select id="theme-font">
+                <option value="Inter, Segoe UI, sans-serif">Inter / modern sans</option>
+                <option value="Georgia, Times New Roman, serif">Georgia / classic serif</option>
+                <option value="Trebuchet MS, Segoe UI, sans-serif">Trebuchet / warm sans</option>
+                <option value="Palatino, Book Antiqua, serif">Palatino / formal serif</option>
+                <option value="Arial Black, Arial, sans-serif">Arial Black / bold display</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button type="button" class="primary" id="btn-save-theme">Save custom theme</button>
+              <button type="button" class="secondary" id="btn-preview-custom-theme">Open preview</button>
+            </div>
+            <p class="status" id="theme-status" aria-live="polite"></p>
+          </aside>
+        </div>
+
+        <section class="tool-card">
+          <div class="panel-head">
+            <div>
+              <h3>Live Slide Preview</h3>
+              <p>This simulated slide updates with the selected theme colors and font.</p>
+            </div>
+          </div>
+          <div class="slide-preview" id="theme-live-preview">
+            <div>
+              <div class="slide-kicker">Fourth Sunday of Advent</div>
+              <h4>Prepare the way of the Lord</h4>
+              <p>Live typography, color hierarchy, and accent treatment for generated worship slides.</p>
+            </div>
+            <div class="slide-footer"><span>Good Shepherd Community</span><span>Entrance Hymn</span></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="page" id="flow-page" data-route="/mass/builder">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Mass Builder</p>
+            <h2>Assemble songs and readings before you generate slides.</h2>
+            <p>Choose hymns, optional parish posters, collection details, and announcements—then generate the full package.</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric"><strong id="flow-song-count">0</strong><span>Songs chosen</span></div>
+            <div class="metric"><strong id="flow-season-chip">—</strong><span>Season</span></div>
+            <div class="metric"><strong id="flow-readings-loaded">—</strong><span>Readings</span></div>
+          </div>
+        </div>
+
+        <div class="workspace flow-workspace">
+          <aside class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>Global Controls</h3>
+                <p>Load lectionary context and tune the production mode for the full Mass plan.</p>
+              </div>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="mass-date">Mass date</label>
+                <input type="date" id="mass-date" />
+              </div>
+              <div class="field">
+                <label for="celebrant">Celebrant</label>
+                <input type="text" id="celebrant" placeholder="Fr. Name" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="church-name">Community name</label>
+              <input type="text" id="church-name" placeholder="Parish or community name" maxlength="240" />
+            </div>
+            <p class="muted" style="margin:0 0 8px;">Logo and parish details: <a href="/settings/church" id="link-church-profile-flow">Church Profile</a></p>
+            <div class="global-controls">
+              <div class="control-card">
+                <label>Season indicator</label>
+                <strong id="season-indicator">Not loaded</strong>
+              </div>
+              <div class="control-card">
+                <label>PPT theme</label>
+                <strong id="ppt-theme-indicator">Advent Violet</strong>
+              </div>
+            </div>
+            <div class="field">
+              <label for="flow-reading1">Reading 1 (full text)</label>
+              <textarea id="flow-reading1" rows="4" readonly style="background:var(--surface-2);font-size:0.82rem;width:100%;"></textarea>
+            </div>
+            <div class="field">
+              <label for="flow-reading2">Reading 2 (full text, if any)</label>
+              <textarea id="flow-reading2" rows="4" readonly style="background:var(--surface-2);font-size:0.82rem;width:100%;"></textarea>
+            </div>
+            <div class="field">
+              <label for="mass-divider-poster">Divider poster (16×9 image, optional)</label>
+              <input type="file" id="mass-divider-poster" accept="image/png,image/jpeg,image/webp" />
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Inserted as a full-bleed divider slide after the Entrance block. Cropped to 16×9.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="mass-collection-amount">Mass collection — amount (KRW)</label>
+                <input type="text" id="mass-collection-amount" placeholder="1,234,567 won" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="mass-collection-date">Mass collection — for date</label>
+                <input type="date" id="mass-collection-date" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="mass-food-sponsors">Food sponsors (one name per line)</label>
+              <textarea id="mass-food-sponsors" rows="3" placeholder="Parish kitchen team&#10;Local bakery"></textarea>
+            </div>
+            <div class="field">
+              <label for="mass-psalm-override">Psalm — edit responsorial text for slides</label>
+              <textarea id="mass-psalm-override" rows="4" placeholder="Leave blank to use lectionary text after Load readings."></textarea>
+            </div>
+            <div class="field">
+              <label for="mass-announcement-posters">Announcement posters (images, optional)</label>
+              <input type="file" id="mass-announcement-posters" accept="image/png,image/jpeg,image/webp" multiple />
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Each image becomes a full-bleed slide immediately before the Final Blessing.</p>
+            </div>
+            <div class="actions" style="margin-top:14px;">
+              <button type="button" class="secondary" id="btn-load-flow">Load readings & songs</button>
+              <button type="button" class="primary" id="btn-generate-flow">Generate Full Mass Package</button>
+            </div>
+            <p class="status" id="flow-status" aria-live="polite"></p>
+            <div class="download-row" id="download-row">
+              <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
+              <a href="#" id="dl-pptx" download>PowerPoint</a>
+              <a href="#" id="dl-poster" download>Poster PNG</a>
+              <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
+            </div>
+          </aside>
+
+          <div class="flow-column">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Lyrics Song Plan</h3>
+                  <p>Deck lyrics stay limited to one Entrance, one Offertory, two Communion, and one Recessional song.</p>
+                </div>
+              </div>
+              <div class="field-grid" id="mass-song-plan"></div>
+            <div class="field" style="margin-top:12px;">
+              <label for="gospel-sentence-index">Gospel quote for slides &amp; poster (pick a sentence)</label>
+              <select id="gospel-sentence-index"><option value="">Auto (first sentence)</option></select>
+              <p class="muted" style="margin:6px 0 0;font-size:0.82rem;">Load readings first to list sentences from the Gospel text.</p>
+            </div>
+          </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="calendar-page" data-route="/mass/calendar">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Liturgical Calendar</p>
+            <h2>Pick a Sunday and preview the readings.</h2>
+            <p>Select any day to see the Mass title, season, and gospel. Jump to media generation when you are ready.</p>
+          </div>
+        </div>
+        <div class="workspace" style="grid-template-columns: 1fr 320px;">
+          <div class="admin-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+              <h3 style="margin:0;">Month view</h3>
+              <div class="actions" style="margin:0;">
+                <button type="button" class="secondary" id="cal-prev">←</button>
+                <strong id="cal-month-label" style="min-width:140px;text-align:center;">—</strong>
+                <button type="button" class="secondary" id="cal-next">→</button>
+              </div>
+            </div>
+            <div class="calendar-grid" id="cal-dow-row"></div>
+            <div class="calendar-grid" id="cal-grid" style="margin-top:6px;"></div>
+          </div>
+          <div class="admin-card" id="cal-detail">
+            <h3 style="margin-top:0;">Selected day</h3>
+            <p class="muted" id="cal-detail-date">Tap a date</p>
+            <p id="cal-detail-title" style="font-weight:800;margin:8px 0;">—</p>
+            <div class="snapshot-row" style="margin-bottom:12px;">
+              <div class="snapshot-tile"><strong>Season</strong><span id="cal-detail-season">—</span></div>
+              <div class="snapshot-tile"><strong>Color</strong><span id="cal-detail-color">—</span></div>
+            </div>
+            <p class="muted" id="cal-detail-gospel">Gospel reference loads after preview.</p>
+            <div class="actions" style="margin-top:14px;">
+              <button type="button" class="primary" id="btn-cal-use-date">Use for Mass Builder</button>
+              <button type="button" class="secondary" id="btn-cal-generate">Generate media</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="posters-page" data-route="/media/posters">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Media / Poster</p>
+            <h2>Parish posters and saved graphics.</h2>
+            <p>Generate liturgical posters, keep personal uploads on this device, and sync fields with Mass Builder.</p>
+          </div>
+        </div>
+        <div class="workspace" style="display:flex;flex-direction:column;gap:16px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;align-items:start;">
+          <div class="admin-card" style="margin:0;">
+            <h3 style="margin-top:0;">Saved posters</h3>
+            <p class="muted">Stored under your app uploads folder for reuse in announcements or social posts.</p>
+            <div class="field">
+              <label for="saved-poster-file">Upload to save permanently</label>
+              <input type="file" id="saved-poster-file" accept="image/png,image/jpeg,image/webp" />
+            </div>
+            <div class="actions" style="margin-top:8px;">
+              <button type="button" class="primary" id="btn-save-poster-asset">Save poster</button>
+            </div>
+            <p class="status" id="saved-poster-status" aria-live="polite"></p>
+            <div id="saved-poster-list" class="muted" style="margin-top:12px;font-size:0.86rem;">Loading…</div>
+          </div>
+          <aside class="panel">
+            <div class="field">
+              <label for="poster-mass-date">Mass date</label>
+              <input type="date" id="poster-mass-date" />
+            </div>
+            <div class="field">
+              <label for="poster-celebrant">Celebrant</label>
+              <input type="text" id="poster-celebrant" list="celebrant-presets" placeholder="Fr. Name" />
+              <datalist id="celebrant-presets"></datalist>
+              <button type="button" class="ghost" id="btn-save-celebrant" style="margin-top:8px;font-size:0.82rem;">Save celebrant to list</button>
+            </div>
+            <div class="field">
+              <label for="poster-gospel-quote">Gospel quote (one line)</label>
+              <textarea id="poster-gospel-quote" rows="3" placeholder="Short line for the poster"></textarea>
+            </div>
+            <div class="field">
+              <label for="poster-gospel-sentence-index">Gospel sentence (optional)</label>
+              <select id="poster-gospel-sentence-index"><option value="">Auto (first sentence)</option></select>
+              <p class="muted" style="margin:6px 0 0;font-size:0.82rem;">Change Mass date above to load sentences, or sync from Mass Builder.</p>
+            </div>
+            <div class="field">
+              <label for="poster-template">Theme / poster template</label>
+              <select id="poster-template">
+                <option value="liturgical_color">Liturgical color fill</option>
+                <option value="classic_white">Classic white</option>
+              </select>
+            </div>
+            <div class="field">
+              <label><input type="checkbox" id="poster-include-social" checked /> Include social exports</label>
+            </div>
+            <div class="field">
+              <label><input type="checkbox" id="poster-include-ai" checked /> AI mass poster (when configured)</label>
+            </div>
+            <div class="actions">
+              <button type="button" class="secondary" id="btn-poster-sync">Sync from Mass Builder</button>
+              <button type="button" class="primary btn-xl" id="btn-poster-generate">Generate poster package</button>
+            </div>
+            <p class="status" id="poster-status" aria-live="polite"></p>
+            <div class="download-row" id="poster-download-row">
+              <a href="#" id="poster-dl-png" download>Poster PNG</a>
+              <a href="#" id="poster-dl-169" download>Poster 16:9</a>
+              <a href="#" id="poster-dl-zip" download>ZIP bundle</a>
+            </div>
+          </aside>
+          </div>
+          <section class="panel">
+            <h3 style="margin-top:0;">Live preview</h3>
+            <p class="muted">Approximates typography and colors from your active Theme Lab selection.</p>
+            <div class="slide-preview" id="poster-live-preview" style="max-height: 420px;">
+              <div>
+                <div class="slide-kicker" id="poster-prev-kicker">Sunday Mass</div>
+                <h4 id="poster-prev-title">Parish community</h4>
+                <p id="poster-prev-quote">Gospel quote appears here.</p>
+                <p class="slide-footer" style="margin-top:18px;font-size:0.8rem;opacity:0.85;border:0;padding:0;background:transparent;" id="poster-prev-meta">Date · Celebrant</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page" id="history-page" data-route="/media/history">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2>Recent posters and decks from this browser.</h2>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3 style="margin-top:0;">Downloads</h3>
+          <div id="history-list" class="muted">Nothing logged yet.</div>
+        </div>
+      </section>
+
+      <section class="page" id="collections-page" data-route="/library/collections">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Library / Collections</p>
+            <h2>Catalog by liturgical moment.</h2>
+            <p>Search, expand a section, and edit titles, authors, or lyrics. Open Song Library for the full block editor.</p>
+          </div>
+          <div class="actions" style="align-self:flex-start;">
+            <button type="button" class="secondary" id="btn-collections-to-song-lib">Song Library</button>
+          </div>
+        </div>
+        <div id="collections-recent-card" class="recent-songs-card" style="display:none;"></div>
+        <div class="notion-panel" id="collections-panel">
+          <div class="coll-search">
+            <input type="search" id="collections-search" placeholder="Search titles, authors, lyrics…" autocomplete="off" />
+          </div>
+          <div class="coll-scroll" id="collections-scroll"></div>
+        </div>
+      </section>
+
+      <section class="page" id="templates-page" data-route="/design/templates">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Design / Templates</p>
+            <h2>Slide theme from your PPTX.</h2>
+            <p>Upload a reference deck. The server scans theme colors and typography so generated Mass slides adopt the same palette and font family (standard layout is preserved).</p>
+          </div>
+        </div>
+        <div class="admin-card" style="max-width:640px;">
+          <div class="field">
+            <label for="pptx-template-file">PPTX template</label>
+            <input type="file" id="pptx-template-file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+          </div>
+          <div class="actions">
+            <button type="button" class="primary" id="btn-analyze-pptx-template">Analyze &amp; apply theme</button>
+          </div>
+          <p class="status" id="template-analyze-status" aria-live="polite"></p>
+          <pre id="template-analyze-notes" class="muted" style="white-space:pre-wrap;font-size:0.8rem;margin-top:10px;display:none;"></pre>
+        </div>
+        <div class="admin-card-grid" style="margin-top:16px;">
+          <div class="admin-card"><h3>Liturgical color poster</h3><p class="muted">Uses the calendar color for the Sunday.</p></div>
+          <div class="admin-card"><h3>Classic white</h3><p class="muted">High-contrast neutral cover.</p></div>
+          <div class="admin-card"><h3>Social crops</h3><p class="muted">Instagram and story sizes ship with generation when enabled.</p></div>
+        </div>
+      </section>
+
+      <section class="page" id="church-settings-page" data-route="/settings/church">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">Church Profile</p>
+            <h2>Community name and logo for slides and posters.</h2>
+          </div>
+        </div>
+        <div class="admin-card" style="max-width:560px;">
+          <div class="field">
+            <label for="settings-church-name">Community name</label>
+            <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" />
+          </div>
+          <div class="field">
+            <label for="church-logo">Church logo</label>
+            <div style="display: flex; gap: 8px; align-items: flex-start;">
+              <input type="file" id="church-logo" accept="image/png,image/jpeg,image/webp,image/gif" style="flex: 1;" />
+              <button type="button" class="secondary" id="btn-upload-logo" style="white-space: nowrap;">Upload</button>
+            </div>
+            <p class="status" id="logo-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
+            <div id="logo-preview" style="margin-top: 8px; max-width: 200px;"></div>
+          </div>
+          <div class="actions">
+            <button type="button" class="primary" id="btn-save-community-api">Save community name</button>
+          </div>
+          <p class="status" id="settings-church-status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="page" id="app-settings-page" data-route="/settings/app">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">App Settings</p>
+            <h2>Planner defaults that feed Mass Builder.</h2>
+          </div>
+        </div>
+        <div class="admin-card" style="max-width:560px;">
+          <p class="muted">Open <strong>Mass Builder</strong> and <strong>Theme Lab</strong> for planner and visual defaults.</p>
+          <div class="actions">
+            <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
+            <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="theme-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="panel-head">
+        <div>
+          <h3 id="theme-modal-title">Theme preview</h3>
+          <p>Simulated slide with selected colors and font applied.</p>
+        </div>
+        <button type="button" class="secondary" id="btn-close-theme-modal">Close</button>
+      </div>
+      <div class="slide-preview" id="theme-modal-preview">
+        <div>
+          <div class="slide-kicker">Communion Meditation</div>
+          <h4>Taste and see the goodness of the Lord</h4>
+          <p>A production preview for hymn lyrics, gospel moment slides, dividers, and title pages.</p>
+        </div>
+        <div class="slide-footer"><span>Good Shepherd Community</span><span>Psalm Response</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (value) => {
+      const div = document.createElement("div");
+      div.textContent = String(value || "");
+      return div.innerHTML;
+    };
+    const formatDateInput = (date) => {
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    };
+    const postJSON = async (url, body) => {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.detail || data.error || res.statusText;
+        throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+      }
+      return data;
+    };
+
+    const routeMeta = {
+      "/home": "Mission control for the upcoming Sunday Mass.",
+      "/mass/builder": "Assemble songs, readings, and generate the full package.",
+      "/mass/calendar": "Monthly liturgical view with readings context.",
+      "/media/posters": "Posters, saved graphics, and social configuration.",
+      "/media/history": "Recent downloads from this browser.",
+      "/library/songs": "Song library and lyrics structuring.",
+      "/library/collections": "Catalog by liturgical section with search.",
+      "/design/theme-lab": "Liturgical themes and custom slide styling.",
+      "/design/templates": "PPTX theme scan and poster reference.",
+      "/settings/church": "Community name and parish logo.",
+      "/settings/app": "Planner defaults and shortcuts.",
+    };
+
+    const legacyRoutes = {
+      "/lyrics-dashboard": "/library/songs",
+      "/theme-dashboard": "/design/theme-lab",
+      "/mass-flow-dashboard": "/mass/builder",
+      "/media/presentation": "/mass/builder",
+    };
+
+    const rawPathInit = window.location.pathname;
+    if (legacyRoutes[rawPathInit]) {
+      history.replaceState({}, "", legacyRoutes[rawPathInit]);
+    } else if (rawPathInit === "/" || rawPathInit === "") {
+      history.replaceState({}, "", "/home");
+    }
+
+    function normalizeRoute(path) {
+      if (legacyRoutes[path]) return legacyRoutes[path];
+      if (path === "/" || path === "") return "/home";
+      return path;
+    }
+
+    function currentRoute() {
+      const path = normalizeRoute(window.location.pathname);
+      return routeMeta[path] ? path : "/home";
+    }
+
+    function showRoute(route, replaceOnly = false) {
+      const r = normalizeRoute(route);
+      document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.dataset.route === r));
+      document.querySelectorAll(".nav-link").forEach((link) => link.classList.toggle("active", link.dataset.route === r));
+      const rs = $("route-switcher");
+      if (rs) rs.value = r;
+      const sub = routeMeta[r] || "";
+      $("topbar-subtitle").textContent = sub;
+      const titleMap = {
+        "/home": "Church Media — Home",
+        "/mass/builder": "Church Media — Mass Builder",
+        "/mass/calendar": "Church Media — Liturgical Calendar",
+        "/media/posters": "Church Media — Media / Poster",
+        "/media/history": "Church Media — History",
+        "/library/songs": "Church Media — Song Library",
+        "/library/collections": "Church Media — Collections",
+        "/design/theme-lab": "Church Media — Theme Lab",
+        "/design/templates": "Church Media — Templates",
+        "/settings/church": "Church Media — Church Profile",
+        "/settings/app": "Church Media — App Settings",
+      };
+      const tb = $("topbar-title");
+      if (tb) tb.textContent = titleMap[r] || "Church Media Generator";
+      if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
+      if (r === "/settings/church") syncChurchFieldsToSettings();
+      if (r === "/mass/builder") syncChurchFieldsFromSettings();
+      if (r === "/media/posters") {
+        syncPosterFromMassBuilder();
+        void ensurePosterSentenceOptions().then(() => updatePosterLivePreview());
+        loadSavedPostersList();
+      }
+      if (r === "/library/collections") loadCollectionsDashboard();
+    }
+
+    const GEN_SESSION_KEY = "churchMediaLastGenerateFingerprint";
+
+    function massGenerateFingerprint() {
+      const date = $("mass-date") && $("mass-date").value;
+      const celeb = $("celebrant") && $("celebrant").value.trim();
+      const songs = JSON.stringify(selectedLyricsSongs || {});
+      return [date || "", celeb || "", songs].join("|");
+    }
+
+    function lastSundayDateForInput() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      const dow = d.getDay();
+      d.setDate(d.getDate() - dow);
+      return formatDateInput(d);
+    }
+
+    let __catalogCache = null;
+
+    async function loadCollectionsDashboard() {
+      const scroll = $("collections-scroll");
+      const recentEl = $("collections-recent-card");
+      if (!scroll) return;
+      scroll.innerHTML = "<p class=\"muted\" style=\"padding:12px;\">Loading…</p>";
+      try {
+        const [catRes, recRes] = await Promise.all([
+          fetch("/api/library/songs-catalog"),
+          fetch("/api/library/songs-recent"),
+        ]);
+        const catData = await catRes.json();
+        const recData = await recRes.json();
+        if (!catData.ok || !catData.catalog) {
+          scroll.innerHTML = "<p class=\"muted\" style=\"padding:12px;\">Could not load catalog.</p>";
+          return;
+        }
+        __catalogCache = catData.catalog;
+        renderRecentSongsCard(recentEl, recData.songs || []);
+        renderCollectionsSections();
+        const cs = $("collections-search");
+        if (cs) cs.oninput = () => renderCollectionsSections();
+      } catch (err) {
+        scroll.innerHTML = "<p class=\"muted\" style=\"padding:12px;\">" + escapeHtml(err.message || "Error") + "</p>";
+      }
+    }
+
+    function renderRecentSongsCard(el, songs) {
+      if (!el) return;
+      if (!songs.length) {
+        el.style.display = "none";
+        el.innerHTML = "";
+        return;
+      }
+      el.style.display = "block";
+      const lines = songs.slice(0, 8).map((s) => {
+        const t = escapeHtml(s.display_title || s.title || s.id || "—");
+        const auth = (s.author || "").trim();
+        const sub = auth ? " — " + escapeHtml(auth) : "";
+        return "<li>" + t + sub + "</li>";
+      });
+      el.innerHTML = "<strong>Recently added</strong><ul>" + lines.join("") + "</ul>";
+    }
+
+    const COLL_SECTIONS = [
+      { key: "entrance", label: "Entrance" },
+      { key: "offertory", label: "Offertory" },
+      { key: "communion", label: "Communion" },
+      { key: "meditation", label: "Meditation" },
+      { key: "recessional", label: "Recessional" },
+    ];
+
+    function collectionsSearchQuery() {
+      return (($("collections-search") && $("collections-search").value) || "").trim().toLowerCase();
+    }
+
+    function songMatchesQuery(song, q) {
+      if (!q) return true;
+      const blob = [
+        song.display_title || "",
+        song.title || "",
+        song.id || "",
+        song.author || "",
+        song.lyrics || "",
+      ].join(" ").toLowerCase();
+      return blob.includes(q);
+    }
+
+    function renderCollectionsSections() {
+      const scroll = $("collections-scroll");
+      if (!scroll || !__catalogCache) return;
+      const q = collectionsSearchQuery();
+      const parts = [];
+      COLL_SECTIONS.forEach((sec) => {
+        const rows = (__catalogCache[sec.key] || []).filter((s) => songMatchesQuery(s, q));
+        const openClass = q ? " open" : "";
+        parts.push(
+          "<div class=\"coll-sec" + openClass + "\" data-sec=\"" + sec.key + "\">" +
+            "<button type=\"button\" class=\"coll-sec-head\" data-coll-toggle=\"" + sec.key + "\">" +
+              "<span>" + escapeHtml(sec.label) + "</span>" +
+              "<span class=\"coll-sec-count\">" + rows.length + " songs</span>" +
+            "</button>" +
+            "<div class=\"coll-sec-body\">" +
+              (rows.length
+                ? rows.map((song) => collectionsRowHtml(sec.key, song)).join("")
+                : "<div class=\"coll-row muted\">No songs in this section.</div>") +
+            "</div>" +
+          "</div>"
+        );
+      });
+      scroll.innerHTML = parts.join("");
+      scroll.querySelectorAll("[data-coll-toggle]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const sec = btn.getAttribute("data-coll-toggle");
+          const wrap = scroll.querySelector(".coll-sec[data-sec=\"" + sec + "\"]");
+          if (wrap) wrap.classList.toggle("open");
+        });
+      });
+      scroll.querySelectorAll("[data-coll-row-toggle]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-coll-row-toggle");
+          const det = scroll.querySelector(".coll-detail[data-coll-detail=\"" + id + "\"]");
+          if (det) det.classList.toggle("open");
+        });
+      });
+      scroll.querySelectorAll("[data-coll-save]").forEach((btn) => {
+        btn.addEventListener("click", () => patchSongFromRow(btn.getAttribute("data-coll-save")));
+      });
+      scroll.querySelectorAll("[data-coll-delete]").forEach((btn) => {
+        btn.addEventListener("click", () => deleteSongFromRow(btn.getAttribute("data-coll-delete")));
+      });
+      if (!q) {
+        COLL_SECTIONS.forEach((sec) => {
+          const wrap = scroll.querySelector(".coll-sec[data-sec=\"" + sec.key + "\"]");
+          if (wrap) wrap.classList.remove("open");
+        });
+      }
+    }
+
+    function collectionsRowHtml(section, song) {
+      const id = String(song.id || "");
+      const rid = section + "::" + id;
+      const title = escapeHtml(song.display_title || song.title || id);
+      const auth = (song.author || "").trim();
+      const authHtml = auth ? "<div class=\"coll-row-meta\">" + escapeHtml(auth) + "</div>" : "";
+      return (
+        "<div class=\"coll-row\" data-song-row=\"" + escapeHtml(rid) + "\">" +
+          "<div class=\"coll-row-title\">" + title + "</div>" +
+          authHtml +
+          "<div class=\"coll-row-actions\">" +
+            "<button type=\"button\" class=\"secondary\" data-coll-row-toggle=\"" + escapeHtml(rid) + "\">Edit</button>" +
+          "</div>" +
+          "<div class=\"coll-detail\" data-coll-detail=\"" + escapeHtml(rid) + "\">" +
+            "<label>Title</label><input type=\"text\" class=\"coll-in-title\" data-sec=\"" + escapeHtml(section) + "\" data-id=\"" + escapeHtml(id) + "\" value=\"" + escapeHtml(String(song.title || "")) + "\" />" +
+            "<label style=\"margin-top:6px;display:block;\">Author</label><input type=\"text\" class=\"coll-in-author\" data-sec=\"" + escapeHtml(section) + "\" data-id=\"" + escapeHtml(id) + "\" value=\"" + escapeHtml(String(song.author || "")) + "\" />" +
+            "<label style=\"margin-top:6px;display:block;\">Lyrics</label><textarea class=\"coll-in-lyrics\" data-sec=\"" + escapeHtml(section) + "\" data-id=\"" + escapeHtml(id) + "\">" + escapeHtml(String(song.lyrics || "")) + "</textarea>" +
+            "<div class=\"coll-row-actions\">" +
+              "<button type=\"button\" class=\"primary\" data-coll-save=\"" + escapeHtml(rid) + "\">Save</button>" +
+              "<button type=\"button\" class=\"ghost\" data-coll-delete=\"" + escapeHtml(rid) + "\" style=\"color:var(--danger);\">Delete</button>" +
+            "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    async function patchSongFromRow(rid) {
+      const scroll = $("collections-scroll");
+      if (!scroll || !rid) return;
+      const row = scroll.querySelector(".coll-detail[data-coll-detail=\"" + rid + "\"]");
+      if (!row) return;
+      const sec = row.querySelector(".coll-in-title").dataset.sec;
+      const sid = row.querySelector(".coll-in-title").dataset.id;
+      const title = row.querySelector(".coll-in-title").value.trim();
+      const author = row.querySelector(".coll-in-author").value.trim();
+      const lyrics = row.querySelector(".coll-in-lyrics").value;
+      try {
+        await fetch("/api/library/song", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section: sec, id: sid, title, author, lyrics }),
+        }).then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.detail || "Save failed");
+        });
+        await loadCollectionsDashboard();
+      } catch (e) {
+        alert(e.message || "Save failed");
+      }
+    }
+
+    async function deleteSongFromRow(rid) {
+      if (!confirm("Remove this song from the library section?")) return;
+      const scroll = $("collections-scroll");
+      if (!scroll || !rid) return;
+      const row = scroll.querySelector(".coll-detail[data-coll-detail=\"" + rid + "\"]");
+      if (!row) return;
+      const sec = row.querySelector(".coll-in-title").dataset.sec;
+      const sid = row.querySelector(".coll-in-title").dataset.id;
+      try {
+        const res = await fetch("/api/library/song?section=" + encodeURIComponent(sec) + "&id=" + encodeURIComponent(sid), { method: "DELETE" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Delete failed");
+        await loadCollectionsDashboard();
+      } catch (e) {
+        alert(e.message || "Delete failed");
+      }
+    }
+
+    async function loadSavedPostersList() {
+      const el = $("saved-poster-list");
+      if (!el) return;
+      el.textContent = "Loading…";
+      try {
+        const res = await fetch("/api/media/posters-saved");
+        const data = await res.json();
+        if (!data.ok || !data.posters) {
+          el.textContent = "Could not load saved posters.";
+          return;
+        }
+        if (!data.posters.length) {
+          el.innerHTML = "<span class=\"muted\">No saved posters yet.</span>";
+          return;
+        }
+        el.innerHTML = data.posters.map((p) => (
+          "<div style=\"display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);\">" +
+            "<a href=\"" + escapeHtml(p.url) + "\" target=\"_blank\" rel=\"noopener\">" + escapeHtml(p.label || p.id) + "</a>" +
+            "<button type=\"button\" class=\"ghost\" data-del-poster=\"" + escapeHtml(p.id) + "\" style=\"font-size:0.78rem;color:var(--danger);\">Delete</button>" +
+          "</div>"
+        )).join("");
+        el.querySelectorAll("[data-del-poster]").forEach((b) => {
+          b.addEventListener("click", async () => {
+            const pid = b.getAttribute("data-del-poster");
+            await fetch("/api/media/posters-saved/" + encodeURIComponent(pid), { method: "DELETE" });
+            loadSavedPostersList();
+          });
+        });
+      } catch (err) {
+        el.textContent = err.message || "Error";
+      }
+    }
+
+    document.querySelectorAll(".nav-link").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        showRoute(link.dataset.route);
+      });
+    });
+    $("route-switcher").addEventListener("change", (event) => showRoute(event.target.value));
+    window.addEventListener("popstate", () => showRoute(currentRoute(), true));
+
+    let lyricBlocks = [];
+    let draggedLyricId = null;
+    const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
+
+    function classifyLyricBlock(header, text, index) {
+      const source = (header + " " + text).toLowerCase();
+      if (/chorus|refrain/.test(source)) return "chorus";
+      if (/bridge|middle/.test(source)) return "bridge";
+      if (/response|responsorial|lord, hear|amen/.test(source)) return "response";
+      return "verse";
+    }
+
+    function analyzeLyrics() {
+      const raw = $("lyrics-input").value.trim();
+      if (!raw) {
+        setLyricsStatus("Paste or upload lyrics first.", "error");
+        return;
+      }
+      const chunks = raw.split(/\n\s*\n+/).map((part) => part.trim()).filter(Boolean);
+      lyricBlocks = chunks.map((chunk, index) => {
+        const lines = chunk.split(/\n/).map((line) => line.trim()).filter(Boolean);
+        const first = lines[0] || "";
+        const headerMatch = /^(verse|chorus|refrain|bridge|response)\s*([\w\d]*)/i.test(first);
+        const title = headerMatch ? first : "Verse " + (index + 1);
+        const text = headerMatch ? lines.slice(1).join("\n") : lines.join("\n");
+        const type = classifyLyricBlock(title, text, index);
+        return { id: crypto.randomUUID(), type, title: title || typeLabels[type], text };
+      });
+      renderLyrics();
+      setLyricsStatus("Detected " + lyricBlocks.length + " editable sections. Drag, split, merge, or reassign as needed.", "ok");
+    }
+
+    function setLyricsStatus(message, kind) {
+      $("lyrics-status").textContent = message || "";
+      $("lyrics-status").className = "status " + (kind || "");
+    }
+
+    function serializedLyrics() {
+      if (!lyricBlocks.length) return $("lyrics-input").value.trim();
+      return lyricBlocks.map((block) => {
+        const title = (block.title || typeLabels[block.type] || "Section").trim();
+        return [title, (block.text || "").trim()].filter(Boolean).join("\n");
+      }).join("\n\n").trim();
+    }
+
+    function lyricStats() {
+      const words = lyricBlocks.reduce((sum, block) => sum + (block.text.match(/\b[\w']+\b/g) || []).length, 0);
+      $("lyrics-total").textContent = lyricBlocks.length;
+      $("lyrics-chorus").textContent = lyricBlocks.filter((block) => block.type === "chorus").length;
+      $("lyrics-words").textContent = words;
+      const counts = ["verse", "chorus", "bridge", "response"].map((type) => {
+        const count = lyricBlocks.filter((block) => block.type === type).length;
+        return '<span class="pill"><span class="dot"></span>' + typeLabels[type] + ": " + count + "</span>";
+      });
+      $("lyrics-detected").innerHTML = counts.join("");
+    }
+
+    function renderLyrics() {
+      lyricStats();
+      const list = $("lyrics-block-list");
+      if (!lyricBlocks.length) {
+        list.innerHTML = '<div class="empty-state">No lyric blocks yet. Analyze text or add a section to begin.</div>';
+        return;
+      }
+      list.innerHTML = lyricBlocks.map((block, index) => (
+        '<article class="lyric-block type-' + block.type + '" draggable="true" data-id="' + block.id + '">' +
+          '<div class="block-top">' +
+            '<div class="drag-handle" title="Drag to reorder">::</div>' +
+            '<select data-action="type">' +
+              Object.keys(typeLabels).map((type) => '<option value="' + type + '"' + (block.type === type ? " selected" : "") + ">" + typeLabels[type] + "</option>").join("") +
+            '</select>' +
+            '<input class="block-title" data-action="title" value="' + escapeHtml(block.title) + '" />' +
+            '<span class="pill">#' + (index + 1) + '</span>' +
+          '</div>' +
+          '<div class="block-body"><textarea data-action="text">' + escapeHtml(block.text) + '</textarea></div>' +
+          '<div class="block-tools">' +
+            '<button type="button" class="mini" data-action="split">Split block</button>' +
+            '<button type="button" class="mini" data-action="merge-up">Merge up</button>' +
+            '<button type="button" class="mini" data-action="duplicate">Duplicate</button>' +
+            '<button type="button" class="mini" data-action="delete">Delete</button>' +
+          '</div>' +
+        '</article>'
+      )).join("");
+    }
+
+    $("lyrics-block-list").addEventListener("input", (event) => {
+      const card = event.target.closest(".lyric-block");
+      if (!card) return;
+      const block = lyricBlocks.find((item) => item.id === card.dataset.id);
+      if (!block) return;
+      if (event.target.dataset.action === "title") block.title = event.target.value;
+      if (event.target.dataset.action === "text") block.text = event.target.value;
+      lyricStats();
+    });
+
+    $("lyrics-block-list").addEventListener("change", (event) => {
+      const card = event.target.closest(".lyric-block");
+      if (!card || event.target.dataset.action !== "type") return;
+      const block = lyricBlocks.find((item) => item.id === card.dataset.id);
+      if (!block) return;
+      block.type = event.target.value;
+      renderLyrics();
+    });
+
+    $("lyrics-block-list").addEventListener("click", (event) => {
+      const action = event.target.dataset.action;
+      const card = event.target.closest(".lyric-block");
+      if (!action || !card) return;
+      const index = lyricBlocks.findIndex((item) => item.id === card.dataset.id);
+      if (index < 0) return;
+      const block = lyricBlocks[index];
+      if (action === "delete") lyricBlocks.splice(index, 1);
+      if (action === "duplicate") lyricBlocks.splice(index + 1, 0, { ...block, id: crypto.randomUUID(), title: block.title + " copy" });
+      if (action === "merge-up" && index > 0) {
+        lyricBlocks[index - 1].text = [lyricBlocks[index - 1].text, block.text].filter(Boolean).join("\n\n");
+        lyricBlocks[index - 1].title = lyricBlocks[index - 1].title + " + " + block.title;
+        lyricBlocks.splice(index, 1);
+      }
+      if (action === "split") {
+        const lines = block.text.split(/\n/);
+        const midpoint = Math.max(1, Math.ceil(lines.length / 2));
+        const first = lines.slice(0, midpoint).join("\n").trim();
+        const second = lines.slice(midpoint).join("\n").trim();
+        if (second) {
+          block.text = first;
+          lyricBlocks.splice(index + 1, 0, { id: crypto.randomUUID(), type: block.type, title: block.title + " split", text: second });
+        }
+      }
+      renderLyrics();
+    });
+
+    $("lyrics-block-list").addEventListener("dragstart", (event) => {
+      const card = event.target.closest(".lyric-block");
+      if (!card) return;
+      draggedLyricId = card.dataset.id;
+      card.classList.add("dragging");
+    });
+    $("lyrics-block-list").addEventListener("dragend", () => {
+      draggedLyricId = null;
+      document.querySelectorAll(".lyric-block.dragging").forEach((el) => el.classList.remove("dragging"));
+    });
+    $("lyrics-block-list").addEventListener("dragover", (event) => {
+      event.preventDefault();
+      const target = event.target.closest(".lyric-block");
+      if (!target || !draggedLyricId || target.dataset.id === draggedLyricId) return;
+      const from = lyricBlocks.findIndex((item) => item.id === draggedLyricId);
+      const to = lyricBlocks.findIndex((item) => item.id === target.dataset.id);
+      if (from < 0 || to < 0) return;
+      const [moved] = lyricBlocks.splice(from, 1);
+      lyricBlocks.splice(to, 0, moved);
+      renderLyrics();
+    });
+
+    $("lyrics-file").addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      $("lyrics-input").value = await file.text();
+      setLyricsStatus("Loaded " + file.name + ". Ready to analyze.", "ok");
+    });
+    $("btn-analyze-lyrics").addEventListener("click", analyzeLyrics);
+    $("btn-add-lyric-block").addEventListener("click", () => {
+      lyricBlocks.push({ id: crypto.randomUUID(), type: "verse", title: "New section", text: "" });
+      renderLyrics();
+    });
+    $("btn-clear-lyrics").addEventListener("click", () => {
+      lyricBlocks = [];
+      renderLyrics();
+      setLyricsStatus("Editor cleared.", "");
+    });
+    $("btn-normalize-lyrics").addEventListener("click", () => {
+      lyricBlocks = lyricBlocks.map((block, index) => ({
+        ...block,
+        title: block.title.trim() || typeLabels[block.type] + " " + (index + 1),
+        text: block.text.replace(/[ \t]+$/gm, "").replace(/\n{3,}/g, "\n\n").trim(),
+      }));
+      renderLyrics();
+      setLyricsStatus("Tidied spacing and empty labels.", "ok");
+    });
+    $("btn-save-lyrics").addEventListener("click", async () => {
+      const title = $("lyrics-save-title").value.trim();
+      const lyrics = serializedLyrics();
+      if (!title || !lyrics) {
+        setLyricsStatus("Song title and lyrics are required before saving.", "error");
+        return;
+      }
+      $("btn-save-lyrics").disabled = true;
+      setLyricsStatus("Saving lyrics to the hymn library...", "");
+      try {
+        const result = await postJSON("/api/lyrics/save", {
+          title,
+          lyrics,
+          sections: [$("lyrics-save-section").value],
+          language: $("lyrics-save-language").value,
+          author: ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || null,
+        });
+        setLyricsStatus("Saved lyrics for " + result.title + " in " + result.sections.join(", ") + ".", "ok");
+      } catch (error) {
+        setLyricsStatus(error.message || "Could not save lyrics.", "error");
+      } finally {
+        $("btn-save-lyrics").disabled = false;
+      }
+    });
+
+    const presetThemes = [
+      { id: "advent", name: "Advent Violet", note: "Quiet anticipation with gold hierarchy.", bg: "#211733", primary: "#d8b4fe", accent: "#f8c66a", text: "#ffffff", font: "Georgia, Times New Roman, serif" },
+      { id: "christmas", name: "Christmas Gold", note: "Warm candlelight for feast days.", bg: "#2c1810", primary: "#ffd166", accent: "#ef476f", text: "#fff8e8", font: "Palatino, Book Antiqua, serif" },
+      { id: "lent", name: "Lenten Minimal", note: "Restrained violet and ash tones.", bg: "#1f2430", primary: "#b8a1ff", accent: "#7c3aed", text: "#f3f4f6", font: "Inter, Segoe UI, sans-serif" },
+      { id: "easter", name: "Easter Dawn", note: "Bright white, blue, and sunrise accents.", bg: "#f8fbff", primary: "#2563eb", accent: "#f59e0b", text: "#0f172a", font: "Trebuchet MS, Segoe UI, sans-serif" },
+      { id: "ordinary", name: "Ordinary Green", note: "Fresh green system for weekly use.", bg: "#10251c", primary: "#86efac", accent: "#22c55e", text: "#f0fdf4", font: "Inter, Segoe UI, sans-serif" },
+    ];
+    let activeTheme = presetThemes[0];
+    let customThemes = JSON.parse(localStorage.getItem("customThemes") || "[]");
+    try {
+      const savedActiveTheme = JSON.parse(localStorage.getItem("activePptTheme") || "null");
+      if (savedActiveTheme && savedActiveTheme.bg && savedActiveTheme.text) {
+        activeTheme = {
+          id: savedActiveTheme.id || "saved-active-theme",
+          name: savedActiveTheme.name || "Saved Theme",
+          note: savedActiveTheme.note || "Previously selected PPT generation theme.",
+          bg: savedActiveTheme.bg,
+          primary: savedActiveTheme.primary,
+          accent: savedActiveTheme.accent,
+          text: savedActiveTheme.text,
+          font: savedActiveTheme.font || "Calibri, sans-serif",
+        };
+      }
+    } catch (_error) {
+      activeTheme = presetThemes[0];
+    }
+
+    function pptThemePayload(theme) {
+      return {
+        name: theme.name,
+        bg: theme.bg,
+        primary: theme.primary,
+        accent: theme.accent,
+        text: theme.text,
+        font: theme.font,
+      };
+    }
+
+    function updateThemeIndicators() {
+      $("active-theme-name").textContent = activeTheme.name.split(" ")[0];
+      const pptTheme = $("ppt-theme-indicator");
+      if (pptTheme) pptTheme.textContent = activeTheme.name;
+      localStorage.setItem("activePptTheme", JSON.stringify(activeTheme));
+    }
+
+    function applyThemeToPreview(el, theme) {
+      el.style.setProperty("--slide-bg", theme.bg);
+      el.style.setProperty("--slide-primary", theme.primary);
+      el.style.setProperty("--slide-accent", theme.accent);
+      el.style.setProperty("--slide-text", theme.text);
+      el.style.setProperty("--slide-font", theme.font);
+    }
+
+    function liturgicalPresetIdFromSeason(seasonStr) {
+      const s = (seasonStr || "").toLowerCase();
+      if (s.includes("advent")) return "advent";
+      if (s.includes("christ") || s.includes("nativity")) return "christmas";
+      if (s.includes("lent") || s.includes("ash")) return "lent";
+      if (s.includes("easter") || s.includes("pentecost")) return "easter";
+      return "ordinary";
+    }
+
+    function renderThemeGrid() {
+      const allThemes = presetThemes.concat(customThemes);
+      $("custom-theme-count").textContent = customThemes.length;
+      updateThemeIndicators();
+      const litId = window.__liturgicalPresetId || "";
+      $("theme-grid").innerHTML = allThemes.map((theme) => {
+        const isActive = activeTheme.id === theme.id;
+        const isLit = litId && theme.id === litId;
+        return (
+          '<div class="theme-card-wrap' + (isActive ? " active" : "") + (isLit ? " lit-match" : "") + '">' +
+            '<button type="button" class="theme-card" data-theme-card="1" data-theme-id="' + theme.id + '">' +
+              '<div class="theme-mini-row" aria-hidden="true">' +
+                '<span class="theme-mini" style="background:' + theme.bg + '">Poster</span>' +
+                '<span class="theme-mini" style="background:' + theme.primary + ';color:' + theme.text + '">Slide</span>' +
+                '<span class="theme-mini" style="background:' + theme.accent + '">Social</span>' +
+              '</div>' +
+              '<div class="theme-swatch">' +
+                '<span style="background:' + theme.bg + '"></span>' +
+                '<span style="background:' + theme.primary + '"></span>' +
+                '<span style="background:' + theme.accent + '"></span>' +
+              '</div>' +
+              '<strong>' + escapeHtml(theme.name) + '</strong>' +
+              '<span>' + escapeHtml(theme.note) + '</span>' +
+            '</button>' +
+            '<div class="theme-card-actions">' +
+              '<button type="button" class="secondary" data-theme-action="preview" data-theme-id="' + theme.id + '">Preview</button>' +
+              '<button type="button" class="primary" data-theme-action="apply" data-theme-id="' + theme.id + '">Apply</button>' +
+              '<button type="button" class="secondary" data-theme-action="customize" data-theme-id="' + theme.id + '">Customize</button>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join("");
+      applyThemeToPreview($("theme-live-preview"), activeTheme);
+      const drop = $("saved-theme-dropdown");
+      if (drop) {
+        drop.innerHTML = "<option value=\"\">Choose a saved preset to apply…</option>" +
+          customThemes.map((t) => "<option value=\"" + escapeHtml(t.id) + "\">" + escapeHtml(t.name) + "</option>").join("");
+      }
+    }
+
+    function themeFromBuilder() {
+      return {
+        id: "custom-" + Date.now(),
+        name: $("custom-theme-name").value.trim() || "Custom Theme",
+        note: "Saved custom theme from the builder.",
+        bg: $("theme-bg").value,
+        primary: $("theme-primary").value,
+        accent: $("theme-accent").value,
+        text: $("theme-text").value,
+        font: $("theme-font").value,
+      };
+    }
+
+    function syncColorInputs(colorId, textId) {
+      const color = $(colorId);
+      const text = $(textId);
+      color.addEventListener("input", () => {
+        text.value = color.value;
+        activeTheme = themeFromBuilder();
+        updateThemeIndicators();
+        applyThemeToPreview($("theme-live-preview"), activeTheme);
+      });
+      text.addEventListener("input", () => {
+        if (/^#[0-9a-f]{6}$/i.test(text.value.trim())) {
+          color.value = text.value.trim();
+          activeTheme = themeFromBuilder();
+          updateThemeIndicators();
+          applyThemeToPreview($("theme-live-preview"), activeTheme);
+        }
+      });
+    }
+    [["theme-bg", "theme-bg-text"], ["theme-primary", "theme-primary-text"], ["theme-accent", "theme-accent-text"], ["theme-text", "theme-text-text"]].forEach((pair) => syncColorInputs(pair[0], pair[1]));
+    $("theme-font").addEventListener("change", () => {
+      activeTheme = themeFromBuilder();
+      updateThemeIndicators();
+      applyThemeToPreview($("theme-live-preview"), activeTheme);
+    });
+    $("custom-theme-name").addEventListener("input", () => {
+      activeTheme = themeFromBuilder();
+      updateThemeIndicators();
+    });
+
+    $("saved-theme-dropdown").addEventListener("change", (event) => {
+      const id = event.target.value;
+      if (!id) return;
+      const theme = customThemes.find((t) => t.id === id);
+      if (!theme) return;
+      activeTheme = Object.assign({}, theme);
+      renderThemeGrid();
+      updateThemeIndicators();
+      applyThemeToPreview($("theme-live-preview"), activeTheme);
+      $("theme-status").textContent = "Applied saved theme " + theme.name + ".";
+      $("theme-status").className = "status ok";
+      event.target.value = "";
+    });
+
+    function applyPresetToBuilder(theme) {
+      const setPair = (c, t, hex) => {
+        if ($(c)) $(c).value = hex;
+        if ($(t)) $(t).value = hex;
+      };
+      setPair("theme-bg", "theme-bg-text", theme.bg);
+      setPair("theme-primary", "theme-primary-text", theme.primary);
+      setPair("theme-accent", "theme-accent-text", theme.accent);
+      setPair("theme-text", "theme-text-text", theme.text);
+      if ($("theme-font")) $("theme-font").value = theme.font;
+      $("custom-theme-name").value = theme.name;
+      activeTheme = Object.assign({}, theme);
+      updateThemeIndicators();
+      applyThemeToPreview($("theme-live-preview"), activeTheme);
+    }
+
+    $("theme-grid").addEventListener("click", (event) => {
+      const actionBtn = event.target.closest("[data-theme-action]");
+      const cardBtn = event.target.closest(".theme-card[data-theme-card]");
+      const allThemes = presetThemes.concat(customThemes);
+      const id = (actionBtn && actionBtn.dataset.themeId) || (cardBtn && cardBtn.dataset.themeId);
+      if (!id) return;
+      const theme = allThemes.find((t) => t.id === id);
+      if (!theme) return;
+      if (actionBtn) {
+        const action = actionBtn.dataset.themeAction;
+        if (action === "preview") {
+          openThemeModal(theme);
+          return;
+        }
+        if (action === "apply") {
+          activeTheme = theme;
+          renderThemeGrid();
+          updateThemeIndicators();
+          applyThemeToPreview($("theme-live-preview"), activeTheme);
+          $("theme-status").textContent = "Applied " + theme.name + " to exports.";
+          $("theme-status").className = "status ok";
+          return;
+        }
+        if (action === "customize") {
+          applyPresetToBuilder(theme);
+          showRoute("/design/theme-lab");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          $("theme-status").textContent = "Loaded " + theme.name + " into the custom builder.";
+          $("theme-status").className = "status ok";
+          return;
+        }
+      }
+      if (cardBtn) {
+        openThemeModal(theme);
+      }
+    });
+
+    function openThemeModal(theme) {
+      $("theme-modal-title").textContent = theme.name + " preview";
+      applyThemeToPreview($("theme-modal-preview"), theme);
+      $("theme-modal").classList.add("visible");
+      $("theme-modal").setAttribute("aria-hidden", "false");
+    }
+    $("btn-close-theme-modal").addEventListener("click", () => {
+      $("theme-modal").classList.remove("visible");
+      $("theme-modal").setAttribute("aria-hidden", "true");
+    });
+    $("theme-modal").addEventListener("click", (event) => {
+      if (event.target.id === "theme-modal") $("btn-close-theme-modal").click();
+    });
+    $("btn-preview-custom-theme").addEventListener("click", () => openThemeModal(themeFromBuilder()));
+    $("btn-save-theme").addEventListener("click", () => {
+      const theme = themeFromBuilder();
+      customThemes.push(theme);
+      localStorage.setItem("customThemes", JSON.stringify(customThemes));
+      activeTheme = theme;
+      renderThemeGrid();
+      $("theme-status").textContent = "Saved " + theme.name + " and applied it to preview.";
+      $("theme-status").className = "status ok";
+    });
+
+    const lyricSongSlots = [
+      { key: "entrance", label: "Entrance song", section: "entrance" },
+      { key: "offertory", label: "Offertory song", section: "offertory" },
+      { key: "communion_1", label: "Communion song 1", section: "communion" },
+      { key: "communion_2", label: "Communion song 2", section: "communion" },
+      { key: "recessional", label: "Recessional song", section: "recessional" },
+    ];
+    let selectedLyricsSongs = { entrance: "", offertory: "", communion_1: "", communion_2: "", recessional: "" };
+    let songOptionsBySection = { entrance: [], offertory: [], communion: [], recessional: [], meditation: [] };
+    let flowPreviewData = null;
+    let posterReadingsCache = null;
+
+    function gospelSentenceOptionsHtml(sentences) {
+      const rows = Array.isArray(sentences) ? sentences : [];
+      return '<option value="">Auto (first sentence)</option>' + rows.map((s, i) => {
+        const t = (s || "").trim();
+        const label = t.length > 140 ? t.slice(0, 137) + "…" : t;
+        return '<option value="' + i + '">' + escapeHtml(label || ("Sentence " + (i + 1))) + "</option>";
+      }).join("");
+    }
+
+    function fillGospelSentenceOptions(sentences, which) {
+      const html = gospelSentenceOptionsHtml(sentences);
+      const w = which || "both";
+      if ((w === "both" || w === "mass") && $("gospel-sentence-index")) $("gospel-sentence-index").innerHTML = html;
+      if ((w === "both" || w === "poster") && $("poster-gospel-sentence-index")) $("poster-gospel-sentence-index").innerHTML = html;
+    }
+
+    function selectedLyricsSongCount() {
+      return Object.values(selectedLyricsSongs).filter(Boolean).length;
+    }
+
+    async function ensurePosterSentenceOptions() {
+      const pd = $("poster-mass-date") && $("poster-mass-date").value;
+      if (!pd) return;
+      const md = $("mass-date") && $("mass-date").value;
+      if (pd === md && flowPreviewData && Array.isArray(flowPreviewData.sentences)) {
+        fillGospelSentenceOptions(flowPreviewData.sentences, "poster");
+        posterReadingsCache = { date: pd, sentences: flowPreviewData.sentences || [], gospel_quote: flowPreviewData.gospel_quote || "" };
+        syncPosterGospelSentenceSelectFromMass();
+        return;
+      }
+      if (posterReadingsCache && posterReadingsCache.date === pd) {
+        fillGospelSentenceOptions(posterReadingsCache.sentences, "poster");
+        syncPosterGospelSentenceSelectFromMass();
+        return;
+      }
+      try {
+        const data = await postJSON("/api/preview", { date: pd });
+        posterReadingsCache = { date: pd, sentences: data.sentences || [], gospel_quote: data.gospel_quote || "" };
+        fillGospelSentenceOptions(posterReadingsCache.sentences, "poster");
+      } catch (_e) {
+        fillGospelSentenceOptions([], "poster");
+      }
+      syncPosterGospelSentenceSelectFromMass();
+    }
+
+    function syncPosterGospelSentenceSelectFromMass() {
+      const ga = $("gospel-sentence-index");
+      const gb = $("poster-gospel-sentence-index");
+      if (!ga || !gb) return;
+      const v = ga.value;
+      if (Array.from(gb.options).some((o) => o.value === v)) gb.value = v;
+    }
+
+    function updateMassBuilderHeaderStats() {
+      const songCount = selectedLyricsSongCount();
+      if ($("flow-song-count")) $("flow-song-count").textContent = String(songCount);
+      const si = $("season-indicator");
+      const chip = $("flow-season-chip");
+      if (chip && si) chip.textContent = (si.textContent || "—").split(",")[0].trim().slice(0, 22);
+      const fr = $("flow-readings-loaded");
+      if (fr) {
+        const r1 = $("flow-reading1");
+        const ok = r1 && r1.value.replace(/\s/g, "").length > 20;
+        fr.textContent = ok ? "Loaded" : "—";
+      }
+    }
+
+    function songLabel(song) {
+      const tags = [];
+      if (song.language) tags.push(song.language);
+      if (song.has_lyrics) tags.push("lyrics");
+      return song.title + (tags.length ? " - " + tags.join(" - ") : "");
+    }
+
+    function renderSongSelect(slot) {
+      const rows = songOptionsBySection[slot.section] || [];
+      const base = '<option value="">Choose song...</option>';
+      const selected = selectedLyricsSongs[slot.key] || "";
+      return base + rows.map((song) => '<option value="' + escapeHtml(song.id) + '"' + (selected === String(song.id) ? " selected" : "") + ">" + escapeHtml(songLabel(song)) + "</option>").join("");
+    }
+
+    function renderSongPlan() {
+      const plan = $("mass-song-plan");
+      if (!plan) return;
+      plan.innerHTML = lyricSongSlots.map((slot) => (
+        '<div class="field">' +
+          '<label for="song-slot-' + slot.key + '">' + escapeHtml(slot.label) + '</label>' +
+          '<select id="song-slot-' + slot.key + '" data-song-key="' + slot.key + '">' + renderSongSelect(slot) + '</select>' +
+        '</div>'
+      )).join("");
+      updateMassBuilderHeaderStats();
+    }
+
+    $("mass-song-plan").addEventListener("change", (event) => {
+      const key = event.target.dataset.songKey;
+      if (!key) return;
+      selectedLyricsSongs[key] = event.target.value;
+      updateMassBuilderHeaderStats();
+    });
+
+    function setFlowStatus(message, kind) {
+      $("flow-status").textContent = message || "";
+      $("flow-status").className = "status " + (kind || "");
+    }
+
+    function getCommunityName() {
+      const a = $("church-name");
+      const b = $("settings-church-name");
+      return ((a && a.value.trim()) || (b && b.value.trim()) || "");
+    }
+
+    function syncChurchFieldsToSettings() {
+      const a = $("church-name");
+      const b = $("settings-church-name");
+      if (a && b) b.value = a.value;
+    }
+
+    function syncChurchFieldsFromSettings() {
+      const a = $("church-name");
+      const b = $("settings-church-name");
+      if (a && b && b.value) a.value = b.value;
+    }
+
+    function upcomingSundayISO(base = new Date()) {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+      const dow = d.getDay();
+      const add = (7 - dow) % 7;
+      d.setDate(d.getDate() + add);
+      return formatDateInput(d);
+    }
+
+    function daysUntilUpcomingSunday() {
+      const today = new Date();
+      const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const sun = new Date(t0);
+      const dow = t0.getDay();
+      sun.setDate(t0.getDate() + ((7 - dow) % 7));
+      return Math.round((sun - t0) / 86400000);
+    }
+
+    async function refreshCommunity() {
+      try {
+        const res = await fetch("/api/community");
+        const data = await res.json();
+        if (data.community_name) {
+          if ($("church-name")) $("church-name").value = data.community_name;
+          if ($("settings-church-name")) $("settings-church-name").value = data.community_name;
+        }
+        if (data.logo_url) {
+          const preview = $("logo-preview");
+          if (preview) {
+            preview.innerHTML = "<img src=\"" + data.logo_url + "?t=" + Date.now() + "\" alt=\"Church logo\" style=\"max-width:100%;height:auto;border-radius:8px;\" />";
+          }
+        }
+      } catch (_error) {
+        // optional
+      }
+    }
+
+    async function uploadLogo(file) {
+      const statusEl = $("logo-status");
+      const uploadBtn = $("btn-upload-logo");
+      if (!file) {
+        if (statusEl) {
+          statusEl.textContent = "Please select a file.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
+      if (statusEl) {
+        statusEl.textContent = "Uploading logo...";
+        statusEl.className = "status";
+      }
+      if (uploadBtn) uploadBtn.disabled = true;
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload-logo", { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Upload failed");
+        if (statusEl) {
+          statusEl.textContent = data.message || "Logo uploaded successfully!";
+          statusEl.className = "status ok";
+        }
+        if ($("church-logo")) $("church-logo").value = "";
+        refreshCommunity();
+      } catch (error) {
+        if (statusEl) {
+          statusEl.textContent = error.message || "Upload failed";
+          statusEl.className = "status error";
+        }
+      } finally {
+        if (uploadBtn) uploadBtn.disabled = false;
+      }
+    }
+
+    const RECENT_KEY = "churchMediaRecentDownloads";
+
+    function readRecent() {
+      try {
+        return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+      } catch (_e) {
+        return [];
+      }
+    }
+
+    function pushRecent(entry) {
+      const raw = readRecent();
+      raw.unshift(Object.assign({ t: Date.now() }, entry));
+      localStorage.setItem(RECENT_KEY, JSON.stringify(raw.slice(0, 14)));
+      renderHomeRecent();
+      renderHistoryList();
+    }
+
+    function renderRecentInto(el) {
+      if (!el) return;
+      const raw = readRecent();
+      if (!raw.length) {
+        el.innerHTML = "<span class=\"muted\">No recent downloads yet. Generate a deck to populate this list.</span>";
+        return;
+      }
+      el.innerHTML = raw.map((row) => (
+        "<div style=\"padding:10px 0;border-bottom:1px solid var(--line);\">" +
+          "<strong>" + escapeHtml(row.title || "Mass export") + "</strong>" +
+          "<div class=\"muted\" style=\"font-size:0.82rem;margin-top:4px;\">" + escapeHtml(row.date || "") + "</div>" +
+          "<div style=\"display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;\">" +
+            (row.zip_url ? "<a href=\"" + row.zip_url + "\">ZIP</a>" : "") +
+            (row.pptx_url ? "<a href=\"" + row.pptx_url + "\">PPTX deck</a>" : "") +
+            (row.poster_url ? "<a href=\"" + row.poster_url + "\">Poster</a>" : "") +
+          "</div>" +
+        "</div>"
+      )).join("");
+    }
+
+    function renderHomeRecent() {
+      renderRecentInto($("home-recent-files"));
+    }
+
+    function renderHistoryList() {
+      renderRecentInto($("history-list"));
+    }
+
+    async function refreshHomeMission() {
+      const elStatus = $("home-mission-status");
+      const sun = upcomingSundayISO();
+      const days = daysUntilUpcomingSunday();
+      const elDays = $("home-days-until");
+      if (elDays) elDays.textContent = String(days);
+      if ($("home-sunday-label")) $("home-sunday-label").textContent = "Sunday " + sun;
+      if (elStatus) {
+        elStatus.textContent = "Loading lectionary snapshot…";
+        elStatus.className = "status";
+      }
+      try {
+        const data = await postJSON("/api/preview", { date: sun });
+        window.__homePreview = data;
+        window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
+        if ($("home-lectionary")) $("home-lectionary").textContent = data.lectionary_cycle || "—";
+        if ($("home-season-chip")) $("home-season-chip").textContent = (data.season || "—").split(",")[0].trim().slice(0, 14);
+        if ($("home-gospel-quote")) $("home-gospel-quote").textContent = data.gospel_quote || data.title || "Gospel text will appear when readings load.";
+        if ($("home-gospel-ref")) $("home-gospel-ref").textContent = data.gospel_reference || "—";
+        if ($("home-snap-season")) $("home-snap-season").textContent = data.season || "—";
+        if ($("home-snap-color")) $("home-snap-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
+        if ($("home-snap-year")) $("home-snap-year").textContent = data.lectionary_cycle || "—";
+        if (elStatus) elStatus.textContent = "";
+        renderThemeGrid();
+      } catch (e) {
+        if (elStatus) {
+          elStatus.textContent = e.message || "Could not load preview.";
+          elStatus.className = "status error";
+        }
+      }
+    }
+
+    async function loadFlowData(auto = false) {
+      const date = $("mass-date").value;
+      if (!date) {
+        if (!auto) setFlowStatus("Choose a Mass date first.", "error");
+        return;
+      }
+      setFlowStatus(auto ? "Auto-loading readings and song options..." : "Loading readings and song options...", "");
+      $("btn-load-flow").disabled = true;
+      try {
+        const data = await postJSON("/api/preview", { date });
+        flowPreviewData = data;
+        window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
+        renderThemeGrid();
+        const season = [data.season, data.lectionary_cycle].filter(Boolean).join(" - ") || "Season loaded";
+        $("season-indicator").textContent = season;
+        songOptionsBySection = data.songs_by_section || songOptionsBySection;
+        const defaults = data.default_song_selections || {};
+        if (defaults.entrance) selectedLyricsSongs.entrance = defaults.entrance;
+        if (defaults.offertory) selectedLyricsSongs.offertory = defaults.offertory;
+        if (defaults.communion_1) selectedLyricsSongs.communion_1 = defaults.communion_1;
+        if (defaults.communion_2) selectedLyricsSongs.communion_2 = defaults.communion_2;
+        if (defaults.recessional) selectedLyricsSongs.recessional = defaults.recessional;
+        renderSongPlan();
+        fillGospelSentenceOptions(data.sentences, "mass");
+        if ($("flow-reading1")) {
+          const r1ref = (data.first_reading || "").trim();
+          const r1t = (data.first_reading_text || "").trim();
+          $("flow-reading1").value = (r1ref ? r1ref + "\n\n" : "") + r1t;
+        }
+        if ($("flow-reading2")) {
+          const r2ref = (data.second_reading || "").trim();
+          const r2t = (data.second_reading_text || "").trim();
+          $("flow-reading2").value = r2ref ? (r2ref + "\n\n" + r2t) : (r2t || "— (no second reading for this Mass)");
+        }
+        const pso = $("mass-psalm-override");
+        if (pso && pso.dataset.userTouched !== "1") {
+          pso.value = (data.psalm_text || "").trim();
+        }
+        if ($("poster-mass-date") && $("poster-mass-date").value === date) {
+          fillGospelSentenceOptions(data.sentences, "poster");
+          posterReadingsCache = { date, sentences: data.sentences || [], gospel_quote: data.gospel_quote || "" };
+        }
+        updateMassBuilderHeaderStats();
+        updatePosterLivePreview();
+        setFlowStatus("Planner refreshed with lectionary context and hymn recommendations.", "ok");
+      } catch (error) {
+        setFlowStatus(error.message || "Could not load readings.", "error");
+      } finally {
+        $("btn-load-flow").disabled = false;
+      }
+    }
+
+    function selectedSongsForGenerate() {
+      const songs = {};
+      const entrance = selectedLyricsSongs.entrance;
+      const offertory = selectedLyricsSongs.offertory;
+      const communion1 = selectedLyricsSongs.communion_1;
+      const communion2 = selectedLyricsSongs.communion_2;
+      const recessional = selectedLyricsSongs.recessional;
+      if (entrance) songs.entrance = entrance;
+      if (offertory) songs.offertory = offertory;
+      if (communion1) songs.communion_1 = communion1;
+      if (communion2) songs.communion_2 = communion2;
+      if (recessional) songs.recessional = recessional;
+      return songs;
+    }
+
+    async function runFullMassGenerate(options) {
+      const o = options || {};
+      const statusFn = o.setStatus || setFlowStatus;
+      const date = o.date || $("mass-date").value;
+      const celebrant = (o.celebrant != null ? o.celebrant : $("celebrant").value).trim();
+      if (!date || !celebrant) {
+        statusFn("Enter Mass date and celebrant before generating.", "error");
+        return null;
+      }
+      const body = {
+        date,
+        celebrant,
+        songs: selectedSongsForGenerate(),
+        custom_theme: pptThemePayload(activeTheme),
+        poster_template: o.poster_template || "liturgical_color",
+        include_social_exports: o.include_social !== false,
+        include_gospel_art: o.include_gospel_art !== false,
+        include_ai_mass_poster: o.include_ai !== false,
+        ai_poster_style: o.ai_poster_style || "cinematic",
+      };
+      const gs = $("gospel-sentence-index");
+      if (gs && gs.value !== "") {
+        const n = parseInt(gs.value, 10);
+        if (!Number.isNaN(n)) body.sentence_index = n;
+      }
+      const church = getCommunityName();
+      if (church) body.community_name = church;
+      const ptxt = ($("mass-psalm-override") && $("mass-psalm-override").value || "").trim();
+      if (ptxt) body.psalm_text_override = ptxt;
+      body.mass_collection_amount = ($("mass-collection-amount") && $("mass-collection-amount").value || "").trim();
+      const mcDate = $("mass-collection-date") && $("mass-collection-date").value;
+      if (mcDate) {
+        const d = new Date(mcDate + "T12:00:00");
+        body.mass_collection_for_date = d.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      }
+      const fs = ($("mass-food-sponsors") && $("mass-food-sponsors").value || "").trim();
+      if (fs) body.food_sponsors = fs.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+
+      const fp = massGenerateFingerprint();
+      const last = sessionStorage.getItem(GEN_SESSION_KEY);
+      if (!o.skipDuplicateCheck && last && last === fp) {
+        if (!window.confirm("A deck was already generated for this Mass in this session. Generate again?")) {
+          return null;
+        }
+      }
+
+      try {
+        const fd = new FormData();
+        fd.append("payload", JSON.stringify(body));
+        const divEl = $("mass-divider-poster");
+        if (divEl && divEl.files && divEl.files[0]) fd.append("divider_poster", divEl.files[0]);
+        const annEl = $("mass-announcement-posters");
+        if (annEl && annEl.files && annEl.files.length) {
+          for (let i = 0; i < annEl.files.length; i++) fd.append("announcement_posters", annEl.files[i]);
+        }
+        const res = await fetch("/api/generate", { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const message = data.detail || data.error || res.statusText;
+          throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+        }
+        const linkMap = o.links || [
+          ["dl-zip", "zip_url"],
+          ["dl-pptx", "pptx_url"],
+          ["dl-poster", "poster_url"],
+          ["dl-poster-ppt", "poster_ppt_url"],
+        ];
+        linkMap.forEach(([id, key]) => {
+          const el = $(id);
+          const url = data[key];
+          if (el) {
+            if (url) {
+              el.href = url;
+              el.style.display = "";
+            } else {
+              el.removeAttribute("href");
+              el.style.display = "none";
+            }
+          }
+        });
+        if (o.downloadRowId) {
+          const row = $(o.downloadRowId);
+          if (row) row.classList.add("visible");
+        } else if ($("download-row")) {
+          $("download-row").classList.add("visible");
+        }
+        statusFn("Deck generated. Downloads are ready.", "ok");
+        sessionStorage.setItem(GEN_SESSION_KEY, fp);
+        if (divEl) divEl.value = "";
+        if (annEl) annEl.value = "";
+        pushRecent({
+          title: data.title || "Mass media",
+          date,
+          zip_url: data.zip_url,
+          pptx_url: data.pptx_url,
+          poster_url: data.poster_url,
+        });
+        return data;
+      } catch (error) {
+        statusFn(error.message || "Generation failed.", "error");
+        return null;
+      }
+    }
+
+    function updatePosterLivePreview() {
+      const frame = $("poster-live-preview");
+      if (!frame) return;
+      const q = ($("poster-gospel-quote") && $("poster-gospel-quote").value.trim()) || ($("home-gospel-quote") && $("home-gospel-quote").textContent.trim()) || "Gospel quote appears here.";
+      const title = getCommunityName() || "Parish community";
+      const d = ($("poster-mass-date") && $("poster-mass-date").value) || ($("mass-date") && $("mass-date").value) || "";
+      const c = ($("poster-celebrant") && $("poster-celebrant").value.trim()) || ($("celebrant") && $("celebrant").value.trim()) || "Celebrant";
+      if ($("poster-prev-kicker")) $("poster-prev-kicker").textContent = "Sunday Mass";
+      if ($("poster-prev-title")) $("poster-prev-title").textContent = title;
+      if ($("poster-prev-quote")) $("poster-prev-quote").textContent = q;
+      if ($("poster-prev-meta")) $("poster-prev-meta").textContent = d + " · " + c;
+      applyThemeToPreview(frame, activeTheme);
+    }
+
+    function syncPosterFromMassBuilder() {
+      if ($("poster-mass-date") && $("mass-date")) $("poster-mass-date").value = $("mass-date").value;
+      if ($("poster-celebrant") && $("celebrant")) $("poster-celebrant").value = $("celebrant").value;
+      if ($("poster-gospel-sentence-index") && $("gospel-sentence-index")) {
+        $("poster-gospel-sentence-index").innerHTML = $("gospel-sentence-index").innerHTML;
+        $("poster-gospel-sentence-index").value = $("gospel-sentence-index").value;
+      }
+      if ($("poster-gospel-quote") && flowPreviewData && flowPreviewData.gospel_quote) {
+        $("poster-gospel-quote").value = flowPreviewData.gospel_quote;
+      }
+      const gs = $("gospel-sentence-index");
+      if (gs && gs.value !== "" && flowPreviewData && Array.isArray(flowPreviewData.sentences)) {
+        const n = parseInt(gs.value, 10);
+        if (!Number.isNaN(n) && flowPreviewData.sentences[n] != null && $("poster-gospel-quote")) {
+          $("poster-gospel-quote").value = String(flowPreviewData.sentences[n]).trim();
+        }
+      }
+      posterReadingsCache = null;
+      updatePosterLivePreview();
+    }
+
+    function loadCelebrantPresets() {
+      const dl = $("celebrant-presets");
+      if (!dl) return;
+      let list = [];
+      try {
+        list = JSON.parse(localStorage.getItem("savedCelebrants") || "[]");
+      } catch (_e) {
+        list = [];
+      }
+      dl.innerHTML = list.map((name) => "<option value=\"" + escapeHtml(name) + "\"></option>").join("");
+    }
+
+    function saveCelebrantPreset(name) {
+      const n = (name || "").trim();
+      if (!n) return;
+      let list = [];
+      try {
+        list = JSON.parse(localStorage.getItem("savedCelebrants") || "[]");
+      } catch (_e) {
+        list = [];
+      }
+      if (!list.includes(n)) {
+        list.unshift(n);
+        localStorage.setItem("savedCelebrants", JSON.stringify(list.slice(0, 12)));
+      }
+      loadCelebrantPresets();
+    }
+
+    let calendarCursor = new Date();
+
+    function renderCalendarDow() {
+      const row = $("cal-dow-row");
+      if (!row) return;
+      row.innerHTML = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => "<div class=\"cal-dow\">" + d + "</div>").join("");
+    }
+
+    function renderCalendarGrid() {
+      const grid = $("cal-grid");
+      const label = $("cal-month-label");
+      if (!grid || !label) return;
+      const y = calendarCursor.getFullYear();
+      const m = calendarCursor.getMonth();
+      label.textContent = calendarCursor.toLocaleString(undefined, { month: "long", year: "numeric" });
+      const first = new Date(y, m, 1);
+      const startPad = first.getDay();
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const cells = [];
+      for (let i = 0; i < startPad; i++) cells.push("<div class=\"cal-cell muted\"></div>");
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso = formatDateInput(new Date(y, m, d));
+        const sunday = new Date(y, m, d).getDay() === 0;
+        cells.push("<button type=\"button\" class=\"cal-cell" + (sunday ? " sunday" : "") + "\" data-cal=\"" + iso + "\">" + d + "</button>");
+      }
+      grid.innerHTML = cells.join("");
+    }
+
+    let calSelected = upcomingSundayISO();
+
+    function setCalDetail(iso) {
+      calSelected = iso;
+      if ($("cal-detail-date")) $("cal-detail-date").textContent = iso;
+      document.querySelectorAll(".cal-cell.selected").forEach((c) => c.classList.remove("selected"));
+      const btn = document.querySelector(".cal-cell[data-cal=\"" + iso + "\"]");
+      if (btn) btn.classList.add("selected");
+      $("cal-detail-title").textContent = "Loading…";
+      postJSON("/api/preview", { date: iso }).then((data) => {
+        $("cal-detail-title").textContent = data.title || "Mass";
+        $("cal-detail-season").textContent = data.season || "—";
+        $("cal-detail-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
+        $("cal-detail-gospel").textContent = data.gospel_reference + " — " + (data.gospel_quote || "").slice(0, 220);
+      }).catch(() => {
+        $("cal-detail-title").textContent = "Preview unavailable";
+      });
+    }
+
+    function buildSongLibFilters() {
+      const wrap = $("song-lib-filters");
+      const sel = $("lyrics-save-section");
+      if (!wrap || !sel) return;
+      const map = [
+        { label: "Entrance", v: "entrance" },
+        { label: "Offertory", v: "offertory" },
+        { label: "Communion", v: "communion" },
+        { label: "Recessional", v: "recessional" },
+        { label: "Meditation / other", v: "meditation" },
+        { label: "Kyrie · Gloria · Psalm (save as meditation)", v: "meditation" },
+      ];
+      wrap.innerHTML = map.map((row) => "<button type=\"button\" data-sec=\"" + row.v + "\" class=\"" + (sel.value === row.v ? "active" : "") + "\">" + escapeHtml(row.label) + "</button>").join("");
+      wrap.addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-sec]");
+        if (!b) return;
+        sel.value = b.dataset.sec;
+        wrap.querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+        setLyricsStatus("Save target section set to " + sel.options[sel.selectedIndex].text + ".", "ok");
+      });
+    }
+
+    const psoEl = $("mass-psalm-override");
+    if (psoEl) psoEl.addEventListener("input", () => { psoEl.dataset.userTouched = "1"; });
+
+    $("btn-load-flow").addEventListener("click", () => loadFlowData(false));
+
+    document.addEventListener("change", (ev) => {
+      const t = ev.target;
+      if (!t || (t.id !== "gospel-sentence-index" && t.id !== "poster-gospel-sentence-index")) return;
+      const idx = t.value === "" ? NaN : parseInt(t.value, 10);
+      let sentences = [];
+      let fallbackQuote = "";
+      if (t.id === "gospel-sentence-index" && flowPreviewData) {
+        sentences = flowPreviewData.sentences || [];
+        fallbackQuote = flowPreviewData.gospel_quote || "";
+      } else if (t.id === "poster-gospel-sentence-index") {
+        const pd = $("poster-mass-date") && $("poster-mass-date").value;
+        const md = $("mass-date") && $("mass-date").value;
+        if (pd === md && flowPreviewData) {
+          sentences = flowPreviewData.sentences || [];
+          fallbackQuote = flowPreviewData.gospel_quote || "";
+        } else if (posterReadingsCache && posterReadingsCache.date === pd) {
+          sentences = posterReadingsCache.sentences || [];
+          fallbackQuote = posterReadingsCache.gospel_quote || "";
+        }
+      }
+      if (!Number.isNaN(idx) && sentences[idx] != null) {
+        if ($("poster-gospel-quote")) $("poster-gospel-quote").value = String(sentences[idx]).trim();
+      } else if (t.value === "" && fallbackQuote && $("poster-gospel-quote")) {
+        $("poster-gospel-quote").value = fallbackQuote;
+      }
+      if (t.id === "gospel-sentence-index" && $("poster-gospel-sentence-index")) $("poster-gospel-sentence-index").value = t.value;
+      if (t.id === "poster-gospel-sentence-index" && $("gospel-sentence-index")) $("gospel-sentence-index").value = t.value;
+      updatePosterLivePreview();
+    });
+    $("mass-date").addEventListener("change", () => {
+      const pso = $("mass-psalm-override");
+      if (pso) delete pso.dataset.userTouched;
+      loadFlowData(true);
+    });
+    $("btn-generate-flow").addEventListener("click", async () => {
+      $("btn-generate-flow").disabled = true;
+      setFlowStatus("Generating deck from planned flow...", "");
+      await runFullMassGenerate({ setStatus: setFlowStatus });
+      $("btn-generate-flow").disabled = false;
+    });
+
+    $("btn-upload-logo").addEventListener("click", () => {
+      const file = $("church-logo").files[0];
+      uploadLogo(file);
+    });
+
+    $("church-logo").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (file) await uploadLogo(file);
+    });
+
+    $("church-name").addEventListener("input", () => syncChurchFieldsToSettings());
+    $("settings-church-name").addEventListener("input", () => syncChurchFieldsFromSettings());
+
+    const linkFlow = $("link-church-profile-flow");
+    if (linkFlow) {
+      linkFlow.addEventListener("click", (e) => {
+        e.preventDefault();
+        showRoute("/settings/church");
+      });
+    }
+
+    $("btn-save-community-api").addEventListener("click", async () => {
+      const name = $("settings-church-name").value.trim();
+      if (!name) {
+        $("settings-church-status").textContent = "Community name is required (at least one character).";
+        $("settings-church-status").className = "status error";
+        return;
+      }
+      $("settings-church-status").textContent = "Saving…";
+      try {
+        await postJSON("/api/community", { community_name: name });
+        if ($("church-name")) $("church-name").value = name;
+        $("settings-church-status").textContent = "Saved community name.";
+        $("settings-church-status").className = "status ok";
+      } catch (err) {
+        $("settings-church-status").textContent = err.message || "Save failed";
+        $("settings-church-status").className = "status error";
+      }
+    });
+
+    $("btn-home-poster").addEventListener("click", () => {
+      syncPosterFromMassBuilder();
+      showRoute("/media/posters");
+    });
+    $("btn-home-ppt").addEventListener("click", () => {
+      showRoute("/mass/builder");
+    });
+    $("btn-home-readings").addEventListener("click", () => {
+      showRoute("/mass/calendar");
+      setCalDetail(upcomingSundayISO());
+    });
+    $("btn-home-create-poster").addEventListener("click", () => { syncPosterFromMassBuilder(); showRoute("/media/posters"); });
+    $("btn-home-gen-ppt").addEventListener("click", () => showRoute("/mass/builder"));
+    $("btn-home-upload-song").addEventListener("click", () => showRoute("/library/songs"));
+    $("btn-home-announce").addEventListener("click", () => showRoute("/mass/builder"));
+
+    const bc = $("btn-collections-to-song-lib");
+    if (bc) bc.addEventListener("click", () => showRoute("/library/songs"));
+
+    const bsave = $("btn-save-poster-asset");
+    if (bsave) bsave.addEventListener("click", async () => {
+      const st = $("saved-poster-status");
+      const inp = $("saved-poster-file");
+      const file = inp && inp.files && inp.files[0];
+      if (!file) {
+        if (st) { st.textContent = "Choose an image first."; st.className = "status error"; }
+        return;
+      }
+      if (st) { st.textContent = "Saving…"; st.className = "status"; }
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/media/posters-saved", { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Save failed");
+        if (st) { st.textContent = "Saved."; st.className = "status ok"; }
+        inp.value = "";
+        loadSavedPostersList();
+      } catch (e) {
+        if (st) { st.textContent = e.message || "Error"; st.className = "status error"; }
+      }
+    });
+
+    const ban = $("btn-analyze-pptx-template");
+    if (ban) ban.addEventListener("click", async () => {
+      const st = $("template-analyze-status");
+      const notes = $("template-analyze-notes");
+      const inp = $("pptx-template-file");
+      const file = inp && inp.files && inp.files[0];
+      if (!file) {
+        if (st) { st.textContent = "Choose a .pptx file first."; st.className = "status error"; }
+        return;
+      }
+      if (st) { st.textContent = "Analyzing…"; st.className = "status"; }
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/design/analyze-template", { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Analysis failed");
+        const ct = data.custom_theme;
+        if (ct) {
+          activeTheme = Object.assign({}, activeTheme, {
+            id: "from-pptx-" + Date.now(),
+            name: ct.name || "From PPTX",
+            note: "Imported from uploaded template.",
+            bg: ct.bg,
+            primary: ct.primary,
+            accent: ct.accent,
+            text: ct.text,
+            font: ct.font,
+          });
+          applyPresetToBuilder(activeTheme);
+          renderThemeGrid();
+        }
+        if (st) { st.textContent = "Theme applied. Open Theme Lab to fine-tune."; st.className = "status ok"; }
+        if (notes && data.notes) {
+          notes.style.display = "block";
+          notes.textContent = data.notes;
+        }
+      } catch (e) {
+        if (st) { st.textContent = e.message || "Error"; st.className = "status error"; }
+      }
+    });
+
+    $("btn-poster-sync").addEventListener("click", () => syncPosterFromMassBuilder());
+    $("poster-template").addEventListener("change", updatePosterLivePreview);
+    ["poster-mass-date", "poster-celebrant", "poster-gospel-quote"].forEach((id) => {
+      const el = $(id);
+      if (el) el.addEventListener("input", updatePosterLivePreview);
+    });
+    const pmd = $("poster-mass-date");
+    if (pmd) pmd.addEventListener("change", () => { void ensurePosterSentenceOptions().then(() => updatePosterLivePreview()); });
+    $("btn-poster-generate").addEventListener("click", async () => {
+      const st = (m, k) => {
+        const el = $("poster-status");
+        if (el) {
+          el.textContent = m || "";
+          el.className = "status " + (k || "");
+        }
+      };
+      $("btn-poster-generate").disabled = true;
+      st("Generating poster package…", "");
+      const date = $("poster-mass-date").value;
+      const celebrant = $("poster-celebrant").value.trim();
+      if (!date || !celebrant) {
+        st("Enter poster date and celebrant.", "error");
+        $("btn-poster-generate").disabled = false;
+        return;
+      }
+      if ($("mass-date")) $("mass-date").value = date;
+      if ($("celebrant")) $("celebrant").value = celebrant;
+      if ($("gospel-sentence-index") && $("poster-gospel-sentence-index")) {
+        $("gospel-sentence-index").value = $("poster-gospel-sentence-index").value;
+      }
+      const data = await runFullMassGenerate({
+        setStatus: st,
+        date,
+        celebrant,
+        poster_template: $("poster-template").value,
+        include_social: $("poster-include-social").checked,
+        include_ai: $("poster-include-ai").checked,
+        downloadRowId: "poster-download-row",
+        skipDuplicateCheck: true,
+        links: [
+          ["poster-dl-zip", "zip_url"],
+          ["poster-dl-png", "poster_url"],
+          ["poster-dl-169", "poster_ppt_url"],
+        ],
+      });
+      $("btn-poster-generate").disabled = false;
+      if (data) {
+        [["dl-zip", data.zip_url], ["dl-pptx", data.pptx_url]].forEach(([id, url]) => {
+          const el = $(id);
+          if (el && url) {
+            el.href = url;
+            el.style.display = "";
+          }
+        });
+        $("download-row").classList.add("visible");
+      }
+    });
+
+    $("btn-app-open-mass").addEventListener("click", () => showRoute("/mass/builder"));
+    $("btn-app-open-theme").addEventListener("click", () => showRoute("/design/theme-lab"));
+
+    $("cal-prev").addEventListener("click", () => {
+      calendarCursor.setMonth(calendarCursor.getMonth() - 1);
+      renderCalendarGrid();
+    });
+    $("cal-next").addEventListener("click", () => {
+      calendarCursor.setMonth(calendarCursor.getMonth() + 1);
+      renderCalendarGrid();
+    });
+    $("cal-grid").addEventListener("click", (e) => {
+      const cell = e.target.closest(".cal-cell[data-cal]");
+      if (!cell) return;
+      setCalDetail(cell.dataset.cal);
+    });
+    $("btn-cal-use-date").addEventListener("click", () => {
+      if ($("mass-date")) $("mass-date").value = calSelected;
+      showRoute("/mass/builder");
+      loadFlowData(true);
+    });
+    $("btn-cal-generate").addEventListener("click", () => {
+      if ($("mass-date")) $("mass-date").value = calSelected;
+      showRoute("/mass/builder");
+      loadFlowData(false).then(() => $("btn-generate-flow").click());
+    });
+
+    $("btn-save-celebrant").addEventListener("click", () => {
+      saveCelebrantPreset($("poster-celebrant").value);
+      const el = $("poster-status");
+      if (el) {
+        el.textContent = "Celebrant saved to browser list.";
+        el.className = "status ok";
+      }
+    });
+
+    $("mass-date").value = upcomingSundayISO();
+    if ($("poster-mass-date")) $("poster-mass-date").value = $("mass-date").value;
+    if ($("mass-collection-date")) $("mass-collection-date").value = lastSundayDateForInput();
+    renderCalendarDow();
+    renderCalendarGrid();
+    setCalDetail(upcomingSundayISO());
+    loadCelebrantPresets();
+    buildSongLibFilters();
+    showRoute(currentRoute(), true);
+    analyzeLyrics();
+    renderThemeGrid();
+    renderSongPlan();
+    updateMassBuilderHeaderStats();
+    fillGospelSentenceOptions([], "mass");
+    fillGospelSentenceOptions([], "poster");
+    refreshCommunity();
+    renderHomeRecent();
+    renderHistoryList();
+    refreshHomeMission();
+    updatePosterLivePreview();
+    setTimeout(() => loadFlowData(true), 250);
+  </script>
+</body>
+</html>
