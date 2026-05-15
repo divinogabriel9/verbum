@@ -47,13 +47,19 @@
     button:disabled { cursor: not-allowed; opacity: 0.48; transform: none; }
 
     .app-shell {
-      --nav-width: 260px;
+      --nav-width-collapsed: 64px;
+      --nav-width-expanded: 240px;
+      --nav-width: var(--nav-width-collapsed);
       display: flex;
       min-height: 100vh;
       width: 100%;
       max-width: 100%;
       margin: 0;
       padding: 0;
+    }
+    .app-shell.nav-expanded,
+    .app-shell.nav-pinned {
+      --nav-width: var(--nav-width-expanded);
     }
     .side-nav {
       position: fixed;
@@ -62,7 +68,7 @@
       bottom: 0;
       width: var(--nav-width);
       z-index: 40;
-      padding: 16px 12px 20px;
+      padding: 12px 8px 16px;
       border-right: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 0;
       background: linear-gradient(180deg, #0a101d 0%, #121b2d 55%, #0f1628 100%);
@@ -72,109 +78,193 @@
       flex-direction: column;
       gap: 0;
       overflow: hidden;
-      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      transition: width 0.2s ease, box-shadow 0.2s ease;
     }
-    .side-brand {
+    .app-shell.nav-expanded .side-nav,
+    .app-shell.nav-pinned .side-nav {
+      box-shadow: 12px 0 40px rgba(0, 0, 0, 0.4);
+    }
+    .side-nav-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 8px;
-    }
-    .side-brand-text { flex: 1; min-width: 0; }
-    .nav-collapse-btn {
+      gap: 6px;
+      padding: 4px 6px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.11);
       flex-shrink: 0;
-      width: 34px;
-      height: 34px;
+      min-height: 44px;
+    }
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .side-nav-header {
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 8px 4px 10px;
+    }
+    .side-brand-mark {
+      width: 36px;
+      height: 36px;
       border-radius: 10px;
+      background: rgba(109, 93, 252, 0.28);
+      border: 1px solid rgba(109, 93, 252, 0.45);
+      display: grid;
+      place-items: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+      letter-spacing: 0.04em;
+    }
+    .side-brand-text {
+      flex: 1;
+      min-width: 0;
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: opacity 0.2s ease, max-width 0.2s ease;
+    }
+    .app-shell.nav-expanded .side-brand-text,
+    .app-shell.nav-pinned .side-brand-text {
+      opacity: 1;
+      max-width: 180px;
+    }
+    .side-brand-text strong {
+      display: block;
+      color: #ffffff;
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+    }
+    .side-brand-text span {
+      display: block;
+      margin-top: 4px;
+      color: #93a4c1;
+      font-size: 0.76rem;
+      line-height: 1.35;
+    }
+    .nav-pin-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
       border: 1px solid rgba(255, 255, 255, 0.15);
       background: rgba(255, 255, 255, 0.06);
       color: #dbe7ff;
-      font-size: 1rem;
+      font-size: 0.9rem;
       line-height: 1;
       cursor: pointer;
-      margin-top: 2px;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
     }
-    .nav-collapse-btn:hover {
+    .nav-pin-btn:hover {
       background: rgba(255, 255, 255, 0.12);
       color: #fff;
     }
-    .nav-rail-expand {
-      display: none;
-      position: fixed;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 41;
-      width: 22px;
-      min-height: 120px;
-      padding: 8px 0;
-      border: 0;
-      border-radius: 0 10px 10px 0;
-      background: linear-gradient(180deg, #121b2d, #0f1628);
-      color: #dbe7ff;
-      font-size: 0.95rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 4px 0 16px rgba(0, 0, 0, 0.25);
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      letter-spacing: 0.12em;
-    }
-    .nav-rail-expand:hover {
+    .app-shell.nav-pinned .nav-pin-btn {
       background: rgba(109, 93, 252, 0.35);
+      border-color: rgba(109, 93, 252, 0.55);
       color: #fff;
-    }
-    .app-shell.nav-collapsed .side-nav {
-      transform: translateX(calc(-1 * var(--nav-width)));
-      pointer-events: none;
-    }
-    .app-shell.nav-collapsed .nav-rail-expand {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: auto;
-    }
-    .app-shell.nav-collapsed.nav-hover-reveal .side-nav {
-      transform: translateX(0);
-      pointer-events: auto;
-      box-shadow: 12px 0 40px rgba(0, 0, 0, 0.45);
-    }
-    .app-shell.nav-collapsed.nav-hover-reveal .nav-rail-expand {
-      opacity: 0;
-      pointer-events: none;
+      transform: rotate(-45deg);
     }
 
     .side-nav-scroll {
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      padding-right: 4px;
-      margin-top: 8px;
+      padding: 6px 2px 8px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
+    }
+
+    .nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     .nav-section-label {
-      margin: 14px 10px 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0 2px;
+      padding: 6px 10px;
       font-size: 0.65rem;
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: #6b7c9e;
     }
+    .nav-section-label .nav-label {
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: opacity 0.2s ease, max-width 0.2s ease;
+    }
+    .app-shell.nav-expanded .nav-section-label .nav-label,
+    .app-shell.nav-pinned .nav-section-label .nav-label {
+      opacity: 1;
+      max-width: 160px;
+    }
+
+    .nav-bullet {
+      flex-shrink: 0;
+      width: 22px;
+      text-align: center;
+      font-size: 1rem;
+      line-height: 1;
+      color: #9eb0d4;
+      user-select: none;
+    }
+    .nav-link.sub .nav-bullet {
+      font-size: 0.55rem;
+      opacity: 0.85;
+    }
+    .nav-link.active .nav-bullet {
+      color: #fff;
+    }
 
     .nav-link {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
+      justify-content: flex-start;
+      gap: 0;
+      padding: 9px 8px;
+      border-radius: 10px;
       color: #b4c4e4;
       font-weight: 600;
       font-size: 0.86rem;
       border: 1px solid transparent;
-      transition: background 0.12s ease, color 0.12s ease;
+      transition: background 0.15s ease, color 0.15s ease, padding 0.2s ease;
+    }
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link {
+      justify-content: center;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-section-label {
+      justify-content: center;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    .nav-link .nav-label {
+      opacity: 0;
+      max-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: opacity 0.2s ease, max-width 0.2s ease;
+    }
+    .app-shell.nav-expanded .nav-link .nav-label,
+    .app-shell.nav-pinned .nav-link .nav-label {
+      opacity: 1;
+      max-width: 180px;
+      margin-left: 4px;
+    }
+    .app-shell.nav-expanded .nav-link.sub,
+    .app-shell.nav-pinned .nav-link.sub {
+      padding-left: 14px;
     }
 
     .nav-link:hover {
@@ -189,42 +279,28 @@
     }
 
     .nav-link.sub {
-      padding-left: 22px;
       font-size: 0.82rem;
       font-weight: 500;
       color: #9eb0d4;
     }
 
-    .nav-link.sub::before {
-      content: "";
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.25);
-      margin-right: 2px;
-    }
-
-    .side-brand {
-      padding: 8px 10px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.11);
-      flex-shrink: 0;
-    }
-    .side-brand strong {
-      display: block;
-      color: #ffffff;
-      font-size: 0.92rem;
-      letter-spacing: 0.02em;
-    }
-    .side-brand span {
-      display: block;
-      margin-top: 4px;
-      color: #93a4c1;
-      font-size: 0.76rem;
-      line-height: 1.35;
-    }
-
-    .nav-item {
-      display: none;
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link[data-nav-tooltip]:hover::after {
+      content: attr(data-nav-tooltip);
+      position: absolute;
+      left: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 60;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #1a2438;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
     .dashboard {
@@ -238,13 +314,7 @@
       max-height: 100vh;
       overflow-y: auto;
       overflow-x: hidden;
-      transition: margin-left 0.22s ease;
-    }
-    .app-shell.nav-collapsed .dashboard {
-      margin-left: 0;
-    }
-    .app-shell.nav-collapsed.nav-hover-reveal .dashboard {
-      margin-left: var(--nav-width);
+      transition: margin-left 0.2s ease;
     }
 
     .topbar, .hero, .panel, .tool-card, .modal-box {
@@ -1031,15 +1101,14 @@
     }
 
     @media (max-width: 1120px) {
-      .app-shell { --nav-width: 240px; }
-      .side-nav { width: var(--nav-width); }
+      .app-shell { --nav-width-expanded: 240px; }
       .dashboard { margin-left: var(--nav-width); }
       .workspace, .workspace.theme-workspace, .workspace.flow-workspace { grid-template-columns: 1fr; }
       .hero { grid-template-columns: 1fr; }
       .hero-metrics { min-width: 0; }
     }
     @media (max-width: 720px) {
-      .app-shell { --nav-width: min(280px, 88vw); }
+      .app-shell { --nav-width-expanded: min(280px, 88vw); }
       .dashboard { padding: 12px; }
       .side-nav {
         width: var(--nav-width);
@@ -1255,39 +1324,96 @@
 <body>
   <div class="app-shell">
     <aside class="side-nav" id="admin-sidebar" aria-label="Dashboard navigation">
-      <div class="side-brand">
+      <div class="side-nav-header">
+        <div class="side-brand-mark" aria-hidden="true">CM</div>
         <div class="side-brand-text">
           <strong>Church Media</strong>
           <span>Sunday Mass media for your parish.</span>
         </div>
-        <button type="button" class="nav-collapse-btn" id="nav-collapse-btn" aria-label="Collapse sidebar" title="Collapse sidebar">⟨</button>
+        <button type="button" class="nav-pin-btn" id="nav-pin-btn" aria-label="Pin sidebar open" aria-pressed="false" title="Pin sidebar open">📌</button>
       </div>
       <div class="side-nav-scroll">
-        <a class="nav-link" data-route="/home" href="/home">Home</a>
+        <a class="nav-link" data-route="/home" href="/home" data-nav-tooltip="Home">
+          <span class="nav-bullet" aria-hidden="true">•</span>
+          <span class="nav-label">Home</span>
+        </a>
 
-        <div class="nav-section-label">Mass</div>
-        <a class="nav-link sub" data-route="/mass/builder" href="/mass/builder">Mass Builder</a>
-        <a class="nav-link sub" data-route="/mass/calendar" href="/mass/calendar">Liturgical Calendar</a>
+        <div class="nav-group">
+          <div class="nav-section-label">
+            <span class="nav-bullet" aria-hidden="true">•</span>
+            <span class="nav-label">Mass</span>
+          </div>
+          <a class="nav-link sub" data-route="/mass/builder" href="/mass/builder" data-nav-tooltip="Mass Builder">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Mass Builder</span>
+          </a>
+          <a class="nav-link sub" data-route="/mass/calendar" href="/mass/calendar" data-nav-tooltip="Liturgical Calendar">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Liturgical Calendar</span>
+          </a>
+        </div>
 
-        <div class="nav-section-label">Media</div>
-        <a class="nav-link sub" data-route="/media/posters" href="/media/posters">Posters</a>
-        <a class="nav-link sub" data-route="/media/history" href="/media/history">History</a>
+        <div class="nav-group">
+          <div class="nav-section-label">
+            <span class="nav-bullet" aria-hidden="true">•</span>
+            <span class="nav-label">Media</span>
+          </div>
+          <a class="nav-link sub" data-route="/media/posters" href="/media/posters" data-nav-tooltip="Posters">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Posters</span>
+          </a>
+          <a class="nav-link sub" data-route="/media/history" href="/media/history" data-nav-tooltip="History">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">History</span>
+          </a>
+        </div>
 
-        <div class="nav-section-label">Library</div>
-        <a class="nav-link sub" data-route="/library/songs" href="/library/songs">Song Library</a>
-        <a class="nav-link sub" data-route="/library/collections" href="/library/collections">Collections</a>
+        <div class="nav-group">
+          <div class="nav-section-label">
+            <span class="nav-bullet" aria-hidden="true">•</span>
+            <span class="nav-label">Library</span>
+          </div>
+          <a class="nav-link sub" data-route="/library/songs" href="/library/songs" data-nav-tooltip="Song Library">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Song Library</span>
+          </a>
+          <a class="nav-link sub" data-route="/library/collections" href="/library/collections" data-nav-tooltip="Collections">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Collections</span>
+          </a>
+        </div>
 
-        <div class="nav-section-label">Design</div>
-        <a class="nav-link sub" data-route="/design/theme-lab" href="/design/theme-lab">Theme Lab</a>
-        <a class="nav-link sub" data-route="/design/templates" href="/design/templates">Templates</a>
+        <div class="nav-group">
+          <div class="nav-section-label">
+            <span class="nav-bullet" aria-hidden="true">•</span>
+            <span class="nav-label">Design</span>
+          </div>
+          <a class="nav-link sub" data-route="/design/theme-lab" href="/design/theme-lab" data-nav-tooltip="Theme Lab">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Theme Lab</span>
+          </a>
+          <a class="nav-link sub" data-route="/design/templates" href="/design/templates" data-nav-tooltip="Templates">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Templates</span>
+          </a>
+        </div>
 
-        <div class="nav-section-label">Settings</div>
-        <a class="nav-link sub" data-route="/settings/church" href="/settings/church">Church Profile</a>
-        <a class="nav-link sub" data-route="/settings/app" href="/settings/app">App Settings</a>
+        <div class="nav-group">
+          <div class="nav-section-label">
+            <span class="nav-bullet" aria-hidden="true">•</span>
+            <span class="nav-label">Settings</span>
+          </div>
+          <a class="nav-link sub" data-route="/settings/church" href="/settings/church" data-nav-tooltip="Church Profile">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">Church Profile</span>
+          </a>
+          <a class="nav-link sub" data-route="/settings/app" href="/settings/app" data-nav-tooltip="App Settings">
+            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-label">App Settings</span>
+          </a>
+        </div>
       </div>
     </aside>
-    <button type="button" class="nav-rail-expand" id="nav-rail-expand" aria-label="Open sidebar" title="Open sidebar (click to pin)">⟩</button>
-
     <main class="dashboard">
       <div class="topbar">
         <div class="brand">
@@ -3766,74 +3892,66 @@ Lord, hear our prayer</textarea>
     (function initSideNav() {
       const shell = document.querySelector(".app-shell");
       const sidebar = $("admin-sidebar");
-      const rail = $("nav-rail-expand");
-      const btnCollapse = $("nav-collapse-btn");
-      if (!shell || !sidebar || !rail || !btnCollapse) return;
-      const NAV_COLLAPSE_KEY = "churchMediaNavCollapsed";
-      let peekTimer = null;
+      const pinBtn = $("nav-pin-btn");
+      if (!shell || !sidebar) return;
+      const NAV_PIN_KEY = "churchMediaNavPinned";
+      const COLLAPSE_DELAY_MS = 350;
+      let collapseTimer = null;
 
-      function clearPeekTimer() {
-        if (peekTimer) {
-          clearTimeout(peekTimer);
-          peekTimer = null;
+      function clearCollapseTimer() {
+        if (collapseTimer) {
+          clearTimeout(collapseTimer);
+          collapseTimer = null;
         }
       }
 
-      function applyNavCollapsed(collapsed) {
-        shell.classList.toggle("nav-collapsed", collapsed);
-        shell.classList.remove("nav-hover-reveal");
-        clearPeekTimer();
+      function isPinned() {
+        return shell.classList.contains("nav-pinned");
+      }
+
+      function setExpanded(expanded) {
+        if (isPinned()) return;
+        shell.classList.toggle("nav-expanded", expanded);
+      }
+
+      function loadPinState() {
         try {
-          localStorage.setItem(NAV_COLLAPSE_KEY, collapsed ? "1" : "0");
+          if (localStorage.getItem(NAV_PIN_KEY) === "1") {
+            shell.classList.add("nav-pinned", "nav-expanded");
+            if (pinBtn) pinBtn.setAttribute("aria-pressed", "true");
+          }
         } catch (_e) {
           /* ignore */
         }
       }
 
-      try {
-        if (localStorage.getItem(NAV_COLLAPSE_KEY) === "1") {
-          shell.classList.add("nav-collapsed");
-        }
-      } catch (_e) {
-        /* ignore */
+      if (pinBtn) {
+        pinBtn.addEventListener("click", () => {
+          const pin = !isPinned();
+          shell.classList.toggle("nav-pinned", pin);
+          shell.classList.toggle("nav-expanded", pin);
+          pinBtn.setAttribute("aria-pressed", pin ? "true" : "false");
+          try {
+            localStorage.setItem(NAV_PIN_KEY, pin ? "1" : "0");
+          } catch (_e) {
+            /* ignore */
+          }
+          if (!pin) setExpanded(false);
+        });
       }
-
-      btnCollapse.addEventListener("click", () => applyNavCollapsed(true));
-      rail.addEventListener("click", () => applyNavCollapsed(false));
-
-      function navIsPeekHovering() {
-        return rail.matches(":hover") || sidebar.matches(":hover");
-      }
-
-      function schedulePeekCollapse() {
-        clearPeekTimer();
-        peekTimer = setTimeout(() => {
-          peekTimer = null;
-          if (!shell.classList.contains("nav-collapsed")) return;
-          if (!navIsPeekHovering()) shell.classList.remove("nav-hover-reveal");
-        }, 30000);
-      }
-
-      function onNavPeekLeave() {
-        if (!shell.classList.contains("nav-collapsed")) return;
-        setTimeout(() => {
-          if (!navIsPeekHovering()) schedulePeekCollapse();
-        }, 80);
-      }
-
-      rail.addEventListener("mouseenter", () => {
-        if (!shell.classList.contains("nav-collapsed")) return;
-        shell.classList.add("nav-hover-reveal");
-        clearPeekTimer();
-      });
-      rail.addEventListener("mouseleave", onNavPeekLeave);
 
       sidebar.addEventListener("mouseenter", () => {
-        if (!shell.classList.contains("nav-collapsed")) return;
-        if (!shell.classList.contains("nav-hover-reveal")) return;
-        clearPeekTimer();
+        clearCollapseTimer();
+        if (!isPinned()) setExpanded(true);
       });
-      sidebar.addEventListener("mouseleave", onNavPeekLeave);
+
+      sidebar.addEventListener("mouseleave", () => {
+        if (isPinned()) return;
+        clearCollapseTimer();
+        collapseTimer = setTimeout(() => setExpanded(false), COLLAPSE_DELAY_MS);
+      });
+
+      loadPinState();
     })();
     renderCalendarDow();
     renderCalendarGrid();

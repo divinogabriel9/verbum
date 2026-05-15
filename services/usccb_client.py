@@ -38,16 +38,65 @@ USCCB_BROWSER_HEADERS = {
 _MAX_TRIES = 4
 _BACKOFF_SEC = 0.55
 
+# Returned when HTTP 200 is a bot-check / CDN interstitial, not the readings page.
+USCCB_HTTP_CHALLENGE = 503
+
 _CACHE_LOCK = Lock()
 _ENTRY: dict[str, Tuple[Optional[BeautifulSoup], Optional[int]]] = {}
 
 # Alias for legacy imports from usccb_scraper
 _DEFAULT_HEADERS = USCCB_BROWSER_HEADERS
 
+_CHALLENGE_PHRASES = (
+    "checking connection",
+    "just a moment",
+    "enable javascript",
+    "cf-browser-verification",
+    "challenge-platform",
+    "attention required",
+    "ray id",
+)
+
+_READINGS_MARKERS = (
+    "reading 1",
+    "reading i",
+    "reading 2",
+    "reading ii",
+    "responsorial psalm",
+    "gospel",
+    "alleluia",
+)
+
 
 def clear_usccb_cache() -> None:
     with _CACHE_LOCK:
         _ENTRY.clear()
+
+
+def _is_usccb_challenge_page(html: str, soup: BeautifulSoup) -> bool:
+    """
+    Detect CDN / bot-protection interstitials that return HTTP 200 with no readings HTML.
+    """
+    raw = (html or "").lower()
+    title = (soup.title.get_text(" ", strip=True) if soup.title else "").lower()
+    visible = soup.get_text(" ", strip=True)
+    vis_lower = visible.lower()
+
+    if "checking connection" in title or "just a moment" in title:
+        return True
+    if len(visible) < 180 and any(p in vis_lower for p in _CHALLENGE_PHRASES):
+        return True
+    if any(p in raw for p in ("cf-browser-verification", "challenge-platform", "cdn-cgi/challenge")):
+        return True
+    if len(visible) > 400 and any(marker in raw for marker in _READINGS_MARKERS):
+        return False
+    for h in soup.find_all(["h1", "h2", "h3", "h4"]):
+        ht = h.get_text(" ", strip=True).lower()
+        if any(x in ht for x in ("reading", "gospel", "psalm", "alleluia")):
+            return False
+    if len(visible) < 280:
+        return True
+    return False
 
 
 def get_usccb_soup(url: str) -> Tuple[Optional[BeautifulSoup], Optional[int]]:
@@ -74,9 +123,17 @@ def get_usccb_soup(url: str) -> Tuple[Optional[BeautifulSoup], Optional[int]]:
         try:
             resp = requests.get(url, headers=USCCB_BROWSER_HEADERS, timeout=25)
             last_status = resp.status_code
-            if resp.status_code == 200 and (resp.text or "").strip():
-                soup = BeautifulSoup(resp.text, "html.parser")
-                break
+            html = (resp.text or "").strip()
+            if html:
+                candidate = BeautifulSoup(html, "html.parser")
+                if _is_usccb_challenge_page(html, candidate):
+                    soup = None
+                    last_status = USCCB_HTTP_CHALLENGE
+                    break
+                if resp.status_code == 200:
+                    soup = candidate
+                    last_status = 200
+                    break
         except requests.RequestException:
             pass
         if attempt < _MAX_TRIES - 1:

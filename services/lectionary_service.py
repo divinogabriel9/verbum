@@ -7,7 +7,7 @@ from core.liturgical_calendar import sunday_lectionary_cycle
 from services.gospel_fallback import fetch_world_english_gospel, gospel_reference_looks_like_citation_only
 from services.gospel_quote_extractor import extract_gospel_slide_quote
 from services.lectionary_store import db_path, get_cached, ignore_cache, upsert
-from services.usccb_client import get_usccb_soup
+from services.usccb_client import USCCB_HTTP_CHALLENGE, get_usccb_soup
 from services.usccb_readings import fetch_all_readings_text
 from services.usccb_scraper import fetch_gospel_text
 
@@ -74,6 +74,12 @@ def fetch_liturgical_data_live(date: str) -> dict | None:
                     print(
                         "⚠️ bible.usccb.org returned HTTP 403 (often antivirus/VPN/firewall)."
                         " Disable blocking or open USCCB in a browser to copy readings."
+                    )
+                elif http_err == USCCB_HTTP_CHALLENGE:
+                    print(
+                        "⚠️ bible.usccb.org returned a bot-check page (\"Checking connection\") "
+                        "instead of readings. Server/datacenter IPs are often blocked — "
+                        "try locally, use a VPN, or paste readings manually."
                     )
                 elif http_err:
                     print(
