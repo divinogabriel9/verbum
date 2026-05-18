@@ -52,6 +52,7 @@ class PreviewPayload:
     second_reading_reference: str = ""
     second_reading_excerpt: str = ""
     psalm_text: str = ""
+    gospel_text: str = ""
 
 
 def _merge_song_sections(
@@ -208,8 +209,12 @@ def resolve_slide_line(
     *,
     sentence_index: Optional[int] = None,
     interactive_pick: bool = False,
+    gospel_quote_override: Optional[str] = None,
 ) -> str:
-    """Pick the short line for slides (first sentence by default, or chosen index / CLI prompt)."""
+    """Pick the short line for slides (first sentence by default, or chosen index / override / CLI prompt)."""
+    ovr = (gospel_quote_override or "").strip()
+    if ovr:
+        return ovr
     base_quote = (gospel_slide_quote or "").strip() or (gospel_text or "")
     sentences = split_slide_sentences(base_quote)
     if sentence_index is not None and sentences and 0 <= sentence_index < len(sentences):
@@ -309,6 +314,7 @@ def fetch_preview(date: str) -> PreviewPayload:
         second_reading_reference=str(data.get("second_reading") or "").strip(),
         second_reading_excerpt=synopsis_from_reading(sr_txt, max_chars=720) if sr_txt else "",
         psalm_text=raw_psalm,
+        gospel_text=gospel_text,
     )
 
 
@@ -360,6 +366,7 @@ def generate_mass_media(
     mass_collection_date_label: Optional[str] = None,
     food_sponsors: Optional[list[str]] = None,
     psalm_text_override: Optional[str] = None,
+    gospel_quote_override: Optional[str] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -390,6 +397,7 @@ def generate_mass_media(
         gospel_text,
         sentence_index=sentence_index,
         interactive_pick=interactive_pick,
+        gospel_quote_override=gospel_quote_override,
     )
 
     picks = _merge_default_and_user_songs(season_key, song_selections)

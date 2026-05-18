@@ -132,10 +132,20 @@
     .side-brand-text strong {
       display: block;
       color: #ffffff;
-      font-size: 0.92rem;
-      letter-spacing: 0.02em;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
     }
-    .side-brand-text span {
+    .side-brand-text .side-brand-sub {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      text-transform: none;
+      color: rgba(255, 255, 255, 0.72);
+      margin-top: 2px;
+    }
+    .side-brand-text span:not(.side-brand-sub) {
       display: block;
       margin-top: 4px;
       color: #93a4c1;
@@ -346,8 +356,15 @@
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
       flex: 0 0 auto;
     }
-    .brand h1 { margin: 0; font-size: 1.02rem; }
-    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.82rem; }
+    .brand h1 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+    .brand .topbar-liturgyflow {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      font-weight: 300;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .brand .muted { margin: 4px 0 0; font-size: 0.8rem; }
 
     .route-switcher {
       display: none;
@@ -1022,6 +1039,37 @@
       color: var(--ink);
       margin: 0 0 12px;
     }
+    .mission-quote.mission-gospel-full {
+      white-space: pre-wrap;
+      max-height: min(50vh, 28rem);
+      overflow: auto;
+      font-size: 0.95rem;
+    }
+    .user-select-all {
+      user-select: all;
+      cursor: text;
+    }
+    .flow-para-preview {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+      font-size: 0.84rem;
+      line-height: 1.45;
+      max-height: 14rem;
+      overflow: auto;
+    }
+    .flow-para-preview p {
+      margin: 0 0 0.55em;
+    }
+    .flow-para-preview p:last-child {
+      margin-bottom: 0;
+    }
+    .flow-para-preview .flow-para-muted {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -1098,6 +1146,12 @@
       border-radius: 10px;
       font-size: 0.78rem;
       font-weight: 700;
+    }
+    .theme-card-actions .danger-theme-del {
+      flex: 1 1 100%;
+      color: #b91c1c;
+      border-color: rgba(185, 28, 28, 0.35);
+      background: rgba(254, 242, 242, 0.55);
     }
 
     @media (max-width: 1120px) {
@@ -1325,10 +1379,10 @@
   <div class="app-shell">
     <aside class="side-nav" id="admin-sidebar" aria-label="Dashboard navigation">
       <div class="side-nav-header">
-        <div class="side-brand-mark" aria-hidden="true">CM</div>
+        <div class="side-brand-mark" aria-hidden="true">V</div>
         <div class="side-brand-text">
-          <strong>Church Media</strong>
-          <span>Sunday Mass media for your parish.</span>
+          <strong>Verbum</strong>
+          <span class="side-brand-sub">LiturgyFlow</span>
         </div>
         <button type="button" class="nav-pin-btn" id="nav-pin-btn" aria-label="Pin sidebar open" aria-pressed="false" title="Pin sidebar open">📌</button>
       </div>
@@ -1419,8 +1473,9 @@
         <div class="brand">
           <div class="brand-mark" aria-hidden="true"></div>
           <div>
-            <h1 id="topbar-title">Church Media Generator</h1>
-            <p id="topbar-subtitle">Mission control for Sunday Mass preparation.</p>
+            <h1 id="topbar-title">Verbum</h1>
+            <p class="topbar-liturgyflow" id="topbar-liturgyflow">LiturgyFlow</p>
+            <p class="muted" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
           </div>
         </div>
         <select class="route-switcher" id="route-switcher" aria-label="Switch dashboard">
@@ -1456,7 +1511,7 @@
           <div class="admin-card" style="grid-column: 1 / -1;">
             <h3>Upcoming Sunday</h3>
             <p class="muted" id="home-sunday-label">Loading…</p>
-            <p class="mission-quote" id="home-gospel-quote">Gospel excerpt will appear after refresh.</p>
+            <p class="mission-quote mission-gospel-full" id="home-gospel-quote">Gospel text will appear after refresh.</p>
             <p class="muted"><strong id="home-gospel-ref">—</strong></p>
             <div class="quick-actions" style="margin-top: 16px;">
               <button type="button" class="primary btn-xl" id="btn-home-poster">Generate Poster</button>
@@ -1772,8 +1827,20 @@ Lord, hear our prayer</textarea>
               <div id="flow-reading2-body" class="muted" style="font-size:0.86rem;line-height:1.45;max-height:7.5rem;overflow:auto;">—</div>
             </div>
             <div class="field">
+              <label>Gospel reading (preview)</label>
+              <p class="muted" id="flow-gospel-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
+              <div id="flow-gospel-body" tabindex="0" class="muted user-select-all" style="font-size:0.86rem;line-height:1.45;max-height:10rem;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);">Load readings to see the full Gospel.</div>
+              <label for="flow-gospel-sentence" style="margin-top:12px;display:block;">Slide quote — sentence for PowerPoint</label>
+              <select id="flow-gospel-sentence" style="width:100%;max-width:100%;margin-top:6px;">
+                <option value="0">Sentence 1 (default)</option>
+              </select>
+              <label for="flow-gospel-custom" style="margin-top:10px;display:block;">Custom slide line (optional, overrides sentence above)</label>
+              <input type="text" id="flow-gospel-custom" maxlength="2000" placeholder="Leave empty to use the selected sentence" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);" />
+            </div>
+            <div class="field">
               <label for="flow-psalm-override">Responsorial Psalm (edit text for slides)</label>
               <textarea id="flow-psalm-override" rows="5" placeholder="Loads with readings; edit the response and verses as needed."></textarea>
+              <div id="flow-psalm-preview" class="flow-para-preview" aria-live="polite"></div>
             </div>
             <div class="field-grid">
               <div class="field">
@@ -1789,6 +1856,7 @@ Lord, hear our prayer</textarea>
             <div class="field">
               <label for="flow-food-sponsors">Food sponsors (one per line)</label>
               <textarea id="flow-food-sponsors" rows="3" placeholder="Name or family, one per line"></textarea>
+              <div id="flow-food-preview" class="flow-para-preview" aria-live="polite"></div>
             </div>
             <div class="field">
               <label for="flow-divider-poster">Divider poster (16:9 image for Mass divider slides)</label>
@@ -2144,23 +2212,10 @@ Lord, hear our prayer</textarea>
       document.querySelectorAll(".nav-link").forEach((link) => link.classList.toggle("active", link.dataset.route === r));
       const rs = $("route-switcher");
       if (rs) rs.value = r;
-      const sub = routeMeta[r] || "";
-      $("topbar-subtitle").textContent = sub;
-      const titleMap = {
-        "/home": "Church Media — Home",
-        "/mass/builder": "Church Media — Mass Builder",
-        "/mass/calendar": "Church Media — Liturgical Calendar",
-        "/media/posters": "Church Media — Posters",
-        "/media/history": "Church Media — History",
-        "/library/songs": "Church Media — Song Library",
-        "/library/collections": "Church Media — Collections",
-        "/design/theme-lab": "Church Media — Theme Lab",
-        "/design/templates": "Church Media — Templates",
-        "/settings/church": "Church Media — Church Profile",
-        "/settings/app": "Church Media — App Settings",
-      };
+      const rd = $("topbar-route-desc");
+      if (rd) rd.textContent = routeMeta[r] || "";
       const tb = $("topbar-title");
-      if (tb) tb.textContent = titleMap[r] || "Church Media Generator";
+      if (tb) tb.textContent = "Verbum";
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/settings/church") syncChurchFieldsToSettings();
       if (r === "/mass/builder") {
@@ -2512,6 +2567,7 @@ Lord, hear our prayer</textarea>
       $("theme-grid").innerHTML = allThemes.map((theme) => {
         const isActive = activeTheme.id === theme.id;
         const isLit = litId && theme.id === litId;
+        const canDelete = customThemes.some((t) => t.id === theme.id);
         return (
           '<div class="theme-card-wrap' + (isActive ? " active" : "") + (isLit ? " lit-match" : "") + '">' +
             '<button type="button" class="theme-card" data-theme-card="1" data-theme-id="' + theme.id + '">' +
@@ -2532,6 +2588,7 @@ Lord, hear our prayer</textarea>
               '<button type="button" class="secondary" data-theme-action="preview" data-theme-id="' + theme.id + '">Preview</button>' +
               '<button type="button" class="primary" data-theme-action="apply" data-theme-id="' + theme.id + '">Apply</button>' +
               '<button type="button" class="secondary" data-theme-action="customize" data-theme-id="' + theme.id + '">Customize</button>' +
+              (canDelete ? '<button type="button" class="ghost danger-theme-del" data-theme-action="delete" data-theme-id="' + theme.id + '" title="Delete saved preset">Delete</button>' : "") +
             '</div>' +
           '</div>'
         );
@@ -2644,6 +2701,28 @@ Lord, hear our prayer</textarea>
           showRoute("/design/theme-lab");
           window.scrollTo({ top: 0, behavior: "smooth" });
           $("theme-status").textContent = "Loaded " + theme.name + " into the custom builder.";
+          $("theme-status").className = "status ok";
+          return;
+        }
+        if (action === "delete") {
+          if (!customThemes.some((t) => t.id === id)) {
+            return;
+          }
+          if (!window.confirm("Delete saved preset \"" + theme.name + "\"? This cannot be undone.")) {
+            return;
+          }
+          customThemes = customThemes.filter((t) => t.id !== id);
+          try {
+            localStorage.setItem("customThemes", JSON.stringify(customThemes));
+          } catch (_e) {
+            /* ignore */
+          }
+          if (activeTheme.id === id) {
+            activeTheme = presetThemes[0];
+            updateThemeIndicators();
+          }
+          renderThemeGrid();
+          $("theme-status").textContent = "Removed saved preset " + theme.name + ".";
           $("theme-status").className = "status ok";
           return;
         }
@@ -3076,6 +3155,61 @@ Lord, hear our prayer</textarea>
       renderRecentInto($("history-list"));
     }
 
+    function previewParagraphs(raw, max) {
+      const t = (raw || "").trim();
+      if (!t) {
+        return [];
+      }
+      let blocks = t.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+      if (blocks.length <= 1) {
+        blocks = t.split("\n").map((s) => s.trim()).filter(Boolean);
+      }
+      return blocks.slice(0, max);
+    }
+
+    function fillFlowPreviewEl(el, parts, emptyMsg) {
+      if (!el) {
+        return;
+      }
+      if (!parts.length) {
+        el.innerHTML = "<p class=\"flow-para-muted\">" + escapeHtml(emptyMsg) + "</p>";
+        return;
+      }
+      el.innerHTML = parts.map((p) => "<p>" + escapeHtml(p) + "</p>").join("");
+    }
+
+    function updateFlowParagraphPreviews() {
+      const psalmRaw = ($("flow-psalm-override") && $("flow-psalm-override").value) || "";
+      const foodRaw = ($("flow-food-sponsors") && $("flow-food-sponsors").value) || "";
+      fillFlowPreviewEl($("flow-psalm-preview"), previewParagraphs(psalmRaw, 3), "Psalm preview will show up to three paragraphs.");
+      const foodLines = foodRaw.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 3);
+      fillFlowPreviewEl($("flow-food-preview"), foodLines, "Food sponsor preview shows up to three lines.");
+    }
+
+    function populateGospelSentenceSelect(data) {
+      const sel = $("flow-gospel-sentence");
+      if (!sel) {
+        return;
+      }
+      sel.innerHTML = "";
+      const sents = Array.isArray(data.sentences) ? data.sentences : [];
+      if (!sents.length) {
+        const o = document.createElement("option");
+        o.value = "0";
+        o.textContent = "Sentence 1 (default)";
+        sel.appendChild(o);
+        return;
+      }
+      sents.forEach((s, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        const preview = (s || "").replace(/\s+/g, " ").trim();
+        const short = preview.length > 100 ? preview.slice(0, 97) + "…" : preview;
+        o.textContent = "Sentence " + (i + 1) + ": " + short;
+        sel.appendChild(o);
+      });
+    }
+
     async function refreshHomeMission() {
       const elStatus = $("home-mission-status");
       const sun = upcomingSundayISO();
@@ -3093,7 +3227,10 @@ Lord, hear our prayer</textarea>
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         if ($("home-lectionary")) $("home-lectionary").textContent = data.lectionary_cycle || "—";
         if ($("home-season-chip")) $("home-season-chip").textContent = (data.season || "—").split(",")[0].trim().slice(0, 14);
-        if ($("home-gospel-quote")) $("home-gospel-quote").textContent = data.gospel_quote || data.title || "Gospel text will appear when readings load.";
+        const fullG = (data.gospel_text || "").trim();
+        if ($("home-gospel-quote")) {
+          $("home-gospel-quote").textContent = fullG || data.gospel_quote || data.title || "Gospel text will appear when readings load.";
+        }
         if ($("home-gospel-ref")) $("home-gospel-ref").textContent = data.gospel_reference || "—";
         if ($("home-snap-season")) $("home-snap-season").textContent = data.season || "—";
         if ($("home-snap-color")) $("home-snap-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
@@ -3136,7 +3273,15 @@ Lord, hear our prayer</textarea>
         if ($("flow-reading1-body")) $("flow-reading1-body").textContent = data.first_reading_excerpt || "—";
         if ($("flow-reading2-ref")) $("flow-reading2-ref").textContent = data.second_reading_reference || "—";
         if ($("flow-reading2-body")) $("flow-reading2-body").textContent = data.second_reading_excerpt || "—";
+        if ($("flow-gospel-ref")) $("flow-gospel-ref").textContent = data.gospel_reference || "—";
+        if ($("flow-gospel-body")) {
+          const gt = (data.gospel_text || "").trim();
+          $("flow-gospel-body").textContent = gt || "Full Gospel text was not loaded.";
+        }
+        populateGospelSentenceSelect(data);
+        if ($("flow-gospel-custom")) $("flow-gospel-custom").value = "";
         if ($("flow-psalm-override")) $("flow-psalm-override").value = data.psalm_text || "";
+        updateFlowParagraphPreviews();
         renderFlowSongCount();
         updatePosterLivePreview();
         setFlowStatus("Planner refreshed with lectionary context and hymn recommendations.", "ok");
@@ -3228,6 +3373,16 @@ Lord, hear our prayer</textarea>
         const collLabel = formatLongDateLabel(collIso) || collIso || "";
         const psalmOv = $("flow-psalm-override") && $("flow-psalm-override").value.trim();
         const foodLines = ($("flow-food-sponsors") && $("flow-food-sponsors").value || "").split("\n").map((s) => s.trim()).filter(Boolean);
+        const gospelCustom = $("flow-gospel-custom") && $("flow-gospel-custom").value.trim();
+        const sentSel = $("flow-gospel-sentence");
+        if (gospelCustom) {
+          body.gospel_quote_override = gospelCustom;
+        } else if (sentSel && sentSel.value !== "") {
+          const idx = parseInt(sentSel.value, 10);
+          if (!Number.isNaN(idx)) {
+            body.sentence_index = idx;
+          }
+        }
         if (divider_bn) body.divider_poster_basename = divider_bn;
         if (ann_bns.length) body.announcement_basenames = ann_bns;
         if (collAmt) body.mass_collection_amount = collAmt;
@@ -3246,6 +3401,8 @@ Lord, hear our prayer</textarea>
           mass_collection_date_label: body.mass_collection_date_label || null,
           food_sponsors: body.food_sponsors || [],
           psalm_text_override: body.psalm_text_override || null,
+          sentence_index: body.sentence_index != null ? body.sentence_index : null,
+          gospel_quote_override: body.gospel_quote_override || null,
           poster_template: body.poster_template,
           custom_theme: body.custom_theme,
         });
@@ -3640,6 +3797,10 @@ Lord, hear our prayer</textarea>
     });
 
     $("btn-load-flow").addEventListener("click", () => loadFlowData(false));
+    const psalmTa = $("flow-psalm-override");
+    const foodTa = $("flow-food-sponsors");
+    if (psalmTa) psalmTa.addEventListener("input", updateFlowParagraphPreviews);
+    if (foodTa) foodTa.addEventListener("input", updateFlowParagraphPreviews);
     $("mass-date").addEventListener("change", () => loadFlowData(true));
     $("btn-generate-flow").addEventListener("click", async () => {
       $("btn-generate-flow").disabled = true;

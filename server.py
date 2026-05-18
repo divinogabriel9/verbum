@@ -169,7 +169,7 @@ def _write_mass_bundle_zip(result: GenerationResult) -> None:
             zf.write(path, arcname=arc)
 
 
-app = FastAPI(title="Church Media Generator")
+app = FastAPI(title="Verbum · LiturgyFlow")
 templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
 app.mount("/media", StaticFiles(directory=str(_OUTPUT_DIR)), name="media")
 app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
@@ -207,6 +207,7 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "second_reading_reference": p.second_reading_reference,
         "second_reading_excerpt": p.second_reading_excerpt,
         "psalm_text": p.psalm_text,
+        "gospel_text": p.gospel_text,
     }
 
 
@@ -259,6 +260,11 @@ class GenerateBody(BaseModel):
     mass_collection_date_label: Optional[str] = Field(None, max_length=240)
     food_sponsors: list[str] = Field(default_factory=list)
     psalm_text_override: Optional[str] = Field(None, max_length=12000)
+    gospel_quote_override: Optional[str] = Field(
+        None,
+        max_length=2000,
+        description="Exact Gospel line for slides; overrides sentence_index when non-empty.",
+    )
 
 
 class RefreshSongsBody(BaseModel):
@@ -555,7 +561,7 @@ def index(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "Church Media Generator"},
+        {"title": "Verbum · LiturgyFlow"},
     )
 
 
@@ -578,7 +584,7 @@ def dashboard(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "Church Media Generator"},
+        {"title": "Verbum · LiturgyFlow"},
     )
 
 
@@ -606,6 +612,7 @@ def api_generate(body: GenerateBody) -> Any:
             break
     sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
     psalm_override = (body.psalm_text_override or "").strip() or None
+    gospel_override = (body.gospel_quote_override or "").strip() or None
     result = generate_mass_media(
         body.date.strip(),
         body.celebrant.strip(),
@@ -626,6 +633,7 @@ def api_generate(body: GenerateBody) -> Any:
         else None,
         food_sponsors=sponsors or None,
         psalm_text_override=psalm_override,
+        gospel_quote_override=gospel_override,
     )
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
