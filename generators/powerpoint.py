@@ -45,7 +45,7 @@ _FOOTER_PT = 13
 _MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
 # Hymn / lyrics slides (black screen, gold title, white ALL CAPS body — projector style)
-_LYRIC_CHUNK = 360
+_LYRIC_MAX_LINES_PER_SLIDE = 4
 _LYRIC_TITLE_DISPLAY_PT = 38
 _LYRIC_BODY_DISPLAY_PT = 55
 _HYMN_BG = RGBColor(0, 0, 0)
@@ -466,45 +466,26 @@ def _add_section_card(prs: Presentation, big_lines: str, footer_section: str, th
     _add_community_footer(slide, footer_section, theme)
 
 
-def _chunk_long_plain_segment(text: str, limit: int) -> List[str]:
-    """Split one lyric segment across slides (line / word aware)."""
+def split_lyrics(lines: List[str], max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[str]:
+    """Group lyric lines into slide blocks (each block is lines joined with newlines)."""
+    if not lines:
+        return []
+    blocks: List[str] = []
+    for i in range(0, len(lines), max_lines):
+        blocks.append("\n".join(lines[i : i + max_lines]))
+    return blocks
+
+
+def _chunk_lyrics_display(text: str, max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[str]:
+    """Split lyrics for hymn slides: max ``max_lines`` lines per slide, original order preserved."""
     t = (text or "").strip()
     if not t:
         return []
-    if len(t) <= limit:
+    line_list = t.splitlines()
+    if not line_list:
         return [t]
-    out: List[str] = []
-    i, n = 0, len(t)
-    while i < n:
-        j = min(i + limit, n)
-        if j < n:
-            k = t.rfind("\n", i + 1, j)
-            if k <= i:
-                k = t.rfind(" ", i + 1, j)
-            if k > i:
-                j = k
-        part = t[i:j].strip()
-        if part:
-            out.append(part)
-        i = j
-        while i < n and t[i].isspace():
-            i += 1
-    return out if out else [t[:limit]]
-
-
-def _chunk_lyrics_display(text: str, limit: int = _LYRIC_CHUNK) -> List[str]:
-    """Prefer stanza boundaries (blank lines), then size limits within each stanza."""
-    t = (text or "").strip() or "(No lyrics in library for this selection.)"
-    stanzas = [s.strip() for s in re.split(r"\n\s*\n+", t) if s.strip()]
-    if len(stanzas) <= 1:
-        return _chunk_long_plain_segment(t, limit)
-    chunks: List[str] = []
-    for stanza in stanzas:
-        if len(stanza) <= limit:
-            chunks.append(stanza)
-        else:
-            chunks.extend(_chunk_long_plain_segment(stanza, limit))
-    return chunks if chunks else [t[:limit]]
+    blocks = split_lyrics(line_list, max_lines=max_lines)
+    return blocks if blocks else [t]
 
 
 def _fill_hymn_body_caps(tf, chunk: str) -> None:
@@ -596,7 +577,8 @@ def _add_hymn_lyric_slides(
 
     body_top = title_top + Inches(1.2)
     body_h = SLIDE_HEIGHT - body_top - Inches(0.95)
-    body_box = slide0.shapes.add_textbox(MARGIN_SIDE, body_top, w, body_h)
+    lyric_w = prs.slide_width
+    body_box = slide0.shapes.add_textbox(0, body_top, lyric_w, body_h)
     tfb = body_box.text_frame
     _prep_tf(tfb)
     tfb.word_wrap = True
@@ -609,7 +591,7 @@ def _add_hymn_lyric_slides(
         _set_slide_bg(slide, _HYMN_BG)
         _apply_hymn_branding(slide)
         body_h2 = SLIDE_HEIGHT - _content_top() - Inches(0.95)
-        bx = slide.shapes.add_textbox(MARGIN_SIDE, _content_top(), w, body_h2)
+        bx = slide.shapes.add_textbox(0, _content_top(), lyric_w, body_h2)
         tf = bx.text_frame
         _prep_tf(tf)
         tf.word_wrap = True

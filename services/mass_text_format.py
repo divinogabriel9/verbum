@@ -6,6 +6,10 @@ import re
 
 _VERSE_LINE_RE = re.compile(r"^\s*\d{1,3}\s*[:.)]\s*", re.MULTILINE)
 _INLINE_VERSE_RE = re.compile(r"\b\d{1,3}\s*[:.)]\s*")
+_STANDALONE_VERSE_LINE = re.compile(
+    r"^\s*(\(\d+\)|\d{1,3}(?:\s*[-–—]\s*\d{1,3})?)\s*$"
+)
+_REFRAIN_ONLY_LINE = re.compile(r"^R\.?\s", re.I)
 
 
 def strip_leading_verse_markers(text: str) -> str:
@@ -31,12 +35,47 @@ def strip_reading_verse_markers(text: str) -> str:
         return ""
     out: list[str] = []
     for line in raw.split("\n"):
+        s = line.strip()
+        if _STANDALONE_VERSE_LINE.match(s):
+            continue
         s = _VERSE_LINE_RE.sub("", line)
         s = _PAREN_VERSE_START.sub("", s)
         s = re.sub(r"^\s*\[\s*\d{1,3}\s*\]\s*", "", s)
         if s.strip():
             out.append(s.rstrip())
     return "\n".join(out)
+
+
+def reading_body_is_usable(text: str, reference: str = "") -> bool:
+    """
+    True when ``text`` is real lectionary prose, not a citation or verse-number shell.
+    """
+    from services.gospel_fallback import gospel_reference_looks_like_citation_only
+
+    t = (text or "").strip()
+    if not t:
+        return False
+    if gospel_reference_looks_like_citation_only(reference, t):
+        return False
+
+    substantive: list[str] = []
+    for line in t.splitlines():
+        s = line.strip()
+        if not s or _STANDALONE_VERSE_LINE.match(s):
+            continue
+        if _REFRAIN_ONLY_LINE.match(s):
+            words = re.findall(r"[A-Za-z]{4,}", s)
+            if len(words) >= 4:
+                substantive.append(s)
+            continue
+        words = re.findall(r"[A-Za-z]{4,}", s)
+        if len(words) >= 2 or (len(words) >= 1 and len(s) > 48):
+            substantive.append(s)
+
+    if not substantive:
+        return False
+    joined = " ".join(substantive)
+    return len(re.findall(r"[A-Za-z]{4,}", joined)) >= 6
 
 
 def synopsis_from_reading(full_text: str, *, max_chars: int = 380) -> str:

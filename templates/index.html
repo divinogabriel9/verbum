@@ -1228,6 +1228,9 @@
     .song-sec-toggle:hover { background: var(--surface-2); }
     .song-sec-body { border-top: 1px solid var(--line); }
     .song-sec-body.collapsed { display: none; }
+    .song-sec-search-open .song-sec-body {
+      display: block;
+    }
     .song-row {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -2253,6 +2256,8 @@ Lord, hear our prayer</textarea>
 
     let lyricBlocks = [];
     let draggedLyricId = null;
+    let lyricsSyncLock = false;
+    let lyricsInputDebounce = null;
     const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
 
     function classifyLyricBlock(header, text, index) {
@@ -2308,6 +2313,15 @@ Lord, hear our prayer</textarea>
       }).join("\n\n").trim();
     }
 
+    /** Structured Editor block order → lyrics textarea (source of truth when blocks exist). */
+    function syncStructuredEditorToInputPanel() {
+      if (!lyricBlocks.length) return;
+      const text = serializedLyrics();
+      lyricsSyncLock = true;
+      $("lyrics-input").value = text;
+      lyricsSyncLock = false;
+    }
+
     function lyricStats() {
       const words = lyricBlocks.reduce((sum, block) => sum + (block.text.match(/\b[\w']+\b/g) || []).length, 0);
       $("lyrics-total").textContent = lyricBlocks.length;
@@ -2328,7 +2342,7 @@ Lord, hear our prayer</textarea>
         return;
       }
       list.innerHTML = lyricBlocks.map((block, index) => (
-        '<article class="lyric-block type-' + block.type + '" draggable="true" data-id="' + block.id + '">' +
+        '<article class="lyric-block type-' + block.type + '" draggable="true" data-id="' + block.id + '" data-index="' + index + '">' +
           '<div class="block-top block-top-lyrics">' +
             '<div class="drag-handle" title="Drag to reorder">::</div>' +
             '<div class="block-field-type">' +
@@ -2352,6 +2366,7 @@ Lord, hear our prayer</textarea>
           "</div>" +
         "</article>"
       )).join("");
+      syncStructuredEditorToInputPanel();
     }
 
     $("lyrics-block-list").addEventListener("input", (event) => {
@@ -2362,6 +2377,7 @@ Lord, hear our prayer</textarea>
       if (event.target.dataset.action === "title") block.title = event.target.value;
       if (event.target.dataset.action === "text") block.text = event.target.value;
       lyricStats();
+      syncStructuredEditorToInputPanel();
     });
 
     $("lyrics-block-list").addEventListener("change", (event) => {
@@ -2412,6 +2428,7 @@ Lord, hear our prayer</textarea>
     $("lyrics-block-list").addEventListener("dragend", () => {
       draggedLyricId = null;
       document.querySelectorAll(".lyric-block.dragging").forEach((el) => el.classList.remove("dragging"));
+      syncStructuredEditorToInputPanel();
     });
     $("lyrics-block-list").addEventListener("dragover", (event) => {
       event.preventDefault();
@@ -2425,10 +2442,24 @@ Lord, hear our prayer</textarea>
       renderLyrics();
     });
 
+    $("lyrics-input").addEventListener("input", () => {
+      if (lyricsSyncLock) return;
+      clearTimeout(lyricsInputDebounce);
+      lyricsInputDebounce = setTimeout(() => {
+        if ($("lyrics-input").value.trim()) {
+          syncInputPanelToStructuredEditor({ quiet: true });
+        } else {
+          lyricBlocks = [];
+          renderLyrics();
+        }
+      }, 400);
+    });
+
     $("lyrics-file").addEventListener("change", async (event) => {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
       $("lyrics-input").value = await file.text();
+      syncInputPanelToStructuredEditor({ quiet: true });
       setLyricsStatus("Loaded " + file.name + ". Ready to analyze.", "ok");
     });
     $("btn-analyze-lyrics").addEventListener("click", analyzeLyrics);
@@ -2438,6 +2469,7 @@ Lord, hear our prayer</textarea>
     });
     $("btn-clear-lyrics").addEventListener("click", () => {
       lyricBlocks = [];
+      $("lyrics-input").value = "";
       renderLyrics();
       setLyricsStatus("Editor cleared.", "");
     });
@@ -2456,7 +2488,9 @@ Lord, hear our prayer</textarea>
         setLyricsStatus("Song title is required before saving.", "error");
         return;
       }
-      if ($("lyrics-input").value.trim()) {
+      if (lyricBlocks.length) {
+        syncStructuredEditorToInputPanel();
+      } else if ($("lyrics-input").value.trim()) {
         syncInputPanelToStructuredEditor({ quiet: true });
       }
       const lyrics = serializedLyrics();
@@ -2464,7 +2498,6 @@ Lord, hear our prayer</textarea>
         setLyricsStatus("Song title and lyrics are required before saving.", "error");
         return;
       }
-      $("lyrics-input").value = lyrics;
       $("btn-save-lyrics").disabled = true;
       setLyricsStatus("Saving lyrics to the hymn library...", "");
       try {
@@ -3671,6 +3704,15 @@ Lord, hear our prayer</textarea>
       lyricSongSlots.forEach((s) => updateMassSlotChip(s.key));
     }
 
+    function filterSongCatalogRows(rows, secKey, query) {
+      const q = (query || "").trim().toLowerCase();
+      if (!q) return rows || [];
+      return (rows || []).filter((row) => {
+        const blob = [row.title, row.author, row.language, row.id, secKey].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
     function renderSongCatalogInto(root) {
       if (!root) return;
       if (!songCatalogData) {
@@ -3678,18 +3720,23 @@ Lord, hear our prayer</textarea>
         return;
       }
       const q = (songCatalogFilter || "").trim().toLowerCase();
-      root.innerHTML = SECTION_ORDER.map((sec) => {
+      const sections = SECTION_ORDER.map((sec) => {
         const allRows = songCatalogData[sec.key] || [];
-        const rows = allRows.filter((row) => {
-          if (!q) return true;
-          const blob = ((row.title || "") + " " + (row.author || "") + " " + (row.language || "")).toLowerCase();
-          return blob.includes(q);
-        });
-        const open = songCatalogExpanded[sec.key] === true;
+        const rows = filterSongCatalogRows(allRows, sec.key, q);
+        return { sec, allRows, rows };
+      });
+      if (q && !sections.some((s) => s.rows.length)) {
+        root.innerHTML = "<p class=\"muted\" style=\"padding:12px 14px;\">No matches. Clear the search or try another title or author.</p>";
+        return;
+      }
+      const visible = q ? sections.filter((s) => s.rows.length) : sections;
+      root.innerHTML = visible.map(({ sec, allRows, rows }) => {
+        const open = q ? true : songCatalogExpanded[sec.key] === true;
+        const countLabel = q ? rows.length + " / " + allRows.length : String(allRows.length);
         return (
-          "<div class=\"song-sec\" data-sec=\"" + sec.key + "\">" +
+          "<div class=\"song-sec" + (q ? " song-sec-search-open" : "") + "\" data-sec=\"" + sec.key + "\">" +
             "<button type=\"button\" class=\"song-sec-toggle\" data-sec-toggle=\"" + sec.key + "\">" +
-              "<span>" + escapeHtml(sec.label) + "</span><span>" + allRows.length + "</span>" +
+              "<span>" + escapeHtml(sec.label) + "</span><span>" + countLabel + "</span>" +
             "</button>" +
             "<div class=\"song-sec-body" + (open ? "" : " collapsed") + "\" data-sec-body=\"" + sec.key + "\">" +
               (rows.length ? rows.map((row) => (
@@ -3774,13 +3821,23 @@ Lord, hear our prayer</textarea>
       if (peer && peer !== sourceEl) peer.value = songCatalogFilter;
     }
 
+    let songCatalogSearchDebounce = null;
+    function applySongCatalogSearch(sourceEl) {
+      songCatalogFilter = (sourceEl && sourceEl.value) || "";
+      syncSongCatalogSearchInputs(sourceEl);
+      renderSongCatalog();
+    }
+
     ["song-catalog-search", "collections-catalog-search"].forEach((id) => {
       const el = $(id);
       if (!el) return;
       el.addEventListener("input", () => {
-        songCatalogFilter = el.value || "";
-        syncSongCatalogSearchInputs(el);
-        renderSongCatalog();
+        clearTimeout(songCatalogSearchDebounce);
+        songCatalogSearchDebounce = setTimeout(() => applySongCatalogSearch(el), 100);
+      });
+      el.addEventListener("focus", () => {
+        clearTimeout(songCatalogSearchDebounce);
+        applySongCatalogSearch(el);
       });
     });
 

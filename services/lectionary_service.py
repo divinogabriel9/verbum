@@ -8,15 +8,37 @@ from services.gospel_fallback import fetch_world_english_gospel, gospel_referenc
 from services.gospel_quote_extractor import extract_gospel_slide_quote
 from services.lectionary_store import db_path, get_cached, ignore_cache, upsert
 from services.usccb_client import USCCB_HTTP_CHALLENGE, get_usccb_soup
-from services.usccb_readings import fetch_all_readings_text
-from services.usccb_scraper import fetch_gospel_text
+from services.mass_text_format import reading_body_is_usable
+from services.usccb_readings import fetch_readings_for_date
+
+
+def _payload_readings_usable(payload: dict) -> bool:
+    """SQLite rows from older scrapers may store only verse numbers — refetch those."""
+    if reading_body_is_usable(
+        payload.get("first_reading_text") or "",
+        payload.get("first_reading") or "",
+    ):
+        return True
+    if reading_body_is_usable(
+        payload.get("gospel_text") or "",
+        payload.get("gospel_reference") or "",
+    ):
+        return True
+    if reading_body_is_usable(payload.get("psalm_text") or "", payload.get("psalm") or ""):
+        return True
+    if reading_body_is_usable(
+        payload.get("second_reading_text") or "",
+        payload.get("second_reading") or "",
+    ):
+        return True
+    return False
 
 
 def _normalize_mass_date(date: str) -> str:
     return _dt.datetime.strptime(date.strip(), "%Y-%m-%d").date().isoformat()
 
 
-def fetch_liturgical_data_live(date: str) -> dict | None:
+def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) -> dict | None:
     """
     Fetch lectionary + USCCB text from the network only (no cache read/write here).
     date: YYYY-MM-DD
@@ -54,14 +76,19 @@ def fetch_liturgical_data_live(date: str) -> dict | None:
         psalm_text = ""
         second_reading_text = ""
 
-        if source_url:
-            blocks = fetch_all_readings_text(source_url)
+        psalm_response = ""
+        if source_url or readings:
+            blocks = fetch_readings_for_date(
+                date,
+                source_url or "",
+                fallback_refs=readings,
+                use_cache=use_readings_cache,
+            )
             first_reading_text = (blocks.get("first_reading") or "").strip()
-            psalm_text = (blocks.get("psalm") or "").strip()
+            psalm_text = (blocks.get("psalm_text") or "").strip()
+            psalm_response = (blocks.get("psalm_response") or "").strip()
             second_reading_text = (blocks.get("second_reading") or "").strip()
             gospel_text = (blocks.get("gospel") or "").strip()
-            if not gospel_text:
-                gospel_text = (fetch_gospel_text(source_url) or "").strip()
 
             if not (
                 first_reading_text
@@ -69,7 +96,7 @@ def fetch_liturgical_data_live(date: str) -> dict | None:
                 or second_reading_text
                 or gospel_text.strip()
             ):
-                _page, http_err = get_usccb_soup(source_url.strip())
+                _page, http_err = get_usccb_soup((source_url or "").strip())
                 if http_err == 403:
                     print(
                         "⚠️ bible.usccb.org returned HTTP 403 (often antivirus/VPN/firewall)."
@@ -87,8 +114,8 @@ def fetch_liturgical_data_live(date: str) -> dict | None:
                     )
                 else:
                     print(
-                        "⚠️ USCCB responded but paragraphs were not extracted. "
-                        "If this persists, the page layout may have changed."
+                        "⚠️ USCCB responded but readings could not be resolved. "
+                        "References may still be filled from the lectionary API + Bible API."
                     )
 
         if gospel_reference_looks_like_citation_only(gospel_reference, gospel_text):
@@ -114,6 +141,7 @@ def fetch_liturgical_data_live(date: str) -> dict | None:
             "second_reading": readings.get("secondReading", ""),
             "first_reading_text": first_reading_text,
             "psalm_text": psalm_text,
+            "psalm_response": psalm_response,
             "second_reading_text": second_reading_text,
             "gospel_reference": gospel_reference,
             "gospel_text": gospel_text,
@@ -142,11 +170,14 @@ def get_liturgical_data(date: str, *, use_cache: bool = True) -> dict | None:
 
     if not bypass_read:
         cached = get_cached(normalized)
+        if cached is not None and not _payload_readings_usable(cached):
+            print(f"Lectionary cache stale (verse-only readings): {normalized}")
+            cached = None
         if cached is not None:
             print(f"Lectionary cache hit: {normalized}")
             return cached
 
-    data = fetch_liturgical_data_live(normalized)
+    data = fetch_liturgical_data_live(normalized, use_readings_cache=not bypass_read)
     if data is None:
         return None
 
