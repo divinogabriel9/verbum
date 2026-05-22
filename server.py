@@ -8,6 +8,7 @@ Run from project root:
 from __future__ import annotations
 
 import io
+import os
 import re
 import shutil
 import subprocess
@@ -16,11 +17,14 @@ import zipfile
 from pathlib import Path
 from typing import Any, Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
+
+load_dotenv()
 
 from pipeline import (
     GenerationResult,
@@ -171,6 +175,9 @@ def _write_mass_bundle_zip(result: GenerationResult) -> None:
 
 app = FastAPI(title="Verbum · LiturgyFlow")
 templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
+_STATIC_DIR = _PROJECT / "static"
+_STATIC_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 app.mount("/media", StaticFiles(directory=str(_OUTPUT_DIR)), name="media")
 app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
 app.mount("/preview", StaticFiles(directory=str(_PREVIEW_DIR)), name="preview")
@@ -239,13 +246,13 @@ class GenerateBody(BaseModel):
     include_social_exports: bool = Field(True)
     include_gospel_art: bool = Field(True)
     include_ai_mass_poster: bool = Field(
-        True,
-        description="Run Hugging Face AI poster export to outputs/posters/ (uses token if set).",
+        False,
+        description="Use OpenAI gpt-image-1 for primary parish posters (requires OPENAI_API_KEY).",
     )
     ai_poster_style: str = Field(
         "cinematic",
         max_length=64,
-        description="HF hero art style key from data/styles.json (e.g. renaissance, stained_glass).",
+        description="OpenAI hero art style key from data/styles.json (5 presets).",
     )
     community_name: Optional[str] = Field(None, max_length=240)
     songs: Optional[SongSelection] = None
@@ -317,6 +324,15 @@ class CatalogSongPatchBody(BaseModel):
     author: Optional[str] = Field(None, max_length=240)
     lyrics: Optional[str] = None
     language: Optional[str] = Field(None, max_length=40)
+
+
+class GenerateImageBody(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=4000)
+
+
+class GenerateImageResponse(BaseModel):
+    image: str
+    path: str
 
 
 def _resolve_soffice_bin() -> Optional[str]:
@@ -392,6 +408,34 @@ def api_ppt_preview_refresh() -> dict[str, Any]:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/generate-image", response_model=GenerateImageResponse)
+def generate_image(body: GenerateImageBody) -> GenerateImageResponse:
+    import base64
+
+    from generators.ai_image_generator import generate_openai_poster
+
+    if not (os.getenv("OPENAI_API_KEY") or "").strip():
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
+
+    prompt = body.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="prompt is required.")
+
+    poster_path = _OUTPUT_DIR / "poster.png"
+    try:
+        saved = generate_openai_poster(prompt, output_path=poster_path)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Image generation failed: {exc}") from exc
+
+    raw = saved.read_bytes()
+    return GenerateImageResponse(
+        image=base64.b64encode(raw).decode("ascii"),
+        path=str(saved),
+    )
 
 
 @app.get("/api/community")

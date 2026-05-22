@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
 import os
 import random
 from pathlib import Path
@@ -23,6 +24,8 @@ from services.gospel_quote_extractor import (
 )
 from services.hymn_library import get_hymn, recommend_sections, section_candidates, web_cached_for_section
 from services.song_selection import default_song_selections_for_date, filter_songs_rows_en_tl_only
+
+logger = logging.getLogger(__name__)
 from services.liturgical_calendar import get_liturgical_color
 from services.lectionary_service import get_liturgical_data
 from services.media_naming import mass_export_stem
@@ -431,21 +434,47 @@ def generate_mass_media(
 
     psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
 
-    # Liturgical 16×9 poster PNG must exist before building the deck so it can be embedded as a slide.
-    poster_path, poster_ppt_path = generate_mass_poster(
-        title=title,
-        gospel_reference=gospel_ref,
-        celebrant=celebrant,
-        date=date,
-        template=tpl,
-        liturgical_color=liturgical_color,
-        logo_path=logo,
-        community_name=community_display,
-        gospel_quote=slide_line,
-        entrance_song_title=entrance_title,
-        communion_song_titles=communion_line,
-        output_stem=stem,
-    )
+    _root = Path(__file__).resolve().parent
+    _out = _root / "outputs"
+
+    # Primary posters: OpenAI (hero art) or liturgical color template.
+    if include_ai_mass_poster:
+        if not (os.environ.get("OPENAI_API_KEY") or "").strip():
+            return GenerationResult(
+                ok=False,
+                error="OPENAI_API_KEY is required when “Generate poster with OpenAI” is enabled.",
+            )
+        try:
+            from generators.ai_poster_generator import generate_primary_openai_posters
+
+            poster_path, poster_ppt_path = generate_primary_openai_posters(
+                date,
+                celebrant_name=celebrant,
+                style=ai_poster_style,
+                output_stem=stem,
+                output_dir=_out,
+            )
+        except Exception as exc:
+            logger.exception("OpenAI poster generation failed")
+            return GenerationResult(
+                ok=False,
+                error=f"OpenAI poster generation failed: {exc}",
+            )
+    else:
+        poster_path, poster_ppt_path = generate_mass_poster(
+            title=title,
+            gospel_reference=gospel_ref,
+            celebrant=celebrant,
+            date=date,
+            template=tpl,
+            liturgical_color=liturgical_color,
+            logo_path=logo,
+            community_name=community_display,
+            gospel_quote=slide_line,
+            entrance_song_title=entrance_title,
+            communion_song_titles=communion_line,
+            output_stem=stem,
+        )
 
     slide_count, pptx_path = generate_mass_ppt(
         title=title,
@@ -476,8 +505,6 @@ def generate_mass_media(
         food_sponsors=food_sponsors,
     )
 
-    _root = Path(__file__).resolve().parent
-    _out = _root / "outputs"
     if include_social_exports:
         export_social_variants(poster_path, output_dir=_out, prefix=stem)
     if include_gospel_art:
@@ -488,15 +515,6 @@ def generate_mass_media(
             line1="Gospel",
             line2=ref_short,
         )
-
-    if include_ai_mass_poster:
-        from generators.ai_poster_generator import create_mass_poster
-
-        try:
-            create_mass_poster(date, celebrant_name=celebrant, style=ai_poster_style)
-        except Exception:
-            # Best-effort: liturgical deck + PNG posters must still succeed without AI export.
-            pass
 
     preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
 

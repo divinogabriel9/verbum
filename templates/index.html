@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mea+Culpa&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #eef2f7;
@@ -22,6 +25,13 @@
       --shadow: 0 24px 70px rgba(17, 24, 39, 0.12);
       --shadow-sm: 0 12px 30px rgba(17, 24, 39, 0.08);
       --font: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      --brand-font: "Mea Culpa", cursive;
+    }
+
+    .mea-culpa-regular {
+      font-family: var(--brand-font);
+      font-weight: 400;
+      font-style: normal;
     }
 
     * { box-sizing: border-box; }
@@ -98,8 +108,27 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      gap: 6px;
+      gap: 8px;
       padding: 8px 4px 10px;
+    }
+    .app-shell.nav-expanded .side-nav-header,
+    .app-shell.nav-pinned .side-nav-header {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 6px 12px;
+    }
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .side-brand-text {
+      display: none;
+    }
+    .nav-toggle-btn {
+      display: none;
+    }
+    .nav-pin-icon {
+      width: 18px;
+      height: 18px;
+      display: block;
     }
     .side-brand-mark {
       width: 36px;
@@ -122,19 +151,23 @@
       max-width: 0;
       overflow: hidden;
       white-space: nowrap;
-      transition: opacity 0.2s ease, max-width 0.2s ease;
+      transition: opacity 0.25s ease, max-width 0.25s ease;
     }
     .app-shell.nav-expanded .side-brand-text,
     .app-shell.nav-pinned .side-brand-text {
+      display: block;
       opacity: 1;
       max-width: 180px;
     }
     .side-brand-text strong {
       display: block;
       color: #ffffff;
-      font-size: 1.05rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
+      font-family: var(--brand-font);
+      font-size: 1.55rem;
+      font-weight: 400;
+      font-style: normal;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
     }
     .side-brand-text .side-brand-sub {
       display: block;
@@ -193,9 +226,6 @@
     }
 
     .nav-section-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
       margin: 10px 0 2px;
       padding: 6px 10px;
       font-size: 0.65rem;
@@ -209,72 +239,91 @@
       max-width: 0;
       overflow: hidden;
       white-space: nowrap;
-      transition: opacity 0.2s ease, max-width 0.2s ease;
+      transition: opacity 0.25s ease, max-width 0.25s ease;
     }
     .app-shell.nav-expanded .nav-section-label .nav-label,
     .app-shell.nav-pinned .nav-section-label .nav-label {
       opacity: 1;
       max-width: 160px;
+      pointer-events: auto;
     }
 
-    .nav-bullet {
-      flex-shrink: 0;
-      width: 22px;
-      text-align: center;
-      font-size: 1rem;
-      line-height: 1;
-      color: #9eb0d4;
-      user-select: none;
-    }
-    .nav-link.sub .nav-bullet {
-      font-size: 0.55rem;
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 10px;
       opacity: 0.85;
+      flex-shrink: 0;
+      display: block;
+      object-fit: contain;
+      filter: brightness(0) invert(0.82);
     }
-    .nav-link.active .nav-bullet {
-      color: #fff;
+    .nav-item:hover .nav-icon,
+    .nav-item.active .nav-icon {
+      opacity: 1;
+      filter: brightness(0) invert(1);
     }
-
-    .nav-link {
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-item .nav-icon {
+      margin-right: 0;
+    }
+    .nav-icon-sub::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.65;
+    }
+    .nav-link,
+    .nav-section-label {
       position: relative;
       display: flex;
       align-items: center;
       justify-content: flex-start;
       gap: 0;
-      padding: 9px 8px;
+    }
+
+    .nav-link {
+      padding: 9px 10px;
       border-radius: 10px;
       color: #b4c4e4;
       font-weight: 600;
       font-size: 0.86rem;
       border: 1px solid transparent;
-      transition: background 0.15s ease, color 0.15s ease, padding 0.2s ease;
+      transition: background 0.15s ease, color 0.15s ease, padding 0.25s ease;
     }
     .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link {
       justify-content: center;
-      padding-left: 6px;
-      padding-right: 6px;
+      padding-left: 8px;
+      padding-right: 8px;
     }
     .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-section-label {
       justify-content: center;
-      padding-left: 6px;
-      padding-right: 6px;
+      padding-left: 8px;
+      padding-right: 8px;
     }
 
-    .nav-link .nav-label {
+    .nav-label {
       opacity: 0;
       max-width: 0;
       overflow: hidden;
       white-space: nowrap;
+      pointer-events: none;
       transition: opacity 0.2s ease, max-width 0.2s ease;
     }
-    .app-shell.nav-expanded .nav-link .nav-label,
-    .app-shell.nav-pinned .nav-link .nav-label {
+    .app-shell.nav-expanded .nav-label,
+    .app-shell.nav-pinned .nav-label {
       opacity: 1;
-      max-width: 180px;
-      margin-left: 4px;
+      max-width: 200px;
+      pointer-events: auto;
+    }
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link.sub {
+      display: none;
     }
     .app-shell.nav-expanded .nav-link.sub,
     .app-shell.nav-pinned .nav-link.sub {
-      padding-left: 14px;
+      display: flex;
+      padding-left: 16px;
     }
 
     .nav-link:hover {
@@ -294,23 +343,23 @@
       color: #9eb0d4;
     }
 
-    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link[data-nav-tooltip]:hover::after {
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link[data-nav-tooltip]:hover::after,
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-section-label[data-nav-tooltip]:hover::after {
       content: attr(data-nav-tooltip);
       position: absolute;
-      left: calc(100% + 10px);
+      left: 70px;
       top: 50%;
       transform: translateY(-50%);
       z-index: 60;
-      padding: 6px 10px;
-      border-radius: 8px;
-      background: #1a2438;
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #111;
       color: #fff;
-      font-size: 0.78rem;
+      font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
       pointer-events: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
     .dashboard {
@@ -324,7 +373,7 @@
       max-height: 100vh;
       overflow-y: auto;
       overflow-x: hidden;
-      transition: margin-left 0.2s ease;
+      transition: margin-left 0.25s ease;
     }
 
     .topbar, .hero, .panel, .tool-card, .modal-box {
@@ -356,7 +405,15 @@
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
       flex: 0 0 auto;
     }
-    .brand h1 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+    .brand h1 {
+      margin: 0;
+      font-family: var(--brand-font);
+      font-size: 1.85rem;
+      font-weight: 400;
+      font-style: normal;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+    }
     .brand .topbar-liturgyflow {
       margin: 2px 0 0;
       font-size: 0.82rem;
@@ -1377,95 +1434,436 @@
       background: var(--surface-2);
       margin-top: 12px;
     }
+
+    /* Mass generation — animated book loader */
+    .mass-gen-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(16px) saturate(1.2);
+      -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    }
+    .mass-gen-loader.visible {
+      display: flex;
+    }
+    .mass-gen-loader__panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      border: none;
+      width: 100%;
+      max-width: 100%;
+    }
+    .mass-gen-loader .loader-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100%;
+      background: transparent;
+      position: relative;
+    }
+    .mass-gen-loader .loader-halo {
+      position: absolute;
+      width: 12em;
+      height: 12em;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(212, 175, 55, 0.45) 0%,
+        rgba(212, 175, 55, 0.2) 40%,
+        transparent 70%
+      );
+      z-index: -1;
+    }
+    .mass-gen-loader__msg {
+      margin: 0;
+      padding: 16px 24px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.42);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255, 255, 255, 0.65);
+      width: 100%;
+    }
+    .mass-gen-loader .book,
+    .mass-gen-loader .book__pg-shadow,
+    .mass-gen-loader .book__pg {
+      animation: mass-gen-cover 5s ease-in-out infinite;
+    }
+    .mass-gen-loader .book {
+      background-color: #8b1e2d;
+      border-radius: 0.25em;
+      box-shadow:
+        0 0.25em 0.5em hsla(0, 0%, 0%, 0.3),
+        0 0 0 0.25em #d4af37 inset;
+      padding: 0.25em;
+      perspective: 37.5em;
+      position: relative;
+      width: 8em;
+      height: 6em;
+      transform: translate3d(0, 0, 0);
+      transform-style: preserve-3d;
+    }
+    .mass-gen-loader .book::before {
+      content: "✝";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.8em;
+      color: #d4af37;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .mass-gen-loader .book::after {
+      content: "";
+      position: absolute;
+      bottom: -1.2em;
+      left: 50%;
+      width: 0.4em;
+      height: 1.8em;
+      background: #c81e2a;
+      transform: translateX(-50%);
+      border-radius: 0.1em;
+      z-index: 2;
+    }
+    .mass-gen-loader .book__pg-shadow,
+    .mass-gen-loader .book__pg {
+      position: absolute;
+      left: 0.25em;
+      width: calc(50% - 0.25em);
+    }
+    .mass-gen-loader .book__pg-shadow {
+      animation-name: mass-gen-shadow;
+      background-image: linear-gradient(
+        -45deg,
+        hsla(0, 0%, 0%, 0) 50%,
+        hsla(0, 0%, 0%, 0.3) 50%
+      );
+      filter: blur(0.25em);
+      top: calc(100% - 0.25em);
+      height: 3.75em;
+      transform: scaleY(0);
+      transform-origin: 100% 0%;
+    }
+    .mass-gen-loader .book__pg {
+      animation-name: mass-gen-pg1;
+      background-color: hsl(223, 10%, 100%);
+      background-image: linear-gradient(
+        90deg,
+        hsla(223, 10%, 90%, 0) 87.5%,
+        hsl(223, 10%, 90%)
+      );
+      height: calc(100% - 0.5em);
+      transform-origin: 100% 50%;
+    }
+    .mass-gen-loader .book__pg--2,
+    .mass-gen-loader .book__pg--3,
+    .mass-gen-loader .book__pg--4 {
+      background-image: repeating-linear-gradient(
+          hsl(223, 10%, 10%) 0 0.125em,
+          hsla(223, 10%, 10%, 0) 0.125em 0.5em
+        ),
+        linear-gradient(90deg, hsla(223, 10%, 90%, 0) 87.5%, hsl(223, 10%, 90%));
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 2.5em 4.125em, 100% 100%;
+    }
+    .mass-gen-loader .book__pg--2 { animation-name: mass-gen-pg2; }
+    .mass-gen-loader .book__pg--3 { animation-name: mass-gen-pg3; }
+    .mass-gen-loader .book__pg--4 { animation-name: mass-gen-pg4; }
+    .mass-gen-loader .book__pg--5 { animation-name: mass-gen-pg5; }
+
+    @keyframes mass-gen-cover {
+      from, 5%, 45%, 55%, 95%, to {
+        animation-timing-function: ease-out;
+        background-color: #9a2434;
+      }
+      10%, 40%, 60%, 90% {
+        animation-timing-function: ease-in;
+        background-color: #6e1824;
+      }
+    }
+    @keyframes mass-gen-shadow {
+      from, 10.01%, 20.01%, 30.01%, 40.01% {
+        animation-timing-function: ease-in;
+        transform: translate3d(0, 0, 1px) scaleY(0) rotateY(0);
+      }
+      5%, 15%, 25%, 35%, 45%, 55%, 65%, 75%, 85%, 95% {
+        animation-timing-function: ease-out;
+        transform: translate3d(0, 0, 1px) scaleY(0.2) rotateY(90deg);
+      }
+      10%, 20%, 30%, 40%, 50%, to {
+        animation-timing-function: ease-out;
+        transform: translate3d(0, 0, 1px) scaleY(0) rotateY(180deg);
+      }
+      50.01%, 60.01%, 70.01%, 80.01%, 90.01% {
+        animation-timing-function: ease-in;
+        transform: translate3d(0, 0, 1px) scaleY(0) rotateY(180deg);
+      }
+      60%, 70%, 80%, 90%, to {
+        animation-timing-function: ease-out;
+        transform: translate3d(0, 0, 1px) scaleY(0) rotateY(0);
+      }
+    }
+    @keyframes mass-gen-pg1 {
+      from, to {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0.4deg);
+      }
+      10%, 15% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(180deg);
+      }
+      20%, 80% {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(180deg);
+      }
+      85%, 90% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(180deg);
+      }
+    }
+    @keyframes mass-gen-pg2 {
+      from, to {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(0.3deg);
+      }
+      5%, 10% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0.3deg);
+      }
+      20%, 25% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(179.9deg);
+      }
+      30%, 70% {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(179.9deg);
+      }
+      75%, 80% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(179.9deg);
+      }
+      90%, 95% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0.3deg);
+      }
+    }
+    @keyframes mass-gen-pg3 {
+      from, 10%, 90%, to {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(0.2deg);
+      }
+      15%, 20% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0.2deg);
+      }
+      30%, 35% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(179.8deg);
+      }
+      40%, 60% {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(179.8deg);
+      }
+      65%, 70% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(179.8deg);
+      }
+      80%, 85% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0.2deg);
+      }
+    }
+    @keyframes mass-gen-pg4 {
+      from, 20%, 80%, to {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(0.1deg);
+      }
+      25%, 30% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0.1deg);
+      }
+      40%, 45% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(179.7deg);
+      }
+      50% {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(179.7deg);
+      }
+      55%, 60% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(179.7deg);
+      }
+      70%, 75% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0.1deg);
+      }
+    }
+    @keyframes mass-gen-pg5 {
+      from, 30%, 70%, to {
+        animation-timing-function: ease-in;
+        background-color: hsl(223, 10%, 45%);
+        transform: translate3d(0, 0, 1px) rotateY(0);
+      }
+      35%, 40% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0deg);
+      }
+      50% {
+        animation-timing-function: ease-in-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(179.6deg);
+      }
+      60%, 65% {
+        animation-timing-function: ease-out;
+        background-color: hsl(223, 10%, 100%);
+        transform: translate3d(0, 0, 1px) rotateY(0);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mass-gen-loader .book,
+      .mass-gen-loader .book__pg-shadow,
+      .mass-gen-loader .book__pg {
+        animation: none;
+      }
+    }
   </style>
 <body>
   <div class="app-shell">
-    <aside class="side-nav" id="admin-sidebar" aria-label="Dashboard navigation">
+    <aside class="side-nav sidebar" id="admin-sidebar" aria-label="Dashboard navigation">
       <div class="side-nav-header">
-        <div class="side-brand-mark" aria-hidden="true">V</div>
+        <button type="button" class="nav-toggle-btn" id="nav-toggle-btn" aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">
+          <img class="nav-toggle-icon" src="/static/icons/chevron.svg" alt="" width="18" height="18" />
+        </button>
         <div class="side-brand-text">
-          <strong>Verbum</strong>
+          <strong class="mea-culpa-regular">Verbum</strong>
           <span class="side-brand-sub">LiturgyFlow</span>
         </div>
-        <button type="button" class="nav-pin-btn" id="nav-pin-btn" aria-label="Pin sidebar open" aria-pressed="false" title="Pin sidebar open">📌</button>
+        <button type="button" class="nav-pin-btn" id="sidebar-pin" aria-label="Pin sidebar open" aria-pressed="false" title="Pin sidebar open">
+          <svg class="nav-pin-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 17v5" />
+            <path d="M9 10.76a2 2 0 0 1-1.11-1.79l-1.78-.9A2 2 0 0 1 5 10.76V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 1 15 10.76V17" />
+          </svg>
+        </button>
       </div>
       <div class="side-nav-scroll">
-        <a class="nav-link" data-route="/home" href="/home" data-nav-tooltip="Home">
-          <span class="nav-bullet" aria-hidden="true">•</span>
+        <a class="nav-link nav-item" data-route="/home" href="/home" data-nav-tooltip="Home">
+          <img src="/static/icons/home.svg" class="nav-icon" alt="" width="20" height="20" />
           <span class="nav-label">Home</span>
         </a>
 
         <div class="nav-group">
-          <div class="nav-section-label">
-            <span class="nav-bullet" aria-hidden="true">•</span>
+          <div class="nav-section-label nav-item" data-nav-tooltip="Mass">
+            <img src="/static/icons/mass.svg" class="nav-icon" alt="" width="20" height="20" />
             <span class="nav-label">Mass</span>
           </div>
           <a class="nav-link sub" data-route="/mass/builder" href="/mass/builder" data-nav-tooltip="Mass Builder">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Mass Builder</span>
           </a>
           <a class="nav-link sub" data-route="/mass/calendar" href="/mass/calendar" data-nav-tooltip="Liturgical Calendar">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Liturgical Calendar</span>
           </a>
         </div>
 
         <div class="nav-group">
-          <div class="nav-section-label">
-            <span class="nav-bullet" aria-hidden="true">•</span>
+          <div class="nav-section-label nav-item" data-nav-tooltip="Media">
+            <img src="/static/icons/media.svg" class="nav-icon" alt="" width="20" height="20" />
             <span class="nav-label">Media</span>
           </div>
           <a class="nav-link sub" data-route="/media/posters" href="/media/posters" data-nav-tooltip="Posters">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Posters</span>
           </a>
           <a class="nav-link sub" data-route="/media/history" href="/media/history" data-nav-tooltip="History">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">History</span>
           </a>
         </div>
 
         <div class="nav-group">
-          <div class="nav-section-label">
-            <span class="nav-bullet" aria-hidden="true">•</span>
+          <div class="nav-section-label nav-item" data-nav-tooltip="Library">
+            <img src="/static/icons/library.svg" class="nav-icon" alt="" width="20" height="20" />
             <span class="nav-label">Library</span>
           </div>
           <a class="nav-link sub" data-route="/library/songs" href="/library/songs" data-nav-tooltip="Song Library">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Song Library</span>
           </a>
           <a class="nav-link sub" data-route="/library/collections" href="/library/collections" data-nav-tooltip="Collections">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Collections</span>
           </a>
         </div>
 
         <div class="nav-group">
-          <div class="nav-section-label">
-            <span class="nav-bullet" aria-hidden="true">•</span>
+          <div class="nav-section-label nav-item" data-nav-tooltip="Design">
+            <img src="/static/icons/design.svg" class="nav-icon" alt="" width="20" height="20" />
             <span class="nav-label">Design</span>
           </div>
           <a class="nav-link sub" data-route="/design/theme-lab" href="/design/theme-lab" data-nav-tooltip="Theme Lab">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Theme Lab</span>
           </a>
           <a class="nav-link sub" data-route="/design/templates" href="/design/templates" data-nav-tooltip="Templates">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Templates</span>
           </a>
         </div>
 
         <div class="nav-group">
-          <div class="nav-section-label">
-            <span class="nav-bullet" aria-hidden="true">•</span>
+          <div class="nav-section-label nav-item" data-nav-tooltip="Settings">
+            <img src="/static/icons/settings.svg" class="nav-icon" alt="" width="20" height="20" />
             <span class="nav-label">Settings</span>
           </div>
           <a class="nav-link sub" data-route="/settings/church" href="/settings/church" data-nav-tooltip="Church Profile">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">Church Profile</span>
           </a>
           <a class="nav-link sub" data-route="/settings/app" href="/settings/app" data-nav-tooltip="App Settings">
-            <span class="nav-bullet" aria-hidden="true">·</span>
+            <span class="nav-icon-sub" aria-hidden="true"></span>
             <span class="nav-label">App Settings</span>
           </a>
         </div>
@@ -1476,7 +1874,7 @@
         <div class="brand">
           <div class="brand-mark" aria-hidden="true"></div>
           <div>
-            <h1 id="topbar-title">Verbum</h1>
+            <h1 id="topbar-title" class="mea-culpa-regular">Verbum</h1>
             <p class="topbar-liturgyflow" id="topbar-liturgyflow">LiturgyFlow</p>
             <p class="muted" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
           </div>
@@ -1871,6 +2269,20 @@ Lord, hear our prayer</textarea>
               <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
               <p class="muted" id="flow-announcement-status" style="margin:6px 0 0;font-size:0.78rem;">Shown full-screen immediately before the final blessing. Clears after generate.</p>
             </div>
+            <div class="field" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);">
+              <label><input type="checkbox" id="flow-use-openai-poster" checked /> Generate poster with OpenAI</label>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art becomes the main poster (portrait + 16×9). Set OPENAI_API_KEY in .env.</p>
+            </div>
+            <div class="field" id="flow-openai-style-wrap">
+              <label for="flow-openai-poster-style">OpenAI poster art style</label>
+              <select id="flow-openai-poster-style">
+                <option value="cinematic">Cinematic — epic biblical scene, volumetric light</option>
+                <option value="realistic">Realistic — cinematic photography, dramatic lighting</option>
+                <option value="renaissance">Renaissance — classical oil painting</option>
+                <option value="stained_glass">Stained glass — cathedral window style</option>
+                <option value="modern">Modern — minimalist church illustration</option>
+              </select>
+            </div>
             <div class="actions" style="margin-top:14px;">
               <button type="button" class="secondary" id="btn-load-flow">Load readings & songs</button>
               <button type="button" class="primary" id="btn-generate-flow">Generate Full Mass Package</button>
@@ -1972,7 +2384,17 @@ Lord, hear our prayer</textarea>
               <textarea id="poster-gospel-quote" rows="3" placeholder="Short line for the poster"></textarea>
             </div>
             <div class="field">
-              <label for="poster-template">Theme / poster template</label>
+              <label for="poster-openai-poster-style">OpenAI poster art style</label>
+              <select id="poster-openai-poster-style">
+                <option value="cinematic">Cinematic — epic biblical scene, volumetric light</option>
+                <option value="realistic">Realistic — cinematic photography, dramatic lighting</option>
+                <option value="renaissance">Renaissance — classical oil painting</option>
+                <option value="stained_glass">Stained glass — cathedral window style</option>
+                <option value="modern">Modern — minimalist church illustration</option>
+              </select>
+            </div>
+            <div class="field" id="poster-liturgical-template-wrap">
+              <label for="poster-template">Liturgical template (when OpenAI is off)</label>
               <select id="poster-template">
                 <option value="liturgical_color">Liturgical color fill</option>
                 <option value="classic_white">Classic white</option>
@@ -1982,7 +2404,8 @@ Lord, hear our prayer</textarea>
               <label><input type="checkbox" id="poster-include-social" checked /> Include social exports</label>
             </div>
             <div class="field">
-              <label><input type="checkbox" id="poster-include-ai" checked /> AI mass poster (when configured)</label>
+              <label><input type="checkbox" id="poster-use-openai-poster" checked /> Generate poster with OpenAI</label>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art hero + layout (requires OPENAI_API_KEY in .env).</p>
             </div>
             <div class="actions">
               <button type="button" class="secondary" id="btn-poster-sync">Sync from Mass Builder</button>
@@ -2121,6 +2544,23 @@ Lord, hear our prayer</textarea>
         </div>
       </section>
     </main>
+  </div>
+
+  <div class="mass-gen-loader" id="mass-gen-loader" aria-hidden="true" aria-live="polite" role="status">
+    <div class="mass-gen-loader__panel">
+      <div class="loader-wrapper">
+        <div class="loader-halo"></div>
+        <div class="book" aria-hidden="true">
+        <div class="book__pg-shadow"></div>
+        <div class="book__pg"></div>
+        <div class="book__pg book__pg--2"></div>
+        <div class="book__pg book__pg--3"></div>
+        <div class="book__pg book__pg--4"></div>
+        <div class="book__pg book__pg--5"></div>
+        </div>
+      </div>
+      <p class="mass-gen-loader__msg" id="mass-gen-loader-msg">Generating Mass PowerPoint…</p>
+    </div>
   </div>
 
   <div class="modal" id="theme-modal" aria-hidden="true">
@@ -3366,6 +3806,72 @@ Lord, hear our prayer</textarea>
       return data.basename;
     }
 
+    function setMassGenLoading(active, message) {
+      const overlay = $("mass-gen-loader");
+      const msgEl = $("mass-gen-loader-msg");
+      if (!overlay) return;
+      if (active) {
+        if (msgEl && message) msgEl.textContent = message;
+        overlay.classList.add("visible");
+        overlay.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      } else {
+        overlay.classList.remove("visible");
+        overlay.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+      }
+    }
+
+    function readOpenAiPosterSettings() {
+      const flowCb = $("flow-use-openai-poster");
+      const posterCb = $("poster-use-openai-poster");
+      const useOpenai = flowCb ? flowCb.checked : !!(posterCb && posterCb.checked);
+      const styleEl = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      return {
+        useOpenai,
+        style: (styleEl && styleEl.value) || "cinematic",
+      };
+    }
+
+    function syncOpenAiPosterUi() {
+      const { useOpenai } = readOpenAiPosterSettings();
+      const litWrap = $("poster-liturgical-template-wrap");
+      if (litWrap) litWrap.style.display = useOpenai ? "none" : "";
+      ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        const field = el.closest(".field") || el;
+        field.style.opacity = useOpenai ? "1" : "0.55";
+      });
+    }
+
+    function bindOpenAiPosterControls() {
+      const checkboxes = ["flow-use-openai-poster", "poster-use-openai-poster"];
+      checkboxes.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("change", () => {
+          checkboxes.forEach((oid) => {
+            const other = $(oid);
+            if (other) other.checked = el.checked;
+          });
+          syncOpenAiPosterUi();
+        });
+      });
+      const styles = ["flow-openai-poster-style", "poster-openai-poster-style"];
+      styles.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("change", () => {
+          styles.forEach((oid) => {
+            const other = $(oid);
+            if (other) other.value = el.value;
+          });
+        });
+      });
+      syncOpenAiPosterUi();
+    }
+
     async function runFullMassGenerate(options) {
       const o = options || {};
       const statusFn = o.setStatus || setFlowStatus;
@@ -3375,6 +3881,8 @@ Lord, hear our prayer</textarea>
         statusFn("Enter Mass date and celebrant before generating.", "error");
         return null;
       }
+      const posterOpts = readOpenAiPosterSettings();
+      const useOpenAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useOpenai;
       const body = {
         date,
         celebrant,
@@ -3383,20 +3891,23 @@ Lord, hear our prayer</textarea>
         poster_template: o.poster_template || "liturgical_color",
         include_social_exports: o.include_social !== false,
         include_gospel_art: o.include_gospel_art !== false,
-        include_ai_mass_poster: o.include_ai !== false,
-        ai_poster_style: o.ai_poster_style || "cinematic",
+        include_ai_mass_poster: useOpenAiPoster,
+        ai_poster_style: o.ai_poster_style || posterOpts.style,
       };
       const church = getCommunityName();
       if (church) body.community_name = church;
       try {
+        setMassGenLoading(true, "Preparing Mass package…");
         let divider_bn = null;
         const divIn = $("flow-divider-poster");
         if (divIn && divIn.files && divIn.files[0]) {
+          setMassGenLoading(true, "Uploading artwork…");
           divider_bn = await uploadMassImage(divIn.files[0], "/api/upload/mass-divider");
         }
         const ann_bns = [];
         const annIn = $("flow-announcement-posters");
         if (annIn && annIn.files && annIn.files.length) {
+          setMassGenLoading(true, "Uploading artwork…");
           for (let i = 0; i < annIn.files.length; i++) {
             ann_bns.push(await uploadMassImage(annIn.files[i], "/api/upload/announcement-slide"));
           }
@@ -3437,15 +3948,25 @@ Lord, hear our prayer</textarea>
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           poster_template: body.poster_template,
+          include_ai_mass_poster: body.include_ai_mass_poster,
+          ai_poster_style: body.ai_poster_style,
           custom_theme: body.custom_theme,
         });
         const prev = localStorage.getItem(dupKey);
         if (prev && prev === fp) {
+          setMassGenLoading(false);
           if (!window.confirm("These Mass Builder settings match your last successful generation. Generate again anyway?")) {
             return null;
           }
         }
 
+        if (body.include_ai_mass_poster) {
+          setMassGenLoading(true, "Generating OpenAI Gospel poster & Mass deck…");
+          statusFn("Generating OpenAI poster art and PowerPoint…", "");
+        } else {
+          setMassGenLoading(true, "Generating Mass PowerPoint…");
+          statusFn("Generating Mass PowerPoint…", "");
+        }
         const data = await postJSON("/api/generate", body);
         localStorage.setItem(dupKey, fp);
         if (divIn) divIn.value = "";
@@ -3487,6 +4008,8 @@ Lord, hear our prayer</textarea>
       } catch (error) {
         statusFn(error.message || "Generation failed.", "error");
         return null;
+      } finally {
+        setMassGenLoading(false);
       }
     }
 
@@ -3953,7 +4476,8 @@ Lord, hear our prayer</textarea>
         celebrant,
         poster_template: $("poster-template").value,
         include_social: $("poster-include-social").checked,
-        include_ai: $("poster-include-ai").checked,
+        include_ai: $("poster-use-openai-poster").checked,
+        ai_poster_style: $("poster-openai-poster-style").value,
         downloadRowId: "poster-download-row",
         links: [
           ["poster-dl-zip", "zip_url"],
@@ -4109,9 +4633,10 @@ Lord, hear our prayer</textarea>
     if ($("flow-collection-date")) $("flow-collection-date").value = previousSundayISO();
     (function initSideNav() {
       const shell = document.querySelector(".app-shell");
-      const sidebar = $("admin-sidebar");
-      const pinBtn = $("nav-pin-btn");
+      const sidebar = document.querySelector(".sidebar");
+      const pinBtn = document.getElementById("sidebar-pin");
       if (!shell || !sidebar) return;
+
       const NAV_PIN_KEY = "churchMediaNavPinned";
       const COLLAPSE_DELAY_MS = 350;
       let collapseTimer = null;
@@ -4130,32 +4655,19 @@ Lord, hear our prayer</textarea>
       function setExpanded(expanded) {
         if (isPinned()) return;
         shell.classList.toggle("nav-expanded", expanded);
+        sidebar.classList.toggle("expanded", expanded);
       }
 
       function loadPinState() {
         try {
           if (localStorage.getItem(NAV_PIN_KEY) === "1") {
             shell.classList.add("nav-pinned", "nav-expanded");
+            sidebar.classList.add("expanded", "pinned");
             if (pinBtn) pinBtn.setAttribute("aria-pressed", "true");
           }
         } catch (_e) {
           /* ignore */
         }
-      }
-
-      if (pinBtn) {
-        pinBtn.addEventListener("click", () => {
-          const pin = !isPinned();
-          shell.classList.toggle("nav-pinned", pin);
-          shell.classList.toggle("nav-expanded", pin);
-          pinBtn.setAttribute("aria-pressed", pin ? "true" : "false");
-          try {
-            localStorage.setItem(NAV_PIN_KEY, pin ? "1" : "0");
-          } catch (_e) {
-            /* ignore */
-          }
-          if (!pin) setExpanded(false);
-        });
       }
 
       sidebar.addEventListener("mouseenter", () => {
@@ -4169,6 +4681,23 @@ Lord, hear our prayer</textarea>
         collapseTimer = setTimeout(() => setExpanded(false), COLLAPSE_DELAY_MS);
       });
 
+      if (pinBtn) {
+        pinBtn.addEventListener("click", () => {
+          const pin = !isPinned();
+          shell.classList.toggle("nav-pinned", pin);
+          shell.classList.toggle("nav-expanded", pin);
+          sidebar.classList.toggle("pinned", pin);
+          sidebar.classList.toggle("expanded", pin);
+          pinBtn.setAttribute("aria-pressed", pin ? "true" : "false");
+          try {
+            localStorage.setItem(NAV_PIN_KEY, pin ? "1" : "0");
+          } catch (_e) {
+            /* ignore */
+          }
+          if (!pin) setExpanded(false);
+        });
+      }
+
       loadPinState();
     })();
     renderCalendarDow();
@@ -4179,6 +4708,7 @@ Lord, hear our prayer</textarea>
     loadSongCatalog();
     renderCollectionsRecent();
     refreshSavedPosters();
+    bindOpenAiPosterControls();
     showRoute(currentRoute(), true);
     analyzeLyrics();
     renderThemeGrid();

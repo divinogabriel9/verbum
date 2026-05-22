@@ -1,10 +1,11 @@
 """
-AI-driven Mass / parish event posters from lectionary data and a Hugging Face image model.
+AI-driven Mass / parish event posters from lectionary data and OpenAI image generation.
 
-Public entry point: :func:`create_mass_poster` — fetches readings, picks a short Gospel quote,
-generates sacred art (or a placeholder), composes layout, exports Instagram / Story / Facebook sizes.
+Public entry points:
+- :func:`generate_primary_openai_posters` — main ``outputs/{stem}.png`` and ``{stem}_16x9.png``
+- :func:`create_mass_poster` — additional social sizes under ``outputs/posters/``
 
-See also: :mod:`generators.ai_image_generator`, :mod:`generators.poster_layout`.
+See also: :mod:`generators.ai_image_generator`, :mod:`generators.poster` (template presets).
 """
 
 from __future__ import annotations
@@ -12,12 +13,19 @@ from __future__ import annotations
 import datetime as _dt
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 from generators.ai_image_generator import generate_sacred_illustration
-from generators.poster_layout import compose_ai_mass_poster, export_poster_sizes
+from generators.poster import (
+    PPT_SIZE,
+    PosterContent,
+    compose_poster,
+    export_poster_sizes,
+    export_primary_poster_pair,
+)
+from generators.poster.primitives import callout_from_quote
 from services.ai_styles import resolve_ai_image_style
-from services.community_config import get_community_name
+from services.community_config import get_community_name, get_logo_path
 from services.gospel_visual_prompt import build_visual_scene_line
 from services.gospel_quote_extractor import first_sentence_slide_quote, split_slide_sentences
 from services.lectionary_service import get_liturgical_data
@@ -35,35 +43,13 @@ def _format_long_date(date_iso: str) -> str:
         return date_iso
 
 
-def create_mass_poster(
+def _build_mass_poster_master(
     date: str,
     *,
     celebrant_name: Optional[str] = None,
-    language: str = "English",
     style: str = "cinematic",
-) -> dict[str, Path]:
-    """
-    Build AI-backed event posters for a Mass date.
-
-    Workflow:
-    1. Load liturgical data (readings API + cache).
-    2. Resolve Gospel reference and a short quote for the poster.
-    3. Generate a sacred illustration via Hugging Face (or placeholder if no token).
-    4. Compose the poster in a canonical 1080×1350 layout with liturgical accents.
-    5. Export Instagram post, Instagram story, and Facebook cover sizes under ``outputs/posters/``.
-
-    Args:
-        date: Mass date ``YYYY-MM-DD``.
-        celebrant_name: Priest name for the poster; defaults to ``MASS_CELEBRANT`` env or ``"TBD"``.
-        language: Reserved for future prompt / caption localization (currently English-oriented art).
-        style: Key from ``data/styles.json`` (default ``cinematic``). Hero image:
-            ``outputs/images/{date}_{style}_hero.png``.
-
-    Returns:
-        Mapping with keys ``instagram``, ``story``, ``facebook`` → written ``Path`` objects.
-    """
-    del language  # Reserved for future bilingual prompts / captions.
-
+) -> Any:
+    """Shared liturgical load, hero generation, and 1080×1350 composition."""
     data = get_liturgical_data(date)
     if not data:
         raise ValueError(f"No liturgical data for {date!r}.")
@@ -85,7 +71,6 @@ def create_mass_poster(
     )
 
     title = str(data.get("title") or "Sunday Mass Celebration")
-    api_season = str(data.get("season") or "")
     community = get_community_name()
     celebrant = (celebrant_name or os.environ.get("MASS_CELEBRANT") or "TBD").strip()
 
@@ -101,24 +86,64 @@ def create_mass_poster(
         out_path=hero_path,
         style=resolved_style,
         visual_scene_line=visual_line,
+        require_openai=True,
+        openai_size="1536x1024",
     )
 
     cycle = str(data.get("lectionary_cycle") or "").strip().upper() or "—"
 
-    # Step 4 — single master canvas at Instagram post size.
-    master = compose_ai_mass_poster(
-        (1080, 1350),
-        liturgical_day=title.replace(" Celebration", "").strip() or title,
-        hero_image_path=hero_path,
+    liturgical_title = title.replace(" Celebration", "").strip() or title
+    content = PosterContent(
+        title=liturgical_title,
         gospel_quote=short_quote,
         gospel_reference=gospel_ref,
-        year_cycle=cycle,
         date_display=_format_long_date(date),
+        year_cycle=cycle,
         celebrant_name=celebrant,
-        community_name=community,
+        hero_image_path=hero_path,
         liturgical_season_key=season_key,
+        logo_path=get_logo_path(),
+        community_name=community,
+        callout=callout_from_quote(short_quote),
     )
+    master = compose_poster(PPT_SIZE, content, preset="verbum")
 
-    # Step 5 — derivative sizes for social platforms.
+    return master
+
+
+def generate_primary_openai_posters(
+    date: str,
+    *,
+    celebrant_name: Optional[str] = None,
+    style: str = "cinematic",
+    output_stem: str,
+    output_dir: Path,
+) -> Tuple[Path, Path]:
+    """
+    Build OpenAI-backed primary parish posters at ``{stem}.png`` and ``{stem}_16x9.png``.
+
+    Also writes Instagram / Story / Facebook variants under ``outputs/posters/``.
+    """
+    master = _build_mass_poster_master(date, celebrant_name=celebrant_name, style=style)
+    social_path, ppt_path = export_primary_poster_pair(master, output_dir, output_stem)
+    _POSTERS_DIR.mkdir(parents=True, exist_ok=True)
+    export_poster_sizes(master, _POSTERS_DIR)
+    return social_path, ppt_path
+
+
+def create_mass_poster(
+    date: str,
+    *,
+    celebrant_name: Optional[str] = None,
+    language: str = "English",
+    style: str = "cinematic",
+) -> dict[str, Path]:
+    """
+    Build AI-backed social poster exports for a Mass date (``outputs/posters/``).
+
+    For main deck posters use :func:`generate_primary_openai_posters`.
+    """
+    del language  # Reserved for future bilingual prompts / captions.
+    master = _build_mass_poster_master(date, celebrant_name=celebrant_name, style=style)
     _POSTERS_DIR.mkdir(parents=True, exist_ok=True)
     return export_poster_sizes(master, _POSTERS_DIR)

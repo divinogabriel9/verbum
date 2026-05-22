@@ -9,3 +9,4 @@ beautifulsoup4
 Pillow
 pypdfium2
 huggingface_hub>=0.27.0
+openai>=1.0.0
