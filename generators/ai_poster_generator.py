@@ -15,7 +15,11 @@ import os
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
-from generators.ai_image_generator import generate_sacred_illustration
+from generators.ai_image_generator import (
+    WIDESCREEN_16_9,
+    _OPENAI_WIDESCREEN_API_SIZE,
+    generate_sacred_illustration,
+)
 from generators.poster import (
     PPT_SIZE,
     PosterContent,
@@ -80,19 +84,24 @@ def _build_mass_poster_master(
     hero_path = _IMAGES_DIR / f"{date_iso}_{resolved_style}_hero.png"
 
     # Step 3 — AI hero: short visual line from Gospel prose (not the poster quote).
-    visual_line = build_visual_scene_line(title, gospel_ref, gospel_full)
+    liturgical_title = title.replace(" Celebration", "").strip() or title
+    visual_line = build_visual_scene_line(liturgical_title, gospel_ref, gospel_full)
     generate_sacred_illustration(
         gospel_ref,
         out_path=hero_path,
         style=resolved_style,
         visual_scene_line=visual_line,
         require_openai=True,
-        openai_size="1536x1024",
+        openai_size=_OPENAI_WIDESCREEN_API_SIZE,
+        output_size=WIDESCREEN_16_9,
+        sunday_title=liturgical_title,
+        scripture_quote=short_quote,
+        gospel_text=gospel_full,
+        season_key=season_key,
     )
 
     cycle = str(data.get("lectionary_cycle") or "").strip().upper() or "—"
 
-    liturgical_title = title.replace(" Celebration", "").strip() or title
     content = PosterContent(
         title=liturgical_title,
         gospel_quote=short_quote,

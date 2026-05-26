@@ -1,14 +1,12 @@
 """
 Text-to-image for Gospel-themed sacred art (posters and hero panels).
 
-A *short* visual scene line comes from :mod:`services.gospel_visual_prompt` (like “Jesus on the water”,
-derived from the Gospel opening — not the poster quote). Style comes from ``data/styles.json``.
+Hero images are **presentation backgrounds only**: no readable text, clean safe zones
+for PowerPoint overlays. Prompts follow the church poster designer brief in
+:func:`build_church_poster_background_prompt`.
 
-Primary path: OpenAI ``gpt-image-1`` when ``OPENAI_API_KEY`` is set (see ``/generate-image`` in ``server.py``).
-Fallback: Hugging Face ``Tongyi-MAI/Z-Image-Turbo`` when ``HF_TOKEN`` / ``HUGGINGFACE_API_TOKEN`` is set.
-Without any provider (or on total failure), writes a soft gradient placeholder so layout still works.
-
-HF-only options: ``HF_INFERENCE_PROVIDER``, ``HF_DIFFUSION_NEGATIVE_PROMPT`` (ignored for OpenAI).
+Primary path: OpenAI ``gpt-image-1`` when ``OPENAI_API_KEY`` is set.
+Fallback: Hugging Face ``Tongyi-MAI/Z-Image-Turbo`` when configured.
 """
 
 from __future__ import annotations
@@ -40,13 +38,215 @@ _DEFAULT_DIFFUSION_MODEL = "Tongyi-MAI/Z-Image-Turbo"
 
 # Used when ``HF_DIFFUSION_NEGATIVE_PROMPT`` is not set — reduces empty / abstract hero panels.
 _DEFAULT_NEGATIVE = (
+    "readable text, letters, words, typography, captions, subtitles, speech bubbles, "
+    "Bible verse written on image, scripture text overlay, title card, fake poster text, "
+    "misspelled words, garbled text, movie poster text, watermark, logo, UI, "
     "solid color only, flat gradient background, abstract wallpaper, empty scene, "
-    "no people, no faces, distant unreadable silhouettes only, modern UI, "
-    "text, letters, words, typography, captions, subtitles, speech bubbles, "
-    "Bible verse written on image, scripture text overlay, title card, "
-    "misspelled words, garbled text, movie poster text, watermark, logo, "
     "deformed hands, extra limbs, low quality, blurry"
 )
+
+_STYLE_LABELS: dict[str, str] = {
+    "cinematic": "Cinematic",
+    "realistic": "Realistic",
+    "renaissance": "Renaissance",
+    "stained_glass": "Stained Glass",
+    "modern": "Modern",
+}
+
+_STYLE_BEHAVIOR: dict[str, str] = {
+    "cinematic": (
+        "dramatic movie-like lighting, cinematic composition, volumetric light, "
+        "emotional atmosphere, epic worship visuals"
+    ),
+    "realistic": (
+        "realistic biblical environment, natural lighting, authentic textures, "
+        "detailed scenery, believable human proportions"
+    ),
+    "renaissance": (
+        "classical renaissance painting, rich religious oil-painting aesthetic, "
+        "dramatic shadows, sacred artistic composition, cathedral-quality artwork"
+    ),
+    "stained_glass": (
+        "church stained glass window style, colorful segmented glass patterns, "
+        "glowing cathedral lighting, ornate sacred design, luminous mosaic aesthetic"
+    ),
+    "modern": (
+        "modern church social-media aesthetic, minimal layered composition, soft gradients, "
+        "subtle depth, clean premium worship branding"
+    ),
+}
+
+_COMPOSITION_RULES = (
+    "16:9 PowerPoint widescreen landscape, ultra high quality, presentation-ready, "
+    "clean title safe area at top center with soft negative space, "
+    "quote safe area near center-right with uncluttered backdrop, "
+    "footer safe area along lower edge for metadata, "
+    "logo safe area top-left kept visually calm, "
+    "balanced negative space, projector readability, emotionally uplifting worship atmosphere"
+)
+
+_NO_TEXT_RULES = (
+    "Do NOT generate readable text. Do NOT place fake typography or scripture lettering. "
+    "Background art only — leave clean composition spaces for editable PowerPoint text overlays. "
+    "Absolutely no words, letters, captions, watermarks, or logos in the image."
+)
+
+
+def _clip(text: str, limit: int) -> str:
+    t = " ".join((text or "").split()).strip()
+    if len(t) <= limit:
+        return t
+    return t[: limit - 1].rsplit(" ", 1)[0].rstrip(" ,.;")
+
+
+def _infer_storytelling_mood(
+    *,
+    sunday_title: str,
+    gospel_reference: str,
+    gospel_text: str,
+    scripture_quote: str,
+    season_key: str,
+) -> str:
+    """Pick visual storytelling guidance from Gospel theme and liturgical season."""
+    blob = " ".join(
+        [
+            (sunday_title or "").lower(),
+            (gospel_reference or "").lower(),
+            (gospel_text or "")[:600].lower(),
+            (scripture_quote or "")[:400].lower(),
+            (season_key or "").lower().replace("_", " "),
+        ]
+    )
+
+    if any(
+        k in blob
+        for k in (
+            "resurrection",
+            " risen ",
+            "risen ",
+            "empty tomb",
+            "easter",
+            "alleluia",
+            "ascension",
+            "pentecost",
+        )
+    ) or season_key in ("easter", "pentecost"):
+        return (
+            "Resurrection Gospel mood: radiant heavenly light, victorious atmosphere, "
+            "glowing sky, uplifting composition, hope and triumph"
+        )
+
+    if season_key in ("lent", "advent") or any(
+        k in blob for k in ("repent", "fast", "desert", "temptation", "passion", "cross", "suffer")
+    ):
+        return (
+            "Lent or repentance mood: solemn lighting, liturgical atmosphere, "
+            "minimalist emotional composition, symbolic light emerging from darkness"
+        )
+
+    if any(
+        k in blob
+        for k in (
+            "heal",
+            "blind",
+            "lame",
+            "paralytic",
+            "mercy",
+            "forgiv",
+            "compassion",
+            "bless",
+            "comfort",
+            "weep",
+            "touch",
+        )
+    ):
+        return (
+            "Healing or mercy Gospel mood: compassionate emotional framing, "
+            "soft divine lighting, peaceful atmosphere, gentle warmth"
+        )
+
+    if any(
+        k in blob
+        for k in (
+            "disciples",
+            "apostles",
+            "journey",
+            "road",
+            "follow",
+            "sent ",
+            "mission",
+            "boat",
+            "sea",
+            "walk",
+            "teach",
+        )
+    ):
+        return (
+            "Disciples or journey Gospel mood: cinematic storytelling scenery, "
+            "movement and direction, emotional environment, narrative depth"
+        )
+
+    return (
+        "Sunday Gospel mood: sacred biblical storytelling, reverent worship atmosphere, "
+        "clear focal moment, divine light guiding the scene"
+    )
+
+
+def build_church_poster_background_prompt(
+    *,
+    style: str,
+    sunday_title: str = "",
+    gospel_reference: str = "",
+    gospel_verse: str = "",
+    scripture_quote: str = "",
+    visual_scene_line: str = "",
+    season_key: str = "",
+    gospel_text: str = "",
+) -> str:
+    """
+    Build the full diffusion prompt for a cinematic church Sunday Gospel poster **background**.
+
+    Text overlays (title, quote, metadata) are added in PowerPoint — the image must stay text-free.
+    """
+    resolved = resolve_ai_image_style(style)
+    style_label = _STYLE_LABELS.get(resolved, resolved.replace("_", " ").title())
+    style_behavior = _STYLE_BEHAVIOR.get(resolved) or style_prompt_fragment(resolved)
+
+    title = _clip(sunday_title.replace(" Celebration", "").strip() or "Sunday Mass", 120)
+    ref = _clip(gospel_verse or gospel_reference or "the Gospel", 80)
+    quote = _clip(scripture_quote, 220)
+    scene = _clip(visual_scene_line, 170)
+    if not scene:
+        scene = f"the main biblical moment from {ref}"
+
+    mood = _infer_storytelling_mood(
+        sunday_title=title,
+        gospel_reference=ref,
+        gospel_text=gospel_text or "",
+        scripture_quote=quote,
+        season_key=(season_key or "").strip().lower(),
+    )
+
+    parts = [
+        "You are an AI church poster designer generating a cinematic church Sunday Gospel poster "
+        "BACKGROUND for PowerPoint presentations.",
+        _NO_TEXT_RULES,
+        f"STYLE: {style_label}. {style_behavior}.",
+        (
+            "Gospel context (for mood and storytelling only — never render as text): "
+            f"Sunday Title: {title}; Gospel: {ref}; "
+            + (f"Scripture theme: {quote}." if quote else "")
+        ),
+        (
+            "Visual storytelling: understand the Gospel situation, identify the main biblical moment, "
+            f"determine emotional atmosphere. Main scene to paint: {scene}."
+        ),
+        mood + ".",
+        "Match the composition to the selected art style; reserve safe typography areas for PowerPoint editing.",
+        _COMPOSITION_RULES + ".",
+        "Focus on visual storytelling and worship atmosphere. Pure illustration, no typography anywhere.",
+    ]
+    return " ".join(parts)
 
 
 def build_hf_image_prompt(
@@ -54,30 +254,22 @@ def build_hf_image_prompt(
     style: str,
     *,
     visual_scene_line: str,
+    sunday_title: str = "",
+    scripture_quote: str = "",
+    gospel_text: str = "",
+    season_key: str = "",
 ) -> str:
-    """
-    Full diffusion prompt: short visual beat + citation + no-text constraints + style.
-
-    ``visual_scene_line`` should read like a plain scene caption (no quoted dialogue).
-    """
-    ref = (gospel_reference or "the Gospel").strip()
-    v = " ".join((visual_scene_line or "").split()).rstrip(" ,.;")
-    if len(v) > 170:
-        v = v[:169].rsplit(" ", 1)[0].rstrip(" ,.;")
-    if not v:
-        v = f"a key moment from {ref}"
-    base = (
-        f"{v}. Biblical narrative painting inspired by {ref}, ancient Near East setting, "
-        "robed human figures, clear faces and gestures, wide cinematic shot, environmental storytelling, "
-        "purely visual illustration with no readable words in the frame, "
-        "absolutely no text anywhere, no letters, no captions, no Bible verse overlay, "
-        "no speech bubbles, no subtitles, no watermark, no logo, no UI"
+    """Full diffusion prompt using the church poster background designer brief."""
+    return build_church_poster_background_prompt(
+        style=style,
+        sunday_title=sunday_title,
+        gospel_reference=gospel_reference,
+        gospel_verse=gospel_reference,
+        scripture_quote=scripture_quote,
+        visual_scene_line=visual_scene_line,
+        season_key=season_key,
+        gospel_text=gospel_text,
     )
-    resolved = resolve_ai_image_style(style)
-    frag = style_prompt_fragment(resolved)
-    if frag:
-        return f"{base}, {frag}"
-    return base
 
 
 def _resolved_negative_prompt() -> str:
@@ -167,6 +359,31 @@ def _decode_hf_image_bytes(raw: bytes) -> Optional[bytes]:
         if decoded and _is_binary_image_magic(decoded):
             return decoded
     return None
+
+
+def fit_image_file_to_size(path: Path, size: tuple[int, int]) -> None:
+    """Center-crop to aspect ratio, then resize to exact pixel dimensions (e.g. 1920×1080)."""
+    from PIL import Image
+
+    tw, th = size
+    if tw < 1 or th < 1:
+        return
+    target_ar = tw / th
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        w, h = im.size
+        cur_ar = w / max(h, 1)
+        if cur_ar > target_ar:
+            new_w = max(1, int(h * target_ar))
+            x0 = (w - new_w) // 2
+            im = im.crop((x0, 0, x0 + new_w, h))
+        elif cur_ar < target_ar:
+            new_h = max(1, int(w / target_ar))
+            y0 = (h - new_h) // 2
+            im = im.crop((0, y0, w, y0 + new_h))
+        if im.size != (tw, th):
+            im = im.resize((tw, th), Image.Resampling.LANCZOS)
+        im.save(path, format="PNG", optimize=True)
 
 
 def _write_raster_as_png(data: bytes, out_path: Path) -> bool:
@@ -318,6 +535,10 @@ _PLACEHOLDER_MAX_BYTES = 24_000  # Real gpt-image-1 PNGs are typically much larg
 
 POSTER_WIDTH = 1080
 POSTER_HEIGHT = 1920
+# PowerPoint widescreen (16:9) — matches ``generators.poster.types.PPT_SIZE``.
+WIDESCREEN_16_9 = (1920, 1080)
+# Closest landscape size from gpt-image-1; center-cropped and upscaled to 1920×1080.
+_OPENAI_WIDESCREEN_API_SIZE = "1536x1024"
 # Closest portrait size supported by gpt-image-1; resized to 1080×1920 on save.
 _OPENAI_PORTRAIT_API_SIZE = "1024x1536"
 
@@ -450,16 +671,18 @@ def generate_sacred_illustration(
     visual_scene_line: Optional[str] = None,
     require_openai: bool = False,
     openai_size: str = "1024x1024",
+    output_size: Optional[tuple[int, int]] = None,
+    sunday_title: str = "",
+    scripture_quote: str = "",
+    gospel_text: str = "",
+    season_key: str = "",
 ) -> Path:
     """
-    Generate sacred art and save a PNG locally.
+    Generate a Gospel poster **background** PNG (no baked-in text).
 
-    Uses OpenAI ``gpt-image-1`` when ``OPENAI_API_KEY`` is set; otherwise Hugging Face if configured.
-    On missing credentials or failure, writes a gradient placeholder unless ``require_openai=True``,
-    in which case an exception is raised (no placeholder).
-
-    Pass ``visual_scene_line`` — a short, plain description of the Gospel *moment* (no poster quote).
-    If omitted, a minimal line is derived from the citation only.
+    Pass ``visual_scene_line`` — a short plain description of the Gospel moment (no poster quote).
+    Optional ``sunday_title``, ``scripture_quote``, ``gospel_text``, and ``season_key`` enrich
+    the designer prompt (:func:`build_church_poster_background_prompt`).
     """
     try:
         from dotenv import load_dotenv
@@ -484,8 +707,17 @@ def generate_sacred_illustration(
 
     vline = (visual_scene_line or "").strip()
     if not vline:
-        vline = build_visual_scene_line("", gospel_reference, "")
-    prompt = build_hf_image_prompt(gospel_reference, resolved_style, visual_scene_line=vline)
+        vline = build_visual_scene_line(sunday_title, gospel_reference, gospel_text or "")
+    prompt = build_church_poster_background_prompt(
+        style=resolved_style,
+        sunday_title=sunday_title,
+        gospel_reference=gospel_reference,
+        gospel_verse=gospel_reference,
+        scripture_quote=scripture_quote,
+        visual_scene_line=vline,
+        season_key=season_key,
+        gospel_text=gospel_text,
+    )
     negative = _resolved_negative_prompt()
     prompt_preview = (prompt[:200] + "…") if len(prompt) > 200 else prompt
 
@@ -496,6 +728,8 @@ def generate_sacred_illustration(
         )
         try:
             _generate_with_openai(prompt, out_path, size=openai_size)
+            if output_size:
+                fit_image_file_to_size(out_path, output_size)
             logger.info(
                 "OpenAI sacred image saved output=%s (%s bytes) gospel=%s style=%s",
                 out_path,

@@ -6,26 +6,33 @@
   <title>{{ title }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Mea+Culpa&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;600;700&family=Mea+Culpa&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #eef2f7;
-      --surface: #ffffff;
-      --surface-2: #f8fafc;
-      --ink: #101827;
-      --muted: #617084;
-      --line: #dfe6ef;
-      --accent: #f15f3a;
-      --accent-2: #6d5dfc;
-      --good: #138a5d;
-      --warn: #bc6c25;
-      --danger: #b42342;
-      --radius: 22px;
-      --radius-sm: 14px;
-      --shadow: 0 24px 70px rgba(17, 24, 39, 0.12);
-      --shadow-sm: 0 12px 30px rgba(17, 24, 39, 0.08);
-      --font: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      --bg: #eef0fb;
+      --surface: rgba(255, 255, 255, 0.62);
+      --surface-2: rgba(255, 255, 255, 0.45);
+      --surface-solid: rgba(255, 255, 255, 0.88);
+      --ink: #2d3348;
+      --muted: #6b7289;
+      --line: rgba(255, 255, 255, 0.72);
+      --line-soft: rgba(167, 139, 250, 0.14);
+      --accent: #a78bfa;
+      --accent-2: #f472b6;
+      --accent-3: #7dd3fc;
+      --good: #10b981;
+      --warn: #d97706;
+      --danger: #e11d48;
+      --radius: 24px;
+      --radius-sm: 16px;
+      --radius-pill: 999px;
+      --shadow: 0 24px 64px rgba(139, 92, 246, 0.12), 0 8px 24px rgba(15, 23, 42, 0.06);
+      --shadow-sm: 0 12px 32px rgba(139, 92, 246, 0.1), 0 4px 12px rgba(15, 23, 42, 0.04);
+      --shadow-hover: 0 28px 56px rgba(139, 92, 246, 0.18), 0 12px 28px rgba(244, 114, 182, 0.1);
+      --glass-blur: blur(20px) saturate(1.35);
+      --font: "Plus Jakarta Sans", Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
       --brand-font: "Mea Culpa", cursive;
+      --sidebar-gap: 20px;
     }
 
     .mea-culpa-regular {
@@ -41,9 +48,11 @@
       color: var(--ink);
       font-family: var(--font);
       background:
-        radial-gradient(circle at 12% 8%, rgba(109, 93, 252, 0.14), transparent 26rem),
-        radial-gradient(circle at 90% 14%, rgba(241, 95, 58, 0.15), transparent 24rem),
-        linear-gradient(135deg, #f7f9fd 0%, var(--bg) 100%);
+        radial-gradient(ellipse 80% 60% at 8% 0%, rgba(167, 139, 250, 0.28), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 92% 8%, rgba(244, 114, 182, 0.22), transparent 50%),
+        radial-gradient(ellipse 60% 45% at 50% 100%, rgba(125, 211, 252, 0.2), transparent 55%),
+        linear-gradient(165deg, #f5f3ff 0%, #eef0fb 38%, #e8f4ff 100%);
+      background-attachment: fixed;
     }
 
     a { color: inherit; text-decoration: none; }
@@ -54,11 +63,12 @@
       transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, background 0.14s ease;
     }
     button:hover { transform: translateY(-1px); }
+    button.uiverse-btn:hover { transform: none; }
     button:disabled { cursor: not-allowed; opacity: 0.48; transform: none; }
 
     .app-shell {
-      --nav-width-collapsed: 64px;
-      --nav-width-expanded: 240px;
+      --nav-width-collapsed: 72px;
+      --nav-width-expanded: 248px;
       --nav-width: var(--nav-width-collapsed);
       display: flex;
       min-height: 100vh;
@@ -73,34 +83,36 @@
     }
     .side-nav {
       position: fixed;
-      left: 0;
-      top: 0;
-      bottom: 0;
+      left: var(--sidebar-gap);
+      top: var(--sidebar-gap);
+      bottom: var(--sidebar-gap);
       width: var(--nav-width);
       z-index: 40;
-      padding: 12px 8px 16px;
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 0;
-      background: linear-gradient(180deg, #0a101d 0%, #121b2d 55%, #0f1628 100%);
-      color: #dbe7ff;
-      box-shadow: 8px 0 32px rgba(8, 12, 24, 0.35);
+      padding: 14px 10px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      color: var(--ink);
+      box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
       gap: 0;
       overflow: hidden;
-      transition: width 0.2s ease, box-shadow 0.2s ease;
+      transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
     }
     .app-shell.nav-expanded .side-nav,
     .app-shell.nav-pinned .side-nav {
-      box-shadow: 12px 0 40px rgba(0, 0, 0, 0.4);
+      box-shadow: var(--shadow-hover);
     }
     .side-nav-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 6px;
-      padding: 4px 6px 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+      padding: 4px 6px 14px;
+      border-bottom: 1px solid var(--line-soft);
       flex-shrink: 0;
       min-height: 44px;
     }
@@ -131,11 +143,11 @@
       display: block;
     }
     .side-brand-mark {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: rgba(109, 93, 252, 0.28);
-      border: 1px solid rgba(109, 93, 252, 0.45);
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.9), rgba(244, 114, 182, 0.85));
+      border: 1px solid rgba(255, 255, 255, 0.65);
       display: grid;
       place-items: center;
       font-size: 0.72rem;
@@ -143,6 +155,7 @@
       color: #fff;
       flex-shrink: 0;
       letter-spacing: 0.04em;
+      box-shadow: 0 8px 20px rgba(167, 139, 250, 0.35);
     }
     .side-brand-text {
       flex: 1;
@@ -161,7 +174,7 @@
     }
     .side-brand-text strong {
       display: block;
-      color: #ffffff;
+      color: var(--ink);
       font-family: var(--brand-font);
       font-size: 1.55rem;
       font-weight: 400;
@@ -172,41 +185,43 @@
     .side-brand-text .side-brand-sub {
       display: block;
       font-size: 0.72rem;
-      font-weight: 300;
+      font-weight: 500;
       letter-spacing: 0.08em;
       text-transform: none;
-      color: rgba(255, 255, 255, 0.72);
+      color: var(--muted);
       margin-top: 2px;
     }
     .side-brand-text span:not(.side-brand-sub) {
       display: block;
       margin-top: 4px;
-      color: #93a4c1;
+      color: var(--muted);
       font-size: 0.76rem;
       line-height: 1.35;
     }
     .nav-pin-btn {
       flex-shrink: 0;
-      width: 32px;
-      height: 32px;
-      border-radius: 9px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.06);
-      color: #dbe7ff;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+      color: var(--muted);
       font-size: 0.9rem;
       line-height: 1;
       cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     }
     .nav-pin-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
     }
     .app-shell.nav-pinned .nav-pin-btn {
-      background: rgba(109, 93, 252, 0.35);
-      border-color: rgba(109, 93, 252, 0.55);
-      color: #fff;
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.35), rgba(244, 114, 182, 0.25));
+      border-color: rgba(167, 139, 250, 0.45);
+      color: #6d28d9;
       transform: rotate(-45deg);
+      box-shadow: 0 0 20px rgba(167, 139, 250, 0.35);
     }
 
     .side-nav-scroll {
@@ -232,7 +247,7 @@
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #6b7c9e;
+      color: var(--muted);
     }
     .nav-section-label .nav-label {
       opacity: 0;
@@ -252,16 +267,15 @@
       width: 20px;
       height: 20px;
       margin-right: 10px;
-      opacity: 0.85;
+      opacity: 0.72;
       flex-shrink: 0;
       display: block;
       object-fit: contain;
-      filter: brightness(0) invert(0.82);
+      filter: none;
     }
     .nav-item:hover .nav-icon,
     .nav-item.active .nav-icon {
       opacity: 1;
-      filter: brightness(0) invert(1);
     }
     .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-item .nav-icon {
       margin-right: 0;
@@ -284,13 +298,13 @@
     }
 
     .nav-link {
-      padding: 9px 10px;
-      border-radius: 10px;
-      color: #b4c4e4;
+      padding: 10px 12px;
+      border-radius: 14px;
+      color: var(--muted);
       font-weight: 600;
       font-size: 0.86rem;
       border: 1px solid transparent;
-      transition: background 0.15s ease, color 0.15s ease, padding 0.25s ease;
+      transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
     }
     .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link {
       justify-content: center;
@@ -327,20 +341,22 @@
     }
 
     .nav-link:hover {
-      background: rgba(255, 255, 255, 0.06);
-      color: #fff;
+      background: rgba(255, 255, 255, 0.55);
+      color: var(--ink);
+      transform: translateX(2px);
     }
 
     .nav-link.active {
-      background: rgba(109, 93, 252, 0.22);
-      border-color: rgba(109, 93, 252, 0.45);
-      color: #fff;
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.32), rgba(244, 114, 182, 0.18));
+      border-color: rgba(167, 139, 250, 0.35);
+      color: #5b21b6;
+      box-shadow: 0 0 24px rgba(167, 139, 250, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.65);
     }
 
     .nav-link.sub {
       font-size: 0.82rem;
       font-weight: 500;
-      color: #9eb0d4;
+      color: var(--muted);
     }
 
     .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link[data-nav-tooltip]:hover::after,
@@ -351,41 +367,49 @@
       top: 50%;
       transform: translateY(-50%);
       z-index: 60;
-      padding: 4px 8px;
-      border-radius: 4px;
-      background: #111;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(45, 51, 72, 0.92);
       color: #fff;
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
       pointer-events: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(12px);
     }
 
     .dashboard {
       flex: 1;
       min-width: 0;
-      margin-left: var(--nav-width);
+      margin-left: calc(var(--nav-width) + var(--sidebar-gap) * 2);
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      padding: 20px 24px 32px;
+      gap: 20px;
+      padding: var(--sidebar-gap) var(--sidebar-gap) 40px;
       max-height: 100vh;
       overflow-y: auto;
       overflow-x: hidden;
-      transition: margin-left 0.25s ease;
+      transition: margin-left 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .topbar, .hero, .panel, .tool-card, .modal-box {
-      border: 1px solid rgba(223, 230, 239, 0.9);
-      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      background: var(--surface);
       box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(12px);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      transition: box-shadow 0.28s ease, transform 0.28s ease, border-color 0.28s ease;
+    }
+    .panel:hover, .tool-card:hover, .hero:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+      border-color: rgba(167, 139, 250, 0.28);
     }
 
     .topbar {
-      border-radius: 18px;
-      padding: 14px 16px;
+      border-radius: var(--radius);
+      padding: 16px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -398,11 +422,11 @@
       min-width: 0;
     }
     .brand-mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 13px;
-      background: conic-gradient(from 140deg, #f15f3a, #ffbe76, #6d5dfc, #f15f3a);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.95), rgba(125, 211, 252, 0.9), rgba(244, 114, 182, 0.85));
+      box-shadow: 0 8px 24px rgba(167, 139, 250, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.55);
       flex: 0 0 auto;
     }
     .brand h1 {
@@ -413,6 +437,7 @@
       font-style: normal;
       letter-spacing: 0.02em;
       line-height: 1.1;
+      color: var(--ink);
     }
     .brand .topbar-liturgyflow {
       margin: 2px 0 0;
@@ -457,24 +482,27 @@
       width: 360px;
       height: 220px;
       border-radius: 999px;
-      background: rgba(109, 93, 252, 0.12);
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.22), rgba(244, 114, 182, 0.08) 60%, transparent 70%);
       transform: rotate(-15deg);
+      pointer-events: none;
     }
     .hero > * { position: relative; }
     .eyebrow {
       margin: 0 0 8px;
-      color: var(--accent);
+      color: #7c3aed;
       font-size: 0.72rem;
-      font-weight: 900;
+      font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
     .hero h2 {
       max-width: 850px;
       margin: 0;
-      font-size: clamp(1.65rem, 2.8vw, 3.1rem);
-      line-height: 1.02;
-      letter-spacing: -0.045em;
+      font-size: clamp(1.65rem, 2.8vw, 2.75rem);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+      font-weight: 800;
+      color: var(--ink);
     }
     .hero p {
       max-width: 760px;
@@ -490,12 +518,18 @@
       min-width: 330px;
     }
     .metric {
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #fff;
+      padding: 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      backdrop-filter: blur(12px);
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
     }
-    .metric strong { display: block; font-size: 1.2rem; }
+    .metric:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .metric strong { display: block; font-size: 1.2rem; font-weight: 800; color: var(--ink); }
     .metric span { color: var(--muted); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
 
     .workspace {
@@ -522,7 +556,7 @@
       gap: 12px;
       margin-bottom: 14px;
     }
-    .panel-head h3, .tool-card h3 { margin: 0; font-size: 1.02rem; letter-spacing: -0.02em; }
+    .panel-head h3, .tool-card h3 { margin: 0; font-size: 1.08rem; letter-spacing: -0.02em; font-weight: 800; color: var(--ink); }
     .panel-head p, .tool-card > p { margin: 5px 0 0; color: var(--muted); font-size: 0.86rem; line-height: 1.45; }
 
     label {
@@ -536,16 +570,17 @@
     }
     textarea, input[type="text"], input[type="date"], input[type="file"], select {
       width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: #fff;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      background: var(--surface-solid);
       color: var(--ink);
-      padding: 11px 12px;
+      padding: 12px 14px;
       outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     textarea:focus, input:focus, select:focus {
-      border-color: rgba(109, 93, 252, 0.55);
-      box-shadow: 0 0 0 4px rgba(109, 93, 252, 0.12);
+      border-color: rgba(167, 139, 250, 0.55);
+      box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.14);
     }
     textarea {
       min-height: 340px;
@@ -578,21 +613,143 @@
       font-weight: 850;
     }
     .primary {
-      padding: 12px 17px;
+      padding: 12px 20px;
       color: #fff;
-      background: linear-gradient(135deg, var(--accent), #ff855d);
-      box-shadow: 0 12px 22px rgba(241, 95, 58, 0.23);
+      background: linear-gradient(135deg, #a78bfa, #f472b6);
+      box-shadow: 0 12px 28px rgba(167, 139, 250, 0.35);
+    }
+    .primary:hover {
+      box-shadow: 0 16px 36px rgba(244, 114, 182, 0.35);
+    }
+    .secondary {
+      padding: 12px 18px;
+      color: var(--ink);
+      background: var(--surface-solid);
+      border: 1px solid var(--line-soft);
+      box-shadow: var(--shadow-sm);
+    }
+    /* Metallic pill buttons (Uiverse-style) */
+    .uiverse-btn {
+      all: unset;
+      cursor: pointer;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      position: relative;
+      display: inline-block;
+      border-radius: 100em;
+      background-color: rgba(0, 0, 0, 0.75);
+      box-shadow:
+        -0.15em -0.15em 0.15em -0.075em rgba(5, 5, 5, 0.25),
+        0.0375em 0.0375em 0.0675em 0 rgba(5, 5, 5, 0.1);
+      font-family: Inter, var(--font);
+    }
+    .uiverse-btn::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      width: calc(100% + 0.3em);
+      height: calc(100% + 0.3em);
+      top: -0.15em;
+      left: -0.15em;
+      border-radius: inherit;
+      background: linear-gradient(-135deg, rgba(5, 5, 5, 0.5), transparent 20%, transparent 100%);
+      filter: blur(0.0125em);
+      opacity: 0.25;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+    .uiverse-btn .button-outer {
+      position: relative;
+      z-index: 1;
+      border-radius: inherit;
+      transition: box-shadow 300ms ease;
+      will-change: box-shadow;
+      box-shadow:
+        0 0.05em 0.05em -0.01em rgba(5, 5, 5, 1),
+        0 0.01em 0.01em -0.01em rgba(5, 5, 5, 0.5),
+        0.15em 0.3em 0.1em -0.01em rgba(5, 5, 5, 0.25);
+    }
+    .uiverse-btn:hover:not(.is-disabled) .button-outer {
+      box-shadow: 0 0 0 0 rgba(5, 5, 5, 1), 0 0 0 0 rgba(5, 5, 5, 0.5), 0 0 0 0 rgba(5, 5, 5, 0.25);
+    }
+    .uiverse-btn .button-inner {
+      --inset: 0.035em;
+      position: relative;
+      z-index: 1;
+      border-radius: inherit;
+      padding: 0.85em 1.35em;
+      background-image: linear-gradient(135deg, rgba(230, 230, 230, 1), rgba(180, 180, 180, 1));
+      transition: box-shadow 300ms ease, clip-path 250ms ease, background-image 250ms ease, transform 250ms ease;
+      overflow: clip;
+      clip-path: inset(0 0 0 0 round 100em);
+      box-shadow:
+        0 0 0 0 inset rgba(5, 5, 5, 0.1),
+        -0.05em -0.05em 0.05em 0 inset rgba(5, 5, 5, 0.25),
+        0 0 0 0 inset rgba(5, 5, 5, 0.1),
+        0 0 0.05em 0.2em inset rgba(255, 255, 255, 0.25),
+        0.025em 0.05em 0.1em 0 inset rgba(255, 255, 255, 1),
+        0.12em 0.12em 0.12em inset rgba(255, 255, 255, 0.25),
+        -0.075em -0.25em 0.25em 0.1em inset rgba(5, 5, 5, 0.25);
+    }
+    .uiverse-btn--sm .button-inner { padding: 0.55em 1em; }
+    .uiverse-btn--orange .button-outer {
+      box-shadow: 0 10px 32px rgba(167, 139, 250, 0.38), 0 4px 12px rgba(244, 114, 182, 0.2);
+    }
+    .uiverse-btn--orange:hover:not(.is-disabled) .button-outer {
+      box-shadow: 0 14px 40px rgba(167, 139, 250, 0.45), 0 6px 16px rgba(244, 114, 182, 0.28);
+    }
+    .uiverse-btn--orange .button-inner {
+      background-image: linear-gradient(135deg, #a78bfa, #f472b6);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+    .uiverse-btn:hover:not(.is-disabled) .button-inner {
+      clip-path: inset(clamp(1px, 0.0625em, 2px) clamp(1px, 0.0625em, 2px) clamp(1px, 0.0625em, 2px) clamp(1px, 0.0625em, 2px) round 100em);
+    }
+    .uiverse-btn:hover:not(.is-disabled) .button-inner span { transform: scale(0.975); }
+    .uiverse-btn:active:not(.is-disabled) .button-inner { transform: scale(0.975); }
+    .uiverse-btn .button-inner span {
+      position: relative;
+      z-index: 4;
+      letter-spacing: -0.04em;
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: rgba(0, 0, 0, 0);
+      background-image: linear-gradient(135deg, rgba(25, 25, 25, 1), rgba(75, 75, 75, 1));
+      -webkit-background-clip: text;
+      background-clip: text;
+      display: block;
+      transition: transform 250ms ease;
+      user-select: none;
+    }
+    .uiverse-btn--orange .button-inner span {
+      color: #ffffff;
+      background-image: none;
+      -webkit-background-clip: border-box;
+      background-clip: border-box;
+      text-shadow: 0 1px 2px rgba(91, 33, 182, 0.2);
+    }
+    .uiverse-btn.is-disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+    }
+    .uiverse-btn.is-disabled .button-inner {
+      background-image: linear-gradient(135deg, #d8d8d8, #b0b0b0);
+    }
+    .uiverse-btn.is-disabled .button-inner span {
+      background-image: linear-gradient(135deg, #888, #aaa);
     }
     .secondary {
       padding: 11px 16px;
       color: var(--ink);
-      border: 1px solid var(--line);
-      background: #fff;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-sm);
     }
     .ghost, .mini {
-      border: 1px solid var(--line);
+      border: 1px solid var(--line-soft);
       background: var(--surface-2);
-      color: #334155;
+      color: var(--ink);
+      backdrop-filter: blur(10px);
     }
     .ghost { padding: 10px 14px; }
     .mini { padding: 7px 10px; font-size: 0.76rem; }
@@ -607,13 +764,14 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 10px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: #fff;
-      color: #475569;
+      padding: 7px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-pill);
+      background: var(--surface-2);
+      color: var(--muted);
       font-size: 0.76rem;
-      font-weight: 850;
+      font-weight: 700;
+      backdrop-filter: blur(8px);
     }
     .dot {
       width: 8px;
@@ -881,6 +1039,313 @@
       padding: 18px;
     }
 
+    /* Song Plan — mini PowerPoint preview panel */
+    .song-preview-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      pointer-events: none;
+      visibility: hidden;
+    }
+    .song-preview-panel.visible,
+    .song-preview-panel.closing {
+      pointer-events: auto;
+      visibility: visible;
+    }
+    .song-preview-panel__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(7, 12, 22, 0.45);
+      opacity: 0;
+      transition: opacity 320ms ease;
+    }
+    .song-preview-panel.visible .song-preview-panel__backdrop { opacity: 1; }
+    .song-preview-panel__sheet {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(520px, 100vw);
+      max-width: 100%;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      box-shadow: -24px 0 64px rgba(139, 92, 246, 0.14);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(104%);
+      transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+      border-left: 1px solid var(--line);
+    }
+    .song-preview-panel.visible .song-preview-panel__sheet { transform: translateX(0); }
+    .song-preview-panel__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .song-preview-panel__body {
+      flex: 1;
+      overflow: auto;
+      padding: 16px 18px 24px;
+    }
+    .song-ppt-viewer {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .song-ppt-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .song-ppt-toolbar-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .song-ppt-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.25);
+      transition: transform 200ms ease, background 200ms ease;
+    }
+    .song-ppt-dot.active {
+      background: var(--accent);
+      transform: scale(1.15);
+    }
+    .song-ppt-stage {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #0a0e16;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+    }
+    .song-ppt-slides {
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scroll-snap-type: y proximity;
+      scroll-behavior: smooth;
+      gap: 14px;
+      padding: 12px;
+      max-height: min(72vh, 680px);
+      -webkit-overflow-scrolling: touch;
+    }
+    .song-ppt-slides::-webkit-scrollbar { width: 6px; }
+    .song-ppt-slides::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 99px; }
+    .hymn-slide-wrap {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+    }
+    .slide-preview.hymn-slide {
+      aspect-ratio: 16 / 9;
+      min-height: 180px;
+      padding: clamp(14px, 3vw, 28px);
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+      background: #000000 !important;
+      color: #ffffff;
+      box-shadow: none;
+      font-family: "Arial Black", Arial, sans-serif;
+      flex-direction: column;
+    }
+    .slide-preview.hymn-slide::before { display: none; }
+    .hymn-preview-title-card {
+      background: #000000;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      border: 1px solid #2a2a32;
+      text-align: center;
+    }
+    .hymn-preview-title-card .hymn-title-text {
+      font-family: Georgia, "Times New Roman", serif;
+      color: #ffcc4d;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.12;
+      margin: 0;
+      text-transform: none;
+    }
+    .hymn-slide-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .song-preview-slide-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .song-preview-slide-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 10px;
+      padding: 10px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+    }
+    .song-preview-slide-controls label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .song-preview-slide-controls input[type="range"] { width: 100%; }
+    .song-preview-slide-controls select {
+      width: 100%;
+      padding: 5px 7px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-size: 0.8rem;
+    }
+    .song-preview-slide-controls .span-2 { grid-column: 1 / -1; }
+    .song-preview-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+      margin-bottom: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+    }
+    .song-preview-controls label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .song-preview-controls input[type="range"] { width: 100%; }
+    .song-preview-controls select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+    .song-preview-controls .span-2 { grid-column: 1 / -1; }
+    .song-preview-save-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+    #song-preview-save-status { font-size: 0.8rem; flex: 1 1 100%; }
+    .hymn-slide .hymn-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 94%;
+      margin: 0 auto;
+    }
+    .hymn-slide .hymn-lines {
+      color: #ffffff;
+      line-height: 1.08;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      width: 100%;
+      text-align: center;
+    }
+    .hymn-slide.lines-many .hymn-lines { font-size: clamp(0.62rem, 1.5vw, 0.88rem); }
+    .hymn-slide.lines-long .hymn-lines { font-size: clamp(0.58rem, 1.35vw, 0.8rem); }
+    .hymn-slide .hymn-title-text {
+      font-family: Georgia, "Times New Roman", serif;
+      color: #ffcc4d;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.12;
+      margin: 0 0 10px;
+      width: 100%;
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .hymn-lines-editable,
+    .hymn-title-editable {
+      outline: none;
+      border-radius: 8px;
+      cursor: text;
+      transition: box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .hymn-lines-editable:focus,
+    .hymn-title-editable:focus {
+      box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.55);
+      background: rgba(167, 139, 250, 0.08);
+    }
+    .hymn-lines-editable:empty:before {
+      content: "Click to edit lyrics…";
+      color: rgba(255, 255, 255, 0.35);
+      font-weight: 600;
+      text-transform: none;
+    }
+    /* Song Plan actions — light metallic, no dark outer ring */
+    .mass-song-plan-root .plan-btn {
+      all: unset;
+      cursor: pointer;
+      display: inline-block;
+      border-radius: 100em;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mass-song-plan-root .plan-btn::after { display: none; }
+    .mass-song-plan-root .plan-btn .button-outer {
+      border-radius: inherit;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+      transition: box-shadow 200ms ease;
+    }
+    .mass-song-plan-root .plan-btn:hover:not(.is-disabled) .button-outer {
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
+    }
+    .mass-song-plan-root .plan-btn .button-inner {
+      border-radius: inherit;
+      padding: 0.5em 1em;
+      background-image: linear-gradient(135deg, #fafafa, #e8e8ec);
+      border: 1px solid var(--line);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      clip-path: none;
+    }
+    .mass-song-plan-root .plan-btn .button-inner span {
+      font-size: 0.8rem;
+      font-weight: 650;
+      background-image: linear-gradient(135deg, #1a1a1a, #4a4a4a);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    .mass-song-plan-root .plan-btn.is-disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .mass-song-plan-root .plan-btn.is-disabled .button-inner {
+      background-image: linear-gradient(135deg, #ececef, #dcdde2);
+    }
+    .mass-song-pick-row .plan-btn { flex-shrink: 0; }
+    @media (max-width: 640px) {
+      .song-preview-panel__sheet { width: 100%; }
+    }
+
     .global-controls {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1059,6 +1524,9 @@
       font-weight: 800;
       font-size: 0.95rem;
     }
+    .uiverse-btn.btn-xl { padding: 0; border-radius: 100em; }
+    .uiverse-btn.btn-xl .button-inner { padding: 1em 1.65em; }
+    .uiverse-btn.btn-xl .button-inner span { font-size: 0.95rem; font-weight: 700; }
     .quick-actions {
       display: flex;
       flex-wrap: wrap;
@@ -1206,14 +1674,48 @@
     }
     .theme-card-actions .danger-theme-del {
       flex: 1 1 100%;
-      color: #b91c1c;
-      border-color: rgba(185, 28, 28, 0.35);
-      background: rgba(254, 242, 242, 0.55);
+      color: #be123c;
+      border-color: rgba(244, 114, 182, 0.35);
+      background: rgba(255, 241, 246, 0.65);
+    }
+
+    /* Glass theme — extended surfaces */
+    .admin-card, .song-catalog-panel, .flow-para-preview, .snapshot-tile {
+      background: var(--surface);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+    }
+    .download-row a {
+      padding: 10px 16px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-solid);
+      border: 1px solid var(--line-soft);
+      font-weight: 700;
+      font-size: 0.84rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    .download-row a:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      color: #6d28d9;
+    }
+    .song-filter-row button.active {
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.28), rgba(244, 114, 182, 0.18));
+      border-color: rgba(167, 139, 250, 0.45);
+      color: #6d28d9;
+      box-shadow: 0 0 16px rgba(167, 139, 250, 0.2);
+    }
+    .mass-song-plan-root .plan-btn .button-inner {
+      background: var(--surface-solid);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
 
     @media (max-width: 1120px) {
-      .app-shell { --nav-width-expanded: 240px; }
-      .dashboard { margin-left: var(--nav-width); }
+      .app-shell { --nav-width-expanded: 248px; }
+      .dashboard { margin-left: calc(var(--nav-width) + var(--sidebar-gap) * 2); }
       .workspace, .workspace.theme-workspace, .workspace.flow-workspace { grid-template-columns: 1fr; }
       .hero { grid-template-columns: 1fr; }
       .hero-metrics { min-width: 0; }
@@ -1223,7 +1725,7 @@
       .dashboard { padding: 12px; }
       .side-nav {
         width: var(--nav-width);
-        box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35);
+        box-shadow: var(--shadow-hover);
       }
       .route-switcher { display: block; }
       .topbar { flex-direction: column; align-items: stretch; }
@@ -1915,8 +2417,8 @@
             <p class="mission-quote mission-gospel-full" id="home-gospel-quote">Gospel text will appear after refresh.</p>
             <p class="muted"><strong id="home-gospel-ref">—</strong></p>
             <div class="quick-actions" style="margin-top: 16px;">
-              <button type="button" class="primary btn-xl" id="btn-home-poster">Generate Poster</button>
-              <button type="button" class="primary btn-xl" id="btn-home-ppt">Generate PowerPoint</button>
+              <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-home-poster"><div class="button-outer"><div class="button-inner"><span>Generate Poster</span></div></div></button>
+              <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-home-ppt"><div class="button-outer"><div class="button-inner"><span>Generate PowerPoint</span></div></div></button>
               <button type="button" class="secondary btn-xl" id="btn-home-readings">View Readings</button>
             </div>
             <p class="status" id="home-mission-status" aria-live="polite"></p>
@@ -1927,7 +2429,7 @@
             <p class="muted">Jump straight into common tasks.</p>
             <div class="quick-actions">
               <button type="button" class="secondary btn-xl" id="btn-home-create-poster">Create Mass Poster</button>
-              <button type="button" class="secondary btn-xl" id="btn-home-gen-ppt">Generate PowerPoint</button>
+              <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-home-gen-ppt"><div class="button-outer"><div class="button-inner"><span>Generate PowerPoint</span></div></div></button>
               <button type="button" class="secondary btn-xl" id="btn-home-upload-song">Upload Song</button>
               <button type="button" class="secondary btn-xl" id="btn-home-announce">Add Announcement</button>
             </div>
@@ -2270,8 +2772,13 @@ Lord, hear our prayer</textarea>
               <p class="muted" id="flow-announcement-status" style="margin:6px 0 0;font-size:0.78rem;">Shown full-screen immediately before the final blessing. Clears after generate.</p>
             </div>
             <div class="field" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);">
+              <label><input type="checkbox" id="flow-include-church-logo" checked /> Include church logo</label>
+              <label style="display:block;margin-top:8px;"><input type="checkbox" id="flow-include-church-name" checked /> Include church name</label>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Applies to PowerPoint slides (header logo and parish name). Uncheck to omit both from the deck.</p>
+            </div>
+            <div class="field" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);">
               <label><input type="checkbox" id="flow-use-openai-poster" checked /> Generate poster with OpenAI</label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art becomes the main poster (portrait + 16×9). Set OPENAI_API_KEY in .env.</p>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art in exact 16:9 widescreen (1920×1080) for projector slides. Set OPENAI_API_KEY in .env.</p>
             </div>
             <div class="field" id="flow-openai-style-wrap">
               <label for="flow-openai-poster-style">OpenAI poster art style</label>
@@ -2284,8 +2791,8 @@ Lord, hear our prayer</textarea>
               </select>
             </div>
             <div class="actions" style="margin-top:14px;">
-              <button type="button" class="secondary" id="btn-load-flow">Load readings & songs</button>
-              <button type="button" class="primary" id="btn-generate-flow">Generate Full Mass Package</button>
+              <button type="button" class="uiverse-btn" id="btn-load-flow"><div class="button-outer"><div class="button-inner"><span>Load readings &amp; songs</span></div></div></button>
+              <button type="button" class="uiverse-btn uiverse-btn--orange" id="btn-generate-flow"><div class="button-outer"><div class="button-inner"><span>Generate Full Mass Package</span></div></div></button>
             </div>
             <p class="status" id="flow-status" aria-live="polite"></p>
             <div class="download-row" id="download-row">
@@ -2409,7 +2916,7 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="actions">
               <button type="button" class="secondary" id="btn-poster-sync">Sync from Mass Builder</button>
-              <button type="button" class="primary btn-xl" id="btn-poster-generate">Generate poster package</button>
+              <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-poster-generate"><div class="button-outer"><div class="button-inner"><span>Generate poster package</span></div></div></button>
             </div>
             <p class="status" id="poster-status" aria-live="polite"></p>
             <div class="download-row" id="poster-download-row">
@@ -2560,6 +3067,22 @@ Lord, hear our prayer</textarea>
         </div>
       </div>
       <p class="mass-gen-loader__msg" id="mass-gen-loader-msg">Generating Mass PowerPoint…</p>
+    </div>
+  </div>
+
+  <div class="song-preview-panel" id="song-preview-panel" aria-hidden="true">
+    <div class="song-preview-panel__backdrop" id="song-preview-backdrop"></div>
+    <div class="song-preview-panel__sheet" role="dialog" aria-labelledby="song-preview-title" aria-modal="true">
+      <div class="song-preview-panel__head">
+        <div>
+          <h3 id="song-preview-title" style="margin:0;">Slide preview</h3>
+          <p class="muted" id="song-preview-sub" style="margin:6px 0 0;font-size:0.84rem;">Title and lyrics per slide — adjust each slide below.</p>
+        </div>
+        <button type="button" class="uiverse-btn uiverse-btn--sm" id="btn-close-song-preview"><div class="button-outer"><div class="button-inner"><span>Close</span></div></div></button>
+      </div>
+      <div class="song-preview-panel__body" id="song-preview-body">
+        <p class="muted">Select a song with saved lyrics, then choose Preview.</p>
+      </div>
     </div>
   </div>
 
@@ -3218,6 +3741,14 @@ Lord, hear our prayer</textarea>
     $("theme-modal").addEventListener("click", (event) => {
       if (event.target.id === "theme-modal") $("btn-close-theme-modal").click();
     });
+
+    $("btn-close-song-preview") && $("btn-close-song-preview").addEventListener("click", closeSongPreviewPanel);
+    $("song-preview-backdrop") && $("song-preview-backdrop").addEventListener("click", closeSongPreviewPanel);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && $("song-preview-panel") && $("song-preview-panel").classList.contains("visible")) {
+        closeSongPreviewPanel();
+      }
+    });
     $("btn-preview-custom-theme").addEventListener("click", () => openThemeModal(themeFromBuilder()));
     $("btn-save-theme").addEventListener("click", () => {
       const theme = themeFromBuilder();
@@ -3381,6 +3912,556 @@ Lord, hear our prayer</textarea>
       });
     }
 
+    const massSongLyricsCache = new Map();
+    const HYMN_TYPO_STORAGE_KEY = "churchMediaHymnTypography";
+    const SLOT_TO_HYMN_SECTION = {
+      entrance: "entrance",
+      offertory: "offertory",
+      communion_1: "communion",
+      communion_2: "communion",
+      recessional: "recessional",
+    };
+    let hymnTypographyBySection = {};
+    let hymnLyricOverrides = {};
+    const HYMN_LYRIC_OV_KEY = "churchMediaHymnLyricOverrides";
+    let songPreviewState = null;
+    let windowLastMassGenerateBody = null;
+
+    function loadHymnLyricOverridesStore() {
+      try {
+        hymnLyricOverrides = JSON.parse(localStorage.getItem(HYMN_LYRIC_OV_KEY) || "{}") || {};
+      } catch (_e) {
+        hymnLyricOverrides = {};
+      }
+    }
+    loadHymnLyricOverridesStore();
+
+    function saveHymnLyricOverridesStore() {
+      try {
+        localStorage.setItem(HYMN_LYRIC_OV_KEY, JSON.stringify(hymnLyricOverrides));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function setHymnLyricOverride(section, songId, lyricsText) {
+      const sec = (section || "").toLowerCase();
+      const id = String(songId || "").trim();
+      if (!sec || !id) return;
+      if (!hymnLyricOverrides[sec]) hymnLyricOverrides[sec] = {};
+      hymnLyricOverrides[sec][id] = lyricsText;
+      saveHymnLyricOverridesStore();
+    }
+
+    function buildHymnLyricOverridesPayload() {
+      const out = {};
+      Object.keys(hymnLyricOverrides).forEach((sec) => {
+        out[sec] = Object.assign({}, hymnLyricOverrides[sec]);
+      });
+      return out;
+    }
+
+    function collectLyricsFromPreviewDom() {
+      const wraps = Array.from(document.querySelectorAll(".hymn-slide-wrap"));
+      const parts = [];
+      wraps.forEach((wrap) => {
+        const el = wrap.querySelector(".hymn-lines");
+        if (!el) return;
+        const text = (el.innerText || "").replace(/\u00a0/g, " ").trim();
+        if (text) parts.push(text);
+      });
+      return parts.join("\n");
+    }
+
+    function collectTitleFromPreviewDom() {
+      const el = document.querySelector(".hymn-slide-wrap[data-slide-index=\"0\"] .hymn-title-text");
+      return el ? (el.innerText || "").trim() : "";
+    }
+
+    function syncPreviewLyricsToState() {
+      if (!songPreviewState) return;
+      const lyrics = collectLyricsFromPreviewDom();
+      songPreviewState.editedLyrics = lyrics;
+      const title = collectTitleFromPreviewDom();
+      if (title && songPreviewState.meta) songPreviewState.meta.title = title;
+      if (songPreviewState.section && songPreviewState.songId && lyrics) {
+        setHymnLyricOverride(songPreviewState.section, songPreviewState.songId, lyrics);
+      }
+    }
+
+    function bindEditablePreviewLyrics() {
+      document.querySelectorAll(".hymn-lines-editable, .hymn-title-editable").forEach((el) => {
+        if (el.dataset.editBound) return;
+        el.dataset.editBound = "1";
+        el.addEventListener("input", syncPreviewLyricsToState);
+        el.addEventListener("blur", syncPreviewLyricsToState);
+      });
+    }
+
+    function loadHymnTypographyStore() {
+      try {
+        hymnTypographyBySection = JSON.parse(localStorage.getItem(HYMN_TYPO_STORAGE_KEY) || "{}") || {};
+      } catch (_e) {
+        hymnTypographyBySection = {};
+      }
+    }
+    loadHymnTypographyStore();
+
+    function saveHymnTypographyStore() {
+      try {
+        localStorage.setItem(HYMN_TYPO_STORAGE_KEY, JSON.stringify(hymnTypographyBySection));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function defaultHymnTypo() {
+      const bodyPt = 55;
+      return {
+        body_pt: bodyPt,
+        title_pt: Math.round(bodyPt * 0.7 * 10) / 10,
+        title_align: "center",
+        body_align: "center",
+      };
+    }
+
+    function ensureSectionTypoStore(section) {
+      const sec = (section || "default").toLowerCase();
+      if (!hymnTypographyBySection[sec]) {
+        hymnTypographyBySection[sec] = Object.assign(defaultHymnTypo(), { slides: {} });
+      }
+      const block = hymnTypographyBySection[sec];
+      if (!block.slides || typeof block.slides !== "object") block.slides = {};
+      return block;
+    }
+
+    function getHymnTypoForSection(section) {
+      const block = ensureSectionTypoStore(section);
+      const base = defaultHymnTypo();
+      return {
+        body_pt: Number(block.body_pt) || base.body_pt,
+        title_pt: Number(block.title_pt) || base.title_pt,
+        title_align: block.title_align || base.title_align,
+        body_align: block.body_align || base.body_align,
+      };
+    }
+
+    function getHymnTypoForSlide(section, slideIndex) {
+      const block = ensureSectionTypoStore(section);
+      const base = getHymnTypoForSection(section);
+      const key = String(slideIndex);
+      const raw = block.slides[key];
+      if (!raw) return Object.assign({}, base);
+      return {
+        body_pt: Number(raw.body_pt) || base.body_pt,
+        title_pt: Number(raw.title_pt) || base.title_pt,
+        title_align: raw.title_align || base.title_align,
+        body_align: raw.body_align || base.body_align,
+      };
+    }
+
+    function setHymnTypoForSlide(section, slideIndex, typo) {
+      const block = ensureSectionTypoStore(section);
+      block.slides[String(slideIndex)] = {
+        body_pt: typo.body_pt,
+        title_pt: typo.title_pt,
+        title_align: typo.title_align,
+        body_align: typo.body_align,
+      };
+      if (slideIndex === 0) {
+        block.title_pt = typo.title_pt;
+        block.title_align = typo.title_align;
+        block.body_pt = typo.body_pt;
+        block.body_align = typo.body_align;
+      }
+    }
+
+    function buildHymnTypographyPayload() {
+      const out = {};
+      Object.keys(hymnTypographyBySection).forEach((k) => {
+        const block = hymnTypographyBySection[k];
+        if (!block || typeof block !== "object") return;
+        out[k] = {
+          body_pt: block.body_pt,
+          title_pt: block.title_pt,
+          title_align: block.title_align,
+          body_align: block.body_align,
+          slides: block.slides || {},
+        };
+      });
+      if (!out.default) out.default = Object.assign(defaultHymnTypo(), { slides: {} });
+      return out;
+    }
+
+    function ptToPreviewRem(pt) {
+      return Math.max(0.55, Number(pt) * 0.028) + "rem";
+    }
+
+    function alignSelectOptions(val) {
+      return ["left", "center", "right"].map((a) => (
+        "<option value=\"" + a + "\"" + (a === val ? " selected" : "") + ">" + a + "</option>"
+      )).join("");
+    }
+
+    function renderSlideTypoControls(section, slideIndex, typo) {
+      const t = typo || getHymnTypoForSlide(section, slideIndex);
+      const sid = section.replace(/[^a-z0-9]/gi, "") + "-s" + slideIndex;
+      const showTitle = slideIndex === 0;
+      let html = "<div class=\"song-preview-slide-controls\" data-typo-section=\"" + escapeHtml(section) + "\" data-typo-slide=\"" + slideIndex + "\">";
+      if (showTitle) {
+        html += "<div><label>Title size (" + t.title_pt + " pt)</label>" +
+          "<input type=\"range\" class=\"hymn-slide-ctrl-title-pt\" data-slide=\"" + slideIndex + "\" min=\"18\" max=\"52\" step=\"1\" value=\"" + t.title_pt + "\" /></div>" +
+          "<div><label>Title alignment</label>" +
+          "<select class=\"hymn-slide-ctrl-title-align\" data-slide=\"" + slideIndex + "\">" + alignSelectOptions(t.title_align) + "</select></div>";
+      }
+      html += "<div><label>Lyrics size (" + t.body_pt + " pt)</label>" +
+        "<input type=\"range\" class=\"hymn-slide-ctrl-body-pt\" data-slide=\"" + slideIndex + "\" min=\"28\" max=\"72\" step=\"1\" value=\"" + t.body_pt + "\" /></div>" +
+        "<div><label>Lyrics alignment</label>" +
+        "<select class=\"hymn-slide-ctrl-body-align\" data-slide=\"" + slideIndex + "\">" + alignSelectOptions(t.body_align) + "</select></div>" +
+        "</div>";
+      return html;
+    }
+
+    function readTypoFromSlideControlPanel(panel) {
+      const slideIndex = parseInt(panel.dataset.typoSlide, 10) || 0;
+      const bodyEl = panel.querySelector(".hymn-slide-ctrl-body-pt");
+      const bodyPt = bodyEl ? parseFloat(bodyEl.value) || 55 : 55;
+      const titleEl = panel.querySelector(".hymn-slide-ctrl-title-pt");
+      const titleAlignEl = panel.querySelector(".hymn-slide-ctrl-title-align");
+      const bodyAlignEl = panel.querySelector(".hymn-slide-ctrl-body-align");
+      const titlePt = titleEl
+        ? parseFloat(titleEl.value) || Math.round(bodyPt * 0.7 * 10) / 10
+        : Math.round(bodyPt * 0.7 * 10) / 10;
+      return {
+        body_pt: bodyPt,
+        title_pt: titlePt,
+        title_align: titleAlignEl ? titleAlignEl.value : "center",
+        body_align: bodyAlignEl ? bodyAlignEl.value : "center",
+        slideIndex: slideIndex,
+      };
+    }
+
+    function applyTypoToSlideWrap(wrap, typo, slideIndex, titleText) {
+      if (!wrap) return;
+      const titleEl = wrap.querySelector(".hymn-title-text");
+      const linesEl = wrap.querySelector(".hymn-lines");
+      if (titleEl && slideIndex === 0) {
+        titleEl.style.fontSize = ptToPreviewRem(typo.title_pt);
+        titleEl.style.textAlign = typo.title_align;
+        if (titleText) titleEl.textContent = titleText;
+      }
+      if (linesEl) {
+        linesEl.style.fontSize = ptToPreviewRem(typo.body_pt);
+        linesEl.style.textAlign = typo.body_align;
+      }
+      const panel = wrap.querySelector(".song-preview-slide-controls");
+      if (panel) {
+        const labels = panel.querySelectorAll("label");
+        labels.forEach((lbl) => {
+          const t = lbl.textContent || "";
+          if (t.indexOf("Title size") === 0) lbl.textContent = "Title size (" + typo.title_pt + " pt)";
+          if (t.indexOf("Lyrics size") === 0) lbl.textContent = "Lyrics size (" + typo.body_pt + " pt)";
+        });
+      }
+    }
+
+    function bindSongPreviewSlideControls(section) {
+      document.querySelectorAll(".song-preview-slide-controls").forEach((panel) => {
+        if (panel.dataset.bound) return;
+        panel.dataset.bound = "1";
+        const slideIndex = parseInt(panel.dataset.typoSlide, 10) || 0;
+        const wrap = panel.closest(".hymn-slide-wrap");
+        let linkTitle = true;
+        const onChange = () => {
+          const titlePtEl = panel.querySelector(".hymn-slide-ctrl-title-pt");
+          const bodyPtEl = panel.querySelector(".hymn-slide-ctrl-body-pt");
+          if (linkTitle && titlePtEl && bodyPtEl) {
+            const bp = parseFloat(bodyPtEl.value) || 55;
+            titlePtEl.value = String(Math.round(bp * 0.7 * 10) / 10);
+          }
+          linkTitle = false;
+          const typo = readTypoFromSlideControlPanel(panel);
+          setHymnTypoForSlide(section, slideIndex, typo);
+          if (songPreviewState) songPreviewState.section = section;
+          applyTypoToSlideWrap(wrap, typo, slideIndex, songPreviewState && songPreviewState.meta ? songPreviewState.meta.title : "");
+        };
+        panel.querySelectorAll("input, select").forEach((el) => {
+          el.addEventListener("input", onChange);
+          el.addEventListener("change", onChange);
+        });
+      });
+      const saveBtn = $("btn-save-hymn-typo");
+      if (saveBtn && !saveBtn.dataset.bound) {
+        saveBtn.dataset.bound = "1";
+        saveBtn.addEventListener("click", () => saveSongPreviewToPptx(section));
+      }
+    }
+
+    async function saveSongPreviewToPptx(section) {
+      const statusEl = $("song-preview-save-status");
+      syncPreviewLyricsToState();
+      document.querySelectorAll(".song-preview-slide-controls").forEach((panel) => {
+        const slideIndex = parseInt(panel.dataset.typoSlide, 10) || 0;
+        setHymnTypoForSlide(section, slideIndex, readTypoFromSlideControlPanel(panel));
+      });
+      hymnTypographyBySection.default = hymnTypographyBySection.default || Object.assign(defaultHymnTypo(), { slides: {} });
+      saveHymnTypographyStore();
+      if (!windowLastMassGenerateBody) {
+        if (statusEl) {
+          statusEl.textContent = "Generate the Mass package first, then Save will update the .pptx.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
+      if (statusEl) {
+        statusEl.textContent = "Updating PowerPoint…";
+        statusEl.className = "status";
+      }
+      const body = Object.assign({}, windowLastMassGenerateBody, {
+        hymn_typography: buildHymnTypographyPayload(),
+        hymn_lyric_overrides: buildHymnLyricOverridesPayload(),
+      });
+      try {
+        const data = await postJSON("/api/regenerate-pptx", body);
+        if (statusEl) {
+          statusEl.textContent = "Saved — " + (data.slide_count || "?") + " slides in PowerPoint.";
+          statusEl.className = "status ok";
+        }
+        if (data.pptx_url) {
+          const dl = $("dl-pptx");
+          if (dl) {
+            dl.href = data.pptx_url;
+            dl.style.display = "";
+          }
+        }
+        setFlowStatus("PowerPoint updated with hymn typography.", "ok");
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Save failed.";
+          statusEl.className = "status error";
+        }
+      }
+    }
+
+    function massSongPreviewButtonHtml(slotKey) {
+      return (
+        "<button type=\"button\" class=\"plan-btn mass-song-preview-btn is-disabled\" " +
+          "data-preview-slot=\"" + escapeHtml(slotKey) + "\" disabled " +
+          "aria-disabled=\"true\" title=\"Lyrics unavailable\">" +
+          "<div class=\"button-outer\"><div class=\"button-inner\"><span>Preview</span></div></div>" +
+        "</button>"
+      );
+    }
+
+    /** Match ``powerpoint._chunk_lyrics_display`` — 4 lines per slide. */
+    function chunkLyricsForPreview(text, maxLines) {
+      const max = maxLines || 4;
+      const t = (text || "").trim();
+      if (!t) return [];
+      const lines = t.split(/\n/);
+      if (!lines.length) return [t];
+      const blocks = [];
+      for (let i = 0; i < lines.length; i += max) {
+        blocks.push(lines.slice(i, i + max).join("\n"));
+      }
+      return blocks.length ? blocks : [t];
+    }
+
+    function hymnBodySizeClass(chunk) {
+      const lines = chunk.split("\n").filter((ln) => ln.trim());
+      const longest = lines.reduce((m, ln) => Math.max(m, ln.trim().length), 0);
+      if (lines.length >= 3 || longest >= 40) return " lines-long";
+      if (lines.length >= 2 || longest >= 28) return " lines-many";
+      return "";
+    }
+
+    function formatHymnBodyHtml(chunk) {
+      const lines = chunk.split("\n").map((ln) => ln.trim()).filter(Boolean);
+      if (!lines.length) return escapeHtml((chunk || "").trim().toUpperCase());
+      return lines.map((ln) => escapeHtml(ln.toUpperCase())).join("<br>");
+    }
+
+    function updateMassSongPreviewButton(slotKey) {
+      const btn = document.querySelector(".mass-song-preview-btn[data-preview-slot=\"" + slotKey + "\"]");
+      if (!btn) return;
+      const id = selectedLyricsSongs[slotKey] || "";
+      let row = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
+      if (id && !row) {
+        rebuildMassPlanSongPool();
+        row = massPlanAllSongs.find((s) => String(s.id) === String(id));
+      }
+      const ok = !!(id && row && row.has_lyrics);
+      btn.classList.toggle("is-disabled", !ok);
+      btn.disabled = !ok;
+      btn.setAttribute("aria-disabled", ok ? "false" : "true");
+      btn.title = ok ? "Preview hymn slides" : "Lyrics unavailable";
+    }
+
+    function resolveMassSongSection(slotKey, row) {
+      if (row && row.section) return row.section;
+      const slot = lyricSongSlots.find((s) => s.key === slotKey);
+      return slot ? slot.section : "entrance";
+    }
+
+    function buildHymnSlideHtml(chunk, meta, slideIndex, section) {
+      const typo = getHymnTypoForSlide(section, slideIndex);
+      const sizeCls = hymnBodySizeClass(chunk);
+      const bodyStyle = "font-size:" + ptToPreviewRem(typo.body_pt) + ";text-align:" + typo.body_align + ";";
+      const titleStyle = "font-size:" + ptToPreviewRem(typo.title_pt) + ";text-align:" + typo.title_align + ";";
+      const titleHtml = slideIndex === 0
+        ? "<h4 class=\"hymn-title-text hymn-title-editable\" contenteditable=\"true\" spellcheck=\"true\" style=\"" + titleStyle + "\">" +
+            escapeHtml(meta.title || "Hymn") + "</h4>"
+        : "";
+      const slideNum = slideIndex + 1;
+      return (
+        "<div class=\"hymn-slide-wrap\" data-slide-index=\"" + slideIndex + "\">" +
+          "<span class=\"song-preview-slide-label\">Slide " + slideNum + "</span>" +
+          renderSlideTypoControls(section, slideIndex, typo) +
+          "<div class=\"slide-preview hymn-slide" + sizeCls + "\" data-hymn-slide=\"1\">" +
+            titleHtml +
+            "<div class=\"hymn-body\">" +
+              "<div class=\"hymn-lines hymn-lines-editable\" contenteditable=\"true\" spellcheck=\"true\" style=\"" + bodyStyle + "\">" + formatHymnBodyHtml(chunk) + "</div>" +
+            "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderSongPreviewViewer(lyricsText, meta, section) {
+      const chunks = chunkLyricsForPreview(lyricsText, 4);
+      if (!chunks.length) {
+        return "<p class=\"muted\">No lyrics to preview.</p>";
+      }
+      const slideHtml = chunks.map((chunk, i) => buildHymnSlideHtml(chunk, meta, i, section)).join("");
+      const countLabel = chunks.length + " slide" + (chunks.length === 1 ? "" : "s");
+      return (
+        "<div class=\"song-ppt-viewer\">" +
+          "<div class=\"song-ppt-toolbar\">" +
+            "<span>Title + lyrics only</span>" +
+            "<span id=\"song-ppt-slide-count\">" + escapeHtml(countLabel) + "</span>" +
+          "</div>" +
+          "<div class=\"song-ppt-stage\">" +
+            "<div class=\"song-ppt-slides\" id=\"song-ppt-slides-scroll\">" + slideHtml + "</div>" +
+          "</div>" +
+          "<div class=\"song-preview-save-row\">" +
+            "<button type=\"button\" class=\"uiverse-btn uiverse-btn--orange\" id=\"btn-save-hymn-typo\"><div class=\"button-outer\"><div class=\"button-inner\"><span>Save to PowerPoint</span></div></div></button>" +
+            "<span class=\"muted\" id=\"song-preview-save-status\"></span>" +
+          "</div>" +
+          "<p class=\"muted\" style=\"font-size:0.78rem;margin:0;\">Title and lyrics centered by default. Click text to edit spelling — Save updates PowerPoint.</p>" +
+        "</div>"
+      );
+    }
+
+    function bindSongPreviewSlideScroll() {
+      const scroller = $("song-ppt-slides-scroll");
+      const countEl = $("song-ppt-slide-count");
+      if (!scroller) return;
+      const wraps = scroller.querySelectorAll(".hymn-slide-wrap");
+      const total = wraps.length;
+      const syncCount = () => {
+        if (!countEl || total < 2) return;
+        let best = 0;
+        let bestDist = Infinity;
+        const mid = scroller.scrollTop + scroller.clientHeight * 0.35;
+        wraps.forEach((wrap, i) => {
+          const dist = Math.abs(wrap.offsetTop - mid);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = i;
+          }
+        });
+        countEl.textContent = "Slide " + (best + 1) + " of " + total;
+      };
+      scroller.addEventListener("scroll", syncCount, { passive: true });
+      syncCount();
+    }
+
+    function closeSongPreviewPanel() {
+      const panel = $("song-preview-panel");
+      if (!panel || !panel.classList.contains("visible")) return;
+      if (panel.classList.contains("closing")) return;
+      const sheet = panel.querySelector(".song-preview-panel__sheet");
+      panel.classList.add("closing");
+      panel.classList.remove("visible");
+      const finish = () => {
+        panel.classList.remove("closing");
+        panel.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+        if (sheet) sheet.removeEventListener("transitionend", onEnd);
+      };
+      const onEnd = (e) => {
+        if (e.target !== sheet || e.propertyName !== "transform") return;
+        finish();
+      };
+      if (sheet) sheet.addEventListener("transitionend", onEnd);
+      setTimeout(finish, 420);
+    }
+
+    function openSongPreviewPanel() {
+      const panel = $("song-preview-panel");
+      if (!panel) return;
+      panel.classList.remove("closing");
+      panel.classList.add("visible");
+      panel.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    async function openMassSongPreview(slotKey) {
+      const id = selectedLyricsSongs[slotKey] || "";
+      let row = massPlanAllSongs.find((s) => String(s.id) === String(id));
+      if (!row) {
+        rebuildMassPlanSongPool();
+        row = massPlanAllSongs.find((s) => String(s.id) === String(id));
+      }
+      if (!id || !row || !row.has_lyrics) return;
+
+      const slotDef = lyricSongSlots.find((s) => s.key === slotKey);
+      const section = resolveMassSongSection(slotKey, row);
+      const cacheKey = section + "|" + id;
+      const titleEl = $("song-preview-title");
+      const subEl = $("song-preview-sub");
+      const body = $("song-preview-body");
+      if (titleEl) titleEl.textContent = row.title || "Song preview";
+      if (subEl) {
+        subEl.textContent = "Click title or lyrics to fix typos · per-slide typography below";
+      }
+      if (body) body.innerHTML = "<p class=\"muted\">Loading lyrics preview…</p>";
+      openSongPreviewPanel();
+
+      let lyricsText = massSongLyricsCache.get(cacheKey);
+      const secOv = hymnLyricOverrides[section] || {};
+      if (secOv[id]) lyricsText = secOv[id];
+      if (!lyricsText) {
+        try {
+          const res = await fetch(
+            "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id)
+          );
+          if (!res.ok) throw new Error("Could not load lyrics");
+          const data = await res.json();
+          lyricsText = (data.song && data.song.lyrics) ? String(data.song.lyrics) : "";
+          massSongLyricsCache.set(cacheKey, lyricsText);
+        } catch (err) {
+          if (body) body.innerHTML = "<p class=\"status error\">" + escapeHtml(err.message || "Load failed") + "</p>";
+          return;
+        }
+      }
+      if (!(lyricsText || "").trim()) {
+        if (body) body.innerHTML = "<p class=\"muted\">Lyrics unavailable for this song.</p>";
+        return;
+      }
+      const meta = {
+        title: row.title,
+      };
+      ensureSectionTypoStore(section);
+      songPreviewState = { slotKey, section, songId: id, lyricsText: lyricsText.trim(), meta };
+      if (body) {
+        body.innerHTML = renderSongPreviewViewer(lyricsText.trim(), meta, section);
+        bindSongPreviewSlideControls(section);
+        bindSongPreviewSlideScroll();
+        bindEditablePreviewLyrics();
+        document.querySelectorAll(".hymn-slide-wrap").forEach((wrap) => {
+          const idx = parseInt(wrap.dataset.slideIndex, 10) || 0;
+          applyTypoToSlideWrap(wrap, getHymnTypoForSlide(section, idx), idx, meta.title);
+        });
+      }
+    }
+
     function renderMassSongPlan() {
       const plan = $("mass-song-plan");
       if (!plan) return;
@@ -3391,14 +4472,18 @@ Lord, hear our prayer</textarea>
           "<div class=\"mass-song-pick\">" +
             "<div class=\"mass-song-pick-row\">" +
               "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" autocomplete=\"off\" placeholder=\"Search title, author, section…\" />" +
-              "<button type=\"button\" class=\"secondary mass-song-clear\" data-mass-song-clear=\"" + slot.key + "\">Clear</button>" +
+              massSongPreviewButtonHtml(slot.key) +
+              "<button type=\"button\" class=\"plan-btn mass-song-clear\" data-mass-song-clear=\"" + slot.key + "\"><div class=\"button-outer\"><div class=\"button-inner\"><span>Clear</span></div></div></button>" +
             "</div>" +
             "<div class=\"mass-song-selected\" id=\"mass-song-picked-" + slot.key + "\"></div>" +
             "<div class=\"mass-song-results\" id=\"mass-song-res-" + slot.key + "\" hidden></div>" +
           "</div>" +
         "</div>"
       )).join("");
-      lyricSongSlots.forEach((slot) => updateMassSlotChip(slot.key));
+      lyricSongSlots.forEach((slot) => {
+        updateMassSlotChip(slot.key);
+        updateMassSongPreviewButton(slot.key);
+      });
     }
 
     document.addEventListener("click", (e) => {
@@ -3422,10 +4507,17 @@ Lord, hear our prayer</textarea>
         box.innerHTML = "";
       }
       updateMassSlotChip(key);
+      updateMassSongPreviewButton(key);
       renderFlowSongCount();
     });
 
     $("mass-song-plan").addEventListener("click", (e) => {
+      const prev = e.target.closest(".mass-song-preview-btn");
+      if (prev && !prev.classList.contains("is-disabled")) {
+        const slotKey = prev.dataset.previewSlot;
+        if (slotKey) openMassSongPreview(slotKey);
+        return;
+      }
       const clr = e.target.closest("[data-mass-song-clear]");
       if (!clr) return;
       const key = clr.dataset.massSongClear;
@@ -3439,6 +4531,7 @@ Lord, hear our prayer</textarea>
         box.innerHTML = "";
       }
       updateMassSlotChip(key);
+      updateMassSongPreviewButton(key);
       renderFlowSongCount();
     });
 
@@ -3933,6 +5026,12 @@ Lord, hear our prayer</textarea>
         if (collLabel) body.mass_collection_date_label = collLabel;
         if (foodLines.length) body.food_sponsors = foodLines;
         if (psalmOv) body.psalm_text_override = psalmOv;
+        body.hymn_typography = buildHymnTypographyPayload();
+        body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
+        const logoCb = $("flow-include-church-logo");
+        const nameCb = $("flow-include-church-name");
+        body.include_church_logo = logoCb ? logoCb.checked : true;
+        body.include_church_name = nameCb ? nameCb.checked : true;
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -3951,6 +5050,8 @@ Lord, hear our prayer</textarea>
           include_ai_mass_poster: body.include_ai_mass_poster,
           ai_poster_style: body.ai_poster_style,
           custom_theme: body.custom_theme,
+          include_church_logo: body.include_church_logo,
+          include_church_name: body.include_church_name,
         });
         const prev = localStorage.getItem(dupKey);
         if (prev && prev === fp) {
@@ -3997,6 +5098,7 @@ Lord, hear our prayer</textarea>
           $("download-row").classList.add("visible");
         }
         statusFn("Deck generated. Downloads are ready.", "ok");
+        windowLastMassGenerateBody = JSON.parse(JSON.stringify(body));
         pushRecent({
           title: data.title || "Mass media",
           date,

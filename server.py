@@ -31,6 +31,7 @@ from pipeline import (
     PreviewPayload,
     fetch_preview,
     generate_mass_media,
+    regenerate_mass_pptx,
     refresh_all_song_sections,
     refresh_song_section,
 )
@@ -271,6 +272,22 @@ class GenerateBody(BaseModel):
         None,
         max_length=2000,
         description="Exact Gospel line for slides; overrides sentence_index when non-empty.",
+    )
+    hymn_typography: Optional[dict[str, Any]] = Field(
+        None,
+        description="Per-section hymn slide typography: entrance, communion, default, etc.",
+    )
+    include_church_logo: bool = Field(
+        True,
+        description="When false, omit parish logo from PowerPoint slides.",
+    )
+    include_church_name: bool = Field(
+        True,
+        description="When false, omit parish / community name from PowerPoint slides.",
+    )
+    hymn_lyric_overrides: Optional[dict[str, dict[str, str]]] = Field(
+        None,
+        description="Per-section hymn lyric text overrides: { entrance: { song_id: lyrics } }.",
     )
 
 
@@ -678,6 +695,10 @@ def api_generate(body: GenerateBody) -> Any:
         food_sponsors=sponsors or None,
         psalm_text_override=psalm_override,
         gospel_quote_override=gospel_override,
+        hymn_typography=body.hymn_typography,
+        include_church_logo=body.include_church_logo,
+        include_church_name=body.include_church_name,
+        hymn_lyric_overrides=body.hymn_lyric_overrides,
     )
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
@@ -723,6 +744,64 @@ def api_generate(body: GenerateBody) -> Any:
             if zip_ready
             else {}
         ),
+    }
+
+
+@app.post("/api/regenerate-pptx")
+def api_regenerate_pptx(body: GenerateBody) -> Any:
+    """Rebuild the Mass PowerPoint with current hymn typography (overwrites existing .pptx)."""
+    song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    divider_path = None
+    if body.divider_poster_basename and str(body.divider_poster_basename).strip():
+        divider_path = _resolve_child_file(_MASS_ASSET_DIR, str(body.divider_poster_basename).strip())
+    ann_paths: list[Path] = []
+    for raw in body.announcement_basenames or []:
+        bn = str(raw).strip()
+        if not bn:
+            continue
+        p = _resolve_child_file(_MASS_ASSET_DIR, bn)
+        if p:
+            ann_paths.append(p)
+        if len(ann_paths) >= 24:
+            break
+    sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
+    psalm_override = (body.psalm_text_override or "").strip() or None
+    gospel_override = (body.gospel_quote_override or "").strip() or None
+    result = regenerate_mass_pptx(
+        body.date.strip(),
+        body.celebrant.strip(),
+        sentence_index=body.sentence_index,
+        song_selections=song_map,
+        custom_theme=body.custom_theme,
+        hymn_typography=body.hymn_typography,
+        divider_poster_path=divider_path,
+        announcement_image_paths=ann_paths or None,
+        mass_collection_amount=body.mass_collection_amount.strip()
+        if body.mass_collection_amount
+        else None,
+        mass_collection_date_label=body.mass_collection_date_label.strip()
+        if body.mass_collection_date_label
+        else None,
+        food_sponsors=sponsors or None,
+        psalm_text_override=psalm_override,
+        gospel_quote_override=gospel_override,
+        include_church_logo=body.include_church_logo,
+        include_church_name=body.include_church_name,
+        hymn_lyric_overrides=body.hymn_lyric_overrides,
+    )
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.error or "PowerPoint rebuild failed.")
+    ppt_url = (
+        f"/media/{result.pptx_path.name}"
+        if result.pptx_path and result.pptx_path.is_file()
+        else None
+    )
+    return {
+        "ok": True,
+        "slide_count": result.slide_count,
+        "export_stem": result.export_stem,
+        "pptx_url": ppt_url,
+        "title": result.title,
     }
 
 

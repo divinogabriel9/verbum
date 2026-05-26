@@ -19,6 +19,7 @@ from pptx.util import Inches, Pt
 
 from services.community_config import get_community_name, get_logo_path
 from services.hymn_library import get_hymn
+from services.hymn_typography import HymnTypographySettings, typography_for_hymn_slide
 from services.mass_text_format import clean_lyrics_for_projection, strip_reading_verse_markers
 from services.prayer_service import get_prayer
 
@@ -59,8 +60,18 @@ _BRAND_BAND = Inches(1.05)
 _LOGO_MAX_W = Inches(0.95)
 _LOGO_MAX_H = Inches(0.42)
 _COMMUNITY_HEADER_PT = 15
+_HYMN_TITLE_TOP = Inches(0.12)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+@dataclass(frozen=True)
+class DeckBrandingOptions:
+    include_logo: bool = True
+    include_name: bool = True
+
+
+_deck_branding = DeckBrandingOptions()
 _OUTPUT_DIR = _PROJECT_ROOT / "outputs"
 
 
@@ -150,13 +161,17 @@ def _accent(liturgical_color: Optional[Mapping[str, Any]]) -> RGBColor:
 
 def _content_top():
     """Vertical start for slide body text (below logo + parish name)."""
+    if not (_deck_branding.include_logo or _deck_branding.include_name):
+        return MARGIN_TOP
     return MARGIN_TOP + _BRAND_BAND
 
 
 def _apply_slide_branding(slide, theme: SlideTheme) -> None:
     """Top-left logo and parish name (GFCC reference deck style)."""
-    logo = get_logo_path()
-    name = get_community_name()
+    if not _deck_branding.include_logo and not _deck_branding.include_name:
+        return
+    logo = get_logo_path() if _deck_branding.include_logo else None
+    name = get_community_name() if _deck_branding.include_name else ""
     top = Inches(0.28)
     cursor_left = MARGIN_SIDE
     if logo and logo.is_file():
@@ -167,23 +182,26 @@ def _apply_slide_branding(slide, theme: SlideTheme) -> None:
             pic.height = int(pic.height * scale)
         cursor_left = pic.left + pic.width + Inches(0.14)
 
-    name_w = SLIDE_WIDTH - cursor_left - MARGIN_SIDE
-    nb = slide.shapes.add_textbox(cursor_left, top, name_w, _LOGO_MAX_H)
-    tf = nb.text_frame
-    _prep_tf(tf)
-    tf.clear()
-    tf.word_wrap = True
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    p0 = tf.paragraphs[0]
-    p0.text = name
-    _style_para(p0, size_pt=_COMMUNITY_HEADER_PT, color=theme.primary, bold=True)
-    p0.alignment = PP_ALIGN.LEFT
+    if _deck_branding.include_name and name:
+        name_w = SLIDE_WIDTH - cursor_left - MARGIN_SIDE
+        nb = slide.shapes.add_textbox(cursor_left, top, name_w, _LOGO_MAX_H)
+        tf = nb.text_frame
+        _prep_tf(tf)
+        tf.clear()
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p0 = tf.paragraphs[0]
+        p0.text = name
+        _style_para(p0, size_pt=_COMMUNITY_HEADER_PT, color=theme.primary, bold=True)
+        p0.alignment = PP_ALIGN.LEFT
 
 
 def _apply_hymn_branding(slide) -> None:
     """Top-left logo + parish name on black hymn slides (white text)."""
-    logo = get_logo_path()
-    name = get_community_name()
+    if not _deck_branding.include_logo and not _deck_branding.include_name:
+        return
+    logo = get_logo_path() if _deck_branding.include_logo else None
+    name = get_community_name() if _deck_branding.include_name else ""
     top = Inches(0.28)
     cursor_left = MARGIN_SIDE
     if logo and logo.is_file():
@@ -193,17 +211,18 @@ def _apply_hymn_branding(slide) -> None:
             pic.width = int(pic.width * scale)
             pic.height = int(pic.height * scale)
         cursor_left = pic.left + pic.width + Inches(0.14)
-    name_w = SLIDE_WIDTH - cursor_left - MARGIN_SIDE
-    nb = slide.shapes.add_textbox(cursor_left, top, name_w, _LOGO_MAX_H)
-    tf = nb.text_frame
-    _prep_tf(tf)
-    tf.clear()
-    tf.word_wrap = True
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    p0 = tf.paragraphs[0]
-    p0.text = name
-    _style_para(p0, size_pt=_COMMUNITY_HEADER_PT, color=_HYMN_BRAND_WHITE, bold=True)
-    p0.alignment = PP_ALIGN.LEFT
+    if _deck_branding.include_name and name:
+        name_w = SLIDE_WIDTH - cursor_left - MARGIN_SIDE
+        nb = slide.shapes.add_textbox(cursor_left, top, name_w, _LOGO_MAX_H)
+        tf = nb.text_frame
+        _prep_tf(tf)
+        tf.clear()
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p0 = tf.paragraphs[0]
+        p0.text = name
+        _style_para(p0, size_pt=_COMMUNITY_HEADER_PT, color=_HYMN_BRAND_WHITE, bold=True)
+        p0.alignment = PP_ALIGN.LEFT
 
 
 def _add_hymn_footer(slide, footer_section: str) -> None:
@@ -215,8 +234,9 @@ def _add_hymn_footer(slide, footer_section: str) -> None:
     _prep_tf(tf)
     tf.clear()
     p0 = tf.paragraphs[0]
-    p0.text = get_community_name()
-    _style_para(p0, size_pt=_FOOTER_PT, color=_HYMN_FOOTER_MUTED, bold=True)
+    if _deck_branding.include_name:
+        p0.text = get_community_name()
+        _style_para(p0, size_pt=_FOOTER_PT, color=_HYMN_FOOTER_MUTED, bold=True)
     p1 = tf.add_paragraph()
     p1.text = footer_section
     _style_para(p1, size_pt=_FOOTER_PT - 1, color=_HYMN_GOLD_TITLE, bold=False)
@@ -280,9 +300,10 @@ def _add_community_footer(slide, footer_section: str, theme: SlideTheme):
     tf = foot.text_frame
     _prep_tf(tf)
     tf.clear()
-    p0 = tf.paragraphs[0]
-    p0.text = get_community_name()
-    _style_para(p0, size_pt=_FOOTER_PT, color=theme.muted, bold=True)
+    if _deck_branding.include_name:
+        p0 = tf.paragraphs[0]
+        p0.text = get_community_name()
+        _style_para(p0, size_pt=_FOOTER_PT, color=theme.muted, bold=True)
     p1 = tf.add_paragraph()
     p1.text = footer_section
     _style_para(p1, size_pt=_FOOTER_PT - 1, color=theme.emphasis, bold=False)
@@ -426,8 +447,11 @@ def _add_divider_cover(
         "MASS CELEBRANT:",
         celebrant,
         "",
-        "\n".join(get_community_name().split()),
-        "",
+        *(
+            ["", "\n".join(get_community_name().split()), ""]
+            if _deck_branding.include_name
+            else []
+        ),
         f"Gospel ({gref})",
     ]
     if g_line:
@@ -488,20 +512,43 @@ def _chunk_lyrics_display(text: str, max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE
     return blocks if blocks else [t]
 
 
-def _fill_hymn_body_caps(tf, chunk: str) -> None:
-    """Centered ALL CAPS bold sans-serif (white on black)."""
+def _pp_align(name: str) -> PP_ALIGN:
+    key = (name or "center").strip().lower()
+    return {
+        "left": PP_ALIGN.LEFT,
+        "center": PP_ALIGN.CENTER,
+        "right": PP_ALIGN.RIGHT,
+    }.get(key, PP_ALIGN.CENTER)
+
+
+def _auto_body_pt(line_count: int, longest: int, base_pt: float) -> float:
+    size_pt = base_pt
+    if line_count >= 8 or longest >= 40:
+        size_pt = min(size_pt, 50.0)
+    if line_count >= 10 or longest >= 48:
+        size_pt = min(size_pt, 44.0)
+    if line_count >= 12 or longest >= 56:
+        size_pt = min(size_pt, 38.0)
+    if line_count >= 14 or longest >= 64:
+        size_pt = min(size_pt, 34.0)
+    return size_pt
+
+
+def _fill_hymn_body_caps(
+    tf,
+    chunk: str,
+    *,
+    typography: Optional[HymnTypographySettings] = None,
+) -> None:
+    """ALL CAPS bold sans-serif (white on black), optional custom size/alignment."""
     lines = [ln.strip() for ln in chunk.split("\n") if ln.strip()]
     longest = max((len(ln) for ln in lines), default=0)
     line_count = len(lines)
-    size_pt = _LYRIC_BODY_DISPLAY_PT
-    if line_count >= 8 or longest >= 40:
-        size_pt = 50
-    if line_count >= 10 or longest >= 48:
-        size_pt = 44
-    if line_count >= 12 or longest >= 56:
-        size_pt = 38
-    if line_count >= 14 or longest >= 64:
-        size_pt = 34
+    base_pt = typography.body_pt if typography else float(_LYRIC_BODY_DISPLAY_PT)
+    size_pt = _auto_body_pt(line_count, longest, base_pt) if typography else _auto_body_pt(
+        line_count, longest, float(_LYRIC_BODY_DISPLAY_PT)
+    )
+    align = _pp_align(typography.body_align if typography else "center")
 
     tf.clear()
     first = True
@@ -516,7 +563,7 @@ def _fill_hymn_body_caps(tf, chunk: str) -> None:
             bold=True,
             font_name=_HYMN_BODY_FONT,
         )
-        p.alignment = PP_ALIGN.CENTER
+        p.alignment = align
         p.space_after = Pt(10 if size_pt >= 34 else 8)
         p.line_spacing = 1.05
     if first:
@@ -529,7 +576,7 @@ def _fill_hymn_body_caps(tf, chunk: str) -> None:
             bold=True,
             font_name=_HYMN_BODY_FONT,
         )
-        p.alignment = PP_ALIGN.CENTER
+        p.alignment = align
 
 
 def _add_hymn_lyric_slides(
@@ -538,6 +585,9 @@ def _add_hymn_lyric_slides(
     hymn_title: str,
     lyrics: str,
     theme: SlideTheme,
+    *,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    section: str = "",
 ) -> None:
     """
     Black screen: gold serif title; lyrics in white ALL CAPS bold sans, large and centered.
@@ -559,23 +609,26 @@ def _add_hymn_lyric_slides(
     _apply_hymn_branding(slide0)
 
     w = SLIDE_WIDTH - 2 * MARGIN_SIDE
-    title_top = _content_top()
+    title_top = _HYMN_TITLE_TOP
     title_box = slide0.shapes.add_textbox(MARGIN_SIDE, title_top, w, Inches(0.95))
     tft = title_box.text_frame
     _prep_tf(tft)
     tft.clear()
+    typo0 = typography_for_hymn_slide(hymn_typography, section, 0)
     pt = tft.paragraphs[0]
+    title_pt = typo0.title_pt
+    title_align = _pp_align(typo0.title_align)
     pt.text = title
     _style_para(
         pt,
-        size_pt=_LYRIC_TITLE_DISPLAY_PT,
+        size_pt=title_pt,
         color=_HYMN_GOLD_TITLE,
         bold=True,
         font_name=_HYMN_TITLE_FONT,
     )
-    pt.alignment = PP_ALIGN.CENTER
+    pt.alignment = title_align
 
-    body_top = title_top + Inches(1.2)
+    body_top = title_top + Inches(1.05)
     body_h = SLIDE_HEIGHT - body_top - Inches(0.95)
     lyric_w = prs.slide_width
     body_box = slide0.shapes.add_textbox(0, body_top, lyric_w, body_h)
@@ -583,10 +636,11 @@ def _add_hymn_lyric_slides(
     _prep_tf(tfb)
     tfb.word_wrap = True
     tfb.vertical_anchor = MSO_ANCHOR.MIDDLE
-    _fill_hymn_body_caps(tfb, first_chunk)
+    _fill_hymn_body_caps(tfb, first_chunk, typography=typo0)
     _add_hymn_footer(slide0, footer_section)
 
-    for chunk in rest_chunks:
+    for slide_idx, chunk in enumerate(rest_chunks, start=1):
+        typo_n = typography_for_hymn_slide(hymn_typography, section, slide_idx)
         slide = prs.slides.add_slide(_layout_blank(prs))
         _set_slide_bg(slide, _HYMN_BG)
         _apply_hymn_branding(slide)
@@ -596,17 +650,40 @@ def _add_hymn_lyric_slides(
         _prep_tf(tf)
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        _fill_hymn_body_caps(tf, chunk)
+        _fill_hymn_body_caps(tf, chunk, typography=typo_n)
         _add_hymn_footer(slide, footer_section)
 
 
-def _try_library_hymn(prs: Presentation, section: str, hymn_id: str, footer: str, theme: SlideTheme) -> bool:
+def _try_library_hymn(
+    prs: Presentation,
+    section: str,
+    hymn_id: str,
+    footer: str,
+    theme: SlideTheme,
+    *,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+) -> bool:
     h = get_hymn(section, hymn_id)
     if not h:
         return False
     title = str(h.get("title") or "Hymn")
     lyrics = clean_lyrics_for_projection(str(h.get("lyrics") or ""))
-    _add_hymn_lyric_slides(prs, footer, title, lyrics, theme)
+    if hymn_lyric_overrides:
+        sec_block = hymn_lyric_overrides.get(section)
+        if isinstance(sec_block, Mapping):
+            ov = sec_block.get(hymn_id) or sec_block.get(str(hymn_id))
+            if ov:
+                lyrics = clean_lyrics_for_projection(str(ov))
+    _add_hymn_lyric_slides(
+        prs,
+        footer,
+        title,
+        lyrics,
+        theme,
+        hymn_typography=hymn_typography,
+        section=section,
+    )
     return True
 
 
@@ -858,8 +935,16 @@ def generate_mass_ppt(
     mass_collection_amount: str = "",
     mass_collection_date_label: str = "",
     food_sponsors: Optional[List[str]] = None,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    include_church_logo: bool = True,
+    include_church_name: bool = True,
+    hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT
+    global _ACTIVE_FONT, _deck_branding
+    _deck_branding = DeckBrandingOptions(
+        include_logo=bool(include_church_logo),
+        include_name=bool(include_church_name),
+    )
     prs = Presentation()
     prs.slide_width = SLIDE_WIDTH
     prs.slide_height = SLIDE_HEIGHT
@@ -917,7 +1002,9 @@ def generate_mass_ppt(
     )
 
     ent_id = str(sel.get("entrance") or "").strip()
-    if not ent_id or not _try_library_hymn(prs, "entrance", ent_id, "Entrance", theme):
+    if not ent_id or not _try_library_hymn(
+        prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+    ):
         _add_marked_slide(
             prs,
             "Entrance",
@@ -1019,7 +1106,9 @@ def generate_mass_ppt(
 
     # --- Liturgy of the Eucharist ---
     off_id = str(sel.get("offertory") or "").strip()
-    if not off_id or not _try_library_hymn(prs, "offertory", off_id, "Offertory", theme):
+    if not off_id or not _try_library_hymn(
+        prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+    ):
         _add_marked_slide(
             prs,
             "Offertory",
@@ -1047,9 +1136,13 @@ def generate_mass_ppt(
     c1 = str(sel.get("communion_1") or "").strip()
     c2 = str(sel.get("communion_2") or "").strip()
     comm_ok = False
-    if c1 and _try_library_hymn(prs, "communion", c1, "Communion (1)", theme):
+    if c1 and _try_library_hymn(
+        prs, "communion", c1, "Communion (1)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+    ):
         comm_ok = True
-    if c2 and _try_library_hymn(prs, "communion", c2, "Communion (2)", theme):
+    if c2 and _try_library_hymn(
+        prs, "communion", c2, "Communion (2)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+    ):
         comm_ok = True
     if not comm_ok:
         _add_marked_slide(
@@ -1060,7 +1153,9 @@ def generate_mass_ppt(
         )
     med_id = str(sel.get("meditation") or "").strip()
     if med_id:
-        _try_library_hymn(prs, "meditation", med_id, "Meditation", theme)
+        _try_library_hymn(
+            prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+        )
     _add_marked_slide(prs, "The Communion Rite", GFCC.POST_COMMUNION, theme)
     _add_divider_cover(prs, **ctx)
 
@@ -1082,7 +1177,9 @@ def generate_mass_ppt(
 
     _add_marked_slide(prs, "Final Blessing", GFCC.FINAL_BLESSING, theme)
     rec_id = str(sel.get("recessional") or "").strip()
-    if not rec_id or not _try_library_hymn(prs, "recessional", rec_id, "Recessional", theme):
+    if not rec_id or not _try_library_hymn(
+        prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+    ):
         _add_marked_slide(
             prs,
             "Recessional",

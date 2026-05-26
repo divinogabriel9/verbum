@@ -370,6 +370,10 @@ def generate_mass_media(
     food_sponsors: Optional[list[str]] = None,
     psalm_text_override: Optional[str] = None,
     gospel_quote_override: Optional[str] = None,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    include_church_logo: bool = True,
+    include_church_name: bool = True,
+    hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -503,6 +507,10 @@ def generate_mass_media(
         mass_collection_amount=mass_collection_amount or "",
         mass_collection_date_label=mass_collection_date_label or "",
         food_sponsors=food_sponsors,
+        hymn_typography=hymn_typography,
+        include_church_logo=include_church_logo,
+        include_church_name=include_church_name,
+        hymn_lyric_overrides=hymn_lyric_overrides,
     )
 
     if include_social_exports:
@@ -534,5 +542,116 @@ def generate_mass_media(
         gospel_quote=slide_line,
         slide_count=slide_count,
         liturgical_color=liturgical_color,
+        export_stem=stem,
+    )
+
+
+def regenerate_mass_pptx(
+    date: str,
+    celebrant: str,
+    *,
+    sentence_index: Optional[int] = None,
+    song_selections: Optional[Mapping[str, str]] = None,
+    custom_theme: Optional[Mapping[str, Any]] = None,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    divider_poster_path: Optional[Path] = None,
+    announcement_image_paths: Optional[list[Path]] = None,
+    mass_collection_amount: Optional[str] = None,
+    mass_collection_date_label: Optional[str] = None,
+    food_sponsors: Optional[list[str]] = None,
+    psalm_text_override: Optional[str] = None,
+    gospel_quote_override: Optional[str] = None,
+    include_church_logo: bool = True,
+    include_church_name: bool = True,
+    hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+) -> GenerationResult:
+    """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
+    data = get_liturgical_data(date)
+    if not data:
+        return GenerationResult(ok=False, error="Unable to fetch liturgical data.")
+
+    title = data.get("title") or "Sunday Mass Celebration"
+    gospel_ref = data.get("gospel_reference") or "N/A"
+    gospel_text = data.get("gospel_text") or ""
+    gospel_slide_quote = (data.get("gospel_slide_quote") or "").strip()
+    season = data.get("season") or ""
+    cycle = data.get("lectionary_cycle") or ""
+    quote_attr = data.get("quote_attribution")
+    liturgical_color = get_liturgical_color(date)
+
+    slide_line = resolve_slide_line(
+        gospel_slide_quote,
+        gospel_text,
+        sentence_index=sentence_index,
+        interactive_pick=False,
+        gospel_quote_override=gospel_quote_override,
+    )
+
+    picks = _merge_default_and_user_songs(
+        str(liturgical_color.get("season") or "ordinary_time"), song_selections
+    )
+    sec_map = {
+        "entrance": "entrance",
+        "offertory": "offertory",
+        "communion_1": "communion",
+        "communion_2": "communion",
+        "recessional": "recessional",
+        "meditation": "meditation",
+    }
+    for key, sec in sec_map.items():
+        sid = str(picks.get(key) or "").strip()
+        if sid:
+            ensure_lyrics_for_song(sec, sid)
+
+    community_display = get_community_name()
+    stem = mass_export_stem(community_display, date, title, season)
+    _root = Path(__file__).resolve().parent
+    _out = _root / "outputs"
+    poster_ppt_path = _out / f"{stem}_16x9.png"
+    if not poster_ppt_path.is_file():
+        poster_ppt_path = None
+
+    psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+
+    slide_count, pptx_path = generate_mass_ppt(
+        title=title,
+        gospel_reference=gospel_ref,
+        gospel_quote=slide_line or gospel_text,
+        season=season,
+        lectionary_cycle=cycle,
+        celebrant=celebrant,
+        date=date,
+        quote_attribution=quote_attr,
+        quote_max_chars=400,
+        gospel_full_text=gospel_text,
+        first_reading_ref=data.get("first_reading") or "",
+        first_reading_text=data.get("first_reading_text") or "",
+        psalm_ref=data.get("psalm") or "",
+        psalm_text=psalm_body,
+        second_reading_ref=data.get("second_reading") or "",
+        second_reading_text=data.get("second_reading_text") or "",
+        liturgical_color=liturgical_color,
+        custom_theme=custom_theme,
+        song_selections=picks,
+        output_stem=stem,
+        liturgical_poster_png=poster_ppt_path,
+        divider_poster_png=divider_poster_path,
+        announcement_image_paths=announcement_image_paths,
+        mass_collection_amount=mass_collection_amount or "",
+        mass_collection_date_label=mass_collection_date_label or "",
+        food_sponsors=food_sponsors,
+        hymn_typography=hymn_typography,
+        include_church_logo=include_church_logo,
+        include_church_name=include_church_name,
+        hymn_lyric_overrides=hymn_lyric_overrides,
+    )
+
+    return GenerationResult(
+        ok=True,
+        pptx_path=pptx_path,
+        title=title,
+        gospel_reference=gospel_ref,
+        slide_line_preview=slide_line[:180] + ("…" if len(slide_line) > 180 else ""),
+        slide_count=slide_count,
         export_stem=stem,
     )
