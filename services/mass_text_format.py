@@ -115,6 +115,142 @@ def format_krw_won(amount_raw: str) -> str:
     return f"{n:,} won"
 
 
+_STRUCTURE_LABEL_LINE_RE = re.compile(
+    r"^\s*\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\s*\]?\s*[:.)-]?\s*$",
+    re.IGNORECASE,
+)
+_STRUCTURE_HEADER_RE = _STRUCTURE_LABEL_LINE_RE
+_STRUCTURE_LABEL_INLINE_RE = re.compile(
+    r"^\s*(refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp)\s*:\s*(.*)$",
+    re.IGNORECASE,
+)
+
+
+def _non_empty_lyric_lines(text: str) -> list[str]:
+    return [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+
+
+def ensure_lyric_section_breaks(lyrics: str) -> str:
+    """Insert blank lines before structure labels when paragraphs were flattened."""
+    raw = (lyrics or "").strip()
+    if not raw:
+        return ""
+    out: list[str] = []
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if stripped and out and out[-1] != "" and _STRUCTURE_HEADER_RE.match(stripped):
+            out.append("")
+        out.append(line.rstrip())
+    return "\n".join(out).strip()
+
+
+def restore_lyric_sections_from_library(flat_lyrics: str, library_lyrics: str) -> str:
+    """
+    Re-split flattened lyric overrides using the saved hymn's section line counts.
+
+    Used when hymn preview edits were saved without blank lines between blocks.
+    """
+    lib_sections = parse_structured_lyric_sections(ensure_lyric_section_breaks(library_lyrics))
+    flat_lines = _non_empty_lyric_lines(flat_lyrics)
+    if len(lib_sections) < 2 or not flat_lines:
+        return ensure_lyric_section_breaks(flat_lyrics)
+    counts = [len(_non_empty_lyric_lines(sec)) for sec in lib_sections]
+    if sum(counts) != len(flat_lines):
+        return ensure_lyric_section_breaks(flat_lyrics)
+    parts: list[str] = []
+    idx = 0
+    for count in counts:
+        parts.append("\n".join(flat_lines[idx : idx + count]))
+        idx += count
+    return "\n\n".join(parts)
+
+
+def resolve_hymn_lyrics(library_lyrics: str, override: str | None) -> str:
+    """Prefer override text but restore verse/chorus structure from the library when needed."""
+    lib = (library_lyrics or "").strip()
+    if not (override or "").strip():
+        return lib
+    ov = ensure_lyric_section_breaks(str(override).strip())
+    lib_sections = parse_structured_lyric_sections(lib)
+    ov_sections = parse_structured_lyric_sections(ov)
+    if len(lib_sections) >= 2 and len(ov_sections) < len(lib_sections):
+        restored = restore_lyric_sections_from_library(ov, lib)
+        if len(parse_structured_lyric_sections(restored)) >= len(ov_sections):
+            return restored
+    return ov
+
+
+def pick_hymn_lyrics_for_slides(library_lyrics: str, override: str | None) -> str:
+    """
+    Lyrics used for hymn slides: library text unless a valid override is present.
+
+    Ignores corrupted browser overrides (flattened preview saves with missing blocks
+    or one long line per slide). Communion hymns often work because they lack stale
+    overrides; entrance frequently had partial overrides in localStorage.
+    """
+    lib = (library_lyrics or "").strip()
+    if not (override or "").strip():
+        return lib
+    resolved = resolve_hymn_lyrics(lib, str(override))
+    lib_lines = _non_empty_lyric_lines(lib)
+    res_lines = _non_empty_lyric_lines(resolved)
+    if lib_lines and len(res_lines) < len(lib_lines):
+        return lib
+    lib_sections = parse_structured_lyric_sections(lib)
+    res_sections = parse_structured_lyric_sections(resolved)
+    if len(lib_sections) >= 2 and len(res_sections) < len(lib_sections):
+        return lib
+    if lib_lines and lib_sections:
+        lib_max = max(len(ln) for ln in lib_lines)
+        res_max = max(len(ln) for ln in res_lines) if res_lines else 0
+        if len(lib_sections) >= 2 and res_max > max(lib_max * 2, 72):
+            return lib
+    return resolved
+
+
+def parse_structured_lyric_sections(lyrics: str) -> list[str]:
+    """
+    Split saved lyrics into verse/chorus blocks (matches Lyrics Studio structured editor).
+
+    Paragraphs are separated by blank lines. A leading label line (``Verse 1``,
+    ``Chorus``, ``REFRAIN:``, etc.) starts a new block; label text is not included
+    in the returned section bodies.
+    """
+    raw = ensure_lyric_section_breaks(lyrics)
+    if not raw:
+        return []
+
+    sections: list[str] = []
+    for part in re.split(r"\n\s*\n+", raw):
+        chunk = part.strip()
+        if not chunk:
+            continue
+        lines = [ln.strip() for ln in chunk.splitlines() if ln.strip()]
+        if not lines:
+            continue
+
+        first = lines[0]
+        body_lines: list[str]
+        if _STRUCTURE_HEADER_RE.match(first):
+            body_lines = lines[1:]
+        else:
+            inline = _STRUCTURE_LABEL_INLINE_RE.match(first)
+            if inline:
+                remainder = (inline.group(2) or "").strip()
+                body_lines = ([remainder] if remainder else []) + lines[1:]
+            else:
+                body_lines = lines
+
+        body_lines = [ln for ln in body_lines if not _STRUCTURE_LABEL_LINE_RE.match(ln)]
+        body = "\n".join(body_lines).strip()
+        if body:
+            sections.append(body)
+
+    if sections:
+        return sections
+    return [raw]
+
+
 def clean_lyrics_for_projection(lyrics: str) -> str:
     """
     Remove structure labels (refrain, verse, chorus, stanza, bridge, response)
@@ -122,17 +258,13 @@ def clean_lyrics_for_projection(lyrics: str) -> str:
     """
     raw = (lyrics or "").splitlines()
     out: list[str] = []
-    label_re = re.compile(
-        r"^\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s+\d+)?\s*[:.)-]?\s*$",
-        re.IGNORECASE,
-    )
     for line in raw:
         stripped = line.strip()
         if not stripped:
             if out and out[-1] != "":
                 out.append("")
             continue
-        if label_re.match(stripped):
+        if _STRUCTURE_LABEL_LINE_RE.match(stripped):
             continue
         out.append(line.rstrip())
     text = "\n".join(out)

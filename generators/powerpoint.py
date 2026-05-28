@@ -7,21 +7,31 @@ text colors are chosen for contrast (never matching the background).
 
 from __future__ import annotations
 
+import math
 import re
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Mapping, Optional, Tuple
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE, PP_ALIGN
 from pptx.util import Inches, Pt
 
 from services.community_config import get_community_name, get_logo_path
 from services.hymn_library import get_hymn
 from services.hymn_typography import HymnTypographySettings, typography_for_hymn_slide
-from services.mass_text_format import clean_lyrics_for_projection, strip_reading_verse_markers
+from services.mass_text_format import (
+    clean_lyrics_for_projection,
+    ensure_lyric_section_breaks,
+    parse_structured_lyric_sections,
+    pick_hymn_lyrics_for_slides,
+    strip_reading_verse_markers,
+)
 from services.prayer_service import get_prayer
+from services.prayer_templates import PENITENTIAL_ACT
 
 from . import gfcc_flow_content as GFCC
 
@@ -42,11 +52,13 @@ _BODY_PT = 19
 _META_PT = 14
 _GREET_PT = 21
 _FOOTER_PT = 13
+_RITE_BODY_PT = 50
+_RITE_DIRECTION_PT = 45
 
 _MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
 # Hymn / lyrics slides (black screen, gold title, white ALL CAPS body — projector style)
-_LYRIC_MAX_LINES_PER_SLIDE = 4
+_LYRIC_MAX_LINES_PER_SLIDE = 6
 _LYRIC_TITLE_DISPLAY_PT = 38
 _LYRIC_BODY_DISPLAY_PT = 55
 _HYMN_BG = RGBColor(0, 0, 0)
@@ -61,8 +73,24 @@ _LOGO_MAX_W = Inches(0.95)
 _LOGO_MAX_H = Inches(0.42)
 _COMMUNITY_HEADER_PT = 15
 _HYMN_TITLE_TOP = Inches(0.12)
+_EMU_PER_INCH = 914400
+_LYRIC_SAFE_SIDE_RATIO = 0.0
+_LYRIC_TEXTBOX_WIDTH_RATIO = 1.0
+_LYRIC_MIN_WORDS_PER_LINE = 3
+_LYRIC_TF_SIDE_MARGIN = Inches(0)
+_LYRIC_MIN_PT = 52
+_LYRIC_MAX_PT = 72
+_LYRIC_SOFT_WRAP_CHARS = 46
+_LYRIC_FIT_WIDTH_SAFETY = 0.96
+_LYRIC_FIT_HEIGHT_SAFETY = 0.90
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_REFERENCE_DECK_FILENAME = "GCCC24May2026_Eastertide.pptx"
+_REFERENCE_SLIDE_PRE_MASS = 0
+_REFERENCE_SLIDE_PENITENTIAL = (7, 8)
+_REFERENCE_SLIDE_KYRIE = 9
+_REFERENCE_FOOTER_ZONE_TOP = int(SLIDE_HEIGHT * 0.78)
+_reference_mass_deck: Optional[Presentation] = None
 
 
 @dataclass(frozen=True)
@@ -284,6 +312,72 @@ def _prep_tf(tf):
     tf.margin_bottom = Inches(0.08)
 
 
+def _prep_hymn_lyric_tf(tf):
+    """Full-width lyric textbox on title slides (side inset 0; vertical padding from _prep_tf)."""
+    _prep_tf(tf)
+    tf.margin_left = _LYRIC_TF_SIDE_MARGIN
+    tf.margin_right = _LYRIC_TF_SIDE_MARGIN
+
+
+def _prep_hymn_lyric_tf_full_bleed(tf):
+    """Title-less lyric slides: textbox flush to all four slide edges."""
+    _prep_tf(tf)
+    tf.margin_left = _LYRIC_TF_SIDE_MARGIN
+    tf.margin_right = _LYRIC_TF_SIDE_MARGIN
+    tf.margin_top = Inches(0)
+    tf.margin_bottom = Inches(0)
+
+
+def _lyric_textbox_geometry(slide_width: int) -> Tuple[int, int]:
+    """Return (left, width) so the textbox spans the full slide width."""
+    width = int(slide_width * _LYRIC_TEXTBOX_WIDTH_RATIO)
+    left = int(slide_width * _LYRIC_SAFE_SIDE_RATIO)
+    return left, width
+
+
+def _lyric_continuation_textbox_geometry(slide_width: int, slide_height: int) -> Tuple[int, int, int, int]:
+    """Return (left, top, width, height) at 0% inset for title-less lyric slides."""
+    return 0, 0, int(slide_width), int(slide_height)
+
+
+def _word_count(line: str) -> int:
+    return len((line or "").split())
+
+
+def _enforce_min_words_per_line(
+    lines: List[str],
+    min_words: int = _LYRIC_MIN_WORDS_PER_LINE,
+) -> List[str]:
+    """Merge orphan lines so each rendered line has at least ``min_words`` when possible."""
+    if not lines:
+        return lines
+    merged: List[str] = []
+    pending = ""
+    for line in lines:
+        text = (line or "").strip()
+        if not text:
+            continue
+        if pending:
+            text = f"{pending} {text}".strip()
+            pending = ""
+        while _word_count(text) < min_words:
+            # keep short source lines intact if nothing else to merge with
+            if not merged:
+                break
+            prev = merged.pop()
+            text = f"{prev} {text}".strip()
+        if _word_count(text) < min_words:
+            pending = text
+            continue
+        merged.append(text)
+    if pending:
+        if merged:
+            merged[-1] = f"{merged[-1]} {pending}".strip()
+        else:
+            merged.append(pending)
+    return merged
+
+
 def _style_para(p, *, size_pt, color, bold=False, italic=False, font_name=None):
     p.font.name = font_name or _ACTIVE_FONT
     p.font.size = Pt(size_pt)
@@ -336,7 +430,290 @@ def _suppress_all_role_prefix(footer_section: str) -> bool:
     return any(f.startswith(k) for k in keys)
 
 
-def _add_marked_slide(prs: Presentation, footer_section: str, marked_text: str, theme: SlideTheme) -> None:
+def _is_prayer_rite_slide(footer_section: str) -> bool:
+    """Mass prayer rites rendered large for projection (Kyrie, Gloria, Creed, etc.)."""
+    f = (footer_section or "").strip().lower()
+    keys = (
+        "kyrie",
+        "gloria",
+        "sanctus",
+        "our father",
+        "lamb of god",
+        "penitential act",
+        "nicene creed",
+    )
+    return any(k in f for k in keys)
+
+
+def _marked_body_height_inches() -> float:
+    """Usable vertical space for marked prayer/body text (inches)."""
+    top = _length_to_inches(_content_top())
+    return float(SLIDE_HEIGHT.inches) - top - 1.1
+
+
+def _rite_display_line(role: str, line: str, *, strip_all: bool) -> str:
+    if role == "priest":
+        return f"Priest: {line}"
+    if role == "all":
+        return line if strip_all else f"All: {line}"
+    return line
+
+
+def _rite_wrapped_line_units(role: str, line: str, *, strip_all: bool) -> float:
+    """Estimate how many slide lines one marked line consumes at rite font size."""
+    text = _rite_display_line(role, line, strip_all=strip_all)
+    chars_per_line = 24 if role in ("priest", "all", "plain") else 30
+    if role == "direction":
+        chars_per_line = 34
+    wrapped = max(1, math.ceil(len(text) / chars_per_line))
+    extra = 0.25 if role in ("priest", "all") else 0.12
+    return wrapped + extra
+
+
+def _rite_line_height_inches(font_pt: float = _RITE_BODY_PT) -> float:
+    return (font_pt * 1.22 + 8) / 72.0
+
+
+def _serialize_marked_lines(items: List[Tuple[str, str]]) -> str:
+    out: List[str] = []
+    for role, line in items:
+        if role == "priest":
+            out.append(f"<<P>>{line}")
+        elif role == "all":
+            out.append(f"<<A>>{line}")
+        elif role == "direction":
+            out.append(f"<<D>>{line}")
+        elif role == "hymn":
+            out.append(f"<<H>>{line}")
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
+def _chunk_marked_rite_by_fit(
+    marked: str,
+    footer_section: str,
+    body_h_inches: Optional[float] = None,
+) -> List[str]:
+    """Split prayer-rite marked text across slides when 50pt body would overflow."""
+    items = _parse_marked_lines(marked)
+    if not items:
+        return [marked]
+
+    strip_all = _suppress_all_role_prefix(footer_section)
+    body_h = float(body_h_inches or _marked_body_height_inches())
+    capacity = max(3.0, body_h / _rite_line_height_inches(_RITE_BODY_PT))
+
+    grouped: List[List[Tuple[str, str]]] = []
+    current: List[Tuple[str, str]] = []
+    used = 0.0
+
+    for role, line in items:
+        units = _rite_wrapped_line_units(role, line, strip_all=strip_all)
+        if current and used + units > capacity:
+            grouped.append(current)
+            current = []
+            used = 0.0
+        current.append((role, line))
+        used += units
+
+    if current:
+        grouped.append(current)
+
+    if not grouped:
+        return [marked]
+    return [_serialize_marked_lines(part) for part in grouped]
+
+
+def _render_templated_prayer_slide(
+    prs: Presentation,
+    template: Mapping[str, Any],
+    slide_spec: Mapping[str, Any],
+    theme: SlideTheme,
+    *,
+    footer_section: str,
+    slide_index: int = 0,
+    slide_total: int = 1,
+) -> None:
+    """Render one prayer-template slide (fixed line breaks and rite typography)."""
+    footer = template.get("footer") or footer_section
+    if slide_total > 1:
+        footer = f"{footer} ({slide_index + 1}/{slide_total})"
+
+    body_pt = int(template.get("body_pt") or _RITE_BODY_PT)
+    dir_pt = int(template.get("direction_pt") or _RITE_DIRECTION_PT)
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _apply_slide_branding(slide, theme)
+    lx, top, w = MARGIN_SIDE, _content_top(), SLIDE_WIDTH - 2 * MARGIN_SIDE
+    body_h = SLIDE_HEIGHT - top - Inches(1.1)
+
+    box = slide.shapes.add_textbox(lx, top, w, body_h)
+    tf = box.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+
+    first = True
+    for line_spec in slide_spec.get("lines") or []:
+        style = str(line_spec.get("style") or "plain").strip().lower()
+        raw = str(line_spec.get("text") or "").strip()
+        if not raw:
+            continue
+        p = tf.paragraphs[0] if first else tf.add_paragraph()
+        first = False
+
+        if style == "priest":
+            p.text = f"Priest: {raw}"
+            _style_para(p, size_pt=body_pt, color=theme.emphasis, bold=True)
+            p.space_before = Pt(6)
+        elif style == "all_lead":
+            p.text = f"ALL: {raw}"
+            _style_para(p, size_pt=body_pt, color=theme.primary, bold=True)
+            p.space_before = Pt(6)
+        elif style == "all_body":
+            p.text = raw
+            _style_para(p, size_pt=body_pt, color=theme.primary, bold=False)
+            p.space_before = Pt(4)
+        elif style == "direction":
+            p.text = raw
+            _style_para(p, size_pt=dir_pt, color=theme.emphasis, bold=False, italic=True)
+            p.space_before = Pt(4)
+        else:
+            p.text = raw
+            _style_para(p, size_pt=body_pt, color=theme.primary, bold=False)
+
+        p.alignment = PP_ALIGN.CENTER
+        p.space_after = Pt(8)
+
+    _add_community_footer(slide, footer, theme)
+
+
+def _add_templated_prayer(prs: Presentation, template: Mapping[str, Any], theme: SlideTheme) -> None:
+    slides = list(template.get("slides") or [])
+    total = len(slides)
+    footer_base = str(template.get("footer") or "Prayer")
+    for i, slide_spec in enumerate(slides):
+        _render_templated_prayer_slide(
+            prs,
+            template,
+            slide_spec,
+            theme,
+            footer_section=footer_base,
+            slide_index=i,
+            slide_total=total,
+        )
+
+
+def _reference_mass_deck_path() -> Optional[Path]:
+    candidates = (
+        _PROJECT_ROOT / "data" / "reference" / _REFERENCE_DECK_FILENAME,
+        _PROJECT_ROOT / "outputs" / "GFCC24May2026_Eastertide.pptx",
+        Path.home() / "Downloads" / _REFERENCE_DECK_FILENAME,
+    )
+    for path in candidates:
+        if path.is_file():
+            return path.resolve()
+    return None
+
+
+def _load_reference_mass_deck() -> Optional[Presentation]:
+    global _reference_mass_deck
+    if _reference_mass_deck is not None:
+        return _reference_mass_deck
+    ref_path = _reference_mass_deck_path()
+    if not ref_path:
+        return None
+    _reference_mass_deck = Presentation(str(ref_path))
+    return _reference_mass_deck
+
+
+def _is_reference_branding_shape(shape) -> bool:
+    """Skip reference logo groups and baked-in parish footer text boxes."""
+    if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+        return True
+    if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+        return False
+    if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+        return True
+    text = (shape.text_frame.text or "").strip().lower()
+    parish = get_community_name().strip().lower()
+    if parish and parish in text and int(shape.top) < _REFERENCE_FOOTER_ZONE_TOP:
+        return True
+    return False
+
+
+def _copy_slide_into_presentation(
+    prs: Presentation,
+    slide_src,
+    theme: SlideTheme,
+    footer_section: str,
+) -> None:
+    """
+    Clone prayer/body shapes from a reference slide.
+
+    Uses liturgical ``theme`` background plus current logo and parish name;
+    does not copy reference background, logo group, or footer text.
+    """
+    layout = _layout_blank(prs)
+    dest = prs.slides.add_slide(layout)
+    for shp in list(dest.shapes):
+        el = shp.element
+        el.getparent().remove(el)
+    for shp in slide_src.shapes:
+        if _is_reference_branding_shape(shp):
+            continue
+        newel = deepcopy(shp.element)
+        dest.shapes._spTree.insert_element_before(newel, "p:extLst")
+    _set_slide_bg(dest, theme.bg)
+    _apply_slide_branding(dest, theme)
+    _add_community_footer(dest, footer_section, theme)
+
+
+def _copy_reference_slides(
+    prs: Presentation,
+    slide_specs: Tuple[Tuple[int, str], ...],
+    theme: SlideTheme,
+) -> bool:
+    ref = _load_reference_mass_deck()
+    if ref is None:
+        return False
+    for idx, _footer in slide_specs:
+        if idx < 0 or idx >= len(ref.slides):
+            return False
+    total = len(slide_specs)
+    for part_i, (idx, footer_base) in enumerate(slide_specs):
+        footer = footer_base if total == 1 else f"{footer_base} ({part_i + 1}/{total})"
+        _copy_slide_into_presentation(prs, ref.slides[idx], theme, footer)
+    return True
+
+
+def _add_pre_mass_slide(prs: Presentation, theme: SlideTheme) -> None:
+    if _copy_reference_slides(prs, ((_REFERENCE_SLIDE_PRE_MASS, "Pre-Mass"),), theme):
+        return
+    _add_marked_slide(prs, "Pre-Mass", GFCC.SILENT_REMINDER, theme)
+
+
+def _add_penitential_act_slides(prs: Presentation, theme: SlideTheme) -> None:
+    specs = tuple((idx, "Penitential Act") for idx in _REFERENCE_SLIDE_PENITENTIAL)
+    if _copy_reference_slides(prs, specs, theme):
+        return
+    _add_templated_prayer(prs, PENITENTIAL_ACT, theme)
+
+
+def _add_kyrie_slide(prs: Presentation, theme: SlideTheme) -> None:
+    if _copy_reference_slides(prs, ((_REFERENCE_SLIDE_KYRIE, "Kyrie Eleison"),), theme):
+        return
+    _add_marked_slide(prs, "Kyrie Eleison", GFCC.KYRIE, theme)
+
+
+def _render_marked_slide(
+    prs: Presentation,
+    footer_section: str,
+    marked_text: str,
+    theme: SlideTheme,
+) -> None:
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, theme.bg)
     _apply_slide_branding(slide, theme)
@@ -349,30 +726,47 @@ def _add_marked_slide(prs: Presentation, footer_section: str, marked_text: str, 
     tf.clear()
     first = True
     strip_all = _suppress_all_role_prefix(footer_section)
+    rite_slide = _is_prayer_rite_slide(footer_section)
+    main_pt = _RITE_BODY_PT if rite_slide else _BODY_PT + 1
+    dir_pt = _RITE_DIRECTION_PT if rite_slide else _META_PT + 1
+    plain_pt = _RITE_BODY_PT if rite_slide else _BODY_PT
+    if rite_slide:
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     for role, line in _parse_marked_lines(marked_text):
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         if role == "priest":
             p.text = f"Priest: {line}"
-            _style_para(p, size_pt=_BODY_PT + 1, color=theme.emphasis, bold=True)
+            _style_para(p, size_pt=main_pt, color=theme.emphasis, bold=True)
             p.space_before = Pt(4)
         elif role == "all":
             p.text = line if strip_all else f"All: {line}"
-            _style_para(p, size_pt=_BODY_PT + 1, color=theme.primary, bold=True)
+            _style_para(p, size_pt=main_pt, color=theme.primary, bold=True)
             p.space_before = Pt(4)
         elif role == "direction":
             p.text = line
-            _style_para(p, size_pt=_META_PT + 1, color=theme.emphasis, bold=False, italic=True)
+            _style_para(p, size_pt=dir_pt, color=theme.emphasis, bold=False, italic=True)
         elif role == "hymn":
             p.text = line
-            _style_para(p, size_pt=_BODY_PT, color=theme.primary, bold=True)
+            _style_para(p, size_pt=plain_pt, color=theme.primary, bold=True)
         else:
             p.text = line
-            _style_para(p, size_pt=_BODY_PT, color=theme.primary, bold=False)
+            _style_para(p, size_pt=plain_pt, color=theme.primary, bold=False)
         p.alignment = PP_ALIGN.CENTER
-        p.space_after = Pt(5)
+        p.space_after = Pt(8 if rite_slide else 5)
 
     _add_community_footer(slide, footer_section, theme)
+
+
+def _add_marked_slide(prs: Presentation, footer_section: str, marked_text: str, theme: SlideTheme) -> None:
+    if _is_prayer_rite_slide(footer_section):
+        chunks = _chunk_marked_rite_by_fit(marked_text, footer_section)
+        total = len(chunks)
+        for i, ch in enumerate(chunks):
+            foot = footer_section if total == 1 else f"{footer_section} ({i + 1}/{total})"
+            _render_marked_slide(prs, foot, ch, theme)
+        return
+    _render_marked_slide(prs, footer_section, marked_text, theme)
 
 
 def _chunk_marked_body(marked: str, limit: int = _MAX_MARKED_BODY) -> List[str]:
@@ -393,7 +787,10 @@ def _chunk_marked_body(marked: str, limit: int = _MAX_MARKED_BODY) -> List[str]:
 
 
 def _add_marked_chunked(prs: Presentation, footer: str, marked: str, theme: SlideTheme) -> None:
-    chunks = _chunk_marked_body(marked)
+    if _is_prayer_rite_slide(footer):
+        chunks = _chunk_marked_rite_by_fit(marked, footer)
+    else:
+        chunks = _chunk_marked_body(marked)
     for i, ch in enumerate(chunks):
         foot = footer if len(chunks) == 1 else f"{footer} ({i + 1}/{len(chunks)})"
         _add_marked_slide(prs, foot, ch, theme)
@@ -490,6 +887,13 @@ def _add_section_card(prs: Presentation, big_lines: str, footer_section: str, th
     _add_community_footer(slide, footer_section, theme)
 
 
+def _length_to_inches(value: Any) -> float:
+    """Convert python-pptx Length or raw EMU int to inches."""
+    if hasattr(value, "inches"):
+        return float(value.inches)
+    return float(value) / _EMU_PER_INCH
+
+
 def split_lyrics(lines: List[str], max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[str]:
     """Group lyric lines into slide blocks (each block is lines joined with newlines)."""
     if not lines:
@@ -500,16 +904,181 @@ def split_lyrics(lines: List[str], max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) 
     return blocks
 
 
+def _token_width_units(token: str) -> float:
+    """Approximate rendered token width in relative units."""
+    if not token:
+        return 0.0
+    narrow = set(".,:;!'|ijlIt`")
+    wide = set("MW@#%&QGOD")
+    units = 0.0
+    for ch in token:
+        if ch == " ":
+            units += 0.33
+        elif ch in narrow:
+            units += 0.38
+        elif ch in wide:
+            units += 0.9
+        else:
+            units += 0.62
+    return units
+
+
+def measureRenderedText(lines: List[str], font_size_pt: float) -> Mapping[str, float]:
+    """
+    Estimate text footprint for full-width lyric fitting.
+
+    Uses a conservative width model to keep projector readability.
+    """
+    safe_width_inches = float(SLIDE_WIDTH.inches) * _LYRIC_TEXTBOX_WIDTH_RATIO
+    line_height_inches = (font_size_pt * 1.16) / 72.0
+    max_line_inches = 0.0
+    for line in lines:
+        units = _token_width_units(line.strip().upper())
+        # 1 unit is approximated as ~0.63em for Arial Black in projection use.
+        # Conservative estimate for Arial Black ALL CAPS on projectors.
+        estimated = (units * font_size_pt * 0.80) / 72.0
+        if estimated > max_line_inches:
+            max_line_inches = estimated
+    return {
+        "max_line_width_inches": max_line_inches,
+        "text_height_inches": len(lines) * line_height_inches,
+        "available_width_inches": safe_width_inches,
+    }
+
+
+def detectOverflow(lines: List[str], font_size_pt: float, box_height_inches: float) -> bool:
+    measured = measureRenderedText(lines, font_size_pt)
+    max_w = measured["available_width_inches"] * _LYRIC_FIT_WIDTH_SAFETY
+    max_h = box_height_inches * _LYRIC_FIT_HEIGHT_SAFETY
+    return bool(
+        measured["max_line_width_inches"] > max_w
+        or measured["text_height_inches"] > max_h
+    )
+
+
+def _lyric_lines_from_chunk(lyrics_text: str) -> List[str]:
+    """
+    Preserve line breaks from Lyrics Studio / saved hymn blocks.
+
+    Only re-wraps individual lines that exceed the soft character limit.
+    """
+    raw_lines = [ln.strip() for ln in (lyrics_text or "").splitlines() if ln.strip()]
+    if not raw_lines:
+        return []
+    out: List[str] = []
+    for raw in raw_lines:
+        if len(raw) <= _LYRIC_SOFT_WRAP_CHARS:
+            out.append(raw)
+            continue
+        wrapped = optimizeLineBreaks(raw)
+        out.extend(wrapped if wrapped else [raw])
+    return out
+
+
+def optimizeLineBreaks(lyrics_text: str) -> List[str]:
+    """
+    Phrase-aware line optimizer for worship lyrics.
+
+    Prefers natural breathing punctuation and conjunction boundaries.
+    Each line keeps at least ``_LYRIC_MIN_WORDS_PER_LINE`` words when split.
+    """
+    min_words = _LYRIC_MIN_WORDS_PER_LINE
+    raw_lines = [ln.strip() for ln in (lyrics_text or "").splitlines() if ln.strip()]
+    out: List[str] = []
+    break_re = re.compile(r"\s+(,|;|:|\.|—|-|and|but|for|that|with|to)\s+", flags=re.IGNORECASE)
+    for raw in raw_lines:
+        words = raw.split()
+        if len(words) <= (min_words * 2 - 1):
+            out.append(raw)
+            continue
+        candidate = None
+        midpoint = len(raw) // 2
+        for m in break_re.finditer(raw):
+            idx = m.start()
+            left_n = _word_count(raw[:idx])
+            right_n = _word_count(raw[idx:])
+            if left_n < min_words or right_n < min_words:
+                continue
+            if candidate is None or abs(idx - midpoint) < abs(candidate - midpoint):
+                candidate = idx
+        if candidate is not None:
+            first = raw[:candidate].strip()
+            second = raw[candidate:].strip(" ,-;:.")
+            if first and second and _word_count(first) >= min_words and _word_count(second) >= min_words:
+                out.extend([first, second])
+                continue
+        # Balanced split with minimum words on each line.
+        cut = max(min_words, min(len(words) - min_words, len(words) // 2))
+        if cut < min_words or len(words) - cut < min_words:
+            out.append(raw)
+            continue
+        out.extend([" ".join(words[:cut]), " ".join(words[cut:])])
+    return _enforce_min_words_per_line(out)
+
+
+def calculateOptimalFontSize(lines: List[str], box_height_inches: float) -> int:
+    """Choose largest readable lyric size (60–72pt) that fits fixed full-width textbox."""
+    line_count = len(lines)
+    height_cap = _LYRIC_MAX_PT
+    if line_count >= 6:
+        height_cap = min(height_cap, 58)
+    elif line_count >= 5:
+        height_cap = min(height_cap, 64)
+    elif line_count >= 4:
+        height_cap = min(height_cap, 68)
+    for pt in range(height_cap, _LYRIC_MIN_PT - 1, -1):
+        if not detectOverflow(lines, float(pt), box_height_inches):
+            return pt
+    return _LYRIC_MIN_PT
+
+
+def fitLyricsToFullWidthTextbox(lyrics_text: str, box_height_inches: float) -> Tuple[List[str], int]:
+    """
+    Fit lyrics into fixed near-edge-to-edge textbox.
+
+    Keeps constant width and adjusts font size; preserves structured block line breaks.
+    """
+    lines = _lyric_lines_from_chunk(lyrics_text)
+    if not lines:
+        return [""], _LYRIC_MIN_PT
+
+    fitted = lines
+    size_pt = calculateOptimalFontSize(fitted, box_height_inches)
+    while size_pt > _LYRIC_MIN_PT and detectOverflow(fitted, float(size_pt), box_height_inches):
+        size_pt -= 2
+    return fitted, size_pt
+
+
+def _chunk_section_for_slides(section_text: str, max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[str]:
+    """One structured block (verse/chorus); sub-chunk only when that block exceeds line budget."""
+    cleaned = clean_lyrics_for_projection(section_text)
+    if not cleaned:
+        return []
+    line_list = [ln for ln in cleaned.splitlines() if ln.strip()]
+    if not line_list:
+        return [cleaned]
+    if len(line_list) <= max_lines:
+        return ["\n".join(line_list)]
+    return split_lyrics(line_list, max_lines=max_lines)
+
+
 def _chunk_lyrics_display(text: str, max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[str]:
-    """Split lyrics for hymn slides: max ``max_lines`` lines per slide, original order preserved."""
-    t = (text or "").strip()
+    """
+    Split lyrics for hymn slides by structured-editor blocks (verse, chorus, bridge, etc.).
+
+    Each blank-line-separated section from Lyrics Studio becomes its own slide group.
+    Long sections may span multiple slides, but chunks never cross section boundaries.
+    """
+    t = ensure_lyric_section_breaks((text or "").strip())
     if not t:
         return []
-    line_list = t.splitlines()
-    if not line_list:
-        return [t]
-    blocks = split_lyrics(line_list, max_lines=max_lines)
-    return blocks if blocks else [t]
+
+    sections = parse_structured_lyric_sections(t)
+    chunks: List[str] = []
+    for section in sections:
+        chunks.extend(_chunk_section_for_slides(section, max_lines=max_lines))
+
+    return chunks if chunks else [t]
 
 
 def _pp_align(name: str) -> PP_ALIGN:
@@ -539,15 +1108,17 @@ def _fill_hymn_body_caps(
     chunk: str,
     *,
     typography: Optional[HymnTypographySettings] = None,
+    box_height_inches: Optional[float] = None,
 ) -> None:
     """ALL CAPS bold sans-serif (white on black), optional custom size/alignment."""
-    lines = [ln.strip() for ln in chunk.split("\n") if ln.strip()]
-    longest = max((len(ln) for ln in lines), default=0)
-    line_count = len(lines)
-    base_pt = typography.body_pt if typography else float(_LYRIC_BODY_DISPLAY_PT)
-    size_pt = _auto_body_pt(line_count, longest, base_pt) if typography else _auto_body_pt(
-        line_count, longest, float(_LYRIC_BODY_DISPLAY_PT)
-    )
+    box_h = float(box_height_inches or 0.0) or float(SLIDE_HEIGHT.inches * 0.72)
+    lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, box_h)
+    size_pt = int(max(_LYRIC_MIN_PT, min(_LYRIC_MAX_PT, auto_fit_pt)))
+    if typography:
+        requested = int(max(_LYRIC_MIN_PT, min(_LYRIC_MAX_PT, round(typography.body_pt))))
+        size_pt = min(size_pt, requested)
+    while size_pt > _LYRIC_MIN_PT and detectOverflow(lines, float(size_pt), box_h):
+        size_pt -= 2
     align = _pp_align(typography.body_align if typography else "center")
 
     tf.clear()
@@ -564,8 +1135,8 @@ def _fill_hymn_body_caps(
             font_name=_HYMN_BODY_FONT,
         )
         p.alignment = align
-        p.space_after = Pt(10 if size_pt >= 34 else 8)
-        p.line_spacing = 1.05
+        p.space_after = Pt(6)
+        p.line_spacing = 1.0
     if first:
         p = tf.paragraphs[0]
         p.text = (chunk or "").strip().upper()
@@ -630,13 +1201,13 @@ def _add_hymn_lyric_slides(
 
     body_top = title_top + Inches(1.05)
     body_h = SLIDE_HEIGHT - body_top - Inches(0.95)
-    lyric_w = prs.slide_width
-    body_box = slide0.shapes.add_textbox(0, body_top, lyric_w, body_h)
+    lyric_left, lyric_w = _lyric_textbox_geometry(prs.slide_width)
+    body_box = slide0.shapes.add_textbox(lyric_left, body_top, lyric_w, body_h)
     tfb = body_box.text_frame
-    _prep_tf(tfb)
+    _prep_hymn_lyric_tf(tfb)
     tfb.word_wrap = True
     tfb.vertical_anchor = MSO_ANCHOR.MIDDLE
-    _fill_hymn_body_caps(tfb, first_chunk, typography=typo0)
+    _fill_hymn_body_caps(tfb, first_chunk, typography=typo0, box_height_inches=_length_to_inches(body_h))
     _add_hymn_footer(slide0, footer_section)
 
     for slide_idx, chunk in enumerate(rest_chunks, start=1):
@@ -644,13 +1215,15 @@ def _add_hymn_lyric_slides(
         slide = prs.slides.add_slide(_layout_blank(prs))
         _set_slide_bg(slide, _HYMN_BG)
         _apply_hymn_branding(slide)
-        body_h2 = SLIDE_HEIGHT - _content_top() - Inches(0.95)
-        bx = slide.shapes.add_textbox(0, _content_top(), lyric_w, body_h2)
+        cont_left, cont_top, cont_w, cont_h = _lyric_continuation_textbox_geometry(
+            prs.slide_width, prs.slide_height
+        )
+        bx = slide.shapes.add_textbox(cont_left, cont_top, cont_w, cont_h)
         tf = bx.text_frame
-        _prep_tf(tf)
+        _prep_hymn_lyric_tf_full_bleed(tf)
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        _fill_hymn_body_caps(tf, chunk, typography=typo_n)
+        _fill_hymn_body_caps(tf, chunk, typography=typo_n, box_height_inches=_length_to_inches(cont_h))
         _add_hymn_footer(slide, footer_section)
 
 
@@ -668,13 +1241,14 @@ def _try_library_hymn(
     if not h:
         return False
     title = str(h.get("title") or "Hymn")
-    lyrics = clean_lyrics_for_projection(str(h.get("lyrics") or ""))
+    library_lyrics = str(h.get("lyrics") or "")
+    lyrics = library_lyrics
     if hymn_lyric_overrides:
         sec_block = hymn_lyric_overrides.get(section)
         if isinstance(sec_block, Mapping):
             ov = sec_block.get(hymn_id) or sec_block.get(str(hymn_id))
             if ov:
-                lyrics = clean_lyrics_for_projection(str(ov))
+                lyrics = pick_hymn_lyrics_for_slides(library_lyrics, str(ov))
     _add_hymn_lyric_slides(
         prs,
         footer,
@@ -940,7 +1514,8 @@ def generate_mass_ppt(
     include_church_name: bool = True,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _deck_branding
+    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck
+    _reference_mass_deck = None
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
@@ -975,8 +1550,8 @@ def generate_mass_ppt(
 
     sel = song_selections or {}
 
-    # --- Pre-Mass (GFCC PDF p.1 style) ---
-    _add_marked_slide(prs, "Pre-Mass", GFCC.SILENT_REMINDER, theme)
+    # --- Pre-Mass (reference deck slide) ---
+    _add_pre_mass_slide(prs, theme)
 
     _add_title_slide(
         prs,
@@ -1015,8 +1590,8 @@ def generate_mass_ppt(
 
     # --- Introductory Rites ---
     _add_marked_slide(prs, "Introductory Rites", GFCC.SIGN_CROSS, theme)
-    _add_marked_chunked(prs, "Penitential Act", get_prayer("penitential_act"), theme)
-    _add_marked_slide(prs, "Kyrie Eleison", GFCC.KYRIE, theme)
+    _add_penitential_act_slides(prs, theme)
+    _add_kyrie_slide(prs, theme)
     _add_marked_chunked(prs, "Gloria", get_prayer("gloria"), theme)
     _add_marked_slide(prs, "Liturgy of the Word", GFCC.OPENING_PRAYER, theme)
 

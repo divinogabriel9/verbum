@@ -12,6 +12,7 @@ and to you, my brothers and sisters,
 that I have greatly sinned,
 in my thoughts and in my words,
 in what I have done and in what I have failed to do,
+<<D>>(strike chest)
 through my fault, through my fault,
 through my most grievous fault;
 therefore I ask blessed Mary ever-Virgin,
