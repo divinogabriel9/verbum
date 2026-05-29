@@ -1527,56 +1527,114 @@
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
-    .song-preview-slide-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 10px;
-      padding: 10px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid rgba(167, 139, 250, 0.2);
-    }
-    .song-preview-slide-controls label {
-      display: block;
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: #4a5068;
-      margin-bottom: 3px;
-    }
-    .song-preview-slide-controls input[type="range"] { width: 100%; }
-    .song-preview-slide-controls select {
-      width: 100%;
-      padding: 5px 7px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      font-size: 0.8rem;
-    }
-    .song-preview-slide-controls .span-2 { grid-column: 1 / -1; }
-    .song-preview-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 12px;
-      margin-bottom: 14px;
-      padding: 12px;
+    .song-slide-plan {
       border-radius: 12px;
-      background: var(--surface-2);
       border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      overflow: hidden;
     }
-    .song-preview-controls label {
-      display: block;
+    .song-slide-plan__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #5b6278;
+    }
+    .song-slide-plan__list {
+      list-style: none;
+      margin: 0;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .song-slide-plan__item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #f8f9fc;
+      border: 1px solid transparent;
+    }
+    .song-slide-plan__item.is-off {
+      opacity: 0.5;
+    }
+    .song-slide-plan__item.is-off .song-slide-plan__summary {
+      text-decoration: line-through;
+    }
+    .song-slide-plan__include {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 0.72rem;
       font-weight: 700;
-      color: var(--muted);
-      margin-bottom: 4px;
+      color: #4a5068;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    .song-preview-controls input[type="range"] { width: 100%; }
-    .song-preview-controls select {
-      width: 100%;
-      padding: 6px 8px;
-      border-radius: 8px;
+    .song-slide-plan__include input { accent-color: var(--accent); }
+    .song-slide-plan__summary {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #2d3348;
+      line-height: 1.3;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .song-slide-plan__summary small {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #7a8198;
+      margin-bottom: 2px;
+    }
+    .song-slide-plan__moves {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .song-slide-plan__moves button {
+      width: 28px;
+      height: 24px;
+      padding: 0;
+      border-radius: 6px;
       border: 1px solid var(--line);
+      background: #fff;
+      color: #4a5068;
+      font-size: 0.75rem;
+      line-height: 1;
+      cursor: pointer;
     }
-    .song-preview-controls .span-2 { grid-column: 1 / -1; }
+    .song-slide-plan__moves button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .song-slide-plan__moves button:not(:disabled):hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .hymn-slide-wrap--off .slide-preview.hymn-slide {
+      opacity: 0.42;
+      filter: grayscale(0.35);
+    }
+    .hymn-slide-wrap--off .song-preview-slide-label::after {
+      content: " · skipped";
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: none;
+    }
     .song-preview-save-row {
       display: flex;
       flex-wrap: wrap;
@@ -1594,10 +1652,20 @@
       max-width: 94%;
       margin: 0 auto;
     }
+    .slide-preview.hymn-slide {
+      --hymn-lyric-size: clamp(0.72rem, 1.85vw, 1.02rem);
+    }
+    .slide-preview.hymn-slide.lines-many {
+      --hymn-lyric-size: clamp(0.62rem, 1.5vw, 0.88rem);
+    }
+    .slide-preview.hymn-slide.lines-long {
+      --hymn-lyric-size: clamp(0.58rem, 1.35vw, 0.8rem);
+    }
     .hymn-slide .hymn-lines,
     .hymn-slide .hymn-lines-editable {
       color: #ffffff !important;
       -webkit-text-fill-color: #ffffff;
+      font-size: var(--hymn-lyric-size) !important;
       line-height: 1.08;
       font-weight: 800;
       text-transform: uppercase;
@@ -1606,15 +1674,12 @@
       text-align: center;
       caret-color: #ffcc4d;
     }
-    .hymn-slide.lines-many .hymn-lines,
-    .hymn-slide.lines-many .hymn-lines-editable { font-size: clamp(0.62rem, 1.5vw, 0.88rem) !important; }
-    .hymn-slide.lines-long .hymn-lines,
-    .hymn-slide.lines-long .hymn-lines-editable { font-size: clamp(0.58rem, 1.35vw, 0.8rem) !important; }
     .hymn-slide .hymn-title-text,
     .hymn-slide .hymn-title-editable {
       font-family: Georgia, "Times New Roman", serif;
       color: #ffcc4d !important;
       -webkit-text-fill-color: #ffcc4d;
+      font-size: calc(var(--hymn-lyric-size) * 0.7) !important;
       font-weight: 700;
       letter-spacing: -0.02em;
       line-height: 1.12;
@@ -3428,7 +3493,7 @@ Lord, hear our prayer</textarea>
       <div class="song-preview-panel__head">
         <div>
           <h3 id="song-preview-title" style="margin:0;">Slide preview</h3>
-          <p class="muted" id="song-preview-sub" style="margin:6px 0 0;font-size:0.84rem;">Title and lyrics per slide — adjust each slide below.</p>
+          <p class="muted" id="song-preview-sub" style="margin:6px 0 0;font-size:0.84rem;">Reorder slides and uncheck any you do not need in the deck.</p>
         </div>
         <button type="button" class="uiverse-btn uiverse-btn--sm" id="btn-close-song-preview"><div class="button-outer"><div class="button-inner"><span>Close</span></div></div></button>
       </div>
@@ -4176,6 +4241,10 @@ Lord, hear our prayer</textarea>
 
     $("btn-close-song-preview") && $("btn-close-song-preview").addEventListener("click", closeSongPreviewPanel);
     $("song-preview-backdrop") && $("song-preview-backdrop").addEventListener("click", closeSongPreviewPanel);
+    $("song-preview-body") && $("song-preview-body").addEventListener("click", (e) => {
+      if (!e.target.closest("#btn-save-hymn-typo")) return;
+      if (songPreviewState && songPreviewState.section) saveSongPreviewToPptx(songPreviewState.section);
+    });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && $("song-preview-panel") && $("song-preview-panel").classList.contains("visible")) {
         closeSongPreviewPanel();
@@ -4356,6 +4425,8 @@ Lord, hear our prayer</textarea>
     let hymnTypographyBySection = {};
     let hymnLyricOverrides = {};
     const HYMN_LYRIC_OV_KEY = "churchMediaHymnLyricOverrides";
+    const HYMN_SLIDE_PLAN_KEY = "churchMediaHymnSlidePlan";
+    let hymnSlidePlans = {};
     let songPreviewState = null;
     let windowLastMassGenerateBody = null;
 
@@ -4367,6 +4438,119 @@ Lord, hear our prayer</textarea>
       }
     }
     loadHymnLyricOverridesStore();
+
+    function loadHymnSlidePlanStore() {
+      try {
+        hymnSlidePlans = JSON.parse(localStorage.getItem(HYMN_SLIDE_PLAN_KEY) || "{}") || {};
+      } catch (_e) {
+        hymnSlidePlans = {};
+      }
+    }
+    loadHymnSlidePlanStore();
+
+    function saveHymnSlidePlanStore() {
+      try {
+        localStorage.setItem(HYMN_SLIDE_PLAN_KEY, JSON.stringify(hymnSlidePlans));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function hymnSlidePlanKey(section, songId) {
+      return (section || "").toLowerCase() + "|" + String(songId || "").trim();
+    }
+
+    function defaultHymnSlidePlan(chunkCount) {
+      return {
+        order: Array.from({ length: chunkCount }, (_, i) => i),
+        disabled: [],
+        chunks: [],
+      };
+    }
+
+    function normalizeHymnSlidePlan(plan, chunks) {
+      const n = chunks.length;
+      const base = plan && typeof plan === "object" ? plan : {};
+      let order = Array.isArray(base.order) ? base.order.map((x) => parseInt(x, 10)).filter((x) => !Number.isNaN(x)) : [];
+      order = order.filter((i) => i >= 0 && i < n);
+      const seen = new Set();
+      order = order.filter((i) => {
+        if (seen.has(i)) return false;
+        seen.add(i);
+        return true;
+      });
+      for (let i = 0; i < n; i++) {
+        if (!seen.has(i)) order.push(i);
+      }
+      const disabled = Array.isArray(base.disabled)
+        ? base.disabled.map((x) => parseInt(x, 10)).filter((i) => !Number.isNaN(i) && i >= 0 && i < n)
+        : [];
+      return {
+        order: order,
+        disabled: Array.from(new Set(disabled)),
+        chunks: chunks.slice(),
+      };
+    }
+
+    function getHymnSlidePlan(section, songId, chunks) {
+      const key = hymnSlidePlanKey(section, songId);
+      const stored = hymnSlidePlans[key];
+      const plan = normalizeHymnSlidePlan(stored, chunks);
+      hymnSlidePlans[key] = plan;
+      return plan;
+    }
+
+    function slidePlanIsCustom(plan, chunkCount) {
+      if (!plan || chunkCount < 1) return false;
+      if (plan.disabled && plan.disabled.length) return true;
+      const def = Array.from({ length: chunkCount }, (_, i) => i);
+      const order = plan.order || def;
+      if (order.length !== chunkCount) return true;
+      return order.some((v, i) => v !== def[i]);
+    }
+
+    function isChunkDisabled(plan, chunkIdx) {
+      return (plan.disabled || []).indexOf(chunkIdx) >= 0;
+    }
+
+    function slideChunkSummary(chunk, chunkIndex) {
+      const lines = chunk.split("\n").map((ln) => ln.trim()).filter(Boolean);
+      const head = lines[0] || ("Block " + (chunkIndex + 1));
+      return head.length > 52 ? head.slice(0, 49) + "…" : head;
+    }
+
+    function buildLyricsFromSlidePlan(chunks, plan) {
+      const source = (plan && plan.chunks && plan.chunks.length === chunks.length) ? plan.chunks : chunks;
+      const order = (plan && plan.order) || source.map((_, i) => i);
+      const disabled = new Set(plan && plan.disabled ? plan.disabled : []);
+      const parts = [];
+      order.forEach((idx) => {
+        if (disabled.has(idx)) return;
+        const text = (source[idx] || "").trim();
+        if (text) parts.push(text);
+      });
+      return parts.join("\n\n");
+    }
+
+    function countEnabledSlides(plan, chunkCount) {
+      const disabled = new Set(plan && plan.disabled ? plan.disabled : []);
+      const order = (plan && plan.order) || Array.from({ length: chunkCount }, (_, i) => i);
+      return order.filter((idx) => !disabled.has(idx)).length;
+    }
+
+    function syncSlidePlanToOverrides() {
+      if (!songPreviewState) return;
+      refreshPreviewChunksFromLibrary();
+      const { section, songId, chunks, plan } = songPreviewState;
+      if (!section || !songId || !chunks || !plan) return;
+      const library = (songPreviewState.libraryLyrics || "").trim();
+      plan.chunks = chunks.slice();
+      hymnSlidePlans[hymnSlidePlanKey(section, songId)] = plan;
+      saveHymnSlidePlanStore();
+      const merged = buildLyricsFromSlidePlan(chunks, plan);
+      if (!merged) return;
+      if (!library || lyricsOverrideIsUsable(library, merged)) {
+        setHymnLyricOverride(section, songId, merged);
+      }
+    }
 
     function saveHymnLyricOverridesStore() {
       try {
@@ -4400,61 +4584,66 @@ Lord, hear our prayer</textarea>
       return true;
     }
 
+    async function ensureLyricsCachedForSelectedSongs() {
+      const songs = selectedSongsForGenerate();
+      const tasks = [];
+      Object.keys(songs).forEach((slot) => {
+        const id = songs[slot];
+        if (!id) return;
+        const sec = SLOT_TO_HYMN_SECTION[slot] || slot;
+        const cacheKey = sec + "|" + id;
+        if (massSongLyricsCache.has(cacheKey)) return;
+        tasks.push(
+          fetch("/api/catalog/songs/" + encodeURIComponent(sec) + "/" + encodeURIComponent(id))
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              const lyrics = data && data.song && data.song.lyrics ? String(data.song.lyrics) : "";
+              if (lyrics.trim()) massSongLyricsCache.set(cacheKey, lyrics);
+            })
+            .catch(() => {})
+        );
+      });
+      if (tasks.length) await Promise.all(tasks);
+    }
+
     function buildHymnLyricOverridesPayload() {
       const out = {};
+      Object.keys(hymnSlidePlans).forEach((key) => {
+        const plan = hymnSlidePlans[key];
+        const pipe = key.indexOf("|");
+        if (pipe < 0) return;
+        const sec = key.slice(0, pipe);
+        const id = key.slice(pipe + 1);
+        const lib = (massSongLyricsCache.get(sec + "|" + id) || "").trim();
+        const chunks = lib
+          ? chunkLyricsForPreview(lib, 6)
+          : (plan && plan.chunks ? plan.chunks.slice() : []);
+        if (!chunks.length) return;
+        const normalized = normalizeHymnSlidePlan(plan, chunks);
+        if (!slidePlanIsCustom(normalized, chunks.length)) return;
+        const merged = buildLyricsFromSlidePlan(chunks, normalized);
+        const libCheck = lib || chunks.join("\n\n");
+        if (!lyricsOverrideIsUsable(libCheck, merged)) return;
+        if (!out[sec]) out[sec] = {};
+        out[sec][id] = merged;
+      });
       Object.keys(hymnLyricOverrides).forEach((sec) => {
         const block = hymnLyricOverrides[sec] || {};
         const filtered = {};
         Object.keys(block).forEach((id) => {
+          if (out[sec] && out[sec][id]) return;
           const ov = block[id];
           const cacheKey = sec + "|" + id;
           const lib = massSongLyricsCache.get(cacheKey) || "";
           if (!lyricsOverrideIsUsable(lib, ov)) return;
           filtered[id] = ov;
         });
-        if (Object.keys(filtered).length) out[sec] = filtered;
+        if (Object.keys(filtered).length) {
+          if (!out[sec]) out[sec] = {};
+          Object.assign(out[sec], filtered);
+        }
       });
       return out;
-    }
-
-    function collectLyricsFromPreviewDom() {
-      const wraps = Array.from(document.querySelectorAll(".hymn-slide-wrap"));
-      const parts = [];
-      wraps.forEach((wrap) => {
-        const el = wrap.querySelector(".hymn-lines");
-        if (!el) return;
-        const text = (el.innerText || "").replace(/\u00a0/g, " ").trim();
-        if (text) parts.push(text);
-      });
-      return parts.join("\n\n");
-    }
-
-    function collectTitleFromPreviewDom() {
-      const el = document.querySelector(".hymn-slide-wrap[data-slide-index=\"0\"] .hymn-title-text");
-      return el ? (el.innerText || "").trim() : "";
-    }
-
-    function syncPreviewLyricsToState() {
-      if (!songPreviewState) return;
-      const lyrics = collectLyricsFromPreviewDom();
-      songPreviewState.editedLyrics = lyrics;
-      const title = collectTitleFromPreviewDom();
-      if (title && songPreviewState.meta) songPreviewState.meta.title = title;
-      if (songPreviewState.section && songPreviewState.songId && lyrics) {
-        const base = (songPreviewState.lyricsText || "").trim();
-        if (!base || lyricsOverrideIsUsable(base, lyrics)) {
-          setHymnLyricOverride(songPreviewState.section, songPreviewState.songId, lyrics);
-        }
-      }
-    }
-
-    function bindEditablePreviewLyrics() {
-      document.querySelectorAll(".hymn-lines-editable, .hymn-title-editable").forEach((el) => {
-        if (el.dataset.editBound) return;
-        el.dataset.editBound = "1";
-        el.addEventListener("input", syncPreviewLyricsToState);
-        el.addEventListener("blur", syncPreviewLyricsToState);
-      });
     }
 
     function loadHymnTypographyStore() {
@@ -4560,109 +4749,106 @@ Lord, hear our prayer</textarea>
       )).join("");
     }
 
-    function renderSlideTypoControls(section, slideIndex, typo) {
-      const t = typo || getHymnTypoForSlide(section, slideIndex);
-      const sid = section.replace(/[^a-z0-9]/gi, "") + "-s" + slideIndex;
-      const showTitle = slideIndex === 0;
-      let html = "<div class=\"song-preview-slide-controls\" data-typo-section=\"" + escapeHtml(section) + "\" data-typo-slide=\"" + slideIndex + "\">";
-      if (showTitle) {
-        html += "<div><label>Title size (" + t.title_pt + " pt)</label>" +
-          "<input type=\"range\" class=\"hymn-slide-ctrl-title-pt\" data-slide=\"" + slideIndex + "\" min=\"18\" max=\"52\" step=\"1\" value=\"" + t.title_pt + "\" /></div>" +
-          "<div><label>Title alignment</label>" +
-          "<select class=\"hymn-slide-ctrl-title-align\" data-slide=\"" + slideIndex + "\">" + alignSelectOptions(t.title_align) + "</select></div>";
-      }
-      html += "<div><label>Lyrics size (" + t.body_pt + " pt)</label>" +
-        "<input type=\"range\" class=\"hymn-slide-ctrl-body-pt\" data-slide=\"" + slideIndex + "\" min=\"28\" max=\"72\" step=\"1\" value=\"" + t.body_pt + "\" /></div>" +
-        "<div><label>Lyrics alignment</label>" +
-        "<select class=\"hymn-slide-ctrl-body-align\" data-slide=\"" + slideIndex + "\">" + alignSelectOptions(t.body_align) + "</select></div>" +
-        "</div>";
-      return html;
+    function renderSongSlidePlanEditor(plan, chunks) {
+      const enabled = countEnabledSlides(plan, chunks.length);
+      const rows = plan.order.map((chunkIdx, pos) => {
+        const off = isChunkDisabled(plan, chunkIdx);
+        const label = slideChunkSummary(chunks[chunkIdx] || "", chunkIdx);
+        return (
+          "<li class=\"song-slide-plan__item" + (off ? " is-off" : "") + "\" data-plan-pos=\"" + pos + "\" data-chunk-idx=\"" + chunkIdx + "\">" +
+            "<label class=\"song-slide-plan__include\">" +
+              "<input type=\"checkbox\" class=\"song-slide-plan-check\" data-chunk-idx=\"" + chunkIdx + "\"" + (off ? "" : " checked") + " />" +
+              "<span>On</span>" +
+            "</label>" +
+            "<div class=\"song-slide-plan__summary\"><small>Slide " + (pos + 1) + "</small>" + escapeHtml(label) + "</div>" +
+            "<div class=\"song-slide-plan__moves\">" +
+              "<button type=\"button\" class=\"song-slide-plan-up\" data-plan-pos=\"" + pos + "\" title=\"Move up\"" + (pos === 0 ? " disabled" : "") + ">↑</button>" +
+              "<button type=\"button\" class=\"song-slide-plan-down\" data-plan-pos=\"" + pos + "\" title=\"Move down\"" + (pos >= plan.order.length - 1 ? " disabled" : "") + ">↓</button>" +
+            "</div>" +
+          "</li>"
+        );
+      }).join("");
+      return (
+        "<div class=\"song-slide-plan\" id=\"song-slide-plan\">" +
+          "<div class=\"song-slide-plan__head\"><span>Slide order</span><span id=\"song-slide-plan-count\">" + enabled + " of " + chunks.length + " in deck</span></div>" +
+          "<ul class=\"song-slide-plan__list\">" + rows + "</ul>" +
+        "</div>"
+      );
     }
 
-    function readTypoFromSlideControlPanel(panel) {
-      const slideIndex = parseInt(panel.dataset.typoSlide, 10) || 0;
-      const bodyEl = panel.querySelector(".hymn-slide-ctrl-body-pt");
-      const bodyPt = bodyEl ? parseFloat(bodyEl.value) || 55 : 55;
-      const titleEl = panel.querySelector(".hymn-slide-ctrl-title-pt");
-      const titleAlignEl = panel.querySelector(".hymn-slide-ctrl-title-align");
-      const bodyAlignEl = panel.querySelector(".hymn-slide-ctrl-body-align");
-      const titlePt = titleEl
-        ? parseFloat(titleEl.value) || Math.round(bodyPt * 0.7 * 10) / 10
-        : Math.round(bodyPt * 0.7 * 10) / 10;
-      return {
-        body_pt: bodyPt,
-        title_pt: titlePt,
-        title_align: titleAlignEl ? titleAlignEl.value : "center",
-        body_align: bodyAlignEl ? bodyAlignEl.value : "center",
-        slideIndex: slideIndex,
+    function refreshPreviewChunksFromLibrary() {
+      if (!songPreviewState) return;
+      const library = (songPreviewState.libraryLyrics || songPreviewState.lyricsText || "").trim();
+      if (!library) return;
+      const chunks = chunkLyricsForPreview(library, 6);
+      const plan = normalizeHymnSlidePlan(songPreviewState.plan, chunks);
+      songPreviewState.libraryLyrics = library;
+      songPreviewState.lyricsText = library;
+      songPreviewState.chunks = chunks;
+      songPreviewState.plan = plan;
+      hymnSlidePlans[hymnSlidePlanKey(songPreviewState.section, songPreviewState.songId)] = plan;
+    }
+
+    function refreshSongPreviewPanel() {
+      if (!songPreviewState) return;
+      const body = $("song-preview-body");
+      if (!body) return;
+      refreshPreviewChunksFromLibrary();
+      const { lyricsText, meta, section, songId, chunks, plan } = songPreviewState;
+      body.innerHTML = renderSongPreviewViewer(lyricsText, meta, section, songId, chunks, plan);
+      bindSongSlidePlanEditor(section);
+      bindSongPreviewSlideScroll();
+    }
+
+    function bindSongSlidePlanEditor(section) {
+      const planEl = $("song-slide-plan");
+      if (!planEl || !songPreviewState) return;
+      const plan = songPreviewState.plan;
+      const chunks = songPreviewState.chunks;
+
+      const movePlan = (pos, delta) => {
+        const next = pos + delta;
+        if (next < 0 || next >= plan.order.length) return;
+        const o = plan.order.slice();
+        const tmp = o[pos];
+        o[pos] = o[next];
+        o[next] = tmp;
+        plan.order = o;
+        refreshSongPreviewPanel();
+        syncSlidePlanToOverrides();
       };
-    }
 
-    function applyTypoToSlideWrap(wrap, typo, slideIndex, titleText) {
-      if (!wrap) return;
-      const titleEl = wrap.querySelector(".hymn-title-text");
-      const linesEl = wrap.querySelector(".hymn-lines");
-      if (titleEl && slideIndex === 0) {
-        titleEl.style.fontSize = ptToPreviewRem(typo.title_pt);
-        titleEl.style.textAlign = typo.title_align;
-        if (titleText) titleEl.textContent = titleText;
-      }
-      if (linesEl) {
-        linesEl.style.fontSize = ptToPreviewRem(typo.body_pt);
-        linesEl.style.textAlign = typo.body_align;
-      }
-      const panel = wrap.querySelector(".song-preview-slide-controls");
-      if (panel) {
-        const labels = panel.querySelectorAll("label");
-        labels.forEach((lbl) => {
-          const t = lbl.textContent || "";
-          if (t.indexOf("Title size") === 0) lbl.textContent = "Title size (" + typo.title_pt + " pt)";
-          if (t.indexOf("Lyrics size") === 0) lbl.textContent = "Lyrics size (" + typo.body_pt + " pt)";
-        });
-      }
-    }
-
-    function bindSongPreviewSlideControls(section) {
-      document.querySelectorAll(".song-preview-slide-controls").forEach((panel) => {
-        if (panel.dataset.bound) return;
-        panel.dataset.bound = "1";
-        const slideIndex = parseInt(panel.dataset.typoSlide, 10) || 0;
-        const wrap = panel.closest(".hymn-slide-wrap");
-        let linkTitle = true;
-        const onChange = () => {
-          const titlePtEl = panel.querySelector(".hymn-slide-ctrl-title-pt");
-          const bodyPtEl = panel.querySelector(".hymn-slide-ctrl-body-pt");
-          if (linkTitle && titlePtEl && bodyPtEl) {
-            const bp = parseFloat(bodyPtEl.value) || 55;
-            titlePtEl.value = String(Math.round(bp * 0.7 * 10) / 10);
-          }
-          linkTitle = false;
-          const typo = readTypoFromSlideControlPanel(panel);
-          setHymnTypoForSlide(section, slideIndex, typo);
-          if (songPreviewState) songPreviewState.section = section;
-          applyTypoToSlideWrap(wrap, typo, slideIndex, songPreviewState && songPreviewState.meta ? songPreviewState.meta.title : "");
-        };
-        panel.querySelectorAll("input, select").forEach((el) => {
-          el.addEventListener("input", onChange);
-          el.addEventListener("change", onChange);
+      planEl.querySelectorAll(".song-slide-plan-up").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          movePlan(parseInt(btn.dataset.planPos, 10) || 0, -1);
         });
       });
-      const saveBtn = $("btn-save-hymn-typo");
-      if (saveBtn && !saveBtn.dataset.bound) {
-        saveBtn.dataset.bound = "1";
-        saveBtn.addEventListener("click", () => saveSongPreviewToPptx(section));
-      }
+      planEl.querySelectorAll(".song-slide-plan-down").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          movePlan(parseInt(btn.dataset.planPos, 10) || 0, 1);
+        });
+      });
+      planEl.querySelectorAll(".song-slide-plan-check").forEach((cb) => {
+        cb.addEventListener("change", () => {
+          const chunkIdx = parseInt(cb.dataset.chunkIdx, 10);
+          const disabled = new Set(plan.disabled || []);
+          if (cb.checked) disabled.delete(chunkIdx);
+          else disabled.add(chunkIdx);
+          if (countEnabledSlides({ order: plan.order, disabled: Array.from(disabled) }, chunks.length) < 1) {
+            cb.checked = true;
+            return;
+          }
+          plan.disabled = Array.from(disabled);
+          refreshSongPreviewPanel();
+          syncSlidePlanToOverrides();
+        });
+      });
+
     }
 
     async function saveSongPreviewToPptx(section) {
       const statusEl = $("song-preview-save-status");
-      syncPreviewLyricsToState();
-      document.querySelectorAll(".song-preview-slide-controls").forEach((panel) => {
-        const slideIndex = parseInt(panel.dataset.typoSlide, 10) || 0;
-        setHymnTypoForSlide(section, slideIndex, readTypoFromSlideControlPanel(panel));
-      });
-      hymnTypographyBySection.default = hymnTypographyBySection.default || Object.assign(defaultHymnTypo(), { slides: {} });
-      saveHymnTypographyStore();
+      syncSlidePlanToOverrides();
       if (!windowLastMassGenerateBody) {
         if (statusEl) {
           statusEl.textContent = "Generate the Mass package first, then Save will update the .pptx.";
@@ -4691,7 +4877,7 @@ Lord, hear our prayer</textarea>
             dl.style.display = "";
           }
         }
-        setFlowStatus("PowerPoint updated with hymn typography.", "ok");
+        setFlowStatus("PowerPoint updated with slide plan.", "ok");
       } catch (err) {
         if (statusEl) {
           statusEl.textContent = err.message || "Save failed.";
@@ -4710,9 +4896,26 @@ Lord, hear our prayer</textarea>
       );
     }
 
+    const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
+
+    /** Match backend ``ensure_lyric_section_breaks`` — blank line before Verse/Chorus labels. */
+    function ensureLyricSectionBreaks(raw) {
+      const text = (raw || "").trim();
+      if (!text) return "";
+      const out = [];
+      text.split("\n").forEach((line) => {
+        const stripped = line.trim();
+        if (stripped && out.length && out[out.length - 1] !== "" && _LYRIC_STRUCTURE_HEADER_RE.test(stripped)) {
+          out.push("");
+        }
+        out.push(line);
+      });
+      return out.join("\n").trim();
+    }
+
     /** Match ``powerpoint._chunk_lyrics_display`` — section blocks, then max lines per slide. */
     function parseLyricsSectionsForPreview(raw) {
-      const parts = (raw || "").trim().split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
+      const parts = ensureLyricSectionBreaks(raw).split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
       if (!parts.length) return [];
       const headerRe = /^\[?\s*(verse|chorus|refrain|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
       const inlineRe = /^(refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp)\s*:\s*(.*)$/i;
@@ -4741,7 +4944,7 @@ Lord, hear our prayer</textarea>
 
     function chunkLyricsForPreview(text, maxLines) {
       const max = maxLines || 6;
-      const t = (text || "").trim();
+      const t = ensureLyricSectionBreaks((text || "").trim());
       if (!t) return [];
       const sections = parseLyricsSectionsForPreview(t);
       const blocks = [];
@@ -4798,51 +5001,62 @@ Lord, hear our prayer</textarea>
       return slot ? slot.section : "entrance";
     }
 
-    function buildHymnSlideHtml(chunk, meta, slideIndex, section) {
-      const typo = getHymnTypoForSlide(section, slideIndex);
+    function buildHymnSlideHtml(chunk, meta, displayPos, options) {
+      const showTitle = options && options.showTitle;
+      const disabled = options && options.disabled;
+      const chunkIdx = options && options.chunkIdx != null ? options.chunkIdx : displayPos;
       const sizeCls = hymnBodySizeClass(chunk);
-      const bodyStyle = "font-size:" + ptToPreviewRem(typo.body_pt) + ";text-align:" + typo.body_align + ";";
-      const titleStyle = "font-size:" + ptToPreviewRem(typo.title_pt) + ";text-align:" + typo.title_align + ";";
-      const titleHtml = slideIndex === 0
-        ? "<h4 class=\"hymn-title-text hymn-title-editable\" contenteditable=\"true\" spellcheck=\"true\" style=\"" + titleStyle + "\">" +
-            escapeHtml(meta.title || "Hymn") + "</h4>"
+      const wrapCls = disabled ? " hymn-slide-wrap--off" : "";
+      const titleHtml = showTitle
+        ? "<h4 class=\"hymn-title-text\">" + escapeHtml(meta.title || "Hymn") + "</h4>"
         : "";
-      const slideNum = slideIndex + 1;
       return (
-        "<div class=\"hymn-slide-wrap\" data-slide-index=\"" + slideIndex + "\">" +
-          "<span class=\"song-preview-slide-label\">Slide " + slideNum + "</span>" +
-          renderSlideTypoControls(section, slideIndex, typo) +
+        "<div class=\"hymn-slide-wrap" + wrapCls + "\" data-slide-index=\"" + displayPos + "\" data-chunk-idx=\"" + chunkIdx + "\">" +
+          "<span class=\"song-preview-slide-label\">Slide " + (displayPos + 1) + "</span>" +
           "<div class=\"slide-preview hymn-slide" + sizeCls + "\" data-hymn-slide=\"1\">" +
             titleHtml +
             "<div class=\"hymn-body\">" +
-              "<div class=\"hymn-lines hymn-lines-editable\" contenteditable=\"true\" spellcheck=\"true\" style=\"" + bodyStyle + "\">" + formatHymnBodyHtml(chunk) + "</div>" +
+              "<div class=\"hymn-lines\">" + formatHymnBodyHtml(chunk) + "</div>" +
             "</div>" +
           "</div>" +
         "</div>"
       );
     }
 
-    function renderSongPreviewViewer(lyricsText, meta, section) {
-      const chunks = chunkLyricsForPreview(lyricsText, 6);
-      if (!chunks.length) {
+    function renderSongPreviewViewer(lyricsText, meta, section, songId, chunks, plan) {
+      const allChunks = chunks || chunkLyricsForPreview(lyricsText, 6);
+      if (!allChunks.length) {
         return "<p class=\"muted\">No lyrics to preview.</p>";
       }
-      const slideHtml = chunks.map((chunk, i) => buildHymnSlideHtml(chunk, meta, i, section)).join("");
-      const countLabel = chunks.length + " slide" + (chunks.length === 1 ? "" : "s");
+      const slidePlan = plan || getHymnSlidePlan(section, songId, allChunks);
+      let titleAssigned = false;
+      const slideHtml = slidePlan.order.map((chunkIdx, pos) => {
+        const off = isChunkDisabled(slidePlan, chunkIdx);
+        const showTitle = !titleAssigned && !off;
+        if (showTitle) titleAssigned = true;
+        return buildHymnSlideHtml(allChunks[chunkIdx] || "", meta, pos, {
+          showTitle: showTitle,
+          disabled: off,
+          chunkIdx: chunkIdx,
+        });
+      }).join("");
+      const enabled = countEnabledSlides(slidePlan, allChunks.length);
+      const countLabel = enabled + " of " + allChunks.length + " slides in deck";
       return (
         "<div class=\"song-ppt-viewer\">" +
+          renderSongSlidePlanEditor(slidePlan, allChunks) +
           "<div class=\"song-ppt-toolbar\">" +
-            "<span>Title + lyrics only</span>" +
+            "<span>Mini preview</span>" +
             "<span id=\"song-ppt-slide-count\">" + escapeHtml(countLabel) + "</span>" +
           "</div>" +
           "<div class=\"song-ppt-stage\">" +
             "<div class=\"song-ppt-slides\" id=\"song-ppt-slides-scroll\">" + slideHtml + "</div>" +
           "</div>" +
           "<div class=\"song-preview-save-row\">" +
-            "<button type=\"button\" class=\"uiverse-btn uiverse-btn--orange\" id=\"btn-save-hymn-typo\"><div class=\"button-outer\"><div class=\"button-inner\"><span>Save to PowerPoint</span></div></div></button>" +
+            "<button type=\"button\" class=\"uiverse-btn uiverse-btn--orange\" id=\"btn-save-hymn-typo\"><div class=\"button-outer\"><div class=\"button-inner\"><span>Apply to PowerPoint</span></div></div></button>" +
             "<span class=\"muted\" id=\"song-preview-save-status\"></span>" +
           "</div>" +
-          "<p class=\"muted\" style=\"font-size:0.78rem;margin:0;\">Title and lyrics centered by default. Click text to edit spelling — Save updates PowerPoint.</p>" +
+          "<p class=\"muted\" style=\"font-size:0.78rem;margin:0;\">Changes apply when you generate or click Apply. Unchecked slides are omitted from the deck.</p>" +
         "</div>"
       );
     }
@@ -4872,6 +5086,7 @@ Lord, hear our prayer</textarea>
     }
 
     function closeSongPreviewPanel() {
+      syncSlidePlanToOverrides();
       const panel = $("song-preview-panel");
       if (!panel || !panel.classList.contains("visible")) return;
       if (panel.classList.contains("closing")) return;
@@ -4918,50 +5133,51 @@ Lord, hear our prayer</textarea>
       const body = $("song-preview-body");
       if (titleEl) titleEl.textContent = row.title || "Song preview";
       if (subEl) {
-        subEl.textContent = "Click title or lyrics to fix typos · per-slide typography below";
+        subEl.textContent = "Reorder slides and uncheck any you do not need in the deck.";
       }
       if (body) body.innerHTML = "<p class=\"muted\">Loading lyrics preview…</p>";
       openSongPreviewPanel();
 
-      let lyricsText = massSongLyricsCache.get(cacheKey);
-      const secOv = hymnLyricOverrides[section] || {};
-      if (secOv[id] && lyricsText && lyricsOverrideIsUsable(lyricsText, secOv[id])) {
-        lyricsText = secOv[id];
-      } else if (secOv[id] && !lyricsText) {
-        lyricsText = secOv[id];
-      }
-      if (!lyricsText) {
+      let libraryLyrics = massSongLyricsCache.get(cacheKey);
+      if (!libraryLyrics) {
         try {
           const res = await fetch(
             "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id)
           );
           if (!res.ok) throw new Error("Could not load lyrics");
           const data = await res.json();
-          lyricsText = (data.song && data.song.lyrics) ? String(data.song.lyrics) : "";
-          massSongLyricsCache.set(cacheKey, lyricsText);
+          libraryLyrics = (data.song && data.song.lyrics) ? String(data.song.lyrics) : "";
+          massSongLyricsCache.set(cacheKey, libraryLyrics);
         } catch (err) {
           if (body) body.innerHTML = "<p class=\"status error\">" + escapeHtml(err.message || "Load failed") + "</p>";
           return;
         }
       }
-      if (!(lyricsText || "").trim()) {
+      if (!(libraryLyrics || "").trim()) {
         if (body) body.innerHTML = "<p class=\"muted\">Lyrics unavailable for this song.</p>";
         return;
       }
       const meta = {
         title: row.title,
       };
-      ensureSectionTypoStore(section);
-      songPreviewState = { slotKey, section, songId: id, lyricsText: lyricsText.trim(), meta };
+      const libraryTrimmed = libraryLyrics.trim();
+      const chunks = chunkLyricsForPreview(libraryTrimmed, 6);
+      const plan = getHymnSlidePlan(section, id, chunks);
+      songPreviewState = {
+        slotKey,
+        section,
+        songId: id,
+        libraryLyrics: libraryTrimmed,
+        lyricsText: libraryTrimmed,
+        meta,
+        chunks,
+        plan,
+      };
+      syncSlidePlanToOverrides();
       if (body) {
-        body.innerHTML = renderSongPreviewViewer(lyricsText.trim(), meta, section);
-        bindSongPreviewSlideControls(section);
+        body.innerHTML = renderSongPreviewViewer(libraryTrimmed, meta, section, id, chunks, plan);
+        bindSongSlidePlanEditor(section);
         bindSongPreviewSlideScroll();
-        bindEditablePreviewLyrics();
-        document.querySelectorAll(".hymn-slide-wrap").forEach((wrap) => {
-          const idx = parseInt(wrap.dataset.slideIndex, 10) || 0;
-          applyTypoToSlideWrap(wrap, getHymnTypoForSlide(section, idx), idx, meta.title);
-        });
       }
     }
 
@@ -5530,6 +5746,7 @@ Lord, hear our prayer</textarea>
         if (foodLines.length) body.food_sponsors = foodLines;
         if (psalmOv) body.psalm_text_override = psalmOv;
         body.hymn_typography = buildHymnTypographyPayload();
+        await ensureLyricsCachedForSelectedSongs();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
         const logoCb = $("flow-include-church-logo");
         const nameCb = $("flow-include-church-name");
