@@ -54,6 +54,8 @@ _GREET_PT = 21
 _FOOTER_PT = 13
 _RITE_BODY_PT = 50
 _RITE_DIRECTION_PT = 45
+_LOTW_TITLE_PT = 50
+_LOTW_BODY_PT = 65
 
 _MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
@@ -561,6 +563,9 @@ def _render_templated_prayer_slide(
         raw = str(line_spec.get("text") or "").strip()
         if not raw:
             continue
+        # Skip sidenote-style directions (kept italic in the template) from projection.
+        if style == "direction":
+            continue
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
 
@@ -575,10 +580,6 @@ def _render_templated_prayer_slide(
         elif style == "all_body":
             p.text = raw
             _style_para(p, size_pt=body_pt, color=theme.primary, bold=False)
-            p.space_before = Pt(4)
-        elif style == "direction":
-            p.text = raw
-            _style_para(p, size_pt=dir_pt, color=theme.emphasis, bold=False, italic=True)
             p.space_before = Pt(4)
         else:
             p.text = raw
@@ -744,8 +745,10 @@ def _render_marked_slide(
             _style_para(p, size_pt=main_pt, color=theme.primary, bold=True)
             p.space_before = Pt(4)
         elif role == "direction":
-            p.text = line
-            _style_para(p, size_pt=dir_pt, color=theme.emphasis, bold=False, italic=True)
+            # Omit italic sidenotes for large projected prayer rites; keep for non-rite slides.
+            if not rite_slide:
+                p.text = line
+                _style_para(p, size_pt=dir_pt, color=theme.emphasis, bold=False, italic=True)
         elif role == "hymn":
             p.text = line
             _style_para(p, size_pt=plain_pt, color=theme.primary, bold=True)
@@ -1376,6 +1379,64 @@ def _add_reading_block(
         one_slide(head, sub, chunk)
 
 
+def _add_lotw_reading_slide(
+    prs: Presentation,
+    *,
+    section: str,
+    reference: str,
+    full_text: str,
+    theme: SlideTheme,
+) -> None:
+    """Liturgy of the Word reading: 50pt headers, 65pt centered body (verse numbers kept)."""
+    ref = (reference or "").strip() or "—"
+    body = (full_text or "").strip()
+    chunks = chunk_plain_text(body, limit=220) if body else []
+    total = max(1, len(chunks))
+
+    for i in range(total):
+        chunk = chunks[i] if chunks else ""
+        slide = prs.slides.add_slide(_layout_blank(prs))
+        _set_slide_bg(slide, theme.bg)
+        _apply_slide_branding(slide, theme)
+        lx, top, w = MARGIN_SIDE, _content_top(), SLIDE_WIDTH - 2 * MARGIN_SIDE
+        body_h = SLIDE_HEIGHT - top - Inches(1.1)
+        box = slide.shapes.add_textbox(lx, top, w, body_h)
+        tf = box.text_frame
+        _prep_tf(tf)
+        tf.clear()
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+
+        p0 = tf.paragraphs[0]
+        p0.text = "Liturgy of the Word"
+        _style_para(p0, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        p0.alignment = PP_ALIGN.CENTER
+        p0.space_after = Pt(10)
+
+        head = section if i == 0 else f"{section} (continued)"
+        p1 = tf.add_paragraph()
+        p1.text = f"{head}\n({ref})"
+        _style_para(p1, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        p1.alignment = PP_ALIGN.CENTER
+        p1.space_after = Pt(12)
+
+        if total > 1:
+            p_cnt = tf.add_paragraph()
+            p_cnt.text = f"Slide {i + 1} of {total}"
+            _style_para(p_cnt, size_pt=_META_PT + 2, color=theme.muted, bold=False)
+            p_cnt.alignment = PP_ALIGN.CENTER
+            p_cnt.space_after = Pt(10)
+
+        if chunk:
+            p2 = tf.add_paragraph()
+            p2.text = chunk
+            _style_para(p2, size_pt=_LOTW_BODY_PT, color=theme.primary, bold=False)
+            p2.alignment = PP_ALIGN.CENTER
+            p2.space_after = Pt(8)
+
+        foot = "Liturgy of the Word" if total == 1 else f"Liturgy of the Word ({i + 1}/{total})"
+        _add_community_footer(slide, foot, theme)
+
+
 def _add_title_slide(
     prs: Presentation,
     *,
@@ -1418,8 +1479,6 @@ def _add_title_slide(
     )
     if g_line:
         meta += f"\n\nExcerpt:\n\u201c{g_line}\u201d"
-    if liturgical_color:
-        meta += f"\n\nLiturgical color: {liturgical_color.get('color_name', '')} ({liturgical_color.get('season', '')})"
 
     mb = slide.shapes.add_textbox(lx, y + Inches(1.15), w, Inches(3.4))
     _prep_tf(mb.text_frame)
@@ -1468,16 +1527,13 @@ def _add_mass_collection_slide(
 
 
 def _add_food_sponsors_slide(prs: Presentation, theme: SlideTheme, sponsors: List[str]) -> None:
+    names = [(s or "").strip() for s in (sponsors or [])]
+    names = [n for n in names if n]
+    if not names:
+        return
     lines: List[str] = ["<<H>>FOOD SPONSORS", "<<D>>The community thanks our food sponsors."]
-    have = False
-    for s in sponsors or []:
-        ss = (s or "").strip()
-        if not ss:
-            continue
-        have = True
+    for ss in names:
         lines.append(f"<<D>>• {ss}")
-    if not have:
-        lines.append("<<D>>(No sponsors listed — add names in Mass Builder.)")
     _add_marked_slide(prs, "Food Sponsors", "\n".join(lines), theme)
 
 
@@ -1568,14 +1624,6 @@ def generate_mass_ppt(
         theme=theme,
     )
 
-    _add_marked_slide(
-        prs,
-        "Intro",
-        "<<D>>Welcome to the celebration of the Holy Eucharist.\n"
-        "<<D>>Please stand and join in singing the Entrance hymn.",
-        theme,
-    )
-
     ent_id = str(sel.get("entrance") or "").strip()
     if not ent_id or not _try_library_hymn(
         prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
@@ -1598,35 +1646,26 @@ def generate_mass_ppt(
     # --- Liturgy of the Word ---
     _add_section_card(prs, "LITURGY OF\nTHE WORD", "Liturgy of the Word", theme)
 
-    _add_reading_block(
+    _add_lotw_reading_slide(
         prs,
         section="First Reading",
         reference=first_reading_ref or "—",
-        body=(first_reading_text or "").strip(),
-        unavailable_note=unavail,
-        lotw_banner=True,
-        footer_tag="Liturgy of the Word",
+        full_text=(first_reading_text or "").strip(),
         theme=theme,
     )
-    _add_reading_block(
+    _add_lotw_reading_slide(
         prs,
         section="Responsorial Psalm",
         reference=psalm_ref or "—",
-        body=(psalm_text or "").strip(),
-        unavailable_note=unavail,
-        lotw_banner=True,
-        footer_tag="Liturgy of the Word",
+        full_text=(psalm_text or "").strip(),
         theme=theme,
     )
     if (second_reading_ref or "").strip():
-        _add_reading_block(
+        _add_lotw_reading_slide(
             prs,
             section="Second Reading",
             reference=second_reading_ref.strip(),
-            body=(second_reading_text or "").strip(),
-            unavailable_note=unavail,
-            lotw_banner=True,
-            footer_tag="Liturgy of the Word",
+            full_text=(second_reading_text or "").strip(),
             theme=theme,
         )
 
@@ -1634,40 +1673,7 @@ def generate_mass_ppt(
     _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_COMMENTATOR, theme)
     _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_INTRO, theme)
 
-    g_quote_intro = (g_line or "").strip()
-    if quote_max_chars and len(g_quote_intro) > quote_max_chars:
-        g_quote_intro = g_quote_intro[: quote_max_chars - 1].rstrip() + "\u2026"
-    if g_quote_intro:
-        _add_marked_slide(
-            prs,
-            "Gospel",
-            f"<<D>>{gospel_reference or '—'}\n<<D>>\n<<A>>\u201c{g_quote_intro}\u201d",
-            theme,
-        )
-    else:
-        _add_marked_slide(prs, "Gospel", f"<<D>>{gospel_reference or '—'}", theme)
-
-    g_body = strip_reading_verse_markers(
-        ((gospel_full_text or "").strip() or (gospel_quote or "").strip())
-    )
-    _add_reading_block(
-        prs,
-        section="Gospel",
-        reference=gospel_reference or "—",
-        body=g_body,
-        unavailable_note=unavail,
-        lotw_banner=False,
-        footer_tag="Gospel",
-        theme=theme,
-    )
-
     _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_END, theme)
-    _add_marked_slide(
-        prs,
-        "Homily",
-        "<<D>>Time for the homily — Father will now preach.\n<<D>>Commentator may introduce the theme.",
-        theme,
-    )
     _add_divider_cover(prs, **ctx)
 
     # --- Creed ---
@@ -1762,13 +1768,6 @@ def generate_mass_ppt(
             theme,
         )
     _add_divider_cover(prs, **ctx)
-
-    # Full-screen 16×9 parish poster (generated before the deck — see pipeline order).
-    if liturgical_poster_png is not None:
-        _add_liturgical_poster_full_slide(prs, liturgical_poster_png)
-
-    if quote_attribution and g_line:
-        _add_marked_slide(prs, "Scripture note", f"<<D>>{quote_attribution}", theme)
 
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     stem = (output_stem or "mass_presentation").strip() or "mass_presentation"

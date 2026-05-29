@@ -284,6 +284,32 @@ def _compose_mass_poster_image(
     return img
 
 
+def compose_mass_poster_wallpaper(
+    pw: int,
+    ph: int,
+    *,
+    template: PosterTemplate = "liturgical_color",
+    liturgical_color: Optional[Mapping[str, Any]] = None,
+) -> Image.Image:
+    """Liturgical gradient + accent orb only (no baked-in poster text)."""
+    lit_rgb: tuple[int, int, int] = (23, 32, 51)
+    if liturgical_color and "rgb" in liturgical_color:
+        raw = liturgical_color["rgb"]
+        lit_rgb = (int(raw[0]), int(raw[1]), int(raw[2]))
+
+    if template == "classic_white":
+        c_tl = (248, 250, 252)
+        c_br = (226, 232, 240)
+        orb = (241, 95, 58)
+    else:
+        base = _tint_rgb(lit_rgb, toward_white=0.08)
+        c_tl = (max(0, base[0] - 38), max(0, base[1] - 32), max(0, base[2] - 28))
+        c_br = _tint_rgb(lit_rgb, toward_white=0.12)
+        orb = (241, 95, 58)
+
+    return _with_accent_orb(_diagonal_gradient_image(pw, ph, c_tl, c_br), accent=orb, opacity=0.22)
+
+
 def generate_mass_poster(
     title: str,
     gospel_reference: str,
@@ -331,20 +357,13 @@ def generate_mass_poster(
     )
     img_social.save(social_path, format="PNG", optimize=True)
 
-    img_ppt = _compose_mass_poster_image(
+    # For the 16×9 variant used as slide wallpaper, keep only the liturgical
+    # gradient + orb; all readable text comes from PowerPoint text boxes.
+    img_ppt = compose_mass_poster_wallpaper(
         PPT_POSTER_W,
         PPT_POSTER_H,
-        title=title,
-        gospel_reference=gospel_reference,
-        celebrant=celebrant,
-        date=date,
         template=template,
         liturgical_color=liturgical_color,
-        logo_path=logo_path,
-        community_name=comm,
-        gospel_quote=gospel_quote,
-        entrance_title=entrance_song_title,
-        communion_titles=communion_song_titles,
     )
     img_ppt.save(ppt_path, format="PNG", optimize=True)
 
