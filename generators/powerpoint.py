@@ -33,6 +33,7 @@ from services.mass_text_format import (
 from services.prayer_service import get_prayer
 from services.prayer_templates import PENITENTIAL_ACT
 from services.responsorial_reading import responsorial_section_title
+from services.title_slide import resolve_title_slide_content
 
 from . import gfcc_flow_content as GFCC
 
@@ -49,6 +50,19 @@ _MUTED = RGBColor(155, 155, 165)
 
 _SLIDE_TEXT_PT = 55
 _FOOTER_PT = 13
+
+# Title slide typography (projector-first; Office-safe font names)
+_TITLE_FONT_HERO = "Aptos Display"
+_TITLE_FONT_HERO_FALLBACK = "Franklin Gothic Demi"
+_TITLE_FONT_UI = "Aptos"
+_TITLE_FONT_UI_FALLBACK = "Calibri"
+_TITLE_PT_CELEBRATION = (20, 28)
+_TITLE_PT_DATE = (20, 26)
+_TITLE_PT_HERO = (54, 72)
+_TITLE_PT_SUPPORT = (28, 40)
+_TITLE_PT_REFERENCE = (22, 30)
+_TITLE_PT_FOOTER = (12, 18)
+_TITLE_HERO_MAX_CHARS = 200
 
 _MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
@@ -145,10 +159,21 @@ def _build_slide_theme(
     and a gold emphasis so roles never mirror the fill.
     """
     if custom_theme:
-        bg = _hex_to_rgb(custom_theme.get("bg"))
-        primary = _hex_to_rgb(custom_theme.get("text")) or _hex_to_rgb(custom_theme.get("primary"))
-        emphasis = _hex_to_rgb(custom_theme.get("primary")) or _hex_to_rgb(custom_theme.get("accent"))
-        muted = _hex_to_rgb(custom_theme.get("accent"))
+        bg = _hex_to_rgb(custom_theme.get("backgroundColor")) or _hex_to_rgb(custom_theme.get("bg"))
+        primary = (
+            _hex_to_rgb(custom_theme.get("textColor"))
+            or _hex_to_rgb(custom_theme.get("text"))
+            or _hex_to_rgb(custom_theme.get("primary"))
+        )
+        emphasis = (
+            _hex_to_rgb(custom_theme.get("accentColor"))
+            or _hex_to_rgb(custom_theme.get("primary"))
+            or _hex_to_rgb(custom_theme.get("accent"))
+        )
+        muted = (
+            _hex_to_rgb(custom_theme.get("secondaryTextColor"))
+            or _hex_to_rgb(custom_theme.get("accent"))
+        )
         if bg and primary and emphasis and muted:
             font_name = str(custom_theme.get("font") or "Calibri").split(",")[0].strip() or "Calibri"
             return SlideTheme(bg=bg, primary=primary, muted=muted, emphasis=emphasis, font_name=font_name)
@@ -1528,6 +1553,74 @@ def _add_lotw_reading_slide(
         _add_community_footer(slide, foot, theme)
 
 
+def _title_slide_hero_font_pt(text: str, width_inches: float, height_inches: float) -> int:
+    """Shrink hero Gospel type until it fits the reserved vertical band."""
+    plain = re.sub(r"[^\w\s]", "", (text or ""))
+    char_count = max(1, len(plain))
+    min_pt, max_pt = _TITLE_PT_HERO
+    pt = max_pt
+    while pt > min_pt:
+        chars_per_line = max(12, int(width_inches * 72 / (pt * 0.52)))
+        lines = max(1, math.ceil(char_count / chars_per_line))
+        line_h_in = (pt * 1.18) / 72.0
+        if lines * line_h_in <= height_inches * 0.92:
+            break
+        pt -= 2
+    return max(min_pt, pt)
+
+
+def _title_slide_add_line(
+    slide,
+    *,
+    left,
+    top,
+    width,
+    height,
+    text: str,
+    size_pt: int,
+    color: RGBColor,
+    bold: bool = False,
+    font_name: str,
+    anchor_middle: bool = False,
+) -> None:
+    if not (text or "").strip():
+        return
+    box = slide.shapes.add_textbox(left, top, width, height)
+    tf = box.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    if anchor_middle:
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p = tf.paragraphs[0]
+    p.text = text.strip()
+    _style_para(p, size_pt=size_pt, color=color, bold=bold, font_name=font_name)
+    p.alignment = PP_ALIGN.CENTER
+    p.line_spacing = 1.08
+
+
+def _add_title_slide_celebrant_footer(slide, celebrant: str, theme: SlideTheme) -> None:
+    name = (celebrant or "").strip()
+    if not name:
+        return
+    lx = MARGIN_SIDE
+    w = SLIDE_WIDTH - 2 * MARGIN_SIDE
+    y = SLIDE_HEIGHT - Inches(0.72)
+    foot = slide.shapes.add_textbox(lx, y, w, Inches(0.55))
+    tf = foot.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    p = tf.paragraphs[0]
+    p.text = name
+    _style_para(
+        p,
+        size_pt=_TITLE_PT_FOOTER[1],
+        color=theme.muted,
+        bold=False,
+        font_name=_TITLE_FONT_UI,
+    )
+    p.alignment = PP_ALIGN.CENTER
+
+
 def _add_title_slide(
     prs: Presentation,
     *,
@@ -1542,45 +1635,120 @@ def _add_title_slide(
     quote_attribution: Optional[str],
     quote_max_chars: int,
     theme: SlideTheme,
+    gospel_full_text: str = "",
 ) -> None:
+    del liturgical_color, season, lectionary_cycle, quote_max_chars  # content-only slide
+
+    content = resolve_title_slide_content(
+        title=title,
+        date_label=date,
+        celebrant=celebrant,
+        gospel_reference=gospel_reference,
+        gospel_quote=gospel_quote,
+        gospel_full_text=gospel_full_text,
+        quote_attribution=quote_attribution,
+        hero_max_chars=_TITLE_HERO_MAX_CHARS,
+    )
+
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, theme.bg)
     _apply_slide_branding(slide, theme)
-    lx, w = MARGIN_SIDE, SLIDE_WIDTH - 2 * MARGIN_SIDE
-    y = _content_top() + Inches(0.15)
 
-    tb = slide.shapes.add_textbox(lx, y, w, Inches(1.05))
-    tft = tb.text_frame
-    _prep_tf(tft)
-    tft.clear()
-    p0 = tft.paragraphs[0]
-    p0.text = title or "Mass"
-    _style_para(p0, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
-    p0.alignment = PP_ALIGN.CENTER
+    lx = MARGIN_SIDE
+    w = SLIDE_WIDTH - 2 * MARGIN_SIDE
+    top = _content_top() + Inches(0.08)
+    footer_reserve = Inches(0.85) if content.celebrant else Inches(0.35)
+    bottom_limit = SLIDE_HEIGHT - footer_reserve
 
-    g_line = (gospel_quote or "").strip()
-    if quote_max_chars and len(g_line) > quote_max_chars:
-        g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
-    gref = (gospel_reference or "").strip() or "—"
+    cursor_y = top
 
-    meta = (
-        f"{date}\n\nCelebrant: {celebrant}\n\n"
-        f"Gospel: {gref}\n"
-        f"Season: {(season or '—').strip()} · Sunday Lectionary Year {(lectionary_cycle or '—').strip().upper()}"
+    _title_slide_add_line(
+        slide,
+        left=lx,
+        top=cursor_y,
+        width=w,
+        height=Inches(0.72),
+        text=content.celebration,
+        size_pt=_TITLE_PT_CELEBRATION[1],
+        color=theme.emphasis,
+        bold=True,
+        font_name=_TITLE_FONT_UI,
     )
-    if g_line:
-        meta += f"\n\nExcerpt:\n\u201c{g_line}\u201d"
+    cursor_y += Inches(0.78)
 
-    mb = slide.shapes.add_textbox(lx, y + Inches(1.15), w, Inches(3.4))
-    _prep_tf(mb.text_frame)
-    _fill_multipara(mb.text_frame, meta, size_pt=_SLIDE_TEXT_PT, color=theme.primary)
+    if content.date_label:
+        _title_slide_add_line(
+            slide,
+            left=lx,
+            top=cursor_y,
+            width=w,
+            height=Inches(0.55),
+            text=content.date_label,
+            size_pt=_TITLE_PT_DATE[1],
+            color=theme.muted,
+            bold=False,
+            font_name=_TITLE_FONT_UI,
+        )
+        cursor_y += Inches(0.62)
 
-    if quote_attribution and g_line:
-        nb = slide.shapes.add_textbox(lx, SLIDE_HEIGHT - Inches(1.2), w, Inches(0.75))
-        _prep_tf(nb.text_frame)
-        _fill_multipara(nb.text_frame, str(quote_attribution), size_pt=_SLIDE_TEXT_PT, color=theme.muted)
+    cursor_y += Inches(0.35)
+    hero_top = cursor_y
+    hero_h = bottom_limit - hero_top - Inches(1.35)
+    if hero_h < Inches(2.0):
+        hero_h = Inches(2.0)
 
-    _add_community_footer(slide, "Title", theme)
+    hero_plain = (content.main_message or "").strip()
+    if not hero_plain:
+        hero_plain = "Gospel text will appear when readings are loaded."
+    hero_pt = _title_slide_hero_font_pt(
+        hero_plain, _length_to_inches(w), _length_to_inches(hero_h)
+    )
+    _title_slide_add_line(
+        slide,
+        left=lx,
+        top=hero_top,
+        width=w,
+        height=hero_h,
+        text=hero_plain,
+        size_pt=hero_pt,
+        color=theme.primary,
+        bold=True,
+        font_name=_TITLE_FONT_HERO,
+        anchor_middle=True,
+    )
+
+    stack_y = hero_top + hero_h + Inches(0.2)
+
+    if content.supporting_quote:
+        _title_slide_add_line(
+            slide,
+            left=lx,
+            top=stack_y,
+            width=w,
+            height=Inches(1.05),
+            text=content.supporting_quote,
+            size_pt=_TITLE_PT_SUPPORT[1],
+            color=theme.muted,
+            bold=False,
+            font_name=_TITLE_FONT_UI,
+        )
+        stack_y += Inches(1.12)
+
+    if content.gospel_reference:
+        _title_slide_add_line(
+            slide,
+            left=lx,
+            top=stack_y,
+            width=w,
+            height=Inches(0.5),
+            text=content.gospel_reference,
+            size_pt=_TITLE_PT_REFERENCE[1],
+            color=theme.muted,
+            bold=False,
+            font_name=_TITLE_FONT_UI,
+        )
+
+    _add_title_slide_celebrant_footer(slide, content.celebrant, theme)
 
 
 def _add_full_bleed_png_slides(prs: Presentation, paths: List[Optional[Path]]) -> None:
@@ -1713,6 +1881,7 @@ def generate_mass_ppt(
         quote_attribution=quote_attribution,
         quote_max_chars=quote_max_chars,
         theme=theme,
+        gospel_full_text=gospel_full_text,
     )
 
     ent_id = str(sel.get("entrance") or "").strip()
