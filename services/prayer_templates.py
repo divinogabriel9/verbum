@@ -13,8 +13,8 @@ from typing import Any, Final, Mapping
 PENITENTIAL_ACT: Final[dict[str, Any]] = {
     "key": "penitential_act",
     "footer": "Penitential Act",
-    "body_pt": 50,
-    "direction_pt": 45,
+    "body_pt": 55,
+    "direction_pt": 55,
     "slides": [
         {
             "lines": [

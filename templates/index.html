@@ -7,32 +7,120 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;600;700&family=Mea+Culpa&display=swap" rel="stylesheet" />
+  <script>
+    (function () {
+      try {
+        var k = "verbumColorTheme";
+        var m = localStorage.getItem(k) || "system";
+        var d = m === "dark" || (m !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.setAttribute("data-theme", d ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme-preference", m);
+      } catch (_e) { /* ignore */ }
+    })();
+  </script>
   <style>
     :root {
-      --bg: #eef0fb;
-      --surface: rgba(255, 255, 255, 0.62);
-      --surface-2: rgba(255, 255, 255, 0.45);
-      --surface-solid: rgba(255, 255, 255, 0.88);
-      --ink: #2d3348;
-      --muted: #6b7289;
-      --line: rgba(255, 255, 255, 0.72);
-      --line-soft: rgba(167, 139, 250, 0.14);
-      --accent: #a78bfa;
-      --accent-2: #f472b6;
-      --accent-3: #7dd3fc;
-      --good: #10b981;
+      color-scheme: light;
+      --bg: #f6f5f3;
+      --bg-top: #fafaf9;
+      --surface: #ffffff;
+      --surface-2: #f8f9fb;
+      --surface-solid: #ffffff;
+      --ink: #1c2333;
+      --muted: #5c6578;
+      --line: #e5e8ef;
+      --line-soft: #eef1f6;
+      --accent: #5b4fc7;
+      --accent-2: #c45c26;
+      --accent-3: #0d9488;
+      --liturgical-accent: var(--accent);
+      --good: #059669;
       --warn: #d97706;
-      --danger: #e11d48;
-      --radius: 24px;
-      --radius-sm: 16px;
+      --danger: #dc2626;
+      --radius: 14px;
+      --radius-sm: 10px;
       --radius-pill: 999px;
-      --shadow: 0 24px 64px rgba(139, 92, 246, 0.12), 0 8px 24px rgba(15, 23, 42, 0.06);
-      --shadow-sm: 0 12px 32px rgba(139, 92, 246, 0.1), 0 4px 12px rgba(15, 23, 42, 0.04);
-      --shadow-hover: 0 28px 56px rgba(139, 92, 246, 0.18), 0 12px 28px rgba(244, 114, 182, 0.1);
-      --glass-blur: blur(20px) saturate(1.35);
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.08);
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
+      --shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.1);
+      --glass-blur: blur(12px) saturate(1.1);
       --font: "Plus Jakarta Sans", Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
       --brand-font: "Mea Culpa", cursive;
-      --sidebar-gap: 20px;
+      --sidebar-gap: 16px;
+      --space-1: 8px;
+      --space-2: 16px;
+      --space-3: 24px;
+      --space-4: 32px;
+    }
+    body[data-season="advent"] { --liturgical-accent: #5b4fc7; --accent: #5b4fc7; }
+    body[data-season="christmas"] { --liturgical-accent: #b8860b; --accent: #b8860b; }
+    body[data-season="lent"] { --liturgical-accent: #6b4c9a; --accent: #6b4c9a; }
+    body[data-season="easter"] { --liturgical-accent: #c45c26; --accent: #c45c26; }
+    body[data-season="ordinary"] { --liturgical-accent: #2d6a4f; --accent: #2d6a4f; }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #111318;
+      --bg-top: #161b24;
+      --surface: #1c222d;
+      --surface-2: #161b24;
+      --surface-solid: #232a38;
+      --ink: #e8ecf4;
+      --muted: #94a3b8;
+      --line: #2f3a4d;
+      --line-soft: #252d3d;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.4);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.28);
+      --shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.38);
+    }
+    html[data-theme="dark"] body {
+      background:
+        radial-gradient(ellipse 70% 50% at 0% 0%, color-mix(in srgb, var(--liturgical-accent) 16%, transparent), transparent 55%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 100%);
+    }
+    html[data-theme="dark"] body[data-season="advent"] { --liturgical-accent: #9d8ef9; --accent: #9d8ef9; }
+    html[data-theme="dark"] body[data-season="christmas"] { --liturgical-accent: #d4a84b; --accent: #d4a84b; }
+    html[data-theme="dark"] body[data-season="lent"] { --liturgical-accent: #a78bda; --accent: #a78bda; }
+    html[data-theme="dark"] body[data-season="easter"] { --liturgical-accent: #e07a45; --accent: #e07a45; }
+    html[data-theme="dark"] body[data-season="ordinary"] { --liturgical-accent: #52b788; --accent: #52b788; }
+    html[data-theme="dark"] .control-card,
+    html[data-theme="dark"] .route-switcher,
+    html[data-theme="dark"] input[type="color"] {
+      background: var(--surface-solid);
+      color: var(--ink);
+    }
+    html[data-theme="dark"] .nav-link:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    html[data-theme="dark"] .flow-builder-tabs button:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    html[data-theme="dark"] .mass-song-plan-root .plan-btn .button-inner {
+      background-image: linear-gradient(135deg, #3d4658, #2a3140);
+      border-color: var(--line);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    html[data-theme="dark"] .mass-song-plan-root .plan-btn .button-inner span {
+      background-image: linear-gradient(135deg, #f0f3fa, #b8c2d8);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    html[data-theme="dark"] .uiverse-btn .button-inner {
+      background-image: linear-gradient(135deg, #4a5468, #353e50);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    html[data-theme="dark"] .uiverse-btn .button-inner span {
+      background-image: linear-gradient(135deg, #f5f7fc, #c8d0e4);
+    }
+    html[data-theme="dark"] .song-filter-row button.active {
+      background: color-mix(in srgb, var(--liturgical-accent) 22%, var(--surface));
+      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
+      color: var(--ink);
+      box-shadow: none;
+    }
+    .theme-pref-option:has(input:checked) {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 50%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface));
     }
 
     .mea-culpa-regular {
@@ -48,11 +136,20 @@
       color: var(--ink);
       font-family: var(--font);
       background:
-        radial-gradient(ellipse 80% 60% at 8% 0%, rgba(167, 139, 250, 0.28), transparent 55%),
-        radial-gradient(ellipse 70% 50% at 92% 8%, rgba(244, 114, 182, 0.22), transparent 50%),
-        radial-gradient(ellipse 60% 45% at 50% 100%, rgba(125, 211, 252, 0.2), transparent 55%),
-        linear-gradient(165deg, #f5f3ff 0%, #eef0fb 38%, #e8f4ff 100%);
+        radial-gradient(ellipse 70% 50% at 0% 0%, color-mix(in srgb, var(--liturgical-accent) 8%, transparent), transparent 55%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 100%);
       background-attachment: fixed;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      button:hover { transform: none; }
+      .panel:hover, .tool-card:hover, .hero:hover, .admin-card:hover {
+        transform: none;
+      }
     }
 
     a { color: inherit; text-decoration: none; }
@@ -145,9 +242,9 @@
     .side-brand-mark {
       width: 40px;
       height: 40px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, rgba(167, 139, 250, 0.9), rgba(244, 114, 182, 0.85));
-      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: 11px;
+      background: var(--liturgical-accent);
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 80%, white);
       display: grid;
       place-items: center;
       font-size: 0.72rem;
@@ -155,7 +252,7 @@
       color: #fff;
       flex-shrink: 0;
       letter-spacing: 0.04em;
-      box-shadow: 0 8px 20px rgba(167, 139, 250, 0.35);
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--liturgical-accent) 30%, transparent);
     }
     .side-brand-text {
       flex: 1;
@@ -347,10 +444,10 @@
     }
 
     .nav-link.active {
-      background: linear-gradient(135deg, rgba(167, 139, 250, 0.32), rgba(244, 114, 182, 0.18));
-      border-color: rgba(167, 139, 250, 0.35);
-      color: #5b21b6;
-      box-shadow: 0 0 24px rgba(167, 139, 250, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface));
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
+      color: var(--liturgical-accent);
+      box-shadow: inset 3px 0 0 var(--liturgical-accent);
     }
 
     .nav-link.sub {
@@ -397,23 +494,120 @@
       border: 1px solid var(--line);
       background: var(--surface);
       box-shadow: var(--shadow-sm);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      transition: box-shadow 0.28s ease, transform 0.28s ease, border-color 0.28s ease;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
     }
-    .panel:hover, .tool-card:hover, .hero:hover {
+    .panel:hover, .tool-card:hover, .admin-card:hover {
       box-shadow: var(--shadow-hover);
-      transform: translateY(-2px);
-      border-color: rgba(167, 139, 250, 0.28);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 22%, var(--line));
     }
 
     .topbar {
       border-radius: var(--radius);
-      padding: 16px 20px;
+      padding: 12px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 14px;
+      flex-wrap: wrap;
+    }
+    .topbar-context {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .topbar-breadcrumb {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .topbar-breadcrumb span { color: var(--liturgical-accent); }
+    .topbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .season-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--ink);
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .season-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--liturgical-accent);
+      flex-shrink: 0;
+    }
+    .theme-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--ink);
+      flex-shrink: 0;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+    .theme-toggle-btn:hover {
+      background: var(--surface-solid);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+    }
+    .theme-toggle-btn svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .theme-toggle-btn .theme-icon-moon { display: none; }
+    html[data-theme="dark"] .theme-toggle-btn .theme-icon-sun { display: none; }
+    html[data-theme="dark"] .theme-toggle-btn .theme-icon-moon { display: block; }
+    .theme-preference-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .theme-pref-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .theme-pref-option input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--liturgical-accent);
     }
     .brand {
       display: flex;
@@ -422,21 +616,20 @@
       min-width: 0;
     }
     .brand-mark {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, rgba(167, 139, 250, 0.95), rgba(125, 211, 252, 0.9), rgba(244, 114, 182, 0.85));
-      box-shadow: 0 8px 24px rgba(167, 139, 250, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: var(--liturgical-accent);
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--liturgical-accent) 35%, transparent);
       flex: 0 0 auto;
     }
     .brand h1 {
       margin: 0;
-      font-family: var(--brand-font);
-      font-size: 1.85rem;
-      font-weight: 400;
-      font-style: normal;
-      letter-spacing: 0.02em;
-      line-height: 1.1;
+      font-family: var(--font);
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
       color: var(--ink);
     }
     .brand .topbar-liturgyflow {
@@ -455,7 +648,7 @@
       border: 1px solid var(--line);
       border-radius: 12px;
       color: var(--ink);
-      background: #fff;
+      background: var(--surface-solid);
     }
 
     .page { display: none; }
@@ -467,55 +660,67 @@
 
     .hero {
       border-radius: var(--radius);
-      padding: 22px;
+      padding: var(--space-2) var(--space-3);
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 18px;
-      align-items: end;
-      overflow: hidden;
-      position: relative;
+      gap: var(--space-2);
+      align-items: center;
     }
-    .hero:before {
-      content: "";
-      position: absolute;
-      inset: -40% -8% auto auto;
-      width: 360px;
-      height: 220px;
-      border-radius: 999px;
-      background: radial-gradient(circle, rgba(167, 139, 250, 0.22), rgba(244, 114, 182, 0.08) 60%, transparent 70%);
-      transform: rotate(-15deg);
-      pointer-events: none;
-    }
-    .hero > * { position: relative; }
     .eyebrow {
-      margin: 0 0 8px;
-      color: #7c3aed;
-      font-size: 0.72rem;
+      margin: 0 0 6px;
+      color: var(--liturgical-accent);
+      font-size: 0.68rem;
       font-weight: 800;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
     }
     .hero h2 {
-      max-width: 850px;
+      max-width: 640px;
       margin: 0;
-      font-size: clamp(1.65rem, 2.8vw, 2.75rem);
-      line-height: 1.08;
-      letter-spacing: -0.035em;
+      font-size: clamp(1.25rem, 2vw, 1.65rem);
+      line-height: 1.2;
+      letter-spacing: -0.03em;
       font-weight: 800;
       color: var(--ink);
     }
     .hero p {
-      max-width: 760px;
-      margin: 12px 0 0;
+      max-width: 560px;
+      margin: 8px 0 0;
       color: var(--muted);
-      line-height: 1.6;
+      font-size: 0.9rem;
+      line-height: 1.5;
     }
 
     .hero-metrics {
       display: grid;
-      grid-template-columns: repeat(3, minmax(86px, 1fr));
-      gap: 10px;
-      min-width: 330px;
+      grid-template-columns: repeat(3, minmax(72px, 1fr));
+      gap: 8px;
+      min-width: 280px;
+    }
+    .home-bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: var(--space-2);
+      align-items: start;
+    }
+    .home-bento-sunday {
+      grid-column: 1 / -1;
+    }
+    .home-bento-actions {
+      grid-column: span 5;
+    }
+    .home-bento-snapshot {
+      grid-column: span 4;
+    }
+    .home-bento-recent {
+      grid-column: span 3;
+    }
+    @media (max-width: 960px) {
+      .home-bento-actions,
+      .home-bento-snapshot,
+      .home-bento-recent {
+        grid-column: 1 / -1;
+      }
     }
     .metric {
       padding: 14px;
@@ -542,7 +747,228 @@
       grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
     }
     .workspace.flow-workspace {
-      grid-template-columns: minmax(360px, 0.95fr) minmax(0, 1.2fr);
+      grid-template-columns: minmax(0, 1fr);
+      max-width: min(1160px, 100%);
+    }
+    .flow-builder-panel {
+      padding-bottom: 20px;
+    }
+    .flow-builder-tabs {
+      display: flex;
+      gap: 6px;
+      margin: 0 0 16px;
+      padding: 4px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+    }
+    .flow-builder-tabs button {
+      flex: 1;
+      margin: 0;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .flow-builder-tabs button:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.55);
+    }
+    .flow-builder-tabs button[aria-selected="true"] {
+      color: var(--liturgical-accent);
+      background: var(--surface);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+    }
+    .flow-builder-tab-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 0;
+    }
+    .flow-builder-tab-panel[hidden] {
+      display: none !important;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-root {
+      max-height: min(68vh, 720px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .flow-accordion {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      margin-bottom: var(--space-1);
+      overflow: hidden;
+    }
+    .flow-accordion[open] {
+      background: var(--surface);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 20%, var(--line));
+    }
+    .flow-accordion summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .flow-accordion summary::-webkit-details-marker { display: none; }
+    .flow-accordion summary::after {
+      content: "+";
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+    .flow-accordion[open] summary::after { content: "−"; }
+    .flow-accordion-body {
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .flow-accordion-body .field:first-child { margin-top: 12px; }
+    .flow-input-group {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      width: 100%;
+    }
+    .flow-input-group .flow-input-addon {
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .flow-input-group input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+    }
+    .flow-input-group .secondary,
+    .flow-input-group .ghost {
+      flex-shrink: 0;
+      margin: 0;
+      padding: 10px 14px;
+      white-space: nowrap;
+    }
+    .flow-input-list {
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .flow-input-list:empty {
+      display: none;
+    }
+    .flow-input-list-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      font-size: 0.86rem;
+      line-height: 1.4;
+      color: var(--ink);
+    }
+    .flow-input-list-text {
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .flow-input-list-remove {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      line-height: 1;
+      font-size: 1.1rem;
+      border-radius: 8px;
+    }
+    .flow-input-sublabel {
+      margin: 0 0 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    #flow-panel-setup {
+      padding-bottom: var(--space-1);
+    }
+    .flow-sticky-actions {
+      position: sticky;
+      bottom: var(--space-2);
+      z-index: 12;
+      margin-top: var(--space-3);
+      padding: var(--space-2) var(--space-1) var(--space-1);
+    }
+    .flow-sticky-actions-card {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: var(--space-2) var(--space-3);
+      border-radius: calc(var(--radius) + 2px);
+      border: 1px solid color-mix(in srgb, var(--line) 70%, rgba(255, 255, 255, 0.65));
+      background: color-mix(in srgb, var(--surface) 72%, transparent);
+      backdrop-filter: blur(18px) saturate(1.25);
+      -webkit-backdrop-filter: blur(18px) saturate(1.25);
+      box-shadow:
+        0 4px 6px rgba(15, 23, 42, 0.04),
+        0 20px 48px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+    html[data-theme="dark"] .flow-sticky-actions-card {
+      border-color: color-mix(in srgb, var(--line) 85%, rgba(255, 255, 255, 0.12));
+      background: color-mix(in srgb, var(--surface) 65%, rgba(15, 20, 30, 0.4));
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.45),
+        0 2px 8px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .flow-sticky-actions-card .actions {
+      justify-content: center;
+      gap: 12px;
+    }
+    .flow-sticky-actions-card .status {
+      text-align: center;
+      margin-top: 12px;
+    }
+    .flow-sticky-actions-card .download-row {
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .page-shell-title {
+      margin: 0 0 var(--space-2);
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+    .page-shell-desc {
+      margin: -8px 0 var(--space-2);
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.45;
     }
 
     .panel, .tool-card {
@@ -579,8 +1005,8 @@
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     textarea:focus, input:focus, select:focus {
-      border-color: rgba(167, 139, 250, 0.55);
-      box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.14);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent) 18%, transparent);
     }
     textarea {
       min-height: 340px;
@@ -593,7 +1019,7 @@
       padding: 3px;
       border: 1px solid var(--line);
       border-radius: 12px;
-      background: #fff;
+      background: var(--surface-solid);
     }
 
     .field { margin-bottom: 14px; }
@@ -613,13 +1039,13 @@
       font-weight: 850;
     }
     .primary {
-      padding: 12px 20px;
+      padding: 11px 18px;
       color: #fff;
-      background: linear-gradient(135deg, #a78bfa, #f472b6);
-      box-shadow: 0 12px 28px rgba(167, 139, 250, 0.35);
+      background: var(--liturgical-accent);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--liturgical-accent) 35%, transparent);
     }
     .primary:hover {
-      box-shadow: 0 16px 36px rgba(244, 114, 182, 0.35);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--liturgical-accent) 40%, transparent);
     }
     .secondary {
       padding: 12px 18px;
@@ -1774,7 +2200,7 @@
       padding: 13px;
       border: 1px solid var(--line);
       border-radius: 18px;
-      background: #fff;
+      background: var(--surface-solid);
     }
     .toggle {
       display: inline-flex;
@@ -1929,7 +2355,7 @@
     .admin-card-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
+      gap: var(--space-2);
     }
     .btn-xl {
       padding: 14px 20px;
@@ -2008,36 +2434,194 @@
       color: var(--muted);
       font-size: 0.78rem;
     }
+    .calendar-page-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+      gap: var(--space-2);
+      align-items: start;
+      max-width: 100%;
+      min-width: 0;
+    }
+    @media (max-width: 900px) {
+      .calendar-page-workspace {
+        grid-template-columns: 1fr;
+      }
+      .cal-detail-panel {
+        order: 2;
+      }
+    }
+    .calendar-month-card {
+      min-width: 0;
+      overflow: hidden;
+    }
     .calendar-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 5px;
+      min-width: 0;
     }
     .cal-dow {
       text-align: center;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: 800;
       color: var(--muted);
-      padding: 4px;
+      padding: 4px 2px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
     .cal-cell {
-      aspect-ratio: 1;
-      min-height: 40px;
-      border-radius: 10px;
+      min-height: 48px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--line);
       background: var(--surface);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.85rem;
+      align-items: stretch;
+      justify-content: flex-start;
+      padding: 6px 6px 5px;
+      font-size: 0.8rem;
       font-weight: 700;
       cursor: pointer;
       color: var(--ink);
+      text-align: left;
+      overflow: hidden;
+      min-width: 0;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .cal-cell.muted { opacity: 0.35; cursor: default; }
-    .cal-cell.sunday { border-color: rgba(241, 95, 58, 0.45); background: #fff8f5; }
-    .cal-cell.selected { outline: 2px solid var(--accent-2); }
+    .cal-cell.sunday {
+      min-height: 92px;
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 5%, var(--surface));
+    }
+    .cal-cell.sunday .cal-cell-gospel {
+      display: block;
+    }
+    .cal-cell.muted {
+      opacity: 0.28;
+      cursor: default;
+      pointer-events: none;
+      min-height: 48px;
+    }
+    .cal-cell.selected {
+      outline: 2px solid var(--liturgical-accent);
+      outline-offset: 1px;
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--liturgical-accent) 18%, transparent);
+    }
+    .cal-cell-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      width: 100%;
+    }
+    .cal-cell-day {
+      font-size: 0.82rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .cal-cell-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--muted);
+      opacity: 0.35;
+    }
+    .cal-cell.has-data .cal-cell-dot {
+      opacity: 1;
+    }
+    .cal-cell-gospel {
+      display: none;
+      margin-top: 5px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      line-height: 1.25;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+    .cal-cell.loading .cal-cell-gospel {
+      display: block;
+      color: transparent;
+      background: linear-gradient(90deg, var(--line-soft), var(--line), var(--line-soft));
+      background-size: 200% 100%;
+      animation: cal-shimmer 1.2s ease infinite;
+      border-radius: 4px;
+      min-height: 0.75rem;
+    }
+    @keyframes cal-shimmer {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+    html[data-theme="dark"] .cal-cell.sunday {
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface));
+    }
+    .cal-detail-panel {
+      min-width: 0;
+    }
+    .cal-reading-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 12px 0 14px;
+    }
+    .cal-reading-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      padding: 10px 12px;
+      min-width: 0;
+    }
+    .cal-reading-card header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 6px 10px;
+      margin-bottom: 6px;
+    }
+    .cal-reading-card header strong {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .cal-reading-card .cal-reading-ref {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--liturgical-accent);
+      text-align: right;
+    }
+    .cal-reading-excerpt {
+      margin: 0;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: var(--ink);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+    .cal-reading-excerpt.is-expanded {
+      -webkit-line-clamp: unset;
+      display: block;
+      max-height: min(40vh, 16rem);
+      overflow-y: auto;
+    }
+    .cal-reading-toggle {
+      margin-top: 8px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+    }
+    .cal-reading-card.is-empty {
+      opacity: 0.55;
+    }
+    .cal-reading-card.is-empty .cal-reading-toggle {
+      display: none;
+    }
     .poster-preview-frame {
       border-radius: 16px;
       overflow: hidden;
@@ -2092,11 +2676,8 @@
       background: rgba(255, 241, 246, 0.65);
     }
 
-    /* Glass theme — extended surfaces */
     .admin-card, .song-catalog-panel, .flow-para-preview, .snapshot-tile {
       background: var(--surface);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
       border: 1px solid var(--line);
       box-shadow: var(--shadow-sm);
     }
@@ -2111,9 +2692,9 @@
       transition: transform 0.22s ease, box-shadow 0.22s ease;
     }
     .download-row a:hover {
-      transform: translateY(-2px);
+      transform: translateY(-1px);
       box-shadow: var(--shadow-hover);
-      color: #6d28d9;
+      color: var(--liturgical-accent);
     }
     .song-filter-row button.active {
       background: linear-gradient(135deg, rgba(167, 139, 250, 0.28), rgba(244, 114, 182, 0.18));
@@ -2133,6 +2714,10 @@
       .hero { grid-template-columns: 1fr; }
       .hero-metrics { min-width: 0; }
     }
+    @media (min-width: 721px) {
+      .route-switcher { display: none !important; }
+      .topbar-meta .season-chip { display: inline-flex; }
+    }
     @media (max-width: 720px) {
       .app-shell { --nav-width-expanded: min(280px, 88vw); }
       .dashboard { padding: 12px; }
@@ -2141,6 +2726,7 @@
         box-shadow: var(--shadow-hover);
       }
       .route-switcher { display: block; }
+      .topbar-meta .season-chip { display: none; }
       .topbar { flex-direction: column; align-items: stretch; }
       .hero, .panel, .tool-card { padding: 15px; border-radius: 18px; }
       .hero-metrics, .global-controls, .field-grid, .builder-grid, .theme-grid { grid-template-columns: 1fr; }
@@ -2686,8 +3272,8 @@
       }
     }
   </style>
-<body>
-  <div class="app-shell">
+<body data-season="ordinary">
+  <div class="app-shell nav-pinned nav-expanded">
     <aside class="side-nav sidebar" id="admin-sidebar" aria-label="Dashboard navigation">
       <div class="side-nav-header">
         <button type="button" class="nav-toggle-btn" id="nav-toggle-btn" aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">
@@ -2697,7 +3283,7 @@
           <strong class="mea-culpa-regular">Verbum</strong>
           <span class="side-brand-sub">LiturgyFlow</span>
         </div>
-        <button type="button" class="nav-pin-btn" id="sidebar-pin" aria-label="Pin sidebar open" aria-pressed="false" title="Pin sidebar open">
+        <button type="button" class="nav-pin-btn" id="sidebar-pin" aria-label="Pin sidebar open" aria-pressed="true" title="Pin sidebar open">
           <svg class="nav-pin-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 17v5" />
             <path d="M9 10.76a2 2 0 0 1-1.11-1.79l-1.78-.9A2 2 0 0 1 5 10.76V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 1 15 10.76V17" />
@@ -2790,11 +3376,26 @@
       <div class="topbar">
         <div class="brand">
           <div class="brand-mark" aria-hidden="true"></div>
-          <div>
-            <h1 id="topbar-title" class="mea-culpa-regular">Verbum</h1>
-            <p class="topbar-liturgyflow" id="topbar-liturgyflow">LiturgyFlow</p>
+          <div class="topbar-context">
+            <p class="topbar-breadcrumb" id="topbar-breadcrumb">Home</p>
+            <h1 id="topbar-title">Verbum</h1>
             <p class="muted" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
           </div>
+        </div>
+        <div class="topbar-meta">
+          <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+            <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+            </svg>
+            <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          </button>
+          <span class="season-chip" id="topbar-season-chip" title="Liturgical season">
+            <span class="season-chip-dot" aria-hidden="true"></span>
+            <span id="topbar-season-label">—</span>
+          </span>
         </div>
         <select class="route-switcher" id="route-switcher" aria-label="Switch dashboard">
           <option value="/home">Home</option>
@@ -2825,8 +3426,8 @@
           </div>
         </div>
 
-        <div class="admin-card-grid">
-          <div class="admin-card" style="grid-column: 1 / -1;">
+        <div class="home-bento">
+          <div class="admin-card home-bento-sunday">
             <h3>Upcoming Sunday</h3>
             <p class="muted" id="home-sunday-label">Loading…</p>
             <p class="mission-quote mission-gospel-full" id="home-gospel-quote">Gospel text will appear after refresh.</p>
@@ -2839,7 +3440,7 @@
             <p class="status" id="home-mission-status" aria-live="polite"></p>
           </div>
 
-          <div class="admin-card">
+          <div class="admin-card home-bento-actions">
             <h3>Quick Actions</h3>
             <p class="muted">Jump straight into common tasks.</p>
             <div class="quick-actions">
@@ -2850,7 +3451,7 @@
             </div>
           </div>
 
-          <div class="admin-card">
+          <div class="admin-card home-bento-snapshot">
             <h3>Liturgical Snapshot</h3>
             <p class="muted">Colors and seasons for this week.</p>
             <div class="snapshot-row">
@@ -2861,7 +3462,7 @@
             </div>
           </div>
 
-          <div class="admin-card">
+          <div class="admin-card home-bento-recent">
             <h3>Recent Files</h3>
             <p class="muted">Last generated downloads from this browser.</p>
             <div id="home-recent-files" class="muted">No recent downloads yet. Generate a deck to populate this list.</div>
@@ -2870,19 +3471,6 @@
       </section>
 
       <section class="page" id="lyrics-page" data-route="/library/songs">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Song Composer</p>
-            <h2>Compose, structure, and save hymns for Mass Builder.</h2>
-            <p>Search your library, paste or upload lyrics, analyze into blocks, and save to Entrance, Offertory, Communion, or Recessional.</p>
-          </div>
-          <div class="hero-metrics">
-            <div class="metric"><strong id="lyrics-total">0</strong><span>Blocks</span></div>
-            <div class="metric"><strong id="lyrics-chorus">0</strong><span>Chorus</span></div>
-            <div class="metric"><strong id="lyrics-words">0</strong><span>Words</span></div>
-          </div>
-        </div>
-
         <div class="lyrics-workspace-stack" id="lyrics-workspace">
           <section class="panel song-composer-panel">
             <div class="panel-head">
@@ -2995,19 +3583,6 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="theme-page" data-route="/design/theme-lab">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Theme Lab</p>
-            <h2>Liturgical visual system for slides, posters, and social graphics.</h2>
-            <p>Five preset seasons plus your saved customs. Preview, apply to exports, or open the builder to fine-tune colors and fonts.</p>
-          </div>
-          <div class="hero-metrics">
-            <div class="metric"><strong>5</strong><span>Presets</span></div>
-            <div class="metric"><strong id="custom-theme-count">0</strong><span>Saved</span></div>
-            <div class="metric"><strong id="active-theme-name">Advent</strong><span>Active</span></div>
-          </div>
-        </div>
-
         <div class="workspace theme-workspace">
           <section class="panel">
             <div class="panel-head">
@@ -3091,143 +3666,171 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="flow-page" data-route="/mass/builder">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Mass Builder</p>
-            <h2>Configure readings, hymns, stewardship slides, and export the full Mass package.</h2>
-            <p>Load the lectionary, pick songs with lyrics, optionally add divider and announcement artwork (16:9), then generate poster, social exports, and PowerPoint.</p>
-          </div>
-          <div class="hero-metrics">
-            <div class="metric"><strong id="flow-song-count">0</strong><span>Songs picked</span></div>
-            <div class="metric"><strong id="flow-reading-loaded">—</strong><span>Readings</span></div>
-          </div>
-        </div>
-
         <div class="workspace flow-workspace">
-          <aside class="panel">
+          <aside class="panel flow-builder-panel">
             <div class="panel-head">
               <div>
-                <h3>Global Controls</h3>
-                <p>Mass date, celebrant, lectionary readings, stewardship fields, and slide assets.</p>
+                <h3>Mass Builder</h3>
+                <p>Setup readings and stewardship, then pick hymns for each slot in your deck.</p>
               </div>
             </div>
-            <div class="field-grid">
-              <div class="field">
-                <label for="mass-date">Mass date</label>
-                <input type="date" id="mass-date" />
-              </div>
-              <div class="field">
-                <label for="celebrant">Celebrant</label>
-                <input type="text" id="celebrant" placeholder="Fr. Name" />
-              </div>
+            <div class="flow-builder-tabs" role="tablist" aria-label="Mass builder sections">
+              <button type="button" role="tab" id="flow-tab-setup" aria-selected="true" aria-controls="flow-panel-setup" data-flow-tab="setup">Setup</button>
+              <button type="button" role="tab" id="flow-tab-songs" aria-selected="false" aria-controls="flow-panel-songs" data-flow-tab="songs" tabindex="-1">Songs</button>
             </div>
-            <div class="field">
-              <label for="church-name">Community name</label>
-              <input type="text" id="church-name" placeholder="Parish or community name" maxlength="240" />
-            </div>
-            <p class="muted" style="margin:0 0 8px;">Logo and parish details: <a href="/settings/church" id="link-church-profile-flow">Church Profile</a></p>
-            <div class="global-controls">
-              <div class="control-card">
-                <label>Season indicator</label>
-                <strong id="season-indicator">Not loaded</strong>
-              </div>
-              <div class="control-card">
-                <label>PPT theme</label>
-                <strong id="ppt-theme-indicator">Advent Violet</strong>
-              </div>
-            </div>
-            <div class="field" style="margin-top:10px;">
-              <label>First reading (preview)</label>
-              <p class="muted" id="flow-reading1-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
-              <div id="flow-reading1-body" class="muted" style="font-size:0.86rem;line-height:1.45;max-height:7.5rem;overflow:auto;">Load readings to see text.</div>
-            </div>
-            <div class="field">
-              <label>Second reading (preview)</label>
-              <p class="muted" id="flow-reading2-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
-              <div id="flow-reading2-body" class="muted" style="font-size:0.86rem;line-height:1.45;max-height:7.5rem;overflow:auto;">—</div>
-            </div>
-            <div class="field">
-              <label>Gospel reading (preview)</label>
-              <p class="muted" id="flow-gospel-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
-              <div id="flow-gospel-body" tabindex="0" class="muted user-select-all" style="font-size:0.86rem;line-height:1.45;max-height:10rem;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);">Load readings to see the full Gospel.</div>
-              <label for="flow-gospel-sentence" style="margin-top:12px;display:block;">Slide quote — sentence for PowerPoint</label>
-              <select id="flow-gospel-sentence" style="width:100%;max-width:100%;margin-top:6px;">
-                <option value="0">Sentence 1 (default)</option>
-              </select>
-              <label for="flow-gospel-custom" style="margin-top:10px;display:block;">Custom slide line (optional, overrides sentence above)</label>
-              <input type="text" id="flow-gospel-custom" maxlength="2000" placeholder="Leave empty to use the selected sentence" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);" />
-            </div>
-            <div class="field">
-              <label for="flow-psalm-override" id="flow-psalm-label">Responsorial Psalm (edit text for slides)</label>
-              <textarea id="flow-psalm-override" rows="5" placeholder="Loads with readings; edit the response and verses as needed."></textarea>
-              <div id="flow-psalm-preview" class="flow-para-preview" aria-live="polite"></div>
-            </div>
-            <div class="field-grid">
-              <div class="field">
-                <label for="flow-collection-amount">Mass collection amount</label>
-                <input type="text" id="flow-collection-amount" placeholder="e.g. ₱12,500 or 1,200 won" maxlength="120" />
-              </div>
-              <div class="field">
-                <label for="flow-collection-date">Collection date label</label>
-                <input type="date" id="flow-collection-date" />
-                <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Defaults to last Sunday; change if needed.</p>
-              </div>
-            </div>
-            <div class="field">
-              <label for="flow-food-sponsors">Food sponsors (one per line)</label>
-              <textarea id="flow-food-sponsors" rows="3" placeholder="Name or family, one per line"></textarea>
-              <div id="flow-food-preview" class="flow-para-preview" aria-live="polite"></div>
-            </div>
-            <div class="field">
-              <label for="flow-divider-poster">Divider poster (16:9 image for Mass divider slides)</label>
-              <input type="file" id="flow-divider-poster" accept="image/png,image/jpeg,image/webp,image/gif" />
-              <p class="muted" id="flow-divider-status" style="margin:6px 0 0;font-size:0.78rem;">Optional. Clears after each successful generation.</p>
-            </div>
-            <div class="field">
-              <label for="flow-announcement-posters">Announcement posters (multiple, 16:9)</label>
-              <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
-              <p class="muted" id="flow-announcement-status" style="margin:6px 0 0;font-size:0.78rem;">Shown full-screen immediately before the final blessing. Clears after generate.</p>
-            </div>
-            <div class="field" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);">
-              <label><input type="checkbox" id="flow-include-church-logo" checked /> Include church logo</label>
-              <label style="display:block;margin-top:8px;"><input type="checkbox" id="flow-include-church-name" checked /> Include church name</label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Applies to PowerPoint slides (header logo and parish name). Uncheck to omit both from the deck.</p>
-            </div>
-            <div class="field" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);">
-              <label><input type="checkbox" id="flow-use-openai-poster" checked /> Generate poster with OpenAI</label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art in exact 16:9 widescreen (1920×1080) for projector slides. Set OPENAI_API_KEY in .env.</p>
-            </div>
-            <div class="field" id="flow-openai-style-wrap">
-              <label for="flow-openai-poster-style">OpenAI poster art style</label>
-              <select id="flow-openai-poster-style">
-                <option value="cinematic">Cinematic — epic biblical scene, volumetric light</option>
-                <option value="realistic">Realistic — cinematic photography, dramatic lighting</option>
-                <option value="renaissance">Renaissance — classical oil painting</option>
-                <option value="stained_glass">Stained glass — cathedral window style</option>
-                <option value="modern">Modern — minimalist church illustration</option>
-              </select>
-            </div>
-            <div class="actions" style="margin-top:14px;">
-              <button type="button" class="uiverse-btn" id="btn-load-flow"><div class="button-outer"><div class="button-inner"><span>Load readings &amp; songs</span></div></div></button>
-              <button type="button" class="uiverse-btn uiverse-btn--orange" id="btn-generate-flow"><div class="button-outer"><div class="button-inner"><span>Generate Full Mass Package</span></div></div></button>
-            </div>
-            <p class="status" id="flow-status" aria-live="polite"></p>
-            <div class="download-row" id="download-row">
-              <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
-              <a href="#" id="dl-pptx" download>PowerPoint</a>
-              <a href="#" id="dl-poster" download>Poster PNG</a>
-              <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
-            </div>
-          </aside>
-
-          <div class="flow-column">
-            <section class="panel">
-              <div class="panel-head">
-                <div>
-                  <h3>Lyrics Song Plan</h3>
-                  <p>Search your full Song Library (every saved hymn, any liturgical tag) plus seasonal suggestions. Pick one song per slot for the deck.</p>
+            <div class="flow-builder-tab-panel" id="flow-panel-setup" role="tabpanel" aria-labelledby="flow-tab-setup" data-flow-panel="setup">
+            <details class="flow-accordion" open>
+              <summary>Basics</summary>
+              <div class="flow-accordion-body">
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="mass-date">Mass date</label>
+                    <input type="date" id="mass-date" />
+                  </div>
+                  <div class="field">
+                    <label for="celebrant">Celebrant</label>
+                    <input type="text" id="celebrant" placeholder="Fr. Name" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="church-name">Community name</label>
+                  <input type="text" id="church-name" placeholder="Parish or community name" maxlength="240" />
+                </div>
+                <p class="muted" style="margin:0 0 8px;">Logo and parish details: <a href="/settings/church" id="link-church-profile-flow">Church Profile</a></p>
+                <div class="global-controls">
+                  <div class="control-card">
+                    <label>Season indicator</label>
+                    <strong id="season-indicator">Not loaded</strong>
+                  </div>
+                  <div class="control-card">
+                    <label>PPT theme</label>
+                    <strong id="ppt-theme-indicator">Advent Violet</strong>
+                  </div>
                 </div>
               </div>
+            </details>
+            <details class="flow-accordion">
+              <summary>Readings</summary>
+              <div class="flow-accordion-body">
+                <div class="field">
+                  <label>First reading (preview)</label>
+                  <p class="muted" id="flow-reading1-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
+                  <div id="flow-reading1-body" class="muted" style="font-size:0.86rem;line-height:1.45;max-height:7.5rem;overflow:auto;">Load readings to see text.</div>
+                </div>
+                <div class="field">
+                  <label>Second reading (preview)</label>
+                  <p class="muted" id="flow-reading2-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
+                  <div id="flow-reading2-body" class="muted" style="font-size:0.86rem;line-height:1.45;max-height:7.5rem;overflow:auto;">—</div>
+                </div>
+                <div class="field">
+                  <label>Gospel reading (preview)</label>
+                  <p class="muted" id="flow-gospel-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
+                  <div id="flow-gospel-body" tabindex="0" class="muted user-select-all" style="font-size:0.86rem;line-height:1.45;max-height:10rem;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);">Load readings to see the full Gospel.</div>
+                  <label for="flow-gospel-sentence" style="margin-top:12px;display:block;">Slide quote — sentence for PowerPoint</label>
+                  <select id="flow-gospel-sentence" style="width:100%;max-width:100%;margin-top:6px;">
+                    <option value="0">Sentence 1 (default)</option>
+                  </select>
+                  <label for="flow-gospel-custom" style="margin-top:10px;display:block;">Custom slide line (optional, overrides sentence above)</label>
+                  <input type="text" id="flow-gospel-custom" maxlength="2000" placeholder="Leave empty to use the selected sentence" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);" />
+                </div>
+                <div class="field">
+                  <label id="flow-psalm-label">Responsorial Psalm (edit text for slides)</label>
+                  <p class="muted" style="margin:0 0 10px;font-size:0.78rem;">Response is what appears on the slide; add optional verse stanzas below.</p>
+                  <p class="flow-input-sublabel" id="flow-psalm-refrain-label">Response refrain</p>
+                  <div class="flow-input-group" role="group" aria-labelledby="flow-psalm-refrain-label">
+                    <span class="flow-input-addon" aria-hidden="true">R.</span>
+                    <input type="text" id="flow-psalm-refrain-input" placeholder="e.g. Praise the Lord, Jerusalem." maxlength="500" autocomplete="off" />
+                  </div>
+                  <p class="flow-input-sublabel" id="flow-psalm-verses-label" style="margin-top:12px;">Verse stanzas (optional)</p>
+                  <div class="flow-input-group" role="group" aria-labelledby="flow-psalm-verses-label">
+                    <input type="text" id="flow-psalm-verse-input" placeholder="Add a stanza, then press Add or Enter" maxlength="2000" autocomplete="off" />
+                    <button type="button" class="secondary" id="btn-flow-psalm-verse-add">Add</button>
+                  </div>
+                  <ul id="flow-psalm-verses-list" class="flow-input-list" aria-live="polite"></ul>
+                  <textarea id="flow-psalm-override" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                  <div id="flow-psalm-preview" class="flow-para-preview" aria-live="polite"></div>
+                </div>
+              </div>
+            </details>
+            <details class="flow-accordion">
+              <summary>Stewardship</summary>
+              <div class="flow-accordion-body">
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="flow-collection-amount">Mass collection amount</label>
+                    <input type="text" id="flow-collection-amount" placeholder="e.g. ₱12,500 or 1,200 won" maxlength="120" />
+                  </div>
+                  <div class="field">
+                    <label for="flow-collection-date">Collection date label</label>
+                    <input type="date" id="flow-collection-date" />
+                    <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Defaults to last Sunday; change if needed.</p>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="flow-food-sponsor-input">Food sponsors</label>
+                  <div class="flow-input-group">
+                    <input type="text" id="flow-food-sponsor-input" placeholder="Name or family" maxlength="120" autocomplete="off" />
+                    <button type="button" class="secondary" id="btn-flow-food-add">Add</button>
+                  </div>
+                  <ul id="flow-food-sponsors-list" class="flow-input-list" aria-live="polite"></ul>
+                  <textarea id="flow-food-sponsors" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                  <div id="flow-food-preview" class="flow-para-preview" aria-live="polite"></div>
+                </div>
+              </div>
+            </details>
+            <details class="flow-accordion">
+              <summary>Assets &amp; options</summary>
+              <div class="flow-accordion-body">
+                <div class="field">
+                  <label for="flow-divider-poster">Divider poster (16:9 image for Mass divider slides)</label>
+                  <input type="file" id="flow-divider-poster" accept="image/png,image/jpeg,image/webp,image/gif" />
+                  <p class="muted" id="flow-divider-status" style="margin:6px 0 0;font-size:0.78rem;">Optional. Clears after each successful generation.</p>
+                </div>
+                <div class="field">
+                  <label for="flow-announcement-posters">Announcement posters (multiple, 16:9)</label>
+                  <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
+                  <p class="muted" id="flow-announcement-status" style="margin:6px 0 0;font-size:0.78rem;">Shown full-screen immediately before the final blessing. Clears after generate.</p>
+                </div>
+                <div class="field">
+                  <label><input type="checkbox" id="flow-include-church-logo" /> Include church logo</label>
+                  <label style="display:block;margin-top:8px;"><input type="checkbox" id="flow-include-church-name" /> Include church name</label>
+                  <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Applies to PowerPoint slides (header logo and parish name). Uncheck to omit both from the deck.</p>
+                </div>
+                <div class="field">
+                  <label><input type="checkbox" id="flow-use-openai-poster" /> Generate poster with OpenAI</label>
+                  <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art in exact 16:9 widescreen (1920×1080) for projector slides. Set OPENAI_API_KEY in .env.</p>
+                </div>
+                <div class="field" id="flow-openai-style-wrap">
+                  <label for="flow-openai-poster-style">OpenAI poster art style</label>
+                  <select id="flow-openai-poster-style">
+                    <option value="cinematic">Cinematic — epic biblical scene, volumetric light</option>
+                    <option value="realistic">Realistic — cinematic photography, dramatic lighting</option>
+                    <option value="renaissance">Renaissance — classical oil painting</option>
+                    <option value="stained_glass">Stained glass — cathedral window style</option>
+                    <option value="modern">Modern — minimalist church illustration</option>
+                  </select>
+                </div>
+              </div>
+            </details>
+            <div class="flow-sticky-actions" aria-label="Mass generation actions">
+              <div class="flow-sticky-actions-card">
+                <div class="actions">
+                  <button type="button" class="uiverse-btn" id="btn-load-flow"><div class="button-outer"><div class="button-inner"><span>Load readings &amp; songs</span></div></div></button>
+                  <button type="button" class="uiverse-btn uiverse-btn--orange" id="btn-generate-flow"><div class="button-outer"><div class="button-inner"><span>Generate Full Mass Package</span></div></div></button>
+                </div>
+                <p class="status" id="flow-status" aria-live="polite"></p>
+                <div class="download-row" id="download-row">
+                  <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
+                  <a href="#" id="dl-pptx" download>PowerPoint</a>
+                  <a href="#" id="dl-poster" download>Poster PNG</a>
+                  <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
+                </div>
+              </div>
+            </div>
+            </div>
+
+            <div class="flow-builder-tab-panel flow-builder-tab-panel--songs" id="flow-panel-songs" role="tabpanel" aria-labelledby="flow-tab-songs" data-flow-panel="songs" hidden>
+              <p class="muted" style="margin:0 0 12px;font-size:0.86rem;line-height:1.45;">Search your full Song Library (every saved hymn, any liturgical tag) plus seasonal suggestions. Pick one song per slot for the deck.</p>
               <div class="field" style="margin:0 0 12px;">
                 <label for="mass-song-plan-lang">Language filter</label>
                 <select id="mass-song-plan-lang">
@@ -3240,33 +3843,27 @@ Lord, hear our prayer</textarea>
                 <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Narrows the search list only; your library still includes every saved language. Mix matches multilingual tags.</p>
               </div>
               <div id="mass-song-plan" class="mass-song-plan-root"></div>
-            </section>
-          </div>
+            </div>
+          </aside>
         </div>
       </section>
 
       <section class="page" id="calendar-page" data-route="/mass/calendar">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Liturgical Calendar</p>
-            <h2>Pick a Sunday and preview the readings.</h2>
-            <p>Select any day to see the Mass title, season, and gospel. Jump to media generation when you are ready.</p>
-          </div>
-        </div>
-        <div class="workspace" style="grid-template-columns: 1fr 320px;">
-          <div class="admin-card">
+        <div class="workspace calendar-page-workspace">
+          <div class="admin-card calendar-month-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
               <h3 style="margin:0;">Month view</h3>
               <div class="actions" style="margin:0;">
-                <button type="button" class="secondary" id="cal-prev">←</button>
+                <button type="button" class="secondary" id="cal-prev" aria-label="Previous month">←</button>
                 <strong id="cal-month-label" style="min-width:140px;text-align:center;">—</strong>
-                <button type="button" class="secondary" id="cal-next">→</button>
+                <button type="button" class="secondary" id="cal-next" aria-label="Next month">→</button>
               </div>
             </div>
             <div class="calendar-grid" id="cal-dow-row"></div>
             <div class="calendar-grid" id="cal-grid" style="margin-top:6px;"></div>
+            <p class="muted" id="cal-month-status" style="margin:10px 0 0;font-size:0.78rem;" aria-live="polite"></p>
           </div>
-          <div class="admin-card" id="cal-detail">
+          <div class="admin-card cal-detail-panel" id="cal-detail">
             <h3 style="margin-top:0;">Selected day</h3>
             <p class="muted" id="cal-detail-date">Tap a date</p>
             <p id="cal-detail-title" style="font-weight:800;margin:8px 0;">—</p>
@@ -3274,7 +3871,28 @@ Lord, hear our prayer</textarea>
               <div class="snapshot-tile"><strong>Season</strong><span id="cal-detail-season">—</span></div>
               <div class="snapshot-tile"><strong>Color</strong><span id="cal-detail-color">—</span></div>
             </div>
-            <p class="muted" id="cal-detail-gospel">Gospel reference loads after preview.</p>
+            <div class="cal-reading-stack" id="cal-reading-stack">
+              <article class="cal-reading-card" data-reading="gospel">
+                <header><strong>Gospel</strong><span class="cal-reading-ref" id="cal-gospel-ref">—</span></header>
+                <p class="cal-reading-excerpt" id="cal-gospel-excerpt">Select a day to load readings.</p>
+                <button type="button" class="ghost mini cal-reading-toggle" data-target="cal-gospel-excerpt" hidden>Read more</button>
+              </article>
+              <article class="cal-reading-card" data-reading="psalm">
+                <header><strong>Psalm</strong><span class="cal-reading-ref" id="cal-psalm-ref">—</span></header>
+                <p class="cal-reading-excerpt" id="cal-psalm-excerpt">—</p>
+                <button type="button" class="ghost mini cal-reading-toggle" data-target="cal-psalm-excerpt" hidden>Read more</button>
+              </article>
+              <article class="cal-reading-card" data-reading="first">
+                <header><strong>First reading</strong><span class="cal-reading-ref" id="cal-reading1-ref">—</span></header>
+                <p class="cal-reading-excerpt" id="cal-reading1-excerpt">—</p>
+                <button type="button" class="ghost mini cal-reading-toggle" data-target="cal-reading1-excerpt" hidden>Read more</button>
+              </article>
+              <article class="cal-reading-card" data-reading="second">
+                <header><strong>Second reading</strong><span class="cal-reading-ref" id="cal-reading2-ref">—</span></header>
+                <p class="cal-reading-excerpt" id="cal-reading2-excerpt">—</p>
+                <button type="button" class="ghost mini cal-reading-toggle" data-target="cal-reading2-excerpt" hidden>Read more</button>
+              </article>
+            </div>
             <div class="actions" style="margin-top:14px;">
               <button type="button" class="primary" id="btn-cal-use-date">Use for Mass Builder</button>
               <button type="button" class="secondary" id="btn-cal-generate">Generate media</button>
@@ -3284,13 +3902,6 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="posters-page" data-route="/media/posters">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Poster Generator</p>
-            <h2>Configure the parish poster and social graphic.</h2>
-            <p>Set the Mass date, celebrant, gospel line, and visual theme. The preview updates as you type.</p>
-          </div>
-        </div>
         <div class="workspace">
           <aside class="panel">
             <div class="field">
@@ -3328,7 +3939,7 @@ Lord, hear our prayer</textarea>
               <label><input type="checkbox" id="poster-include-social" checked /> Include social exports</label>
             </div>
             <div class="field">
-              <label><input type="checkbox" id="poster-use-openai-poster" checked /> Generate poster with OpenAI</label>
+              <label><input type="checkbox" id="poster-use-openai-poster" /> Generate poster with OpenAI</label>
               <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art hero + layout (requires OPENAI_API_KEY in .env).</p>
             </div>
             <div class="actions">
@@ -3364,12 +3975,6 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="history-page" data-route="/media/history">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">History</p>
-            <h2>Recent posters and decks from this browser.</h2>
-          </div>
-        </div>
         <div class="admin-card">
           <h3 style="margin-top:0;">Downloads</h3>
           <div id="history-list" class="muted">Nothing logged yet.</div>
@@ -3377,13 +3982,6 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="collections-page" data-route="/library/collections">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Collections</p>
-            <h2>Plan from your parish song library.</h2>
-            <p>Browse what is on file, note recent additions, then open Song Library to edit lyrics or titles. Mass Builder is where you assign Entrance–Recessional slots for each Sunday.</p>
-          </div>
-        </div>
         <div class="admin-card collections-hub">
           <h3 style="margin-top:0;">Song Library</h3>
           <p class="muted">The full catalog lives on Song Library with search, liturgical sections, and inline edit. Use <strong>Edit</strong> below to jump there with the same song focused.</p>
@@ -3405,13 +4003,6 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="templates-page" data-route="/design/templates">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Templates</p>
-            <h2>Poster modes and slide theme import.</h2>
-            <p>Liturgical and classic poster modes are chosen in Mass Builder or the poster screen. Upload a reference PowerPoint to extract colors and fonts for generated decks.</p>
-          </div>
-        </div>
         <div class="admin-card" style="max-width:640px;">
           <h3 style="margin-top:0;">Import slide theme from .pptx</h3>
           <p class="muted">We sample the first slides for solid backgrounds, text colors, and fonts, then map them to the generator’s custom theme (closest practical match to your reference deck).</p>
@@ -3425,12 +4016,6 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="church-settings-page" data-route="/settings/church">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Church Profile</p>
-            <h2>Community name and logo for slides and posters.</h2>
-          </div>
-        </div>
         <div class="admin-card" style="max-width:560px;">
           <div class="field">
             <label for="settings-church-name">Community name</label>
@@ -3453,14 +4038,15 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="app-settings-page" data-route="/settings/app">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">App Settings</p>
-            <h2>Planner defaults that feed Mass Builder.</h2>
-          </div>
-        </div>
         <div class="admin-card" style="max-width:560px;">
-          <p class="muted">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for liturgical colors and typography.</p>
+          <h3 style="margin-top:0;">Appearance</h3>
+          <p class="muted">Choose light or dark interface, or match your device setting.</p>
+          <div class="theme-preference-row" role="radiogroup" aria-label="Color theme">
+            <label class="theme-pref-option"><input type="radio" name="theme-preference" value="light" /> Light</label>
+            <label class="theme-pref-option"><input type="radio" name="theme-preference" value="dark" /> Dark</label>
+            <label class="theme-pref-option"><input type="radio" name="theme-preference" value="system" checked /> System</label>
+          </div>
+          <p class="muted" style="margin-top:16px;">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for liturgical colors and typography.</p>
           <div class="actions">
             <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
             <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
@@ -3566,6 +4152,67 @@ Lord, hear our prayer</textarea>
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     }
 
+    const THEME_STORAGE_KEY = "verbumColorTheme";
+
+    function resolveColorTheme(preference) {
+      let pref = preference;
+      if (pref == null) {
+        try { pref = localStorage.getItem(THEME_STORAGE_KEY) || "system"; } catch (_e) { pref = "system"; }
+      }
+      if (pref === "dark") return "dark";
+      if (pref === "light") return "light";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function syncColorThemeUI(preference, resolved) {
+      const pref = preference || "system";
+      const btn = $("theme-toggle-btn");
+      if (btn) {
+        const isDark = resolved === "dark";
+        btn.setAttribute("aria-pressed", isDark ? "true" : "false");
+        btn.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+        btn.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+      }
+      document.querySelectorAll('input[name="theme-preference"]').forEach((inp) => {
+        inp.checked = inp.value === pref;
+      });
+    }
+
+    function applyColorTheme(preference) {
+      let pref = preference;
+      if (pref == null) {
+        try { pref = localStorage.getItem(THEME_STORAGE_KEY) || "system"; } catch (_e) { pref = "system"; }
+      }
+      try { localStorage.setItem(THEME_STORAGE_KEY, pref); } catch (_e) { /* ignore */ }
+      const resolved = resolveColorTheme(pref);
+      document.documentElement.setAttribute("data-theme", resolved);
+      document.documentElement.setAttribute("data-theme-preference", pref);
+      syncColorThemeUI(pref, resolved);
+      return resolved;
+    }
+
+    function initColorTheme() {
+      applyColorTheme();
+      const btn = $("theme-toggle-btn");
+      if (btn) {
+        btn.addEventListener("click", () => {
+          const resolved = document.documentElement.getAttribute("data-theme") || "light";
+          applyColorTheme(resolved === "dark" ? "light" : "dark");
+        });
+      }
+      document.querySelectorAll('input[name="theme-preference"]').forEach((inp) => {
+        inp.addEventListener("change", () => {
+          if (inp.checked) applyColorTheme(inp.value);
+        });
+      });
+      try {
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+          const pref = document.documentElement.getAttribute("data-theme-preference") || "system";
+          if (pref === "system") applyColorTheme("system");
+        });
+      } catch (_e) { /* ignore */ }
+    }
+
     const routeMeta = {
       "/home": "Mission control for the upcoming Sunday Mass.",
       "/mass/builder": "Assemble songs, timeline, and generate the full package.",
@@ -3579,6 +4226,36 @@ Lord, hear our prayer</textarea>
       "/settings/church": "Community name and parish logo.",
       "/settings/app": "Planner defaults and shortcuts.",
     };
+
+    const routeBreadcrumb = {
+      "/home": ["Home"],
+      "/mass/builder": ["Mass", "Builder"],
+      "/mass/calendar": ["Mass", "Calendar"],
+      "/media/posters": ["Media", "Posters"],
+      "/media/history": ["Media", "History"],
+      "/library/songs": ["Library", "Songs"],
+      "/library/collections": ["Library", "Collections"],
+      "/design/theme-lab": ["Design", "Theme Lab"],
+      "/design/templates": ["Design", "Templates"],
+      "/settings/church": ["Settings", "Church Profile"],
+      "/settings/app": ["Settings", "App Settings"],
+    };
+
+    function formatRouteBreadcrumb(route) {
+      const parts = routeBreadcrumb[route] || ["Home"];
+      if (parts.length === 1) return parts[0];
+      return parts[0] + ' <span aria-hidden="true">›</span> <span>' + parts[1] + "</span>";
+    }
+
+    function applyLiturgicalSeasonTheme(seasonStr) {
+      const preset = liturgicalPresetIdFromSeason(seasonStr || "");
+      document.body.setAttribute("data-season", preset || "ordinary");
+      const chip = $("topbar-season-label");
+      if (chip) {
+        const label = (seasonStr || "").split(",")[0].trim();
+        chip.textContent = label ? label.slice(0, 32) : "—";
+      }
+    }
 
     const legacyRoutes = {
       "/lyrics-dashboard": "/library/songs",
@@ -3614,6 +4291,8 @@ Lord, hear our prayer</textarea>
       if (rs) rs.value = r;
       const rd = $("topbar-route-desc");
       if (rd) rd.textContent = routeMeta[r] || "";
+      const bc = $("topbar-breadcrumb");
+      if (bc) bc.innerHTML = formatRouteBreadcrumb(r);
       const tb = $("topbar-title");
       if (tb) tb.textContent = "Verbum";
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
@@ -3639,6 +4318,9 @@ Lord, hear our prayer</textarea>
       if (r === "/library/collections") {
         loadSongCatalog();
         renderCollectionsRecent();
+      }
+      if (r === "/mass/calendar") {
+        loadCalendarMonth();
       }
     }
 
@@ -3763,9 +4445,12 @@ Lord, hear our prayer</textarea>
 
     function lyricStats() {
       const words = lyricBlocks.reduce((sum, block) => sum + (block.text.match(/\b[\w']+\b/g) || []).length, 0);
-      $("lyrics-total").textContent = lyricBlocks.length;
-      $("lyrics-chorus").textContent = lyricBlocks.filter((block) => block.type === "chorus").length;
-      $("lyrics-words").textContent = words;
+      const lt = $("lyrics-total");
+      const lc = $("lyrics-chorus");
+      const lw = $("lyrics-words");
+      if (lt) lt.textContent = lyricBlocks.length;
+      if (lc) lc.textContent = lyricBlocks.filter((block) => block.type === "chorus").length;
+      if (lw) lw.textContent = words;
       const counts = ["verse", "chorus", "bridge", "response"].map((type) => {
         const count = lyricBlocks.filter((block) => block.type === type).length;
         return '<span class="pill"><span class="dot"></span>' + typeLabels[type] + ": " + count + "</span>";
@@ -4029,7 +4714,8 @@ Lord, hear our prayer</textarea>
     }
 
     function updateThemeIndicators() {
-      $("active-theme-name").textContent = activeTheme.name.split(" ")[0];
+      const activeName = $("active-theme-name");
+      if (activeName) activeName.textContent = activeTheme.name.split(" ")[0];
       const pptTheme = $("ppt-theme-indicator");
       if (pptTheme) pptTheme.textContent = activeTheme.name;
       localStorage.setItem("activePptTheme", JSON.stringify(activeTheme));
@@ -4054,7 +4740,8 @@ Lord, hear our prayer</textarea>
 
     function renderThemeGrid() {
       const allThemes = presetThemes.concat(customThemes);
-      $("custom-theme-count").textContent = customThemes.length;
+      const ctc = $("custom-theme-count");
+      if (ctc) ctc.textContent = customThemes.length;
       updateThemeIndicators();
       const litId = window.__liturgicalPresetId || "";
       $("theme-grid").innerHTML = allThemes.map((theme) => {
@@ -5298,6 +5985,42 @@ Lord, hear our prayer</textarea>
       renderMassSongPlan();
     });
 
+    (function initFlowBuilderTabs() {
+      const tablist = document.querySelector(".flow-builder-tabs");
+      if (!tablist) return;
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll("[data-flow-panel]"));
+      function activateFlowTab(name) {
+        tabs.forEach((tab) => {
+          const on = tab.dataset.flowTab === name;
+          tab.setAttribute("aria-selected", on ? "true" : "false");
+          tab.tabIndex = on ? 0 : -1;
+        });
+        panels.forEach((panel) => {
+          const on = panel.dataset.flowPanel === name;
+          panel.hidden = !on;
+        });
+      }
+      tablist.addEventListener("click", (e) => {
+        const tab = e.target.closest('[role="tab"]');
+        if (!tab || !tab.dataset.flowTab) return;
+        activateFlowTab(tab.dataset.flowTab);
+      });
+      tablist.addEventListener("keydown", (e) => {
+        const idx = tabs.indexOf(document.activeElement);
+        if (idx < 0) return;
+        let next = -1;
+        if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
+        else if (e.key === "ArrowLeft") next = (idx - 1 + tabs.length) % tabs.length;
+        else if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = tabs.length - 1;
+        if (next < 0) return;
+        e.preventDefault();
+        tabs[next].focus();
+        activateFlowTab(tabs[next].dataset.flowTab);
+      });
+    })();
+
     function setFlowStatus(message, kind) {
       $("flow-status").textContent = message || "";
       $("flow-status").className = "status " + (kind || "");
@@ -5474,14 +6197,193 @@ Lord, hear our prayer</textarea>
       return "Responsorial Psalm";
     }
 
+    const FLOW_FOOD_MAX = 24;
+
+    function parsePsalmBlocks(text) {
+      const blocks = (text || "").trim().split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+      if (!blocks.length) return { refrain: "", verses: [] };
+      return {
+        refrain: calExtractPsalmRefrain(blocks[0]),
+        verses: blocks.slice(1),
+      };
+    }
+
+    function syncFlowPsalmOverrideHidden() {
+      const hidden = $("flow-psalm-override");
+      const refrainIn = $("flow-psalm-refrain-input");
+      if (!hidden) return;
+      const refrain = refrainIn ? refrainIn.value.trim().replace(/^R\.?\s*/i, "").trim() : "";
+      const verses = [];
+      const list = $("flow-psalm-verses-list");
+      if (list) {
+        list.querySelectorAll(".flow-input-list-text").forEach((el) => {
+          const t = (el.textContent || "").trim();
+          if (t) verses.push(t);
+        });
+      }
+      const parts = [];
+      if (refrain) parts.push("R. " + refrain);
+      parts.push.apply(parts, verses);
+      hidden.value = parts.join("\n\n");
+    }
+
+    function renderFlowPsalmVerses(verses) {
+      const list = $("flow-psalm-verses-list");
+      if (!list) return;
+      list.innerHTML = (verses || []).map((line, idx) => (
+        "<li class=\"flow-input-list-item\">" +
+        "<span class=\"flow-input-list-text\">" + escapeHtml(line) + "</span>" +
+        "<button type=\"button\" class=\"ghost mini flow-input-list-remove\" data-psalm-verse-idx=\"" + idx + "\" aria-label=\"Remove stanza\">×</button>" +
+        "</li>"
+      )).join("");
+    }
+
+    function getFlowPsalmVerseLines() {
+      const list = $("flow-psalm-verses-list");
+      if (!list) return [];
+      return Array.from(list.querySelectorAll(".flow-input-list-text")).map((el) => (el.textContent || "").trim()).filter(Boolean);
+    }
+
+    function setFlowPsalmUI(text) {
+      const parsed = parsePsalmBlocks(text);
+      const refrainIn = $("flow-psalm-refrain-input");
+      if (refrainIn) refrainIn.value = parsed.refrain;
+      renderFlowPsalmVerses(parsed.verses);
+      syncFlowPsalmOverrideHidden();
+    }
+
+    function addFlowPsalmVerse(line) {
+      const t = (line || "").trim();
+      if (!t) return;
+      const verses = getFlowPsalmVerseLines();
+      verses.push(t);
+      renderFlowPsalmVerses(verses);
+      syncFlowPsalmOverrideHidden();
+      updateFlowParagraphPreviews();
+    }
+
+    function syncFlowFoodSponsorsHidden() {
+      const hidden = $("flow-food-sponsors");
+      if (!hidden) return;
+      hidden.value = getFlowFoodSponsorsLines().join("\n");
+    }
+
+    function getFlowFoodSponsorsLines() {
+      const list = $("flow-food-sponsors-list");
+      if (!list) return [];
+      return Array.from(list.querySelectorAll(".flow-input-list-text")).map((el) => (el.textContent || "").trim()).filter(Boolean);
+    }
+
+    function renderFlowFoodSponsorsList(lines) {
+      const list = $("flow-food-sponsors-list");
+      if (!list) return;
+      list.innerHTML = (lines || []).map((line, idx) => (
+        "<li class=\"flow-input-list-item\">" +
+        "<span class=\"flow-input-list-text\">" + escapeHtml(line) + "</span>" +
+        "<button type=\"button\" class=\"ghost mini flow-input-list-remove\" data-food-idx=\"" + idx + "\" aria-label=\"Remove sponsor\">×</button>" +
+        "</li>"
+      )).join("");
+    }
+
+    function setFlowFoodSponsorsUI(lines) {
+      renderFlowFoodSponsorsList((lines || []).map((s) => String(s).trim()).filter(Boolean).slice(0, FLOW_FOOD_MAX));
+      syncFlowFoodSponsorsHidden();
+    }
+
+    function addFlowFoodSponsor(name) {
+      const t = (name || "").trim();
+      if (!t) return;
+      const lines = getFlowFoodSponsorsLines();
+      if (lines.some((x) => x.toLowerCase() === t.toLowerCase())) return;
+      if (lines.length >= FLOW_FOOD_MAX) return;
+      lines.push(t);
+      renderFlowFoodSponsorsList(lines);
+      syncFlowFoodSponsorsHidden();
+      updateFlowParagraphPreviews();
+    }
+
+    function initFlowInputGroups() {
+      const foodIn = $("flow-food-sponsor-input");
+      const foodAdd = $("btn-flow-food-add");
+      const foodList = $("flow-food-sponsors-list");
+      const psalmRefrain = $("flow-psalm-refrain-input");
+      const psalmVerseIn = $("flow-psalm-verse-input");
+      const psalmVerseAdd = $("btn-flow-psalm-verse-add");
+      const psalmList = $("flow-psalm-verses-list");
+
+      function bindEnterToAdd(input, addFn) {
+        if (!input) return;
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            addFn();
+          }
+        });
+      }
+
+      if (foodAdd) {
+        foodAdd.addEventListener("click", () => {
+          addFlowFoodSponsor(foodIn && foodIn.value);
+          if (foodIn) foodIn.value = "";
+          foodIn && foodIn.focus();
+        });
+      }
+      bindEnterToAdd(foodIn, () => foodAdd && foodAdd.click());
+
+      if (foodList) {
+        foodList.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-food-idx]");
+          if (!btn) return;
+          const lines = getFlowFoodSponsorsLines();
+          const idx = parseInt(btn.getAttribute("data-food-idx"), 10);
+          if (Number.isNaN(idx)) return;
+          lines.splice(idx, 1);
+          renderFlowFoodSponsorsList(lines);
+          syncFlowFoodSponsorsHidden();
+          updateFlowParagraphPreviews();
+        });
+      }
+
+      if (psalmRefrain) {
+        psalmRefrain.addEventListener("input", () => {
+          syncFlowPsalmOverrideHidden();
+          updateFlowParagraphPreviews();
+        });
+      }
+
+      if (psalmVerseAdd) {
+        psalmVerseAdd.addEventListener("click", () => {
+          addFlowPsalmVerse(psalmVerseIn && psalmVerseIn.value);
+          if (psalmVerseIn) psalmVerseIn.value = "";
+          psalmVerseIn && psalmVerseIn.focus();
+        });
+      }
+      bindEnterToAdd(psalmVerseIn, () => psalmVerseAdd && psalmVerseAdd.click());
+
+      if (psalmList) {
+        psalmList.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-psalm-verse-idx]");
+          if (!btn) return;
+          const verses = getFlowPsalmVerseLines();
+          const idx = parseInt(btn.getAttribute("data-psalm-verse-idx"), 10);
+          if (Number.isNaN(idx)) return;
+          verses.splice(idx, 1);
+          renderFlowPsalmVerses(verses);
+          syncFlowPsalmOverrideHidden();
+          updateFlowParagraphPreviews();
+        });
+      }
+    }
+
     function updateFlowParagraphPreviews() {
+      syncFlowPsalmOverrideHidden();
+      syncFlowFoodSponsorsHidden();
       const psalmRaw = ($("flow-psalm-override") && $("flow-psalm-override").value) || "";
-      const foodRaw = ($("flow-food-sponsors") && $("flow-food-sponsors").value) || "";
+      const foodLines = getFlowFoodSponsorsLines();
       const psalmRef = flowPreviewData && (flowPreviewData.psalm || flowPreviewData.psalm_reference);
       const psalmKind = responsorialSectionLabel(psalmRef);
       fillFlowPreviewEl($("flow-psalm-preview"), previewParagraphs(psalmRaw, 3), psalmKind + " preview will show up to three paragraphs.");
-      const foodLines = foodRaw.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 3);
-      fillFlowPreviewEl($("flow-food-preview"), foodLines, "Food sponsor preview shows up to three lines.");
+      fillFlowPreviewEl($("flow-food-preview"), foodLines.slice(0, 3), "Food sponsor preview shows up to three lines.");
     }
 
     function populateGospelSentenceSelect(data) {
@@ -5523,6 +6425,7 @@ Lord, hear our prayer</textarea>
         const data = await postJSON("/api/preview", { date: sun });
         window.__homePreview = data;
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
+        applyLiturgicalSeasonTheme(data.season || "");
         if ($("home-lectionary")) $("home-lectionary").textContent = data.lectionary_cycle || "—";
         if ($("home-season-chip")) $("home-season-chip").textContent = (data.season || "—").split(",")[0].trim().slice(0, 14);
         const fullG = (data.gospel_text || "").trim();
@@ -5555,6 +6458,7 @@ Lord, hear our prayer</textarea>
         const data = await postJSON("/api/preview", { date });
         flowPreviewData = data;
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
+        applyLiturgicalSeasonTheme(data.season || "");
         renderThemeGrid();
         const season = [data.season, data.lectionary_cycle].filter(Boolean).join(" - ") || "Season loaded";
         $("season-indicator").textContent = season;
@@ -5578,7 +6482,7 @@ Lord, hear our prayer</textarea>
         }
         populateGospelSentenceSelect(data);
         if ($("flow-gospel-custom")) $("flow-gospel-custom").value = "";
-        if ($("flow-psalm-override")) $("flow-psalm-override").value = data.psalm_text || "";
+        setFlowPsalmUI(data.psalm_text || "");
         if ($("flow-psalm-label")) {
           const psalmKind = responsorialSectionLabel(data.psalm || data.psalm_reference || "");
           $("flow-psalm-label").textContent = psalmKind + " (edit text for slides)";
@@ -5744,8 +6648,10 @@ Lord, hear our prayer</textarea>
         const collAmt = $("flow-collection-amount") && $("flow-collection-amount").value.trim();
         const collIso = $("flow-collection-date") && $("flow-collection-date").value;
         const collLabel = formatLongDateLabel(collIso) || collIso || "";
+        syncFlowPsalmOverrideHidden();
+        syncFlowFoodSponsorsHidden();
         const psalmOv = $("flow-psalm-override") && $("flow-psalm-override").value.trim();
-        const foodLines = ($("flow-food-sponsors") && $("flow-food-sponsors").value || "").split("\n").map((s) => s.trim()).filter(Boolean);
+        const foodLines = getFlowFoodSponsorsLines();
         const gospelCustom = $("flow-gospel-custom") && $("flow-gospel-custom").value.trim();
         const sentSel = $("flow-gospel-sentence");
         if (gospelCustom) {
@@ -5767,8 +6673,8 @@ Lord, hear our prayer</textarea>
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
         const logoCb = $("flow-include-church-logo");
         const nameCb = $("flow-include-church-name");
-        body.include_church_logo = logoCb ? logoCb.checked : true;
-        body.include_church_name = nameCb ? nameCb.checked : true;
+        body.include_church_logo = logoCb ? logoCb.checked : false;
+        body.include_church_name = nameCb ? nameCb.checked : false;
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -5914,6 +6820,34 @@ Lord, hear our prayer</textarea>
     }
 
     let calendarCursor = new Date();
+    let calendarMonthData = {};
+    let calendarMonthLoading = false;
+    let calendarMonthKey = "";
+
+    function calExtractPsalmRefrain(psalmText) {
+      let line = (psalmText || "").trim().split("\n\n")[0].split("\n")[0].trim();
+      if (!line) return "";
+      line = line.replace(/^R\.?\s*/i, "").trim();
+      const m = line.match(/^(.+?[.!?])/);
+      if (m) line = m[1].trim();
+      return line;
+    }
+
+    function updateCalReadingCard(refEl, excerptEl, toggleEl, ref, body) {
+      const text = (body || "").trim();
+      const hasContent = !!(text || (ref || "").trim());
+      const card = excerptEl && excerptEl.closest(".cal-reading-card");
+      if (refEl) refEl.textContent = (ref || "").trim() || "—";
+      if (excerptEl) {
+        excerptEl.textContent = text || "Not available for this day.";
+        excerptEl.classList.remove("is-expanded");
+      }
+      if (toggleEl) {
+        toggleEl.hidden = text.length < 160;
+        toggleEl.textContent = "Read more";
+      }
+      if (card) card.classList.toggle("is-empty", !hasContent);
+    }
 
     function renderCalendarDow() {
       const row = $("cal-dow-row");
@@ -5932,13 +6866,55 @@ Lord, hear our prayer</textarea>
       const startPad = first.getDay();
       const daysInMonth = new Date(y, m + 1, 0).getDate();
       const cells = [];
-      for (let i = 0; i < startPad; i++) cells.push("<div class=\"cal-cell muted\"></div>");
+      for (let i = 0; i < startPad; i++) cells.push("<div class=\"cal-cell muted\" aria-hidden=\"true\"></div>");
       for (let d = 1; d <= daysInMonth; d++) {
         const iso = formatDateInput(new Date(y, m, d));
         const sunday = new Date(y, m, d).getDay() === 0;
-        cells.push("<button type=\"button\" class=\"cal-cell" + (sunday ? " sunday" : "") + "\" data-cal=\"" + iso + "\">" + d + "</button>");
+        const day = calendarMonthData[iso] || {};
+        const lc = day.liturgical_color || {};
+        const hex = lc.hex || "";
+        const hasData = !!(day.has_cache || day.loaded);
+        const classes = ["cal-cell"];
+        if (sunday) classes.push("sunday");
+        if (hasData) classes.push("has-data");
+        if (iso === calSelected) classes.push("selected");
+        if (sunday && calendarMonthLoading && !day.gospel_reference) classes.push("loading");
+        const dotAttr = hex ? " style=\"background:" + escapeHtml(hex) + "\"" : "";
+        const gospelLabel = day.gospel_reference ? escapeHtml(day.gospel_reference) : "";
+        cells.push(
+          "<button type=\"button\" class=\"" + classes.join(" ") + "\" data-cal=\"" + iso + "\">" +
+          "<span class=\"cal-cell-top\"><span class=\"cal-cell-day\">" + d + "</span>" +
+          "<span class=\"cal-cell-dot\"" + dotAttr + " aria-hidden=\"true\"></span></span>" +
+          "<span class=\"cal-cell-gospel\">" + gospelLabel + "</span>" +
+          "</button>"
+        );
       }
       grid.innerHTML = cells.join("");
+    }
+
+    async function loadCalendarMonth() {
+      const y = calendarCursor.getFullYear();
+      const m = calendarCursor.getMonth() + 1;
+      const key = y + "-" + m;
+      calendarMonthLoading = true;
+      renderCalendarGrid();
+      const status = $("cal-month-status");
+      if (status) status.textContent = "Loading liturgical data…";
+      try {
+        const res = await fetch("/api/calendar/month?year=" + y + "&month=" + m);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || data.error || "Could not load month");
+        calendarMonthData = data.days || {};
+        calendarMonthKey = key;
+        if (status) status.textContent = "";
+      } catch (err) {
+        calendarMonthData = {};
+        calendarMonthKey = "";
+        if (status) status.textContent = err.message || "Month load failed.";
+      } finally {
+        calendarMonthLoading = false;
+        renderCalendarGrid();
+      }
     }
 
     let calSelected = upcomingSundayISO();
@@ -5949,14 +6925,32 @@ Lord, hear our prayer</textarea>
       document.querySelectorAll(".cal-cell.selected").forEach((c) => c.classList.remove("selected"));
       const btn = document.querySelector(".cal-cell[data-cal=\"" + iso + "\"]");
       if (btn) btn.classList.add("selected");
-      $("cal-detail-title").textContent = "Loading…";
+      const snap = calendarMonthData[iso] || {};
+      if ($("cal-detail-title")) $("cal-detail-title").textContent = snap.title || "Loading…";
+      if ($("cal-detail-season")) $("cal-detail-season").textContent = snap.season || "—";
+      if ($("cal-detail-color")) {
+        $("cal-detail-color").textContent = (snap.liturgical_color && snap.liturgical_color.color_name) || "—";
+      }
+      updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), snap.gospel_reference, snap.gospel_quote_short || "");
+      updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), snap.psalm_reference, snap.psalm_refrain ? "R. " + snap.psalm_refrain : "");
+      updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), snap.first_reading_reference, "");
+      updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), snap.second_reading_reference, "");
+
       postJSON("/api/preview", { date: iso }).then((data) => {
-        $("cal-detail-title").textContent = data.title || "Mass";
-        $("cal-detail-season").textContent = data.season || "—";
-        $("cal-detail-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
-        $("cal-detail-gospel").textContent = data.gospel_reference + " — " + (data.gospel_quote || "").slice(0, 220);
+        if ($("cal-detail-title")) $("cal-detail-title").textContent = data.title || "Mass";
+        if ($("cal-detail-season")) $("cal-detail-season").textContent = data.season || "—";
+        if ($("cal-detail-color")) {
+          $("cal-detail-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
+        }
+        const gospelBody = (data.gospel_text || data.gospel_quote || "").trim();
+        const psalmBody = calExtractPsalmRefrain(data.psalm_text || "") || calExtractPsalmRefrain(snap.psalm_refrain || "");
+        const psalmRef = snap.psalm_reference || "";
+        updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), data.gospel_reference, gospelBody);
+        updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), psalmRef, psalmBody ? "R. " + psalmBody : (data.psalm_text || "").trim());
+        updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), data.first_reading_reference, data.first_reading_excerpt || "");
+        updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), data.second_reading_reference, data.second_reading_excerpt || "");
       }).catch(() => {
-        $("cal-detail-title").textContent = "Preview unavailable";
+        if ($("cal-detail-title")) $("cal-detail-title").textContent = "Preview unavailable";
       });
     }
 
@@ -6226,10 +7220,7 @@ Lord, hear our prayer</textarea>
     });
 
     $("btn-load-flow").addEventListener("click", () => loadFlowData(false));
-    const psalmTa = $("flow-psalm-override");
-    const foodTa = $("flow-food-sponsors");
-    if (psalmTa) psalmTa.addEventListener("input", updateFlowParagraphPreviews);
-    if (foodTa) foodTa.addEventListener("input", updateFlowParagraphPreviews);
+    initFlowInputGroups();
     $("mass-date").addEventListener("change", () => loadFlowData(true));
     $("btn-generate-flow").addEventListener("click", async () => {
       $("btn-generate-flow").disabled = true;
@@ -6446,12 +7437,26 @@ Lord, hear our prayer</textarea>
 
     $("cal-prev").addEventListener("click", () => {
       calendarCursor.setMonth(calendarCursor.getMonth() - 1);
-      renderCalendarGrid();
+      calendarMonthKey = "";
+      loadCalendarMonth();
     });
     $("cal-next").addEventListener("click", () => {
       calendarCursor.setMonth(calendarCursor.getMonth() + 1);
-      renderCalendarGrid();
+      calendarMonthKey = "";
+      loadCalendarMonth();
     });
+    const calReadingStack = $("cal-reading-stack");
+    if (calReadingStack) {
+      calReadingStack.addEventListener("click", (e) => {
+        const toggle = e.target.closest(".cal-reading-toggle");
+        if (!toggle || toggle.hidden) return;
+        const targetId = toggle.getAttribute("data-target");
+        const excerpt = targetId && $(targetId);
+        if (!excerpt) return;
+        const expanded = excerpt.classList.toggle("is-expanded");
+        toggle.textContent = expanded ? "Show less" : "Read more";
+      });
+    }
     $("cal-grid").addEventListener("click", (e) => {
       const cell = e.target.closest(".cal-cell[data-cal]");
       if (!cell) return;
@@ -6476,6 +7481,8 @@ Lord, hear our prayer</textarea>
         el.className = "status ok";
       }
     });
+
+    initColorTheme();
 
     $("mass-date").value = upcomingSundayISO();
     if ($("poster-mass-date")) $("poster-mass-date").value = $("mass-date").value;
@@ -6509,10 +7516,15 @@ Lord, hear our prayer</textarea>
 
       function loadPinState() {
         try {
-          if (localStorage.getItem(NAV_PIN_KEY) === "1") {
+          const stored = localStorage.getItem(NAV_PIN_KEY);
+          if (stored !== "0") {
             shell.classList.add("nav-pinned", "nav-expanded");
             sidebar.classList.add("expanded", "pinned");
             if (pinBtn) pinBtn.setAttribute("aria-pressed", "true");
+          } else {
+            shell.classList.remove("nav-pinned", "nav-expanded");
+            sidebar.classList.remove("expanded", "pinned");
+            if (pinBtn) pinBtn.setAttribute("aria-pressed", "false");
           }
         } catch (_e) {
           /* ignore */
@@ -6550,8 +7562,7 @@ Lord, hear our prayer</textarea>
       loadPinState();
     })();
     renderCalendarDow();
-    renderCalendarGrid();
-    setCalDetail(upcomingSundayISO());
+    loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
     loadCelebrantPresets();
     buildSongLibFilters();
     loadSongCatalog();

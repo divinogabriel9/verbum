@@ -137,8 +137,7 @@ def _cache_entry_is_usable(entry: Mapping[str, str]) -> bool:
         return True
     if reading_body_is_usable(entry.get("gospel") or ""):
         return True
-    psalm = (entry.get("psalm_text") or "").strip()
-    if psalm and not _psalm_text_is_refrain_only(psalm) and reading_body_is_usable(psalm):
+    if reading_body_is_usable(entry.get("psalm_text") or ""):
         return True
     if reading_body_is_usable(entry.get("second_reading") or ""):
         return True
@@ -383,17 +382,65 @@ def _scraped_responsorial_body(scraped: Optional[str]) -> str:
     return ""
 
 
-def _clean_psalm_refrain_line(text: str) -> str:
+def _extract_responsorial_refrain(text: str) -> str:
+    """
+    Core responsorial response only, e.g. ``Praise the Lord, Jerusalem.``
+
+    Strips ``R.``, verse keys like ``(12)``, alternates (``or:``), and text after
+    the first sentence (e.g. ``And when it is rain…``).
+    """
     line = (text or "").strip()
     if not line:
         return ""
-    if re.match(r"^R\.?\s*", line, re.I):
-        line = re.sub(r"^R\.?\s*", "", line, flags=re.I).strip()
-        line = re.sub(r"^\(see[^)]*\)\s*", "", line, flags=re.I).strip()
-    # USCCB often appends an alternate refrain after "or: R. Alleluia."
-    line = re.split(r"\s+or:\s*R\.\s*Alleluia\.\s*", line, maxsplit=1, flags=re.I)[0].strip()
+    line = line.split("\n\n")[0].split("\n")[0].strip()
+    line = re.sub(r"^R\.?\s*", "", line, flags=re.I).strip()
+    line = re.sub(r"^\([^)]*\)\s*", "", line).strip()
+    line = re.sub(r"^\(see[^)]*\)\s*", "", line, flags=re.I).strip()
+    line = re.split(r"\s+or:\s*R\.?\s*Alleluia\.\s*", line, maxsplit=1, flags=re.I)[0].strip()
     line = re.split(r"\s+or:\s*", line, maxsplit=1, flags=re.I)[0].strip()
-    return line
+    m = re.match(r"^(.+?[.!?])", line)
+    if m:
+        line = m.group(1).strip()
+    else:
+        line = re.split(
+            r"\s+And\s+(?:when|if|the|at|in|on)\s+",
+            line,
+            maxsplit=1,
+            flags=re.I,
+        )[0].strip()
+    return line.strip()
+
+
+def _clean_psalm_refrain_line(text: str) -> str:
+    return _extract_responsorial_refrain(text)
+
+
+def _refrain_slide_body(refrain: str) -> str:
+    """Projection line: ``R. {refrain}``."""
+    t = _extract_responsorial_refrain(refrain)
+    return f"R. {t}" if t else ""
+
+
+def _first_refrain_raw_from_scraped(scraped: Optional[str]) -> str:
+    text = (scraped or "").strip()
+    if not text:
+        return ""
+    for block in re.split(r"\n\n+", text):
+        s = block.strip()
+        if re.match(r"^R\.?\s", s, re.I) or re.match(r"^\([^)]+\)\s*\S", s):
+            return s
+    for line in text.splitlines():
+        s = line.strip()
+        if re.match(r"^R\.?\s", s, re.I) or re.match(r"^\([^)]+\)\s*\S", s):
+            return s
+    prose = _normalize_responsorial_prose(text)
+    if prose and re.search(r"\bR\.\s", prose, re.I):
+        parts = re.split(r"\s+(?=R\.\s)", prose, flags=re.I)
+        for part in parts:
+            s = part.strip()
+            if re.match(r"^R\.?\s", s, re.I):
+                return s
+    return ""
 
 
 def _scrape_psalm_response(soup: BeautifulSoup) -> str:
@@ -523,47 +570,18 @@ def _resolve_psalm(
     *,
     pericope_href: str = "",
 ) -> tuple[str, str]:
-    ref = (reference or "").strip()
-    resp = _clean_psalm_refrain_line(response_line)
-    if not resp and scraped:
-        for line in re.split(r"\n\n|\n", scraped or ""):
-            s = line.strip()
-            if re.match(r"^R\.?\s", s, re.I) or re.match(r"^\(\d+\)", s):
-                resp = _clean_psalm_refrain_line(s)
-                if resp:
-                    break
-
-    scraped_full = _scraped_responsorial_body(scraped)
-    if scraped_full and reading_body_is_usable(ref, scraped_full):
-        if not resp:
-            for line in scraped_full.split("\n\n"):
-                s = line.strip()
-                if re.match(r"^R\.?\s", s, re.I):
-                    resp = _clean_psalm_refrain_line(s)
-                    break
-        return scraped_full, resp
-
-    verses = ""
-    if ref:
-        if ":" in ref:
-            ranged = fetch_scripture_text(ref, full_psalm=False)
-            if ranged and reading_body_is_usable(ranged, ref):
-                verses = ranged.strip()
-        if not verses:
-            api_psalm = fetch_scripture_text(ref, full_psalm=True)
-            if api_psalm and reading_body_is_usable(api_psalm, ref):
-                verses = api_psalm.strip()
-    if not verses:
-        peri = _fetch_pericope_text(pericope_href)
-        if peri and reading_body_is_usable(peri, ref):
-            verses = peri.strip()
-    if not verses:
-        fallback = _normalize_responsorial_prose((scraped or "").strip())
-        if fallback and reading_body_is_usable(ref, fallback):
-            verses = fallback
-
-    body = _format_psalm_text(resp, verses)
-    return body, resp
+    """Return slide text and plain refrain (response only, no psalm stanzas)."""
+    del reference, pericope_href  # refrain comes from USCCB response line / scrape
+    raw = (response_line or "").strip()
+    if not raw:
+        raw = _first_refrain_raw_from_scraped(scraped)
+    if not raw and scraped:
+        first = (scraped or "").split("\n\n")[0].strip()
+        if re.match(r"^R\.?\s", first, re.I) or re.match(r"^\([^)]+\)", first):
+            raw = first
+    refrain = _extract_responsorial_refrain(raw)
+    body = _refrain_slide_body(refrain)
+    return body, refrain
 
 
 def enrich_psalm_text_for_slides(
@@ -572,15 +590,38 @@ def enrich_psalm_text_for_slides(
     *,
     psalm_response: str = "",
 ) -> str:
-    """Re-fetch when slides only have the refrain; keeps full responsorial when possible."""
-    body = (psalm_text or "").strip()
+    """Normalize any loaded psalm field to the single responsorial refrain for slides."""
+    resp = (psalm_response or "").strip()
+    if resp:
+        refrain = _extract_responsorial_refrain(resp)
+        if refrain:
+            return _refrain_slide_body(refrain)
+
+    raw_r = _first_refrain_raw_from_scraped(psalm_text)
+    if raw_r:
+        refrain = _extract_responsorial_refrain(raw_r)
+        if refrain:
+            return _refrain_slide_body(refrain)
+
+    text = (psalm_text or "").strip()
+    if text:
+        for line in text.splitlines():
+            s = line.strip()
+            if re.match(r"^R\.?\s", s, re.I):
+                refrain = _extract_responsorial_refrain(s)
+                if refrain:
+                    return _refrain_slide_body(refrain)
+        if len(text) < 220 and "\n\n" not in text:
+            refrain = _extract_responsorial_refrain(text)
+            if refrain:
+                return _refrain_slide_body(refrain)
+
     ref = (psalm_reference or "").strip()
-    if not ref:
-        return body
-    if body and not _psalm_text_is_refrain_only(body):
-        return body
-    resolved, _ = _resolve_psalm(ref, None, (psalm_response or body).strip())
-    return (resolved or body).strip()
+    if ref:
+        body, _ = _resolve_psalm(ref, psalm_text or None, resp)
+        if body:
+            return body
+    return ""
 
 
 def _merge_fallback_refs(

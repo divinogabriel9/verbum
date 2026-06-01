@@ -359,7 +359,7 @@ def generate_mass_media(
     poster_template: str = "liturgical_color",
     include_social_exports: bool = True,
     include_gospel_art: bool = True,
-    include_ai_mass_poster: bool = True,
+    include_ai_mass_poster: bool = False,
     ai_poster_style: str = "cinematic",
     community_name: Optional[str] = None,
     song_selections: Optional[Mapping[str, str]] = None,
@@ -372,8 +372,8 @@ def generate_mass_media(
     psalm_text_override: Optional[str] = None,
     gospel_quote_override: Optional[str] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
-    include_church_logo: bool = True,
-    include_church_name: bool = True,
+    include_church_logo: bool = False,
+    include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
@@ -567,8 +567,8 @@ def regenerate_mass_pptx(
     food_sponsors: Optional[list[str]] = None,
     psalm_text_override: Optional[str] = None,
     gospel_quote_override: Optional[str] = None,
-    include_church_logo: bool = True,
-    include_church_name: bool = True,
+    include_church_logo: bool = False,
+    include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""

@@ -208,19 +208,32 @@ def pick_hymn_lyrics_for_slides(library_lyrics: str, override: str | None) -> st
     return resolved
 
 
-def parse_structured_lyric_sections(lyrics: str) -> list[str]:
-    """
-    Split saved lyrics into verse/chorus blocks (matches Lyrics Studio structured editor).
+def _structure_kind_from_label_line(line: str) -> str | None:
+    """Map a structure label line to verse|chorus|bridge|response|stanza|coda|intro|vamp."""
+    stripped = (line or "").strip()
+    m = _STRUCTURE_HEADER_RE.match(stripped)
+    if m:
+        kind = (m.group(1) or "").lower()
+        return "chorus" if kind == "refrain" else kind
+    inline = _STRUCTURE_LABEL_INLINE_RE.match(stripped)
+    if inline:
+        kind = (inline.group(1) or "").lower()
+        return "chorus" if kind == "refrain" else kind
+    return None
 
-    Paragraphs are separated by blank lines. A leading label line (``Verse 1``,
-    ``Chorus``, ``REFRAIN:``, etc.) starts a new block; label text is not included
-    in the returned section bodies.
+
+def parse_structured_lyric_sections_typed(lyrics: str) -> list[tuple[str, str]]:
+    """
+    Split saved lyrics into labeled blocks (matches Lyrics Studio structured editor).
+
+    Returns ``(block_kind, body)`` pairs. ``block_kind`` is verse|chorus|bridge|etc.;
+    unlabeled blocks default to ``verse``.
     """
     raw = ensure_lyric_section_breaks(lyrics)
     if not raw:
         return []
 
-    sections: list[str] = []
+    sections: list[tuple[str, str]] = []
     for part in re.split(r"\n\s*\n+", raw):
         chunk = part.strip()
         if not chunk:
@@ -230,12 +243,18 @@ def parse_structured_lyric_sections(lyrics: str) -> list[str]:
             continue
 
         first = lines[0]
+        block_kind = "verse"
         body_lines: list[str]
-        if _STRUCTURE_HEADER_RE.match(first):
+        header_kind = _structure_kind_from_label_line(first)
+        if header_kind:
+            block_kind = header_kind
+            body_lines = lines[1:]
+        elif _STRUCTURE_HEADER_RE.match(first):
             body_lines = lines[1:]
         else:
             inline = _STRUCTURE_LABEL_INLINE_RE.match(first)
             if inline:
+                block_kind = _structure_kind_from_label_line(first) or "verse"
                 remainder = (inline.group(2) or "").strip()
                 body_lines = ([remainder] if remainder else []) + lines[1:]
             else:
@@ -244,11 +263,22 @@ def parse_structured_lyric_sections(lyrics: str) -> list[str]:
         body_lines = [ln for ln in body_lines if not _STRUCTURE_LABEL_LINE_RE.match(ln)]
         body = "\n".join(body_lines).strip()
         if body:
-            sections.append(body)
+            sections.append((block_kind, body))
 
     if sections:
         return sections
-    return [raw]
+    return [("verse", raw)]
+
+
+def parse_structured_lyric_sections(lyrics: str) -> list[str]:
+    """
+    Split saved lyrics into verse/chorus blocks (matches Lyrics Studio structured editor).
+
+    Paragraphs are separated by blank lines. A leading label line (``Verse 1``,
+    ``Chorus``, ``REFRAIN:``, etc.) starts a new block; label text is not included
+    in the returned section bodies.
+    """
+    return [body for _kind, body in parse_structured_lyric_sections_typed(lyrics)]
 
 
 def clean_lyrics_for_projection(lyrics: str) -> str:

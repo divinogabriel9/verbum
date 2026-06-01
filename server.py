@@ -26,6 +26,8 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 
+from services.calendar_month import fetch_calendar_month
+
 from pipeline import (
     GenerationResult,
     PreviewPayload,
@@ -278,11 +280,11 @@ class GenerateBody(BaseModel):
         description="Per-section hymn slide typography: entrance, communion, default, etc.",
     )
     include_church_logo: bool = Field(
-        True,
+        False,
         description="When false, omit parish logo from PowerPoint slides.",
     )
     include_church_name: bool = Field(
-        True,
+        False,
         description="When false, omit parish / community name from PowerPoint slides.",
     )
     hymn_lyric_overrides: Optional[dict[str, dict[str, str]]] = Field(
@@ -647,6 +649,15 @@ def dashboard(request: Request) -> Any:
         "index.html",
         {"title": "Verbum · LiturgyFlow"},
     )
+
+
+@app.get("/api/calendar/month")
+def api_calendar_month(year: int, month: int) -> Any:
+    """Lightweight per-day summaries for the liturgical calendar grid."""
+    try:
+        return fetch_calendar_month(year, month)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/preview")

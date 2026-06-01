@@ -26,7 +26,7 @@ from services.hymn_typography import HymnTypographySettings, typography_for_hymn
 from services.mass_text_format import (
     clean_lyrics_for_projection,
     ensure_lyric_section_breaks,
-    parse_structured_lyric_sections,
+    parse_structured_lyric_sections_typed,
     pick_hymn_lyrics_for_slides,
     strip_reading_verse_markers,
 )
@@ -47,16 +47,8 @@ _GOLD_FALLBACK = RGBColor(220, 170, 90)
 _BODY = RGBColor(245, 245, 245)
 _MUTED = RGBColor(155, 155, 165)
 
-_TITLE_PT = 38
-_SECTION_PT = 30
-_BODY_PT = 19
-_META_PT = 14
-_GREET_PT = 21
+_SLIDE_TEXT_PT = 55
 _FOOTER_PT = 13
-_RITE_BODY_PT = 50
-_RITE_DIRECTION_PT = 45
-_LOTW_TITLE_PT = 50
-_LOTW_BODY_PT = 65
 
 _MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
@@ -67,6 +59,7 @@ _LYRIC_BODY_DISPLAY_PT = 55
 _HYMN_BG = RGBColor(0, 0, 0)
 _HYMN_GOLD_TITLE = RGBColor(255, 204, 77)
 _HYMN_BODY_WHITE = RGBColor(255, 255, 255)
+_HYMN_CHORUS_COLOR = RGBColor(0xFF, 0xB8, 0x00)
 _HYMN_BRAND_WHITE = RGBColor(255, 255, 255)
 _HYMN_FOOTER_MUTED = RGBColor(140, 140, 145)
 _HYMN_TITLE_FONT = "Georgia"
@@ -401,9 +394,11 @@ def _add_community_footer(slide, footer_section: str, theme: SlideTheme):
         p0 = tf.paragraphs[0]
         p0.text = get_community_name()
         _style_para(p0, size_pt=_FOOTER_PT, color=theme.muted, bold=True)
+        p0.alignment = PP_ALIGN.LEFT
     p1 = tf.add_paragraph()
     p1.text = footer_section
     _style_para(p1, size_pt=_FOOTER_PT - 1, color=theme.emphasis, bold=False)
+    p1.alignment = PP_ALIGN.LEFT
     p1.space_before = Pt(2)
 
 
@@ -490,7 +485,7 @@ def _rite_wrapped_line_units(role: str, line: str, *, strip_all: bool) -> float:
     return wrapped + extra
 
 
-def _rite_line_height_inches(font_pt: float = _RITE_BODY_PT) -> float:
+def _rite_line_height_inches(font_pt: float = _SLIDE_TEXT_PT) -> float:
     return (font_pt * 1.22 + 8) / 72.0
 
 
@@ -515,14 +510,14 @@ def _chunk_marked_rite_by_fit(
     footer_section: str,
     body_h_inches: Optional[float] = None,
 ) -> List[str]:
-    """Split prayer-rite marked text across slides when 50pt body would overflow."""
+    """Split prayer-rite marked text across slides when body text would overflow."""
     items = [(r, ln) for r, ln in _parse_marked_lines(marked) if r != "direction"]
     if not items:
         return [marked]
 
     strip_all = _suppress_all_role_prefix(footer_section)
     body_h = float(body_h_inches or _marked_body_height_inches())
-    capacity = max(3.0, body_h / _rite_line_height_inches(_RITE_BODY_PT))
+    capacity = max(3.0, body_h / _rite_line_height_inches(_SLIDE_TEXT_PT))
 
     grouped: List[List[Tuple[str, str]]] = []
     current: List[Tuple[str, str]] = []
@@ -560,8 +555,7 @@ def _render_templated_prayer_slide(
     if slide_total > 1:
         footer = f"{footer} ({slide_index + 1}/{slide_total})"
 
-    body_pt = int(template.get("body_pt") or _RITE_BODY_PT)
-    dir_pt = int(template.get("direction_pt") or _RITE_DIRECTION_PT)
+    body_pt = _SLIDE_TEXT_PT
 
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, theme.bg)
@@ -763,9 +757,6 @@ def _render_marked_slide(
     first = True
     strip_all = _suppress_all_role_prefix(footer_section)
     rite_slide = _is_prayer_rite_slide(footer_section)
-    main_pt = _RITE_BODY_PT if rite_slide else _BODY_PT + 1
-    dir_pt = _RITE_DIRECTION_PT if rite_slide else _META_PT + 1
-    plain_pt = _RITE_BODY_PT if rite_slide else _BODY_PT
     if rite_slide:
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     for role, line in _parse_marked_lines(marked_text):
@@ -775,18 +766,18 @@ def _render_marked_slide(
         first = False
         if role == "priest":
             p.text = f"Priest: {line}"
-            _style_para(p, size_pt=main_pt, color=theme.emphasis, bold=True)
+            _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
             p.space_before = Pt(4)
         elif role == "all":
             p.text = line if strip_all else f"All: {line}"
-            _style_para(p, size_pt=main_pt, color=theme.primary, bold=True)
+            _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.primary, bold=True)
             p.space_before = Pt(4)
         elif role == "hymn":
             p.text = line
-            _style_para(p, size_pt=plain_pt, color=theme.primary, bold=True)
+            _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.primary, bold=True)
         else:
             p.text = line
-            _style_para(p, size_pt=plain_pt, color=theme.primary, bold=False)
+            _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.primary, bold=False)
         p.alignment = PP_ALIGN.CENTER
         p.space_after = Pt(8 if rite_slide else 5)
 
@@ -906,7 +897,8 @@ def _add_divider_cover(
         first = False
         p.text = line
         bold = "CELEBRANT" in line or line.startswith("MASS")
-        _style_para(p, size_pt=_GREET_PT, color=theme.primary if not bold else theme.emphasis, bold=bold)
+        _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.primary if not bold else theme.emphasis, bold=bold)
+        p.alignment = PP_ALIGN.CENTER
         p.space_after = Pt(3)
 
     _add_community_footer(slide, "Mass poster / divider", theme)
@@ -923,7 +915,7 @@ def _add_section_card(prs: Presentation, big_lines: str, footer_section: str, th
     tf.clear()
     p = tf.paragraphs[0]
     p.text = big_lines
-    _style_para(p, size_pt=44, color=theme.emphasis, bold=True)
+    _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
     p.alignment = PP_ALIGN.CENTER
     _add_community_footer(slide, footer_section, theme)
 
@@ -1103,23 +1095,24 @@ def _chunk_section_for_slides(section_text: str, max_lines: int = _LYRIC_MAX_LIN
     return split_lyrics(line_list, max_lines=max_lines)
 
 
-def _chunk_lyrics_display(text: str, max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[str]:
+def _chunk_lyrics_display(text: str, max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[Tuple[str, str]]:
     """
     Split lyrics for hymn slides by structured-editor blocks (verse, chorus, bridge, etc.).
 
     Each blank-line-separated section from Lyrics Studio becomes its own slide group.
     Long sections may span multiple slides, but chunks never cross section boundaries.
+    Returns ``(chunk_text, block_kind)`` pairs (``block_kind`` is verse|chorus|…).
     """
     t = ensure_lyric_section_breaks((text or "").strip())
     if not t:
         return []
 
-    sections = parse_structured_lyric_sections(t)
-    chunks: List[str] = []
-    for section in sections:
-        chunks.extend(_chunk_section_for_slides(section, max_lines=max_lines))
+    chunks: List[Tuple[str, str]] = []
+    for block_kind, section in parse_structured_lyric_sections_typed(t):
+        for chunk in _chunk_section_for_slides(section, max_lines=max_lines):
+            chunks.append((chunk, block_kind))
 
-    return chunks if chunks else [t]
+    return chunks if chunks else [(t, "verse")]
 
 
 def _pp_align(name: str) -> PP_ALIGN:
@@ -1144,14 +1137,19 @@ def _auto_body_pt(line_count: int, longest: int, base_pt: float) -> float:
     return size_pt
 
 
+def _is_chorus_block_kind(block_kind: str) -> bool:
+    return (block_kind or "").strip().lower() in ("chorus", "refrain")
+
+
 def _fill_hymn_body_caps(
     tf,
     chunk: str,
     *,
     typography: Optional[HymnTypographySettings] = None,
     box_height_inches: Optional[float] = None,
+    block_kind: str = "verse",
 ) -> None:
-    """ALL CAPS bold sans-serif (white on black), optional custom size/alignment."""
+    """ALL CAPS sans-serif on black; verses bold white, chorus bold italic #ffb800."""
     box_h = float(box_height_inches or 0.0) or float(SLIDE_HEIGHT.inches * 0.72)
     lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, box_h)
     size_pt = int(max(_LYRIC_MIN_PT, min(_LYRIC_MAX_PT, auto_fit_pt)))
@@ -1161,6 +1159,8 @@ def _fill_hymn_body_caps(
     while size_pt > _LYRIC_MIN_PT and detectOverflow(lines, float(size_pt), box_h):
         size_pt -= 2
     align = _pp_align(typography.body_align if typography else "center")
+    is_chorus = _is_chorus_block_kind(block_kind)
+    body_color = _HYMN_CHORUS_COLOR if is_chorus else _HYMN_BODY_WHITE
 
     tf.clear()
     first = True
@@ -1171,8 +1171,9 @@ def _fill_hymn_body_caps(
         _style_para(
             p,
             size_pt=size_pt,
-            color=_HYMN_BODY_WHITE,
+            color=body_color,
             bold=True,
+            italic=is_chorus,
             font_name=_HYMN_BODY_FONT,
         )
         p.alignment = align
@@ -1184,8 +1185,9 @@ def _fill_hymn_body_caps(
         _style_para(
             p,
             size_pt=size_pt,
-            color=_HYMN_BODY_WHITE,
+            color=body_color,
             bold=True,
+            italic=is_chorus,
             font_name=_HYMN_BODY_FONT,
         )
         p.alignment = align
@@ -1210,9 +1212,9 @@ def _add_hymn_lyric_slides(
     raw_lyrics = (lyrics or "").strip() or "(No lyrics in library for this hymn.)"
     chunks = _chunk_lyrics_display(raw_lyrics)
     if not chunks:
-        chunks = [raw_lyrics]
+        chunks = [(raw_lyrics, "verse")]
 
-    first_chunk = chunks[0]
+    first_chunk, first_kind = chunks[0]
     rest_chunks = chunks[1:]
 
     # Slide 1: gold title + first lyrics
@@ -1248,10 +1250,16 @@ def _add_hymn_lyric_slides(
     _prep_hymn_lyric_tf(tfb)
     tfb.word_wrap = True
     tfb.vertical_anchor = MSO_ANCHOR.MIDDLE
-    _fill_hymn_body_caps(tfb, first_chunk, typography=typo0, box_height_inches=_length_to_inches(body_h))
+    _fill_hymn_body_caps(
+        tfb,
+        first_chunk,
+        typography=typo0,
+        box_height_inches=_length_to_inches(body_h),
+        block_kind=first_kind,
+    )
     _add_hymn_footer(slide0, footer_section)
 
-    for slide_idx, chunk in enumerate(rest_chunks, start=1):
+    for slide_idx, (chunk, block_kind) in enumerate(rest_chunks, start=1):
         typo_n = typography_for_hymn_slide(hymn_typography, section, slide_idx)
         slide = prs.slides.add_slide(_layout_blank(prs))
         _set_slide_bg(slide, _HYMN_BG)
@@ -1264,7 +1272,13 @@ def _add_hymn_lyric_slides(
         _prep_hymn_lyric_tf_full_bleed(tf)
         tf.word_wrap = True
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        _fill_hymn_body_caps(tf, chunk, typography=typo_n, box_height_inches=_length_to_inches(cont_h))
+        _fill_hymn_body_caps(
+            tf,
+            chunk,
+            typography=typo_n,
+            box_height_inches=_length_to_inches(cont_h),
+            block_kind=block_kind,
+        )
         _add_hymn_footer(slide, footer_section)
 
 
@@ -1338,6 +1352,7 @@ def _paragraphs(tf, *, size_pt, color, bold=False):
     tf.clear()
     p = tf.paragraphs[0]
     _style_para(p, size_pt=size_pt, color=color, bold=bold)
+    p.alignment = PP_ALIGN.CENTER
 
 
 def _fill_multipara(tf, text: str, *, size_pt: int, color: RGBColor):
@@ -1350,6 +1365,7 @@ def _fill_multipara(tf, text: str, *, size_pt: int, color: RGBColor):
         first = False
         p.text = block
         _style_para(p, size_pt=size_pt, color=color)
+        p.alignment = PP_ALIGN.CENTER
         p.space_after = Pt(5)
 
 
@@ -1380,27 +1396,30 @@ def _add_reading_block(
         if lotw_banner:
             p0 = tf_t.paragraphs[0]
             p0.text = "Liturgy of the Word"
-            _style_para(p0, size_pt=_SECTION_PT - 2, color=theme.emphasis, bold=True)
+            _style_para(p0, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
+            p0.alignment = PP_ALIGN.CENTER
             p1 = tf_t.add_paragraph()
             p1.text = head if "continued" in head.lower() else f"{section} ({ref})"
-            _style_para(p1, size_pt=_META_PT + 2, color=theme.muted, bold=False)
+            _style_para(p1, size_pt=_SLIDE_TEXT_PT, color=theme.muted, bold=False)
+            p1.alignment = PP_ALIGN.CENTER
         else:
-            _paragraphs(tf_t, size_pt=_SECTION_PT, color=theme.emphasis, bold=True)
+            _paragraphs(tf_t, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
             tf_t.paragraphs[0].text = head
 
         sub_top = top + title_h + Inches(0.06)
         sub_h = Inches(0.48)
         sub_box = slide.shapes.add_textbox(lx, sub_top, w, sub_h)
         _prep_tf(sub_box.text_frame)
-        _paragraphs(sub_box.text_frame, size_pt=_META_PT, color=theme.muted)
+        _paragraphs(sub_box.text_frame, size_pt=_SLIDE_TEXT_PT, color=theme.muted)
         sub_box.text_frame.paragraphs[0].text = sub
 
         body_top = sub_top + sub_h + Inches(0.12)
         body_h = SLIDE_HEIGHT - body_top - Inches(1.0)
         bsh = slide.shapes.add_textbox(lx, body_top, w, body_h)
         _prep_tf(bsh.text_frame)
-        _paragraphs(bsh.text_frame, size_pt=_BODY_PT, color=theme.primary)
-        _fill_multipara(bsh.text_frame, main, size_pt=_BODY_PT, color=theme.primary)
+        bsh.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+        _paragraphs(bsh.text_frame, size_pt=_SLIDE_TEXT_PT, color=theme.primary)
+        _fill_multipara(bsh.text_frame, main, size_pt=_SLIDE_TEXT_PT, color=theme.primary)
         _add_community_footer(slide, footer_tag, theme)
 
     if not body:
@@ -1443,19 +1462,19 @@ def _add_lotw_reading_slide(
 
         p0 = tf.paragraphs[0]
         p0.text = "Liturgy of the Word"
-        _style_para(p0, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        _style_para(p0, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
         p0.alignment = PP_ALIGN.CENTER
         p0.space_after = Pt(10)
 
         p1 = tf.add_paragraph()
         p1.text = section
-        _style_para(p1, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        _style_para(p1, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
         p1.alignment = PP_ALIGN.CENTER
         p1.space_after = Pt(16)
 
         p2 = tf.add_paragraph()
         p2.text = ref
-        _style_para(p2, size_pt=_LOTW_BODY_PT, color=theme.primary, bold=False)
+        _style_para(p2, size_pt=_SLIDE_TEXT_PT, color=theme.primary, bold=False)
         p2.alignment = PP_ALIGN.CENTER
 
         _add_community_footer(slide, "Liturgy of the Word", theme)
@@ -1480,28 +1499,28 @@ def _add_lotw_reading_slide(
 
         p0 = tf.paragraphs[0]
         p0.text = "Liturgy of the Word"
-        _style_para(p0, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        _style_para(p0, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
         p0.alignment = PP_ALIGN.CENTER
         p0.space_after = Pt(10)
 
         head = section if i == 0 else f"{section} (continued)"
         p1 = tf.add_paragraph()
         p1.text = f"{head}\n({ref})"
-        _style_para(p1, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        _style_para(p1, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
         p1.alignment = PP_ALIGN.CENTER
         p1.space_after = Pt(12)
 
         if total > 1:
             p_cnt = tf.add_paragraph()
             p_cnt.text = f"Slide {i + 1} of {total}"
-            _style_para(p_cnt, size_pt=_META_PT + 2, color=theme.muted, bold=False)
+            _style_para(p_cnt, size_pt=_SLIDE_TEXT_PT, color=theme.muted, bold=False)
             p_cnt.alignment = PP_ALIGN.CENTER
             p_cnt.space_after = Pt(10)
 
         if chunk:
             p2 = tf.add_paragraph()
             p2.text = chunk
-            _style_para(p2, size_pt=_LOTW_BODY_PT, color=theme.primary, bold=False)
+            _style_para(p2, size_pt=_SLIDE_TEXT_PT, color=theme.primary, bold=False)
             p2.alignment = PP_ALIGN.CENTER
             p2.space_after = Pt(8)
 
@@ -1536,7 +1555,7 @@ def _add_title_slide(
     tft.clear()
     p0 = tft.paragraphs[0]
     p0.text = title or "Mass"
-    _style_para(p0, size_pt=_TITLE_PT, color=theme.emphasis, bold=True)
+    _style_para(p0, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
     p0.alignment = PP_ALIGN.CENTER
 
     g_line = (gospel_quote or "").strip()
@@ -1554,12 +1573,12 @@ def _add_title_slide(
 
     mb = slide.shapes.add_textbox(lx, y + Inches(1.15), w, Inches(3.4))
     _prep_tf(mb.text_frame)
-    _fill_multipara(mb.text_frame, meta, size_pt=_GREET_PT, color=theme.primary)
+    _fill_multipara(mb.text_frame, meta, size_pt=_SLIDE_TEXT_PT, color=theme.primary)
 
     if quote_attribution and g_line:
         nb = slide.shapes.add_textbox(lx, SLIDE_HEIGHT - Inches(1.2), w, Inches(0.75))
         _prep_tf(nb.text_frame)
-        _fill_multipara(nb.text_frame, str(quote_attribution), size_pt=_META_PT, color=theme.muted)
+        _fill_multipara(nb.text_frame, str(quote_attribution), size_pt=_SLIDE_TEXT_PT, color=theme.muted)
 
     _add_community_footer(slide, "Title", theme)
 
@@ -1638,8 +1657,8 @@ def generate_mass_ppt(
     mass_collection_date_label: str = "",
     food_sponsors: Optional[List[str]] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
-    include_church_logo: bool = True,
-    include_church_name: bool = True,
+    include_church_logo: bool = False,
+    include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
     global _ACTIVE_FONT, _deck_branding, _reference_mass_deck
