@@ -9,7 +9,7 @@ refer explicitly to the Missal for the day.
 
 # --- Pre-Mass & entrance ---
 SILENT_REMINDER = """<<H>>PUT YOUR CELLPHONE ON SILENT MODE DURING THE MASS.
-<<D>>Thank you."""
+Thank you."""
 
 ENTRANCE_HYMN_1 = """<<D>>Entrance hymn lyrics are loaded from the hymn library."""
 
@@ -58,7 +58,6 @@ in the glory of God the Father.
 Amen."""
 
 OPENING_PRAYER = """<<P>>Let us pray.
-<<D>>All pray silently with the Priest for a moment. Then the Priest says the Collect for the day, that is, the Opening Prayer, in full from the Roman Missal for this celebration—nothing abbreviated. The people respond at the end.
 <<A>>Amen."""
 
 # --- Liturgy of the Word ---

@@ -32,6 +32,7 @@ from services.media_naming import mass_export_stem
 from services.web_hymn_discovery import discover_hymns_for_readings
 from services.lyrics_fetcher import ensure_lyrics_for_song
 from services.mass_text_format import synopsis_from_reading
+from services.usccb_readings import enrich_psalm_text_for_slides
 
 
 @dataclass
@@ -437,6 +438,11 @@ def generate_mass_media(
     communion_line = " · ".join(comm_titles)
 
     psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+    psalm_body = enrich_psalm_text_for_slides(
+        psalm_body,
+        data.get("psalm") or "",
+        psalm_response=(data.get("psalm_response") or "").strip(),
+    )
 
     _root = Path(__file__).resolve().parent
     _out = _root / "outputs"
@@ -612,6 +618,11 @@ def regenerate_mass_pptx(
         poster_ppt_path = None
 
     psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+    psalm_body = enrich_psalm_text_for_slides(
+        psalm_body,
+        data.get("psalm") or "",
+        psalm_response=(data.get("psalm_response") or "").strip(),
+    )
 
     slide_count, pptx_path = generate_mass_ppt(
         title=title,

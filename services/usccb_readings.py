@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup
 
 from services.gospel_fallback import fetch_world_english_gospel
 from services.mass_text_format import reading_body_is_usable, strip_reading_verse_markers
+from services.responsorial_reading import fetch_responsorial_verses
 from services.usccb_client import get_usccb_soup
 from services.usccb_scraper import _fetch_gospel_from_pericope
 
@@ -114,13 +115,30 @@ def _save_cache_file(data: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
+def _psalm_text_is_refrain_only(psalm_text: str) -> bool:
+    """True when cached psalm body is only the response refrain, not stanzas."""
+    t = (psalm_text or "").strip()
+    if not t:
+        return True
+    if "\n\n" in t and len(t) > 280:
+        return False
+    if len(re.findall(r"\bR\.\s", t, re.I)) >= 2:
+        return False
+    if len(t) > 450:
+        return False
+    if not re.match(r"^R\.?\s", t, re.I):
+        return False
+    return True
+
+
 def _cache_entry_is_usable(entry: Mapping[str, str]) -> bool:
     """Reject cache rows that only store verse numbers or bare citations."""
     if reading_body_is_usable(entry.get("first_reading") or ""):
         return True
     if reading_body_is_usable(entry.get("gospel") or ""):
         return True
-    if reading_body_is_usable(entry.get("psalm_text") or ""):
+    psalm = (entry.get("psalm_text") or "").strip()
+    if psalm and not _psalm_text_is_refrain_only(psalm) and reading_body_is_usable(psalm):
         return True
     if reading_body_is_usable(entry.get("second_reading") or ""):
         return True
@@ -193,18 +211,20 @@ def normalize_scripture_reference(reference: str) -> str:
 
 def psalm_reference_for_full_text(reference: str) -> str:
     """Reduce a responsorial psalm citation to ``Psalm N`` for full-psalm API fetch."""
-    ref = (reference or "").strip()
-    m = re.match(r"^(?:Psalm|Psalms)\s+(\d+)\b", ref, re.I)
-    if m:
-        return f"Psalm {m.group(1)}"
-    return normalize_scripture_reference(ref)
+    from services.responsorial_reading import psalm_reference_for_full_text as _full
+
+    return _full(reference)
 
 
 def fetch_scripture_text(reference: str, *, full_psalm: bool = False) -> Optional[str]:
     ref = (reference or "").strip()
     if not ref:
         return None
-    api_ref = psalm_reference_for_full_text(ref) if full_psalm else normalize_scripture_reference(ref)
+
+    if full_psalm:
+        return fetch_responsorial_verses(ref)
+
+    api_ref = normalize_scripture_reference(ref)
     if not api_ref:
         return None
     text = fetch_world_english_gospel(api_ref)
@@ -310,6 +330,59 @@ def _gather_paragraphs_after_heading(
     return " ".join(parts)
 
 
+def _gather_responsorial_psalm_prose(
+    soup: BeautifulSoup,
+    heading_match: Callable[[str], bool],
+    heading_stop: Callable[[str], bool],
+) -> str:
+    """Responsorial psalm paragraphs from USCCB, preserving stanza breaks."""
+    tags = list(soup.find_all([*_READING_TAGS, "p"]))
+    started = False
+    parts: list[str] = []
+    for tag in tags:
+        if tag.name in _READING_TAGS:
+            title = _norm_heading(tag.get_text())
+            if not started:
+                if heading_match(title):
+                    started = True
+                continue
+            if title and heading_stop(title):
+                break
+            continue
+        if started and tag.name == "p":
+            t = tag.get_text(" ", strip=True)
+            if _is_footer_paragraph(t):
+                break
+            if t:
+                parts.append(t)
+    return "\n\n".join(parts)
+
+
+def _normalize_responsorial_prose(text: str) -> str:
+    """Split space-joined USCCB prose into lines at each ``R.`` refrain."""
+    t = (text or "").strip()
+    if not t:
+        return ""
+    if "\n\n" in t:
+        return t
+    split = re.split(r"\s+(?=R\.\s)", t, flags=re.I)
+    if len(split) > 1:
+        return "\n\n".join(s.strip() for s in split if s.strip())
+    return t
+
+
+def _scraped_responsorial_body(scraped: Optional[str]) -> str:
+    """Full on-page responsorial text when USCCB provides stanzas, not just the refrain."""
+    raw = _normalize_responsorial_prose((scraped or "").strip())
+    if not raw:
+        return ""
+    if len(raw) > 320:
+        return raw
+    if len(re.findall(r"\bR\.\s", raw, re.I)) >= 2:
+        return raw
+    return ""
+
+
 def _clean_psalm_refrain_line(text: str) -> str:
     line = (text or "").strip()
     if not line:
@@ -368,7 +441,7 @@ def _scrape_on_page_prose(soup: BeautifulSoup) -> dict[str, Optional[str]]:
     fr = _gather_paragraphs_after_heading(soup, _match_reading_one, _stop_after_reading_one)
     out["first_reading"] = fr if fr.strip() else None
 
-    ps = _gather_paragraphs_after_heading(soup, _match_psalm, _stop_after_psalm)
+    ps = _gather_responsorial_psalm_prose(soup, _match_psalm, _stop_after_psalm)
     out["psalm"] = ps if ps.strip() else None
 
     s2 = _gather_paragraphs_after_heading(soup, _match_reading_two, _stop_after_reading_two)
@@ -432,8 +505,11 @@ def _resolve_reading_body(
 
 
 def _format_psalm_text(response: str, verses: str) -> str:
-    v = strip_reading_verse_markers((verses or "").strip())
+    v = (verses or "").strip()
     r = (response or "").strip()
+    if v and re.match(r"^R\.?\s", v, re.I) and (not r or len(v) > len(r) + 60):
+        return v
+    v = strip_reading_verse_markers(v)
     if r:
         rline = r if re.match(r"^R\.?\s", r, re.I) else f"R. {r}"
         return f"{rline}\n\n{v}".strip() if v else rline
@@ -450,27 +526,61 @@ def _resolve_psalm(
     ref = (reference or "").strip()
     resp = _clean_psalm_refrain_line(response_line)
     if not resp and scraped:
-        for line in (scraped or "").splitlines():
+        for line in re.split(r"\n\n|\n", scraped or ""):
             s = line.strip()
             if re.match(r"^R\.?\s", s, re.I) or re.match(r"^\(\d+\)", s):
                 resp = _clean_psalm_refrain_line(s)
                 if resp:
                     break
 
+    scraped_full = _scraped_responsorial_body(scraped)
+    if scraped_full and reading_body_is_usable(ref, scraped_full):
+        if not resp:
+            for line in scraped_full.split("\n\n"):
+                s = line.strip()
+                if re.match(r"^R\.?\s", s, re.I):
+                    resp = _clean_psalm_refrain_line(s)
+                    break
+        return scraped_full, resp
+
     verses = ""
     if ref:
-        api_psalm = fetch_scripture_text(ref, full_psalm=True)
-        if api_psalm and reading_body_is_usable(api_psalm, ref):
-            verses = api_psalm.strip()
+        if ":" in ref:
+            ranged = fetch_scripture_text(ref, full_psalm=False)
+            if ranged and reading_body_is_usable(ranged, ref):
+                verses = ranged.strip()
+        if not verses:
+            api_psalm = fetch_scripture_text(ref, full_psalm=True)
+            if api_psalm and reading_body_is_usable(api_psalm, ref):
+                verses = api_psalm.strip()
     if not verses:
         peri = _fetch_pericope_text(pericope_href)
         if peri and reading_body_is_usable(peri, ref):
             verses = peri.strip()
-    if not verses and _prose_sufficient(ref, (scraped or "").strip()):
-        verses = strip_reading_verse_markers((scraped or "").strip())
+    if not verses:
+        fallback = _normalize_responsorial_prose((scraped or "").strip())
+        if fallback and reading_body_is_usable(ref, fallback):
+            verses = fallback
 
     body = _format_psalm_text(resp, verses)
     return body, resp
+
+
+def enrich_psalm_text_for_slides(
+    psalm_text: str,
+    psalm_reference: str,
+    *,
+    psalm_response: str = "",
+) -> str:
+    """Re-fetch when slides only have the refrain; keeps full responsorial when possible."""
+    body = (psalm_text or "").strip()
+    ref = (psalm_reference or "").strip()
+    if not ref:
+        return body
+    if body and not _psalm_text_is_refrain_only(body):
+        return body
+    resolved, _ = _resolve_psalm(ref, None, (psalm_response or body).strip())
+    return (resolved or body).strip()
 
 
 def _merge_fallback_refs(

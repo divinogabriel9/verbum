@@ -3158,7 +3158,7 @@ Lord, hear our prayer</textarea>
               <input type="text" id="flow-gospel-custom" maxlength="2000" placeholder="Leave empty to use the selected sentence" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);" />
             </div>
             <div class="field">
-              <label for="flow-psalm-override">Responsorial Psalm (edit text for slides)</label>
+              <label for="flow-psalm-override" id="flow-psalm-label">Responsorial Psalm (edit text for slides)</label>
               <textarea id="flow-psalm-override" rows="5" placeholder="Loads with readings; edit the response and verses as needed."></textarea>
               <div id="flow-psalm-preview" class="flow-para-preview" aria-live="polite"></div>
             </div>
@@ -5463,10 +5463,23 @@ Lord, hear our prayer</textarea>
       el.innerHTML = parts.map((p) => "<p>" + escapeHtml(p) + "</p>").join("");
     }
 
+    function isPsalmReference(ref) {
+      return /^(?:Psalm|Psalms)\s+\d+/i.test(String(ref || "").trim());
+    }
+
+    function responsorialSectionLabel(ref) {
+      const r = String(ref || "").trim();
+      if (isPsalmReference(r)) return "Responsorial Psalm";
+      if (/^(?:\d+\s+)?[A-Za-z][A-Za-z\s]+?\s+\d+\s*:/.test(r)) return "Responsorial Canticle";
+      return "Responsorial Psalm";
+    }
+
     function updateFlowParagraphPreviews() {
       const psalmRaw = ($("flow-psalm-override") && $("flow-psalm-override").value) || "";
       const foodRaw = ($("flow-food-sponsors") && $("flow-food-sponsors").value) || "";
-      fillFlowPreviewEl($("flow-psalm-preview"), previewParagraphs(psalmRaw, 3), "Psalm preview will show up to three paragraphs.");
+      const psalmRef = flowPreviewData && (flowPreviewData.psalm || flowPreviewData.psalm_reference);
+      const psalmKind = responsorialSectionLabel(psalmRef);
+      fillFlowPreviewEl($("flow-psalm-preview"), previewParagraphs(psalmRaw, 3), psalmKind + " preview will show up to three paragraphs.");
       const foodLines = foodRaw.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 3);
       fillFlowPreviewEl($("flow-food-preview"), foodLines, "Food sponsor preview shows up to three lines.");
     }
@@ -5566,6 +5579,10 @@ Lord, hear our prayer</textarea>
         populateGospelSentenceSelect(data);
         if ($("flow-gospel-custom")) $("flow-gospel-custom").value = "";
         if ($("flow-psalm-override")) $("flow-psalm-override").value = data.psalm_text || "";
+        if ($("flow-psalm-label")) {
+          const psalmKind = responsorialSectionLabel(data.psalm || data.psalm_reference || "");
+          $("flow-psalm-label").textContent = psalmKind + " (edit text for slides)";
+        }
         updateFlowParagraphPreviews();
         renderFlowSongCount();
         updatePosterLivePreview();

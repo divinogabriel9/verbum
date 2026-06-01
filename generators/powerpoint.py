@@ -32,6 +32,7 @@ from services.mass_text_format import (
 )
 from services.prayer_service import get_prayer
 from services.prayer_templates import PENITENTIAL_ACT
+from services.responsorial_reading import responsorial_section_title
 
 from . import gfcc_flow_content as GFCC
 
@@ -425,6 +426,23 @@ def _parse_marked_lines(marked: str) -> List[Tuple[str, str]]:
     return out
 
 
+def _strip_marked_rubrics(marked: str) -> str:
+    """Remove ``<<D>>`` liturgical rubrics before building projection slides."""
+    kept: List[str] = []
+    for raw in (marked or "").split("\n"):
+        if raw.strip().startswith("<<D>>"):
+            continue
+        kept.append(raw.rstrip())
+    return "\n".join(kept).strip()
+
+
+def _marked_has_projectable_content(marked: str) -> bool:
+    for role, line in _parse_marked_lines(_strip_marked_rubrics(marked)):
+        if role != "direction" and (line or "").strip():
+            return True
+    return False
+
+
 def _suppress_all_role_prefix(footer_section: str) -> bool:
     """Kyrie / Gloria / Sanctus / Our Father / Lamb: congregation lines without an ``All:`` prefix."""
     f = (footer_section or "").strip().lower()
@@ -498,7 +516,7 @@ def _chunk_marked_rite_by_fit(
     body_h_inches: Optional[float] = None,
 ) -> List[str]:
     """Split prayer-rite marked text across slides when 50pt body would overflow."""
-    items = _parse_marked_lines(marked)
+    items = [(r, ln) for r, ln in _parse_marked_lines(marked) if r != "direction"]
     if not items:
         return [marked]
 
@@ -645,6 +663,22 @@ def _is_reference_branding_shape(shape) -> bool:
     return False
 
 
+def _strip_italic_rubric_paragraphs_on_slide(slide) -> None:
+    """Remove italic rubric paragraphs from cloned reference-deck shapes."""
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        for para in shape.text_frame.paragraphs:
+            text = (para.text or "").strip()
+            if not text:
+                continue
+            try:
+                if para.font.italic:
+                    para.text = ""
+            except (AttributeError, TypeError):
+                continue
+
+
 def _copy_slide_into_presentation(
     prs: Presentation,
     slide_src,
@@ -669,6 +703,7 @@ def _copy_slide_into_presentation(
         dest.shapes._spTree.insert_element_before(newel, "p:extLst")
     _set_slide_bg(dest, theme.bg)
     _apply_slide_branding(dest, theme)
+    _strip_italic_rubric_paragraphs_on_slide(dest)
     _add_community_footer(dest, footer_section, theme)
 
 
@@ -734,6 +769,8 @@ def _render_marked_slide(
     if rite_slide:
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     for role, line in _parse_marked_lines(marked_text):
+        if role == "direction":
+            continue
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
         if role == "priest":
@@ -744,11 +781,6 @@ def _render_marked_slide(
             p.text = line if strip_all else f"All: {line}"
             _style_para(p, size_pt=main_pt, color=theme.primary, bold=True)
             p.space_before = Pt(4)
-        elif role == "direction":
-            # Omit italic sidenotes for large projected prayer rites; keep for non-rite slides.
-            if not rite_slide:
-                p.text = line
-                _style_para(p, size_pt=dir_pt, color=theme.emphasis, bold=False, italic=True)
         elif role == "hymn":
             p.text = line
             _style_para(p, size_pt=plain_pt, color=theme.primary, bold=True)
@@ -762,6 +794,9 @@ def _render_marked_slide(
 
 
 def _add_marked_slide(prs: Presentation, footer_section: str, marked_text: str, theme: SlideTheme) -> None:
+    marked_text = _strip_marked_rubrics(marked_text)
+    if not _marked_has_projectable_content(marked_text):
+        return
     if _is_prayer_rite_slide(footer_section):
         chunks = _chunk_marked_rite_by_fit(marked_text, footer_section)
         total = len(chunks)
@@ -790,6 +825,9 @@ def _chunk_marked_body(marked: str, limit: int = _MAX_MARKED_BODY) -> List[str]:
 
 
 def _add_marked_chunked(prs: Presentation, footer: str, marked: str, theme: SlideTheme) -> None:
+    marked = _strip_marked_rubrics(marked)
+    if not _marked_has_projectable_content(marked):
+        return
     if _is_prayer_rite_slide(footer):
         chunks = _chunk_marked_rite_by_fit(marked, footer)
     else:
@@ -1386,9 +1424,43 @@ def _add_lotw_reading_slide(
     reference: str,
     full_text: str,
     theme: SlideTheme,
+    reference_only: bool = False,
 ) -> None:
-    """Liturgy of the Word reading: 50pt headers, 65pt centered body (verse numbers kept)."""
+    """Liturgy of the Word: full text for psalm/canticle; citation only for other readings."""
     ref = (reference or "").strip() or "—"
+
+    if reference_only:
+        slide = prs.slides.add_slide(_layout_blank(prs))
+        _set_slide_bg(slide, theme.bg)
+        _apply_slide_branding(slide, theme)
+        lx, top, w = MARGIN_SIDE, _content_top(), SLIDE_WIDTH - 2 * MARGIN_SIDE
+        body_h = SLIDE_HEIGHT - top - Inches(1.1)
+        box = slide.shapes.add_textbox(lx, top, w, body_h)
+        tf = box.text_frame
+        _prep_tf(tf)
+        tf.clear()
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+
+        p0 = tf.paragraphs[0]
+        p0.text = "Liturgy of the Word"
+        _style_para(p0, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        p0.alignment = PP_ALIGN.CENTER
+        p0.space_after = Pt(10)
+
+        p1 = tf.add_paragraph()
+        p1.text = section
+        _style_para(p1, size_pt=_LOTW_TITLE_PT, color=theme.emphasis, bold=True)
+        p1.alignment = PP_ALIGN.CENTER
+        p1.space_after = Pt(16)
+
+        p2 = tf.add_paragraph()
+        p2.text = ref
+        _style_para(p2, size_pt=_LOTW_BODY_PT, color=theme.primary, bold=False)
+        p2.alignment = PP_ALIGN.CENTER
+
+        _add_community_footer(slide, "Liturgy of the Word", theme)
+        return
+
     body = (full_text or "").strip()
     chunks = chunk_plain_text(body, limit=220) if body else []
     total = max(1, len(chunks))
@@ -1516,13 +1588,13 @@ def _add_mass_collection_slide(
     amount: str,
     date_label: str,
 ) -> None:
-    lines = ["<<H>>MASS COLLECTION", "<<D>>Thank you for your generosity."]
+    lines = ["<<H>>MASS COLLECTION", "Thank you for your generosity."]
     if (amount or "").strip():
-        lines.append(f"<<D>>Amount: {amount.strip()}")
+        lines.append(f"Amount: {amount.strip()}")
     if (date_label or "").strip():
-        lines.append(f"<<D>>Date: {date_label.strip()}")
+        lines.append(f"Date: {date_label.strip()}")
     if len(lines) == 2:
-        lines.append("<<D>>(Enter collection amount and date in Mass Builder.)")
+        lines.append("(Enter collection amount and date in Mass Builder.)")
     _add_marked_slide(prs, "Mass Collection", "\n".join(lines), theme)
 
 
@@ -1531,9 +1603,9 @@ def _add_food_sponsors_slide(prs: Presentation, theme: SlideTheme, sponsors: Lis
     names = [n for n in names if n]
     if not names:
         return
-    lines: List[str] = ["<<H>>FOOD SPONSORS", "<<D>>The community thanks our food sponsors."]
+    lines: List[str] = ["<<H>>FOOD SPONSORS", "The community thanks our food sponsors."]
     for ss in names:
-        lines.append(f"<<D>>• {ss}")
+        lines.append(f"• {ss}")
     _add_marked_slide(prs, "Food Sponsors", "\n".join(lines), theme)
 
 
@@ -1631,7 +1703,7 @@ def generate_mass_ppt(
         _add_marked_slide(
             prs,
             "Entrance",
-            "<<D>>No Entrance hymn lyrics were selected. Choose one Entrance song in Mass Flow or save lyrics in Lyrics Studio before generating.",
+            "No Entrance hymn lyrics were selected. Choose one Entrance song in Mass Flow or save lyrics in Lyrics Studio before generating.",
             theme,
         )
     _add_divider_cover(prs, **ctx)
@@ -1650,12 +1722,13 @@ def generate_mass_ppt(
         prs,
         section="First Reading",
         reference=first_reading_ref or "—",
-        full_text=(first_reading_text or "").strip(),
+        full_text="",
         theme=theme,
+        reference_only=True,
     )
     _add_lotw_reading_slide(
         prs,
-        section="Responsorial Psalm",
+        section=responsorial_section_title(psalm_ref or ""),
         reference=psalm_ref or "—",
         full_text=(psalm_text or "").strip(),
         theme=theme,
@@ -1665,8 +1738,9 @@ def generate_mass_ppt(
             prs,
             section="Second Reading",
             reference=second_reading_ref.strip(),
-            full_text=(second_reading_text or "").strip(),
+            full_text="",
             theme=theme,
+            reference_only=True,
         )
 
     _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_SING, theme)
@@ -1693,7 +1767,7 @@ def generate_mass_ppt(
         _add_marked_slide(
             prs,
             "Offertory",
-            "<<D>>No Offertory hymn lyrics were selected. Choose one Offertory song in Mass Flow or save lyrics in Lyrics Studio before generating.",
+            "No Offertory hymn lyrics were selected. Choose one Offertory song in Mass Flow or save lyrics in Lyrics Studio before generating.",
             theme,
         )
     _add_section_card(prs, "LITURGY OF\nTHE EUCHARIST", "Liturgy of the Eucharist", theme)
@@ -1707,8 +1781,6 @@ def generate_mass_ppt(
     _add_section_card(prs, "LITURGY OF\nTHE EUCHARIST", "Liturgy of the Eucharist", theme)
     _add_marked_slide(prs, "Great Amen", GFCC.GREAT_AMEN, theme)
     _add_marked_chunked(prs, "Our Father", get_prayer("our_father"), theme)
-    _add_divider_cover(prs, **ctx)
-    _add_marked_slide(prs, "The Communion Rite", GFCC.COMMUNION_RITE_DELIVER, theme)
     _add_divider_cover(prs, **ctx)
     _add_marked_slide(prs, "Sign of Peace", GFCC.SIGN_PEACE, theme)
     _add_marked_slide(prs, "Lamb of God", get_prayer("lamb_of_god"), theme)
@@ -1729,7 +1801,7 @@ def generate_mass_ppt(
         _add_marked_slide(
             prs,
             "Communion",
-            "<<D>>No Communion hymn lyrics were selected. Choose up to two Communion songs in Mass Flow or save lyrics in Lyrics Studio before generating.",
+            "No Communion hymn lyrics were selected. Choose up to two Communion songs in Mass Flow or save lyrics in Lyrics Studio before generating.",
             theme,
         )
     med_id = str(sel.get("meditation") or "").strip()
@@ -1764,7 +1836,7 @@ def generate_mass_ppt(
         _add_marked_slide(
             prs,
             "Recessional",
-            "<<D>>No Recessional hymn lyrics were selected. Choose one Recessional song in Mass Flow or save lyrics in Lyrics Studio before generating.",
+            "No Recessional hymn lyrics were selected. Choose one Recessional song in Mass Flow or save lyrics in Lyrics Studio before generating.",
             theme,
         )
     _add_divider_cover(prs, **ctx)

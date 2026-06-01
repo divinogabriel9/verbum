@@ -7,6 +7,7 @@ for liturgical use, verify against bible.usccb.org.
 from __future__ import annotations
 
 import re
+import time
 
 import requests
 
@@ -23,7 +24,7 @@ def gospel_reference_looks_like_citation_only(gospel_reference: str, gospel_text
     return False
 
 
-def fetch_world_english_gospel(reference: str) -> str | None:
+def fetch_world_english_gospel(reference: str, *, max_attempts: int = 3) -> str | None:
     reference = (reference or "").strip()
     if not reference:
         return None
@@ -32,13 +33,20 @@ def fetch_world_english_gospel(reference: str) -> str | None:
 
     path = reference.replace(" ", "+")
     url = f"https://bible-api.com/{path}"
-    try:
-        response = requests.get(url, timeout=15)
-        if response.status_code != 200:
+    for attempt in range(max_attempts):
+        try:
+            response = requests.get(url, timeout=15)
+            if response.status_code == 200:
+                data = response.json()
+                text = (data.get("text") or "").replace("\xa0", " ").strip()
+                return text or None
+            if response.status_code in (429, 500, 502, 503, 504) and attempt + 1 < max_attempts:
+                time.sleep(0.5 * (2**attempt))
+                continue
             return None
-        data = response.json()
-        text = data.get("text") or ""
-        text = text.replace("\xa0", " ").strip()
-        return text or None
-    except Exception:
-        return None
+        except (requests.RequestException, ValueError):
+            if attempt + 1 < max_attempts:
+                time.sleep(0.5 * (2**attempt))
+                continue
+            return None
+    return None
