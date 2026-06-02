@@ -1024,6 +1024,11 @@
       background: color-mix(in srgb, var(--danger) 10%, var(--surface-solid));
       color: var(--danger);
     }
+    .toast--warn {
+      border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
+      background: color-mix(in srgb, var(--warn) 12%, var(--surface-solid));
+      color: var(--warn);
+    }
     .notif-wrap {
       position: relative;
       flex-shrink: 0;
@@ -1305,44 +1310,97 @@
       margin: 20px 0;
       background: linear-gradient(90deg, transparent, var(--line), transparent);
     }
-    .settings-subnav {
-      display: none;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 0 0 20px;
-      padding: 6px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--line);
-      background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
-      box-shadow: var(--shadow-sm);
+    /* Settings — account-style layout with left sidebar */
+    .settings-layout {
+      display: grid;
+      grid-template-columns: minmax(200px, 252px) minmax(0, 1fr);
+      gap: var(--space-lg);
+      align-items: start;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
     }
-    .settings-subnav.is-visible {
+    .settings-sidebar {
+      position: sticky;
+      top: calc(var(--header-height) + var(--space-md));
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-card);
+      padding: var(--space-md) var(--space-sm);
+    }
+    .settings-sidebar__title {
+      margin: 0 0 4px;
+      padding: 0 12px;
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .settings-sidebar__subtitle {
+      margin: 0 0 14px;
+      padding: 0 12px;
+      font-size: var(--text-sm);
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .settings-sidebar__nav {
       display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
-    .settings-subnav-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      border-radius: var(--radius-sm);
+    .settings-sidebar-link {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 11px 14px;
+      border-radius: 10px;
       border: 1px solid transparent;
       background: transparent;
       color: var(--muted);
-      font-size: 0.88rem;
-      font-weight: 700;
+      font-size: var(--text-sm);
+      font-weight: 650;
       text-decoration: none;
       cursor: pointer;
       transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     }
-    .settings-subnav-link:hover {
+    .settings-sidebar-link:hover {
       color: var(--ink);
       background: var(--surface-2);
     }
-    .settings-subnav-link.active {
+    .settings-sidebar-link.active {
       color: var(--ink);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 35%, var(--line));
-      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface-solid));
-      box-shadow: 0 0 12px color-mix(in srgb, var(--liturgical-glow) 18%, transparent);
+      font-weight: 750;
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-solid));
+      box-shadow: inset 3px 0 0 var(--liturgical-accent);
+    }
+    .settings-main {
+      min-width: 0;
+    }
+    .settings-panel .admin-card {
+      max-width: none;
+    }
+    .settings-panel[hidden] {
+      display: none !important;
+    }
+    @media (max-width: 768px) {
+      .settings-layout {
+        grid-template-columns: 1fr;
+      }
+      .settings-sidebar {
+        position: static;
+      }
+      .settings-sidebar__nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .settings-sidebar-link.active {
+        box-shadow: none;
+        border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      }
     }
     .route-switcher {
       display: block;
@@ -1813,6 +1871,54 @@
     }
     .flow-input-list:empty {
       display: none;
+    }
+    #celebrant {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 36px 10px 14px;
+      font-size: var(--text-base);
+      font-weight: 600;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background:
+        var(--surface-solid)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235C6B75' d='M1.4.6 6 5.2 10.6.6 12 2l-6 6-6-6z'/%3E%3C/svg%3E")
+        no-repeat right 14px center;
+    }
+    #celebrant:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .celebrant-settings-list {
+      list-style: none;
+      margin: 0 0 12px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .celebrant-settings-list:empty {
+      display: none;
+    }
+    .celebrant-settings-list__item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+    .celebrant-settings-list__item button {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      font-size: var(--text-xs);
     }
     .flow-input-list-item {
       display: flex;
@@ -3090,49 +3196,59 @@
     }
     #song-preview-save-status { font-size: 0.8rem; flex: 1 1 100%; }
     .hymn-slide .hymn-body {
-      flex: 1;
+      flex: 1 1 auto;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 100%;
       max-width: 94%;
+      min-height: 0;
+      max-height: 68%;
       margin: 0 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .slide-preview.hymn-slide {
-      --hymn-lyric-size: clamp(0.72rem, 1.85vw, 1.02rem);
-    }
-    .slide-preview.hymn-slide.lines-many {
-      --hymn-lyric-size: clamp(0.62rem, 1.5vw, 0.88rem);
-    }
-    .slide-preview.hymn-slide.lines-long {
-      --hymn-lyric-size: clamp(0.58rem, 1.35vw, 0.8rem);
+      --hymn-lyric-size: 0.8rem;
+      --hymn-title-size: 0.62rem;
+      --hymn-body-align: center;
+      --hymn-title-align: center;
+      overflow: hidden;
     }
     .hymn-slide .hymn-lines,
     .hymn-slide .hymn-lines-editable {
       color: #ffffff !important;
       -webkit-text-fill-color: #ffffff;
+      font-family: "Arial Black", Arial, sans-serif;
       font-size: var(--hymn-lyric-size) !important;
       line-height: 1.08;
       font-weight: 800;
+      font-style: normal;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       width: 100%;
-      text-align: center;
+      text-align: var(--hymn-body-align, center);
       caret-color: #ffcc4d;
+    }
+    .hymn-slide .hymn-lines.hymn-lines--chorus,
+    .hymn-slide .hymn-lines-editable.hymn-lines--chorus {
+      color: #ffb800 !important;
+      -webkit-text-fill-color: #ffb800;
+      font-style: italic;
     }
     .hymn-slide .hymn-title-text,
     .hymn-slide .hymn-title-editable {
       font-family: Georgia, "Times New Roman", serif;
       color: #ffcc4d !important;
       -webkit-text-fill-color: #ffcc4d;
-      font-size: calc(var(--hymn-lyric-size) * 0.7) !important;
+      font-size: var(--hymn-title-size) !important;
       font-weight: 700;
       letter-spacing: -0.02em;
       line-height: 1.12;
       margin: 0 0 10px;
       width: 100%;
       flex-shrink: 0;
-      text-align: center;
+      text-align: var(--hymn-title-align, center);
       caret-color: #fff;
     }
     .hymn-lines-editable,
@@ -4803,7 +4919,10 @@ Lord, hear our prayer</textarea>
                 </div>
                 <div class="field">
                   <label for="celebrant">Mass celebrant</label>
-                  <input type="text" id="celebrant" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
+                  <select id="celebrant" aria-describedby="celebrant-hint">
+                    <option value="">— Select celebrant —</option>
+                  </select>
+                  <p class="muted" id="celebrant-hint" style="margin:8px 0 0;font-size:var(--text-sm);">Choose from names saved in Settings → Church Profile (stored in the database).</p>
                 </div>
                 <div class="field" style="margin-bottom:0;">
                   <label for="co-celebrant">Co-celebrant <span class="muted" style="font-weight:600;text-transform:none;letter-spacing:0;">(optional)</span></label>
@@ -5005,9 +5124,8 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="field">
               <label for="poster-celebrant">Celebrant</label>
-              <input type="text" id="poster-celebrant" list="celebrant-presets" placeholder="Fr. Name" />
-              <datalist id="celebrant-presets"></datalist>
-              <button type="button" class="ghost" id="btn-save-celebrant" style="margin-top:8px;font-size:0.82rem;">Save celebrant to list</button>
+              <input type="text" id="poster-celebrant" placeholder="Synced from Mass Builder" maxlength="200" />
+              <p class="muted" style="margin:6px 0 0;font-size:var(--text-sm);">Uses the celebrant from Mass Builder. Manage the list in Settings → Church Profile.</p>
             </div>
             <div class="field">
               <label for="poster-gospel-quote">Gospel quote (one line)</label>
@@ -5111,74 +5229,93 @@ Lord, hear our prayer</textarea>
         </div>
       </section>
 
-      <nav class="settings-subnav" id="settings-subnav" aria-label="Settings sections">
-        <a class="settings-subnav-link" href="/settings/church" data-route="/settings/church">Church Profile</a>
-        <a class="settings-subnav-link" href="/settings/app" data-route="/settings/app">Appearance &amp; theme</a>
-      </nav>
-
-      <section class="page" id="church-settings-page" data-route="/settings/church">
-        <div class="admin-card" style="max-width:560px;">
-          <div class="field">
-            <label for="settings-church-name">Community name</label>
-            <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" />
-          </div>
-          <div class="field">
-            <label for="church-logo">Church logo</label>
-            <div style="display: flex; gap: 8px; align-items: flex-start;">
-              <input type="file" id="church-logo" accept="image/png,image/jpeg,image/webp,image/gif" style="flex: 1;" />
-              <button type="button" class="secondary" id="btn-upload-logo" style="white-space: nowrap;">Upload</button>
+      <section class="page" id="settings-page">
+        <div class="settings-layout">
+          <aside class="settings-sidebar" aria-label="Settings navigation">
+            <h2 class="settings-sidebar__title">Settings</h2>
+            <p class="settings-sidebar__subtitle">Parish profile and app appearance</p>
+            <nav class="settings-sidebar__nav" id="settings-sidebar-nav">
+              <a class="settings-sidebar-link" href="/settings/church" data-route="/settings/church">Church Profile</a>
+              <a class="settings-sidebar-link" href="/settings/app" data-route="/settings/app">Appearance &amp; theme</a>
+            </nav>
+          </aside>
+          <div class="settings-main">
+            <div class="settings-panel" id="settings-panel-church" data-settings-panel="church">
+              <div class="admin-card">
+                <h3 style="margin-top:0;">Church Profile</h3>
+                <p class="muted">Community name, celebrants, and logo used across Mass media.</p>
+                <div class="field">
+                  <label for="settings-church-name">Community name</label>
+                  <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" />
+                </div>
+                <div class="field">
+                  <label for="settings-celebrant-new">Mass celebrants</label>
+                  <p class="muted" style="margin:0 0 10px;">Saved to the app database. Names appear in Mass Builder → Basics.</p>
+                  <ul class="celebrant-settings-list" id="settings-celebrant-list" aria-live="polite"></ul>
+                  <div class="flow-input-group">
+                    <input type="text" id="settings-celebrant-new" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
+                    <button type="button" class="secondary" id="btn-settings-celebrant-add">Add</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="church-logo">Church logo</label>
+                  <div style="display: flex; gap: 8px; align-items: flex-start;">
+                    <input type="file" id="church-logo" accept="image/png,image/jpeg,image/webp,image/gif" style="flex: 1;" />
+                    <button type="button" class="secondary" id="btn-upload-logo" style="white-space: nowrap;">Upload</button>
+                  </div>
+                  <p class="status" id="logo-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
+                  <div id="logo-preview" style="margin-top: 8px; max-width: 200px;"></div>
+                </div>
+                <div class="actions">
+                  <button type="button" class="primary" id="btn-save-community-api">Save church profile</button>
+                </div>
+                <p class="status" id="settings-church-status" aria-live="polite"></p>
+              </div>
             </div>
-            <p class="status" id="logo-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
-            <div id="logo-preview" style="margin-top: 8px; max-width: 200px;"></div>
-          </div>
-          <div class="actions">
-            <button type="button" class="primary" id="btn-save-community-api">Save community name</button>
-          </div>
-          <p class="status" id="settings-church-status" aria-live="polite"></p>
-        </div>
-      </section>
+            <div class="settings-panel" id="settings-panel-app" data-settings-panel="appearance" hidden>
+              <div class="admin-card">
+                <h3 style="margin-top:0;">Appearance &amp; theme</h3>
+                <p class="muted">Choose light or dark interface, or match your device setting.</p>
+                <div class="theme-preference-row" role="radiogroup" aria-label="Color theme">
+                  <label class="theme-pref-option"><input type="radio" name="theme-preference" value="light" /> Light</label>
+                  <label class="theme-pref-option"><input type="radio" name="theme-preference" value="dark" /> Dark</label>
+                  <label class="theme-pref-option"><input type="radio" name="theme-preference" value="system" checked /> System</label>
+                </div>
 
-      <section class="page" id="app-settings-page" data-route="/settings/app">
-        <div class="admin-card" style="max-width:560px;">
-          <h3 style="margin-top:0;">Appearance</h3>
-          <p class="muted">Choose light or dark interface, or match your device setting.</p>
-          <div class="theme-preference-row" role="radiogroup" aria-label="Color theme">
-            <label class="theme-pref-option"><input type="radio" name="theme-preference" value="light" /> Light</label>
-            <label class="theme-pref-option"><input type="radio" name="theme-preference" value="dark" /> Dark</label>
-            <label class="theme-pref-option"><input type="radio" name="theme-preference" value="system" checked /> System</label>
-          </div>
+                <hr class="settings-divider" />
 
-          <hr class="settings-divider" />
+                <h3>Accent color</h3>
+                <p class="muted">App chrome glow and highlights. Choose a missalette color or pick your own. Reset to follow the liturgical season from the calendar.</p>
+                <div class="accent-preset-row" role="group" aria-label="Accent presets">
+                  <button type="button" class="accent-swatch" data-accent="#166534" data-accent-glow="#4ADE80" title="Ordinary — green" style="background: linear-gradient(135deg, #166534, #4ADE80);"></button>
+                  <button type="button" class="accent-swatch" data-accent="#5B21B6" data-accent-glow="#C4B5FD" title="Advent — violet" style="background: linear-gradient(135deg, #5B21B6, #C4B5FD);"></button>
+                  <button type="button" class="accent-swatch" data-accent="#B45309" data-accent-glow="#FCD34D" title="Christmas — gold" style="background: linear-gradient(135deg, #B45309, #FCD34D);"></button>
+                  <button type="button" class="accent-swatch" data-accent="#6B21A8" data-accent-glow="#E9D5FF" title="Lent — purple" style="background: linear-gradient(135deg, #6B21A8, #E9D5FF);"></button>
+                  <button type="button" class="accent-swatch" data-accent="#BE123C" data-accent-glow="#FDA4AF" title="Easter — rose" style="background: linear-gradient(135deg, #BE123C, #FDA4AF);"></button>
+                </div>
+                <div class="field accent-custom-row">
+                  <label for="app-accent-color">Custom accent</label>
+                  <input type="color" id="app-accent-color" value="#166534" aria-label="Custom accent color" />
+                  <button type="button" class="secondary" id="btn-reset-accent">Follow liturgical season</button>
+                </div>
 
-          <h3>Accent color</h3>
-          <p class="muted">App chrome glow and highlights. Choose a missalette color or pick your own. Reset to follow the liturgical season from the calendar.</p>
-          <div class="accent-preset-row" role="group" aria-label="Accent presets">
-            <button type="button" class="accent-swatch" data-accent="#166534" data-accent-glow="#4ADE80" title="Ordinary — green" style="background: linear-gradient(135deg, #166534, #4ADE80);"></button>
-            <button type="button" class="accent-swatch" data-accent="#5B21B6" data-accent-glow="#C4B5FD" title="Advent — violet" style="background: linear-gradient(135deg, #5B21B6, #C4B5FD);"></button>
-            <button type="button" class="accent-swatch" data-accent="#B45309" data-accent-glow="#FCD34D" title="Christmas — gold" style="background: linear-gradient(135deg, #B45309, #FCD34D);"></button>
-            <button type="button" class="accent-swatch" data-accent="#6B21A8" data-accent-glow="#E9D5FF" title="Lent — purple" style="background: linear-gradient(135deg, #6B21A8, #E9D5FF);"></button>
-            <button type="button" class="accent-swatch" data-accent="#BE123C" data-accent-glow="#FDA4AF" title="Easter — rose" style="background: linear-gradient(135deg, #BE123C, #FDA4AF);"></button>
-          </div>
-          <div class="field accent-custom-row">
-            <label for="app-accent-color">Custom accent</label>
-            <input type="color" id="app-accent-color" value="#166534" aria-label="Custom accent color" />
-            <button type="button" class="secondary" id="btn-reset-accent">Follow liturgical season</button>
-          </div>
+                <hr class="settings-divider" />
 
-          <hr class="settings-divider" />
+                <h3>Visual style</h3>
+                <p class="muted">Overall atmosphere of the interface (independent of light/dark mode).</p>
+                <div class="theme-preference-row" role="radiogroup" aria-label="Visual style">
+                  <label class="theme-pref-option"><input type="radio" name="visual-style" value="missalette" checked /> Missalette</label>
+                  <label class="theme-pref-option"><input type="radio" name="visual-style" value="parchment" /> Parchment</label>
+                  <label class="theme-pref-option"><input type="radio" name="visual-style" value="midnight" /> Midnight</label>
+                </div>
 
-          <h3>Visual style</h3>
-          <p class="muted">Overall atmosphere of the interface (independent of light/dark mode).</p>
-          <div class="theme-preference-row" role="radiogroup" aria-label="Visual style">
-            <label class="theme-pref-option"><input type="radio" name="visual-style" value="missalette" checked /> Missalette</label>
-            <label class="theme-pref-option"><input type="radio" name="visual-style" value="parchment" /> Parchment</label>
-            <label class="theme-pref-option"><input type="radio" name="visual-style" value="midnight" /> Midnight</label>
-          </div>
-
-          <p class="muted" style="margin-top:16px;">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for slide colors and typography.</p>
-          <div class="actions">
-            <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
-            <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
+                <p class="muted" style="margin-top:16px;">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for slide colors and typography.</p>
+                <div class="actions">
+                  <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
+                  <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -5578,21 +5715,32 @@ Lord, hear our prayer</textarea>
       return false;
     }
 
-    function syncSettingsSubnav(route) {
-      const subnav = $("settings-subnav");
-      if (!subnav) return;
-      const onSettings = route.startsWith("/settings/");
-      subnav.classList.toggle("is-visible", onSettings);
-      subnav.querySelectorAll(".settings-subnav-link").forEach((link) => {
+    function isSettingsRoute(route) {
+      return route === "/settings/church" || route === "/settings/app";
+    }
+
+    function syncSettingsLayout(route) {
+      const panelKey = route === "/settings/app" ? "appearance" : "church";
+      document.querySelectorAll(".settings-panel").forEach((panel) => {
+        const show = isSettingsRoute(route) && panel.dataset.settingsPanel === panelKey;
+        panel.hidden = !show;
+      });
+      document.querySelectorAll(".settings-sidebar-link").forEach((link) => {
         link.classList.toggle("active", link.dataset.route === route);
       });
     }
 
     function showRoute(route, replaceOnly = false) {
       const r = normalizeRoute(route);
-      document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.dataset.route === r));
+      document.querySelectorAll(".page").forEach((page) => {
+        if (page.id === "settings-page") {
+          page.classList.toggle("active", isSettingsRoute(r));
+        } else {
+          page.classList.toggle("active", page.dataset.route === r);
+        }
+      });
       document.querySelectorAll(".nav-link").forEach((link) => link.classList.toggle("active", navLinkIsActive(link, r)));
-      syncSettingsSubnav(r);
+      syncSettingsLayout(r);
       const rs = $("route-switcher");
       if (rs) rs.value = r;
       const rd = $("topbar-route-desc");
@@ -5605,6 +5753,7 @@ Lord, hear our prayer</textarea>
       if (r === "/settings/church") syncChurchFieldsToSettings();
       if (r === "/mass/builder") {
         syncChurchFieldsFromSettings();
+        refreshCommunity();
         loadSongCatalog();
       }
       const flowDock = $("flow-dock-actions");
@@ -5632,7 +5781,7 @@ Lord, hear our prayer</textarea>
       }
     }
 
-    document.querySelectorAll(".nav-link, .settings-subnav-link").forEach((link) => {
+    document.querySelectorAll(".nav-link, .settings-sidebar-link").forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
         showRoute(link.dataset.route);
@@ -6443,6 +6592,41 @@ Lord, hear our prayer</textarea>
     let hymnSlidePlans = {};
     let songPreviewState = null;
     let windowLastMassGenerateBody = null;
+    let hymnSlidePreviewDirty = false;
+    let hymnPreviewBaselineSignature = "";
+
+    function resetHymnSlidePlansSession() {
+      hymnSlidePlans = {};
+      hymnLyricOverrides = {};
+      hymnSlidePreviewDirty = false;
+      hymnPreviewBaselineSignature = "";
+      try {
+        localStorage.removeItem(HYMN_SLIDE_PLAN_KEY);
+        localStorage.removeItem(HYMN_LYRIC_OV_KEY);
+      } catch (_e) { /* ignore */ }
+    }
+
+    function markHymnSlidePreviewDirty() {
+      hymnSlidePreviewDirty = true;
+    }
+
+    function hymnPreviewPayloadSignature() {
+      return JSON.stringify({
+        plans: hymnSlidePlans,
+        overrides: buildHymnLyricOverridesPayload(),
+      });
+    }
+
+    function hymnPreviewHasPendingChanges() {
+      if (hymnSlidePreviewDirty) return true;
+      const sig = hymnPreviewPayloadSignature();
+      return !!(hymnPreviewBaselineSignature && sig !== hymnPreviewBaselineSignature);
+    }
+
+    function commitHymnPreviewBaseline() {
+      hymnSlidePreviewDirty = false;
+      hymnPreviewBaselineSignature = hymnPreviewPayloadSignature();
+    }
 
     function loadHymnLyricOverridesStore() {
       try {
@@ -6451,22 +6635,7 @@ Lord, hear our prayer</textarea>
         hymnLyricOverrides = {};
       }
     }
-    loadHymnLyricOverridesStore();
-
-    function loadHymnSlidePlanStore() {
-      try {
-        hymnSlidePlans = JSON.parse(localStorage.getItem(HYMN_SLIDE_PLAN_KEY) || "{}") || {};
-      } catch (_e) {
-        hymnSlidePlans = {};
-      }
-    }
-    loadHymnSlidePlanStore();
-
-    function saveHymnSlidePlanStore() {
-      try {
-        localStorage.setItem(HYMN_SLIDE_PLAN_KEY, JSON.stringify(hymnSlidePlans));
-      } catch (_e) { /* ignore */ }
-    }
+    resetHymnSlidePlansSession();
 
     function hymnSlidePlanKey(section, songId) {
       return (section || "").toLowerCase() + "|" + String(songId || "").trim();
@@ -6558,7 +6727,6 @@ Lord, hear our prayer</textarea>
       const library = (songPreviewState.libraryLyrics || "").trim();
       plan.chunks = chunks.slice();
       hymnSlidePlans[hymnSlidePlanKey(section, songId)] = plan;
-      saveHymnSlidePlanStore();
       const merged = buildLyricsFromSlidePlan(chunks, plan);
       if (!merged) return;
       if (!library || lyricsOverrideIsUsable(library, merged)) {
@@ -6753,8 +6921,95 @@ Lord, hear our prayer</textarea>
       return out;
     }
 
-    function ptToPreviewRem(pt) {
-      return Math.max(0.55, Number(pt) * 0.028) + "rem";
+    function ptToPreviewRem(pt, kind) {
+      const scale = kind === "title" ? 0.0165 : 0.0135;
+      const cap = kind === "title" ? 0.78 : 0.88;
+      const floor = kind === "title" ? 0.44 : 0.4;
+      return Math.max(floor, Math.min(cap, Number(pt) * scale)).toFixed(3) + "rem";
+    }
+
+    /** Preview-only lyric size: fits 16:9 mini slide (PPTX pt sizes are much larger on screen). */
+    function previewBodyRemForChunk(chunk, basePt) {
+      const lines = (chunk || "").split("\n").filter((ln) => ln.trim());
+      const lineCount = lines.length;
+      const longest = lines.reduce((m, ln) => Math.max(m, ln.trim().length), 0);
+      let rem = Math.min(0.88, Math.max(0.4, (Number(basePt) || 55) * 0.0135));
+      if (lineCount >= 2 || longest >= 22) rem = Math.min(rem, 0.78);
+      if (lineCount >= 3 || longest >= 28) rem = Math.min(rem, 0.7);
+      if (lineCount >= 4 || longest >= 34) rem = Math.min(rem, 0.62);
+      if (lineCount >= 5 || longest >= 40) rem = Math.min(rem, 0.56);
+      if (lineCount >= 6 || longest >= 46) rem = Math.min(rem, 0.5);
+      if (longest >= 54) rem = Math.min(rem, 0.46);
+      return rem.toFixed(3) + "rem";
+    }
+
+    /** Mirror ``powerpoint._auto_body_pt`` caps on requested body point size. */
+    function autoHymnBodyPtForChunk(chunk, basePt) {
+      const lines = (chunk || "").split("\n").filter((ln) => ln.trim());
+      const lineCount = lines.length;
+      const longest = lines.reduce((m, ln) => Math.max(m, ln.trim().length), 0);
+      let sizePt = Number(basePt) || 55;
+      if (lineCount >= 8 || longest >= 40) sizePt = Math.min(sizePt, 50);
+      if (lineCount >= 10 || longest >= 48) sizePt = Math.min(sizePt, 44);
+      if (lineCount >= 12 || longest >= 56) sizePt = Math.min(sizePt, 38);
+      if (lineCount >= 14 || longest >= 64) sizePt = Math.min(sizePt, 34);
+      return sizePt;
+    }
+
+    function inferHymnChunkBlockKind(chunk) {
+      const lines = (chunk || "").split("\n").map((ln) => ln.trim()).filter(Boolean);
+      if (!lines.length) return "verse";
+      const head = lines[0];
+      if (/^\[?\s*(refrain|chorus)(\s|\]|$|:)/i.test(head)) return "chorus";
+      if (/^(refrain|chorus)\s*:/i.test(head)) return "chorus";
+      return "verse";
+    }
+
+    function hymnPreviewSlideStyle(section, slideIndex, chunk) {
+      const typo = getHymnTypoForSlide(section, slideIndex);
+      const bodyPt = autoHymnBodyPtForChunk(chunk, typo.body_pt);
+      const titlePt = typo.title_pt;
+      const bodyAlign = (typo.body_align || "center").toLowerCase();
+      const titleAlign = (typo.title_align || "center").toLowerCase();
+      return (
+        "--hymn-lyric-size:" + previewBodyRemForChunk(chunk, bodyPt) + ";" +
+        "--hymn-title-size:" + ptToPreviewRem(titlePt, "title") + ";" +
+        "--hymn-body-align:" + bodyAlign + ";" +
+        "--hymn-title-align:" + titleAlign + ";"
+      );
+    }
+
+    async function flushMassSongSlidePlansForGenerate() {
+      if (songPreviewState) syncSlidePlanToOverrides();
+      await ensureLyricsCachedForSelectedSongs();
+      const songs = selectedSongsForGenerate();
+      Object.keys(songs).forEach((slot) => {
+        const id = songs[slot];
+        if (!id) return;
+        const sec = (SLOT_TO_HYMN_SECTION[slot] || slot).toLowerCase();
+        const lib = (massSongLyricsCache.get(sec + "|" + id) || "").trim();
+        if (!lib) return;
+        const chunks = chunkLyricsForPreview(lib, 6);
+        const key = hymnSlidePlanKey(sec, id);
+        const plan = normalizeHymnSlidePlan(hymnSlidePlans[key], chunks);
+        hymnSlidePlans[key] = plan;
+        if (slidePlanIsCustom(plan, chunks.length)) {
+          const merged = buildLyricsFromSlidePlan(chunks, plan);
+          if (merged && lyricsOverrideIsUsable(lib, merged)) {
+            setHymnLyricOverride(sec, id, merged);
+          }
+        }
+      });
+    }
+
+    async function confirmHymnPreviewChangesBeforeGenerate() {
+      await flushMassSongSlidePlansForGenerate();
+      if (!hymnPreviewHasPendingChanges()) return true;
+      const msg =
+        "Song slide preview has changes (slide order or slides turned off). " +
+        "These will be applied to the PowerPoint you are about to generate.";
+      notify(msg, "warn");
+      return window.confirm(msg + "\n\nContinue generating?");
     }
 
     function alignSelectOptions(val) {
@@ -6833,6 +7088,7 @@ Lord, hear our prayer</textarea>
         o[pos] = o[next];
         o[next] = tmp;
         plan.order = o;
+        markHymnSlidePreviewDirty();
         refreshSongPreviewPanel();
         syncSlidePlanToOverrides();
       };
@@ -6860,6 +7116,7 @@ Lord, hear our prayer</textarea>
           }
         }
         songPreviewState.plan.disabled = Array.from(disabled);
+        markHymnSlidePreviewDirty();
         refreshSongPreviewPanel();
         syncSlidePlanToOverrides();
       };
@@ -6926,6 +7183,7 @@ Lord, hear our prayer</textarea>
           }
         }
         notify("PowerPoint updated with slide plan.", "ok");
+        commitHymnPreviewBaseline();
       } catch (err) {
         if (statusEl) {
           statusEl.textContent = err.message || "Save failed.";
@@ -7053,18 +7311,22 @@ Lord, hear our prayer</textarea>
       const showTitle = options && options.showTitle;
       const disabled = options && options.disabled;
       const chunkIdx = options && options.chunkIdx != null ? options.chunkIdx : displayPos;
-      const sizeCls = hymnBodySizeClass(chunk);
+      const section = (options && options.section) || "default";
+      const slideIndex = options && options.slideIndex != null ? options.slideIndex : displayPos;
+      const blockKind = (options && options.blockKind) || inferHymnChunkBlockKind(chunk);
+      const slideStyle = hymnPreviewSlideStyle(section, slideIndex, chunk);
       const wrapCls = disabled ? " hymn-slide-wrap--off" : "";
+      const chorusCls = blockKind === "chorus" ? " hymn-lines--chorus" : "";
       const titleHtml = showTitle
         ? "<h4 class=\"hymn-title-text\">" + escapeHtml(meta.title || "Hymn") + "</h4>"
         : "";
       return (
         "<div class=\"hymn-slide-wrap" + wrapCls + "\" data-slide-index=\"" + displayPos + "\" data-chunk-idx=\"" + chunkIdx + "\">" +
           "<span class=\"song-preview-slide-label\">Slide " + (displayPos + 1) + "</span>" +
-          "<div class=\"slide-preview hymn-slide" + sizeCls + "\" data-hymn-slide=\"1\">" +
+          "<div class=\"slide-preview hymn-slide\" data-hymn-slide=\"1\" style=\"" + slideStyle + "\">" +
             titleHtml +
             "<div class=\"hymn-body\">" +
-              "<div class=\"hymn-lines\">" + formatHymnBodyHtml(chunk) + "</div>" +
+              "<div class=\"hymn-lines" + chorusCls + "\">" + formatHymnBodyHtml(chunk) + "</div>" +
             "</div>" +
           "</div>" +
         "</div>"
@@ -7086,6 +7348,9 @@ Lord, hear our prayer</textarea>
           showTitle: showTitle,
           disabled: off,
           chunkIdx: chunkIdx,
+          section: section,
+          slideIndex: pos,
+          blockKind: inferHymnChunkBlockKind(allChunks[chunkIdx] || ""),
         });
       }).join("");
       const enabled = countEnabledSlides(slidePlan, allChunks.length);
@@ -7147,7 +7412,12 @@ Lord, hear our prayer</textarea>
     }
 
     function closeSongPreviewPanel() {
-      syncSlidePlanToOverrides();
+      if (songPreviewState) {
+        syncSlidePlanToOverrides();
+        if (slidePlanIsCustom(songPreviewState.plan, songPreviewState.chunks.length)) {
+          markHymnSlidePreviewDirty();
+        }
+      }
       const panel = $("song-preview-panel");
       if (!panel || !panel.classList.contains("visible")) return;
       if (panel.classList.contains("closing")) return;
@@ -7508,7 +7778,9 @@ Lord, hear our prayer</textarea>
       const stack = $("toast-stack");
       if (!stack || !message) return;
       const el = document.createElement("div");
-      el.className = "toast toast--" + (kind === "error" ? "error" : kind === "ok" ? "ok" : "info");
+      el.className = "toast toast--" + (
+        kind === "error" ? "error" : kind === "ok" ? "ok" : kind === "warn" ? "warn" : "info"
+      );
       el.setAttribute("role", "status");
       const row = document.createElement("div");
       row.className = "toast__row";
@@ -7531,8 +7803,8 @@ Lord, hear our prayer</textarea>
 
     function notify(message, kind, meta) {
       if (!message) return;
-      if (kind === "ok" || kind === "error") {
-        pushAppNotification(message, kind, meta);
+      if (kind === "ok" || kind === "error" || kind === "warn") {
+        pushAppNotification(message, kind === "warn" ? "error" : kind, meta);
         showToast(message, kind);
       }
     }
@@ -7594,18 +7866,115 @@ Lord, hear our prayer</textarea>
     }
 
     function syncChurchFieldsToSettings() {
-      /* church name is managed in Settings → Church Profile */
+      renderSettingsCelebrantList();
     }
 
     function syncChurchFieldsFromSettings() {
       /* church name is managed in Settings → Church Profile */
     }
 
+    let celebrantNamesCache = [];
+
+    function getMainCelebrantName() {
+      const el = $("celebrant");
+      return (el && el.value.trim()) || "";
+    }
+
     function getMassCelebrantLine() {
-      const main = ($("celebrant") && $("celebrant").value.trim()) || "";
+      const main = getMainCelebrantName();
       const co = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
       if (!main) return "";
       return co ? main + " · " + co : main;
+    }
+
+    function renderSettingsCelebrantList() {
+      const ul = $("settings-celebrant-list");
+      if (!ul) return;
+      ul.innerHTML = celebrantNamesCache.map((name, i) => (
+        "<li class=\"celebrant-settings-list__item\">" +
+          "<span>" + escapeHtml(name) + "</span>" +
+          "<button type=\"button\" class=\"ghost mini\" data-remove-celebrant=\"" + i + "\">Remove</button>" +
+        "</li>"
+      )).join("");
+    }
+
+    function syncCelebrantFromSelect() {
+      if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
+    }
+
+    function renderCelebrantSelect(selectedName) {
+      const sel = $("celebrant");
+      if (!sel) return;
+      const keep = (selectedName || getMainCelebrantName() || "").trim();
+      const names = celebrantNamesCache.slice();
+      let options = "<option value=\"\">— Select celebrant —</option>";
+      if (!names.length) {
+        options += "<option value=\"\" disabled>No celebrants saved — open Settings</option>";
+        sel.disabled = true;
+      } else {
+        sel.disabled = false;
+        options += names.map((name) => (
+          "<option value=\"" + escapeHtml(name) + "\">" + escapeHtml(name) + "</option>"
+        )).join("");
+      }
+      sel.innerHTML = options;
+      if (keep && names.indexOf(keep) >= 0) {
+        sel.value = keep;
+      } else if (names.length) {
+        sel.value = names[0];
+      } else {
+        sel.value = "";
+      }
+      syncCelebrantFromSelect();
+    }
+
+    function bindCelebrantSelect() {
+      const sel = $("celebrant");
+      if (!sel || sel.dataset.bound === "1") return;
+      sel.dataset.bound = "1";
+      sel.addEventListener("change", syncCelebrantFromSelect);
+    }
+
+    function applyCelebrantNamesFromServer(names) {
+      celebrantNamesCache = Array.isArray(names)
+        ? names.map((x) => String(x).trim()).filter(Boolean)
+        : [];
+      renderSettingsCelebrantList();
+      renderCelebrantSelect(getMainCelebrantName());
+    }
+
+    async function saveCelebrantNamesToDatabase() {
+      const data = await postJSON("/api/community/profile", { celebrant_names: celebrantNamesCache });
+      applyCelebrantNamesFromServer(data.celebrant_names || celebrantNamesCache);
+      return data;
+    }
+
+    async function addSettingsCelebrantName(name) {
+      const n = (name || "").trim();
+      if (!n) return false;
+      const key = n.toLowerCase();
+      if (celebrantNamesCache.some((x) => x.toLowerCase() === key)) return false;
+      celebrantNamesCache.push(n);
+      renderSettingsCelebrantList();
+      renderCelebrantSelect(n);
+      try {
+        await saveCelebrantNamesToDatabase();
+      } catch (_e) {
+        return false;
+      }
+      return true;
+    }
+
+    async function migrateCelebrantsFromBrowserStorage() {
+      try {
+        const local = JSON.parse(localStorage.getItem("savedCelebrants") || "[]");
+        if (!Array.isArray(local) || !local.length) return;
+        const merged = local.map((x) => String(x).trim()).filter(Boolean);
+        if (!merged.length) return;
+        await postJSON("/api/community/profile", { celebrant_names: merged });
+        localStorage.removeItem("savedCelebrants");
+        celebrantNamesCache = merged;
+      } catch (_e) { /* ignore */ }
     }
 
     function upcomingSundayISO(base = new Date()) {
@@ -7632,6 +8001,12 @@ Lord, hear our prayer</textarea>
         if (data.community_name && $("settings-church-name")) {
           $("settings-church-name").value = data.community_name;
         }
+        applyCelebrantNamesFromServer(data.celebrant_names || []);
+        if (!celebrantNamesCache.length) {
+          await migrateCelebrantsFromBrowserStorage();
+          applyCelebrantNamesFromServer(celebrantNamesCache);
+        }
+        bindCelebrantSelect();
         if (data.logo_url) {
           const preview = $("logo-preview");
           if (preview) {
@@ -8160,7 +8535,7 @@ Lord, hear our prayer</textarea>
       const celebrant = (o.celebrant != null ? o.celebrant : getMassCelebrantLine()).trim();
       const celebrantMain = ($("celebrant") && $("celebrant").value.trim()) || "";
       if (!date || !celebrantMain) {
-        statusFn("Enter Mass date and celebrant before generating.", "error");
+        statusFn("Enter Mass date and select a celebrant in Basics before generating.", "error");
         return null;
       }
       const posterOpts = readOpenAiPosterSettings();
@@ -8217,6 +8592,10 @@ Lord, hear our prayer</textarea>
         if (collLabel) body.mass_collection_date_label = collLabel;
         if (foodLines.length) body.food_sponsors = foodLines;
         if (psalmOv) body.psalm_text_override = psalmOv;
+        if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
+          setMassGenLoading(false);
+          return null;
+        }
         body.hymn_typography = buildHymnTypographyPayload();
         await ensureLyricsCachedForSelectedSongs();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
@@ -8291,6 +8670,7 @@ Lord, hear our prayer</textarea>
           $("download-row").classList.add("visible");
         }
         windowLastMassGenerateBody = JSON.parse(JSON.stringify(body));
+        commitHymnPreviewBaseline();
         pushRecent({
           title: data.title || "Mass media",
           date,
@@ -8340,34 +8720,6 @@ Lord, hear our prayer</textarea>
         $("poster-gospel-quote").value = flowPreviewData.gospel_quote;
       }
       updatePosterLivePreview();
-    }
-
-    function loadCelebrantPresets() {
-      const dl = $("celebrant-presets");
-      if (!dl) return;
-      let list = [];
-      try {
-        list = JSON.parse(localStorage.getItem("savedCelebrants") || "[]");
-      } catch (_e) {
-        list = [];
-      }
-      dl.innerHTML = list.map((name) => "<option value=\"" + escapeHtml(name) + "\"></option>").join("");
-    }
-
-    function saveCelebrantPreset(name) {
-      const n = (name || "").trim();
-      if (!n) return;
-      let list = [];
-      try {
-        list = JSON.parse(localStorage.getItem("savedCelebrants") || "[]");
-      } catch (_e) {
-        list = [];
-      }
-      if (!list.includes(n)) {
-        list.unshift(n);
-        localStorage.setItem("savedCelebrants", JSON.stringify(list.slice(0, 12)));
-      }
-      loadCelebrantPresets();
     }
 
     let calendarCursor = new Date();
@@ -8800,12 +9152,75 @@ Lord, hear our prayer</textarea>
       }
       $("settings-church-status").textContent = "Saving…";
       try {
-        await postJSON("/api/community", { community_name: name });
-        $("settings-church-status").textContent = "Saved community name.";
+        const saved = await postJSON("/api/community/profile", {
+          community_name: name,
+          celebrant_names: celebrantNamesCache,
+        });
+        applyCelebrantNamesFromServer(saved.celebrant_names || celebrantNamesCache);
+        $("settings-church-status").textContent = "Saved church profile to database.";
         $("settings-church-status").className = "status ok";
+        renderCelebrantSelect(getMainCelebrantName());
       } catch (err) {
         $("settings-church-status").textContent = err.message || "Save failed";
         $("settings-church-status").className = "status error";
+      }
+    });
+
+    $("btn-settings-celebrant-add").addEventListener("click", async () => {
+      const inp = $("settings-celebrant-new");
+      if (!inp) return;
+      const statusEl = $("settings-church-status");
+      if (statusEl) {
+        statusEl.textContent = "Saving…";
+        statusEl.className = "status";
+      }
+      const ok = await addSettingsCelebrantName(inp.value);
+      if (!ok) {
+        if (statusEl) {
+          statusEl.textContent = "Enter a new name, or check that the server is running.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
+      inp.value = "";
+      if (statusEl) {
+        statusEl.textContent = "Celebrant saved to database.";
+        statusEl.className = "status ok";
+      }
+    });
+
+    $("settings-celebrant-new").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      $("btn-settings-celebrant-add").click();
+    });
+
+    $("settings-celebrant-list").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-remove-celebrant]");
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.removeCelebrant, 10);
+      if (Number.isNaN(idx) || idx < 0 || idx >= celebrantNamesCache.length) return;
+      const statusEl = $("settings-church-status");
+      const removed = celebrantNamesCache[idx];
+      celebrantNamesCache.splice(idx, 1);
+      renderSettingsCelebrantList();
+      const keep = getMainCelebrantName();
+      renderCelebrantSelect(keep && keep !== removed ? keep : (celebrantNamesCache[0] || ""));
+      if (statusEl) {
+        statusEl.textContent = "Saving…";
+        statusEl.className = "status";
+      }
+      try {
+        await saveCelebrantNamesToDatabase();
+        if (statusEl) {
+          statusEl.textContent = "Celebrant removed from database.";
+          statusEl.className = "status ok";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Remove failed.";
+          statusEl.className = "status error";
+        }
       }
     });
 
@@ -8850,7 +9265,7 @@ Lord, hear our prayer</textarea>
         return;
       }
       if ($("mass-date")) $("mass-date").value = date;
-      if ($("celebrant")) $("celebrant").value = celebrant;
+      renderCelebrantSelect(celebrant.split(" · ")[0].trim());
       const data = await runFullMassGenerate({
         setStatus: st,
         date,
@@ -9014,16 +9429,11 @@ Lord, hear our prayer</textarea>
       loadFlowData(false).then(() => $("btn-generate-flow").click());
     });
 
-    $("btn-save-celebrant").addEventListener("click", () => {
-      saveCelebrantPreset($("poster-celebrant").value);
-      const el = $("poster-status");
-      if (el) {
-        el.textContent = "Celebrant saved to browser list.";
-        el.className = "status ok";
-      }
-    });
-
     initColorTheme();
+
+    $("co-celebrant") && $("co-celebrant").addEventListener("input", () => {
+      if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
+    });
 
     $("mass-date").value = upcomingSundayISO();
     if ($("poster-mass-date")) $("poster-mass-date").value = $("mass-date").value;
@@ -9104,7 +9514,7 @@ Lord, hear our prayer</textarea>
     })();
     renderCalendarDow();
     loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
-    loadCelebrantPresets();
+    bindCelebrantSelect();
     buildSongLibFilters();
     loadSongCatalog();
     renderCollectionsRecent();

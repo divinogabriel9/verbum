@@ -1,4 +1,7 @@
 {
   "community_name": "Gwangju Filipino Catholic Community",
-  "logo_path": "data/uploads/community_logo.png"
+  "logo_path": "data/uploads/community_logo.png",
+  "celebrant_names": [
+    "Rev.Fr. Jonrey Lauron, RCJ"
+  ]
 }

@@ -1,65 +1,47 @@
-"""Congregation display name and optional logo path (Phase 3 — church logo system)."""
+"""Congregation display name, logo path, and Mass celebrant list (SQLite-backed)."""
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any, Optional
 
+from services import community_store
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_CONFIG_PATH = _PROJECT_ROOT / "data" / "community.json"
 _UPLOADS_DIR = _PROJECT_ROOT / "data" / "uploads"
 LOGO_FILENAME = "community_logo.png"
-# Path stored in community.json (relative to project root)
 LOGO_RELATIVE = f"data/uploads/{LOGO_FILENAME}"
 
-_default: dict[str, Any] = {
-    "community_name": "GWANGJU FILIPINO CATHOLIC COMMUNITY",
-    "logo_path": None,
-}
-_cache: Optional[dict[str, Any]] = None
+_default_name = community_store._DEFAULT_COMMUNITY_NAME
 
 
 def load_community() -> dict[str, Any]:
-    global _cache
-    if _cache is not None:
-        return _cache
-    if not _CONFIG_PATH.is_file():
-        _cache = dict(_default)
-        return _cache
-    try:
-        raw = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
-        merged = {**_default, **{k: v for k, v in raw.items() if k in ("community_name", "logo_path")}}
-        _cache = merged
-        return _cache
-    except (json.JSONDecodeError, OSError):
-        _cache = dict(_default)
-        return _cache
+    return community_store.load_profile()
 
 
-def update_community(*, community_name: Optional[str] = None, logo_path: Optional[str | Any] = None) -> dict[str, Any]:
-    """Write `data/community.json`. Pass ``logo_path`` as a string path or ``None`` to clear."""
-    global _cache
-    base = dict(_default)
-    if _CONFIG_PATH.is_file():
-        try:
-            raw = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
-            base.update({k: v for k, v in raw.items() if k in ("community_name", "logo_path")})
-        except (json.JSONDecodeError, OSError):
-            pass
+def update_community(
+    *,
+    community_name: Optional[str] = None,
+    logo_path: Optional[str | Any] = None,
+    celebrant_names: Optional[list[str]] = None,
+) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
     if community_name is not None:
-        base["community_name"] = str(community_name).strip() or _default["community_name"]
+        kwargs["community_name"] = community_name
     if logo_path is not None:
-        base["logo_path"] = logo_path
-    _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _CONFIG_PATH.write_text(json.dumps(base, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    _cache = None
-    return load_community()
+        kwargs["logo_path"] = logo_path
+    if celebrant_names is not None:
+        kwargs["celebrant_names"] = celebrant_names
+    return community_store.save_profile(**kwargs)
 
 
 def get_community_name() -> str:
     name = (load_community().get("community_name") or "").strip()
-    return name or str(_default["community_name"])
+    return name or _default_name
+
+
+def get_celebrant_names() -> list[str]:
+    return community_store.list_celebrant_names()
 
 
 def get_logo_path() -> Optional[Path]:
@@ -71,14 +53,13 @@ def get_logo_path() -> Optional[Path]:
         cand = _PROJECT_ROOT / path
         if cand.is_file():
             return cand
-    # Uploaded default location even if community.json was reset
     fallback = _PROJECT_ROOT / LOGO_RELATIVE
     return fallback if fallback.is_file() else None
 
 
 def clear_config_cache() -> None:
-    global _cache
-    _cache = None
+    """No-op: kept for callers that refreshed an in-memory JSON cache."""
+    return None
 
 
 def uploads_dir() -> Path:

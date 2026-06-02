@@ -39,6 +39,7 @@ from pipeline import (
 )
 from services.community_config import (
     LOGO_RELATIVE,
+    get_celebrant_names,
     get_community_name,
     logo_file_absolute,
     update_community,
@@ -233,6 +234,15 @@ class SongSelection(BaseModel):
 
 class CommunityNameBody(BaseModel):
     community_name: str = Field(..., min_length=1, max_length=240)
+
+
+class CommunityProfileBody(BaseModel):
+    community_name: Optional[str] = Field(None, min_length=1, max_length=240)
+    celebrant_names: Optional[list[str]] = Field(
+        None,
+        max_length=32,
+        description="Saved Mass celebrant names for the in-app picker.",
+    )
 
 
 class PreviewBody(BaseModel):
@@ -466,6 +476,7 @@ def api_community() -> dict[str, Any]:
     logo_exists = logo_file_absolute().is_file()
     return {
         "community_name": get_community_name(),
+        "celebrant_names": get_celebrant_names(),
         "logo_url": "/uploads/community_logo.png" if logo_exists else None,
     }
 
@@ -473,7 +484,28 @@ def api_community() -> dict[str, Any]:
 @app.post("/api/community")
 def api_set_community_name(body: CommunityNameBody) -> dict[str, Any]:
     update_community(community_name=body.community_name.strip())
-    return {"ok": True, "community_name": get_community_name()}
+    return {
+        "ok": True,
+        "community_name": get_community_name(),
+        "celebrant_names": get_celebrant_names(),
+    }
+
+
+@app.post("/api/community/profile")
+def api_set_community_profile(body: CommunityProfileBody) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    if body.community_name is not None:
+        kwargs["community_name"] = body.community_name.strip()
+    if body.celebrant_names is not None:
+        kwargs["celebrant_names"] = body.celebrant_names
+    if not kwargs:
+        raise HTTPException(status_code=400, detail="No profile fields to update.")
+    update_community(**kwargs)
+    return {
+        "ok": True,
+        "community_name": get_community_name(),
+        "celebrant_names": get_celebrant_names(),
+    }
 
 
 @app.post("/api/upload-logo")

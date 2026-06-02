@@ -99,8 +99,11 @@ _REFERENCE_DECK_FILENAME = "GCCC24May2026_Eastertide.pptx"
 _REFERENCE_SLIDE_PRE_MASS = 0
 _REFERENCE_SLIDE_PENITENTIAL = (7, 8)
 _REFERENCE_SLIDE_KYRIE = 9
+_LAMB_OF_GOD_TEMPLATE_FILENAME = "lamb_of_god_slide.pptx"
+_LAMB_OF_GOD_SLIDE_INDEX = 0
 _REFERENCE_FOOTER_ZONE_TOP = int(SLIDE_HEIGHT * 0.78)
 _reference_mass_deck: Optional[Presentation] = None
+_lamb_of_god_template: Optional[Presentation] = None
 
 
 @dataclass(frozen=True)
@@ -667,6 +670,28 @@ def _load_reference_mass_deck() -> Optional[Presentation]:
     return _reference_mass_deck
 
 
+def _lamb_of_god_template_path() -> Optional[Path]:
+    candidates = (
+        _PROJECT_ROOT / "data" / "reference" / _LAMB_OF_GOD_TEMPLATE_FILENAME,
+        Path.home() / "Downloads" / "GFCC_26APRIL2026 (3).pptx",
+    )
+    for path in candidates:
+        if path.is_file():
+            return path.resolve()
+    return None
+
+
+def _load_lamb_of_god_template() -> Optional[Presentation]:
+    global _lamb_of_god_template
+    if _lamb_of_god_template is not None:
+        return _lamb_of_god_template
+    ref_path = _lamb_of_god_template_path()
+    if not ref_path:
+        return None
+    _lamb_of_god_template = Presentation(str(ref_path))
+    return _lamb_of_god_template
+
+
 def _is_reference_branding_shape(shape) -> bool:
     """Skip reference logo groups and baked-in parish footer text boxes."""
     if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
@@ -761,6 +786,16 @@ def _add_kyrie_slide(prs: Presentation, theme: SlideTheme) -> None:
     if _copy_reference_slides(prs, ((_REFERENCE_SLIDE_KYRIE, "Kyrie Eleison"),), theme):
         return
     _add_marked_slide(prs, "Kyrie Eleison", GFCC.KYRIE, theme)
+
+
+def _add_lamb_of_god_slide(prs: Presentation, theme: SlideTheme) -> None:
+    tpl = _load_lamb_of_god_template()
+    if tpl is not None and _LAMB_OF_GOD_SLIDE_INDEX < len(tpl.slides):
+        _copy_slide_into_presentation(
+            prs, tpl.slides[_LAMB_OF_GOD_SLIDE_INDEX], theme, "Lamb of God"
+        )
+        return
+    _add_marked_slide(prs, "Lamb of God", get_prayer("lamb_of_god"), theme)
 
 
 def _render_marked_slide(
@@ -1829,8 +1864,9 @@ def generate_mass_ppt(
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck
+    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template
     _reference_mass_deck = None
+    _lamb_of_god_template = None
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
@@ -1971,7 +2007,7 @@ def generate_mass_ppt(
     _add_marked_chunked(prs, "Our Father", get_prayer("our_father"), theme)
     _add_divider_cover(prs, **ctx)
     _add_marked_slide(prs, "Sign of Peace", GFCC.SIGN_PEACE, theme)
-    _add_marked_slide(prs, "Lamb of God", get_prayer("lamb_of_god"), theme)
+    _add_lamb_of_god_slide(prs, theme)
     _add_marked_slide(prs, "The Communion Rite", GFCC.COMMUNION_DIALOGUE, theme)
     _add_divider_cover(prs, **ctx)
     c1 = str(sel.get("communion_1") or "").strip()
