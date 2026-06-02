@@ -6,7 +6,7 @@
   <title>{{ title }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;600;700&family=Mea+Culpa&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Mea+Culpa&display=swap" rel="stylesheet" />
   <script>
     (function () {
       try {
@@ -21,70 +21,247 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f6f5f3;
-      --bg-top: #fafaf9;
-      --surface: #ffffff;
-      --surface-2: #f8f9fb;
-      --surface-solid: #ffffff;
-      --ink: #1c2333;
-      --muted: #5c6578;
-      --line: #e5e8ef;
-      --line-soft: #eef1f6;
-      --accent: #5b4fc7;
-      --accent-2: #c45c26;
-      --accent-3: #0d9488;
-      --liturgical-accent: var(--accent);
-      --good: #059669;
-      --warn: #d97706;
-      --danger: #dc2626;
+      /* Winter Berry palette No.21 — sophisticated, minimal, timeless */
+      --wb-frost: #E6DFD9;
+      --wb-midnight: #15333D;
+      --wb-petal: #C1A3A1;
+      --wb-berry: #824D5D;
+      --wb-stone: #788898;
+      --wb-neon: #4DFFC8;
+      --wb-neon-dim: #2DD4A8;
+      --bg: #F3F5F8;
+      --bg-top: #FFFFFF;
+      --surface: #FFFFFF;
+      --surface-2: #F8FAFC;
+      --surface-solid: #FFFFFF;
+      --card-border: #E4E9EF;
+      --ink: #15333D;
+      --muted: #5C6B75;
+      --line: #E2E8F0;
+      --line-soft: #EDF2F7;
+      --accent: #824D5D;
+      --accent-2: #788898;
+      --accent-3: #C1A3A1;
+      --liturgical-accent: #824D5D;
+      --liturgical-glow: #C1A3A1;
+      --liturgical-secondary: #788898;
+      --on-accent: #FFFFFF;
+      --ink-subtle: #6A7A84;
+      --good: #2D6A4F;
+      --warn: #B45309;
+      --danger: #9B3D4E;
       --radius: 14px;
       --radius-sm: 10px;
       --radius-pill: 999px;
-      --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.08);
-      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
-      --shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.1);
-      --glass-blur: blur(12px) saturate(1.1);
-      --font: "Plus Jakarta Sans", Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      --shadow: 0 1px 2px rgba(21, 51, 61, 0.05), 0 12px 32px rgba(21, 51, 61, 0.08);
+      --shadow-sm: 0 1px 2px rgba(21, 51, 61, 0.04), 0 6px 18px rgba(21, 51, 61, 0.06);
+      --shadow-card: 0 1px 3px rgba(21, 51, 61, 0.06), 0 10px 28px rgba(21, 51, 61, 0.07);
+      --shadow-hover: 0 4px 16px rgba(21, 51, 61, 0.1), 0 20px 40px rgba(21, 51, 61, 0.08);
+      --shadow-glow: 0 0 24px color-mix(in srgb, var(--wb-petal) 18%, transparent);
+      --shadow-glow-soft: 0 0 32px color-mix(in srgb, var(--wb-stone) 10%, transparent);
+      --glass-blur: blur(14px) saturate(1.1);
+      --font: "Inter", "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+      --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
       --brand-font: "Mea Culpa", cursive;
       --sidebar-gap: 16px;
       --space-1: 8px;
       --space-2: 16px;
       --space-3: 24px;
       --space-4: 32px;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --header-height: 56px;
+      --content-max: 1280px;
+      /* Readable UI scale (~18px root; rem-based sizes inherit) */
+      --text-xs: 0.8125rem;
+      --text-sm: 0.9375rem;
+      --text-base: 1rem;
+      --text-lg: 1.125rem;
+      --text-xl: 1.25rem;
     }
-    body[data-season="advent"] { --liturgical-accent: #5b4fc7; --accent: #5b4fc7; }
-    body[data-season="christmas"] { --liturgical-accent: #b8860b; --accent: #b8860b; }
-    body[data-season="lent"] { --liturgical-accent: #6b4c9a; --accent: #6b4c9a; }
-    body[data-season="easter"] { --liturgical-accent: #c45c26; --accent: #c45c26; }
-    body[data-season="ordinary"] { --liturgical-accent: #2d6a4f; --accent: #2d6a4f; }
+    html {
+      scroll-behavior: smooth;
+      font-size: 112.5%;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+    /* Liturgical season: missalette ribbon colors (skipped when data-user-accent is set) */
+    body[data-season="advent"]:not([data-user-accent]) {
+      --liturgical-accent: #5A4A6A;
+      --liturgical-glow: #9B8AAB;
+      --liturgical-secondary: #788898;
+      --accent: #5A4A6A;
+    }
+    body[data-season="christmas"]:not([data-user-accent]) {
+      --liturgical-accent: #8B5A3C;
+      --liturgical-glow: #D4B896;
+      --liturgical-secondary: #788898;
+      --accent: #8B5A3C;
+    }
+    body[data-season="lent"]:not([data-user-accent]) {
+      --liturgical-accent: #5C3D52;
+      --liturgical-glow: #A8889E;
+      --liturgical-secondary: #6A7A8A;
+      --accent: #5C3D52;
+    }
+    body[data-season="easter"]:not([data-user-accent]) {
+      --liturgical-accent: #9B4D5E;
+      --liturgical-glow: #E8B4BC;
+      --liturgical-secondary: #788898;
+      --accent: #9B4D5E;
+    }
+    body[data-season="ordinary"]:not([data-user-accent]) {
+      --liturgical-accent: #824D5D;
+      --liturgical-glow: #C1A3A1;
+      --liturgical-secondary: #788898;
+      --accent: #824D5D;
+    }
 
     html[data-theme="dark"] {
       color-scheme: dark;
-      --bg: #111318;
-      --bg-top: #161b24;
-      --surface: #1c222d;
-      --surface-2: #161b24;
-      --surface-solid: #232a38;
-      --ink: #e8ecf4;
-      --muted: #94a3b8;
-      --line: #2f3a4d;
-      --line-soft: #252d3d;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.4);
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.28);
-      --shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.38);
+      --bg: #0E161A;
+      --bg-top: #121C22;
+      --surface: #1A2A32;
+      --surface-2: #223640;
+      --surface-solid: #243845;
+      --card-border: #3A5260;
+      --ink: #F0EBE8;
+      --muted: #A8B5BC;
+      --ink-subtle: #8A9AA3;
+      --line: #3D5260;
+      --line-soft: #2E424E;
+      --on-accent: #FFFFFF;
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.45), 0 20px 48px rgba(0, 0, 0, 0.5);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35), 0 12px 28px rgba(0, 0, 0, 0.4);
+      --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4), 0 24px 48px color-mix(in srgb, var(--wb-petal) 15%, rgba(0, 0, 0, 0.5));
+      --shadow-glow: 0 0 36px color-mix(in srgb, var(--wb-petal) 22%, transparent);
+      --shadow-glow-soft: 0 0 56px color-mix(in srgb, var(--wb-stone) 12%, transparent);
     }
     html[data-theme="dark"] body {
       background:
-        radial-gradient(ellipse 70% 50% at 0% 0%, color-mix(in srgb, var(--liturgical-accent) 16%, transparent), transparent 55%),
+        radial-gradient(ellipse 90% 70% at 0% -10%, color-mix(in srgb, var(--wb-petal) 18%, transparent), transparent 50%),
+        radial-gradient(ellipse 60% 50% at 100% 0%, color-mix(in srgb, var(--wb-stone) 12%, transparent), transparent 45%),
+        radial-gradient(ellipse 80% 60% at 50% 100%, color-mix(in srgb, var(--wb-berry) 12%, transparent), transparent 55%),
         linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 100%);
     }
-    html[data-theme="dark"] body[data-season="advent"] { --liturgical-accent: #9d8ef9; --accent: #9d8ef9; }
-    html[data-theme="dark"] body[data-season="christmas"] { --liturgical-accent: #d4a84b; --accent: #d4a84b; }
-    html[data-theme="dark"] body[data-season="lent"] { --liturgical-accent: #a78bda; --accent: #a78bda; }
-    html[data-theme="dark"] body[data-season="easter"] { --liturgical-accent: #e07a45; --accent: #e07a45; }
-    html[data-theme="dark"] body[data-season="ordinary"] { --liturgical-accent: #52b788; --accent: #52b788; }
+    html[data-theme="dark"] body[data-season="advent"]:not([data-user-accent]) {
+      --liturgical-accent: #9B8AAB;
+      --liturgical-glow: #C4B5CE;
+      --liturgical-secondary: #788898;
+      --accent: #9B8AAB;
+    }
+    html[data-theme="dark"] body[data-season="christmas"]:not([data-user-accent]) {
+      --liturgical-accent: #D4B896;
+      --liturgical-glow: #E8D4BC;
+      --liturgical-secondary: #788898;
+      --accent: #D4B896;
+    }
+    html[data-theme="dark"] body[data-season="lent"]:not([data-user-accent]) {
+      --liturgical-accent: #A8889E;
+      --liturgical-glow: #C9A8B8;
+      --liturgical-secondary: #6A7A8A;
+      --accent: #A8889E;
+    }
+    html[data-theme="dark"] body[data-season="easter"]:not([data-user-accent]) {
+      --liturgical-accent: #E8B4BC;
+      --liturgical-glow: #F0D0D6;
+      --liturgical-secondary: #788898;
+      --accent: #E8B4BC;
+    }
+    html[data-theme="dark"] body[data-season="ordinary"]:not([data-user-accent]) {
+      --liturgical-accent: #C1A3A1;
+      --liturgical-glow: #D4B8B6;
+      --liturgical-secondary: #788898;
+      --accent: #C1A3A1;
+    }
+
+    /* Visual style presets (App Settings) */
+    html[data-visual-style="midnight"][data-theme="dark"] {
+      --bg: #06050A;
+      --bg-top: #0C0A12;
+      --surface: #14111E;
+      --surface-2: #1A1626;
+      --surface-solid: #201C2E;
+      --ink: #FAF8FF;
+      --muted: #C4BCD6;
+    }
+    html[data-visual-style="parchment"][data-theme="light"] {
+      --bg: #F5F2EC;
+      --bg-top: #FFFFFF;
+      --surface: #FFFFFF;
+      --surface-2: #FAF8F4;
+      --surface-solid: #FFFFFF;
+      --card-border: #E8E4DC;
+      --shadow-glow: 0 0 20px color-mix(in srgb, var(--liturgical-glow) 14%, transparent);
+    }
+    html[data-visual-style="parchment"][data-theme="dark"] {
+      --bg: #12101A;
+      --bg-top: #1A1724;
+      --surface: #221E30;
+      --surface-solid: #2C2740;
+    }
+
+    /* Dark mode: readable text on all surfaces (Accessible & Ethical / WCAG) */
+    html[data-theme="dark"] .muted,
+    html[data-theme="dark"] .status,
+    html[data-theme="dark"] label,
+    html[data-theme="dark"] .panel-head p,
+    html[data-theme="dark"] .tool-card > p,
+    html[data-theme="dark"] .admin-card .muted {
+      color: var(--muted);
+    }
+    html[data-theme="dark"] .eyebrow,
+    html[data-theme="dark"] .metric strong,
+    html[data-theme="dark"] .topbar-nav .nav-link.active,
+    html[data-theme="dark"] .brand-logo:hover,
+    html[data-theme="dark"] .brand-logo.active {
+      color: var(--liturgical-glow);
+    }
+    html[data-theme="dark"] .topbar-nav .nav-link {
+      color: var(--muted);
+    }
+    html[data-theme="dark"] .topbar-nav .nav-link:hover {
+      color: var(--ink);
+    }
+    html[data-theme="dark"] textarea,
+    html[data-theme="dark"] input[type="text"],
+    html[data-theme="dark"] input[type="date"],
+    html[data-theme="dark"] input[type="search"],
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] .route-switcher {
+      background: var(--surface-solid);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    html[data-theme="dark"] textarea::placeholder,
+    html[data-theme="dark"] input::placeholder {
+      color: var(--ink-subtle);
+      opacity: 1;
+    }
+    html[data-theme="dark"] .secondary,
+    html[data-theme="dark"] .ghost,
+    html[data-theme="dark"] .mini {
+      color: var(--ink);
+      background: var(--surface-solid);
+      border-color: var(--line);
+    }
+    html[data-theme="dark"] .primary {
+      color: var(--on-accent);
+    }
+    html[data-theme="dark"] .topbar,
+    html[data-theme="dark"] .hero,
+    html[data-theme="dark"] .panel,
+    html[data-theme="dark"] .tool-card,
+    html[data-theme="dark"] .admin-card,
+    html[data-theme="dark"] .modal-box {
+      background: var(--surface);
+      color: var(--ink);
+    }
     html[data-theme="dark"] .control-card,
-    html[data-theme="dark"] .route-switcher,
     html[data-theme="dark"] input[type="color"] {
       background: var(--surface-solid);
       color: var(--ink);
@@ -135,9 +312,11 @@
       min-height: 100vh;
       color: var(--ink);
       font-family: var(--font);
+      font-size: var(--text-base);
+      line-height: 1.5;
       background:
-        radial-gradient(ellipse 70% 50% at 0% 0%, color-mix(in srgb, var(--liturgical-accent) 8%, transparent), transparent 55%),
-        linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 100%);
+        radial-gradient(ellipse 80% 50% at 50% -20%, color-mix(in srgb, var(--wb-frost) 40%, white), transparent 55%),
+        linear-gradient(180deg, #FFFFFF 0%, var(--bg) 55%, #EEF1F5 100%);
       background-attachment: fixed;
     }
     @media (prefers-reduced-motion: reduce) {
@@ -164,9 +343,9 @@
     button:disabled { cursor: not-allowed; opacity: 0.48; transform: none; }
 
     .app-shell {
-      --nav-width-collapsed: 72px;
-      --nav-width-expanded: 248px;
-      --nav-width: var(--nav-width-collapsed);
+      --nav-width-collapsed: 0px;
+      --nav-width-expanded: 0px;
+      --nav-width: 0px;
       display: flex;
       min-height: 100vh;
       width: 100%;
@@ -364,11 +543,15 @@
       width: 20px;
       height: 20px;
       margin-right: 10px;
-      opacity: 0.72;
+      opacity: 0.88;
       flex-shrink: 0;
       display: block;
       object-fit: contain;
       filter: none;
+    }
+    html[data-theme="dark"] .nav-icon {
+      filter: invert(1);
+      opacity: 0.95;
     }
     .nav-item:hover .nav-icon,
     .nav-item.active .nav-icon {
@@ -479,54 +662,524 @@
     .dashboard {
       flex: 1;
       min-width: 0;
-      margin-left: calc(var(--nav-width) + var(--sidebar-gap) * 2);
+      margin-left: 0;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      padding: var(--sidebar-gap) var(--sidebar-gap) 40px;
+      align-items: center;
+      gap: var(--space-lg);
+      padding: var(--space-md) clamp(20px, 4vw, 40px) 88px;
       max-height: 100vh;
       overflow-y: auto;
       overflow-x: hidden;
+      scroll-padding-top: calc(var(--header-height) + var(--space-md));
       transition: margin-left 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
-
-    .topbar, .hero, .panel, .tool-card, .modal-box {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    .dashboard > * {
+      width: min(var(--content-max), 100%);
+      margin-inline: auto;
     }
-    .panel:hover, .tool-card:hover, .admin-card:hover {
+
+    .topbar, .hero, .panel, .tool-card, .modal-box, .admin-card {
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: var(--shadow-card);
+      transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+    }
+    .panel:hover, .tool-card:hover, .admin-card:hover, .hero:hover {
       box-shadow: var(--shadow-hover);
-      border-color: color-mix(in srgb, var(--liturgical-accent) 22%, var(--line));
+      border-color: color-mix(in srgb, var(--liturgical-accent) 18%, var(--card-border));
     }
 
-    .topbar {
+    .topbar.topbar--pill {
+      border-radius: 999px;
+      padding: 6px 12px 6px 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 10px;
+      z-index: 22;
+      min-height: var(--header-height);
+      backdrop-filter: blur(18px) saturate(1.2);
+      -webkit-backdrop-filter: blur(18px) saturate(1.2);
+      background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 55%, var(--line));
+      box-shadow:
+        var(--shadow-glow),
+        0 14px 40px rgba(26, 18, 40, 0.18),
+        inset 0 1px 0 color-mix(in srgb, var(--liturgical-glow) 25%, white);
+    }
+    html[data-theme="dark"] .topbar.topbar--pill {
+      background: color-mix(in srgb, var(--surface-solid) 65%, transparent);
+      border-color: color-mix(in srgb, var(--liturgical-glow) 50%, var(--line));
+      box-shadow:
+        var(--shadow-glow),
+        0 14px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 color-mix(in srgb, var(--liturgical-glow) 15%, white);
+    }
+    .brand-logo {
+      justify-self: start;
+      flex-shrink: 0;
+      margin: 0;
+      padding: 8px 4px;
+      font-family: var(--brand-font), var(--font);
+      font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      color: var(--ink);
+      text-decoration: none;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: color 0.2s ease, text-shadow 0.2s ease;
+    }
+    .brand-logo:hover {
+      color: var(--liturgical-accent);
+      text-shadow:
+        0 0 12px color-mix(in srgb, var(--liturgical-glow) 70%, transparent),
+        0 0 28px color-mix(in srgb, var(--liturgical-glow) 35%, transparent);
+    }
+    .brand-logo.active {
+      color: var(--liturgical-accent);
+      text-shadow: 0 0 16px color-mix(in srgb, var(--liturgical-glow) 50%, transparent);
+    }
+    .brand-logo:focus-visible {
+      outline: 2px solid var(--liturgical-accent);
+      outline-offset: 3px;
+      border-radius: 8px;
+    }
+    .topbar-nav {
+      grid-column: 2;
+      justify-self: center;
+      flex: 0 1 auto;
+      width: fit-content;
+      max-width: min(100%, 56vw);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 0;
+      margin-inline: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-wrap: nowrap;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 3px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 20%, var(--line));
+      background: color-mix(in srgb, var(--surface-2) 55%, transparent);
+      box-shadow: inset 0 0 20px color-mix(in srgb, var(--liturgical-glow) 6%, transparent);
+    }
+    .topbar-nav::-webkit-scrollbar { display: none; }
+    .topbar-nav .nav-link {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      color: var(--muted);
+      background: transparent;
+      transition: color 0.2s ease, background 0.2s ease;
+      white-space: nowrap;
+    }
+    .topbar-nav .nav-link .nav-icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.9;
+      filter: none;
+      object-fit: contain;
+    }
+    html[data-theme="dark"] .topbar-nav .nav-link .nav-icon {
+      filter: invert(1);
+      opacity: 0.95;
+    }
+    .topbar-nav .nav-link:hover {
+      color: var(--ink);
+      background: color-mix(in srgb, var(--liturgical-accent) 8%, transparent);
+      transform: none;
+    }
+    .topbar-nav .nav-link.active {
+      color: var(--liturgical-accent);
+      background: color-mix(in srgb, var(--liturgical-glow) 22%, var(--surface-solid));
+      box-shadow: 0 1px 3px rgba(21, 51, 61, 0.08);
+    }
+    .topbar-nav .nav-link.active .nav-icon {
+      opacity: 1;
+      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--liturgical-glow) 55%, transparent));
+    }
+    html[data-theme="dark"] .flow-accordion {
+      background: var(--surface-2);
+      border-color: var(--line);
+    }
+    html[data-theme="dark"] .flow-accordion:hover {
+      border-color: color-mix(in srgb, var(--liturgical-glow) 45%, var(--line));
+      box-shadow: 0 2px 12px color-mix(in srgb, var(--liturgical-glow) 18%, rgba(0,0,0,0.3));
+    }
+    html[data-theme="dark"] .flow-accordion[open] {
+      background: var(--surface);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--liturgical-accent) 20%, rgba(0,0,0,0.4));
+    }
+    html[data-theme="dark"] .flow-accordion summary {
+      background: var(--surface-2);
+      color: var(--ink);
+      border-bottom-color: var(--line);
+    }
+    html[data-theme="dark"] .flow-accordion[open] > summary {
+      background: color-mix(in srgb, var(--surface) 90%, var(--liturgical-accent) 15%);
+      border-bottom-color: var(--line);
+    }
+    html[data-theme="dark"] .flow-accordion summary:hover {
+      background: color-mix(in srgb, var(--surface-2) 85%, var(--liturgical-accent) 20%);
+    }
+    html[data-theme="dark"] .flow-accordion-body {
+      background: var(--surface-solid);
+      color: var(--ink);
+    }
+    .topbar-nav .nav-link:focus-visible {
+      outline: 2px solid var(--liturgical-accent);
+      outline-offset: -2px;
+      z-index: 1;
+    }
+    .topbar-nav .nav-label {
+      opacity: 1;
+      max-width: none;
+      overflow: visible;
+      pointer-events: auto;
+    }
+    .topbar--pill .nav-link {
+      justify-content: center;
+      box-shadow: none;
+      transform: none;
+    }
+    .topbar--pill .nav-link:hover {
+      transform: none;
+    }
+    .topbar--pill .nav-link.active {
+      box-shadow: none;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .sr-only-host {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .app-bottom-right {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .app-bottom-right > * {
+      pointer-events: auto;
+    }
+    .route-jump-float {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-card);
+      opacity: 0;
+      transition: opacity 0.3s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .route-jump-float:hover,
+    .route-jump-float:focus-within {
+      opacity: 1;
+      box-shadow: var(--shadow-hover);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 22%, var(--card-border));
+    }
+    .flow-dock-float {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-card);
+    }
+    .flow-dock-float[hidden] {
+      display: none !important;
+    }
+    .route-jump-float label {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .flow-dock-float .uiverse-btn {
+      flex-shrink: 0;
+    }
+    .toast-stack {
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: flex-end;
+      gap: 8px;
+      width: min(360px, calc(100vw - 32px));
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      width: 100%;
+      padding: 10px 10px 10px 14px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      font-weight: 600;
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      color: var(--ink);
+      box-shadow: var(--shadow-card);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .toast__row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .toast__text {
+      flex: 1;
+      min-width: 0;
+    }
+    .toast__close {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.65;
+      transition: opacity 0.15s ease, background 0.15s ease;
+    }
+    .toast__close:hover {
+      opacity: 1;
+      background: color-mix(in srgb, currentColor 12%, transparent);
+    }
+    .toast__close:focus-visible {
+      outline: 2px solid var(--liturgical-accent);
+      outline-offset: 2px;
+      opacity: 1;
+    }
+    .toast--visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast--ok {
+      border-color: color-mix(in srgb, var(--good) 45%, var(--line));
+      background: color-mix(in srgb, var(--good) 10%, var(--surface-solid));
+      color: var(--good);
+    }
+    .toast--error {
+      border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+      background: color-mix(in srgb, var(--danger) 10%, var(--surface-solid));
+      color: var(--danger);
+    }
+    .notif-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .notif-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 30%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-glow) 8%, var(--surface-2));
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .notif-btn:hover,
+    .notif-btn[aria-expanded="true"] {
+      background: var(--surface-solid);
+      border-color: color-mix(in srgb, var(--liturgical-glow) 55%, var(--line));
+      box-shadow: 0 0 14px color-mix(in srgb, var(--liturgical-glow) 25%, transparent);
+    }
+    .notif-btn .notif-icon {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      display: block;
+    }
+    html[data-theme="dark"] .notif-btn .notif-icon {
+      filter: invert(1);
+      opacity: 0.95;
+    }
+    .notif-btn .notif-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      min-width: 1.1rem;
+      height: 1.1rem;
+      padding: 0 4px;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      line-height: 1.1rem;
+      text-align: center;
+      background: var(--liturgical-accent);
+      color: var(--on-accent);
+      border: 2px solid var(--surface-solid);
+    }
+    .notif-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 50;
+      width: min(380px, calc(100vw - 24px));
+      max-height: min(440px, 62vh);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
       border-radius: var(--radius);
-      padding: 12px 18px;
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 35%, var(--line));
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-hover);
+    }
+    .notif-panel[hidden] {
+      display: none !important;
+    }
+    .notif-panel__head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line-soft);
+      flex-shrink: 0;
     }
-    .topbar-context {
-      flex: 1;
-      min-width: 0;
+    .notif-panel__head h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+    .notif-panel__body {
+      overflow-y: auto;
+      padding: 10px 14px 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .notif-panel__body .notification-feed {
+      margin: 0;
+    }
+    .notif-panel__body #notification-empty {
+      margin: 0;
+      font-size: 0.86rem;
+    }
+    .notification-feed {
+      list-style: none;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 10px;
     }
-    .topbar-breadcrumb {
+    .notification-item {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+    .notification-item--ok {
+      border-color: color-mix(in srgb, var(--good) 35%, var(--line));
+    }
+    .notification-item--error {
+      border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+    }
+    .notification-item__msg {
       margin: 0;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: var(--ink);
     }
-    .topbar-breadcrumb span { color: var(--liturgical-accent); }
+    .notification-item__time {
+      margin: 6px 0 0;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .notification-item__links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .notification-item__links a {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      text-decoration: none;
+      color: var(--liturgical-accent);
+    }
+    .side-nav {
+      display: none !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      transform: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
     .topbar-meta {
+      grid-column: 3;
+      justify-self: end;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -538,8 +1191,8 @@
       gap: 6px;
       padding: 6px 12px;
       border-radius: var(--radius-pill);
-      background: var(--surface-2);
-      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--liturgical-glow) 12%, var(--surface-2));
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 40%, var(--line));
       font-size: 0.78rem;
       font-weight: 700;
       color: var(--ink);
@@ -547,13 +1200,15 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      box-shadow: 0 0 16px color-mix(in srgb, var(--liturgical-glow) 18%, transparent);
     }
     .season-chip-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--liturgical-accent);
+      background: var(--liturgical-glow);
       flex-shrink: 0;
+      box-shadow: 0 0 10px var(--liturgical-glow);
     }
     .theme-toggle-btn {
       display: inline-flex;
@@ -563,15 +1218,16 @@
       height: 40px;
       padding: 0;
       border-radius: var(--radius-sm);
-      border: 1px solid var(--line);
-      background: var(--surface-2);
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 30%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-glow) 8%, var(--surface-2));
       color: var(--ink);
       flex-shrink: 0;
-      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
     .theme-toggle-btn:hover {
       background: var(--surface-solid);
-      border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      border-color: color-mix(in srgb, var(--liturgical-glow) 55%, var(--line));
+      box-shadow: 0 0 14px color-mix(in srgb, var(--liturgical-glow) 25%, transparent);
     }
     .theme-toggle-btn svg {
       width: 20px;
@@ -609,46 +1265,97 @@
       margin: 0;
       accent-color: var(--liturgical-accent);
     }
-    .brand {
+    .accent-preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+    .accent-swatch {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 12px;
+      border: 2px solid var(--line);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .accent-swatch:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--liturgical-glow) 60%, var(--line));
+    }
+    .accent-swatch.active {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 2px var(--surface-solid), 0 0 16px color-mix(in srgb, var(--liturgical-glow) 45%, transparent);
+    }
+    .accent-custom-row {
       display: flex;
       align-items: center;
       gap: 12px;
-      min-width: 0;
+      flex-wrap: wrap;
     }
-    .brand-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: 11px;
-      background: var(--liturgical-accent);
-      box-shadow: 0 2px 10px color-mix(in srgb, var(--liturgical-accent) 35%, transparent);
-      flex: 0 0 auto;
+    .accent-custom-row input[type="color"] {
+      width: 56px;
+      height: 48px;
     }
-    .brand h1 {
-      margin: 0;
-      font-family: var(--font);
-      font-size: 1.05rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      color: var(--ink);
+    .settings-divider {
+      height: 1px;
+      border: 0;
+      margin: 20px 0;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
     }
-    .brand .topbar-liturgyflow {
-      margin: 2px 0 0;
-      font-size: 0.82rem;
-      font-weight: 300;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-    }
-    .brand .muted { margin: 4px 0 0; font-size: 0.8rem; }
-
-    .route-switcher {
+    .settings-subnav {
       display: none;
-      width: 100%;
-      padding: 10px 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 20px;
+      padding: 6px;
+      border-radius: var(--radius-md);
       border: 1px solid var(--line);
-      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+      box-shadow: var(--shadow-sm);
+    }
+    .settings-subnav.is-visible {
+      display: flex;
+    }
+    .settings-subnav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .settings-subnav-link:hover {
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+    .settings-subnav-link.active {
+      color: var(--ink);
+      border-color: color-mix(in srgb, var(--liturgical-glow) 35%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface-solid));
+      box-shadow: 0 0 12px color-mix(in srgb, var(--liturgical-glow) 18%, transparent);
+    }
+    .route-switcher {
+      display: block;
+      width: auto;
+      min-width: 180px;
+      max-width: 240px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
       color: var(--ink);
       background: var(--surface-solid);
+      font-size: 0.84rem;
+      font-weight: 600;
     }
 
     .page { display: none; }
@@ -666,6 +1373,58 @@
       gap: var(--space-2);
       align-items: center;
     }
+    .hero--home {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-lg);
+      padding: var(--space-lg) var(--space-xl);
+      border-radius: 20px;
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 35%, var(--line));
+      background:
+        radial-gradient(ellipse 90% 70% at 100% 0%, color-mix(in srgb, var(--liturgical-glow) 14%, transparent), transparent 58%),
+        radial-gradient(ellipse 60% 50% at 0% 100%, color-mix(in srgb, var(--liturgical-accent) 10%, transparent), transparent 50%),
+        var(--surface);
+      box-shadow: var(--shadow-sm), var(--shadow-glow);
+    }
+    .hero--home-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-lg);
+      align-items: start;
+    }
+    .hero--home-divider {
+      height: 1px;
+      border: 0;
+      margin: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in srgb, var(--liturgical-glow) 50%, var(--line)),
+        transparent
+      );
+      box-shadow: 0 0 12px color-mix(in srgb, var(--liturgical-glow) 25%, transparent);
+    }
+    .hero--home-section h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+    .hero--home-footer {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-lg);
+      align-items: start;
+    }
+    .hero--home-quick .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .hero--home-quick .quick-actions > * {
+      min-width: 0;
+      width: 100%;
+    }
     .eyebrow {
       margin: 0 0 6px;
       color: var(--liturgical-accent);
@@ -673,6 +1432,7 @@
       font-weight: 800;
       letter-spacing: 0.1em;
       text-transform: uppercase;
+      text-shadow: 0 0 14px color-mix(in srgb, var(--liturgical-glow) 40%, transparent);
     }
     .hero h2 {
       max-width: 640px;
@@ -700,20 +1460,20 @@
     .home-bento {
       display: grid;
       grid-template-columns: repeat(12, 1fr);
-      gap: var(--space-2);
+      gap: var(--space-lg);
       align-items: start;
     }
     .home-bento-sunday {
-      grid-column: 1 / -1;
+      grid-column: span 8;
     }
     .home-bento-actions {
-      grid-column: span 5;
-    }
-    .home-bento-snapshot {
       grid-column: span 4;
     }
+    .home-bento-snapshot {
+      grid-column: span 5;
+    }
     .home-bento-recent {
-      grid-column: span 3;
+      grid-column: span 7;
     }
     @media (max-width: 960px) {
       .home-bento-actions,
@@ -724,23 +1484,36 @@
     }
     .metric {
       padding: 14px;
-      border: 1px solid var(--line-soft);
+      border: 1px solid var(--card-border);
       border-radius: var(--radius-sm);
-      background: var(--surface-2);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-sm);
       backdrop-filter: blur(12px);
-      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--liturgical-glow) 12%, white);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     }
     .metric:hover {
       transform: translateY(-2px);
-      box-shadow: var(--shadow-sm);
+      border-color: color-mix(in srgb, var(--liturgical-glow) 45%, var(--line));
+      box-shadow: var(--shadow-sm), 0 0 20px color-mix(in srgb, var(--liturgical-glow) 20%, transparent);
     }
-    .metric strong { display: block; font-size: 1.2rem; font-weight: 800; color: var(--ink); }
+    .metric strong {
+      display: block;
+      font-size: clamp(1.2rem, 2vw, 1.45rem);
+      font-weight: 800;
+      color: var(--liturgical-accent);
+      letter-spacing: -0.02em;
+      text-shadow: 0 0 18px color-mix(in srgb, var(--liturgical-glow) 35%, transparent);
+    }
+    html[data-theme="light"] .metric strong {
+      color: color-mix(in srgb, var(--liturgical-accent) 88%, var(--ink));
+    }
     .metric span { color: var(--muted); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
 
     .workspace {
       display: grid;
-      grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.45fr);
-      gap: 16px;
+      grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.62fr);
+      gap: 18px;
       align-items: start;
     }
     .workspace.theme-workspace {
@@ -748,29 +1521,32 @@
     }
     .workspace.flow-workspace {
       grid-template-columns: minmax(0, 1fr);
-      max-width: min(1160px, 100%);
+      width: 100%;
+      max-width: none;
     }
-    .flow-builder-panel {
-      padding-bottom: 20px;
+    .flow-builder-shell {
+      min-width: 0;
+      width: 100%;
     }
     .flow-builder-tabs {
-      display: flex;
-      gap: 6px;
-      margin: 0 0 16px;
-      padding: 4px;
-      border-radius: 12px;
+      display: inline-flex;
+      width: fit-content;
+      gap: 3px;
+      margin: 0;
+      padding: 3px;
+      border-radius: 999px;
       background: var(--surface-2);
       border: 1px solid var(--line);
     }
     .flow-builder-tabs button {
-      flex: 1;
+      flex: 0 1 auto;
       margin: 0;
-      padding: 10px 14px;
+      padding: 7px 12px;
       border: none;
-      border-radius: 9px;
+      border-radius: 999px;
       background: transparent;
       color: var(--muted);
-      font-size: 0.82rem;
+      font-size: 0.88rem;
       font-weight: 800;
       letter-spacing: 0.02em;
       cursor: pointer;
@@ -782,61 +1558,221 @@
     }
     .flow-builder-tabs button[aria-selected="true"] {
       color: var(--liturgical-accent);
-      background: var(--surface);
+      background: var(--surface-solid);
       box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
     }
     .flow-builder-tab-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
+      display: block;
       min-width: 0;
+      width: 100%;
     }
     .flow-builder-tab-panel[hidden] {
       display: none !important;
     }
+    .flow-song-plan-section {
+      margin-top: 0;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      max-height: none;
+    }
+    .flow-section-head {
+      margin-bottom: var(--space-2);
+    }
+    .flow-section-head h4 {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+    .flow-section-head p {
+      margin: 0;
+      font-size: 0.86rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
     .flow-builder-tab-panel--songs .mass-song-plan-root {
-      max-height: min(68vh, 720px);
-      overflow-y: auto;
-      padding-right: 4px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-content: start;
+      width: 100%;
+      padding: 0;
+    }
+    .flow-accordion-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      margin: 0;
+      width: 100%;
+    }
+    .flow-builder-tabs-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 0 14px;
+    }
+    .flow-builder-tabs-bar .flow-builder-tabs {
+      flex: 0 1 auto;
+      margin: 0;
+      min-width: 0;
+    }
+    .dashboard:has(#flow-page.active) > #flow-page {
+      width: min(var(--content-max), 100%);
+      margin-inline: auto;
+    }
+    #flow-page .flow-workspace {
+      width: 100%;
+      display: block;
+    }
+    #flow-page .flow-builder-shell {
+      width: 100%;
+      padding: 0;
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    #flow-page .flow-builder-shell:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: transparent;
+    }
+    #flow-page .flow-builder-tab-panel--songs .flow-song-plan-section {
+      display: block;
+    }
+    #flow-page .flow-section-head h4 {
+      font-family: var(--font-display);
+    }
+    #flow-page .flow-builder-tab-panel,
+    #flow-page .flow-song-plan-section,
+    #flow-page .flow-accordion-grid {
+      width: 100%;
+    }
+    #flow-page .flow-accordion {
+      width: 100%;
+      border-radius: var(--radius);
+    }
+    #flow-page .flow-accordion summary {
+      padding: 18px 22px;
+      font-size: 1.02rem;
+    }
+    #flow-page .flow-accordion-body {
+      padding: 20px 22px 22px;
+    }
+    #flow-page .field-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (min-width: 1100px) {
+      #flow-page .field-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 720px) {
+      #flow-page .field-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    #flow-page .mass-song-slot {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px 24px;
+      border-radius: var(--radius);
+    }
+    #flow-page .mass-song-slot-label {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    #flow-page .mass-song-pick-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: stretch;
+    }
+    #flow-page .mass-song-search-input {
+      width: 100%;
+      min-width: 0;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+    }
+    #flow-page .flow-builder-tabs {
+      width: 100%;
+    }
+    #flow-page .flow-builder-tab-panel--songs .field {
+      max-width: 480px;
     }
     .flow-accordion {
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      background: var(--surface-2);
-      margin-bottom: var(--space-1);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      background: var(--surface-solid);
+      margin-bottom: 0;
       overflow: hidden;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-card);
+    }
+    .flow-accordion:hover {
+      border-color: color-mix(in srgb, var(--liturgical-glow) 35%, var(--line));
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--liturgical-glow) 12%, rgba(0,0,0,0.08));
+      transform: translateY(-1px);
     }
     .flow-accordion[open] {
       background: var(--surface);
-      border-color: color-mix(in srgb, var(--liturgical-accent) 20%, var(--line));
+      border-color: color-mix(in srgb, var(--liturgical-accent) 25%, var(--line));
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--liturgical-accent) 15%, rgba(0,0,0,0.08));
     }
     .flow-accordion summary {
       list-style: none;
       cursor: pointer;
-      padding: 12px 14px;
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      padding: 14px 16px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-transform: capitalize;
       color: var(--ink);
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--line);
+      transition: background 0.15s ease;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      user-select: none;
+      gap: 10px;
     }
-    .flow-accordion summary::-webkit-details-marker { display: none; }
-    .flow-accordion summary::after {
-      content: "+";
-      font-size: 1rem;
-      font-weight: 400;
-      color: var(--muted);
+    .flow-accordion[open] > summary {
+      background: color-mix(in srgb, var(--surface) 90%, var(--liturgical-accent) 10%);
+      border-bottom-color: color-mix(in srgb, var(--liturgical-accent) 25%, var(--line));
     }
-    .flow-accordion[open] summary::after { content: "−"; }
+    .flow-accordion summary:hover {
+      background: color-mix(in srgb, var(--surface-2) 85%, var(--liturgical-accent) 15%);
+    }
+    .flow-accordion summary::marker {
+      display: none;
+    }
+    .flow-accordion summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      font-size: 0.75rem;
+      transition: transform 0.2s ease;
+      color: var(--liturgical-accent);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .flow-accordion[open] > summary::before {
+      transform: rotate(90deg);
+    }
     .flow-accordion-body {
-      padding: 0 14px 14px;
-      border-top: 1px solid var(--line-soft);
+      padding: 14px 16px;
+      background: var(--surface-solid);
     }
-    .flow-accordion-body .field:first-child { margin-top: 12px; }
+    .flow-accordion-body .field:first-child { margin-top: 0; }
     .flow-input-group {
       display: flex;
       align-items: stretch;
@@ -913,50 +1849,6 @@
       text-transform: uppercase;
       color: var(--muted);
     }
-    #flow-panel-setup {
-      padding-bottom: var(--space-1);
-    }
-    .flow-sticky-actions {
-      position: sticky;
-      bottom: var(--space-2);
-      z-index: 12;
-      margin-top: var(--space-3);
-      padding: var(--space-2) var(--space-1) var(--space-1);
-    }
-    .flow-sticky-actions-card {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: var(--space-2) var(--space-3);
-      border-radius: calc(var(--radius) + 2px);
-      border: 1px solid color-mix(in srgb, var(--line) 70%, rgba(255, 255, 255, 0.65));
-      background: color-mix(in srgb, var(--surface) 72%, transparent);
-      backdrop-filter: blur(18px) saturate(1.25);
-      -webkit-backdrop-filter: blur(18px) saturate(1.25);
-      box-shadow:
-        0 4px 6px rgba(15, 23, 42, 0.04),
-        0 20px 48px rgba(15, 23, 42, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.55);
-    }
-    html[data-theme="dark"] .flow-sticky-actions-card {
-      border-color: color-mix(in srgb, var(--line) 85%, rgba(255, 255, 255, 0.12));
-      background: color-mix(in srgb, var(--surface) 65%, rgba(15, 20, 30, 0.4));
-      box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.45),
-        0 2px 8px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    }
-    .flow-sticky-actions-card .actions {
-      justify-content: center;
-      gap: 12px;
-    }
-    .flow-sticky-actions-card .status {
-      text-align: center;
-      margin-top: 12px;
-    }
-    .flow-sticky-actions-card .download-row {
-      justify-content: center;
-      margin-top: 10px;
-    }
     .page-shell-title {
       margin: 0 0 var(--space-2);
       font-size: 1.15rem;
@@ -982,14 +1874,18 @@
       gap: 12px;
       margin-bottom: 14px;
     }
-    .panel-head h3, .tool-card h3 { margin: 0; font-size: 1.08rem; letter-spacing: -0.02em; font-weight: 800; color: var(--ink); }
-    .panel-head p, .tool-card > p { margin: 5px 0 0; color: var(--muted); font-size: 0.86rem; line-height: 1.45; }
+    .panel-head h3, .tool-card h3 { margin: 0; font-size: var(--text-xl); letter-spacing: -0.02em; font-weight: 700; font-family: var(--font-display); color: var(--ink); }
+    .panel-head p, .tool-card > p { margin: 5px 0 0; color: var(--muted); font-size: var(--text-sm); line-height: 1.5; }
+    .muted {
+      color: var(--muted);
+      font-size: var(--text-sm);
+    }
 
     label {
       display: block;
       margin: 0 0 7px;
       color: var(--muted);
-      font-size: 0.72rem;
+      font-size: var(--text-xs);
       font-weight: 900;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1040,7 +1936,7 @@
     }
     .primary {
       padding: 11px 18px;
-      color: #fff;
+      color: var(--on-accent, #fff);
       background: var(--liturgical-accent);
       box-shadow: 0 2px 8px color-mix(in srgb, var(--liturgical-accent) 35%, transparent);
     }
@@ -1152,6 +2048,34 @@
       -webkit-background-clip: border-box;
       background-clip: border-box;
       text-shadow: 0 1px 2px rgba(91, 33, 182, 0.2);
+    }
+    /* Neon accent: Mass Builder generate only */
+    .uiverse-btn--generate .button-outer {
+      box-shadow:
+        0 0 20px color-mix(in srgb, var(--wb-neon) 55%, transparent),
+        0 0 40px color-mix(in srgb, var(--wb-neon) 25%, transparent),
+        0 8px 24px rgba(21, 51, 61, 0.15);
+    }
+    .uiverse-btn--generate:hover:not(.is-disabled) .button-outer {
+      box-shadow:
+        0 0 28px color-mix(in srgb, var(--wb-neon) 65%, transparent),
+        0 0 48px color-mix(in srgb, var(--wb-neon) 35%, transparent),
+        0 10px 28px rgba(21, 51, 61, 0.18);
+    }
+    .uiverse-btn--generate .button-inner {
+      background-image: linear-gradient(135deg, #6EFFD4 0%, var(--wb-neon) 45%, var(--wb-neon-dim) 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    .uiverse-btn--generate .button-inner span {
+      color: var(--wb-midnight);
+      background-image: none;
+      -webkit-background-clip: border-box;
+      background-clip: border-box;
+      font-weight: 700;
+      text-shadow: 0 0 12px color-mix(in srgb, var(--wb-neon) 40%, transparent);
+    }
+    html[data-theme="dark"] .uiverse-btn--generate .button-inner span {
+      color: var(--wb-midnight);
     }
     .uiverse-btn.is-disabled {
       cursor: not-allowed;
@@ -1807,7 +2731,7 @@
     .song-preview-panel__backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(7, 12, 22, 0.45);
+      background: color-mix(in srgb, var(--wb-midnight) 55%, transparent);
       opacity: 0;
       transition: opacity 320ms ease;
     }
@@ -1817,12 +2741,12 @@
       top: 0;
       right: 0;
       bottom: 0;
-      width: min(520px, 100vw);
+      width: min(720px, 96vw);
       max-width: 100%;
-      background: rgba(255, 255, 255, 0.72);
+      background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
       backdrop-filter: var(--glass-blur);
       -webkit-backdrop-filter: var(--glass-blur);
-      box-shadow: -24px 0 64px rgba(139, 92, 246, 0.14);
+      box-shadow: -24px 0 64px color-mix(in srgb, var(--wb-midnight) 18%, transparent);
       display: flex;
       flex-direction: column;
       transform: translateX(104%);
@@ -1835,19 +2759,39 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 12px;
-      padding: 18px 18px 12px;
+      padding: 18px 20px 12px;
       border-bottom: 1px solid var(--line);
       flex-shrink: 0;
+    }
+    .song-preview-panel__head h3 {
+      font-family: var(--font-display);
+      color: var(--ink);
+    }
+    .song-preview-panel,
+    .song-preview-panel .muted {
+      color: var(--muted);
     }
     .song-preview-panel__body {
       flex: 1;
       overflow: auto;
-      padding: 16px 18px 24px;
+      padding: 16px 20px 24px;
     }
     .song-ppt-viewer {
+      display: grid;
+      grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .song-ppt-organizer {
+      position: sticky;
+      top: 0;
+      min-width: 0;
+    }
+    .song-ppt-main {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+      min-width: 0;
     }
     .song-ppt-toolbar {
       display: flex;
@@ -1892,9 +2836,9 @@
       overflow-y: auto;
       scroll-snap-type: y proximity;
       scroll-behavior: smooth;
-      gap: 14px;
-      padding: 12px;
-      max-height: min(72vh, 680px);
+      gap: 16px;
+      padding: 14px;
+      max-height: min(78vh, 860px);
       -webkit-overflow-scrolling: touch;
     }
     .song-ppt-slides::-webkit-scrollbar { width: 6px; }
@@ -1905,8 +2849,8 @@
     }
     .slide-preview.hymn-slide {
       aspect-ratio: 16 / 9;
-      min-height: 180px;
-      padding: clamp(14px, 3vw, 28px);
+      min-height: 240px;
+      padding: clamp(16px, 3.2vw, 32px);
       justify-content: flex-start;
       align-items: center;
       text-align: center;
@@ -1939,117 +2883,193 @@
       flex-direction: column;
       gap: 8px;
     }
-    .song-preview-panel,
-    .song-preview-panel .muted {
-      color: #4a5068;
-    }
-    .song-preview-panel__head h3 {
-      color: #2d3348;
-    }
     .song-preview-slide-label {
       font-size: 0.72rem;
       font-weight: 800;
-      color: #5b6278;
+      color: var(--muted);
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
     .song-slide-plan {
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.92);
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
       overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
     .song-slide-plan__head {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 10px 12px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--line);
+    }
+    .song-slide-plan__head-title {
       font-size: 0.72rem;
       font-weight: 800;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: #5b6278;
+      color: var(--muted);
+    }
+    .song-slide-plan__head-hint {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--ink-subtle);
+      line-height: 1.35;
+    }
+    #song-slide-plan-count {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--liturgical-accent);
+      margin-top: 2px;
     }
     .song-slide-plan__list {
       list-style: none;
       margin: 0;
-      padding: 6px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      max-height: 220px;
+      gap: 6px;
+      max-height: min(72vh, 640px);
       overflow-y: auto;
     }
     .song-slide-plan__item {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 26px 1fr auto;
+      grid-template-rows: auto auto;
       align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: #f8f9fc;
-      border: 1px solid transparent;
+      gap: 6px 8px;
+      padding: 10px 10px 8px;
+      border-radius: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--line-soft);
+      cursor: pointer;
+      transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+    .song-slide-plan__item:hover {
+      border-color: color-mix(in srgb, var(--wb-petal) 45%, var(--line));
+      background: color-mix(in srgb, var(--wb-frost) 35%, var(--surface-2));
+    }
+    .song-slide-plan__item.is-active {
+      border-color: color-mix(in srgb, var(--wb-berry) 50%, var(--line));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--wb-berry) 25%, transparent);
+      background: color-mix(in srgb, var(--wb-frost) 50%, var(--surface-solid));
     }
     .song-slide-plan__item.is-off {
-      opacity: 0.5;
+      opacity: 0.72;
+      background: var(--surface);
     }
-    .song-slide-plan__item.is-off .song-slide-plan__summary {
+    .song-slide-plan__item.is-off .song-slide-plan__summary-text {
       text-decoration: line-through;
+      color: var(--muted);
     }
-    .song-slide-plan__include {
+    .song-slide-plan__num {
+      grid-row: 1 / span 2;
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #4a5068;
-      cursor: pointer;
-      white-space: nowrap;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--on-accent);
+      background: var(--liturgical-accent);
+      flex-shrink: 0;
     }
-    .song-slide-plan__include input { accent-color: var(--accent); }
+    .song-slide-plan__item.is-off .song-slide-plan__num {
+      background: var(--wb-stone);
+    }
     .song-slide-plan__summary {
+      grid-column: 2;
+      min-width: 0;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+    }
+    .song-slide-plan__summary-label {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .song-slide-plan__summary-text {
+      display: block;
       font-size: 0.78rem;
       font-weight: 600;
-      color: #2d3348;
+      color: var(--ink);
       line-height: 1.3;
-      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .song-slide-plan__summary small {
-      display: block;
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: #7a8198;
-      margin-bottom: 2px;
+    .song-slide-plan__toggle {
+      grid-column: 3;
+      grid-row: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      min-height: 32px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: var(--text-xs);
+      font-weight: 750;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      border: 1px solid color-mix(in srgb, var(--good) 35%, var(--line));
+      background: color-mix(in srgb, var(--good) 12%, var(--surface-solid));
+      color: var(--good);
+      cursor: pointer;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+    .song-slide-plan__item.is-off .song-slide-plan__toggle {
+      border-color: color-mix(in srgb, var(--muted) 35%, var(--line));
+      background: var(--surface);
+      color: var(--muted);
+    }
+    .song-slide-plan__toggle:hover {
+      border-color: color-mix(in srgb, var(--good) 55%, var(--line));
+    }
+    .song-slide-plan__toggle:focus-visible {
+      outline: 2px solid var(--liturgical-accent);
+      outline-offset: 2px;
     }
     .song-slide-plan__moves {
+      grid-column: 2 / span 2;
+      grid-row: 2;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      gap: 4px;
+      justify-content: flex-end;
     }
     .song-slide-plan__moves button {
-      width: 28px;
-      height: 24px;
-      padding: 0;
-      border-radius: 6px;
+      min-width: 36px;
+      min-height: 32px;
+      padding: 0 8px;
+      border-radius: 8px;
       border: 1px solid var(--line);
-      background: #fff;
-      color: #4a5068;
-      font-size: 0.75rem;
+      background: var(--surface-solid);
+      color: var(--ink);
+      font-size: 0.82rem;
       line-height: 1;
       cursor: pointer;
+      transition: border-color 160ms ease, color 160ms ease;
     }
     .song-slide-plan__moves button:disabled {
       opacity: 0.35;
       cursor: not-allowed;
     }
     .song-slide-plan__moves button:not(:disabled):hover {
-      border-color: var(--accent);
-      color: var(--accent);
+      border-color: var(--liturgical-accent);
+      color: var(--liturgical-accent);
     }
     .hymn-slide-wrap--off .slide-preview.hymn-slide {
       opacity: 0.42;
@@ -2181,6 +3201,17 @@
       background-image: linear-gradient(135deg, #ececef, #dcdde2);
     }
     .mass-song-pick-row .plan-btn { flex-shrink: 0; }
+    @media (max-width: 720px) {
+      .song-ppt-viewer {
+        grid-template-columns: 1fr;
+      }
+      .song-ppt-organizer {
+        position: static;
+      }
+      .song-slide-plan__list {
+        max-height: 240px;
+      }
+    }
     @media (max-width: 640px) {
       .song-preview-panel__sheet { width: 100%; }
     }
@@ -2198,9 +3229,10 @@
     }
     .control-card {
       padding: 13px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--card-border);
       border-radius: 18px;
       background: var(--surface-solid);
+      box-shadow: var(--shadow-sm);
     }
     .toggle {
       display: inline-flex;
@@ -2337,10 +3369,30 @@
     .download-row.visible { display: flex; }
     .admin-card {
       border-radius: var(--radius-sm);
-      border: 1px solid var(--line);
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 18%, var(--line));
       background: var(--surface);
       padding: 18px 20px;
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-sm), var(--shadow-glow-soft);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+    }
+    .home-bento .admin-card {
+      border-radius: 16px;
+      padding: 18px 18px 16px;
+      box-shadow:
+        0 14px 34px rgba(9, 13, 20, 0.11),
+        0 2px 8px rgba(9, 13, 20, 0.08);
+    }
+    .home-bento-actions .quick-actions,
+    .home-bento-recent .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .home-bento-actions .quick-actions > *,
+    .home-bento-recent .quick-actions > * {
+      min-width: 0;
+      width: 100%;
     }
     .admin-card h3 {
       margin: 0 0 6px;
@@ -2382,8 +3434,9 @@
     .snapshot-tile {
       padding: 14px;
       border-radius: 14px;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-sm);
     }
     .snapshot-tile strong {
       display: block;
@@ -2398,16 +3451,49 @@
       font-weight: 700;
     }
     .mission-quote {
-      font-size: 1.05rem;
-      line-height: 1.5;
+      font-size: var(--text-lg);
+      line-height: 1.55;
       color: var(--ink);
       margin: 0 0 12px;
     }
-    .mission-quote.mission-gospel-full {
+    .mission-quote.mission-gospel-full,
+    .flow-reading-text {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
       white-space: pre-wrap;
+      font-size: var(--text-base);
+      line-height: 1.55;
+    }
+    .mission-quote.mission-gospel-full {
       max-height: min(50vh, 28rem);
       overflow: auto;
-      font-size: 0.95rem;
+      margin: 0 0 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+    }
+    .flow-reading-text {
+      max-height: 12rem;
+      overflow: auto;
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+    }
+    .flow-reading-text--gospel {
+      max-height: 14rem;
+    }
+    .flow-reading-ref {
+      margin: 0 0 6px;
+      font-size: var(--text-sm);
+    }
+    .hero--home-section {
+      width: 100%;
+      min-width: 0;
     }
     .user-select-all {
       user-select: all;
@@ -2676,10 +3762,10 @@
       background: rgba(255, 241, 246, 0.65);
     }
 
-    .admin-card, .song-catalog-panel, .flow-para-preview, .snapshot-tile {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow-sm);
+    .admin-card, .song-catalog-panel, .flow-para-preview {
+      background: var(--surface-solid);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-card);
     }
     .download-row a {
       padding: 10px 16px;
@@ -2709,26 +3795,51 @@
 
     @media (max-width: 1120px) {
       .app-shell { --nav-width-expanded: 248px; }
-      .dashboard { margin-left: calc(var(--nav-width) + var(--sidebar-gap) * 2); }
+      .dashboard { margin-left: 0; }
       .workspace, .workspace.theme-workspace, .workspace.flow-workspace { grid-template-columns: 1fr; }
       .hero { grid-template-columns: 1fr; }
+      .hero--home-head { grid-template-columns: 1fr; }
+      .hero--home-footer { grid-template-columns: 1fr; }
       .hero-metrics { min-width: 0; }
     }
     @media (min-width: 721px) {
-      .route-switcher { display: none !important; }
       .topbar-meta .season-chip { display: inline-flex; }
     }
     @media (max-width: 720px) {
-      .app-shell { --nav-width-expanded: min(280px, 88vw); }
-      .dashboard { padding: 12px; }
-      .side-nav {
-        width: var(--nav-width);
-        box-shadow: var(--shadow-hover);
+      .app-shell { --nav-width-expanded: 0px; }
+      .dashboard { padding: 12px; margin-left: 0; scroll-padding-top: 120px; }
+      .route-jump-float {
+        left: 12px;
+        bottom: 12px;
+        max-width: calc(100vw - 24px);
       }
-      .route-switcher { display: block; }
+      .app-bottom-right {
+        right: 12px;
+        bottom: 12px;
+        max-width: calc(100vw - 24px);
+      }
+      .flow-dock-float {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .toast-stack {
+        width: 100%;
+        max-width: none;
+      }
+      .route-switcher { width: 100%; max-width: none; min-width: 0; flex: 1; }
       .topbar-meta .season-chip { display: none; }
-      .topbar { flex-direction: column; align-items: stretch; }
+      .topbar.topbar--pill {
+        flex-wrap: nowrap;
+        padding: 6px 10px 6px 14px;
+        border-radius: 22px;
+      }
+      .brand-logo { font-size: 1.25rem; }
+      .topbar-nav .nav-link { padding: 8px 10px; font-size: 0.76rem; }
+      .topbar-nav .nav-label { display: none; }
+      .topbar-nav .nav-link .nav-icon { width: 18px; height: 18px; }
       .hero, .panel, .tool-card { padding: 15px; border-radius: 18px; }
+      .hero--home { padding: var(--space-md); }
+      .hero--home-quick .quick-actions { grid-template-columns: 1fr; }
       .hero-metrics, .global-controls, .field-grid, .builder-grid, .theme-grid { grid-template-columns: 1fr; }
       .block-top:not(.block-top-lyrics) { grid-template-columns: auto minmax(0, 1fr); }
       .block-top:not(.block-top-lyrics) select, .block-top:not(.block-top-lyrics) .inline-actions { grid-column: 1 / -1; }
@@ -2819,11 +3930,11 @@
       gap: 14px;
     }
     .mass-song-slot {
-      border: 1px solid var(--line);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 12px 14px 14px;
-      background: var(--surface);
-      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-card);
     }
     .mass-song-slot-label {
       display: block;
@@ -2844,7 +3955,8 @@
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 10px 12px;
-      background: #fff;
+      background: var(--surface-solid);
+      color: var(--ink);
     }
     .mass-song-clear {
       white-space: nowrap;
@@ -2862,14 +3974,14 @@
       line-height: 1.35;
     }
     .mass-song-selected.has-selection {
-      border-color: rgba(109, 93, 252, 0.5);
-      background: linear-gradient(180deg, #f5f3ff 0%, #faf8ff 100%);
-      box-shadow: 0 0 0 1px rgba(109, 93, 252, 0.12);
+      border-color: color-mix(in srgb, var(--wb-berry) 45%, var(--line));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--wb-frost) 80%, white) 0%, var(--surface) 100%);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--wb-petal) 35%, transparent);
     }
     .mass-song-picked-title {
       font-size: 1.05rem;
       font-weight: 850;
-      color: #4c3d9e;
+      color: var(--liturgical-accent);
       letter-spacing: -0.01em;
     }
     .mass-song-picked-meta {
@@ -2882,8 +3994,81 @@
       color: var(--danger);
       font-weight: 650;
     }
+    .mass-song-slot.mass-song-slot--missing-lyrics {
+      border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 22%, transparent),
+        var(--shadow-card);
+    }
+    .mass-song-selected.mass-song-selected--missing-lyrics {
+      border-color: color-mix(in srgb, var(--danger) 50%, var(--line));
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--danger) 8%, var(--surface-solid)) 0%,
+        var(--surface-2) 100%
+      );
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 18%, transparent);
+    }
+    .mass-song-lyrics-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+      background: color-mix(in srgb, var(--danger) 10%, var(--surface-solid));
+    }
+    .mass-song-lyrics-alert__icon {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--on-accent);
+      background: var(--danger);
+      line-height: 1;
+    }
+    .mass-song-lyrics-alert__title {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--danger);
+      margin-bottom: 2px;
+    }
+    .mass-song-lyrics-alert__text {
+      display: block;
+      font-size: 0.76rem;
+      line-height: 1.35;
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .mass-song-lyrics-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 750;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--danger);
+      background: color-mix(in srgb, var(--danger) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+    }
+    .mass-song-result-row--no-lyrics {
+      background: color-mix(in srgb, var(--danger) 6%, var(--surface-solid));
+    }
+    .mass-song-result-row--no-lyrics:hover {
+      background: color-mix(in srgb, var(--danger) 10%, var(--surface-2));
+    }
     .mass-song-slot.has-selection {
-      border-color: rgba(109, 93, 252, 0.35);
+      border-color: color-mix(in srgb, var(--wb-berry) 40%, var(--line));
     }
     .collections-recent-row {
       display: flex;
@@ -3273,116 +4458,55 @@
     }
   </style>
 <body data-season="ordinary">
-  <div class="app-shell nav-pinned nav-expanded">
-    <aside class="side-nav sidebar" id="admin-sidebar" aria-label="Dashboard navigation">
-      <div class="side-nav-header">
-        <button type="button" class="nav-toggle-btn" id="nav-toggle-btn" aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">
-          <img class="nav-toggle-icon" src="/static/icons/chevron.svg" alt="" width="18" height="18" />
-        </button>
-        <div class="side-brand-text">
-          <strong class="mea-culpa-regular">Verbum</strong>
-          <span class="side-brand-sub">LiturgyFlow</span>
-        </div>
-        <button type="button" class="nav-pin-btn" id="sidebar-pin" aria-label="Pin sidebar open" aria-pressed="true" title="Pin sidebar open">
-          <svg class="nav-pin-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 17v5" />
-            <path d="M9 10.76a2 2 0 0 1-1.11-1.79l-1.78-.9A2 2 0 0 1 5 10.76V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 1 15 10.76V17" />
-          </svg>
-        </button>
-      </div>
-      <div class="side-nav-scroll">
-        <a class="nav-link nav-item" data-route="/home" href="/home" data-nav-tooltip="Home">
-          <img src="/static/icons/home.svg" class="nav-icon" alt="" width="20" height="20" />
-          <span class="nav-label">Home</span>
-        </a>
-
-        <div class="nav-group">
-          <div class="nav-section-label nav-item" data-nav-tooltip="Mass">
-            <img src="/static/icons/mass.svg" class="nav-icon" alt="" width="20" height="20" />
-            <span class="nav-label">Mass</span>
-          </div>
-          <a class="nav-link sub" data-route="/mass/builder" href="/mass/builder" data-nav-tooltip="Mass Builder">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Mass Builder</span>
-          </a>
-          <a class="nav-link sub" data-route="/mass/calendar" href="/mass/calendar" data-nav-tooltip="Liturgical Calendar">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Liturgical Calendar</span>
-          </a>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label nav-item" data-nav-tooltip="Media">
-            <img src="/static/icons/media.svg" class="nav-icon" alt="" width="20" height="20" />
-            <span class="nav-label">Media</span>
-          </div>
-          <a class="nav-link sub" data-route="/media/posters" href="/media/posters" data-nav-tooltip="Posters">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Posters</span>
-          </a>
-          <a class="nav-link sub" data-route="/media/history" href="/media/history" data-nav-tooltip="History">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">History</span>
-          </a>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label nav-item" data-nav-tooltip="Library">
-            <img src="/static/icons/library.svg" class="nav-icon" alt="" width="20" height="20" />
-            <span class="nav-label">Library</span>
-          </div>
-          <a class="nav-link sub" data-route="/library/songs" href="/library/songs" data-nav-tooltip="Song Library">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Song Library</span>
-          </a>
-          <a class="nav-link sub" data-route="/library/collections" href="/library/collections" data-nav-tooltip="Collections">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Collections</span>
-          </a>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label nav-item" data-nav-tooltip="Design">
-            <img src="/static/icons/design.svg" class="nav-icon" alt="" width="20" height="20" />
-            <span class="nav-label">Design</span>
-          </div>
-          <a class="nav-link sub" data-route="/design/theme-lab" href="/design/theme-lab" data-nav-tooltip="Theme Lab">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Theme Lab</span>
-          </a>
-          <a class="nav-link sub" data-route="/design/templates" href="/design/templates" data-nav-tooltip="Templates">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Templates</span>
-          </a>
-        </div>
-
-        <div class="nav-group">
-          <div class="nav-section-label nav-item" data-nav-tooltip="Settings">
-            <img src="/static/icons/settings.svg" class="nav-icon" alt="" width="20" height="20" />
-            <span class="nav-label">Settings</span>
-          </div>
-          <a class="nav-link sub" data-route="/settings/church" href="/settings/church" data-nav-tooltip="Church Profile">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">Church Profile</span>
-          </a>
-          <a class="nav-link sub" data-route="/settings/app" href="/settings/app" data-nav-tooltip="App Settings">
-            <span class="nav-icon-sub" aria-hidden="true"></span>
-            <span class="nav-label">App Settings</span>
-          </a>
-        </div>
-      </div>
-    </aside>
+  <div class="app-shell">
     <main class="dashboard">
-      <div class="topbar">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true"></div>
-          <div class="topbar-context">
-            <p class="topbar-breadcrumb" id="topbar-breadcrumb">Home</p>
-            <h1 id="topbar-title">Verbum</h1>
-            <p class="muted" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
-          </div>
-        </div>
+      <header class="topbar topbar--pill">
+        <a href="/home" class="brand-logo nav-link" id="topbar-title" data-route="/home" aria-label="Verbum — home">Verbum</a>
+        <p class="sr-only" id="topbar-breadcrumb">Home</p>
+        <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
+        <nav class="topbar-nav" id="admin-sidebar" aria-label="Main navigation">
+          <a class="nav-link" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
+            <img src="/static/icons/mass.png" class="nav-icon" alt="" width="18" height="18" />
+            <span class="nav-label">Mass</span>
+          </a>
+          <a class="nav-link" data-route="/mass/calendar" href="/mass/calendar">
+            <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="18" height="18" />
+            <span class="nav-label">Calendar</span>
+          </a>
+          <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+            <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
+            <span class="nav-label">Media</span>
+          </a>
+          <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+            <img src="/static/icons/library.png" class="nav-icon" alt="" width="18" height="18" />
+            <span class="nav-label">Library</span>
+          </a>
+          <a class="nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+            <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
+            <span class="nav-label">Design</span>
+          </a>
+          <a class="nav-link" data-route="/settings/church" data-route-prefix="/settings" href="/settings/church">
+            <img src="/static/icons/settings.png" class="nav-icon" alt="" width="18" height="18" />
+            <span class="nav-label">Settings</span>
+          </a>
+        </nav>
         <div class="topbar-meta">
+          <div class="notif-wrap">
+            <button type="button" class="notif-btn" id="notif-toggle-btn" aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel" title="Notifications">
+              <img src="/static/icons/notifications.png" class="notif-icon" alt="" width="20" height="20" />
+              <span class="notif-badge" id="notif-badge" hidden>0</span>
+            </button>
+            <div class="notif-panel" id="notif-panel" role="dialog" aria-labelledby="notif-panel-title" hidden>
+              <div class="notif-panel__head">
+                <h3 id="notif-panel-title">Notifications</h3>
+                <button type="button" class="secondary" id="btn-clear-notifications">Clear all</button>
+              </div>
+              <div class="notif-panel__body">
+                <p class="muted" id="notification-empty">No notifications yet.</p>
+                <ul class="notification-feed" id="notification-feed" aria-live="polite"></ul>
+              </div>
+            </div>
+          </div>
           <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
             <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="4" />
@@ -3397,37 +4521,26 @@
             <span id="topbar-season-label">—</span>
           </span>
         </div>
-        <select class="route-switcher" id="route-switcher" aria-label="Switch dashboard">
-          <option value="/home">Home</option>
-          <option value="/mass/builder">Mass Builder</option>
-          <option value="/mass/calendar">Liturgical Calendar</option>
-          <option value="/media/posters">Posters</option>
-          <option value="/media/history">History</option>
-          <option value="/library/songs">Song Library</option>
-          <option value="/library/collections">Collections</option>
-          <option value="/design/theme-lab">Theme Lab</option>
-          <option value="/design/templates">Templates</option>
-          <option value="/settings/church">Church Profile</option>
-          <option value="/settings/app">App Settings</option>
-        </select>
-      </div>
+      </header>
 
       <section class="page" id="home-page" data-route="/home">
-        <div class="hero">
-          <div>
-            <p class="eyebrow">Mission Control</p>
-            <h2>Everything for the upcoming Sunday Mass.</h2>
-            <p>Load lectionary context, generate posters and slides, and keep your parish branding consistent.</p>
+        <div class="hero hero--home">
+          <div class="hero--home-head">
+            <div>
+              <p class="eyebrow">Mission Control</p>
+              <h2>Everything for the upcoming Sunday Mass.</h2>
+              <p class="muted" id="home-page-desc">Load lectionary context, generate posters and slides, and keep your parish branding consistent.</p>
+            </div>
+            <div class="hero-metrics">
+              <div class="metric"><strong id="home-days-until">—</strong><span>Until Sunday</span></div>
+              <div class="metric"><strong id="home-lectionary">—</strong><span>Lectionary</span></div>
+              <div class="metric"><strong id="home-season-chip">—</strong><span>Season</span></div>
+            </div>
           </div>
-          <div class="hero-metrics">
-            <div class="metric"><strong id="home-days-until">—</strong><span>Until Sunday</span></div>
-            <div class="metric"><strong id="home-lectionary">—</strong><span>Lectionary</span></div>
-            <div class="metric"><strong id="home-season-chip">—</strong><span>Season</span></div>
-          </div>
-        </div>
 
-        <div class="home-bento">
-          <div class="admin-card home-bento-sunday">
+          <hr class="hero--home-divider" />
+
+          <div class="hero--home-section">
             <h3>Upcoming Sunday</h3>
             <p class="muted" id="home-sunday-label">Loading…</p>
             <p class="mission-quote mission-gospel-full" id="home-gospel-quote">Gospel text will appear after refresh.</p>
@@ -3437,35 +4550,32 @@
               <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-home-ppt"><div class="button-outer"><div class="button-inner"><span>Generate PowerPoint</span></div></div></button>
               <button type="button" class="secondary btn-xl" id="btn-home-readings">View Readings</button>
             </div>
-            <p class="status" id="home-mission-status" aria-live="polite"></p>
           </div>
 
-          <div class="admin-card home-bento-actions">
-            <h3>Quick Actions</h3>
-            <p class="muted">Jump straight into common tasks.</p>
-            <div class="quick-actions">
-              <button type="button" class="secondary btn-xl" id="btn-home-create-poster">Create Mass Poster</button>
-              <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-home-gen-ppt"><div class="button-outer"><div class="button-inner"><span>Generate PowerPoint</span></div></div></button>
-              <button type="button" class="secondary btn-xl" id="btn-home-upload-song">Upload Song</button>
-              <button type="button" class="secondary btn-xl" id="btn-home-announce">Add Announcement</button>
+          <div class="hero--home-footer">
+            <div class="hero--home-section">
+              <h3>Liturgical Snapshot</h3>
+              <p class="muted">Colors and seasons for this week.</p>
+              <div class="snapshot-row">
+                <div class="snapshot-tile"><strong>Season</strong><span id="home-snap-season">—</span></div>
+                <div class="snapshot-tile"><strong>Liturgical color</strong><span id="home-snap-color">—</span></div>
+                <div class="snapshot-tile"><strong>Liturgical year</strong><span id="home-snap-year">—</span></div>
+                <div class="snapshot-tile"><strong>Next feast</strong><span id="home-snap-feast">See calendar</span></div>
+              </div>
             </div>
-          </div>
-
-          <div class="admin-card home-bento-snapshot">
-            <h3>Liturgical Snapshot</h3>
-            <p class="muted">Colors and seasons for this week.</p>
-            <div class="snapshot-row">
-              <div class="snapshot-tile"><strong>Season</strong><span id="home-snap-season">—</span></div>
-              <div class="snapshot-tile"><strong>Liturgical color</strong><span id="home-snap-color">—</span></div>
-              <div class="snapshot-tile"><strong>Liturgical year</strong><span id="home-snap-year">—</span></div>
-              <div class="snapshot-tile"><strong>Next feast</strong><span id="home-snap-feast">See calendar</span></div>
+            <div class="hero--home-section hero--home-quick">
+              <h3>Quick Actions</h3>
+              <p class="muted">Jump straight into common tasks.</p>
+              <div class="quick-actions">
+                <button type="button" class="secondary btn-xl" id="btn-home-create-poster">Create Mass Poster</button>
+                <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-home-gen-ppt"><div class="button-outer"><div class="button-inner"><span>Generate PowerPoint</span></div></div></button>
+                <button type="button" class="secondary btn-xl" id="btn-home-upload-song">Upload Song</button>
+                <button type="button" class="secondary btn-xl" id="btn-home-announce">Add Announcement</button>
+              </div>
+              <h3 style="margin-top: 20px;">Recent Files</h3>
+              <p class="muted">Last generated downloads from this browser.</p>
+              <div id="home-recent-files" class="muted">No recent downloads yet. Generate a deck to populate this list.</div>
             </div>
-          </div>
-
-          <div class="admin-card home-bento-recent">
-            <h3>Recent Files</h3>
-            <p class="muted">Last generated downloads from this browser.</p>
-            <div id="home-recent-files" class="muted">No recent downloads yet. Generate a deck to populate this list.</div>
           </div>
         </div>
       </section>
@@ -3666,46 +4776,38 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="flow-page" data-route="/mass/builder">
+        <div class="sr-only-host" id="flow-downloads-host" aria-hidden="true">
+          <div class="download-row" id="download-row">
+          <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
+          <a href="#" id="dl-pptx" download>PowerPoint</a>
+          <a href="#" id="dl-poster" download>Poster PNG</a>
+          <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
+          </div>
+        </div>
         <div class="workspace flow-workspace">
-          <aside class="panel flow-builder-panel">
-            <div class="panel-head">
-              <div>
-                <h3>Mass Builder</h3>
-                <p>Setup readings and stewardship, then pick hymns for each slot in your deck.</p>
+          <div class="panel flow-builder-shell">
+            <div class="flow-builder-tabs-bar">
+              <div class="flow-builder-tabs" role="tablist" aria-label="Mass builder sections">
+                <button type="button" role="tab" id="flow-tab-setup" aria-selected="true" aria-controls="flow-panel-setup" data-flow-tab="setup">Setup</button>
+                <button type="button" role="tab" id="flow-tab-songs" aria-selected="false" aria-controls="flow-panel-songs" data-flow-tab="songs" tabindex="-1">Song plan</button>
               </div>
             </div>
-            <div class="flow-builder-tabs" role="tablist" aria-label="Mass builder sections">
-              <button type="button" role="tab" id="flow-tab-setup" aria-selected="true" aria-controls="flow-panel-setup" data-flow-tab="setup">Setup</button>
-              <button type="button" role="tab" id="flow-tab-songs" aria-selected="false" aria-controls="flow-panel-songs" data-flow-tab="songs" tabindex="-1">Songs</button>
-            </div>
             <div class="flow-builder-tab-panel" id="flow-panel-setup" role="tabpanel" aria-labelledby="flow-tab-setup" data-flow-panel="setup">
+            <div class="flow-accordion-grid" aria-label="Mass setup">
             <details class="flow-accordion" open>
               <summary>Basics</summary>
               <div class="flow-accordion-body">
-                <div class="field-grid">
-                  <div class="field">
-                    <label for="mass-date">Mass date</label>
-                    <input type="date" id="mass-date" />
-                  </div>
-                  <div class="field">
-                    <label for="celebrant">Celebrant</label>
-                    <input type="text" id="celebrant" placeholder="Fr. Name" />
-                  </div>
+                <div class="field">
+                  <label for="mass-date">Mass date</label>
+                  <input type="date" id="mass-date" />
                 </div>
                 <div class="field">
-                  <label for="church-name">Community name</label>
-                  <input type="text" id="church-name" placeholder="Parish or community name" maxlength="240" />
+                  <label for="celebrant">Mass celebrant</label>
+                  <input type="text" id="celebrant" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
                 </div>
-                <p class="muted" style="margin:0 0 8px;">Logo and parish details: <a href="/settings/church" id="link-church-profile-flow">Church Profile</a></p>
-                <div class="global-controls">
-                  <div class="control-card">
-                    <label>Season indicator</label>
-                    <strong id="season-indicator">Not loaded</strong>
-                  </div>
-                  <div class="control-card">
-                    <label>PPT theme</label>
-                    <strong id="ppt-theme-indicator">Advent Violet</strong>
-                  </div>
+                <div class="field" style="margin-bottom:0;">
+                  <label for="co-celebrant">Co-celebrant <span class="muted" style="font-weight:600;text-transform:none;letter-spacing:0;">(optional)</span></label>
+                  <input type="text" id="co-celebrant" placeholder="e.g. Fr. Jane Doe" maxlength="200" autocomplete="name" />
                 </div>
               </div>
             </details>
@@ -3714,18 +4816,18 @@ Lord, hear our prayer</textarea>
               <div class="flow-accordion-body">
                 <div class="field">
                   <label>First reading (preview)</label>
-                  <p class="muted" id="flow-reading1-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
-                  <div id="flow-reading1-body" class="muted" style="font-size:0.86rem;line-height:1.45;max-height:7.5rem;overflow:auto;">Load readings to see text.</div>
+                  <p class="muted flow-reading-ref" id="flow-reading1-ref">—</p>
+                  <div id="flow-reading1-body" class="flow-reading-text user-select-all">Load readings to see text.</div>
                 </div>
                 <div class="field">
                   <label>Second reading (preview)</label>
-                  <p class="muted" id="flow-reading2-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
-                  <div id="flow-reading2-body" class="muted" style="font-size:0.86rem;line-height:1.45;max-height:7.5rem;overflow:auto;">—</div>
+                  <p class="muted flow-reading-ref" id="flow-reading2-ref">—</p>
+                  <div id="flow-reading2-body" class="flow-reading-text user-select-all">—</div>
                 </div>
                 <div class="field">
                   <label>Gospel reading (preview)</label>
-                  <p class="muted" id="flow-gospel-ref" style="margin:0 0 4px;font-size:0.82rem;">—</p>
-                  <div id="flow-gospel-body" tabindex="0" class="muted user-select-all" style="font-size:0.86rem;line-height:1.45;max-height:10rem;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);">Load readings to see the full Gospel.</div>
+                  <p class="muted flow-reading-ref" id="flow-gospel-ref">—</p>
+                  <div id="flow-gospel-body" tabindex="0" class="flow-reading-text flow-reading-text--gospel user-select-all">Load readings to see the full Gospel.</div>
                   <label for="flow-gospel-sentence" style="margin-top:12px;display:block;">Slide quote — sentence for PowerPoint</label>
                   <select id="flow-gospel-sentence" style="width:100%;max-width:100%;margin-top:6px;">
                     <option value="0">Sentence 1 (default)</option>
@@ -3748,7 +4850,6 @@ Lord, hear our prayer</textarea>
                   </div>
                   <ul id="flow-psalm-verses-list" class="flow-input-list" aria-live="polite"></ul>
                   <textarea id="flow-psalm-override" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
-                  <div id="flow-psalm-preview" class="flow-para-preview" aria-live="polite"></div>
                 </div>
               </div>
             </details>
@@ -3774,7 +4875,6 @@ Lord, hear our prayer</textarea>
                   </div>
                   <ul id="flow-food-sponsors-list" class="flow-input-list" aria-live="polite"></ul>
                   <textarea id="flow-food-sponsors" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
-                  <div id="flow-food-preview" class="flow-para-preview" aria-live="polite"></div>
                 </div>
               </div>
             </details>
@@ -3816,25 +4916,15 @@ Lord, hear our prayer</textarea>
                 </div>
               </div>
             </details>
-            <div class="flow-sticky-actions" aria-label="Mass generation actions">
-              <div class="flow-sticky-actions-card">
-                <div class="actions">
-                  <button type="button" class="uiverse-btn" id="btn-load-flow"><div class="button-outer"><div class="button-inner"><span>Load readings &amp; songs</span></div></div></button>
-                  <button type="button" class="uiverse-btn uiverse-btn--orange" id="btn-generate-flow"><div class="button-outer"><div class="button-inner"><span>Generate Full Mass Package</span></div></div></button>
-                </div>
-                <p class="status" id="flow-status" aria-live="polite"></p>
-                <div class="download-row" id="download-row">
-                  <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
-                  <a href="#" id="dl-pptx" download>PowerPoint</a>
-                  <a href="#" id="dl-poster" download>Poster PNG</a>
-                  <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
-                </div>
-              </div>
             </div>
             </div>
 
             <div class="flow-builder-tab-panel flow-builder-tab-panel--songs" id="flow-panel-songs" role="tabpanel" aria-labelledby="flow-tab-songs" data-flow-panel="songs" hidden>
-              <p class="muted" style="margin:0 0 12px;font-size:0.86rem;line-height:1.45;">Search your full Song Library (every saved hymn, any liturgical tag) plus seasonal suggestions. Pick one song per slot for the deck.</p>
+            <section class="flow-song-plan-section" id="flow-song-plan-section" aria-labelledby="flow-song-plan-heading">
+              <div class="flow-section-head">
+                <h4 id="flow-song-plan-heading">Song plan</h4>
+                <p>Search your Song Library and pick one hymn per Mass slot for the deck.</p>
+              </div>
               <div class="field" style="margin:0 0 12px;">
                 <label for="mass-song-plan-lang">Language filter</label>
                 <select id="mass-song-plan-lang">
@@ -3844,11 +4934,12 @@ Lord, hear our prayer</textarea>
                   <option value="Latin">Latin</option>
                   <option value="mix">Mix</option>
                 </select>
-                <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Narrows the search list only; your library still includes every saved language. Mix matches multilingual tags.</p>
+                <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Narrows the search list only; your library still includes every saved language.</p>
               </div>
               <div id="mass-song-plan" class="mass-song-plan-root"></div>
+            </section>
             </div>
-          </aside>
+          </div>
         </div>
       </section>
 
@@ -4020,6 +5111,11 @@ Lord, hear our prayer</textarea>
         </div>
       </section>
 
+      <nav class="settings-subnav" id="settings-subnav" aria-label="Settings sections">
+        <a class="settings-subnav-link" href="/settings/church" data-route="/settings/church">Church Profile</a>
+        <a class="settings-subnav-link" href="/settings/app" data-route="/settings/app">Appearance &amp; theme</a>
+      </nav>
+
       <section class="page" id="church-settings-page" data-route="/settings/church">
         <div class="admin-card" style="max-width:560px;">
           <div class="field">
@@ -4051,7 +5147,35 @@ Lord, hear our prayer</textarea>
             <label class="theme-pref-option"><input type="radio" name="theme-preference" value="dark" /> Dark</label>
             <label class="theme-pref-option"><input type="radio" name="theme-preference" value="system" checked /> System</label>
           </div>
-          <p class="muted" style="margin-top:16px;">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for liturgical colors and typography.</p>
+
+          <hr class="settings-divider" />
+
+          <h3>Accent color</h3>
+          <p class="muted">App chrome glow and highlights. Choose a missalette color or pick your own. Reset to follow the liturgical season from the calendar.</p>
+          <div class="accent-preset-row" role="group" aria-label="Accent presets">
+            <button type="button" class="accent-swatch" data-accent="#166534" data-accent-glow="#4ADE80" title="Ordinary — green" style="background: linear-gradient(135deg, #166534, #4ADE80);"></button>
+            <button type="button" class="accent-swatch" data-accent="#5B21B6" data-accent-glow="#C4B5FD" title="Advent — violet" style="background: linear-gradient(135deg, #5B21B6, #C4B5FD);"></button>
+            <button type="button" class="accent-swatch" data-accent="#B45309" data-accent-glow="#FCD34D" title="Christmas — gold" style="background: linear-gradient(135deg, #B45309, #FCD34D);"></button>
+            <button type="button" class="accent-swatch" data-accent="#6B21A8" data-accent-glow="#E9D5FF" title="Lent — purple" style="background: linear-gradient(135deg, #6B21A8, #E9D5FF);"></button>
+            <button type="button" class="accent-swatch" data-accent="#BE123C" data-accent-glow="#FDA4AF" title="Easter — rose" style="background: linear-gradient(135deg, #BE123C, #FDA4AF);"></button>
+          </div>
+          <div class="field accent-custom-row">
+            <label for="app-accent-color">Custom accent</label>
+            <input type="color" id="app-accent-color" value="#166534" aria-label="Custom accent color" />
+            <button type="button" class="secondary" id="btn-reset-accent">Follow liturgical season</button>
+          </div>
+
+          <hr class="settings-divider" />
+
+          <h3>Visual style</h3>
+          <p class="muted">Overall atmosphere of the interface (independent of light/dark mode).</p>
+          <div class="theme-preference-row" role="radiogroup" aria-label="Visual style">
+            <label class="theme-pref-option"><input type="radio" name="visual-style" value="missalette" checked /> Missalette</label>
+            <label class="theme-pref-option"><input type="radio" name="visual-style" value="parchment" /> Parchment</label>
+            <label class="theme-pref-option"><input type="radio" name="visual-style" value="midnight" /> Midnight</label>
+          </div>
+
+          <p class="muted" style="margin-top:16px;">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for slide colors and typography.</p>
           <div class="actions">
             <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
             <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
@@ -4059,6 +5183,29 @@ Lord, hear our prayer</textarea>
         </div>
       </section>
     </main>
+    <div class="route-jump-float" id="route-jump-float">
+      <label for="route-switcher">Jump to</label>
+      <select class="route-switcher" id="route-switcher" aria-label="Jump to page">
+        <option value="/home">Home</option>
+        <option value="/mass/builder">Mass Builder</option>
+        <option value="/mass/calendar">Liturgical Calendar</option>
+        <option value="/media/posters">Posters</option>
+        <option value="/media/history">History</option>
+        <option value="/library/songs">Song Library</option>
+        <option value="/library/collections">Collections</option>
+        <option value="/design/theme-lab">Theme Lab</option>
+        <option value="/design/templates">Templates</option>
+        <option value="/settings/church">Church Profile</option>
+        <option value="/settings/app">Appearance &amp; theme</option>
+      </select>
+    </div>
+    <div class="app-bottom-right" id="app-bottom-right">
+      <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
+      <div class="flow-dock-float" id="flow-dock-actions" hidden>
+        <button type="button" class="uiverse-btn" id="btn-load-flow"><div class="button-outer"><div class="button-inner"><span>Load readings</span></div></div></button>
+        <button type="button" class="uiverse-btn uiverse-btn--generate" id="btn-generate-flow"><div class="button-outer"><div class="button-inner"><span>Generate package</span></div></div></button>
+      </div>
+    </div>
   </div>
 
   <div class="mass-gen-loader" id="mass-gen-loader" aria-hidden="true" aria-live="polite" role="status">
@@ -4084,7 +5231,7 @@ Lord, hear our prayer</textarea>
       <div class="song-preview-panel__head">
         <div>
           <h3 id="song-preview-title" style="margin:0;">Slide preview</h3>
-          <p class="muted" id="song-preview-sub" style="margin:6px 0 0;font-size:0.84rem;">Reorder slides and uncheck any you do not need in the deck.</p>
+          <p class="muted" id="song-preview-sub" style="margin:6px 0 0;font-size:0.84rem;">Organize slides on the left, preview on the right. Tap a slide row to jump in the preview.</p>
         </div>
         <button type="button" class="uiverse-btn uiverse-btn--sm" id="btn-close-song-preview"><div class="button-outer"><div class="button-inner"><span>Close</span></div></div></button>
       </div>
@@ -4158,6 +5305,131 @@ Lord, hear our prayer</textarea>
     }
 
     const THEME_STORAGE_KEY = "verbumColorTheme";
+    const ACCENT_STORAGE_KEY = "verbumAccentColor";
+    const VISUAL_STYLE_STORAGE_KEY = "verbumVisualStyle";
+
+    function hexToRgb(hex) {
+      const raw = String(hex || "").replace("#", "").trim();
+      const h = raw.length === 3 ? raw.split("").map((c) => c + c).join("") : raw;
+      if (h.length !== 6) return null;
+      const n = parseInt(h, 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    function mixHex(hex, amount, target = 255) {
+      const rgb = hexToRgb(hex);
+      if (!rgb) return hex;
+      const mix = (c) => Math.round(c + (target - c) * amount);
+      const toHex = (v) => v.toString(16).padStart(2, "0");
+      return "#" + toHex(mix(rgb.r)) + toHex(mix(rgb.g)) + toHex(mix(rgb.b));
+    }
+
+    function relativeLuminance(hex) {
+      const rgb = hexToRgb(hex);
+      if (!rgb) return 0;
+      const chan = (c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * chan(rgb.r) + 0.7152 * chan(rgb.g) + 0.0722 * chan(rgb.b);
+    }
+
+    function onAccentColor(hex) {
+      return relativeLuminance(hex) > 0.42 ? "#1A1528" : "#FFFFFF";
+    }
+
+    function readStoredUserAccent() {
+      try {
+        const v = localStorage.getItem(ACCENT_STORAGE_KEY);
+        return v && /^#[0-9A-Fa-f]{6}$/.test(v) ? v : null;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function syncAccentSwatchUI(hex) {
+      document.querySelectorAll(".accent-swatch").forEach((btn) => {
+        const match = hex && btn.dataset.accent && btn.dataset.accent.toLowerCase() === hex.toLowerCase();
+        btn.classList.toggle("active", !!match);
+      });
+      const picker = $("app-accent-color");
+      if (picker && hex) picker.value = hex;
+    }
+
+    function applyUserAccent(hex, persist = true) {
+      const body = document.body;
+      if (!hex || !hexToRgb(hex)) {
+        body.removeAttribute("data-user-accent");
+        ["--liturgical-accent", "--liturgical-glow", "--liturgical-secondary", "--accent", "--on-accent"].forEach((prop) => {
+          body.style.removeProperty(prop);
+        });
+        if (persist) {
+          try { localStorage.removeItem(ACCENT_STORAGE_KEY); } catch (_e) { /* ignore */ }
+        }
+        syncAccentSwatchUI(null);
+        return;
+      }
+      const glow = mixHex(hex, 0.38, 255);
+      const secondary = mixHex(hex, 0.2, 0);
+      body.setAttribute("data-user-accent", "1");
+      body.style.setProperty("--liturgical-accent", hex);
+      body.style.setProperty("--liturgical-glow", glow);
+      body.style.setProperty("--liturgical-secondary", secondary);
+      body.style.setProperty("--accent", hex);
+      body.style.setProperty("--on-accent", onAccentColor(hex));
+      if (persist) {
+        try { localStorage.setItem(ACCENT_STORAGE_KEY, hex); } catch (_e) { /* ignore */ }
+      }
+      syncAccentSwatchUI(hex);
+    }
+
+    function applyVisualStyle(styleId, persist = true) {
+      const style = styleId || "missalette";
+      document.documentElement.setAttribute("data-visual-style", style);
+      if (persist) {
+        try { localStorage.setItem(VISUAL_STYLE_STORAGE_KEY, style); } catch (_e) { /* ignore */ }
+      }
+      document.querySelectorAll('input[name="visual-style"]').forEach((inp) => {
+        inp.checked = inp.value === style;
+      });
+    }
+
+    function initAppearanceSettings() {
+      applyVisualStyle(
+        (() => {
+          try { return localStorage.getItem(VISUAL_STYLE_STORAGE_KEY) || "missalette"; } catch (_e) { return "missalette"; }
+        })(),
+        false
+      );
+      const storedAccent = readStoredUserAccent();
+      if (storedAccent) applyUserAccent(storedAccent, false);
+      else syncAccentSwatchUI(null);
+
+      document.querySelectorAll(".accent-swatch").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const hex = btn.dataset.accent;
+          const glow = btn.dataset.accentGlow;
+          if (!hex) return;
+          applyUserAccent(hex);
+          if (glow) document.body.style.setProperty("--liturgical-glow", glow);
+        });
+      });
+      const accentPicker = $("app-accent-color");
+      if (accentPicker) {
+        accentPicker.addEventListener("input", () => applyUserAccent(accentPicker.value));
+      }
+      const resetAccent = $("btn-reset-accent");
+      if (resetAccent) {
+        resetAccent.addEventListener("click", () => {
+          applyUserAccent(null);
+        });
+      }
+      document.querySelectorAll('input[name="visual-style"]').forEach((inp) => {
+        inp.addEventListener("change", () => {
+          if (inp.checked) applyVisualStyle(inp.value);
+        });
+      });
+    }
 
     function resolveColorTheme(preference) {
       let pref = preference;
@@ -4197,6 +5469,7 @@ Lord, hear our prayer</textarea>
     }
 
     function initColorTheme() {
+      initAppearanceSettings();
       applyColorTheme();
       const btn = $("theme-toggle-btn");
       if (btn) {
@@ -4229,7 +5502,7 @@ Lord, hear our prayer</textarea>
       "/design/theme-lab": "Liturgical themes and custom slide styling.",
       "/design/templates": "Poster and slide template reference.",
       "/settings/church": "Community name and parish logo.",
-      "/settings/app": "Planner defaults and shortcuts.",
+      "/settings/app": "Light/dark mode, accent colors, and visual style.",
     };
 
     const routeBreadcrumb = {
@@ -4243,7 +5516,7 @@ Lord, hear our prayer</textarea>
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
       "/settings/church": ["Settings", "Church Profile"],
-      "/settings/app": ["Settings", "App Settings"],
+      "/settings/app": ["Settings", "Appearance"],
     };
 
     function formatRouteBreadcrumb(route) {
@@ -4255,6 +5528,11 @@ Lord, hear our prayer</textarea>
     function applyLiturgicalSeasonTheme(seasonStr) {
       const preset = liturgicalPresetIdFromSeason(seasonStr || "");
       document.body.setAttribute("data-season", preset || "ordinary");
+      if (!document.body.hasAttribute("data-user-accent")) {
+        ["--liturgical-accent", "--liturgical-glow", "--liturgical-secondary", "--accent", "--on-accent"].forEach((prop) => {
+          document.body.style.removeProperty(prop);
+        });
+      }
       const chip = $("topbar-season-label");
       if (chip) {
         const label = (seasonStr || "").split(",")[0].trim();
@@ -4288,24 +5566,49 @@ Lord, hear our prayer</textarea>
       return routeMeta[path] ? path : "/home";
     }
 
+    function navLinkIsActive(link, route) {
+      const exact = link.dataset.route;
+      if (exact && route === exact) return true;
+      const prefix = link.dataset.routePrefix;
+      if (prefix && route.startsWith(prefix)) {
+        const exclude = link.dataset.routeExclude;
+        if (exclude && route === exclude) return false;
+        return true;
+      }
+      return false;
+    }
+
+    function syncSettingsSubnav(route) {
+      const subnav = $("settings-subnav");
+      if (!subnav) return;
+      const onSettings = route.startsWith("/settings/");
+      subnav.classList.toggle("is-visible", onSettings);
+      subnav.querySelectorAll(".settings-subnav-link").forEach((link) => {
+        link.classList.toggle("active", link.dataset.route === route);
+      });
+    }
+
     function showRoute(route, replaceOnly = false) {
       const r = normalizeRoute(route);
       document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.dataset.route === r));
-      document.querySelectorAll(".nav-link").forEach((link) => link.classList.toggle("active", link.dataset.route === r));
+      document.querySelectorAll(".nav-link").forEach((link) => link.classList.toggle("active", navLinkIsActive(link, r)));
+      syncSettingsSubnav(r);
       const rs = $("route-switcher");
       if (rs) rs.value = r;
       const rd = $("topbar-route-desc");
       if (rd) rd.textContent = routeMeta[r] || "";
       const bc = $("topbar-breadcrumb");
       if (bc) bc.innerHTML = formatRouteBreadcrumb(r);
-      const tb = $("topbar-title");
-      if (tb) tb.textContent = "Verbum";
+      const homeDesc = $("home-page-desc");
+      if (homeDesc && r === "/home") homeDesc.textContent = routeMeta[r] || "";
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/settings/church") syncChurchFieldsToSettings();
       if (r === "/mass/builder") {
         syncChurchFieldsFromSettings();
         loadSongCatalog();
       }
+      const flowDock = $("flow-dock-actions");
+      if (flowDock) flowDock.hidden = r !== "/mass/builder";
       if (r === "/media/posters") {
         syncPosterFromMassBuilder();
         refreshSavedPosters();
@@ -4329,13 +5632,14 @@ Lord, hear our prayer</textarea>
       }
     }
 
-    document.querySelectorAll(".nav-link").forEach((link) => {
+    document.querySelectorAll(".nav-link, .settings-subnav-link").forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
         showRoute(link.dataset.route);
       });
     });
-    $("route-switcher").addEventListener("change", (event) => showRoute(event.target.value));
+    const routeSwitcherEl = $("route-switcher");
+    if (routeSwitcherEl) routeSwitcherEl.addEventListener("change", (event) => showRoute(event.target.value));
     window.addEventListener("popstate", () => showRoute(currentRoute(), true));
 
     let lyricBlocks = [];
@@ -5044,18 +6348,23 @@ Lord, hear our prayer</textarea>
       const slot = document.querySelector(".mass-song-slot[data-slot-key=\"" + key + "\"]");
       if (!el) return;
       const id = selectedLyricsSongs[key] || "";
-      if (slot) slot.classList.toggle("has-selection", !!id);
+      let row = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
+      if (id && !row) {
+        rebuildMassPlanSongPool();
+        row = massPlanAllSongs.find((s) => String(s.id) === String(id));
+      }
+      const missingLyrics = !!(id && row && !row.has_lyrics);
+      if (slot) {
+        slot.classList.toggle("has-selection", !!id);
+        slot.classList.toggle("mass-song-slot--missing-lyrics", missingLyrics);
+      }
+      el.classList.toggle("mass-song-selected--missing-lyrics", missingLyrics);
       if (!id) {
         el.classList.remove("has-selection");
         el.innerHTML = "<span class=\"muted\">No song selected</span>";
         return;
       }
       el.classList.add("has-selection");
-      let row = massPlanAllSongs.find((s) => String(s.id) === String(id));
-      if (!row) {
-        rebuildMassPlanSongPool();
-        row = massPlanAllSongs.find((s) => String(s.id) === String(id));
-      }
       const secPill = row && row.section
         ? "<span class=\"pill\" style=\"font-size:0.68rem;margin-right:6px;vertical-align:middle;\">" + escapeHtml(row.section) + "</span>"
         : "";
@@ -5064,10 +6373,15 @@ Lord, hear our prayer</textarea>
       if (row) {
         const bits = [row.author, row.language].filter(Boolean);
         if (!row.has_lyrics) {
-          meta = "<div class=\"mass-song-picked-warn\">No lyrics saved — add lyrics in Song Library before generating slides.</div>";
-          if (bits.length) {
-            meta = "<div class=\"mass-song-picked-meta muted\">" + escapeHtml(bits.join(" · ")) + "</div>" + meta;
-          }
+          meta =
+            (bits.length ? "<div class=\"mass-song-picked-meta muted\">" + escapeHtml(bits.join(" · ")) + "</div>" : "") +
+            "<div class=\"mass-song-lyrics-alert\" role=\"alert\">" +
+              "<span class=\"mass-song-lyrics-alert__icon\" aria-hidden=\"true\">!</span>" +
+              "<div>" +
+                "<span class=\"mass-song-lyrics-alert__title\">Lyrics missing</span>" +
+                "<span class=\"mass-song-lyrics-alert__text\">Add lyrics in Song Library before generating hymn slides. Preview stays disabled until lyrics are saved.</span>" +
+              "</div>" +
+            "</div>";
         } else {
           meta = "<div class=\"mass-song-picked-meta muted\">" + escapeHtml(bits.join(" · ")) + (bits.length ? " · " : "") + "lyrics saved</div>";
         }
@@ -5083,17 +6397,25 @@ Lord, hear our prayer</textarea>
         box.hidden = false;
         return;
       }
-      box.innerHTML = list.map((row) => (
-        "<button type=\"button\" class=\"mass-song-result-row\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
-          "<strong>" + escapeHtml(row.title) + "</strong>" +
-          "<span class=\"muted\" style=\"font-size:0.78rem;display:block;margin-top:2px;\">" +
-          escapeHtml(row.section || "library") +
-          (row.author ? " · " + escapeHtml(row.author) : "") +
-          (row.language ? " · " + escapeHtml(row.language) : "") +
-          (row.source === "web" ? " · web hint" : "") +
-          "</span>" +
-        "</button>"
-      )).join("");
+      box.innerHTML = list.map((row) => {
+        const noLyrics = !row.has_lyrics;
+        const rowCls = "mass-song-result-row" + (noLyrics ? " mass-song-result-row--no-lyrics" : "");
+        const lyricsBadge = noLyrics
+          ? "<span class=\"mass-song-lyrics-badge\" aria-label=\"No lyrics saved\">No lyrics</span>"
+          : "";
+        return (
+          "<button type=\"button\" class=\"" + rowCls + "\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
+            "<strong>" + escapeHtml(row.title) + "</strong>" +
+            "<span class=\"muted\" style=\"font-size:0.78rem;display:block;margin-top:2px;\">" +
+            escapeHtml(row.section || "library") +
+            (row.author ? " · " + escapeHtml(row.author) : "") +
+            (row.language ? " · " + escapeHtml(row.language) : "") +
+            (row.source === "web" ? " · web hint" : "") +
+            "</span>" +
+            lyricsBadge +
+          "</button>"
+        );
+      }).join("");
       box.hidden = false;
     }
 
@@ -5447,23 +6769,28 @@ Lord, hear our prayer</textarea>
         const off = isChunkDisabled(plan, chunkIdx);
         const label = slideChunkSummary(chunks[chunkIdx] || "", chunkIdx);
         return (
-          "<li class=\"song-slide-plan__item" + (off ? " is-off" : "") + "\" data-plan-pos=\"" + pos + "\" data-chunk-idx=\"" + chunkIdx + "\">" +
-            "<label class=\"song-slide-plan__include\">" +
-              "<input type=\"checkbox\" class=\"song-slide-plan-check\" data-chunk-idx=\"" + chunkIdx + "\"" + (off ? "" : " checked") + " />" +
-              "<span>On</span>" +
-            "</label>" +
-            "<div class=\"song-slide-plan__summary\"><small>Slide " + (pos + 1) + "</small>" + escapeHtml(label) + "</div>" +
+          "<li class=\"song-slide-plan__item" + (off ? " is-off" : "") + "\" data-plan-pos=\"" + pos + "\" data-chunk-idx=\"" + chunkIdx + "\" role=\"listitem\">" +
+            "<span class=\"song-slide-plan__num\" aria-hidden=\"true\">" + (pos + 1) + "</span>" +
+            "<button type=\"button\" class=\"song-slide-plan__summary song-slide-plan-jump\" data-plan-pos=\"" + pos + "\" title=\"Show in preview\">" +
+              "<span class=\"song-slide-plan__summary-label\">Slide " + (pos + 1) + "</span>" +
+              "<span class=\"song-slide-plan__summary-text\">" + escapeHtml(label) + "</span>" +
+            "</button>" +
+            "<button type=\"button\" class=\"song-slide-plan__toggle\" data-chunk-idx=\"" + chunkIdx + "\" aria-pressed=\"" + (!off) + "\" title=\"" + (off ? "Include in deck" : "Omit from deck") + "\">" + (off ? "Off" : "In deck") + "</button>" +
             "<div class=\"song-slide-plan__moves\">" +
-              "<button type=\"button\" class=\"song-slide-plan-up\" data-plan-pos=\"" + pos + "\" title=\"Move up\"" + (pos === 0 ? " disabled" : "") + ">↑</button>" +
-              "<button type=\"button\" class=\"song-slide-plan-down\" data-plan-pos=\"" + pos + "\" title=\"Move down\"" + (pos >= plan.order.length - 1 ? " disabled" : "") + ">↓</button>" +
+              "<button type=\"button\" class=\"song-slide-plan-up\" data-plan-pos=\"" + pos + "\" title=\"Move up\"" + (pos === 0 ? " disabled" : "") + " aria-label=\"Move slide up\">↑</button>" +
+              "<button type=\"button\" class=\"song-slide-plan-down\" data-plan-pos=\"" + pos + "\" title=\"Move down\"" + (pos >= plan.order.length - 1 ? " disabled" : "") + " aria-label=\"Move slide down\">↓</button>" +
             "</div>" +
           "</li>"
         );
       }).join("");
       return (
         "<div class=\"song-slide-plan\" id=\"song-slide-plan\">" +
-          "<div class=\"song-slide-plan__head\"><span>Slide order</span><span id=\"song-slide-plan-count\">" + enabled + " of " + chunks.length + " in deck</span></div>" +
-          "<ul class=\"song-slide-plan__list\">" + rows + "</ul>" +
+          "<div class=\"song-slide-plan__head\">" +
+            "<span class=\"song-slide-plan__head-title\">Slide organizer</span>" +
+            "<span class=\"song-slide-plan__head-hint\">Reorder with arrows. Toggle off slides you do not need.</span>" +
+            "<span id=\"song-slide-plan-count\">" + enabled + " of " + chunks.length + " in deck</span>" +
+          "</div>" +
+          "<ul class=\"song-slide-plan__list\" role=\"list\">" + rows + "</ul>" +
         "</div>"
       );
     }
@@ -5511,31 +6838,60 @@ Lord, hear our prayer</textarea>
       };
 
       planEl.querySelectorAll(".song-slide-plan-up").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
           movePlan(parseInt(btn.dataset.planPos, 10) || 0, -1);
         });
       });
       planEl.querySelectorAll(".song-slide-plan-down").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
           movePlan(parseInt(btn.dataset.planPos, 10) || 0, 1);
         });
       });
-      planEl.querySelectorAll(".song-slide-plan-check").forEach((cb) => {
-        cb.addEventListener("change", () => {
-          const chunkIdx = parseInt(cb.dataset.chunkIdx, 10);
-          const disabled = new Set(plan.disabled || []);
-          if (cb.checked) disabled.delete(chunkIdx);
-          else disabled.add(chunkIdx);
-          if (countEnabledSlides({ order: plan.order, disabled: Array.from(disabled) }, chunks.length) < 1) {
-            cb.checked = true;
+      const toggleSlideInDeck = (chunkIdx) => {
+        const disabled = new Set(songPreviewState.plan.disabled || []);
+        if (disabled.has(chunkIdx)) {
+          disabled.delete(chunkIdx);
+        } else {
+          disabled.add(chunkIdx);
+          if (countEnabledSlides({ order: songPreviewState.plan.order, disabled: Array.from(disabled) }, chunks.length) < 1) {
             return;
           }
-          plan.disabled = Array.from(disabled);
-          refreshSongPreviewPanel();
-          syncSlidePlanToOverrides();
+        }
+        songPreviewState.plan.disabled = Array.from(disabled);
+        refreshSongPreviewPanel();
+        syncSlidePlanToOverrides();
+      };
+
+      planEl.querySelectorAll(".song-slide-plan__toggle").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSlideInDeck(parseInt(btn.dataset.chunkIdx, 10));
         });
       });
 
+      const scrollToPlanSlide = (pos) => {
+        const scroller = $("song-ppt-slides-scroll");
+        if (!scroller) return;
+        const wrap = scroller.querySelector(".hymn-slide-wrap[data-slide-index=\"" + pos + "\"]");
+        if (wrap) wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      };
+
+      planEl.querySelectorAll(".song-slide-plan-jump").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          scrollToPlanSlide(parseInt(btn.dataset.planPos, 10) || 0);
+        });
+      });
+
+      planEl.querySelectorAll(".song-slide-plan__item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          if (e.target.closest(".song-slide-plan__toggle, .song-slide-plan-up, .song-slide-plan-down, .song-slide-plan-jump")) return;
+          scrollToPlanSlide(parseInt(item.dataset.planPos, 10) || 0);
+        });
+      });
     }
 
     async function saveSongPreviewToPptx(section) {
@@ -5569,7 +6925,7 @@ Lord, hear our prayer</textarea>
             dl.style.display = "";
           }
         }
-        setFlowStatus("PowerPoint updated with slide plan.", "ok");
+        notify("PowerPoint updated with slide plan.", "ok");
       } catch (err) {
         if (statusEl) {
           statusEl.textContent = err.message || "Save failed.";
@@ -5736,19 +7092,23 @@ Lord, hear our prayer</textarea>
       const countLabel = enabled + " of " + allChunks.length + " slides in deck";
       return (
         "<div class=\"song-ppt-viewer\">" +
-          renderSongSlidePlanEditor(slidePlan, allChunks) +
-          "<div class=\"song-ppt-toolbar\">" +
-            "<span>Mini preview</span>" +
-            "<span id=\"song-ppt-slide-count\">" + escapeHtml(countLabel) + "</span>" +
+          "<aside class=\"song-ppt-organizer\" aria-label=\"Slide organizer\">" +
+            renderSongSlidePlanEditor(slidePlan, allChunks) +
+          "</aside>" +
+          "<div class=\"song-ppt-main\">" +
+            "<div class=\"song-ppt-toolbar\">" +
+              "<span>Slide preview</span>" +
+              "<span id=\"song-ppt-slide-count\">" + escapeHtml(countLabel) + "</span>" +
+            "</div>" +
+            "<div class=\"song-ppt-stage\">" +
+              "<div class=\"song-ppt-slides\" id=\"song-ppt-slides-scroll\">" + slideHtml + "</div>" +
+            "</div>" +
+            "<div class=\"song-preview-save-row\">" +
+              "<button type=\"button\" class=\"uiverse-btn uiverse-btn--orange\" id=\"btn-save-hymn-typo\"><div class=\"button-outer\"><div class=\"button-inner\"><span>Apply to PowerPoint</span></div></div></button>" +
+              "<span class=\"muted\" id=\"song-preview-save-status\"></span>" +
+            "</div>" +
+            "<p class=\"muted\" style=\"font-size:0.78rem;margin:0;\">Changes apply when you generate or click Apply. Slides toggled off are omitted from the deck.</p>" +
           "</div>" +
-          "<div class=\"song-ppt-stage\">" +
-            "<div class=\"song-ppt-slides\" id=\"song-ppt-slides-scroll\">" + slideHtml + "</div>" +
-          "</div>" +
-          "<div class=\"song-preview-save-row\">" +
-            "<button type=\"button\" class=\"uiverse-btn uiverse-btn--orange\" id=\"btn-save-hymn-typo\"><div class=\"button-outer\"><div class=\"button-inner\"><span>Apply to PowerPoint</span></div></div></button>" +
-            "<span class=\"muted\" id=\"song-preview-save-status\"></span>" +
-          "</div>" +
-          "<p class=\"muted\" style=\"font-size:0.78rem;margin:0;\">Changes apply when you generate or click Apply. Unchecked slides are omitted from the deck.</p>" +
         "</div>"
       );
     }
@@ -5756,11 +7116,11 @@ Lord, hear our prayer</textarea>
     function bindSongPreviewSlideScroll() {
       const scroller = $("song-ppt-slides-scroll");
       const countEl = $("song-ppt-slide-count");
+      const planEl = $("song-slide-plan");
       if (!scroller) return;
       const wraps = scroller.querySelectorAll(".hymn-slide-wrap");
       const total = wraps.length;
       const syncCount = () => {
-        if (!countEl || total < 2) return;
         let best = 0;
         let bestDist = Infinity;
         const mid = scroller.scrollTop + scroller.clientHeight * 0.35;
@@ -5771,7 +7131,16 @@ Lord, hear our prayer</textarea>
             best = i;
           }
         });
-        countEl.textContent = "Slide " + (best + 1) + " of " + total;
+        if (countEl) {
+          countEl.textContent = total < 2
+            ? (total ? "1 slide" : "0 slides")
+            : "Slide " + (best + 1) + " of " + total;
+        }
+        if (planEl) {
+          planEl.querySelectorAll(".song-slide-plan__item").forEach((li, i) => {
+            li.classList.toggle("is-active", i === best);
+          });
+        }
       };
       scroller.addEventListener("scroll", syncCount, { passive: true });
       syncCount();
@@ -5825,7 +7194,7 @@ Lord, hear our prayer</textarea>
       const body = $("song-preview-body");
       if (titleEl) titleEl.textContent = row.title || "Song preview";
       if (subEl) {
-        subEl.textContent = "Reorder slides and uncheck any you do not need in the deck.";
+        subEl.textContent = "Organize slides on the left, preview on the right. Tap a slide row to jump in the preview.";
       }
       if (body) body.innerHTML = "<p class=\"muted\">Loading lyrics preview…</p>";
       openSongPreviewPanel();
@@ -5994,7 +7363,7 @@ Lord, hear our prayer</textarea>
       const tablist = document.querySelector(".flow-builder-tabs");
       if (!tablist) return;
       const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
-      const panels = Array.from(document.querySelectorAll("[data-flow-panel]"));
+      const panels = Array.from(document.querySelectorAll("#flow-page [data-flow-panel]"));
       function activateFlowTab(name) {
         tabs.forEach((tab) => {
           const on = tab.dataset.flowTab === name;
@@ -6005,6 +7374,9 @@ Lord, hear our prayer</textarea>
           const on = panel.dataset.flowPanel === name;
           panel.hidden = !on;
         });
+        if (name === "songs" && typeof renderMassSongPlan === "function") {
+          renderMassSongPlan();
+        }
       }
       tablist.addEventListener("click", (e) => {
         const tab = e.target.closest('[role="tab"]');
@@ -6026,27 +7398,214 @@ Lord, hear our prayer</textarea>
       });
     })();
 
-    function setFlowStatus(message, kind) {
-      $("flow-status").textContent = message || "";
-      $("flow-status").className = "status " + (kind || "");
+    const NOTIF_STORAGE_KEY = "verbumNotifications";
+    let appNotifications = [];
+
+    function loadAppNotifications() {
+      try {
+        appNotifications = JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY) || "[]");
+        if (!Array.isArray(appNotifications)) appNotifications = [];
+      } catch (_e) {
+        appNotifications = [];
+      }
+    }
+
+    function saveAppNotifications() {
+      try {
+        localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(appNotifications.slice(0, 120)));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function formatNotificationTime(iso) {
+      const d = iso ? new Date(iso) : new Date();
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+
+    function updateNotifBadge() {
+      const badge = $("notif-badge");
+      if (!badge) return;
+      const n = appNotifications.length;
+      if (n > 0) {
+        badge.hidden = false;
+        badge.textContent = n > 99 ? "99+" : String(n);
+      } else {
+        badge.hidden = true;
+        badge.textContent = "0";
+      }
+    }
+
+    function renderNotificationFeed() {
+      const feed = $("notification-feed");
+      const empty = $("notification-empty");
+      if (!feed) return;
+      feed.innerHTML = "";
+      if (!appNotifications.length) {
+        if (empty) empty.style.display = "";
+        updateNotifBadge();
+        return;
+      }
+      if (empty) empty.style.display = "none";
+      appNotifications.forEach((item) => {
+        const li = document.createElement("li");
+        li.className = "notification-item notification-item--" + (item.kind || "info");
+        const msg = document.createElement("p");
+        msg.className = "notification-item__msg";
+        msg.textContent = item.message || "";
+        li.appendChild(msg);
+        const time = document.createElement("p");
+        time.className = "notification-item__time";
+        time.textContent = formatNotificationTime(item.at);
+        li.appendChild(time);
+        if (item.downloads && item.downloads.length) {
+          const links = document.createElement("div");
+          links.className = "notification-item__links";
+          item.downloads.forEach((dl) => {
+            if (!dl || !dl.url) return;
+            const a = document.createElement("a");
+            a.href = dl.url;
+            a.textContent = dl.label || "Download";
+            if (dl.download) a.setAttribute("download", "");
+            links.appendChild(a);
+          });
+          if (links.childNodes.length) li.appendChild(links);
+        }
+        feed.appendChild(li);
+      });
+      updateNotifBadge();
+    }
+
+    function pushAppNotification(message, kind, meta) {
+      const item = {
+        id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8),
+        message: message || "",
+        kind: kind === "ok" || kind === "error" ? kind : "info",
+        at: new Date().toISOString(),
+        downloads: (meta && meta.downloads) ? meta.downloads : [],
+      };
+      appNotifications.unshift(item);
+      saveAppNotifications();
+      renderNotificationFeed();
+      return item;
+    }
+
+    function dismissToast(el) {
+      if (!el || !el.isConnected) return;
+      clearTimeout(el._toastTimer);
+      el.classList.remove("toast--visible");
+      setTimeout(() => el.remove(), 280);
+    }
+
+    function showToast(message, kind) {
+      const stack = $("toast-stack");
+      if (!stack || !message) return;
+      const el = document.createElement("div");
+      el.className = "toast toast--" + (kind === "error" ? "error" : kind === "ok" ? "ok" : "info");
+      el.setAttribute("role", "status");
+      const row = document.createElement("div");
+      row.className = "toast__row";
+      const text = document.createElement("span");
+      text.className = "toast__text";
+      text.textContent = message;
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "toast__close";
+      closeBtn.setAttribute("aria-label", "Dismiss notification");
+      closeBtn.innerHTML = "&times;";
+      closeBtn.addEventListener("click", () => dismissToast(el));
+      row.appendChild(text);
+      row.appendChild(closeBtn);
+      el.appendChild(row);
+      stack.appendChild(el);
+      requestAnimationFrame(() => el.classList.add("toast--visible"));
+      el._toastTimer = setTimeout(() => dismissToast(el), kind === "error" ? 5500 : 4200);
+    }
+
+    function notify(message, kind, meta) {
+      if (!message) return;
+      if (kind === "ok" || kind === "error") {
+        pushAppNotification(message, kind, meta);
+        showToast(message, kind);
+      }
+    }
+
+    function setFlowStatus(message, kind, meta) {
+      notify(message, kind, meta);
+    }
+
+    function massGenerateDownloadLinks(data) {
+      if (!data) return [];
+      const out = [];
+      if (data.zip_url) out.push({ label: "ZIP bundle", url: data.zip_url, download: true });
+      if (data.pptx_url) out.push({ label: "PowerPoint", url: data.pptx_url, download: true });
+      if (data.poster_url) out.push({ label: "Poster PNG", url: data.poster_url, download: true });
+      if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
+      return out;
+    }
+
+    loadAppNotifications();
+    renderNotificationFeed();
+
+    (function initNotifPanel() {
+      const btn = $("notif-toggle-btn");
+      const panel = $("notif-panel");
+      if (!btn || !panel) return;
+      function closeNotifPanel() {
+        panel.hidden = true;
+        btn.setAttribute("aria-expanded", "false");
+      }
+      function openNotifPanel() {
+        panel.hidden = false;
+        btn.setAttribute("aria-expanded", "true");
+      }
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (panel.hidden) openNotifPanel();
+        else closeNotifPanel();
+      });
+      document.addEventListener("click", (e) => {
+        if (!panel.hidden && !e.target.closest(".notif-wrap")) closeNotifPanel();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !panel.hidden) closeNotifPanel();
+      });
+    })();
+
+    const clearNotifBtn = $("btn-clear-notifications");
+    if (clearNotifBtn) {
+      clearNotifBtn.addEventListener("click", () => {
+        appNotifications = [];
+        saveAppNotifications();
+        renderNotificationFeed();
+      });
     }
 
     function getCommunityName() {
-      const a = $("church-name");
       const b = $("settings-church-name");
-      return ((a && a.value.trim()) || (b && b.value.trim()) || "");
+      return (b && b.value.trim()) || "";
     }
 
     function syncChurchFieldsToSettings() {
-      const a = $("church-name");
-      const b = $("settings-church-name");
-      if (a && b) b.value = a.value;
+      /* church name is managed in Settings → Church Profile */
     }
 
     function syncChurchFieldsFromSettings() {
-      const a = $("church-name");
-      const b = $("settings-church-name");
-      if (a && b && b.value) a.value = b.value;
+      /* church name is managed in Settings → Church Profile */
+    }
+
+    function getMassCelebrantLine() {
+      const main = ($("celebrant") && $("celebrant").value.trim()) || "";
+      const co = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
+      if (!main) return "";
+      return co ? main + " · " + co : main;
     }
 
     function upcomingSundayISO(base = new Date()) {
@@ -6070,9 +7629,8 @@ Lord, hear our prayer</textarea>
       try {
         const res = await fetch("/api/community");
         const data = await res.json();
-        if (data.community_name) {
-          if ($("church-name")) $("church-name").value = data.community_name;
-          if ($("settings-church-name")) $("settings-church-name").value = data.community_name;
+        if (data.community_name && $("settings-church-name")) {
+          $("settings-church-name").value = data.community_name;
         }
         if (data.logo_url) {
           const preview = $("logo-preview");
@@ -6166,29 +7724,6 @@ Lord, hear our prayer</textarea>
 
     function renderHistoryList() {
       renderRecentInto($("history-list"));
-    }
-
-    function previewParagraphs(raw, max) {
-      const t = (raw || "").trim();
-      if (!t) {
-        return [];
-      }
-      let blocks = t.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
-      if (blocks.length <= 1) {
-        blocks = t.split("\n").map((s) => s.trim()).filter(Boolean);
-      }
-      return blocks.slice(0, max);
-    }
-
-    function fillFlowPreviewEl(el, parts, emptyMsg) {
-      if (!el) {
-        return;
-      }
-      if (!parts.length) {
-        el.innerHTML = "<p class=\"flow-para-muted\">" + escapeHtml(emptyMsg) + "</p>";
-        return;
-      }
-      el.innerHTML = parts.map((p) => "<p>" + escapeHtml(p) + "</p>").join("");
     }
 
     function isPsalmReference(ref) {
@@ -6383,12 +7918,6 @@ Lord, hear our prayer</textarea>
     function updateFlowParagraphPreviews() {
       syncFlowPsalmOverrideHidden();
       syncFlowFoodSponsorsHidden();
-      const psalmRaw = ($("flow-psalm-override") && $("flow-psalm-override").value) || "";
-      const foodLines = getFlowFoodSponsorsLines();
-      const psalmRef = flowPreviewData && (flowPreviewData.psalm || flowPreviewData.psalm_reference);
-      const psalmKind = responsorialSectionLabel(psalmRef);
-      fillFlowPreviewEl($("flow-psalm-preview"), previewParagraphs(psalmRaw, 3), psalmKind + " preview will show up to three paragraphs.");
-      fillFlowPreviewEl($("flow-food-preview"), foodLines.slice(0, 3), "Food sponsor preview shows up to three lines.");
     }
 
     function populateGospelSentenceSelect(data) {
@@ -6416,16 +7945,11 @@ Lord, hear our prayer</textarea>
     }
 
     async function refreshHomeMission() {
-      const elStatus = $("home-mission-status");
       const sun = upcomingSundayISO();
       const days = daysUntilUpcomingSunday();
       const elDays = $("home-days-until");
       if (elDays) elDays.textContent = String(days);
       if ($("home-sunday-label")) $("home-sunday-label").textContent = "Sunday " + sun;
-      if (elStatus) {
-        elStatus.textContent = "Loading lectionary snapshot…";
-        elStatus.className = "status";
-      }
       try {
         const data = await postJSON("/api/preview", { date: sun });
         window.__homePreview = data;
@@ -6441,23 +7965,18 @@ Lord, hear our prayer</textarea>
         if ($("home-snap-season")) $("home-snap-season").textContent = data.season || "—";
         if ($("home-snap-color")) $("home-snap-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
         if ($("home-snap-year")) $("home-snap-year").textContent = data.lectionary_cycle || "—";
-        if (elStatus) elStatus.textContent = "";
         renderThemeGrid();
       } catch (e) {
-        if (elStatus) {
-          elStatus.textContent = e.message || "Could not load preview.";
-          elStatus.className = "status error";
-        }
+        notify(e.message || "Could not load lectionary preview.", "error");
       }
     }
 
     async function loadFlowData(auto = false) {
       const date = $("mass-date").value;
       if (!date) {
-        if (!auto) setFlowStatus("Choose a Mass date first.", "error");
+        if (!auto) notify("Choose a Mass date first.", "error");
         return;
       }
-      setFlowStatus(auto ? "Auto-loading readings and song options..." : "Loading readings and song options...", "");
       $("btn-load-flow").disabled = true;
       try {
         const data = await postJSON("/api/preview", { date });
@@ -6466,7 +7985,8 @@ Lord, hear our prayer</textarea>
         applyLiturgicalSeasonTheme(data.season || "");
         renderThemeGrid();
         const season = [data.season, data.lectionary_cycle].filter(Boolean).join(" - ") || "Season loaded";
-        $("season-indicator").textContent = season;
+        const seasonEl = $("season-indicator");
+        if (seasonEl) seasonEl.textContent = season;
         songOptionsBySection = data.songs_by_section || songOptionsBySection;
         const defaults = data.default_song_selections || {};
         if (defaults.entrance) selectedLyricsSongs.entrance = defaults.entrance;
@@ -6495,9 +8015,9 @@ Lord, hear our prayer</textarea>
         updateFlowParagraphPreviews();
         renderFlowSongCount();
         updatePosterLivePreview();
-        setFlowStatus("Planner refreshed with lectionary context and hymn recommendations.", "ok");
+        notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
       } catch (error) {
-        setFlowStatus(error.message || "Could not load readings.", "error");
+        notify(error.message || "Could not load readings.", "error");
       } finally {
         $("btn-load-flow").disabled = false;
       }
@@ -6637,8 +8157,9 @@ Lord, hear our prayer</textarea>
       const o = options || {};
       const statusFn = o.setStatus || setFlowStatus;
       const date = o.date || $("mass-date").value;
-      const celebrant = (o.celebrant != null ? o.celebrant : $("celebrant").value).trim();
-      if (!date || !celebrant) {
+      const celebrant = (o.celebrant != null ? o.celebrant : getMassCelebrantLine()).trim();
+      const celebrantMain = ($("celebrant") && $("celebrant").value.trim()) || "";
+      if (!date || !celebrantMain) {
         statusFn("Enter Mass date and celebrant before generating.", "error");
         return null;
       }
@@ -6777,16 +8298,17 @@ Lord, hear our prayer</textarea>
           pptx_url: data.pptx_url,
           poster_url: data.poster_url,
         });
+        const dlMeta = { downloads: massGenerateDownloadLinks(data) };
         if (o.autoDownloadPptx && data.pptx_url) {
           const pptxName = (data.export_stem ? data.export_stem + ".pptx" : "mass_presentation.pptx");
           try {
             await triggerBrowserDownload(data.pptx_url, pptxName);
-            statusFn("Deck generated. PowerPoint download started.", "ok");
+            statusFn("Deck generated. PowerPoint download started.", "ok", dlMeta);
           } catch (_dlErr) {
-            statusFn("Deck generated. Downloads are ready (use PowerPoint link if download did not start).", "ok");
+            statusFn("Deck generated. Downloads are ready (use PowerPoint link if download did not start).", "ok", dlMeta);
           }
         } else {
-          statusFn("Deck generated. Downloads are ready.", "ok");
+          statusFn("Deck generated. Downloads are ready.", "ok", dlMeta);
         }
         return data;
       } catch (error) {
@@ -6803,7 +8325,7 @@ Lord, hear our prayer</textarea>
       const q = ($("poster-gospel-quote") && $("poster-gospel-quote").value.trim()) || ($("home-gospel-quote") && $("home-gospel-quote").textContent.trim()) || "Gospel quote appears here.";
       const title = getCommunityName() || "Parish community";
       const d = ($("poster-mass-date") && $("poster-mass-date").value) || ($("mass-date") && $("mass-date").value) || "";
-      const c = ($("poster-celebrant") && $("poster-celebrant").value.trim()) || ($("celebrant") && $("celebrant").value.trim()) || "Celebrant";
+      const c = ($("poster-celebrant") && $("poster-celebrant").value.trim()) || getMassCelebrantLine() || "Celebrant";
       if ($("poster-prev-kicker")) $("poster-prev-kicker").textContent = "Sunday Mass";
       if ($("poster-prev-title")) $("poster-prev-title").textContent = title;
       if ($("poster-prev-quote")) $("poster-prev-quote").textContent = q;
@@ -6813,7 +8335,7 @@ Lord, hear our prayer</textarea>
 
     function syncPosterFromMassBuilder() {
       if ($("poster-mass-date") && $("mass-date")) $("poster-mass-date").value = $("mass-date").value;
-      if ($("poster-celebrant") && $("celebrant")) $("poster-celebrant").value = $("celebrant").value;
+      if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
       if ($("poster-gospel-quote") && flowPreviewData && flowPreviewData.gospel_quote) {
         $("poster-gospel-quote").value = flowPreviewData.gospel_quote;
       }
@@ -7253,7 +8775,6 @@ Lord, hear our prayer</textarea>
     $("mass-date").addEventListener("change", () => loadFlowData(true));
     $("btn-generate-flow").addEventListener("click", async () => {
       $("btn-generate-flow").disabled = true;
-      setFlowStatus("Generating deck from planned flow...", "");
       await runFullMassGenerate({ setStatus: setFlowStatus, autoDownloadPptx: true });
       $("btn-generate-flow").disabled = false;
     });
@@ -7268,16 +8789,7 @@ Lord, hear our prayer</textarea>
       if (file) await uploadLogo(file);
     });
 
-    $("church-name").addEventListener("input", () => syncChurchFieldsToSettings());
     $("settings-church-name").addEventListener("input", () => syncChurchFieldsFromSettings());
-
-    const linkFlow = $("link-church-profile-flow");
-    if (linkFlow) {
-      linkFlow.addEventListener("click", (e) => {
-        e.preventDefault();
-        showRoute("/settings/church");
-      });
-    }
 
     $("btn-save-community-api").addEventListener("click", async () => {
       const name = $("settings-church-name").value.trim();
@@ -7289,7 +8801,6 @@ Lord, hear our prayer</textarea>
       $("settings-church-status").textContent = "Saving…";
       try {
         await postJSON("/api/community", { community_name: name });
-        if ($("church-name")) $("church-name").value = name;
         $("settings-church-status").textContent = "Saved community name.";
         $("settings-church-status").className = "status ok";
       } catch (err) {
@@ -7321,12 +8832,13 @@ Lord, hear our prayer</textarea>
       if (el) el.addEventListener("input", updatePosterLivePreview);
     });
     $("btn-poster-generate").addEventListener("click", async () => {
-      const st = (m, k) => {
+      const st = (m, k, meta) => {
         const el = $("poster-status");
         if (el) {
           el.textContent = m || "";
           el.className = "status " + (k || "");
         }
+        notify(m, k, meta);
       };
       $("btn-poster-generate").disabled = true;
       st("Generating poster package…", "");
