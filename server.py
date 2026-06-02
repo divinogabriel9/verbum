@@ -152,25 +152,26 @@ def _write_mass_bundle_zip(result: GenerationResult) -> None:
         if p and Path(p).is_file():
             pp = Path(p)
             entries.append((pp, pp.name))
-    if result.poster_path:
+    if result.include_social_exports and result.poster_path:
         parent = Path(result.poster_path).parent
         stem = Path(result.poster_path).stem
         for child in sorted(parent.glob(f"{stem}_*.png")):
             if child.is_file() and all(o[0] != child for o in entries):
                 entries.append((child, child.name))
+        post_dir = _OUTPUT_DIR / "posters"
+        if post_dir.is_dir():
+            for child in sorted(post_dir.glob("*.png")):
+                if child.is_file() and all(o[0] != child for o in entries):
+                    entries.append((child, f"posters/{child.name}"))
     if result.export_stem:
         g = _OUTPUT_DIR / f"{result.export_stem}_gospel_moment.png"
         if g.is_file() and all(o[0] != g for o in entries):
             entries.append((g, g.name))
-    post_dir = _OUTPUT_DIR / "posters"
-    if post_dir.is_dir():
-        for child in sorted(post_dir.glob("*.png")):
-            if child.is_file() and all(o[0] != child for o in entries):
-                entries.append((child, f"posters/{child.name}"))
-    for name in _BUNDLE_OPTIONAL:
-        p = _OUTPUT_DIR / name
-        if p.is_file() and all(o[0] != p for o in entries):
-            entries.append((p, name))
+    if result.include_social_exports:
+        for name in _BUNDLE_OPTIONAL:
+            p = _OUTPUT_DIR / name
+            if p.is_file() and all(o[0] != p for o in entries):
+                entries.append((p, name))
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
         for path, arc in entries:
             zf.write(path, arcname=arc)
@@ -246,7 +247,10 @@ class GenerateBody(BaseModel):
         "liturgical_color",
         description="liturgical_color | classic_white",
     )
-    include_social_exports: bool = Field(True)
+    include_social_exports: bool = Field(
+        False,
+        description="When true, also export 1080×1350 feed PNG and Instagram/Story/OG variants.",
+    )
     include_gospel_art: bool = Field(True)
     include_ai_mass_poster: bool = Field(
         False,

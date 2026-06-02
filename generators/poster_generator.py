@@ -324,14 +324,14 @@ def generate_mass_poster(
     entrance_song_title: str = "",
     communion_song_titles: str = "",
     output_stem: str = "mass_poster",
-) -> Tuple[Path, Path]:
+    include_social_exports: bool = False,
+) -> Tuple[Optional[Path], Path]:
     """
-    Writes ``outputs/{output_stem}.png`` (1080×1350, social / feed) and
-    ``outputs/{output_stem}_16x9.png`` (1920×1080, presentation-friendly).
+    Writes ``outputs/{output_stem}_16x9.png`` (1920×1080, liturgical slide).
 
-    Default ``output_stem="mass_poster"`` preserves legacy filenames.
+    When ``include_social_exports`` is true, also writes ``{output_stem}.png`` (1080×1350).
 
-    Returns ``(social_path, ppt_aspect_path)``.
+    Returns ``(social_path or None, ppt_aspect_path)``.
     """
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     stem = (output_stem or "mass_poster").strip() or "mass_poster"
@@ -340,22 +340,25 @@ def generate_mass_poster(
 
     comm = (community_name or "").strip() or get_community_name()
 
-    img_social = _compose_mass_poster_image(
-        POSTER_W,
-        POSTER_H,
-        title=title,
-        gospel_reference=gospel_reference,
-        celebrant=celebrant,
-        date=date,
-        template=template,
-        liturgical_color=liturgical_color,
-        logo_path=logo_path,
-        community_name=comm,
-        gospel_quote=gospel_quote,
-        entrance_title=entrance_song_title,
-        communion_titles=communion_song_titles,
-    )
-    img_social.save(social_path, format="PNG", optimize=True)
+    if include_social_exports:
+        img_social = _compose_mass_poster_image(
+            POSTER_W,
+            POSTER_H,
+            title=title,
+            gospel_reference=gospel_reference,
+            celebrant=celebrant,
+            date=date,
+            template=template,
+            liturgical_color=liturgical_color,
+            logo_path=logo_path,
+            community_name=comm,
+            gospel_quote=gospel_quote,
+            entrance_title=entrance_song_title,
+            communion_titles=communion_song_titles,
+        )
+        img_social.save(social_path, format="PNG", optimize=True)
+    else:
+        social_path = None
 
     # For the 16×9 variant used as slide wallpaper, keep only the liturgical
     # gradient + orb; all readable text comes from PowerPoint text boxes.

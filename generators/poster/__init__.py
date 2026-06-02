@@ -8,7 +8,7 @@ Public API:
 """
 
 from generators.poster.composer import compose_poster, content_from_legacy_kwargs
-from generators.poster.export import export_poster_sizes, export_primary_poster_pair
+from generators.poster.export import export_poster_sizes, export_ppt_poster, export_primary_poster_pair
 from generators.poster.presets import PRESET_IDS
 from generators.poster.types import (
     PPT_SIZE,
@@ -28,6 +28,7 @@ __all__ = [
     "compose_poster",
     "content_from_legacy_kwargs",
     "export_poster_sizes",
+    "export_ppt_poster",
     "export_primary_poster_pair",
     "palette_from_season",
     "poster_accent_rgb",

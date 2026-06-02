@@ -3800,6 +3800,10 @@ Lord, hear our prayer</textarea>
                   <label><input type="checkbox" id="flow-use-openai-poster" /> Generate poster with OpenAI</label>
                   <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art in exact 16:9 widescreen (1920×1080) for projector slides. Set OPENAI_API_KEY in .env.</p>
                 </div>
+                <div class="field">
+                  <label><input type="checkbox" id="flow-include-social-exports" /> Include Instagram / social poster sizes</label>
+                  <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Off by default: generates PowerPoint and 16:9 slide poster only. Enable for 1080×1350 feed plus square, story, and web crops.</p>
+                </div>
                 <div class="field" id="flow-openai-style-wrap">
                   <label for="flow-openai-poster-style">OpenAI poster art style</label>
                   <select id="flow-openai-poster-style">
@@ -3936,7 +3940,8 @@ Lord, hear our prayer</textarea>
               </select>
             </div>
             <div class="field">
-              <label><input type="checkbox" id="poster-include-social" checked /> Include social exports</label>
+              <label><input type="checkbox" id="poster-include-social" /> Include Instagram / social poster sizes</label>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Off by default: PowerPoint and 16:9 poster only.</p>
             </div>
             <div class="field">
               <label><input type="checkbox" id="poster-use-openai-poster" /> Generate poster with OpenAI</label>
@@ -6555,6 +6560,29 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    function readSocialExportSettings(o) {
+      if (o && o.include_social != null) return !!o.include_social;
+      const flowCb = $("flow-include-social-exports");
+      const posterCb = $("poster-include-social");
+      if (flowCb) return flowCb.checked;
+      if (posterCb) return posterCb.checked;
+      return false;
+    }
+
+    function bindSocialExportControls() {
+      const ids = ["flow-include-social-exports", "poster-include-social"];
+      ids.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("change", () => {
+          ids.forEach((oid) => {
+            const other = $(oid);
+            if (other) other.checked = el.checked;
+          });
+        });
+      });
+    }
+
     function readOpenAiPosterSettings() {
       const flowCb = $("flow-use-openai-poster");
       const posterCb = $("poster-use-openai-poster");
@@ -6622,7 +6650,7 @@ Lord, hear our prayer</textarea>
         songs: selectedSongsForGenerate(),
         custom_theme: pptThemePayload(activeTheme),
         poster_template: o.poster_template || "liturgical_color",
-        include_social_exports: o.include_social !== false,
+        include_social_exports: readSocialExportSettings(o),
         include_gospel_art: o.include_gospel_art !== false,
         include_ai_mass_poster: useOpenAiPoster,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
@@ -6692,6 +6720,7 @@ Lord, hear our prayer</textarea>
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
           ai_poster_style: body.ai_poster_style,
+          include_social_exports: body.include_social_exports,
           custom_theme: body.custom_theme,
           include_church_logo: body.include_church_logo,
           include_church_name: body.include_church_name,
@@ -7568,6 +7597,7 @@ Lord, hear our prayer</textarea>
     loadSongCatalog();
     renderCollectionsRecent();
     refreshSavedPosters();
+    bindSocialExportControls();
     bindOpenAiPosterControls();
     showRoute(currentRoute(), true);
     analyzeLyrics();

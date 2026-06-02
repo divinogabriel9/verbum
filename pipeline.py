@@ -341,6 +341,7 @@ class GenerationResult:
     slide_count: int = 0
     liturgical_color: Optional[Mapping[str, Any]] = None
     export_stem: str = ""
+    include_social_exports: bool = False
 
 
 def _poster_template_arg(name: str) -> PosterTemplate:
@@ -357,7 +358,7 @@ def generate_mass_media(
     sentence_index: Optional[int] = None,
     interactive_pick: bool = False,
     poster_template: str = "liturgical_color",
-    include_social_exports: bool = True,
+    include_social_exports: bool = False,
     include_gospel_art: bool = True,
     include_ai_mass_poster: bool = False,
     ai_poster_style: str = "cinematic",
@@ -463,6 +464,7 @@ def generate_mass_media(
                 style=ai_poster_style,
                 output_stem=stem,
                 output_dir=_out,
+                include_social_exports=include_social_exports,
             )
         except Exception as exc:
             logger.exception("OpenAI poster generation failed")
@@ -484,6 +486,7 @@ def generate_mass_media(
             entrance_song_title=entrance_title,
             communion_song_titles=communion_line,
             output_stem=stem,
+            include_social_exports=include_social_exports,
         )
 
     slide_count, pptx_path = generate_mass_ppt(
@@ -519,7 +522,7 @@ def generate_mass_media(
         hymn_lyric_overrides=hymn_lyric_overrides,
     )
 
-    if include_social_exports:
+    if include_social_exports and poster_path and poster_path.is_file():
         export_social_variants(poster_path, output_dir=_out, prefix=stem)
     if include_gospel_art:
         ref_short = (gospel_ref or "").strip()[:90] if gospel_ref else ""
@@ -549,6 +552,7 @@ def generate_mass_media(
         slide_count=slide_count,
         liturgical_color=liturgical_color,
         export_stem=stem,
+        include_social_exports=include_social_exports,
     )
 
 

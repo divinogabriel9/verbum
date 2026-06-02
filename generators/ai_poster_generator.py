@@ -127,16 +127,22 @@ def generate_primary_openai_posters(
     style: str = "cinematic",
     output_stem: str,
     output_dir: Path,
-) -> Tuple[Path, Path]:
+    include_social_exports: bool = False,
+) -> Tuple[Optional[Path], Path]:
     """
-    Build OpenAI-backed primary parish posters at ``{stem}.png`` and ``{stem}_16x9.png``.
+    Build OpenAI-backed parish posters.
 
-    Also writes Instagram / Story / Facebook variants under ``outputs/posters/``.
+    By default writes only ``{stem}_16x9.png`` (projection / PPT slide).
+    When ``include_social_exports`` is true, also writes ``{stem}.png`` (1080×1350)
+    and variants under ``outputs/posters/``.
     """
     master = _build_mass_poster_master(date, celebrant_name=celebrant_name, style=style)
-    social_path, ppt_path = export_primary_poster_pair(master, output_dir, output_stem)
-    _POSTERS_DIR.mkdir(parents=True, exist_ok=True)
-    export_poster_sizes(master, _POSTERS_DIR)
+    social_path, ppt_path = export_primary_poster_pair(
+        master, output_dir, output_stem, include_social=include_social_exports
+    )
+    if include_social_exports:
+        _POSTERS_DIR.mkdir(parents=True, exist_ok=True)
+        export_poster_sizes(master, _POSTERS_DIR)
     return social_path, ppt_path
 
 

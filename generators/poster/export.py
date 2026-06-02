@@ -36,6 +36,33 @@ def landscape_to_portrait(landscape: Image.Image, target: tuple[int, int] = SOCI
     return canvas
 
 
+def _landscape_master_for_export(master: Image.Image) -> Image.Image:
+    mw, mh = master.size
+    if mw < mh:
+        return master.transpose(Image.Transpose.ROTATE_90)
+    return master
+
+
+def export_ppt_poster(
+    master: Image.Image,
+    output_dir: Path,
+    stem: str,
+    *,
+    ppt_size: tuple[int, int] = PPT_SIZE,
+) -> Path:
+    """Write ``{stem}_16x9.png`` (1920×1080) for projection / liturgical slide."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_stem = (stem or "mass_poster").strip() or "mass_poster"
+    ppt_path = output_dir / f"{safe_stem}_16x9.png"
+    landscape = _landscape_master_for_export(master)
+    if landscape.size != ppt_size:
+        ppt_img = landscape.resize(ppt_size, Image.Resampling.LANCZOS)
+    else:
+        ppt_img = landscape
+    ppt_img.save(ppt_path, format="PNG", optimize=True)
+    return ppt_path
+
+
 def export_primary_poster_pair(
     master: Image.Image,
     output_dir: Path,
@@ -43,24 +70,17 @@ def export_primary_poster_pair(
     *,
     social_size: tuple[int, int] = SOCIAL_SIZE,
     ppt_size: tuple[int, int] = PPT_SIZE,
-) -> tuple[Path, Path]:
-    """Write ``{stem}_16x9.png`` (landscape) and ``{stem}.png`` (portrait social)."""
+    include_social: bool = True,
+) -> tuple[Path | None, Path]:
+    """Write ``{stem}_16x9.png``; optionally ``{stem}.png`` (1080×1350 Instagram feed)."""
+    ppt_path = export_ppt_poster(master, output_dir, stem, ppt_size=ppt_size)
+    if not include_social:
+        return None, ppt_path
+
     output_dir.mkdir(parents=True, exist_ok=True)
     safe_stem = (stem or "mass_poster").strip() or "mass_poster"
     social_path = output_dir / f"{safe_stem}.png"
-    ppt_path = output_dir / f"{safe_stem}_16x9.png"
-
-    mw, mh = master.size
-    landscape = master
-    if mw < mh:
-        landscape = master.transpose(Image.Transpose.ROTATE_90)
-
-    if landscape.size != ppt_size:
-        ppt_img = landscape.resize(ppt_size, Image.Resampling.LANCZOS)
-    else:
-        ppt_img = landscape
-    ppt_img.save(ppt_path, format="PNG", optimize=True)
-
+    landscape = _landscape_master_for_export(master)
     social = landscape_to_portrait(landscape, social_size)
     social.save(social_path, format="PNG", optimize=True)
     return social_path, ppt_path
