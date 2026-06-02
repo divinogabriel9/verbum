@@ -68,8 +68,10 @@ _MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
 # Hymn / lyrics slides (black screen, gold title, white ALL CAPS body — projector style)
 _LYRIC_MAX_LINES_PER_SLIDE = 6
-_LYRIC_TITLE_DISPLAY_PT = 38
-_LYRIC_BODY_DISPLAY_PT = 55
+_HYMN_TITLE_PT = 38.5
+_HYMN_BODY_PT = 56.0
+_LYRIC_TITLE_DISPLAY_PT = _HYMN_TITLE_PT
+_LYRIC_BODY_DISPLAY_PT = _HYMN_BODY_PT
 _HYMN_BG = RGBColor(0, 0, 0)
 _HYMN_GOLD_TITLE = RGBColor(255, 204, 77)
 _HYMN_BODY_WHITE = RGBColor(255, 255, 255)
@@ -77,7 +79,7 @@ _HYMN_CHORUS_COLOR = RGBColor(0xFF, 0xB8, 0x00)
 _HYMN_BRAND_WHITE = RGBColor(255, 255, 255)
 _HYMN_FOOTER_MUTED = RGBColor(140, 140, 145)
 _HYMN_TITLE_FONT = "Georgia"
-_HYMN_BODY_FONT = "Arial Black"
+_HYMN_BODY_FONT = "Poppins Bold"
 _BRAND_BAND = Inches(1.05)
 _LOGO_MAX_W = Inches(0.95)
 _LOGO_MAX_H = Inches(0.42)
@@ -88,8 +90,8 @@ _LYRIC_SAFE_SIDE_RATIO = 0.0
 _LYRIC_TEXTBOX_WIDTH_RATIO = 1.0
 _LYRIC_MIN_WORDS_PER_LINE = 3
 _LYRIC_TF_SIDE_MARGIN = Inches(0)
-_LYRIC_MIN_PT = 52
-_LYRIC_MAX_PT = 72
+_LYRIC_MIN_PT = 40
+_LYRIC_MAX_PT = int(_HYMN_BODY_PT)
 _LYRIC_SOFT_WRAP_CHARS = 46
 _LYRIC_FIT_WIDTH_SAFETY = 0.96
 _LYRIC_FIT_HEIGHT_SAFETY = 0.90
@@ -101,9 +103,14 @@ _REFERENCE_SLIDE_PENITENTIAL = (7, 8)
 _REFERENCE_SLIDE_KYRIE = 9
 _LAMB_OF_GOD_TEMPLATE_FILENAME = "lamb_of_god_slide.pptx"
 _LAMB_OF_GOD_SLIDE_INDEX = 0
+_SIGN_OF_PEACE_TEMPLATE_FILENAME = "sign_of_peace_slide.pptx"
+_SIGN_OF_PEACE_SLIDE_INDEX = 0
+_GLORIA_TEMPLATE_FILENAME = "gloria_slides.pptx"
 _REFERENCE_FOOTER_ZONE_TOP = int(SLIDE_HEIGHT * 0.78)
 _reference_mass_deck: Optional[Presentation] = None
 _lamb_of_god_template: Optional[Presentation] = None
+_sign_of_peace_template: Optional[Presentation] = None
+_gloria_template: Optional[Presentation] = None
 
 
 @dataclass(frozen=True)
@@ -410,6 +417,84 @@ def _style_para(p, *, size_pt, color, bold=False, italic=False, font_name=None):
     p.font.color.rgb = color
 
 
+def _style_shape_font(
+    shape,
+    *,
+    font_name: str,
+    size_pt: float,
+    bold: Optional[bool] = None,
+    italic: Optional[bool] = None,
+) -> None:
+    """Apply font to every run (or paragraph) on a text shape."""
+    if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+        return
+    for para in shape.text_frame.paragraphs:
+        if para.runs:
+            for run in para.runs:
+                run.font.name = font_name
+                run.font.size = Pt(size_pt)
+                if bold is not None:
+                    run.font.bold = bold
+                if italic is not None:
+                    run.font.italic = italic
+        else:
+            para.font.name = font_name
+            para.font.size = Pt(size_pt)
+            if bold is not None:
+                para.font.bold = bold
+            if italic is not None:
+                para.font.italic = italic
+
+
+def _is_rite_slide_title_text(text: str, title: str) -> bool:
+    t = (text or "").strip()
+    return "\n" not in t and t.lower() == (title or "").strip().lower()
+
+
+def _apply_rite_slide_title_typography(slide, section_title: str) -> None:
+    """Section header in Georgia 38.5 pt (Lamb of God, Sign of Peace, …)."""
+    parish = get_community_name().strip().lower()
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+            continue
+        text = (shape.text_frame.text or "").strip()
+        if not text or (parish and parish in text.lower()):
+            continue
+        if _is_rite_slide_title_text(text, section_title):
+            _style_shape_font(shape, font_name=_HYMN_TITLE_FONT, size_pt=_HYMN_TITLE_PT)
+
+
+def _is_lamb_of_god_header_text(text: str) -> bool:
+    return _is_rite_slide_title_text(text, "Lamb of God")
+
+
+def _is_lamb_of_god_lyric_text(text: str) -> bool:
+    """Main prayer blocks start with ALL CAPS ``LAMB OF GOD`` (not the footer tag line)."""
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+    return len(lines) >= 2 and lines[0].upper() == "LAMB OF GOD"
+
+
+def _apply_lamb_of_god_typography(slide) -> None:
+    """Match cloned Lamb slide to hymn title/body typography (Georgia 38.5 / Poppins Bold 56)."""
+    _apply_rite_slide_title_typography(slide, "Lamb of God")
+    parish = get_community_name().strip().lower()
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+            continue
+        text = (shape.text_frame.text or "").strip()
+        if not text or (parish and parish in text.lower()):
+            continue
+        if _is_lamb_of_god_header_text(text) or _is_lamb_of_god_lyric_text(text):
+            if _is_lamb_of_god_lyric_text(text):
+                _style_shape_font(
+                    shape, font_name=_HYMN_BODY_FONT, size_pt=_HYMN_BODY_PT, bold=True
+                )
+
+
 def _add_community_footer(slide, footer_section: str, theme: SlideTheme):
     lx = MARGIN_SIDE
     w = SLIDE_WIDTH - 2 * MARGIN_SIDE
@@ -692,6 +777,64 @@ def _load_lamb_of_god_template() -> Optional[Presentation]:
     return _lamb_of_god_template
 
 
+def _sign_of_peace_template_path() -> Optional[Path]:
+    candidates = (
+        _PROJECT_ROOT / "data" / "reference" / _SIGN_OF_PEACE_TEMPLATE_FILENAME,
+        Path.home() / "Downloads" / "GFCC_26APRIL2026 (4).pptx",
+    )
+    for path in candidates:
+        if path.is_file():
+            return path.resolve()
+    return None
+
+
+def _load_sign_of_peace_template() -> Optional[Presentation]:
+    global _sign_of_peace_template
+    if _sign_of_peace_template is not None:
+        return _sign_of_peace_template
+    ref_path = _sign_of_peace_template_path()
+    if not ref_path:
+        return None
+    _sign_of_peace_template = Presentation(str(ref_path))
+    return _sign_of_peace_template
+
+
+def _gloria_template_path() -> Optional[Path]:
+    candidates = (
+        _PROJECT_ROOT / "data" / "reference" / _GLORIA_TEMPLATE_FILENAME,
+        Path.home() / "Downloads" / "Gloria.pptx",
+    )
+    for path in candidates:
+        if path.is_file():
+            return path.resolve()
+    return None
+
+
+def _load_gloria_template() -> Optional[Presentation]:
+    global _gloria_template
+    if _gloria_template is not None:
+        return _gloria_template
+    ref_path = _gloria_template_path()
+    if not ref_path:
+        return None
+    _gloria_template = Presentation(str(ref_path))
+    return _gloria_template
+
+
+def _gloria_source_slide_indices(slide_count: int) -> Tuple[int, ...]:
+    """
+    Map Gloria reference deck to four projection slides.
+
+    The bundled deck has five slides; index 1 is a duplicate refrain-only slide
+    between the opening and the Christ section, so we use 0, 2, 3, 4.
+    """
+    if slide_count >= 5:
+        return (0, 2, 3, 4)
+    if slide_count == 4:
+        return (0, 1, 2, 3)
+    return tuple(range(max(0, slide_count)))
+
+
 def _is_reference_branding_shape(shape) -> bool:
     """Skip reference logo groups and baked-in parish footer text boxes."""
     if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
@@ -794,8 +937,44 @@ def _add_lamb_of_god_slide(prs: Presentation, theme: SlideTheme) -> None:
         _copy_slide_into_presentation(
             prs, tpl.slides[_LAMB_OF_GOD_SLIDE_INDEX], theme, "Lamb of God"
         )
+        _apply_lamb_of_god_typography(prs.slides[-1])
         return
     _add_marked_slide(prs, "Lamb of God", get_prayer("lamb_of_god"), theme)
+
+
+def _apply_sign_of_peace_typography(slide) -> None:
+    _apply_rite_slide_title_typography(slide, "Sign of Peace")
+
+
+def _add_sign_of_peace_slide(prs: Presentation, theme: SlideTheme) -> None:
+    tpl = _load_sign_of_peace_template()
+    if tpl is not None and _SIGN_OF_PEACE_SLIDE_INDEX < len(tpl.slides):
+        _copy_slide_into_presentation(
+            prs, tpl.slides[_SIGN_OF_PEACE_SLIDE_INDEX], theme, "Sign of Peace"
+        )
+        _apply_sign_of_peace_typography(prs.slides[-1])
+        return
+    _add_marked_slide(prs, "Sign of Peace", GFCC.SIGN_PEACE, theme)
+
+
+def _apply_gloria_typography(slide) -> None:
+    _apply_rite_slide_title_typography(slide, "Gloria")
+
+
+def _add_gloria_slides(prs: Presentation, theme: SlideTheme) -> None:
+    tpl = _load_gloria_template()
+    if tpl is None:
+        _add_marked_chunked(prs, "Gloria", get_prayer("gloria"), theme)
+        return
+    indices = _gloria_source_slide_indices(len(tpl.slides))
+    if not indices or any(i < 0 or i >= len(tpl.slides) for i in indices):
+        _add_marked_chunked(prs, "Gloria", get_prayer("gloria"), theme)
+        return
+    total = len(indices)
+    for part_i, idx in enumerate(indices):
+        footer = "Gloria" if total == 1 else f"Gloria ({part_i + 1}/{total})"
+        _copy_slide_into_presentation(prs, tpl.slides[idx], theme, footer)
+        _apply_gloria_typography(prs.slides[-1])
 
 
 def _render_marked_slide(
@@ -904,13 +1083,15 @@ def _add_divider_cover(
 ) -> None:
     slide = prs.slides.add_slide(_layout_blank(prs))
 
+    uploaded_divider = bool(
+        divider_poster_path and Path(divider_poster_path).is_file()
+    )
     cover: Optional[Path] = None
-    if divider_poster_path and Path(divider_poster_path).is_file():
+    if uploaded_divider:
         cover = Path(divider_poster_path).resolve()
     elif background_image_path and Path(background_image_path).is_file():
         cover = Path(background_image_path).resolve()
 
-    # Add background image if provided, otherwise use solid color
     if cover and cover.is_file():
         slide.shapes.add_picture(
             str(cover),
@@ -921,7 +1102,10 @@ def _add_divider_cover(
         )
     else:
         _set_slide_bg(slide, theme.bg)
-    
+
+    if uploaded_divider:
+        return
+
     _apply_slide_branding(slide, theme)
     lx = MARGIN_SIDE
     lw = SLIDE_WIDTH - 2 * MARGIN_SIDE
@@ -1027,8 +1211,8 @@ def measureRenderedText(lines: List[str], font_size_pt: float) -> Mapping[str, f
     max_line_inches = 0.0
     for line in lines:
         units = _token_width_units(line.strip().upper())
-        # 1 unit is approximated as ~0.63em for Arial Black in projection use.
-        # Conservative estimate for Arial Black ALL CAPS on projectors.
+        # 1 unit is approximated as ~0.63em for Poppins Bold in projection use.
+        # Conservative estimate for Poppins Bold ALL CAPS on projectors.
         estimated = (units * font_size_pt * 0.80) / 72.0
         if estimated > max_line_inches:
             max_line_inches = estimated
@@ -1110,15 +1294,15 @@ def optimizeLineBreaks(lyrics_text: str) -> List[str]:
 
 
 def calculateOptimalFontSize(lines: List[str], box_height_inches: float) -> int:
-    """Choose largest readable lyric size (60–72pt) that fits fixed full-width textbox."""
+    """Choose largest readable lyric size (up to Lamb/hymn 56pt) that fits the textbox."""
     line_count = len(lines)
     height_cap = _LYRIC_MAX_PT
     if line_count >= 6:
-        height_cap = min(height_cap, 58)
+        height_cap = min(height_cap, 48)
     elif line_count >= 5:
-        height_cap = min(height_cap, 64)
+        height_cap = min(height_cap, 52)
     elif line_count >= 4:
-        height_cap = min(height_cap, 68)
+        height_cap = min(height_cap, 54)
     for pt in range(height_cap, _LYRIC_MIN_PT - 1, -1):
         if not detectOverflow(lines, float(pt), box_height_inches):
             return pt
@@ -1209,7 +1393,7 @@ def _fill_hymn_body_caps(
     box_height_inches: Optional[float] = None,
     block_kind: str = "verse",
 ) -> None:
-    """ALL CAPS sans-serif on black; verses bold white, chorus bold italic #ffb800."""
+    """ALL CAPS Poppins Bold on black; verses bold white, chorus bold italic #ffb800."""
     box_h = float(box_height_inches or 0.0) or float(SLIDE_HEIGHT.inches * 0.72)
     lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, box_h)
     size_pt = int(max(_LYRIC_MIN_PT, min(_LYRIC_MAX_PT, auto_fit_pt)))
@@ -1864,9 +2048,11 @@ def generate_mass_ppt(
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template
+    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template
     _reference_mass_deck = None
     _lamb_of_god_template = None
+    _sign_of_peace_template = None
+    _gloria_template = None
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
@@ -1936,7 +2122,7 @@ def generate_mass_ppt(
     _add_marked_slide(prs, "Introductory Rites", GFCC.SIGN_CROSS, theme)
     _add_penitential_act_slides(prs, theme)
     _add_kyrie_slide(prs, theme)
-    _add_marked_chunked(prs, "Gloria", get_prayer("gloria"), theme)
+    _add_gloria_slides(prs, theme)
     _add_marked_slide(prs, "Liturgy of the Word", GFCC.OPENING_PRAYER, theme)
 
     # --- Liturgy of the Word ---
@@ -2006,7 +2192,7 @@ def generate_mass_ppt(
     _add_marked_slide(prs, "Great Amen", GFCC.GREAT_AMEN, theme)
     _add_marked_chunked(prs, "Our Father", get_prayer("our_father"), theme)
     _add_divider_cover(prs, **ctx)
-    _add_marked_slide(prs, "Sign of Peace", GFCC.SIGN_PEACE, theme)
+    _add_sign_of_peace_slide(prs, theme)
     _add_lamb_of_god_slide(prs, theme)
     _add_marked_slide(prs, "The Communion Rite", GFCC.COMMUNION_DIALOGUE, theme)
     _add_divider_cover(prs, **ctx)

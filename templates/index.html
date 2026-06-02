@@ -310,6 +310,7 @@
     body {
       margin: 0;
       min-height: 100vh;
+      overflow: hidden;
       color: var(--ink);
       font-family: var(--font);
       font-size: var(--text-base);
@@ -348,6 +349,8 @@
       --nav-width: 0px;
       display: flex;
       min-height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
       width: 100%;
       max-width: 100%;
       margin: 0;
@@ -662,6 +665,7 @@
     .dashboard {
       flex: 1;
       min-width: 0;
+      min-height: 0;
       margin-left: 0;
       display: flex;
       flex-direction: column;
@@ -1872,23 +1876,119 @@
     .flow-input-list:empty {
       display: none;
     }
-    #celebrant {
+    .celebrant-picker {
       width: 100%;
-      min-height: 44px;
-      padding: 10px 36px 10px 14px;
-      font-size: var(--text-base);
-      font-weight: 600;
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-      background:
-        var(--surface-solid)
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235C6B75' d='M1.4.6 6 5.2 10.6.6 12 2l-6 6-6-6z'/%3E%3C/svg%3E")
-        no-repeat right 14px center;
+      max-width: 420px;
     }
-    #celebrant:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
+    .celebrant-picker__root {
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+    }
+    .celebrant-picker__root[open] {
+      border-color: color-mix(in srgb, var(--ink) 18%, var(--line));
+    }
+    .celebrant-picker--disabled .celebrant-picker__root {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .celebrant-picker__trigger {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 34px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--ink);
+      user-select: none;
+    }
+    .celebrant-picker__trigger::-webkit-details-marker {
+      display: none;
+    }
+    .celebrant-picker__trigger::marker {
+      content: "";
+    }
+    .celebrant-picker__value {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .celebrant-picker__value.is-placeholder {
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .celebrant-picker__chevron {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      color: var(--muted);
+      opacity: 0.75;
+      transition: transform 0.18s ease;
+    }
+    .celebrant-picker__root[open] .celebrant-picker__chevron {
+      transform: rotate(180deg);
+    }
+    .celebrant-picker__content {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      padding: 0 4px 4px;
+      font-size: var(--text-sm);
+      border-top: 1px solid var(--line-soft);
+    }
+    .celebrant-picker__list {
+      list-style: none;
+      margin: 0;
+      padding: 2px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      max-height: 168px;
+      overflow-y: auto;
+    }
+    .celebrant-picker__list:empty {
+      display: none;
+    }
+    .celebrant-picker__option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 5px 8px 5px 10px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--ink);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.1s ease;
+      box-shadow: inset 2px 0 0 transparent;
+    }
+    .celebrant-picker__option:hover {
+      background: var(--surface-2);
+    }
+    .celebrant-picker__option[aria-selected="true"] {
+      background: var(--surface-2);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: inset 2px 0 0 var(--ink);
+    }
+    .celebrant-picker__empty {
+      margin: 0;
+      padding: 6px 8px;
+      font-size: var(--text-xs);
+      line-height: 1.4;
+    }
+    .celebrant-picker__empty[hidden] {
+      display: none !important;
     }
     .celebrant-settings-list {
       list-style: none;
@@ -2963,7 +3063,7 @@
       background: #000000 !important;
       color: #ffffff;
       box-shadow: none;
-      font-family: "Arial Black", Arial, sans-serif;
+      font-family: "Poppins Bold", Poppins, "Arial Black", Arial, sans-serif;
       flex-direction: column;
     }
     .slide-preview.hymn-slide::before { display: none; }
@@ -3219,7 +3319,7 @@
     .hymn-slide .hymn-lines-editable {
       color: #ffffff !important;
       -webkit-text-fill-color: #ffffff;
-      font-family: "Arial Black", Arial, sans-serif;
+      font-family: "Poppins Bold", Poppins, "Arial Black", Arial, sans-serif;
       font-size: var(--hymn-lyric-size) !important;
       line-height: 1.08;
       font-weight: 800;
@@ -4918,11 +5018,21 @@ Lord, hear our prayer</textarea>
                   <input type="date" id="mass-date" />
                 </div>
                 <div class="field">
-                  <label for="celebrant">Mass celebrant</label>
-                  <select id="celebrant" aria-describedby="celebrant-hint">
-                    <option value="">— Select celebrant —</option>
-                  </select>
-                  <p class="muted" id="celebrant-hint" style="margin:8px 0 0;font-size:var(--text-sm);">Choose from names saved in Settings → Church Profile (stored in the database).</p>
+                  <label id="celebrant-label" for="celebrant-picker-trigger">Mass celebrant</label>
+                  <div class="celebrant-picker" id="celebrant-picker">
+                    <details class="celebrant-picker__root" id="celebrant-picker-details">
+                      <summary class="celebrant-picker__trigger" id="celebrant-picker-trigger" aria-labelledby="celebrant-label">
+                        <span class="celebrant-picker__value is-placeholder" id="celebrant-display">— Select celebrant —</span>
+                        <svg class="celebrant-picker__chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                      </summary>
+                      <div class="celebrant-picker__content">
+                        <ul class="celebrant-picker__list" id="celebrant-list" role="listbox" aria-labelledby="celebrant-label"></ul>
+                        <p class="celebrant-picker__empty muted" id="celebrant-picker-empty" hidden>No celebrants saved — add names in Settings → Church Profile.</p>
+                      </div>
+                    </details>
+                    <input type="hidden" id="celebrant" value="" aria-describedby="celebrant-hint" />
+                  </div>
+                  <p class="muted" id="celebrant-hint" style="margin:4px 0 0;font-size:var(--text-xs);">From Settings → Church Profile.</p>
                 </div>
                 <div class="field" style="margin-bottom:0;">
                   <label for="co-celebrant">Co-celebrant <span class="muted" style="font-weight:600;text-transform:none;letter-spacing:0;">(optional)</span></label>
@@ -5493,17 +5603,70 @@ Lord, hear our prayer</textarea>
       if (picker && hex) picker.value = hex;
     }
 
+  /** Missalette ribbon accents — must match `body[data-season]` / dark theme CSS blocks. */
+    const SEASON_ACCENT_PALETTES = {
+      advent: {
+        light: { accent: "#5A4A6A", glow: "#7A6A8A", secondary: "#B8A8C8" },
+        dark: { accent: "#9B8AAB", glow: "#BBAACB", secondary: "#4A3A5A" },
+      },
+      christmas: {
+        light: { accent: "#8B5A3C", glow: "#AB7A5C", secondary: "#D4B896" },
+        dark: { accent: "#D4B896", glow: "#F4D8B6", secondary: "#6B4A2C" },
+      },
+      lent: {
+        light: { accent: "#5C3D52", glow: "#7A5D72", secondary: "#B898A8" },
+        dark: { accent: "#A8889E", glow: "#C8A8BE", secondary: "#5C3D52" },
+      },
+      easter: {
+        light: { accent: "#9B4D5E", glow: "#BB6D7E", secondary: "#E8B4BC" },
+        dark: { accent: "#E8B4BC", glow: "#FFccd4", secondary: "#9B4D5E" },
+      },
+      ordinary: {
+        light: { accent: "#824D5D", glow: "#A86D7D", secondary: "#C1A3A1" },
+        dark: { accent: "#C1A3A1", glow: "#E1C3C1", secondary: "#624D4D" },
+      },
+    };
+
+    function clearUserAccentOverrides() {
+      const body = document.body;
+      body.removeAttribute("data-user-accent");
+      ["--liturgical-accent", "--liturgical-glow", "--liturgical-secondary", "--accent", "--on-accent"].forEach((prop) => {
+        body.style.removeProperty(prop);
+      });
+      try { localStorage.removeItem(ACCENT_STORAGE_KEY); } catch (_e) { /* ignore */ }
+      syncAccentSwatchUI(null);
+    }
+
+    function followLiturgicalSeasonAccent() {
+      clearUserAccentOverrides();
+      const seasonStr = window.__liturgicalSeasonRaw || "";
+      applyLiturgicalSeasonTheme(seasonStr);
+      const preset = document.body.getAttribute("data-season") || "ordinary";
+      const mode = resolveColorTheme();
+      const palette = (SEASON_ACCENT_PALETTES[preset] || SEASON_ACCENT_PALETTES.ordinary)[mode];
+      const picker = $("app-accent-color");
+      if (picker && palette) picker.value = palette.accent;
+      if (typeof presetThemes !== "undefined" && Array.isArray(presetThemes)) {
+        const seasonTheme = presetThemes.find((t) => t.id === preset);
+        if (seasonTheme) {
+          activeTheme = { ...seasonTheme };
+          if (typeof updateThemeIndicators === "function") updateThemeIndicators();
+          if (typeof renderThemeGrid === "function") renderThemeGrid();
+          const preview = $("theme-live-preview");
+          if (preview && typeof applyThemeToPreview === "function") {
+            applyThemeToPreview(preview, activeTheme);
+          }
+        }
+      }
+    }
+
     function applyUserAccent(hex, persist = true) {
       const body = document.body;
       if (!hex || !hexToRgb(hex)) {
-        body.removeAttribute("data-user-accent");
-        ["--liturgical-accent", "--liturgical-glow", "--liturgical-secondary", "--accent", "--on-accent"].forEach((prop) => {
-          body.style.removeProperty(prop);
-        });
-        if (persist) {
+        clearUserAccentOverrides();
+        if (!persist) {
           try { localStorage.removeItem(ACCENT_STORAGE_KEY); } catch (_e) { /* ignore */ }
         }
-        syncAccentSwatchUI(null);
         return;
       }
       const glow = mixHex(hex, 0.38, 255);
@@ -5540,7 +5703,14 @@ Lord, hear our prayer</textarea>
       );
       const storedAccent = readStoredUserAccent();
       if (storedAccent) applyUserAccent(storedAccent, false);
-      else syncAccentSwatchUI(null);
+      else {
+        syncAccentSwatchUI(null);
+        const preset = document.body.getAttribute("data-season") || "ordinary";
+        const mode = resolveColorTheme();
+        const palette = (SEASON_ACCENT_PALETTES[preset] || SEASON_ACCENT_PALETTES.ordinary)[mode];
+        const picker = $("app-accent-color");
+        if (picker && palette) picker.value = palette.accent;
+      }
 
       document.querySelectorAll(".accent-swatch").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -5558,7 +5728,7 @@ Lord, hear our prayer</textarea>
       const resetAccent = $("btn-reset-accent");
       if (resetAccent) {
         resetAccent.addEventListener("click", () => {
-          applyUserAccent(null);
+          followLiturgicalSeasonAccent();
         });
       }
       document.querySelectorAll('input[name="visual-style"]').forEach((inp) => {
@@ -5663,8 +5833,10 @@ Lord, hear our prayer</textarea>
     }
 
     function applyLiturgicalSeasonTheme(seasonStr) {
+      window.__liturgicalSeasonRaw = String(seasonStr || "");
       const preset = liturgicalPresetIdFromSeason(seasonStr || "");
       document.body.setAttribute("data-season", preset || "ordinary");
+      window.__liturgicalPresetId = preset || "ordinary";
       if (!document.body.hasAttribute("data-user-accent")) {
         ["--liturgical-accent", "--liturgical-glow", "--liturgical-secondary", "--accent", "--on-accent"].forEach((prop) => {
           document.body.style.removeProperty(prop);
@@ -6844,10 +7016,9 @@ Lord, hear our prayer</textarea>
     }
 
     function defaultHymnTypo() {
-      const bodyPt = 55;
       return {
-        body_pt: bodyPt,
-        title_pt: Math.round(bodyPt * 0.7 * 10) / 10,
+        body_pt: 56,
+        title_pt: 38.5,
         title_align: "center",
         body_align: "center",
       };
@@ -6933,7 +7104,7 @@ Lord, hear our prayer</textarea>
       const lines = (chunk || "").split("\n").filter((ln) => ln.trim());
       const lineCount = lines.length;
       const longest = lines.reduce((m, ln) => Math.max(m, ln.trim().length), 0);
-      let rem = Math.min(0.88, Math.max(0.4, (Number(basePt) || 55) * 0.0135));
+      let rem = Math.min(0.88, Math.max(0.4, (Number(basePt) || 56) * 0.0135));
       if (lineCount >= 2 || longest >= 22) rem = Math.min(rem, 0.78);
       if (lineCount >= 3 || longest >= 28) rem = Math.min(rem, 0.7);
       if (lineCount >= 4 || longest >= 34) rem = Math.min(rem, 0.62);
@@ -6948,7 +7119,7 @@ Lord, hear our prayer</textarea>
       const lines = (chunk || "").split("\n").filter((ln) => ln.trim());
       const lineCount = lines.length;
       const longest = lines.reduce((m, ln) => Math.max(m, ln.trim().length), 0);
-      let sizePt = Number(basePt) || 55;
+      let sizePt = Number(basePt) || 56;
       if (lineCount >= 8 || longest >= 40) sizePt = Math.min(sizePt, 50);
       if (lineCount >= 10 || longest >= 48) sizePt = Math.min(sizePt, 44);
       if (lineCount >= 12 || longest >= 56) sizePt = Math.min(sizePt, 38);
@@ -7902,37 +8073,101 @@ Lord, hear our prayer</textarea>
       if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
     }
 
-    function renderCelebrantSelect(selectedName) {
-      const sel = $("celebrant");
-      if (!sel) return;
-      const keep = (selectedName || getMainCelebrantName() || "").trim();
-      const names = celebrantNamesCache.slice();
-      let options = "<option value=\"\">— Select celebrant —</option>";
-      if (!names.length) {
-        options += "<option value=\"\" disabled>No celebrants saved — open Settings</option>";
-        sel.disabled = true;
+    const CELEBRANT_PLACEHOLDER = "— Select celebrant —";
+
+    function setCelebrantPickerValue(name) {
+      const hidden = $("celebrant");
+      const display = $("celebrant-display");
+      const picker = $("celebrant-picker");
+      const list = $("celebrant-list");
+      if (!hidden || !display) return;
+      const value = (name || "").trim();
+      hidden.value = value;
+      if (value) {
+        display.textContent = value;
+        display.classList.remove("is-placeholder");
       } else {
-        sel.disabled = false;
-        options += names.map((name) => (
-          "<option value=\"" + escapeHtml(name) + "\">" + escapeHtml(name) + "</option>"
-        )).join("");
+        display.textContent = CELEBRANT_PLACEHOLDER;
+        display.classList.add("is-placeholder");
       }
-      sel.innerHTML = options;
-      if (keep && names.indexOf(keep) >= 0) {
-        sel.value = keep;
-      } else if (names.length) {
-        sel.value = names[0];
-      } else {
-        sel.value = "";
+      if (list) {
+        list.querySelectorAll(".celebrant-picker__option").forEach((btn) => {
+          const on = btn.dataset.value === value;
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+        });
       }
+      if (picker) picker.classList.toggle("celebrant-picker--disabled", !celebrantNamesCache.length);
       syncCelebrantFromSelect();
     }
 
+    function closeCelebrantPicker() {
+      const details = $("celebrant-picker-details");
+      if (details) details.removeAttribute("open");
+    }
+
+    function renderCelebrantSelect(selectedName) {
+      const list = $("celebrant-list");
+      const empty = $("celebrant-picker-empty");
+      const picker = $("celebrant-picker");
+      const hidden = $("celebrant");
+      if (!list || !hidden) return;
+      const keep = (selectedName || getMainCelebrantName() || "").trim();
+      const names = celebrantNamesCache.slice();
+      if (!names.length) {
+        list.innerHTML = "";
+        if (empty) empty.hidden = false;
+        if (picker) picker.classList.add("celebrant-picker--disabled");
+        setCelebrantPickerValue("");
+        return;
+      }
+      if (empty) empty.hidden = true;
+      if (picker) picker.classList.remove("celebrant-picker--disabled");
+      list.innerHTML = names.map((name) => (
+        "<li role=\"presentation\">" +
+          "<button type=\"button\" class=\"celebrant-picker__option\" role=\"option\" data-value=\"" +
+          escapeHtml(name) + "\" aria-selected=\"false\">" + escapeHtml(name) + "</button>" +
+        "</li>"
+      )).join("");
+      let chosen = "";
+      if (keep && names.indexOf(keep) >= 0) {
+        chosen = keep;
+      } else if (names.length) {
+        chosen = names[0];
+      }
+      setCelebrantPickerValue(chosen);
+    }
+
     function bindCelebrantSelect() {
-      const sel = $("celebrant");
-      if (!sel || sel.dataset.bound === "1") return;
-      sel.dataset.bound = "1";
-      sel.addEventListener("change", syncCelebrantFromSelect);
+      const list = $("celebrant-list");
+      const picker = $("celebrant-picker");
+      if (!list || !picker || picker.dataset.bound === "1") return;
+      picker.dataset.bound = "1";
+      list.addEventListener("click", (e) => {
+        const btn = e.target.closest(".celebrant-picker__option");
+        if (!btn || !btn.dataset.value) return;
+        setCelebrantPickerValue(btn.dataset.value);
+        closeCelebrantPicker();
+      });
+      list.addEventListener("keydown", (e) => {
+        const opts = Array.from(list.querySelectorAll(".celebrant-picker__option"));
+        if (!opts.length) return;
+        const idx = opts.indexOf(document.activeElement);
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          (opts[Math.min(opts.length - 1, idx < 0 ? 0 : idx + 1)] || opts[0]).focus();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          (opts[Math.max(0, idx <= 0 ? 0 : idx - 1)] || opts[0]).focus();
+        } else if (e.key === "Enter" || e.key === " ") {
+          if (idx >= 0) {
+            e.preventDefault();
+            setCelebrantPickerValue(opts[idx].dataset.value);
+            closeCelebrantPicker();
+          }
+        } else if (e.key === "Escape") {
+          closeCelebrantPicker();
+        }
+      });
     }
 
     function applyCelebrantNamesFromServer(names) {

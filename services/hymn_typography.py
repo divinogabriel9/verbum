@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
-DEFAULT_BODY_PT = 55.0
-DEFAULT_TITLE_PT = 38.0  # ~70% of body (30% smaller)
+DEFAULT_BODY_PT = 56.0  # Lamb of God hymn blocks (Poppins Bold)
+DEFAULT_TITLE_PT = 38.5  # Lamb of God / hymn slide title (Georgia)
 DEFAULT_ALIGN = "center"
 
 
