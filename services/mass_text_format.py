@@ -165,12 +165,43 @@ def restore_lyric_sections_from_library(flat_lyrics: str, library_lyrics: str) -
     return "\n\n".join(parts)
 
 
+def _normalized_lyric_block(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "").strip()).lower()
+
+
+def _lyric_paragraph_blocks(text: str) -> list[str]:
+    raw = ensure_lyric_section_breaks((text or "").strip())
+    if not raw:
+        return []
+    return [b.strip() for b in raw.split("\n\n") if b.strip()]
+
+
+def hymn_override_is_slide_plan_subset(library_lyrics: str, override: str) -> bool:
+    """
+    True when override keeps only some library blocks (slides turned off in song preview).
+
+    Distinct from corrupted flattened overrides: every override block must match a library block.
+    """
+    lib_blocks = _lyric_paragraph_blocks(library_lyrics)
+    ov_blocks = _lyric_paragraph_blocks(override)
+    if not ov_blocks or not lib_blocks or len(ov_blocks) >= len(lib_blocks):
+        return False
+    lib_norm = [_normalized_lyric_block(b) for b in lib_blocks]
+    for ob in ov_blocks:
+        on = _normalized_lyric_block(ob)
+        if not any(on == ln or on in ln or ln in on for ln in lib_norm):
+            return False
+    return True
+
+
 def resolve_hymn_lyrics(library_lyrics: str, override: str | None) -> str:
     """Prefer override text but restore verse/chorus structure from the library when needed."""
     lib = (library_lyrics or "").strip()
     if not (override or "").strip():
         return lib
     ov = ensure_lyric_section_breaks(str(override).strip())
+    if hymn_override_is_slide_plan_subset(lib, ov):
+        return ov
     lib_sections = parse_structured_lyric_sections(lib)
     ov_sections = parse_structured_lyric_sections(ov)
     if len(lib_sections) >= 2 and len(ov_sections) < len(lib_sections):
@@ -185,13 +216,16 @@ def pick_hymn_lyrics_for_slides(library_lyrics: str, override: str | None) -> st
     Lyrics used for hymn slides: library text unless a valid override is present.
 
     Ignores corrupted browser overrides (flattened preview saves with missing blocks
-    or one long line per slide). Communion hymns often work because they lack stale
-    overrides; entrance frequently had partial overrides in localStorage.
+    or one long line per slide). Accepts intentional slide-plan subsets when slides
+    are toggled off in the song preview panel.
     """
     lib = (library_lyrics or "").strip()
     if not (override or "").strip():
         return lib
-    resolved = resolve_hymn_lyrics(lib, str(override))
+    ov_raw = str(override).strip()
+    if hymn_override_is_slide_plan_subset(lib, ov_raw):
+        return ensure_lyric_section_breaks(ov_raw)
+    resolved = resolve_hymn_lyrics(lib, ov_raw)
     lib_lines = _non_empty_lyric_lines(lib)
     res_lines = _non_empty_lyric_lines(resolved)
     if lib_lines and len(res_lines) < len(lib_lines):

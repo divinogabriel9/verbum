@@ -112,7 +112,6 @@ iframe {
   .settings-layout,
   .home-bento,
   .hero,
-  .hero--home-head,
   .hero--home-footer,
   .hero-metrics,
   .field-grid,
@@ -130,12 +129,17 @@ iframe {
     width: 100%;
   }
 
-  .home-bento > *,
-  .home-bento-sunday,
-  .home-bento-actions,
-  .home-bento-snapshot,
-  .home-bento-recent {
+  .home-bento-grid > * {
     grid-column: 1 / -1 !important;
+  }
+
+  .home-bento-cell--readings {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-news-panel {
+    max-height: none;
+    width: 100%;
   }
 
   .hero-metrics {
@@ -143,9 +147,18 @@ iframe {
     width: 100%;
   }
 
-  .hero--home-quick .quick-actions,
-  .home-bento-actions .quick-actions,
-  .home-bento-recent .quick-actions {
+  .home-bento-grid {
+    gap: var(--space-3);
+  }
+
+  .home-bento-cell--gospel,
+  .home-bento-cell--events,
+  .home-bento-cell--readings,
+  .home-bento-cell--news {
+    grid-column: 1 / -1;
+  }
+
+  .home-bento-cell--readings {
     grid-template-columns: 1fr;
   }
 
@@ -497,8 +510,14 @@ iframe {
     align-items: flex-start;
   }
 
-  .season-chip {
-    max-width: min(140px, 40vw);
+  .liturgical-indicator-wrap {
+    max-width: min(120px, 36vw);
+  }
+
+  .liturgical-indicator-panel {
+    right: 0;
+    left: auto;
+    width: min(280px, calc(100vw - 16px));
   }
 
   #flow-page .flow-accordion summary {
@@ -638,25 +657,23 @@ iframe {
 
 /* —— Wide layouts: align with existing app breakpoints (do not fight ≤1120px rules) —— */
 @media (min-width: 961px) {
-  .home-bento {
-    grid-template-columns: repeat(12, 1fr);
+  .home-bento-cell--gospel {
+    grid-column: span 7 !important;
   }
 
-  .home-bento-sunday {
-    grid-column: span 8;
+  .home-bento-cell--events {
+    grid-column: span 5 !important;
   }
 
-  .home-bento-actions {
-    grid-column: span 4;
+  .home-bento-cell--readings {
+    grid-column: span 12 !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
-  .home-bento-snapshot {
-    grid-column: span 5;
+  .home-bento-cell--news {
+    grid-column: span 12 !important;
   }
 
-  .home-bento-recent {
-    grid-column: span 7;
-  }
 }
 
 @media (min-width: 1121px) {

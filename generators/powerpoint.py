@@ -1120,11 +1120,6 @@ def _add_divider_cover(
         "MASS CELEBRANT:",
         celebrant,
         "",
-        *(
-            ["", "\n".join(get_community_name().split()), ""]
-            if _deck_branding.include_name
-            else []
-        ),
         f"Gospel ({gref})",
     ]
     if g_line:

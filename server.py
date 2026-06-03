@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 load_dotenv()
 
 from services.calendar_month import fetch_calendar_month
+from services.catholic_news import fetch_catholic_headlines
 
 from pipeline import (
     GenerationResult,
@@ -684,6 +685,21 @@ def dashboard(request: Request) -> Any:
         request,
         "index.html",
         {"title": "Verbum · LiturgyFlow"},
+    )
+
+
+@app.get("/api/catholic-news")
+def api_catholic_news(
+    vatican: bool = True,
+    cna: bool = True,
+    limit: int = 3,
+) -> Any:
+    """Headlines from Vatican News and Catholic News Agency RSS (fresh each request)."""
+    cap = max(1, min(int(limit), 6))
+    return fetch_catholic_headlines(
+        include_vatican=vatican,
+        include_cna=cna,
+        max_items=cap,
     )
 
 
