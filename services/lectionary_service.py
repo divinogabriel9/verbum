@@ -9,7 +9,11 @@ from services.gospel_quote_extractor import extract_gospel_slide_quote
 from services.lectionary_store import db_path, get_cached, ignore_cache, upsert
 from services.usccb_client import USCCB_HTTP_CHALLENGE, get_usccb_soup
 from services.mass_text_format import reading_body_is_usable
-from services.usccb_readings import fetch_readings_for_date
+from services.usccb_readings import (
+    fetch_readings_for_date,
+    is_usccb_nav_chrome_title,
+    scrape_mass_celebration_from_soup,
+)
 
 
 def _payload_readings_usable(payload: dict) -> bool:
@@ -32,6 +36,41 @@ def _payload_readings_usable(payload: dict) -> bool:
     ):
         return True
     return False
+
+
+def _payload_title_stale(payload: dict) -> bool:
+    """Older cache rows used season-only or nav-scraped titles instead of the mass-day name."""
+    title = (payload.get("title") or "").strip()
+    season = (payload.get("season") or "").strip()
+    celebration = (payload.get("celebration") or "").strip()
+    if celebration and not is_usccb_nav_chrome_title(celebration):
+        if not is_usccb_nav_chrome_title(title):
+            return False
+    if is_usccb_nav_chrome_title(celebration) or is_usccb_nav_chrome_title(title):
+        return True
+    if not title:
+        return True
+    if season and title == f"{season} Celebration":
+        return True
+    if title.endswith(" Celebration") and not celebration:
+        return True
+    return False
+
+
+def _resolve_mass_celebration(
+    blocks: dict,
+    source_url: str,
+) -> str:
+    celebration = (blocks.get("mass_celebration") or "").strip()
+    if celebration and not is_usccb_nav_chrome_title(celebration):
+        return celebration
+    url = (source_url or "").strip()
+    if not url:
+        return ""
+    soup, _http = get_usccb_soup(url)
+    if soup is None:
+        return ""
+    return scrape_mass_celebration_from_soup(soup)
 
 
 def _normalize_mass_date(date: str) -> str:
@@ -77,6 +116,7 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
         second_reading_text = ""
 
         psalm_response = ""
+        blocks: dict = {}
         if source_url or readings:
             blocks = fetch_readings_for_date(
                 date,
@@ -132,9 +172,14 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             extract_gospel_slide_quote(gospel_text, max_chars=300) if gospel_text else ""
         )
 
+        season = data.get("season", "Ordinary Time")
+        celebration = _resolve_mass_celebration(blocks, source_url)
+        title = celebration or f"{season} Celebration"
+
         return {
-            "title": f"{data.get('season', 'Sunday Mass')} Celebration",
-            "season": data.get("season", "Ordinary Time"),
+            "title": title,
+            "celebration": celebration,
+            "season": season,
             "lectionary_cycle": lectionary_cycle,
             "first_reading": readings.get("firstReading", ""),
             "psalm": readings.get("psalm", ""),
@@ -172,6 +217,9 @@ def get_liturgical_data(date: str, *, use_cache: bool = True) -> dict | None:
         cached = get_cached(normalized)
         if cached is not None and not _payload_readings_usable(cached):
             print(f"Lectionary cache stale (verse-only readings): {normalized}")
+            cached = None
+        if cached is not None and _payload_title_stale(cached):
+            print(f"Lectionary cache stale (season-only title): {normalized}")
             cached = None
         if cached is not None:
             print(f"Lectionary cache hit: {normalized}")

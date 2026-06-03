@@ -85,6 +85,133 @@ def _stop_after_reading_two(title: str) -> bool:
     return "alleluia" in tl or _match_gospel(title)
 
 
+def _ordinal_numeric_suffix(n: int) -> str:
+    if 11 <= (n % 100) <= 13:
+        return f"{n}th"
+    return f"{n}{('th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th')[n % 10]}"
+
+
+_ORDINAL_WORD_TO_N: dict[str, int] = {
+    "first": 1,
+    "second": 2,
+    "third": 3,
+    "fourth": 4,
+    "fifth": 5,
+    "sixth": 6,
+    "seventh": 7,
+    "eighth": 8,
+    "ninth": 9,
+    "tenth": 10,
+    "eleventh": 11,
+    "twelfth": 12,
+    "thirteenth": 13,
+    "fourteenth": 14,
+    "fifteenth": 15,
+    "sixteenth": 16,
+    "seventeenth": 17,
+    "eighteenth": 18,
+    "nineteenth": 19,
+    "twentieth": 20,
+    "twenty first": 21,
+    "twenty second": 22,
+    "twenty third": 23,
+    "twenty fourth": 24,
+    "twenty fifth": 25,
+    "twenty sixth": 26,
+    "twenty seventh": 27,
+    "twenty eighth": 28,
+    "twenty ninth": 29,
+    "thirtieth": 30,
+    "thirty first": 31,
+    "thirty second": 32,
+    "thirty third": 33,
+    "thirty fourth": 34,
+}
+
+
+def simplify_celebration_ordinals(title: str) -> str:
+    """
+    Shorten spelled-out Sunday ordinals from USCCB headings, e.g.
+    ``Eleventh Sunday in Ordinary Time`` → ``11th Sunday in Ordinary Time``.
+    """
+    t = _norm_heading(title)
+    m = re.match(r"^([A-Za-z\-]+(?:\s+[A-Za-z]+)?)\s+(Sunday\b.*)$", t, re.I)
+    if not m:
+        return t
+    word_part = re.sub(r"[-\s]+", " ", m.group(1).lower()).strip()
+    n = _ORDINAL_WORD_TO_N.get(word_part)
+    if not n:
+        return t
+    return f"{_ordinal_numeric_suffix(n)} {m.group(2)}"
+
+
+def _is_reading_or_liturgy_heading(title: str) -> bool:
+    t = _norm_heading(title).lower()
+    if not t:
+        return True
+    if t in ("daily readings",):
+        return True
+    if t.startswith("lectionary:"):
+        return True
+    if t.startswith("get the daily readings"):
+        return True
+    if t.startswith("sequence"):
+        return True
+    if _match_reading_one(title) or _match_psalm(title) or _match_reading_two(title):
+        return True
+    if _match_gospel(title):
+        return True
+    if t.startswith("alleluia"):
+        return True
+    return False
+
+
+def _is_nav_chrome_heading(title: str) -> bool:
+    """Skip USCCB site chrome / accessibility headings (not the mass-day title)."""
+    t = _norm_heading(title).lower()
+    if t.startswith("menu:"):
+        return True
+    if t in ("main navigation", "dive into god's word"):
+        return True
+    return False
+
+
+def is_usccb_nav_chrome_title(title: str) -> bool:
+    """True when a scraped celebration string is site chrome, not a liturgical title."""
+    return _is_nav_chrome_heading(title) or _is_reading_or_liturgy_heading(title)
+
+
+def _mass_celebration_heading_from_soup(soup: BeautifulSoup) -> str:
+    """Mass-day title: the heading immediately before Reading 1 on bible.usccb.org."""
+    reading_one_el = None
+    for h in soup.find_all(_READING_TAGS):
+        if _match_reading_one(_norm_heading(h.get_text())):
+            reading_one_el = h
+            break
+
+    if reading_one_el is not None:
+        for h in reading_one_el.find_all_previous(_READING_TAGS):
+            title = _norm_heading(h.get_text())
+            if _is_reading_or_liturgy_heading(title) or _is_nav_chrome_heading(title):
+                continue
+            if len(title) >= 4:
+                return title
+
+    for h in soup.find_all(_READING_TAGS):
+        title = _norm_heading(h.get_text())
+        if _is_reading_or_liturgy_heading(title) or _is_nav_chrome_heading(title):
+            continue
+        if len(title) >= 4:
+            return title
+    return ""
+
+
+def scrape_mass_celebration_from_soup(soup: BeautifulSoup) -> str:
+    """USCCB mass-day heading (solemnity, feast, or Sunday), with shortened ordinals."""
+    raw = _mass_celebration_heading_from_soup(soup)
+    return simplify_celebration_ordinals(raw) if raw else ""
+
+
 def ignore_readings_cache() -> bool:
     return os.environ.get("READINGS_IGNORE_CACHE", "").strip() in ("1", "true", "yes")
 
@@ -659,6 +786,14 @@ def fetch_readings_for_date(
     if use_cache and not ignore_readings_cache():
         cached = get_readings_cache_entry(mass_date)
         if cached and any(cached.get(k) for k in CACHE_KEYS):
+            celebration = (cached.get("mass_celebration") or "").strip()
+            if (not celebration or is_usccb_nav_chrome_title(celebration)) and usccb_url:
+                soup, _http = get_usccb_soup(usccb_url.strip())
+                if soup is not None:
+                    celebration = scrape_mass_celebration_from_soup(soup)
+                    if celebration:
+                        cached = {**cached, "mass_celebration": celebration}
+                        set_readings_cache_entry(mass_date, cached)
             return cached
 
     soup, _http = get_usccb_soup(usccb_url.strip()) if usccb_url else (None, None)
@@ -679,9 +814,11 @@ def fetch_readings_for_date(
         "gospel": None,
     }
     psalm_response = ""
+    mass_celebration = ""
     if soup is not None:
         scraped_prose = _scrape_on_page_prose(soup)
         psalm_response = _scrape_psalm_response(soup)
+        mass_celebration = scrape_mass_celebration_from_soup(soup)
 
     psalm_text, psalm_resp = _resolve_psalm(
         refs.get("psalm") or "",
@@ -708,6 +845,7 @@ def fetch_readings_for_date(
             scraped_prose.get("gospel"),
             pericope_href=pericope_links.get("gospel") or "",
         ),
+        "mass_celebration": mass_celebration,
     }
 
     if use_cache:
