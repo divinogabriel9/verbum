@@ -1,0 +1,884 @@
+/**
+ * Verbum — unified product design system
+ * Premium SaaS visual language (Linear / Notion / Stripe inspired)
+ * Load after inline styles in templates/index.html
+ */
+
+:root {
+  /* —— Spacing scale (4 · 8 · 12 · 16 · 24 · 32 · 48) —— */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-xs: var(--space-1);
+  --space-sm: var(--space-2);
+  --space-md: var(--space-4);
+  --space-lg: var(--space-5);
+  --space-xl: var(--space-6);
+
+  /* —— Border radius —— */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius: var(--radius-lg);
+  --radius-pill: 999px;
+
+  /* —— Shadows (light · medium · large) —— */
+  --shadow-light: 0 1px 2px rgba(21, 51, 61, 0.04), 0 1px 3px rgba(21, 51, 61, 0.05);
+  --shadow-medium: 0 2px 6px rgba(21, 51, 61, 0.05), 0 8px 20px rgba(21, 51, 61, 0.07);
+  --shadow-large: 0 4px 12px rgba(21, 51, 61, 0.07), 0 16px 36px rgba(21, 51, 61, 0.09);
+  --shadow-sm: var(--shadow-light);
+  --shadow-card: var(--shadow-light);
+  --shadow: var(--shadow-medium);
+  --shadow-hover: var(--shadow-large);
+  --shadow-glow: none;
+  --shadow-glow-soft: none;
+
+  /* —— Surfaces (calm, flat) —— */
+  --bg: #F7F8FA;
+  --bg-top: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #F3F4F6;
+  --surface-solid: #FFFFFF;
+  --card-border: #E5E7EB;
+  --line: #E5E7EB;
+  --line-soft: #F0F1F3;
+  --ink: #111827;
+  --muted: #6B7280;
+  --ink-subtle: #9CA3AF;
+  --glass-blur: none;
+
+  /* —— Typography scale —— */
+  --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font);
+  --type-page-title: 1.5rem;
+  --type-section-title: 1.125rem;
+  --type-card-title: 1rem;
+  --type-body: 1rem;
+  --type-helper: 0.875rem;
+  --type-caption: 0.75rem;
+  --text-xs: var(--type-caption);
+  --text-sm: var(--type-helper);
+  --text-base: var(--type-body);
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+
+  /* —— Component tokens —— */
+  --btn-height: 40px;
+  --btn-height-sm: 32px;
+  --btn-padding-x: 16px;
+  --card-padding: var(--space-5);
+  --input-height: 40px;
+  --tab-height: 36px;
+  --header-height: 56px;
+  --content-max: 1280px;
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+}
+
+html[data-theme="dark"] {
+  --bg: #0F1115;
+  --bg-top: #14161B;
+  --surface: #1A1D24;
+  --surface-2: #22262E;
+  --surface-solid: #1A1D24;
+  --card-border: #2E333D;
+  --line: #2E333D;
+  --line-soft: #252930;
+  --ink: #F3F4F6;
+  --muted: #9CA3AF;
+  --ink-subtle: #6B7280;
+  --shadow-light: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.28), 0 8px 24px rgba(0, 0, 0, 0.32);
+  --shadow-large: 0 4px 16px rgba(0, 0, 0, 0.32), 0 16px 40px rgba(0, 0, 0, 0.38);
+}
+
+html {
+  font-size: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--type-body);
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg);
+  background-attachment: fixed;
+}
+
+html[data-theme="dark"] body {
+  background: var(--bg);
+}
+
+/* —— Page structure typography —— */
+.page-shell-title,
+.hero h2 {
+  font-family: var(--font);
+  font-size: var(--type-page-title);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.panel-head h3,
+.tool-card h3,
+.admin-card h3,
+.notif-panel__head h3,
+.settings-sidebar__title {
+  font-family: var(--font);
+  font-size: var(--type-card-title);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.hero--home-section h3,
+.flow-section-head h4 {
+  font-size: var(--type-section-title);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.page-shell-desc,
+.panel-head p,
+.tool-card > p,
+.hero p,
+.admin-card > p,
+.admin-card .muted {
+  font-size: var(--type-helper);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.muted,
+.status,
+.helper-text {
+  font-size: var(--type-helper);
+  color: var(--muted);
+}
+
+.eyebrow {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-shadow: none;
+}
+
+label {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-2);
+}
+
+/* —— Universal card —— */
+.hero:not(.hero--home),
+.panel,
+.tool-card,
+.admin-card,
+.modal-box,
+.snapshot-tile,
+.settings-sidebar,
+.notification-item,
+.toast,
+.metric,
+.cal-reading-card,
+.mission-quote.mission-gospel-full,
+.flow-para-preview,
+.flow-reading-text,
+.song-catalog-panel,
+.cal-detail-panel.panel {
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-light);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.panel,
+.tool-card {
+  padding: var(--card-padding);
+}
+
+.admin-card {
+  padding: var(--card-padding);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-light);
+}
+
+.home-bento .admin-card {
+  border-radius: var(--radius-lg);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-light);
+}
+
+.panel:hover,
+.tool-card:hover,
+.admin-card:hover,
+.hero:hover {
+  box-shadow: var(--shadow-medium);
+  border-color: color-mix(in srgb, var(--liturgical-accent) 12%, var(--card-border));
+  transform: none;
+}
+
+.hero {
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-lg);
+}
+
+.hero--home {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-border);
+  background: var(--surface);
+  box-shadow: var(--shadow-light);
+  padding: var(--space-6);
+  gap: var(--space-5);
+}
+
+.hero--home-divider {
+  background: var(--line);
+  box-shadow: none;
+}
+
+.panel-head {
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+}
+
+.field {
+  margin-bottom: var(--space-4);
+}
+
+.page.active {
+  gap: var(--space-5);
+}
+
+.dashboard {
+  gap: var(--space-5);
+  padding: var(--space-4) clamp(var(--space-4), 4vw, var(--space-6)) 88px;
+}
+
+/* —— Topbar (calm, minimal) —— */
+.topbar.topbar--pill {
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--card-border);
+  background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-light);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  gap: var(--space-3);
+}
+
+.brand-logo:hover,
+.brand-logo.active {
+  color: var(--liturgical-accent);
+  text-shadow: none;
+}
+
+.season-chip,
+.notif-btn,
+.theme-toggle-btn {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+.season-chip-dot {
+  box-shadow: none;
+}
+
+.notif-btn:hover,
+.notif-btn[aria-expanded="true"],
+.theme-toggle-btn:hover {
+  background: var(--surface-solid);
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.metric {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  backdrop-filter: none;
+  box-shadow: var(--shadow-light);
+}
+
+.metric strong {
+  color: var(--ink);
+  text-shadow: none;
+  font-weight: 600;
+}
+
+.metric:hover {
+  transform: none;
+  box-shadow: var(--shadow-medium);
+}
+
+.metric span {
+  font-size: var(--type-caption);
+  font-weight: 600;
+}
+
+/* —— Unified tabs —— */
+.flow-builder-tabs,
+.topbar-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  min-height: calc(var(--tab-height) + var(--space-2));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+.flow-builder-tabs button,
+.topbar-nav .nav-link {
+  min-height: var(--tab-height);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: var(--type-helper);
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.flow-builder-tabs button:hover,
+.topbar-nav .nav-link:hover {
+  color: var(--ink);
+  background: var(--surface-solid);
+  transform: none;
+}
+
+.flow-builder-tabs button[aria-selected="true"],
+.topbar-nav .nav-link.active {
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-light);
+}
+
+.topbar-nav .nav-link.active .nav-icon {
+  filter: none;
+  opacity: 1;
+}
+
+.settings-sidebar {
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.settings-sidebar-link {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-helper);
+  font-weight: 500;
+}
+
+.settings-sidebar-link.active {
+  font-weight: 600;
+  box-shadow: none;
+  border-color: var(--card-border);
+  background: var(--surface-2);
+}
+
+/* —— Buttons —— */
+.primary,
+.secondary,
+.ghost,
+.mini,
+.danger,
+button.lyric-block__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
+  border-radius: var(--radius-md);
+  font-size: var(--type-helper);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+button:hover {
+  transform: none;
+}
+
+.primary {
+  color: var(--on-accent, #fff);
+  background: var(--liturgical-accent);
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-light);
+}
+
+.primary:hover {
+  color: var(--on-accent, #fff);
+  background: color-mix(in srgb, var(--liturgical-accent) 92%, black);
+  box-shadow: var(--shadow-medium);
+}
+
+.secondary {
+  color: var(--ink);
+  background: var(--surface-solid);
+  border: 1px solid var(--card-border);
+  box-shadow: none;
+}
+
+.secondary:hover {
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+
+.ghost,
+.mini {
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--card-border);
+  backdrop-filter: none;
+}
+
+.ghost:hover,
+.mini:hover {
+  color: var(--ink);
+  background: var(--surface-solid);
+  border-color: var(--line);
+}
+
+.mini {
+  min-height: var(--btn-height-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--type-caption);
+}
+
+.danger,
+button.lyric-block__btn.danger,
+.theme-card-actions .danger-theme-del {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-solid));
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, var(--card-border));
+}
+
+.danger:hover,
+button.lyric-block__btn.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface-solid));
+}
+
+.actions,
+.inline-actions,
+.quick-actions {
+  gap: var(--space-2);
+}
+
+/* —— Uiverse → design-system buttons (same HTML, flat UI) —— */
+.uiverse-btn {
+  all: unset;
+  display: inline-flex;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  box-sizing: border-box;
+}
+
+.uiverse-btn::after {
+  display: none;
+}
+
+.uiverse-btn .button-outer {
+  border-radius: inherit;
+  box-shadow: none;
+  transition: none;
+}
+
+.uiverse-btn .button-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--btn-height);
+  padding: 0 var(--btn-padding-x);
+  border-radius: inherit;
+  background: var(--surface-solid);
+  border: 1px solid var(--card-border);
+  box-shadow: none;
+  clip-path: none;
+  overflow: visible;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.uiverse-btn .button-inner span {
+  font-size: var(--type-helper);
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  text-shadow: none;
+  transform: none;
+}
+
+/* Cancel legacy Uiverse hover clip-path / gradient-text (inline styles) */
+.uiverse-btn:hover:not(.is-disabled) .button-outer,
+.uiverse-btn:hover:not(.is-disabled) .button-inner,
+.uiverse-btn:active:not(.is-disabled) .button-inner {
+  box-shadow: none !important;
+  clip-path: none !important;
+  transform: none !important;
+}
+
+.uiverse-btn:hover:not(.is-disabled) .button-inner span,
+.uiverse-btn:active:not(.is-disabled) .button-inner span {
+  color: var(--ink) !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: currentColor !important;
+  transform: none !important;
+}
+
+.uiverse-btn:not(.uiverse-btn--orange):not(.uiverse-btn--generate):hover:not(.is-disabled) .button-inner {
+  background: var(--surface-2) !important;
+  background-image: none !important;
+}
+
+.uiverse-btn--orange .button-inner,
+.uiverse-btn--generate .button-inner {
+  background: var(--liturgical-accent) !important;
+  background-image: none !important;
+  border-color: transparent;
+}
+
+.uiverse-btn--orange .button-inner span,
+.uiverse-btn--generate .button-inner span {
+  color: var(--on-accent, #fff) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.uiverse-btn--generate .button-outer,
+.uiverse-btn--orange .button-outer {
+  box-shadow: none;
+}
+
+.uiverse-btn--generate:hover:not(.is-disabled) .button-inner,
+.uiverse-btn--orange:hover:not(.is-disabled) .button-inner {
+  background: var(--liturgical-accent) !important;
+  background-image: none !important;
+  filter: brightness(1.06);
+}
+
+.uiverse-btn--generate:hover:not(.is-disabled) .button-inner span,
+.uiverse-btn--orange:hover:not(.is-disabled) .button-inner span {
+  color: var(--on-accent, #fff) !important;
+}
+
+/* Song plan metallic buttons (same nested structure) */
+.mass-song-plan-root .plan-btn:hover:not(.is-disabled) .button-inner {
+  clip-path: none !important;
+  background: var(--surface-2) !important;
+  background-image: none !important;
+}
+
+.mass-song-plan-root .plan-btn .button-inner span,
+.mass-song-plan-root .plan-btn:hover:not(.is-disabled) .button-inner span {
+  color: var(--ink) !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.uiverse-btn.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.uiverse-btn.is-disabled .button-inner {
+  background: var(--surface-2);
+}
+
+.uiverse-btn.is-disabled .button-inner span {
+  color: var(--muted);
+  background: none;
+}
+
+.uiverse-btn--sm .button-inner {
+  min-height: var(--btn-height-sm);
+  padding: 0 var(--space-3);
+}
+
+.uiverse-btn.btn-xl {
+  border-radius: var(--radius-md);
+}
+
+.uiverse-btn.btn-xl .button-inner {
+  min-height: 44px;
+  padding: 0 var(--space-5);
+}
+
+/* —— Forms —— */
+textarea,
+input[type="text"],
+input[type="date"],
+input[type="file"],
+input[type="search"],
+select,
+.route-switcher {
+  min-height: var(--input-height);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-solid);
+  color: var(--ink);
+  font-size: var(--type-helper);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+textarea:focus,
+input:focus,
+select:focus,
+.route-switcher:focus {
+  border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--card-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent) 12%, transparent);
+  outline: none;
+}
+
+input[type="color"] {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+}
+
+.field-grid {
+  gap: var(--space-4);
+}
+
+.theme-pref-option {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+.accent-swatch {
+  border-radius: var(--radius-md);
+}
+
+/* —— Pills & filters (segmented control family) —— */
+.pill,
+.song-filter-row button {
+  min-height: var(--btn-height-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--card-border);
+  background: var(--surface-2);
+  font-size: var(--type-caption);
+  font-weight: 500;
+  color: var(--muted);
+  backdrop-filter: none;
+}
+
+.song-filter-row button.active {
+  background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-solid));
+  border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--card-border));
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.pill-row {
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+/* —— Modals —— */
+.modal {
+  padding: var(--space-4);
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-large);
+}
+
+.song-preview-panel__sheet {
+  backdrop-filter: none;
+  box-shadow: var(--shadow-large);
+}
+
+.song-preview-panel__head {
+  padding: var(--space-4) var(--space-5);
+}
+
+.song-preview-panel__body {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+/* —— Tables & lists —— */
+.celebrant-settings-list__item,
+.flow-input-list-item,
+.notification-item {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.notification-item__links a {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+/* —— Toast & floating chrome —— */
+.toast {
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-weight: 500;
+}
+
+.route-jump-float,
+.flow-dock-float {
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-3);
+  box-shadow: var(--shadow-medium);
+}
+
+.nav-pin-btn {
+  border-radius: var(--radius-md);
+}
+
+.app-shell.nav-pinned .nav-pin-btn {
+  background: var(--surface-2);
+  border-color: var(--card-border);
+  color: var(--ink);
+  box-shadow: none;
+  transform: none;
+}
+
+.side-brand-mark {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-light);
+}
+
+.snapshot-tile {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.download-row a {
+  border-radius: var(--radius-md);
+  min-height: var(--btn-height-sm);
+  display: inline-flex;
+  align-items: center;
+}
+
+.download-row a:hover {
+  transform: none;
+}
+
+/* —— Flow accordions —— */
+.flow-accordion {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-light);
+}
+
+.flow-accordion summary {
+  padding: var(--space-3) var(--space-4);
+}
+
+.flow-accordion-body {
+  padding: var(--space-4);
+}
+
+/* —— Calendar —— */
+.cal-cell {
+  border-radius: var(--radius-sm);
+}
+
+/* —— Dark mode button overrides —— */
+html[data-theme="dark"] .uiverse-btn .button-inner {
+  background: var(--surface-2);
+  border-color: var(--card-border);
+  background-image: none;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .uiverse-btn .button-inner span {
+  background-image: none;
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .mass-song-plan-root .plan-btn .button-inner {
+  background: var(--surface-solid);
+  background-image: none;
+  border: 1px solid var(--card-border);
+}
+
+html[data-theme="dark"] .mass-song-plan-root .plan-btn .button-inner span {
+  background-image: none;
+  color: var(--ink);
+  -webkit-background-clip: border-box;
+}
+
+html[data-theme="dark"] .flow-builder-tabs button:hover {
+  background: var(--surface-solid);
+}
+
+.theme-card-actions button {
+  min-height: var(--btn-height-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--type-caption);
+  font-weight: 600;
+  border: 1px solid var(--card-border);
+  background: var(--surface-solid);
+}
+
+.btn-xl {
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.workspace {
+  gap: var(--space-5);
+}
+
+.flow-builder-tabs-bar {
+  margin-bottom: var(--space-4);
+}
+
+.settings-divider {
+  background: var(--line);
+  margin: var(--space-5) 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel:hover,
+  .tool-card:hover,
+  .admin-card:hover,
+  .hero:hover,
+  .metric:hover {
+    transform: none;
+  }
+}
