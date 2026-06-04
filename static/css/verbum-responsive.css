@@ -33,7 +33,11 @@ body {
 .page > *,
 .workspace,
 .flow-builder-shell,
-.lyrics-workspace-stack {
+.lyrics-workspace,
+.lyrics-workspace-stack,
+.lyrics-workspace-bottom,
+.lyrics-source-panel,
+.lyrics-structured-panel {
   max-width: 100%;
   min-width: 0;
 }
@@ -119,6 +123,8 @@ iframe {
   .theme-grid,
   .global-controls,
   .admin-card-grid,
+  .song-composer-top,
+  .lyrics-workspace-bottom,
   .song-composer-layout,
   .song-composer-meta,
   .song-composer-save-row,

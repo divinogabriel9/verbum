@@ -91,12 +91,20 @@
       --text-base: 1rem;
       --text-lg: 1.125rem;
       --text-xl: 1.25rem;
-      /* Motion + modal scrim (ui-ux-pro-max: 150–300ms, ease-out enter) */
+      /* Motion — Emil design-eng (≤300ms, custom ease-out, no ease-in on UI) */
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+      --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+      --ease-hover: cubic-bezier(0.25, 0.1, 0.25, 1);
+      --motion-duration-micro: 100ms;
       --motion-duration-fast: 150ms;
-      --motion-duration-base: 220ms;
-      --motion-duration-slow: 320ms;
-      --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-      --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+      --motion-duration-base: 200ms;
+      --motion-duration-modal: 260ms;
+      --motion-duration-exit: 120ms;
+      --motion-duration-slow: 280ms;
+      --motion-ease-out: var(--ease-out);
+      --motion-ease-in-out: var(--ease-in-out);
+      --motion-ease-hover: var(--ease-hover);
       --app-scrim: rgba(21, 51, 61, 0.48);
       --app-blur: 12px;
     }
@@ -370,41 +378,7 @@
     button {
       border: 0;
       cursor: pointer;
-      transition:
-        transform var(--motion-duration-fast) var(--motion-ease-out),
-        box-shadow var(--motion-duration-fast) ease,
-        border-color var(--motion-duration-fast) ease,
-        background var(--motion-duration-fast) ease,
-        color var(--motion-duration-fast) ease,
-        opacity var(--motion-duration-fast) ease;
     }
-    .nav-link,
-    .settings-sidebar-link,
-    .flow-builder-tabs button,
-    .reading-preview-card,
-    .home-bento-cell,
-    .home-bento-cell--gospel.is-gospel-preview,
-    .tool-card,
-    .panel,
-    .flow-bento-cell,
-    .metric,
-    .home-reading-card,
-    .btn-home-create-event,
-    .event-date-trigger,
-    .event-date-cal__day,
-    .liturgical-indicator,
-    .flow-input-list-item,
-    .secondary,
-    .ghost {
-      transition:
-        background var(--motion-duration-fast) ease,
-        color var(--motion-duration-fast) ease,
-        border-color var(--motion-duration-fast) ease,
-        box-shadow var(--motion-duration-fast) ease,
-        transform var(--motion-duration-fast) var(--motion-ease-out),
-        opacity var(--motion-duration-fast) ease;
-    }
-    button:hover { transform: translateY(-1px); }
     button.uiverse-btn:hover { transform: none; }
     button:disabled { cursor: not-allowed; opacity: 0.48; transform: none; }
 
@@ -1064,8 +1038,10 @@
       color: var(--ink);
       box-shadow: var(--shadow-card);
       opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
+      transform: translateY(8px) scale(0.96);
+      transition:
+        opacity var(--motion-duration-base) var(--motion-ease-hover),
+        transform var(--motion-duration-base) var(--motion-ease-hover);
     }
     .toast__row {
       display: flex;
@@ -1102,7 +1078,7 @@
     }
     .toast--visible {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
     .toast--ok {
       border-color: color-mix(in srgb, var(--good) 45%, var(--line));
@@ -1382,7 +1358,7 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transform: translateY(-6px);
+      transform: translateY(-4px) scale(0.96);
     }
     .liturgical-indicator-panel:not([hidden]) {
       animation: vb-dropdown-in var(--motion-duration-base) var(--motion-ease-out) both;
@@ -1685,20 +1661,20 @@
     }
 
     @keyframes vb-page-in {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(6px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     @keyframes vb-page-out {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(-6px); }
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-4px) scale(0.985); }
     }
     @keyframes vb-panel-in {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     @keyframes vb-dropdown-in {
-      from { opacity: 0; transform: translateY(-6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .page {
       display: none;
@@ -1711,7 +1687,7 @@
     }
     .page.page--leaving {
       display: flex;
-      animation: vb-page-out var(--motion-duration-fast) var(--motion-ease-in) both;
+      animation: vb-page-out var(--motion-duration-exit) var(--motion-ease-out) both;
     }
 
     .hero {
@@ -2041,10 +2017,11 @@
       box-shadow: var(--shadow-large);
       overflow: hidden;
       opacity: 0;
-      transform: scale(0.98) translateY(10px);
+      transform: scale(0.95) translateY(8px);
+      transform-origin: center center;
       transition:
-        opacity var(--motion-duration-base) var(--motion-ease-out),
-        transform var(--motion-duration-base) var(--motion-ease-out);
+        opacity var(--motion-duration-modal) var(--motion-ease-out),
+        transform var(--motion-duration-modal) var(--motion-ease-out);
     }
     .ui-overlay.is-open .ui-card {
       opacity: 1;
@@ -2193,7 +2170,7 @@
       box-shadow: var(--shadow-large);
       opacity: 0;
       visibility: hidden;
-      transform: translateY(-6px);
+      transform: translateY(-4px) scale(0.96);
       pointer-events: none;
       transition:
         opacity var(--motion-duration-base) var(--motion-ease-out),
@@ -3438,137 +3415,388 @@
       border: 0;
     }
 
-    /* Song Library — unified composer + editor stack */
-    .lyrics-workspace-stack {
+    /* Song Library — compact composer · lyrics | editor (page scroll, no inner scroll) */
+    .lyrics-workspace-mockup {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      align-items: stretch;
+      gap: 12px;
       min-width: 0;
+      max-width: var(--content-max);
+      margin: 0 auto;
+      width: 100%;
+      padding-bottom: 24px;
     }
-    .song-composer-panel {
-      padding: 12px 14px;
-      flex-shrink: 0;
-    }
-    .song-composer-panel .panel-head {
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--line-soft);
-    }
-    .song-composer-panel .panel-head h3 {
-      font-size: 1rem;
-      margin: 0;
-    }
-    .song-composer-panel .panel-head p {
-      margin: 4px 0 0;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-    .song-composer-layout {
+    .lyrics-workspace-row {
       display: grid;
-      grid-template-columns: minmax(300px, 372px) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 12px;
       align-items: start;
     }
-    .song-composer-lib {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 0;
-    }
-    .song-composer-lib .song-filter-row {
-      margin: 0;
-      gap: 4px;
-    }
-    .song-composer-catalog .song-catalog-panel {
-      max-height: min(200px, 28vh);
-      min-height: 100px;
+    .song-composer-panel {
+      padding: 10px 12px;
+      border-radius: 12px;
+      box-shadow: none;
       border: 1px solid var(--line-soft);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.55);
-    }
-    .song-composer-catalog .song-catalog-toolbar {
-      padding: 6px 8px;
-      border-bottom: 1px solid var(--line-soft);
-    }
-    .song-composer-catalog .song-catalog-toolbar input {
-      padding: 6px 8px;
-      font-size: 0.82rem;
-      border-radius: 8px;
-    }
-    .song-composer-main {
+      background: color-mix(in srgb, var(--surface-solid) 88%, var(--bg));
       display: flex;
       flex-direction: column;
       gap: 8px;
-      min-width: 0;
     }
-    .song-composer-main .field {
-      margin-bottom: 0;
-    }
-    .song-composer-main label {
-      font-size: 0.68rem;
-      margin-bottom: 4px;
-      letter-spacing: 0.06em;
-    }
-    .song-composer-textarea {
-      min-height: 108px;
-      resize: vertical;
-      font-size: 0.86rem;
-      line-height: 1.45;
-      padding: 8px 10px;
-    }
-    .song-composer-meta {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-    .song-composer-meta .field { min-width: 0; }
-    .song-composer-save-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: end;
-    }
-    .song-composer-upload {
+    .song-composer-head {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    .song-composer-upload input[type="file"] {
-      flex: 1;
-      padding: 6px 8px;
-      font-size: 0.78rem;
+    .song-composer-head__copy h3 {
+      font-size: 0.94rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.02em;
     }
-    .song-composer-actions {
+    .song-composer-head__actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
       align-items: center;
-      padding-top: 4px;
-    }
-    .song-composer-actions .primary,
-    .song-composer-actions .secondary,
-    .song-composer-actions .ghost {
-      padding: 8px 14px;
-      font-size: 0.8rem;
-    }
-    .song-composer-panel .pill-row {
-      margin-top: 4px;
       gap: 6px;
+      flex-shrink: 0;
     }
-    .song-composer-panel .pill {
-      padding: 4px 8px;
+    .song-composer-head__actions .primary,
+    .song-composer-head__actions .secondary,
+    .song-composer-head__actions .ghost {
+      min-height: 32px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 8px;
+    }
+    .song-composer-head__actions .primary {
+      background: #157347;
+      border-color: #157347;
+    }
+    .song-composer-head__actions .ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .song-composer-clear-icon {
+      display: inline-flex;
+      opacity: 0.7;
+    }
+    .song-composer-toolbar-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 0;
+      position: relative;
+    }
+    .song-composer-toolbar-row .song-composer-search-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+    .song-composer-search-wrap {
+      position: relative;
+    }
+    .song-composer-search-wrap input {
+      width: 100%;
+      padding: 8px 10px 8px 2.5rem;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      font-size: 0.84rem;
+      background: var(--surface-solid);
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        box-shadow var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .song-composer-search-wrap input::-webkit-search-decoration,
+    .song-composer-search-wrap input::-webkit-search-cancel-button,
+    .song-composer-search-wrap input::-webkit-search-results-button,
+    .song-composer-search-wrap input::-webkit-search-results-decoration {
+      -webkit-appearance: none;
+      appearance: none;
+      display: none;
+    }
+    .song-composer-search-wrap input:focus {
+      outline: none;
+      border-color: rgba(21, 115, 71, 0.45);
+      box-shadow: 0 0 0 3px rgba(21, 115, 71, 0.1);
+    }
+    .song-composer-search-wrap::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      z-index: 1;
+      opacity: 0.45;
+      background: currentColor;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z'/%3E%3C/svg%3E") center / contain no-repeat;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z'/%3E%3C/svg%3E") center / contain no-repeat;
+      pointer-events: none;
+    }
+    .song-composer-upload-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px dashed #c5d0de;
+      border-radius: 8px;
+      background: var(--surface-solid);
+      color: var(--ink);
+      font-size: 0.78rem;
+      font-weight: 650;
+      cursor: pointer;
+      white-space: nowrap;
+      transition:
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .song-composer-upload-btn:hover,
+    .song-composer-upload-btn.is-dragover {
+      border-color: #157347;
+      background: rgba(21, 115, 71, 0.06);
+      color: #157347;
+    }
+    .song-composer-upload-btn svg {
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+    .lyrics-file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .song-composer-browse {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 8px;
+      min-width: 0;
+    }
+    .song-composer-browse__label {
       font-size: 0.72rem;
+      font-weight: 650;
+      color: var(--muted);
+      flex-shrink: 0;
     }
-    .song-composer-panel .status {
+    .song-composer-section-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      flex: 1;
+      min-width: 0;
+    }
+    .song-composer-section-pills button {
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      color: var(--ink);
+      font-size: 0.72rem;
+      font-weight: 650;
+      cursor: pointer;
+      transition:
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .song-composer-section-pills button:hover {
+      border-color: rgba(21, 115, 71, 0.35);
+      background: rgba(21, 115, 71, 0.06);
+    }
+    .song-composer-section-pills button.active {
+      background: #157347;
+      border-color: #157347;
+      color: #fff;
+    }
+    #btn-toggle-song-catalog.active {
+      border-color: rgba(21, 115, 71, 0.4);
+      background: rgba(21, 115, 71, 0.08);
+      color: #157347;
+    }
+    .song-composer-catalog-wrap[hidden] {
+      display: none !important;
+    }
+    .song-composer-catalog-wrap:not([hidden]) {
+      margin-top: 2px;
+    }
+    .song-composer-catalog-panel {
+      max-height: min(132px, 22vh);
+      min-height: 0;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--surface-solid);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .song-composer-catalog-panel .song-catalog-scroll {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .song-composer-catalog-panel .song-sec-toggle {
+      padding: 7px 10px;
+      font-size: 0.76rem;
+    }
+    .song-composer-catalog-panel .song-row {
+      padding: 6px 10px;
+    }
+    .song-composer-status {
       margin: 0;
-      font-size: 0.8rem;
-      min-height: 1em;
+      font-size: 0.76rem;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+    .song-composer-status:empty {
+      display: none;
+    }
+    .lyrics-structured-foot {
+      flex-shrink: 0;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .lyrics-structured-foot .detected-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 12px;
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .detected-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 650;
+      color: var(--ink);
+    }
+    .detected-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .detected-pill--verse .detected-dot { background: #6d5dfc; }
+    .detected-pill--chorus .detected-dot { background: #f472b6; }
+    .detected-pill--bridge .detected-dot { background: #10b981; }
+    .detected-pill--response .detected-dot { background: #d97706; }
+    .lyrics-details-panel,
+    .lyrics-structured-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 16px 18px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+      overflow: visible;
+    }
+    .lyrics-details-panel .panel-head,
+    .lyrics-structured-panel .panel-head {
+      flex-shrink: 0;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .lyrics-details-panel .panel-head h3,
+    .lyrics-structured-panel .panel-head h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .lyrics-details-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      flex-shrink: 0;
+      margin-bottom: 10px;
+    }
+    .lyrics-details-meta-grid .field {
+      margin-bottom: 0;
+    }
+    .lyrics-details-meta-grid label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .lyrics-details-save-row {
+      flex-shrink: 0;
+      margin-bottom: 10px;
+    }
+    .lyrics-details-save-row label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .lyrics-editor-scroll {
+      display: block;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: var(--surface-solid);
+      overflow: visible;
+    }
+    .lyrics-editor-main {
+      display: block;
+      width: 100%;
+      min-height: 10rem;
+      resize: none;
+      overflow: hidden;
+      field-sizing: content;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      font-family: inherit;
+      color: var(--ink);
+      background: transparent;
+    }
+    .lyrics-editor-main:focus {
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(21, 115, 71, 0.25);
+    }
+    .lyrics-word-stats {
+      flex-shrink: 0;
+      margin-top: 8px;
+      font-size: 0.74rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .lyrics-structured-panel .lyrics-structured-head {
+      flex: 0 0 auto;
+    }
+    .lyrics-structured-body {
+      display: flex;
+      flex-direction: column;
+      overflow: visible;
+    }
+    .lyrics-structured-panel .lyrics-quick-add {
+      flex-shrink: 0;
+    }
+    .lyrics-block-list-scroll {
+      overflow: visible;
     }
     .lyrics-structured-panel {
-      flex: 1;
-      min-height: 0;
-      padding: 12px 14px;
+      padding-bottom: 14px;
     }
 
     /* Structured lyrics editor — minimal single-column */
@@ -3630,6 +3858,10 @@
       border-bottom: 1px solid var(--line-soft);
       background: rgba(248, 250, 255, 0.6);
     }
+    .lyric-block.type-verse .lyric-block__head { background: rgba(109, 93, 252, 0.12); border-bottom-color: rgba(109, 93, 252, 0.2); }
+    .lyric-block.type-chorus .lyric-block__head { background: rgba(244, 114, 182, 0.12); border-bottom-color: rgba(244, 114, 182, 0.2); }
+    .lyric-block.type-bridge .lyric-block__head { background: rgba(16, 185, 129, 0.12); border-bottom-color: rgba(16, 185, 129, 0.2); }
+    .lyric-block.type-response .lyric-block__head { background: rgba(217, 119, 6, 0.12); border-bottom-color: rgba(217, 119, 6, 0.2); }
     .lyric-block__drag {
       width: 22px;
       height: 22px;
@@ -3717,7 +3949,6 @@
     .lyric-block__ta {
       width: 100%;
       min-height: 52px;
-      max-height: 420px;
       padding: 8px 10px;
       border: 1px solid var(--line-soft);
       border-radius: 8px;
@@ -3726,7 +3957,8 @@
       font-size: 0.88rem;
       line-height: 1.45;
       resize: none;
-      overflow-y: hidden;
+      overflow: hidden;
+      field-sizing: content;
       outline: none;
     }
     .lyric-block__ta:focus {
@@ -4040,10 +4272,11 @@
       position: relative;
       z-index: 1;
       opacity: 0;
-      transform: scale(0.98) translateY(10px);
+      transform: scale(0.95) translateY(8px);
+      transform-origin: center center;
       transition:
-        opacity var(--motion-duration-base) var(--motion-ease-out),
-        transform var(--motion-duration-base) var(--motion-ease-out);
+        opacity var(--motion-duration-modal) var(--motion-ease-out),
+        transform var(--motion-duration-modal) var(--motion-ease-out);
     }
     .modal.visible .modal-box {
       opacity: 1;
@@ -5191,9 +5424,17 @@
       .block-top.block-top-lyrics .block-field-type,
       .block-top.block-top-lyrics .block-field-name { flex: 1 1 100%; min-width: 0; }
       .timeline-body { grid-template-columns: 1fr; }
-      .song-composer-layout { grid-template-columns: 1fr; }
-      .song-composer-meta { grid-template-columns: 1fr; }
-      .song-composer-save-row { grid-template-columns: 1fr; }
+      .song-composer-head { align-items: stretch; }
+      .song-composer-head__actions { width: 100%; }
+      .song-composer-head__actions .primary,
+      .song-composer-head__actions .secondary,
+      .song-composer-head__actions .ghost { flex: 1 1 auto; }
+      .song-composer-toolbar-row { flex-wrap: wrap; }
+      .song-composer-upload-btn { width: 100%; }
+      .song-composer-catalog-panel { max-height: min(160px, 28vh); }
+      .lyrics-workspace-row { grid-template-columns: 1fr; }
+      .lyrics-editor-main { min-height: 8rem; }
+      .lyrics-details-meta-grid { grid-template-columns: 1fr; }
     }
 
     .song-catalog-panel {
@@ -5813,6 +6054,7 @@
     }
   </style>
   <link rel="stylesheet" href="/static/css/verbum-design-system.css" />
+  <link rel="stylesheet" href="/static/css/emil-motion.css" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css" />
 <body data-season="ordinary">
   <div class="app-shell">
@@ -6010,30 +6252,85 @@
       </div>
 
       <section class="page" id="lyrics-page" data-route="/library/songs">
-        <div class="lyrics-workspace-stack" id="lyrics-workspace">
-          <section class="panel song-composer-panel">
-            <div class="panel-head">
-              <div>
+        <div class="lyrics-workspace-mockup" id="lyrics-workspace">
+          <section class="panel song-composer-panel" aria-label="Song composer toolbar">
+            <header class="song-composer-head">
+              <div class="song-composer-head__copy">
                 <h3>Song Composer</h3>
-                <p>Pick from your library, paste or upload lyrics, then analyze into blocks below.</p>
+              </div>
+              <div class="song-composer-head__actions actions" role="group" aria-label="Composer actions">
+                <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
+                <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
+                <button type="button" class="ghost" id="btn-clear-lyrics">
+                  <span class="song-composer-clear-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                  </span>
+                  Clear
+                </button>
+              </div>
+            </header>
+            <div class="song-composer-toolbar-row">
+              <div class="song-composer-search-wrap">
+                <input type="search" id="song-catalog-search" placeholder="Search library…" autocomplete="off" aria-label="Search library" />
+              </div>
+              <label class="song-composer-upload-btn" id="lyrics-drop-zone" for="lyrics-file" title="Upload .txt lyrics file">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+                <span>Upload .txt</span>
+              </label>
+              <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,text/plain" tabindex="-1" />
+            </div>
+            <div class="song-composer-browse">
+              <span class="song-composer-browse__label" id="song-composer-browse-label">Browse:</span>
+              <div class="song-composer-section-pills song-filter-row" id="song-lib-filters" role="group" aria-labelledby="song-composer-browse-label"></div>
+              <button type="button" class="ghost mini" id="btn-toggle-song-catalog" aria-expanded="false" aria-controls="song-composer-catalog-wrap">Library</button>
+            </div>
+            <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap" hidden>
+              <div class="song-catalog-panel song-composer-catalog-panel">
+                <div class="song-catalog-scroll" id="song-catalog-root"></div>
               </div>
             </div>
-            <div class="song-composer-layout">
-              <div class="song-composer-lib">
-                <div class="song-composer-catalog">
-                  <div class="song-catalog-panel">
-                    <div class="song-catalog-toolbar">
-                      <input type="search" id="song-catalog-search" placeholder="Search library…" autocomplete="off" />
-                    </div>
-                    <div class="song-catalog-scroll" id="song-catalog-root"></div>
-                  </div>
+            <p class="status song-composer-status" id="lyrics-status" aria-live="polite"></p>
+          </section>
+
+          <div class="lyrics-workspace-row">
+            <section class="panel lyrics-details-panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Lyrics</h3>
                 </div>
-                <div class="song-filter-row" id="song-lib-filters"></div>
+                <button type="button" class="ghost mini" id="btn-lyrics-focus-meta" title="Focus title field">Edit Details</button>
               </div>
-              <div class="song-composer-main">
+              <div class="lyrics-details-meta-grid">
                 <div class="field">
-                  <label for="lyrics-input">Lyrics</label>
-                  <textarea id="lyrics-input" class="song-composer-textarea" spellcheck="false">Verse 1
+                  <label for="lyrics-save-title">Title</label>
+                  <input type="text" id="lyrics-save-title" value="Saved Hymn" />
+                </div>
+                <div class="field">
+                  <label for="lyrics-save-author">Author</label>
+                  <input type="text" id="lyrics-save-author" placeholder="Optional" maxlength="240" />
+                </div>
+                <div class="field">
+                  <label for="lyrics-save-language">Language</label>
+                  <select id="lyrics-save-language">
+                    <option value="English">English</option>
+                    <option value="Tagalog">Tagalog</option>
+                    <option value="Latin">Latin</option>
+                    <option value="Mix">Mix</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field lyrics-details-save-row">
+                <label for="lyrics-save-section">Save to Section</label>
+                <select id="lyrics-save-section">
+                  <option value="entrance">Entrance</option>
+                  <option value="offertory">Offertory</option>
+                  <option value="communion">Communion</option>
+                  <option value="recessional">Recessional</option>
+                  <option value="meditation">Meditation / Other</option>
+                </select>
+              </div>
+              <div class="lyrics-editor-scroll">
+                <textarea id="lyrics-input" class="lyrics-editor-main" spellcheck="true" aria-label="Song lyrics">Verse 1
 Amazing grace, how sweet the sound
 That saved a soul like me
 I once was lost, but now am found
@@ -6055,69 +6352,36 @@ His word my hope secures
 
 Response
 Lord, hear our prayer</textarea>
-                </div>
-                <div class="song-composer-upload">
-                  <label for="lyrics-file" class="sr-only">Upload file</label>
-                  <input type="file" id="lyrics-file" accept=".txt,text/plain" title="Upload .txt file" />
-                </div>
-                <div class="song-composer-meta">
-                  <div class="field">
-                    <label for="lyrics-save-title">Title</label>
-                    <input type="text" id="lyrics-save-title" value="Saved Hymn" />
-                  </div>
-                  <div class="field">
-                    <label for="lyrics-save-author">Author</label>
-                    <input type="text" id="lyrics-save-author" placeholder="Optional" maxlength="240" />
-                  </div>
-                  <div class="field">
-                    <label for="lyrics-save-language">Language</label>
-                    <select id="lyrics-save-language">
-                      <option value="English">English</option>
-                      <option value="Tagalog">Tagalog</option>
-                      <option value="Latin">Latin</option>
-                      <option value="Mix">Mix</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="song-composer-save-row">
-                  <div class="field">
-                    <label for="lyrics-save-section">Save to section</label>
-                    <select id="lyrics-save-section">
-                      <option value="entrance">Entrance</option>
-                      <option value="offertory">Offertory</option>
-                      <option value="communion">Communion</option>
-                      <option value="recessional">Recessional</option>
-                      <option value="meditation">Meditation</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="song-composer-actions actions">
-                  <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
-                  <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
-                  <button type="button" class="ghost" id="btn-clear-lyrics">Clear</button>
-                </div>
-                <p class="status" id="lyrics-status" aria-live="polite"></p>
-                <div class="pill-row" id="lyrics-detected"></div>
               </div>
-            </div>
-          </section>
+              <p class="lyrics-word-stats" id="lyrics-word-stats">0 words · 0 lines</p>
+            </section>
 
-          <section class="panel lyrics-structured-panel">
-            <div class="panel-head lyrics-structured-head">
-              <div>
-                <h3>Structured Editor</h3>
-                <p class="lyrics-structured-meta" id="lyrics-structured-meta">0 blocks · ~0 slides</p>
+            <section class="panel lyrics-structured-panel">
+              <div class="panel-head lyrics-structured-head">
+                <div>
+                  <h3>Structured Editor</h3>
+                  <p class="lyrics-structured-meta" id="lyrics-structured-meta">0 blocks · ~0 slides</p>
+                </div>
+                <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Trim spacing">Tidy</button>
               </div>
-              <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Trim spacing">Tidy</button>
-            </div>
-            <div class="lyrics-quick-add" id="lyrics-quick-add">
-              <button type="button" class="lyrics-add-btn" data-add-type="verse">+ Verse</button>
-              <button type="button" class="lyrics-add-btn" data-add-type="chorus">+ Chorus</button>
-              <button type="button" class="lyrics-add-btn" data-add-type="bridge">+ Bridge</button>
-              <button type="button" class="lyrics-add-btn" data-add-type="response">+ Response</button>
-            </div>
-            <div class="lyrics-block-list block-list" id="lyrics-block-list"></div>
-          </section>
+              <div class="lyrics-structured-body">
+                <div class="lyrics-quick-add" id="lyrics-quick-add">
+                  <button type="button" class="lyrics-add-btn" data-add-type="verse">+ Verse</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="chorus">+ Chorus</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="bridge">+ Bridge</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="response">+ Response</button>
+                </div>
+                <div class="lyrics-block-list-scroll">
+                  <div class="lyrics-block-list block-list" id="lyrics-block-list"></div>
+                </div>
+              </div>
+              <footer class="lyrics-structured-foot">
+                <div class="detected-row" id="lyrics-detected" aria-live="polite">
+                  <span class="muted">Detected sections:</span>
+                </div>
+              </footer>
+            </section>
+          </div>
         </div>
       </section>
 
@@ -7318,6 +7582,7 @@ Lord, hear our prayer</textarea>
       }
       if (r === "/library/songs") {
         loadSongCatalog();
+        updateComposerCatalogVisibility();
         const params = new URLSearchParams(window.location.search);
         const sec = (params.get("section") || "").trim().toLowerCase();
         const sid = (params.get("song") || params.get("id") || "").trim();
@@ -7346,7 +7611,7 @@ Lord, hear our prayer</textarea>
         setTimeout(() => {
           leaving.classList.remove("page--leaving");
           applyRouteState(r, replaceOnly);
-        }, 160);
+        }, 130);
         return;
       }
       applyRouteState(r, replaceOnly);
@@ -7383,11 +7648,18 @@ Lord, hear our prayer</textarea>
     function autoResizeLyricTextarea(ta) {
       if (!ta) return;
       ta.style.height = "auto";
-      ta.style.height = Math.min(420, Math.max(52, ta.scrollHeight)) + "px";
+      ta.style.height = Math.max(52, ta.scrollHeight) + "px";
     }
 
     function autoResizeAllLyricTextareas() {
       document.querySelectorAll(".lyric-block__ta").forEach(autoResizeLyricTextarea);
+    }
+
+    function autoResizeLyricsMainInput() {
+      const ta = $("lyrics-input");
+      if (!ta) return;
+      ta.style.height = "auto";
+      ta.style.height = Math.max(160, ta.scrollHeight) + "px";
     }
 
     function updateLyricsStructuredMeta() {
@@ -7396,6 +7668,16 @@ Lord, hear our prayer</textarea>
       const slides = estimateSlidesForBlocks(lyricBlocks);
       const n = lyricBlocks.length;
       el.textContent = n + " block" + (n === 1 ? "" : "s") + " · ~" + slides + " slide" + (slides === 1 ? "" : "s");
+    }
+
+    function updateLyricsWordStats() {
+      const el = $("lyrics-word-stats");
+      const input = $("lyrics-input");
+      if (!el || !input) return;
+      const text = input.value || "";
+      const words = (text.match(/\b[\w']+\b/g) || []).length;
+      const lines = text.trim() ? text.split(/\n/).length : 0;
+      el.textContent = words + " word" + (words === 1 ? "" : "s") + " · " + lines + " line" + (lines === 1 ? "" : "s");
     }
 
     function addLyricBlockOfType(type) {
@@ -7435,7 +7717,7 @@ Lord, hear our prayer</textarea>
       const quiet = options && options.quiet;
       const raw = $("lyrics-input").value.trim();
       if (!raw) {
-        if (!quiet) setLyricsStatus("Paste or upload lyrics first.", "error");
+        if (!quiet) setLyricsStatus("Add lyrics below or upload a file first.", "error");
         return false;
       }
       lyricBlocks = parseLyricsInputToBlocks(raw);
@@ -7451,8 +7733,10 @@ Lord, hear our prayer</textarea>
     }
 
     function setLyricsStatus(message, kind) {
-      $("lyrics-status").textContent = message || "";
-      $("lyrics-status").className = "status " + (kind || "");
+      const el = $("lyrics-status");
+      if (!el) return;
+      el.textContent = message || "";
+      el.className = "status song-composer-status" + (kind ? " " + kind : "");
     }
 
     function serializedLyrics() {
@@ -7470,21 +7754,23 @@ Lord, hear our prayer</textarea>
       lyricsSyncLock = true;
       $("lyrics-input").value = text;
       lyricsSyncLock = false;
+      autoResizeLyricsMainInput();
     }
 
     function lyricStats() {
-      const words = lyricBlocks.reduce((sum, block) => sum + (block.text.match(/\b[\w']+\b/g) || []).length, 0);
-      const lt = $("lyrics-total");
-      const lc = $("lyrics-chorus");
-      const lw = $("lyrics-words");
-      if (lt) lt.textContent = lyricBlocks.length;
-      if (lc) lc.textContent = lyricBlocks.filter((block) => block.type === "chorus").length;
-      if (lw) lw.textContent = words;
-      const counts = ["verse", "chorus", "bridge", "response"].map((type) => {
+      updateLyricsWordStats();
+      const detected = $("lyrics-detected");
+      if (!detected) return;
+      const pills = ["verse", "chorus", "bridge", "response"].map((type) => {
         const count = lyricBlocks.filter((block) => block.type === type).length;
-        return '<span class="pill"><span class="dot"></span>' + typeLabels[type] + ": " + count + "</span>";
+        return (
+          '<span class="detected-pill detected-pill--' + type + '">' +
+            '<span class="detected-dot" aria-hidden="true"></span>' +
+            typeLabels[type] + ": " + count +
+          "</span>"
+        );
       });
-      $("lyrics-detected").innerHTML = counts.join("");
+      detected.innerHTML = '<span class="muted">Detected sections:</span>' + pills.join("");
       updateLyricsStructuredMeta();
     }
 
@@ -7615,6 +7901,8 @@ Lord, hear our prayer</textarea>
     });
 
     $("lyrics-input").addEventListener("input", () => {
+      autoResizeLyricsMainInput();
+      updateLyricsWordStats();
       if (lyricsSyncLock) return;
       clearTimeout(lyricsInputDebounce);
       lyricsInputDebounce = setTimeout(() => {
@@ -7627,12 +7915,55 @@ Lord, hear our prayer</textarea>
       }, 400);
     });
 
-    $("lyrics-file").addEventListener("change", async (event) => {
-      const file = event.target.files && event.target.files[0];
+    async function loadLyricsFromFile(file) {
       if (!file) return;
-      $("lyrics-input").value = await file.text();
+      const text = await file.text();
+      $("lyrics-input").value = text;
+      autoResizeLyricsMainInput();
+      updateLyricsWordStats();
       syncInputPanelToStructuredEditor({ quiet: true });
       setLyricsStatus("Loaded " + file.name + ". Ready to analyze.", "ok");
+    }
+
+    $("lyrics-file").addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      await loadLyricsFromFile(file);
+      event.target.value = "";
+    });
+
+    (function bindLyricsDropZone() {
+      const zone = $("lyrics-drop-zone");
+      if (!zone) return;
+      const prevent = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+      ["dragenter", "dragover"].forEach((name) => {
+        zone.addEventListener(name, (event) => {
+          prevent(event);
+          zone.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach((name) => {
+        zone.addEventListener(name, (event) => {
+          prevent(event);
+          if (name === "dragleave" && event.relatedTarget && zone.contains(event.relatedTarget)) return;
+          zone.classList.remove("is-dragover");
+        });
+      });
+      zone.addEventListener("drop", async (event) => {
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (!file) return;
+        await loadLyricsFromFile(file);
+      });
+    })();
+
+    $("btn-lyrics-focus-meta") && $("btn-lyrics-focus-meta").addEventListener("click", () => {
+      const title = $("lyrics-save-title");
+      if (title) {
+        title.focus();
+        title.select();
+      }
     });
     $("btn-analyze-lyrics").addEventListener("click", analyzeLyrics);
     $("lyrics-quick-add") && $("lyrics-quick-add").addEventListener("click", (event) => {
@@ -7644,6 +7975,7 @@ Lord, hear our prayer</textarea>
     $("btn-clear-lyrics").addEventListener("click", () => {
       lyricBlocks = [];
       $("lyrics-input").value = "";
+      autoResizeLyricsMainInput();
       renderLyrics();
       setLyricsStatus("Editor cleared.", "");
     });
@@ -9348,7 +9680,7 @@ Lord, hear our prayer</textarea>
       if (!el || !el.isConnected) return;
       clearTimeout(el._toastTimer);
       el.classList.remove("toast--visible");
-      setTimeout(() => el.remove(), 280);
+      setTimeout(() => el.remove(), 220);
     }
 
     function showToast(message, kind) {
@@ -10955,22 +11287,36 @@ Lord, hear our prayer</textarea>
       const wrap = $("song-lib-filters");
       const sel = $("lyrics-save-section");
       if (!wrap || !sel) return;
+      const defaultActive = {
+        entrance: "Entrance",
+        offertory: "Offertory",
+        communion: "Communion",
+        recessional: "Recessional",
+        meditation: "Meditation / Other",
+      };
+      const activeLabel = defaultActive[sel.value] || "Entrance";
       const map = [
         { label: "Entrance", v: "entrance" },
         { label: "Offertory", v: "offertory" },
         { label: "Communion", v: "communion" },
         { label: "Recessional", v: "recessional" },
-        { label: "Meditation / other", v: "meditation" },
-        { label: "Kyrie · Gloria · Psalm (save as meditation)", v: "meditation" },
+        { label: "Meditation / Other", v: "meditation" },
       ];
-      wrap.innerHTML = map.map((row) => "<button type=\"button\" data-sec=\"" + row.v + "\" class=\"" + (sel.value === row.v ? "active" : "") + "\">" + escapeHtml(row.label) + "</button>").join("");
-      wrap.addEventListener("click", (e) => {
-        const b = e.target.closest("button[data-sec]");
-        if (!b) return;
-        sel.value = b.dataset.sec;
-        wrap.querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
-        setLyricsStatus("Save target section set to " + sel.options[sel.selectedIndex].text + ".", "ok");
-      });
+      wrap.innerHTML = map.map((row) => (
+        "<button type=\"button\" data-sec=\"" + row.v + "\" class=\"" +
+        (row.label === activeLabel ? "active" : "") +
+        "\">" + escapeHtml(row.label) + "</button>"
+      )).join("");
+      if (!wrap.dataset.bound) {
+        wrap.dataset.bound = "1";
+        wrap.addEventListener("click", (e) => {
+          const b = e.target.closest("button[data-sec]");
+          if (!b) return;
+          sel.value = b.dataset.sec;
+          wrap.querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+          setLyricsStatus("Save target section set to " + b.textContent.trim() + ".", "ok");
+        });
+      }
     }
 
     const RECENT_SONGS_KEY = "churchMediaRecentSongAdds";
@@ -11134,6 +11480,7 @@ Lord, hear our prayer</textarea>
       if ($("lyrics-save-section")) $("lyrics-save-section").value = section;
       if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
       analyzeLyrics();
+      autoResizeLyricsMainInput();
       setLyricsStatus("Loaded \"" + (s.title || "") + "\" from " + section + ".", "ok");
     }
 
@@ -11185,11 +11532,35 @@ Lord, hear our prayer</textarea>
     }
 
     let songCatalogSearchDebounce = null;
+    function updateComposerCatalogVisibility() {
+      const wrap = $("song-composer-catalog-wrap");
+      const toggle = $("btn-toggle-song-catalog");
+      if (!wrap) return;
+      const q = (songCatalogFilter || "").trim();
+      const libraryOpen = wrap.dataset.libraryOpen === "1";
+      const show = libraryOpen || q.length > 0;
+      wrap.hidden = !show;
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", show ? "true" : "false");
+        toggle.classList.toggle("active", libraryOpen && !q.length);
+      }
+    }
+
     function applySongCatalogSearch(sourceEl) {
       songCatalogFilter = (sourceEl && sourceEl.value) || "";
       syncSongCatalogSearchInputs(sourceEl);
       renderSongCatalog();
+      updateComposerCatalogVisibility();
     }
+
+    $("btn-toggle-song-catalog") && $("btn-toggle-song-catalog").addEventListener("click", () => {
+      const wrap = $("song-composer-catalog-wrap");
+      if (!wrap) return;
+      const open = wrap.dataset.libraryOpen === "1";
+      wrap.dataset.libraryOpen = open ? "" : "1";
+      updateComposerCatalogVisibility();
+      if (!open) renderSongCatalog();
+    });
 
     ["song-catalog-search", "collections-catalog-search"].forEach((id) => {
       const el = $(id);
@@ -11594,6 +11965,7 @@ Lord, hear our prayer</textarea>
     loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
     bindCelebrantSelect();
     buildSongLibFilters();
+    updateComposerCatalogVisibility();
     loadSongCatalog();
     renderCollectionsRecent();
     refreshSavedPosters();
@@ -11601,6 +11973,8 @@ Lord, hear our prayer</textarea>
     bindOpenAiPosterControls();
     showRoute(currentRoute(), true);
     analyzeLyrics();
+    updateLyricsWordStats();
+    autoResizeLyricsMainInput();
     renderThemeGrid();
     restoreMassSongPlanLang();
     renderMassSongPlan();
