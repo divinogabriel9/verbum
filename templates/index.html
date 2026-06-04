@@ -277,7 +277,9 @@
       border-color: var(--line);
     }
     html[data-theme="dark"] .primary {
-      color: var(--on-accent);
+      color: var(--on-primary, #fff);
+      background: var(--color-primary, #f54e00);
+      border-color: var(--color-primary, #f54e00);
     }
     html[data-theme="dark"] .topbar,
     html[data-theme="dark"] .hero,
@@ -3214,13 +3216,17 @@
       font-weight: 600;
     }
     .primary {
-      padding: 11px 18px;
-      color: var(--on-accent, #fff);
-      background: var(--liturgical-accent);
-      box-shadow: 0 2px 8px color-mix(in srgb, var(--liturgical-accent) 35%, transparent);
+      padding: 10px 18px;
+      color: var(--on-primary, #fff);
+      background: var(--color-primary, #f54e00);
+      border: 1px solid var(--color-primary, #f54e00);
+      box-shadow: none;
+      font-weight: 500;
     }
     .primary:hover {
-      box-shadow: 0 4px 14px color-mix(in srgb, var(--liturgical-accent) 40%, transparent);
+      background: var(--color-primary-active, #d04200);
+      border-color: var(--color-primary-active, #d04200);
+      box-shadow: none;
     }
     .secondary {
       padding: 12px 18px;
@@ -3432,50 +3438,18 @@
       gap: 12px;
       align-items: start;
     }
-    .song-composer-panel {
-      padding: 10px 12px;
-      border-radius: 12px;
-      box-shadow: none;
-      border: 1px solid var(--line-soft);
-      background: color-mix(in srgb, var(--surface-solid) 88%, var(--bg));
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
     .song-composer-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      min-width: 0;
     }
     .song-composer-head__copy h3 {
-      font-size: 0.94rem;
-      font-weight: 700;
       margin: 0;
-      letter-spacing: -0.02em;
     }
-    .song-composer-head__actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    .song-composer-head__actions .primary,
-    .song-composer-head__actions .secondary,
-    .song-composer-head__actions .ghost {
-      min-height: 32px;
-      padding: 5px 12px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      border-radius: 8px;
-    }
-    .song-composer-head__actions .primary {
-      background: #157347;
-      border-color: #157347;
-    }
-    .song-composer-head__actions .ghost {
+    .lyrics-structured-actions .ghost#btn-clear-lyrics {
       display: inline-flex;
       align-items: center;
       gap: 5px;
@@ -3484,31 +3458,14 @@
       display: inline-flex;
       opacity: 0.7;
     }
-    .song-composer-toolbar-row {
-      display: flex;
-      align-items: stretch;
-      gap: 8px;
-      min-width: 0;
-      position: relative;
-    }
-    .song-composer-toolbar-row .song-composer-search-wrap {
-      flex: 1;
-      min-width: 0;
-    }
     .song-composer-search-wrap {
       position: relative;
+      min-width: 0;
     }
     .song-composer-search-wrap input {
       width: 100%;
-      padding: 8px 10px 8px 2.5rem;
-      border: 1px solid var(--line-soft);
-      border-radius: 8px;
-      font-size: 0.84rem;
-      background: var(--surface-solid);
       -webkit-appearance: none;
       appearance: none;
-      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
-        box-shadow var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .song-composer-search-wrap input::-webkit-search-decoration,
     .song-composer-search-wrap input::-webkit-search-cancel-button,
@@ -3520,8 +3477,37 @@
     }
     .song-composer-search-wrap input:focus {
       outline: none;
-      border-color: rgba(21, 115, 71, 0.45);
-      box-shadow: 0 0 0 3px rgba(21, 115, 71, 0.1);
+    }
+    .song-composer-search-wrap input:not(:placeholder-shown),
+    .song-composer-search-wrap input:focus {
+      padding-right: 2.25rem;
+    }
+    .song-composer-search-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.125rem;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .song-composer-search-clear:hover {
+      color: var(--ink);
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-2));
+    }
+    .song-composer-search-clear[hidden] {
+      display: none !important;
     }
     .song-composer-search-wrap::before {
       content: "";
@@ -3540,34 +3526,8 @@
     }
     .song-composer-upload-btn {
       flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      min-height: 36px;
-      padding: 0 12px;
-      border: 1px dashed #c5d0de;
-      border-radius: 8px;
-      background: var(--surface-solid);
-      color: var(--ink);
-      font-size: 0.78rem;
-      font-weight: 650;
       cursor: pointer;
       white-space: nowrap;
-      transition:
-        border-color var(--motion-duration-fast) var(--motion-ease-hover),
-        background var(--motion-duration-fast) var(--motion-ease-hover),
-        color var(--motion-duration-fast) var(--motion-ease-hover);
-    }
-    .song-composer-upload-btn:hover,
-    .song-composer-upload-btn.is-dragover {
-      border-color: #157347;
-      background: rgba(21, 115, 71, 0.06);
-      color: #157347;
-    }
-    .song-composer-upload-btn svg {
-      flex-shrink: 0;
-      opacity: 0.8;
     }
     .lyrics-file-input {
       position: absolute;
@@ -3576,54 +3536,9 @@
       opacity: 0;
       pointer-events: none;
     }
-    .song-composer-browse {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 8px;
-      min-width: 0;
-    }
-    .song-composer-browse__label {
-      font-size: 0.72rem;
-      font-weight: 650;
-      color: var(--muted);
+    #btn-toggle-song-catalog {
       flex-shrink: 0;
-    }
-    .song-composer-section-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      flex: 1;
-      min-width: 0;
-    }
-    .song-composer-section-pills button {
-      min-height: 28px;
-      padding: 4px 10px;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--line-soft);
-      background: var(--surface-solid);
-      color: var(--ink);
-      font-size: 0.72rem;
-      font-weight: 650;
-      cursor: pointer;
-      transition:
-        background var(--motion-duration-fast) var(--motion-ease-hover),
-        border-color var(--motion-duration-fast) var(--motion-ease-hover),
-        color var(--motion-duration-fast) var(--motion-ease-hover);
-    }
-    .song-composer-section-pills button:hover {
-      border-color: rgba(21, 115, 71, 0.35);
-      background: rgba(21, 115, 71, 0.06);
-    }
-    .song-composer-section-pills button.active {
-      background: #157347;
-      border-color: #157347;
-      color: #fff;
-    }
-    #btn-toggle-song-catalog.active {
-      border-color: rgba(21, 115, 71, 0.4);
-      background: rgba(21, 115, 71, 0.08);
-      color: #157347;
+      white-space: nowrap;
     }
     .song-composer-catalog-wrap[hidden] {
       display: none !important;
@@ -3631,12 +3546,131 @@
     .song-composer-catalog-wrap:not([hidden]) {
       margin-top: 2px;
     }
+    @media (min-width: 721px) {
+      .lyrics-workspace-mockup .song-composer-layout {
+        display: grid !important;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
+        gap: 12px;
+        align-items: stretch;
+        min-width: 0;
+        width: 100%;
+      }
+      .lyrics-workspace-mockup .song-composer-main {
+        grid-column: 1 !important;
+      }
+      .lyrics-workspace-mockup .song-composer-recent {
+        grid-column: 2 !important;
+        max-width: 100%;
+      }
+    }
+    .song-composer-main {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .song-composer-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .song-composer-library-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 8px 14px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .song-composer-library-btn svg {
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+    .song-composer-library-btn.active {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-solid));
+      color: var(--liturgical-accent);
+    }
+    .song-composer-recent {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      max-width: 100%;
+      min-height: 0;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+    }
+    .song-composer-recent__title {
+      margin: 0 0 8px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .song-composer-recent-list {
+      flex: 1;
+      min-height: 72px;
+      max-height: min(220px, 32vh);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .song-composer-recent-list:empty::before,
+    .song-composer-recent-empty {
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    .song-composer-recent-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      background: var(--surface-solid);
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .song-composer-recent-item:hover,
+    .song-composer-recent-item:focus-visible {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 30%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
+      outline: none;
+    }
+    .song-composer-recent-item__title {
+      font-size: 0.8125rem;
+      font-weight: 650;
+      color: var(--ink);
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    .song-composer-recent-item__meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+    .song-composer-recent-item__badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--liturgical-accent);
+    }
     .song-composer-catalog-panel {
       max-height: min(132px, 22vh);
       min-height: 0;
-      border: 1px solid var(--line-soft);
-      border-radius: 8px;
-      background: var(--surface-solid);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -3654,12 +3688,26 @@
     }
     .song-composer-status {
       margin: 0;
-      font-size: 0.76rem;
       line-height: 1.35;
-      color: var(--muted);
     }
     .song-composer-status:empty {
       display: none;
+    }
+    .lyrics-analyze-hint {
+      flex-shrink: 0;
+      margin-top: 6px;
+      font-size: 0.8125rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    .lyrics-analyze-hint:empty {
+      display: none;
+    }
+    .lyrics-analyze-hint.ok {
+      color: var(--good, var(--design-success, #1f8a65));
+    }
+    .lyrics-analyze-hint.error {
+      color: var(--danger, var(--design-error, #cf2d56));
     }
     .lyrics-structured-foot {
       flex-shrink: 0;
@@ -3783,6 +3831,70 @@
     }
     .lyrics-structured-panel .lyrics-structured-head {
       flex: 0 0 auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .lyrics-structured-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .lyrics-structured-actions .primary,
+    .lyrics-structured-actions .secondary,
+    .lyrics-structured-actions .ghost {
+      min-height: 32px;
+      padding: 6px 12px;
+      font-size: 0.8125rem;
+    }
+    .lyrics-structured-actions .ghost.mini {
+      min-height: 32px;
+    }
+    /* Song Library — liturgical season accents (not brand orange) */
+    .lyrics-workspace-mockup .primary {
+      background: var(--liturgical-accent);
+      border-color: var(--liturgical-accent);
+      color: var(--on-accent, #fff);
+    }
+    .lyrics-workspace-mockup .primary:hover {
+      background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+    }
+    .lyrics-workspace-mockup .song-composer-library-btn.active {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface-solid));
+      color: var(--liturgical-accent);
+    }
+    .lyrics-workspace-mockup .song-composer-search-wrap input:focus {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent) 14%, transparent);
+    }
+    .lyrics-workspace-mockup .song-composer-upload-btn:hover,
+    .lyrics-workspace-mockup .song-composer-upload-btn.is-dragover {
+      border-color: var(--liturgical-accent);
+      color: var(--liturgical-accent);
+      background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
+    }
+    .song-delete-confirm-btn {
+      background: var(--danger) !important;
+      border-color: var(--danger) !important;
+    }
+    .song-delete-confirm-btn:hover {
+      background: color-mix(in srgb, var(--danger) 88%, black) !important;
+      border-color: color-mix(in srgb, var(--danger) 88%, black) !important;
+    }
+    #song-metadata-modal .primary {
+      background: var(--liturgical-accent);
+      border-color: var(--liturgical-accent);
+      color: var(--on-accent, #fff);
+    }
+    #song-metadata-modal .primary:hover {
+      background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
     }
     .lyrics-structured-body {
       display: flex;
@@ -5424,13 +5536,15 @@
       .block-top.block-top-lyrics .block-field-type,
       .block-top.block-top-lyrics .block-field-name { flex: 1 1 100%; min-width: 0; }
       .timeline-body { grid-template-columns: 1fr; }
-      .song-composer-head { align-items: stretch; }
-      .song-composer-head__actions { width: 100%; }
-      .song-composer-head__actions .primary,
-      .song-composer-head__actions .secondary,
-      .song-composer-head__actions .ghost { flex: 1 1 auto; }
-      .song-composer-toolbar-row { flex-wrap: wrap; }
-      .song-composer-upload-btn { width: 100%; }
+      .lyrics-structured-head { flex-direction: column; align-items: stretch; }
+      .lyrics-structured-actions { width: 100%; }
+      .lyrics-structured-actions .primary,
+      .lyrics-structured-actions .secondary,
+      .lyrics-structured-actions .ghost { flex: 1 1 auto; }
+      .lyrics-workspace-mockup .song-composer-layout { grid-template-columns: 1fr !important; }
+      .lyrics-workspace-mockup .song-composer-main,
+      .lyrics-workspace-mockup .song-composer-recent { grid-column: 1 !important; }
+      .song-composer-recent-list { max-height: min(160px, 24vh); }
       .song-composer-catalog-panel { max-height: min(160px, 28vh); }
       .lyrics-workspace-row { grid-template-columns: 1fr; }
       .lyrics-editor-main { min-height: 8rem; }
@@ -5498,6 +5612,22 @@
       align-items: start;
     }
     .song-row:hover { background: #fafbfd; }
+    .song-row-clickable {
+      cursor: pointer;
+      min-width: 0;
+      border-radius: 6px;
+      padding: 2px 4px;
+      margin: -2px -4px;
+      transition: background 0.12s ease;
+    }
+    .song-row-clickable:hover,
+    .song-row-clickable:focus-visible {
+      background: color-mix(in srgb, var(--liturgical-accent) 8%, transparent);
+      outline: none;
+    }
+    .song-row-clickable:focus-visible {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--liturgical-accent) 35%, transparent);
+    }
     .song-row-title { font-weight: 650; color: var(--ink); }
     .song-row-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
     .song-row-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
@@ -6053,9 +6183,9 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css" />
-  <link rel="stylesheet" href="/static/css/emil-motion.css" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260603" />
+  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260603" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260603" />
 <body data-season="ordinary">
   <div class="app-shell">
     <main class="dashboard">
@@ -6251,6 +6381,60 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="song-metadata-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="song-metadata-backdrop"></div>
+        <article class="ui-card" role="dialog" aria-labelledby="song-metadata-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="song-metadata-title">Edit song details</h3>
+              <p class="ui-card__description" id="song-metadata-subtitle">Update title, author, and language.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="song-metadata-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content">
+            <div class="field">
+              <label for="song-metadata-edit-title">Title</label>
+              <input type="text" id="song-metadata-edit-title" maxlength="240" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="song-metadata-edit-author">Author</label>
+              <input type="text" id="song-metadata-edit-author" placeholder="Optional" maxlength="240" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="song-metadata-edit-language">Language</label>
+              <select id="song-metadata-edit-language">
+                <option value="English">English</option>
+                <option value="Tagalog">Tagalog</option>
+                <option value="Latin">Latin</option>
+                <option value="Mix">Mix</option>
+              </select>
+            </div>
+            <p class="muted" style="margin:0;font-size:0.8125rem;" id="song-metadata-section-label">Section: —</p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="song-metadata-cancel">Cancel</button>
+            <button type="button" class="primary" id="song-metadata-save">Save changes</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="song-delete-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="song-delete-backdrop"></div>
+        <article class="ui-card" role="alertdialog" aria-labelledby="song-delete-title" aria-describedby="song-delete-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="song-delete-title">Delete song?</h3>
+              <p class="ui-card__description" id="song-delete-desc">This cannot be undone.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="song-delete-close" aria-label="Close">×</button>
+          </header>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="song-delete-cancel">Cancel</button>
+            <button type="button" class="primary song-delete-confirm-btn" id="song-delete-confirm">Delete</button>
+          </footer>
+        </article>
+      </div>
+
       <section class="page" id="lyrics-page" data-route="/library/songs">
         <div class="lyrics-workspace-mockup" id="lyrics-workspace">
           <section class="panel song-composer-panel" aria-label="Song composer toolbar">
@@ -6258,38 +6442,38 @@
               <div class="song-composer-head__copy">
                 <h3>Song Composer</h3>
               </div>
-              <div class="song-composer-head__actions actions" role="group" aria-label="Composer actions">
-                <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
-                <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
-                <button type="button" class="ghost" id="btn-clear-lyrics">
-                  <span class="song-composer-clear-icon" aria-hidden="true">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-                  </span>
-                  Clear
-                </button>
-              </div>
             </header>
-            <div class="song-composer-toolbar-row">
-              <div class="song-composer-search-wrap">
-                <input type="search" id="song-catalog-search" placeholder="Search library…" autocomplete="off" aria-label="Search library" />
+            <div class="song-composer-layout">
+              <div class="song-composer-main">
+                <div class="song-composer-toolbar-row">
+                  <div class="song-composer-search-wrap">
+                    <input type="search" id="song-catalog-search" placeholder="Search songs by title or author…" autocomplete="off" aria-label="Search songs in library" />
+                    <button type="button" class="song-composer-search-clear" id="song-catalog-search-clear" aria-label="Clear search" hidden>×</button>
+                  </div>
+                  <label class="song-composer-upload-btn" id="lyrics-drop-zone" for="lyrics-file" title="Upload .txt lyrics file">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+                    <span>Upload .txt</span>
+                  </label>
+                  <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,text/plain" tabindex="-1" />
+                </div>
+                <div class="song-composer-actions-row">
+                  <button type="button" class="secondary song-composer-library-btn" id="btn-toggle-song-catalog" aria-expanded="false" aria-controls="song-composer-catalog-wrap">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                    <span>Songs library</span>
+                  </button>
+                </div>
+                <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap" hidden>
+                  <div class="song-catalog-panel song-composer-catalog-panel">
+                    <div class="song-catalog-scroll" id="song-catalog-root"></div>
+                  </div>
+                </div>
+                <p class="status song-composer-status" id="lyrics-status" aria-live="polite"></p>
               </div>
-              <label class="song-composer-upload-btn" id="lyrics-drop-zone" for="lyrics-file" title="Upload .txt lyrics file">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-                <span>Upload .txt</span>
-              </label>
-              <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,text/plain" tabindex="-1" />
+              <aside class="song-composer-recent" aria-label="Recent songs">
+                <h4 class="song-composer-recent__title">Recent</h4>
+                <div class="song-composer-recent-list" id="song-composer-recent-list" role="list"></div>
+              </aside>
             </div>
-            <div class="song-composer-browse">
-              <span class="song-composer-browse__label" id="song-composer-browse-label">Browse:</span>
-              <div class="song-composer-section-pills song-filter-row" id="song-lib-filters" role="group" aria-labelledby="song-composer-browse-label"></div>
-              <button type="button" class="ghost mini" id="btn-toggle-song-catalog" aria-expanded="false" aria-controls="song-composer-catalog-wrap">Library</button>
-            </div>
-            <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap" hidden>
-              <div class="song-catalog-panel song-composer-catalog-panel">
-                <div class="song-catalog-scroll" id="song-catalog-root"></div>
-              </div>
-            </div>
-            <p class="status song-composer-status" id="lyrics-status" aria-live="polite"></p>
           </section>
 
           <div class="lyrics-workspace-row">
@@ -6354,6 +6538,7 @@ Response
 Lord, hear our prayer</textarea>
               </div>
               <p class="lyrics-word-stats" id="lyrics-word-stats">0 words · 0 lines</p>
+              <p class="lyrics-analyze-hint" id="lyrics-analyze-hint" aria-live="polite"></p>
             </section>
 
             <section class="panel lyrics-structured-panel">
@@ -6362,7 +6547,17 @@ Lord, hear our prayer</textarea>
                   <h3>Structured Editor</h3>
                   <p class="lyrics-structured-meta" id="lyrics-structured-meta">0 blocks · ~0 slides</p>
                 </div>
-                <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Trim spacing">Tidy</button>
+                <div class="lyrics-structured-actions actions" role="group" aria-label="Lyrics editor actions">
+                  <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
+                  <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
+                  <button type="button" class="ghost" id="btn-clear-lyrics">
+                    <span class="song-composer-clear-icon" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                    </span>
+                    Clear
+                  </button>
+                  <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Trim spacing">Tidy</button>
+                </div>
               </div>
               <div class="lyrics-structured-body">
                 <div class="lyrics-quick-add" id="lyrics-quick-add">
@@ -7582,12 +7777,13 @@ Lord, hear our prayer</textarea>
       }
       if (r === "/library/songs") {
         loadSongCatalog();
+        renderComposerRecent();
         updateComposerCatalogVisibility();
         const params = new URLSearchParams(window.location.search);
         const sec = (params.get("section") || "").trim().toLowerCase();
         const sid = (params.get("song") || params.get("id") || "").trim();
         if (sec && sid && ["entrance", "offertory", "communion", "recessional", "meditation"].includes(sec)) {
-          loadSongIntoEditor(sec, sid).catch(() => {});
+          loadSongIntoEditor(sec, sid, { clearSearch: false }).catch(() => {});
           history.replaceState({}, "", r);
         }
       }
@@ -7717,13 +7913,19 @@ Lord, hear our prayer</textarea>
       const quiet = options && options.quiet;
       const raw = $("lyrics-input").value.trim();
       if (!raw) {
-        if (!quiet) setLyricsStatus("Add lyrics below or upload a file first.", "error");
+        if (!quiet) {
+          setLyricsAnalyzeHint("Add lyrics in the editor below, or upload a .txt file.", "error");
+        }
         return false;
       }
       lyricBlocks = parseLyricsInputToBlocks(raw);
       renderLyrics();
       if (!quiet) {
-        setLyricsStatus("Detected " + lyricBlocks.length + " editable sections. Drag, split, merge, or reassign as needed.", "ok");
+        const n = lyricBlocks.length;
+        setLyricsAnalyzeHint(
+          n + " section" + (n === 1 ? "" : "s") + " detected — refine blocks in the Structured Editor.",
+          "ok"
+        );
       }
       return true;
     }
@@ -7737,6 +7939,13 @@ Lord, hear our prayer</textarea>
       if (!el) return;
       el.textContent = message || "";
       el.className = "status song-composer-status" + (kind ? " " + kind : "");
+    }
+
+    function setLyricsAnalyzeHint(message, kind) {
+      const el = $("lyrics-analyze-hint");
+      if (!el) return;
+      el.textContent = message || "";
+      el.className = "lyrics-analyze-hint" + (kind ? " " + kind : "");
     }
 
     function serializedLyrics() {
@@ -7922,6 +8131,14 @@ Lord, hear our prayer</textarea>
       autoResizeLyricsMainInput();
       updateLyricsWordStats();
       syncInputPanelToStructuredEditor({ quiet: true });
+      const baseTitle = (file.name || "").replace(/\.txt$/i, "").trim();
+      if (baseTitle && $("lyrics-save-title")) $("lyrics-save-title").value = baseTitle;
+      pushSongHistory({
+        title: baseTitle || file.name || "Uploaded lyrics",
+        section: ($("lyrics-save-section") && $("lyrics-save-section").value) || "",
+        id: "",
+        kind: "loaded",
+      });
       setLyricsStatus("Loaded " + file.name + ". Ready to analyze.", "ok");
     }
 
@@ -7978,6 +8195,7 @@ Lord, hear our prayer</textarea>
       autoResizeLyricsMainInput();
       renderLyrics();
       setLyricsStatus("Editor cleared.", "");
+      setLyricsAnalyzeHint("", "");
     });
     $("btn-normalize-lyrics").addEventListener("click", () => {
       lyricBlocks = lyricBlocks.map((block, index) => ({
@@ -11283,43 +11501,13 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    function buildSongLibFilters() {
-      const wrap = $("song-lib-filters");
-      const sel = $("lyrics-save-section");
-      if (!wrap || !sel) return;
-      const defaultActive = {
-        entrance: "Entrance",
-        offertory: "Offertory",
-        communion: "Communion",
-        recessional: "Recessional",
-        meditation: "Meditation / Other",
-      };
-      const activeLabel = defaultActive[sel.value] || "Entrance";
-      const map = [
-        { label: "Entrance", v: "entrance" },
-        { label: "Offertory", v: "offertory" },
-        { label: "Communion", v: "communion" },
-        { label: "Recessional", v: "recessional" },
-        { label: "Meditation / Other", v: "meditation" },
-      ];
-      wrap.innerHTML = map.map((row) => (
-        "<button type=\"button\" data-sec=\"" + row.v + "\" class=\"" +
-        (row.label === activeLabel ? "active" : "") +
-        "\">" + escapeHtml(row.label) + "</button>"
-      )).join("");
-      if (!wrap.dataset.bound) {
-        wrap.dataset.bound = "1";
-        wrap.addEventListener("click", (e) => {
-          const b = e.target.closest("button[data-sec]");
-          if (!b) return;
-          sel.value = b.dataset.sec;
-          wrap.querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
-          setLyricsStatus("Save target section set to " + b.textContent.trim() + ".", "ok");
-        });
-      }
-    }
-
     const RECENT_SONGS_KEY = "churchMediaRecentSongAdds";
+    const SONG_HISTORY_KIND_LABELS = {
+      loaded: "Opened",
+      saved: "Saved",
+      edited: "Updated",
+      new: "New",
+    };
     const SECTION_ORDER = [
       { key: "entrance", label: "Entrance" },
       { key: "offertory", label: "Offertory" },
@@ -11338,62 +11526,132 @@ Lord, hear our prayer</textarea>
       return sec + "\0" + String(r.title || "").trim().toLowerCase();
     }
 
-    function pushRecentSong(entry) {
-      if (!entry || (!entry.isNew && !entry.isEdited)) return;
-      let raw = [];
+    function readSongHistoryRaw() {
       try {
-        raw = JSON.parse(localStorage.getItem(RECENT_SONGS_KEY) || "[]");
+        return JSON.parse(localStorage.getItem(RECENT_SONGS_KEY) || "[]");
       } catch (_e) {
-        raw = [];
+        return [];
       }
-      const key = recentSongDedupeKey(entry);
-      raw = raw.filter((r) => recentSongDedupeKey(r) !== key);
-      raw.unshift({
-        t: Date.now(),
-        title: entry.title || "",
-        section: entry.section || "",
-        id: entry.id || "",
-        isNew: !!entry.isNew,
-        isEdited: !!entry.isEdited,
-      });
-      localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 24)));
-      renderCollectionsRecent();
     }
 
-    function renderCollectionsRecent() {
-      const el = $("collections-recent-songs");
-      if (!el) return;
-      let raw = [];
-      try {
-        raw = JSON.parse(localStorage.getItem(RECENT_SONGS_KEY) || "[]");
-      } catch (_e) {
-        raw = [];
+    function normalizeSongHistoryRow(r) {
+      if (!r) return null;
+      let kind = r.kind || "";
+      if (!kind) {
+        if (r.isNew) kind = "new";
+        else if (r.isEdited) kind = "edited";
+        else if (r.isLoaded) kind = "loaded";
+        else return null;
       }
+      return {
+        t: r.t || Date.now(),
+        title: r.title || "",
+        section: r.section || "",
+        id: r.id || "",
+        kind,
+      };
+    }
+
+    function getSongHistoryRows(limit) {
       const seen = new Set();
       const rows = [];
-      raw.forEach((r) => {
-        if (!r || (!r.isNew && !r.isEdited)) return;
+      readSongHistoryRaw().forEach((raw) => {
+        const r = normalizeSongHistoryRow(raw);
+        if (!r || !r.title) return;
         const key = recentSongDedupeKey(r);
         if (seen.has(key)) return;
         seen.add(key);
         rows.push(r);
       });
+      return rows.slice(0, limit || 16);
+    }
+
+    function pushSongHistory(entry) {
+      if (!entry || !entry.title) return;
+      let raw = readSongHistoryRaw();
+      const key = recentSongDedupeKey(entry);
+      raw = raw.filter((r) => {
+        const n = normalizeSongHistoryRow(r);
+        return recentSongDedupeKey(n || r) !== key;
+      });
+      raw.unshift({
+        t: Date.now(),
+        title: entry.title || "",
+        section: entry.section || "",
+        id: entry.id || "",
+        kind: entry.kind || "loaded",
+      });
+      localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 32)));
+      renderCollectionsRecent();
+      renderComposerRecent();
+    }
+
+    function pushRecentSong(entry) {
+      if (!entry) return;
+      pushSongHistory({
+        title: entry.title,
+        section: entry.section,
+        id: entry.id,
+        kind: entry.isNew ? "new" : entry.isEdited ? "edited" : "saved",
+      });
+    }
+
+    function renderComposerRecent() {
+      const el = $("song-composer-recent-list");
+      if (!el) return;
+      const rows = getSongHistoryRows(14);
       if (!rows.length) {
-        el.textContent = "Nothing tracked yet — saving a new song or editing lyrics in Song Library adds entries here.";
+        el.innerHTML = "<p class=\"song-composer-recent-empty\">Open or save a song to see it here.</p>";
         return;
       }
-      el.innerHTML = rows.slice(0, 12).map((r) => {
+      el.innerHTML = rows.map((r) => {
+        const hasId = r.id && r.section;
+        const badge = SONG_HISTORY_KIND_LABELS[r.kind] || "Recent";
+        const meta = songSectionLabel(r.section) + (r.t ? " · " + formatSongHistoryWhen(r.t) : "");
+        const attrs = hasId
+          ? " type=\"button\" data-recent-sec=\"" + escapeHtml(r.section) + "\" data-recent-id=\"" + escapeHtml(r.id) + "\""
+          : " type=\"button\" disabled";
+        return (
+          "<button class=\"song-composer-recent-item\" role=\"listitem\"" + attrs + ">" +
+            "<span class=\"song-composer-recent-item__badge\">" + escapeHtml(badge) + "</span>" +
+            "<span class=\"song-composer-recent-item__title\">" + escapeHtml(r.title) + "</span>" +
+            "<span class=\"song-composer-recent-item__meta\">" + escapeHtml(meta) + "</span>" +
+          "</button>"
+        );
+      }).join("");
+    }
+
+    function formatSongHistoryWhen(ts) {
+      const d = new Date(ts);
+      if (Number.isNaN(d.getTime())) return "";
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      if (sameDay) {
+        return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      }
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+
+    function renderCollectionsRecent() {
+      const el = $("collections-recent-songs");
+      if (!el) return;
+      const rows = getSongHistoryRows(12).filter((r) => r.kind === "new" || r.kind === "edited" || r.kind === "saved");
+      if (!rows.length) {
+        el.textContent = "Nothing tracked yet — saving or opening songs in Song Library adds entries here.";
+        return;
+      }
+      el.innerHTML = rows.map((r) => {
         const hasId = r.id && r.section;
         const rightBits = [];
-        if (r.isEdited) {
-          rightBits.push("<span class=\"collections-recent-label\">Edited</span>");
+        if (r.kind === "edited" || r.kind === "saved") {
+          rightBits.push("<span class=\"collections-recent-label\">" + escapeHtml(SONG_HISTORY_KIND_LABELS[r.kind] || "") + "</span>");
         }
         if (hasId) {
-          rightBits.push("<button type=\"button\" class=\"ghost\" style=\"font-size:0.76rem;white-space:nowrap;\" data-jump-song=\"" + escapeHtml(r.section) + "\" data-jump-id=\"" + escapeHtml(r.id) + "\">Edit</button>");
+          rightBits.push("<button type=\"button\" class=\"ghost\" style=\"font-size:0.76rem;white-space:nowrap;\" data-jump-song=\"" + escapeHtml(r.section) + "\" data-jump-id=\"" + escapeHtml(r.id) + "\">Open</button>");
         }
         return (
           "<div class=\"collections-recent-row\">" +
-            "<div><strong>" + escapeHtml(r.title || "Song") + "</strong> <span class=\"muted\">· " + escapeHtml(r.section || "") + "</span></div>" +
+            "<div><strong>" + escapeHtml(r.title || "Song") + "</strong> <span class=\"muted\">· " + escapeHtml(songSectionLabel(r.section)) + "</span></div>" +
             "<div style=\"display:flex;align-items:center;gap:8px;flex-shrink:0;\">" + rightBits.join("") + "</div>" +
           "</div>"
         );
@@ -11450,10 +11708,11 @@ Lord, hear our prayer</textarea>
             "<div class=\"song-sec-body" + (open ? "" : " collapsed") + "\" data-sec-body=\"" + sec.key + "\">" +
               (rows.length ? rows.map((row) => (
                 "<div class=\"song-row\" data-sid=\"" + escapeHtml(row.id) + "\" data-ssec=\"" + sec.key + "\">" +
-                  "<div><div class=\"song-row-title\">" + escapeHtml(row.title) + "</div>" +
-                  "<div class=\"song-row-meta\">" + (row.author ? escapeHtml(row.author) + " · " : "") + escapeHtml(row.language || "") + "</div></div>" +
+                  "<div class=\"song-row-clickable\" role=\"button\" tabindex=\"0\" aria-label=\"Load " + escapeHtml(row.title) + "\">" +
+                    "<div class=\"song-row-title\">" + escapeHtml(row.title) + "</div>" +
+                    "<div class=\"song-row-meta\">" + (row.author ? escapeHtml(row.author) + " · " : "") + escapeHtml(row.language || "") + "</div>" +
+                  "</div>" +
                   "<div class=\"song-row-actions\">" +
-                    "<button type=\"button\" data-act=\"load\">Load</button>" +
                     "<button type=\"button\" data-act=\"edit\">Edit</button>" +
                     "<button type=\"button\" data-act=\"del\">Delete</button>" +
                   "</div>" +
@@ -11469,7 +11728,8 @@ Lord, hear our prayer</textarea>
       renderSongCatalogInto($("collections-catalog-root"));
     }
 
-    async function loadSongIntoEditor(section, id) {
+    async function loadSongIntoEditor(section, id, options) {
+      const clearSearch = !options || options.clearSearch !== false;
       const res = await fetch("/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id));
       if (!res.ok) throw new Error("Could not load song");
       const data = await res.json();
@@ -11481,7 +11741,171 @@ Lord, hear our prayer</textarea>
       if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
       analyzeLyrics();
       autoResizeLyricsMainInput();
-      setLyricsStatus("Loaded \"" + (s.title || "") + "\" from " + section + ".", "ok");
+      setLyricsStatus("Loaded \"" + (s.title || "") + "\" from " + songSectionLabel(section) + ".", "ok");
+      pushSongHistory({
+        title: s.title || "",
+        section,
+        id,
+        kind: "loaded",
+      });
+      if (clearSearch) clearSongCatalogSearch();
+    }
+
+    function songSectionLabel(key) {
+      const hit = SECTION_ORDER.find((s) => s.key === key);
+      return hit ? hit.label : key;
+    }
+
+    let songMetaEditCtx = null;
+    let songDeletePending = null;
+
+    function setUiOverlayOpen(modal, open) {
+      if (!modal) return;
+      if (open) {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      } else {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        if (!document.querySelector(".ui-overlay.is-open")) {
+          document.body.style.overflow = "";
+        }
+      }
+    }
+
+    function closeSongMetadataModal() {
+      setUiOverlayOpen($("song-metadata-modal"), false);
+      songMetaEditCtx = null;
+    }
+
+    function closeSongDeleteModal() {
+      setUiOverlayOpen($("song-delete-modal"), false);
+      songDeletePending = null;
+    }
+
+    async function openSongMetadataModal(section, id) {
+      const res = await fetch("/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id));
+      if (!res.ok) throw new Error("Could not load song");
+      const data = await res.json();
+      const s = data.song || {};
+      songMetaEditCtx = { section, id };
+      if ($("song-metadata-edit-title")) $("song-metadata-edit-title").value = s.title || "";
+      if ($("song-metadata-edit-author")) $("song-metadata-edit-author").value = s.author || "";
+      if ($("song-metadata-edit-language")) $("song-metadata-edit-language").value = s.language || "English";
+      if ($("song-metadata-section-label")) {
+        $("song-metadata-section-label").textContent = "Section: " + songSectionLabel(section);
+      }
+      if ($("song-metadata-subtitle")) {
+        $("song-metadata-subtitle").textContent = "Editing metadata for \"" + (s.title || "Song") + "\".";
+      }
+      setUiOverlayOpen($("song-metadata-modal"), true);
+      const titleInput = $("song-metadata-edit-title");
+      if (titleInput) {
+        titleInput.focus();
+        titleInput.select();
+      }
+    }
+
+    async function saveSongMetadataFromModal() {
+      if (!songMetaEditCtx) return;
+      const title = ($("song-metadata-edit-title") && $("song-metadata-edit-title").value.trim()) || "";
+      if (!title) {
+        setLyricsStatus("Song title is required.", "error");
+        return;
+      }
+      const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
+      const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
+      const { section, id } = songMetaEditCtx;
+      const res = await fetch(
+        "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, author, language }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.error || "Update failed");
+      closeSongMetadataModal();
+      await loadSongCatalog();
+      if ($("lyrics-save-title")) $("lyrics-save-title").value = title;
+      if ($("lyrics-save-author")) $("lyrics-save-author").value = author;
+      if ($("lyrics-save-language")) $("lyrics-save-language").value = language;
+      setLyricsStatus("Updated \"" + title + "\".", "ok");
+    }
+
+    function openSongDeleteConfirmModal(section, id, title) {
+      songDeletePending = { section, id };
+      const desc = $("song-delete-desc");
+      if (desc) {
+        desc.textContent =
+          "Remove \"" + (title || "this song") + "\" from " + songSectionLabel(section) + "? This cannot be undone.";
+      }
+      setUiOverlayOpen($("song-delete-modal"), true);
+    }
+
+    async function confirmSongDeleteFromModal() {
+      if (!songDeletePending) return;
+      const { section, id } = songDeletePending;
+      const res = await fetch(
+        "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
+        { method: "DELETE" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.error || "Delete failed");
+      closeSongDeleteModal();
+      await loadSongCatalog();
+      setLyricsStatus("Song removed from catalog.", "ok");
+    }
+
+    function clearSongCatalogSearch() {
+      songCatalogFilter = "";
+      const a = $("song-catalog-search");
+      const b = $("collections-catalog-search");
+      if (a) a.value = "";
+      if (b) b.value = "";
+      syncSongSearchClearButton();
+      renderSongCatalog();
+      updateComposerCatalogVisibility();
+    }
+
+    function syncSongSearchClearButton() {
+      const input = $("song-catalog-search");
+      const btn = $("song-catalog-search-clear");
+      if (!btn || !input) return;
+      btn.hidden = !(input.value || "").trim();
+    }
+
+    function initSongCatalogModals() {
+      const metaModal = $("song-metadata-modal");
+      const delModal = $("song-delete-modal");
+      [
+        ["song-metadata-backdrop", closeSongMetadataModal],
+        ["song-metadata-close", closeSongMetadataModal],
+        ["song-metadata-cancel", closeSongMetadataModal],
+        ["song-delete-backdrop", closeSongDeleteModal],
+        ["song-delete-close", closeSongDeleteModal],
+        ["song-delete-cancel", closeSongDeleteModal],
+      ].forEach(([id, fn]) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", fn);
+      });
+      $("song-metadata-save") && $("song-metadata-save").addEventListener("click", () => {
+        saveSongMetadataFromModal().catch((err) => {
+          setLyricsStatus(err.message || "Could not save song details.", "error");
+        });
+      });
+      $("song-delete-confirm") && $("song-delete-confirm").addEventListener("click", () => {
+        confirmSongDeleteFromModal().catch((err) => {
+          setLyricsStatus(err.message || "Delete failed.", "error");
+        });
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (metaModal && metaModal.classList.contains("is-open")) closeSongMetadataModal();
+        else if (delModal && delModal.classList.contains("is-open")) closeSongDeleteModal();
+      });
     }
 
     function bindSongCatalogRoot(root) {
@@ -11495,34 +11919,52 @@ Lord, hear our prayer</textarea>
           renderSongCatalog();
           return;
         }
-        const row = e.target.closest(".song-row");
         const actBtn = e.target.closest("button[data-act]");
-        if (!row || !actBtn) return;
+        const row = e.target.closest(".song-row");
+        if (!row) return;
         const section = row.dataset.ssec;
         const id = row.dataset.sid;
-        const act = actBtn.dataset.act;
-        try {
-          if (act === "load") {
-            await loadSongIntoEditor(section, id);
-            showRoute("/library/songs");
-          } else if (act === "edit") {
-            await loadSongIntoEditor(section, id);
-            showRoute("/library/songs");
-          } else if (act === "del") {
-            if (!window.confirm("Delete this song from " + section + "?")) return;
-            const res = await fetch("/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id), { method: "DELETE" });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.detail || "Delete failed");
-            await loadSongCatalog();
-            setLyricsStatus("Song removed from catalog.", "ok");
+        if (actBtn) {
+          const act = actBtn.dataset.act;
+          try {
+            if (act === "edit") {
+              showRoute("/library/songs");
+              await openSongMetadataModal(section, id);
+            } else if (act === "del") {
+              const titleEl = row.querySelector(".song-row-title");
+              openSongDeleteConfirmModal(section, id, titleEl ? titleEl.textContent : "");
+            }
+          } catch (err) {
+            setLyricsStatus(err.message || "Catalog action failed.", "error");
           }
+          return;
+        }
+        if (!e.target.closest(".song-row-clickable")) return;
+        try {
+          await loadSongIntoEditor(section, id);
+          showRoute("/library/songs");
         } catch (err) {
-          setLyricsStatus(err.message || "Catalog action failed.", "error");
+          setLyricsStatus(err.message || "Could not load song.", "error");
+        }
+      });
+      root.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const clickable = e.target.closest(".song-row-clickable");
+        if (!clickable) return;
+        e.preventDefault();
+        const row = clickable.closest(".song-row");
+        if (!row) return;
+        try {
+          await loadSongIntoEditor(row.dataset.ssec, row.dataset.sid);
+          showRoute("/library/songs");
+        } catch (err) {
+          setLyricsStatus(err.message || "Could not load song.", "error");
         }
       });
     }
     bindSongCatalogRoot($("song-catalog-root"));
     bindSongCatalogRoot($("collections-catalog-root"));
+    initSongCatalogModals();
 
     function syncSongCatalogSearchInputs(sourceEl) {
       const a = $("song-catalog-search");
@@ -11542,16 +11984,21 @@ Lord, hear our prayer</textarea>
       wrap.hidden = !show;
       if (toggle) {
         toggle.setAttribute("aria-expanded", show ? "true" : "false");
-        toggle.classList.toggle("active", libraryOpen && !q.length);
+        toggle.classList.toggle("active", libraryOpen);
       }
     }
 
     function applySongCatalogSearch(sourceEl) {
       songCatalogFilter = (sourceEl && sourceEl.value) || "";
       syncSongCatalogSearchInputs(sourceEl);
+      syncSongSearchClearButton();
       renderSongCatalog();
       updateComposerCatalogVisibility();
     }
+
+    $("song-catalog-search-clear") && $("song-catalog-search-clear").addEventListener("click", () => {
+      clearSongCatalogSearch();
+    });
 
     $("btn-toggle-song-catalog") && $("btn-toggle-song-catalog").addEventListener("click", () => {
       const wrap = $("song-composer-catalog-wrap");
@@ -11559,7 +12006,18 @@ Lord, hear our prayer</textarea>
       const open = wrap.dataset.libraryOpen === "1";
       wrap.dataset.libraryOpen = open ? "" : "1";
       updateComposerCatalogVisibility();
-      if (!open) renderSongCatalog();
+      if (!open) {
+        renderSongCatalog();
+        wrap.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    });
+
+    $("song-composer-recent-list") && $("song-composer-recent-list").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-recent-sec][data-recent-id]");
+      if (!btn) return;
+      loadSongIntoEditor(btn.dataset.recentSec, btn.dataset.recentId, { clearSearch: false }).catch((err) => {
+        setLyricsStatus(err.message || "Could not load song.", "error");
+      });
     });
 
     ["song-catalog-search", "collections-catalog-search"].forEach((id) => {
@@ -11584,7 +12042,7 @@ Lord, hear our prayer</textarea>
       const sec = b.dataset.jumpSong;
       const id = b.dataset.jumpId;
       showRoute("/library/songs");
-      loadSongIntoEditor(sec, id).catch(() => {});
+      loadSongIntoEditor(sec, id, { clearSearch: false }).catch(() => {});
     });
 
     $("btn-load-flow").addEventListener("click", () => loadFlowData(false));
@@ -11964,9 +12422,9 @@ Lord, hear our prayer</textarea>
     renderCalendarDow();
     loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
     bindCelebrantSelect();
-    buildSongLibFilters();
     updateComposerCatalogVisibility();
     loadSongCatalog();
+    renderComposerRecent();
     renderCollectionsRecent();
     refreshSavedPosters();
     bindSocialExportControls();

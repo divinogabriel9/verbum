@@ -1,11 +1,30 @@
 /**
  * Verbum — unified product design system
- * Premium SaaS visual language (Linear / Notion / Stripe inspired)
+ * Semantic tokens mapped from DESIGN.md (warm cream · hairline depth · Cursor Orange CTA)
  * Load after inline styles in templates/index.html
  */
 
 :root {
-  /* —— Spacing scale (4 · 8 · 12 · 16 · 24 · 32 · 48) —— */
+  /* —— DESIGN.md primitives (see /DESIGN.md) —— */
+  --design-primary: #f54e00;
+  --design-primary-active: #d04200;
+  --design-ink: #26251e;
+  --design-body: #5a5852;
+  --design-body-strong: #26251e;
+  --design-muted: #807d72;
+  --design-muted-soft: #a09c92;
+  --design-hairline: #e6e5e0;
+  --design-hairline-soft: #efeee8;
+  --design-hairline-strong: #cfcdc4;
+  --design-canvas: #f7f7f4;
+  --design-canvas-soft: #fafaf7;
+  --design-surface-card: #ffffff;
+  --design-surface-strong: #e6e5e0;
+  --design-on-primary: #ffffff;
+  --design-success: #1f8a65;
+  --design-error: #cf2d56;
+
+  /* —— Spacing scale (DESIGN.md base unit 4px) —— */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -19,37 +38,44 @@
   --space-lg: var(--space-5);
   --space-xl: var(--space-6);
 
-  /* —— Border radius —— */
+  /* —— Border radius (DESIGN.md rounded.*) —— */
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   --radius: var(--radius-lg);
-  --radius-pill: 999px;
+  --radius-pill: 9999px;
 
-  /* —— Shadows (light · medium · large) —— */
-  --shadow-light: 0 1px 2px rgba(21, 51, 61, 0.04), 0 1px 3px rgba(21, 51, 61, 0.05);
-  --shadow-medium: 0 2px 6px rgba(21, 51, 61, 0.05), 0 8px 20px rgba(21, 51, 61, 0.07);
-  --shadow-large: 0 4px 12px rgba(21, 51, 61, 0.07), 0 16px 36px rgba(21, 51, 61, 0.09);
-  --shadow-sm: var(--shadow-light);
-  --shadow-card: var(--shadow-light);
-  --shadow: var(--shadow-medium);
-  --shadow-hover: var(--shadow-large);
+  /* —— Depth: hairline-only (no drop shadows per DESIGN.md) —— */
+  --shadow-light: none;
+  --shadow-medium: none;
+  --shadow-large: none;
+  --shadow-sm: none;
+  --shadow-card: none;
+  --shadow: none;
+  --shadow-hover: none;
   --shadow-glow: none;
   --shadow-glow-soft: none;
 
-  /* —— Surfaces (calm, flat) —— */
-  --bg: #F7F8FA;
-  --bg-top: #FFFFFF;
-  --surface: #FFFFFF;
-  --surface-2: #F3F4F6;
-  --surface-solid: #FFFFFF;
-  --card-border: #E5E7EB;
-  --line: #E5E7EB;
-  --line-soft: #F0F1F3;
-  --ink: #111827;
-  --muted: #6B7280;
-  --ink-subtle: #9CA3AF;
+  /* —— Semantic surfaces & text —— */
+  --bg: var(--design-canvas);
+  --bg-top: var(--design-canvas-soft);
+  --surface: var(--design-surface-card);
+  --surface-2: var(--design-hairline-soft);
+  --surface-solid: var(--design-surface-card);
+  --card-border: var(--design-hairline);
+  --line: var(--design-hairline);
+  --line-soft: var(--design-hairline-soft);
+  --ink: var(--design-ink);
+  --muted: var(--design-muted);
+  --ink-subtle: var(--design-muted-soft);
   --glass-blur: none;
+
+  /* —— Brand CTA (DESIGN.md primary; liturgical accent unchanged in index.html) —— */
+  --color-primary: var(--design-primary);
+  --color-primary-active: var(--design-primary-active);
+  --on-primary: var(--design-on-primary);
+  --good: var(--design-success);
+  --danger: var(--design-error);
 
   /* —— Typography scale —— */
   --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -69,9 +95,9 @@
   /* —— Component tokens —— */
   --btn-height: 40px;
   --btn-height-sm: 32px;
-  --btn-padding-x: 16px;
+  --btn-padding-x: 18px;
   --card-padding: var(--space-5);
-  --input-height: 40px;
+  --input-height: 44px;
   --tab-height: 36px;
   --header-height: 56px;
   --content-max: 1536px;
@@ -94,20 +120,30 @@
 }
 
 html[data-theme="dark"] {
-  --bg: #0F1115;
-  --bg-top: #14161B;
-  --surface: #1A1D24;
-  --surface-2: #22262E;
-  --surface-solid: #1A1D24;
-  --card-border: #2E333D;
-  --line: #2E333D;
-  --line-soft: #252930;
-  --ink: #F3F4F6;
-  --muted: #9CA3AF;
-  --ink-subtle: #6B7280;
-  --shadow-light: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.25);
-  --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.28), 0 8px 24px rgba(0, 0, 0, 0.32);
-  --shadow-large: 0 4px 16px rgba(0, 0, 0, 0.32), 0 16px 40px rgba(0, 0, 0, 0.38);
+  --bg: #1a1916;
+  --bg-top: #22211d;
+  --surface: #26251e;
+  --surface-2: #2e2c26;
+  --surface-solid: #26251e;
+  --card-border: #3d3a34;
+  --line: #3d3a34;
+  --line-soft: #333029;
+  --ink: #f7f7f4;
+  --muted: #a09c92;
+  --ink-subtle: #807d72;
+  --design-hairline: #3d3a34;
+  --design-hairline-soft: #333029;
+  --design-hairline-strong: #4a4740;
+  --design-surface-card: #26251e;
+  --design-canvas: #1a1916;
+  --design-canvas-soft: #22211d;
+  --design-ink: #f7f7f4;
+  --design-muted: #a09c92;
+  --shadow-light: none;
+  --shadow-medium: none;
+  --shadow-large: none;
+  --color-primary: #f54e00;
+  --color-primary-active: #ff6a1a;
   --app-scrim: rgba(14, 22, 26, 0.62);
 }
 
@@ -442,22 +478,29 @@ button:hover {
 }
 
 .primary {
-  color: var(--on-accent, #fff);
-  background: var(--liturgical-accent);
-  border: 1px solid transparent;
-  box-shadow: var(--shadow-light);
+  color: var(--on-primary);
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  box-shadow: none;
+  font-weight: 500;
 }
 
 .primary:hover {
-  color: var(--on-accent, #fff);
-  background: color-mix(in srgb, var(--liturgical-accent) 92%, black);
-  box-shadow: var(--shadow-medium);
+  color: var(--on-primary);
+  background: var(--color-primary-active);
+  border-color: var(--color-primary-active);
+  box-shadow: none;
+}
+
+.primary:active:not(:disabled) {
+  background: var(--color-primary-active);
+  border-color: var(--color-primary-active);
 }
 
 .secondary {
   color: var(--ink);
   background: var(--surface-solid);
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--design-hairline-strong);
   box-shadow: none;
 }
 
@@ -925,4 +968,344 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
     box-shadow var(--motion-duration-fast) var(--motion-ease-hover),
     transform var(--motion-duration-fast) var(--motion-ease-out),
     opacity var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+/* —— DESIGN.md: Song Composer toolbar —— */
+.song-composer-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-3);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  border: 1px solid var(--design-hairline);
+  background: var(--design-surface-card);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.song-composer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--space-sm);
+  align-items: stretch;
+  min-width: 0;
+  width: 100%;
+}
+
+.song-composer-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.song-composer-actions-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.song-composer-library-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.song-composer-library-btn.active {
+  border-color: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 40%, var(--design-hairline-strong));
+  background: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 10%, var(--design-surface-card));
+  color: var(--liturgical-accent, var(--color-primary));
+}
+
+.song-composer-recent {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--design-hairline);
+  background: color-mix(in srgb, var(--design-surface-card) 55%, var(--design-canvas));
+}
+
+.song-composer-recent__title {
+  margin: 0 0 8px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--design-muted);
+}
+
+.song-composer-recent-list {
+  flex: 1;
+  min-height: 72px;
+  max-height: min(220px, 32vh);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.song-composer-recent-empty {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--design-muted);
+  margin: 0;
+}
+
+.song-composer-recent-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--design-surface-card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.song-composer-recent-item:hover:not(:disabled),
+.song-composer-recent-item:focus-visible:not(:disabled) {
+  border-color: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 30%, var(--design-hairline));
+  background: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 6%, var(--design-surface-card));
+  outline: none;
+}
+
+.song-composer-recent-item__title {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--design-ink);
+}
+
+.song-composer-recent-item__meta {
+  font-size: 0.72rem;
+  color: var(--design-muted);
+}
+
+.song-composer-recent-item__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--liturgical-accent, var(--color-primary));
+}
+
+.song-composer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.song-composer-head__copy {
+  min-width: 0;
+}
+
+.song-composer-head__copy h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--design-ink);
+}
+
+.song-composer-head__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.lyrics-structured-actions .primary,
+.lyrics-structured-actions .secondary,
+.lyrics-structured-actions .ghost {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}
+
+.song-composer-toolbar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-sm);
+  align-items: center;
+  min-width: 0;
+  position: relative;
+}
+
+.song-composer-search-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+
+.lyrics-workspace-mockup .lyrics-structured-actions .primary {
+  background: var(--liturgical-accent, var(--color-primary));
+  border-color: var(--liturgical-accent, var(--color-primary));
+  color: var(--on-accent, var(--on-primary));
+}
+
+.lyrics-workspace-mockup .lyrics-structured-actions .primary:hover {
+  background: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 88%, black);
+  border-color: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 88%, black);
+}
+
+.lyrics-workspace-mockup .lyrics-structured-actions .secondary {
+  border: 1px solid var(--design-hairline-strong);
+  background: var(--design-surface-card);
+  box-shadow: none;
+}
+
+.song-composer-search-wrap input {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 12px 8px 2.5rem;
+  border: 1px solid var(--design-hairline);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--design-ink);
+  background: var(--design-surface-card);
+  box-sizing: border-box;
+}
+
+.song-composer-search-wrap input::placeholder {
+  color: var(--design-muted-soft);
+}
+
+.song-composer-search-wrap input:focus {
+  border-color: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 55%, var(--design-hairline));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 14%, transparent);
+}
+
+.song-composer-search-wrap input:not(:placeholder-shown),
+.song-composer-search-wrap input:focus {
+  padding-right: 2.25rem;
+}
+
+.song-composer-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--design-muted);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.song-composer-search-clear:hover {
+  color: var(--design-ink);
+  background: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 10%, var(--design-surface-card));
+}
+
+.song-composer-search-clear[hidden] {
+  display: none !important;
+}
+
+.song-composer-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--design-hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--design-surface-card);
+  color: var(--design-ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.song-composer-upload-btn:hover,
+.song-composer-upload-btn.is-dragover {
+  border-color: var(--liturgical-accent, var(--color-primary));
+  background: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 6%, var(--design-surface-card));
+  color: var(--liturgical-accent, var(--color-primary));
+}
+
+.song-composer-catalog-panel {
+  border: 1px solid var(--design-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--design-surface-card);
+}
+
+.song-composer-status {
+  color: var(--design-muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.song-composer-status:empty {
+  display: none;
+}
+
+.lyrics-analyze-hint {
+  margin-top: var(--space-xs);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--design-muted);
+}
+
+.lyrics-analyze-hint:empty {
+  display: none;
+}
+
+.lyrics-analyze-hint.ok {
+  color: var(--design-success);
+}
+
+.lyrics-analyze-hint.error {
+  color: var(--design-error);
+}
+
+@media (max-width: 720px) {
+  .song-composer-head {
+    flex-wrap: wrap;
+  }
+  .lyrics-structured-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .song-composer-layout {
+    grid-template-columns: 1fr;
+  }
+  .song-composer-main,
+  .song-composer-recent {
+    grid-column: 1;
+  }
+  .song-composer-toolbar-row {
+    grid-template-columns: 1fr;
+  }
+  .song-composer-upload-btn {
+    width: 100%;
+  }
+  .song-composer-library-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

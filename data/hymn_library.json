@@ -7,8 +7,10 @@
         "ordinary_time",
         "easter"
       ],
-      "lyrics": "Verse 2\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 2\nYahweh's people dance for joy\nO come before the Lord\nAnd play for him on glad tambourines\nAnd let your trumpet sound\n\nVerse 3\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 4\nRise, O children, from your sleep;\nYour Savior now has come\nHe has turned your sorrow to joy\nAnd filled your soul with song\n\nVerse 5\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging Alleluia\nSinging Alleluia",
-      "source": "lyrics_dashboard"
+      "lyrics": "Chorus 2\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 2\nYahweh's people dance for joy\nO come before the Lord\nAnd play for him on glad tambourines\nAnd let your trumpet sound\n\nChorus 3\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 4\nRise, O children, from your sleep;\nYour Savior now has come\nHe has turned your sorrow to joy\nAnd filled your soul with song\n\nChorus 5\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging Alleluia\nSinging Alleluia",
+      "source": "lyrics_dashboard",
+      "author": "",
+      "language": "English"
     },
     {
       "id": "all_creatures",
@@ -581,7 +583,9 @@
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "Let us build the city of God,\nmay our tears be turned into dancing;\nfor the Lord, our light and our love,\nhas turned the night into day.\n\nWe are called to be the salt for the earth,\ncalled to be the light for a world in need.\nSo before you, Lord, we bend in trust,\nand we'll lift our hands in truth.\n\nLet us build the city of God...\n\nBlessed are the poor in spirit,\nwe are yours and we shall reign with you.\nBlessed are those who mourn,\nyour comfort shall be their strength.\n\nLet us build the city of God...\n\nWhen we love with hearts forgiving,\nwe are blessed and we shall know your peace.\nWhen we bring good news to the poor,\nyour salvation shall be our joy.\n\nLet us build the city of God..."
+      "lyrics": "Let us build the city of God,\nmay our tears be turned into dancing;\nfor the Lord, our light and our love,\nhas turned the night into day.\n\nWe are called to be the salt for the earth,\ncalled to be the light for a world in need.\nSo before you, Lord, we bend in trust,\nand we'll lift our hands in truth.\n\nLet us build the city of God...\n\nBlessed are the poor in spirit,\nwe are yours and we shall reign with you.\nBlessed are those who mourn,\nyour comfort shall be their strength.\n\nLet us build the city of God...\n\nWhen we love with hearts forgiving,\nwe are blessed and we shall know your peace.\nWhen we bring good news to the poor,\nyour salvation shall be our joy.\n\nLet us build the city of God...",
+      "author": "",
+      "language": "English"
     },
     {
       "id": "alleluia_sing",
