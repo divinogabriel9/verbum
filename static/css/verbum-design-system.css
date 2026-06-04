@@ -991,6 +991,7 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   align-items: stretch;
   min-width: 0;
   width: 100%;
+  min-height: 260px;
 }
 
 .song-composer-main {
@@ -998,9 +999,19 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   flex-direction: column;
   gap: var(--space-xs);
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.song-composer-toolbar-row {
+  flex-shrink: 0;
 }
 
 .song-composer-catalog-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   margin-top: 2px;
   border: 1px solid var(--design-hairline);
   border-radius: var(--radius-sm);
@@ -1008,33 +1019,15 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   overflow: hidden;
 }
 
-.song-composer-library-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 40px;
+.song-composer-catalog-label {
+  flex-shrink: 0;
+  margin: 0;
   padding: 8px 12px;
-  border: none;
-  background: transparent;
-  color: var(--design-ink);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-
-.song-composer-library-toggle__chev {
-  margin-left: auto;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--design-muted);
-  transition: transform 0.15s ease;
-}
-
-.song-composer-catalog-wrap.is-expanded .song-composer-library-toggle__chev {
-  transform: rotate(90deg);
-}
-
-.song-composer-catalog-wrap.is-expanded .song-composer-library-toggle {
   border-bottom: 1px solid var(--design-hairline);
 }
 
@@ -1043,6 +1036,8 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   flex-direction: column;
   min-width: 0;
   max-width: 100%;
+  min-height: 0;
+  height: 100%;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--design-hairline);
@@ -1262,12 +1257,24 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
 }
 
 .song-composer-catalog-panel {
-  border: 1px solid var(--design-hairline);
-  border-radius: var(--radius-sm);
-  background: var(--design-surface-card);
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.song-composer-catalog-panel .song-catalog-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .song-composer-status {
+  flex-shrink: 0;
   color: var(--design-muted);
   font-size: 0.8125rem;
   line-height: 1.35;

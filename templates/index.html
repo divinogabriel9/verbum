@@ -3536,71 +3536,34 @@
       opacity: 0;
       pointer-events: none;
     }
-    #btn-toggle-song-catalog {
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-    .song-composer-catalog-wrap {
-      margin-top: 2px;
-      border: 1px solid var(--line-soft);
-      border-radius: var(--radius-md);
-      background: var(--surface-2);
-      overflow: hidden;
-    }
-    .song-composer-library-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      min-height: 40px;
-      padding: 8px 12px;
-      border: none;
-      border-radius: var(--radius-md);
-      background: transparent;
-      color: var(--ink);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-    }
-    .song-composer-library-toggle:hover {
-      background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
-    }
-    .song-composer-library-toggle__chev {
-      margin-left: auto;
-      font-size: 0.75rem;
-      color: var(--muted);
-      transition: transform 0.15s ease;
-    }
-    .song-composer-catalog-wrap.is-expanded .song-composer-library-toggle__chev {
-      transform: rotate(90deg);
-    }
-    .song-composer-catalog-wrap.is-expanded .song-composer-library-toggle {
-      border-bottom: 1px solid var(--line-soft);
-      border-radius: var(--radius-md) var(--radius-md) 0 0;
-    }
-    .song-composer-catalog-body[hidden] {
-      display: none !important;
-    }
-    .song-composer-catalog-body:not([hidden]) .song-composer-catalog-panel {
-      border: none;
-      border-radius: 0;
+    .song-composer-layout {
+      align-items: stretch;
+      min-height: 240px;
     }
     @media (min-width: 721px) {
       .lyrics-workspace-mockup .song-composer-layout {
         display: grid !important;
         grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
         gap: 12px;
-        align-items: stretch;
+        align-items: stretch !important;
         min-width: 0;
         width: 100%;
+        min-height: 260px;
       }
       .lyrics-workspace-mockup .song-composer-main {
         grid-column: 1 !important;
+        display: flex !important;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
       }
       .lyrics-workspace-mockup .song-composer-recent {
         grid-column: 2 !important;
         max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
       }
     }
     .song-composer-main {
@@ -3608,6 +3571,32 @@
       flex-direction: column;
       gap: 8px;
       min-width: 0;
+      min-height: 0;
+    }
+    .song-composer-toolbar-row {
+      flex-shrink: 0;
+    }
+    .song-composer-catalog-wrap {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      margin-top: 2px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+    .song-composer-catalog-label {
+      flex-shrink: 0;
+      margin: 0;
+      padding: 8px 12px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line-soft);
     }
     .song-composer-recent {
       display: flex;
@@ -3615,6 +3604,7 @@
       min-width: 0;
       max-width: 100%;
       min-height: 0;
+      height: 100%;
       padding: 10px 12px;
       border-radius: var(--radius-md);
       border: 1px solid var(--line-soft);
@@ -3629,9 +3619,8 @@
       color: var(--muted);
     }
     .song-composer-recent-list {
-      flex: 1;
-      min-height: 72px;
-      max-height: min(220px, 32vh);
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       display: flex;
@@ -3692,13 +3681,18 @@
       background: color-mix(in srgb, var(--danger) 4%, var(--surface-solid));
     }
     .song-composer-catalog-panel {
-      max-height: min(132px, 22vh);
+      flex: 1 1 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      border: none;
+      border-radius: 0;
+      background: transparent;
     }
     .song-composer-catalog-panel .song-catalog-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -3710,6 +3704,7 @@
       padding: 6px 10px;
     }
     .song-composer-status {
+      flex-shrink: 0;
       margin: 0;
       line-height: 1.35;
     }
@@ -3886,9 +3881,6 @@
     .lyrics-workspace-mockup .primary:hover {
       background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
       border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
-    }
-    .lyrics-workspace-mockup .song-composer-catalog-wrap.is-expanded .song-composer-library-toggle {
-      color: var(--liturgical-accent);
     }
     .lyrics-workspace-mockup .song-composer-search-wrap input:focus {
       border-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--line));
@@ -5566,7 +5558,6 @@
       .lyrics-workspace-mockup .song-composer-main,
       .lyrics-workspace-mockup .song-composer-recent { grid-column: 1 !important; }
       .song-composer-recent-list { max-height: min(160px, 24vh); }
-      .song-composer-catalog-panel { max-height: min(160px, 28vh); }
       .lyrics-workspace-row { grid-template-columns: 1fr; }
       .lyrics-editor-main { min-height: 8rem; }
       .lyrics-details-meta-grid { grid-template-columns: 1fr; }
@@ -6204,9 +6195,9 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260604" />
-  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260604" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260604" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260605" />
+  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260605" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260605" />
 <body data-season="ordinary">
   <div class="app-shell">
     <main class="dashboard">
@@ -6477,16 +6468,10 @@
                   </label>
                   <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,text/plain" tabindex="-1" />
                 </div>
-                <div class="song-composer-catalog-wrap is-collapsed" id="song-composer-catalog-wrap" data-library-open="">
-                  <button type="button" class="song-composer-library-toggle" id="btn-toggle-song-catalog" aria-expanded="false" aria-controls="song-composer-catalog-body">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-                    <span>Songs library</span>
-                    <span class="song-composer-library-toggle__chev" aria-hidden="true">▸</span>
-                  </button>
-                  <div class="song-composer-catalog-body" id="song-composer-catalog-body" hidden>
-                    <div class="song-catalog-panel song-composer-catalog-panel">
-                      <div class="song-catalog-scroll" id="song-catalog-root"></div>
-                    </div>
+                <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap">
+                  <h4 class="song-composer-catalog-label">Songs library</h4>
+                  <div class="song-catalog-panel song-composer-catalog-panel">
+                    <div class="song-catalog-scroll" id="song-catalog-root"></div>
                   </div>
                 </div>
                 <p class="status song-composer-status" id="lyrics-status" aria-live="polite"></p>
@@ -7800,7 +7785,6 @@ Lord, hear our prayer</textarea>
       if (r === "/library/songs") {
         loadSongCatalog();
         renderComposerRecent();
-        updateComposerCatalogVisibility();
         const params = new URLSearchParams(window.location.search);
         const sec = (params.get("section") || "").trim().toLowerCase();
         const sid = (params.get("song") || params.get("id") || "").trim();
@@ -11762,6 +11746,12 @@ Lord, hear our prayer</textarea>
       renderSongCatalogInto($("collections-catalog-root"));
     }
 
+    function collapseSongCatalogSection(secKey) {
+      if (!secKey || !songCatalogExpanded.hasOwnProperty(secKey)) return;
+      songCatalogExpanded[secKey] = false;
+      renderSongCatalog();
+    }
+
     async function loadSongIntoEditor(section, id, options) {
       const clearSearch = !options || options.clearSearch !== false;
       const res = await fetch("/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id));
@@ -11777,25 +11767,6 @@ Lord, hear our prayer</textarea>
       autoResizeLyricsMainInput();
       setLyricsStatus("Loaded \"" + (s.title || "") + "\" from " + songSectionLabel(section) + ".", "ok");
       if (clearSearch) clearSongCatalogSearch();
-      collapseComposerLibrary();
-    }
-
-    function setComposerLibraryExpanded(expanded) {
-      const wrap = $("song-composer-catalog-wrap");
-      const body = $("song-composer-catalog-body");
-      const toggle = $("btn-toggle-song-catalog");
-      if (!wrap || !body) return;
-      wrap.dataset.libraryOpen = expanded ? "1" : "";
-      wrap.classList.toggle("is-expanded", expanded);
-      wrap.classList.toggle("is-collapsed", !expanded);
-      body.hidden = !expanded;
-      if (toggle) {
-        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
-      }
-    }
-
-    function collapseComposerLibrary() {
-      setComposerLibraryExpanded(false);
     }
 
     function songSectionLabel(key) {
@@ -11916,7 +11887,6 @@ Lord, hear our prayer</textarea>
       if (b) b.value = "";
       syncSongSearchClearButton();
       renderSongCatalog();
-      updateComposerCatalogVisibility();
     }
 
     function syncSongSearchClearButton() {
@@ -11991,6 +11961,7 @@ Lord, hear our prayer</textarea>
         if (!e.target.closest(".song-row-clickable")) return;
         try {
           await loadSongIntoEditor(section, id);
+          if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
           showRoute("/library/songs");
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");
@@ -12003,8 +11974,11 @@ Lord, hear our prayer</textarea>
         e.preventDefault();
         const row = clickable.closest(".song-row");
         if (!row) return;
+        const section = row.dataset.ssec;
+        const id = row.dataset.sid;
         try {
-          await loadSongIntoEditor(row.dataset.ssec, row.dataset.sid);
+          await loadSongIntoEditor(section, id);
+          if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
           showRoute("/library/songs");
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");
@@ -12023,38 +11997,15 @@ Lord, hear our prayer</textarea>
     }
 
     let songCatalogSearchDebounce = null;
-    function updateComposerCatalogVisibility() {
-      const wrap = $("song-composer-catalog-wrap");
-      if (!wrap) return;
-      const q = (songCatalogFilter || "").trim();
-      const libraryOpen = wrap.dataset.libraryOpen === "1";
-      const expanded = libraryOpen || q.length > 0;
-      setComposerLibraryExpanded(expanded);
-    }
-
     function applySongCatalogSearch(sourceEl) {
       songCatalogFilter = (sourceEl && sourceEl.value) || "";
       syncSongCatalogSearchInputs(sourceEl);
       syncSongSearchClearButton();
       renderSongCatalog();
-      updateComposerCatalogVisibility();
     }
 
     $("song-catalog-search-clear") && $("song-catalog-search-clear").addEventListener("click", () => {
       clearSongCatalogSearch();
-    });
-
-    $("btn-toggle-song-catalog") && $("btn-toggle-song-catalog").addEventListener("click", () => {
-      const wrap = $("song-composer-catalog-wrap");
-      if (!wrap) return;
-      const open = wrap.dataset.libraryOpen === "1";
-      if (open) {
-        collapseComposerLibrary();
-      } else {
-        setComposerLibraryExpanded(true);
-        renderSongCatalog();
-        wrap.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      }
     });
 
     $("song-composer-recent-list") && $("song-composer-recent-list").addEventListener("click", (e) => {
@@ -12467,7 +12418,6 @@ Lord, hear our prayer</textarea>
     renderCalendarDow();
     loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
     bindCelebrantSelect();
-    updateComposerCatalogVisibility();
     loadSongCatalog();
     renderComposerRecent();
     renderCollectionsRecent();

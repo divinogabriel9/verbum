@@ -746,6 +746,10 @@ iframe {
     grid-column: 1 !important;
     grid-row: 1;
     min-width: 0;
+    display: flex !important;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
   }
 
   .lyrics-workspace-mockup .song-composer-recent,
@@ -755,6 +759,16 @@ iframe {
     min-width: 0;
     max-width: 100%;
     width: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .lyrics-workspace-mockup .song-composer-layout,
+  #lyrics-workspace .song-composer-layout {
+    min-height: 260px;
+    align-items: stretch !important;
   }
 }
 
