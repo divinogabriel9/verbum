@@ -685,9 +685,9 @@ def generate_sacred_illustration(
     the designer prompt (:func:`build_church_poster_background_prompt`).
     """
     try:
-        from dotenv import load_dotenv
+        from services.env_config import load_project_dotenv
 
-        load_dotenv()
+        load_project_dotenv()
     except ImportError:
         pass
 

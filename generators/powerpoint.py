@@ -7,6 +7,7 @@ text colors are chosen for contrast (never matching the background).
 
 from __future__ import annotations
 
+import datetime as _dt
 import math
 import re
 from copy import deepcopy
@@ -14,10 +15,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Mapping, Optional, Tuple
 
+from lxml import etree
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.enum.shapes import MSO_SHAPE, MSO_SHAPE_TYPE
 from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE, PP_ALIGN
+from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 from services.community_config import get_community_name, get_logo_path
@@ -1067,6 +1070,390 @@ def _add_marked_chunked(prs: Presentation, footer: str, marked: str, theme: Slid
         _add_marked_slide(prs, foot, ch, theme)
 
 
+# Mass divider poster (GFCC layout — rounded panels, season-themed palette)
+_DIVIDER_FONT = "Calibri"
+_DIVIDER_CORNER_ADJ = 0.1667  # matches reference freeform corner radius (~16.67% of height)
+_DIVIDER_PANEL_ALPHA = 44706  # ~44.7% opaque (reference right panel)
+_DIVIDER_BAR_ALPHA = 60784  # ~60.8% opaque (reference bottom bar)
+_DIVIDER_LINE_W = 14299  # reference outline weight (EMU)
+
+
+@dataclass(frozen=True)
+class _DividerPalette:
+    grad_start: RGBColor
+    grad_end: RGBColor
+    panel_fill: RGBColor
+    panel_border: RGBColor
+    bar_fill: RGBColor
+    bar_border: RGBColor
+    label: RGBColor
+    primary: RGBColor
+    quote: RGBColor
+    gospel_label: RGBColor
+
+
+def _rgb_channels(color: RGBColor) -> tuple[int, int, int]:
+    return int(color[0]), int(color[1]), int(color[2])
+
+
+def _rgb_from_channels(r: int, g: int, b: int) -> RGBColor:
+    return RGBColor(_clamp_byte(r), _clamp_byte(g), _clamp_byte(b))
+
+
+def _mix_rgb(a: RGBColor, b: RGBColor, t: float) -> RGBColor:
+    ar, ag, ab = _rgb_channels(a)
+    br, bg, bb = _rgb_channels(b)
+    t = max(0.0, min(1.0, t))
+    return _rgb_from_channels(
+        ar + (br - ar) * t,
+        ag + (bg - ag) * t,
+        ab + (bb - ab) * t,
+    )
+
+
+def _divider_palette(theme: SlideTheme) -> _DividerPalette:
+    """Season-aware divider colors derived from the liturgical slide theme."""
+    bg = theme.bg
+    black = RGBColor(8, 8, 10)
+    white = RGBColor(255, 255, 255)
+    grad_start = _mix_rgb(bg, black, 0.82)
+    grad_end = _mix_rgb(bg, white, 0.28)
+    panel_fill = bg
+    panel_border = _mix_rgb(bg, white, 0.34)
+    bar_fill = _mix_rgb(bg, black, 0.42)
+    bar_border = bar_fill
+    label = _mix_rgb(theme.emphasis, white, 0.42)
+    quote = _mix_rgb(theme.primary, theme.muted, 0.18)
+    gospel_label = _mix_rgb(theme.emphasis, white, 0.12)
+    return _DividerPalette(
+        grad_start=grad_start,
+        grad_end=grad_end,
+        panel_fill=panel_fill,
+        panel_border=panel_border,
+        bar_fill=bar_fill,
+        bar_border=bar_border,
+        label=label,
+        primary=theme.primary,
+        quote=quote,
+        gospel_label=gospel_label,
+    )
+
+
+def _apply_solid_fill_alpha(shape, rgb: RGBColor, alpha_val: int) -> None:
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = rgb
+    sp_pr = shape._element.spPr
+    solid = sp_pr.find(qn("a:solidFill"))
+    if solid is None:
+        return
+    srgb = solid.find(qn("a:srgbClr"))
+    if srgb is None:
+        return
+    for old in srgb.findall(qn("a:alpha")):
+        srgb.remove(old)
+    alpha = etree.SubElement(srgb, qn("a:alpha"))
+    alpha.set("val", str(alpha_val))
+
+
+def _apply_line_alpha(shape, rgb: RGBColor, alpha_val: int, *, width_emu: int = _DIVIDER_LINE_W) -> None:
+    sp_pr = shape._element.spPr
+    ln = sp_pr.find(qn("a:ln"))
+    if ln is None:
+        ln = etree.SubElement(sp_pr, qn("a:ln"))
+    ln.set("w", str(width_emu))
+    ln.set("cap", "sq")
+    for child in list(ln):
+        ln.remove(child)
+    solid_fill = etree.SubElement(ln, qn("a:solidFill"))
+    r, g, b = _rgb_channels(rgb)
+    srgb = etree.SubElement(solid_fill, qn("a:srgbClr"))
+    srgb.set("val", f"{r:02X}{g:02X}{b:02X}")
+    alpha = etree.SubElement(srgb, qn("a:alpha"))
+    alpha.set("val", str(alpha_val))
+
+
+def _divider_add_rounded_panel(
+    slide,
+    left,
+    top,
+    width,
+    height,
+    *,
+    fill_rgb: RGBColor,
+    border_rgb: RGBColor,
+    alpha_val: int,
+) -> None:
+    shp = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+    shp.adjustments[0] = _DIVIDER_CORNER_ADJ
+    _apply_solid_fill_alpha(shp, fill_rgb, alpha_val)
+    _apply_line_alpha(shp, border_rgb, alpha_val)
+
+
+def _set_divider_gradient_bg(slide, start: RGBColor, end: RGBColor) -> None:
+    fill = slide.background.fill
+    fill.gradient()
+    fill.gradient_angle = 0.0
+    stops = fill.gradient_stops
+    stops[0].color.rgb = start
+    stops[1].color.rgb = end
+
+
+def _divider_date_display(date: str) -> str:
+    raw = (date or "").strip()
+    if not raw:
+        return ""
+    for fmt in ("%Y-%m-%d", "%B %d, %Y", "%b %d, %Y", "%d %B %Y"):
+        try:
+            d = _dt.datetime.strptime(raw, fmt).date()
+            return f"{d.day} {d.strftime('%B').upper()} {d.year}"
+        except ValueError:
+            continue
+    return raw.upper()
+
+
+def _divider_year_date_line(lectionary_cycle: str, date: str) -> str:
+    cycle = (lectionary_cycle or "—").strip().upper()
+    date_line = _divider_date_display(date)
+    if date_line:
+        return f"YEAR {cycle} · {date_line}"
+    return f"YEAR {cycle}"
+
+
+def _divider_gospel_heading(gospel_reference: str) -> str:
+    ref = (gospel_reference or "").strip() or "—"
+    ref = ref.replace("–", "–").replace("-", "–")
+    return f"GOSPEL ({ref.upper()})"
+
+
+def _divider_quote_lines(quote: str) -> List[str]:
+    q = (quote or "").strip()
+    if not q:
+        return []
+    if q[0] not in "\"“‘":
+        q = f"\u201c{q}"
+    if q[-1] not in "\"”’":
+        q = f"{q}\u201d"
+    parts = re.split(r"(?<=[;.])\s+", q)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _divider_est_lines(text: str, width_in: float, pt: float) -> int:
+    plain = (text or "").strip()
+    if not plain:
+        return 0
+    chars_per_line = max(6, int(width_in * 72 / max(pt * 0.52, 1)))
+    return max(1, math.ceil(len(plain) / chars_per_line))
+
+
+def _divider_fit_font_pt(
+    chunks: List[str],
+    *,
+    width_in: float,
+    height_in: float,
+    max_pt: float,
+    min_pt: float,
+) -> float:
+    lines = [c for c in chunks if (c or "").strip()]
+    if not lines:
+        return max_pt
+    pt = max_pt
+    while pt > min_pt:
+        total_lines = sum(_divider_est_lines(line, width_in, pt) for line in lines)
+        line_h = (pt * 1.14) / 72.0
+        if total_lines * line_h <= height_in * 0.92:
+            break
+        pt -= 1
+    return max(min_pt, pt)
+
+
+def _divider_add_textbox(
+    slide,
+    *,
+    left,
+    top,
+    width,
+    height,
+    lines: List[Tuple[str, dict]],
+    anchor_middle: bool = False,
+) -> None:
+    """Add a textbox; each item is (text, style kwargs for _style_para)."""
+    if not any((t or "").strip() for t, _ in lines):
+        return
+    box = slide.shapes.add_textbox(left, top, width, height)
+    tf = box.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    if anchor_middle:
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    first = True
+    for text, style in lines:
+        if not (text or "").strip():
+            continue
+        p = tf.paragraphs[0] if first else tf.add_paragraph()
+        first = False
+        p.text = text.strip()
+        _style_para(
+            p,
+            size_pt=style.get("size_pt", _SLIDE_TEXT_PT),
+            color=style.get("color", RGBColor(255, 255, 255)),
+            bold=style.get("bold", False),
+            italic=style.get("italic", False),
+            font_name=style.get("font_name", _DIVIDER_FONT),
+        )
+        p.alignment = style.get("align", PP_ALIGN.CENTER)
+        p.line_spacing = style.get("line_spacing", 1.08)
+        if style.get("space_after"):
+            p.space_after = Pt(style["space_after"])
+
+
+def _render_default_divider_cover(
+    slide,
+    *,
+    celebrant: str,
+    date: str,
+    mass_title: str,
+    season: str,
+    lectionary_cycle: str,
+    gospel_reference: str,
+    gospel_quote: str,
+    quote_max_chars: int,
+    theme: SlideTheme,
+) -> None:
+    pal = _divider_palette(theme)
+    _set_divider_gradient_bg(slide, pal.grad_start, pal.grad_end)
+    _divider_add_rounded_panel(
+        slide,
+        Inches(7.498),
+        Inches(1.388),
+        Inches(11.968),
+        Inches(6.702),
+        fill_rgb=pal.panel_fill,
+        border_rgb=pal.panel_border,
+        alpha_val=_DIVIDER_PANEL_ALPHA,
+    )
+    _divider_add_rounded_panel(
+        slide,
+        Inches(0.985),
+        Inches(9.299),
+        Inches(18.03),
+        Inches(1.217),
+        fill_rgb=pal.bar_fill,
+        border_rgb=pal.bar_border,
+        alpha_val=_DIVIDER_BAR_ALPHA,
+    )
+
+    celebrant_name = (celebrant or "").strip() or "—"
+    celebrant_pt = _divider_fit_font_pt(
+        [celebrant_name],
+        width_in=7.206,
+        height_in=1.156,
+        max_pt=61,
+        min_pt=34,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(1.405),
+        top=Inches(2.614),
+        width=Inches(4.604),
+        height=Inches(0.698),
+        lines=[("MASS CELEBRANT:", {"size_pt": 37, "color": pal.label, "bold": True})],
+        anchor_middle=True,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(0.292),
+        top=Inches(3.339),
+        width=Inches(7.206),
+        height=Inches(1.156),
+        lines=[(celebrant_name, {"size_pt": celebrant_pt, "color": pal.primary, "bold": True})],
+        anchor_middle=True,
+    )
+
+    year_date_line = _divider_year_date_line(lectionary_cycle, date)
+    year_date_pt = _divider_fit_font_pt(
+        [year_date_line],
+        width_in=7.206,
+        height_in=0.95,
+        max_pt=49,
+        min_pt=28,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(0.292),
+        top=Inches(4.844),
+        width=Inches(7.206),
+        height=Inches(0.95),
+        lines=[
+            (
+                year_date_line,
+                {"size_pt": year_date_pt, "color": pal.primary, "bold": True, "italic": True},
+            )
+        ],
+        anchor_middle=True,
+    )
+
+    g_line = (gospel_quote or "").strip()
+    if quote_max_chars and len(g_line) > quote_max_chars:
+        g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
+    quote_parts = _divider_quote_lines(g_line)
+    quote_w_in = 11.784
+    quote_h_in = 2.649
+    quote_pt = _divider_fit_font_pt(
+        quote_parts or [g_line],
+        width_in=quote_w_in,
+        height_in=quote_h_in,
+        max_pt=39,
+        min_pt=22,
+    )
+    quote_style = {"size_pt": quote_pt, "color": pal.quote, "bold": False}
+    _divider_add_textbox(
+        slide,
+        left=Inches(7.546),
+        top=Inches(2.614),
+        width=Inches(quote_w_in),
+        height=Inches(quote_h_in),
+        lines=[(part, quote_style) for part in (quote_parts or ([g_line] if g_line else []))],
+        anchor_middle=True,
+    )
+
+    g_heading = _divider_gospel_heading(gospel_reference)
+    g_head_pt = _divider_fit_font_pt(
+        [g_heading],
+        width_in=6.364,
+        height_in=0.771,
+        max_pt=41,
+        min_pt=24,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(10.256),
+        top=Inches(6.345),
+        width=Inches(6.364),
+        height=Inches(0.771),
+        lines=[(g_heading, {"size_pt": g_head_pt, "color": pal.gospel_label, "bold": True})],
+        anchor_middle=True,
+    )
+
+    bottom_title = (mass_title or season or "Sunday Mass").strip()
+    bottom_title = bottom_title.replace(" Celebration", "").strip() or "Sunday Mass"
+    bottom_pt = _divider_fit_font_pt(
+        [bottom_title],
+        width_in=13.52,
+        height_in=1.271,
+        max_pt=68,
+        min_pt=32,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(3.495),
+        top=Inches(9.199),
+        width=Inches(13.52),
+        height=Inches(1.271),
+        lines=[(bottom_title, {"size_pt": bottom_pt, "color": pal.primary, "bold": True})],
+        anchor_middle=True,
+    )
+
+
 def _add_divider_cover(
     prs: Presentation,
     *,
@@ -1078,21 +1465,18 @@ def _add_divider_cover(
     gospel_quote: str,
     quote_max_chars: int,
     theme: SlideTheme,
+    mass_title: str = "",
     background_image_path: Optional[Path] = None,
     divider_poster_path: Optional[Path] = None,
 ) -> None:
+    del background_image_path  # GFCC divider uses season theme; poster is not overlaid here
     slide = prs.slides.add_slide(_layout_blank(prs))
 
-    uploaded_divider = bool(
+    image_divider = bool(
         divider_poster_path and Path(divider_poster_path).is_file()
     )
-    cover: Optional[Path] = None
-    if uploaded_divider:
+    if image_divider:
         cover = Path(divider_poster_path).resolve()
-    elif background_image_path and Path(background_image_path).is_file():
-        cover = Path(background_image_path).resolve()
-
-    if cover and cover.is_file():
         slide.shapes.add_picture(
             str(cover),
             left=0,
@@ -1100,47 +1484,20 @@ def _add_divider_cover(
             width=prs.slide_width,
             height=prs.slide_height,
         )
-    else:
-        _set_slide_bg(slide, theme.bg)
-
-    if uploaded_divider:
         return
 
-    _apply_slide_branding(slide, theme)
-    lx = MARGIN_SIDE
-    lw = SLIDE_WIDTH - 2 * MARGIN_SIDE
-    ty = _content_top() + Inches(0.35)
-
-    g_line = (gospel_quote or "").strip()
-    if quote_max_chars and len(g_line) > quote_max_chars:
-        g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
-    gref = (gospel_reference or "").strip() or "—"
-
-    lines = [
-        "MASS CELEBRANT:",
-        celebrant,
-        "",
-        f"Gospel ({gref})",
-    ]
-    if g_line:
-        lines.append(f"\u201c{g_line}\u201d")
-    lines.extend(["", f"YEAR {(lectionary_cycle or '—').strip().upper()}", f"{date} · {(season or '').strip()}"])
-
-    blk = slide.shapes.add_textbox(lx, ty, lw, Inches(6.5))
-    tf = blk.text_frame
-    _prep_tf(tf)
-    tf.clear()
-    first = True
-    for line in lines:
-        p = tf.paragraphs[0] if first else tf.add_paragraph()
-        first = False
-        p.text = line
-        bold = "CELEBRANT" in line or line.startswith("MASS")
-        _style_para(p, size_pt=_SLIDE_TEXT_PT, color=theme.primary if not bold else theme.emphasis, bold=bold)
-        p.alignment = PP_ALIGN.CENTER
-        p.space_after = Pt(3)
-
-    _add_community_footer(slide, "Mass poster / divider", theme)
+    _render_default_divider_cover(
+        slide,
+        celebrant=celebrant,
+        date=date,
+        mass_title=mass_title,
+        season=season,
+        lectionary_cycle=lectionary_cycle,
+        gospel_reference=gospel_reference,
+        gospel_quote=gospel_quote,
+        quote_max_chars=quote_max_chars,
+        theme=theme,
+    )
 
 
 def _add_section_card(prs: Presentation, big_lines: str, footer_section: str, theme: SlideTheme) -> None:
@@ -2076,6 +2433,7 @@ def generate_mass_ppt(
         gospel_quote=g_line,
         quote_max_chars=quote_max_chars,
         theme=theme,
+        mass_title=title,
         background_image_path=liturgical_poster_png,
         divider_poster_path=divider_poster_png,
     )

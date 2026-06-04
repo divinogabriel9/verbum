@@ -264,6 +264,20 @@ def _hymn_title_for_poster(section: str, hymn_id: str) -> str:
     return str(row.get("title") or hid).strip() if row else hid
 
 
+def _resolve_divider_poster_path(
+    *,
+    uploaded: Optional[Path],
+    poster_ppt_path: Optional[Path],
+    use_poster_as_divider: bool,
+) -> Optional[Path]:
+    """Uploaded divider wins; otherwise use 16:9 poster when OpenAI poster is enabled."""
+    if uploaded and Path(uploaded).is_file():
+        return Path(uploaded)
+    if use_poster_as_divider and poster_ppt_path and Path(poster_ppt_path).is_file():
+        return Path(poster_ppt_path)
+    return None
+
+
 def fetch_preview(date: str) -> PreviewPayload:
     data = get_liturgical_data(date)
     if not data:
@@ -489,6 +503,12 @@ def generate_mass_media(
             include_social_exports=include_social_exports,
         )
 
+    divider_for_ppt = _resolve_divider_poster_path(
+        uploaded=divider_poster_path,
+        poster_ppt_path=poster_ppt_path,
+        use_poster_as_divider=include_ai_mass_poster,
+    )
+
     slide_count, pptx_path = generate_mass_ppt(
         title=title,
         gospel_reference=gospel_ref,
@@ -510,8 +530,8 @@ def generate_mass_media(
         custom_theme=custom_theme,
         song_selections=picks,
         output_stem=stem,
-        liturgical_poster_png=poster_ppt_path,
-        divider_poster_png=divider_poster_path,
+        liturgical_poster_png=None,
+        divider_poster_png=divider_for_ppt,
         announcement_image_paths=announcement_image_paths,
         mass_collection_amount=mass_collection_amount or "",
         mass_collection_date_label=mass_collection_date_label or "",
@@ -621,6 +641,12 @@ def regenerate_mass_pptx(
     if not poster_ppt_path.is_file():
         poster_ppt_path = None
 
+    divider_for_ppt = _resolve_divider_poster_path(
+        uploaded=divider_poster_path,
+        poster_ppt_path=poster_ppt_path,
+        use_poster_as_divider=bool(poster_ppt_path),
+    )
+
     psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
     psalm_body = enrich_psalm_text_for_slides(
         psalm_body,
@@ -649,8 +675,8 @@ def regenerate_mass_pptx(
         custom_theme=custom_theme,
         song_selections=picks,
         output_stem=stem,
-        liturgical_poster_png=poster_ppt_path,
-        divider_poster_png=divider_poster_path,
+        liturgical_poster_png=None,
+        divider_poster_png=divider_for_ppt,
         announcement_image_paths=announcement_image_paths,
         mass_collection_amount=mass_collection_amount or "",
         mass_collection_date_label=mass_collection_date_label or "",

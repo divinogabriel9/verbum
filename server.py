@@ -17,14 +17,15 @@ import zipfile
 from pathlib import Path
 from typing import Any, Optional
 
-from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
-load_dotenv()
+from services.env_config import load_project_dotenv
+
+load_project_dotenv()
 
 from services.calendar_month import fetch_calendar_month
 from services.catholic_news import fetch_catholic_headlines
