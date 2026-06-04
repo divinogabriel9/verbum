@@ -3540,11 +3540,51 @@
       flex-shrink: 0;
       white-space: nowrap;
     }
-    .song-composer-catalog-wrap[hidden] {
+    .song-composer-catalog-wrap {
+      margin-top: 2px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+    .song-composer-library-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--ink);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+    .song-composer-library-toggle:hover {
+      background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
+    }
+    .song-composer-library-toggle__chev {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: var(--muted);
+      transition: transform 0.15s ease;
+    }
+    .song-composer-catalog-wrap.is-expanded .song-composer-library-toggle__chev {
+      transform: rotate(90deg);
+    }
+    .song-composer-catalog-wrap.is-expanded .song-composer-library-toggle {
+      border-bottom: 1px solid var(--line-soft);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+    .song-composer-catalog-body[hidden] {
       display: none !important;
     }
-    .song-composer-catalog-wrap:not([hidden]) {
-      margin-top: 2px;
+    .song-composer-catalog-body:not([hidden]) .song-composer-catalog-panel {
+      border: none;
+      border-radius: 0;
     }
     @media (min-width: 721px) {
       .lyrics-workspace-mockup .song-composer-layout {
@@ -3568,31 +3608,6 @@
       flex-direction: column;
       gap: 8px;
       min-width: 0;
-    }
-    .song-composer-actions-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-    }
-    .song-composer-library-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 36px;
-      padding: 8px 14px;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .song-composer-library-btn svg {
-      flex-shrink: 0;
-      opacity: 0.85;
-    }
-    .song-composer-library-btn.active {
-      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
-      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-solid));
-      color: var(--liturgical-accent);
     }
     .song-composer-recent {
       display: flex;
@@ -3667,6 +3682,14 @@
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--liturgical-accent);
+    }
+    .song-composer-recent-item--deleted .song-composer-recent-item__badge,
+    .song-composer-recent-item--deleted .song-composer-recent-item__title {
+      color: var(--danger);
+    }
+    .song-composer-recent-item--deleted {
+      border-color: color-mix(in srgb, var(--danger) 25%, var(--line-soft));
+      background: color-mix(in srgb, var(--danger) 4%, var(--surface-solid));
     }
     .song-composer-catalog-panel {
       max-height: min(132px, 22vh);
@@ -3864,9 +3887,7 @@
       background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
       border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
     }
-    .lyrics-workspace-mockup .song-composer-library-btn.active {
-      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
-      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface-solid));
+    .lyrics-workspace-mockup .song-composer-catalog-wrap.is-expanded .song-composer-library-toggle {
       color: var(--liturgical-accent);
     }
     .lyrics-workspace-mockup .song-composer-search-wrap input:focus {
@@ -6183,9 +6204,9 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260603" />
-  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260603" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260603" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260604" />
+  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260604" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260604" />
 <body data-season="ordinary">
   <div class="app-shell">
     <main class="dashboard">
@@ -6456,15 +6477,16 @@
                   </label>
                   <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,text/plain" tabindex="-1" />
                 </div>
-                <div class="song-composer-actions-row">
-                  <button type="button" class="secondary song-composer-library-btn" id="btn-toggle-song-catalog" aria-expanded="false" aria-controls="song-composer-catalog-wrap">
+                <div class="song-composer-catalog-wrap is-collapsed" id="song-composer-catalog-wrap" data-library-open="">
+                  <button type="button" class="song-composer-library-toggle" id="btn-toggle-song-catalog" aria-expanded="false" aria-controls="song-composer-catalog-body">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
                     <span>Songs library</span>
+                    <span class="song-composer-library-toggle__chev" aria-hidden="true">▸</span>
                   </button>
-                </div>
-                <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap" hidden>
-                  <div class="song-catalog-panel song-composer-catalog-panel">
-                    <div class="song-catalog-scroll" id="song-catalog-root"></div>
+                  <div class="song-composer-catalog-body" id="song-composer-catalog-body" hidden>
+                    <div class="song-catalog-panel song-composer-catalog-panel">
+                      <div class="song-catalog-scroll" id="song-catalog-root"></div>
+                    </div>
                   </div>
                 </div>
                 <p class="status song-composer-status" id="lyrics-status" aria-live="polite"></p>
@@ -7948,10 +7970,18 @@ Lord, hear our prayer</textarea>
       el.className = "lyrics-analyze-hint" + (kind ? " " + kind : "");
     }
 
+    function lyricBlockSectionTitle(block, index) {
+      const type = block.type || "verse";
+      const label = typeLabels[type] || "Section";
+      const sameTypeIndex = lyricBlocks.slice(0, index + 1).filter((b) => b.type === type).length;
+      if (type === "verse" || sameTypeIndex > 1) return label + " " + sameTypeIndex;
+      return label;
+    }
+
     function serializedLyrics() {
       if (!lyricBlocks.length) return $("lyrics-input").value.trim();
-      return lyricBlocks.map((block) => {
-        const title = (block.title || typeLabels[block.type] || "Section").trim();
+      return lyricBlocks.map((block, index) => {
+        const title = lyricBlockSectionTitle(block, index);
         return [title, (block.text || "").trim()].filter(Boolean).join("\n");
       }).join("\n\n").trim();
     }
@@ -8045,7 +8075,9 @@ Lord, hear our prayer</textarea>
       if (!card || event.target.dataset.action !== "type") return;
       const block = lyricBlocks.find((item) => item.id === card.dataset.id);
       if (!block) return;
+      const index = lyricBlocks.findIndex((item) => item.id === card.dataset.id);
       block.type = event.target.value;
+      block.title = lyricBlockSectionTitle(block, index);
       renderLyrics();
     });
 
@@ -8133,12 +8165,6 @@ Lord, hear our prayer</textarea>
       syncInputPanelToStructuredEditor({ quiet: true });
       const baseTitle = (file.name || "").replace(/\.txt$/i, "").trim();
       if (baseTitle && $("lyrics-save-title")) $("lyrics-save-title").value = baseTitle;
-      pushSongHistory({
-        title: baseTitle || file.name || "Uploaded lyrics",
-        section: ($("lyrics-save-section") && $("lyrics-save-section").value) || "",
-        id: "",
-        kind: "loaded",
-      });
       setLyricsStatus("Loaded " + file.name + ". Ready to analyze.", "ok");
     }
 
@@ -8206,6 +8232,19 @@ Lord, hear our prayer</textarea>
       renderLyrics();
       setLyricsStatus("Tidied spacing and empty labels.", "ok");
     });
+    function flushLyricBlocksFromDom() {
+      document.querySelectorAll("#lyrics-block-list .lyric-block").forEach((card) => {
+        const block = lyricBlocks.find((b) => b.id === card.dataset.id);
+        if (!block) return;
+        const ta = card.querySelector('[data-action="text"]');
+        if (ta) block.text = ta.value;
+        const sel = card.querySelector('[data-action="type"]');
+        if (sel) block.type = sel.value;
+        const index = lyricBlocks.findIndex((b) => b.id === block.id);
+        if (index >= 0) block.title = lyricBlockSectionTitle(block, index);
+      });
+    }
+
     $("btn-save-lyrics").addEventListener("click", async () => {
       const title = $("lyrics-save-title").value.trim();
       if (!title) {
@@ -8213,6 +8252,7 @@ Lord, hear our prayer</textarea>
         return;
       }
       if (lyricBlocks.length) {
+        flushLyricBlocksFromDom();
         syncStructuredEditorToInputPanel();
       } else if ($("lyrics-input").value.trim()) {
         syncInputPanelToStructuredEditor({ quiet: true });
@@ -8237,15 +8277,12 @@ Lord, hear our prayer</textarea>
         const isNew = created.length > 0;
         const isEdited = !isNew && updated.length > 0;
         setLyricsStatus("Saved lyrics for " + result.title + " in " + result.sections.join(", ") + ".", "ok");
-        if (isNew || isEdited) {
-          pushRecentSong({
-            title: result.title,
-            section: $("lyrics-save-section").value,
-            id: result.id || "",
-            isNew,
-            isEdited,
-          });
-        }
+        pushSongHistory({
+          title: result.title,
+          section: $("lyrics-save-section").value,
+          id: result.id || "",
+          kind: isNew ? "new" : "lyrics_updated",
+        });
         await loadSongCatalog();
       } catch (error) {
         setLyricsStatus(error.message || "Could not save lyrics.", "error");
@@ -11503,11 +11540,13 @@ Lord, hear our prayer</textarea>
 
     const RECENT_SONGS_KEY = "churchMediaRecentSongAdds";
     const SONG_HISTORY_KIND_LABELS = {
-      loaded: "Opened",
-      saved: "Saved",
-      edited: "Updated",
-      new: "New",
+      new: "Added",
+      edited: "Edited",
+      lyrics_updated: "Updated lyrics",
+      saved: "Updated lyrics",
+      deleted: "Deleted",
     };
+    const COMPOSER_RECENT_KINDS = new Set(["new", "edited", "lyrics_updated", "saved", "deleted"]);
     const SECTION_ORDER = [
       { key: "entrance", label: "Entrance" },
       { key: "offertory", label: "Offertory" },
@@ -11543,6 +11582,8 @@ Lord, hear our prayer</textarea>
         else if (r.isLoaded) kind = "loaded";
         else return null;
       }
+      if (kind === "loaded" || kind === "opened") return null;
+      if (kind === "saved") kind = "lyrics_updated";
       return {
         t: r.t || Date.now(),
         title: r.title || "",
@@ -11552,12 +11593,13 @@ Lord, hear our prayer</textarea>
       };
     }
 
-    function getSongHistoryRows(limit) {
+    function getSongHistoryRows(limit, kindsFilter) {
       const seen = new Set();
       const rows = [];
       readSongHistoryRaw().forEach((raw) => {
         const r = normalizeSongHistoryRow(raw);
         if (!r || !r.title) return;
+        if (kindsFilter && !kindsFilter.has(r.kind)) return;
         const key = recentSongDedupeKey(r);
         if (seen.has(key)) return;
         seen.add(key);
@@ -11568,6 +11610,8 @@ Lord, hear our prayer</textarea>
 
     function pushSongHistory(entry) {
       if (!entry || !entry.title) return;
+      const kind = entry.kind || "lyrics_updated";
+      if (kind === "loaded" || kind === "opened") return;
       let raw = readSongHistoryRaw();
       const key = recentSongDedupeKey(entry);
       raw = raw.filter((r) => {
@@ -11579,40 +11623,30 @@ Lord, hear our prayer</textarea>
         title: entry.title || "",
         section: entry.section || "",
         id: entry.id || "",
-        kind: entry.kind || "loaded",
+        kind,
       });
       localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 32)));
       renderCollectionsRecent();
       renderComposerRecent();
     }
 
-    function pushRecentSong(entry) {
-      if (!entry) return;
-      pushSongHistory({
-        title: entry.title,
-        section: entry.section,
-        id: entry.id,
-        kind: entry.isNew ? "new" : entry.isEdited ? "edited" : "saved",
-      });
-    }
-
     function renderComposerRecent() {
       const el = $("song-composer-recent-list");
       if (!el) return;
-      const rows = getSongHistoryRows(14);
+      const rows = getSongHistoryRows(14, COMPOSER_RECENT_KINDS);
       if (!rows.length) {
-        el.innerHTML = "<p class=\"song-composer-recent-empty\">Open or save a song to see it here.</p>";
+        el.innerHTML = "<p class=\"song-composer-recent-empty\">Added, edited, or deleted songs appear here.</p>";
         return;
       }
       el.innerHTML = rows.map((r) => {
-        const hasId = r.id && r.section;
+        const hasId = r.id && r.section && r.kind !== "deleted";
         const badge = SONG_HISTORY_KIND_LABELS[r.kind] || "Recent";
         const meta = songSectionLabel(r.section) + (r.t ? " · " + formatSongHistoryWhen(r.t) : "");
         const attrs = hasId
           ? " type=\"button\" data-recent-sec=\"" + escapeHtml(r.section) + "\" data-recent-id=\"" + escapeHtml(r.id) + "\""
           : " type=\"button\" disabled";
         return (
-          "<button class=\"song-composer-recent-item\" role=\"listitem\"" + attrs + ">" +
+          "<button class=\"song-composer-recent-item song-composer-recent-item--" + escapeHtml(r.kind) + "\" role=\"listitem\"" + attrs + ">" +
             "<span class=\"song-composer-recent-item__badge\">" + escapeHtml(badge) + "</span>" +
             "<span class=\"song-composer-recent-item__title\">" + escapeHtml(r.title) + "</span>" +
             "<span class=\"song-composer-recent-item__meta\">" + escapeHtml(meta) + "</span>" +
@@ -11635,7 +11669,7 @@ Lord, hear our prayer</textarea>
     function renderCollectionsRecent() {
       const el = $("collections-recent-songs");
       if (!el) return;
-      const rows = getSongHistoryRows(12).filter((r) => r.kind === "new" || r.kind === "edited" || r.kind === "saved");
+      const rows = getSongHistoryRows(12, COMPOSER_RECENT_KINDS);
       if (!rows.length) {
         el.textContent = "Nothing tracked yet — saving or opening songs in Song Library adds entries here.";
         return;
@@ -11742,13 +11776,26 @@ Lord, hear our prayer</textarea>
       analyzeLyrics();
       autoResizeLyricsMainInput();
       setLyricsStatus("Loaded \"" + (s.title || "") + "\" from " + songSectionLabel(section) + ".", "ok");
-      pushSongHistory({
-        title: s.title || "",
-        section,
-        id,
-        kind: "loaded",
-      });
       if (clearSearch) clearSongCatalogSearch();
+      collapseComposerLibrary();
+    }
+
+    function setComposerLibraryExpanded(expanded) {
+      const wrap = $("song-composer-catalog-wrap");
+      const body = $("song-composer-catalog-body");
+      const toggle = $("btn-toggle-song-catalog");
+      if (!wrap || !body) return;
+      wrap.dataset.libraryOpen = expanded ? "1" : "";
+      wrap.classList.toggle("is-expanded", expanded);
+      wrap.classList.toggle("is-collapsed", !expanded);
+      body.hidden = !expanded;
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      }
+    }
+
+    function collapseComposerLibrary() {
+      setComposerLibraryExpanded(false);
     }
 
     function songSectionLabel(key) {
@@ -11832,11 +11879,12 @@ Lord, hear our prayer</textarea>
       if ($("lyrics-save-title")) $("lyrics-save-title").value = title;
       if ($("lyrics-save-author")) $("lyrics-save-author").value = author;
       if ($("lyrics-save-language")) $("lyrics-save-language").value = language;
+      pushSongHistory({ title, section, id, kind: "edited" });
       setLyricsStatus("Updated \"" + title + "\".", "ok");
     }
 
     function openSongDeleteConfirmModal(section, id, title) {
-      songDeletePending = { section, id };
+      songDeletePending = { section, id, title: title || "" };
       const desc = $("song-delete-desc");
       if (desc) {
         desc.textContent =
@@ -11847,7 +11895,7 @@ Lord, hear our prayer</textarea>
 
     async function confirmSongDeleteFromModal() {
       if (!songDeletePending) return;
-      const { section, id } = songDeletePending;
+      const { section, id, title } = songDeletePending;
       const res = await fetch(
         "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
         { method: "DELETE" }
@@ -11855,6 +11903,7 @@ Lord, hear our prayer</textarea>
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || data.error || "Delete failed");
       closeSongDeleteModal();
+      pushSongHistory({ title: title || "Song", section, id, kind: "deleted" });
       await loadSongCatalog();
       setLyricsStatus("Song removed from catalog.", "ok");
     }
@@ -11976,16 +12025,11 @@ Lord, hear our prayer</textarea>
     let songCatalogSearchDebounce = null;
     function updateComposerCatalogVisibility() {
       const wrap = $("song-composer-catalog-wrap");
-      const toggle = $("btn-toggle-song-catalog");
       if (!wrap) return;
       const q = (songCatalogFilter || "").trim();
       const libraryOpen = wrap.dataset.libraryOpen === "1";
-      const show = libraryOpen || q.length > 0;
-      wrap.hidden = !show;
-      if (toggle) {
-        toggle.setAttribute("aria-expanded", show ? "true" : "false");
-        toggle.classList.toggle("active", libraryOpen);
-      }
+      const expanded = libraryOpen || q.length > 0;
+      setComposerLibraryExpanded(expanded);
     }
 
     function applySongCatalogSearch(sourceEl) {
@@ -12004,9 +12048,10 @@ Lord, hear our prayer</textarea>
       const wrap = $("song-composer-catalog-wrap");
       if (!wrap) return;
       const open = wrap.dataset.libraryOpen === "1";
-      wrap.dataset.libraryOpen = open ? "" : "1";
-      updateComposerCatalogVisibility();
-      if (!open) {
+      if (open) {
+        collapseComposerLibrary();
+      } else {
+        setComposerLibraryExpanded(true);
         renderSongCatalog();
         wrap.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
