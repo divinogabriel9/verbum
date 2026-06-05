@@ -83,6 +83,8 @@ _HYMN_BRAND_WHITE = RGBColor(255, 255, 255)
 _HYMN_FOOTER_MUTED = RGBColor(140, 140, 145)
 _HYMN_TITLE_FONT = "Georgia"
 _HYMN_BODY_FONT = "Poppins Bold"
+_GOSPEL_ACCLAMATION_BODY_PT = 69.0
+_GOSPEL_ACCLAMATION_BODY_FONT = "Poppins Bold"
 _BRAND_BAND = Inches(1.05)
 _LOGO_MAX_W = Inches(0.95)
 _LOGO_MAX_H = Inches(0.42)
@@ -109,11 +111,23 @@ _LAMB_OF_GOD_SLIDE_INDEX = 0
 _SIGN_OF_PEACE_TEMPLATE_FILENAME = "sign_of_peace_slide.pptx"
 _SIGN_OF_PEACE_SLIDE_INDEX = 0
 _GLORIA_TEMPLATE_FILENAME = "gloria_slides.pptx"
+_KYRIE_TEMPLATE_FILENAME = "kyrie_slide.pptx"
+_KYRIE_SLIDE_INDEX = 0
+_LOTW_TITLE_IMAGE_FILENAME = "liturgy_of_the_word_title.png"
+_LOTW_TITLE_TEMPLATE_FILENAME = "liturgy_of_the_word_title_slide.pptx"
+_LOTW_TITLE_SLIDE_INDEX = 0
+_GOSPEL_ACCLAMATION_TEMPLATE_FILENAME = "gospel_acclamation_slides.pptx"
+_APOSTLES_CREED_TEMPLATE_FILENAME = "apostles_creed_slides.pptx"
+_APOSTLES_CREED_TITLE = "Apostles' Creed"
 _REFERENCE_FOOTER_ZONE_TOP = int(SLIDE_HEIGHT * 0.78)
 _reference_mass_deck: Optional[Presentation] = None
 _lamb_of_god_template: Optional[Presentation] = None
 _sign_of_peace_template: Optional[Presentation] = None
 _gloria_template: Optional[Presentation] = None
+_kyrie_template: Optional[Presentation] = None
+_lotw_title_template: Optional[Presentation] = None
+_gospel_acclamation_template: Optional[Presentation] = None
+_apostles_creed_template: Optional[Presentation] = None
 
 
 @dataclass(frozen=True)
@@ -449,9 +463,19 @@ def _style_shape_font(
                 para.font.italic = italic
 
 
+def _normalize_rite_title(text: str) -> str:
+    t = (text or "").strip().lower()
+    return t.replace("\u2019", "'").replace("\u2018", "'").replace("'", "'")
+
+
 def _is_rite_slide_title_text(text: str, title: str) -> bool:
     t = (text or "").strip()
-    return "\n" not in t and t.lower() == (title or "").strip().lower()
+    return "\n" not in t and _normalize_rite_title(t) == _normalize_rite_title(title or "")
+
+
+def _is_apostles_creed_title_text(text: str) -> bool:
+    n = _normalize_rite_title(text)
+    return n == _normalize_rite_title(_APOSTLES_CREED_TITLE) or n == "apostles creed"
 
 
 def _apply_rite_slide_title_typography(slide, section_title: str) -> None:
@@ -572,6 +596,8 @@ def _is_prayer_rite_slide(footer_section: str) -> bool:
         "lamb of god",
         "penitential act",
         "nicene creed",
+        "apostles' creed",
+        "apostles creed",
     )
     return any(k in f for k in keys)
 
@@ -824,6 +850,59 @@ def _load_gloria_template() -> Optional[Presentation]:
     return _gloria_template
 
 
+def _kyrie_template_path() -> Optional[Path]:
+    candidates = (
+        _PROJECT_ROOT / "data" / "reference" / _KYRIE_TEMPLATE_FILENAME,
+        Path.home() / "Downloads" / "GFCC_26APRIL2026 (6).pptx",
+    )
+    for path in candidates:
+        if path.is_file():
+            return path.resolve()
+    return None
+
+
+def _load_kyrie_template() -> Optional[Presentation]:
+    global _kyrie_template
+    if _kyrie_template is not None:
+        return _kyrie_template
+    ref_path = _kyrie_template_path()
+    if not ref_path:
+        return None
+    _kyrie_template = Presentation(str(ref_path))
+    return _kyrie_template
+
+
+def _is_kyrie_body_text(text: str) -> bool:
+    """Main Kyrie blocks: LORD / CHRIST HAVE MERCY (all caps, not the section title)."""
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+    if not lines:
+        return False
+    joined = " ".join(lines).upper()
+    if _is_rite_slide_title_text(text, "Kyrie Eleison"):
+        return False
+    return "HAVE MERCY" in joined or joined.startswith("LORD,") or joined.startswith("CHRIST,")
+
+
+def _apply_kyrie_typography(slide) -> None:
+    """Kyrie title Georgia 38.5 pt (same as Gloria); body Poppins Bold 56 pt ALL CAPS blocks."""
+    _apply_rite_slide_title_typography(slide, "Kyrie Eleison")
+    parish = get_community_name().strip().lower()
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+            continue
+        text = (shape.text_frame.text or "").strip()
+        if not text or (parish and parish in text.lower()):
+            continue
+        if _is_rite_slide_title_text(text, "Kyrie Eleison"):
+            continue
+        if _is_kyrie_body_text(text):
+            _style_shape_font(
+                shape, font_name=_HYMN_BODY_FONT, size_pt=_HYMN_BODY_PT, bold=True
+            )
+
+
 def _gloria_source_slide_indices(slide_count: int) -> Tuple[int, ...]:
     """
     Map Gloria reference deck to four projection slides.
@@ -874,6 +953,8 @@ def _copy_slide_into_presentation(
     slide_src,
     theme: SlideTheme,
     footer_section: str,
+    *,
+    copy_groups: bool = False,
 ) -> None:
     """
     Clone prayer/body shapes from a reference slide.
@@ -886,8 +967,20 @@ def _copy_slide_into_presentation(
     for shp in list(dest.shapes):
         el = shp.element
         el.getparent().remove(el)
+    parish = get_community_name().strip().lower()
     for shp in slide_src.shapes:
-        if _is_reference_branding_shape(shp):
+        if copy_groups:
+            if int(shp.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+                continue
+            if (
+                getattr(shp, "has_text_frame", False)
+                and shp.has_text_frame
+                and parish
+            ):
+                text = (shp.text_frame.text or "").strip().lower()
+                if parish in text:
+                    continue
+        elif _is_reference_branding_shape(shp):
             continue
         newel = deepcopy(shp.element)
         dest.shapes._spTree.insert_element_before(newel, "p:extLst")
@@ -895,6 +988,59 @@ def _copy_slide_into_presentation(
     _apply_slide_branding(dest, theme)
     _strip_italic_rubric_paragraphs_on_slide(dest)
     _add_community_footer(dest, footer_section, theme)
+
+
+def _lotw_title_image_path() -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / _LOTW_TITLE_IMAGE_FILENAME
+    if path.is_file():
+        return path.resolve()
+    return None
+
+
+def _lotw_title_template_path() -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / _LOTW_TITLE_TEMPLATE_FILENAME
+    if path.is_file():
+        return path.resolve()
+    return None
+
+
+def _load_lotw_title_template() -> Optional[Presentation]:
+    global _lotw_title_template
+    if _lotw_title_template is not None:
+        return _lotw_title_template
+    ref_path = _lotw_title_template_path()
+    if not ref_path:
+        return None
+    _lotw_title_template = Presentation(str(ref_path))
+    return _lotw_title_template
+
+
+def _add_lotw_title_slide(prs: Presentation, theme: SlideTheme) -> None:
+    """Second Liturgy of the Word slide: full-bleed title artwork (replaces plain section card)."""
+    footer_section = "Liturgy of the Word"
+    image_path = _lotw_title_image_path()
+    if image_path is not None:
+        slide = prs.slides.add_slide(_layout_blank(prs))
+        slide.shapes.add_picture(
+            str(image_path),
+            left=0,
+            top=0,
+            width=prs.slide_width,
+            height=prs.slide_height,
+        )
+        _add_community_footer(slide, footer_section, theme)
+        return
+    tpl = _load_lotw_title_template()
+    if tpl is not None and _LOTW_TITLE_SLIDE_INDEX < len(tpl.slides):
+        _copy_slide_into_presentation(
+            prs,
+            tpl.slides[_LOTW_TITLE_SLIDE_INDEX],
+            theme,
+            footer_section,
+            copy_groups=True,
+        )
+        return
+    _add_section_card(prs, "LITURGY OF\nTHE WORD", footer_section, theme)
 
 
 def _copy_reference_slides(
@@ -929,7 +1075,15 @@ def _add_penitential_act_slides(prs: Presentation, theme: SlideTheme) -> None:
 
 
 def _add_kyrie_slide(prs: Presentation, theme: SlideTheme) -> None:
+    tpl = _load_kyrie_template()
+    if tpl is not None and _KYRIE_SLIDE_INDEX < len(tpl.slides):
+        _copy_slide_into_presentation(
+            prs, tpl.slides[_KYRIE_SLIDE_INDEX], theme, "Kyrie Eleison"
+        )
+        _apply_kyrie_typography(prs.slides[-1])
+        return
     if _copy_reference_slides(prs, ((_REFERENCE_SLIDE_KYRIE, "Kyrie Eleison"),), theme):
+        _apply_kyrie_typography(prs.slides[-1])
         return
     _add_marked_slide(prs, "Kyrie Eleison", GFCC.KYRIE, theme)
 
@@ -978,6 +1132,268 @@ def _add_gloria_slides(prs: Presentation, theme: SlideTheme) -> None:
         footer = "Gloria" if total == 1 else f"Gloria ({part_i + 1}/{total})"
         _copy_slide_into_presentation(prs, tpl.slides[idx], theme, footer)
         _apply_gloria_typography(prs.slides[-1])
+
+
+def _gospel_acclamation_template_path() -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / _GOSPEL_ACCLAMATION_TEMPLATE_FILENAME
+    if path.is_file():
+        return path.resolve()
+    return None
+
+
+def _load_gospel_acclamation_template() -> Optional[Presentation]:
+    global _gospel_acclamation_template
+    if _gospel_acclamation_template is not None:
+        return _gospel_acclamation_template
+    ref_path = _gospel_acclamation_template_path()
+    if not ref_path:
+        return None
+    _gospel_acclamation_template = Presentation(str(ref_path))
+    return _gospel_acclamation_template
+
+
+def _disable_cloned_slide_autofit(slide) -> None:
+    """Stop PowerPoint from shrinking text to fit boxes (SHAPE_TO_FIT_TEXT on reference slides)."""
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        shape.text_frame.auto_size = MSO_AUTO_SIZE.NONE
+
+
+def _gospel_acclamation_body_shape(slide):
+    """Largest non-title text box on a Gospel Acclamation slide."""
+    best = None
+    best_len = 0
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        text = (shape.text_frame.text or "").strip()
+        if not text or _is_rite_slide_title_text(text, "Gospel Acclamation"):
+            continue
+        if len(text) > best_len:
+            best_len = len(text)
+            best = shape
+    return best
+
+
+def _format_gospel_acclamation_projection_text(verse: str) -> str:
+    """Alleluia + lectionary verse + Alleluia (one projection block, uniform sizing)."""
+    raw = (verse or "").strip()
+    if not raw:
+        return ""
+    raw = re.sub(r"^R\.?\s*", "", raw, flags=re.I).strip()
+    lines = [ln.strip() for ln in re.split(r"\n+", raw) if ln.strip()]
+    core_lines = [
+        ln
+        for ln in lines
+        if not re.match(r"^alleluia[,.!]?\s*$", ln, flags=re.I)
+    ]
+    core = " ".join(core_lines) if core_lines else raw
+    core = re.sub(
+        r"^Alleluia[,.!]?\s*(?=.)",
+        "",
+        core,
+        count=1,
+        flags=re.I,
+    ).strip()
+    if not core:
+        return ""
+    return (
+        "Alleluia, alleluia, alleluia!\n"
+        f"{core}\n"
+        "Alleluia, alleluia, alleluia!"
+    )
+
+
+def _replace_shape_text_preserve_runs(shape, old: str, new: str) -> bool:
+    if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+        return False
+    replaced = False
+    for para in shape.text_frame.paragraphs:
+        for run in para.runs:
+            if old in (run.text or ""):
+                run.text = (run.text or "").replace(old, new, 1)
+                replaced = True
+    if not replaced and old in (shape.text_frame.text or ""):
+        shape.text_frame.text = (shape.text_frame.text or "").replace(old, new, 1)
+        replaced = True
+    return replaced
+
+
+def _gospel_book_from_reference(gospel_reference: str) -> str:
+    """Evangelist or book name for “Gospel according to …” (from lectionary citation)."""
+    ref = (gospel_reference or "").strip()
+    if not ref or ref.upper() == "N/A":
+        return "John"
+    low = ref.lower()
+    if "according to" in low:
+        return ref.split("according to", 1)[-1].strip().rstrip(".")
+    m = re.match(r"^(?:\d+\s+)?([A-Za-z][A-Za-z]+)", ref)
+    if m:
+        return m.group(1)
+    parts = ref.split()
+    return parts[0] if parts else "John"
+
+
+def _patch_gospel_acclamation_intro_slide(slide, gospel_reference: str) -> None:
+    book = _gospel_book_from_reference(gospel_reference)
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        text = shape.text_frame.text or ""
+        if "Gospel according to" not in text:
+            continue
+        m = re.search(r"Gospel according to\s+(\w+)", text)
+        if m:
+            _replace_shape_text_preserve_runs(
+                shape,
+                f"Gospel according to {m.group(1)}",
+                f"Gospel according to {book}",
+            )
+
+
+def _patch_gospel_acclamation_alleluia_slide(slide, verse: str) -> None:
+    body = _format_gospel_acclamation_projection_text(verse)
+    if not body:
+        return
+    shape = _gospel_acclamation_body_shape(slide)
+    if shape is None:
+        return
+    shape.text_frame.text = body
+
+
+def _apply_gospel_acclamation_typography(slide) -> None:
+    """Title Georgia 38.5 pt; all body lines fixed 69 pt (no autofit shrink)."""
+    _apply_rite_slide_title_typography(slide, "Gospel Acclamation")
+    parish = get_community_name().strip().lower()
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+            continue
+        text = (shape.text_frame.text or "").strip()
+        if not text or (parish and parish in text.lower()):
+            continue
+        if _is_rite_slide_title_text(text, "Gospel Acclamation"):
+            continue
+        _style_shape_font(
+            shape,
+            font_name=_GOSPEL_ACCLAMATION_BODY_FONT,
+            size_pt=_GOSPEL_ACCLAMATION_BODY_PT,
+            bold=True,
+        )
+
+
+def _gospel_acclamation_source_slide_indices(slide_count: int) -> Tuple[int, ...]:
+    """Alleluia (one slide) + priest/assembly dialogue; skip duplicate alleluia in reference."""
+    if slide_count >= 3:
+        return (0, 2)
+    if slide_count == 2:
+        return (0, 1)
+    if slide_count == 1:
+        return (0,)
+    return ()
+
+
+def _add_gospel_acclamation_slides(
+    prs: Presentation,
+    theme: SlideTheme,
+    *,
+    gospel_reference: str = "",
+    gospel_acclamation_verse: str = "",
+) -> None:
+    """Designed Gospel Acclamation: one alleluia slide + priest/assembly dialogue."""
+    tpl = _load_gospel_acclamation_template()
+    indices = _gospel_acclamation_source_slide_indices(
+        len(tpl.slides) if tpl is not None else 0
+    )
+    if tpl is None or not indices:
+        _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_SING, theme)
+        _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_INTRO, theme)
+        return
+    total = len(indices)
+    for part_i, idx in enumerate(indices):
+        footer = (
+            "Gospel Acclamation"
+            if total == 1
+            else f"Gospel Acclamation ({part_i + 1}/{total})"
+        )
+        _copy_slide_into_presentation(prs, tpl.slides[idx], theme, footer)
+        slide = prs.slides[-1]
+        _disable_cloned_slide_autofit(slide)
+        if idx == 0:
+            _patch_gospel_acclamation_alleluia_slide(slide, gospel_acclamation_verse)
+        else:
+            _patch_gospel_acclamation_intro_slide(slide, gospel_reference)
+        _apply_gospel_acclamation_typography(slide)
+
+
+def _normalize_creed_choice(choice: str) -> str:
+    c = (choice or "").strip().lower().replace("-", "_")
+    if c in ("apostles", "apostles_creed", "apostle"):
+        return "apostles"
+    return "nicene"
+
+
+def _apostles_creed_template_path() -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / _APOSTLES_CREED_TEMPLATE_FILENAME
+    if path.is_file():
+        return path.resolve()
+    return None
+
+
+def _load_apostles_creed_template() -> Optional[Presentation]:
+    global _apostles_creed_template
+    if _apostles_creed_template is not None:
+        return _apostles_creed_template
+    ref_path = _apostles_creed_template_path()
+    if not ref_path:
+        return None
+    _apostles_creed_template = Presentation(str(ref_path))
+    return _apostles_creed_template
+
+
+def _apply_apostles_creed_typography(slide) -> None:
+    """Section title Georgia 38.5 pt; leave body fonts from reference deck."""
+    parish = get_community_name().strip().lower()
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+            continue
+        text = (shape.text_frame.text or "").strip()
+        if not text or (parish and parish in text.lower()):
+            continue
+        if _is_apostles_creed_title_text(text):
+            _style_shape_font(shape, font_name=_HYMN_TITLE_FONT, size_pt=_HYMN_TITLE_PT)
+
+
+def _add_apostles_creed_slides(prs: Presentation, theme: SlideTheme) -> None:
+    tpl = _load_apostles_creed_template()
+    if tpl is None or not tpl.slides:
+        _add_marked_slide(
+            prs,
+            _APOSTLES_CREED_TITLE,
+            "<<D>>Apostles' Creed reference slides not found. Add data/reference/apostles_creed_slides.pptx.",
+            theme,
+        )
+        return
+    total = len(tpl.slides)
+    footer_base = _APOSTLES_CREED_TITLE
+    for part_i in range(total):
+        footer = footer_base if total == 1 else f"{footer_base} ({part_i + 1}/{total})"
+        _copy_slide_into_presentation(prs, tpl.slides[part_i], theme, footer)
+        slide = prs.slides[-1]
+        _disable_cloned_slide_autofit(slide)
+        _apply_apostles_creed_typography(slide)
+
+
+def _add_creed_slides(prs: Presentation, theme: SlideTheme, *, creed_choice: str = "nicene") -> None:
+    """Nicene or Apostles' Creed — same place in the Mass, never both."""
+    if _normalize_creed_choice(creed_choice) == "apostles":
+        _add_apostles_creed_slides(prs, theme)
+        return
+    _add_marked_chunked(prs, "Nicene Creed", get_prayer("nicene_creed"), theme)
 
 
 def _render_marked_slide(
@@ -2399,12 +2815,18 @@ def generate_mass_ppt(
     include_church_logo: bool = False,
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+    gospel_acclamation_verse: str = "",
+    creed_choice: str = "nicene",
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template
+    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template, _kyrie_template, _lotw_title_template, _gospel_acclamation_template, _apostles_creed_template
     _reference_mass_deck = None
     _lamb_of_god_template = None
     _sign_of_peace_template = None
     _gloria_template = None
+    _kyrie_template = None
+    _lotw_title_template = None
+    _gospel_acclamation_template = None
+    _apostles_creed_template = None
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
@@ -2479,7 +2901,7 @@ def generate_mass_ppt(
     _add_marked_slide(prs, "Liturgy of the Word", GFCC.OPENING_PRAYER, theme)
 
     # --- Liturgy of the Word ---
-    _add_section_card(prs, "LITURGY OF\nTHE WORD", "Liturgy of the Word", theme)
+    _add_lotw_title_slide(prs, theme)
 
     _add_lotw_reading_slide(
         prs,
@@ -2506,15 +2928,18 @@ def generate_mass_ppt(
             reference_only=True,
         )
 
-    _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_SING, theme)
-    _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_COMMENTATOR, theme)
-    _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_INTRO, theme)
+    _add_gospel_acclamation_slides(
+        prs,
+        theme,
+        gospel_reference=gospel_reference or "",
+        gospel_acclamation_verse=gospel_acclamation_verse or "",
+    )
 
     _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_END, theme)
     _add_divider_cover(prs, **ctx)
 
-    # --- Creed ---
-    _add_marked_chunked(prs, "Nicene Creed", get_prayer("nicene_creed"), theme)
+    # --- Creed (Nicene or Apostles' — never both) ---
+    _add_creed_slides(prs, theme, creed_choice=creed_choice)
     _add_divider_cover(prs, **ctx)
 
     # --- Prayer of the Faithful ---

@@ -190,6 +190,7 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             "second_reading_text": second_reading_text,
             "gospel_reference": gospel_reference,
             "gospel_text": gospel_text,
+            "gospel_acclamation": (blocks.get("gospel_acclamation") or "").strip(),
             "gospel_slide_quote": gospel_slide_quote,
             "source": source_url,
             "quote_attribution": quote_attribution,

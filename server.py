@@ -307,6 +307,10 @@ class GenerateBody(BaseModel):
         None,
         description="Per-section hymn lyric text overrides: { entrance: { song_id: lyrics } }.",
     )
+    creed_choice: str = Field(
+        "nicene",
+        description="Creed for the Mass deck: nicene | apostles (only one is included).",
+    )
 
 
 class RefreshSongsBody(BaseModel):
@@ -763,6 +767,7 @@ def api_generate(body: GenerateBody) -> Any:
         include_church_logo=body.include_church_logo,
         include_church_name=body.include_church_name,
         hymn_lyric_overrides=body.hymn_lyric_overrides,
+        creed_choice=body.creed_choice,
     )
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
@@ -852,6 +857,7 @@ def api_regenerate_pptx(body: GenerateBody) -> Any:
         include_church_logo=body.include_church_logo,
         include_church_name=body.include_church_name,
         hymn_lyric_overrides=body.hymn_lyric_overrides,
+        creed_choice=body.creed_choice,
     )
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "PowerPoint rebuild failed.")

@@ -6823,6 +6823,14 @@ Lord, hear our prayer</textarea>
                         <label for="flow-gospel-custom">Custom line <span class="muted">(optional)</span></label>
                         <input type="text" id="flow-gospel-custom" maxlength="2000" placeholder="Overrides sentence above" />
                       </div>
+                      <div class="field">
+                        <label for="flow-creed-choice">Creed for Mass</label>
+                        <select id="flow-creed-choice" aria-describedby="flow-creed-choice-hint">
+                          <option value="nicene" selected>Nicene Creed</option>
+                          <option value="apostles">Apostles' Creed</option>
+                        </select>
+                        <p class="flow-readings-zone__hint" id="flow-creed-choice-hint">Only one creed is included in the deck—the other is omitted.</p>
+                      </div>
                     </div>
                   </section>
 
@@ -11257,6 +11265,8 @@ Lord, hear our prayer</textarea>
         if (collLabel) body.mass_collection_date_label = collLabel;
         if (foodLines.length) body.food_sponsors = foodLines;
         if (psalmOv) body.psalm_text_override = psalmOv;
+        const creedSel = $("flow-creed-choice");
+        body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
         if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
           setMassGenLoading(false);
           return null;
@@ -11282,6 +11292,7 @@ Lord, hear our prayer</textarea>
           psalm_text_override: body.psalm_text_override || null,
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
+          creed_choice: body.creed_choice || "nicene",
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
           ai_poster_style: body.ai_poster_style,

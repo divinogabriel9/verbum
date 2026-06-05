@@ -33,6 +33,7 @@ CACHE_KEYS = (
     "psalm_response",
     "second_reading",
     "gospel",
+    "gospel_acclamation",
 )
 
 
@@ -83,6 +84,21 @@ def _stop_after_psalm(title: str) -> bool:
 def _stop_after_reading_two(title: str) -> bool:
     tl = title.lower()
     return "alleluia" in tl or _match_gospel(title)
+
+
+def _match_alleluia(title: str) -> bool:
+    return "alleluia" in (title or "").lower()
+
+
+def _stop_after_alleluia(title: str) -> bool:
+    return _match_gospel(title)
+
+
+def _scrape_gospel_acclamation_verse(soup: BeautifulSoup) -> str:
+    """Lectionary Gospel Acclamation verse between Alleluia and Gospel headings."""
+    return _gather_paragraphs_after_heading(
+        soup, _match_alleluia, _stop_after_alleluia
+    ).strip()
 
 
 def _ordinal_numeric_suffix(n: int) -> str:
@@ -815,10 +831,12 @@ def fetch_readings_for_date(
     }
     psalm_response = ""
     mass_celebration = ""
+    gospel_acclamation = ""
     if soup is not None:
         scraped_prose = _scrape_on_page_prose(soup)
         psalm_response = _scrape_psalm_response(soup)
         mass_celebration = scrape_mass_celebration_from_soup(soup)
+        gospel_acclamation = _scrape_gospel_acclamation_verse(soup)
 
     psalm_text, psalm_resp = _resolve_psalm(
         refs.get("psalm") or "",
@@ -845,6 +863,7 @@ def fetch_readings_for_date(
             scraped_prose.get("gospel"),
             pericope_href=pericope_links.get("gospel") or "",
         ),
+        "gospel_acclamation": gospel_acclamation,
         "mass_celebration": mass_celebration,
     }
 

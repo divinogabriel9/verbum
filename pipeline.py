@@ -390,6 +390,7 @@ def generate_mass_media(
     include_church_logo: bool = False,
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+    creed_choice: str = "nicene",
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -526,6 +527,7 @@ def generate_mass_media(
         psalm_text=psalm_body,
         second_reading_ref=data.get("second_reading") or "",
         second_reading_text=data.get("second_reading_text") or "",
+        gospel_acclamation_verse=data.get("gospel_acclamation") or "",
         liturgical_color=liturgical_color,
         custom_theme=custom_theme,
         song_selections=picks,
@@ -540,6 +542,7 @@ def generate_mass_media(
         include_church_logo=include_church_logo,
         include_church_name=include_church_name,
         hymn_lyric_overrides=hymn_lyric_overrides,
+        creed_choice=creed_choice,
     )
 
     if include_social_exports and poster_path and poster_path.is_file():
@@ -594,6 +597,7 @@ def regenerate_mass_pptx(
     include_church_logo: bool = False,
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+    creed_choice: str = "nicene",
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
     data = get_liturgical_data(date)
@@ -671,6 +675,7 @@ def regenerate_mass_pptx(
         psalm_text=psalm_body,
         second_reading_ref=data.get("second_reading") or "",
         second_reading_text=data.get("second_reading_text") or "",
+        gospel_acclamation_verse=data.get("gospel_acclamation") or "",
         liturgical_color=liturgical_color,
         custom_theme=custom_theme,
         song_selections=picks,
@@ -685,6 +690,7 @@ def regenerate_mass_pptx(
         include_church_logo=include_church_logo,
         include_church_name=include_church_name,
         hymn_lyric_overrides=hymn_lyric_overrides,
+        creed_choice=creed_choice,
     )
 
     return GenerationResult(

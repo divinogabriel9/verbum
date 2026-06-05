@@ -28,13 +28,15 @@ CONFITEOR_OPEN = """<<A>>I confess to almighty God and to you, my brothers and s
 ABSOLUTION_PENITENTIAL = """<<P>>May almighty God have mercy on us, forgive us our sins, and bring us to everlasting life.
 <<A>>Amen."""
 
-KYRIE = """<<A>>Lord, have mercy.
-<<A>>Lord, have mercy.
-<<A>>Christ, have mercy.
-<<A>>Christ, have mercy.
-<<A>>Lord, have mercy.
-<<A>>Lord, have mercy.
-<<D>>This acclamation may also be sung, or the invocations from the Missal or approved pastoral practice may be used in full."""
+KYRIE = """<<A>>LORD, HAVE MERCY.
+<<A>>LORD, HAVE MERCY.
+<<A>>           LORD, HAVE MERCY.
+<<A>>CHRIST, HAVE MERCY.
+<<A>>CHRIST, HAVE MERCY.
+<<A>>           CHRIST, HAVE MERCY.
+<<A>>LORD, HAVE MERCY.
+<<A>>LORD, HAVE MERCY.
+<<A>>           LORD, HAVE MERCY."""
 
 GLORIA_FULL = """<<H>>Glory to God in the highest,
 and on earth peace to people of good will.
