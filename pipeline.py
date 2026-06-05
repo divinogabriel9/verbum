@@ -32,7 +32,7 @@ from services.media_naming import mass_export_stem
 from services.web_hymn_discovery import discover_hymns_for_readings
 from services.lyrics_fetcher import ensure_lyrics_for_song
 from services.mass_text_format import synopsis_from_reading
-from services.usccb_readings import enrich_psalm_text_for_slides
+from services.usccb_readings import collect_psalm_refrain_options, resolve_psalm_slide_text
 
 
 @dataclass
@@ -56,6 +56,8 @@ class PreviewPayload:
     second_reading_reference: str = ""
     second_reading_excerpt: str = ""
     psalm_text: str = ""
+    psalm_reference: str = ""
+    psalm_refrains: list[str] = field(default_factory=list)
     gospel_text: str = ""
 
 
@@ -313,6 +315,13 @@ def fetch_preview(date: str) -> PreviewPayload:
     fr_txt = data.get("first_reading_text") or ""
     sr_txt = data.get("second_reading_text") or ""
     raw_psalm = (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+    psalm_ref = str(data.get("psalm") or "").strip()
+    psalm_resp = (data.get("psalm_response") or "").strip()
+    psalm_refrains = collect_psalm_refrain_options(
+        raw_psalm,
+        psalm_ref,
+        psalm_response=psalm_resp,
+    )
     return PreviewPayload(
         ok=True,
         title=data.get("title") or "Sunday Mass Celebration",
@@ -332,6 +341,8 @@ def fetch_preview(date: str) -> PreviewPayload:
         second_reading_reference=str(data.get("second_reading") or "").strip(),
         second_reading_excerpt=synopsis_from_reading(sr_txt, max_chars=720) if sr_txt else "",
         psalm_text=raw_psalm,
+        psalm_reference=psalm_ref,
+        psalm_refrains=psalm_refrains,
         gospel_text=gospel_text,
     )
 
@@ -376,6 +387,7 @@ def generate_mass_media(
     include_gospel_art: bool = True,
     include_ai_mass_poster: bool = False,
     ai_poster_style: str = "cinematic",
+    include_poster_text: bool = True,
     community_name: Optional[str] = None,
     song_selections: Optional[Mapping[str, str]] = None,
     custom_theme: Optional[Mapping[str, Any]] = None,
@@ -383,8 +395,10 @@ def generate_mass_media(
     announcement_image_paths: Optional[list[Path]] = None,
     mass_collection_amount: Optional[str] = None,
     mass_collection_date_label: Optional[str] = None,
+    mass_collection_currency: Optional[str] = None,
     food_sponsors: Optional[list[str]] = None,
     psalm_text_override: Optional[str] = None,
+    psalm_refrain_index: Optional[int] = None,
     gospel_quote_override: Optional[str] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     include_church_logo: bool = False,
@@ -454,11 +468,12 @@ def generate_mass_media(
             comm_titles.append(t)
     communion_line = " · ".join(comm_titles)
 
-    psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
-    psalm_body = enrich_psalm_text_for_slides(
-        psalm_body,
+    psalm_body = resolve_psalm_slide_text(
+        (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
         data.get("psalm") or "",
         psalm_response=(data.get("psalm_response") or "").strip(),
+        psalm_text_override=psalm_text_override,
+        refrain_index=psalm_refrain_index,
     )
 
     _root = Path(__file__).resolve().parent
@@ -481,6 +496,10 @@ def generate_mass_media(
                 output_stem=stem,
                 output_dir=_out,
                 include_social_exports=include_social_exports,
+                include_poster_text=include_poster_text,
+                gospel_quote=slide_line,
+                gospel_reference=gospel_ref,
+                liturgical_title=title.replace(" Celebration", "").strip() or title,
             )
         except Exception as exc:
             logger.exception("OpenAI poster generation failed")
@@ -538,6 +557,7 @@ def generate_mass_media(
         announcement_image_paths=announcement_image_paths,
         mass_collection_amount=mass_collection_amount or "",
         mass_collection_date_label=mass_collection_date_label or "",
+        mass_collection_currency=mass_collection_currency or "PHP",
         food_sponsors=food_sponsors,
         hymn_typography=hymn_typography,
         include_church_logo=include_church_logo,
@@ -593,8 +613,10 @@ def regenerate_mass_pptx(
     announcement_image_paths: Optional[list[Path]] = None,
     mass_collection_amount: Optional[str] = None,
     mass_collection_date_label: Optional[str] = None,
+    mass_collection_currency: Optional[str] = None,
     food_sponsors: Optional[list[str]] = None,
     psalm_text_override: Optional[str] = None,
+    psalm_refrain_index: Optional[int] = None,
     gospel_quote_override: Optional[str] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
@@ -654,11 +676,12 @@ def regenerate_mass_pptx(
         use_poster_as_divider=bool(poster_ppt_path),
     )
 
-    psalm_body = (psalm_text_override or "").strip() or (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
-    psalm_body = enrich_psalm_text_for_slides(
-        psalm_body,
+    psalm_body = resolve_psalm_slide_text(
+        (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
         data.get("psalm") or "",
         psalm_response=(data.get("psalm_response") or "").strip(),
+        psalm_text_override=psalm_text_override,
+        refrain_index=psalm_refrain_index,
     )
 
     slide_count, pptx_path = generate_mass_ppt(
@@ -688,6 +711,7 @@ def regenerate_mass_pptx(
         announcement_image_paths=announcement_image_paths,
         mass_collection_amount=mass_collection_amount or "",
         mass_collection_date_label=mass_collection_date_label or "",
+        mass_collection_currency=mass_collection_currency or "PHP",
         food_sponsors=food_sponsors,
         hymn_typography=hymn_typography,
         include_church_logo=include_church_logo,

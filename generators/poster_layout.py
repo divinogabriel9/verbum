@@ -40,9 +40,9 @@ def compose_ai_mass_poster(
     community_name: str,
     liturgical_season_key: str,
     logo_path: Optional[Path] = None,
-    preset: str = "verbum",
+    preset: str = "gfcc_flat",
 ) -> Image.Image:
-    """Compose a Mass poster (default preset: ``verbum`` scrapbook style)."""
+    """Compose a Mass poster (default preset: ``gfcc_flat`` full-bleed layout)."""
     content = content_from_legacy_kwargs(
         liturgical_day=liturgical_day,
         hero_image_path=hero_image_path,

@@ -221,6 +221,8 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "second_reading_reference": p.second_reading_reference,
         "second_reading_excerpt": p.second_reading_excerpt,
         "psalm_text": p.psalm_text,
+        "psalm_reference": p.psalm_reference,
+        "psalm_refrains": p.psalm_refrains,
         "gospel_text": p.gospel_text,
     }
 
@@ -266,12 +268,16 @@ class GenerateBody(BaseModel):
     include_gospel_art: bool = Field(True)
     include_ai_mass_poster: bool = Field(
         False,
-        description="Use OpenAI gpt-image-1 for primary parish posters (requires OPENAI_API_KEY).",
+        description="Use OpenAI gpt-image-2 for primary parish posters (requires OPENAI_API_KEY).",
     )
     ai_poster_style: str = Field(
         "cinematic",
         max_length=64,
         description="OpenAI hero art style key from data/styles.json (5 presets).",
+    )
+    include_poster_text: bool = Field(
+        True,
+        description="When OpenAI poster is enabled, overlay title, quote, and celebrant on the hero.",
     )
     community_name: Optional[str] = Field(None, max_length=240)
     songs: Optional[SongSelection] = None
@@ -283,9 +289,15 @@ class GenerateBody(BaseModel):
     )
     announcement_basenames: list[str] = Field(default_factory=list)
     mass_collection_amount: Optional[str] = Field(None, max_length=120)
+    mass_collection_currency: Optional[str] = Field(
+        "PHP",
+        description="Mass collection currency: PHP | KRW | MYR",
+        max_length=8,
+    )
     mass_collection_date_label: Optional[str] = Field(None, max_length=240)
     food_sponsors: list[str] = Field(default_factory=list)
     psalm_text_override: Optional[str] = Field(None, max_length=12000)
+    psalm_refrain_index: Optional[int] = Field(None, ge=0)
     gospel_quote_override: Optional[str] = Field(
         None,
         max_length=2000,
@@ -755,6 +767,7 @@ def api_generate(body: GenerateBody) -> Any:
         include_gospel_art=body.include_gospel_art,
         include_ai_mass_poster=body.include_ai_mass_poster,
         ai_poster_style=body.ai_poster_style.strip() or "cinematic",
+        include_poster_text=body.include_poster_text,
         community_name=body.community_name.strip() if body.community_name else None,
         song_selections=song_map,
         custom_theme=body.custom_theme,
@@ -764,8 +777,12 @@ def api_generate(body: GenerateBody) -> Any:
         mass_collection_date_label=body.mass_collection_date_label.strip()
         if body.mass_collection_date_label
         else None,
+        mass_collection_currency=body.mass_collection_currency.strip().upper()
+        if body.mass_collection_currency
+        else "PHP",
         food_sponsors=sponsors or None,
         psalm_text_override=psalm_override,
+        psalm_refrain_index=body.psalm_refrain_index,
         gospel_quote_override=gospel_override,
         hymn_typography=body.hymn_typography,
         include_church_logo=body.include_church_logo,
@@ -856,8 +873,12 @@ def api_regenerate_pptx(body: GenerateBody) -> Any:
         mass_collection_date_label=body.mass_collection_date_label.strip()
         if body.mass_collection_date_label
         else None,
+        mass_collection_currency=body.mass_collection_currency.strip().upper()
+        if body.mass_collection_currency
+        else "PHP",
         food_sponsors=sponsors or None,
         psalm_text_override=psalm_override,
+        psalm_refrain_index=body.psalm_refrain_index,
         gospel_quote_override=gospel_override,
         include_church_logo=body.include_church_logo,
         include_church_name=body.include_church_name,

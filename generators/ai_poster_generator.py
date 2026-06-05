@@ -13,11 +13,13 @@ from __future__ import annotations
 import datetime as _dt
 import os
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
+
+from PIL import Image
 
 from generators.ai_image_generator import (
     WIDESCREEN_16_9,
-    _OPENAI_WIDESCREEN_API_SIZE,
+    _openai_widescreen_api_size,
     generate_sacred_illustration,
 )
 from generators.poster import (
@@ -29,7 +31,7 @@ from generators.poster import (
 )
 from generators.poster.primitives import callout_from_quote
 from services.ai_styles import resolve_ai_image_style
-from services.community_config import get_community_name, get_logo_path
+from services.community_config import get_community_name
 from services.gospel_visual_prompt import build_visual_scene_line
 from services.gospel_quote_extractor import first_sentence_slide_quote, split_slide_sentences
 from services.lectionary_service import get_liturgical_data
@@ -52,8 +54,12 @@ def _build_mass_poster_master(
     *,
     celebrant_name: Optional[str] = None,
     style: str = "cinematic",
-) -> Any:
-    """Shared liturgical load, hero generation, and 1080×1350 composition."""
+    include_poster_text: bool = True,
+    gospel_quote: Optional[str] = None,
+    gospel_reference: Optional[str] = None,
+    liturgical_title: Optional[str] = None,
+) -> Image.Image:
+    """Liturgical load, OpenAI hero (visual only), optional PIL text overlays."""
     data = get_liturgical_data(date)
     if not data:
         raise ValueError(f"No liturgical data for {date!r}.")
@@ -61,18 +67,19 @@ def _build_mass_poster_master(
     liturgical = get_liturgical_color(date)
     season_key = str(liturgical.get("season") or "ordinary_time")
 
-    gospel_ref = str(data.get("gospel_reference") or "").strip() or "Gospel"
+    gospel_ref = (gospel_reference or data.get("gospel_reference") or "").strip() or "Gospel"
     gospel_slide = (data.get("gospel_slide_quote") or "").strip()
     gospel_full = (data.get("gospel_text") or "").strip()
     base_quote = gospel_slide or gospel_full
     sentences = split_slide_sentences(base_quote)
-    short_quote = (
+    default_quote = (
         sentences[0]
         if sentences
         else first_sentence_slide_quote(base_quote)
         if base_quote
         else gospel_ref
     )
+    quote_for_poster = (gospel_quote or "").strip() or default_quote
 
     title = str(data.get("title") or "Sunday Mass Celebration")
     community = get_community_name()
@@ -83,19 +90,17 @@ def _build_mass_poster_master(
     resolved_style = resolve_ai_image_style(style)
     hero_path = _IMAGES_DIR / f"{date_iso}_{resolved_style}_hero.png"
 
-    # Step 3 — AI hero: short visual line from Gospel prose (not the poster quote).
-    liturgical_title = title.replace(" Celebration", "").strip() or title
-    visual_line = build_visual_scene_line(liturgical_title, gospel_ref, gospel_full)
+    display_title = (liturgical_title or title.replace(" Celebration", "").strip() or title)
+    visual_line = build_visual_scene_line(display_title, gospel_ref, gospel_full)
     generate_sacred_illustration(
         gospel_ref,
         out_path=hero_path,
         style=resolved_style,
         visual_scene_line=visual_line,
         require_openai=True,
-        openai_size=_OPENAI_WIDESCREEN_API_SIZE,
+        openai_size=_openai_widescreen_api_size(),
         output_size=WIDESCREEN_16_9,
-        sunday_title=liturgical_title,
-        scripture_quote=short_quote,
+        sunday_title=display_title,
         gospel_text=gospel_full,
         season_key=season_key,
     )
@@ -103,21 +108,20 @@ def _build_mass_poster_master(
     cycle = str(data.get("lectionary_cycle") or "").strip().upper() or "—"
 
     content = PosterContent(
-        title=liturgical_title,
-        gospel_quote=short_quote,
+        title=display_title,
+        gospel_quote=quote_for_poster,
         gospel_reference=gospel_ref,
         date_display=_format_long_date(date),
         year_cycle=cycle,
         celebrant_name=celebrant,
         hero_image_path=hero_path,
         liturgical_season_key=season_key,
-        logo_path=get_logo_path(),
+        logo_path=None,
         community_name=community,
-        callout=callout_from_quote(short_quote),
+        callout=callout_from_quote(quote_for_poster),
+        include_text_overlays=include_poster_text,
     )
-    master = compose_poster(PPT_SIZE, content, preset="verbum")
-
-    return master
+    return compose_poster(PPT_SIZE, content, preset="gfcc_flat")
 
 
 def generate_primary_openai_posters(
@@ -128,6 +132,10 @@ def generate_primary_openai_posters(
     output_stem: str,
     output_dir: Path,
     include_social_exports: bool = False,
+    include_poster_text: bool = True,
+    gospel_quote: Optional[str] = None,
+    gospel_reference: Optional[str] = None,
+    liturgical_title: Optional[str] = None,
 ) -> Tuple[Optional[Path], Path]:
     """
     Build OpenAI-backed parish posters.
@@ -136,7 +144,15 @@ def generate_primary_openai_posters(
     When ``include_social_exports`` is true, also writes ``{stem}.png`` (1080×1350)
     and variants under ``outputs/posters/``.
     """
-    master = _build_mass_poster_master(date, celebrant_name=celebrant_name, style=style)
+    master = _build_mass_poster_master(
+        date,
+        celebrant_name=celebrant_name,
+        style=style,
+        include_poster_text=include_poster_text,
+        gospel_quote=gospel_quote,
+        gospel_reference=gospel_reference,
+        liturgical_title=liturgical_title,
+    )
     social_path, ppt_path = export_primary_poster_pair(
         master, output_dir, output_stem, include_social=include_social_exports
     )
@@ -152,6 +168,8 @@ def create_mass_poster(
     celebrant_name: Optional[str] = None,
     language: str = "English",
     style: str = "cinematic",
+    include_poster_text: bool = True,
+    gospel_quote: Optional[str] = None,
 ) -> dict[str, Path]:
     """
     Build AI-backed social poster exports for a Mass date (``outputs/posters/``).
@@ -159,6 +177,12 @@ def create_mass_poster(
     For main deck posters use :func:`generate_primary_openai_posters`.
     """
     del language  # Reserved for future bilingual prompts / captions.
-    master = _build_mass_poster_master(date, celebrant_name=celebrant_name, style=style)
+    master = _build_mass_poster_master(
+        date,
+        celebrant_name=celebrant_name,
+        style=style,
+        include_poster_text=include_poster_text,
+        gospel_quote=gospel_quote,
+    )
     _POSTERS_DIR.mkdir(parents=True, exist_ok=True)
     return export_poster_sizes(master, _POSTERS_DIR)

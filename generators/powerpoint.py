@@ -95,6 +95,10 @@ _HYMN_TITLE_FONT = "Georgia"
 _HYMN_BODY_FONT = "Poppins Bold"
 _GOSPEL_ACCLAMATION_BODY_PT = 69.0
 _GOSPEL_ACCLAMATION_BODY_FONT = "Poppins Bold"
+_PRIEST_LABEL_COLOR = RGBColor(248, 179, 0)  # #f8b300
+_DIALOGUE_TEXT_COLOR = RGBColor(255, 255, 255)
+_GOSPEL_ACCLAMATION_PRIEST_COLOR = _PRIEST_LABEL_COLOR
+_GOSPEL_ACCLAMATION_DIALOGUE_COLOR = _DIALOGUE_TEXT_COLOR
 _BRAND_BAND = Inches(1.05)
 _LOGO_MAX_W = Inches(0.95)
 _LOGO_MAX_H = Inches(0.42)
@@ -129,6 +133,8 @@ _LOTW_TITLE_SLIDE_INDEX = 0
 _GOSPEL_ACCLAMATION_TEMPLATE_FILENAME = "gospel_acclamation_slides.pptx"
 _APOSTLES_CREED_TEMPLATE_FILENAME = "apostles_creed_slides.pptx"
 _APOSTLES_CREED_TITLE = "Apostles' Creed"
+_NICENE_CREED_TEMPLATE_FILENAME = "nicene_creed_slides.pptx"
+_NICENE_CREED_TITLE = "Nicene Creed"
 _REFERENCE_FOOTER_ZONE_TOP = int(SLIDE_HEIGHT * 0.78)
 _reference_mass_deck: Optional[Presentation] = None
 _lamb_of_god_template: Optional[Presentation] = None
@@ -138,6 +144,7 @@ _kyrie_template: Optional[Presentation] = None
 _lotw_title_template: Optional[Presentation] = None
 _gospel_acclamation_template: Optional[Presentation] = None
 _apostles_creed_template: Optional[Presentation] = None
+_nicene_creed_template: Optional[Presentation] = None
 
 
 @dataclass(frozen=True)
@@ -491,6 +498,11 @@ def _is_apostles_creed_title_text(text: str) -> bool:
     return n == _normalize_rite_title(_APOSTLES_CREED_TITLE) or n == "apostles creed"
 
 
+def _is_nicene_creed_title_text(text: str) -> bool:
+    n = _normalize_rite_title(text)
+    return n == _normalize_rite_title(_NICENE_CREED_TITLE) or n == "nicene creed"
+
+
 def _apply_rite_slide_title_typography(slide, section_title: str) -> None:
     """Section header in Georgia 38.5 pt (Lamb of God, Sign of Peace, …)."""
     parish = get_community_name().strip().lower()
@@ -596,6 +608,12 @@ def _suppress_all_role_prefix(footer_section: str) -> bool:
     f = (footer_section or "").strip().lower()
     keys = ("kyrie eleison", "gloria", "sanctus", "our father", "lamb of god")
     return any(f.startswith(k) for k in keys)
+
+
+def _is_projection_dialogue_slide(footer_section: str) -> bool:
+    """Priest/assembly dialogue: centered body, gold ``Priest:`` label, white text."""
+    f = (footer_section or "").strip().lower()
+    return f.startswith("final blessing") or f.startswith("the communion rite") or f == "communion rite"
 
 
 def _is_prayer_rite_slide(footer_section: str) -> bool:
@@ -968,6 +986,7 @@ def _copy_slide_into_presentation(
     footer_section: str,
     *,
     copy_groups: bool = False,
+    strip_italic_rubrics: bool = True,
 ) -> None:
     """
     Clone prayer/body shapes from a reference slide.
@@ -999,7 +1018,8 @@ def _copy_slide_into_presentation(
         dest.shapes._spTree.insert_element_before(newel, "p:extLst")
     _set_slide_bg(dest, theme.bg)
     _apply_slide_branding(dest, theme)
-    _strip_italic_rubric_paragraphs_on_slide(dest)
+    if strip_italic_rubrics:
+        _strip_italic_rubric_paragraphs_on_slide(dest)
     _add_community_footer(dest, footer_section, theme)
 
 
@@ -1248,21 +1268,127 @@ def _gospel_book_from_reference(gospel_reference: str) -> str:
     return parts[0] if parts else "John"
 
 
-def _patch_gospel_acclamation_intro_slide(slide, gospel_reference: str) -> None:
+def _gospel_acclamation_run_font(
+    run,
+    *,
+    color: RGBColor,
+    italic: bool = False,
+) -> None:
+    run.font.name = _GOSPEL_ACCLAMATION_BODY_FONT
+    run.font.size = Pt(_GOSPEL_ACCLAMATION_BODY_PT)
+    run.font.bold = True
+    run.font.italic = italic
+    run.font.color.rgb = color
+
+
+def _gospel_acclamation_role_line(
+    tf,
+    label: str,
+    body: str,
+    *,
+    first: bool,
+    label_color: RGBColor,
+) -> None:
+    if first:
+        para = tf.paragraphs[0]
+        para.text = ""
+    else:
+        para = tf.add_paragraph()
+        para.text = ""
+    label_run = para.add_run()
+    label_run.text = label
+    _gospel_acclamation_run_font(label_run, color=label_color)
+    body_run = para.add_run()
+    body_run.text = body
+    _gospel_acclamation_run_font(body_run, color=_GOSPEL_ACCLAMATION_DIALOGUE_COLOR)
+
+
+def _gospel_acclamation_priest_line(tf, body: str, *, first: bool) -> None:
+    _gospel_acclamation_role_line(
+        tf,
+        "Priest: ",
+        body,
+        first=first,
+        label_color=_GOSPEL_ACCLAMATION_PRIEST_COLOR,
+    )
+
+
+def _gospel_acclamation_all_line(tf, body: str, *, first: bool) -> None:
+    _gospel_acclamation_role_line(
+        tf,
+        "All: ",
+        body,
+        first=first,
+        label_color=_GOSPEL_ACCLAMATION_DIALOGUE_COLOR,
+    )
+
+
+def _rebuild_gospel_acclamation_intro_shape(shape, gospel_book: str) -> None:
+    """Priest label gold; All label and dialogue white; evangelist/book name in italic."""
+    if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+        return
+    raw = (shape.text_frame.text or "").strip()
+    if not raw:
+        return
+    low = raw.lower()
+    tf = shape.text_frame
+    tf.clear()
+    book = (gospel_book or "John").strip().rstrip(".")
+
+    if "gospel according to" in low:
+        _gospel_acclamation_priest_line(tf, "A reading from the holy", first=True)
+        para = tf.add_paragraph()
+        para.text = ""
+        lead = para.add_run()
+        lead.text = "Gospel according to "
+        _gospel_acclamation_run_font(lead, color=_GOSPEL_ACCLAMATION_DIALOGUE_COLOR)
+        book_run = para.add_run()
+        book_run.text = book
+        _gospel_acclamation_run_font(
+            book_run,
+            color=_GOSPEL_ACCLAMATION_DIALOGUE_COLOR,
+            italic=True,
+        )
+        dot = para.add_run()
+        dot.text = "."
+        _gospel_acclamation_run_font(dot, color=_GOSPEL_ACCLAMATION_DIALOGUE_COLOR)
+        return
+
+    if low.startswith("priest:"):
+        body = raw.split(":", 1)[-1].strip()
+        _gospel_acclamation_priest_line(tf, body, first=True)
+        return
+
+    if low.startswith("all:") or low.startswith("people:"):
+        body = raw.split(":", 1)[-1].strip()
+        _gospel_acclamation_all_line(tf, body, first=True)
+        return
+
+
+def _apply_gospel_acclamation_intro_typography(slide, gospel_reference: str) -> None:
+    """Gospel Acclamation dialogue slide: gold Priest label, white All/dialogue, italic book."""
+    _apply_rite_slide_title_typography(slide, "Gospel Acclamation")
     book = _gospel_book_from_reference(gospel_reference)
+    parish = get_community_name().strip().lower()
     for shape in slide.shapes:
         if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
             continue
-        text = shape.text_frame.text or ""
-        if "Gospel according to" not in text:
+        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
             continue
-        m = re.search(r"Gospel according to\s+(\w+)", text)
-        if m:
-            _replace_shape_text_preserve_runs(
-                shape,
-                f"Gospel according to {m.group(1)}",
-                f"Gospel according to {book}",
-            )
+        text = (shape.text_frame.text or "").strip()
+        if not text or (parish and parish in text.lower()):
+            continue
+        if _is_rite_slide_title_text(text, "Gospel Acclamation"):
+            continue
+        low = text.lower()
+        if not (
+            low.startswith("priest:")
+            or low.startswith("all:")
+            or low.startswith("people:")
+            or "gospel according to" in low
+        ):
+            continue
+        _rebuild_gospel_acclamation_intro_shape(shape, book)
 
 
 def _patch_gospel_acclamation_alleluia_slide(slide, verse: str) -> None:
@@ -1336,9 +1462,9 @@ def _add_gospel_acclamation_slides(
         _disable_cloned_slide_autofit(slide)
         if idx == 0:
             _patch_gospel_acclamation_alleluia_slide(slide, gospel_acclamation_verse)
+            _apply_gospel_acclamation_typography(slide)
         else:
-            _patch_gospel_acclamation_intro_slide(slide, gospel_reference)
-        _apply_gospel_acclamation_typography(slide)
+            _apply_gospel_acclamation_intro_typography(slide, gospel_reference)
 
 
 def _normalize_creed_choice(choice: str) -> str:
@@ -1401,12 +1527,160 @@ def _add_apostles_creed_slides(prs: Presentation, theme: SlideTheme) -> None:
         _apply_apostles_creed_typography(slide)
 
 
+def _nicene_creed_template_path() -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / _NICENE_CREED_TEMPLATE_FILENAME
+    if path.is_file():
+        return path.resolve()
+    return None
+
+
+def _load_nicene_creed_template() -> Optional[Presentation]:
+    global _nicene_creed_template
+    if _nicene_creed_template is not None:
+        return _nicene_creed_template
+    ref_path = _nicene_creed_template_path()
+    if not ref_path:
+        return None
+    _nicene_creed_template = Presentation(str(ref_path))
+    return _nicene_creed_template
+
+
+def _apply_nicene_creed_typography(slide) -> None:
+    """Section title Georgia 38.5 pt; leave body fonts from reference deck."""
+    parish = get_community_name().strip().lower()
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+            continue
+        text = (shape.text_frame.text or "").strip()
+        if not text or (parish and parish in text.lower()):
+            continue
+        if _is_nicene_creed_title_text(text):
+            _style_shape_font(shape, font_name=_HYMN_TITLE_FONT, size_pt=_HYMN_TITLE_PT)
+
+
+def _add_nicene_creed_slides(prs: Presentation, theme: SlideTheme) -> None:
+    tpl = _load_nicene_creed_template()
+    if tpl is None or not tpl.slides:
+        _add_marked_chunked(prs, _NICENE_CREED_TITLE, get_prayer("nicene_creed"), theme)
+        return
+    total = len(tpl.slides)
+    footer_base = _NICENE_CREED_TITLE
+    for part_i in range(total):
+        footer = footer_base if total == 1 else f"{footer_base} ({part_i + 1}/{total})"
+        _copy_slide_into_presentation(
+            prs,
+            tpl.slides[part_i],
+            theme,
+            footer,
+            strip_italic_rubrics=False,
+        )
+        slide = prs.slides[-1]
+        _disable_cloned_slide_autofit(slide)
+        _apply_nicene_creed_typography(slide)
+
+
 def _add_creed_slides(prs: Presentation, theme: SlideTheme, *, creed_choice: str = "nicene") -> None:
     """Nicene or Apostles' Creed — same place in the Mass, never both."""
     if _normalize_creed_choice(creed_choice) == "apostles":
         _add_apostles_creed_slides(prs, theme)
         return
-    _add_marked_chunked(prs, "Nicene Creed", get_prayer("nicene_creed"), theme)
+    _add_nicene_creed_slides(prs, theme)
+
+
+def _style_dialogue_run(
+    run,
+    *,
+    color: RGBColor,
+    size_pt: float = _SLIDE_TEXT_PT,
+    bold: bool = True,
+) -> None:
+    run.font.name = _ACTIVE_FONT
+    run.font.size = Pt(size_pt)
+    run.font.bold = bold
+    run.font.color.rgb = color
+
+
+def _append_projection_dialogue_paragraph(
+    tf,
+    role: str,
+    line: str,
+    *,
+    first: bool,
+    strip_all: bool,
+    size_pt: float = _SLIDE_TEXT_PT,
+) -> None:
+    p = tf.paragraphs[0] if first else tf.add_paragraph()
+    p.text = ""
+    p.alignment = PP_ALIGN.CENTER
+    p.space_before = Pt(6)
+    p.space_after = Pt(8)
+
+    if role == "priest":
+        label = p.add_run()
+        label.text = "Priest: "
+        _style_dialogue_run(label, color=_PRIEST_LABEL_COLOR, size_pt=size_pt)
+        body = p.add_run()
+        body.text = line
+        _style_dialogue_run(body, color=_DIALOGUE_TEXT_COLOR, size_pt=size_pt, bold=True)
+        return
+
+    if role == "all":
+        if not strip_all:
+            label = p.add_run()
+            label.text = "All: "
+            _style_dialogue_run(label, color=_DIALOGUE_TEXT_COLOR, size_pt=size_pt)
+        body = p.add_run()
+        body.text = line
+        _style_dialogue_run(body, color=_DIALOGUE_TEXT_COLOR, size_pt=size_pt, bold=True)
+        return
+
+    body = p.add_run()
+    body.text = line
+    _style_dialogue_run(
+        body,
+        color=_DIALOGUE_TEXT_COLOR,
+        size_pt=size_pt,
+        bold=(role == "hymn"),
+    )
+
+
+def _render_projection_dialogue_slide(
+    prs: Presentation,
+    footer_section: str,
+    marked_text: str,
+    theme: SlideTheme,
+) -> None:
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _apply_slide_branding(slide, theme)
+    lx, w = MARGIN_SIDE, SLIDE_WIDTH - 2 * MARGIN_SIDE
+    zone_top = _content_top()
+    zone_bottom = SLIDE_HEIGHT - Inches(1.25)
+    body_h = zone_bottom - zone_top
+
+    box = slide.shapes.add_textbox(lx, zone_top, w, body_h)
+    tf = box.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+
+    strip_all = _suppress_all_role_prefix(footer_section)
+    first = True
+    for role, line in _parse_marked_lines(marked_text):
+        if role == "direction":
+            continue
+        _append_projection_dialogue_paragraph(
+            tf,
+            role,
+            line,
+            first=first,
+            strip_all=strip_all,
+        )
+        first = False
+
+    _add_community_footer(slide, footer_section, theme)
 
 
 def _render_marked_slide(
@@ -1458,6 +1732,9 @@ def _render_marked_slide(
 def _add_marked_slide(prs: Presentation, footer_section: str, marked_text: str, theme: SlideTheme) -> None:
     marked_text = _strip_marked_rubrics(marked_text)
     if not _marked_has_projectable_content(marked_text):
+        return
+    if _is_projection_dialogue_slide(footer_section):
+        _render_projection_dialogue_slide(prs, footer_section, marked_text, theme)
         return
     if _is_prayer_rite_slide(footer_section):
         chunks = _chunk_marked_rite_by_fit(marked_text, footer_section)
@@ -2954,21 +3231,99 @@ def _add_full_bleed_png_slides(prs: Presentation, paths: List[Optional[Path]]) -
         )
 
 
+_COLLECTION_CURRENCY_SPECS: dict[str, dict[str, Any]] = {
+    "PHP": {"symbol": "₱", "prefix": True, "space": False},
+    "KRW": {"symbol": "₩", "prefix": True, "space": False},
+    "MYR": {"symbol": "RM", "prefix": True, "space": True},
+}
+
+
+def _normalize_collection_currency(code: str) -> str:
+    cur = (code or "PHP").strip().upper()
+    return cur if cur in _COLLECTION_CURRENCY_SPECS else "PHP"
+
+
+def _format_collection_amount(amount: str, currency: str = "PHP") -> str:
+    """Apply currency symbol placement for the Mass Collection slide."""
+    raw = (amount or "").strip()
+    if not raw:
+        return ""
+    cur = _normalize_collection_currency(currency)
+    spec = _COLLECTION_CURRENCY_SPECS[cur]
+    sym = spec["symbol"]
+    gap = " " if spec.get("space") else ""
+    if raw.startswith(sym) or (gap and raw.startswith(sym + gap)):
+        return raw
+    digits = re.sub(r"[^\d]", "", raw)
+    if not digits:
+        return raw
+    formatted_num = f"{int(digits):,}"
+    if spec.get("prefix", True):
+        return f"{sym}{gap}{formatted_num}"
+    return f"{formatted_num}{gap}{sym}"
+
+
 def _add_mass_collection_slide(
     prs: Presentation,
     theme: SlideTheme,
     *,
     amount: str,
     date_label: str,
+    currency: str = "PHP",
 ) -> None:
-    lines = ["<<H>>MASS COLLECTION", "Thank you for your generosity."]
-    if (amount or "").strip():
-        lines.append(f"Amount: {amount.strip()}")
+    """Title at top, amount centered, date + thank-you above the deck footer."""
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _apply_slide_branding(slide, theme)
+
+    lx = MARGIN_SIDE
+    w = SLIDE_WIDTH - 2 * MARGIN_SIDE
+    title_top = _content_top()
+    title_h = Inches(1.15)
+
+    title_box = slide.shapes.add_textbox(lx, title_top, w, title_h)
+    title_tf = title_box.text_frame
+    _prep_tf(title_tf)
+    title_tf.clear()
+    title_tf.vertical_anchor = MSO_ANCHOR.TOP
+    title_p = title_tf.paragraphs[0]
+    title_p.text = "MASS COLLECTION"
+    _style_para(title_p, size_pt=_SLIDE_TEXT_PT, color=theme.emphasis, bold=True)
+    title_p.alignment = PP_ALIGN.CENTER
+
+    foot_top = SLIDE_HEIGHT - Inches(1.55)
+    mid_top = title_top + title_h
+    mid_h = foot_top - mid_top - Inches(0.2)
+    formatted_amount = _format_collection_amount(amount, currency)
+    amount_text = formatted_amount or "(Enter collection amount in Mass Builder.)"
+    mid_box = slide.shapes.add_textbox(lx, mid_top, w, mid_h)
+    mid_tf = mid_box.text_frame
+    _prep_tf(mid_tf)
+    mid_tf.clear()
+    mid_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    mid_p = mid_tf.paragraphs[0]
+    mid_p.text = amount_text
+    _style_para(mid_p, size_pt=_SLIDE_TEXT_PT, color=_DIALOGUE_TEXT_COLOR, bold=True)
+    mid_p.alignment = PP_ALIGN.CENTER
+
+    foot_box = slide.shapes.add_textbox(lx, foot_top, w, Inches(0.95))
+    foot_tf = foot_box.text_frame
+    _prep_tf(foot_tf)
+    foot_tf.clear()
+    foot_lines: List[str] = []
     if (date_label or "").strip():
-        lines.append(f"Date: {date_label.strip()}")
-    if len(lines) == 2:
-        lines.append("(Enter collection amount and date in Mass Builder.)")
-    _add_marked_slide(prs, "Mass Collection", "\n".join(lines), theme)
+        foot_lines.append(date_label.strip())
+    foot_lines.append("Thank you for your generosity.")
+    first_foot = True
+    for line in foot_lines:
+        fp = foot_tf.paragraphs[0] if first_foot else foot_tf.add_paragraph()
+        first_foot = False
+        fp.text = line
+        _style_para(fp, size_pt=_FOOTER_PT + 2, color=_DIALOGUE_TEXT_COLOR, bold=False)
+        fp.alignment = PP_ALIGN.CENTER
+        fp.space_after = Pt(2)
+
+    _add_community_footer(slide, "Mass Collection", theme)
 
 
 def _add_food_sponsors_slide(prs: Presentation, theme: SlideTheme, sponsors: List[str]) -> None:
@@ -3009,6 +3364,7 @@ def generate_mass_ppt(
     announcement_image_paths: Optional[List[Path]] = None,
     mass_collection_amount: str = "",
     mass_collection_date_label: str = "",
+    mass_collection_currency: str = "PHP",
     food_sponsors: Optional[List[str]] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     include_church_logo: bool = False,
@@ -3018,7 +3374,7 @@ def generate_mass_ppt(
     creed_choice: str = "nicene",
     hymn_lyrics_layout: str = "single",
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template, _kyrie_template, _lotw_title_template, _gospel_acclamation_template, _apostles_creed_template
+    global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template, _kyrie_template, _lotw_title_template, _gospel_acclamation_template, _apostles_creed_template, _nicene_creed_template
     _reference_mass_deck = None
     _lamb_of_god_template = None
     _sign_of_peace_template = None
@@ -3027,6 +3383,7 @@ def generate_mass_ppt(
     _lotw_title_template = None
     _gospel_acclamation_template = None
     _apostles_creed_template = None
+    _nicene_creed_template = None
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
@@ -3206,6 +3563,7 @@ def generate_mass_ppt(
         theme,
         amount=mass_collection_amount or "",
         date_label=mass_collection_date_label or "",
+        currency=mass_collection_currency or "PHP",
     )
     _add_food_sponsors_slide(prs, theme, list(food_sponsors or []))
     ann_paths: List[Optional[Path]] = list(announcement_image_paths or [])

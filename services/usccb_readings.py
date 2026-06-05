@@ -767,6 +767,88 @@ def enrich_psalm_text_for_slides(
     return ""
 
 
+def collect_psalm_refrain_options(
+    psalm_text: str,
+    psalm_reference: str = "",
+    *,
+    psalm_response: str = "",
+) -> list[str]:
+    """Distinct responsorial refrain lines detectable from psalm sources (not gospel sentences)."""
+    seen: set[str] = set()
+    options: list[str] = []
+
+    def add_raw(raw: str) -> None:
+        refrain = _extract_responsorial_refrain(raw)
+        if not refrain:
+            return
+        key = refrain.lower()
+        if key in seen:
+            return
+        seen.add(key)
+        options.append(refrain)
+
+    resp = (psalm_response or "").strip()
+    if resp:
+        add_raw(resp)
+
+    text = _normalize_responsorial_prose((psalm_text or "").strip())
+    if text:
+        for block in re.split(r"\n\n+", text):
+            s = block.strip()
+            if re.match(r"^R\.?\s", s, re.I) or re.match(r"^\([^)]+\)", s):
+                add_raw(s)
+        for line in text.splitlines():
+            s = line.strip()
+            if re.match(r"^R\.?\s", s, re.I):
+                add_raw(s)
+        for part in re.split(r"\s+(?=R\.\s)", text, flags=re.I):
+            s = part.strip()
+            if re.match(r"^R\.?\s", s, re.I):
+                add_raw(s)
+        if len(text) < 220 and not options:
+            add_raw(text)
+
+    if not options:
+        _, refrain = _resolve_psalm(psalm_reference, psalm_text or None, resp)
+        if refrain:
+            add_raw(refrain)
+
+    return options
+
+
+def resolve_psalm_slide_text(
+    psalm_text: str,
+    psalm_reference: str = "",
+    *,
+    psalm_response: str = "",
+    psalm_text_override: Optional[str] = None,
+    refrain_index: Optional[int] = None,
+) -> str:
+    """Pick the responsorial refrain line for slides (override, chosen index, or default detection)."""
+    ovr = (psalm_text_override or "").strip()
+    if ovr:
+        if re.match(r"^R\.?\s", ovr, re.I):
+            return _refrain_slide_body(_extract_responsorial_refrain(ovr))
+        return _refrain_slide_body(ovr)
+
+    options = collect_psalm_refrain_options(
+        psalm_text,
+        psalm_reference,
+        psalm_response=psalm_response,
+    )
+    if options:
+        idx = refrain_index if refrain_index is not None else 0
+        if 0 <= idx < len(options):
+            return _refrain_slide_body(options[idx])
+        return _refrain_slide_body(options[0])
+
+    return enrich_psalm_text_for_slides(
+        psalm_text,
+        psalm_reference,
+        psalm_response=psalm_response,
+    )
+
+
 def _merge_fallback_refs(
     scraped_refs: Mapping[str, str],
     fallback_refs: Optional[Mapping[str, str]],

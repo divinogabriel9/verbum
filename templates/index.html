@@ -903,12 +903,11 @@
     html[data-theme="dark"] .flow-setup-col {
       border-color: var(--line);
     }
-    html[data-theme="dark"] .flow-readings-preview-row {
-      background: color-mix(in srgb, var(--surface) 80%, var(--surface-2));
+    html[data-theme="dark"] .flow-setup-footer {
+      border-top-color: var(--line);
     }
-    html[data-theme="dark"] .flow-readings-inner .flow-reading-text {
-      background: var(--surface);
-      border-color: var(--line);
+    html[data-theme="dark"] .flow-reading-tile:hover {
+      background: color-mix(in srgb, var(--surface) 55%, transparent);
     }
     html[data-theme="dark"] .flow-psalm-textarea {
       background: var(--surface);
@@ -2105,6 +2104,10 @@
       outline: 2px solid var(--ink);
       outline-offset: 2px;
     }
+    .flow-reading-tile:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--liturgical-accent) 55%, var(--ink));
+      outline-offset: -2px;
+    }
     .home-bento-cell--gospel.is-gospel-preview {
       cursor: pointer;
     }
@@ -2630,7 +2633,9 @@
       border-radius: calc(var(--radius-md) - 2px);
       cursor: pointer;
       color: var(--muted);
-      transition: background 0.15s, color 0.15s;
+      transition:
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        color var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .flow-segment label:has(input:checked) {
       background: var(--surface-solid);
@@ -2648,20 +2653,78 @@
       display: grid;
       gap: var(--space-sm);
     }
-    /* Readings card — 3 zones (previews → gospel slides → psalm) */
+    .flow-setup-footer {
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--line-soft);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .flow-setup-footer__toggles {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-3) var(--space-5);
+    }
+    .flow-setup-footer__toggle-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      min-width: 0;
+    }
+    .flow-setup-footer__toggle-item > label,
+    .flow-setup-footer__toggle-item > .flow-option-inline__label {
+      margin: 0;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .flow-setup-footer__toggle-item select {
+      min-width: 9rem;
+      padding: 6px 10px;
+      font-size: var(--text-xs);
+      min-height: 32px;
+    }
+    .flow-setup-footer__checks {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2) var(--space-4);
+    }
+    .flow-setup-footer__checks label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      line-height: 1.3;
+      cursor: pointer;
+      color: var(--ink);
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .flow-setup-footer__checks input[type="checkbox"] {
+      margin: 0;
+      flex-shrink: 0;
+    }
+    /* Readings card — flat previews + slide controls */
     .flow-readings-inner {
       display: flex;
       flex-direction: column;
       gap: 0;
       min-width: 0;
+      margin-top: calc(var(--space-1) * -1);
     }
     .flow-readings-zone {
       padding-top: var(--space-3);
       border-top: 1px solid var(--line-soft);
     }
-    .flow-readings-zone:first-child {
-      padding-top: 0;
-      border-top: none;
+    .flow-readings-zone:first-of-type {
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--line-soft);
     }
     .flow-readings-zone__title {
       margin: 0 0 var(--space-2);
@@ -2679,39 +2742,75 @@
     }
     .flow-readings-preview-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-md);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
       align-items: stretch;
-      padding: var(--space-3);
-      border-radius: var(--radius-md);
-      background: color-mix(in srgb, var(--surface-2) 65%, var(--surface-solid));
-      border: 1px solid var(--line-soft);
+      margin: 0 calc(var(--space-1) * -1);
     }
-    .flow-readings-inner .home-reading-card {
+    .flow-reading-tile {
+      min-width: 0;
       min-height: 0;
-      flex: 1;
-      padding: var(--space-3);
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      padding: var(--space-2) var(--space-3);
+      border: none;
+      border-right: 1px solid var(--line-soft);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover);
     }
-    .flow-readings-inner .home-reading-card:hover {
+    .flow-reading-tile:last-child {
+      border-right: none;
+    }
+    .flow-reading-tile:hover {
+      background: color-mix(in srgb, var(--surface-2) 45%, transparent);
       transform: none;
-      border-color: color-mix(in srgb, var(--liturgical-accent) 22%, var(--line-soft));
-      box-shadow: var(--shadow-sm);
+      box-shadow: none;
+    }
+    .flow-reading-tile:active {
+      transform: scale(0.995);
+      transition-duration: var(--motion-duration-micro);
+    }
+    .flow-reading-tile header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .flow-reading-tile header strong {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .flow-reading-tile .flow-reading-ref {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--liturgical-accent);
+      text-align: right;
     }
     .flow-readings-inner .flow-reading-text {
       flex: 1;
-      min-height: 6.5rem;
-      max-height: 9.5rem;
+      min-height: 5.5rem;
+      max-height: 9rem;
       margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      font-size: var(--text-sm);
+      line-height: 1.45;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
-    .flow-readings-inner .flow-reading-text--gospel {
-      max-height: 11rem;
-    }
-    .flow-readings-inner .home-reading-card .flow-reading-ref,
-    .flow-readings-inner .home-reading-ref {
-      font-size: 0.75rem;
+    .flow-readings-inner .flow-reading-text--gospel,
+    .flow-readings-inner .flow-reading-text--psalm {
+      max-height: 10rem;
     }
     .flow-readings-gospel-fields {
       display: grid;
@@ -2768,13 +2867,42 @@
         padding-bottom: 0;
       }
       .flow-readings-preview-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: 0;
+      }
+      .flow-reading-tile {
+        border-right: none;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .flow-reading-tile:nth-child(2n) {
+        border-right: none;
+      }
+      .flow-reading-tile:nth-child(odd) {
+        border-right: 1px solid var(--line-soft);
+      }
+      .flow-reading-tile:nth-last-child(-n+2) {
+        border-bottom: none;
       }
       .flow-readings-gospel-fields {
         grid-template-columns: 1fr;
       }
     }
     @media (max-width: 720px) {
+      .flow-readings-preview-row {
+        grid-template-columns: 1fr;
+      }
+      .flow-reading-tile,
+      .flow-reading-tile:nth-child(odd) {
+        border-right: none;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .flow-reading-tile:last-child {
+        border-bottom: none;
+      }
+      .flow-setup-footer__toggles {
+        flex-direction: column;
+        align-items: flex-start;
+      }
       .flow-bento-cell {
         padding: var(--space-2);
       }
@@ -2970,6 +3098,19 @@
       flex: 1;
       min-width: 0;
       margin: 0;
+    }
+    .flow-input-group select {
+      flex-shrink: 0;
+      min-width: 6.75rem;
+      max-width: 8.5rem;
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 700;
     }
     .flow-input-group .secondary,
     .flow-input-group .ghost {
@@ -4607,6 +4748,31 @@
       flex-direction: column;
     }
     .slide-preview.hymn-slide::before { display: none; }
+    .slide-preview.hymn-slide.hymn-slide--dual {
+      justify-content: flex-start;
+      gap: 0;
+      padding: clamp(10px, 2.2vw, 22px) clamp(16px, 3.2vw, 32px);
+    }
+    .slide-preview.hymn-slide.hymn-slide--dual-single {
+      justify-content: center;
+    }
+    .hymn-slide--dual .hymn-body-dual-block {
+      flex: 1 1 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 0;
+    }
+    .hymn-slide--dual .hymn-body-dual-top {
+      padding-bottom: 6px;
+    }
+    .hymn-slide--dual .hymn-body-dual-bottom {
+      padding-top: 6px;
+    }
+    .hymn-slide--dual-first .hymn-title-text {
+      margin-bottom: 8px;
+    }
     .hymn-preview-title-card {
       background: #000000;
       border-radius: 12px;
@@ -4669,6 +4835,44 @@
       font-weight: 700;
       color: var(--liturgical-accent);
       margin-top: 2px;
+    }
+    .song-slide-plan__layout {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .song-slide-plan__layout-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-right: 2px;
+    }
+    .song-slide-plan__layout label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--ink);
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease;
+    }
+    .song-slide-plan__layout label:has(input:checked) {
+      border-color: color-mix(in srgb, var(--wb-berry) 45%, var(--line));
+      background: color-mix(in srgb, var(--wb-frost) 55%, var(--surface-solid));
+    }
+    .song-slide-plan__layout input {
+      accent-color: var(--accent);
     }
     .song-slide-plan__list {
       list-style: none;
@@ -6742,7 +6946,7 @@ Lord, hear our prayer</textarea>
               <article class="flow-bento-cell flow-bento-cell--setup">
                 <header class="flow-bento-cell__head">
                   <h3>Setup</h3>
-                  <p>Date, celebrant, stewardship, and deck options.</p>
+                  <p>Date, celebrant, stewardship, and artwork uploads.</p>
                 </header>
                 <div class="flow-setup-unified">
                   <section class="flow-setup-col flow-setup-col--basics" aria-labelledby="flow-setup-basics-title">
@@ -6777,7 +6981,15 @@ Lord, hear our prayer</textarea>
                     <h4 class="flow-setup-col__title" id="flow-setup-stewardship-title">Stewardship</h4>
                     <div class="field">
                       <label for="flow-collection-amount">Collection amount</label>
-                      <input type="text" id="flow-collection-amount" placeholder="e.g. ₱12,500" maxlength="120" />
+                      <div class="flow-input-group flow-collection-amount-row">
+                        <select id="flow-collection-currency" aria-label="Collection currency">
+                          <option value="PHP">₱ PHP</option>
+                          <option value="KRW">₩ KRW</option>
+                          <option value="MYR">RM MYR</option>
+                        </select>
+                        <input type="text" id="flow-collection-amount" inputmode="numeric" placeholder="12,500" maxlength="120" autocomplete="off" />
+                      </div>
+                      <p class="muted" id="flow-collection-amount-hint">Formatted on the slide using the selected currency.</p>
                     </div>
                     <div class="field">
                       <label for="flow-collection-date">Collection date</label>
@@ -6795,7 +7007,7 @@ Lord, hear our prayer</textarea>
                     </div>
                   </section>
                   <section class="flow-setup-col flow-setup-col--assets" aria-labelledby="flow-setup-assets-title">
-                    <h4 class="flow-setup-col__title" id="flow-setup-assets-title">Assets &amp; options</h4>
+                    <h4 class="flow-setup-col__title" id="flow-setup-assets-title">Assets</h4>
                     <div class="flow-assets-compact">
                       <div class="field">
                         <label for="flow-divider-poster">Divider poster</label>
@@ -6807,66 +7019,75 @@ Lord, hear our prayer</textarea>
                         <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
                         <p class="muted" id="flow-announcement-status">Before final blessing</p>
                       </div>
-                      <div class="field flow-option-inline">
-                        <span class="flow-option-inline__label" id="flow-hymn-layout-label">Hymn lyrics</span>
-                        <div class="flow-segment" role="radiogroup" aria-labelledby="flow-hymn-layout-label">
-                          <label><input type="radio" name="flow-hymn-layout" value="single" checked /> 1 / slide</label>
-                          <label><input type="radio" name="flow-hymn-layout" value="dual" /> 2 / slide</label>
-                        </div>
-                      </div>
-                      <div class="field flow-check-stack">
-                        <label><input type="checkbox" id="flow-include-church-logo" /> Logo on slides</label>
-                        <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
-                        <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI poster</label>
-                        <label><input type="checkbox" id="flow-include-social-exports" /> Social sizes</label>
-                      </div>
-                      <div class="field" id="flow-openai-style-wrap">
-                        <label for="flow-openai-poster-style">Poster style</label>
-                        <select id="flow-openai-poster-style">
-                          <option value="cinematic">Cinematic</option>
-                          <option value="realistic">Realistic</option>
-                          <option value="renaissance">Renaissance</option>
-                          <option value="stained_glass">Stained glass</option>
-                          <option value="modern">Modern</option>
-                        </select>
-                      </div>
                     </div>
                   </section>
                 </div>
+                <footer class="flow-setup-footer" aria-label="Deck options">
+                  <div class="flow-setup-footer__toggles">
+                    <div class="flow-setup-footer__toggle-item">
+                      <span class="flow-option-inline__label" id="flow-hymn-layout-label">Hymn lyrics</span>
+                      <div class="flow-segment" role="radiogroup" aria-labelledby="flow-hymn-layout-label">
+                        <label><input type="radio" name="flow-hymn-layout" value="single" checked /> 1 / slide</label>
+                        <label><input type="radio" name="flow-hymn-layout" value="dual" /> 2 / slide</label>
+                      </div>
+                    </div>
+                    <div class="flow-setup-footer__toggle-item" id="flow-openai-style-wrap">
+                      <label for="flow-openai-poster-style">Poster style</label>
+                      <select id="flow-openai-poster-style">
+                        <option value="cinematic">Cinematic</option>
+                        <option value="realistic">Realistic</option>
+                        <option value="renaissance">Renaissance</option>
+                        <option value="stained_glass">Stained glass</option>
+                        <option value="modern">Modern</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="flow-setup-footer__checks">
+                    <label><input type="checkbox" id="flow-include-church-logo" /> Logo on slides</label>
+                    <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
+                    <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI poster</label>
+                    <label id="flow-include-poster-text-wrap"><input type="checkbox" id="flow-include-poster-text" checked /> Text on poster</label>
+                    <label><input type="checkbox" id="flow-include-social-exports" /> Social sizes</label>
+                  </div>
+                </footer>
               </article>
 
               <article class="flow-bento-cell flow-bento-cell--readings">
                 <header class="flow-bento-cell__head">
                   <h3>Readings</h3>
-                  <p>Preview texts, gospel slide line, and responsorial psalm for the deck.</p>
+                  <p>Preview Sunday texts and choose gospel and psalm lines for slides.</p>
                 </header>
                 <div class="flow-readings-inner">
-                  <section class="flow-readings-zone flow-readings-zone--previews" aria-labelledby="flow-readings-previews-title">
-                    <h4 class="flow-readings-zone__title" id="flow-readings-previews-title">Sunday texts</h4>
-                    <div class="flow-readings-preview-row" role="group" aria-label="Reading previews">
-                      <article class="home-reading-card reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
-                        <header>
-                          <strong>First reading</strong>
-                          <span class="home-reading-ref flow-reading-ref" id="flow-reading1-ref">—</span>
-                        </header>
-                        <div id="flow-reading1-body" class="flow-reading-text user-select-all">Load readings to see text.</div>
-                      </article>
-                      <article class="home-reading-card reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
-                        <header>
-                          <strong>Second reading</strong>
-                          <span class="home-reading-ref flow-reading-ref" id="flow-reading2-ref">—</span>
-                        </header>
-                        <div id="flow-reading2-body" class="flow-reading-text user-select-all">—</div>
-                      </article>
-                      <article class="home-reading-card reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
-                        <header>
-                          <strong>Gospel</strong>
-                          <span class="home-reading-ref flow-reading-ref" id="flow-gospel-ref">—</span>
-                        </header>
-                        <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel user-select-all">Load readings to see the full Gospel.</div>
-                      </article>
-                    </div>
-                  </section>
+                  <div class="flow-readings-preview-row" role="group" aria-label="Sunday reading texts">
+                    <article class="flow-reading-tile reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
+                      <header>
+                        <strong>First reading</strong>
+                        <span class="flow-reading-ref" id="flow-reading1-ref">—</span>
+                      </header>
+                      <div id="flow-reading1-body" class="flow-reading-text user-select-all">Load readings to see text.</div>
+                    </article>
+                    <article class="flow-reading-tile reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
+                      <header>
+                        <strong>Second reading</strong>
+                        <span class="flow-reading-ref" id="flow-reading2-ref">—</span>
+                      </header>
+                      <div id="flow-reading2-body" class="flow-reading-text user-select-all">—</div>
+                    </article>
+                    <article class="flow-reading-tile reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
+                      <header>
+                        <strong>Gospel</strong>
+                        <span class="flow-reading-ref" id="flow-gospel-ref">—</span>
+                      </header>
+                      <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel user-select-all">Load readings to see the full Gospel.</div>
+                    </article>
+                    <article class="flow-reading-tile reading-preview-card" id="flow-psalm-preview-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
+                      <header>
+                        <strong>Psalm</strong>
+                        <span class="flow-reading-ref" id="flow-psalm-ref">—</span>
+                      </header>
+                      <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm user-select-all">Load readings to see the full psalm text.</div>
+                    </article>
+                  </div>
 
                   <section class="flow-readings-zone flow-readings-zone--gospel-slides" aria-labelledby="flow-readings-gospel-slides-title">
                     <h4 class="flow-readings-zone__title" id="flow-readings-gospel-slides-title">Gospel on slides</h4>
@@ -6893,12 +7114,21 @@ Lord, hear our prayer</textarea>
                     </div>
                   </section>
 
-                  <section class="flow-readings-zone flow-readings-zone--psalm" aria-labelledby="flow-readings-psalm-title">
-                    <h4 class="flow-readings-zone__title" id="flow-readings-psalm-title">Responsorial psalm</h4>
-                    <p class="flow-readings-zone__hint" id="flow-psalm-label">Full psalm text for slides. Edit to override what is sent to PowerPoint.</p>
-                    <label for="flow-psalm-text">Psalm text</label>
-                    <textarea id="flow-psalm-text" class="flow-psalm-textarea" rows="14" maxlength="12000" placeholder="Load readings to preview the full psalm text."></textarea>
-                    <textarea id="flow-psalm-override" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                  <section class="flow-readings-zone flow-readings-zone--psalm-slides" aria-labelledby="flow-readings-psalm-slides-title">
+                    <h4 class="flow-readings-zone__title" id="flow-readings-psalm-slides-title">Psalm on slides</h4>
+                    <p class="flow-readings-zone__hint" id="flow-psalm-label">Refrain line shown on the responsorial psalm slide in PowerPoint.</p>
+                    <div class="flow-readings-gospel-fields">
+                      <div class="field">
+                        <label for="flow-psalm-refrain">Refrain for slide</label>
+                        <select id="flow-psalm-refrain">
+                          <option value="0">Refrain 1 (default)</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="flow-psalm-custom">Custom refrain <span class="muted">(optional)</span></label>
+                        <input type="text" id="flow-psalm-custom" maxlength="500" placeholder="Overrides refrain above" />
+                      </div>
+                    </div>
                   </section>
                 </div>
               </article>
@@ -7021,7 +7251,11 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="field">
               <label><input type="checkbox" id="poster-use-openai-poster" /> Generate poster with OpenAI</label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Gospel art hero + layout (requires OPENAI_API_KEY in .env).</p>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Full-bleed Gospel art; optional title and quote overlay (requires OPENAI_API_KEY in .env).</p>
+            </div>
+            <div class="field" id="poster-include-poster-text-wrap">
+              <label><input type="checkbox" id="poster-include-poster-text" checked /> Include text on poster</label>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Off = AI art only. On = same Gospel line and metadata as the deck, composited onto the image (not generated by OpenAI).</p>
             </div>
             <div class="actions">
               <button type="button" class="secondary" id="btn-poster-sync">Sync from Mass Builder</button>
@@ -8788,24 +9022,111 @@ Lord, hear our prayer</textarea>
     const massSongLyricsCache = new Map();
     const HYMN_TYPO_STORAGE_KEY = "churchMediaHymnTypography";
     const HYMN_LAYOUT_STORAGE_KEY = "churchMediaHymnLyricsLayout";
+    const COLLECTION_CURRENCY_STORAGE_KEY = "churchMediaCollectionCurrency";
+
+    const COLLECTION_CURRENCIES = {
+      PHP: { symbol: "₱", prefix: true, spaceAfterSymbol: false, decimals: 0 },
+      KRW: { symbol: "₩", prefix: true, spaceAfterSymbol: false, decimals: 0 },
+      MYR: { symbol: "RM", prefix: true, spaceAfterSymbol: true, decimals: 0 },
+    };
+
+    function readCollectionCurrencyCode() {
+      const sel = $("flow-collection-currency");
+      const code = sel && sel.value ? sel.value.toUpperCase() : "PHP";
+      return COLLECTION_CURRENCIES[code] ? code : "PHP";
+    }
+
+    function parseCollectionDigits(text) {
+      return String(text || "").replace(/\D/g, "");
+    }
+
+    function formatCollectionAmount(digits, currencyCode) {
+      const cfg = COLLECTION_CURRENCIES[currencyCode] || COLLECTION_CURRENCIES.PHP;
+      const raw = String(digits || "").replace(/\D/g, "");
+      if (!raw) return "";
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n <= 0) return "";
+      const num = n.toLocaleString("en-US", {
+        minimumFractionDigits: cfg.decimals,
+        maximumFractionDigits: cfg.decimals,
+      });
+      const gap = cfg.spaceAfterSymbol ? " " : "";
+      if (cfg.prefix) return cfg.symbol + gap + num;
+      return num + gap + cfg.symbol;
+    }
+
+    function syncCollectionAmountDisplay() {
+      const inp = $("flow-collection-amount");
+      if (!inp) return "";
+      const digits = inp.dataset.rawDigits || parseCollectionDigits(inp.value);
+      inp.dataset.rawDigits = digits;
+      const formatted = formatCollectionAmount(digits, readCollectionCurrencyCode());
+      inp.value = formatted;
+      return formatted;
+    }
+
+    function getFormattedCollectionAmount() {
+      return syncCollectionAmountDisplay();
+    }
+
+    function initCollectionCurrencyUi() {
+      const sel = $("flow-collection-currency");
+      const inp = $("flow-collection-amount");
+      if (!sel || !inp) return;
+      let saved = "PHP";
+      try {
+        saved = localStorage.getItem(COLLECTION_CURRENCY_STORAGE_KEY) || "PHP";
+      } catch (_e) { /* ignore */ }
+      if (COLLECTION_CURRENCIES[saved]) sel.value = saved;
+      sel.addEventListener("change", () => {
+        try {
+          localStorage.setItem(COLLECTION_CURRENCY_STORAGE_KEY, readCollectionCurrencyCode());
+        } catch (_e) { /* ignore */ }
+        syncCollectionAmountDisplay();
+      });
+      inp.addEventListener("input", () => {
+        const digits = parseCollectionDigits(inp.value);
+        inp.dataset.rawDigits = digits;
+        syncCollectionAmountDisplay();
+      });
+      inp.addEventListener("blur", () => {
+        syncCollectionAmountDisplay();
+      });
+    }
 
     function readHymnLyricsLayout() {
+      const previewPicked = document.querySelector('input[name="song-preview-hymn-layout"]:checked');
+      if (previewPicked && previewPicked.value === "dual") return "dual";
+      if (previewPicked && previewPicked.value === "single") return "single";
       const picked = document.querySelector('input[name="flow-hymn-layout"]:checked');
       if (picked && picked.value === "dual") return "dual";
       const saved = localStorage.getItem(HYMN_LAYOUT_STORAGE_KEY);
       return saved === "dual" ? "dual" : "single";
     }
 
+    function applyHymnLyricsLayout(value) {
+      const layout = value === "dual" ? "dual" : "single";
+      try {
+        localStorage.setItem(HYMN_LAYOUT_STORAGE_KEY, layout);
+      } catch (_e) { /* ignore */ }
+      document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+        el.checked = el.value === layout;
+      });
+      document.querySelectorAll('input[name="song-preview-hymn-layout"]').forEach((el) => {
+        el.checked = el.value === layout;
+      });
+      if (songPreviewState) refreshSongPreviewPanel();
+    }
+
     function initHymnLyricsLayoutUi() {
       const saved = localStorage.getItem(HYMN_LAYOUT_STORAGE_KEY);
       if (saved === "dual" || saved === "single") {
-        const el = document.querySelector('input[name="flow-hymn-layout"][value="' + saved + '"]');
-        if (el) el.checked = true;
+        applyHymnLyricsLayout(saved);
       }
       document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
         el.addEventListener("change", () => {
           const v = document.querySelector('input[name="flow-hymn-layout"]:checked');
-          if (v) localStorage.setItem(HYMN_LAYOUT_STORAGE_KEY, v.value);
+          if (v) applyHymnLyricsLayout(v.value);
         });
       });
     }
@@ -8948,6 +9269,50 @@ Lord, hear our prayer</textarea>
       const disabled = new Set(plan && plan.disabled ? plan.disabled : []);
       const order = (plan && plan.order) || Array.from({ length: chunkCount }, (_, i) => i);
       return order.filter((idx) => !disabled.has(idx)).length;
+    }
+
+    function countDualPreviewSlides(plan, chunkCount) {
+      const enabled = countEnabledSlides(plan, chunkCount);
+      if (enabled <= 0) return 0;
+      return Math.ceil(enabled / 2);
+    }
+
+    function pairChunksForDualPreview(items) {
+      const slides = [];
+      let i = 0;
+      const n = items.length;
+      while (i < n) {
+        if (n - i === 1) {
+          slides.push([items[i]]);
+          break;
+        }
+        slides.push([items[i], items[i + 1]]);
+        i += 2;
+      }
+      return slides;
+    }
+
+    function enabledChunkItems(chunks, plan) {
+      const order = (plan && plan.order) || chunks.map((_, i) => i);
+      const disabled = new Set(plan && plan.disabled ? plan.disabled : []);
+      return order
+        .filter((idx) => !disabled.has(idx))
+        .map((idx) => ({
+          chunkIdx: idx,
+          chunk: chunks[idx] || "",
+          kind: inferHymnChunkBlockKind(chunks[idx] || ""),
+        }));
+    }
+
+    function renderSongSlideLayoutToggle(layout) {
+      const current = layout === "dual" ? "dual" : "single";
+      return (
+        "<div class=\"song-slide-plan__layout\" role=\"radiogroup\" aria-label=\"Verses per slide\">" +
+          "<span class=\"song-slide-plan__layout-label\">Layout</span>" +
+          "<label><input type=\"radio\" name=\"song-preview-hymn-layout\" value=\"single\"" + (current === "single" ? " checked" : "") + " /> 1 / slide</label>" +
+          "<label><input type=\"radio\" name=\"song-preview-hymn-layout\" value=\"dual\"" + (current === "dual" ? " checked" : "") + " /> 2 / slide</label>" +
+        "</div>"
+      );
     }
 
     function shouldApplySlidePlanOverride(libraryLyrics, merged, plan, chunkCount) {
@@ -9262,8 +9627,13 @@ Lord, hear our prayer</textarea>
       )).join("");
     }
 
-    function renderSongSlidePlanEditor(plan, chunks) {
+    function renderSongSlidePlanEditor(plan, chunks, layout) {
       const enabled = countEnabledSlides(plan, chunks.length);
+      const layoutMode = layout === "dual" ? "dual" : "single";
+      const previewSlides = layoutMode === "dual" ? countDualPreviewSlides(plan, chunks.length) : enabled;
+      const countLabel = layoutMode === "dual"
+        ? previewSlides + " preview slides · " + enabled + " blocks in deck"
+        : enabled + " of " + chunks.length + " in deck";
       const rows = plan.order.map((chunkIdx, pos) => {
         const off = isChunkDisabled(plan, chunkIdx);
         const label = slideChunkSummary(chunks[chunkIdx] || "", chunkIdx);
@@ -9286,8 +9656,9 @@ Lord, hear our prayer</textarea>
         "<div class=\"song-slide-plan\" id=\"song-slide-plan\">" +
           "<div class=\"song-slide-plan__head\">" +
             "<span class=\"song-slide-plan__head-title\">Slide organizer</span>" +
-            "<span class=\"song-slide-plan__head-hint\">Reorder with arrows. Toggle off slides you do not need.</span>" +
-            "<span id=\"song-slide-plan-count\">" + enabled + " of " + chunks.length + " in deck</span>" +
+            "<span class=\"song-slide-plan__head-hint\">Reorder with arrows. Toggle off blocks you do not need.</span>" +
+            renderSongSlideLayoutToggle(layoutMode) +
+            "<span id=\"song-slide-plan-count\">" + countLabel + "</span>" +
           "</div>" +
           "<ul class=\"song-slide-plan__list\" role=\"list\">" + rows + "</ul>" +
         "</div>"
@@ -9315,7 +9686,29 @@ Lord, hear our prayer</textarea>
       const { lyricsText, meta, section, songId, chunks, plan } = songPreviewState;
       body.innerHTML = renderSongPreviewViewer(lyricsText, meta, section, songId, chunks, plan);
       bindSongSlidePlanEditor(section);
+      bindSongPreviewLayoutToggle();
       bindSongPreviewSlideScroll();
+    }
+
+    function previewSlideIndexForChunk(chunkIdx, chunks, plan, layout) {
+      if (layout !== "dual") {
+        const order = (plan && plan.order) || chunks.map((_, i) => i);
+        const pos = order.indexOf(chunkIdx);
+        return pos >= 0 ? pos : 0;
+      }
+      const enabled = enabledChunkItems(chunks, plan);
+      const posInEnabled = enabled.findIndex((item) => item.chunkIdx === chunkIdx);
+      if (posInEnabled < 0) return 0;
+      return Math.floor(posInEnabled / 2);
+    }
+
+    function bindSongPreviewLayoutToggle() {
+      document.querySelectorAll('input[name="song-preview-hymn-layout"]').forEach((el) => {
+        el.addEventListener("change", () => {
+          const v = document.querySelector('input[name="song-preview-hymn-layout"]:checked');
+          if (v) applyHymnLyricsLayout(v.value);
+        });
+      });
     }
 
     function bindSongSlidePlanEditor(section) {
@@ -9376,7 +9769,10 @@ Lord, hear our prayer</textarea>
       const scrollToPlanSlide = (pos) => {
         const scroller = $("song-ppt-slides-scroll");
         if (!scroller) return;
-        const wrap = scroller.querySelector(".hymn-slide-wrap[data-slide-index=\"" + pos + "\"]");
+        const layout = readHymnLyricsLayout();
+        const chunkIdx = parseInt(plan.order[pos], 10);
+        const slideIndex = previewSlideIndexForChunk(chunkIdx, chunks, plan, layout);
+        const wrap = scroller.querySelector(".hymn-slide-wrap[data-slide-index=\"" + slideIndex + "\"]");
         if (wrap) wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
       };
 
@@ -9551,6 +9947,40 @@ Lord, hear our prayer</textarea>
       return slot ? slot.section : "entrance";
     }
 
+    function buildHymnDualSlideHtml(group, meta, displayPos, options) {
+      const showTitle = options && options.showTitle;
+      const section = (options && options.section) || "default";
+      const slideIndex = options && options.slideIndex != null ? options.slideIndex : displayPos;
+      const slideStyle = hymnPreviewSlideStyle(section, slideIndex, group[0] ? group[0].chunk : "");
+      const singleOnly = group.length === 1;
+      const slideCls =
+        " hymn-slide--dual" +
+        (showTitle ? " hymn-slide--dual-first" : "") +
+        (singleOnly ? " hymn-slide--dual-single" : "");
+      const titleHtml = showTitle
+        ? "<h4 class=\"hymn-title-text\">" + escapeHtml(meta.title || "Hymn") + "</h4>"
+        : "";
+      const blocksHtml = group.map((item, bi) => {
+        const chorusCls = item.kind === "chorus" ? " hymn-lines--chorus" : "";
+        const posCls = bi === 0 ? " hymn-body-dual-top" : " hymn-body-dual-bottom";
+        return (
+          "<div class=\"hymn-body hymn-body-dual-block" + posCls + "\">" +
+            "<div class=\"hymn-lines" + chorusCls + "\">" + formatHymnBodyHtml(item.chunk) + "</div>" +
+          "</div>"
+        );
+      }).join("");
+      const chunkIdxAttr = group.map((item) => item.chunkIdx).join(",");
+      return (
+        "<div class=\"hymn-slide-wrap\" data-slide-index=\"" + displayPos + "\" data-chunk-idx=\"" + chunkIdxAttr + "\">" +
+          "<span class=\"song-preview-slide-label\">Slide " + (displayPos + 1) + "</span>" +
+          "<div class=\"slide-preview hymn-slide" + slideCls + "\" data-hymn-slide=\"1\" style=\"" + slideStyle + "\">" +
+            titleHtml +
+            blocksHtml +
+          "</div>" +
+        "</div>"
+      );
+    }
+
     function buildHymnSlideHtml(chunk, meta, displayPos, options) {
       const showTitle = options && options.showTitle;
       const disabled = options && options.disabled;
@@ -9583,26 +10013,45 @@ Lord, hear our prayer</textarea>
         return "<p class=\"muted\">No lyrics to preview.</p>";
       }
       const slidePlan = plan || getHymnSlidePlan(section, songId, allChunks);
-      let titleAssigned = false;
-      const slideHtml = slidePlan.order.map((chunkIdx, pos) => {
-        const off = isChunkDisabled(slidePlan, chunkIdx);
-        const showTitle = !titleAssigned && !off;
-        if (showTitle) titleAssigned = true;
-        return buildHymnSlideHtml(allChunks[chunkIdx] || "", meta, pos, {
-          showTitle: showTitle,
-          disabled: off,
-          chunkIdx: chunkIdx,
-          section: section,
-          slideIndex: pos,
-          blockKind: inferHymnChunkBlockKind(allChunks[chunkIdx] || ""),
-        });
-      }).join("");
+      const layout = readHymnLyricsLayout();
+      let slideHtml = "";
+      if (layout === "dual") {
+        const groups = pairChunksForDualPreview(enabledChunkItems(allChunks, slidePlan));
+        let titleAssigned = false;
+        slideHtml = groups.map((group, pos) => {
+          const showTitle = !titleAssigned;
+          if (showTitle) titleAssigned = true;
+          return buildHymnDualSlideHtml(group, meta, pos, {
+            showTitle: showTitle,
+            section: section,
+            slideIndex: pos,
+          });
+        }).join("");
+      } else {
+        let titleAssigned = false;
+        slideHtml = slidePlan.order.map((chunkIdx, pos) => {
+          const off = isChunkDisabled(slidePlan, chunkIdx);
+          const showTitle = !titleAssigned && !off;
+          if (showTitle) titleAssigned = true;
+          return buildHymnSlideHtml(allChunks[chunkIdx] || "", meta, pos, {
+            showTitle: showTitle,
+            disabled: off,
+            chunkIdx: chunkIdx,
+            section: section,
+            slideIndex: pos,
+            blockKind: inferHymnChunkBlockKind(allChunks[chunkIdx] || ""),
+          });
+        }).join("");
+      }
       const enabled = countEnabledSlides(slidePlan, allChunks.length);
-      const countLabel = enabled + " of " + allChunks.length + " slides in deck";
+      const previewCount = layout === "dual" ? countDualPreviewSlides(slidePlan, allChunks.length) : enabled;
+      const countLabel = layout === "dual"
+        ? previewCount + " slides · " + enabled + " blocks"
+        : enabled + " of " + allChunks.length + " slides in deck";
       return (
         "<div class=\"song-ppt-viewer\">" +
           "<aside class=\"song-ppt-organizer\" aria-label=\"Slide organizer\">" +
-            renderSongSlidePlanEditor(slidePlan, allChunks) +
+            renderSongSlidePlanEditor(slidePlan, allChunks, layout) +
           "</aside>" +
           "<div class=\"song-ppt-main\">" +
             "<div class=\"song-ppt-toolbar\">" +
@@ -9646,9 +10095,22 @@ Lord, hear our prayer</textarea>
             : "Slide " + (best + 1) + " of " + total;
         }
         if (planEl) {
-          planEl.querySelectorAll(".song-slide-plan__item").forEach((li, i) => {
-            li.classList.toggle("is-active", i === best);
-          });
+          const activeWrap = wraps[best];
+          const layout = readHymnLyricsLayout();
+          if (layout === "dual" && activeWrap) {
+            const activeChunks = String(activeWrap.dataset.chunkIdx || "")
+              .split(",")
+              .map((s) => parseInt(s, 10))
+              .filter((n) => !Number.isNaN(n));
+            planEl.querySelectorAll(".song-slide-plan__item").forEach((li) => {
+              const chunkIdx = parseInt(li.dataset.chunkIdx, 10);
+              li.classList.toggle("is-active", activeChunks.indexOf(chunkIdx) >= 0);
+            });
+          } else {
+            planEl.querySelectorAll(".song-slide-plan__item").forEach((li, i) => {
+              li.classList.toggle("is-active", i === best);
+            });
+          }
         }
       };
       scroller.addEventListener("scroll", syncCount, { passive: true });
@@ -9752,6 +10214,7 @@ Lord, hear our prayer</textarea>
       if (body) {
         body.innerHTML = renderSongPreviewViewer(libraryTrimmed, meta, section, id, chunks, plan);
         bindSongSlidePlanEditor(section);
+        bindSongPreviewLayoutToggle();
         bindSongPreviewSlideScroll();
       }
     }
@@ -10418,16 +10881,11 @@ Lord, hear our prayer</textarea>
     const FLOW_FOOD_MAX = 24;
 
     function syncFlowPsalmOverrideHidden() {
-      const hidden = $("flow-psalm-override");
-      const ta = $("flow-psalm-text");
-      if (!hidden || !ta) return;
-      hidden.value = ta.value;
+      /* legacy no-op — psalm custom line is sent directly from #flow-psalm-custom */
     }
 
-    function setFlowPsalmUI(text) {
-      const ta = $("flow-psalm-text");
-      if (ta) ta.value = (text || "").trim();
-      syncFlowPsalmOverrideHidden();
+    function setFlowPsalmUI(_text) {
+      /* legacy no-op — psalm preview lives in #flow-psalm-body */
     }
 
     function syncFlowFoodSponsorsHidden() {
@@ -10474,7 +10932,6 @@ Lord, hear our prayer</textarea>
       const foodIn = $("flow-food-sponsor-input");
       const foodAdd = $("btn-flow-food-add");
       const foodList = $("flow-food-sponsors-list");
-      const psalmTa = $("flow-psalm-text");
 
       function bindEnterToAdd(input, addFn) {
         if (!input) return;
@@ -10508,17 +10965,9 @@ Lord, hear our prayer</textarea>
           updateFlowParagraphPreviews();
         });
       }
-
-      if (psalmTa) {
-        psalmTa.addEventListener("input", () => {
-          syncFlowPsalmOverrideHidden();
-          updateFlowParagraphPreviews();
-        });
-      }
     }
 
     function updateFlowParagraphPreviews() {
-      syncFlowPsalmOverrideHidden();
       syncFlowFoodSponsorsHidden();
     }
 
@@ -10542,6 +10991,30 @@ Lord, hear our prayer</textarea>
         const preview = (s || "").replace(/\s+/g, " ").trim();
         const short = preview.length > 100 ? preview.slice(0, 97) + "…" : preview;
         o.textContent = "Sentence " + (i + 1) + ": " + short;
+        sel.appendChild(o);
+      });
+    }
+
+    function populatePsalmRefrainSelect(data) {
+      const sel = $("flow-psalm-refrain");
+      if (!sel) {
+        return;
+      }
+      sel.innerHTML = "";
+      const refrains = Array.isArray(data.psalm_refrains) ? data.psalm_refrains : [];
+      if (!refrains.length) {
+        const o = document.createElement("option");
+        o.value = "0";
+        o.textContent = "Refrain 1 (default)";
+        sel.appendChild(o);
+        return;
+      }
+      refrains.forEach((s, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        const preview = ("R. " + (s || "")).replace(/\s+/g, " ").trim();
+        const short = preview.length > 100 ? preview.slice(0, 97) + "…" : preview;
+        o.textContent = "Refrain " + (i + 1) + ": " + short;
         sel.appendChild(o);
       });
     }
@@ -11143,10 +11616,19 @@ Lord, hear our prayer</textarea>
         }
         populateGospelSentenceSelect(data);
         if ($("flow-gospel-custom")) $("flow-gospel-custom").value = "";
-        setFlowPsalmUI(data.psalm_text || "");
+        populatePsalmRefrainSelect(data);
+        if ($("flow-psalm-custom")) $("flow-psalm-custom").value = "";
+        if ($("flow-psalm-ref")) {
+          const psalmRef = responsorialSectionLabel(data.psalm_reference || data.psalm || "") || "Responsorial Psalm";
+          $("flow-psalm-ref").textContent = psalmRef;
+        }
+        if ($("flow-psalm-body")) {
+          const pt = (data.psalm_text || "").trim();
+          $("flow-psalm-body").textContent = pt || "Full psalm text was not loaded.";
+        }
         if ($("flow-psalm-label")) {
-          const psalmKind = responsorialSectionLabel(data.psalm || data.psalm_reference || "");
-          $("flow-psalm-label").textContent = psalmKind + " (edit text for slides)";
+          const psalmKind = responsorialSectionLabel(data.psalm_reference || data.psalm || "");
+          $("flow-psalm-label").textContent = (psalmKind || "Responsorial psalm") + " refrain for the slide in PowerPoint.";
         }
         updateFlowParagraphPreviews();
         renderFlowSongCount();
@@ -11244,9 +11726,15 @@ Lord, hear our prayer</textarea>
       const posterCb = $("poster-use-openai-poster");
       const useOpenai = flowCb ? flowCb.checked : !!(posterCb && posterCb.checked);
       const styleEl = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const textFlow = $("flow-include-poster-text");
+      const textPoster = $("poster-include-poster-text");
+      const includePosterText = textFlow
+        ? textFlow.checked
+        : textPoster ? textPoster.checked : true;
       return {
         useOpenai,
         style: (styleEl && styleEl.value) || "cinematic",
+        includePosterText,
       };
     }
 
@@ -11257,8 +11745,14 @@ Lord, hear our prayer</textarea>
       ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
         const el = $(id);
         if (!el) return;
-        const field = el.closest(".field") || el;
+        const field = el.closest(".field") || el.closest(".flow-setup-footer__toggle-item") || el;
         field.style.opacity = useOpenai ? "1" : "0.55";
+      });
+      ["flow-include-poster-text-wrap", "poster-include-poster-text-wrap"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.style.opacity = useOpenai ? "1" : "0.45";
+        el.style.pointerEvents = useOpenai ? "" : "none";
       });
     }
 
@@ -11273,6 +11767,17 @@ Lord, hear our prayer</textarea>
             if (other) other.checked = el.checked;
           });
           syncOpenAiPosterUi();
+        });
+      });
+      const textCheckboxes = ["flow-include-poster-text", "poster-include-poster-text"];
+      textCheckboxes.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("change", () => {
+          textCheckboxes.forEach((oid) => {
+            const other = $(oid);
+            if (other) other.checked = el.checked;
+          });
         });
       });
       const styles = ["flow-openai-poster-style", "poster-openai-poster-style"];
@@ -11301,6 +11806,7 @@ Lord, hear our prayer</textarea>
       }
       const posterOpts = readOpenAiPosterSettings();
       const useOpenAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useOpenai;
+      const includePosterText = o.include_poster_text != null ? !!o.include_poster_text : posterOpts.includePosterText;
       const body = {
         date,
         celebrant,
@@ -11311,6 +11817,7 @@ Lord, hear our prayer</textarea>
         include_gospel_art: o.include_gospel_art !== false,
         include_ai_mass_poster: useOpenAiPoster,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
+        include_poster_text: includePosterText,
       };
       const church = getCommunityName();
       if (church) body.community_name = church;
@@ -11330,15 +11837,15 @@ Lord, hear our prayer</textarea>
             ann_bns.push(await uploadMassImage(annIn.files[i], "/api/upload/announcement-slide"));
           }
         }
-        const collAmt = $("flow-collection-amount") && $("flow-collection-amount").value.trim();
+        const collFormatted = getFormattedCollectionAmount();
         const collIso = $("flow-collection-date") && $("flow-collection-date").value;
         const collLabel = formatLongDateLabel(collIso) || collIso || "";
-        syncFlowPsalmOverrideHidden();
         syncFlowFoodSponsorsHidden();
-        const psalmOv = $("flow-psalm-override") && $("flow-psalm-override").value.trim();
+        const psalmCustom = $("flow-psalm-custom") && $("flow-psalm-custom").value.trim();
         const foodLines = getFlowFoodSponsorsLines();
         const gospelCustom = $("flow-gospel-custom") && $("flow-gospel-custom").value.trim();
         const sentSel = $("flow-gospel-sentence");
+        const psalmSel = $("flow-psalm-refrain");
         if (gospelCustom) {
           body.gospel_quote_override = gospelCustom;
         } else if (sentSel && sentSel.value !== "") {
@@ -11347,12 +11854,22 @@ Lord, hear our prayer</textarea>
             body.sentence_index = idx;
           }
         }
+        if (psalmCustom) {
+          body.psalm_text_override = psalmCustom;
+        } else if (psalmSel && psalmSel.value !== "") {
+          const pidx = parseInt(psalmSel.value, 10);
+          if (!Number.isNaN(pidx)) {
+            body.psalm_refrain_index = pidx;
+          }
+        }
         if (divider_bn) body.divider_poster_basename = divider_bn;
         if (ann_bns.length) body.announcement_basenames = ann_bns;
-        if (collAmt) body.mass_collection_amount = collAmt;
+        if (collFormatted) {
+          body.mass_collection_amount = collFormatted;
+          body.mass_collection_currency = readCollectionCurrencyCode();
+        }
         if (collLabel) body.mass_collection_date_label = collLabel;
         if (foodLines.length) body.food_sponsors = foodLines;
-        if (psalmOv) body.psalm_text_override = psalmOv;
         const creedSel = $("flow-creed-choice");
         body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
         body.hymn_lyrics_layout = readHymnLyricsLayout();
@@ -11376,9 +11893,11 @@ Lord, hear our prayer</textarea>
           divider_poster_basename: body.divider_poster_basename || null,
           announcement_basenames: body.announcement_basenames || [],
           mass_collection_amount: body.mass_collection_amount || null,
+          mass_collection_currency: body.mass_collection_currency || null,
           mass_collection_date_label: body.mass_collection_date_label || null,
           food_sponsors: body.food_sponsors || [],
           psalm_text_override: body.psalm_text_override || null,
+          psalm_refrain_index: body.psalm_refrain_index != null ? body.psalm_refrain_index : null,
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
@@ -11386,6 +11905,7 @@ Lord, hear our prayer</textarea>
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
           ai_poster_style: body.ai_poster_style,
+          include_poster_text: body.include_poster_text,
           include_social_exports: body.include_social_exports,
           custom_theme: body.custom_theme,
           include_church_logo: body.include_church_logo,
@@ -12145,6 +12665,7 @@ Lord, hear our prayer</textarea>
     $("btn-load-flow").addEventListener("click", () => loadFlowData(false));
     initFlowInputGroups();
     initHymnLyricsLayoutUi();
+    initCollectionCurrencyUi();
     $("mass-date").addEventListener("change", () => loadFlowData(true));
     $("btn-generate-flow").addEventListener("click", async () => {
       $("btn-generate-flow").disabled = true;
@@ -12279,6 +12800,7 @@ Lord, hear our prayer</textarea>
         include_social: $("poster-include-social").checked,
         include_ai: $("poster-use-openai-poster").checked,
         ai_poster_style: $("poster-openai-poster-style").value,
+        include_poster_text: $("poster-include-poster-text") && $("poster-include-poster-text").checked,
         downloadRowId: "poster-download-row",
         links: [
           ["poster-dl-zip", "zip_url"],

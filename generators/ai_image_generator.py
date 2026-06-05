@@ -5,7 +5,7 @@ Hero images are **presentation backgrounds only**: no readable text, clean safe 
 for PowerPoint overlays. Prompts follow the church poster designer brief in
 :func:`build_church_poster_background_prompt`.
 
-Primary path: OpenAI ``gpt-image-1`` when ``OPENAI_API_KEY`` is set.
+Primary path: OpenAI ``gpt-image-2`` when ``OPENAI_API_KEY`` is set.
 Fallback: Hugging Face ``Tongyi-MAI/Z-Image-Turbo`` when configured.
 """
 
@@ -76,19 +76,19 @@ _STYLE_BEHAVIOR: dict[str, str] = {
     ),
 }
 
-_COMPOSITION_RULES = (
+_COMPOSITION_RULES_FULL_BLEED = (
     "16:9 PowerPoint widescreen landscape, ultra high quality, presentation-ready, "
-    "clean title safe area at top center with soft negative space, "
-    "quote safe area near center-right with uncluttered backdrop, "
-    "footer safe area along lower edge for metadata, "
-    "logo safe area top-left kept visually calm, "
-    "balanced negative space, projector readability, emotionally uplifting worship atmosphere"
+    "full-bleed edge-to-edge biblical scene filling the entire frame, "
+    "rich detail corner to corner, no empty margins, no letterboxing, "
+    "subject centered with cinematic depth, emotionally uplifting worship atmosphere"
 )
 
+_COMPOSITION_RULES_WITH_TEXT = _COMPOSITION_RULES_FULL_BLEED  # unused; kept for import stability
+
 _NO_TEXT_RULES = (
-    "Do NOT generate readable text. Do NOT place fake typography or scripture lettering. "
-    "Background art only — leave clean composition spaces for editable PowerPoint text overlays. "
-    "Absolutely no words, letters, captions, watermarks, or logos in the image."
+    "Do NOT generate readable text, letters, numbers, captions, subtitles, or watermarks. "
+    "Do NOT render church logos, crests, seals, insignia, or parish branding. "
+    "Pure background illustration only — no typography and no logos anywhere in the image."
 )
 
 
@@ -195,56 +195,38 @@ def _infer_storytelling_mood(
 def build_church_poster_background_prompt(
     *,
     style: str,
-    sunday_title: str = "",
-    gospel_reference: str = "",
-    gospel_verse: str = "",
-    scripture_quote: str = "",
     visual_scene_line: str = "",
     season_key: str = "",
-    gospel_text: str = "",
 ) -> str:
     """
-    Build the full diffusion prompt for a cinematic church Sunday Gospel poster **background**.
+    Build a visual-only diffusion prompt for a Gospel poster background.
 
-    Text overlays (title, quote, metadata) are added in PowerPoint — the image must stay text-free.
+    No scripture quotes, titles, or references are sent — text is composited in Python afterward.
     """
     resolved = resolve_ai_image_style(style)
     style_label = _STYLE_LABELS.get(resolved, resolved.replace("_", " ").title())
     style_behavior = _STYLE_BEHAVIOR.get(resolved) or style_prompt_fragment(resolved)
 
-    title = _clip(sunday_title.replace(" Celebration", "").strip() or "Sunday Mass", 120)
-    ref = _clip(gospel_verse or gospel_reference or "the Gospel", 80)
-    quote = _clip(scripture_quote, 220)
-    scene = _clip(visual_scene_line, 170)
+    scene = _clip(visual_scene_line, 220)
     if not scene:
-        scene = f"the main biblical moment from {ref}"
+        scene = "a reverent biblical moment from the Sunday Gospel"
 
     mood = _infer_storytelling_mood(
-        sunday_title=title,
-        gospel_reference=ref,
-        gospel_text=gospel_text or "",
-        scripture_quote=quote,
+        sunday_title="",
+        gospel_reference="",
+        gospel_text="",
+        scripture_quote="",
         season_key=(season_key or "").strip().lower(),
     )
 
     parts = [
-        "You are an AI church poster designer generating a cinematic church Sunday Gospel poster "
-        "BACKGROUND for PowerPoint presentations.",
+        "Generate a cinematic biblical illustration BACKGROUND for a church presentation slide.",
         _NO_TEXT_RULES,
         f"STYLE: {style_label}. {style_behavior}.",
-        (
-            "Gospel context (for mood and storytelling only — never render as text): "
-            f"Sunday Title: {title}; Gospel: {ref}; "
-            + (f"Scripture theme: {quote}." if quote else "")
-        ),
-        (
-            "Visual storytelling: understand the Gospel situation, identify the main biblical moment, "
-            f"determine emotional atmosphere. Main scene to paint: {scene}."
-        ),
+        f"Main scene to paint: {scene}.",
         mood + ".",
-        "Match the composition to the selected art style; reserve safe typography areas for PowerPoint editing.",
-        _COMPOSITION_RULES + ".",
-        "Focus on visual storytelling and worship atmosphere. Pure illustration, no typography anywhere.",
+        _COMPOSITION_RULES_FULL_BLEED + ".",
+        "Focus on visual storytelling and worship atmosphere.",
     ]
     return " ".join(parts)
 
@@ -259,16 +241,12 @@ def build_hf_image_prompt(
     gospel_text: str = "",
     season_key: str = "",
 ) -> str:
-    """Full diffusion prompt using the church poster background designer brief."""
+    """Full diffusion prompt — visual scene line only (legacy HF callers may pass unused kwargs)."""
+    del gospel_reference, sunday_title, scripture_quote, gospel_text
     return build_church_poster_background_prompt(
         style=style,
-        sunday_title=sunday_title,
-        gospel_reference=gospel_reference,
-        gospel_verse=gospel_reference,
-        scripture_quote=scripture_quote,
         visual_scene_line=visual_scene_line,
         season_key=season_key,
-        gospel_text=gospel_text,
     )
 
 
@@ -531,16 +509,50 @@ def _generate_with_legacy_http(
         return False
 
 
-_PLACEHOLDER_MAX_BYTES = 24_000  # Real gpt-image-1 PNGs are typically much larger.
+_PLACEHOLDER_MAX_BYTES = 24_000  # Real OpenAI image PNGs are typically much larger.
 
 POSTER_WIDTH = 1080
 POSTER_HEIGHT = 1920
 # PowerPoint widescreen (16:9) — matches ``generators.poster.types.PPT_SIZE``.
 WIDESCREEN_16_9 = (1920, 1080)
-# Closest landscape size from gpt-image-1; center-cropped and upscaled to 1920×1080.
-_OPENAI_WIDESCREEN_API_SIZE = "1536x1024"
-# Closest portrait size supported by gpt-image-1; resized to 1080×1920 on save.
-_OPENAI_PORTRAIT_API_SIZE = "1024x1536"
+# gpt-image-2 landscape (1920×1088 — both dims ÷16); cropped to 1920×1080 after generation.
+_OPENAI_WIDESCREEN_API_SIZE = "1920x1088"
+_OPENAI_WIDESCREEN_API_SIZE_LEGACY = "1536x1024"
+# gpt-image-2 portrait (1088×1920, 16-aligned); legacy uses 1024×1536.
+_OPENAI_PORTRAIT_API_SIZE = "1088x1920"
+_OPENAI_PORTRAIT_API_SIZE_LEGACY = "1024x1536"
+
+
+def _openai_image_model() -> str:
+    return (os.environ.get("OPENAI_IMAGE_MODEL") or "gpt-image-2").strip() or "gpt-image-2"
+
+
+def _openai_image_quality() -> str:
+    q = (os.environ.get("OPENAI_IMAGE_QUALITY") or "high").strip().lower() or "high"
+    return q if q in ("low", "medium", "high") else "high"
+
+
+def _openai_widescreen_api_size() -> str:
+    if _openai_image_model() == "gpt-image-2":
+        return _OPENAI_WIDESCREEN_API_SIZE
+    return _OPENAI_WIDESCREEN_API_SIZE_LEGACY
+
+
+def _openai_portrait_api_size() -> str:
+    if _openai_image_model() == "gpt-image-2":
+        return _OPENAI_PORTRAIT_API_SIZE
+    return _OPENAI_PORTRAIT_API_SIZE_LEGACY
+
+
+def _openai_images_generate(client: OpenAI, *, prompt: str, size: str) -> Any:
+    """Call ``client.images.generate`` with model, size, and quality for the active GPT Image model."""
+    kwargs: dict[str, Any] = {
+        "model": _openai_image_model(),
+        "prompt": prompt,
+        "size": size,
+        "quality": _openai_image_quality(),
+    }
+    return client.images.generate(**kwargs)
 
 
 def _require_openai_api_key() -> None:
@@ -570,7 +582,7 @@ def generate_openai_poster(
     output_path: Path | str | None = None,
 ) -> Path:
     """
-    Generate a poster with OpenAI ``gpt-image-1``.
+    Generate a poster with OpenAI GPT Image (default ``gpt-image-2``).
 
     Uses modern SDK syntax::
 
@@ -589,10 +601,10 @@ def generate_openai_poster(
         out_path.unlink()
 
     client = OpenAI()
-    result = client.images.generate(
-        model="gpt-image-1",
+    result = _openai_images_generate(
+        client,
         prompt=prompt,
-        size=_OPENAI_PORTRAIT_API_SIZE,
+        size=_openai_portrait_api_size(),
     )
     raw = _decode_openai_images_generate_result(result)
 
@@ -606,9 +618,15 @@ def generate_openai_poster(
     if not hero_image_is_real(out_path):
         raise RuntimeError(
             "OpenAI poster image was too small or invalid. "
-            "Check OPENAI_API_KEY, billing, and model access (gpt-image-1)."
+            "Check OPENAI_API_KEY, billing, and model access "
+            f"({_openai_image_model()})."
         )
-    logger.info("OpenAI poster saved path=%s bytes=%s", out_path, out_path.stat().st_size)
+    logger.info(
+        "OpenAI poster saved path=%s bytes=%s model=%s",
+        out_path,
+        out_path.stat().st_size,
+        _openai_image_model(),
+    )
     return out_path.resolve()
 
 
@@ -635,7 +653,7 @@ def _generate_with_openai(
     *,
     size: str = "1024x1024",
 ) -> None:
-    """Generate a PNG via OpenAI Images API (``gpt-image-1``). Raises on failure."""
+    """Generate a PNG via OpenAI Images API (default ``gpt-image-2``). Raises on failure."""
     _require_openai_api_key()
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -644,11 +662,7 @@ def _generate_with_openai(
 
     try:
         client = OpenAI()
-        result = client.images.generate(
-            model="gpt-image-1",
-            prompt=prompt,
-            size=size,
-        )
+        result = _openai_images_generate(client, prompt=prompt, size=size)
     except Exception as exc:
         raise RuntimeError(f"OpenAI image API error: {exc}") from exc
 
@@ -659,7 +673,8 @@ def _generate_with_openai(
     if not hero_image_is_real(out_path):
         raise RuntimeError(
             "OpenAI image was too small or invalid — not using a placeholder. "
-            "Check your API key, billing, and model access (gpt-image-1)."
+            "Check your API key, billing, and model access "
+            f"({_openai_image_model()})."
         )
 
 
@@ -678,11 +693,10 @@ def generate_sacred_illustration(
     season_key: str = "",
 ) -> Path:
     """
-    Generate a Gospel poster **background** PNG (no baked-in text).
+    Generate a Gospel poster **background** PNG (no baked-in text or logos).
 
-    Pass ``visual_scene_line`` — a short plain description of the Gospel moment (no poster quote).
-    Optional ``sunday_title``, ``scripture_quote``, ``gospel_text``, and ``season_key`` enrich
-    the designer prompt (:func:`build_church_poster_background_prompt`).
+    Pass ``visual_scene_line`` — a short plain description of the Gospel moment (not a poster quote).
+    ``gospel_text`` / ``sunday_title`` are used only to derive a scene line when none is provided.
     """
     try:
         from services.env_config import load_project_dotenv
@@ -710,20 +724,16 @@ def generate_sacred_illustration(
         vline = build_visual_scene_line(sunday_title, gospel_reference, gospel_text or "")
     prompt = build_church_poster_background_prompt(
         style=resolved_style,
-        sunday_title=sunday_title,
-        gospel_reference=gospel_reference,
-        gospel_verse=gospel_reference,
-        scripture_quote=scripture_quote,
         visual_scene_line=vline,
         season_key=season_key,
-        gospel_text=gospel_text,
     )
     negative = _resolved_negative_prompt()
     prompt_preview = (prompt[:200] + "…") if len(prompt) > 200 else prompt
 
     if openai_key:
         logger.info(
-            "OpenAI sacred image attempt model=gpt-image-1 prompt_preview=%r",
+            "OpenAI sacred image attempt model=%s prompt_preview=%r",
+            _openai_image_model(),
             prompt_preview,
         )
         try:

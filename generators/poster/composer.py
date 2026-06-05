@@ -15,7 +15,7 @@ from generators.poster.types import PPT_SIZE, PosterContent, RenderContext
 def compose_poster(
     size: tuple[int, int],
     content: PosterContent,
-    preset: str = "verbum",
+    preset: str = "gfcc_flat",
 ) -> Image.Image:
     """Render a poster at ``size`` using the given layout preset."""
     w, h = size
