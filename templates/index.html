@@ -2807,6 +2807,8 @@
       line-height: 1.45;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      user-select: text;
+      cursor: pointer;
     }
     .flow-readings-inner .flow-reading-text--gospel,
     .flow-readings-inner .flow-reading-text--psalm {
@@ -5445,10 +5447,6 @@
       width: 100%;
       min-width: 0;
     }
-    .user-select-all {
-      user-select: all;
-      cursor: text;
-    }
     .flow-para-preview {
       margin-top: 8px;
       padding: 10px 12px;
@@ -7064,28 +7062,28 @@ Lord, hear our prayer</textarea>
                         <strong>First reading</strong>
                         <span class="flow-reading-ref" id="flow-reading1-ref">—</span>
                       </header>
-                      <div id="flow-reading1-body" class="flow-reading-text user-select-all">Load readings to see text.</div>
+                      <div id="flow-reading1-body" class="flow-reading-text">Load readings to see text.</div>
                     </article>
                     <article class="flow-reading-tile reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
                       <header>
                         <strong>Second reading</strong>
                         <span class="flow-reading-ref" id="flow-reading2-ref">—</span>
                       </header>
-                      <div id="flow-reading2-body" class="flow-reading-text user-select-all">—</div>
+                      <div id="flow-reading2-body" class="flow-reading-text">—</div>
                     </article>
                     <article class="flow-reading-tile reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
                       <header>
                         <strong>Gospel</strong>
                         <span class="flow-reading-ref" id="flow-gospel-ref">—</span>
                       </header>
-                      <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel user-select-all">Load readings to see the full Gospel.</div>
+                      <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel">Load readings to see the full Gospel.</div>
                     </article>
                     <article class="flow-reading-tile reading-preview-card" id="flow-psalm-preview-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
                       <header>
                         <strong>Psalm</strong>
                         <span class="flow-reading-ref" id="flow-psalm-ref">—</span>
                       </header>
-                      <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm user-select-all">Load readings to see the full psalm text.</div>
+                      <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm">Load readings to see the full psalm text.</div>
                     </article>
                   </div>
 
@@ -11572,8 +11570,14 @@ Lord, hear our prayer</textarea>
         updateHomeReadingCard("home-reading1-ref", "home-reading1-excerpt", "home-reading1-toggle", data.first_reading_reference, data.first_reading_excerpt);
         updateHomeReadingCard("home-reading2-ref", "home-reading2-excerpt", "home-reading2-toggle", data.second_reading_reference, data.second_reading_excerpt);
         const psalmRef = responsorialSectionLabel(data.psalm || data.psalm_reference || "") || "Responsorial Psalm";
-        const psalmExcerpt = calExtractPsalmRefrain(data.psalm_text || "") || (data.psalm_text || "").trim().slice(0, 320);
-        updateHomeReadingCard("home-psalm-ref", "home-psalm-excerpt", "home-psalm-toggle", psalmRef, psalmExcerpt || data.psalm_text);
+        const psalmFull = (data.psalm_text || "").trim();
+        updateHomeReadingCard(
+          "home-psalm-ref",
+          "home-psalm-excerpt",
+          "home-psalm-toggle",
+          psalmRef,
+          psalmFull
+        );
         renderThemeGrid();
       } catch (e) {
         notify(e.message || "Could not load lectionary preview.", "error");
