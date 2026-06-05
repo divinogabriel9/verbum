@@ -318,13 +318,13 @@ label {
 /* —— Topbar (calm, minimal) —— */
 .topbar.topbar--pill {
   border-radius: var(--radius-pill);
-  border: 1px solid var(--card-border);
-  background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--liturgical-glow) 32%, var(--line));
+  background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-light);
-  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
-  gap: var(--space-3);
+  box-shadow: var(--shadow-light), 0 10px 32px rgba(21, 51, 61, 0.07);
+  padding: 6px 16px;
+  column-gap: 16px;
 }
 
 .brand-logo:hover,
@@ -338,24 +338,26 @@ label {
 }
 
 .liturgical-indicator {
-  border: 1px solid var(--card-border);
+  border: 1px solid color-mix(in srgb, var(--liturgical-glow) 24%, var(--card-border));
   background: var(--surface-solid);
-  box-shadow: var(--shadow-light);
+  box-shadow: none;
 }
 
 .notif-btn,
 .theme-toggle-btn {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--card-border);
-  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--liturgical-glow) 24%, var(--card-border));
+  background: var(--surface-solid);
   box-shadow: none;
+  width: var(--topbar-chip-height);
+  height: var(--topbar-chip-height);
 }
 
 .notif-btn:hover,
 .notif-btn[aria-expanded="true"],
 .theme-toggle-btn:hover {
-  background: var(--surface-solid);
-  border-color: var(--line);
+  background: color-mix(in srgb, var(--liturgical-accent) 5%, var(--surface-solid));
+  border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--card-border));
   box-shadow: none;
 }
 
@@ -387,12 +389,12 @@ label {
 .topbar-nav {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  min-height: calc(var(--tab-height) + var(--space-2));
-  border-radius: var(--radius-md);
-  border: 1px solid var(--card-border);
-  background: var(--surface-2);
+  gap: 2px;
+  padding: 2px;
+  min-height: calc(var(--topbar-chip-height) + 4px);
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
+  background: color-mix(in srgb, var(--surface-2) 28%, transparent);
   box-shadow: none;
 }
 

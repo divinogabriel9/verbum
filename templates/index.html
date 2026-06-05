@@ -739,34 +739,35 @@
 
     .topbar.topbar--pill {
       border-radius: 999px;
-      padding: 6px 12px 6px 18px;
+      padding: 6px 16px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      gap: 12px;
+      column-gap: 16px;
+      row-gap: 8px;
       position: sticky;
       top: 10px;
       z-index: 22;
       min-height: var(--header-height);
-      backdrop-filter: blur(18px) saturate(1.2);
-      -webkit-backdrop-filter: blur(18px) saturate(1.2);
-      background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 55%, var(--line));
+      backdrop-filter: blur(18px) saturate(1.15);
+      -webkit-backdrop-filter: blur(18px) saturate(1.15);
+      background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 32%, var(--line));
       box-shadow:
-        var(--shadow-glow),
-        0 14px 40px rgba(26, 18, 40, 0.18),
-        inset 0 1px 0 color-mix(in srgb, var(--liturgical-glow) 25%, white);
+        var(--shadow-light),
+        0 10px 32px rgba(21, 51, 61, 0.07);
     }
     html[data-theme="dark"] .topbar.topbar--pill {
-      background: color-mix(in srgb, var(--surface-solid) 65%, transparent);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 50%, var(--line));
+      background: color-mix(in srgb, var(--surface-solid) 82%, transparent);
+      border-color: color-mix(in srgb, var(--liturgical-glow) 28%, var(--line));
       box-shadow:
-        var(--shadow-glow),
-        0 14px 40px rgba(0, 0, 0, 0.5),
-        inset 0 1px 0 color-mix(in srgb, var(--liturgical-glow) 15%, white);
+        var(--shadow-light),
+        0 10px 32px rgba(0, 0, 0, 0.28);
     }
     .brand-logo {
+      grid-column: 1;
       justify-self: start;
+      align-self: center;
       flex-shrink: 0;
       margin: 0;
       padding: 8px 4px;
@@ -800,13 +801,14 @@
     .topbar-nav {
       grid-column: 2;
       justify-self: center;
+      align-self: center;
       flex: 0 1 auto;
       width: fit-content;
-      max-width: min(100%, 56vw);
+      max-width: min(100%, 52vw);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 2px;
       min-width: 0;
       margin-inline: 0;
       overflow-x: auto;
@@ -814,11 +816,11 @@
       flex-wrap: nowrap;
       scrollbar-width: none;
       -ms-overflow-style: none;
-      padding: 3px;
+      padding: 2px;
       border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 20%, var(--line));
-      background: color-mix(in srgb, var(--surface-2) 55%, transparent);
-      box-shadow: inset 0 0 20px color-mix(in srgb, var(--liturgical-glow) 6%, transparent);
+      border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
+      background: color-mix(in srgb, var(--surface-2) 28%, transparent);
+      box-shadow: none;
     }
     .topbar-nav::-webkit-scrollbar { display: none; }
     .topbar-nav .nav-link {
@@ -826,17 +828,18 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      min-height: 0;
-      padding: 6px 10px;
+      min-height: calc(var(--topbar-chip-height) - 4px);
+      padding: 5px 11px;
       border-radius: 999px;
       border: none;
-      font-size: 0.82rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       text-transform: none;
       color: var(--muted);
       background: transparent;
-      transition: color 0.2s ease, background 0.2s ease;
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover);
       white-space: nowrap;
     }
     .topbar-nav .nav-link .nav-icon {
@@ -857,8 +860,8 @@
     }
     .topbar-nav .nav-link.active {
       color: var(--liturgical-accent);
-      background: color-mix(in srgb, var(--liturgical-glow) 22%, var(--surface-solid));
-      box-shadow: 0 1px 3px rgba(21, 51, 61, 0.08);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-light);
     }
     .topbar-nav .nav-link.active .nav-icon {
       opacity: 1;
@@ -1109,20 +1112,21 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
+      width: var(--topbar-chip-height);
+      height: var(--topbar-chip-height);
       padding: 0;
-      border-radius: var(--radius-sm);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 30%, var(--line));
-      background: color-mix(in srgb, var(--liturgical-glow) 8%, var(--surface-2));
+      border-radius: var(--radius-pill);
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 24%, var(--card-border));
+      background: var(--surface-solid);
       cursor: pointer;
-      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .notif-btn:hover,
     .notif-btn[aria-expanded="true"] {
-      background: var(--surface-solid);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 55%, var(--line));
-      box-shadow: 0 0 14px color-mix(in srgb, var(--liturgical-glow) 25%, transparent);
+      background: color-mix(in srgb, var(--liturgical-accent) 5%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--card-border));
+      box-shadow: none;
     }
     .notif-btn .notif-icon {
       width: 20px;
@@ -1256,18 +1260,19 @@
     .topbar-meta {
       grid-column: 3;
       justify-self: end;
+      align-self: center;
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-shrink: 1;
+      gap: 6px;
+      flex-shrink: 0;
       min-width: 0;
-      max-width: min(280px, 42vw);
+      max-width: none;
     }
     .liturgical-indicator-wrap {
       position: relative;
-      flex-shrink: 1;
+      flex-shrink: 0;
       min-width: 0;
-      max-width: min(192px, 36vw);
+      max-width: min(200px, 30vw);
       display: flex;
       align-items: center;
     }
@@ -1282,9 +1287,9 @@
       min-height: var(--topbar-chip-height);
       padding: 0 14px 0 9px;
       border-radius: var(--radius-pill);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 28%, var(--card-border));
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 24%, var(--card-border));
       background: var(--surface-solid);
-      box-shadow: var(--shadow-light);
+      box-shadow: none;
       cursor: pointer;
       font: inherit;
       color: inherit;
@@ -1483,20 +1488,22 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
+      width: var(--topbar-chip-height);
+      height: var(--topbar-chip-height);
       padding: 0;
-      border-radius: var(--radius-sm);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 30%, var(--line));
-      background: color-mix(in srgb, var(--liturgical-glow) 8%, var(--surface-2));
+      border-radius: var(--radius-pill);
+      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 24%, var(--card-border));
+      background: var(--surface-solid);
       color: var(--ink);
       flex-shrink: 0;
-      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        color var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .theme-toggle-btn:hover {
-      background: var(--surface-solid);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 55%, var(--line));
-      box-shadow: 0 0 14px color-mix(in srgb, var(--liturgical-glow) 25%, transparent);
+      background: color-mix(in srgb, var(--liturgical-accent) 5%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--card-border));
+      box-shadow: none;
     }
     .theme-toggle-btn svg {
       width: 20px;
@@ -5771,8 +5778,9 @@
       .hero-metrics { min-width: 0; }
     }
     @media (min-width: 721px) {
-      .topbar-meta { max-width: min(240px, 38vw); }
-      .topbar-meta .liturgical-indicator-wrap { display: block; max-width: min(192px, 36vw); }
+      .topbar-meta .liturgical-indicator-wrap {
+        max-width: min(200px, 26vw);
+      }
     }
     @media (max-width: 720px) {
       .app-shell { --nav-width-expanded: 0px; }
