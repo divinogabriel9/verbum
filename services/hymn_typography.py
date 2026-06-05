@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
-DEFAULT_BODY_PT = 56.0  # Lamb of God hymn blocks (Poppins Bold)
+DEFAULT_BODY_PT = 75.0  # Hymn lyric slides (Poppins, reference deck)
 DEFAULT_TITLE_PT = 38.5  # Lamb of God / hymn slide title (Georgia)
 DEFAULT_ALIGN = "center"
 

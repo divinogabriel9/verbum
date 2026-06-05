@@ -311,6 +311,10 @@ class GenerateBody(BaseModel):
         "nicene",
         description="Creed for the Mass deck: nicene | apostles (only one is included).",
     )
+    hymn_lyrics_layout: str = Field(
+        "single",
+        description="Hymn slide layout: single (1 block/slide) | dual (2 blocks/slide).",
+    )
 
 
 class RefreshSongsBody(BaseModel):
@@ -768,6 +772,7 @@ def api_generate(body: GenerateBody) -> Any:
         include_church_name=body.include_church_name,
         hymn_lyric_overrides=body.hymn_lyric_overrides,
         creed_choice=body.creed_choice,
+        hymn_lyrics_layout=body.hymn_lyrics_layout,
     )
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
@@ -858,6 +863,7 @@ def api_regenerate_pptx(body: GenerateBody) -> Any:
         include_church_name=body.include_church_name,
         hymn_lyric_overrides=body.hymn_lyric_overrides,
         creed_choice=body.creed_choice,
+        hymn_lyrics_layout=body.hymn_lyrics_layout,
     )
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "PowerPoint rebuild failed.")

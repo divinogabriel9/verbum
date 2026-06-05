@@ -2598,6 +2598,56 @@
       margin-top: 2px;
       flex-shrink: 0;
     }
+    .flow-option-inline {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+    .flow-option-inline__label {
+      margin: 0;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .flow-segment {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line-soft);
+      background: var(--surface-muted, var(--surface-solid));
+    }
+    .flow-segment label {
+      display: inline-flex;
+      align-items: center;
+      margin: 0;
+      padding: 4px 10px;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      line-height: 1.3;
+      border-radius: calc(var(--radius-md) - 2px);
+      cursor: pointer;
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s;
+    }
+    .flow-segment label:has(input:checked) {
+      background: var(--surface-solid);
+      color: var(--ink);
+      box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,0.06));
+    }
+    .flow-segment input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+    .flow-assets-compact {
+      display: grid;
+      gap: var(--space-sm);
+    }
     /* Readings card — 3 zones (previews → gospel slides → psalm) */
     .flow-readings-inner {
       display: flex;
@@ -6746,31 +6796,40 @@ Lord, hear our prayer</textarea>
                   </section>
                   <section class="flow-setup-col flow-setup-col--assets" aria-labelledby="flow-setup-assets-title">
                     <h4 class="flow-setup-col__title" id="flow-setup-assets-title">Assets &amp; options</h4>
-                    <div class="field">
-                      <label for="flow-divider-poster">Divider poster (16:9)</label>
-                      <input type="file" id="flow-divider-poster" accept="image/png,image/jpeg,image/webp,image/gif" />
-                      <p class="muted" id="flow-divider-status">Optional. Clears after generate.</p>
-                    </div>
-                    <div class="field">
-                      <label for="flow-announcement-posters">Announcement posters</label>
-                      <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
-                      <p class="muted" id="flow-announcement-status">Before final blessing. Clears after generate.</p>
-                    </div>
-                    <div class="field flow-check-stack">
-                      <label><input type="checkbox" id="flow-include-church-logo" /> Church logo on slides</label>
-                      <label><input type="checkbox" id="flow-include-church-name" /> Parish name on slides</label>
-                      <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI gospel poster</label>
-                      <label><input type="checkbox" id="flow-include-social-exports" /> Social poster sizes</label>
-                    </div>
-                    <div class="field" id="flow-openai-style-wrap">
-                      <label for="flow-openai-poster-style">Poster art style</label>
-                      <select id="flow-openai-poster-style">
-                        <option value="cinematic">Cinematic</option>
-                        <option value="realistic">Realistic</option>
-                        <option value="renaissance">Renaissance</option>
-                        <option value="stained_glass">Stained glass</option>
-                        <option value="modern">Modern</option>
-                      </select>
+                    <div class="flow-assets-compact">
+                      <div class="field">
+                        <label for="flow-divider-poster">Divider poster</label>
+                        <input type="file" id="flow-divider-poster" accept="image/png,image/jpeg,image/webp,image/gif" />
+                        <p class="muted" id="flow-divider-status">16:9 · optional</p>
+                      </div>
+                      <div class="field">
+                        <label for="flow-announcement-posters">Announcements</label>
+                        <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
+                        <p class="muted" id="flow-announcement-status">Before final blessing</p>
+                      </div>
+                      <div class="field flow-option-inline">
+                        <span class="flow-option-inline__label" id="flow-hymn-layout-label">Hymn lyrics</span>
+                        <div class="flow-segment" role="radiogroup" aria-labelledby="flow-hymn-layout-label">
+                          <label><input type="radio" name="flow-hymn-layout" value="single" checked /> 1 / slide</label>
+                          <label><input type="radio" name="flow-hymn-layout" value="dual" /> 2 / slide</label>
+                        </div>
+                      </div>
+                      <div class="field flow-check-stack">
+                        <label><input type="checkbox" id="flow-include-church-logo" /> Logo on slides</label>
+                        <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
+                        <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI poster</label>
+                        <label><input type="checkbox" id="flow-include-social-exports" /> Social sizes</label>
+                      </div>
+                      <div class="field" id="flow-openai-style-wrap">
+                        <label for="flow-openai-poster-style">Poster style</label>
+                        <select id="flow-openai-poster-style">
+                          <option value="cinematic">Cinematic</option>
+                          <option value="realistic">Realistic</option>
+                          <option value="renaissance">Renaissance</option>
+                          <option value="stained_glass">Stained glass</option>
+                          <option value="modern">Modern</option>
+                        </select>
+                      </div>
                     </div>
                   </section>
                 </div>
@@ -8728,6 +8787,28 @@ Lord, hear our prayer</textarea>
 
     const massSongLyricsCache = new Map();
     const HYMN_TYPO_STORAGE_KEY = "churchMediaHymnTypography";
+    const HYMN_LAYOUT_STORAGE_KEY = "churchMediaHymnLyricsLayout";
+
+    function readHymnLyricsLayout() {
+      const picked = document.querySelector('input[name="flow-hymn-layout"]:checked');
+      if (picked && picked.value === "dual") return "dual";
+      const saved = localStorage.getItem(HYMN_LAYOUT_STORAGE_KEY);
+      return saved === "dual" ? "dual" : "single";
+    }
+
+    function initHymnLyricsLayoutUi() {
+      const saved = localStorage.getItem(HYMN_LAYOUT_STORAGE_KEY);
+      if (saved === "dual" || saved === "single") {
+        const el = document.querySelector('input[name="flow-hymn-layout"][value="' + saved + '"]');
+        if (el) el.checked = true;
+      }
+      document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+        el.addEventListener("change", () => {
+          const v = document.querySelector('input[name="flow-hymn-layout"]:checked');
+          if (v) localStorage.setItem(HYMN_LAYOUT_STORAGE_KEY, v.value);
+        });
+      });
+    }
     const SLOT_TO_HYMN_SECTION = {
       entrance: "entrance",
       offertory: "offertory",
@@ -9000,9 +9081,15 @@ Lord, hear our prayer</textarea>
       } catch (_e) { /* ignore */ }
     }
 
+    function normalizeHymnBodyPt(pt) {
+      const n = Number(pt);
+      if (!Number.isFinite(n) || n <= 56) return 75;
+      return Math.min(96, n);
+    }
+
     function defaultHymnTypo() {
       return {
-        body_pt: 56,
+        body_pt: 75,
         title_pt: 38.5,
         title_align: "center",
         body_align: "center",
@@ -9023,7 +9110,7 @@ Lord, hear our prayer</textarea>
       const block = ensureSectionTypoStore(section);
       const base = defaultHymnTypo();
       return {
-        body_pt: Number(block.body_pt) || base.body_pt,
+        body_pt: normalizeHymnBodyPt(block.body_pt || base.body_pt),
         title_pt: Number(block.title_pt) || base.title_pt,
         title_align: block.title_align || base.title_align,
         body_align: block.body_align || base.body_align,
@@ -9037,7 +9124,7 @@ Lord, hear our prayer</textarea>
       const raw = block.slides[key];
       if (!raw) return Object.assign({}, base);
       return {
-        body_pt: Number(raw.body_pt) || base.body_pt,
+        body_pt: normalizeHymnBodyPt(raw.body_pt || base.body_pt),
         title_pt: Number(raw.title_pt) || base.title_pt,
         title_align: raw.title_align || base.title_align,
         body_align: raw.body_align || base.body_align,
@@ -9066,7 +9153,7 @@ Lord, hear our prayer</textarea>
         const block = hymnTypographyBySection[k];
         if (!block || typeof block !== "object") return;
         out[k] = {
-          body_pt: block.body_pt,
+          body_pt: normalizeHymnBodyPt(block.body_pt),
           title_pt: block.title_pt,
           title_align: block.title_align,
           body_align: block.body_align,
@@ -9089,7 +9176,7 @@ Lord, hear our prayer</textarea>
       const lines = (chunk || "").split("\n").filter((ln) => ln.trim());
       const lineCount = lines.length;
       const longest = lines.reduce((m, ln) => Math.max(m, ln.trim().length), 0);
-      let rem = Math.min(0.88, Math.max(0.4, (Number(basePt) || 56) * 0.0135));
+      let rem = Math.min(0.88, Math.max(0.4, normalizeHymnBodyPt(basePt) * 0.0135));
       if (lineCount >= 2 || longest >= 22) rem = Math.min(rem, 0.78);
       if (lineCount >= 3 || longest >= 28) rem = Math.min(rem, 0.7);
       if (lineCount >= 4 || longest >= 34) rem = Math.min(rem, 0.62);
@@ -9099,16 +9186,17 @@ Lord, hear our prayer</textarea>
       return rem.toFixed(3) + "rem";
     }
 
-    /** Mirror ``powerpoint._auto_body_pt`` caps on requested body point size. */
+    /** Mirror ``powerpoint.calculateOptimalFontSize`` for hymn preview (68–75 pt). */
     function autoHymnBodyPtForChunk(chunk, basePt) {
       const lines = (chunk || "").split("\n").filter((ln) => ln.trim());
       const lineCount = lines.length;
       const longest = lines.reduce((m, ln) => Math.max(m, ln.trim().length), 0);
-      let sizePt = Number(basePt) || 56;
-      if (lineCount >= 8 || longest >= 40) sizePt = Math.min(sizePt, 50);
-      if (lineCount >= 10 || longest >= 48) sizePt = Math.min(sizePt, 44);
-      if (lineCount >= 12 || longest >= 56) sizePt = Math.min(sizePt, 38);
-      if (lineCount >= 14 || longest >= 64) sizePt = Math.min(sizePt, 34);
+      let sizePt = normalizeHymnBodyPt(basePt);
+      if (lineCount >= 8) sizePt = Math.min(sizePt, 68);
+      else if (lineCount >= 6) sizePt = Math.min(sizePt, 72);
+      else if (lineCount >= 5) sizePt = Math.min(sizePt, 74);
+      if (longest >= 52) sizePt = Math.min(sizePt, 70);
+      if (longest >= 60) sizePt = Math.min(sizePt, 68);
       return sizePt;
     }
 
@@ -11267,6 +11355,7 @@ Lord, hear our prayer</textarea>
         if (psalmOv) body.psalm_text_override = psalmOv;
         const creedSel = $("flow-creed-choice");
         body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
+        body.hymn_lyrics_layout = readHymnLyricsLayout();
         if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
           setMassGenLoading(false);
           return null;
@@ -11293,6 +11382,7 @@ Lord, hear our prayer</textarea>
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
+          hymn_lyrics_layout: body.hymn_lyrics_layout || "single",
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
           ai_poster_style: body.ai_poster_style,
@@ -12054,6 +12144,7 @@ Lord, hear our prayer</textarea>
 
     $("btn-load-flow").addEventListener("click", () => loadFlowData(false));
     initFlowInputGroups();
+    initHymnLyricsLayoutUi();
     $("mass-date").addEventListener("change", () => loadFlowData(true));
     $("btn-generate-flow").addEventListener("click", async () => {
       $("btn-generate-flow").disabled = true;

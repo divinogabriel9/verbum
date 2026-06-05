@@ -391,6 +391,7 @@ def generate_mass_media(
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
+    hymn_lyrics_layout: str = "single",
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -543,6 +544,7 @@ def generate_mass_media(
         include_church_name=include_church_name,
         hymn_lyric_overrides=hymn_lyric_overrides,
         creed_choice=creed_choice,
+        hymn_lyrics_layout=hymn_lyrics_layout,
     )
 
     if include_social_exports and poster_path and poster_path.is_file():
@@ -598,6 +600,7 @@ def regenerate_mass_pptx(
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
+    hymn_lyrics_layout: str = "single",
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
     data = get_liturgical_data(date)
@@ -691,6 +694,7 @@ def regenerate_mass_pptx(
         include_church_name=include_church_name,
         hymn_lyric_overrides=hymn_lyric_overrides,
         creed_choice=creed_choice,
+        hymn_lyrics_layout=hymn_lyrics_layout,
     )
 
     return GenerationResult(

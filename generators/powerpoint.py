@@ -73,6 +73,16 @@ _MAX_MARKED_BODY = 2600
 _LYRIC_MAX_LINES_PER_SLIDE = 6
 _HYMN_TITLE_PT = 38.5
 _HYMN_BODY_PT = 56.0
+_HYMN_REF_TITLE_PT = 36.0
+_HYMN_REF_BODY_PT = 75.0
+_HYMN_REF_BODY_PT_MIN = 68.0
+_HYMN_REF_BODY_FONT = "Poppins"
+_HYMN_REF_LINE_SPACING = 0.7
+_HYMN_DUAL_BOX_H = Inches(5.247)
+_HYMN_DUAL_TOP_FIRST = Inches(0.901)
+_HYMN_DUAL_BOTTOM_FIRST = Inches(5.984)
+_HYMN_DUAL_TOP_CONT = Inches(0.484)
+_HYMN_DUAL_BOTTOM_CONT = Inches(5.568)
 _LYRIC_TITLE_DISPLAY_PT = _HYMN_TITLE_PT
 _LYRIC_BODY_DISPLAY_PT = _HYMN_BODY_PT
 _HYMN_BG = RGBColor(0, 0, 0)
@@ -96,7 +106,7 @@ _LYRIC_TEXTBOX_WIDTH_RATIO = 1.0
 _LYRIC_MIN_WORDS_PER_LINE = 3
 _LYRIC_TF_SIDE_MARGIN = Inches(0)
 _LYRIC_MIN_PT = 40
-_LYRIC_MAX_PT = int(_HYMN_BODY_PT)
+_LYRIC_MAX_PT = int(_HYMN_REF_BODY_PT)
 _LYRIC_SOFT_WRAP_CHARS = 46
 _LYRIC_FIT_WIDTH_SAFETY = 0.96
 _LYRIC_FIT_HEIGHT_SAFETY = 0.90
@@ -426,11 +436,14 @@ def _enforce_min_words_per_line(
     return merged
 
 
-def _style_para(p, *, size_pt, color, bold=False, italic=False, font_name=None):
+def _style_para(
+    p, *, size_pt, color, bold=False, italic=False, font_name=None, underline=False
+):
     p.font.name = font_name or _ACTIVE_FONT
     p.font.size = Pt(size_pt)
     p.font.bold = bold
     p.font.italic = italic
+    p.font.underline = underline
     p.font.color.rgb = color
 
 
@@ -1975,7 +1988,7 @@ def measureRenderedText(lines: List[str], font_size_pt: float) -> Mapping[str, f
     Uses a conservative width model to keep projector readability.
     """
     safe_width_inches = float(SLIDE_WIDTH.inches) * _LYRIC_TEXTBOX_WIDTH_RATIO
-    line_height_inches = (font_size_pt * 1.16) / 72.0
+    line_height_inches = (font_size_pt * _HYMN_REF_LINE_SPACING * 1.12) / 72.0
     max_line_inches = 0.0
     for line in lines:
         units = _token_width_units(line.strip().upper())
@@ -2062,16 +2075,20 @@ def optimizeLineBreaks(lyrics_text: str) -> List[str]:
 
 
 def calculateOptimalFontSize(lines: List[str], box_height_inches: float) -> int:
-    """Choose largest readable lyric size (up to Lamb/hymn 56pt) that fits the textbox."""
+    """Choose largest lyric size in 68–75 pt that fits the textbox (reference hymn slides)."""
     line_count = len(lines)
     height_cap = _LYRIC_MAX_PT
-    if line_count >= 6:
-        height_cap = min(height_cap, 48)
+    if line_count >= 8:
+        height_cap = min(height_cap, int(_HYMN_REF_BODY_PT_MIN))
+    elif line_count >= 6:
+        height_cap = min(height_cap, 72)
     elif line_count >= 5:
-        height_cap = min(height_cap, 52)
-    elif line_count >= 4:
-        height_cap = min(height_cap, 54)
-    for pt in range(height_cap, _LYRIC_MIN_PT - 1, -1):
+        height_cap = min(height_cap, 74)
+    floor_pt = int(_HYMN_REF_BODY_PT_MIN)
+    for pt in range(height_cap, floor_pt - 1, -1):
+        if not detectOverflow(lines, float(pt), box_height_inches):
+            return pt
+    for pt in range(floor_pt - 1, _LYRIC_MIN_PT - 1, -1):
         if not detectOverflow(lines, float(pt), box_height_inches):
             return pt
     return _LYRIC_MIN_PT
@@ -2161,65 +2178,132 @@ def _fill_hymn_body_caps(
     box_height_inches: Optional[float] = None,
     block_kind: str = "verse",
 ) -> None:
-    """ALL CAPS Poppins Bold on black; verses bold white, chorus bold italic #ffb800."""
+    """ALL CAPS Poppins on black; reference deck uses 75 pt and 0.7 line spacing."""
     box_h = float(box_height_inches or 0.0) or float(SLIDE_HEIGHT.inches * 0.72)
     lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, box_h)
-    size_pt = int(max(_LYRIC_MIN_PT, min(_LYRIC_MAX_PT, auto_fit_pt)))
+    size_pt = int(max(_HYMN_REF_BODY_PT_MIN, min(_LYRIC_MAX_PT, auto_fit_pt)))
     if typography:
-        requested = int(max(_LYRIC_MIN_PT, min(_LYRIC_MAX_PT, round(typography.body_pt))))
-        size_pt = min(size_pt, requested)
+        requested = int(round(typography.body_pt))
+        if requested >= _HYMN_REF_BODY_PT_MIN:
+            size_pt = min(size_pt, requested)
     while size_pt > _LYRIC_MIN_PT and detectOverflow(lines, float(size_pt), box_h):
         size_pt -= 2
     align = _pp_align(typography.body_align if typography else "center")
     is_chorus = _is_chorus_block_kind(block_kind)
     body_color = _HYMN_CHORUS_COLOR if is_chorus else _HYMN_BODY_WHITE
 
+    def _apply_body_para(p, text: str) -> None:
+        p.text = text
+        p.alignment = align
+        p.line_spacing = _HYMN_REF_LINE_SPACING
+        targets = list(p.runs) if p.runs else [p]
+        for target in targets:
+            font = target.font
+            font.name = _HYMN_REF_BODY_FONT
+            font.size = Pt(size_pt)
+            font.bold = True
+            font.italic = is_chorus
+            font.color.rgb = body_color
+
     tf.clear()
     first = True
     for raw in lines:
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
-        p.text = raw.upper()
-        _style_para(
-            p,
-            size_pt=size_pt,
-            color=body_color,
-            bold=True,
-            italic=is_chorus,
-            font_name=_HYMN_BODY_FONT,
-        )
-        p.alignment = align
-        p.space_after = Pt(6)
-        p.line_spacing = 1.0
+        _apply_body_para(p, raw.upper())
     if first:
-        p = tf.paragraphs[0]
-        p.text = (chunk or "").strip().upper()
-        _style_para(
-            p,
-            size_pt=size_pt,
-            color=body_color,
-            bold=True,
-            italic=is_chorus,
-            font_name=_HYMN_BODY_FONT,
-        )
-        p.alignment = align
+        _apply_body_para(tf.paragraphs[0], (chunk or "").strip().upper())
 
 
-def _add_hymn_lyric_slides(
+def _normalize_hymn_lyrics_layout(layout: str) -> str:
+    key = (layout or "").strip().lower().replace("-", "_")
+    if key in ("dual", "two", "2", "double", "pair", "pairs"):
+        return "dual"
+    return "single"
+
+
+def _lyric_blocks_for_slides(text: str) -> List[Tuple[str, str]]:
+    """Structured lyric blocks (verse, chorus, …) for slide pairing."""
+    t = ensure_lyric_section_breaks((text or "").strip())
+    if not t:
+        return []
+    blocks: List[Tuple[str, str]] = []
+    for block_kind, section in parse_structured_lyric_sections_typed(t):
+        for chunk in _chunk_section_for_slides(section):
+            blocks.append((chunk, block_kind))
+    return blocks if blocks else [(t, "verse")]
+
+
+def _pair_blocks_for_dual_slides(
+    blocks: List[Tuple[str, str]],
+) -> List[List[Tuple[str, str]]]:
+    """Even count → two blocks per slide; odd remainder → one full-bleed block."""
+    slides: List[List[Tuple[str, str]]] = []
+    i = 0
+    n = len(blocks)
+    while i < n:
+        if n - i == 1:
+            slides.append([blocks[i]])
+            break
+        slides.append([blocks[i], blocks[i + 1]])
+        i += 2
+    return slides
+
+
+def _apply_hymn_song_title(
+    para,
+    title: str,
+    *,
+    title_pt: float,
+    title_align: PP_ALIGN,
+) -> None:
+    para.text = title
+    para.alignment = title_align
+    targets = list(para.runs) if para.runs else [para]
+    for target in targets:
+        font = target.font
+        font.name = _HYMN_TITLE_FONT
+        font.size = Pt(title_pt)
+        font.bold = True
+        font.underline = True
+        font.color.rgb = _HYMN_GOLD_TITLE
+
+
+def _add_hymn_lyric_box(
+    slide,
+    left: int,
+    top: int,
+    width: int,
+    height: int,
+    chunk: str,
+    block_kind: str,
+    *,
+    typography: Optional[HymnTypographySettings] = None,
+) -> None:
+    box = slide.shapes.add_textbox(left, top, width, height)
+    tf = box.text_frame
+    _prep_hymn_lyric_tf(tf)
+    tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    _fill_hymn_body_caps(
+        tf,
+        chunk,
+        typography=typography,
+        box_height_inches=_length_to_inches(height),
+        block_kind=block_kind,
+    )
+
+
+def _add_hymn_lyric_slides_single(
     prs: Presentation,
     footer_section: str,
     hymn_title: str,
     lyrics: str,
-    theme: SlideTheme,
     *,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     section: str = "",
 ) -> None:
-    """
-    Black screen: gold serif title; lyrics in white ALL CAPS bold sans, large and centered.
-    First slide: title at top center + first lyric block below; further slides continue lyrics.
-    """
-    del theme  # hymn slides use fixed projector palette, not liturgical theme
+    """One structured block per slide."""
     title = (hymn_title or "Hymn").strip()
     raw_lyrics = (lyrics or "").strip() or "(No lyrics in library for this hymn.)"
     chunks = _chunk_lyrics_display(raw_lyrics)
@@ -2229,7 +2313,6 @@ def _add_hymn_lyric_slides(
     first_chunk, first_kind = chunks[0]
     rest_chunks = chunks[1:]
 
-    # Slide 1: gold title + first lyrics
     slide0 = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide0, _HYMN_BG)
     _apply_hymn_branding(slide0)
@@ -2241,33 +2324,26 @@ def _add_hymn_lyric_slides(
     _prep_tf(tft)
     tft.clear()
     typo0 = typography_for_hymn_slide(hymn_typography, section, 0)
-    pt = tft.paragraphs[0]
-    title_pt = typo0.title_pt
-    title_align = _pp_align(typo0.title_align)
-    pt.text = title
-    _style_para(
-        pt,
-        size_pt=title_pt,
-        color=_HYMN_GOLD_TITLE,
-        bold=True,
-        font_name=_HYMN_TITLE_FONT,
+    title_pt = max(typo0.title_pt, _HYMN_REF_TITLE_PT)
+    _apply_hymn_song_title(
+        tft.paragraphs[0],
+        title,
+        title_pt=title_pt,
+        title_align=_pp_align(typo0.title_align),
     )
-    pt.alignment = title_align
 
     body_top = title_top + Inches(1.05)
     body_h = SLIDE_HEIGHT - body_top - Inches(0.95)
     lyric_left, lyric_w = _lyric_textbox_geometry(prs.slide_width)
-    body_box = slide0.shapes.add_textbox(lyric_left, body_top, lyric_w, body_h)
-    tfb = body_box.text_frame
-    _prep_hymn_lyric_tf(tfb)
-    tfb.word_wrap = True
-    tfb.vertical_anchor = MSO_ANCHOR.MIDDLE
-    _fill_hymn_body_caps(
-        tfb,
+    _add_hymn_lyric_box(
+        slide0,
+        lyric_left,
+        body_top,
+        lyric_w,
+        body_h,
         first_chunk,
+        first_kind,
         typography=typo0,
-        box_height_inches=_length_to_inches(body_h),
-        block_kind=first_kind,
     )
     _add_hymn_footer(slide0, footer_section)
 
@@ -2279,19 +2355,140 @@ def _add_hymn_lyric_slides(
         cont_left, cont_top, cont_w, cont_h = _lyric_continuation_textbox_geometry(
             prs.slide_width, prs.slide_height
         )
-        bx = slide.shapes.add_textbox(cont_left, cont_top, cont_w, cont_h)
-        tf = bx.text_frame
-        _prep_hymn_lyric_tf_full_bleed(tf)
-        tf.word_wrap = True
-        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        _fill_hymn_body_caps(
-            tf,
+        _add_hymn_lyric_box(
+            slide,
+            cont_left,
+            cont_top,
+            cont_w,
+            cont_h,
             chunk,
+            block_kind,
             typography=typo_n,
-            box_height_inches=_length_to_inches(cont_h),
-            block_kind=block_kind,
         )
         _add_hymn_footer(slide, footer_section)
+
+
+def _add_hymn_lyric_slides_dual(
+    prs: Presentation,
+    footer_section: str,
+    hymn_title: str,
+    lyrics: str,
+    *,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    section: str = "",
+) -> None:
+    """Two blocks per slide (reference slides 3–5); odd remainder is full-bleed."""
+    title = (hymn_title or "Hymn").strip()
+    raw_lyrics = (lyrics or "").strip() or "(No lyrics in library for this hymn.)"
+    blocks = _lyric_blocks_for_slides(raw_lyrics)
+    slide_groups = _pair_blocks_for_dual_slides(blocks)
+    full_w = int(prs.slide_width)
+
+    for group_i, group in enumerate(slide_groups):
+        typo = typography_for_hymn_slide(hymn_typography, section, group_i)
+        slide = prs.slides.add_slide(_layout_blank(prs))
+        _set_slide_bg(slide, _HYMN_BG)
+        _apply_hymn_branding(slide)
+
+        if len(group) == 1:
+            _add_hymn_lyric_box(
+                slide,
+                0,
+                0,
+                full_w,
+                int(SLIDE_HEIGHT),
+                group[0][0],
+                group[0][1],
+                typography=typo,
+            )
+        elif group_i == 0:
+            w = SLIDE_WIDTH - 2 * MARGIN_SIDE
+            title_box = slide.shapes.add_textbox(MARGIN_SIDE, _HYMN_TITLE_TOP, w, Inches(0.95))
+            tft = title_box.text_frame
+            _prep_tf(tft)
+            tft.clear()
+            title_pt = max(typo.title_pt, _HYMN_REF_TITLE_PT)
+            _apply_hymn_song_title(
+                tft.paragraphs[0],
+                title,
+                title_pt=title_pt,
+                title_align=_pp_align(typo.title_align),
+            )
+            _add_hymn_lyric_box(
+                slide,
+                0,
+                int(_HYMN_DUAL_TOP_FIRST),
+                full_w,
+                int(_HYMN_DUAL_BOX_H),
+                group[0][0],
+                group[0][1],
+                typography=typo,
+            )
+            _add_hymn_lyric_box(
+                slide,
+                0,
+                int(_HYMN_DUAL_BOTTOM_FIRST),
+                full_w,
+                int(_HYMN_DUAL_BOX_H),
+                group[1][0],
+                group[1][1],
+                typography=typo,
+            )
+        else:
+            _add_hymn_lyric_box(
+                slide,
+                0,
+                int(_HYMN_DUAL_TOP_CONT),
+                full_w,
+                int(_HYMN_DUAL_BOX_H),
+                group[0][0],
+                group[0][1],
+                typography=typo,
+            )
+            _add_hymn_lyric_box(
+                slide,
+                0,
+                int(_HYMN_DUAL_BOTTOM_CONT),
+                full_w,
+                int(_HYMN_DUAL_BOX_H),
+                group[1][0],
+                group[1][1],
+                typography=typo,
+            )
+
+        _add_hymn_footer(slide, footer_section)
+
+
+def _add_hymn_lyric_slides(
+    prs: Presentation,
+    footer_section: str,
+    hymn_title: str,
+    lyrics: str,
+    theme: SlideTheme,
+    *,
+    hymn_typography: Optional[Mapping[str, Any]] = None,
+    section: str = "",
+    hymn_lyrics_layout: str = "single",
+) -> None:
+    del theme  # hymn slides use fixed projector palette, not liturgical theme
+    if _normalize_hymn_lyrics_layout(hymn_lyrics_layout) == "dual":
+        _add_hymn_lyric_slides_dual(
+            prs,
+            footer_section,
+            hymn_title,
+            lyrics,
+            hymn_typography=hymn_typography,
+            section=section,
+        )
+        return
+    _add_hymn_lyric_slides_single(
+        prs,
+        footer_section,
+        hymn_title,
+        lyrics,
+        hymn_typography=hymn_typography,
+        section=section,
+    )
 
 
 def _try_library_hymn(
@@ -2303,6 +2500,7 @@ def _try_library_hymn(
     *,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
+    hymn_lyrics_layout: str = "single",
 ) -> bool:
     h = get_hymn(section, hymn_id)
     if not h:
@@ -2324,6 +2522,7 @@ def _try_library_hymn(
         theme,
         hymn_typography=hymn_typography,
         section=section,
+        hymn_lyrics_layout=hymn_lyrics_layout,
     )
     return True
 
@@ -2817,6 +3016,7 @@ def generate_mass_ppt(
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
+    hymn_lyrics_layout: str = "single",
 ) -> tuple[int, Path]:
     global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template, _kyrie_template, _lotw_title_template, _gospel_acclamation_template, _apostles_creed_template
     _reference_mass_deck = None
@@ -2883,7 +3083,7 @@ def generate_mass_ppt(
 
     ent_id = str(sel.get("entrance") or "").strip()
     if not ent_id or not _try_library_hymn(
-        prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+        prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
     ):
         _add_marked_slide(
             prs,
@@ -2950,7 +3150,7 @@ def generate_mass_ppt(
     # --- Liturgy of the Eucharist ---
     off_id = str(sel.get("offertory") or "").strip()
     if not off_id or not _try_library_hymn(
-        prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+        prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
     ):
         _add_marked_slide(
             prs,
@@ -2978,11 +3178,11 @@ def generate_mass_ppt(
     c2 = str(sel.get("communion_2") or "").strip()
     comm_ok = False
     if c1 and _try_library_hymn(
-        prs, "communion", c1, "Communion (1)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+        prs, "communion", c1, "Communion (1)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
     ):
         comm_ok = True
     if c2 and _try_library_hymn(
-        prs, "communion", c2, "Communion (2)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+        prs, "communion", c2, "Communion (2)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
     ):
         comm_ok = True
     if not comm_ok:
@@ -2995,7 +3195,7 @@ def generate_mass_ppt(
     med_id = str(sel.get("meditation") or "").strip()
     if med_id:
         _try_library_hymn(
-            prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+            prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
         )
     _add_marked_slide(prs, "The Communion Rite", GFCC.POST_COMMUNION, theme)
     _add_divider_cover(prs, **ctx)
@@ -3019,7 +3219,7 @@ def generate_mass_ppt(
     _add_marked_slide(prs, "Final Blessing", GFCC.FINAL_BLESSING, theme)
     rec_id = str(sel.get("recessional") or "").strip()
     if not rec_id or not _try_library_hymn(
-        prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides
+        prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
     ):
         _add_marked_slide(
             prs,
