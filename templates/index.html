@@ -906,6 +906,10 @@
     html[data-theme="dark"] .flow-setup-footer {
       border-top-color: var(--line);
     }
+    html[data-theme="dark"] .home-bento-grid .flow-bento-cell {
+      background: var(--surface-2);
+      border-color: var(--line);
+    }
     html[data-theme="dark"] .flow-reading-tile:hover {
       background: color-mix(in srgb, var(--surface) 55%, transparent);
     }
@@ -1750,7 +1754,7 @@
       gap: 8px;
       min-width: 280px;
     }
-    /* Home — Bento Grid Showcase (ui-ux-pro-max) */
+    /* Home — flat bento (matches Mass Builder readings card) */
     .home-bento-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -1765,25 +1769,19 @@
         gap: var(--space-5);
       }
     }
-    .home-bento-cell {
-      min-width: 0;
-      padding: var(--space-4);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      background: var(--surface-solid);
-      box-shadow: var(--shadow-card);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    .home-bento-grid .flow-bento-cell {
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover);
     }
-    .home-bento-cell:hover {
-      border-color: color-mix(in srgb, var(--liturgical-accent) 18%, var(--card-border));
-      box-shadow: var(--shadow-medium);
+    .home-bento-grid .flow-bento-cell:hover {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 16%, var(--card-border));
     }
     .home-bento-cell--gospel {
       grid-column: span 7;
       display: flex;
       flex-direction: column;
       gap: var(--space-2);
-      min-height: 220px;
+      min-height: 0;
+      height: auto;
     }
     .home-bento-cell--events {
       grid-column: span 5;
@@ -1793,39 +1791,31 @@
     }
     .home-bento-cell--readings {
       grid-column: span 12;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-md);
-      padding: var(--space-3);
-      background: color-mix(in srgb, var(--surface-2) 65%, var(--surface-solid));
     }
     .home-bento-cell--news {
       grid-column: span 12;
-      padding: var(--space-4);
       max-height: min(42vh, 380px);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
-    .home-bento-cell h3 {
-      margin: 0 0 var(--space-1);
-      font-size: var(--text-lg);
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-    .home-bento-cell__sub {
-      margin: 0 0 var(--space-3);
+    .home-gospel-ref {
+      margin: var(--space-1) 0 0;
       font-size: var(--text-sm);
       color: var(--muted);
+    }
+    .home-gospel-ref strong {
+      color: var(--liturgical-accent);
+      font-weight: 700;
     }
     .home-events-card__head {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: var(--space-2);
-      margin-bottom: var(--space-3);
     }
     .home-events-card__head h3 {
       margin: 0;
-      flex: 1;
-      min-width: 0;
     }
     .btn-home-create-event {
       flex-shrink: 0;
@@ -1838,10 +1828,15 @@
       background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-solid));
       color: var(--liturgical-accent);
       cursor: pointer;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
     }
     .btn-home-create-event:hover {
       background: color-mix(in srgb, var(--liturgical-accent) 16%, var(--surface-solid));
+    }
+    .btn-home-create-event:active {
+      transform: scale(0.97);
     }
     .home-events-list {
       list-style: none;
@@ -1849,7 +1844,7 @@
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: 0;
       flex: 1;
       min-height: 0;
       overflow-y: auto;
@@ -1858,10 +1853,14 @@
       display: none;
     }
     .home-events-item {
-      padding: var(--space-3);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--line-soft);
-      background: var(--surface-2);
+      padding: var(--space-2) 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .home-events-item:last-child {
+      border-bottom: none;
     }
     .home-events-item__name {
       margin: 0 0 4px;
@@ -1890,61 +1889,119 @@
     .home-events-card__empty[hidden] {
       display: none !important;
     }
-    .home-reading-card {
+    .home-news-panel {
       min-width: 0;
-      padding: var(--space-4);
-      border: 1px solid var(--line-soft);
-      border-radius: var(--radius-md);
-      background: var(--surface-solid);
       display: flex;
       flex-direction: column;
       gap: var(--space-2);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      flex: 1;
+      min-height: 0;
     }
-    .home-reading-card:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-light);
+    .home-news-panel[hidden] {
+      display: none !important;
     }
-    .home-reading-card header {
+    .home-news-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    .home-news-item {
+      padding: var(--space-2) 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      border-bottom: 1px solid var(--line-soft);
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .home-news-item:last-child {
+      border-bottom: none;
+    }
+    .home-news-item:hover {
+      background: transparent;
+    }
+    .home-news-item__meta {
       display: flex;
       flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 6px;
-    }
-    .home-reading-card header strong {
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      align-items: center;
+      gap: 6px 8px;
+      margin-bottom: 6px;
+      font-size: var(--text-xs);
+      font-weight: 600;
       color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-    .home-reading-card .home-reading-ref {
-      font-size: 0.78rem;
-      font-weight: 700;
+    .home-news-item__badge {
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface-solid));
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 22%, var(--line));
       color: var(--liturgical-accent);
-      text-align: right;
+      font-size: 0.65rem;
     }
-    .home-reading-excerpt {
+    .home-news-item__title {
       margin: 0;
       font-size: var(--text-sm);
-      line-height: 1.5;
+      font-weight: 600;
+      line-height: 1.4;
       color: var(--ink);
-      display: -webkit-box;
-      -webkit-line-clamp: 5;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
-    .home-reading-excerpt.is-expanded {
-      display: block;
-      -webkit-line-clamp: unset;
+    .home-news-item__title a {
+      color: inherit;
+      text-decoration: none;
     }
-    .home-reading-card.is-empty {
-      opacity: 0.6;
+    .home-news-item__title a:hover {
+      color: var(--liturgical-accent);
+      text-decoration: underline;
     }
-    .home-reading-toggle {
-      align-self: flex-start;
-      margin-top: auto;
+    .home-news-item__summary {
+      margin: 6px 0 0;
+      font-size: var(--text-xs);
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .home-news-panel__head p {
+      margin: 0;
+      font-size: var(--text-xs);
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .home-bento-cell--events .flow-bento-cell__head {
+      border-bottom: none;
+      margin-bottom: var(--space-2);
+      padding-bottom: 0;
+    }
+    .home-news-status {
+      margin: 0;
+      font-size: var(--text-xs);
+      min-height: 1.2em;
+    }
+    @media (max-width: 960px) {
+      .home-bento-cell--gospel,
+      .home-bento-cell--events {
+        grid-column: span 12;
+      }
+      .home-bento-cell--readings .flow-readings-preview-row {
+        grid-template-columns: 1fr;
+      }
+      .home-bento-cell--readings .flow-readings-preview-row .flow-reading-tile {
+        border-right: none;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .home-bento-cell--readings .flow-readings-preview-row .flow-reading-tile:last-child {
+        border-bottom: none;
+      }
+    }
+    @media (max-width: 768px) {
+      .home-bento-cell--news {
+        max-height: none;
+      }
     }
     /* Full-viewport grey scrim — shared by all overlays/modals */
     .app-scrim,
@@ -2260,107 +2317,6 @@
       background: var(--surface-solid);
       color: var(--ink);
       box-sizing: border-box;
-    }
-    .home-news-panel {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-    .home-news-panel[hidden] {
-      display: none !important;
-    }
-    .home-news-panel__head h3 {
-      margin: 0 0 4px;
-      font-size: var(--text-lg);
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-    .home-news-panel__head p {
-      margin: 0;
-      font-size: var(--text-sm);
-    }
-    .home-news-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-      overflow-y: auto;
-      flex: 1;
-      min-height: 0;
-    }
-    .home-news-item {
-      padding: var(--space-3);
-      border: 1px solid var(--line-soft);
-      border-radius: var(--radius-md);
-      background: var(--surface-2);
-      transition: border-color 0.15s ease, background 0.15s ease;
-    }
-    .home-news-item:hover {
-      border-color: var(--card-border);
-      background: var(--surface-solid);
-    }
-    .home-news-item__meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 8px;
-      margin-bottom: 6px;
-      font-size: var(--text-xs);
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .home-news-item__badge {
-      padding: 2px 8px;
-      border-radius: var(--radius-pill);
-      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface-solid));
-      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 22%, var(--line));
-      color: var(--liturgical-accent);
-      font-size: 0.65rem;
-    }
-    .home-news-item__title {
-      margin: 0;
-      font-size: var(--text-sm);
-      font-weight: 600;
-      line-height: 1.4;
-      color: var(--ink);
-    }
-    .home-news-item__title a {
-      color: inherit;
-      text-decoration: none;
-    }
-    .home-news-item__title a:hover {
-      color: var(--liturgical-accent);
-      text-decoration: underline;
-    }
-    .home-news-item__summary {
-      margin: 6px 0 0;
-      font-size: var(--text-xs);
-      line-height: 1.45;
-      color: var(--muted);
-    }
-    .home-news-status {
-      margin: 0;
-      font-size: var(--text-xs);
-      min-height: 1.2em;
-    }
-    @media (max-width: 960px) {
-      .home-bento-cell--gospel,
-      .home-bento-cell--events {
-        grid-column: span 12;
-      }
-      .home-bento-cell--readings {
-        grid-template-columns: 1fr;
-      }
-    }
-    @media (max-width: 768px) {
-      .home-bento-cell--news {
-        max-height: none;
-      }
     }
     .metric {
       padding: 14px;
@@ -2774,6 +2730,9 @@
       transform: scale(0.995);
       transition-duration: var(--motion-duration-micro);
     }
+    .flow-reading-tile.is-empty {
+      opacity: 0.6;
+    }
     .flow-reading-tile header {
       display: flex;
       flex-wrap: wrap;
@@ -2813,6 +2772,39 @@
     .flow-readings-inner .flow-reading-text--gospel,
     .flow-readings-inner .flow-reading-text--psalm {
       max-height: 10rem;
+    }
+    /* Home Sunday readings — balanced 3-up row (overrides Mass Builder 4-col margins) */
+    .home-bento-cell--readings .flow-readings-inner {
+      margin-top: 0;
+      width: 100%;
+    }
+    .home-bento-cell--readings .flow-readings-preview-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin: 0;
+      width: 100%;
+    }
+    .home-bento-cell--readings .flow-reading-tile {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: var(--space-2) var(--space-3);
+    }
+    .home-bento-cell--readings .flow-reading-text {
+      flex: 1 1 auto;
+      min-height: 8.5rem;
+      max-height: 10rem;
+    }
+    .home-bento-cell--readings .flow-reading-text,
+    .home-bento-cell--gospel .flow-reading-text {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+    }
+    .home-bento-cell--gospel .flow-reading-text.flow-reading-text--gospel {
+      max-height: none;
+      overflow: visible;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     .flow-readings-gospel-fields {
       display: grid;
@@ -5439,6 +5431,10 @@
     .flow-reading-text--gospel {
       max-height: 14rem;
     }
+    .home-bento-cell--gospel .flow-reading-text.flow-reading-text--gospel {
+      max-height: none;
+      overflow: visible;
+    }
     .flow-reading-ref {
       margin: 0 0 6px;
       font-size: var(--text-sm);
@@ -6545,45 +6541,63 @@
       <section class="page" id="home-page" data-route="/home">
         <div class="hero hero--home">
           <div class="home-bento-grid">
-            <article class="home-bento-cell home-bento-cell--gospel is-gospel-preview" id="home-gospel-card" tabindex="0" role="button" aria-label="Open full Gospel preview">
-              <h3>Upcoming Sunday</h3>
-              <p class="home-bento-cell__sub" id="home-sunday-label">Loading…</p>
-              <p class="mission-quote mission-gospel-full" id="home-gospel-quote">Gospel text will appear after refresh.</p>
-              <p class="muted" style="margin:0;"><strong id="home-gospel-ref">—</strong></p>
+            <article class="flow-bento-cell home-bento-cell--gospel is-gospel-preview" id="home-gospel-card" tabindex="0" role="button" aria-label="Open full Gospel preview">
+              <header class="flow-bento-cell__head">
+                <h3>Upcoming Sunday</h3>
+                <p id="home-sunday-label">Loading…</p>
+              </header>
+              <div class="flow-reading-text flow-reading-text--gospel" id="home-gospel-quote">Gospel text will appear after refresh.</div>
+              <p class="home-gospel-ref"><strong id="home-gospel-ref">—</strong></p>
             </article>
 
-            <aside class="home-bento-cell home-bento-cell--events" aria-labelledby="home-events-heading">
-              <div class="home-events-card__head">
-                <h3 id="home-events-heading">Upcoming Events</h3>
+            <aside class="flow-bento-cell home-bento-cell--events" aria-labelledby="home-events-heading">
+              <header class="flow-bento-cell__head home-events-card__head">
+                <div>
+                  <h3 id="home-events-heading">Upcoming Events</h3>
+                </div>
                 <button type="button" class="btn-home-create-event" id="btn-home-create-event">Create event</button>
-              </div>
+              </header>
               <ul class="home-events-list" id="home-events-list" aria-live="polite"></ul>
               <p class="home-events-card__empty" id="home-events-empty">No event</p>
             </aside>
 
-            <div class="home-bento-cell home-bento-cell--readings" role="group" aria-label="Sunday readings">
-              <article class="home-reading-card reading-preview-card" id="home-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
-                <header><strong>First reading</strong><span class="home-reading-ref" id="home-reading1-ref">—</span></header>
-                <p class="home-reading-excerpt" id="home-reading1-excerpt">Loading…</p>
-                <button type="button" class="ghost mini home-reading-toggle" id="home-reading1-toggle" data-target="home-reading1-excerpt" hidden>Read more</button>
-              </article>
-              <article class="home-reading-card reading-preview-card" id="home-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
-                <header><strong>Second reading</strong><span class="home-reading-ref" id="home-reading2-ref">—</span></header>
-                <p class="home-reading-excerpt" id="home-reading2-excerpt">Loading…</p>
-                <button type="button" class="ghost mini home-reading-toggle" id="home-reading2-toggle" data-target="home-reading2-excerpt" hidden>Read more</button>
-              </article>
-              <article class="home-reading-card reading-preview-card" id="home-psalm-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
-                <header><strong>Psalm</strong><span class="home-reading-ref" id="home-psalm-ref">—</span></header>
-                <p class="home-reading-excerpt" id="home-psalm-excerpt">Loading…</p>
-                <button type="button" class="ghost mini home-reading-toggle" id="home-psalm-toggle" data-target="home-psalm-excerpt" hidden>Read more</button>
-              </article>
-            </div>
-
-            <aside class="home-bento-cell home-bento-cell--news home-news-panel" id="home-news-panel" aria-labelledby="home-news-heading">
-              <div class="home-news-panel__head">
-                <h3 id="home-news-heading">World Catholic News</h3>
-                <p class="muted">Headlines from trusted Catholic sources.</p>
+            <article class="flow-bento-cell home-bento-cell--readings">
+              <header class="flow-bento-cell__head">
+                <h3>Sunday readings</h3>
+                <p>Tap a reading to open the full text.</p>
+              </header>
+              <div class="flow-readings-inner">
+                <div class="flow-readings-preview-row home-readings-preview-row" role="group" aria-label="Sunday reading texts">
+                  <article class="flow-reading-tile reading-preview-card" id="home-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
+                    <header>
+                      <strong>First reading</strong>
+                      <span class="flow-reading-ref" id="home-reading1-ref">—</span>
+                    </header>
+                    <div class="flow-reading-text" id="home-reading1-excerpt">Loading…</div>
+                  </article>
+                  <article class="flow-reading-tile reading-preview-card" id="home-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
+                    <header>
+                      <strong>Second reading</strong>
+                      <span class="flow-reading-ref" id="home-reading2-ref">—</span>
+                    </header>
+                    <div class="flow-reading-text" id="home-reading2-excerpt">Loading…</div>
+                  </article>
+                  <article class="flow-reading-tile reading-preview-card" id="home-psalm-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
+                    <header>
+                      <strong>Psalm</strong>
+                      <span class="flow-reading-ref" id="home-psalm-ref">—</span>
+                    </header>
+                    <div class="flow-reading-text flow-reading-text--psalm" id="home-psalm-excerpt">Loading…</div>
+                  </article>
+                </div>
               </div>
+            </article>
+
+            <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-panel" aria-labelledby="home-news-heading">
+              <header class="flow-bento-cell__head home-news-panel__head">
+                <h3 id="home-news-heading">World Catholic News</h3>
+                <p>Headlines from trusted Catholic sources.</p>
+              </header>
               <ul class="home-news-list" id="home-news-list" aria-live="polite"></ul>
               <p class="muted home-news-status" id="home-news-status">Loading news…</p>
             </aside>
@@ -11196,35 +11210,17 @@ Lord, hear our prayer</textarea>
       if (emptyEl) emptyEl.hidden = events.length > 0;
     }
 
-    function updateHomeReadingCard(refId, excerptId, toggleId, ref, body) {
+    function updateHomeReadingCard(refId, excerptId, ref, body) {
       const refEl = $(refId);
       const excerptEl = $(excerptId);
-      const toggleEl = $(toggleId);
       const text = (body || "").trim();
       const hasContent = !!(text || (ref || "").trim());
-      const card = excerptEl && excerptEl.closest(".home-reading-card");
+      const tile = excerptEl && excerptEl.closest(".flow-reading-tile");
       if (refEl) refEl.textContent = (ref || "").trim() || "—";
       if (excerptEl) {
         excerptEl.textContent = text || "Not available for this Sunday.";
-        excerptEl.classList.remove("is-expanded");
       }
-      if (toggleEl) {
-        toggleEl.hidden = text.length < 160;
-        toggleEl.textContent = "Read more";
-      }
-      if (card) card.classList.toggle("is-empty", !hasContent);
-    }
-
-    function initHomeReadingToggles() {
-      document.querySelectorAll(".home-reading-toggle").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const targetId = btn.getAttribute("data-target");
-          const el = targetId && $(targetId);
-          if (!el) return;
-          const expanded = el.classList.toggle("is-expanded");
-          btn.textContent = expanded ? "Show less" : "Read more";
-        });
-      });
+      if (tile) tile.classList.toggle("is-empty", !hasContent);
     }
 
     let eventDateRangeState = { month: new Date(), start: null, end: null };
@@ -11364,7 +11360,7 @@ Lord, hear our prayer</textarea>
       const title = card.getAttribute("data-reading-title") ||
         (card.querySelector("header strong") && card.querySelector("header strong").textContent) || "Reading";
       const refEl = card.querySelector(".home-reading-ref, .flow-reading-ref");
-      const bodyEl = card.querySelector(".home-reading-excerpt, .flow-reading-text");
+      const bodyEl = card.querySelector(".flow-reading-text");
       const ref = refEl ? refEl.textContent : "";
       const body = bodyEl ? bodyEl.textContent : "";
       openReadingExpandModal(title, ref, body);
@@ -11378,7 +11374,7 @@ Lord, hear our prayer</textarea>
 
       document.querySelectorAll(".reading-preview-card").forEach((card) => {
         card.addEventListener("click", (e) => {
-          if (e.target.closest(".home-reading-toggle, button, a, input, select, textarea, label")) return;
+          if (e.target.closest("button, a, input, select, textarea, label")) return;
           readingExpandFromCard(card);
         });
         card.addEventListener("keydown", (e) => {
@@ -11567,17 +11563,11 @@ Lord, hear our prayer</textarea>
           $("home-gospel-quote").textContent = fullG || data.gospel_quote || data.title || "Gospel text will appear when readings load.";
         }
         if ($("home-gospel-ref")) $("home-gospel-ref").textContent = data.gospel_reference || "—";
-        updateHomeReadingCard("home-reading1-ref", "home-reading1-excerpt", "home-reading1-toggle", data.first_reading_reference, data.first_reading_excerpt);
-        updateHomeReadingCard("home-reading2-ref", "home-reading2-excerpt", "home-reading2-toggle", data.second_reading_reference, data.second_reading_excerpt);
+        updateHomeReadingCard("home-reading1-ref", "home-reading1-excerpt", data.first_reading_reference, data.first_reading_excerpt);
+        updateHomeReadingCard("home-reading2-ref", "home-reading2-excerpt", data.second_reading_reference, data.second_reading_excerpt);
         const psalmRef = responsorialSectionLabel(data.psalm || data.psalm_reference || "") || "Responsorial Psalm";
         const psalmFull = (data.psalm_text || "").trim();
-        updateHomeReadingCard(
-          "home-psalm-ref",
-          "home-psalm-excerpt",
-          "home-psalm-toggle",
-          psalmRef,
-          psalmFull
-        );
+        updateHomeReadingCard("home-psalm-ref", "home-psalm-excerpt", psalmRef, psalmFull);
         renderThemeGrid();
       } catch (e) {
         notify(e.message || "Could not load lectionary preview.", "error");
@@ -13066,7 +13056,6 @@ Lord, hear our prayer</textarea>
     initLiturgicalIndicatorPanel();
     initHomeEventModal();
     initReadingExpandModal();
-    initHomeReadingToggles();
     refreshHomeMission();
     updatePosterLivePreview();
     setTimeout(() => loadFlowData(true), 250);
