@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
+from services.gospel_mood import gospel_moods_for_song, normalize_gospel_moods
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LIBRARY_PATH = _PROJECT_ROOT / "data" / "hymn_library.json"
 _SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
@@ -303,6 +305,7 @@ def catalog_for_api() -> dict[str, list[dict[str, Any]]]:
                     "author": str(item.get("author") or "").strip(),
                     "language": str(item.get("language") or "English"),
                     "has_lyrics": bool(str(item.get("lyrics") or "").strip()),
+                    "gospel_moods": gospel_moods_for_song(item),
                 }
             )
         out[sec] = rows
@@ -317,6 +320,7 @@ def update_catalog_song(
     author: Optional[str] = None,
     lyrics: Optional[str] = None,
     language: Optional[str] = None,
+    gospel_moods: Optional[list[str]] = None,
 ) -> dict[str, Any]:
     sec = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
@@ -336,6 +340,12 @@ def update_catalog_song(
             item["lyrics"] = str(lyrics)
         if language is not None and str(language).strip():
             item["language"] = str(language).strip()
+        if gospel_moods is not None:
+            moods = normalize_gospel_moods(gospel_moods)
+            if moods:
+                item["gospel_moods"] = moods
+            elif "gospel_moods" in item:
+                del item["gospel_moods"]
         save_catalog(data)
         return {"ok": True}
     return {"ok": False, "error": "Song not found."}

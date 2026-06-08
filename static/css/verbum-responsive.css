@@ -204,9 +204,10 @@ iframe {
 
   .app-header-nav .nav-link {
     min-height: 44px;
-    min-width: 44px;
-    padding: 0 12px;
-    flex-shrink: 0;
+    min-width: 0;
+    padding: 0 2px;
+    flex: 1 1 0;
+    justify-content: center;
   }
 
   .notif-btn,

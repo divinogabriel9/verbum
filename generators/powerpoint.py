@@ -3554,6 +3554,24 @@ def generate_mass_ppt(
         _try_library_hymn(
             prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
         )
+    extra_sections = sel.get("extra_sections") or []
+    if isinstance(extra_sections, list):
+        for item in extra_sections:
+            if not isinstance(item, dict):
+                continue
+            label = str(item.get("label") or "Custom").strip() or "Custom"
+            song_id = str(item.get("song_id") or "").strip()
+            if song_id:
+                _try_library_hymn(
+                    prs,
+                    "meditation",
+                    song_id,
+                    label,
+                    theme,
+                    hymn_typography=hymn_typography,
+                    hymn_lyric_overrides=hymn_lyric_overrides,
+                    hymn_lyrics_layout=hymn_lyrics_layout,
+                )
     _add_marked_slide(prs, "The Communion Rite", GFCC.POST_COMMUNION, theme)
     _add_divider_cover(prs, **ctx)
 

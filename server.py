@@ -47,6 +47,7 @@ from services.community_config import (
     update_community,
     uploads_dir,
 )
+from services.gospel_mood import gospel_moods_for_song
 from services.hymn_library import get_hymn
 from services.lyrics_fetcher import fetch_and_store_for_selection
 from services.ppt_preview_render import render_ppt_preview_pngs
@@ -227,6 +228,11 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
     }
 
 
+class ExtraSongSection(BaseModel):
+    label: str = Field(..., min_length=1, max_length=80)
+    song_id: str = Field(..., min_length=1)
+
+
 class SongSelection(BaseModel):
     entrance: Optional[str] = None
     offertory: Optional[str] = None
@@ -234,6 +240,11 @@ class SongSelection(BaseModel):
     communion_2: Optional[str] = None
     recessional: Optional[str] = None
     meditation: Optional[str] = None
+    extra_sections: Optional[list[ExtraSongSection]] = Field(
+        None,
+        max_length=12,
+        description="User-added Mass song sections (custom labels) beyond the five defaults.",
+    )
 
 
 class CommunityNameBody(BaseModel):
@@ -379,6 +390,11 @@ class CatalogSongPatchBody(BaseModel):
     author: Optional[str] = Field(None, max_length=240)
     lyrics: Optional[str] = None
     language: Optional[str] = Field(None, max_length=40)
+    gospel_moods: Optional[list[str]] = Field(
+        None,
+        max_length=5,
+        description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
+    )
 
 
 class GenerateImageBody(BaseModel):
@@ -627,6 +643,7 @@ def api_get_catalog_song(section: str, hymn_id: str) -> dict[str, Any]:
             "author": str(row.get("author") or ""),
             "language": str(row.get("language") or "English"),
             "lyrics": str(row.get("lyrics") or ""),
+            "gospel_moods": gospel_moods_for_song(row),
         },
     }
 
@@ -640,6 +657,7 @@ def api_patch_catalog_song(section: str, hymn_id: str, body: CatalogSongPatchBod
         author=body.author,
         lyrics=body.lyrics,
         language=body.language,
+        gospel_moods=body.gospel_moods,
     )
     if not res.get("ok"):
         raise HTTPException(status_code=400, detail=res.get("error") or "Update failed.")
@@ -713,14 +731,20 @@ def dashboard(request: Request) -> Any:
 def api_catholic_news(
     vatican: bool = True,
     cna: bool = True,
-    limit: int = 3,
+    limit: int = 6,
+    offset: int = 0,
+    max_age_days: int = 3,
 ) -> Any:
     """Headlines from Vatican News and Catholic News Agency RSS (fresh each request)."""
-    cap = max(1, min(int(limit), 6))
+    cap = max(1, min(int(limit), 15))
+    off = max(0, int(offset))
+    age = max(0, min(int(max_age_days), 14))
     return fetch_catholic_headlines(
         include_vatican=vatican,
         include_cna=cna,
         max_items=cap,
+        offset=off,
+        max_age_days=age,
     )
 
 

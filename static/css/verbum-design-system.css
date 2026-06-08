@@ -57,6 +57,14 @@
   --shadow-glow: none;
   --shadow-glow-soft: none;
 
+  /* —— Apple.com utility-card hover (store-utility-card) —— */
+  --apple-card-shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --apple-card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.04), 0 12px 28px rgba(0, 0, 0, 0.08);
+  --apple-card-hover-lift: -4px;
+  --apple-card-hover-scale: 1.006;
+  --apple-card-hover-duration: 320ms;
+  --apple-card-hover-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
   /* —— Semantic surfaces & text —— */
   --bg: var(--design-canvas);
   --bg-top: var(--design-canvas-soft);
@@ -1750,10 +1758,15 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
 
 .app-header-nav .nav-link,
 .app-header-nav .nav-label {
-  font-size: var(--type-fine);
-  font-weight: 400;
-  letter-spacing: var(--tracking-fine);
+  font-size: var(--type-helper);
+  font-weight: 500;
+  letter-spacing: -0.01em;
   line-height: 1;
+}
+
+.app-header-nav .nav-link .nav-icon {
+  width: 15px;
+  height: 15px;
 }
 
 .btn-create,
@@ -1783,5 +1796,45 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   font-size: var(--type-helper);
   letter-spacing: var(--tracking-caption);
   line-height: var(--leading-caption);
+}
+
+/* —— Apple.com utility-card hover (home bento first) —— */
+.home-bento-grid .flow-bento-cell {
+  position: relative;
+  z-index: 0;
+  transform: translateY(0) scale(1);
+  transform-origin: center center;
+  box-shadow: var(--apple-card-shadow-rest);
+  transition:
+    transform var(--apple-card-hover-duration) var(--apple-card-hover-ease),
+    box-shadow var(--apple-card-hover-duration) var(--apple-card-hover-ease),
+    border-color var(--motion-duration-fast) var(--motion-ease-hover),
+    background var(--motion-duration-fast) var(--motion-ease-hover);
+}
+
+.home-bento-grid .flow-bento-cell:hover {
+  z-index: 1;
+  transform: translateY(var(--apple-card-hover-lift)) scale(var(--apple-card-hover-scale));
+  border-color: color-mix(in srgb, var(--ink) 12%, var(--card-border));
+  box-shadow: var(--apple-card-shadow-hover);
+}
+
+.home-bento-grid .flow-bento-cell.is-gospel-preview:active {
+  transform: translateY(-2px) scale(0.992);
+  transition-duration: var(--motion-duration-micro);
+}
+
+html[data-theme="dark"] .home-bento-grid .flow-bento-cell {
+  --apple-card-shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --apple-card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.28), 0 16px 40px rgba(0, 0, 0, 0.32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-bento-grid .flow-bento-cell,
+  .home-bento-grid .flow-bento-cell:hover,
+  .home-bento-grid .flow-bento-cell.is-gospel-preview:active {
+    transform: none;
+    transition-duration: 0.01ms;
+  }
 }
 

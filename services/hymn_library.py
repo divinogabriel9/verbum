@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
+from services.gospel_mood import gospel_moods_for_song
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LIBRARY_PATH = _PROJECT_ROOT / "data" / "hymn_library.json"
 _WEB_CACHE_PATH = _PROJECT_ROOT / "data" / "web_hymn_cache.json"
@@ -80,6 +82,7 @@ def recommend_sections(
                         "source": "local",
                         "language": str(item.get("language") or "English"),
                         "has_lyrics": bool(has_lyrics),
+                        "gospel_moods": gospel_moods_for_song(item),
                     },
                 )
             )
@@ -128,6 +131,7 @@ def section_candidates(
                     "source": "local",
                     "language": str(item.get("language") or "English"),
                     "has_lyrics": bool(has_lyrics),
+                    "gospel_moods": gospel_moods_for_song(item),
                 },
             )
         )

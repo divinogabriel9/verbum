@@ -917,7 +917,7 @@
     .app-header-nav {
       display: flex;
       align-items: stretch;
-      gap: 4px;
+      gap: 0;
       min-width: 0;
       flex: 1;
       overflow-x: auto;
@@ -928,15 +928,17 @@
     .app-header-nav .nav-link {
       position: relative;
       z-index: 0;
-      flex: 0 0 auto;
+      flex: 1 1 0;
+      min-width: 0;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 0 16px;
+      justify-content: center;
+      gap: 5px;
+      padding: 0 4px;
       margin: 0;
       border: none;
       border-radius: 0;
-      font-size: 0.8125rem;
+      font-size: var(--type-helper);
       font-weight: 500;
       letter-spacing: -0.01em;
       color: var(--muted);
@@ -948,8 +950,9 @@
       transition: color var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .app-header-nav .nav-link .nav-icon {
-      width: 17px;
-      height: 17px;
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
       opacity: 0.72;
       object-fit: contain;
     }
@@ -1608,11 +1611,20 @@
       gap: 0;
     }
     .liturgical-panel-event {
-      padding: 8px 0;
+      padding: 8px var(--space-2);
       border: none;
-      border-radius: 0;
+      border-radius: var(--radius-sm);
       background: transparent;
       border-bottom: 1px solid var(--line-soft);
+      border-left: 3px solid transparent;
+    }
+    .liturgical-panel-event--ongoing {
+      border-left-color: #10b981;
+      background: color-mix(in srgb, #10b981 8%, var(--surface-solid));
+    }
+    .liturgical-panel-event--upcoming {
+      border-left-color: var(--liturgical-accent);
+      background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
     }
     .liturgical-panel-event:last-child {
       border-bottom: none;
@@ -1637,22 +1649,113 @@
       color: var(--liturgical-accent);
       margin-top: 4px;
     }
-    #liturgical-panel-events-empty[hidden] {
+    .liturgical-panel-event--ongoing .liturgical-panel-event__cd {
+      color: #047857;
+    }
+    .liturgical-panel-event--upcoming .liturgical-panel-event__cd {
+      color: var(--liturgical-accent);
+    }
+    .liturgical-panel-events-section {
+      margin-top: 6px;
+    }
+    .liturgical-panel-events-section + .liturgical-panel-events-section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .liturgical-panel-events-section__label {
+      display: block;
+      margin: 0 0 4px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .liturgical-panel-events-section--ongoing .liturgical-panel-events-section__label {
+      color: #047857;
+    }
+    .liturgical-panel-events-section--upcoming .liturgical-panel-events-section__label {
+      color: var(--liturgical-accent);
+    }
+    #liturgical-panel-events-empty[hidden],
+    .liturgical-panel-events-section__empty[hidden] {
+      display: none !important;
+    }
+    .liturgical-countdown-item--sunday .liturgical-countdown-item__value {
+      display: inline;
+      margin: 0;
+      font-size: var(--type-helper);
+      font-weight: 600;
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+    .liturgical-countdown-sunday-countdown {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px 6px;
+      margin-top: 2px;
+    }
+    .liturgical-countdown-item--sunday .liturgical-countdown-item__sub--inline {
+      display: inline;
+      margin: 0;
+      font-size: var(--type-fine);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-fine);
+      color: var(--muted);
+    }
+    .liturgical-countdown-item--sunday > .liturgical-countdown-item__sub:not(.liturgical-countdown-item__sub--inline) {
+      margin-top: 2px;
+      font-size: var(--type-fine);
+    }
+    .liturgical-sunday-celebrations {
+      margin: 8px 0 0;
+      padding: 8px 0 0;
+      border-top: 1px solid var(--line-soft);
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .liturgical-sunday-celebration__date {
+      display: block;
+      font-size: var(--type-fine);
+      font-weight: 600;
+      letter-spacing: var(--tracking-fine);
+      color: var(--muted);
+      line-height: var(--leading-caption);
+    }
+    .liturgical-sunday-celebration__title {
+      display: block;
+      margin-top: 1px;
+      font-size: var(--type-helper);
+      font-weight: 500;
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+      color: var(--ink);
+    }
+    .liturgical-countdown-item--events[hidden],
+    .liturgical-panel-events-section[hidden] {
       display: none !important;
     }
     .liturgical-countdown-item__value {
       display: block;
       margin: 0;
-      font-size: 1.05rem;
+      font-size: var(--type-helper);
       font-weight: 600;
-      letter-spacing: -0.02em;
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
       color: var(--ink);
       font-variant-numeric: tabular-nums;
     }
     .liturgical-countdown-item__sub {
       display: block;
       margin: 4px 0 0;
-      font-size: 0.72rem;
+      font-size: var(--type-fine);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-fine);
       color: var(--muted);
     }
     .liturgical-countdown-item--custom .field {
@@ -1976,13 +2079,6 @@
       border: 1px solid var(--card-border);
       border-radius: var(--radius-lg);
       padding: var(--space-5);
-      box-shadow: none;
-      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover);
-    }
-    .home-bento-grid .flow-bento-cell:hover {
-      border-color: color-mix(in srgb, var(--liturgical-accent) 18%, var(--card-border));
-      box-shadow: none;
-      transform: none;
     }
     .home-bento-grid .flow-bento-cell__head {
       margin: 0 0 var(--space-4);
@@ -2007,10 +2103,9 @@
     }
     .home-bento-cell--news {
       grid-column: span 12;
-      max-height: min(42vh, 380px);
       display: flex;
       flex-direction: column;
-      min-height: 0;
+      cursor: default;
     }
     .home-gospel-ref {
       margin: var(--space-1) 0 0;
@@ -2062,18 +2157,56 @@
       min-height: 0;
       overflow-y: auto;
     }
+    .home-events-board {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .home-events-section__title {
+      margin: 0 0 var(--space-2);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .home-events-section--ongoing .home-events-section__title {
+      color: #047857;
+    }
+    .home-events-section--upcoming .home-events-section__title {
+      color: var(--liturgical-accent);
+    }
+    .home-events-section__empty {
+      margin: 0;
+      font-size: var(--text-xs);
+      color: var(--muted);
+    }
+    .home-events-section__empty[hidden] {
+      display: none !important;
+    }
     .home-events-list:empty {
       display: none;
     }
     .home-events-item {
-      padding: var(--space-2) 0;
+      padding: var(--space-2);
       border: none;
-      border-radius: 0;
+      border-radius: var(--radius-md);
       background: transparent;
       border-bottom: 1px solid var(--line-soft);
+      border-left: 3px solid transparent;
     }
     .home-events-item:last-child {
       border-bottom: none;
+    }
+    .home-events-item--ongoing {
+      border-left-color: #10b981;
+      background: color-mix(in srgb, #10b981 8%, var(--surface-solid));
+    }
+    .home-events-item--upcoming {
+      border-left-color: var(--liturgical-accent);
+      background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
     }
     .home-events-item__name {
       margin: 0 0 4px;
@@ -2092,6 +2225,12 @@
       font-weight: 700;
       color: var(--liturgical-accent);
     }
+    .home-events-item--ongoing .home-events-item__countdown {
+      color: #047857;
+    }
+    .home-events-item--upcoming .home-events-item__countdown {
+      color: var(--liturgical-accent);
+    }
     .home-events-card__empty {
       margin: auto 0 0;
       padding-top: var(--space-3);
@@ -2107,48 +2246,165 @@
       display: flex;
       flex-direction: column;
       gap: var(--space-2);
-      flex: 1;
-      min-height: 0;
     }
     .home-news-panel[hidden] {
       display: none !important;
+    }
+    .home-news-panel__head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: start;
+      gap: var(--space-2);
+      cursor: pointer;
+    }
+    .home-news-panel__expand-zone {
+      cursor: pointer;
+    }
+    .btn-home-news-refresh {
+      flex-shrink: 0;
+      align-self: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 36px;
+      min-width: 36px;
+      padding: 6px 10px;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      color: var(--muted);
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        color var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .btn-home-news-refresh:hover {
+      color: var(--liturgical-accent);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 8%, var(--surface-solid));
+    }
+    .btn-home-news-refresh:active {
+      transform: scale(0.97);
+    }
+    .btn-home-news-refresh.is-loading svg {
+      animation: emil-refresh-spin 0.75s linear infinite;
+    }
+    .btn-home-news-refresh svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
     }
     .home-news-list {
       list-style: none;
       margin: 0;
       padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      overflow-y: auto;
-      flex: 1;
-      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-flow: row;
+      column-gap: var(--space-3);
+      row-gap: var(--space-3);
+      overflow: visible;
+      align-items: stretch;
+    }
+    .home-news-list > li {
+      min-width: 0;
+      margin: 0;
+      padding: 0;
     }
     .home-news-item {
-      padding: var(--space-2) 0;
-      border: none;
-      border-radius: 0;
-      background: transparent;
-      border-bottom: 1px solid var(--line-soft);
-      transition: color var(--motion-duration-fast) var(--motion-ease-hover);
-    }
-    .home-news-item:last-child {
-      border-bottom: none;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line-soft);
+      min-height: 88px;
+      max-height: 104px;
+      min-width: 0;
+      height: 100%;
+      width: 100%;
+      padding: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      background: var(--surface-solid);
+      contain: layout style paint;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      box-sizing: border-box;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .home-news-item:hover {
-      background: transparent;
+      border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 4%, var(--surface-solid));
+    }
+    .home-news-item__media {
+      flex: 0 0 20%;
+      width: 20%;
+      max-width: 20%;
+      min-width: 52px;
+      overflow: hidden;
+      align-self: stretch;
+      position: relative;
+      flex-shrink: 0;
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-2));
+      border-right: 1px solid var(--line-soft);
+    }
+    .home-news-item__placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-2));
+      z-index: 0;
+    }
+    .home-news-item__img--placeholder {
+      object-fit: cover;
+      object-position: center;
+    }
+    .home-news-item__img {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 88px;
+      max-height: 104px;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+    .home-news-item__content {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      padding: var(--space-2) var(--space-3);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
     }
     .home-news-item__meta {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
-      gap: 6px 8px;
-      margin-bottom: 6px;
+      gap: 6px;
+      margin-bottom: 0;
+      min-width: 0;
+      overflow: hidden;
       font-size: var(--text-xs);
       font-weight: 600;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.04em;
+    }
+    .home-news-item__meta > span:last-child {
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     .home-news-item__badge {
       padding: 2px 8px;
@@ -2157,27 +2413,113 @@
       border: 1px solid color-mix(in srgb, var(--liturgical-accent) 22%, var(--line));
       color: var(--liturgical-accent);
       font-size: 0.65rem;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 1;
+      min-width: 0;
     }
     .home-news-item__title {
       margin: 0;
       font-size: var(--text-sm);
       font-weight: 600;
-      line-height: 1.4;
+      line-height: 1.3;
       color: var(--ink);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
     }
-    .home-news-item__title a {
-      color: inherit;
-      text-decoration: none;
-    }
-    .home-news-item__title a:hover {
+    .home-news-item:hover .home-news-item__title {
       color: var(--liturgical-accent);
-      text-decoration: underline;
     }
     .home-news-item__summary {
-      margin: 6px 0 0;
+      margin: 0;
       font-size: var(--text-xs);
-      line-height: 1.45;
+      line-height: 1.35;
       color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+    }
+    .home-news-item--skeleton {
+      pointer-events: none;
+      cursor: default;
+    }
+    .home-news-item--skeleton .home-news-item__media.emil-skeleton {
+      min-height: 88px;
+      max-height: 104px;
+    }
+    .home-news-item--skeleton .home-news-item__content {
+      gap: 6px;
+    }
+    .home-news-item--skeleton .emil-skeleton--line {
+      height: 10px;
+      width: 100%;
+    }
+    .home-news-item--skeleton .emil-skeleton--line-sm {
+      width: 55%;
+      height: 8px;
+    }
+    .home-news-item--skeleton .emil-skeleton--line-lg {
+      width: 88%;
+      height: 12px;
+    }
+    .mass-song-plan-card--skeleton {
+      pointer-events: none;
+    }
+    .mass-song-plan-card--skeleton .emil-skeleton--drag {
+      width: 14px;
+      height: 18px;
+      flex-shrink: 0;
+      border-radius: 4px;
+    }
+    .mass-song-plan-card--skeleton .emil-skeleton--num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .mass-song-plan-card--skeleton .emil-skeleton--line {
+      height: 12px;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+    .mass-song-plan-card--skeleton .emil-skeleton--line-lg {
+      width: 72%;
+      height: 14px;
+    }
+    .mass-song-plan-card--skeleton .emil-skeleton--line-sm {
+      width: 100%;
+      height: 36px;
+      border-radius: var(--radius-md);
+    }
+    .mass-summary-recs.is-refreshing {
+      pointer-events: none;
+      opacity: 0.94;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .mass-summary-mood-pick--skeleton {
+      pointer-events: none;
+    }
+    .mass-summary-mood-pick--skeleton .emil-skeleton--line-sm {
+      width: 42%;
+      height: 8px;
+      display: block;
+      margin-bottom: 6px;
+    }
+    .mass-summary-mood-pick--skeleton .emil-skeleton--line-lg {
+      width: 78%;
+      height: 11px;
+      display: block;
+    }
+    .song-plan-layout .mass-summary-recs-refresh.is-loading {
+      animation: emil-refresh-spin 0.75s linear infinite;
+      transform-origin: center;
     }
     .home-news-panel__head p {
       margin: 0;
@@ -2194,6 +2536,105 @@
       margin: 0;
       font-size: var(--text-xs);
       min-height: 1.2em;
+      cursor: pointer;
+    }
+    .ui-card--news-expand {
+      width: min(var(--content-max), calc(100vw - 32px));
+      max-width: calc(100vw - 32px);
+      max-height: min(86vh, 760px);
+      display: flex;
+      flex-direction: column;
+    }
+    .home-news-expand-scroll {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      padding-top: 2px;
+    }
+    .home-news-expand-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+    .home-news-expand-list > li {
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+    }
+    .home-news-expand-item {
+      flex-direction: row;
+      align-items: stretch;
+      min-height: 96px;
+      max-height: none;
+      height: 100%;
+    }
+    .home-news-expand-item .home-news-item__media {
+      flex: 0 0 20%;
+      width: 20%;
+      max-width: 20%;
+      min-width: 52px;
+      height: auto;
+      border-right: 1px solid var(--line-soft);
+      border-bottom: none;
+    }
+    .home-news-expand-item .home-news-item__img {
+      min-height: 96px;
+      max-height: none;
+      height: 100%;
+    }
+    .home-news-expand-item .home-news-item__content {
+      padding: var(--space-2) var(--space-3);
+      justify-content: center;
+    }
+    .home-news-expand-item .home-news-item__title {
+      font-size: var(--text-sm);
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+    .home-news-expand-item .home-news-item__summary {
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      font-size: var(--text-xs);
+    }
+    .home-news-expand-foot {
+      margin: var(--space-3) 0 0;
+      text-align: center;
+      font-size: var(--text-xs);
+      color: var(--muted);
+      min-height: 1.4em;
+    }
+    @media (max-width: 960px) {
+      .home-news-expand-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 768px) {
+      .home-news-list {
+        grid-template-columns: 1fr;
+      }
+      .home-news-expand-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .home-news-item,
+      .home-news-expand-item {
+        max-height: none;
+      }
+      .home-news-item__img,
+      .home-news-expand-item .home-news-item__img {
+        max-height: none;
+      }
+      .ui-card--news-expand {
+        width: calc(100vw - 20px);
+        max-height: 92vh;
+      }
+    }
+    @media (max-width: 480px) {
+      .home-news-expand-list {
+        grid-template-columns: 1fr;
+      }
     }
     @media (max-width: 960px) {
       .home-bento-cell--gospel,
@@ -2219,6 +2660,7 @@
     @media (max-width: 768px) {
       .home-bento-cell--news {
         max-height: none;
+        min-height: 0;
       }
     }
     /* Full-viewport grey scrim — shared by all overlays/modals */
@@ -2620,6 +3062,10 @@
       min-width: 0;
       width: 100%;
     }
+    .flow-builder-tab-panel--songs {
+      min-width: 0;
+      max-width: 100%;
+    }
     .flow-builder-tab-panel[hidden] {
       display: none !important;
     }
@@ -2666,6 +3112,571 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
+    }
+    /* Song plan tab — two-column layout (summary | slots) */
+    .song-plan-layout {
+      display: grid;
+      grid-template-columns: minmax(9.5rem, 0.34fr) minmax(0, 1fr);
+      gap: var(--space-4);
+      align-items: start;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .song-plan-summary {
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-3);
+      min-width: 0;
+    }
+    .song-plan-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      max-width: 100%;
+      overflow: visible;
+    }
+    .song-plan-main .mass-song-plan-root {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+    }
+    .song-plan-layout .mass-summary-lang-field {
+      margin-bottom: 10px;
+    }
+    .song-plan-layout .mass-summary-lang-field label {
+      display: block;
+      margin: 0 0 4px;
+      font-size: var(--type-fine);
+      font-weight: 600;
+      letter-spacing: var(--tracking-fine);
+      line-height: var(--leading-caption);
+      color: var(--muted);
+      text-transform: none;
+    }
+    .song-plan-layout .mass-summary-lang-field .vb-select,
+    .song-plan-layout .mass-summary-lang-field .mass-song-plan-lang-select {
+      width: 100%;
+      min-width: 0;
+    }
+    .song-plan-layout .home-card-head {
+      margin-bottom: var(--space-2);
+      padding-bottom: var(--space-2);
+      gap: var(--space-2);
+    }
+    .song-plan-layout .home-card-head__icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+    }
+    .song-plan-layout .home-card-head__icon svg {
+      width: 14px;
+      height: 14px;
+    }
+    .song-plan-layout .home-card-head__text h3 {
+      font-size: var(--type-card-title);
+      font-weight: 600;
+      letter-spacing: var(--tracking-body);
+      line-height: var(--leading-tight);
+    }
+    .song-plan-layout .home-card-head__text p {
+      display: none;
+    }
+    .song-plan-layout .mass-summary-gospel-tip {
+      margin: auto 0 0;
+      padding: 8px 0 0;
+      border: none;
+      background: none;
+    }
+    .song-plan-layout .mass-summary-gospel-tip__label {
+      display: block;
+      margin: 0 0 4px;
+      font-size: var(--type-fine);
+      font-weight: 600;
+      letter-spacing: var(--tracking-fine);
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: var(--leading-caption);
+    }
+    .song-plan-layout .mass-summary-gospel-tip__text {
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: var(--type-helper);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .song-plan-layout .mass-summary-recs {
+      margin: 8px 0 0;
+    }
+    .song-plan-layout .mass-summary-recs[hidden] {
+      display: none;
+    }
+    .song-plan-layout .mass-summary-recs__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .song-plan-layout .mass-summary-recs__label {
+      font-size: var(--type-fine);
+      font-weight: 600;
+      letter-spacing: var(--tracking-fine);
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: var(--leading-caption);
+    }
+    .song-plan-layout .mass-summary-recs-refresh {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      background: var(--surface-solid);
+      color: var(--muted);
+      font-size: var(--type-helper);
+      line-height: 1;
+      cursor: pointer;
+    }
+    .song-plan-layout .mass-summary-recs-refresh:hover {
+      color: var(--ink);
+      border-color: color-mix(in srgb, var(--ink) 15%, var(--line-soft));
+    }
+    .song-plan-layout .mass-summary-mood-picks {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .song-plan-layout .mass-summary-mood-picks[hidden] {
+      display: none;
+    }
+    .song-plan-layout .mass-summary-mood-pick {
+      display: block;
+      margin: 0 0 8px;
+    }
+    .song-plan-layout .mass-summary-mood-pick__cat {
+      display: block;
+      margin: 0 0 2px;
+      font-size: var(--type-fine);
+      font-weight: 600;
+      letter-spacing: var(--tracking-fine);
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: var(--leading-caption);
+    }
+    .song-plan-layout .mass-summary-mood-pick__song {
+      display: block;
+      margin: 0;
+      color: var(--ink);
+      font-size: var(--type-helper);
+      font-weight: 500;
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .song-plan-layout .mass-summary-recs-add {
+      display: block;
+      width: 100%;
+      margin: 4px 0 0;
+      padding: 6px 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--good) 6%, var(--surface-solid));
+      color: var(--good);
+      font-size: var(--type-helper);
+      font-weight: 600;
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+      cursor: pointer;
+      text-align: center;
+    }
+    .song-plan-layout .mass-summary-recs-add:hover {
+      background: color-mix(in srgb, var(--good) 10%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--good) 28%, var(--line-soft));
+    }
+    .song-plan-layout .mass-summary-recs-add:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .song-plan-layout .mass-summary-stats {
+      margin-bottom: 8px;
+      gap: 4px;
+    }
+    .song-plan-layout .mass-summary-stat {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      font-size: var(--type-fine);
+      letter-spacing: var(--tracking-fine);
+      line-height: var(--leading-caption);
+    }
+    .song-plan-layout .mass-summary-stat dd {
+      text-align: left;
+      font-size: var(--type-helper);
+      font-weight: 600;
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+    }
+    .song-plan-layout .mass-summary-progress-wrap {
+      margin-bottom: 8px;
+    }
+    .song-plan-layout .mass-summary-progress-label {
+      font-size: var(--type-fine);
+      font-weight: 600;
+      letter-spacing: var(--tracking-fine);
+      line-height: var(--leading-caption);
+      margin-bottom: 4px;
+    }
+    .song-plan-layout .mass-summary-progress {
+      height: 4px;
+    }
+    .song-plan-layout .mass-summary-links {
+      display: none;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card,
+    .flow-builder-tab-panel--songs .mass-song-slot {
+      border-radius: 8px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      box-shadow: none;
+      padding: 0;
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card:focus-within {
+      overflow: visible;
+      position: relative;
+      z-index: 3;
+      border-color: color-mix(in srgb, var(--good) 24%, var(--line-soft));
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 6px 8px;
+      min-width: 0;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__drag {
+      width: 12px;
+      margin-top: 8px;
+      opacity: 0.35;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__drag svg {
+      width: 12px;
+      height: 12px;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__num {
+      width: 20px;
+      height: 20px;
+      margin-top: 6px;
+      font-size: var(--type-fine);
+      font-weight: 600;
+      letter-spacing: var(--tracking-fine);
+      line-height: 1;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__core {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      gap: 2px 8px;
+      align-items: center;
+      min-width: 0;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__part {
+      grid-column: 1;
+      grid-row: 1;
+      flex-shrink: 0;
+      width: auto;
+      max-width: 100%;
+      font-size: var(--type-helper);
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__part-input {
+      grid-column: 1;
+      grid-row: 1;
+      flex: 0 1 auto;
+      width: auto;
+      min-width: 0;
+      max-width: 100%;
+      margin: 0;
+      padding: 0 0 2px;
+      font-size: var(--type-helper);
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--line-soft);
+      border-radius: 0;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__part-input:focus {
+      outline: none;
+      border-bottom-color: color-mix(in srgb, var(--good) 55%, var(--line));
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 24px;
+      min-width: 24px;
+      padding: 0;
+      color: var(--danger);
+      border: 1px solid color-mix(in srgb, var(--danger) 22%, var(--line-soft));
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete svg {
+      width: 12px;
+      height: 12px;
+      display: block;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete:hover {
+      background: color-mix(in srgb, var(--danger) 10%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--danger) 35%, var(--line-soft));
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__title-wrap {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      flex: unset;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__title-picked {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      max-width: 100%;
+      width: 100%;
+      vertical-align: middle;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__title-picked .mass-song-plan-card__title {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 100%;
+      font-size: var(--type-body);
+      font-weight: 600;
+      line-height: var(--leading-body);
+      letter-spacing: var(--tracking-body);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__title-picked .mass-song-plan-card__title.is-empty {
+      font-size: var(--type-helper);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--muted);
+      font-size: var(--type-helper);
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: var(--tracking-caption);
+      cursor: pointer;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x:hover {
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x[hidden] {
+      display: none;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__badge {
+      display: none;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__meta {
+      display: none;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__actions {
+      grid-column: 2;
+      grid-row: 1;
+      flex-shrink: 0;
+      gap: 2px;
+      margin-left: 0;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__btn {
+      min-height: 24px;
+      padding: 0 6px;
+      font-size: var(--type-helper);
+      font-weight: 500;
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+      border-radius: 6px;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__btn--clear svg {
+      width: 12px;
+      height: 12px;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__btn-label {
+      display: none;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-row__search {
+      position: relative;
+      min-width: 0;
+      width: 100%;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-row__search .mass-song-results {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 50;
+      max-height: min(260px, 42vh);
+      overflow-y: auto;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-row__search .mass-song-results .vb-dropdown-list {
+      padding: 3px;
+      gap: 0;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-row__search .mass-song-results .vb-dropdown-list > li {
+      margin: 0;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-row__search .mass-song-result-row {
+      align-items: center;
+      gap: 6px;
+      min-height: 0;
+      padding: 3px 8px;
+      font-size: var(--type-body);
+      line-height: var(--leading-body);
+      letter-spacing: var(--tracking-body);
+      border-radius: 5px;
+    }
+    .flow-builder-tab-panel--songs .mass-song-result-row .vb-dropdown-item__label {
+      display: block;
+      min-width: 0;
+      flex: 1;
+      line-height: 1.2;
+    }
+    .flow-builder-tab-panel--songs .mass-song-result-row strong {
+      display: block;
+      font-size: inherit;
+      font-weight: 600;
+      line-height: inherit;
+      letter-spacing: inherit;
+    }
+    .flow-builder-tab-panel--songs .mass-song-result-row .mass-song-result-meta {
+      display: block;
+      margin-top: 1px;
+      font-size: var(--type-helper);
+      font-weight: 400;
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .flow-builder-tab-panel--songs .mass-song-result-row .vb-dropdown-item__hint,
+    .flow-builder-tab-panel--songs .mass-song-result-row .mass-song-lyrics-badge {
+      font-size: var(--type-fine);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-fine);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-row__search .mass-song-results .vb-dropdown-empty {
+      padding: 8px 10px;
+      font-size: var(--type-helper);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+    }
+    .flow-builder-tab-panel--songs .mass-song-search-input {
+      min-height: 30px;
+      padding: 4px 10px;
+      font-size: var(--type-body);
+      line-height: var(--leading-body);
+      letter-spacing: var(--tracking-body);
+      border-radius: 6px;
+      border-color: var(--line-soft);
+    }
+    .flow-builder-tab-panel--songs .mass-song-lyrics-alert {
+      font-size: var(--type-helper);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+    }
+    .flow-builder-tab-panel--songs .mass-song-lyrics-alert__title {
+      font-size: var(--type-helper);
+      font-weight: 600;
+    }
+    .flow-builder-tab-panel--songs .mass-song-lyrics-alert__text {
+      font-size: var(--type-fine);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-fine);
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__expand {
+      display: none !important;
+    }
+    .flow-builder-tab-panel--songs .mass-song-add-custom {
+      align-self: flex-start;
+      width: auto;
+      min-height: 28px;
+      margin-top: 6px;
+      padding: 4px 10px;
+      border-style: solid;
+      border-width: 1px;
+      border-radius: 6px;
+      border-color: var(--line);
+      font-size: var(--type-helper);
+      font-weight: 500;
+      letter-spacing: var(--tracking-caption);
+      line-height: var(--leading-caption);
+      color: var(--muted);
+      background: transparent;
+    }
+    .flow-builder-tab-panel--songs .mass-song-add-custom:hover {
+      color: var(--ink);
+      border-color: color-mix(in srgb, var(--ink) 18%, var(--line));
+      background: color-mix(in srgb, var(--ink) 3%, var(--surface-solid));
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-footer {
+      margin-top: 8px;
+      padding-top: 8px;
+      gap: 8px;
+    }
+    .flow-builder-tab-panel--songs .mass-song-plan-footer .btn-home-create-event,
+    .flow-builder-tab-panel--songs .mass-song-plan-footer .btn-create {
+      min-height: 32px;
+      padding: 0 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
     }
     .mass-summary-sidebar {
       min-width: 0;
@@ -2819,13 +3830,6 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-    }
-    .flow-builder-tab-panel--songs .mass-song-plan-root {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 100%;
-      padding: 0;
     }
     .mass-song-plan-card {
       border: 1px solid var(--line);
@@ -3110,8 +4114,6 @@
       font-size: 0.8125rem;
     }
     .mass-song-plan-row__search .mass-song-result-row {
-      padding: 8px 12px;
-      min-height: 44px;
       cursor: pointer;
     }
     .mass-song-plan-row__search .mass-song-result-row strong {
@@ -3174,6 +4176,12 @@
       .home-bento-cell--summary,
       .home-bento-cell--song-plan {
         grid-column: span 12;
+      }
+      .song-plan-layout {
+        grid-template-columns: 1fr;
+      }
+      .song-plan-summary {
+        position: static;
       }
       .mass-summary-stats {
         flex-direction: row;
@@ -3611,6 +4619,37 @@
       padding: 7px 10px;
       font-size: var(--text-sm);
       min-height: 36px;
+    }
+    .flow-readings-inner .vb-select--slide-pick {
+      width: 100%;
+    }
+    .flow-readings-inner .vb-select--slide-pick .vb-select__trigger {
+      width: 100%;
+      min-height: 36px;
+      text-align: left;
+    }
+    .flow-readings-inner .vb-select--slide-pick .vb-select__value {
+      flex: 1 1 auto;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .flow-readings-inner .vb-select--slide-pick .vb-select__panel {
+      min-width: 100%;
+      max-width: min(520px, 92vw);
+    }
+    .flow-readings-inner .vb-select--slide-pick .vb-dropdown-item {
+      white-space: normal;
+      align-items: flex-start;
+      line-height: 1.45;
+      font-size: var(--text-sm);
+      font-weight: 500;
+    }
+    .flow-readings-inner .vb-select--slide-pick .vb-dropdown-item__label {
+      white-space: normal;
+      font-weight: 500;
+      line-height: 1.45;
     }
     .flow-readings-inner .flow-input-sublabel {
       margin: 10px 0 4px;
@@ -4806,6 +5845,32 @@
     #song-metadata-modal .primary:hover {
       background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
       border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+    }
+    .song-metadata-moods {
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    .song-metadata-moods legend {
+      margin: 0 0 6px;
+      padding: 0;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .song-metadata-moods__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 10px;
+    }
+    .song-metadata-moods__grid label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      font-size: 0.8125rem;
+      color: var(--ink);
+      cursor: pointer;
     }
     .lyrics-structured-body {
       display: flex;
@@ -6518,9 +7583,9 @@
       .liturgical-indicator__season,
       .liturgical-indicator__year { font-size: 0.6875rem; }
       .liturgical-indicator__chevron { display: none; }
-      .app-header-nav .nav-link { padding: 0 10px; font-size: 0.76rem; }
+      .app-header-nav .nav-link { padding: 0 2px; }
       .app-header-nav .nav-label { display: none; }
-      .app-header-nav .nav-link .nav-icon { width: 18px; height: 18px; }
+      .app-header-nav .nav-link .nav-icon { width: 17px; height: 17px; }
       .btn-create span:not(.btn-create__icon) { display: none; }
       .btn-create { padding: 0 12px; }
       .hero, .panel, .tool-card { padding: 15px; border-radius: 18px; }
@@ -6645,6 +7710,11 @@
       padding: 12px 14px 14px;
       background: var(--surface-solid);
       box-shadow: var(--shadow-card);
+    }
+    .song-plan-layout .mass-song-slot {
+      padding: 0;
+      box-shadow: none;
+      border-radius: 8px;
     }
     .mass-song-slot-label {
       display: block;
@@ -6794,17 +7864,18 @@
       white-space: nowrap;
     }
     .mass-song-results {
-      margin-top: 8px;
-      position: relative;
+      margin-top: 0;
       padding: 0;
+    }
+    .mass-song-plan-row__search .mass-song-results {
+      position: absolute;
     }
     .mass-song-results[hidden] {
       display: flex !important;
     }
     .mass-song-result-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
+      flex-direction: row;
+      align-items: center;
     }
     .mass-song-result-row strong {
       display: block;
@@ -7162,7 +8233,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260613" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260614" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260609" />
   <style id="verbum-layout-overrides">
@@ -7171,6 +8242,18 @@
     .dashboard { background: transparent; }
     .app-header { background: var(--surface-solid); }
     .app-header-nav .nav-link.active::before { display: none !important; }
+    /* Six-tab nav — even columns, icon + label in proportion */
+    .app-header-nav .nav-link,
+    .app-header-nav .nav-label {
+      font-size: var(--type-helper);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+    .app-header-nav .nav-link .nav-icon {
+      width: 15px;
+      height: 15px;
+    }
     .brand-block,
     .brand-block:hover,
     .brand-block:focus-visible {
@@ -7178,18 +8261,7 @@
       box-shadow: none !important;
       border: none !important;
     }
-    .home-bento-grid .flow-bento-cell {
-      background: var(--surface-solid);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: var(--space-5);
-      box-shadow: 0 1px 2px rgba(21, 51, 61, 0.05), 0 4px 14px rgba(21, 51, 61, 0.04);
-    }
-    .home-bento-grid .flow-bento-cell:hover {
-      border-color: color-mix(in srgb, var(--good) 22%, var(--card-border));
-      box-shadow: 0 2px 4px rgba(21, 51, 61, 0.06), 0 8px 20px rgba(21, 51, 61, 0.05);
-      transform: none;
-    }
+    /* Home card hover — Apple utility-card lift (see verbum-design-system.css) */
     .home-card-head {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
@@ -7252,6 +8324,9 @@
     .home-bento-cell--events .home-events-card__head {
       grid-template-columns: auto minmax(0, 1fr) auto;
     }
+    .home-bento-cell--news .home-news-panel__head {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
     .home-bento-cell--events .flow-bento-cell__head,
     .home-bento-cell--readings .flow-bento-cell__head,
     .home-bento-cell--news .flow-bento-cell__head {
@@ -7290,8 +8365,8 @@
               <span class="brand-block__tagline">Liturgy Planning Platform</span>
             </span>
           </a>
-          <p class="sr-only" id="topbar-breadcrumb">Home</p>
-          <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
+        <p class="sr-only" id="topbar-breadcrumb">Home</p>
+        <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
           <div class="app-header__search-wrap">
             <label class="app-header__search" for="app-global-search">
               <svg class="app-header__search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -7315,39 +8390,44 @@
             <div class="vb-dropdown-panel global-search-panel" id="global-search-panel" role="listbox" aria-label="Search results" hidden>
               <ul class="vb-dropdown-list global-search-list" id="global-search-list"></ul>
               <p class="global-search-empty" id="global-search-empty" hidden>No matches — try “mass”, “calendar”, or a song title</p>
-            </div>
-          </div>
+              </div>
+              </div>
           <div class="app-header__utilities">
-            <div class="liturgical-indicator-wrap">
-              <button type="button" class="liturgical-indicator" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
+          <div class="liturgical-indicator-wrap">
+            <button type="button" class="liturgical-indicator" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
                 <img src="/static/icons/calendar.png" class="liturgical-indicator__icon" alt="" width="16" height="16" aria-hidden="true" />
-                <span class="liturgical-indicator__bar" id="topbar-liturgical-color-bar" aria-hidden="true"></span>
-                <span class="liturgical-indicator__lines">
-                  <span class="liturgical-indicator__season" id="home-liturgical-season">Ordinary Time</span>
-                  <span class="liturgical-indicator__year" id="home-liturgical-year">Year A</span>
-                </span>
+              <span class="liturgical-indicator__bar" id="topbar-liturgical-color-bar" aria-hidden="true"></span>
+              <span class="liturgical-indicator__lines">
+                <span class="liturgical-indicator__season" id="home-liturgical-season">Ordinary Time</span>
+                <span class="liturgical-indicator__year" id="home-liturgical-year">Year A</span>
+              </span>
                 <svg class="liturgical-indicator__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-              </button>
+            </button>
               <div class="vb-dropdown-panel vb-dropdown-panel--right vb-dropdown-panel--wide liturgical-indicator-panel" id="liturgical-indicator-panel" role="dialog" aria-labelledby="liturgical-panel-title" hidden>
-                <p class="liturgical-indicator-panel__title" id="liturgical-panel-title">Countdowns</p>
-                <ul class="liturgical-countdown-list">
-                  <li class="liturgical-countdown-item">
-                    <span class="liturgical-countdown-item__label">Next Sunday</span>
-                    <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-days">—</span>
-                    <strong class="liturgical-countdown-item__value" id="liturgical-countdown-sunday">—</strong>
-                    <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-date">—</span>
-                  </li>
-                  <li class="liturgical-countdown-item liturgical-countdown-item--events">
-                    <span class="liturgical-countdown-item__label">Your events</span>
-                    <ul class="liturgical-panel-events" id="liturgical-panel-events-list" aria-live="polite"></ul>
-                    <span class="liturgical-countdown-item__sub" id="liturgical-panel-events-empty">No event</span>
-                  </li>
-                  <li class="liturgical-countdown-item">
-                    <span class="liturgical-countdown-item__label">World Youth Day 2027</span>
-                    <span class="liturgical-countdown-item__sub">Seoul · 3 Aug 2027</span>
-                    <strong class="liturgical-countdown-item__value" id="liturgical-countdown-wyd">—</strong>
-                  </li>
-                </ul>
+              <p class="liturgical-indicator-panel__title" id="liturgical-panel-title">Countdowns</p>
+              <ul class="liturgical-countdown-list">
+                <li class="liturgical-countdown-item">
+                  <span class="liturgical-countdown-item__label">Next Sunday</span>
+                  <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-days">—</span>
+                  <strong class="liturgical-countdown-item__value" id="liturgical-countdown-sunday">—</strong>
+                  <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-date">—</span>
+                </li>
+                <li class="liturgical-countdown-item liturgical-countdown-item--events" id="liturgical-countdown-item-events" hidden>
+                    <div class="liturgical-panel-events-section liturgical-panel-events-section--ongoing" id="liturgical-panel-events-ongoing-section" hidden>
+                      <span class="liturgical-panel-events-section__label">Ongoing</span>
+                      <ul class="liturgical-panel-events" id="liturgical-panel-events-ongoing" aria-live="polite"></ul>
+                    </div>
+                    <div class="liturgical-panel-events-section liturgical-panel-events-section--upcoming" id="liturgical-panel-events-upcoming-section" hidden>
+                      <span class="liturgical-panel-events-section__label">Upcoming event</span>
+                      <ul class="liturgical-panel-events" id="liturgical-panel-events-upcoming" aria-live="polite"></ul>
+                    </div>
+                </li>
+                <li class="liturgical-countdown-item">
+                  <span class="liturgical-countdown-item__label">World Youth Day 2027</span>
+                  <span class="liturgical-countdown-item__sub">Seoul · 3 Aug 2027</span>
+                  <strong class="liturgical-countdown-item__value" id="liturgical-countdown-wyd">—</strong>
+                </li>
+              </ul>
               </div>
             </div>
             <div class="notif-wrap">
@@ -7393,27 +8473,27 @@
         <div class="app-header__nav-row">
           <nav class="app-header-nav" id="admin-sidebar" aria-label="Main navigation">
             <a class="nav-link" data-route="/home" href="/home">
-              <img src="/static/icons/home.png" class="nav-icon" alt="" width="17" height="17" />
+              <img src="/static/icons/home.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Home</span>
             </a>
             <a class="nav-link" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
-              <img src="/static/icons/mass.png" class="nav-icon" alt="" width="17" height="17" />
+              <img src="/static/icons/mass.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Mass</span>
             </a>
             <a class="nav-link" data-route="/mass/calendar" href="/mass/calendar">
-              <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="17" height="17" />
+              <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Calendar</span>
             </a>
             <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
-              <img src="/static/icons/media.png" class="nav-icon" alt="" width="17" height="17" />
+              <img src="/static/icons/media.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Media</span>
             </a>
             <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
-              <img src="/static/icons/library.png" class="nav-icon" alt="" width="17" height="17" />
+              <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Library</span>
             </a>
             <a class="nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
-              <img src="/static/icons/design.png" class="nav-icon" alt="" width="17" height="17" />
+              <img src="/static/icons/design.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Design</span>
             </a>
           </nav>
@@ -7444,7 +8524,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                 </span>
                 <div class="home-card-head__text">
-                  <h3>Upcoming Sunday</h3>
+              <h3>Upcoming Sunday</h3>
                   <p id="home-sunday-label">Loading…</p>
                 </div>
                 <a class="home-card-head__action" href="/mass/builder" data-route="/mass/builder">View full Mass ›</a>
@@ -7459,12 +8539,12 @@
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
                 </span>
                 <div class="home-card-head__text">
-                  <h3 id="home-events-heading">Upcoming Events</h3>
-                </div>
+                  <h3 id="home-events-heading">Events</h3>
+              </div>
                 <button type="button" class="btn-home-create-event" id="btn-home-create-event">Create event</button>
               </header>
-              <ul class="home-events-list" id="home-events-list" aria-live="polite"></ul>
-              <p class="home-events-card__empty" id="home-events-empty">No event</p>
+              <div class="home-events-board" id="home-events-board" aria-live="polite"></div>
+              <p class="home-events-card__empty" id="home-events-empty">No events</p>
             </aside>
 
             <article class="flow-bento-cell home-bento-cell--readings">
@@ -7485,39 +8565,43 @@
                       <span class="flow-reading-ref" id="home-reading1-ref">—</span>
                     </header>
                     <div class="flow-reading-text" id="home-reading1-excerpt">Loading…</div>
-                  </article>
+              </article>
                   <article class="flow-reading-tile reading-preview-card" id="home-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
                     <header>
                       <strong>Second reading</strong>
                       <span class="flow-reading-ref" id="home-reading2-ref">—</span>
                     </header>
                     <div class="flow-reading-text" id="home-reading2-excerpt">Loading…</div>
-                  </article>
+              </article>
                   <article class="flow-reading-tile reading-preview-card" id="home-psalm-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
                     <header>
                       <strong>Psalm</strong>
                       <span class="flow-reading-ref" id="home-psalm-ref">—</span>
                     </header>
                     <div class="flow-reading-text flow-reading-text--psalm" id="home-psalm-excerpt">Loading…</div>
-                  </article>
-                </div>
+              </article>
+            </div>
               </div>
             </article>
 
             <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-panel" aria-labelledby="home-news-heading">
-              <header class="flow-bento-cell__head home-card-head home-news-panel__head">
+              <header class="flow-bento-cell__head home-card-head home-news-panel__head home-news-panel__expand-zone" id="home-news-panel-head">
                 <span class="home-card-head__icon" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
                 </span>
                 <div class="home-card-head__text">
-                  <h3 id="home-news-heading">World Catholic News</h3>
-                  <p>Headlines from trusted Catholic sources.</p>
-                </div>
+                <h3 id="home-news-heading">World Catholic News</h3>
+                  <p>Tap the card to browse more · tap a headline to open the article.</p>
+              </div>
+                <button type="button" class="btn-home-news-refresh" id="btn-home-news-refresh" aria-label="Refresh news feed" title="Refresh news">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                  <span class="sr-only">Refresh</span>
+                </button>
               </header>
               <ul class="home-news-list" id="home-news-list" aria-live="polite"></ul>
-              <p class="muted home-news-status" id="home-news-status">Loading news…</p>
+              <p class="muted home-news-status home-news-panel__expand-zone" id="home-news-status">Loading news…</p>
             </aside>
-          </div>
+        </div>
       </section>
 
       <div class="ui-overlay" id="home-event-modal" aria-hidden="true" role="presentation">
@@ -7555,6 +8639,23 @@
             <button type="button" class="secondary" id="home-event-modal-cancel">Cancel</button>
             <button type="button" class="uiverse-btn uiverse-btn--orange" id="home-event-modal-save"><div class="button-outer"><div class="button-inner"><span>Save</span></div></div></button>
           </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="home-news-expand-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="home-news-expand-backdrop"></div>
+        <article class="ui-card ui-card--news-expand" role="dialog" aria-labelledby="home-news-expand-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="home-news-expand-title">World Catholic News</h3>
+              <p class="ui-card__description" id="home-news-expand-desc">3 columns × 5 rows per page · headlines from the last 3 days · scroll for more.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="home-news-expand-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content home-news-expand-scroll" id="home-news-expand-scroll">
+            <ul class="home-news-expand-list" id="home-news-expand-list"></ul>
+            <p class="home-news-expand-foot" id="home-news-expand-foot">Loading…</p>
+          </div>
         </article>
       </div>
 
@@ -7602,6 +8703,16 @@
                 <option value="Mix">Mix</option>
               </select>
             </div>
+            <fieldset class="song-metadata-moods" id="song-metadata-moods">
+              <legend>Gospel mood</legend>
+              <div class="song-metadata-moods__grid">
+                <label><input type="checkbox" value="triumphant" data-gospel-mood-opt /> Triumphant</label>
+                <label><input type="checkbox" value="solemn" data-gospel-mood-opt /> Solemn</label>
+                <label><input type="checkbox" value="mercy" data-gospel-mood-opt /> Mercy</label>
+                <label><input type="checkbox" value="journey" data-gospel-mood-opt /> Journey</label>
+                <label><input type="checkbox" value="reverent" data-gospel-mood-opt /> Reverent</label>
+              </div>
+            </fieldset>
             <p class="muted" style="margin:0;font-size:0.8125rem;" id="song-metadata-section-label">Section: —</p>
           </div>
           <footer class="ui-card__footer ui-card__footer--row">
@@ -7892,7 +9003,7 @@ Lord, hear our prayer</textarea>
                         <div class="celebrant-picker__panel vb-dropdown-panel" id="celebrant-picker-panel" role="listbox" aria-labelledby="celebrant-label" hidden>
                           <ul class="vb-dropdown-list celebrant-picker__list" id="celebrant-list"></ul>
                           <p class="vb-dropdown-empty celebrant-picker__empty" id="celebrant-picker-empty" hidden>No celebrants saved — add names in Settings → Church Profile.</p>
-                        </div>
+                          </div>
                         <input type="hidden" id="celebrant" value="" aria-describedby="celebrant-hint" />
                       </div>
                       <p class="muted" id="celebrant-hint">Settings → Church Profile.</p>
@@ -7950,30 +9061,30 @@ Lord, hear our prayer</textarea>
                 <footer class="flow-setup-footer" aria-label="Deck options">
                   <div class="flow-setup-footer__toggles">
                     <div class="flow-setup-footer__toggle-item">
-                      <span class="flow-option-inline__label" id="flow-hymn-layout-label">Hymn lyrics</span>
-                      <div class="flow-segment" role="radiogroup" aria-labelledby="flow-hymn-layout-label">
-                        <label><input type="radio" name="flow-hymn-layout" value="single" checked /> 1 / slide</label>
-                        <label><input type="radio" name="flow-hymn-layout" value="dual" /> 2 / slide</label>
+                        <span class="flow-option-inline__label" id="flow-hymn-layout-label">Hymn lyrics</span>
+                        <div class="flow-segment" role="radiogroup" aria-labelledby="flow-hymn-layout-label">
+                          <label><input type="radio" name="flow-hymn-layout" value="single" checked /> 1 / slide</label>
+                          <label><input type="radio" name="flow-hymn-layout" value="dual" /> 2 / slide</label>
+                        </div>
+                      </div>
+                    <div class="flow-setup-footer__toggle-item" id="flow-openai-style-wrap">
+                        <label for="flow-openai-poster-style">Poster style</label>
+                        <select id="flow-openai-poster-style">
+                          <option value="cinematic">Cinematic</option>
+                          <option value="realistic">Realistic</option>
+                          <option value="renaissance">Renaissance</option>
+                          <option value="stained_glass">Stained glass</option>
+                          <option value="modern">Modern</option>
+                        </select>
                       </div>
                     </div>
-                    <div class="flow-setup-footer__toggle-item" id="flow-openai-style-wrap">
-                      <label for="flow-openai-poster-style">Poster style</label>
-                      <select id="flow-openai-poster-style">
-                        <option value="cinematic">Cinematic</option>
-                        <option value="realistic">Realistic</option>
-                        <option value="renaissance">Renaissance</option>
-                        <option value="stained_glass">Stained glass</option>
-                        <option value="modern">Modern</option>
-                      </select>
-                    </div>
-                  </div>
                   <div class="flow-setup-footer__checks">
                     <label><input type="checkbox" id="flow-include-church-logo" /> Logo on slides</label>
                     <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
                     <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI poster</label>
                     <label id="flow-include-poster-text-wrap"><input type="checkbox" id="flow-include-poster-text" checked /> Text on poster</label>
                     <label><input type="checkbox" id="flow-include-social-exports" /> Social sizes</label>
-                  </div>
+                </div>
                 </footer>
               </article>
 
@@ -7985,34 +9096,34 @@ Lord, hear our prayer</textarea>
                 <div class="flow-readings-inner">
                   <div class="flow-readings-preview-row" role="group" aria-label="Sunday reading texts">
                     <article class="flow-reading-tile reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
-                      <header>
-                        <strong>First reading</strong>
+                        <header>
+                          <strong>First reading</strong>
                         <span class="flow-reading-ref" id="flow-reading1-ref">—</span>
-                      </header>
+                        </header>
                       <div id="flow-reading1-body" class="flow-reading-text">Load readings to see text.</div>
-                    </article>
+                      </article>
                     <article class="flow-reading-tile reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
-                      <header>
-                        <strong>Second reading</strong>
+                        <header>
+                          <strong>Second reading</strong>
                         <span class="flow-reading-ref" id="flow-reading2-ref">—</span>
-                      </header>
+                        </header>
                       <div id="flow-reading2-body" class="flow-reading-text">—</div>
-                    </article>
+                      </article>
                     <article class="flow-reading-tile reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
-                      <header>
-                        <strong>Gospel</strong>
+                        <header>
+                          <strong>Gospel</strong>
                         <span class="flow-reading-ref" id="flow-gospel-ref">—</span>
-                      </header>
+                        </header>
                       <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel">Load readings to see the full Gospel.</div>
-                    </article>
+                      </article>
                     <article class="flow-reading-tile reading-preview-card" id="flow-psalm-preview-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
-                      <header>
-                        <strong>Psalm</strong>
+                        <header>
+                          <strong>Psalm</strong>
                         <span class="flow-reading-ref" id="flow-psalm-ref">—</span>
-                      </header>
+                        </header>
                       <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm">Load readings to see the full psalm text.</div>
-                    </article>
-                  </div>
+                      </article>
+                    </div>
 
                   <section class="flow-readings-zone flow-readings-zone--gospel-slides" aria-labelledby="flow-readings-gospel-slides-title">
                     <h4 class="flow-readings-zone__title" id="flow-readings-gospel-slides-title">Gospel on slides</h4>
@@ -8020,8 +9131,8 @@ Lord, hear our prayer</textarea>
                     <div class="flow-readings-gospel-fields">
                       <div class="field">
                         <label for="flow-gospel-sentence">Sentence for slide</label>
-                        <select id="flow-gospel-sentence">
-                          <option value="0">Sentence 1 (default)</option>
+                        <select id="flow-gospel-sentence" class="flow-slide-pick-select">
+                          <option value="" disabled selected>Load readings to choose a sentence</option>
                         </select>
                       </div>
                       <div class="field">
@@ -8045,8 +9156,8 @@ Lord, hear our prayer</textarea>
                     <div class="flow-readings-gospel-fields">
                       <div class="field">
                         <label for="flow-psalm-refrain">Refrain for slide</label>
-                        <select id="flow-psalm-refrain">
-                          <option value="0">Refrain 1 (default)</option>
+                        <select id="flow-psalm-refrain" class="flow-slide-pick-select">
+                          <option value="" disabled selected>Load readings to choose a refrain</option>
                         </select>
                       </div>
                       <div class="field">
@@ -8061,8 +9172,8 @@ Lord, hear our prayer</textarea>
             </div>
 
             <div class="flow-builder-tab-panel flow-builder-tab-panel--songs" id="flow-panel-songs" role="tabpanel" aria-labelledby="flow-tab-songs" data-flow-panel="songs" hidden>
-            <div class="home-bento-grid song-plan-bento-grid">
-              <aside class="flow-bento-cell home-bento-cell--summary mass-summary-sidebar" aria-labelledby="mass-summary-heading">
+            <div class="song-plan-layout">
+              <aside class="flow-bento-cell song-plan-summary mass-summary-sidebar" aria-labelledby="mass-summary-heading">
                 <header class="flow-bento-cell__head home-card-head">
                   <span class="home-card-head__icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -8070,17 +9181,23 @@ Lord, hear our prayer</textarea>
                   <div class="home-card-head__text">
                     <h3 id="mass-summary-heading">Mass summary</h3>
                     <p><span id="mass-summary-date-label">—</span> · <span id="mass-summary-season-label">Ordinary Time</span></p>
-                  </div>
+              </div>
                 </header>
+                <div class="mass-summary-lang-field mass-song-plan-lang-field">
+                  <label for="mass-song-plan-lang">Language</label>
+                  <select id="mass-song-plan-lang" class="mass-song-plan-lang-select">
+                    <option value="all">All languages</option>
+                  <option value="English">English</option>
+                  <option value="Tagalog">Tagalog</option>
+                  <option value="Latin">Latin</option>
+                  <option value="mix">Mix</option>
+                </select>
+              </div>
                 <dl class="mass-summary-stats">
-                  <div class="mass-summary-stat">
-                    <dt>Language</dt>
-                    <dd id="mass-summary-lang-label">All languages</dd>
-                  </div>
                   <div class="mass-summary-stat">
                     <dt>Songs</dt>
                     <dd aria-live="polite" aria-atomic="true"><span id="flow-song-count">0</span>/<span id="mass-summary-song-total">5</span></dd>
-                  </div>
+            </div>
                   <div class="mass-summary-stat">
                     <dt>Readings</dt>
                     <dd id="flow-reading-loaded">—</dd>
@@ -8092,43 +9209,31 @@ Lord, hear our prayer</textarea>
                     <div class="mass-summary-progress__fill" id="mass-summary-progress-fill"></div>
                   </div>
                 </div>
+                <p class="mass-summary-gospel-tip" id="mass-summary-gospel-tip" aria-live="polite">
+                  <span class="mass-summary-gospel-tip__label">Gospel mood</span>
+                  <span class="mass-summary-gospel-tip__text" id="mass-summary-gospel-tip-text">Load readings to see this Sunday’s Gospel mood.</span>
+                </p>
+                <div class="mass-summary-recs" id="mass-summary-recs" hidden>
+                  <div class="mass-summary-recs__head">
+                    <span class="mass-summary-recs__label">Suggested songs</span>
+                    <button type="button" class="mass-summary-recs-refresh" id="mass-summary-recs-refresh" aria-label="Refresh song suggestions" title="Refresh suggestions">↻</button>
+                  </div>
+                  <ul class="mass-summary-mood-picks" id="mass-summary-mood-picks" aria-label="Gospel mood song suggestions"></ul>
+                  <button type="button" class="mass-summary-recs-add" id="mass-summary-recs-add">Add to song plan</button>
+                </div>
                 <nav class="mass-summary-links" aria-label="Song plan shortcuts">
                   <a href="/settings/app" data-route="/settings/app" class="mass-summary-link">Preferences</a>
                   <a href="/library/songs" data-route="/library/songs" class="mass-summary-link">Song library</a>
                 </nav>
               </aside>
-              <section class="flow-bento-cell home-bento-cell--song-plan flow-song-plan-section" id="flow-song-plan-section" aria-labelledby="flow-song-plan-heading">
-                <header class="flow-bento-cell__head home-card-head">
-                  <span class="home-card-head__icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                  </span>
-                  <div class="home-card-head__text">
-                    <h3 id="flow-song-plan-heading">Song plan</h3>
-                    <p>Search and assign hymns for each part of Mass.</p>
-                  </div>
-                </header>
-                <div class="mass-song-plan-subtoolbar">
-                  <div class="mass-song-plan-lang-field">
-                    <label for="mass-song-plan-lang">Language filter</label>
-                    <select id="mass-song-plan-lang" class="mass-song-plan-lang-select">
-                      <option value="all">All languages</option>
-                      <option value="English">English</option>
-                      <option value="Tagalog">Tagalog</option>
-                      <option value="Latin">Latin</option>
-                      <option value="mix">Mix</option>
-                    </select>
-                  </div>
-                  <button type="button" class="btn-home-create-event" id="btn-song-plan-expand-all">Expand all</button>
-                </div>
-                <div class="mass-song-plan-list" role="region" aria-label="Mass song slots">
-                  <div id="mass-song-plan" class="mass-song-plan-root"></div>
-                </div>
-                <button type="button" class="mass-song-add-custom" id="mass-song-add-custom">+ Add custom section</button>
+              <div class="song-plan-main">
+                <div id="mass-song-plan" class="mass-song-plan-root" role="region" aria-label="Mass song slots"></div>
+                <button type="button" class="mass-song-add-custom" id="mass-song-add-custom">+ Add section</button>
                 <footer class="mass-song-plan-footer">
                   <button type="button" class="btn-home-create-event" id="btn-load-flow-inline">Load readings</button>
                   <button type="button" class="btn-create" id="btn-generate-flow-inline">Generate package</button>
                 </footer>
-              </section>
+              </div>
             </div>
             </div>
           </div>
@@ -8589,32 +9694,218 @@ Lord, hear our prayer</textarea>
       return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
     }
 
+    function homeNewsThumbUrl(url) {
+      const u = String(url || "").trim();
+      if (!u) return "";
+      if (u.includes("res.cloudinary.com") && u.includes("/upload/")) {
+        return u.replace("/upload/", "/upload/w_96,h_72,c_fill,q_auto,f_auto/");
+      }
+      return u;
+    }
+
+    const HOME_NEWS_PLACEHOLDER_SRC = "/static/images/news-no-image-placeholder.png";
+
+    function homeNewsPlaceholderHtml() {
+      return (
+        '<img class="home-news-item__img home-news-item__img--placeholder" src="' + HOME_NEWS_PLACEHOLDER_SRC + '" alt="" loading="lazy" decoding="async" />'
+      );
+    }
+
+    function homeNewsMediaHtml(imageUrl) {
+      const url = String(imageUrl || "").trim();
+      if (!url) {
+        return '<div class="home-news-item__media">' + homeNewsPlaceholderHtml() + "</div>";
+      }
+      const thumb = homeNewsThumbUrl(url);
+      return (
+        '<div class="home-news-item__media">' +
+        '<img class="home-news-item__img" src="' + escapeHtml(thumb) + '" alt="" loading="lazy" decoding="async" width="96" height="72" ' +
+        'onerror="this.onerror=null;this.src=\'' + HOME_NEWS_PLACEHOLDER_SRC + '\';this.classList.add(\'home-news-item__img--placeholder\');" />' +
+        "</div>"
+      );
+    }
+
+    function renderHomeNewsItemMarkup(item, expanded) {
+      const title = escapeHtml(item.title || "Untitled");
+      const src = escapeHtml(item.source || "News");
+      const when = formatNewsDate(item.pub_date);
+      const summaryText = expanded ? (item.summary_full || item.summary || "") : (item.summary || "");
+      const summary = summaryText
+        ? `<p class="home-news-item__summary">${escapeHtml(summaryText)}</p>`
+        : "";
+      const link = String(item.link || "").trim();
+      const itemClass = "home-news-item" + (expanded ? " home-news-expand-item" : "");
+      const inner =
+        homeNewsMediaHtml(item.image_url) +
+        '<div class="home-news-item__content">' +
+        '<div class="home-news-item__meta">' +
+        '<span class="home-news-item__badge">' + src + "</span>" +
+        (when ? "<span>" + escapeHtml(when) + "</span>" : "") +
+        "</div>" +
+        '<p class="home-news-item__title">' + title + "</p>" +
+        summary +
+        "</div>";
+      if (link) {
+        return (
+          '<a class="' + itemClass + '" href="' + escapeHtml(link) + '" target="_blank" rel="noopener noreferrer">' +
+          inner +
+          "</a>"
+        );
+      }
+      return '<article class="' + itemClass + '">' + inner + "</article>";
+    }
+
+    const HOME_NEWS_EXPAND_COLS = 3;
+    const HOME_NEWS_EXPAND_ROWS = 5;
+    const HOME_NEWS_EXPAND_PAGE_SIZE = HOME_NEWS_EXPAND_COLS * HOME_NEWS_EXPAND_ROWS;
+    const HOME_NEWS_MAX_AGE_DAYS = 3;
+    const EMIL_STAGGER_STEP_MS = 42;
+
+    function homeNewsSkeletonHtml(count) {
+      const n = count || 6;
+      return Array.from({ length: n }, () => (
+        "<li class=\"home-news-item home-news-item--skeleton\" aria-hidden=\"true\">" +
+        "<div class=\"home-news-item__media emil-skeleton\"></div>" +
+        "<div class=\"home-news-item__content\">" +
+        "<div class=\"emil-skeleton emil-skeleton--line emil-skeleton--line-sm\"></div>" +
+        "<div class=\"emil-skeleton emil-skeleton--line emil-skeleton--line-lg\"></div>" +
+        "<div class=\"emil-skeleton emil-skeleton--line\"></div>" +
+        "</div></li>"
+      )).join("");
+    }
+
+    function massSongPlanSkeletonHtml(count) {
+      const n = count || Math.max(5, lyricSongSlots.length || 5);
+      return Array.from({ length: n }, () => (
+        "<article class=\"mass-song-plan-card mass-song-plan-card--skeleton\" aria-hidden=\"true\">" +
+        "<div class=\"mass-song-plan-card__row\">" +
+        "<span class=\"emil-skeleton emil-skeleton--drag\"></span>" +
+        "<span class=\"emil-skeleton emil-skeleton--num\"></span>" +
+        "<div class=\"mass-song-plan-card__core\">" +
+        "<div class=\"emil-skeleton emil-skeleton--line emil-skeleton--line-lg\"></div>" +
+        "<div class=\"emil-skeleton emil-skeleton--line emil-skeleton--line-sm\"></div>" +
+        "</div></div></article>"
+      )).join("");
+    }
+
+    function revealStaggerChildren(container, itemSelector) {
+      if (!container || !itemSelector) return;
+      const items = container.querySelectorAll(itemSelector);
+      if (!items.length) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      items.forEach((el, i) => {
+        if (reduced) return;
+        el.classList.add("emil-stagger-enter");
+        el.style.animationDelay = (i * EMIL_STAGGER_STEP_MS) + "ms";
+      });
+      if (reduced) return;
+      const totalMs = 200 + items.length * EMIL_STAGGER_STEP_MS + 80;
+      window.setTimeout(() => {
+        items.forEach((el) => {
+          el.classList.remove("emil-stagger-enter");
+          el.style.animationDelay = "";
+        });
+      }, totalMs);
+    }
+
+    function massMoodPickSkeletonHtml(count) {
+      const n = count || 5;
+      return Array.from({ length: n }, () => (
+        "<li class=\"mass-summary-mood-pick mass-summary-mood-pick--skeleton\" aria-hidden=\"true\">" +
+        "<span class=\"emil-skeleton emil-skeleton--line emil-skeleton--line-sm\"></span>" +
+        "<span class=\"emil-skeleton emil-skeleton--line emil-skeleton--line-lg\"></span>" +
+        "</li>"
+      )).join("");
+    }
+
+    async function runEmilRefresh(opts) {
+      const container = opts && opts.container;
+      const trigger = opts && opts.trigger;
+      const contentEl = opts && opts.contentEl;
+      if (!contentEl || typeof opts.task !== "function") return;
+      if (container) container.classList.add("is-refreshing");
+      contentEl.setAttribute("aria-busy", "true");
+      if (trigger) {
+        trigger.classList.add("is-loading");
+        trigger.disabled = true;
+      }
+      if (opts.skeletonHtml) contentEl.innerHTML = opts.skeletonHtml;
+      try {
+        const result = await opts.task();
+        if (typeof opts.reveal === "function") opts.reveal(result);
+        if (opts.staggerSelector) revealStaggerChildren(contentEl, opts.staggerSelector);
+      } finally {
+        if (container) container.classList.remove("is-refreshing");
+        contentEl.setAttribute("aria-busy", "false");
+        if (trigger) {
+          trigger.classList.remove("is-loading");
+          trigger.disabled = false;
+        }
+      }
+    }
+
+    function setMassSongPlanRefreshing(active) {
+      const plan = $("mass-song-plan");
+      if (!plan) return;
+      plan.classList.toggle("is-refreshing", !!active);
+      plan.setAttribute("aria-busy", active ? "true" : "false");
+      if (active) {
+        plan.innerHTML = massSongPlanSkeletonHtml();
+      }
+    }
+
+    function setHomeNewsRefreshing(active) {
+      const panel = $("home-news-panel");
+      const list = $("home-news-list");
+      if (panel) panel.classList.toggle("is-refreshing", !!active);
+      if (list) list.setAttribute("aria-busy", active ? "true" : "false");
+    }
+
+    async function fetchCatholicNewsPage(limit, offset, maxAgeDays) {
+      const prefs = getHomeNewsPrefs();
+      const params = new URLSearchParams({
+        vatican: prefs.vatican ? "true" : "false",
+        cna: prefs.cna ? "true" : "false",
+        limit: String(limit),
+        offset: String(offset),
+        max_age_days: String(maxAgeDays != null ? maxAgeDays : HOME_NEWS_MAX_AGE_DAYS),
+      });
+      const res = await fetch("/api/catholic-news?" + params.toString());
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Could not load news.");
+      return data;
+    }
+
+    const homeNewsExpandState = {
+      offset: 0,
+      loading: false,
+      hasMore: true,
+    };
+
     async function refreshCatholicNews() {
       const panel = $("home-news-panel");
       const list = $("home-news-list");
       const status = $("home-news-status");
+      const refreshBtn = $("btn-home-news-refresh");
       if (!panel || !list) return;
       const prefs = getHomeNewsPrefs();
       if (!prefs.enabled || (!prefs.vatican && !prefs.cna)) {
         panel.hidden = true;
         list.innerHTML = "";
+        setHomeNewsRefreshing(false);
         if (status) status.textContent = "";
         return;
       }
       panel.hidden = false;
-      list.innerHTML = "";
-      if (status) status.textContent = "Loading news…";
-      const params = new URLSearchParams({
-        vatican: prefs.vatican ? "true" : "false",
-        cna: prefs.cna ? "true" : "false",
-        limit: "3",
-      });
+      setHomeNewsRefreshing(true);
+      list.innerHTML = homeNewsSkeletonHtml(6);
+      if (status) status.textContent = "Refreshing headlines…";
+      if (refreshBtn) refreshBtn.classList.add("is-loading");
       try {
-        const res = await fetch("/api/catholic-news?" + params.toString());
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "Could not load news.");
+        const data = await fetchCatholicNewsPage(6, 0, HOME_NEWS_MAX_AGE_DAYS);
         const items = data.items || [];
         if (!items.length) {
+          list.innerHTML = "";
           if (status) {
             status.textContent = (data.errors && data.errors.length)
               ? "News temporarily unavailable."
@@ -8622,34 +9913,164 @@ Lord, hear our prayer</textarea>
           }
           return;
         }
-        list.innerHTML = items.map((item) => {
-          const title = escapeHtml(item.title || "Untitled");
-          const src = escapeHtml(item.source || "News");
-          const when = formatNewsDate(item.pub_date);
-          const summary = item.summary ? `<p class="home-news-item__summary">${escapeHtml(item.summary)}</p>` : "";
-          const titleInner = item.link
-            ? `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${title}</a>`
-            : title;
-          return (
-            "<li class=\"home-news-item\">" +
-            "<div class=\"home-news-item__meta\">" +
-            "<span class=\"home-news-item__badge\">" + src + "</span>" +
-            (when ? "<span>" + escapeHtml(when) + "</span>" : "") +
-            "</div>" +
-            "<p class=\"home-news-item__title\">" + titleInner + "</p>" +
-            summary +
-            "</li>"
-          );
-        }).join("");
+        list.innerHTML = items.map((item) => (
+          "<li>" + renderHomeNewsItemMarkup(item, false) + "</li>"
+        )).join("");
+        revealStaggerChildren(list, ":scope > li");
         if (status) {
           status.textContent = (data.errors && data.errors.length)
-            ? "Some sources unavailable."
-            : "Opens in a new tab · refreshes when you visit Home.";
+            ? "Some sources unavailable · tap card to browse more"
+            : "Tap card to browse more · tap a story to open it";
         }
       } catch (e) {
         list.innerHTML = "";
         if (status) status.textContent = e.message || "Could not load Catholic news.";
+      } finally {
+        setHomeNewsRefreshing(false);
+        if (refreshBtn) refreshBtn.classList.remove("is-loading");
       }
+    }
+
+    function closeHomeNewsExpandModal() {
+      const modal = $("home-news-expand-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      if (!$("home-event-modal") || !$("home-event-modal").classList.contains("is-open")) {
+        if (!$("reading-expand-modal") || !$("reading-expand-modal").classList.contains("is-open")) {
+          document.body.style.overflow = "";
+        }
+      }
+    }
+
+    function setHomeNewsExpandFoot(message) {
+      const foot = $("home-news-expand-foot");
+      if (foot) foot.textContent = message || "";
+    }
+
+    function homeNewsExpandFootMessage(data, append) {
+      const total = data.total != null ? data.total : 0;
+      const age = data.max_age_days || HOME_NEWS_MAX_AGE_DAYS;
+      const ageLabel = "the last " + age + " day" + (age === 1 ? "" : "s");
+      if (!append && total === 0) {
+        return "No headlines from " + ageLabel + ".";
+      }
+      if (data.has_more) {
+        return "Showing headlines from " + ageLabel + " · scroll down for more";
+      }
+      return "All headlines from " + ageLabel + " loaded (" + total + ").";
+    }
+
+    async function loadHomeNewsExpandPage(append) {
+      const list = $("home-news-expand-list");
+      if (!list || homeNewsExpandState.loading) return;
+      homeNewsExpandState.loading = true;
+      setHomeNewsExpandFoot("Loading headlines…");
+      try {
+        const data = await fetchCatholicNewsPage(
+          HOME_NEWS_EXPAND_PAGE_SIZE,
+          homeNewsExpandState.offset,
+          HOME_NEWS_MAX_AGE_DAYS
+        );
+        const items = data.items || [];
+        homeNewsExpandState.hasMore = !!data.has_more;
+        homeNewsExpandState.offset += items.length;
+        const html = items.map((item) => (
+          "<li>" + renderHomeNewsItemMarkup(item, true) + "</li>"
+        )).join("");
+        if (append) list.insertAdjacentHTML("beforeend", html);
+        else list.innerHTML = html;
+        setHomeNewsExpandFoot(homeNewsExpandFootMessage(data, append));
+      } catch (e) {
+        setHomeNewsExpandFoot(e.message || "Could not load news.");
+      } finally {
+        homeNewsExpandState.loading = false;
+      }
+    }
+
+    async function openHomeNewsExpandModal() {
+      const modal = $("home-news-expand-modal");
+      const scroll = $("home-news-expand-scroll");
+      if (!modal) return;
+      homeNewsExpandState.offset = 0;
+      homeNewsExpandState.hasMore = true;
+      homeNewsExpandState.loading = false;
+      syncHomeNewsExpandModalWidth();
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      await loadHomeNewsExpandPage(false);
+      syncHomeNewsExpandModalWidth();
+      if (scroll) scroll.scrollTop = 0;
+    }
+
+    function syncHomeNewsExpandModalWidth() {
+      const panel = $("home-news-panel");
+      const card = document.querySelector("#home-news-expand-modal .ui-card--news-expand");
+      if (!panel || !card || panel.hidden) return;
+      const panelWidth = panel.getBoundingClientRect().width;
+      if (panelWidth <= 0) return;
+      const overlay = $("home-news-expand-modal");
+      const overlayStyle = overlay ? getComputedStyle(overlay) : null;
+      const padX = overlayStyle
+        ? (parseFloat(overlayStyle.paddingLeft) || 0) + (parseFloat(overlayStyle.paddingRight) || 0)
+        : 32;
+      const maxWidth = Math.max(280, window.innerWidth - padX);
+      card.style.width = Math.min(panelWidth, maxWidth) + "px";
+    }
+
+    function initHomeNewsExpandModal() {
+      const modal = $("home-news-expand-modal");
+      const backdrop = $("home-news-expand-backdrop");
+      const closeBtn = $("home-news-expand-close");
+      const scroll = $("home-news-expand-scroll");
+      const panel = $("home-news-panel");
+      const refreshBtn = $("btn-home-news-refresh");
+
+      if (backdrop) backdrop.addEventListener("click", closeHomeNewsExpandModal);
+      if (closeBtn) closeBtn.addEventListener("click", closeHomeNewsExpandModal);
+
+      if (scroll) {
+        scroll.addEventListener("scroll", () => {
+          if (!modal || !modal.classList.contains("is-open")) return;
+          if (!homeNewsExpandState.hasMore || homeNewsExpandState.loading) return;
+          const nearBottom = scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 120;
+          if (nearBottom) loadHomeNewsExpandPage(true);
+        });
+      }
+
+      if (refreshBtn) {
+        refreshBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          refreshCatholicNews();
+        });
+      }
+
+      if (panel) {
+        panel.querySelectorAll(".home-news-panel__expand-zone").forEach((zone) => {
+          zone.addEventListener("click", (e) => {
+            if (e.target.closest("#btn-home-news-refresh, button, a, input, select, textarea, label")) return;
+            openHomeNewsExpandModal();
+          });
+        });
+        panel.addEventListener("click", (e) => {
+          if (e.target.closest(".home-news-item, #btn-home-news-refresh, button, a, input, select, textarea, label")) return;
+          if (e.target.closest(".home-news-panel__expand-zone")) return;
+          openHomeNewsExpandModal();
+        });
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal && modal.classList.contains("is-open")) {
+          closeHomeNewsExpandModal();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        if (modal && modal.classList.contains("is-open")) {
+          syncHomeNewsExpandModalWidth();
+        }
+      });
     }
 
     function bindHomeNewsSettings() {
@@ -9868,14 +11289,16 @@ Lord, hear our prayer</textarea>
       if ([...sel.options].some((o) => o.value === v)) sel.value = v;
       massSongPlanLanguage = sel.value;
     }
-    const lyricSongSlots = [
+    let lyricSongSlots = [
       { key: "entrance", label: "Entrance song", section: "entrance" },
       { key: "offertory", label: "Offertory song", section: "offertory" },
       { key: "communion_1", label: "Communion song 1", section: "communion" },
       { key: "communion_2", label: "Communion song 2", section: "communion" },
       { key: "recessional", label: "Recessional song", section: "recessional" },
     ];
-    let selectedLyricsSongs = { entrance: "", offertory: "", communion_1: "", communion_2: "", recessional: "", meditation: "" };
+    const MASS_SONG_PLAN_MAX_SECTIONS = 10;
+    let massCustomSlotSeq = 0;
+    let selectedLyricsSongs = { entrance: "", offertory: "", communion_1: "", communion_2: "", recessional: "" };
     let songOptionsBySection = { entrance: [], offertory: [], communion: [], recessional: [], meditation: [] };
     let flowPreviewData = null;
     let massPlanAllSongs = [];
@@ -9895,6 +11318,7 @@ Lord, hear our prayer</textarea>
           author: String(row.author || "").trim(),
           language: String(row.language || "").trim(),
           has_lyrics: !!row.has_lyrics,
+          gospel_moods: Array.isArray(row.gospel_moods) ? row.gospel_moods : [],
           section: section || "",
           source: String(source || ""),
         });
@@ -9985,7 +11409,7 @@ Lord, hear our prayer</textarea>
     function openVbDropdownPanel(panel) {
       if (!panel) return;
       panel.hidden = false;
-      requestAnimationFrame(() => panel.classList.add("is-open"));
+      panel.classList.add("is-open");
     }
 
     function closeVbDropdownPanel(panel) {
@@ -10022,13 +11446,13 @@ Lord, hear our prayer</textarea>
           ? "<span class=\"vb-dropdown-item__hint mass-song-lyrics-badge\" aria-label=\"No lyrics saved\">No lyrics</span>"
           : "";
         const meta = escapeHtml(row.section || "library") +
-          (row.author ? " · " + escapeHtml(row.author) : "") +
-          (row.language ? " · " + escapeHtml(row.language) : "") +
+            (row.author ? " · " + escapeHtml(row.author) : "") +
+            (row.language ? " · " + escapeHtml(row.language) : "") +
           (row.source === "web" ? " · web hint" : "");
         return (
           "<li><button type=\"button\" class=\"" + rowCls + "\" role=\"option\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
             "<span class=\"vb-dropdown-item__label\"><strong>" + escapeHtml(row.title) + "</strong>" +
-            "<span class=\"muted\" style=\"font-size:0.78rem;display:block;margin-top:2px;font-weight:500;\">" + meta + "</span></span>" +
+            "<span class=\"mass-song-result-meta\">" + meta + "</span></span>" +
             lyricsBadge +
           "</button></li>"
         );
@@ -10862,10 +12286,6 @@ Lord, hear our prayer</textarea>
         "<circle cx=\"9\" cy=\"12\" r=\"1.25\"/><circle cx=\"15\" cy=\"12\" r=\"1.25\"/>" +
         "<circle cx=\"9\" cy=\"17\" r=\"1.25\"/><circle cx=\"15\" cy=\"17\" r=\"1.25\"/>" +
       "</svg>";
-    const MASS_SONG_PLAN_CHEVRON_SVG =
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
-        "<path d=\"m6 9 6 6 6-6\"/>" +
-      "</svg>";
     const MASS_SONG_PLAN_TRASH_SVG =
       "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
         "<path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/>" +
@@ -10879,45 +12299,48 @@ Lord, hear our prayer</textarea>
       );
     }
 
-    function massSongChangeButtonHtml(slotKey) {
-      return (
-        "<button type=\"button\" class=\"mass-song-plan-card__btn mass-song-change-btn\" data-change-slot=\"" +
-          escapeHtml(slotKey) + "\">Change</button>"
-      );
-    }
-
     function massSongClearButtonHtml(slotKey) {
       return (
-        "<button type=\"button\" class=\"mass-song-plan-card__btn mass-song-plan-card__btn--clear mass-song-clear\" data-mass-song-clear=\"" +
-          escapeHtml(slotKey) + "\" hidden aria-label=\"Clear selection\">" +
-          "<span class=\"mass-song-plan-card__btn-label\">Clear</span>" + MASS_SONG_PLAN_TRASH_SVG +
-        "</button>"
+        "<button type=\"button\" class=\"mass-song-plan-card__clear-x mass-song-clear\" data-mass-song-clear=\"" +
+          escapeHtml(slotKey) + "\" hidden aria-label=\"Clear song\" title=\"Clear song\">×</button>"
       );
     }
 
-    function toggleMassSongCardExpanded(key, expanded, focusSearch) {
-      const card = document.querySelector(".mass-song-plan-card[data-slot-key=\"" + key + "\"]");
-      if (!card) return;
-      const body = card.querySelector(".mass-song-plan-card__body");
-      const expandBtn = card.querySelector(".mass-song-plan-card__expand");
-      if (body) body.hidden = !expanded;
-      if (expandBtn) expandBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
-      card.classList.toggle("is-expanded", expanded);
-      if (expanded && focusSearch) {
-        const inp = $("mass-song-q-" + key);
-        if (inp) {
-          window.requestAnimationFrame(() => inp.focus());
-        }
+    function massSongTitleWrapHtml(slotKey) {
+      return (
+        "<div class=\"mass-song-plan-card__title-wrap\">" +
+          "<span class=\"mass-song-plan-card__title-picked\">" +
+            "<strong class=\"mass-song-plan-card__title is-empty\" id=\"mass-song-picked-" + escapeHtml(slotKey) + "\">Choose a song</strong>" +
+            massSongClearButtonHtml(slotKey) +
+          "</span>" +
+        "</div>"
+      );
+    }
+
+    function updateMassSongAddButton() {
+      const addBtn = $("mass-song-add-custom");
+      if (addBtn) addBtn.hidden = lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS;
+    }
+
+    function massSongSlotPartHtml(slot) {
+      if (slot.custom) {
+        return (
+          "<input type=\"text\" class=\"mass-song-plan-card__part-input\" data-custom-label=\"" + escapeHtml(slot.key) + "\" " +
+            "value=\"" + escapeHtml(slot.label || "") + "\" maxlength=\"80\" " +
+            "placeholder=\"Section name\" aria-label=\"Section name\" />"
+        );
       }
+      return "<span class=\"mass-song-plan-card__part\">" + escapeHtml(massSongSlotShortLabel(slot.key, slot.label)) + "</span>";
     }
 
-    function setAllMassSongCardsExpanded(expanded) {
-      lyricSongSlots.forEach((slot) => toggleMassSongCardExpanded(slot.key, expanded, false));
-      const btn = $("btn-song-plan-expand-all");
-      if (btn) btn.textContent = expanded ? "Collapse all" : "Expand all";
+    function massSongDeleteSectionButtonHtml(slot) {
+      const name = (slot.label || "").trim() || "section";
+      return (
+        "<button type=\"button\" class=\"mass-song-plan-card__btn mass-song-plan-card__btn--delete mass-song-delete-section\" " +
+          "data-mass-song-delete=\"" + escapeHtml(slot.key) + "\" aria-label=\"Delete " + escapeHtml(name) + " section\" " +
+          "title=\"Delete section\">" + MASS_SONG_PLAN_TRASH_SVG + "</button>"
+      );
     }
-
-    let massSongPlanExpandAll = false;
 
     const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
 
@@ -11094,7 +12517,7 @@ Lord, hear our prayer</textarea>
       let slideHtml = "";
       if (layout === "dual") {
         const groups = pairChunksForDualPreview(enabledChunkItems(allChunks, slidePlan));
-        let titleAssigned = false;
+      let titleAssigned = false;
         slideHtml = groups.map((group, pos) => {
           const showTitle = !titleAssigned;
           if (showTitle) titleAssigned = true;
@@ -11107,18 +12530,18 @@ Lord, hear our prayer</textarea>
       } else {
         let titleAssigned = false;
         slideHtml = slidePlan.order.map((chunkIdx, pos) => {
-          const off = isChunkDisabled(slidePlan, chunkIdx);
-          const showTitle = !titleAssigned && !off;
-          if (showTitle) titleAssigned = true;
-          return buildHymnSlideHtml(allChunks[chunkIdx] || "", meta, pos, {
-            showTitle: showTitle,
-            disabled: off,
-            chunkIdx: chunkIdx,
-            section: section,
-            slideIndex: pos,
-            blockKind: inferHymnChunkBlockKind(allChunks[chunkIdx] || ""),
-          });
-        }).join("");
+        const off = isChunkDisabled(slidePlan, chunkIdx);
+        const showTitle = !titleAssigned && !off;
+        if (showTitle) titleAssigned = true;
+        return buildHymnSlideHtml(allChunks[chunkIdx] || "", meta, pos, {
+          showTitle: showTitle,
+          disabled: off,
+          chunkIdx: chunkIdx,
+          section: section,
+          slideIndex: pos,
+          blockKind: inferHymnChunkBlockKind(allChunks[chunkIdx] || ""),
+        });
+      }).join("");
       }
       const enabled = countEnabledSlides(slidePlan, allChunks.length);
       const previewCount = layout === "dual" ? countDualPreviewSlides(slidePlan, allChunks.length) : enabled;
@@ -11184,9 +12607,9 @@ Lord, hear our prayer</textarea>
               li.classList.toggle("is-active", activeChunks.indexOf(chunkIdx) >= 0);
             });
           } else {
-            planEl.querySelectorAll(".song-slide-plan__item").forEach((li, i) => {
-              li.classList.toggle("is-active", i === best);
-            });
+          planEl.querySelectorAll(".song-slide-plan__item").forEach((li, i) => {
+            li.classList.toggle("is-active", i === best);
+          });
           }
         }
       };
@@ -11317,7 +12740,8 @@ Lord, hear our prayer</textarea>
         recessional: "Recessional",
         meditation: "Meditation",
       };
-      return map[key] || label;
+      const custom = (label || "").trim();
+      return map[key] || custom || "section";
     }
 
     function renderMassSongPlan() {
@@ -11325,32 +12749,26 @@ Lord, hear our prayer</textarea>
       if (!plan) return;
       rebuildMassPlanSongPool();
       plan.innerHTML = lyricSongSlots.map((slot, index) => (
-        "<article class=\"mass-song-plan-card mass-song-slot\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
-          "<div class=\"mass-song-plan-card__bar\">" +
+        "<article class=\"mass-song-plan-card mass-song-slot" + (slot.custom ? " mass-song-slot--custom" : "") + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
+          "<div class=\"mass-song-plan-card__row\">" +
             "<span class=\"mass-song-plan-card__drag\" aria-hidden=\"true\">" + MASS_SONG_PLAN_DRAG_SVG + "</span>" +
             "<span class=\"mass-song-plan-card__num\" aria-hidden=\"true\">" + (index + 1) + "</span>" +
-            "<div class=\"mass-song-plan-card__main\">" +
-              "<div class=\"mass-song-plan-card__heading\">" +
-                "<span class=\"mass-song-plan-card__part\">" + escapeHtml(massSongSlotShortLabel(slot.key, slot.label)) + "</span>" +
+            "<div class=\"mass-song-plan-card__core\">" +
+              "<div class=\"mass-song-plan-card__top\">" +
+                massSongSlotPartHtml(slot) +
+                massSongTitleWrapHtml(slot.key) +
                 "<span class=\"mass-song-plan-card__badge\" id=\"mass-song-badge-" + slot.key + "\" hidden>Selected</span>" +
-              "</div>" +
-              "<strong class=\"mass-song-plan-card__title is-empty\" id=\"mass-song-picked-" + slot.key + "\">Choose a song</strong>" +
-              "<span class=\"mass-song-plan-card__meta\" id=\"mass-song-status-" + slot.key + "\"></span>" +
-            "</div>" +
-            "<div class=\"mass-song-plan-card__actions\">" +
+                "<span class=\"mass-song-plan-card__meta\" id=\"mass-song-status-" + slot.key + "\"></span>" +
+                "<div class=\"mass-song-plan-card__actions\">" +
               massSongPreviewButtonHtml(slot.key) +
-              massSongChangeButtonHtml(slot.key) +
-              massSongClearButtonHtml(slot.key) +
-              "<button type=\"button\" class=\"mass-song-plan-card__expand\" data-expand-slot=\"" + escapeHtml(slot.key) + "\" aria-expanded=\"false\" aria-label=\"Expand " + escapeHtml(slot.label) + "\">" +
-                MASS_SONG_PLAN_CHEVRON_SVG +
-              "</button>" +
+                  (slot.custom ? massSongDeleteSectionButtonHtml(slot) : "") +
             "</div>" +
           "</div>" +
-          "<div class=\"mass-song-plan-card__body\" hidden>" +
-            "<div class=\"mass-song-plan-row__search mass-song-pick\">" +
-              "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" autocomplete=\"off\" placeholder=\"Search library…\" aria-label=\"Search " + escapeHtml(slot.label) + "\" />" +
-              "<div class=\"mass-song-alert-host\" id=\"mass-song-alert-" + slot.key + "\"></div>" +
-              "<div class=\"vb-dropdown-panel mass-song-results\" id=\"mass-song-res-" + slot.key + "\" role=\"listbox\" hidden></div>" +
+              "<div class=\"mass-song-plan-row__search mass-song-pick\">" +
+                "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" autocomplete=\"off\" placeholder=\"Search " + escapeHtml(massSongSlotShortLabel(slot.key, slot.label).toLowerCase()) + "…\" aria-label=\"Search " + escapeHtml((slot.label || "").trim() || "section") + "\" />" +
+                "<div class=\"mass-song-alert-host\" id=\"mass-song-alert-" + slot.key + "\"></div>" +
+                "<div class=\"vb-dropdown-panel mass-song-results\" id=\"mass-song-res-" + slot.key + "\" role=\"listbox\" hidden></div>" +
+              "</div>" +
             "</div>" +
           "</div>" +
         "</article>"
@@ -11358,27 +12776,311 @@ Lord, hear our prayer</textarea>
       lyricSongSlots.forEach((slot) => {
         updateMassSlotChip(slot.key);
         updateMassSongPreviewButton(slot.key);
-        if (massSongPlanExpandAll) toggleMassSongCardExpanded(slot.key, true, false);
       });
+      updateMassSongAddButton();
       renderMassSummarySidebar();
       renderFlowSongCount();
     }
+    function previewForMassSummary() {
+      const date = $("mass-date") && $("mass-date").value;
+      if (!date) return null;
+      if (flowPreviewData && flowPreviewData.ok && flowPreviewData.__previewDate === date) {
+        return flowPreviewData;
+      }
+      if (window.__homePreview && window.__homePreview.ok && date === upcomingSundayISO()) {
+        return window.__homePreview;
+      }
+      return null;
+    }
+
+    const GOSPEL_MOOD_TIPS = {
+      triumphant: "Joyful and triumphant — resurrection light and hope.",
+      solemn: "Solemn and reflective — repentance and preparation.",
+      mercy: "Gentle and compassionate — mercy and healing warmth.",
+      journey: "Forward-moving — call to follow Christ and serve.",
+      reverent: "Reverent and worshipful — sacred Sunday storytelling.",
+    };
+    const MOOD_PICK_SECTIONS = [
+      { key: "entrance", label: "Entrance", slotKey: "entrance", count: 1 },
+      { key: "offertory", label: "Offertory", slotKey: "offertory", count: 1 },
+      { key: "communion", label: "Communion", slotKeys: ["communion_1", "communion_2"], count: 2 },
+      { key: "recessional", label: "Recessional", slotKey: "recessional", count: 1 },
+    ];
+    let massMoodPickSelections = [];
+    let massMoodPickExcludeIds = new Set();
+    const GOSPEL_MOOD_RELATED = {
+      triumphant: ["reverent"],
+      solemn: ["reverent", "mercy"],
+      mercy: ["solemn", "reverent"],
+      journey: ["reverent", "mercy"],
+      reverent: ["solemn", "journey"],
+    };
+
+    function inferGospelMoodKey(preview) {
+      if (!preview || !preview.ok) return null;
+      const seasonKey = String(preview.season || "").toLowerCase().replace(/\s+/g, "_");
+      const blob = [
+        preview.title,
+        preview.gospel_reference,
+        (preview.gospel_text || "").slice(0, 600),
+        (preview.gospel_quote || "").slice(0, 400),
+        seasonKey.replace(/_/g, " "),
+      ].join(" ").toLowerCase();
+
+      if (/\b(resurrection|risen|empty tomb|easter|alleluia|ascension|pentecost)\b/.test(blob) || ["easter", "pentecost"].includes(seasonKey)) {
+        return "triumphant";
+      }
+      if (["lent", "advent"].includes(seasonKey) || /\b(repent|fast|desert|temptation|passion|cross|suffer)\b/.test(blob)) {
+        return "solemn";
+      }
+      if (/\b(heal|blind|lame|paralytic|mercy|forgiv|compassion|bless|comfort|weep|touch)\b/.test(blob)) {
+        return "mercy";
+      }
+      if (/\b(disciples|apostles|journey|road|follow|sent |mission|boat|sea|walk|teach)\b/.test(blob)) {
+        return "journey";
+      }
+      return "reverent";
+    }
+
+    function inferGospelMoodTip(preview) {
+      const key = inferGospelMoodKey(preview);
+      return key ? GOSPEL_MOOD_TIPS[key] : null;
+    }
+
+    function songGospelMoods(row) {
+      if (!row) return ["reverent"];
+      if (Array.isArray(row.gospel_moods) && row.gospel_moods.length) return row.gospel_moods;
+      const blob = [row.title, row.author, row.id].join(" ").toLowerCase();
+      const moods = [];
+      if (/\b(alleluia|risen|glory|joyful|crown|easter|hallelujah|triumph)\b/.test(blob)) moods.push("triumphant");
+      if (/\b(repent|passion|cross|forty|lent|advent|remember|save)\b/.test(blob)) moods.push("solemn");
+      if (/\b(mercy|heal|comfort|welcome|afraid|forgiv|compassion|bread)\b/.test(blob)) moods.push("mercy");
+      if (/\b(here i am|follow|send|city of god|go tell|mission|journey)\b/.test(blob)) moods.push("journey");
+      if (!moods.length) moods.push("reverent");
+      return moods;
+    }
+
+    function moodMatchScore(songMoods, moodKey) {
+      if (songMoods.includes(moodKey)) return 3;
+      const related = GOSPEL_MOOD_RELATED[moodKey] || [];
+      if (related.some((m) => songMoods.includes(m))) return 2;
+      return 1;
+    }
+
+    function pickMoodSongsForSection(section, moodKey, count, excludeIds) {
+      const rows = (songCatalogData && songCatalogData[section]) || [];
+      if (!rows.length) return [];
+      const exclude = excludeIds || new Set();
+      const scored = rows.map((row, idx) => {
+        const moods = songGospelMoods(row);
+        const match = moodMatchScore(moods, moodKey);
+        const lyrics = row.has_lyrics ? 1 : 0;
+        const lang = songMatchesPlanLangFilter(row, massSongPlanLanguage) ? 1 : 0;
+        return { row, score: match * 100 + lyrics * 10 + lang * 5 - idx * 0.001 };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      const picked = [];
+      for (const item of scored) {
+        const id = String(item.row.id || "");
+        if (!id || exclude.has(id)) continue;
+        picked.push(item.row);
+        exclude.add(id);
+        if (picked.length >= count) break;
+      }
+      return picked;
+    }
+
+    function buildMassMoodPickSelections(moodKey, rotateExclude) {
+      const exclude = new Set(rotateExclude || []);
+      const selections = [];
+      MOOD_PICK_SECTIONS.forEach((sec) => {
+        const songs = pickMoodSongsForSection(sec.key, moodKey, sec.count || 1, exclude);
+        if (sec.slotKeys) {
+          sec.slotKeys.forEach((slotKey, i) => {
+            const row = songs[i];
+            if (!row) return;
+            selections.push({
+              section: sec.key,
+              slotKey,
+              id: row.id,
+              title: row.title || "",
+              label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
+            });
+          });
+          return;
+        }
+        const row = songs[0];
+        if (!row) return;
+        selections.push({
+          section: sec.key,
+          slotKey: sec.slotKey,
+          id: row.id,
+          title: row.title || "",
+          label: sec.label,
+        });
+      });
+      return selections;
+    }
+
+    function renderMassMoodPickList(selections) {
+      const listEl = $("mass-summary-mood-picks");
+      if (!listEl) return;
+      if (!selections.length) {
+        listEl.innerHTML = "";
+        return;
+      }
+      listEl.innerHTML = selections.map((pick) => (
+        "<li class=\"mass-summary-mood-pick\">" +
+          "<span class=\"mass-summary-mood-pick__cat\">" + escapeHtml(pick.label) + "</span>" +
+          "<span class=\"mass-summary-mood-pick__song\">" + escapeHtml(pick.title || "—") + "</span>" +
+        "</li>"
+      )).join("");
+    }
+
+    function computeMassMoodPickRefresh() {
+      const preview = previewForMassSummary();
+      const moodKey = preview ? inferGospelMoodKey(preview) : null;
+      if (!moodKey || !songCatalogData) return null;
+      massMoodPickSelections.forEach((p) => massMoodPickExcludeIds.add(String(p.id || "")));
+      let next = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) => Object.assign({ moodKey }, p));
+      if (!next.length) {
+        massMoodPickExcludeIds = new Set();
+        next = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) => Object.assign({ moodKey }, p));
+      }
+      massMoodPickSelections = next;
+      return massMoodPickSelections;
+    }
+
+    async function refreshMassMoodPicks() {
+      const wrapEl = $("mass-summary-recs");
+      const listEl = $("mass-summary-mood-picks");
+      const refreshBtn = $("mass-summary-recs-refresh");
+      const addBtn = $("mass-summary-recs-add");
+      if (!listEl) return;
+      const preview = previewForMassSummary();
+      const moodKey = preview ? inferGospelMoodKey(preview) : null;
+      if (!moodKey || !songCatalogData) return;
+      await runEmilRefresh({
+        container: wrapEl,
+        trigger: refreshBtn,
+        contentEl: listEl,
+        skeletonHtml: massMoodPickSkeletonHtml(massMoodPickSelections.length || 5),
+        task: async () => computeMassMoodPickRefresh(),
+        reveal: (selections) => {
+          if (!selections || !selections.length) {
+            listEl.innerHTML = "";
+            if (addBtn) addBtn.disabled = true;
+            return;
+          }
+          renderMassMoodPickList(selections);
+          if (addBtn) addBtn.disabled = false;
+        },
+        staggerSelector: ".mass-summary-mood-pick",
+      });
+    }
+
+    function updateMassSummaryMoodPicks() {
+      const wrapEl = $("mass-summary-recs");
+      const listEl = $("mass-summary-mood-picks");
+      const addBtn = $("mass-summary-recs-add");
+      if (!listEl) return;
+      const preview = previewForMassSummary();
+      const moodKey = preview ? inferGospelMoodKey(preview) : null;
+      if (!moodKey || !songCatalogData) {
+        massMoodPickSelections = [];
+        if (wrapEl) wrapEl.hidden = true;
+        listEl.innerHTML = "";
+        if (addBtn) addBtn.disabled = true;
+        return;
+      }
+      if (!massMoodPickSelections.length || (massMoodPickSelections[0] && massMoodPickSelections[0].moodKey !== moodKey)) {
+        massMoodPickExcludeIds = new Set();
+        massMoodPickSelections = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) => Object.assign({ moodKey }, p));
+      }
+      if (!massMoodPickSelections.length) {
+        if (wrapEl) wrapEl.hidden = true;
+        listEl.innerHTML = "";
+        if (addBtn) addBtn.disabled = true;
+        return;
+      }
+      if (wrapEl) wrapEl.hidden = false;
+      renderMassMoodPickList(massMoodPickSelections);
+      if (addBtn) addBtn.disabled = false;
+    }
+
+    function applyMassMoodPicksToSongPlan() {
+      if (!massMoodPickSelections.length) return;
+      massMoodPickSelections.forEach((pick) => {
+        if (!pick.slotKey || !pick.id) return;
+        selectedLyricsSongs[pick.slotKey] = pick.id;
+        updateMassSlotChip(pick.slotKey);
+        updateMassSongPreviewButton(pick.slotKey);
+      });
+      renderFlowSongCount();
+      notify("Suggested songs added to your plan.", "ok");
+    }
+
+    function formatGospelMoodsLabel(moods) {
+      if (!Array.isArray(moods) || !moods.length) return "";
+      const labels = { triumphant: "Triumphant", solemn: "Solemn", mercy: "Mercy", journey: "Journey", reverent: "Reverent" };
+      return moods.map((m) => labels[m] || m).join(", ");
+    }
+
+    function readSongMetadataMoodChecks() {
+      return Array.from(document.querySelectorAll("[data-gospel-mood-opt]:checked")).map((el) => el.value);
+    }
+
+    function setSongMetadataMoodChecks(moods) {
+      const picked = new Set(Array.isArray(moods) ? moods : []);
+      document.querySelectorAll("[data-gospel-mood-opt]").forEach((el) => {
+        el.checked = picked.has(el.value);
+      });
+    }
+
+    function updateMassSummaryGospelTip() {
+      const tipEl = $("mass-summary-gospel-tip");
+      const textEl = $("mass-summary-gospel-tip-text");
+      if (!tipEl || !textEl) return;
+      const preview = previewForMassSummary();
+      const moodKey = preview ? inferGospelMoodKey(preview) : null;
+      const mood = moodKey ? GOSPEL_MOOD_TIPS[moodKey] : null;
+      const ref = preview && preview.gospel_reference ? preview.gospel_reference.trim() : "";
+      if (mood) {
+        textEl.textContent = mood;
+        tipEl.title = ref ? ref + " — " + mood : mood;
+      } else {
+        textEl.textContent = "Load readings to see this Sunday’s Gospel mood.";
+        tipEl.title = "";
+      }
+      if (moodKey && massMoodPickSelections.length && massMoodPickSelections[0].moodKey !== moodKey) {
+        massMoodPickSelections = [];
+        massMoodPickExcludeIds = new Set();
+      }
+      updateMassSummaryMoodPicks();
+    }
+
     function renderMassSummarySidebar() {
       const dateInp = $("mass-date");
       const dateLabel = $("mass-summary-date-label");
       const seasonLabel = $("mass-summary-season-label");
-      const langLabel = $("mass-summary-lang-label");
+      const langSel = $("mass-song-plan-lang");
       const totalEl = $("mass-summary-song-total");
       const progress = $("mass-summary-progress");
       const progressFill = $("mass-summary-progress-fill");
-      const addBtn = $("mass-song-add-custom");
+      const summaryPreview = previewForMassSummary();
       if (dateLabel && dateInp) dateLabel.textContent = formatMassSummaryDate(dateInp.value);
       if (seasonLabel) {
-        const season = flowPreviewData ? formatLiturgicalSeasonLabel(flowPreviewData.season || "") : "Ordinary Time";
-        const year = flowPreviewData ? formatLectionaryYearLabel(flowPreviewData.lectionary_cycle || "") : "";
+        const season = summaryPreview ? formatLiturgicalSeasonLabel(summaryPreview.season || "") : "Ordinary Time";
+        const year = summaryPreview ? formatLectionaryYearLabel(summaryPreview.lectionary_cycle || "") : "";
         seasonLabel.textContent = year ? season + ", " + year : season;
       }
-      if (langLabel) langLabel.textContent = massSongLangLabel(massSongPlanLanguage);
+      updateMassSummaryGospelTip();
+      if (langSel && langSel.value !== massSongPlanLanguage) {
+        if ([...langSel.options].some((o) => o.value === massSongPlanLanguage)) {
+          langSel.value = massSongPlanLanguage;
+          refreshVerbumSelect(langSel);
+        }
+      }
       const total = lyricSongSlots.length;
       if (totalEl) totalEl.textContent = String(total);
       const n = selectedLyricsSongCount();
@@ -11388,7 +13090,7 @@ Lord, hear our prayer</textarea>
         progress.setAttribute("aria-valuetext", n + " of " + total + " songs selected");
       }
       if (progressFill) progressFill.style.width = total ? ((n / total) * 100) + "%" : "0%";
-      if (addBtn) addBtn.hidden = lyricSongSlots.some((s) => s.key === "meditation");
+      updateMassSongAddButton();
     }
 
     function syncFlowDockVisibility(activeTab) {
@@ -11419,9 +13121,43 @@ Lord, hear our prayer</textarea>
       }
       updateMassSlotChip(key);
       updateMassSongPreviewButton(key);
-      toggleMassSongCardExpanded(key, false, false);
       renderFlowSongCount();
     });
+
+    function syncCustomSlotLabel(key, rawValue, finalize) {
+      const slot = lyricSongSlots.find((s) => s.key === key);
+      if (!slot || !slot.custom) return;
+      if (finalize) {
+        slot.label = (rawValue || "").trim();
+      } else {
+        slot.label = rawValue || "";
+      }
+      const display = ((finalize ? slot.label : rawValue) || "").trim() || "section";
+      const searchInp = $("mass-song-q-" + key);
+      if (searchInp) {
+        searchInp.placeholder = "Search " + display.toLowerCase() + "…";
+        searchInp.setAttribute("aria-label", "Search " + display);
+      }
+      const delBtn = document.querySelector("[data-mass-song-delete=\"" + key + "\"]");
+      if (delBtn) {
+        delBtn.setAttribute("aria-label", "Delete " + display + " section");
+        delBtn.title = "Delete section";
+      }
+    }
+
+    $("mass-song-plan").addEventListener("input", (e) => {
+      const labelInp = e.target.closest("[data-custom-label]");
+      if (!labelInp) return;
+      syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, false);
+    });
+
+    $("mass-song-plan").addEventListener("blur", (e) => {
+      const labelInp = e.target.closest("[data-custom-label]");
+      if (!labelInp) return;
+      syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, true);
+      const slot = lyricSongSlots.find((s) => s.key === labelInp.dataset.customLabel);
+      if (slot) labelInp.value = slot.label;
+    }, true);
 
     $("mass-song-plan").addEventListener("click", (e) => {
       const prev = e.target.closest(".mass-song-preview-btn");
@@ -11430,19 +13166,16 @@ Lord, hear our prayer</textarea>
         if (slotKey) openMassSongPreview(slotKey);
         return;
       }
-      const changeBtn = e.target.closest(".mass-song-change-btn");
-      if (changeBtn) {
-        const key = changeBtn.dataset.changeSlot;
-        if (key) toggleMassSongCardExpanded(key, true, true);
-        return;
-      }
-      const expandBtn = e.target.closest(".mass-song-plan-card__expand");
-      if (expandBtn) {
-        const key = expandBtn.dataset.expandSlot;
-        if (!key) return;
-        const card = expandBtn.closest(".mass-song-plan-card");
-        const expanded = !(card && card.classList.contains("is-expanded"));
-        toggleMassSongCardExpanded(key, expanded, expanded);
+      const del = e.target.closest("[data-mass-song-delete]");
+      if (del) {
+        const key = del.dataset.massSongDelete;
+        const slot = lyricSongSlots.find((s) => s.key === key);
+        if (!slot || !slot.custom) return;
+        const name = (slot.label || "").trim() || "this section";
+        if (!window.confirm("Delete \"" + name + "\"? Any selected song for this section will be removed.")) return;
+        lyricSongSlots = lyricSongSlots.filter((s) => s.key !== key);
+        delete selectedLyricsSongs[key];
+        renderMassSongPlan();
         return;
       }
       const clr = e.target.closest("[data-mass-song-clear]");
@@ -11460,11 +13193,6 @@ Lord, hear our prayer</textarea>
       updateMassSlotChip(key);
       updateMassSongPreviewButton(key);
       renderFlowSongCount();
-    });
-
-    $("btn-song-plan-expand-all") && $("btn-song-plan-expand-all").addEventListener("click", () => {
-      massSongPlanExpandAll = !massSongPlanExpandAll;
-      setAllMassSongCardsExpanded(massSongPlanExpandAll);
     });
 
     $("mass-song-plan").addEventListener("input", (e) => {
@@ -11509,6 +13237,8 @@ Lord, hear our prayer</textarea>
       } catch (_e) {
         /* ignore */
       }
+      massMoodPickSelections = [];
+      massMoodPickExcludeIds = new Set();
       renderMassSummarySidebar();
       lyricSongSlots.forEach((slot) => {
         const box = $("mass-song-res-" + slot.key);
@@ -11519,12 +13249,18 @@ Lord, hear our prayer</textarea>
     });
 
     $("mass-song-add-custom") && $("mass-song-add-custom").addEventListener("click", () => {
-      if (lyricSongSlots.some((s) => s.key === "meditation")) return;
-      lyricSongSlots.push({ key: "meditation", label: "Meditation song", section: "meditation" });
-      if (selectedLyricsSongs.meditation == null) selectedLyricsSongs.meditation = "";
+      if (lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS) return;
+      massCustomSlotSeq += 1;
+      const key = "custom_" + massCustomSlotSeq;
+      lyricSongSlots.push({ key, label: "", section: "meditation", custom: true });
+      selectedLyricsSongs[key] = "";
       renderMassSongPlan();
-      toggleMassSongCardExpanded("meditation", true, true);
+      const labelInp = document.querySelector("[data-custom-label=\"" + key + "\"]");
+      if (labelInp) window.requestAnimationFrame(() => labelInp.focus());
     });
+
+    $("mass-summary-recs-refresh") && $("mass-summary-recs-refresh").addEventListener("click", () => refreshMassMoodPicks());
+    $("mass-summary-recs-add") && $("mass-summary-recs-add").addEventListener("click", () => applyMassMoodPicksToSongPlan());
 
     $("btn-load-flow-inline") && $("btn-load-flow-inline").addEventListener("click", () => loadFlowData(false));
     $("btn-generate-flow-inline") && $("btn-generate-flow-inline").addEventListener("click", () => {
@@ -12214,52 +13950,73 @@ Lord, hear our prayer</textarea>
       syncFlowFoodSponsorsHidden();
     }
 
+    function splitGospelSlideSentences(text) {
+      const raw = String(text || "").replace(/\s+/g, " ").trim();
+      if (!raw) return [];
+      return raw.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+    }
+
+    function formatSlidePickLabel(text, index, total) {
+      const label = String(text || "").replace(/\s+/g, " ").trim();
+      if (!label) return "Option " + (index + 1);
+      if (total <= 1) return label;
+      return (index + 1) + ". " + label;
+    }
+
+    function setSlidePickPlaceholder(sel, message) {
+      sel.innerHTML = "";
+        const o = document.createElement("option");
+      o.value = "";
+      o.textContent = message;
+      o.disabled = true;
+      o.selected = true;
+        sel.appendChild(o);
+      sel.disabled = true;
+      refreshVerbumSelect(sel);
+    }
+
     function populateGospelSentenceSelect(data) {
       const sel = $("flow-gospel-sentence");
-      if (!sel) {
-        return;
-      }
+      if (!sel) return;
       sel.innerHTML = "";
-      const sents = Array.isArray(data.sentences) ? data.sentences : [];
+      let sents = Array.isArray(data.sentences) ? data.sentences.filter(Boolean) : [];
       if (!sents.length) {
-        const o = document.createElement("option");
-        o.value = "0";
-        o.textContent = "Sentence 1 (default)";
-        sel.appendChild(o);
+        const quote = (data.gospel_slide_quote || data.gospel_quote || data.gospel_text || "").trim();
+        sents = splitGospelSlideSentences(quote);
+      }
+      if (!sents.length) {
+        setSlidePickPlaceholder(sel, "No sentences found — use custom line below");
         return;
       }
+      sel.disabled = false;
       sents.forEach((s, i) => {
         const o = document.createElement("option");
         o.value = String(i);
-        const preview = (s || "").replace(/\s+/g, " ").trim();
-        const short = preview.length > 100 ? preview.slice(0, 97) + "…" : preview;
-        o.textContent = "Sentence " + (i + 1) + ": " + short;
+        o.textContent = formatSlidePickLabel(s, i, sents.length);
         sel.appendChild(o);
       });
+      refreshVerbumSelect(sel);
     }
 
     function populatePsalmRefrainSelect(data) {
       const sel = $("flow-psalm-refrain");
-      if (!sel) {
-        return;
-      }
+      if (!sel) return;
       sel.innerHTML = "";
-      const refrains = Array.isArray(data.psalm_refrains) ? data.psalm_refrains : [];
+      let refrains = Array.isArray(data.psalm_refrains) ? data.psalm_refrains.filter(Boolean) : [];
       if (!refrains.length) {
-        const o = document.createElement("option");
-        o.value = "0";
-        o.textContent = "Refrain 1 (default)";
-        sel.appendChild(o);
+        setSlidePickPlaceholder(sel, "No refrain found — use custom refrain below");
         return;
       }
+      sel.disabled = false;
       refrains.forEach((s, i) => {
         const o = document.createElement("option");
         o.value = String(i);
-        const preview = ("R. " + (s || "")).replace(/\s+/g, " ").trim();
-        const short = preview.length > 100 ? preview.slice(0, 97) + "…" : preview;
-        o.textContent = "Refrain " + (i + 1) + ": " + short;
+        const line = String(s || "").replace(/\s+/g, " ").trim();
+        const withResponse = /^R\.?\s/i.test(line) ? line : "R. " + line;
+        o.textContent = formatSlidePickLabel(withResponse, i, refrains.length);
         sel.appendChild(o);
       });
+      refreshVerbumSelect(sel);
     }
 
     function formatLiturgicalSeasonLabel(seasonStr) {
@@ -12348,6 +14105,169 @@ Lord, hear our prayer</textarea>
       return d;
     }
 
+    function startOfTodayLocal() {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    function eventStartDay(ev) {
+      const d = parseLocalDateISO(ev && ev.date);
+      if (!d) return null;
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    function eventEndDay(ev) {
+      const iso = ((ev && (ev.dateEnd || ev.date)) || "").trim();
+      const d = parseLocalDateISO(iso);
+      if (!d) return null;
+      d.setHours(23, 59, 59, 999);
+      return d;
+    }
+
+    function isEventExpired(ev) {
+      const end = eventEndDay(ev);
+      return !end || end.getTime() < Date.now();
+    }
+
+    function isEventOngoing(ev) {
+      if (isEventExpired(ev)) return false;
+      const start = eventStartDay(ev);
+      const today = startOfTodayLocal();
+      if (!start) return false;
+      return today.getTime() >= start.getTime();
+    }
+
+    function isEventUpcoming(ev) {
+      if (isEventExpired(ev)) return false;
+      const start = eventStartDay(ev);
+      const today = startOfTodayLocal();
+      if (!start) return false;
+      return start.getTime() > today.getTime();
+    }
+
+    function purgeExpiredUserEvents() {
+      const events = getUserEvents();
+      const active = events.filter((e) => !isEventExpired(e));
+      if (active.length !== events.length) {
+        saveUserEvents(active);
+      }
+      return active;
+    }
+
+    function getActiveUserEvents() {
+      purgeExpiredUserEvents();
+      return getUserEvents().filter((e) => !isEventExpired(e));
+    }
+
+    function formatEventStatusCountdown(ev, kind) {
+      if (kind === "ongoing") {
+        const end = eventEndDay(ev);
+        const endDay = parseLocalDateISO(ev.dateEnd || ev.date);
+        const today = startOfTodayLocal();
+        if (endDay && endDay.getTime() === today.getTime()) return "Ends today";
+        return "Ends in " + formatCountdown(end);
+      }
+      const t = parseEventDateTime(ev);
+      return "Starts in " + formatCountdown(t);
+    }
+
+    function renderHomeEventItemMarkup(ev, kind) {
+      return (
+        "<li class=\"home-events-item home-events-item--" + kind + "\">" +
+        "<p class=\"home-events-item__name\">" + escapeHtml(ev.name) + "</p>" +
+        "<p class=\"home-events-item__meta\">" + escapeHtml(formatEventMeta(ev)) + "</p>" +
+        "<p class=\"home-events-item__countdown\">" + escapeHtml(formatEventStatusCountdown(ev, kind)) + "</p>" +
+        "</li>"
+      );
+    }
+
+    function renderLiturgicalEventItemMarkup(ev, kind) {
+      return (
+        "<li class=\"liturgical-panel-event liturgical-panel-event--" + kind + "\">" +
+        "<span class=\"liturgical-panel-event__name\">" + escapeHtml(ev.name) + "</span>" +
+        "<span class=\"liturgical-panel-event__when\">" + escapeHtml(formatEventMeta(ev)) + "</span>" +
+        "<span class=\"liturgical-panel-event__cd\">" + escapeHtml(formatEventStatusCountdown(ev, kind)) + "</span>" +
+        "</li>"
+      );
+    }
+
+    const EVENTS_MONTH_FILTER_THRESHOLD = 5;
+    let liturgicalSundayCelebrationsCache = {};
+
+    function getNextThreeSundayISOs() {
+      const sun = getNextSundayCountdownTarget();
+      if (!sun.target) return [];
+      const isos = [];
+      let d = new Date(sun.target.getTime());
+      for (let i = 0; i < 3; i++) {
+        isos.push(formatDateInput(d));
+        d.setDate(d.getDate() + 7);
+      }
+      return isos;
+    }
+
+    function eventsForDisplay(rawEvents) {
+      if (!rawEvents || !rawEvents.length) return [];
+      if (rawEvents.length <= EVENTS_MONTH_FILTER_THRESHOLD) return rawEvents;
+      const monthStart = startOfTodayLocal();
+      monthStart.setDate(1);
+      const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+      monthEnd.setHours(23, 59, 59, 999);
+      return rawEvents.filter((ev) => {
+        const start = eventStartDay(ev);
+        const end = eventEndDay(ev);
+        if (!start || !end) return false;
+        return start.getTime() <= monthEnd.getTime() && end.getTime() >= monthStart.getTime();
+      });
+    }
+
+    async function updateLiturgicalSundayCelebrations() {
+      const listEl = $("liturgical-sunday-celebrations");
+      if (!listEl) return;
+      const isos = getNextThreeSundayISOs();
+      if (!isos.length) {
+        listEl.innerHTML = "";
+        return;
+      }
+      listEl.innerHTML = isos.map((iso) => (
+        "<li class=\"liturgical-sunday-celebration\">" +
+          "<span class=\"liturgical-sunday-celebration__date\">" + escapeHtml(formatNiceDate(iso)) + "</span>" +
+          "<span class=\"liturgical-sunday-celebration__title\" data-celebration-iso=\"" + escapeHtml(iso) + "\">Loading…</span>" +
+        "</li>"
+      )).join("");
+      await Promise.all(isos.map(async (iso) => {
+        if (liturgicalSundayCelebrationsCache[iso]) return;
+        const snap = calendarMonthData && calendarMonthData[iso];
+        if (snap && snap.title) {
+          liturgicalSundayCelebrationsCache[iso] = snap.title;
+          return;
+        }
+        try {
+          const data = await postJSON("/api/preview", { date: iso });
+          liturgicalSundayCelebrationsCache[iso] = (data.title || "").trim() || "Sunday Mass";
+        } catch (_e) {
+          liturgicalSundayCelebrationsCache[iso] = "Sunday Mass";
+        }
+      }));
+      isos.forEach((iso) => {
+        const titleEl = listEl.querySelector("[data-celebration-iso=\"" + iso + "\"]");
+        if (titleEl) titleEl.textContent = liturgicalSundayCelebrationsCache[iso] || "Sunday Mass";
+      });
+    }
+
+    function renderEventsSectionHtml(title, items, kind, itemRenderer) {
+      if (!items.length) return "";
+      const listHtml = items.map((ev) => itemRenderer(ev, kind)).join("");
+      return (
+        "<section class=\"home-events-section home-events-section--" + kind + "\">" +
+        "<h4 class=\"home-events-section__title\">" + escapeHtml(title) + "</h4>" +
+        "<ul class=\"home-events-list\">" + listHtml + "</ul>" +
+        "</section>"
+      );
+    }
+
     function migrateLegacyUserEvent() {
       try {
         const raw = localStorage.getItem(USER_EVENTS_KEY);
@@ -12403,42 +14323,38 @@ Lord, hear our prayer</textarea>
     }
 
     function renderHomeEvents() {
-      const listEl = $("home-events-list");
+      const boardEl = $("home-events-board");
       const emptyEl = $("home-events-empty");
-      if (!listEl) return;
-      const events = getUserEvents().filter((e) => {
-        const t = parseEventDateTime(e);
-        return t && t.getTime() >= new Date(new Date().setHours(0, 0, 0, 0)).getTime() - 86400000;
-      });
-      listEl.innerHTML = events.map((ev) => {
-        const t = parseEventDateTime(ev);
-        return (
-          "<li class=\"home-events-item\">" +
-          "<p class=\"home-events-item__name\">" + escapeHtml(ev.name) + "</p>" +
-          "<p class=\"home-events-item__meta\">" + escapeHtml(formatEventMeta(ev)) + "</p>" +
-          "<p class=\"home-events-item__countdown\">" + escapeHtml(formatCountdown(t)) + "</p>" +
-          "</li>"
-        );
-      }).join("");
-      if (emptyEl) emptyEl.hidden = events.length > 0;
+      if (!boardEl) return;
+      const events = eventsForDisplay(getActiveUserEvents());
+      const ongoing = events.filter(isEventOngoing);
+      const upcoming = events.filter(isEventUpcoming);
+      boardEl.innerHTML =
+        renderEventsSectionHtml("Ongoing", ongoing, "ongoing", renderHomeEventItemMarkup) +
+        renderEventsSectionHtml("Upcoming event", upcoming, "upcoming", renderHomeEventItemMarkup);
+      if (emptyEl) emptyEl.hidden = ongoing.length > 0 || upcoming.length > 0;
     }
 
     function renderLiturgicalPanelEvents() {
-      const listEl = $("liturgical-panel-events-list");
-      const emptyEl = $("liturgical-panel-events-empty");
-      if (!listEl) return;
-      const events = getUserEvents();
-      listEl.innerHTML = events.map((ev) => {
-        const t = parseEventDateTime(ev);
-        return (
-          "<li class=\"liturgical-panel-event\">" +
-          "<span class=\"liturgical-panel-event__name\">" + escapeHtml(ev.name) + "</span>" +
-          "<span class=\"liturgical-panel-event__when\">" + escapeHtml(formatEventMeta(ev)) + "</span>" +
-          "<span class=\"liturgical-panel-event__cd\">" + escapeHtml(formatCountdown(t)) + "</span>" +
-          "</li>"
-        );
-      }).join("");
-      if (emptyEl) emptyEl.hidden = events.length > 0;
+      const ongoingList = $("liturgical-panel-events-ongoing");
+      const upcomingList = $("liturgical-panel-events-upcoming");
+      const ongoingSection = $("liturgical-panel-events-ongoing-section") ||
+        document.querySelector(".liturgical-panel-events-section--ongoing");
+      const upcomingSection = $("liturgical-panel-events-upcoming-section") ||
+        document.querySelector(".liturgical-panel-events-section--upcoming");
+      const eventsWrap = $("liturgical-countdown-item-events") ||
+        document.querySelector(".liturgical-countdown-item--events");
+      if (!ongoingList || !upcomingList) return;
+      const events = eventsForDisplay(getActiveUserEvents());
+      const ongoing = events.filter(isEventOngoing);
+      const upcoming = events.filter(isEventUpcoming);
+      ongoingList.innerHTML = ongoing.map((ev) => renderLiturgicalEventItemMarkup(ev, "ongoing")).join("");
+      upcomingList.innerHTML = upcoming.map((ev) => renderLiturgicalEventItemMarkup(ev, "upcoming")).join("");
+      const hasOngoing = ongoing.length > 0;
+      const hasUpcoming = upcoming.length > 0;
+      if (ongoingSection) ongoingSection.hidden = !hasOngoing;
+      if (upcomingSection) upcomingSection.hidden = !hasUpcoming;
+      if (eventsWrap) eventsWrap.hidden = !hasOngoing && !hasUpcoming;
     }
 
     function updateHomeReadingCard(refId, excerptId, ref, body) {
@@ -12582,7 +14498,9 @@ Lord, hear our prayer</textarea>
       modal.classList.remove("is-open");
       modal.setAttribute("aria-hidden", "true");
       if (!$("home-event-modal") || !$("home-event-modal").classList.contains("is-open")) {
+        if (!$("home-news-expand-modal") || !$("home-news-expand-modal").classList.contains("is-open")) {
         document.body.style.overflow = "";
+        }
       }
     }
 
@@ -12730,7 +14648,9 @@ Lord, hear our prayer</textarea>
       if (sunDaysEl && sun.target) {
         const dayMs = sun.target.getTime() - Date.now();
         const d = Math.max(0, Math.ceil(dayMs / 86400000));
-        sunDaysEl.textContent = d === 0 ? "Today" : d + " day" + (d === 1 ? "" : "s");
+        sunDaysEl.textContent = d === 0 ? "· today" : "· " + d + " day" + (d === 1 ? "" : "s");
+      } else if (sunDaysEl) {
+        sunDaysEl.textContent = "";
       }
       if (sunDateEl) sunDateEl.textContent = formatNiceDate(sun.iso);
 
@@ -12738,6 +14658,7 @@ Lord, hear our prayer</textarea>
       const wydTarget = parseLocalDateISO(WYD_2027_START_ISO);
       if (wydEl) wydEl.textContent = formatCountdown(wydTarget);
 
+      updateLiturgicalSundayCelebrations();
       renderLiturgicalPanelEvents();
       renderHomeEvents();
     }
@@ -12805,10 +14726,6 @@ Lord, hear our prayer</textarea>
           const action = item.getAttribute("data-create");
           if (action === "pptx") {
             showRoute("/mass/builder");
-            setTimeout(() => {
-              const gen = $("btn-generate-flow");
-              if (gen && !gen.disabled) gen.click();
-            }, 450);
           } else if (action === "event") {
             if (typeof openHomeEventModal === "function") openHomeEventModal();
           } else if (action === "poster") {
@@ -13041,6 +14958,7 @@ Lord, hear our prayer</textarea>
         valueEl.textContent = label;
         valueEl.classList.toggle("is-placeholder", isPlaceholder);
       } else if (trigger) trigger.childNodes[0].textContent = label;
+      if (trigger) trigger.disabled = !!select.disabled;
       wrap.querySelectorAll(".vb-dropdown-item[data-value]").forEach((btn) => {
         btn.classList.toggle("is-active", btn.dataset.value === select.value);
         btn.setAttribute("aria-selected", btn.dataset.value === select.value ? "true" : "false");
@@ -13054,7 +14972,9 @@ Lord, hear our prayer</textarea>
       if (!list) return;
       list.innerHTML = "";
       const isPillSelect = select.classList.contains("lyric-block__pill-select");
+      const isSlidePick = select.classList.contains("flow-slide-pick-select");
       Array.from(select.options).forEach((opt) => {
+        if (isSlidePick && (opt.disabled || opt.value === "")) return;
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.type = "button";
@@ -13100,6 +15020,7 @@ Lord, hear our prayer</textarea>
       const wrap = document.createElement("div");
       wrap.className = "vb-select";
       if (select.classList.contains("lyric-block__pill-select")) wrap.classList.add("vb-select--pill");
+      if (select.classList.contains("flow-slide-pick-select")) wrap.classList.add("vb-select--slide-pick");
       if (select.classList.contains("mass-song-plan-lang-select")) wrap.classList.add("vb-select--sm");
       if (select.classList.contains("route-switcher")) wrap.classList.add("vb-select--sm");
       if (select.id === "flow-collection-currency") wrap.classList.add("vb-select--sm");
@@ -13266,7 +15187,7 @@ Lord, hear our prayer</textarea>
       if ($("home-sunday-label")) $("home-sunday-label").textContent = "Sunday " + sun;
       try {
         const data = await postJSON("/api/preview", { date: sun });
-        window.__homePreview = data;
+        window.__homePreview = Object.assign({}, data, { __previewDate: sun });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         applyLiturgicalSeasonTheme(data.season || "");
         const seasonLabel = formatLiturgicalSeasonLabel(data.season || "");
@@ -13286,6 +15207,9 @@ Lord, hear our prayer</textarea>
         const psalmFull = (data.psalm_text || "").trim();
         updateHomeReadingCard("home-psalm-ref", "home-psalm-excerpt", psalmRef, psalmFull);
         renderThemeGrid();
+        if ($("mass-date") && $("mass-date").value === sun) {
+          renderMassSummarySidebar();
+        }
       } catch (e) {
         notify(e.message || "Could not load lectionary preview.", "error");
       }
@@ -13299,9 +15223,17 @@ Lord, hear our prayer</textarea>
       }
       $("btn-load-flow").disabled = true;
       if ($("btn-load-flow-inline")) $("btn-load-flow-inline").disabled = true;
+      setMassSongPlanRefreshing(true);
+      const recsWrap = $("mass-summary-recs");
+      const moodList = $("mass-summary-mood-picks");
+      if (recsWrap && !recsWrap.hidden && moodList) {
+        recsWrap.classList.add("is-refreshing");
+        moodList.setAttribute("aria-busy", "true");
+        moodList.innerHTML = massMoodPickSkeletonHtml(massMoodPickSelections.length || 5);
+      }
       try {
         const data = await postJSON("/api/preview", { date });
-        flowPreviewData = data;
+        flowPreviewData = Object.assign({}, data, { __previewDate: date });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         applyLiturgicalSeasonTheme(data.season || "");
         renderThemeGrid();
@@ -13317,6 +15249,8 @@ Lord, hear our prayer</textarea>
         if (defaults.recessional) selectedLyricsSongs.recessional = defaults.recessional;
         await loadSongCatalog();
         renderMassSongPlan();
+        revealStaggerChildren($("mass-song-plan"), ".mass-song-plan-card:not(.mass-song-plan-card--skeleton)");
+        revealStaggerChildren(moodList, ".mass-summary-mood-pick:not(.mass-summary-mood-pick--skeleton)");
         if ($("flow-reading1-ref")) $("flow-reading1-ref").textContent = data.first_reading_reference || "—";
         if ($("flow-reading1-body")) $("flow-reading1-body").textContent = data.first_reading_excerpt || "—";
         if ($("flow-reading2-ref")) $("flow-reading2-ref").textContent = data.second_reading_reference || "—";
@@ -13348,7 +15282,11 @@ Lord, hear our prayer</textarea>
         notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
       } catch (error) {
         notify(error.message || "Could not load readings.", "error");
+        renderMassSongPlan();
       } finally {
+        setMassSongPlanRefreshing(false);
+        if (recsWrap) recsWrap.classList.remove("is-refreshing");
+        if (moodList) moodList.setAttribute("aria-busy", "false");
         $("btn-load-flow").disabled = false;
         if ($("btn-load-flow-inline")) $("btn-load-flow-inline").disabled = false;
       }
@@ -13366,7 +15304,13 @@ Lord, hear our prayer</textarea>
       if (communion1) songs.communion_1 = communion1;
       if (communion2) songs.communion_2 = communion2;
       if (recessional) songs.recessional = recessional;
-      if (selectedLyricsSongs.meditation) songs.meditation = selectedLyricsSongs.meditation;
+      const extra = [];
+      lyricSongSlots.forEach((slot) => {
+        if (!slot.custom) return;
+        const sid = (selectedLyricsSongs[slot.key] || "").trim();
+        if (sid) extra.push({ label: (slot.label || "").trim(), song_id: sid });
+      });
+      if (extra.length) songs.extra_sections = extra;
       return songs;
     }
 
@@ -14022,6 +15966,7 @@ Lord, hear our prayer</textarea>
       renderSongCatalog();
       rebuildMassPlanSongPool();
       lyricSongSlots.forEach((s) => updateMassSlotChip(s.key));
+      if (typeof updateMassSummaryMoodPicks === "function") updateMassSummaryMoodPicks();
     }
 
     function filterSongCatalogRows(rows, secKey, query) {
@@ -14063,7 +16008,11 @@ Lord, hear our prayer</textarea>
                 "<div class=\"song-row\" data-sid=\"" + escapeHtml(row.id) + "\" data-ssec=\"" + sec.key + "\">" +
                   "<div class=\"song-row-clickable\" role=\"button\" tabindex=\"0\" aria-label=\"Load " + escapeHtml(row.title) + "\">" +
                     "<div class=\"song-row-title\">" + escapeHtml(row.title) + "</div>" +
-                    "<div class=\"song-row-meta\">" + (row.author ? escapeHtml(row.author) + " · " : "") + escapeHtml(row.language || "") + "</div>" +
+                    "<div class=\"song-row-meta\">" +
+                      (row.author ? escapeHtml(row.author) + " · " : "") +
+                      escapeHtml(row.language || "") +
+                      (formatGospelMoodsLabel(row.gospel_moods) ? " · " + escapeHtml(formatGospelMoodsLabel(row.gospel_moods)) : "") +
+                    "</div>" +
                   "</div>" +
                   "<div class=\"song-row-actions\">" +
                     "<button type=\"button\" data-act=\"edit\">Edit</button>" +
@@ -14152,6 +16101,7 @@ Lord, hear our prayer</textarea>
       if ($("song-metadata-subtitle")) {
         $("song-metadata-subtitle").textContent = "Editing metadata for \"" + (s.title || "Song") + "\".";
       }
+      setSongMetadataMoodChecks(s.gospel_moods || []);
       setUiOverlayOpen($("song-metadata-modal"), true);
       const titleInput = $("song-metadata-edit-title");
       if (titleInput) {
@@ -14169,13 +16119,14 @@ Lord, hear our prayer</textarea>
       }
       const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
       const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
+      const gospel_moods = readSongMetadataMoodChecks();
       const { section, id } = songMetaEditCtx;
       const res = await fetch(
         "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, author, language }),
+          body: JSON.stringify({ title, author, language, gospel_moods }),
         }
       );
       const data = await res.json().catch(() => ({}));
@@ -14780,6 +16731,7 @@ Lord, hear our prayer</textarea>
     refreshCommunity();
     renderHistoryList();
     bindHomeNewsSettings();
+    initHomeNewsExpandModal();
     initLiturgicalIndicatorPanel();
     initAccountMenu();
     initCreateMenu();
