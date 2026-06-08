@@ -22,10 +22,18 @@ body {
   overflow-x: hidden;
 }
 
-.app-shell,
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 .dashboard {
   overflow-x: hidden;
   max-width: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .dashboard > *,
@@ -68,10 +76,10 @@ iframe {
 @media (max-width: 768px) {
   .dashboard {
     padding:
-      calc(var(--space-3) + var(--safe-top))
-      calc(var(--space-3) + var(--safe-right))
+      var(--layout-gap)
+      calc(var(--layout-gutter) + var(--safe-right))
       calc(80px + var(--safe-bottom))
-      calc(var(--space-3) + var(--safe-left));
+      calc(var(--layout-gutter) + var(--safe-left));
     scroll-padding-top: calc(72px + var(--safe-top));
   }
 
@@ -153,7 +161,7 @@ iframe {
   }
 
   .home-bento-grid {
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .home-bento-cell--gospel,
@@ -167,58 +175,37 @@ iframe {
     grid-template-columns: 1fr;
   }
 
-  /* Topbar: no overflow */
-  .topbar.topbar--pill {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    grid-template-columns: unset;
-    gap: var(--space-2);
+  /* App header: stack on tablet */
+  .app-header {
+    top: 0;
+    border-radius: 0;
     width: 100%;
-    max-width: 100%;
-    min-height: auto;
+    padding-top: var(--safe-top);
+  }
+
+  .app-header__main {
+    grid-template-columns: 1fr auto;
     padding:
-      calc(var(--space-2) + var(--safe-top) * 0.25)
+      var(--space-2)
       var(--space-3);
-    top: var(--safe-top);
-    border-radius: var(--radius-lg);
   }
 
-  .brand-logo {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: 100%;
-    font-size: clamp(1.15rem, 5vw, 1.35rem);
-  }
-
-  .topbar-nav {
-    order: 3;
-    flex: 1 1 100%;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    justify-content: flex-start;
-    padding: var(--space-1);
-  }
-
-  .topbar-nav::-webkit-scrollbar {
+  .app-header__search-wrap {
     display: none;
   }
 
-  .topbar-meta {
-    order: 2;
-    margin-left: auto;
-    flex-shrink: 0;
+  .app-header__utilities {
+    justify-self: end;
   }
 
-  .topbar-nav .nav-link {
+  .app-header__nav-row {
+    padding: 0 var(--space-2);
+  }
+
+  .app-header-nav .nav-link {
     min-height: 44px;
     min-width: 44px;
-    padding: 10px 12px;
+    padding: 0 12px;
     flex-shrink: 0;
   }
 
@@ -492,18 +479,18 @@ iframe {
   }
 
   .dashboard {
-    padding-left: calc(var(--space-2) + var(--safe-left));
-    padding-right: calc(var(--space-2) + var(--safe-right));
+    padding-left: calc(var(--layout-gutter) + var(--safe-left));
+    padding-right: calc(var(--layout-gutter) + var(--safe-right));
   }
 
-  .topbar.topbar--pill {
-    padding-left: calc(var(--space-2) + var(--safe-left));
-    padding-right: calc(var(--space-2) + var(--safe-right));
+  .app-header__main,
+  .app-header__nav-row {
+    padding-left: calc(var(--layout-gutter) + var(--safe-left));
+    padding-right: calc(var(--layout-gutter) + var(--safe-right));
   }
 
-  .hero--home {
+  .home-bento-grid .flow-bento-cell {
     padding: var(--space-4);
-    gap: var(--space-4);
   }
 
   .metric {
@@ -555,8 +542,8 @@ iframe {
 
 /* —— Small phone (≤375px) —— */
 @media (max-width: 375px) {
-  .topbar-nav .nav-link {
-    padding: 10px;
+  .app-header-nav .nav-link {
+    padding: 0 10px;
   }
 
   .cal-dow {
@@ -571,7 +558,7 @@ iframe {
     font-size: 1.1rem;
   }
 
-  .topbar-nav .nav-link .nav-icon {
+  .app-header-nav .nav-link .nav-icon {
     width: 16px;
     height: 16px;
   }
@@ -626,23 +613,8 @@ iframe {
     width: auto;
   }
 
-  .topbar.topbar--pill {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    flex-wrap: nowrap;
-  }
-
-  .topbar-nav {
-    order: unset;
-    flex: unset;
-    width: fit-content;
-    max-width: min(100%, 56vw);
-    justify-content: center;
-  }
-
-  .topbar-meta {
-    order: unset;
-    margin-left: 0;
+  .app-header__search-wrap {
+    display: block;
   }
 
   #flow-page .mass-song-pick-row {

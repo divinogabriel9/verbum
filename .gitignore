@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 data/lectionary.sqlite
 data/uploads/
+.cursor/design-references/_vendor/

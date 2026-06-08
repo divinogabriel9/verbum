@@ -6,7 +6,7 @@
   <title>{{ title }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Mea+Culpa&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Mea+Culpa&display=swap" rel="stylesheet" />
   <script>
     (function () {
       try {
@@ -29,7 +29,7 @@
       --wb-stone: #788898;
       --wb-neon: #4DFFC8;
       --wb-neon-dim: #2DD4A8;
-      --bg: #FAFBFD;
+      --bg: #EEF2F6;
       --bg-top: #FFFFFF;
       --surface: #FFFFFF;
       --surface-2: #F8FAFC;
@@ -65,8 +65,8 @@
       --shadow-glow: none;
       --shadow-glow-soft: none;
       --glass-blur: none;
-      --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --font-display: var(--font);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
       --brand-font: "Mea Culpa", cursive;
       --sidebar-gap: 16px;
       --space-1: 4px;
@@ -83,14 +83,24 @@
       --space-xl: var(--space-6);
       --header-height: 56px;
       --topbar-chip-height: 36px;
+      --app-header-nav-height: 44px;
+      --app-header-stack: 104px;
+      --layout-gutter: clamp(20px, 3vw, 40px);
+      --layout-gap: var(--space-5);
+      --app-header-pad-x: var(--layout-gutter);
       /* App shell width (1440px+ desktop tier per ui-ux-pro-max) */
       --content-max: 1536px;
-      /* Readable UI scale (~18px root; rem-based sizes inherit) */
-      --text-xs: 0.8125rem;
-      --text-sm: 0.9375rem;
-      --text-base: 1rem;
-      --text-lg: 1.125rem;
-      --text-xl: 1.25rem;
+      /* Apple.com type scale (17px body, 14px caption, 12px fine) */
+      --text-xs: 0.75rem;
+      --text-sm: 0.875rem;
+      --text-base: 1.0625rem;
+      --text-lg: 1.3125rem;
+      --text-xl: 1.75rem;
+      --leading-body: 1.47;
+      --leading-caption: 1.43;
+      --leading-tight: 1.24;
+      --tracking-body: -0.022em;
+      --tracking-caption: -0.016em;
       /* Motion — Emil design-eng (≤300ms, custom ease-out, no ease-in on UI) */
       --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
       --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -243,15 +253,13 @@
     }
     html[data-theme="dark"] .eyebrow,
     html[data-theme="dark"] .metric strong,
-    html[data-theme="dark"] .topbar-nav .nav-link.active,
-    html[data-theme="dark"] .brand-logo:hover,
-    html[data-theme="dark"] .brand-logo.active {
-      color: var(--liturgical-glow);
+    html[data-theme="dark"] .app-header-nav .nav-link.active {
+      color: color-mix(in srgb, var(--good) 85%, #fff);
     }
-    html[data-theme="dark"] .topbar-nav .nav-link {
+    html[data-theme="dark"] .app-header-nav .nav-link {
       color: var(--muted);
     }
-    html[data-theme="dark"] .topbar-nav .nav-link:hover {
+    html[data-theme="dark"] .app-header-nav .nav-link:hover {
       color: var(--ink);
     }
     html[data-theme="dark"] textarea,
@@ -281,6 +289,7 @@
       background: var(--color-primary, #f54e00);
       border-color: var(--color-primary, #f54e00);
     }
+    html[data-theme="dark"] .app-header,
     html[data-theme="dark"] .topbar,
     html[data-theme="dark"] .hero,
     html[data-theme="dark"] .panel,
@@ -389,6 +398,7 @@
       --nav-width-expanded: 0px;
       --nav-width: 0px;
       display: flex;
+      flex-direction: column;
       min-height: 100vh;
       max-height: 100vh;
       overflow: hidden;
@@ -670,7 +680,7 @@
       transform: translateX(2px);
     }
 
-    .nav-link.active {
+    .side-nav .nav-link.active {
       background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface));
       border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
       color: var(--liturgical-accent);
@@ -710,18 +720,18 @@
       margin-left: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: var(--space-lg);
-      padding: var(--space-md) clamp(16px, 2.5vw, 32px) 88px;
-      max-height: 100vh;
+      align-items: stretch;
+      gap: var(--layout-gap);
+      padding: var(--layout-gap) var(--layout-gutter) 88px;
       overflow-y: auto;
       overflow-x: hidden;
-      scroll-padding-top: calc(var(--header-height) + var(--space-md));
+      scroll-padding-top: var(--space-4);
       transition: margin-left 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .dashboard > * {
       width: min(var(--content-max), 100%);
       margin-inline: auto;
+      flex-shrink: 0;
     }
 
     .topbar, .hero, .panel, .tool-card, .modal-box, .admin-card {
@@ -737,40 +747,350 @@
       border-color: color-mix(in srgb, var(--liturgical-accent) 18%, var(--card-border));
     }
 
-    .topbar.topbar--pill {
-      border-radius: 999px;
-      padding: 6px 16px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      align-items: center;
-      column-gap: 16px;
-      row-gap: 8px;
+    /* App header — full-width two-row shell (flat, edge-to-edge) */
+    .app-header {
       position: sticky;
-      top: 10px;
+      top: 0;
       z-index: 22;
-      min-height: var(--header-height);
-      backdrop-filter: blur(18px) saturate(1.15);
-      -webkit-backdrop-filter: blur(18px) saturate(1.15);
-      background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 32%, var(--line));
-      box-shadow:
-        var(--shadow-light),
-        0 10px 32px rgba(21, 51, 61, 0.07);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+      align-self: stretch;
+      border-radius: 0;
+      overflow: visible;
+      background: var(--surface-solid);
+      border: none;
+      border-bottom: 1px solid var(--line);
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
-    html[data-theme="dark"] .topbar.topbar--pill {
-      background: color-mix(in srgb, var(--surface-solid) 82%, transparent);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 28%, var(--line));
-      box-shadow:
-        var(--shadow-light),
-        0 10px 32px rgba(0, 0, 0, 0.28);
+    html[data-theme="dark"] .app-header {
+      background: var(--surface-solid);
+      border-bottom-color: var(--line);
+      box-shadow: none;
+    }
+    .app-header__main {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: var(--content-max);
+      margin-inline: auto;
+      padding: 12px var(--app-header-pad-x);
+      min-height: var(--header-height);
+      box-sizing: border-box;
+    }
+    .brand-block {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      text-decoration: none;
+      color: inherit;
+      border-radius: 10px;
+      padding: 2px 4px 2px 0;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .brand-block:hover { opacity: 0.92; }
+    .brand-block:focus-visible {
+      outline: 2px solid var(--good);
+      outline-offset: 3px;
+    }
+    .brand-block__mark {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--good) 14%, var(--surface-solid));
+      border: 1px solid color-mix(in srgb, var(--good) 22%, var(--line));
+      color: var(--good);
+    }
+    .brand-block__mark svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .brand-block__text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+    .brand-block__name {
+      font-family: var(--brand-font), var(--font);
+      font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+    }
+    .brand-block__tagline {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+      color: var(--muted);
+    }
+    .app-header__search-wrap {
+      min-width: 0;
+      max-width: 520px;
+      width: 100%;
+      justify-self: center;
+    }
+    .app-header__search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--topbar-chip-height);
+      padding: 0 12px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      cursor: text;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        box-shadow var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .app-header__search:focus-within {
+      border-color: color-mix(in srgb, var(--good) 35%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 12%, transparent);
+    }
+    .app-header__search-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+    .app-header__search input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      padding: 0;
+      font-size: 0.875rem;
+      color: var(--ink);
+      outline: none;
+    }
+    .app-header__search input::placeholder { color: var(--muted); }
+    .app-header__search-kbd {
+      flex-shrink: 0;
+      padding: 2px 7px;
+      border-radius: 6px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+      font-size: 0.65rem;
+      font-weight: 600;
+      font-family: var(--font);
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .app-header__utilities {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      justify-self: end;
+    }
+    .app-header__nav-row {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      max-width: var(--content-max);
+      margin-inline: auto;
+      padding: 0 var(--app-header-pad-x);
+      min-height: var(--app-header-nav-height);
+      border-top: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      box-sizing: border-box;
+    }
+    .app-header-nav {
+      display: flex;
+      align-items: stretch;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .app-header-nav::-webkit-scrollbar { display: none; }
+    .app-header-nav .nav-link {
+      position: relative;
+      z-index: 0;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 16px;
+      margin: 0;
+      border: none;
+      border-radius: 0;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--muted);
+      background: transparent;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: none;
+      transform: none;
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .app-header-nav .nav-link .nav-icon {
+      width: 17px;
+      height: 17px;
+      opacity: 0.72;
+      object-fit: contain;
+    }
+    html[data-theme="dark"] .app-header-nav .nav-link .nav-icon {
+      filter: invert(1);
+      opacity: 0.78;
+    }
+    .app-header-nav .nav-link:hover {
+      color: var(--ink);
+      background: transparent;
+      transform: none;
+    }
+    .app-header-nav .nav-link.active {
+      color: var(--good);
+      font-weight: 600;
+      background: transparent;
+      box-shadow: none;
+    }
+    .app-header-nav .nav-link.active .nav-icon {
+      opacity: 1;
+    }
+    /* Active tab: bottom rule only (reference mock — no pill) */
+    .app-header-nav .nav-link.active::before {
+      display: none;
+    }
+    .app-header-nav .nav-link.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--good);
+      border-radius: 1px 1px 0 0;
+    }
+    .app-header-nav .nav-link:focus-visible {
+      outline: 2px solid var(--good);
+      outline-offset: -2px;
+      z-index: 1;
+    }
+    .create-menu-wrap,
+    .account-menu-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .btn-create {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: center;
+      min-height: 34px;
+      margin: 0;
+      padding: 0 16px;
+      border: none;
+      border-radius: 8px;
+      background: var(--good);
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .btn-create:hover {
+      background: color-mix(in srgb, var(--good) 88%, #000);
+    }
+    .btn-create:active { transform: scale(0.97); }
+    .btn-create__icon {
+      font-size: 1rem;
+      line-height: 1;
+      font-weight: 500;
+    }
+    .btn-create__chevron,
+    .account-menu-btn__chevron,
+    .liturgical-indicator__chevron {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+    .app-menu-panel {
+      top: calc(100% + 6px);
+      z-index: 55;
+      min-width: 200px;
+      padding: 0;
+    }
+    .app-menu-panel--account {
+      min-width: 220px;
+    }
+    .app-menu-item__hint {
+      margin-left: auto;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+    .account-menu-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--topbar-chip-height);
+      padding: 0 10px 0 4px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      font: inherit;
+      color: var(--ink);
+      cursor: pointer;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .account-menu-btn:hover,
+    .account-menu-btn[aria-expanded="true"],
+    .account-menu-btn.is-active {
+      border-color: color-mix(in srgb, var(--good) 30%, var(--line));
+      background: color-mix(in srgb, var(--good) 6%, var(--surface-solid));
+    }
+    .account-menu-btn:active { transform: scale(0.97); }
+    .account-menu-btn__avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: color-mix(in srgb, var(--good) 16%, var(--surface-solid));
+      color: var(--good);
+      flex-shrink: 0;
+    }
+    .account-menu-btn__name {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .brand-logo {
-      grid-column: 1;
-      justify-self: start;
-      align-self: center;
       flex-shrink: 0;
       margin: 0;
-      padding: 8px 4px;
       font-family: var(--brand-font), var(--font);
       font-size: clamp(1.35rem, 2.5vw, 1.65rem);
       font-weight: 400;
@@ -781,91 +1101,6 @@
       border: none;
       background: transparent;
       cursor: pointer;
-      transition: color 0.2s ease, text-shadow 0.2s ease;
-    }
-    .brand-logo:hover {
-      color: var(--liturgical-accent);
-      text-shadow:
-        0 0 12px color-mix(in srgb, var(--liturgical-glow) 70%, transparent),
-        0 0 28px color-mix(in srgb, var(--liturgical-glow) 35%, transparent);
-    }
-    .brand-logo.active {
-      color: var(--liturgical-accent);
-      text-shadow: 0 0 16px color-mix(in srgb, var(--liturgical-glow) 50%, transparent);
-    }
-    .brand-logo:focus-visible {
-      outline: 2px solid var(--liturgical-accent);
-      outline-offset: 3px;
-      border-radius: 8px;
-    }
-    .topbar-nav {
-      grid-column: 2;
-      justify-self: center;
-      align-self: center;
-      flex: 0 1 auto;
-      width: fit-content;
-      max-width: min(100%, 52vw);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      min-width: 0;
-      margin-inline: 0;
-      overflow-x: auto;
-      overflow-y: hidden;
-      flex-wrap: nowrap;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      padding: 2px;
-      border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--card-border) 85%, transparent);
-      background: color-mix(in srgb, var(--surface-2) 28%, transparent);
-      box-shadow: none;
-    }
-    .topbar-nav::-webkit-scrollbar { display: none; }
-    .topbar-nav .nav-link {
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-height: calc(var(--topbar-chip-height) - 4px);
-      padding: 5px 11px;
-      border-radius: 999px;
-      border: none;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      text-transform: none;
-      color: var(--muted);
-      background: transparent;
-      transition: color var(--motion-duration-fast) var(--motion-ease-hover),
-        background var(--motion-duration-fast) var(--motion-ease-hover);
-      white-space: nowrap;
-    }
-    .topbar-nav .nav-link .nav-icon {
-      width: 18px;
-      height: 18px;
-      opacity: 0.9;
-      filter: none;
-      object-fit: contain;
-    }
-    html[data-theme="dark"] .topbar-nav .nav-link .nav-icon {
-      filter: invert(1);
-      opacity: 0.95;
-    }
-    .topbar-nav .nav-link:hover {
-      color: var(--ink);
-      background: color-mix(in srgb, var(--liturgical-accent) 8%, transparent);
-      transform: none;
-    }
-    .topbar-nav .nav-link.active {
-      color: var(--liturgical-accent);
-      background: var(--surface-solid);
-      box-shadow: var(--shadow-light);
-    }
-    .topbar-nav .nav-link.active .nav-icon {
-      opacity: 1;
-      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--liturgical-glow) 55%, transparent));
     }
     html[data-theme="dark"] .flow-accordion {
       background: var(--surface-2);
@@ -920,27 +1155,11 @@
       background: var(--surface);
       border-color: var(--line);
     }
-    .topbar-nav .nav-link:focus-visible {
-      outline: 2px solid var(--liturgical-accent);
-      outline-offset: -2px;
-      z-index: 1;
-    }
-    .topbar-nav .nav-label {
+    .app-header-nav .nav-label {
       opacity: 1;
       max-width: none;
       overflow: visible;
       pointer-events: auto;
-    }
-    .topbar--pill .nav-link {
-      justify-content: center;
-      box-shadow: none;
-      transform: none;
-    }
-    .topbar--pill .nav-link:hover {
-      transform: none;
-    }
-    .topbar--pill .nav-link.active {
-      box-shadow: none;
     }
     .sr-only {
       position: absolute;
@@ -1155,22 +1374,10 @@
       border: 2px solid var(--surface-solid);
     }
     .notif-panel {
-      position: absolute;
       top: calc(100% + 8px);
-      right: 0;
       z-index: 50;
       width: min(380px, calc(100vw - 24px));
-      max-height: min(440px, 62vh);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      border-radius: var(--radius);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 35%, var(--line));
-      background: var(--surface-solid);
-      box-shadow: var(--shadow-hover);
-    }
-    .notif-panel[hidden] {
-      display: none !important;
+      border-color: color-mix(in srgb, var(--liturgical-glow) 35%, var(--line));
     }
     .notif-panel__head {
       display: flex;
@@ -1257,17 +1464,6 @@
       opacity: 0 !important;
       pointer-events: none !important;
     }
-    .topbar-meta {
-      grid-column: 3;
-      justify-self: end;
-      align-self: center;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      min-width: 0;
-      max-width: none;
-    }
     .liturgical-indicator-wrap {
       position: relative;
       flex-shrink: 0;
@@ -1279,16 +1475,16 @@
     .liturgical-indicator {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       width: 100%;
       max-width: 100%;
       height: var(--topbar-chip-height);
       max-height: var(--topbar-chip-height);
       min-height: var(--topbar-chip-height);
-      padding: 0 14px 0 9px;
+      padding: 0 10px 0 8px;
       border-radius: var(--radius-pill);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 24%, var(--card-border));
-      background: var(--surface-solid);
+      border: 1px solid color-mix(in srgb, var(--good) 22%, var(--line));
+      background: color-mix(in srgb, var(--good) 9%, var(--surface-solid));
       box-shadow: none;
       cursor: pointer;
       font: inherit;
@@ -1297,21 +1493,29 @@
       overflow: hidden;
       box-sizing: border-box;
       touch-action: manipulation;
-      transition: border-color 0.15s ease, background 0.15s ease;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
     }
     .liturgical-indicator:hover,
     .liturgical-indicator[aria-expanded="true"] {
-      border-color: color-mix(in srgb, var(--liturgical-accent) 32%, var(--card-border));
-      background: color-mix(in srgb, var(--liturgical-accent) 5%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--good) 35%, var(--line));
+      background: color-mix(in srgb, var(--good) 14%, var(--surface-solid));
+    }
+    .liturgical-indicator:active { transform: scale(0.97); }
+    .liturgical-indicator__icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+      opacity: 0.9;
+    }
+    html[data-theme="dark"] .liturgical-indicator__icon {
+      filter: invert(1);
+      opacity: 0.85;
     }
     .liturgical-indicator__bar {
-      width: 3px;
-      height: 22px;
-      max-height: 22px;
-      flex-shrink: 0;
-      align-self: center;
-      border-radius: var(--radius-pill);
-      background: var(--liturgical-glow);
+      display: none;
     }
     .liturgical-indicator__lines {
       display: flex;
@@ -1330,7 +1534,7 @@
       font-weight: 600;
       line-height: 1.15;
       letter-spacing: -0.01em;
-      color: var(--ink);
+      color: var(--good);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1346,32 +1550,13 @@
       text-overflow: ellipsis;
     }
     .liturgical-indicator-panel {
-      position: absolute;
       top: calc(100% + 8px);
-      right: 0;
       z-index: 52;
       width: min(320px, calc(100vw - 24px));
       max-height: min(70vh, 480px);
       overflow-y: auto;
       padding: 14px 16px 16px;
-      border-radius: var(--radius-md);
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 22%, var(--card-border));
-      background: var(--surface-solid);
-      box-shadow: var(--shadow-large);
-      transition:
-        opacity var(--motion-duration-base) var(--motion-ease-out),
-        transform var(--motion-duration-base) var(--motion-ease-out),
-        visibility 0s;
-    }
-    .liturgical-indicator-panel[hidden] {
-      display: block !important;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transform: translateY(-4px) scale(0.96);
-    }
-    .liturgical-indicator-panel:not([hidden]) {
-      animation: vb-dropdown-in var(--motion-duration-base) var(--motion-ease-out) both;
+      border-color: color-mix(in srgb, var(--liturgical-glow) 22%, var(--card-border));
     }
     .liturgical-indicator-panel__title {
       margin: 0 0 12px;
@@ -1706,10 +1891,13 @@
     .page {
       display: none;
       flex-direction: column;
-      gap: 16px;
+      gap: var(--layout-gap);
     }
     .page.active {
       display: flex;
+      flex: 1 0 auto;
+      width: 100%;
+      min-height: min-content;
       animation: vb-page-in var(--motion-duration-base) var(--motion-ease-out) both;
     }
     .page.page--leaving {
@@ -1726,22 +1914,10 @@
       align-items: center;
     }
     .hero--home {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: var(--space-lg);
-      padding: var(--space-lg) var(--space-xl);
-      border-radius: 20px;
-      border: 1px solid color-mix(in srgb, var(--liturgical-glow) 24%, var(--line));
-      background:
-        radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in srgb, var(--liturgical-glow) 8%, transparent), transparent 55%),
-        radial-gradient(ellipse 55% 45% at 0% 100%, color-mix(in srgb, var(--liturgical-accent) 6%, transparent), transparent 48%),
-        var(--surface-solid);
-      box-shadow: var(--shadow-light);
+      display: contents;
     }
-    .hero--home:hover {
-      box-shadow: var(--shadow-light);
-      transform: none;
+    #home-page.active {
+      gap: 0;
     }
     .hero--home-section h3 {
       margin: 0 0 8px;
@@ -1780,11 +1956,11 @@
       gap: 8px;
       min-width: 280px;
     }
-    /* Home — flat bento (matches Mass Builder readings card) */
+    /* Home — flat bento on shared 12-col grid (matches header content width) */
     .home-bento-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: var(--space-md);
+      gap: var(--layout-gap);
       align-items: stretch;
       width: 100%;
       min-width: 0;
@@ -1792,35 +1968,39 @@
     @media (min-width: 1440px) {
       .home-bento-grid,
       .flow-setup-bento {
-        gap: var(--space-5);
+        gap: var(--space-6);
       }
     }
     .home-bento-grid .flow-bento-cell {
       background: var(--surface-solid);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 16%, var(--card-border));
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
       box-shadow: none;
       transition: border-color var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .home-bento-grid .flow-bento-cell:hover {
-      border-color: color-mix(in srgb, var(--liturgical-accent) 20%, var(--card-border));
+      border-color: color-mix(in srgb, var(--liturgical-accent) 18%, var(--card-border));
       box-shadow: none;
+      transform: none;
     }
     .home-bento-grid .flow-bento-cell__head {
-      border-bottom-color: color-mix(in srgb, var(--liturgical-glow) 12%, var(--line-soft));
+      margin: 0 0 var(--space-4);
+      padding: 0 0 var(--space-3);
+      border-bottom: 1px solid var(--line-soft);
     }
     .home-bento-cell--gospel {
       grid-column: span 7;
       display: flex;
       flex-direction: column;
-      gap: var(--space-2);
+      gap: var(--space-3);
       min-height: 0;
-      height: auto;
     }
     .home-bento-cell--events {
       grid-column: span 5;
       display: flex;
       flex-direction: column;
-      min-height: 220px;
+      min-height: 0;
     }
     .home-bento-cell--readings {
       grid-column: span 12;
@@ -2006,9 +2186,9 @@
       line-height: 1.4;
     }
     .home-bento-cell--events .flow-bento-cell__head {
-      border-bottom: none;
-      margin-bottom: var(--space-2);
-      padding-bottom: 0;
+      border-bottom: 1px solid var(--line-soft);
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-3);
     }
     .home-news-status {
       margin: 0;
@@ -2023,11 +2203,16 @@
       .home-bento-cell--readings .flow-readings-preview-row {
         grid-template-columns: 1fr;
       }
-      .home-bento-cell--readings .flow-readings-preview-row .flow-reading-tile {
+      .home-bento-cell--readings .flow-reading-tile {
+        padding: var(--space-3) 0;
         border-right: none;
         border-bottom: 1px solid var(--line-soft);
       }
-      .home-bento-cell--readings .flow-readings-preview-row .flow-reading-tile:last-child {
+      .home-bento-cell--readings .flow-reading-tile:first-child {
+        padding-top: 0;
+      }
+      .home-bento-cell--readings .flow-reading-tile:last-child {
+        padding-bottom: 0;
         border-bottom: none;
       }
     }
@@ -2469,13 +2654,556 @@
       line-height: 1.45;
       color: var(--muted);
     }
+    /* Song plan — Home bento (summary + plan cards on shared grid) */
+    .home-bento-cell--summary {
+      grid-column: span 4;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .home-bento-cell--song-plan {
+      grid-column: span 8;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .mass-summary-sidebar {
+      min-width: 0;
+    }
+    .mass-summary-stats {
+      margin: 0 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .mass-summary-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 0.8125rem;
+      line-height: 1.4;
+    }
+    .mass-summary-stat dt {
+      margin: 0;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .mass-summary-stat dd {
+      margin: 0;
+      font-weight: 700;
+      color: var(--ink);
+      text-align: right;
+    }
+    .mass-summary-progress-wrap {
+      margin-bottom: 12px;
+    }
+    .mass-summary-progress-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .mass-summary-progress {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--line-soft);
+      overflow: hidden;
+    }
+    .mass-summary-progress__fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: var(--good);
+      transition: width var(--motion-duration-base) var(--motion-ease-out);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mass-summary-progress__fill {
+        transition: none;
+      }
+    }
+    .mass-summary-links {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: auto;
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--line-soft);
+    }
+    .mass-summary-link {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--good);
+      text-decoration: none;
+      padding: 4px 0;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .mass-summary-link:hover {
+      color: color-mix(in srgb, var(--good) 82%, #000);
+      text-decoration: underline;
+    }
+    .mass-summary-link:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .flow-song-plan-section {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .home-song-plan-card__head {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: flex-start;
+    }
+    .flow-song-plan-toolbar__actions {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn-song-plan-generate {
+      min-height: 36px;
+      padding: 6px 14px;
+      font-size: var(--text-xs);
+    }
+    .mass-song-plan-lang-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mass-song-plan-lang-field .vb-select {
+      min-width: 132px;
+      width: auto;
+    }
+    .mass-song-plan-lang-field label {
+      margin: 0;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .mass-song-plan-lang-select {
+      min-width: 132px;
+      min-height: 40px;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface-solid);
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .mass-song-plan-lang-select:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--good) 40%, transparent);
+      outline-offset: 1px;
+      border-color: color-mix(in srgb, var(--ink) 22%, var(--line));
+    }
+    .mass-song-plan-subtoolbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin: 0 0 var(--space-4);
+    }
+    .mass-song-plan-list {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
     .flow-builder-tab-panel--songs .mass-song-plan-root {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
-      align-content: start;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       width: 100%;
       padding: 0;
+    }
+    .mass-song-plan-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-solid);
+      overflow: hidden;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .mass-song-plan-card:hover {
+      border-color: color-mix(in srgb, var(--good) 20%, var(--line));
+    }
+    .mass-song-plan-card.is-expanded {
+      border-color: color-mix(in srgb, var(--good) 32%, var(--line));
+    }
+    .mass-song-plan-card.has-selection {
+      border-color: color-mix(in srgb, var(--good) 18%, var(--line));
+    }
+    .mass-song-plan-card.mass-song-slot--missing-lyrics {
+      border-color: color-mix(in srgb, var(--danger) 28%, var(--line));
+    }
+    .mass-song-plan-card__bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
+    .mass-song-plan-card__drag {
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      width: 20px;
+      color: var(--muted);
+      opacity: 0.45;
+      cursor: grab;
+      touch-action: none;
+    }
+    .mass-song-plan-card__drag svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    .mass-song-plan-card__num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--good) 10%, var(--surface-solid));
+      border: 1px solid color-mix(in srgb, var(--good) 18%, var(--line));
+      color: var(--good);
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .mass-song-plan-card__main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mass-song-plan-card__heading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mass-song-plan-card__part {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+    .mass-song-plan-card__badge {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--good) 12%, var(--surface-solid));
+      color: var(--good);
+      border: 1px solid color-mix(in srgb, var(--good) 22%, transparent);
+      line-height: 1.3;
+    }
+    .mass-song-plan-card__badge[hidden] {
+      display: none !important;
+    }
+    .mass-song-plan-card__title {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mass-song-plan-card__title.has-selection {
+      color: var(--good);
+    }
+    .mass-song-plan-card__title.is-empty {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .mass-song-plan-card.mass-song-slot--missing-lyrics .mass-song-plan-card__title.has-selection {
+      color: var(--danger);
+    }
+    .mass-song-plan-card__meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mass-song-plan-card__meta:empty {
+      display: none;
+    }
+    .mass-song-plan-card__meta.is-warn {
+      color: var(--danger);
+      font-weight: 650;
+    }
+    .mass-song-plan-card__meta.is-warn::before {
+      content: "⚠ ";
+    }
+    .mass-song-plan-card__actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .mass-song-plan-card__btn {
+      min-height: 34px;
+      padding: 0 10px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+      white-space: nowrap;
+      touch-action: manipulation;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition:
+        color var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .mass-song-plan-card__btn:hover:not(:disabled):not([hidden]) {
+      border-color: var(--line);
+      background: color-mix(in srgb, var(--good) 5%, var(--surface-solid));
+    }
+    .mass-song-plan-card__btn:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
+      outline-offset: 2px;
+    }
+    .mass-song-plan-card__btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .mass-song-plan-card__btn.is-disabled,
+    .mass-song-plan-card__btn:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+    .mass-song-plan-card__btn[hidden] {
+      display: none !important;
+    }
+    .mass-song-plan-card__btn--clear {
+      color: var(--danger);
+    }
+    .mass-song-plan-card__btn--clear svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+    .mass-song-plan-card__expand {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      margin-left: 2px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition:
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-base) var(--motion-ease-out),
+        color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .mass-song-plan-card__expand svg {
+      width: 16px;
+      height: 16px;
+      transition: transform var(--motion-duration-base) var(--motion-ease-out);
+    }
+    .mass-song-plan-card.is-expanded .mass-song-plan-card__expand svg {
+      transform: rotate(180deg);
+    }
+    .mass-song-plan-card__expand:hover {
+      border-color: var(--line);
+      background: color-mix(in srgb, var(--good) 5%, var(--surface-solid));
+      color: var(--ink);
+    }
+    .mass-song-plan-card__expand:active {
+      transform: scale(0.97);
+    }
+    .mass-song-plan-card__expand:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
+      outline-offset: 2px;
+    }
+    .mass-song-plan-card__body {
+      padding: 0 14px 14px 72px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .mass-song-plan-card__body[hidden] {
+      display: none !important;
+    }
+    .mass-song-plan-row__search {
+      position: relative;
+      min-width: 0;
+    }
+    .mass-song-plan-row__search .mass-song-search-input {
+      width: 100%;
+      min-width: 0;
+      min-height: 40px;
+      padding: 10px 14px;
+      font-size: 0.875rem;
+      line-height: 1.35;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-solid);
+      color: var(--ink);
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .mass-song-plan-row__search .mass-song-search-input::placeholder {
+      color: var(--muted);
+    }
+    .mass-song-plan-row__search .mass-song-search-input:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--ink) 28%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 12%, transparent);
+    }
+    .mass-song-plan-row__search .mass-song-results {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 30;
+      margin-top: 0;
+      max-height: 240px;
+      padding: 0;
+    }
+    .mass-song-plan-row__search .mass-song-results.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
+    }
+    .mass-song-plan-row__search .mass-song-lyrics-alert {
+      margin-top: 6px;
+      padding: 8px 10px;
+      font-size: 0.75rem;
+    }
+    .mass-song-plan-row__search .mass-song-lyrics-alert__icon {
+      width: 18px;
+      height: 18px;
+      font-size: 0.75rem;
+    }
+    .mass-song-plan-row__search .mass-song-lyrics-alert__title {
+      font-size: 0.8125rem;
+    }
+    .mass-song-plan-row__search .mass-song-result-row {
+      padding: 8px 12px;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    .mass-song-plan-row__search .mass-song-result-row strong {
+      font-weight: inherit;
+    }
+    .mass-song-plan-row__search .mass-song-result-row:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--liturgical-accent) 45%, transparent);
+      outline-offset: -2px;
+    }
+    html[data-theme="dark"] .mass-song-plan-row__search .mass-song-results {
+      background: var(--surface-solid);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    .mass-song-add-custom {
+      align-self: stretch;
+      margin-top: var(--space-3);
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1px dashed color-mix(in srgb, var(--good) 35%, var(--line));
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition:
+        color var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .mass-song-add-custom:hover {
+      color: var(--good);
+      border-color: color-mix(in srgb, var(--good) 50%, var(--line));
+      background: color-mix(in srgb, var(--good) 4%, var(--surface-solid));
+    }
+    .mass-song-add-custom:active {
+      transform: scale(0.99);
+    }
+    .mass-song-add-custom[hidden] {
+      display: none !important;
+    }
+    .mass-song-plan-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--line-soft);
+    }
+    .mass-song-plan-footer .btn-create {
+      min-height: 40px;
+      padding: 0 18px;
+      font-size: 0.875rem;
+    }
+    @media (max-width: 960px) {
+      .home-bento-cell--summary,
+      .home-bento-cell--song-plan {
+        grid-column: span 12;
+      }
+      .mass-summary-stats {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+      }
+      .home-song-plan-card__head {
+        grid-template-columns: auto 1fr;
+      }
+      .mass-song-plan-card__bar {
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .mass-song-plan-card__actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        padding-left: 58px;
+      }
+      .mass-song-plan-card__body {
+        padding-left: 14px;
+      }
+      .mass-song-plan-footer {
+        justify-content: stretch;
+      }
+      .mass-song-plan-footer .btn-home-create-event,
+      .mass-song-plan-footer .btn-create {
+        flex: 1;
+        min-width: 140px;
+      }
     }
     /* Mass Builder Setup — bento (ui-ux-pro-max) */
     .flow-setup-bento {
@@ -2538,10 +3266,12 @@
     }
     .flow-setup-col__title {
       margin: 0 0 var(--space-2);
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
+      font-family: var(--font-display);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: var(--tracking-caption);
+      text-transform: none;
+      line-height: var(--leading-caption);
       color: var(--muted);
     }
     .flow-setup-bento .field {
@@ -2552,19 +3282,25 @@
     }
     .flow-setup-bento label {
       margin-bottom: 4px;
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       font-weight: 600;
+      letter-spacing: var(--tracking-caption);
+      text-transform: none;
+      color: var(--ink);
     }
     .flow-setup-bento .muted {
-      font-size: var(--text-xs);
-      line-height: 1.35;
+      font-size: var(--text-sm);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
     }
     .flow-setup-bento input[type="date"],
     .flow-setup-bento input[type="text"],
     .flow-setup-bento input[type="file"],
     .flow-setup-bento select {
       padding: 7px 10px;
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
+      line-height: var(--leading-body);
+      letter-spacing: var(--tracking-body);
       min-height: 36px;
     }
     .flow-setup-bento .field-grid {
@@ -2806,25 +3542,40 @@
     .flow-readings-inner .flow-reading-text--psalm {
       max-height: 10rem;
     }
-    /* Home Sunday readings — balanced 3-up row (overrides Mass Builder 4-col margins) */
+    /* Home Sunday readings — balanced 3-up row on equal tracks */
     .home-bento-cell--readings .flow-readings-inner {
-      margin-top: 0;
-      width: 100%;
-    }
-    .home-bento-cell--readings .flow-readings-preview-row {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
       margin: 0;
       width: 100%;
     }
+    .home-bento-cell--readings .flow-bento-cell__head {
+      margin-bottom: var(--space-4);
+    }
+    .home-bento-cell--readings .flow-readings-preview-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      margin: 0;
+      width: 100%;
+      align-items: stretch;
+    }
     .home-bento-cell--readings .flow-reading-tile {
-      flex: 1 1 0;
       min-width: 0;
-      padding: var(--space-2) var(--space-3);
+      padding: 0 var(--space-5);
+      border: none;
+      border-right: 1px solid var(--line-soft);
+      border-radius: 0;
+    }
+    .home-bento-cell--readings .flow-reading-tile:first-child {
+      padding-left: 0;
+    }
+    .home-bento-cell--readings .flow-reading-tile:last-child {
+      padding-right: 0;
+      border-right: none;
     }
     .home-bento-cell--readings .flow-reading-text {
       flex: 1 1 auto;
-      min-height: 8.5rem;
-      max-height: 10rem;
+      min-height: 6.5rem;
+      max-height: 9.5rem;
     }
     .home-bento-cell--readings .flow-reading-text,
     .home-bento-cell--gospel .flow-reading-text {
@@ -2975,7 +3726,18 @@
       border-color: transparent;
     }
     #flow-page .flow-builder-tab-panel--songs .flow-song-plan-section {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    #flow-page .mass-song-plan-card {
+      width: 100%;
+      box-sizing: border-box;
     }
     #flow-page .flow-section-head h4 {
       font-family: var(--font-display);
@@ -3014,24 +3776,12 @@
     #flow-page .mass-song-slot {
       width: 100%;
       box-sizing: border-box;
-      padding: 20px 24px;
-      border-radius: var(--radius);
     }
-    #flow-page .mass-song-slot-label {
-      font-size: 1rem;
-      margin-bottom: 12px;
-    }
-    #flow-page .mass-song-pick-row {
+    #flow-page .mass-song-plan-card .mass-song-pick-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(0, 1fr);
       gap: 10px;
       align-items: stretch;
-    }
-    #flow-page .mass-song-search-input {
-      width: 100%;
-      min-width: 0;
-      padding: 12px 14px;
-      font-size: 0.95rem;
     }
     #flow-page .flow-builder-tabs {
       width: 100%;
@@ -3122,7 +3872,7 @@
       flex-shrink: 0;
     }
     .flow-input-group input[type="text"] {
-      flex: 1;
+      flex: 1 1 8rem;
       min-width: 0;
       margin: 0;
     }
@@ -3138,6 +3888,30 @@
       color: var(--text);
       font-size: 0.88rem;
       font-weight: 700;
+    }
+    .flow-input-group .vb-select {
+      width: auto;
+      flex: 0 0 auto;
+      min-width: 6.75rem;
+      max-width: 9rem;
+    }
+    .flow-input-group .vb-select__trigger {
+      width: 100%;
+    }
+    .flow-collection-amount-row {
+      align-items: stretch;
+    }
+    .flow-collection-amount-row #flow-collection-amount {
+      flex: 1 1 0;
+      min-width: 5.5rem;
+    }
+    .flow-setup-col--stewardship .flow-input-group .secondary {
+      padding: 7px 12px;
+      font-size: var(--text-xs);
+      min-height: 36px;
+    }
+    .flow-setup-col--stewardship .flow-input-group input[type="text"] {
+      flex: 1 1 6rem;
     }
     .flow-input-group .secondary,
     .flow-input-group .ghost {
@@ -3158,130 +3932,36 @@
       display: none;
     }
     .celebrant-picker {
+      position: relative;
       width: 100%;
-      max-width: 420px;
+      max-width: 100%;
     }
-    .celebrant-picker__root {
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      background: var(--surface-solid);
-    }
-    .celebrant-picker__root[open] {
-      border-color: color-mix(in srgb, var(--ink) 18%, var(--line));
-    }
-    .celebrant-picker--disabled .celebrant-picker__root {
+    .celebrant-picker--disabled .celebrant-picker__trigger {
       opacity: 0.55;
       pointer-events: none;
     }
     .celebrant-picker__trigger {
-      list-style: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
       width: 100%;
-      min-height: 34px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: var(--text-sm);
-      font-weight: 500;
-      color: var(--ink);
-      user-select: none;
     }
-    .celebrant-picker__trigger::-webkit-details-marker {
-      display: none;
-    }
-    .celebrant-picker__trigger::marker {
-      content: "";
-    }
-    .celebrant-picker__value {
-      flex: 1;
-      min-width: 0;
-      text-align: left;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .celebrant-picker__value.is-placeholder {
-      color: var(--muted);
-      font-weight: 500;
-    }
-    .celebrant-picker__chevron {
-      flex-shrink: 0;
-      width: 14px;
-      height: 14px;
-      color: var(--muted);
-      opacity: 0.75;
-      transition: transform 0.18s ease;
-    }
-    .celebrant-picker__root[open] .celebrant-picker__chevron {
-      transform: rotate(180deg);
-    }
-    .celebrant-picker__content {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0;
-      padding: 0 4px 4px;
-      font-size: var(--text-sm);
-      border-top: 1px solid var(--line-soft);
-      overflow: hidden;
-      max-height: 0;
-      opacity: 0;
-      transition:
-        max-height var(--motion-duration-base) var(--motion-ease-out),
-        opacity var(--motion-duration-fast) var(--motion-ease-out),
-        padding var(--motion-duration-base) var(--motion-ease-out);
-    }
-    .celebrant-picker__root[open] .celebrant-picker__content {
-      max-height: 220px;
-      opacity: 1;
-      padding: 0 4px 4px;
-    }
-    .celebrant-picker__list {
-      list-style: none;
-      margin: 0;
-      padding: 2px 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      max-height: 168px;
-      overflow-y: auto;
+    .celebrant-picker__panel {
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 40;
+      transform-origin: top left;
     }
     .celebrant-picker__list:empty {
       display: none;
     }
-    .celebrant-picker__option {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 5px 8px 5px 10px;
-      border: none;
-      border-radius: 4px;
-      background: transparent;
-      color: var(--ink);
-      font-size: var(--text-sm);
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.1s ease;
-      box-shadow: inset 2px 0 0 transparent;
-    }
-    .celebrant-picker__option:hover {
-      background: var(--surface-2);
-    }
-    .celebrant-picker__option[aria-selected="true"] {
-      background: var(--surface-2);
-      color: var(--ink);
-      font-weight: 600;
-      box-shadow: inset 2px 0 0 var(--ink);
+    .celebrant-picker .celebrant-picker__option {
+      justify-content: flex-start;
     }
     .celebrant-picker__empty {
-      margin: 0;
-      padding: 6px 8px;
-      font-size: var(--text-xs);
-      line-height: 1.4;
-    }
-    .celebrant-picker__empty[hidden] {
-      display: none !important;
+      font-size: var(--text-sm);
+      font-weight: 400;
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+      color: var(--muted);
     }
     .celebrant-settings-list {
       list-style: none;
@@ -4186,8 +4866,13 @@
       border: 1px solid var(--line-soft);
       border-radius: 10px;
       background: var(--surface-solid);
-      overflow: hidden;
+      overflow: visible;
+      position: relative;
+      z-index: 0;
       transition: border-color 0.15s ease;
+    }
+    .lyric-block:has(.vb-select__trigger[aria-expanded="true"]) {
+      z-index: 40;
     }
     .lyric-block:focus-within {
       border-color: rgba(167, 139, 250, 0.45);
@@ -4200,6 +4885,12 @@
       padding: 6px 8px;
       border-bottom: 1px solid var(--line-soft);
       background: rgba(248, 250, 255, 0.6);
+      overflow: visible;
+      position: relative;
+    }
+    .lyric-block__head .vb-select {
+      flex-shrink: 0;
+      width: auto;
     }
     .lyric-block.type-verse .lyric-block__head { background: rgba(109, 93, 252, 0.12); border-bottom-color: rgba(109, 93, 252, 0.2); }
     .lyric-block.type-chorus .lyric-block__head { background: rgba(244, 114, 182, 0.12); border-bottom-color: rgba(244, 114, 182, 0.2); }
@@ -5778,13 +6469,28 @@
       .hero-metrics { min-width: 0; }
     }
     @media (min-width: 721px) {
-      .topbar-meta .liturgical-indicator-wrap {
-        max-width: min(200px, 26vw);
+      .liturgical-indicator-wrap {
+        max-width: min(210px, 24vw);
       }
+    }
+    @media (max-width: 960px) {
+      .app-header__search-wrap { display: none; }
+      .account-menu-btn__name { display: none; }
+      .account-menu-btn { padding-right: 8px; }
     }
     @media (max-width: 720px) {
       .app-shell { --nav-width-expanded: 0px; }
-      .dashboard { padding: 12px; margin-left: 0; scroll-padding-top: 120px; }
+      .dashboard {
+        padding:
+          var(--space-4)
+          var(--layout-gutter)
+          80px;
+        margin-left: 0;
+        scroll-padding-top: var(--space-4);
+      }
+      .app-header { width: 100%; margin: 0; border-radius: 0; }
+      .app-header__main,
+      .app-header__nav-row { padding-inline: var(--layout-gutter); }
       .route-jump-float {
         left: 12px;
         bottom: 12px;
@@ -5804,27 +6510,21 @@
         max-width: none;
       }
       .route-switcher { width: 100%; max-width: none; min-width: 0; flex: 1; }
-      .topbar-meta { max-width: none; gap: 4px; }
-      .topbar-meta .liturgical-indicator-wrap { max-width: min(176px, 42vw); }
-      :root { --topbar-chip-height: 40px; }
-      .liturgical-indicator {
-        padding: 0 13px 0 8px;
-        gap: 7px;
-      }
-      .liturgical-indicator__bar { height: 24px; max-height: 24px; }
-      .liturgical-indicator__season { font-size: 0.72rem; }
+      .liturgical-indicator-wrap { max-width: min(148px, 38vw); }
+      :root { --topbar-chip-height: 40px; --app-header-stack: 120px; }
+      .app-header__main { padding: 10px var(--space-3); gap: 10px; }
+      .brand-block__name { font-size: 1.2rem; }
+      .brand-block__tagline { font-size: 0.625rem; }
+      .liturgical-indicator__season,
       .liturgical-indicator__year { font-size: 0.6875rem; }
-      .topbar.topbar--pill {
-        flex-wrap: nowrap;
-        padding: 6px 10px 6px 14px;
-        border-radius: 22px;
-      }
-      .brand-logo { font-size: 1.25rem; }
-      .topbar-nav .nav-link { padding: 8px 10px; font-size: 0.76rem; }
-      .topbar-nav .nav-label { display: none; }
-      .topbar-nav .nav-link .nav-icon { width: 18px; height: 18px; }
+      .liturgical-indicator__chevron { display: none; }
+      .app-header-nav .nav-link { padding: 0 10px; font-size: 0.76rem; }
+      .app-header-nav .nav-label { display: none; }
+      .app-header-nav .nav-link .nav-icon { width: 18px; height: 18px; }
+      .btn-create span:not(.btn-create__icon) { display: none; }
+      .btn-create { padding: 0 12px; }
       .hero, .panel, .tool-card { padding: 15px; border-radius: 18px; }
-      .hero--home { padding: var(--space-md); }
+      .home-bento-grid .flow-bento-cell { padding: var(--space-4); }
       .hero-metrics, .global-controls, .field-grid, .builder-grid, .theme-grid { grid-template-columns: 1fr; }
       .block-top:not(.block-top-lyrics) { grid-template-columns: auto minmax(0, 1fr); }
       .block-top:not(.block-top-lyrics) select, .block-top:not(.block-top-lyrics) .inline-actions { grid-column: 1 / -1; }
@@ -5937,7 +6637,7 @@
     .mass-song-plan-root {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 0;
     }
     .mass-song-slot {
       border: 1px solid var(--card-border);
@@ -6095,35 +6795,20 @@
     }
     .mass-song-results {
       margin-top: 8px;
-      max-height: 240px;
-      overflow-y: auto;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fff;
-      box-shadow: var(--shadow-sm);
+      position: relative;
+      padding: 0;
     }
     .mass-song-results[hidden] {
-      display: none !important;
+      display: flex !important;
     }
     .mass-song-result-row {
-      width: 100%;
-      text-align: left;
-      padding: 10px 12px;
-      border: 0;
-      border-bottom: 1px solid var(--line);
-      background: transparent;
-      cursor: pointer;
-      display: block;
-    }
-    .mass-song-result-row:last-child {
-      border-bottom: 0;
-    }
-    .mass-song-result-row:hover {
-      background: var(--surface-2);
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
     }
     .mass-song-result-row strong {
       display: block;
-      font-size: 0.9rem;
+      font-weight: inherit;
     }
     .new-songs-card {
       border: 1px dashed var(--line);
@@ -6477,116 +7162,303 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260605" />
-  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260605" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260605" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260613" />
+  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260609" />
+  <style id="verbum-layout-overrides">
+    /* Loaded last — wins over external sheets */
+    body { background: var(--bg); }
+    .dashboard { background: transparent; }
+    .app-header { background: var(--surface-solid); }
+    .app-header-nav .nav-link.active::before { display: none !important; }
+    .brand-block,
+    .brand-block:hover,
+    .brand-block:focus-visible {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .home-bento-grid .flow-bento-cell {
+      background: var(--surface-solid);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      box-shadow: 0 1px 2px rgba(21, 51, 61, 0.05), 0 4px 14px rgba(21, 51, 61, 0.04);
+    }
+    .home-bento-grid .flow-bento-cell:hover {
+      border-color: color-mix(in srgb, var(--good) 22%, var(--card-border));
+      box-shadow: 0 2px 4px rgba(21, 51, 61, 0.06), 0 8px 20px rgba(21, 51, 61, 0.05);
+      transform: none;
+    }
+    .home-card-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: start;
+      gap: var(--space-3);
+      margin: 0 0 var(--space-4);
+      padding: 0 0 var(--space-3);
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .home-card-head__icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--good) 12%, var(--surface-solid));
+      border: 1px solid color-mix(in srgb, var(--good) 18%, var(--line));
+      color: var(--good);
+    }
+    .home-card-head__icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .home-card-head__text { min-width: 0; }
+    .home-card-head__text h3,
+    .home-card-head__text h4 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      letter-spacing: var(--tracking-body);
+      line-height: var(--leading-tight);
+      color: var(--ink);
+    }
+    .home-card-head__text p {
+      margin: 4px 0 0;
+      font-size: var(--text-sm);
+      color: var(--muted);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+    }
+    .home-card-head__action {
+      flex-shrink: 0;
+      align-self: center;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .home-card-head__action:hover { color: var(--good); }
+    .home-bento-cell--events .home-card-head,
+    .home-bento-cell--readings .home-card-head,
+    .home-bento-cell--news .home-card-head,
+    .home-bento-cell--summary .home-card-head {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .home-bento-cell--events .home-events-card__head {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .home-bento-cell--events .flow-bento-cell__head,
+    .home-bento-cell--readings .flow-bento-cell__head,
+    .home-bento-cell--news .flow-bento-cell__head {
+      border-bottom: none;
+      margin: 0;
+      padding: 0;
+    }
+    .btn-home-create-event::after {
+      content: " +";
+      font-weight: 700;
+    }
+    .app-header__search-wrap {
+      position: relative;
+    }
+    .global-search-panel {
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      transform-origin: top center;
+    }
+  </style>
+</head>
 <body data-season="ordinary">
   <div class="app-shell">
-    <main class="dashboard">
-      <header class="topbar topbar--pill">
-        <a href="/home" class="brand-logo nav-link" id="topbar-title" data-route="/home" aria-label="Verbum — home">Verbum</a>
-        <p class="sr-only" id="topbar-breadcrumb">Home</p>
-        <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
-        <nav class="topbar-nav" id="admin-sidebar" aria-label="Main navigation">
-          <a class="nav-link" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
-            <img src="/static/icons/mass.png" class="nav-icon" alt="" width="18" height="18" />
-            <span class="nav-label">Mass</span>
+      <header class="app-header" id="app-header">
+        <div class="app-header__main">
+          <a href="/home" class="brand-block" id="topbar-title" data-route="/home" aria-label="Verbum — Home">
+            <span class="brand-block__mark" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22c4-4 8-7.5 8-12a8 8 0 1 0-16 0c0 4.5 4 8 8 12z" />
+                <path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+              </svg>
+            </span>
+            <span class="brand-block__text">
+              <span class="brand-block__name">Verbum</span>
+              <span class="brand-block__tagline">Liturgy Planning Platform</span>
+            </span>
           </a>
-          <a class="nav-link" data-route="/mass/calendar" href="/mass/calendar">
-            <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="18" height="18" />
-            <span class="nav-label">Calendar</span>
-          </a>
-          <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
-            <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
-            <span class="nav-label">Media</span>
-          </a>
-          <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
-            <img src="/static/icons/library.png" class="nav-icon" alt="" width="18" height="18" />
-            <span class="nav-label">Library</span>
-          </a>
-          <a class="nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
-            <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
-            <span class="nav-label">Design</span>
-          </a>
-          <a class="nav-link" data-route="/settings/church" data-route-prefix="/settings" href="/settings/church">
-            <img src="/static/icons/settings.png" class="nav-icon" alt="" width="18" height="18" />
-            <span class="nav-label">Settings</span>
-          </a>
-        </nav>
-        <div class="topbar-meta">
-          <div class="notif-wrap">
-            <button type="button" class="notif-btn" id="notif-toggle-btn" aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel" title="Notifications">
-              <img src="/static/icons/notifications.png" class="notif-icon" alt="" width="20" height="20" />
-              <span class="notif-badge" id="notif-badge" hidden>0</span>
-            </button>
-            <div class="notif-panel" id="notif-panel" role="dialog" aria-labelledby="notif-panel-title" hidden>
-              <div class="notif-panel__head">
-                <h3 id="notif-panel-title">Notifications</h3>
-                <button type="button" class="secondary" id="btn-clear-notifications">Clear all</button>
+          <p class="sr-only" id="topbar-breadcrumb">Home</p>
+          <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
+          <div class="app-header__search-wrap">
+            <label class="app-header__search" for="app-global-search">
+              <svg class="app-header__search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                type="search"
+                id="app-global-search"
+                placeholder="Search anything…"
+                autocomplete="off"
+                role="combobox"
+                aria-label="Search pages and actions"
+                aria-expanded="false"
+                aria-controls="global-search-panel"
+                aria-autocomplete="list"
+                aria-activedescendant=""
+              />
+              <kbd class="app-header__search-kbd" aria-hidden="true">⌘K</kbd>
+            </label>
+            <div class="vb-dropdown-panel global-search-panel" id="global-search-panel" role="listbox" aria-label="Search results" hidden>
+              <ul class="vb-dropdown-list global-search-list" id="global-search-list"></ul>
+              <p class="global-search-empty" id="global-search-empty" hidden>No matches — try “mass”, “calendar”, or a song title</p>
+            </div>
+          </div>
+          <div class="app-header__utilities">
+            <div class="liturgical-indicator-wrap">
+              <button type="button" class="liturgical-indicator" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
+                <img src="/static/icons/calendar.png" class="liturgical-indicator__icon" alt="" width="16" height="16" aria-hidden="true" />
+                <span class="liturgical-indicator__bar" id="topbar-liturgical-color-bar" aria-hidden="true"></span>
+                <span class="liturgical-indicator__lines">
+                  <span class="liturgical-indicator__season" id="home-liturgical-season">Ordinary Time</span>
+                  <span class="liturgical-indicator__year" id="home-liturgical-year">Year A</span>
+                </span>
+                <svg class="liturgical-indicator__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+              <div class="vb-dropdown-panel vb-dropdown-panel--right vb-dropdown-panel--wide liturgical-indicator-panel" id="liturgical-indicator-panel" role="dialog" aria-labelledby="liturgical-panel-title" hidden>
+                <p class="liturgical-indicator-panel__title" id="liturgical-panel-title">Countdowns</p>
+                <ul class="liturgical-countdown-list">
+                  <li class="liturgical-countdown-item">
+                    <span class="liturgical-countdown-item__label">Next Sunday</span>
+                    <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-days">—</span>
+                    <strong class="liturgical-countdown-item__value" id="liturgical-countdown-sunday">—</strong>
+                    <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-date">—</span>
+                  </li>
+                  <li class="liturgical-countdown-item liturgical-countdown-item--events">
+                    <span class="liturgical-countdown-item__label">Your events</span>
+                    <ul class="liturgical-panel-events" id="liturgical-panel-events-list" aria-live="polite"></ul>
+                    <span class="liturgical-countdown-item__sub" id="liturgical-panel-events-empty">No event</span>
+                  </li>
+                  <li class="liturgical-countdown-item">
+                    <span class="liturgical-countdown-item__label">World Youth Day 2027</span>
+                    <span class="liturgical-countdown-item__sub">Seoul · 3 Aug 2027</span>
+                    <strong class="liturgical-countdown-item__value" id="liturgical-countdown-wyd">—</strong>
+                  </li>
+                </ul>
               </div>
-              <div class="notif-panel__body">
-                <p class="muted" id="notification-empty">No notifications yet.</p>
-                <ul class="notification-feed" id="notification-feed" aria-live="polite"></ul>
+            </div>
+            <div class="notif-wrap">
+              <button type="button" class="notif-btn" id="notif-toggle-btn" aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel" title="Notifications">
+                <img src="/static/icons/notifications.png" class="notif-icon" alt="" width="20" height="20" />
+                <span class="notif-badge" id="notif-badge" hidden>0</span>
+              </button>
+              <div class="vb-dropdown-panel vb-dropdown-panel--right vb-dropdown-panel--wide notif-panel" id="notif-panel" role="dialog" aria-labelledby="notif-panel-title" hidden>
+                <div class="notif-panel__head">
+                  <h3 id="notif-panel-title">Notifications</h3>
+                  <button type="button" class="secondary" id="btn-clear-notifications">Clear all</button>
+                </div>
+                <div class="notif-panel__body">
+                  <p class="muted" id="notification-empty">No notifications yet.</p>
+                  <ul class="notification-feed" id="notification-feed" aria-live="polite"></ul>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+              <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </svg>
+              <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </button>
+            <div class="account-menu-wrap">
+              <button type="button" class="account-menu-btn" id="account-menu-btn" aria-expanded="false" aria-controls="account-menu-panel" aria-haspopup="menu">
+                <span class="account-menu-btn__avatar" id="account-menu-avatar" aria-hidden="true">A</span>
+                <span class="account-menu-btn__name" id="account-menu-name">Account</span>
+                <svg class="account-menu-btn__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+              <div class="vb-dropdown-panel vb-dropdown-panel--right app-menu-panel app-menu-panel--account" id="account-menu-panel" role="menu" hidden>
+                <div class="vb-dropdown-list">
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" role="menuitem">Church profile</a>
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/app" data-route="/settings/app" role="menuitem">Appearance</a>
+                </div>
               </div>
             </div>
           </div>
-          <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
-            <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-            </svg>
-            <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
-          </button>
-          <div class="liturgical-indicator-wrap">
-            <button type="button" class="liturgical-indicator" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
-              <span class="liturgical-indicator__bar" id="topbar-liturgical-color-bar" aria-hidden="true"></span>
-              <span class="liturgical-indicator__lines">
-                <span class="liturgical-indicator__season" id="home-liturgical-season">Ordinary Time</span>
-                <span class="liturgical-indicator__year" id="home-liturgical-year">Year A</span>
-              </span>
+        </div>
+        <div class="app-header__nav-row">
+          <nav class="app-header-nav" id="admin-sidebar" aria-label="Main navigation">
+            <a class="nav-link" data-route="/home" href="/home">
+              <img src="/static/icons/home.png" class="nav-icon" alt="" width="17" height="17" />
+              <span class="nav-label">Home</span>
+            </a>
+            <a class="nav-link" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
+              <img src="/static/icons/mass.png" class="nav-icon" alt="" width="17" height="17" />
+              <span class="nav-label">Mass</span>
+            </a>
+            <a class="nav-link" data-route="/mass/calendar" href="/mass/calendar">
+              <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="17" height="17" />
+              <span class="nav-label">Calendar</span>
+            </a>
+            <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+              <img src="/static/icons/media.png" class="nav-icon" alt="" width="17" height="17" />
+              <span class="nav-label">Media</span>
+            </a>
+            <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+              <img src="/static/icons/library.png" class="nav-icon" alt="" width="17" height="17" />
+              <span class="nav-label">Library</span>
+            </a>
+            <a class="nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+              <img src="/static/icons/design.png" class="nav-icon" alt="" width="17" height="17" />
+              <span class="nav-label">Design</span>
+            </a>
+          </nav>
+          <div class="create-menu-wrap">
+            <button type="button" class="btn-create" id="create-menu-btn" aria-expanded="false" aria-controls="create-menu-panel" aria-haspopup="menu">
+              <span class="btn-create__icon" aria-hidden="true">+</span>
+              <span>Create</span>
+              <svg class="btn-create__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
-            <div class="liturgical-indicator-panel" id="liturgical-indicator-panel" role="dialog" aria-labelledby="liturgical-panel-title" hidden>
-              <p class="liturgical-indicator-panel__title" id="liturgical-panel-title">Countdowns</p>
-              <ul class="liturgical-countdown-list">
-                <li class="liturgical-countdown-item">
-                  <span class="liturgical-countdown-item__label">Next Sunday</span>
-                  <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-days">—</span>
-                  <strong class="liturgical-countdown-item__value" id="liturgical-countdown-sunday">—</strong>
-                  <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-date">—</span>
-                </li>
-                <li class="liturgical-countdown-item liturgical-countdown-item--events">
-                  <span class="liturgical-countdown-item__label">Your events</span>
-                  <ul class="liturgical-panel-events" id="liturgical-panel-events-list" aria-live="polite"></ul>
-                  <span class="liturgical-countdown-item__sub" id="liturgical-panel-events-empty">No event</span>
-                </li>
-                <li class="liturgical-countdown-item">
-                  <span class="liturgical-countdown-item__label">World Youth Day 2027</span>
-                  <span class="liturgical-countdown-item__sub">Seoul · 3 Aug 2027</span>
-                  <strong class="liturgical-countdown-item__value" id="liturgical-countdown-wyd">—</strong>
-                </li>
-              </ul>
+            <div class="vb-dropdown-panel vb-dropdown-panel--right app-menu-panel" id="create-menu-panel" role="menu" hidden>
+              <div class="vb-dropdown-list">
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="pptx" role="menuitem">Create PPTX</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="event" role="menuitem">Create event</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="poster" role="menuitem">Create poster</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="song" role="menuitem">Add song</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="collection" role="menuitem">New collection</button>
+              </div>
             </div>
           </div>
         </div>
       </header>
-
+    <main class="dashboard">
       <section class="page" id="home-page" data-route="/home">
-        <div class="hero hero--home">
           <div class="home-bento-grid">
             <article class="flow-bento-cell home-bento-cell--gospel is-gospel-preview" id="home-gospel-card" tabindex="0" role="button" aria-label="Open full Gospel preview">
-              <header class="flow-bento-cell__head">
-                <h3>Upcoming Sunday</h3>
-                <p id="home-sunday-label">Loading…</p>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Upcoming Sunday</h3>
+                  <p id="home-sunday-label">Loading…</p>
+                </div>
+                <a class="home-card-head__action" href="/mass/builder" data-route="/mass/builder">View full Mass ›</a>
               </header>
               <div class="flow-reading-text flow-reading-text--gospel" id="home-gospel-quote">Gospel text will appear after refresh.</div>
               <p class="home-gospel-ref"><strong id="home-gospel-ref">—</strong></p>
             </article>
 
             <aside class="flow-bento-cell home-bento-cell--events" aria-labelledby="home-events-heading">
-              <header class="flow-bento-cell__head home-events-card__head">
-                <div>
+              <header class="flow-bento-cell__head home-card-head home-events-card__head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+                </span>
+                <div class="home-card-head__text">
                   <h3 id="home-events-heading">Upcoming Events</h3>
                 </div>
                 <button type="button" class="btn-home-create-event" id="btn-home-create-event">Create event</button>
@@ -6596,9 +7468,14 @@
             </aside>
 
             <article class="flow-bento-cell home-bento-cell--readings">
-              <header class="flow-bento-cell__head">
-                <h3>Sunday readings</h3>
-                <p>Tap a reading to open the full text.</p>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Sunday readings</h3>
+                  <p>Tap a reading to open the full text.</p>
+                </div>
               </header>
               <div class="flow-readings-inner">
                 <div class="flow-readings-preview-row home-readings-preview-row" role="group" aria-label="Sunday reading texts">
@@ -6628,15 +7505,19 @@
             </article>
 
             <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-panel" aria-labelledby="home-news-heading">
-              <header class="flow-bento-cell__head home-news-panel__head">
-                <h3 id="home-news-heading">World Catholic News</h3>
-                <p>Headlines from trusted Catholic sources.</p>
+              <header class="flow-bento-cell__head home-card-head home-news-panel__head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3 id="home-news-heading">World Catholic News</h3>
+                  <p>Headlines from trusted Catholic sources.</p>
+                </div>
               </header>
               <ul class="home-news-list" id="home-news-list" aria-live="polite"></ul>
               <p class="muted home-news-status" id="home-news-status">Loading news…</p>
             </aside>
           </div>
-        </div>
       </section>
 
       <div class="ui-overlay" id="home-event-modal" aria-hidden="true" role="presentation">
@@ -7004,16 +7885,14 @@ Lord, hear our prayer</textarea>
                     <div class="field">
                       <label id="celebrant-label" for="celebrant-picker-trigger">Mass celebrant</label>
                       <div class="celebrant-picker" id="celebrant-picker">
-                        <details class="celebrant-picker__root" id="celebrant-picker-details">
-                          <summary class="celebrant-picker__trigger" id="celebrant-picker-trigger" aria-labelledby="celebrant-label">
-                            <span class="celebrant-picker__value is-placeholder" id="celebrant-display">— Select celebrant —</span>
-                            <svg class="celebrant-picker__chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                          </summary>
-                          <div class="celebrant-picker__content">
-                            <ul class="celebrant-picker__list" id="celebrant-list" role="listbox" aria-labelledby="celebrant-label"></ul>
-                            <p class="celebrant-picker__empty muted" id="celebrant-picker-empty" hidden>No celebrants saved — add names in Settings → Church Profile.</p>
-                          </div>
-                        </details>
+                        <button type="button" class="celebrant-picker__trigger vb-select__trigger" id="celebrant-picker-trigger" aria-labelledby="celebrant-label" aria-haspopup="listbox" aria-expanded="false" aria-controls="celebrant-picker-panel">
+                          <span class="celebrant-picker__value vb-select__value is-placeholder" id="celebrant-display">Select celebrant</span>
+                          <svg class="vb-select__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="celebrant-picker__panel vb-dropdown-panel" id="celebrant-picker-panel" role="listbox" aria-labelledby="celebrant-label" hidden>
+                          <ul class="vb-dropdown-list celebrant-picker__list" id="celebrant-list"></ul>
+                          <p class="vb-dropdown-empty celebrant-picker__empty" id="celebrant-picker-empty" hidden>No celebrants saved — add names in Settings → Church Profile.</p>
+                        </div>
                         <input type="hidden" id="celebrant" value="" aria-describedby="celebrant-hint" />
                       </div>
                       <p class="muted" id="celebrant-hint">Settings → Church Profile.</p>
@@ -7182,24 +8061,75 @@ Lord, hear our prayer</textarea>
             </div>
 
             <div class="flow-builder-tab-panel flow-builder-tab-panel--songs" id="flow-panel-songs" role="tabpanel" aria-labelledby="flow-tab-songs" data-flow-panel="songs" hidden>
-            <section class="flow-song-plan-section" id="flow-song-plan-section" aria-labelledby="flow-song-plan-heading">
-              <div class="flow-section-head">
-                <h4 id="flow-song-plan-heading">Song plan</h4>
-                <p>Search your Song Library and pick one hymn per Mass slot for the deck.</p>
-              </div>
-              <div class="field" style="margin:0 0 12px;">
-                <label for="mass-song-plan-lang">Language filter</label>
-                <select id="mass-song-plan-lang">
-                  <option value="all">All</option>
-                  <option value="English">English</option>
-                  <option value="Tagalog">Tagalog</option>
-                  <option value="Latin">Latin</option>
-                  <option value="mix">Mix</option>
-                </select>
-                <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Narrows the search list only; your library still includes every saved language.</p>
-              </div>
-              <div id="mass-song-plan" class="mass-song-plan-root"></div>
-            </section>
+            <div class="home-bento-grid song-plan-bento-grid">
+              <aside class="flow-bento-cell home-bento-cell--summary mass-summary-sidebar" aria-labelledby="mass-summary-heading">
+                <header class="flow-bento-cell__head home-card-head">
+                  <span class="home-card-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  </span>
+                  <div class="home-card-head__text">
+                    <h3 id="mass-summary-heading">Mass summary</h3>
+                    <p><span id="mass-summary-date-label">—</span> · <span id="mass-summary-season-label">Ordinary Time</span></p>
+                  </div>
+                </header>
+                <dl class="mass-summary-stats">
+                  <div class="mass-summary-stat">
+                    <dt>Language</dt>
+                    <dd id="mass-summary-lang-label">All languages</dd>
+                  </div>
+                  <div class="mass-summary-stat">
+                    <dt>Songs</dt>
+                    <dd aria-live="polite" aria-atomic="true"><span id="flow-song-count">0</span>/<span id="mass-summary-song-total">5</span></dd>
+                  </div>
+                  <div class="mass-summary-stat">
+                    <dt>Readings</dt>
+                    <dd id="flow-reading-loaded">—</dd>
+                  </div>
+                </dl>
+                <div class="mass-summary-progress-wrap">
+                  <span class="mass-summary-progress-label" id="mass-summary-progress-label">Plan progress</span>
+                  <div class="mass-summary-progress" role="progressbar" aria-labelledby="mass-summary-progress-label" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" id="mass-summary-progress">
+                    <div class="mass-summary-progress__fill" id="mass-summary-progress-fill"></div>
+                  </div>
+                </div>
+                <nav class="mass-summary-links" aria-label="Song plan shortcuts">
+                  <a href="/settings/app" data-route="/settings/app" class="mass-summary-link">Preferences</a>
+                  <a href="/library/songs" data-route="/library/songs" class="mass-summary-link">Song library</a>
+                </nav>
+              </aside>
+              <section class="flow-bento-cell home-bento-cell--song-plan flow-song-plan-section" id="flow-song-plan-section" aria-labelledby="flow-song-plan-heading">
+                <header class="flow-bento-cell__head home-card-head">
+                  <span class="home-card-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  </span>
+                  <div class="home-card-head__text">
+                    <h3 id="flow-song-plan-heading">Song plan</h3>
+                    <p>Search and assign hymns for each part of Mass.</p>
+                  </div>
+                </header>
+                <div class="mass-song-plan-subtoolbar">
+                  <div class="mass-song-plan-lang-field">
+                    <label for="mass-song-plan-lang">Language filter</label>
+                    <select id="mass-song-plan-lang" class="mass-song-plan-lang-select">
+                      <option value="all">All languages</option>
+                      <option value="English">English</option>
+                      <option value="Tagalog">Tagalog</option>
+                      <option value="Latin">Latin</option>
+                      <option value="mix">Mix</option>
+                    </select>
+                  </div>
+                  <button type="button" class="btn-home-create-event" id="btn-song-plan-expand-all">Expand all</button>
+                </div>
+                <div class="mass-song-plan-list" role="region" aria-label="Mass song slots">
+                  <div id="mass-song-plan" class="mass-song-plan-root"></div>
+                </div>
+                <button type="button" class="mass-song-add-custom" id="mass-song-add-custom">+ Add custom section</button>
+                <footer class="mass-song-plan-footer">
+                  <button type="button" class="btn-home-create-event" id="btn-load-flow-inline">Load readings</button>
+                  <button type="button" class="btn-create" id="btn-generate-flow-inline">Generate package</button>
+                </footer>
+              </section>
+            </div>
             </div>
           </div>
         </div>
@@ -8103,7 +9033,9 @@ Lord, hear our prayer</textarea>
         page.classList.toggle("active", pageIsActiveForRoute(page, r));
         page.classList.remove("page--leaving");
       });
-      document.querySelectorAll(".nav-link").forEach((link) => link.classList.toggle("active", navLinkIsActive(link, r)));
+      document.querySelectorAll(".app-header-nav .nav-link").forEach((link) => {
+        link.classList.toggle("active", navLinkIsActive(link, r));
+      });
       syncSettingsLayout(r);
       const rs = $("route-switcher");
       if (rs) rs.value = r;
@@ -8111,6 +9043,8 @@ Lord, hear our prayer</textarea>
       if (rd) rd.textContent = routeMeta[r] || "";
       const bc = $("topbar-breadcrumb");
       if (bc) bc.innerHTML = formatRouteBreadcrumb(r);
+      const accountBtn = $("account-menu-btn");
+      if (accountBtn) accountBtn.classList.toggle("is-active", isSettingsRoute(r));
       if (r === "/home") {
         refreshHomeMission();
         refreshCatholicNews();
@@ -8124,7 +9058,10 @@ Lord, hear our prayer</textarea>
         loadSongCatalog();
       }
       const flowDock = $("flow-dock-actions");
-      if (flowDock) flowDock.hidden = r !== "/mass/builder";
+      if (flowDock) {
+        const songsTab = document.querySelector("#flow-tab-songs[aria-selected=\"true\"]");
+        flowDock.hidden = r !== "/mass/builder" || !!songsTab;
+      }
       if (r === "/media/posters") {
         syncPosterFromMassBuilder();
         refreshSavedPosters();
@@ -8166,9 +9103,10 @@ Lord, hear our prayer</textarea>
       applyRouteState(r, replaceOnly);
     }
 
-    document.querySelectorAll(".nav-link, .settings-sidebar-link").forEach((link) => {
+    document.querySelectorAll(".app-header-nav .nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
+        event.stopPropagation();
         showRoute(link.dataset.route);
       });
     });
@@ -8380,6 +9318,7 @@ Lord, hear our prayer</textarea>
       }).join("");
       syncStructuredEditorToInputPanel();
       requestAnimationFrame(autoResizeAllLyricTextareas);
+      initVerbumSelects(list);
     }
 
     $("lyrics-block-list").addEventListener("input", (event) => {
@@ -8725,6 +9664,7 @@ Lord, hear our prayer</textarea>
       if (drop) {
         drop.innerHTML = "<option value=\"\">Choose a saved preset to apply…</option>" +
           customThemes.map((t) => "<option value=\"" + escapeHtml(t.id) + "\">" + escapeHtml(t.name) + "</option>").join("");
+        refreshVerbumSelect(drop);
       }
     }
 
@@ -8935,7 +9875,7 @@ Lord, hear our prayer</textarea>
       { key: "communion_2", label: "Communion song 2", section: "communion" },
       { key: "recessional", label: "Recessional song", section: "recessional" },
     ];
-    let selectedLyricsSongs = { entrance: "", offertory: "", communion_1: "", communion_2: "", recessional: "" };
+    let selectedLyricsSongs = { entrance: "", offertory: "", communion_1: "", communion_2: "", recessional: "", meditation: "" };
     let songOptionsBySection = { entrance: [], offertory: [], communion: [], recessional: [], meditation: [] };
     let flowPreviewData = null;
     let massPlanAllSongs = [];
@@ -8982,86 +9922,124 @@ Lord, hear our prayer</textarea>
     }
 
     function updateMassSlotChip(key) {
-      const el = $("mass-song-picked-" + key);
-      const slot = document.querySelector(".mass-song-slot[data-slot-key=\"" + key + "\"]");
-      if (!el) return;
+      const titleEl = $("mass-song-picked-" + key);
+      const statusEl = $("mass-song-status-" + key);
+      const alertEl = $("mass-song-alert-" + key);
+      const badgeEl = $("mass-song-badge-" + key);
+      const row = document.querySelector(".mass-song-plan-card[data-slot-key=\"" + key + "\"]");
+      if (!titleEl) return;
       const id = selectedLyricsSongs[key] || "";
-      let row = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
-      if (id && !row) {
+      let rowData = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
+      if (id && !rowData) {
         rebuildMassPlanSongPool();
-        row = massPlanAllSongs.find((s) => String(s.id) === String(id));
+        rowData = massPlanAllSongs.find((s) => String(s.id) === String(id));
       }
-      const missingLyrics = !!(id && row && !row.has_lyrics);
-      if (slot) {
-        slot.classList.toggle("has-selection", !!id);
-        slot.classList.toggle("mass-song-slot--missing-lyrics", missingLyrics);
+      const missingLyrics = !!(id && rowData && !rowData.has_lyrics);
+      const clearBtn = row ? row.querySelector("[data-mass-song-clear]") : null;
+      if (row) {
+        row.classList.toggle("has-selection", !!id);
+        row.classList.toggle("mass-song-slot--missing-lyrics", missingLyrics);
       }
-      el.classList.toggle("mass-song-selected--missing-lyrics", missingLyrics);
+      if (badgeEl) badgeEl.hidden = !id;
+      if (clearBtn) clearBtn.hidden = !id;
       if (!id) {
-        el.classList.remove("has-selection");
-        el.innerHTML = "<span class=\"muted\">No song selected</span>";
+        titleEl.textContent = "Choose a song";
+        titleEl.classList.remove("has-selection");
+        titleEl.classList.add("is-empty");
+        if (statusEl) {
+          statusEl.textContent = "";
+          statusEl.classList.remove("is-warn");
+        }
+        if (alertEl) alertEl.innerHTML = "";
         return;
       }
-      el.classList.add("has-selection");
-      const secPill = row && row.section
-        ? "<span class=\"pill\" style=\"font-size:0.68rem;margin-right:6px;vertical-align:middle;\">" + escapeHtml(row.section) + "</span>"
-        : "";
-      const title = row ? escapeHtml(row.title) : escapeHtml(id);
-      let meta = "";
-      if (row) {
-        const bits = [row.author, row.language].filter(Boolean);
-        if (!row.has_lyrics) {
-          meta =
-            (bits.length ? "<div class=\"mass-song-picked-meta muted\">" + escapeHtml(bits.join(" · ")) + "</div>" : "") +
+      titleEl.textContent = rowData ? rowData.title : id;
+      titleEl.classList.add("has-selection");
+      titleEl.classList.remove("is-empty");
+      if (statusEl) {
+        if (missingLyrics) {
+          statusEl.textContent = "No lyrics";
+          statusEl.classList.add("is-warn");
+        } else {
+          const lang = rowData && rowData.language ? rowData.language : "";
+          statusEl.textContent = lang ? lang + " · Lyrics saved" : "Lyrics saved";
+          statusEl.classList.remove("is-warn");
+        }
+      }
+      if (alertEl) {
+        if (missingLyrics) {
+          alertEl.innerHTML =
             "<div class=\"mass-song-lyrics-alert\" role=\"alert\">" +
               "<span class=\"mass-song-lyrics-alert__icon\" aria-hidden=\"true\">!</span>" +
               "<div>" +
                 "<span class=\"mass-song-lyrics-alert__title\">Lyrics missing</span>" +
-                "<span class=\"mass-song-lyrics-alert__text\">Add lyrics in Song Library before generating hymn slides. Preview stays disabled until lyrics are saved.</span>" +
+                "<span class=\"mass-song-lyrics-alert__text\">Add lyrics in Song Library before generating.</span>" +
               "</div>" +
             "</div>";
         } else {
-          meta = "<div class=\"mass-song-picked-meta muted\">" + escapeHtml(bits.join(" · ")) + (bits.length ? " · " : "") + "lyrics saved</div>";
+          alertEl.innerHTML = "";
         }
       }
-      el.innerHTML = secPill + "<strong class=\"mass-song-picked-title\">" + title + "</strong>" + meta;
+    }
+
+    function openVbDropdownPanel(panel) {
+      if (!panel) return;
+      panel.hidden = false;
+      requestAnimationFrame(() => panel.classList.add("is-open"));
+    }
+
+    function closeVbDropdownPanel(panel) {
+      if (!panel) return;
+      panel.classList.remove("is-open");
+      panel.hidden = true;
+    }
+
+    function setVbDropdownOpen(panel, btn, open) {
+      if (!panel) return;
+      if (open) {
+        panel.hidden = false;
+        requestAnimationFrame(() => panel.classList.add("is-open"));
+        if (btn) btn.setAttribute("aria-expanded", "true");
+      } else {
+        panel.classList.remove("is-open");
+        panel.hidden = true;
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      }
     }
 
     function renderMassSongResults(key, list) {
       const box = $("mass-song-res-" + key);
       if (!box) return;
       if (!list.length) {
-        box.innerHTML = "<div class=\"muted\" style=\"padding:10px 12px;font-size:0.82rem;\">No matches. Clear the search or set Language to All.</div>";
-        box.hidden = false;
+        box.innerHTML = "<p class=\"vb-dropdown-empty\">No matches. Clear the search or set Language to All.</p>";
+        openVbDropdownPanel(box);
         return;
       }
-      box.innerHTML = list.map((row) => {
+      box.innerHTML = "<ul class=\"vb-dropdown-list\">" + list.map((row) => {
         const noLyrics = !row.has_lyrics;
-        const rowCls = "mass-song-result-row" + (noLyrics ? " mass-song-result-row--no-lyrics" : "");
+        const rowCls = "vb-dropdown-item mass-song-result-row" + (noLyrics ? " mass-song-result-row--no-lyrics" : "");
         const lyricsBadge = noLyrics
-          ? "<span class=\"mass-song-lyrics-badge\" aria-label=\"No lyrics saved\">No lyrics</span>"
+          ? "<span class=\"vb-dropdown-item__hint mass-song-lyrics-badge\" aria-label=\"No lyrics saved\">No lyrics</span>"
           : "";
+        const meta = escapeHtml(row.section || "library") +
+          (row.author ? " · " + escapeHtml(row.author) : "") +
+          (row.language ? " · " + escapeHtml(row.language) : "") +
+          (row.source === "web" ? " · web hint" : "");
         return (
-          "<button type=\"button\" class=\"" + rowCls + "\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
-            "<strong>" + escapeHtml(row.title) + "</strong>" +
-            "<span class=\"muted\" style=\"font-size:0.78rem;display:block;margin-top:2px;\">" +
-            escapeHtml(row.section || "library") +
-            (row.author ? " · " + escapeHtml(row.author) : "") +
-            (row.language ? " · " + escapeHtml(row.language) : "") +
-            (row.source === "web" ? " · web hint" : "") +
-            "</span>" +
+          "<li><button type=\"button\" class=\"" + rowCls + "\" role=\"option\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
+            "<span class=\"vb-dropdown-item__label\"><strong>" + escapeHtml(row.title) + "</strong>" +
+            "<span class=\"muted\" style=\"font-size:0.78rem;display:block;margin-top:2px;font-weight:500;\">" + meta + "</span></span>" +
             lyricsBadge +
-          "</button>"
+          "</button></li>"
         );
-      }).join("");
-      box.hidden = false;
+      }).join("") + "</ul>";
+      openVbDropdownPanel(box);
     }
 
     function closeMassSongResultPanels(exceptKey) {
       lyricSongSlots.forEach((s) => {
         if (exceptKey && s.key === exceptKey) return;
-        const b = $("mass-song-res-" + s.key);
-        if (b) b.hidden = true;
+        closeVbDropdownPanel($("mass-song-res-" + s.key));
       });
     }
 
@@ -9878,15 +10856,68 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    const MASS_SONG_PLAN_DRAG_SVG =
+      "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\">" +
+        "<circle cx=\"9\" cy=\"7\" r=\"1.25\"/><circle cx=\"15\" cy=\"7\" r=\"1.25\"/>" +
+        "<circle cx=\"9\" cy=\"12\" r=\"1.25\"/><circle cx=\"15\" cy=\"12\" r=\"1.25\"/>" +
+        "<circle cx=\"9\" cy=\"17\" r=\"1.25\"/><circle cx=\"15\" cy=\"17\" r=\"1.25\"/>" +
+      "</svg>";
+    const MASS_SONG_PLAN_CHEVRON_SVG =
+      "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
+        "<path d=\"m6 9 6 6 6-6\"/>" +
+      "</svg>";
+    const MASS_SONG_PLAN_TRASH_SVG =
+      "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
+        "<path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/>" +
+      "</svg>";
+
     function massSongPreviewButtonHtml(slotKey) {
       return (
-        "<button type=\"button\" class=\"plan-btn mass-song-preview-btn is-disabled\" " +
+        "<button type=\"button\" class=\"mass-song-plan-card__btn mass-song-preview-btn is-disabled\" " +
           "data-preview-slot=\"" + escapeHtml(slotKey) + "\" disabled " +
-          "aria-disabled=\"true\" title=\"Lyrics unavailable\">" +
-          "<div class=\"button-outer\"><div class=\"button-inner\"><span>Preview</span></div></div>" +
+          "aria-disabled=\"true\" title=\"Lyrics unavailable\">Preview</button>"
+      );
+    }
+
+    function massSongChangeButtonHtml(slotKey) {
+      return (
+        "<button type=\"button\" class=\"mass-song-plan-card__btn mass-song-change-btn\" data-change-slot=\"" +
+          escapeHtml(slotKey) + "\">Change</button>"
+      );
+    }
+
+    function massSongClearButtonHtml(slotKey) {
+      return (
+        "<button type=\"button\" class=\"mass-song-plan-card__btn mass-song-plan-card__btn--clear mass-song-clear\" data-mass-song-clear=\"" +
+          escapeHtml(slotKey) + "\" hidden aria-label=\"Clear selection\">" +
+          "<span class=\"mass-song-plan-card__btn-label\">Clear</span>" + MASS_SONG_PLAN_TRASH_SVG +
         "</button>"
       );
     }
+
+    function toggleMassSongCardExpanded(key, expanded, focusSearch) {
+      const card = document.querySelector(".mass-song-plan-card[data-slot-key=\"" + key + "\"]");
+      if (!card) return;
+      const body = card.querySelector(".mass-song-plan-card__body");
+      const expandBtn = card.querySelector(".mass-song-plan-card__expand");
+      if (body) body.hidden = !expanded;
+      if (expandBtn) expandBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      card.classList.toggle("is-expanded", expanded);
+      if (expanded && focusSearch) {
+        const inp = $("mass-song-q-" + key);
+        if (inp) {
+          window.requestAnimationFrame(() => inp.focus());
+        }
+      }
+    }
+
+    function setAllMassSongCardsExpanded(expanded) {
+      lyricSongSlots.forEach((slot) => toggleMassSongCardExpanded(slot.key, expanded, false));
+      const btn = $("btn-song-plan-expand-all");
+      if (btn) btn.textContent = expanded ? "Collapse all" : "Expand all";
+    }
+
+    let massSongPlanExpandAll = false;
 
     const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
 
@@ -10265,28 +11296,105 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    function formatMassSummaryDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso + "T12:00:00");
+      if (Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function massSongLangLabel(code) {
+      const map = { all: "All languages", English: "English", Tagalog: "Tagalog", Latin: "Latin", mix: "Mix" };
+      return map[code] || code || "All languages";
+    }
+
+    function massSongSlotShortLabel(key, label) {
+      const map = {
+        entrance: "Entrance",
+        offertory: "Offertory",
+        communion_1: "Communion 1",
+        communion_2: "Communion 2",
+        recessional: "Recessional",
+        meditation: "Meditation",
+      };
+      return map[key] || label;
+    }
+
     function renderMassSongPlan() {
       const plan = $("mass-song-plan");
       if (!plan) return;
       rebuildMassPlanSongPool();
-      plan.innerHTML = lyricSongSlots.map((slot) => (
-        "<div class=\"mass-song-slot\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
-          "<label class=\"mass-song-slot-label\" for=\"mass-song-q-" + slot.key + "\">" + escapeHtml(slot.label) + "</label>" +
-          "<div class=\"mass-song-pick\">" +
-            "<div class=\"mass-song-pick-row\">" +
-              "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" autocomplete=\"off\" placeholder=\"Search title, author, section…\" />" +
-              massSongPreviewButtonHtml(slot.key) +
-              "<button type=\"button\" class=\"plan-btn mass-song-clear\" data-mass-song-clear=\"" + slot.key + "\"><div class=\"button-outer\"><div class=\"button-inner\"><span>Clear</span></div></div></button>" +
+      plan.innerHTML = lyricSongSlots.map((slot, index) => (
+        "<article class=\"mass-song-plan-card mass-song-slot\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
+          "<div class=\"mass-song-plan-card__bar\">" +
+            "<span class=\"mass-song-plan-card__drag\" aria-hidden=\"true\">" + MASS_SONG_PLAN_DRAG_SVG + "</span>" +
+            "<span class=\"mass-song-plan-card__num\" aria-hidden=\"true\">" + (index + 1) + "</span>" +
+            "<div class=\"mass-song-plan-card__main\">" +
+              "<div class=\"mass-song-plan-card__heading\">" +
+                "<span class=\"mass-song-plan-card__part\">" + escapeHtml(massSongSlotShortLabel(slot.key, slot.label)) + "</span>" +
+                "<span class=\"mass-song-plan-card__badge\" id=\"mass-song-badge-" + slot.key + "\" hidden>Selected</span>" +
+              "</div>" +
+              "<strong class=\"mass-song-plan-card__title is-empty\" id=\"mass-song-picked-" + slot.key + "\">Choose a song</strong>" +
+              "<span class=\"mass-song-plan-card__meta\" id=\"mass-song-status-" + slot.key + "\"></span>" +
             "</div>" +
-            "<div class=\"mass-song-selected\" id=\"mass-song-picked-" + slot.key + "\"></div>" +
-            "<div class=\"mass-song-results\" id=\"mass-song-res-" + slot.key + "\" hidden></div>" +
+            "<div class=\"mass-song-plan-card__actions\">" +
+              massSongPreviewButtonHtml(slot.key) +
+              massSongChangeButtonHtml(slot.key) +
+              massSongClearButtonHtml(slot.key) +
+              "<button type=\"button\" class=\"mass-song-plan-card__expand\" data-expand-slot=\"" + escapeHtml(slot.key) + "\" aria-expanded=\"false\" aria-label=\"Expand " + escapeHtml(slot.label) + "\">" +
+                MASS_SONG_PLAN_CHEVRON_SVG +
+              "</button>" +
+            "</div>" +
           "</div>" +
-        "</div>"
+          "<div class=\"mass-song-plan-card__body\" hidden>" +
+            "<div class=\"mass-song-plan-row__search mass-song-pick\">" +
+              "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" autocomplete=\"off\" placeholder=\"Search library…\" aria-label=\"Search " + escapeHtml(slot.label) + "\" />" +
+              "<div class=\"mass-song-alert-host\" id=\"mass-song-alert-" + slot.key + "\"></div>" +
+              "<div class=\"vb-dropdown-panel mass-song-results\" id=\"mass-song-res-" + slot.key + "\" role=\"listbox\" hidden></div>" +
+            "</div>" +
+          "</div>" +
+        "</article>"
       )).join("");
       lyricSongSlots.forEach((slot) => {
         updateMassSlotChip(slot.key);
         updateMassSongPreviewButton(slot.key);
+        if (massSongPlanExpandAll) toggleMassSongCardExpanded(slot.key, true, false);
       });
+      renderMassSummarySidebar();
+      renderFlowSongCount();
+    }
+    function renderMassSummarySidebar() {
+      const dateInp = $("mass-date");
+      const dateLabel = $("mass-summary-date-label");
+      const seasonLabel = $("mass-summary-season-label");
+      const langLabel = $("mass-summary-lang-label");
+      const totalEl = $("mass-summary-song-total");
+      const progress = $("mass-summary-progress");
+      const progressFill = $("mass-summary-progress-fill");
+      const addBtn = $("mass-song-add-custom");
+      if (dateLabel && dateInp) dateLabel.textContent = formatMassSummaryDate(dateInp.value);
+      if (seasonLabel) {
+        const season = flowPreviewData ? formatLiturgicalSeasonLabel(flowPreviewData.season || "") : "Ordinary Time";
+        const year = flowPreviewData ? formatLectionaryYearLabel(flowPreviewData.lectionary_cycle || "") : "";
+        seasonLabel.textContent = year ? season + ", " + year : season;
+      }
+      if (langLabel) langLabel.textContent = massSongLangLabel(massSongPlanLanguage);
+      const total = lyricSongSlots.length;
+      if (totalEl) totalEl.textContent = String(total);
+      const n = selectedLyricsSongCount();
+      if (progress) {
+        progress.setAttribute("aria-valuemax", String(total));
+        progress.setAttribute("aria-valuenow", String(n));
+        progress.setAttribute("aria-valuetext", n + " of " + total + " songs selected");
+      }
+      if (progressFill) progressFill.style.width = total ? ((n / total) * 100) + "%" : "0%";
+      if (addBtn) addBtn.hidden = lyricSongSlots.some((s) => s.key === "meditation");
+    }
+
+    function syncFlowDockVisibility(activeTab) {
+      const flowDock = $("flow-dock-actions");
+      const onBuilder = currentRoute() === "/mass/builder";
+      if (flowDock) flowDock.hidden = !onBuilder || activeTab === "songs";
     }
 
     document.addEventListener("click", (e) => {
@@ -10306,11 +11414,12 @@ Lord, hear our prayer</textarea>
       if (inp) inp.value = "";
       const box = $("mass-song-res-" + key);
       if (box) {
-        box.hidden = true;
+        closeVbDropdownPanel(box);
         box.innerHTML = "";
       }
       updateMassSlotChip(key);
       updateMassSongPreviewButton(key);
+      toggleMassSongCardExpanded(key, false, false);
       renderFlowSongCount();
     });
 
@@ -10319,6 +11428,21 @@ Lord, hear our prayer</textarea>
       if (prev && !prev.classList.contains("is-disabled")) {
         const slotKey = prev.dataset.previewSlot;
         if (slotKey) openMassSongPreview(slotKey);
+        return;
+      }
+      const changeBtn = e.target.closest(".mass-song-change-btn");
+      if (changeBtn) {
+        const key = changeBtn.dataset.changeSlot;
+        if (key) toggleMassSongCardExpanded(key, true, true);
+        return;
+      }
+      const expandBtn = e.target.closest(".mass-song-plan-card__expand");
+      if (expandBtn) {
+        const key = expandBtn.dataset.expandSlot;
+        if (!key) return;
+        const card = expandBtn.closest(".mass-song-plan-card");
+        const expanded = !(card && card.classList.contains("is-expanded"));
+        toggleMassSongCardExpanded(key, expanded, expanded);
         return;
       }
       const clr = e.target.closest("[data-mass-song-clear]");
@@ -10330,12 +11454,17 @@ Lord, hear our prayer</textarea>
       if (inp) inp.value = "";
       const box = $("mass-song-res-" + key);
       if (box) {
-        box.hidden = true;
+        closeVbDropdownPanel(box);
         box.innerHTML = "";
       }
       updateMassSlotChip(key);
       updateMassSongPreviewButton(key);
       renderFlowSongCount();
+    });
+
+    $("btn-song-plan-expand-all") && $("btn-song-plan-expand-all").addEventListener("click", () => {
+      massSongPlanExpandAll = !massSongPlanExpandAll;
+      setAllMassSongCardsExpanded(massSongPlanExpandAll);
     });
 
     $("mass-song-plan").addEventListener("input", (e) => {
@@ -10359,7 +11488,7 @@ Lord, hear our prayer</textarea>
     }, true);
 
     function selectedLyricsSongCount() {
-      return Object.values(selectedLyricsSongs).filter(Boolean).length;
+      return lyricSongSlots.filter((slot) => !!(selectedLyricsSongs[slot.key] || "")).length;
     }
 
     function renderFlowSongCount() {
@@ -10370,6 +11499,7 @@ Lord, hear our prayer</textarea>
       if (r) {
         r.textContent = (flowPreviewData && flowPreviewData.ok) ? "Loaded" : "—";
       }
+      renderMassSummarySidebar();
     }
 
     $("mass-song-plan-lang") && $("mass-song-plan-lang").addEventListener("change", (event) => {
@@ -10379,7 +11509,34 @@ Lord, hear our prayer</textarea>
       } catch (_e) {
         /* ignore */
       }
+      renderMassSummarySidebar();
+      lyricSongSlots.forEach((slot) => {
+        const box = $("mass-song-res-" + slot.key);
+        const inp = $("mass-song-q-" + slot.key);
+        if (!inp || !box || box.hidden) return;
+        renderMassSongResults(slot.key, filterMassPlanSongs(inp.value));
+      });
+    });
+
+    $("mass-song-add-custom") && $("mass-song-add-custom").addEventListener("click", () => {
+      if (lyricSongSlots.some((s) => s.key === "meditation")) return;
+      lyricSongSlots.push({ key: "meditation", label: "Meditation song", section: "meditation" });
+      if (selectedLyricsSongs.meditation == null) selectedLyricsSongs.meditation = "";
       renderMassSongPlan();
+      toggleMassSongCardExpanded("meditation", true, true);
+    });
+
+    $("btn-load-flow-inline") && $("btn-load-flow-inline").addEventListener("click", () => loadFlowData(false));
+    $("btn-generate-flow-inline") && $("btn-generate-flow-inline").addEventListener("click", () => {
+      const gen = $("btn-generate-flow");
+      if (gen) gen.click();
+    });
+
+    document.querySelectorAll(".mass-summary-link[data-route]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        showRoute(link.dataset.route);
+      });
     });
 
     (function initFlowBuilderTabs() {
@@ -10400,6 +11557,7 @@ Lord, hear our prayer</textarea>
         if (name === "songs" && typeof renderMassSongPlan === "function") {
           renderMassSongPlan();
         }
+        syncFlowDockVisibility(name);
       }
       tablist.addEventListener("click", (e) => {
         const tab = e.target.closest('[role="tab"]');
@@ -10419,6 +11577,7 @@ Lord, hear our prayer</textarea>
         tabs[next].focus();
         activateFlowTab(tabs[next].dataset.flowTab);
       });
+      syncFlowDockVisibility("setup");
     })();
 
     const NOTIF_STORAGE_KEY = "verbumNotifications";
@@ -10584,12 +11743,11 @@ Lord, hear our prayer</textarea>
       const panel = $("notif-panel");
       if (!btn || !panel) return;
       function closeNotifPanel() {
-        panel.hidden = true;
-        btn.setAttribute("aria-expanded", "false");
+        setVbDropdownOpen(panel, btn, false);
       }
       function openNotifPanel() {
-        panel.hidden = false;
-        btn.setAttribute("aria-expanded", "true");
+        closeHeaderMenus("notif-panel");
+        setVbDropdownOpen(panel, btn, true);
       }
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -10655,7 +11813,7 @@ Lord, hear our prayer</textarea>
       if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
     }
 
-    const CELEBRANT_PLACEHOLDER = "— Select celebrant —";
+    const CELEBRANT_PLACEHOLDER = "Select celebrant";
 
     function setCelebrantPickerValue(name) {
       const hidden = $("celebrant");
@@ -10676,6 +11834,7 @@ Lord, hear our prayer</textarea>
         list.querySelectorAll(".celebrant-picker__option").forEach((btn) => {
           const on = btn.dataset.value === value;
           btn.setAttribute("aria-selected", on ? "true" : "false");
+          btn.classList.toggle("is-active", on);
         });
       }
       if (picker) picker.classList.toggle("celebrant-picker--disabled", !celebrantNamesCache.length);
@@ -10683,8 +11842,31 @@ Lord, hear our prayer</textarea>
     }
 
     function closeCelebrantPicker() {
-      const details = $("celebrant-picker-details");
-      if (details) details.removeAttribute("open");
+      const panel = $("celebrant-picker-panel");
+      const trigger = $("celebrant-picker-trigger");
+      closeVbDropdownPanel(panel);
+      if (trigger) trigger.setAttribute("aria-expanded", "false");
+    }
+
+    function openCelebrantPicker() {
+      const panel = $("celebrant-picker-panel");
+      const trigger = $("celebrant-picker-trigger");
+      if (!panel || !trigger || pickerIsDisabled()) return;
+      if (typeof closeAllVerbumSelects === "function") closeAllVerbumSelects();
+      if (typeof closeGlobalSearch === "function") closeGlobalSearch();
+      [
+        ["liturgical-indicator-panel", "liturgical-indicator-btn"],
+        ["account-menu-panel", "account-menu-btn"],
+        ["create-menu-panel", "create-menu-btn"],
+        ["notif-panel", "notif-toggle-btn"],
+      ].forEach(([panelId, btnId]) => setVbDropdownOpen($(panelId), $(btnId), false));
+      openVbDropdownPanel(panel);
+      trigger.setAttribute("aria-expanded", "true");
+    }
+
+    function pickerIsDisabled() {
+      const picker = $("celebrant-picker");
+      return !!(picker && picker.classList.contains("celebrant-picker--disabled"));
     }
 
     function renderCelebrantSelect(selectedName) {
@@ -10706,8 +11888,9 @@ Lord, hear our prayer</textarea>
       if (picker) picker.classList.remove("celebrant-picker--disabled");
       list.innerHTML = names.map((name) => (
         "<li role=\"presentation\">" +
-          "<button type=\"button\" class=\"celebrant-picker__option\" role=\"option\" data-value=\"" +
-          escapeHtml(name) + "\" aria-selected=\"false\">" + escapeHtml(name) + "</button>" +
+          "<button type=\"button\" class=\"vb-dropdown-item celebrant-picker__option\" role=\"option\" data-value=\"" +
+          escapeHtml(name) + "\" aria-selected=\"false\">" +
+          "<span class=\"vb-dropdown-item__label\">" + escapeHtml(name) + "</span></button>" +
         "</li>"
       )).join("");
       let chosen = "";
@@ -10722,8 +11905,21 @@ Lord, hear our prayer</textarea>
     function bindCelebrantSelect() {
       const list = $("celebrant-list");
       const picker = $("celebrant-picker");
+      const trigger = $("celebrant-picker-trigger");
       if (!list || !picker || picker.dataset.bound === "1") return;
       picker.dataset.bound = "1";
+      if (trigger) {
+        trigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const panel = $("celebrant-picker-panel");
+          if (!panel) return;
+          if (panel.hidden) openCelebrantPicker();
+          else closeCelebrantPicker();
+        });
+      }
+      document.addEventListener("click", (e) => {
+        if (!picker.contains(e.target)) closeCelebrantPicker();
+      });
       list.addEventListener("click", (e) => {
         const btn = e.target.closest(".celebrant-picker__option");
         if (!btn || !btn.dataset.value) return;
@@ -10818,6 +12014,7 @@ Lord, hear our prayer</textarea>
         if (data.community_name && $("settings-church-name")) {
           $("settings-church-name").value = data.community_name;
         }
+        updateAccountMenuDisplay();
         applyCelebrantNamesFromServer(data.celebrant_names || []);
         if (!celebrantNamesCache.length) {
           await migrateCelebrantsFromBrowserStorage();
@@ -11425,7 +12622,10 @@ Lord, hear our prayer</textarea>
           const body = $("home-gospel-quote") && $("home-gospel-quote").textContent;
           openReadingExpandModal("Gospel", ref, body);
         };
-        gospelCard.addEventListener("click", openGospel);
+        gospelCard.addEventListener("click", (e) => {
+          if (e.target.closest(".home-card-head__action")) return;
+          openGospel();
+        });
         gospelCard.addEventListener("keydown", (e) => {
           if (e.key !== "Enter" && e.key !== " ") return;
           e.preventDefault();
@@ -11548,18 +12748,489 @@ Lord, hear our prayer</textarea>
       liturgicalCountdownTimer = setInterval(updateLiturgicalCountdowns, 60000);
     }
 
+    function updateAccountMenuDisplay() {
+      const raw = getCommunityName() || "Account";
+      const avatar = $("account-menu-avatar");
+      const nameEl = $("account-menu-name");
+      const initial = (raw.charAt(0) || "A").toUpperCase();
+      if (avatar) avatar.textContent = initial;
+      if (nameEl) nameEl.textContent = raw.length > 20 ? raw.slice(0, 18) + "…" : raw;
+    }
+
+    function closeHeaderMenus(exceptPanelId) {
+      if (exceptPanelId !== "global-search-panel" && typeof closeGlobalSearch === "function") {
+        closeGlobalSearch();
+      }
+      if (typeof closeAllVerbumSelects === "function") closeAllVerbumSelects();
+      if (typeof closeCelebrantPicker === "function") closeCelebrantPicker();
+      [
+        ["liturgical-indicator-panel", "liturgical-indicator-btn"],
+        ["account-menu-panel", "account-menu-btn"],
+        ["create-menu-panel", "create-menu-btn"],
+        ["notif-panel", "notif-toggle-btn"],
+      ].forEach(([panelId, btnId]) => {
+        if (exceptPanelId && panelId === exceptPanelId) return;
+        setVbDropdownOpen($(panelId), $(btnId), false);
+      });
+    }
+
+    function initAccountMenu() {
+      const btn = $("account-menu-btn");
+      const panel = $("account-menu-panel");
+      if (!btn || !panel) return;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = panel.hidden;
+        closeHeaderMenus(open ? "account-menu-panel" : null);
+        setVbDropdownOpen(panel, btn, open);
+      });
+      panel.querySelectorAll(".nav-link[data-route]").forEach((link) => {
+        link.addEventListener("click", () => closeHeaderMenus());
+      });
+    }
+
+    function initCreateMenu() {
+      const btn = $("create-menu-btn");
+      const panel = $("create-menu-panel");
+      if (!btn || !panel) return;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = panel.hidden;
+        closeHeaderMenus(open ? "create-menu-panel" : null);
+        setVbDropdownOpen(panel, btn, open);
+      });
+      panel.querySelectorAll("[data-create]").forEach((item) => {
+        item.addEventListener("click", () => {
+          closeHeaderMenus();
+          const action = item.getAttribute("data-create");
+          if (action === "pptx") {
+            showRoute("/mass/builder");
+            setTimeout(() => {
+              const gen = $("btn-generate-flow");
+              if (gen && !gen.disabled) gen.click();
+            }, 450);
+          } else if (action === "event") {
+            if (typeof openHomeEventModal === "function") openHomeEventModal();
+          } else if (action === "poster") {
+            showRoute("/media/posters");
+          } else if (action === "song") {
+            showRoute("/library/songs");
+          } else if (action === "collection") {
+            showRoute("/library/collections");
+          }
+        });
+      });
+    }
+
+    const GLOBAL_SEARCH_ITEMS = [
+      { id: "page-home", label: "Home", hint: "Page", group: "Pages", route: "/home", keywords: ["home", "dashboard", "verbum", "sunday"] },
+      { id: "page-mass", label: "Mass Builder", hint: "Page", group: "Pages", route: "/mass/builder", keywords: ["mass", "builder", "pptx", "powerpoint", "slides", "generate"] },
+      { id: "page-calendar", label: "Liturgical Calendar", hint: "Page", group: "Pages", route: "/mass/calendar", keywords: ["calendar", "liturgical", "readings"] },
+      { id: "page-posters", label: "Posters", hint: "Page", group: "Pages", route: "/media/posters", keywords: ["media", "poster", "graphic", "social"] },
+      { id: "page-history", label: "History", hint: "Page", group: "Pages", route: "/media/history", keywords: ["history", "download", "recent"] },
+      { id: "page-songs", label: "Song Library", hint: "Page", group: "Pages", route: "/library/songs", keywords: ["library", "song", "lyrics", "hymn", "music"] },
+      { id: "page-collections", label: "Collections", hint: "Page", group: "Pages", route: "/library/collections", keywords: ["collection", "setlist"] },
+      { id: "page-theme", label: "Theme Lab", hint: "Page", group: "Pages", route: "/design/theme-lab", keywords: ["design", "theme", "style", "color"] },
+      { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
+      { id: "page-church", label: "Church Profile", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },
+      { id: "page-appearance", label: "Appearance", hint: "Page", group: "Pages", route: "/settings/app", keywords: ["appearance", "dark", "light", "theme", "settings"] },
+      { id: "act-event", label: "Create event", hint: "Action", group: "Actions", action: "create-event", keywords: ["event", "create", "schedule"] },
+      { id: "act-pptx", label: "Generate PPTX", hint: "Action", group: "Actions", action: "generate-pptx", keywords: ["generate", "pptx", "package", "export"] },
+      { id: "act-readings", label: "Load readings", hint: "Action", group: "Actions", action: "load-readings", keywords: ["readings", "load", "refresh"] },
+    ];
+
+    let globalSearchActiveIndex = -1;
+    let globalSearchVisibleItems = [];
+
+    function scoreGlobalSearchItem(item, query) {
+      if (!query) return 1;
+      const q = query.toLowerCase();
+      const label = item.label.toLowerCase();
+      if (label === q) return 100;
+      if (label.startsWith(q)) return 80;
+      if (label.includes(q)) return 60;
+      if ((item.keywords || []).some((k) => k === q || k.startsWith(q))) return 50;
+      if ((item.keywords || []).some((k) => k.includes(q) || q.includes(k))) return 35;
+      if ((item.hint || "").toLowerCase().includes(q)) return 20;
+      if ((routeMeta[item.route] || "").toLowerCase().includes(q)) return 15;
+      return 0;
+    }
+
+    function getGlobalSearchSongHits(query, limit) {
+      if (!query || !songCatalogData) return [];
+      const q = query.trim().toLowerCase();
+      if (q.length < 2) return [];
+      const hits = [];
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      secs.forEach((sec) => {
+        (songCatalogData[sec] || []).forEach((row) => {
+          if (hits.length >= limit) return;
+          const title = String(row.title || "").trim();
+          const author = String(row.author || "").trim();
+          const blob = (title + " " + author + " " + sec).toLowerCase();
+          if (!blob.includes(q)) return;
+          hits.push({
+            id: "song-" + String(row.id || title),
+            label: title || "Untitled song",
+            hint: author || sec,
+            group: "Songs",
+            action: "song-search",
+            query: q,
+            keywords: [],
+          });
+        });
+      });
+      return hits;
+    }
+
+    function filterGlobalSearchItems(query) {
+      const q = (query || "").trim();
+      const scored = GLOBAL_SEARCH_ITEMS
+        .map((item) => ({ item, score: scoreGlobalSearchItem(item, q) }))
+        .filter((row) => row.score > 0)
+        .sort((a, b) => b.score - a.score || a.item.label.localeCompare(b.item.label))
+        .map((row) => row.item);
+      const songs = getGlobalSearchSongHits(q, 6);
+      return scored.concat(songs).slice(0, 12);
+    }
+
+    function runGlobalSearchItem(item) {
+      if (!item) return;
+      closeGlobalSearch();
+      const input = $("app-global-search");
+      if (input) input.value = "";
+      if (item.route) {
+        showRoute(item.route);
+        return;
+      }
+      if (item.action === "create-event") {
+        if (typeof openHomeEventModal === "function") openHomeEventModal();
+        return;
+      }
+      if (item.action === "generate-pptx") {
+        showRoute("/mass/builder");
+        setTimeout(() => {
+          const gen = $("btn-generate-flow");
+          if (gen && !gen.disabled) gen.click();
+        }, 450);
+        return;
+      }
+      if (item.action === "load-readings") {
+        showRoute("/mass/builder");
+        setTimeout(() => {
+          const btn = $("btn-load-flow");
+          if (btn && !btn.disabled) btn.click();
+        }, 350);
+        return;
+      }
+      if (item.action === "song-search") {
+        showRoute("/library/songs");
+        setTimeout(() => {
+          const searchEl = $("song-catalog-search");
+          if (searchEl) {
+            searchEl.value = item.query || "";
+            if (typeof applySongCatalogSearch === "function") applySongCatalogSearch(searchEl);
+          }
+        }, 200);
+      }
+    }
+
+    function renderGlobalSearchResults(query) {
+      const list = $("global-search-list");
+      const empty = $("global-search-empty");
+      const input = $("app-global-search");
+      if (!list || !empty) return;
+      globalSearchVisibleItems = filterGlobalSearchItems(query);
+      globalSearchActiveIndex = globalSearchVisibleItems.length ? 0 : -1;
+      list.innerHTML = "";
+      if (!globalSearchVisibleItems.length) {
+        empty.hidden = false;
+        if (input) input.setAttribute("aria-activedescendant", "");
+        return;
+      }
+      empty.hidden = true;
+      let lastGroup = "";
+      globalSearchVisibleItems.forEach((item, index) => {
+        if (item.group && item.group !== lastGroup) {
+          lastGroup = item.group;
+          const groupEl = document.createElement("li");
+          groupEl.className = "global-search-group-label";
+          groupEl.textContent = item.group;
+          groupEl.setAttribute("role", "presentation");
+          list.appendChild(groupEl);
+        }
+        const li = document.createElement("li");
+        li.setAttribute("role", "presentation");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "vb-dropdown-item global-search-item" + (index === globalSearchActiveIndex ? " is-active" : "");
+        btn.id = "global-search-opt-" + index;
+        btn.setAttribute("role", "option");
+        btn.setAttribute("aria-selected", index === globalSearchActiveIndex ? "true" : "false");
+        btn.dataset.index = String(index);
+        btn.innerHTML =
+          '<span class="global-search-item__label"></span><span class="global-search-item__hint"></span>';
+        btn.querySelector(".global-search-item__label").textContent = item.label;
+        btn.querySelector(".global-search-item__hint").textContent = item.hint || "";
+        btn.addEventListener("mousedown", (e) => e.preventDefault());
+        btn.addEventListener("click", () => runGlobalSearchItem(item));
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+      if (input && globalSearchActiveIndex >= 0) {
+        input.setAttribute("aria-activedescendant", "global-search-opt-" + globalSearchActiveIndex);
+      }
+    }
+
+    function highlightGlobalSearchIndex(nextIndex) {
+      if (!globalSearchVisibleItems.length) return;
+      const count = globalSearchVisibleItems.length;
+      globalSearchActiveIndex = ((nextIndex % count) + count) % count;
+      const list = $("global-search-list");
+      const input = $("app-global-search");
+      if (!list) return;
+      list.querySelectorAll(".global-search-item").forEach((el) => {
+        const idx = Number(el.dataset.index);
+        const active = idx === globalSearchActiveIndex;
+        el.classList.toggle("is-active", active);
+        el.setAttribute("aria-selected", active ? "true" : "false");
+        if (active) {
+          el.scrollIntoView({ block: "nearest" });
+          if (input) input.setAttribute("aria-activedescendant", el.id);
+        }
+      });
+    }
+
+    function openGlobalSearch() {
+      const panel = $("global-search-panel");
+      const input = $("app-global-search");
+      if (!panel || !input) return;
+      closeHeaderMenus("global-search-panel");
+      panel.hidden = false;
+      requestAnimationFrame(() => panel.classList.add("is-open"));
+      input.setAttribute("aria-expanded", "true");
+      renderGlobalSearchResults(input.value);
+    }
+
+    function closeGlobalSearch() {
+      const panel = $("global-search-panel");
+      const input = $("app-global-search");
+      if (!panel) return;
+      panel.classList.remove("is-open");
+      panel.hidden = true;
+      if (input) {
+        input.setAttribute("aria-expanded", "false");
+        input.setAttribute("aria-activedescendant", "");
+      }
+      globalSearchActiveIndex = -1;
+      globalSearchVisibleItems = [];
+    }
+
+    const VB_SELECT_CHEVRON_SVG =
+      "<svg class=\"vb-select__chevron\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg>";
+
+    function syncVerbumSelectTrigger(select) {
+      const wrap = select.closest(".vb-select");
+      if (!wrap) return;
+      const trigger = wrap.querySelector(".vb-select__trigger");
+      const valueEl = wrap.querySelector(".vb-select__value");
+      const opt = select.options[select.selectedIndex];
+      const label = opt ? opt.text : "";
+      const isPlaceholder = !opt || opt.value === "";
+      if (valueEl) {
+        valueEl.textContent = label;
+        valueEl.classList.toggle("is-placeholder", isPlaceholder);
+      } else if (trigger) trigger.childNodes[0].textContent = label;
+      wrap.querySelectorAll(".vb-dropdown-item[data-value]").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.value === select.value);
+        btn.setAttribute("aria-selected", btn.dataset.value === select.value ? "true" : "false");
+      });
+    }
+
+    function rebuildVerbumSelectList(select) {
+      const wrap = select.closest(".vb-select");
+      if (!wrap) return;
+      const list = wrap.querySelector(".vb-dropdown-list");
+      if (!list) return;
+      list.innerHTML = "";
+      const isPillSelect = select.classList.contains("lyric-block__pill-select");
+      Array.from(select.options).forEach((opt) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "vb-dropdown-item";
+        if (isPillSelect && opt.value) btn.classList.add("vb-dropdown-item--" + opt.value);
+        btn.setAttribute("role", "option");
+        btn.dataset.value = opt.value;
+        btn.innerHTML = "<span class=\"vb-dropdown-item__label\">" + escapeHtml(opt.text) + "</span>";
+        if (opt.disabled) btn.disabled = true;
+        const isSelected = opt.value === select.value;
+        if (isSelected) btn.classList.add("is-active");
+        btn.setAttribute("aria-selected", isSelected ? "true" : "false");
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          select.value = opt.value;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          syncVerbumSelectTrigger(select);
+          closeVerbumSelect(wrap);
+        });
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+      syncVerbumSelectTrigger(select);
+    }
+
+    function closeVerbumSelect(wrap) {
+      if (!wrap) return;
+      const panel = wrap.querySelector(".vb-select__panel");
+      const trigger = wrap.querySelector(".vb-select__trigger");
+      closeVbDropdownPanel(panel);
+      if (trigger) trigger.setAttribute("aria-expanded", "false");
+    }
+
+    function closeAllVerbumSelects(exceptWrap) {
+      document.querySelectorAll(".vb-select").forEach((wrap) => {
+        if (exceptWrap && wrap === exceptWrap) return;
+        closeVerbumSelect(wrap);
+      });
+    }
+
+    function enhanceVerbumSelect(select) {
+      if (!select || select.closest(".vb-select") || select.dataset.vbSelect === "off") return;
+      const wrap = document.createElement("div");
+      wrap.className = "vb-select";
+      if (select.classList.contains("lyric-block__pill-select")) wrap.classList.add("vb-select--pill");
+      if (select.classList.contains("mass-song-plan-lang-select")) wrap.classList.add("vb-select--sm");
+      if (select.classList.contains("route-switcher")) wrap.classList.add("vb-select--sm");
+      if (select.id === "flow-collection-currency") wrap.classList.add("vb-select--sm");
+
+      const triggerId = (select.id || "vb-select-" + Math.random().toString(36).slice(2, 9)) + "-trigger";
+      const panelId = (select.id || triggerId) + "-panel";
+
+      const trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "vb-select__trigger";
+      trigger.id = triggerId;
+      trigger.setAttribute("aria-haspopup", "listbox");
+      trigger.setAttribute("aria-expanded", "false");
+      trigger.innerHTML = "<span class=\"vb-select__value\"></span>" + VB_SELECT_CHEVRON_SVG;
+
+      const panel = document.createElement("div");
+      panel.className = "vb-dropdown-panel vb-select__panel";
+      panel.id = panelId;
+      panel.setAttribute("role", "listbox");
+      panel.hidden = true;
+      trigger.setAttribute("aria-controls", panelId);
+
+      const list = document.createElement("ul");
+      list.className = "vb-dropdown-list";
+      panel.appendChild(list);
+
+      select.classList.add("vb-select__native");
+      const label = select.id ? document.querySelector('label[for="' + select.id + '"]') : null;
+      if (label) label.setAttribute("for", triggerId);
+
+      select.parentNode.insertBefore(wrap, select);
+      wrap.appendChild(select);
+      wrap.appendChild(trigger);
+      wrap.appendChild(panel);
+
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const opening = panel.hidden;
+        closeHeaderMenus();
+        closeAllVerbumSelects(wrap);
+        if (opening) {
+          openVbDropdownPanel(panel);
+          trigger.setAttribute("aria-expanded", "true");
+        } else {
+          closeVerbumSelect(wrap);
+        }
+      });
+
+      select.addEventListener("change", () => syncVerbumSelectTrigger(select));
+      rebuildVerbumSelectList(select);
+    }
+
+    function refreshVerbumSelect(select) {
+      if (!select) return;
+      if (!select.closest(".vb-select")) {
+        enhanceVerbumSelect(select);
+        return;
+      }
+      rebuildVerbumSelectList(select);
+    }
+
+    function initVerbumSelects(root) {
+      const scope = root || document;
+      scope.querySelectorAll("select:not(.vb-select__native)").forEach((select) => {
+        enhanceVerbumSelect(select);
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      if (e.target.closest(".vb-select")) return;
+      closeAllVerbumSelects();
+    });
+
+    function initGlobalSearch() {
+      const input = $("app-global-search");
+      const panel = $("global-search-panel");
+      const wrap = document.querySelector(".app-header__search-wrap");
+      if (!input || !panel) return;
+
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === "k") {
+          e.preventDefault();
+          openGlobalSearch();
+          input.focus();
+          input.select();
+        }
+      });
+
+      input.addEventListener("focus", () => openGlobalSearch());
+      input.addEventListener("input", () => renderGlobalSearchResults(input.value));
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          closeGlobalSearch();
+          input.blur();
+          return;
+        }
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (!panel.classList.contains("is-open")) openGlobalSearch();
+          highlightGlobalSearchIndex(globalSearchActiveIndex + 1);
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          highlightGlobalSearchIndex(globalSearchActiveIndex - 1);
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const item = globalSearchVisibleItems[globalSearchActiveIndex] || globalSearchVisibleItems[0];
+          if (item) runGlobalSearchItem(item);
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (wrap && !e.target.closest(".app-header__search-wrap")) closeGlobalSearch();
+      });
+    }
+
     function initLiturgicalIndicatorPanel() {
       const btn = $("liturgical-indicator-btn");
       const panel = $("liturgical-indicator-panel");
       if (!btn || !panel) return;
 
       function closePanel() {
-        panel.hidden = true;
-        btn.setAttribute("aria-expanded", "false");
+        setVbDropdownOpen(panel, btn, false);
       }
       function openPanel() {
-        panel.hidden = false;
-        btn.setAttribute("aria-expanded", "true");
+        closeHeaderMenus("liturgical-indicator-panel");
+        setVbDropdownOpen(panel, btn, true);
         updateLiturgicalCountdowns();
       }
 
@@ -11569,10 +13240,22 @@ Lord, hear our prayer</textarea>
         else closePanel();
       });
       document.addEventListener("click", (e) => {
-        if (!panel.hidden && !e.target.closest(".liturgical-indicator-wrap")) closePanel();
+        if (!e.target.closest(".liturgical-indicator-wrap") && !panel.hidden) closePanel();
+        const accountPanel = $("account-menu-panel");
+        const accountBtn = $("account-menu-btn");
+        if (!e.target.closest(".account-menu-wrap") && accountPanel && !accountPanel.hidden) {
+          accountPanel.hidden = true;
+          if (accountBtn) accountBtn.setAttribute("aria-expanded", "false");
+        }
+        const createPanel = $("create-menu-panel");
+        const createBtn = $("create-menu-btn");
+        if (!e.target.closest(".create-menu-wrap") && createPanel && !createPanel.hidden) {
+          createPanel.hidden = true;
+          if (createBtn) createBtn.setAttribute("aria-expanded", "false");
+        }
       });
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !panel.hidden) closePanel();
+        if (e.key === "Escape") closeHeaderMenus();
       });
 
       startLiturgicalCountdownTimer();
@@ -11615,6 +13298,7 @@ Lord, hear our prayer</textarea>
         return;
       }
       $("btn-load-flow").disabled = true;
+      if ($("btn-load-flow-inline")) $("btn-load-flow-inline").disabled = true;
       try {
         const data = await postJSON("/api/preview", { date });
         flowPreviewData = data;
@@ -11666,6 +13350,7 @@ Lord, hear our prayer</textarea>
         notify(error.message || "Could not load readings.", "error");
       } finally {
         $("btn-load-flow").disabled = false;
+        if ($("btn-load-flow-inline")) $("btn-load-flow-inline").disabled = false;
       }
     }
 
@@ -11681,6 +13366,7 @@ Lord, hear our prayer</textarea>
       if (communion1) songs.communion_1 = communion1;
       if (communion2) songs.communion_2 = communion2;
       if (recessional) songs.recessional = recessional;
+      if (selectedLyricsSongs.meditation) songs.meditation = selectedLyricsSongs.meditation;
       return songs;
     }
 
@@ -12694,7 +14380,10 @@ Lord, hear our prayer</textarea>
     initFlowInputGroups();
     initHymnLyricsLayoutUi();
     initCollectionCurrencyUi();
-    $("mass-date").addEventListener("change", () => loadFlowData(true));
+    $("mass-date").addEventListener("change", () => {
+      loadFlowData(true);
+      renderMassSummarySidebar();
+    });
     $("btn-generate-flow").addEventListener("click", async () => {
       $("btn-generate-flow").disabled = true;
       await runFullMassGenerate({ setStatus: setFlowStatus, autoDownloadPptx: true });
@@ -12711,7 +14400,10 @@ Lord, hear our prayer</textarea>
       if (file) await uploadLogo(file);
     });
 
-    $("settings-church-name").addEventListener("input", () => syncChurchFieldsFromSettings());
+    $("settings-church-name").addEventListener("input", () => {
+      syncChurchFieldsFromSettings();
+      updateAccountMenuDisplay();
+    });
 
     $("btn-save-community-api").addEventListener("click", async () => {
       const name = $("settings-church-name").value.trim();
@@ -12729,6 +14421,7 @@ Lord, hear our prayer</textarea>
         applyCelebrantNamesFromServer(saved.celebrant_names || celebrantNamesCache);
         $("settings-church-status").textContent = "Saved church profile to database.";
         $("settings-church-status").className = "status ok";
+        updateAccountMenuDisplay();
         renderCelebrantSelect(getMainCelebrantName());
       } catch (err) {
         $("settings-church-status").textContent = err.message || "Save failed";
@@ -13088,6 +14781,11 @@ Lord, hear our prayer</textarea>
     renderHistoryList();
     bindHomeNewsSettings();
     initLiturgicalIndicatorPanel();
+    initAccountMenu();
+    initCreateMenu();
+    initVerbumSelects();
+    initGlobalSearch();
+    updateAccountMenuDisplay();
     initHomeEventModal();
     initReadingExpandModal();
     refreshHomeMission();

@@ -32,6 +32,12 @@ button:hover:not(:disabled):not(:active):not(.uiverse-btn) {
   transform: translateY(-1px);
 }
 
+.app-header-nav .nav-link:hover,
+.brand-block:hover,
+.home-bento-grid .flow-bento-cell:hover {
+  transform: none;
+}
+
 .primary:active:not(:disabled),
 .secondary:active:not(:disabled),
 .ghost:active:not(:disabled) {
