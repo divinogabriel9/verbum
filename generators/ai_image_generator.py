@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import time
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional
@@ -560,6 +561,232 @@ def _require_openai_api_key() -> None:
         raise RuntimeError("OPENAI_API_KEY is not set.")
 
 
+_GEMINI_IMAGE_MODEL_DEFAULT = "gemini-2.5-flash-image"
+_GEMINI_IMAGE_MODEL_FALLBACKS = (
+    "gemini-2.5-flash-image",
+    "gemini-3.1-flash-image",
+    "gemini-3-pro-image",
+)
+_RETIRED_GEMINI_IMAGE_MODELS = frozenset(
+    {
+        "gemini-2.0-flash-preview-image-generation",
+        "models/gemini-2.0-flash-preview-image-generation",
+    }
+)
+
+
+def _gemini_image_model() -> str:
+    models = _gemini_image_models_to_try()
+    return models[0]
+
+
+def _gemini_image_models_to_try() -> list[str]:
+    configured = (os.environ.get("GEMINI_IMAGE_MODEL") or "").strip()
+    if configured.startswith("models/"):
+        configured = configured[len("models/") :]
+    if configured in _RETIRED_GEMINI_IMAGE_MODELS:
+        configured = ""
+
+    out: list[str] = []
+    if configured:
+        out.append(configured)
+    for model in _GEMINI_IMAGE_MODEL_FALLBACKS:
+        if model not in out:
+            out.append(model)
+    return out or [_GEMINI_IMAGE_MODEL_DEFAULT]
+
+
+def _require_gemini_api_key() -> None:
+    try:
+        from services.env_config import get_gemini_api_key
+
+        if not get_gemini_api_key():
+            raise RuntimeError("GEMINI_API_KEY is not set.")
+    except ImportError:
+        if not (os.environ.get("GEMINI_API_KEY") or "").strip():
+            raise RuntimeError("GEMINI_API_KEY is not set.")
+
+
+def _gemini_aspect_ratio_for_size(size: str) -> str:
+    """Map OpenAI-style WxH strings to Gemini aspect ratio labels."""
+    m = re.match(r"^(\d+)x(\d+)$", (size or "").strip())
+    if not m:
+        return "16:9"
+    w, h = int(m.group(1)), int(m.group(2))
+    if w <= 0 or h <= 0:
+        return "16:9"
+    ratio = w / h
+    if ratio > 1.45:
+        return "16:9"
+    if ratio < 0.72:
+        return "9:16"
+    if ratio < 0.85:
+        return "3:4"
+    if ratio > 1.15:
+        return "4:3"
+    return "1:1"
+
+
+def _extract_gemini_image_bytes(response: Any) -> bytes:
+    parts: list[Any] = []
+    if getattr(response, "parts", None):
+        parts = list(response.parts)
+    else:
+        candidates = getattr(response, "candidates", None) or []
+        if candidates:
+            content = getattr(candidates[0], "content", None)
+            parts = list(getattr(content, "parts", None) or [])
+
+    for part in parts:
+        inline = getattr(part, "inline_data", None)
+        if inline is None:
+            continue
+        data = getattr(inline, "data", None)
+        if isinstance(data, (bytes, bytearray)) and data:
+            return bytes(data)
+        if isinstance(data, str) and data.strip():
+            decoded = _b64_decode_loose(data)
+            if decoded:
+                return decoded
+        as_image = getattr(part, "as_image", None)
+        if callable(as_image):
+            try:
+                img = as_image()
+                buf = BytesIO()
+                img.save(buf, format="PNG")
+                return buf.getvalue()
+            except Exception:
+                pass
+    raise RuntimeError("Gemini returned no image data.")
+
+
+def _gemini_retry_seconds(exc: Exception) -> int | None:
+    msg = str(exc)
+    m = re.search(r"retry in (\d+(?:\.\d+)?)\s*s", msg, re.I)
+    if m:
+        return min(120, max(1, int(float(m.group(1)))))
+    return None
+
+
+def _gemini_error_user_message(exc: Exception, *, model: str = "") -> str:
+    msg = str(exc)
+    label = model or "image model"
+    if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+        if "limit: 0" in msg:
+            return (
+                f"Gemini has no free-tier quota for {label} on this API key. "
+                "Image generation usually needs a Google AI Studio key (starts with AIza…) "
+                "with billing enabled: https://aistudio.google.com/apikey"
+            )
+        retry = _gemini_retry_seconds(exc)
+        if retry:
+            return (
+                f"Gemini rate limit reached. Wait about {retry} seconds and try again, "
+                "or enable billing for higher limits: https://ai.dev/rate-limit"
+            )
+        return (
+            "Gemini API quota exceeded. Check usage at https://ai.dev/rate-limit "
+            "or enable billing in Google AI Studio."
+        )
+    if any(x in msg for x in ("401", "403", "API key not valid", "PERMISSION_DENIED")):
+        return (
+            "Invalid Gemini API key. Create one at https://aistudio.google.com/apikey "
+            "(usually starts with AIza…) and save it in Settings."
+        )
+    if "404" in msg or "NOT_FOUND" in msg:
+        return f"Gemini model {label} is not available for your API key."
+    return f"Gemini image generation failed ({label}): {exc}"
+
+
+def _generate_with_gemini(
+    prompt: str,
+    out_path: Path,
+    *,
+    size: str = "1920x1080",
+) -> None:
+    """Generate a PNG via Gemini image models using the same prompt as OpenAI."""
+    _require_gemini_api_key()
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError as exc:
+        raise RuntimeError(
+            "google-genai is required for Gemini image generation. "
+            "Install with: pip install google-genai"
+        ) from exc
+
+    try:
+        from services.env_config import get_gemini_api_key, load_gemini_dotenv
+
+        load_gemini_dotenv()
+        api_key = get_gemini_api_key()
+    except ImportError:
+        api_key = (os.environ.get("GEMINI_API_KEY") or "").strip()
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    if out_path.is_file():
+        out_path.unlink()
+
+    client = genai.Client(api_key=api_key)
+    aspect_ratio = _gemini_aspect_ratio_for_size(size)
+    last_exc: Exception | None = None
+    response = None
+    used_model = ""
+
+    def _call_model(model: str) -> Any:
+        return client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(aspect_ratio=aspect_ratio),
+            ),
+        )
+
+    for model in _gemini_image_models_to_try():
+        try:
+            response = _call_model(model)
+            used_model = model
+            break
+        except Exception as exc:
+            last_exc = exc
+            msg = str(exc)
+            if "404" in msg or "NOT_FOUND" in msg:
+                logger.warning("Gemini model %s unavailable, trying fallback", model)
+                continue
+            if ("429" in msg or "RESOURCE_EXHAUSTED" in msg) and "limit: 0" not in msg:
+                retry_s = _gemini_retry_seconds(exc)
+                if retry_s and retry_s <= 90:
+                    logger.info("Gemini rate limited on %s, retrying in %ss", model, retry_s)
+                    time.sleep(retry_s)
+                    try:
+                        response = _call_model(model)
+                        used_model = model
+                        break
+                    except Exception as retry_exc:
+                        raise RuntimeError(
+                            _gemini_error_user_message(retry_exc, model=model)
+                        ) from retry_exc
+            raise RuntimeError(_gemini_error_user_message(exc, model=model)) from exc
+
+    if response is None:
+        raise RuntimeError(
+            "Gemini image API error: no supported image model worked. "
+            f"Last error: {last_exc}"
+        ) from last_exc
+
+    raw = _extract_gemini_image_bytes(response)
+    if not _write_raster_as_png(raw, out_path):
+        raise RuntimeError("Could not decode Gemini image bytes as a PNG.")
+
+    if not hero_image_is_real(out_path):
+        raise RuntimeError(
+            "Gemini image was too small or invalid — not using a placeholder. "
+            "Check your API key, billing, and model access "
+            f"({used_model or _gemini_image_model()})."
+        )
+
+
 def _decode_openai_images_generate_result(result: Any) -> bytes:
     """Extract raw image bytes from ``client.images.generate()`` response."""
     if not result.data:
@@ -685,6 +912,7 @@ def generate_sacred_illustration(
     style: str = "cinematic",
     visual_scene_line: Optional[str] = None,
     require_openai: bool = False,
+    image_backend: str = "auto",
     openai_size: str = "1024x1024",
     output_size: Optional[tuple[int, int]] = None,
     sunday_title: str = "",
@@ -697,13 +925,22 @@ def generate_sacred_illustration(
 
     Pass ``visual_scene_line`` — a short plain description of the Gospel moment (not a poster quote).
     ``gospel_text`` / ``sunday_title`` are used only to derive a scene line when none is provided.
+
+    ``image_backend``: ``auto`` (OpenAI, then Gemini, then HF), ``openai``, or ``gemini``.
+    ``require_openai`` is kept for compatibility; when true, forces OpenAI-only unless
+    ``image_backend`` is ``gemini``.
     """
     try:
-        from services.env_config import load_project_dotenv
+        from services.env_config import get_gemini_api_key, load_gemini_dotenv, load_project_dotenv
 
         load_project_dotenv()
+        load_gemini_dotenv()
     except ImportError:
         pass
+
+    backend = (image_backend or "auto").strip().lower()
+    if require_openai and backend == "auto":
+        backend = "openai"
 
     _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     slug = _slug_ref(gospel_reference)
@@ -712,6 +949,14 @@ def generate_sacred_illustration(
         out_path = _IMAGES_DIR / f"gospel_scene_{slug}_{resolved_style}.png"
 
     openai_key = (os.environ.get("OPENAI_API_KEY") or "").strip()
+    gemini_key = ""
+    try:
+        from services.env_config import get_gemini_api_key
+
+        gemini_key = get_gemini_api_key()
+    except ImportError:
+        gemini_key = (os.environ.get("GEMINI_API_KEY") or "").strip()
+
     token = (os.environ.get("HUGGINGFACE_API_TOKEN") or os.environ.get("HF_TOKEN") or "").strip()
     provider = (os.environ.get("HF_INFERENCE_PROVIDER") or "fal-ai").strip().lower()
     if provider in ("", "auto"):
@@ -730,7 +975,9 @@ def generate_sacred_illustration(
     negative = _resolved_negative_prompt()
     prompt_preview = (prompt[:200] + "…") if len(prompt) > 200 else prompt
 
-    if openai_key:
+    def _try_openai() -> bool:
+        if not openai_key:
+            return False
         logger.info(
             "OpenAI sacred image attempt model=%s prompt_preview=%r",
             _openai_image_model(),
@@ -747,18 +994,62 @@ def generate_sacred_illustration(
                 gospel_reference,
                 resolved_style,
             )
-            return out_path
+            return True
         except Exception as exc:
-            if require_openai:
-                raise
             logger.warning("OpenAI sacred image failed: %s", exc)
+            return False
+
+    def _try_gemini(*, required: bool = False) -> bool:
+        if not gemini_key:
+            if required:
+                raise RuntimeError("GEMINI_API_KEY is not set. Add it in Settings → AI integrations.")
+            return False
+        logger.info(
+            "Gemini sacred image attempt model=%s prompt_preview=%r",
+            _gemini_image_model(),
+            prompt_preview,
+        )
+        try:
+            _generate_with_gemini(prompt, out_path, size=openai_size)
+            if output_size:
+                fit_image_file_to_size(out_path, output_size)
+            logger.info(
+                "Gemini sacred image saved output=%s (%s bytes) gospel=%s style=%s",
+                out_path,
+                out_path.stat().st_size,
+                gospel_reference,
+                resolved_style,
+            )
+            return True
+        except Exception as exc:
+            logger.warning("Gemini sacred image failed: %s", exc)
+            if required:
+                raise
+            return False
+
+    if backend == "openai":
+        if _try_openai():
+            return out_path
+        raise RuntimeError(
+            "OpenAI image generation failed. Check OPENAI_API_KEY, billing, and model access."
+        )
+
+    if backend == "gemini":
+        _try_gemini(required=True)
+        return out_path
+
+    if openai_key and _try_openai():
+        return out_path
+
+    if gemini_key and _try_gemini():
+        return out_path
 
     if require_openai:
         raise RuntimeError(
             "OpenAI image generation is required but OPENAI_API_KEY is missing."
         )
 
-    if not openai_key and not token:
+    if not openai_key and not gemini_key and not token:
         logger.warning(
             "Sacred image: using gradient placeholder (set OPENAI_API_KEY or HF_TOKEN). "
             "output=%s gospel=%s style=%s",

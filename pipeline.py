@@ -386,6 +386,7 @@ def generate_mass_media(
     include_social_exports: bool = False,
     include_gospel_art: bool = True,
     include_ai_mass_poster: bool = False,
+    ai_poster_backend: str = "openai",
     ai_poster_style: str = "cinematic",
     include_poster_text: bool = True,
     community_name: Optional[str] = None,
@@ -479,9 +480,38 @@ def generate_mass_media(
     _root = Path(__file__).resolve().parent
     _out = _root / "outputs"
 
-    # Primary posters: OpenAI (hero art) or liturgical color template.
+    # Primary posters: AI (OpenAI or Gemini hero art) or liturgical color template.
     if include_ai_mass_poster:
-        if not (os.environ.get("OPENAI_API_KEY") or "").strip():
+        backend = (ai_poster_backend or "openai").strip().lower()
+        if backend not in ("openai", "gemini"):
+            backend = "openai"
+        if backend == "gemini":
+            try:
+                from services.env_config import gemini_api_key_configured, gemini_sdk_available
+
+                if not gemini_sdk_available():
+                    return GenerationResult(
+                        ok=False,
+                        error=(
+                            "The google-genai package is not installed. "
+                            "Run: pip install google-genai"
+                        ),
+                    )
+                if not gemini_api_key_configured():
+                    return GenerationResult(
+                        ok=False,
+                        error=(
+                            "GEMINI_API_KEY is required when “Generate poster with Gemini” "
+                            "is enabled. Add it in Settings."
+                        ),
+                    )
+            except ImportError:
+                if not (os.environ.get("GEMINI_API_KEY") or "").strip():
+                    return GenerationResult(
+                        ok=False,
+                        error="GEMINI_API_KEY is required when Gemini poster is enabled.",
+                    )
+        elif not (os.environ.get("OPENAI_API_KEY") or "").strip():
             return GenerationResult(
                 ok=False,
                 error="OPENAI_API_KEY is required when “Generate poster with OpenAI” is enabled.",
@@ -500,12 +530,14 @@ def generate_mass_media(
                 gospel_quote=slide_line,
                 gospel_reference=gospel_ref,
                 liturgical_title=title.replace(" Celebration", "").strip() or title,
+                image_backend=backend,
             )
         except Exception as exc:
-            logger.exception("OpenAI poster generation failed")
+            label = "Gemini" if backend == "gemini" else "OpenAI"
+            logger.exception("%s poster generation failed", label)
             return GenerationResult(
                 ok=False,
-                error=f"OpenAI poster generation failed: {exc}",
+                error=f"{label} poster generation failed: {exc}",
             )
     else:
         poster_path, poster_ppt_path = generate_mass_poster(

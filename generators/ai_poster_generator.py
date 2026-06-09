@@ -58,8 +58,9 @@ def _build_mass_poster_master(
     gospel_quote: Optional[str] = None,
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
+    image_backend: str = "openai",
 ) -> Image.Image:
-    """Liturgical load, OpenAI hero (visual only), optional PIL text overlays."""
+    """Liturgical load, AI hero (visual only), optional PIL text overlays."""
     data = get_liturgical_data(date)
     if not data:
         raise ValueError(f"No liturgical data for {date!r}.")
@@ -97,7 +98,7 @@ def _build_mass_poster_master(
         out_path=hero_path,
         style=resolved_style,
         visual_scene_line=visual_line,
-        require_openai=True,
+        image_backend=image_backend,
         openai_size=_openai_widescreen_api_size(),
         output_size=WIDESCREEN_16_9,
         sunday_title=display_title,
@@ -136,9 +137,10 @@ def generate_primary_openai_posters(
     gospel_quote: Optional[str] = None,
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
+    image_backend: str = "openai",
 ) -> Tuple[Optional[Path], Path]:
     """
-    Build OpenAI-backed parish posters.
+    Build AI-backed parish posters (OpenAI or Gemini — same prompt).
 
     By default writes only ``{stem}_16x9.png`` (projection / PPT slide).
     When ``include_social_exports`` is true, also writes ``{stem}.png`` (1080×1350)
@@ -152,6 +154,7 @@ def generate_primary_openai_posters(
         gospel_quote=gospel_quote,
         gospel_reference=gospel_reference,
         liturgical_title=liturgical_title,
+        image_backend=image_backend,
     )
     social_path, ppt_path = export_primary_poster_pair(
         master, output_dir, output_stem, include_social=include_social_exports

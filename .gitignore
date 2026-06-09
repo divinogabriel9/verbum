@@ -1,5 +1,6 @@
 .venv
 .env
+.env.gemini
 __pycache__/
 *.pyc
 data/lectionary.sqlite

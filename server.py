@@ -260,6 +260,10 @@ class CommunityProfileBody(BaseModel):
     )
 
 
+class GeminiApiKeyBody(BaseModel):
+    api_key: str = Field(..., min_length=8, max_length=512)
+
+
 class PreviewBody(BaseModel):
     date: str = Field(..., min_length=8, description="YYYY-MM-DD")
 
@@ -279,7 +283,11 @@ class GenerateBody(BaseModel):
     include_gospel_art: bool = Field(True)
     include_ai_mass_poster: bool = Field(
         False,
-        description="Use OpenAI gpt-image-2 for primary parish posters (requires OPENAI_API_KEY).",
+        description="Use AI (OpenAI or Gemini) for primary parish posters.",
+    )
+    ai_poster_backend: str = Field(
+        "openai",
+        description="openai | gemini — which API generates the hero art when include_ai_mass_poster is true.",
     )
     ai_poster_style: str = Field(
         "cinematic",
@@ -546,6 +554,38 @@ def api_set_community_profile(body: CommunityProfileBody) -> dict[str, Any]:
     }
 
 
+@app.get("/api/settings/gemini-api-key")
+def api_get_gemini_api_key_status() -> dict[str, Any]:
+    from services.env_config import gemini_api_key_configured, gemini_api_key_hint
+
+    configured = gemini_api_key_configured()
+    hint = gemini_api_key_hint() if configured else None
+    return {"configured": configured, "key_hint": hint}
+
+
+@app.post("/api/settings/gemini-api-key")
+def api_save_gemini_api_key(body: GeminiApiKeyBody) -> dict[str, Any]:
+    from services.env_config import gemini_api_key_hint, save_gemini_api_key
+
+    try:
+        save_gemini_api_key(body.api_key.strip())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "ok": True,
+        "configured": True,
+        "key_hint": gemini_api_key_hint(),
+        "key_format_warning": (
+            None
+            if body.api_key.strip().startswith("AIza")
+            else (
+                "This key does not look like a standard Google AI Studio key (AIza…). "
+                "Image generation may fail with quota errors."
+            )
+        ),
+    }
+
+
 @app.post("/api/upload-logo")
 async def api_upload_logo(file: UploadFile = File(...)) -> dict[str, Any]:
     ctype = (file.content_type or "").split(";")[0].strip().lower()
@@ -790,6 +830,7 @@ def api_generate(body: GenerateBody) -> Any:
         include_social_exports=body.include_social_exports,
         include_gospel_art=body.include_gospel_art,
         include_ai_mass_poster=body.include_ai_mass_poster,
+        ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
         ai_poster_style=body.ai_poster_style.strip() or "cinematic",
         include_poster_text=body.include_poster_text,
         community_name=body.community_name.strip() if body.community_name else None,

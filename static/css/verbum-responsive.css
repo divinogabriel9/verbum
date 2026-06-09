@@ -1,7 +1,7 @@
 /**
  * Verbum — mobile-first responsive layout
- * Breakpoints: 320–430 phone · 768 tablet · 1024+ desktop (unchanged)
- * Visual/layout only — no behavior changes.
+ * Breakpoints: 320–430 phone · ≤768 mobile/tablet stack · ≥769 desktop (unchanged)
+ * Phase A: unified 768/769 · touch targets · flow dock bar · song plan mobile grid
  */
 
 :root {
@@ -469,6 +469,135 @@ iframe {
     min-width: 44px;
     min-height: 44px;
   }
+
+  /* —— Phase A: touch targets (44px min) —— */
+  .btn-create,
+  .account-menu-btn,
+  .btn-home-news-refresh,
+  .song-plan-layout .mass-summary-recs-refresh,
+  .app-menu-panel .vb-dropdown-item {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .btn-create {
+    padding: 0 14px;
+  }
+
+  /* Route jump visible on touch (desktop uses hover fade-in) */
+  .route-jump-float {
+    opacity: 1;
+  }
+
+  /* —— Phase A: bottom float consolidation (Mass Builder dock) —— */
+  body.flow-dock-visible .route-jump-float {
+    display: none !important;
+  }
+
+  body.flow-dock-visible .app-bottom-right {
+    left: calc(var(--space-3) + var(--safe-left));
+    right: calc(var(--space-3) + var(--safe-right));
+    bottom: calc(var(--space-3) + var(--safe-bottom));
+    align-items: stretch;
+  }
+
+  body.flow-dock-visible .flow-dock-float {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg, 14px);
+  }
+
+  body.flow-dock-visible .flow-dock-float .uiverse-btn {
+    width: 100%;
+  }
+
+  body.flow-dock-visible .dashboard {
+    padding-bottom: calc(148px + var(--safe-bottom));
+  }
+
+  /* —— Phase A: song plan card mobile layout —— */
+  .song-plan-layout {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-3);
+  }
+
+  .song-plan-summary {
+    position: static;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__drag {
+    display: none;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__top {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: var(--space-2);
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__part,
+  .flow-builder-tab-panel--songs .mass-song-plan-card__part-input {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__actions {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-left: 0;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__title-wrap {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn,
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete {
+    width: 44px;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-search-input {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-row__search .mass-song-result-row {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+
+  /* Header: icon-only nav (matches legacy 720 rules, now at 768) */
+  .app-header-nav .nav-label {
+    display: none;
+  }
+
+  .btn-create span:not(.btn-create__icon) {
+    display: none;
+  }
+
+  .liturgical-indicator__chevron {
+    display: none;
+  }
 }
 
 /* —— Phone (≤430px): tighter spacing & typography —— */
@@ -618,6 +747,22 @@ iframe {
     display: block;
   }
 
+  .app-header-nav .nav-label {
+    display: inline;
+  }
+
+  .btn-create span:not(.btn-create__icon) {
+    display: inline;
+  }
+
+  .liturgical-indicator__chevron {
+    display: inline-flex;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__drag {
+    display: block;
+  }
+
   #flow-page .mass-song-pick-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -704,7 +849,7 @@ iframe {
 }
 
 /* —— Song Composer: main 2/3 left · recent 1/3 right (wins over legacy layout rules) —— */
-@media (min-width: 721px) {
+@media (min-width: 769px) {
   .lyrics-workspace-mockup .song-composer-layout,
   #lyrics-workspace .song-composer-layout {
     display: grid !important;
@@ -745,7 +890,7 @@ iframe {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .lyrics-workspace-mockup .song-composer-layout,
   #lyrics-workspace .song-composer-layout {
     grid-template-columns: 1fr !important;
