@@ -92,7 +92,14 @@ def upsert_church_profile(
     if not uid:
         raise ValueError("user_id is required.")
 
-    payload: dict[str, Any] = {"user_id": uid}
+    existing = get_church_profile(uid, access_token=access_token) or {}
+    payload: dict[str, Any] = {
+        "user_id": uid,
+        "community_name": existing.get("community_name") or "",
+        "celebrant_names": existing.get("celebrant_names") or [],
+    }
+    if existing.get("logo_path"):
+        payload["logo_path"] = existing.get("logo_path")
     if community_name is not None:
         payload["community_name"] = community_name
     if logo_path is not None:
@@ -101,12 +108,17 @@ def upsert_church_profile(
         payload["celebrant_names"] = celebrant_names
 
     client = _client_for_user(access_token)
+    if not access_token:
+        raise ValueError("Access token is required to save church profile.")
+
     result = client.table("church_profiles").upsert(payload, on_conflict="user_id").execute()
     rows = result.data or []
     if rows:
         return rows[0]
     saved = get_church_profile(uid, access_token=access_token)
-    return saved or payload
+    if not saved:
+        raise RuntimeError("Church profile save did not persist. Check Supabase RLS policies.")
+    return saved
 
 
 def record_generation(

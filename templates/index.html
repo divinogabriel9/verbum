@@ -1091,7 +1091,45 @@
     .account-menu-btn__name {
       font-size: 0.8125rem;
       font-weight: 600;
-      max-width: 120px;
+      max-width: 148px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .account-menu-header {
+      padding: 8px 8px 4px;
+      border-bottom: 1px solid var(--line);
+    }
+    .account-menu-header[hidden] {
+      display: none;
+    }
+    .account-menu-header__row {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      min-width: 0;
+    }
+    .account-menu-header__email {
+      margin: 0;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      line-height: 1.35;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .app-menu-panel--account .app-menu-item {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      align-items: center;
+      gap: 10px;
+      justify-content: start;
+    }
+    .app-menu-panel--account .vb-dropdown-item__label {
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1874,96 +1912,98 @@
       margin: 20px 0;
       background: linear-gradient(90deg, transparent, var(--line), transparent);
     }
-    /* Settings — account-style layout with left sidebar */
+    /* Settings — song-plan-style split (nav card | content card) */
     .settings-layout {
-      display: grid;
-      grid-template-columns: minmax(200px, 252px) minmax(0, 1fr);
-      gap: var(--space-lg);
-      align-items: start;
       width: 100%;
       max-width: var(--content-max);
       margin: 0 auto;
     }
-    .settings-sidebar {
-      position: sticky;
-      top: calc(var(--header-height) + var(--space-md));
-      border-radius: 16px;
-      border: 1px solid var(--card-border);
-      background: var(--surface-solid);
-      box-shadow: var(--shadow-card);
-      padding: var(--space-md) var(--space-sm);
-    }
-    .settings-sidebar__title {
-      margin: 0 0 4px;
-      padding: 0 12px;
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: -0.02em;
-    }
-    .settings-sidebar__subtitle {
-      margin: 0 0 14px;
-      padding: 0 12px;
-      font-size: var(--text-sm);
-      color: var(--muted);
-      line-height: 1.4;
-    }
-    .settings-sidebar__nav {
+    .settings-nav-list {
       display: flex;
       flex-direction: column;
       gap: 2px;
+      margin: 0;
+      padding: 0;
     }
     .settings-sidebar-link {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 11px 14px;
-      border-radius: 10px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--muted);
-      font-size: var(--text-sm);
-      font-weight: 650;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--good);
       text-decoration: none;
+      padding: 8px 4px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
       cursor: pointer;
-      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .settings-sidebar-link:hover {
-      color: var(--ink);
-      background: var(--surface-2);
+      color: color-mix(in srgb, var(--good) 82%, #000);
+      text-decoration: underline;
     }
     .settings-sidebar-link.active {
       color: var(--ink);
-      font-weight: 750;
-      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
-      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-solid));
-      box-shadow: inset 3px 0 0 var(--liturgical-accent);
+      background: var(--surface-2);
+      text-decoration: none;
+      font-weight: 700;
     }
-    .settings-main {
-      min-width: 0;
-    }
-    .settings-panel .admin-card {
-      max-width: none;
+    .settings-sidebar-link:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
+      outline-offset: 2px;
     }
     .settings-panel[hidden] {
       display: none !important;
     }
+    .settings-layout .settings-panel.flow-bento-cell {
+      padding: var(--space-3);
+    }
+    .settings-layout .flow-bento-cell__head.home-card-head,
+    .settings-layout .home-card-head {
+      border-bottom: none;
+      margin: 0 0 var(--space-2);
+      padding: 0 0 var(--space-2);
+      gap: var(--space-2);
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .settings-layout .home-card-head__icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+    }
+    .settings-layout .home-card-head__icon svg {
+      width: 14px;
+      height: 14px;
+    }
+    .settings-layout .home-card-head__text h3 {
+      font-size: var(--type-card-title);
+      font-weight: 600;
+      letter-spacing: var(--tracking-body);
+      line-height: var(--leading-tight);
+    }
+    .settings-layout .home-card-head__text p {
+      margin: 2px 0 0;
+      font-size: var(--type-helper);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
+      color: var(--muted);
+    }
     @media (max-width: 768px) {
-      .settings-layout {
-        grid-template-columns: 1fr;
-      }
-      .settings-sidebar {
-        position: static;
-      }
-      .settings-sidebar__nav {
+      .settings-nav-list {
         flex-direction: row;
         flex-wrap: wrap;
         gap: 6px;
       }
-      .settings-sidebar-link.active {
-        box-shadow: none;
-        border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      .settings-sidebar-link {
+        width: auto;
+        flex: 1 1 auto;
+        justify-content: center;
+        white-space: nowrap;
+        padding: 8px 10px;
       }
     }
     .route-switcher {
@@ -8238,7 +8278,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260609c" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260609d" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260615" />
   <style id="verbum-layout-overrides">
@@ -8480,12 +8520,45 @@
                 <svg class="account-menu-btn__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
               </button>
               <div class="vb-dropdown-panel vb-dropdown-panel--right app-menu-panel app-menu-panel--account" id="account-menu-panel" role="menu" hidden>
+                <div class="account-menu-header" id="account-menu-header" hidden>
+                  <div class="account-menu-header__row">
+                    <span class="app-menu-item__icon account-menu-header__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>
+                    </span>
+                    <p class="account-menu-header__email" id="account-menu-email"></p>
+                  </div>
+                </div>
                 <div class="vb-dropdown-list">
-                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" role="menuitem">Church profile</a>
-                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/app" data-route="/settings/app" role="menuitem">Appearance</a>
-                  <a class="vb-dropdown-item app-menu-item nav-link" href="/sign-in" id="account-sign-in-link" role="menuitem" hidden>Sign in</a>
-                  <a class="vb-dropdown-item app-menu-item nav-link" href="/sign-up" id="account-sign-up-link" role="menuitem" hidden>Create account</a>
-                  <button type="button" class="vb-dropdown-item app-menu-item" id="account-sign-out-btn" role="menuitem" hidden>Sign out</button>
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" role="menuitem">
+                    <span class="app-menu-item__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></svg>
+                    </span>
+                    <span class="vb-dropdown-item__label">Church profile</span>
+                  </a>
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/app" data-route="/settings/app" role="menuitem">
+                    <span class="app-menu-item__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                    </span>
+                    <span class="vb-dropdown-item__label">Appearance</span>
+                  </a>
+                  <a class="vb-dropdown-item app-menu-item" href="/sign-in" id="account-sign-in-link" role="menuitem" hidden>
+                    <span class="app-menu-item__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+                    </span>
+                    <span class="vb-dropdown-item__label">Sign in</span>
+                  </a>
+                  <a class="vb-dropdown-item app-menu-item" href="/sign-up" id="account-sign-up-link" role="menuitem" hidden>
+                    <span class="app-menu-item__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                    </span>
+                    <span class="vb-dropdown-item__label">Create account</span>
+                  </a>
+                  <button type="button" class="vb-dropdown-item app-menu-item app-menu-item--sign-out" id="account-sign-out-btn" role="menuitem" hidden>
+                    <span class="app-menu-item__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                    </span>
+                    <span class="vb-dropdown-item__label">Sign out</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -9450,20 +9523,33 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="settings-page">
-        <div class="settings-layout">
-          <aside class="settings-sidebar" aria-label="Settings navigation">
-            <h2 class="settings-sidebar__title">Settings</h2>
-            <p class="settings-sidebar__subtitle">Parish profile and app appearance</p>
-            <nav class="settings-sidebar__nav" id="settings-sidebar-nav">
+        <div class="settings-layout song-plan-layout">
+          <aside class="flow-bento-cell settings-nav-card song-plan-summary" aria-labelledby="settings-nav-heading">
+            <header class="flow-bento-cell__head home-card-head">
+              <span class="home-card-head__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              </span>
+              <div class="home-card-head__text">
+                <h3 id="settings-nav-heading">Settings</h3>
+                <p>Parish profile and app appearance</p>
+              </div>
+            </header>
+            <nav class="settings-nav-list" id="settings-sidebar-nav" aria-label="Settings navigation">
               <a class="settings-sidebar-link" href="/settings/church" data-route="/settings/church">Church Profile</a>
               <a class="settings-sidebar-link" href="/settings/app" data-route="/settings/app">Appearance &amp; theme</a>
             </nav>
           </aside>
-          <div class="settings-main">
-            <div class="settings-panel" id="settings-panel-church" data-settings-panel="church">
-              <div class="admin-card">
-                <h3 style="margin-top:0;">Church Profile</h3>
-                <p class="muted">Community name, celebrants, and logo used across Mass media.</p>
+          <div class="settings-main song-plan-main">
+            <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church">
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Church Profile</h3>
+                  <p>Community name, celebrants, and logo used across Mass media.</p>
+                </div>
+              </header>
                 <div class="field">
                   <label for="settings-church-name">Community name</label>
                   <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" />
@@ -9490,12 +9576,17 @@ Lord, hear our prayer</textarea>
                   <button type="button" class="primary" id="btn-save-community-api">Save church profile</button>
                 </div>
                 <p class="status" id="settings-church-status" aria-live="polite"></p>
-              </div>
-            </div>
-            <div class="settings-panel" id="settings-panel-app" data-settings-panel="appearance" hidden>
-              <div class="admin-card">
-                <h3 style="margin-top:0;">Appearance &amp; theme</h3>
-                <p class="muted">Choose light or dark interface, or match your device setting.</p>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-app" data-settings-panel="appearance" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Appearance &amp; theme</h3>
+                  <p>Choose light or dark interface, or match your device setting.</p>
+                </div>
+              </header>
                 <div class="theme-preference-row" role="radiogroup" aria-label="Color theme">
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="light" /> Light</label>
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="dark" /> Dark</label>
@@ -9565,8 +9656,7 @@ Lord, hear our prayer</textarea>
                   <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
                   <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
                 </div>
-              </div>
-            </div>
+            </article>
           </div>
         </div>
       </section>
@@ -9662,13 +9752,23 @@ Lord, hear our prayer</textarea>
       return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     };
     const postJSON = async (url, body) => {
+      if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+        await window.VerbumAuth.waitUntilReady();
+      }
+      const headers = { "Content-Type": "application/json" };
+      if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+        Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+      }
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (res.status === 401 && window.VerbumAuth && window.VerbumAuth.redirectToSignIn) {
+          window.VerbumAuth.redirectToSignIn();
+        }
         const message = data.detail || data.error || res.statusText;
         throw new Error(typeof message === "string" ? message : JSON.stringify(message));
       }
@@ -10524,7 +10624,10 @@ Lord, hear our prayer</textarea>
       }
       if (r === "/settings/app") syncHomeNewsSettingsUI();
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
-      if (r === "/settings/church") syncChurchFieldsToSettings();
+      if (r === "/settings/church") {
+        syncChurchFieldsToSettings();
+        refreshCommunity();
+      }
       if (r === "/mass/builder") {
         syncChurchFieldsFromSettings();
         refreshCommunity();
@@ -10556,6 +10659,7 @@ Lord, hear our prayer</textarea>
     }
 
     function showRoute(route, replaceOnly = false) {
+      if (typeof closeHeaderMenus === "function") closeHeaderMenus();
       const r = normalizeRoute(route);
       const leaving = document.querySelector(".page.active");
       const next = Array.from(document.querySelectorAll(".page")).find((p) => pageIsActiveForRoute(p, r));
@@ -10574,9 +10678,11 @@ Lord, hear our prayer</textarea>
 
     document.querySelectorAll(".app-header-nav .nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach((link) => {
       link.addEventListener("click", (event) => {
+        const route = link.dataset.route;
+        if (!route) return;
         event.preventDefault();
         event.stopPropagation();
-        showRoute(link.dataset.route);
+        showRoute(route);
       });
     });
     const routeSwitcherEl = $("route-switcher");
@@ -13154,10 +13260,6 @@ Lord, hear our prayer</textarea>
       document.body.classList.toggle("flow-dock-visible", dockVisible);
     }
 
-    document.addEventListener("click", (e) => {
-      if (e.target.closest(".mass-song-pick")) return;
-      closeMassSongResultPanels(null);
-    });
 
     $("mass-song-plan").addEventListener("mousedown", (e) => {
       const btn = e.target.closest("button[data-pick-slot]");
@@ -13336,6 +13438,7 @@ Lord, hear our prayer</textarea>
       const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
       const panels = Array.from(document.querySelectorAll("#flow-page [data-flow-panel]"));
       function activateFlowTab(name) {
+        if (typeof closeHeaderMenus === "function") closeHeaderMenus();
         tabs.forEach((tab) => {
           const on = tab.dataset.flowTab === name;
           tab.setAttribute("aria-selected", on ? "true" : "false");
@@ -13708,9 +13811,6 @@ Lord, hear our prayer</textarea>
           else closeCelebrantPicker();
         });
       }
-      document.addEventListener("click", (e) => {
-        if (!picker.contains(e.target)) closeCelebrantPicker();
-      });
       list.addEventListener("click", (e) => {
         const btn = e.target.closest(".celebrant-picker__option");
         if (!btn || !btn.dataset.value) return;
@@ -13800,8 +13900,50 @@ Lord, hear our prayer</textarea>
 
     async function refreshCommunity() {
       try {
-        const res = await fetch("/api/community");
-        const data = await res.json();
+        const auth = window.VerbumAuth;
+        if (!auth) return;
+        if (auth.waitUntilReady) {
+          await auth.waitUntilReady();
+        }
+        if (auth.isReady && !auth.isReady()) return;
+        const cfg = auth.getConfig ? auth.getConfig() : null;
+        if (cfg && cfg.auth_enabled && auth && auth.getUser && !auth.getUser()) {
+          const statusEl = $("settings-church-status");
+          if (statusEl && normalizeRoute(window.location.pathname) === "/settings/church") {
+            statusEl.textContent = "Sign in to load and save your church profile.";
+            statusEl.className = "status error";
+          }
+          return;
+        }
+        let headers = auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
+        let res = await fetch("/api/community", { headers });
+        if (!res.ok && res.status === 401 && auth && auth.refreshSession) {
+          await auth.refreshSession();
+          headers = await auth.getAuthHeaders();
+          res = await fetch("/api/community", { headers });
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = data.detail || res.statusText || "Could not load church profile.";
+          const statusEl = $("settings-church-status");
+          if (statusEl && res.status === 401) {
+            statusEl.textContent = "Sign in to load and save your church profile.";
+            statusEl.className = "status error";
+          } else if (statusEl) {
+            statusEl.textContent = typeof msg === "string" ? msg : "Could not load church profile.";
+            statusEl.className = "status error";
+          }
+          return;
+        }
+        const statusEl = $("settings-church-status");
+        if (
+          statusEl &&
+          statusEl.className === "status error" &&
+          statusEl.textContent === "Sign in to load and save your church profile."
+        ) {
+          statusEl.textContent = "";
+          statusEl.className = "status";
+        }
         if (data.community_name && $("settings-church-name")) {
           $("settings-church-name").value = data.community_name;
         }
@@ -13860,7 +14002,10 @@ Lord, hear our prayer</textarea>
       try {
         const formData = new FormData();
         formData.append("file", file);
-        const res = await fetch("/api/upload-logo", { method: "POST", body: formData });
+        const logoHeaders = window.VerbumAuth && window.VerbumAuth.getAuthHeaders
+          ? await window.VerbumAuth.getAuthHeaders()
+          : {};
+        const res = await fetch("/api/upload-logo", { method: "POST", headers: logoHeaders, body: formData });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Upload failed");
         if (statusEl) {
@@ -14744,12 +14889,16 @@ Lord, hear our prayer</textarea>
     }
 
     function updateAccountMenuDisplay() {
-      const raw = getCommunityName() || "Account";
-      const avatar = $("account-menu-avatar");
-      const nameEl = $("account-menu-name");
-      const initial = (raw.charAt(0) || "A").toUpperCase();
-      if (avatar) avatar.textContent = initial;
-      if (nameEl) nameEl.textContent = raw.length > 20 ? raw.slice(0, 18) + "…" : raw;
+      if (window.VerbumAuth && typeof window.VerbumAuth.updateAccountMenuDisplay === "function") {
+        window.VerbumAuth.updateAccountMenuDisplay();
+        return;
+      }
+      const signInLink = $("account-sign-in-link");
+      const signUpLink = $("account-sign-up-link");
+      const signOutBtn = $("account-sign-out-btn");
+      if (signInLink) signInLink.hidden = true;
+      if (signUpLink) signUpLink.hidden = true;
+      if (signOutBtn) signOutBtn.hidden = true;
     }
 
     function closeHeaderMenus(exceptPanelId) {
@@ -14758,6 +14907,7 @@ Lord, hear our prayer</textarea>
       }
       if (typeof closeAllVerbumSelects === "function") closeAllVerbumSelects();
       if (typeof closeCelebrantPicker === "function") closeCelebrantPicker();
+      if (typeof closeMassSongResultPanels === "function") closeMassSongResultPanels(null);
       [
         ["liturgical-indicator-panel", "liturgical-indicator-btn"],
         ["account-menu-panel", "account-menu-btn"],
@@ -14766,6 +14916,22 @@ Lord, hear our prayer</textarea>
       ].forEach(([panelId, btnId]) => {
         if (exceptPanelId && panelId === exceptPanelId) return;
         setVbDropdownOpen($(panelId), $(btnId), false);
+      });
+    }
+
+    function initDashboardDropdownDismiss() {
+      if (window.__verbumDropdownDismissBound) return;
+      window.__verbumDropdownDismissBound = true;
+      const dropdownRoots =
+        ".account-menu-wrap, .create-menu-wrap, .liturgical-indicator-wrap, " +
+        ".notif-wrap, .app-header__search-wrap, .vb-select, .celebrant-picker, " +
+        ".mass-song-plan-row__search";
+      document.addEventListener("click", (e) => {
+        if (e.target.closest(dropdownRoots)) return;
+        closeHeaderMenus();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeHeaderMenus();
       });
     }
 
@@ -14782,6 +14948,12 @@ Lord, hear our prayer</textarea>
       panel.querySelectorAll(".nav-link[data-route]").forEach((link) => {
         link.addEventListener("click", () => closeHeaderMenus());
       });
+      const signInLink = $("account-sign-in-link");
+      const signUpLink = $("account-sign-up-link");
+      if (signInLink) signInLink.addEventListener("click", () => closeHeaderMenus());
+      if (signUpLink) signUpLink.addEventListener("click", () => closeHeaderMenus());
+      const signOutBtn = $("account-sign-out-btn");
+      if (signOutBtn) signOutBtn.addEventListener("click", () => closeHeaderMenus());
     }
 
     function initCreateMenu() {
@@ -15164,10 +15336,6 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    document.addEventListener("click", (e) => {
-      if (e.target.closest(".vb-select")) return;
-      closeAllVerbumSelects();
-    });
 
     function initGlobalSearch() {
       const input = $("app-global-search");
@@ -15211,9 +15379,6 @@ Lord, hear our prayer</textarea>
         }
       });
 
-      document.addEventListener("click", (e) => {
-        if (wrap && !e.target.closest(".app-header__search-wrap")) closeGlobalSearch();
-      });
     }
 
     function initLiturgicalIndicatorPanel() {
@@ -15235,25 +15400,6 @@ Lord, hear our prayer</textarea>
         if (panel.hidden) openPanel();
         else closePanel();
       });
-      document.addEventListener("click", (e) => {
-        if (!e.target.closest(".liturgical-indicator-wrap") && !panel.hidden) closePanel();
-        const accountPanel = $("account-menu-panel");
-        const accountBtn = $("account-menu-btn");
-        if (!e.target.closest(".account-menu-wrap") && accountPanel && !accountPanel.hidden) {
-          accountPanel.hidden = true;
-          if (accountBtn) accountBtn.setAttribute("aria-expanded", "false");
-        }
-        const createPanel = $("create-menu-panel");
-        const createBtn = $("create-menu-btn");
-        if (!e.target.closest(".create-menu-wrap") && createPanel && !createPanel.hidden) {
-          createPanel.hidden = true;
-          if (createBtn) createBtn.setAttribute("aria-expanded", "false");
-        }
-      });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeHeaderMenus();
-      });
-
       startLiturgicalCountdownTimer();
     }
 
@@ -16914,17 +17060,21 @@ Lord, hear our prayer</textarea>
     restoreMassSongPlanLang();
     renderMassSongPlan();
     renderFlowSongCount();
-    refreshCommunity();
     renderHistoryList();
     bindHomeNewsSettings();
     initHomeNewsExpandModal();
     initLiturgicalIndicatorPanel();
+    initDashboardDropdownDismiss();
     initAccountMenu();
     initCreateMenu();
     initVerbumSelects();
     syncOpenAiPosterUi();
     initGlobalSearch();
     updateAccountMenuDisplay();
+    window.addEventListener("verbum:auth-ready", () => {
+      updateAccountMenuDisplay();
+      refreshCommunity();
+    });
     initHomeEventModal();
     initReadingExpandModal();
     refreshHomeMission();

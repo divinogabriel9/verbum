@@ -57,7 +57,7 @@ def get_community_name() -> str:
 
 
 def get_celebrant_names() -> list[str]:
-    return community_store.list_celebrant_names()
+    return _celebrants_from_context(load_community())
 
 
 def get_logo_path() -> Optional[Path]:

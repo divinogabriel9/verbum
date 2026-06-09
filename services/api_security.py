@@ -140,7 +140,38 @@ class AuthGuardMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+# Content-Security-Policy. The app loads the Supabase JS SDK from jsDelivr and
+# talks to the Supabase REST/Auth host, so those origins are allowlisted.
+# 'unsafe-inline' is required for the inline <script>/<style> blocks in the
+# templates; tighten with nonces if those are refactored out.
+def _build_csp() -> str:
+    from services.auth_config import supabase_url
+
+    connect = ["'self'", "https://*.supabase.co", "https://*.supabase.in"]
+    sb = supabase_url()
+    if sb:
+        connect.append(sb)
+    return "; ".join(
+        [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "img-src 'self' data: blob: https:",
+            "font-src 'self' https://fonts.gstatic.com data:",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "connect-src " + " ".join(dict.fromkeys(connect)),
+        ]
+    )
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self._csp = _build_csp()
+
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
@@ -150,8 +181,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault(
             "Permissions-Policy",
-            "camera=(), microphone=(), geolocation=()",
+            "camera=(), microphone=(), geolocation=(), interest-cohort=()",
         )
+        response.headers.setdefault("Content-Security-Policy", self._csp)
+        response.headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
         if request.url.scheme == "https":
             response.headers.setdefault(
                 "Strict-Transport-Security",
@@ -161,6 +195,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 def register_security_middleware(app) -> None:
+    from services.rate_limit import RateLimitMiddleware
+
+    # Middleware runs in reverse registration order for the request path, so the
+    # rate limiter (added last) executes first — rejecting floods before any
+    # auth, DB, or business logic runs.
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(UserChurchMiddleware)
     app.add_middleware(AuthGuardMiddleware)
+    app.add_middleware(RateLimitMiddleware)

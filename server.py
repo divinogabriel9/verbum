@@ -43,6 +43,7 @@ from services.community_config import (
     LOGO_RELATIVE,
     get_celebrant_names,
     get_community_name,
+    load_community,
     logo_file_absolute,
     update_community,
     uploads_dir,
@@ -216,9 +217,9 @@ def _sync_church_profile_to_supabase(
     community_name: Optional[str] = None,
     logo_path: Optional[str] = None,
     celebrant_names: Optional[list[str]] = None,
-) -> None:
+) -> dict[str, Any]:
     if not session or not supabase_enabled():
-        return
+        raise HTTPException(status_code=503, detail="Sign in is required to save church profile.")
     try:
         from services.supabase_client import upsert_church_profile
         from services.user_church_context import set_church_profile
@@ -231,8 +232,12 @@ def _sync_church_profile_to_supabase(
             access_token=session.token,
         )
         set_church_profile(saved)
-    except Exception:
-        pass
+        return saved
+    except HTTPException:
+        raise
+    except Exception as exc:
+        detail = str(exc).strip() or "Could not save church profile to Supabase."
+        raise HTTPException(status_code=502, detail=detail) from exc
 
 
 def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
@@ -620,10 +625,15 @@ def generate_image(
 
 
 def _community_api_payload() -> dict[str, Any]:
+    profile = load_community()
     logo_exists = logo_file_absolute().is_file()
+    celebrants = profile.get("celebrant_names")
+    if not isinstance(celebrants, list):
+        celebrants = get_celebrant_names()
     return {
+        "ok": True,
         "community_name": get_community_name(),
-        "celebrant_names": get_celebrant_names(),
+        "celebrant_names": celebrants,
         "logo_url": "/uploads/community_logo.png" if logo_exists else None,
     }
 
@@ -704,7 +714,10 @@ def api_save_gemini_api_key(body: GeminiApiKeyBody) -> dict[str, Any]:
 
 
 @app.post("/api/upload-logo")
-async def api_upload_logo(file: UploadFile = File(...)) -> dict[str, Any]:
+async def api_upload_logo(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
     ctype = (file.content_type or "").split(";")[0].strip().lower()
     if ctype not in _ALLOWED_LOGO_TYPES:
         raise HTTPException(
@@ -735,7 +748,10 @@ async def api_upload_logo(file: UploadFile = File(...)) -> dict[str, Any]:
     out_path = logo_file_absolute()
     im.save(out_path, format="PNG", optimize=True)
 
-    update_community(logo_path=LOGO_RELATIVE)
+    if session and supabase_enabled():
+        _sync_church_profile_to_supabase(session, logo_path=LOGO_RELATIVE)
+    else:
+        update_community(logo_path=LOGO_RELATIVE)
     return {
         "ok": True,
         "logo_url": "/uploads/community_logo.png",

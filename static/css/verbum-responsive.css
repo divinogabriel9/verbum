@@ -94,7 +94,8 @@ iframe {
   .hero,
   .hero--home,
   .modal-box,
-  .settings-sidebar,
+  .settings-nav-card,
+  .settings-layout .settings-panel,
   .control-card,
   .mass-song-slot,
   .theme-card-wrap,
@@ -401,23 +402,18 @@ iframe {
   }
 
   /* Settings nav: horizontal scroll on narrow tablet */
-  .settings-sidebar__nav {
+  .settings-nav-list {
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     gap: var(--space-2);
-    padding-bottom: var(--space-1);
   }
 
   .settings-sidebar-link {
     flex: 0 0 auto;
     min-height: 44px;
     white-space: nowrap;
-  }
-
-  .settings-sidebar-link.active {
-    box-shadow: none;
   }
 
   /* Theme / poster preview */
@@ -827,11 +823,7 @@ iframe {
 }
 
 @media (min-width: 769px) {
-  .settings-layout {
-    grid-template-columns: minmax(200px, 252px) minmax(0, 1fr);
-  }
-
-  .settings-sidebar__nav {
+  .settings-nav-list {
     flex-direction: column;
     overflow-x: visible;
   }
