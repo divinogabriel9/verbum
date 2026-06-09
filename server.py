@@ -17,11 +17,11 @@ import zipfile
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from services.env_config import load_project_dotenv
 
@@ -60,6 +60,22 @@ from services.song_catalog import (
     save_lyrics_song,
     update_catalog_song,
 )
+from services.auth_config import supabase_enabled
+from services.api_security import (
+    AuthSession,
+    optional_session,
+    register_security_middleware,
+    require_session_when_auth,
+)
+from services.image_generation_quota import (
+    get_quota_status,
+    reserve_daily_image_generation,
+    resolve_subject,
+)
+from services.input_limits import public_limits
+from services import input_limits as L
+from services.input_validation import check_hymn_overrides, check_string_list
+from routes.auth import register_auth_routes
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
 _BUNDLE_OPTIONAL = (
@@ -181,7 +197,7 @@ def _write_mass_bundle_zip(result: GenerationResult) -> None:
             zf.write(path, arcname=arc)
 
 
-app = FastAPI(title="Verbum · LiturgyFlow")
+app = FastAPI(title="LiturgyFlow")
 templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
 _STATIC_DIR = _PROJECT / "static"
 _STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -189,6 +205,34 @@ app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 app.mount("/media", StaticFiles(directory=str(_OUTPUT_DIR)), name="media")
 app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
 app.mount("/preview", StaticFiles(directory=str(_PREVIEW_DIR)), name="preview")
+
+register_auth_routes(app, templates)
+register_security_middleware(app)
+
+
+def _sync_church_profile_to_supabase(
+    session: Optional[AuthSession],
+    *,
+    community_name: Optional[str] = None,
+    logo_path: Optional[str] = None,
+    celebrant_names: Optional[list[str]] = None,
+) -> None:
+    if not session or not supabase_enabled():
+        return
+    try:
+        from services.supabase_client import upsert_church_profile
+        from services.user_church_context import set_church_profile
+
+        saved = upsert_church_profile(
+            session.user.user_id,
+            community_name=community_name,
+            logo_path=logo_path,
+            celebrant_names=celebrant_names,
+            access_token=session.token,
+        )
+        set_church_profile(saved)
+    except Exception:
+        pass
 
 
 def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
@@ -229,8 +273,8 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
 
 
 class ExtraSongSection(BaseModel):
-    label: str = Field(..., min_length=1, max_length=80)
-    song_id: str = Field(..., min_length=1)
+    label: str = Field(..., min_length=1, max_length=L.SECTION_LABEL)
+    song_id: str = Field(..., min_length=1, max_length=L.SONG_ID)
 
 
 class SongSelection(BaseModel):
@@ -242,26 +286,37 @@ class SongSelection(BaseModel):
     meditation: Optional[str] = None
     extra_sections: Optional[list[ExtraSongSection]] = Field(
         None,
-        max_length=12,
+        max_length=L.MAX_EXTRA_SONG_SECTIONS,
         description="User-added Mass song sections (custom labels) beyond the five defaults.",
     )
 
 
 class CommunityNameBody(BaseModel):
-    community_name: str = Field(..., min_length=1, max_length=240)
+    community_name: str = Field(..., min_length=1, max_length=L.CHURCH_NAME)
 
 
 class CommunityProfileBody(BaseModel):
-    community_name: Optional[str] = Field(None, min_length=1, max_length=240)
+    community_name: Optional[str] = Field(None, min_length=1, max_length=L.CHURCH_NAME)
     celebrant_names: Optional[list[str]] = Field(
         None,
-        max_length=32,
+        max_length=L.MAX_CELEBRANTS,
         description="Saved Mass celebrant names for the in-app picker.",
     )
 
+    @model_validator(mode="after")
+    def _validate_celebrant_names(self) -> CommunityProfileBody:
+        if self.celebrant_names is not None:
+            self.celebrant_names = check_string_list(
+                self.celebrant_names,
+                field="celebrant_names",
+                max_items=L.MAX_CELEBRANTS,
+                item_max_len=L.CELEBRANT_NAME,
+            )
+        return self
+
 
 class GeminiApiKeyBody(BaseModel):
-    api_key: str = Field(..., min_length=8, max_length=512)
+    api_key: str = Field(..., min_length=8, max_length=L.API_KEY)
 
 
 class PreviewBody(BaseModel):
@@ -270,7 +325,7 @@ class PreviewBody(BaseModel):
 
 class GenerateBody(BaseModel):
     date: str = Field(..., min_length=8)
-    celebrant: str = Field(..., min_length=1, max_length=200)
+    celebrant: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
     sentence_index: Optional[int] = Field(None, ge=0)
     poster_template: str = Field(
         "liturgical_color",
@@ -291,35 +346,35 @@ class GenerateBody(BaseModel):
     )
     ai_poster_style: str = Field(
         "cinematic",
-        max_length=64,
+        max_length=L.AI_POSTER_STYLE,
         description="OpenAI hero art style key from data/styles.json (5 presets).",
     )
     include_poster_text: bool = Field(
         True,
         description="When OpenAI poster is enabled, overlay title, quote, and celebrant on the hero.",
     )
-    community_name: Optional[str] = Field(None, max_length=240)
+    community_name: Optional[str] = Field(None, max_length=L.CHURCH_NAME)
     songs: Optional[SongSelection] = None
     custom_theme: Optional[dict[str, Any]] = None
     divider_poster_basename: Optional[str] = Field(
         None,
-        max_length=200,
+        max_length=L.FILE_BASENAME,
         description="Basename of a file previously uploaded to mass_assets/.",
     )
     announcement_basenames: list[str] = Field(default_factory=list)
-    mass_collection_amount: Optional[str] = Field(None, max_length=120)
+    mass_collection_amount: Optional[str] = Field(None, max_length=L.COLLECTION_AMOUNT)
     mass_collection_currency: Optional[str] = Field(
         "PHP",
         description="Mass collection currency: PHP | KRW | MYR",
-        max_length=8,
+        max_length=L.CURRENCY_CODE,
     )
-    mass_collection_date_label: Optional[str] = Field(None, max_length=240)
+    mass_collection_date_label: Optional[str] = Field(None, max_length=L.COLLECTION_DATE_LABEL)
     food_sponsors: list[str] = Field(default_factory=list)
-    psalm_text_override: Optional[str] = Field(None, max_length=12000)
+    psalm_text_override: Optional[str] = Field(None, max_length=L.PSALM_FULL)
     psalm_refrain_index: Optional[int] = Field(None, ge=0)
     gospel_quote_override: Optional[str] = Field(
         None,
-        max_length=2000,
+        max_length=L.GOSPEL_QUOTE,
         description="Exact Gospel line for slides; overrides sentence_index when non-empty.",
     )
     hymn_typography: Optional[dict[str, Any]] = Field(
@@ -347,10 +402,27 @@ class GenerateBody(BaseModel):
         description="Hymn slide layout: single (1 block/slide) | dual (2 blocks/slide).",
     )
 
+    @model_validator(mode="after")
+    def _validate_generate_lists(self) -> GenerateBody:
+        self.food_sponsors = check_string_list(
+            self.food_sponsors,
+            field="food_sponsors",
+            max_items=L.MAX_FOOD_SPONSORS,
+            item_max_len=L.FOOD_SPONSOR,
+        ) or []
+        self.announcement_basenames = check_string_list(
+            self.announcement_basenames,
+            field="announcement_basenames",
+            max_items=L.MAX_ANNOUNCEMENT_IMAGES,
+            item_max_len=L.FILE_BASENAME,
+        ) or []
+        self.hymn_lyric_overrides = check_hymn_overrides(self.hymn_lyric_overrides)
+        return self
+
 
 class RefreshSongsBody(BaseModel):
     date: str = Field(..., min_length=8, description="YYYY-MM-DD")
-    section: str = Field(..., min_length=3, max_length=40)
+    section: str = Field(..., min_length=3, max_length=L.SECTION_KEY)
     current_ids: list[str] = Field(default_factory=list)
 
 
@@ -367,18 +439,18 @@ class ImportSongsBody(BaseModel):
 
 
 class SongRowBody(BaseModel):
-    title: str = Field(..., min_length=1, max_length=240)
-    language: str = Field("English", max_length=40)
+    title: str = Field(..., min_length=1, max_length=L.SONG_TITLE)
+    language: str = Field("English", max_length=L.LANGUAGE)
     mass_part: list[str] = Field(default_factory=list)
 
 
 class ImportSongRowsBody(BaseModel):
-    songs: list[SongRowBody] = Field(default_factory=list)
+    songs: list[SongRowBody] = Field(default_factory=list, max_length=L.MAX_IMPORT_SONG_ROWS)
 
 
 class LyricsSelectionBody(BaseModel):
-    section: str = Field(..., min_length=3, max_length=40)
-    id: str = Field(..., min_length=1, max_length=160)
+    section: str = Field(..., min_length=3, max_length=L.SECTION_KEY)
+    id: str = Field(..., min_length=1, max_length=L.SONG_ID)
 
 
 class FetchLyricsBody(BaseModel):
@@ -386,27 +458,27 @@ class FetchLyricsBody(BaseModel):
 
 
 class SaveLyricsBody(BaseModel):
-    title: str = Field(..., min_length=1, max_length=240)
-    lyrics: str = Field(..., min_length=1)
+    title: str = Field(..., min_length=1, max_length=L.SONG_TITLE)
+    lyrics: str = Field(..., min_length=1, max_length=L.LYRICS_FULL)
     sections: list[str] = Field(default_factory=list)
-    language: str = Field("English", max_length=40)
-    author: str = Field("", max_length=240)
+    language: str = Field("English", max_length=L.LANGUAGE)
+    author: str = Field("", max_length=L.SONG_AUTHOR)
 
 
 class CatalogSongPatchBody(BaseModel):
-    title: Optional[str] = Field(None, max_length=240)
-    author: Optional[str] = Field(None, max_length=240)
-    lyrics: Optional[str] = None
-    language: Optional[str] = Field(None, max_length=40)
+    title: Optional[str] = Field(None, max_length=L.SONG_TITLE)
+    author: Optional[str] = Field(None, max_length=L.SONG_AUTHOR)
+    lyrics: Optional[str] = Field(None, max_length=L.LYRICS_FULL)
+    language: Optional[str] = Field(None, max_length=L.LANGUAGE)
     gospel_moods: Optional[list[str]] = Field(
         None,
-        max_length=5,
+        max_length=L.MAX_GOSPEL_MOODS,
         description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
     )
 
 
 class GenerateImageBody(BaseModel):
-    prompt: str = Field(..., min_length=1, max_length=4000)
+    prompt: str = Field(..., min_length=1, max_length=L.AI_PROMPT)
 
 
 class GenerateImageResponse(BaseModel):
@@ -484,13 +556,41 @@ def api_ppt_preview_refresh() -> dict[str, Any]:
     return {"ok": True, "mode": "image", "slides": slides, "message": msg}
 
 
+@app.get("/api/input-limits")
+def api_input_limits() -> dict[str, int]:
+    return public_limits()
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api/image-quota")
+def api_image_quota(
+    request: Request,
+    session: Optional[AuthSession] = Depends(optional_session),
+) -> dict[str, Any]:
+    subject = resolve_subject(session, request)
+    return get_quota_status(subject)
+
+
+def _enforce_ai_image_quota(
+    session: Optional[AuthSession],
+    request: Request,
+    *,
+    source: str,
+) -> dict[str, Any]:
+    subject = resolve_subject(session, request)
+    return reserve_daily_image_generation(subject, source=source)
+
+
 @app.post("/generate-image", response_model=GenerateImageResponse)
-def generate_image(body: GenerateImageBody) -> GenerateImageResponse:
+def generate_image(
+    body: GenerateImageBody,
+    request: Request,
+    session: Optional[AuthSession] = Depends(optional_session),
+) -> GenerateImageResponse:
     import base64
 
     from generators.ai_image_generator import generate_openai_poster
@@ -501,6 +601,8 @@ def generate_image(body: GenerateImageBody) -> GenerateImageResponse:
     prompt = body.prompt.strip()
     if not prompt:
         raise HTTPException(status_code=400, detail="prompt is required.")
+
+    _enforce_ai_image_quota(session, request, source="generate-image")
 
     poster_path = _OUTPUT_DIR / "poster.png"
     try:
@@ -517,8 +619,7 @@ def generate_image(body: GenerateImageBody) -> GenerateImageResponse:
     )
 
 
-@app.get("/api/community")
-def api_community() -> dict[str, Any]:
+def _community_api_payload() -> dict[str, Any]:
     logo_exists = logo_file_absolute().is_file()
     return {
         "community_name": get_community_name(),
@@ -527,18 +628,31 @@ def api_community() -> dict[str, Any]:
     }
 
 
+@app.get("/api/community")
+def api_community(
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    return _community_api_payload()
+
+
 @app.post("/api/community")
-def api_set_community_name(body: CommunityNameBody) -> dict[str, Any]:
-    update_community(community_name=body.community_name.strip())
-    return {
-        "ok": True,
-        "community_name": get_community_name(),
-        "celebrant_names": get_celebrant_names(),
-    }
+def api_set_community_name(
+    body: CommunityNameBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    name = body.community_name.strip()
+    if session and supabase_enabled():
+        _sync_church_profile_to_supabase(session, community_name=name)
+    else:
+        update_community(community_name=name)
+    return _community_api_payload()
 
 
 @app.post("/api/community/profile")
-def api_set_community_profile(body: CommunityProfileBody) -> dict[str, Any]:
+def api_set_community_profile(
+    body: CommunityProfileBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
     kwargs: dict[str, Any] = {}
     if body.community_name is not None:
         kwargs["community_name"] = body.community_name.strip()
@@ -546,12 +660,15 @@ def api_set_community_profile(body: CommunityProfileBody) -> dict[str, Any]:
         kwargs["celebrant_names"] = body.celebrant_names
     if not kwargs:
         raise HTTPException(status_code=400, detail="No profile fields to update.")
-    update_community(**kwargs)
-    return {
-        "ok": True,
-        "community_name": get_community_name(),
-        "celebrant_names": get_celebrant_names(),
-    }
+    if session and supabase_enabled():
+        _sync_church_profile_to_supabase(
+            session,
+            community_name=kwargs.get("community_name"),
+            celebrant_names=kwargs.get("celebrant_names"),
+        )
+    else:
+        update_community(**kwargs)
+    return _community_api_payload()
 
 
 @app.get("/api/settings/gemini-api-key")
@@ -740,7 +857,7 @@ def index(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "Verbum · LiturgyFlow"},
+        {"title": "LiturgyFlow"},
     )
 
 
@@ -763,7 +880,7 @@ def dashboard(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "Verbum · LiturgyFlow"},
+        {"title": "LiturgyFlow"},
     )
 
 
@@ -804,7 +921,11 @@ def api_preview(body: PreviewBody) -> Any:
 
 
 @app.post("/api/generate")
-def api_generate(body: GenerateBody) -> Any:
+def api_generate(
+    body: GenerateBody,
+    request: Request,
+    session: Optional[AuthSession] = Depends(optional_session),
+) -> Any:
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
     divider_path = None
     if body.divider_poster_basename and str(body.divider_poster_basename).strip():
@@ -822,6 +943,15 @@ def api_generate(body: GenerateBody) -> Any:
     sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
     psalm_override = (body.psalm_text_override or "").strip() or None
     gospel_override = (body.gospel_quote_override or "").strip() or None
+
+    if body.include_ai_mass_poster:
+        backend = (body.ai_poster_backend or "openai").strip().lower()
+        _enforce_ai_image_quota(
+            session,
+            request,
+            source=f"mass-poster:{backend}",
+        )
+
     result = generate_mass_media(
         body.date.strip(),
         body.celebrant.strip(),
@@ -893,6 +1023,23 @@ def api_generate(body: GenerateBody) -> Any:
     if poster_ppt_url:
         payload["poster_ppt_url"] = poster_ppt_url
     payload["ai_poster_urls"] = _ai_poster_download_urls()
+    if session and supabase_enabled():
+        try:
+            from services.supabase_client import record_generation
+
+            record_generation(
+                session.user.user_id,
+                mass_date=body.date.strip(),
+                celebrant=body.celebrant.strip(),
+                output_summary={
+                    "title": result.title,
+                    "slide_count": result.slide_count,
+                    "export_stem": result.export_stem,
+                },
+                access_token=session.token,
+            )
+        except Exception:
+            pass
     return {
         **payload,
         **(

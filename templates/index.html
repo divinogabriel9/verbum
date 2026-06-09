@@ -999,6 +999,8 @@
     .create-menu-wrap,
     .account-menu-wrap {
       position: relative;
+      display: flex;
+      align-items: center;
       flex-shrink: 0;
     }
     .btn-create {
@@ -2696,20 +2698,14 @@
       align-items: center;
       justify-content: center;
       padding: var(--space-4);
-      opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transition:
-        opacity var(--motion-duration-base) var(--motion-ease-out),
-        visibility 0s linear var(--motion-duration-base);
+      transition: visibility 0s linear var(--motion-duration-modal);
     }
     .ui-overlay.is-open {
-      opacity: 1;
       visibility: visible;
       pointer-events: auto;
-      transition:
-        opacity var(--motion-duration-base) var(--motion-ease-out),
-        visibility 0s;
+      transition: visibility 0s;
     }
     .ui-overlay__backdrop {
       position: fixed;
@@ -2720,10 +2716,11 @@
       right: 0;
       margin: 0;
       opacity: 0;
-      transition: opacity var(--motion-duration-base) var(--motion-ease-out);
+      transition: opacity var(--motion-duration-exit) var(--motion-ease-out);
     }
     .ui-overlay.is-open .ui-overlay__backdrop {
       opacity: 1;
+      transition-duration: 0ms;
     }
     .ui-card {
       position: relative;
@@ -3160,25 +3157,43 @@
       width: 100%;
       min-width: 0;
     }
+    /* Mass builder hybrid card heads — setup + song plan */
+    .flow-setup-bento .flow-bento-cell__head.home-card-head,
+    .song-plan-layout .flow-bento-cell__head.home-card-head {
+      border-bottom: none;
+      margin: 0 0 var(--space-2);
+      padding: 0 0 var(--space-2);
+    }
+    .flow-setup-bento .home-card-head,
     .song-plan-layout .home-card-head {
       margin-bottom: var(--space-2);
       padding-bottom: var(--space-2);
       gap: var(--space-2);
+      grid-template-columns: auto minmax(0, 1fr);
     }
+    .flow-setup-bento .home-card-head__icon,
     .song-plan-layout .home-card-head__icon {
       width: 28px;
       height: 28px;
       border-radius: 8px;
     }
+    .flow-setup-bento .home-card-head__icon svg,
     .song-plan-layout .home-card-head__icon svg {
       width: 14px;
       height: 14px;
     }
+    .flow-setup-bento .home-card-head__text h3,
     .song-plan-layout .home-card-head__text h3 {
       font-size: var(--type-card-title);
       font-weight: 600;
       letter-spacing: var(--tracking-body);
       line-height: var(--leading-tight);
+    }
+    .flow-setup-bento .home-card-head__text p {
+      margin: 2px 0 0;
+      font-size: var(--type-helper);
+      line-height: var(--leading-caption);
+      letter-spacing: var(--tracking-caption);
     }
     .song-plan-layout .home-card-head__text p {
       display: none;
@@ -4208,7 +4223,7 @@
         min-width: 140px;
       }
     }
-    /* Mass Builder Setup — bento (ui-ux-pro-max) */
+    /* Mass Builder Setup — bento grid + hybrid card heads (matches song plan) */
     .flow-setup-bento {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -4388,6 +4403,8 @@
       display: flex;
       flex-direction: column;
       gap: var(--space-3);
+      overflow: visible;
+      position: relative;
     }
     .flow-setup-footer__toggles {
       display: flex;
@@ -6327,12 +6344,9 @@
       justify-content: center;
       padding: 18px;
       background: transparent;
-      opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transition:
-        opacity var(--motion-duration-base) var(--motion-ease-out),
-        visibility 0s linear var(--motion-duration-base);
+      transition: visibility 0s linear var(--motion-duration-modal);
     }
     .modal::before {
       content: "";
@@ -6344,18 +6358,16 @@
       right: 0;
       z-index: -1;
       opacity: 0;
-      transition: opacity var(--motion-duration-base) var(--motion-ease-out);
+      transition: opacity var(--motion-duration-exit) var(--motion-ease-out);
     }
     .modal.visible {
-      opacity: 1;
       visibility: visible;
       pointer-events: auto;
-      transition:
-        opacity var(--motion-duration-base) var(--motion-ease-out),
-        visibility 0s;
+      transition: visibility 0s;
     }
     .modal.visible::before {
       opacity: 1;
+      transition-duration: 0ms;
     }
     .modal-box {
       width: min(var(--content-max), 100%);
@@ -8226,7 +8238,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260617" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260609c" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260615" />
   <style id="verbum-layout-overrides">
@@ -8340,13 +8352,25 @@
       right: 0;
       transform-origin: top center;
     }
+    /* Header Create CTA — always liturgical green (loads last) */
+    .btn-create {
+      background: var(--good, var(--color-primary, #2d6a4f));
+      color: #fff;
+      border: none;
+    }
+    .btn-create:hover {
+      background: color-mix(in srgb, var(--good, var(--color-primary, #2d6a4f)) 88%, #000);
+      color: #fff;
+    }
   </style>
+  <script src="/static/js/input-limits.js" defer></script>
+  <script src="/static/js/auth.js" defer></script>
 </head>
 <body data-season="ordinary">
   <div class="app-shell">
       <header class="app-header" id="app-header">
         <div class="app-header__main">
-          <a href="/home" class="brand-block" id="topbar-title" data-route="/home" aria-label="Verbum — Home">
+          <a href="/home" class="brand-block" id="topbar-title" data-route="/home" aria-label="LiturgyFlow — Home">
             <span class="brand-block__mark" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22c4-4 8-7.5 8-12a8 8 0 1 0-16 0c0 4.5 4 8 8 12z" />
@@ -8354,8 +8378,8 @@
               </svg>
             </span>
             <span class="brand-block__text">
-              <span class="brand-block__name">Verbum</span>
-              <span class="brand-block__tagline">Liturgy Planning Platform</span>
+              <span class="brand-block__name">LiturgyFlow</span>
+              <span class="brand-block__tagline">Mass slides &amp; posters</span>
             </span>
           </a>
         <p class="sr-only" id="topbar-breadcrumb">Home</p>
@@ -8370,6 +8394,7 @@
                 type="search"
                 id="app-global-search"
                 placeholder="Search anything…"
+                maxlength="120"
                 autocomplete="off"
                 role="combobox"
                 aria-label="Search pages and actions"
@@ -8458,6 +8483,9 @@
                 <div class="vb-dropdown-list">
                   <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" role="menuitem">Church profile</a>
                   <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/app" data-route="/settings/app" role="menuitem">Appearance</a>
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/sign-in" id="account-sign-in-link" role="menuitem" hidden>Sign in</a>
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/sign-up" id="account-sign-up-link" role="menuitem" hidden>Create account</a>
+                  <button type="button" class="vb-dropdown-item app-menu-item" id="account-sign-out-btn" role="menuitem" hidden>Sign out</button>
                 </div>
               </div>
             </div>
@@ -8744,7 +8772,7 @@
               <div class="song-composer-main">
                 <div class="song-composer-toolbar-row">
                   <div class="song-composer-search-wrap">
-                    <input type="search" id="song-catalog-search" placeholder="Search songs by title or author…" autocomplete="off" aria-label="Search songs in library" />
+                    <input type="search" id="song-catalog-search" placeholder="Search songs by title or author…" maxlength="120" autocomplete="off" aria-label="Search songs in library" />
                     <button type="button" class="song-composer-search-clear" id="song-catalog-search-clear" aria-label="Clear search" hidden>×</button>
                   </div>
                   <label class="song-composer-upload-btn" id="lyrics-drop-zone" for="lyrics-file" title="Upload .txt lyrics file">
@@ -8779,7 +8807,7 @@
               <div class="lyrics-details-meta-grid">
                 <div class="field">
                   <label for="lyrics-save-title">Title</label>
-                  <input type="text" id="lyrics-save-title" value="Saved Hymn" />
+                  <input type="text" id="lyrics-save-title" value="Saved Hymn" maxlength="240" />
                 </div>
                 <div class="field">
                   <label for="lyrics-save-author">Author</label>
@@ -8806,7 +8834,7 @@
                 </select>
               </div>
               <div class="lyrics-editor-scroll">
-                <textarea id="lyrics-input" class="lyrics-editor-main" spellcheck="true" aria-label="Song lyrics">Verse 1
+                <textarea id="lyrics-input" class="lyrics-editor-main" spellcheck="true" aria-label="Song lyrics" maxlength="50000" data-max-length="50000">Verse 1
 Amazing grace, how sweet the sound
 That saved a soul like me
 I once was lost, but now am found
@@ -8899,24 +8927,24 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="field">
               <label for="custom-theme-name">Theme name</label>
-              <input type="text" id="custom-theme-name" value="Parish Evening" />
+              <input type="text" id="custom-theme-name" value="Parish Evening" maxlength="80" />
             </div>
             <div class="builder-grid">
               <div class="color-field">
                 <input type="color" id="theme-bg" value="#182033" />
-                <div><label for="theme-bg-text">Background</label><input type="text" id="theme-bg-text" value="#182033" /></div>
+                <div><label for="theme-bg-text">Background</label><input type="text" id="theme-bg-text" value="#182033" maxlength="7" /></div>
               </div>
               <div class="color-field">
                 <input type="color" id="theme-primary" value="#f8c66a" />
-                <div><label for="theme-primary-text">Primary</label><input type="text" id="theme-primary-text" value="#f8c66a" /></div>
+                <div><label for="theme-primary-text">Primary</label><input type="text" id="theme-primary-text" value="#f8c66a" maxlength="7" /></div>
               </div>
               <div class="color-field">
                 <input type="color" id="theme-accent" value="#f15f3a" />
-                <div><label for="theme-accent-text">Accent</label><input type="text" id="theme-accent-text" value="#f15f3a" /></div>
+                <div><label for="theme-accent-text">Accent</label><input type="text" id="theme-accent-text" value="#f15f3a" maxlength="7" /></div>
               </div>
               <div class="color-field">
                 <input type="color" id="theme-text" value="#ffffff" />
-                <div><label for="theme-text-text">Text</label><input type="text" id="theme-text-text" value="#ffffff" /></div>
+                <div><label for="theme-text-text">Text</label><input type="text" id="theme-text-text" value="#ffffff" maxlength="7" /></div>
               </div>
             </div>
             <div class="field" style="margin-top:14px;">
@@ -8975,9 +9003,14 @@ Lord, hear our prayer</textarea>
             <div class="flow-builder-tab-panel" id="flow-panel-setup" role="tabpanel" aria-labelledby="flow-tab-setup" data-flow-panel="setup">
             <div class="flow-setup-bento" aria-label="Mass setup">
               <article class="flow-bento-cell flow-bento-cell--setup">
-                <header class="flow-bento-cell__head">
-                  <h3>Setup</h3>
-                  <p>Date, celebrant, stewardship, and artwork uploads.</p>
+                <header class="flow-bento-cell__head home-card-head">
+                  <span class="home-card-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>
+                  </span>
+                  <div class="home-card-head__text">
+                    <h3>Setup</h3>
+                    <p>Date, celebrant, stewardship, and artwork uploads.</p>
+                  </div>
                 </header>
                 <div class="flow-setup-unified">
                   <section class="flow-setup-col flow-setup-col--basics" aria-labelledby="flow-setup-basics-title">
@@ -9076,6 +9109,7 @@ Lord, hear our prayer</textarea>
                     <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
                     <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI poster</label>
                     <label><input type="checkbox" id="flow-use-gemini-poster" /> Gemini poster</label>
+                    <p class="muted ai-image-quota-hint" id="flow-ai-quota-hint" style="margin:8px 0 0;font-size:0.78rem;width:100%;" aria-live="polite"></p>
                     <label id="flow-include-poster-text-wrap"><input type="checkbox" id="flow-include-poster-text" checked /> Text on poster</label>
                     <label><input type="checkbox" id="flow-include-social-exports" /> Social sizes</label>
                 </div>
@@ -9083,9 +9117,14 @@ Lord, hear our prayer</textarea>
               </article>
 
               <article class="flow-bento-cell flow-bento-cell--readings">
-                <header class="flow-bento-cell__head">
-                  <h3>Readings</h3>
-                  <p>Preview Sunday texts and choose gospel and psalm lines for slides.</p>
+                <header class="flow-bento-cell__head home-card-head">
+                  <span class="home-card-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </span>
+                  <div class="home-card-head__text">
+                    <h3>Readings</h3>
+                    <p>Preview Sunday texts and choose gospel and psalm lines for slides.</p>
+                  </div>
                 </header>
                 <div class="flow-readings-inner">
                   <div class="flow-readings-preview-row" role="group" aria-label="Sunday reading texts">
@@ -9301,9 +9340,9 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="field">
               <label for="poster-gospel-quote">Gospel quote (one line)</label>
-              <textarea id="poster-gospel-quote" rows="3" placeholder="Short line for the poster"></textarea>
+              <textarea id="poster-gospel-quote" rows="3" maxlength="2000" placeholder="Short line for the poster"></textarea>
             </div>
-            <div class="field">
+            <div class="field" id="poster-openai-style-wrap">
               <label for="poster-openai-poster-style">OpenAI poster art style</label>
               <select id="poster-openai-poster-style">
                 <option value="cinematic">Cinematic — epic biblical scene, volumetric light</option>
@@ -9332,6 +9371,7 @@ Lord, hear our prayer</textarea>
               <label><input type="checkbox" id="poster-use-gemini-poster" /> Generate poster with Gemini</label>
               <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Same prompt as OpenAI; uses GEMINI_API_KEY from Settings (saved to .env.gemini).</p>
             </div>
+            <p class="muted ai-image-quota-hint" id="poster-ai-quota-hint" style="margin:0 0 12px;font-size:0.78rem;" aria-live="polite"></p>
             <div class="field" id="poster-include-poster-text-wrap">
               <label><input type="checkbox" id="poster-include-poster-text" checked /> Include text on poster</label>
               <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Off = AI art only. On = same Gospel line and metadata as the deck, composited onto the image (not generated by the AI model).</p>
@@ -9389,7 +9429,7 @@ Lord, hear our prayer</textarea>
           </div>
           <div class="song-catalog-panel" style="margin-top:16px; max-height: min(62vh, 560px);">
             <div class="song-catalog-toolbar">
-              <input type="search" id="collections-catalog-search" placeholder="Search title, author…" autocomplete="off" />
+              <input type="search" id="collections-catalog-search" placeholder="Search title, author…" maxlength="120" autocomplete="off" />
             </div>
             <div class="song-catalog-scroll" id="collections-catalog-root"></div>
           </div>
@@ -10740,7 +10780,7 @@ Lord, hear our prayer</textarea>
               "</div>" +
             "</div>" +
             '<div class="lyric-block__body">' +
-              '<textarea class="lyric-block__ta" data-action="text" rows="2" spellcheck="true">' + escapeHtml(block.text) + "</textarea>" +
+              '<textarea class="lyric-block__ta" data-action="text" data-limit-key="lyric_block" maxlength="4000" rows="2" spellcheck="true">' + escapeHtml(block.text) + "</textarea>" +
             "</div>" +
           "</article>"
         );
@@ -12773,7 +12813,7 @@ Lord, hear our prayer</textarea>
             "</div>" +
           "</div>" +
               "<div class=\"mass-song-plan-row__search mass-song-pick\">" +
-                "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" autocomplete=\"off\" placeholder=\"Search " + escapeHtml(massSongSlotShortLabel(slot.key, slot.label).toLowerCase()) + "…\" aria-label=\"Search " + escapeHtml((slot.label || "").trim() || "section") + "\" />" +
+                "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" maxlength=\"120\" autocomplete=\"off\" placeholder=\"Search " + escapeHtml(massSongSlotShortLabel(slot.key, slot.label).toLowerCase()) + "…\" aria-label=\"Search " + escapeHtml((slot.label || "").trim() || "section") + "\" />" +
                 "<div class=\"mass-song-alert-host\" id=\"mass-song-alert-" + slot.key + "\"></div>" +
                 "<div class=\"vb-dropdown-panel mass-song-results\" id=\"mass-song-res-" + slot.key + "\" role=\"listbox\" hidden></div>" +
               "</div>" +
@@ -14774,7 +14814,7 @@ Lord, hear our prayer</textarea>
     }
 
     const GLOBAL_SEARCH_ITEMS = [
-      { id: "page-home", label: "Home", hint: "Page", group: "Pages", route: "/home", keywords: ["home", "dashboard", "verbum", "sunday"] },
+      { id: "page-home", label: "Home", hint: "Page", group: "Pages", route: "/home", keywords: ["home", "dashboard", "liturgyflow", "sunday"] },
       { id: "page-mass", label: "Mass Builder", hint: "Page", group: "Pages", route: "/mass/builder", keywords: ["mass", "builder", "pptx", "powerpoint", "slides", "generate"] },
       { id: "page-songs", label: "Song Library", hint: "Page", group: "Pages", route: "/library/songs", keywords: ["library", "song", "lyrics", "hymn", "music"] },
       { id: "page-collections", label: "Collections", hint: "Page", group: "Pages", route: "/library/collections", keywords: ["collection", "setlist"] },
@@ -15092,6 +15132,7 @@ Lord, hear our prayer</textarea>
 
       trigger.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (select.disabled) return;
         const opening = panel.hidden;
         closeHeaderMenus();
         closeAllVerbumSelects(wrap);
@@ -15445,6 +15486,18 @@ Lord, hear our prayer</textarea>
         if (!el) return;
         const field = el.closest(".field") || el.closest(".flow-setup-footer__toggle-item") || el;
         field.style.opacity = useAi ? "1" : "0.55";
+        field.style.pointerEvents = useAi ? "" : "none";
+        field.setAttribute("aria-disabled", useAi ? "false" : "true");
+      });
+      ["flow-openai-poster-style", "poster-openai-poster-style"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.disabled = !useAi;
+        const wrap = el.closest(".vb-select");
+        if (wrap) {
+          if (!useAi) closeVerbumSelect(wrap);
+          syncVerbumSelectTrigger(el);
+        }
       });
       ["flow-include-poster-text-wrap", "poster-include-poster-text-wrap"].forEach((id) => {
         const el = $(id);
@@ -15452,6 +15505,32 @@ Lord, hear our prayer</textarea>
         el.style.opacity = useAi ? "1" : "0.45";
         el.style.pointerEvents = useAi ? "" : "none";
       });
+    }
+
+    async function refreshAiImageQuotaHint() {
+      const nodes = document.querySelectorAll(".ai-image-quota-hint");
+      if (!nodes.length) return;
+      try {
+        const res = await fetch("/api/image-quota");
+        const q = await res.json();
+        const msg = q.allowed
+          ? (q.remaining + " of " + q.limit + " AI image generation" + (q.limit === 1 ? "" : "s") + " left today (UTC).")
+          : ("Daily AI image limit reached (" + q.limit + "/day UTC). Use liturgical template instead, or try again tomorrow.");
+        nodes.forEach((el) => {
+          el.textContent = msg;
+          el.style.color = q.allowed ? "" : "var(--warn)";
+        });
+        const disableAi = !q.allowed;
+        ["flow-use-openai-poster", "flow-use-gemini-poster", "poster-use-openai-poster", "poster-use-gemini-poster"].forEach((id) => {
+          const el = $(id);
+          if (!el) return;
+          el.disabled = disableAi;
+          if (disableAi) el.checked = false;
+        });
+        syncOpenAiPosterUi();
+      } catch (_e) {
+        nodes.forEach((el) => { el.textContent = ""; });
+      }
     }
 
     function bindOpenAiPosterControls() {
@@ -15702,6 +15781,7 @@ Lord, hear our prayer</textarea>
         } else {
           statusFn("Deck generated. Downloads are ready.", "ok", dlMeta);
         }
+        refreshAiImageQuotaHint();
         return data;
       } catch (error) {
         statusFn(error.message || "Generation failed.", "error");
@@ -16825,6 +16905,7 @@ Lord, hear our prayer</textarea>
     refreshSavedPosters();
     bindSocialExportControls();
     bindOpenAiPosterControls();
+    refreshAiImageQuotaHint();
     showRoute(currentRoute(), true);
     analyzeLyrics();
     updateLyricsWordStats();
@@ -16841,6 +16922,7 @@ Lord, hear our prayer</textarea>
     initAccountMenu();
     initCreateMenu();
     initVerbumSelects();
+    syncOpenAiPosterUi();
     initGlobalSearch();
     updateAccountMenuDisplay();
     initHomeEventModal();

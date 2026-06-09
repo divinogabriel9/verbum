@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from services import community_store
+from services.user_church_context import get_church_profile_context
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _UPLOADS_DIR = _PROJECT_ROOT / "data" / "uploads"
@@ -15,7 +16,22 @@ LOGO_RELATIVE = f"data/uploads/{LOGO_FILENAME}"
 _default_name = community_store._DEFAULT_COMMUNITY_NAME
 
 
+def _celebrants_from_context(profile: dict[str, Any]) -> list[str]:
+    raw = profile.get("celebrant_names")
+    if isinstance(raw, list):
+        return [str(x).strip() for x in raw if str(x).strip()]
+    return []
+
+
 def load_community() -> dict[str, Any]:
+    ctx = get_church_profile_context()
+    if ctx:
+        name = (ctx.get("community_name") or "").strip()
+        return {
+            "community_name": name or _default_name,
+            "celebrant_names": _celebrants_from_context(ctx),
+            "logo_path": ctx.get("logo_path"),
+        }
     return community_store.load_profile()
 
 

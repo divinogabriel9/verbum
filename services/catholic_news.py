@@ -134,7 +134,7 @@ def _fetch_feed(url: str) -> bytes:
     resp = requests.get(
         url,
         timeout=_FEED_TIMEOUT,
-        headers={"User-Agent": "Verbum-ChurchMedia/1.0 (+local parish app)"},
+        headers={"User-Agent": "LiturgyFlow/1.0 (+local parish app)"},
     )
     resp.raise_for_status()
     return resp.content

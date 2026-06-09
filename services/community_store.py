@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+from services import input_limits as L
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _DATA_DIR = _PROJECT_ROOT / "data"
 _DB_PATH = _DATA_DIR / "app.sqlite"
@@ -56,14 +58,14 @@ def _normalize_names(raw: Any) -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
     for item in raw:
-        s = str(item or "").strip()
+        s = str(item or "").strip()[: L.CELEBRANT_NAME]
         if not s:
             continue
         key = s.lower()
         if key in seen:
             continue
         seen.add(key)
-        out.append(s[:200])
+        out.append(s)
         if len(out) >= _MAX_CELEBRANTS:
             break
     return out

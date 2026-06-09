@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --ink: #15333d;
+      --muted: #5c6b75;
+      --accent: #824d5d;
+      --line: #e4e9ef;
+      --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 55%);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .auth-shell {
+      width: min(100%, 420px);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(21, 51, 61, 0.08);
+      padding: 28px 24px 24px;
+    }
+    .auth-brand { text-align: center; margin-bottom: 20px; }
+    .auth-brand h1 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 600; }
+    .auth-brand p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 500; margin-bottom: 6px; }
+    .field input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font: inherit;
+    }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .auth-submit {
+      width: 100%;
+      margin-top: 8px;
+      padding: 11px 14px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .auth-error {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fef2f2;
+      color: #9b3d4e;
+      font-size: 0.86rem;
+    }
+    .auth-footer {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .auth-loading { text-align: center; color: var(--muted); padding: 48px 0; }
+    .auth-session {
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+    .auth-session p { margin: 0 0 16px; color: var(--muted); font-size: 0.92rem; line-height: 1.5; }
+    .auth-session strong { color: var(--ink); font-weight: 600; }
+    .auth-session-actions { display: grid; gap: 10px; }
+    .auth-secondary {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .auth-secondary:hover { background: var(--bg); }
+  </style>
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-brand">
+      <h1>Verbum</h1>
+      <p>{{ subtitle }}</p>
+    </div>
+
+    <p class="auth-loading" id="auth-loading">Loading…</p>
+    <p class="auth-error" id="auth-error" hidden role="alert"></p>
+
+    <div id="auth-session-panel" class="auth-session" hidden>
+      <p>You’re already signed in as<br /><strong id="auth-session-email"></strong></p>
+      <div class="auth-session-actions">
+        <button type="button" class="auth-submit" id="auth-continue-btn">Continue to Verbum</button>
+        <button type="button" class="auth-secondary" id="auth-switch-btn">Sign in with a different account</button>
+      </div>
+    </div>
+
+    <form id="auth-form" hidden novalidate>
+      <div id="auth-signup-fields" hidden>
+        <div class="field">
+          <label for="auth-church-name">Church / community name</label>
+          <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="e.g. St. Mary's Parish" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="auth-first-name">First name</label>
+            <input type="text" id="auth-first-name" autocomplete="given-name" maxlength="80" />
+          </div>
+          <div class="field">
+            <label for="auth-last-name">Last name</label>
+            <input type="text" id="auth-last-name" autocomplete="family-name" maxlength="80" />
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="auth-email">Email</label>
+        <input type="email" id="auth-email" autocomplete="email" required maxlength="320" />
+      </div>
+      <div class="field">
+        <label for="auth-password">Password</label>
+        <input type="password" id="auth-password" autocomplete="{% if mode == 'sign-up' %}new-password{% else %}current-password{% endif %}" required minlength="8" maxlength="128" />
+      </div>
+      <button type="submit" class="auth-submit" id="auth-submit">
+        {% if mode == "sign-up" %}Create account{% else %}Sign in{% endif %}
+      </button>
+    </form>
+
+    <p class="auth-footer" id="auth-footer">
+      {% if mode == "sign-in" %}
+        New here? <a href="/sign-up">Create an account</a>
+        · <a href="/sign-in?switch=1">Use a different account</a>
+      {% else %}
+        Already have an account? <a href="/sign-in">Sign in</a>
+      {% endif %}
+    </p>
+  </div>
+
+  <script>
+    window.__VERBUM_AUTH_MODE__ = {{ mode | tojson }};
+  </script>
+  <script src="/static/js/auth-page.js" defer></script>
+</body>
+</html>

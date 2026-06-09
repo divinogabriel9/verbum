@@ -1554,6 +1554,12 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   transform: scale(0.99);
 }
 
+.vb-select__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .vb-select__trigger:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
   outline-offset: 2px;
@@ -1685,6 +1691,16 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   z-index: 40;
 }
 
+/* Mass Builder setup: keep open selects above the readings card (hover lift uses z-index: 1). */
+.flow-setup-bento .flow-bento-cell:has(.vb-select__trigger[aria-expanded="true"]) {
+  z-index: 2;
+  overflow: visible;
+}
+
+.flow-setup-bento .flow-bento-cell--readings:hover {
+  z-index: 0;
+}
+
 @media (max-width: 720px) {
   .song-composer-head {
     flex-wrap: wrap;
@@ -1762,6 +1778,17 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
 .app-header__search input {
   font-size: var(--type-helper);
   letter-spacing: var(--tracking-caption);
+}
+
+.btn-create {
+  background: var(--good, var(--color-primary));
+  color: var(--on-primary, #fff);
+  border: none;
+}
+
+.btn-create:hover {
+  background: color-mix(in srgb, var(--good, var(--color-primary)) 88%, #000);
+  color: var(--on-primary, #fff);
 }
 
 .flow-reading-text,

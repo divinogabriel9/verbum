@@ -1,0 +1,220 @@
+(function () {
+  "use strict";
+
+  const mode = window.__VERBUM_AUTH_MODE__ || "sign-in";
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function showError(msg) {
+    const el = $("auth-error");
+    if (el) {
+      el.textContent = msg || "";
+      el.hidden = !msg;
+    }
+  }
+
+  function isAuthCallback() {
+    const hash = window.location.hash || "";
+    const params = new URLSearchParams(window.location.search);
+    return (
+      hash.includes("access_token") ||
+      params.has("code") ||
+      params.get("type") === "signup" ||
+      params.get("type") === "recovery" ||
+      params.get("type") === "magiclink"
+    );
+  }
+
+  function wantsSwitchAccount() {
+    return new URLSearchParams(window.location.search).get("switch") === "1";
+  }
+
+  async function boot() {
+    const loading = $("auth-loading");
+    const form = $("auth-form");
+    const signupFields = $("auth-signup-fields");
+    const sessionPanel = $("auth-session-panel");
+    const footer = document.querySelector(".auth-footer");
+
+    try {
+      const res = await fetch("/api/auth/config");
+      const cfg = await res.json();
+      if (!cfg.auth_enabled) {
+        if (loading) loading.textContent = "Authentication is not configured on this server.";
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Could not load Supabase."));
+        document.head.appendChild(script);
+      });
+
+      const createClient = window.supabase && window.supabase.createClient;
+      if (!createClient) throw new Error("Supabase SDK missing.");
+
+      const publishableKey =
+        cfg.supabase_publishable_key || cfg.supabase_anon_key;
+      const client = createClient(cfg.supabase_url, publishableKey, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+      });
+
+      function redirectAfterAuth() {
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get("redirect_url") || cfg.after_sign_in_url;
+      }
+
+      function showLoginForm() {
+        if (loading) loading.remove();
+        if (sessionPanel) sessionPanel.hidden = true;
+        if (form) form.hidden = false;
+        if (signupFields) signupFields.hidden = mode !== "sign-up";
+        if (footer) footer.hidden = false;
+      }
+
+      function showExistingSession(user) {
+        if (loading) loading.remove();
+        if (form) form.hidden = true;
+        if (signupFields) signupFields.hidden = true;
+        if (footer) footer.hidden = true;
+        if (sessionPanel) sessionPanel.hidden = false;
+        const emailEl = $("auth-session-email");
+        if (emailEl) emailEl.textContent = user && user.email ? user.email : "your account";
+
+        const continueBtn = $("auth-continue-btn");
+        if (continueBtn && !continueBtn.dataset.bound) {
+          continueBtn.dataset.bound = "1";
+          continueBtn.addEventListener("click", redirectAfterAuth);
+        }
+
+        const switchBtn = $("auth-switch-btn");
+        if (switchBtn && !switchBtn.dataset.bound) {
+          switchBtn.dataset.bound = "1";
+          switchBtn.addEventListener("click", async () => {
+            switchBtn.disabled = true;
+            await client.auth.signOut();
+            const params = new URLSearchParams(window.location.search);
+            params.delete("switch");
+            const qs = params.toString();
+            window.location.href = window.location.pathname + (qs ? "?" + qs : "");
+          });
+        }
+      }
+
+      if (wantsSwitchAccount()) {
+        await client.auth.signOut();
+      }
+
+      // Email confirm / magic links: finish auth then redirect.
+      if (isAuthCallback()) {
+        client.auth.onAuthStateChange((event, session) => {
+          if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+            redirectAfterAuth();
+          }
+        });
+        const { data: sessionData } = await client.auth.getSession();
+        if (sessionData.session) {
+          redirectAfterAuth();
+          return;
+        }
+      }
+
+      const { data: sessionData } = await client.auth.getSession();
+      const existingUser =
+        sessionData.session && sessionData.session.user
+          ? sessionData.session.user
+          : null;
+
+      if (existingUser && mode === "sign-up") {
+        redirectAfterAuth();
+        return;
+      }
+
+      if (existingUser && mode === "sign-in") {
+        showExistingSession(existingUser);
+        return;
+      }
+
+      showLoginForm();
+
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          showError("");
+          const email = ($("auth-email") && $("auth-email").value.trim()) || "";
+          const password = ($("auth-password") && $("auth-password").value) || "";
+          const firstName = ($("auth-first-name") && $("auth-first-name").value.trim()) || "";
+          const lastName = ($("auth-last-name") && $("auth-last-name").value.trim()) || "";
+          const churchName = ($("auth-church-name") && $("auth-church-name").value.trim()) || "";
+          const submitBtn = $("auth-submit");
+
+          if (!email || !password) {
+            showError("Email and password are required.");
+            return;
+          }
+          if (password.length < 8) {
+            showError("Password must be at least 8 characters.");
+            return;
+          }
+
+          if (submitBtn) submitBtn.disabled = true;
+
+          try {
+            const emailRedirectTo =
+              cfg.email_confirm_redirect_url ||
+              window.location.origin + cfg.sign_in_url;
+
+            if (mode === "sign-up") {
+              const { data, error } = await client.auth.signUp({
+                email,
+                password,
+                options: {
+                  emailRedirectTo,
+                  data: {
+                    first_name: firstName || undefined,
+                    last_name: lastName || undefined,
+                    community_name: churchName || undefined,
+                  },
+                },
+              });
+              if (error) throw error;
+              if (data.session) {
+                if (churchName) {
+                  await fetch("/api/community/profile", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: "Bearer " + data.session.access_token,
+                    },
+                    body: JSON.stringify({ community_name: churchName }),
+                  });
+                }
+                window.location.href = cfg.after_sign_up_url;
+                return;
+              }
+              showError("Check your email to confirm your account, then sign in.");
+            } else {
+              const { error } = await client.auth.signInWithPassword({ email, password });
+              if (error) throw error;
+              redirectAfterAuth();
+            }
+          } catch (err) {
+            showError((err && err.message) || "Authentication failed.");
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        });
+      }
+    } catch (err) {
+      if (loading) loading.textContent = err.message || "Could not start sign-in.";
+      console.error("[Verbum auth page]", err);
+    }
+  }
+
+  boot();
+})();
