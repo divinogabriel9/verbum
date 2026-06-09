@@ -379,7 +379,15 @@
         transition: none !important;
       }
       button:hover { transform: none; }
-      .panel:hover, .tool-card:hover, .hero:hover, .admin-card:hover {
+      .flow-bento-cell:hover,
+      .panel:not(.flow-builder-shell):hover,
+      .tool-card:hover,
+      .admin-card:hover,
+      .hero:hover,
+      .metric:hover,
+      .theme-card-wrap:hover,
+      .mass-song-plan-card:hover,
+      .cal-reading-card:hover {
         transform: none;
       }
     }
@@ -740,11 +748,6 @@
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
       box-shadow: var(--shadow-card);
-      transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
-    }
-    .panel:hover, .tool-card:hover, .admin-card:hover, .hero:hover {
-      box-shadow: var(--shadow-hover);
-      border-color: color-mix(in srgb, var(--liturgical-accent) 18%, var(--card-border));
     }
 
     /* App header — full-width two-row shell (flat, edge-to-edge) */
@@ -2983,15 +2986,8 @@
       border: 1px solid var(--card-border);
       border-radius: var(--radius-sm);
       background: var(--surface-solid);
-      box-shadow: var(--shadow-sm);
       backdrop-filter: blur(12px);
       box-shadow: inset 0 1px 0 color-mix(in srgb, var(--liturgical-glow) 12%, white);
-      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-    }
-    .metric:hover {
-      transform: translateY(-2px);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 45%, var(--line));
-      box-shadow: var(--shadow-sm), 0 0 20px color-mix(in srgb, var(--liturgical-glow) 20%, transparent);
     }
     .metric strong {
       display: block;
@@ -3355,7 +3351,6 @@
       border-radius: 8px;
       border: 1px solid var(--line-soft);
       background: var(--surface-solid);
-      box-shadow: none;
       padding: 0;
       overflow: hidden;
       max-width: 100%;
@@ -8231,7 +8226,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260614" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260617" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260615" />
   <style id="verbum-layout-overrides">
@@ -8259,7 +8254,7 @@
       box-shadow: none !important;
       border: none !important;
     }
-    /* Home card hover — Apple utility-card lift (see verbum-design-system.css) */
+    /* Card hover — Apple utility-card lift on all tabs (see verbum-design-system.css) */
     .home-card-head {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
@@ -8478,17 +8473,17 @@
               <img src="/static/icons/mass.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Mass</span>
             </a>
-            <a class="nav-link" data-route="/mass/calendar" href="/mass/calendar">
-              <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Calendar</span>
+            <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+              <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
+              <span class="nav-label">Library</span>
             </a>
             <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
               <img src="/static/icons/media.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Media</span>
             </a>
-            <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
-              <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Library</span>
+            <a class="nav-link" data-route="/mass/calendar" href="/mass/calendar">
+              <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="15" height="15" />
+              <span class="nav-label">Calendar</span>
             </a>
             <a class="nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
               <img src="/static/icons/design.png" class="nav-icon" alt="" width="15" height="15" />
@@ -9541,11 +9536,11 @@ Lord, hear our prayer</textarea>
       <select class="route-switcher" id="route-switcher" aria-label="Jump to page">
         <option value="/home">Home</option>
         <option value="/mass/builder">Mass Builder</option>
-        <option value="/mass/calendar">Liturgical Calendar</option>
-        <option value="/media/posters">Posters</option>
-        <option value="/media/history">History</option>
         <option value="/library/songs">Song Library</option>
         <option value="/library/collections">Collections</option>
+        <option value="/media/posters">Posters</option>
+        <option value="/media/history">History</option>
+        <option value="/mass/calendar">Liturgical Calendar</option>
         <option value="/design/theme-lab">Theme Lab</option>
         <option value="/design/templates">Templates</option>
         <option value="/settings/church">Church Profile</option>
@@ -14781,11 +14776,11 @@ Lord, hear our prayer</textarea>
     const GLOBAL_SEARCH_ITEMS = [
       { id: "page-home", label: "Home", hint: "Page", group: "Pages", route: "/home", keywords: ["home", "dashboard", "verbum", "sunday"] },
       { id: "page-mass", label: "Mass Builder", hint: "Page", group: "Pages", route: "/mass/builder", keywords: ["mass", "builder", "pptx", "powerpoint", "slides", "generate"] },
-      { id: "page-calendar", label: "Liturgical Calendar", hint: "Page", group: "Pages", route: "/mass/calendar", keywords: ["calendar", "liturgical", "readings"] },
-      { id: "page-posters", label: "Posters", hint: "Page", group: "Pages", route: "/media/posters", keywords: ["media", "poster", "graphic", "social"] },
-      { id: "page-history", label: "History", hint: "Page", group: "Pages", route: "/media/history", keywords: ["history", "download", "recent"] },
       { id: "page-songs", label: "Song Library", hint: "Page", group: "Pages", route: "/library/songs", keywords: ["library", "song", "lyrics", "hymn", "music"] },
       { id: "page-collections", label: "Collections", hint: "Page", group: "Pages", route: "/library/collections", keywords: ["collection", "setlist"] },
+      { id: "page-posters", label: "Posters", hint: "Page", group: "Pages", route: "/media/posters", keywords: ["media", "poster", "graphic", "social"] },
+      { id: "page-history", label: "History", hint: "Page", group: "Pages", route: "/media/history", keywords: ["history", "download", "recent"] },
+      { id: "page-calendar", label: "Liturgical Calendar", hint: "Page", group: "Pages", route: "/mass/calendar", keywords: ["calendar", "liturgical", "readings"] },
       { id: "page-theme", label: "Theme Lab", hint: "Page", group: "Pages", route: "/design/theme-lab", keywords: ["design", "theme", "style", "color"] },
       { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
       { id: "page-church", label: "Church Profile", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },

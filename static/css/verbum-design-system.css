@@ -330,15 +330,6 @@ textarea {
   box-shadow: var(--shadow-light);
 }
 
-.panel:hover,
-.tool-card:hover,
-.admin-card:hover,
-.hero:hover {
-  box-shadow: var(--shadow-medium);
-  border-color: color-mix(in srgb, var(--liturgical-accent) 12%, var(--card-border));
-  transform: none;
-}
-
 .hero {
   padding: var(--space-5) var(--space-6);
   border-radius: var(--radius-lg);
@@ -427,11 +418,6 @@ textarea {
   color: var(--ink);
   text-shadow: none;
   font-weight: 600;
-}
-
-.metric:hover {
-  transform: none;
-  box-shadow: var(--shadow-medium);
 }
 
 .metric span {
@@ -1798,8 +1784,15 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   line-height: var(--leading-caption);
 }
 
-/* —— Apple.com utility-card hover (home bento first) —— */
-.home-bento-grid .flow-bento-cell {
+/* —— Apple.com utility-card hover (all tab card surfaces) —— */
+.flow-bento-cell,
+.panel:not(.flow-builder-shell),
+.tool-card,
+.admin-card,
+.metric,
+.theme-card-wrap,
+.mass-song-plan-card,
+.cal-reading-card {
   position: relative;
   z-index: 0;
   transform: translateY(0) scale(1);
@@ -1812,27 +1805,59 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
     background var(--motion-duration-fast) var(--motion-ease-hover);
 }
 
-.home-bento-grid .flow-bento-cell:hover {
+.flow-bento-cell:hover,
+.panel:not(.flow-builder-shell):hover,
+.tool-card:hover,
+.admin-card:hover,
+.metric:hover,
+.theme-card-wrap:hover,
+.mass-song-plan-card:hover,
+.cal-reading-card:hover {
   z-index: 1;
   transform: translateY(var(--apple-card-hover-lift)) scale(var(--apple-card-hover-scale));
   border-color: color-mix(in srgb, var(--ink) 12%, var(--card-border));
   box-shadow: var(--apple-card-shadow-hover);
 }
 
-.home-bento-grid .flow-bento-cell.is-gospel-preview:active {
+.flow-bento-cell.is-gospel-preview:active,
+.mass-song-plan-card:active,
+.theme-card-wrap:active {
   transform: translateY(-2px) scale(0.992);
   transition-duration: var(--motion-duration-micro);
 }
 
-html[data-theme="dark"] .home-bento-grid .flow-bento-cell {
+html[data-theme="dark"] .flow-bento-cell,
+html[data-theme="dark"] .panel:not(.flow-builder-shell),
+html[data-theme="dark"] .tool-card,
+html[data-theme="dark"] .admin-card,
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .theme-card-wrap,
+html[data-theme="dark"] .mass-song-plan-card,
+html[data-theme="dark"] .cal-reading-card {
   --apple-card-shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.2);
   --apple-card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.28), 0 16px 40px rgba(0, 0, 0, 0.32);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-bento-grid .flow-bento-cell,
-  .home-bento-grid .flow-bento-cell:hover,
-  .home-bento-grid .flow-bento-cell.is-gospel-preview:active {
+  .flow-bento-cell,
+  .flow-bento-cell:hover,
+  .flow-bento-cell.is-gospel-preview:active,
+  .panel:not(.flow-builder-shell),
+  .panel:not(.flow-builder-shell):hover,
+  .tool-card,
+  .tool-card:hover,
+  .admin-card,
+  .admin-card:hover,
+  .metric,
+  .metric:hover,
+  .theme-card-wrap,
+  .theme-card-wrap:hover,
+  .theme-card-wrap:active,
+  .mass-song-plan-card,
+  .mass-song-plan-card:hover,
+  .mass-song-plan-card:active,
+  .cal-reading-card,
+  .cal-reading-card:hover {
     transform: none;
     transition-duration: 0.01ms;
   }

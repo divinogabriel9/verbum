@@ -698,13 +698,16 @@ def _gemini_error_user_message(exc: Exception, *, model: str = "") -> str:
     return f"Gemini image generation failed ({label}): {exc}"
 
 
+_GEMINI_REQUEST_TIMEOUT_MS = 90_000
+
+
 def _generate_with_gemini(
     prompt: str,
     out_path: Path,
     *,
     size: str = "1920x1080",
 ) -> None:
-    """Generate a PNG via Gemini image models using the same prompt as OpenAI."""
+    """Generate a PNG via Gemini image models (google.genai SDK)."""
     _require_gemini_api_key()
     try:
         from google import genai
@@ -727,7 +730,10 @@ def _generate_with_gemini(
     if out_path.is_file():
         out_path.unlink()
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(timeout=_GEMINI_REQUEST_TIMEOUT_MS),
+    )
     aspect_ratio = _gemini_aspect_ratio_for_size(size)
     last_exc: Exception | None = None
     response = None
@@ -778,6 +784,10 @@ def _generate_with_gemini(
     raw = _extract_gemini_image_bytes(response)
     if not _write_raster_as_png(raw, out_path):
         raise RuntimeError("Could not decode Gemini image bytes as a PNG.")
+
+    m = re.match(r"^(\d+)x(\d+)$", (size or "").strip())
+    if m:
+        fit_image_file_to_size(out_path, (int(m.group(1)), int(m.group(2))))
 
     if not hero_image_is_real(out_path):
         raise RuntimeError(
