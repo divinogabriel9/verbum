@@ -2,6 +2,9 @@
  * Verbum — mobile-first responsive layout
  * Breakpoints: 320–430 phone · ≤768 mobile/tablet stack · ≥769 desktop (unchanged)
  * Phase A: unified 768/769 · touch targets · flow dock bar · song plan mobile grid
+ * Phase B: collapsible summary · bottom sheet modals · More tab + overflow sheet
+ * Phase C: migrate index.html mobile rules · expanded touch polish · header stack tune
+ * GF mobile: fonts.google.com M3 type/spacing scale (≤768 only, desktop unchanged)
  */
 
 :root {
@@ -11,6 +14,13 @@
   --safe-left: env(safe-area-inset-left, 0px);
   --bp-tablet: 768px;
   --bp-desktop: 1024px;
+  --app-bottom-nav-height: 56px;
+  --app-bottom-nav-offset: calc(var(--app-bottom-nav-height) + var(--safe-bottom));
+}
+
+/* Mobile bottom tab bar — hidden on desktop */
+.app-bottom-nav {
+  display: none;
 }
 
 /* —— Global: prevent horizontal page scroll —— */
@@ -78,9 +88,127 @@ iframe {
     padding:
       var(--layout-gap)
       calc(var(--layout-gutter) + var(--safe-right))
-      calc(80px + var(--safe-bottom))
+      calc(var(--app-bottom-nav-offset) + var(--space-3))
       calc(var(--layout-gutter) + var(--safe-left));
     scroll-padding-top: calc(72px + var(--safe-top));
+  }
+
+  /* Duplicate nav: desktop header hidden, mobile bottom bar visible */
+  .app-nav--desktop {
+    display: none !important;
+  }
+
+  .app-bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    align-items: stretch;
+    justify-content: space-around;
+    gap: 0;
+    min-height: var(--app-bottom-nav-height);
+    padding:
+      4px
+      calc(var(--safe-left) + var(--space-1))
+      calc(var(--safe-bottom) + 4px)
+      calc(var(--safe-right) + var(--space-1));
+    border-top: 1px solid var(--line-soft);
+    background: var(--surface-solid);
+    box-shadow: 0 -4px 24px color-mix(in srgb, var(--ink) 6%, transparent);
+    box-sizing: border-box;
+  }
+
+  .app-bottom-nav .nav-link {
+    position: relative;
+    z-index: 0;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 44px;
+    padding: 4px 2px;
+    margin: 0;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    color: var(--muted);
+    background: transparent;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: none;
+    transform: none;
+    transition: color var(--motion-duration-fast) var(--motion-ease-hover);
+  }
+
+  .app-bottom-nav .nav-link .nav-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    opacity: 0.72;
+    object-fit: contain;
+  }
+
+  html[data-theme="dark"] .app-bottom-nav .nav-link .nav-icon {
+    filter: invert(1);
+    opacity: 0.78;
+  }
+
+  .app-bottom-nav .nav-link .nav-label {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-bottom-nav .nav-link.active {
+    color: var(--good);
+    font-weight: 600;
+  }
+
+  .app-bottom-nav .nav-link.active .nav-icon {
+    opacity: 1;
+  }
+
+  .app-bottom-nav .nav-link.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 22%;
+    right: 22%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: var(--good);
+  }
+
+  .app-bottom-nav .nav-link:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
+    outline-offset: 2px;
+  }
+
+  .app-header__nav-row {
+    justify-content: flex-end;
+    min-height: 40px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  .route-jump-float {
+    display: none !important;
+  }
+
+  .app-bottom-right {
+    bottom: calc(var(--app-bottom-nav-offset) + var(--space-2));
   }
 
   .page.active {
@@ -193,6 +321,14 @@ iframe {
 
   .app-header__search-wrap {
     display: none;
+  }
+
+  .account-menu-btn__name {
+    display: none;
+  }
+
+  .account-menu-btn {
+    padding-right: 8px;
   }
 
   .app-header__utilities {
@@ -378,17 +514,9 @@ iframe {
     max-height: min(50vh, 400px);
   }
 
-  /* Floating UI + safe area */
-  .route-jump-float {
-    left: calc(var(--space-3) + var(--safe-left));
-    bottom: calc(var(--space-3) + var(--safe-bottom));
-    max-width: calc(100vw - var(--space-6) - var(--safe-left) - var(--safe-right));
-    flex-wrap: wrap;
-  }
-
+  /* Floating UI + safe area (above bottom tab bar) */
   .app-bottom-right {
     right: calc(var(--space-3) + var(--safe-right));
-    bottom: calc(var(--space-3) + var(--safe-bottom));
     max-width: calc(100vw - var(--space-6) - var(--safe-left) - var(--safe-right));
   }
 
@@ -453,8 +581,8 @@ iframe {
   }
 
   .flow-builder-tabs button {
-    min-height: 44px;
-    padding: 10px 16px;
+    min-height: 40px;
+    padding: 8px 14px;
   }
 
   .accent-preset-row {
@@ -480,20 +608,11 @@ iframe {
     padding: 0 14px;
   }
 
-  /* Route jump visible on touch (desktop uses hover fade-in) */
-  .route-jump-float {
-    opacity: 1;
-  }
-
   /* —— Phase A: bottom float consolidation (Mass Builder dock) —— */
-  body.flow-dock-visible .route-jump-float {
-    display: none !important;
-  }
-
   body.flow-dock-visible .app-bottom-right {
     left: calc(var(--space-3) + var(--safe-left));
     right: calc(var(--space-3) + var(--safe-right));
-    bottom: calc(var(--space-3) + var(--safe-bottom));
+    bottom: calc(var(--app-bottom-nav-offset) + var(--space-2));
     align-items: stretch;
   }
 
@@ -511,7 +630,7 @@ iframe {
   }
 
   body.flow-dock-visible .dashboard {
-    padding-bottom: calc(148px + var(--safe-bottom));
+    padding-bottom: calc(var(--app-bottom-nav-offset) + 132px);
   }
 
   /* —— Phase A: song plan card mobile layout —— */
@@ -530,31 +649,31 @@ iframe {
   }
 
   .flow-builder-tab-panel--songs .mass-song-plan-card__top {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    gap: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .flow-builder-tab-panel--songs .mass-song-plan-card__part,
   .flow-builder-tab-panel--songs .mass-song-plan-card__part-input {
-    grid-column: 1;
-    grid-row: 1;
-    width: 100%;
-  }
-
-  .flow-builder-tab-panel--songs .mass-song-plan-card__actions {
-    grid-column: 1;
-    grid-row: 2;
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-left: 0;
+    flex-shrink: 0;
+    max-width: 7rem;
   }
 
   .flow-builder-tab-panel--songs .mass-song-plan-card__title-wrap {
-    grid-column: 1;
-    grid-row: 3;
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__actions {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .flow-builder-tabs button {
+    min-height: 40px;
+    padding: 8px 14px;
   }
 
   .flow-builder-tab-panel--songs .mass-song-plan-card__btn,
@@ -583,11 +702,6 @@ iframe {
     padding: 8px 10px;
   }
 
-  /* Header: icon-only nav (matches legacy 720 rules, now at 768) */
-  .app-header-nav .nav-label {
-    display: none;
-  }
-
   .btn-create span:not(.btn-create__icon) {
     display: none;
   }
@@ -595,16 +709,201 @@ iframe {
   .liturgical-indicator__chevron {
     display: none;
   }
-}
 
-/* —— Phone (≤430px): tighter spacing & typography —— */
-@media (max-width: 430px) {
-  :root {
-    --type-page-title: 1.25rem;
-    --type-section-title: 1.0625rem;
-    --type-card-title: 0.9375rem;
+  /* —— Phase B: collapsible song plan summary —— */
+  .song-plan-summary.is-collapsible .song-plan-summary__head {
+    cursor: pointer;
+    align-items: center;
   }
 
+  .song-plan-summary__toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    background: var(--surface-solid);
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .song-plan-summary.is-collapsible .song-plan-summary__toggle {
+    display: inline-flex;
+  }
+
+  .song-plan-summary__chevron {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--motion-duration-fast) var(--motion-ease-out);
+  }
+
+  .song-plan-summary.is-collapsible.is-expanded .song-plan-summary__chevron {
+    transform: rotate(180deg);
+  }
+
+  .song-plan-summary__panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .song-plan-summary.is-collapsible:not(.is-expanded) .song-plan-summary__panel {
+    display: none;
+  }
+
+  /* —— Phase B: bottom sheet modals —— */
+  .ui-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .ui-overlay .ui-card {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: var(--app-bottom-nav-offset);
+    max-height: min(calc(92dvh - var(--app-bottom-nav-offset)), 900px);
+    border-radius: calc(var(--radius-lg) + 2px) calc(var(--radius-lg) + 2px) 0 0;
+    transform: translateY(105%);
+    transform-origin: bottom center;
+  }
+
+  .ui-overlay.is-open .ui-card {
+    transform: translateY(0);
+  }
+
+  .ui-card--reading {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .ui-card--news-expand {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(calc(92dvh - var(--app-bottom-nav-offset)), 760px);
+  }
+
+  /* —— Phase B: More sheet + bottom nav More button —— */
+  .app-bottom-nav .app-bottom-nav__more {
+    appearance: none;
+    font: inherit;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .app-bottom-nav .app-bottom-nav__more-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.72;
+  }
+
+  .app-bottom-nav .app-bottom-nav__more.active {
+    color: var(--good);
+    font-weight: 600;
+  }
+
+  .app-bottom-nav .app-bottom-nav__more.active .app-bottom-nav__more-icon {
+    opacity: 1;
+  }
+
+  .app-bottom-nav .app-bottom-nav__more.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 22%;
+    right: 22%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: var(--good);
+  }
+
+  .ui-card--more-sheet {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .app-more-sheet__links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 0;
+  }
+
+  .app-more-sheet__link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: var(--type-body, 0.9375rem);
+    font-weight: 500;
+    transition: background var(--motion-duration-fast) var(--motion-ease-hover);
+  }
+
+  .app-more-sheet__link:hover,
+  .app-more-sheet__link:focus-visible {
+    background: var(--surface-2);
+  }
+
+  .app-more-sheet__link.active {
+    color: var(--good);
+    background: color-mix(in srgb, var(--good) 8%, var(--surface-solid));
+  }
+
+  .app-more-sheet__link .nav-icon,
+  .app-more-sheet__link-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .app-more-sheet__link-icon svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  html[data-theme="dark"] .app-more-sheet__link .nav-icon {
+    filter: invert(1);
+  }
+}
+
+/* —— Phase B: touch-visible affordances (no hover dependency) —— */
+@media (max-width: 768px) and (hover: none) {
+  .home-bento-cell.is-gospel-preview,
+  .home-news-item,
+  .home-news-panel__expand-zone,
+  .flow-reading-tile.reading-preview-card,
+  .home-events-board .home-event-row {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .home-bento-cell.is-gospel-preview:active,
+  .home-news-item:active,
+  .flow-reading-tile.reading-preview-card:active {
+    opacity: 0.92;
+    transform: scale(0.995);
+  }
+
+  .btn-home-news-refresh.is-loading svg {
+    animation: emil-refresh-spin 0.75s linear infinite;
+  }
+}
+
+/* —— Phone (≤430px): tighter spacing —— */
+@media (max-width: 430px) {
   .dashboard {
     padding-left: calc(var(--layout-gutter) + var(--safe-left));
     padding-right: calc(var(--layout-gutter) + var(--safe-right));
@@ -744,6 +1043,95 @@ iframe {
     display: block;
   }
 
+  .account-menu-btn__name {
+    display: inline;
+  }
+
+  .account-menu-btn {
+    padding-right: var(--space-3, 12px);
+  }
+
+  .liturgical-indicator-wrap {
+    max-width: min(210px, 24vw);
+  }
+
+  .app-nav--desktop {
+    display: flex !important;
+  }
+
+  .app-bottom-nav {
+    display: none !important;
+  }
+
+  .app-header__nav-row {
+    justify-content: space-between;
+    min-height: var(--app-header-nav-height, 44px);
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .route-jump-float {
+    display: flex !important;
+  }
+
+  .app-bottom-right {
+    bottom: calc(var(--space-3) + var(--safe-bottom));
+  }
+
+  body.flow-dock-visible .app-bottom-right {
+    bottom: calc(var(--space-3) + var(--safe-bottom));
+  }
+
+  body.flow-dock-visible .dashboard {
+    padding-bottom: calc(88px + var(--safe-bottom));
+  }
+
+  /* Phase B: restore centered modals + always-open summary on desktop */
+  .ui-overlay {
+    align-items: center;
+    padding: var(--space-4);
+  }
+
+  .ui-overlay .ui-card {
+    width: min(400px, 100%);
+    max-width: 100%;
+    margin-bottom: 0;
+    max-height: min(90vh, 900px);
+    border-radius: calc(var(--radius-lg) + 2px);
+    transform: scale(0.95) translateY(8px);
+    transform-origin: center center;
+  }
+
+  .ui-overlay.is-open .ui-card {
+    transform: scale(1) translateY(0);
+  }
+
+  .ui-card--reading {
+    width: min(900px, 96vw);
+  }
+
+  .ui-card--news-expand {
+    width: min(var(--content-max), calc(100vw - 32px));
+    max-height: min(86vh, 760px);
+  }
+
+  .song-plan-summary.is-collapsible .song-plan-summary__panel {
+    display: flex !important;
+  }
+
+  .song-plan-summary__toggle {
+    display: none !important;
+  }
+
+  .song-plan-summary.is-collapsible .song-plan-summary__head {
+    cursor: default;
+  }
+
+  .ui-overlay--more-sheet:not(.is-open) {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .app-header-nav .nav-label {
     display: inline;
   }
@@ -758,6 +1146,50 @@ iframe {
 
   .flow-builder-tab-panel--songs .mass-song-plan-card__drag {
     display: block;
+  }
+
+  /* Song plan tab — restore desktop two-column layout + card grid (undo mobile Phase A) */
+  .song-plan-layout {
+    grid-template-columns: minmax(16rem, 350px) minmax(0, 1fr) !important;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__part,
+  .flow-builder-tab-panel--songs .mass-song-plan-card__part-input {
+    flex-shrink: 0;
+    max-width: 9rem;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__title-wrap {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__actions {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn,
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete {
+    min-width: 0;
+    min-height: 24px;
+    padding: 0 6px;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete {
+    width: 24px;
+  }
+
+  .flow-builder-tab-panel--songs .mass-song-plan-card__btn--delete svg {
+    width: 12px;
+    height: 12px;
   }
 
   #flow-page .mass-song-pick-row {
@@ -778,11 +1210,11 @@ iframe {
 /* —— Wide layouts: align with existing app breakpoints (do not fight ≤1120px rules) —— */
 @media (min-width: 961px) {
   .home-bento-cell--gospel {
-    grid-column: span 7 !important;
+    grid-column: span 8 !important;
   }
 
   .home-bento-cell--events {
-    grid-column: span 5 !important;
+    grid-column: span 4 !important;
   }
 
   .home-bento-cell--readings {
@@ -894,5 +1326,516 @@ iframe {
   #lyrics-workspace .song-composer-main,
   #lyrics-workspace .song-composer-recent {
     grid-column: 1 !important;
+  }
+}
+
+/* ========== Phase C: migrated from index.html inline @media ========== */
+
+@media (max-width: 960px) {
+  .home-news-expand-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-bento-cell--summary,
+  .home-bento-cell--song-plan {
+    grid-column: span 12;
+  }
+
+  .home-bento-cell--gospel,
+  .home-bento-cell--events {
+    grid-column: span 12;
+  }
+
+  .home-bento-cell--readings .flow-readings-preview-row {
+    grid-template-columns: 1fr;
+  }
+
+  .home-bento-cell--readings .flow-reading-tile {
+    padding: var(--space-3) 0;
+    border-right: none;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .home-bento-cell--readings .flow-reading-tile:first-child {
+    padding-top: 0;
+  }
+
+  .home-bento-cell--readings .flow-reading-tile:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .calendar-page-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .cal-detail-panel {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --topbar-chip-height: 40px;
+    --app-header-stack: 72px;
+  }
+
+  .app-shell {
+    --nav-width-expanded: 0px;
+  }
+
+  .dashboard {
+    margin-left: 0;
+    scroll-padding-top: var(--space-4);
+  }
+
+  .app-header__main,
+  .app-header__nav-row {
+    padding-inline: calc(var(--layout-gutter) + var(--safe-left))
+      calc(var(--layout-gutter) + var(--safe-right));
+  }
+
+  .liturgical-indicator-wrap {
+    max-width: min(148px, 38vw);
+  }
+
+  .liturgical-indicator__season,
+  .liturgical-indicator__year {
+    font-size: 0.6875rem;
+  }
+
+  .brand-block__name.wordmark {
+    font-size: 1.38rem;
+  }
+
+  .brand-block__tagline {
+    font-size: 0.625rem;
+  }
+
+  .hero,
+  .panel,
+  .tool-card {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .home-bento-grid .flow-bento-cell {
+    padding: var(--space-4);
+  }
+
+  .home-bento-cell--news {
+    max-height: none;
+    min-height: 0;
+  }
+
+  .home-news-list {
+    grid-template-columns: 1fr;
+  }
+
+  .home-news-expand-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-news-item,
+  .home-news-expand-item {
+    max-height: none;
+  }
+
+  .home-news-item__img,
+  .home-news-expand-item .home-news-item__img {
+    max-height: none;
+  }
+
+  .settings-nav-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .settings-nav-list .settings-sidebar-link {
+    width: auto;
+    flex: 1 1 auto;
+    justify-content: center;
+    white-space: nowrap;
+    padding: 8px 10px;
+  }
+
+  .home-bento-cell--summary,
+  .home-bento-cell--song-plan {
+    grid-column: span 12;
+  }
+
+  .mass-summary-stats {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+  }
+
+  .song-plan-layout .mass-summary-stats {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .song-plan-layout .mass-summary-stat {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+  }
+
+  .song-plan-layout .mass-summary-stat dd {
+    text-align: right;
+  }
+
+  .home-song-plan-card__head {
+    grid-template-columns: auto 1fr;
+  }
+
+  .mass-song-plan-card__bar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .mass-song-plan-card__actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    padding-left: 58px;
+  }
+
+  .mass-song-plan-card__body {
+    padding-left: 14px;
+  }
+
+  .mass-song-plan-footer {
+    justify-content: stretch;
+  }
+
+  .mass-song-plan-footer .btn-home-create-event,
+  .mass-song-plan-footer .btn-create {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .flow-readings-preview-row {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-reading-tile,
+  .flow-reading-tile:nth-child(odd) {
+    border-right: none;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .flow-reading-tile:last-child {
+    border-bottom: none;
+  }
+
+  .flow-readings-gospel-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-setup-footer__toggles {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .flow-bento-cell {
+    padding: var(--space-2);
+  }
+
+  .song-ppt-viewer {
+    grid-template-columns: 1fr;
+  }
+
+  .song-ppt-organizer {
+    position: static;
+  }
+
+  .song-slide-plan__list {
+    max-height: 240px;
+  }
+
+  .song-preview-panel__sheet {
+    width: 100%;
+  }
+
+  .block-top:not(.block-top-lyrics) {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .block-top:not(.block-top-lyrics) select,
+  .block-top:not(.block-top-lyrics) .inline-actions {
+    grid-column: 1 / -1;
+  }
+
+  .lyrics-structured-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lyrics-structured-actions {
+    width: 100%;
+  }
+
+  .lyrics-structured-actions .primary,
+  .lyrics-structured-actions .secondary,
+  .lyrics-structured-actions .ghost {
+    flex: 1 1 auto;
+  }
+
+  .song-composer-recent-list {
+    max-height: min(160px, 24vh);
+  }
+
+  .lyrics-workspace-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lyrics-editor-main {
+    min-height: 8rem;
+  }
+
+  .lyrics-details-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toast-stack {
+    width: 100%;
+    max-width: none;
+  }
+
+  .flow-dock-float {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-news-expand-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Phase C: expanded touch polish (no hover dependency) */
+@media (max-width: 768px) and (hover: none) {
+  .app-bottom-nav .nav-link,
+  .app-bottom-nav .app-bottom-nav__more,
+  .app-more-sheet__link,
+  .flow-builder-tabs button,
+  .btn-create,
+  .notif-btn,
+  .theme-toggle-btn,
+  .account-menu-btn,
+  .mass-song-plan-card,
+  .mass-song-plan-card__btn,
+  .flow-bento-cell,
+  .home-event-row,
+  .home-card-head__action,
+  .song-row-clickable,
+  .vb-dropdown-item,
+  .settings-sidebar-link,
+  .mass-summary-link,
+  .mass-summary-mood-pick,
+  .song-plan-summary__toggle,
+  .cal-day-cell,
+  .primary,
+  .secondary,
+  .ghost {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-bottom-nav .nav-link:active,
+  .app-bottom-nav .app-bottom-nav__more:active,
+  .app-more-sheet__link:active,
+  .flow-builder-tabs button:active,
+  .btn-create:active,
+  .notif-btn:active,
+  .theme-toggle-btn:active,
+  .account-menu-btn:active,
+  .mass-song-plan-card:active,
+  .mass-song-plan-card__btn:active,
+  .flow-bento-cell:active,
+  .home-event-row:active,
+  .home-card-head__action:active,
+  .song-row-clickable:active,
+  .vb-dropdown-item:active,
+  .settings-sidebar-link:active,
+  .mass-summary-link:active,
+  .mass-summary-mood-pick:active,
+  .song-plan-summary__toggle:active,
+  .cal-day-cell:active,
+  .primary:active,
+  .secondary:active,
+  .ghost:active {
+    opacity: 0.88;
+    transform: scale(0.98);
+  }
+
+  .flow-accordion:hover {
+    transform: none;
+    box-shadow: var(--shadow-card);
+  }
+
+  .flow-accordion summary:active {
+    background: var(--surface-2);
+  }
+
+  .panel:hover,
+  .tool-card:hover,
+  .admin-card:hover,
+  .hero:hover {
+    transform: none;
+  }
+
+  .mass-summary-recs-refresh.is-loading svg {
+    animation: emil-refresh-spin 0.75s linear infinite;
+  }
+}
+
+/* ========== fonts.google.com mobile sizing (M3 @720px, ≤768 only) ========== */
+@media (max-width: 768px) {
+  :root {
+    /* M3 type scale — mirrors fonts.google.com responsive-headings / gm3-type-* */
+    --type-display: 2.25rem;
+    --type-page-title: 1.5rem;
+    --type-section-title: 1.375rem;
+    --type-card-title: 1rem;
+    --type-body: 0.875rem;
+    --type-helper: 0.75rem;
+    --type-caption: 0.75rem;
+    --type-fine: 0.688rem;
+    --type-micro: 0.688rem;
+
+    /* M3 line heights */
+    --leading-display: 1.22;
+    --leading-tight: 1.25;
+    --leading-body: 1.43;
+    --leading-caption: 1.33;
+
+    /* M3 spacing rhythm — gf-rc1 uses 32px 24px; horizontal gutter 24px */
+    --layout-gutter: 24px;
+    --layout-gap: 16px;
+    --card-padding: 24px;
+
+    /* GF bottom nav bar */
+    --app-bottom-nav-height: 80px;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  /* Headings — override inline clamp/hardcoded sizes */
+  .hero h2,
+  .page-shell-title {
+    font-size: var(--type-page-title);
+    line-height: 2rem;
+  }
+
+  .hero p,
+  .page-shell-desc,
+  .panel-head p,
+  .tool-card > p {
+    font-size: var(--type-body);
+    line-height: 1.25rem;
+  }
+
+  .panel-head h3,
+  .tool-card h3,
+  .flow-section-head h4,
+  .hero--home-section h3 {
+    font-size: var(--type-section-title);
+    line-height: 1.75rem;
+  }
+
+  .home-card-head__text h3,
+  .home-card-head__text h4,
+  .settings-layout .home-card-head__text h3 {
+    font-size: var(--type-card-title);
+    line-height: 1.5rem;
+  }
+
+  .home-card-head__text p {
+    font-size: var(--type-helper);
+    line-height: 1rem;
+  }
+
+  /* Surfaces — gf-rc1 padding rhythm */
+  .panel,
+  .tool-card,
+  .hero,
+  .hero--home,
+  .admin-card {
+    padding: var(--card-padding);
+    border-radius: 16px;
+  }
+
+  .home-bento-grid .flow-bento-cell {
+    padding: var(--space-5);
+  }
+
+  .app-header__main {
+    min-height: 64px;
+    padding-block: var(--space-4);
+  }
+
+  .brand-block__name.wordmark {
+    font-size: var(--type-card-title);
+    line-height: 1.5rem;
+  }
+
+  .brand-block__tagline {
+    font-size: var(--type-fine);
+    line-height: 1rem;
+  }
+
+  /* Bottom nav — GF label-small + 80px bar */
+  .app-bottom-nav {
+    min-height: var(--app-bottom-nav-height);
+    padding-top: 8px;
+    padding-bottom: calc(var(--safe-bottom) + 8px);
+  }
+
+  .app-bottom-nav .nav-link {
+    font-size: var(--type-fine);
+    line-height: 1rem;
+    font-weight: 500;
+    min-height: 48px;
+    gap: 4px;
+  }
+
+  .app-bottom-nav .nav-link .nav-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* GF touch targets — 48px buttons, float offset nav + 16px */
+  .btn-create,
+  .account-menu-btn,
+  .notif-btn,
+  .theme-toggle-btn,
+  .primary,
+  .secondary,
+  .ghost,
+  .mini,
+  .uiverse-btn .button-inner,
+  .song-filter-row button {
+    min-height: 48px;
+  }
+
+  .app-bottom-right {
+    bottom: calc(var(--app-bottom-nav-offset) + 16px);
+  }
+
+  body.flow-dock-visible .app-bottom-right {
+    bottom: calc(var(--app-bottom-nav-offset) + 16px);
+  }
+
+  body.flow-dock-visible .dashboard {
+    padding-bottom: calc(var(--app-bottom-nav-offset) + 148px);
   }
 }

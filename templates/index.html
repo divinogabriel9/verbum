@@ -6,7 +6,7 @@
   <title>{{ title }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Mea+Culpa&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
   <script>
     (function () {
       try {
@@ -69,7 +69,9 @@
       --glass-blur: none;
       --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
-      --brand-font: "Mea Culpa", cursive;
+      --brand-font-liturgy: "Times New Roman", Times, "Liberation Serif", serif;
+      --brand-font-flow: "Playfair Display", Georgia, serif;
+      --brand-flow-color: #F87C6B;
       --sidebar-gap: 16px;
       --space-1: 4px;
       --space-2: 8px;
@@ -371,10 +373,30 @@
       background: color-mix(in srgb, var(--good) 12%, var(--surface));
     }
 
-    .mea-culpa-regular {
-      font-family: var(--brand-font);
+    .wordmark {
+      display: inline-flex;
+      align-items: baseline;
+      line-height: 1;
+      white-space: nowrap;
+      transform: translateX(-0.065em);
+      letter-spacing: 0;
+    }
+    .wordmark__liturgy {
+      font-family: var(--brand-font-liturgy);
       font-weight: 400;
       font-style: normal;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .wordmark__flow {
+      font-family: var(--brand-font-flow);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--brand-flow-color);
+      margin-left: -0.17em;
+      font-size: 1.08em;
+      letter-spacing: -0.03em;
+      transform: translateY(0.025em);
     }
 
     * { box-sizing: border-box; }
@@ -543,14 +565,9 @@
       opacity: 1;
       max-width: 180px;
     }
-    .side-brand-text strong {
-      display: block;
-      color: var(--ink);
-      font-family: var(--brand-font);
+    .side-brand-text strong.wordmark {
+      display: inline-flex;
       font-size: 1.55rem;
-      font-weight: 400;
-      font-style: normal;
-      letter-spacing: 0.02em;
       line-height: 1.1;
     }
     .side-brand-text .side-brand-sub {
@@ -862,13 +879,8 @@
       gap: 1px;
       min-width: 0;
     }
-    .brand-block__name {
-      font-family: var(--brand-font), var(--font);
+    .brand-block__name.wordmark {
       font-size: clamp(1.2rem, 2.2vw, 1.45rem);
-      font-weight: 400;
-      line-height: 1.05;
-      letter-spacing: 0.02em;
-      color: var(--ink);
     }
     .brand-block__tagline {
       font-size: 0.6875rem;
@@ -1173,15 +1185,10 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .brand-logo {
+    .brand-logo.wordmark {
       flex-shrink: 0;
       margin: 0;
-      font-family: var(--brand-font), var(--font);
       font-size: clamp(1.35rem, 2.5vw, 1.65rem);
-      font-weight: 400;
-      letter-spacing: 0.03em;
-      line-height: 1;
-      color: var(--ink);
       text-decoration: none;
       border: none;
       background: transparent;
@@ -2068,20 +2075,6 @@
       letter-spacing: var(--tracking-caption);
       color: var(--muted);
     }
-    @media (max-width: 768px) {
-      .settings-nav-list {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .settings-sidebar-link {
-        width: auto;
-        flex: 1 1 auto;
-        justify-content: center;
-        white-space: nowrap;
-        padding: 8px 10px;
-      }
-    }
     .route-switcher {
       display: block;
       width: auto;
@@ -2207,14 +2200,14 @@
       border-bottom: 1px solid var(--line-soft);
     }
     .home-bento-cell--gospel {
-      grid-column: span 7;
+      grid-column: span 8;
       display: flex;
       flex-direction: column;
       gap: var(--space-3);
       min-height: 0;
     }
     .home-bento-cell--events {
-      grid-column: span 5;
+      grid-column: span 4;
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -2735,63 +2728,6 @@
       color: var(--muted);
       min-height: 1.4em;
     }
-    @media (max-width: 960px) {
-      .home-news-expand-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-    @media (max-width: 768px) {
-      .home-news-list {
-        grid-template-columns: 1fr;
-      }
-      .home-news-expand-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .home-news-item,
-      .home-news-expand-item {
-        max-height: none;
-      }
-      .home-news-item__img,
-      .home-news-expand-item .home-news-item__img {
-        max-height: none;
-      }
-      .ui-card--news-expand {
-        width: calc(100vw - 20px);
-        max-height: 92vh;
-      }
-    }
-    @media (max-width: 480px) {
-      .home-news-expand-list {
-        grid-template-columns: 1fr;
-      }
-    }
-    @media (max-width: 960px) {
-      .home-bento-cell--gospel,
-      .home-bento-cell--events {
-        grid-column: span 12;
-      }
-      .home-bento-cell--readings .flow-readings-preview-row {
-        grid-template-columns: 1fr;
-      }
-      .home-bento-cell--readings .flow-reading-tile {
-        padding: var(--space-3) 0;
-        border-right: none;
-        border-bottom: 1px solid var(--line-soft);
-      }
-      .home-bento-cell--readings .flow-reading-tile:first-child {
-        padding-top: 0;
-      }
-      .home-bento-cell--readings .flow-reading-tile:last-child {
-        padding-bottom: 0;
-        border-bottom: none;
-      }
-    }
-    @media (max-width: 768px) {
-      .home-bento-cell--news {
-        max-height: none;
-        min-height: 0;
-      }
-    }
     /* Full-viewport grey scrim — shared by all overlays/modals */
     .app-scrim,
     .ui-overlay__backdrop,
@@ -3144,9 +3080,9 @@
     .flow-builder-tabs {
       display: inline-flex;
       width: fit-content;
-      gap: 3px;
+      gap: 2px;
       margin: 0;
-      padding: 3px;
+      padding: 2px;
       border-radius: 999px;
       background: var(--surface-2);
       border: 1px solid var(--line);
@@ -3154,12 +3090,12 @@
     .flow-builder-tabs button {
       flex: 0 1 auto;
       margin: 0;
-      padding: 7px 12px;
+      padding: 5px 11px;
       border: none;
       border-radius: 999px;
       background: transparent;
       color: var(--muted);
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 800;
       letter-spacing: 0.02em;
       cursor: pointer;
@@ -3233,19 +3169,24 @@
     /* Song plan tab — two-column layout (summary | slots) */
     .song-plan-layout {
       display: grid;
-      grid-template-columns: minmax(9.5rem, 0.34fr) minmax(0, 1fr);
+      grid-template-columns: minmax(16rem, 350px) minmax(0, 1fr);
       gap: var(--space-4);
       align-items: start;
       width: 100%;
       min-width: 0;
       max-width: 100%;
     }
+    .song-plan-layout .song-plan-summary.flow-bento-cell {
+      padding: var(--space-3);
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
     .song-plan-summary {
       position: sticky;
       top: 0;
       display: flex;
       flex-direction: column;
-      padding: var(--space-3);
       min-width: 0;
     }
     .song-plan-main {
@@ -3290,10 +3231,26 @@
     }
     .flow-setup-bento .home-card-head,
     .song-plan-layout .home-card-head {
-      margin-bottom: var(--space-2);
-      padding-bottom: var(--space-2);
+      margin: 0 0 var(--space-2);
+      padding: 0 0 var(--space-2);
       gap: var(--space-2);
       grid-template-columns: auto minmax(0, 1fr);
+      border-bottom: none;
+    }
+    .song-plan-layout .song-plan-summary__head {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      margin: 0 0 var(--space-2);
+      padding: 0 0 var(--space-2);
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .song-plan-layout .song-plan-summary__head .home-card-head__text {
+      min-width: 0;
+    }
+    .song-plan-layout .song-plan-summary__head .home-card-head__text h3 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .flow-setup-bento .home-card-head__icon,
     .song-plan-layout .home-card-head__icon {
@@ -3319,14 +3276,13 @@
       line-height: var(--leading-caption);
       letter-spacing: var(--tracking-caption);
     }
-    .song-plan-layout .home-card-head__text p {
-      display: none;
-    }
     .song-plan-layout .mass-summary-gospel-tip {
-      margin: auto 0 0;
+      margin: 8px 0 0;
       padding: 8px 0 0;
       border: none;
+      border-top: 1px solid var(--line-soft);
       background: none;
+      min-width: 0;
     }
     .song-plan-layout .mass-summary-gospel-tip__label {
       display: block;
@@ -3344,6 +3300,8 @@
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      overflow-wrap: anywhere;
+      word-break: break-word;
       font-size: var(--type-helper);
       line-height: var(--leading-caption);
       letter-spacing: var(--tracking-caption);
@@ -3352,6 +3310,7 @@
     }
     .song-plan-layout .mass-summary-recs {
       margin: 8px 0 0;
+      min-width: 0;
     }
     .song-plan-layout .mass-summary-recs[hidden] {
       display: none;
@@ -3452,18 +3411,35 @@
     }
     .song-plan-layout .mass-summary-stats {
       margin-bottom: 8px;
-      gap: 4px;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 6px;
+      min-width: 0;
     }
     .song-plan-layout .mass-summary-stat {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
       font-size: var(--type-fine);
       letter-spacing: var(--tracking-fine);
       line-height: var(--leading-caption);
     }
+    .song-plan-layout .mass-summary-stat dt {
+      flex-shrink: 0;
+      margin: 0;
+    }
     .song-plan-layout .mass-summary-stat dd {
-      text-align: left;
+      margin: 0;
+      min-width: 0;
+      text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       font-size: var(--type-helper);
       font-weight: 600;
       letter-spacing: var(--tracking-caption);
@@ -3533,32 +3509,34 @@
       gap: 4px;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__top {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-rows: auto auto;
-      gap: 2px 8px;
+      display: flex;
       align-items: center;
+      gap: 8px;
       min-width: 0;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__part {
-      grid-column: 1;
-      grid-row: 1;
       flex-shrink: 0;
-      width: auto;
-      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       font-size: var(--type-helper);
       font-weight: 600;
       color: var(--muted);
       letter-spacing: var(--tracking-caption);
       line-height: var(--leading-caption);
     }
+    .flow-builder-tab-panel--songs .mass-song-plan-card__part::after {
+      content: "·";
+      margin-left: 8px;
+      color: color-mix(in srgb, var(--muted) 55%, transparent);
+      font-weight: 400;
+    }
     .flow-builder-tab-panel--songs .mass-song-plan-card__part-input {
-      grid-column: 1;
-      grid-row: 1;
-      flex: 0 1 auto;
+      flex-shrink: 0;
       width: auto;
       min-width: 0;
-      max-width: 100%;
+      max-width: 8rem;
       margin: 0;
       padding: 0 0 2px;
       font-size: var(--type-helper);
@@ -3570,6 +3548,9 @@
       border: none;
       border-bottom: 1px solid var(--line-soft);
       border-radius: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__part-input:focus {
       outline: none;
@@ -3596,24 +3577,25 @@
       border-color: color-mix(in srgb, var(--danger) 35%, var(--line-soft));
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__title-wrap {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      flex: unset;
+      flex: 0 1 auto;
       min-width: 0;
       overflow: hidden;
+      text-align: left;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__title-picked {
       display: inline-flex;
       align-items: center;
+      justify-content: flex-start;
       gap: 2px;
       max-width: 100%;
-      width: 100%;
+      width: auto;
       vertical-align: middle;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__title-picked .mass-song-plan-card__title {
       flex: 0 1 auto;
       min-width: 0;
       max-width: 100%;
+      text-align: left;
       font-size: var(--type-body);
       font-weight: 600;
       line-height: var(--leading-body);
@@ -3660,11 +3642,9 @@
       display: none;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__actions {
-      grid-column: 2;
-      grid-row: 1;
       flex-shrink: 0;
+      margin-left: auto;
       gap: 2px;
-      margin-left: 0;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__btn {
       min-height: 24px;
@@ -3814,12 +3794,22 @@
     }
     .mass-summary-sidebar {
       min-width: 0;
+      max-width: 100%;
+    }
+    .song-plan-summary__panel {
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
     .mass-summary-stats {
       margin: 0 0 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      min-width: 0;
     }
     .mass-summary-stat {
       display: flex;
@@ -3828,17 +3818,23 @@
       gap: 8px;
       font-size: 0.8125rem;
       line-height: 1.4;
+      min-width: 0;
     }
     .mass-summary-stat dt {
       margin: 0;
       font-weight: 600;
       color: var(--muted);
+      flex-shrink: 0;
     }
     .mass-summary-stat dd {
       margin: 0;
       font-weight: 700;
       color: var(--ink);
       text-align: right;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .mass-summary-progress-wrap {
       margin-bottom: 12px;
@@ -4305,48 +4301,6 @@
       min-height: 40px;
       padding: 0 18px;
       font-size: 0.875rem;
-    }
-    @media (max-width: 768px) {
-      .home-bento-cell--summary,
-      .home-bento-cell--song-plan {
-        grid-column: span 12;
-      }
-      .song-plan-layout {
-        grid-template-columns: 1fr;
-      }
-      .song-plan-summary,
-      .settings-layout .settings-nav-card.song-plan-summary {
-        position: static;
-      }
-      .mass-summary-stats {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 10px 20px;
-      }
-      .home-song-plan-card__head {
-        grid-template-columns: auto 1fr;
-      }
-      .mass-song-plan-card__bar {
-        flex-wrap: wrap;
-        align-items: flex-start;
-      }
-      .mass-song-plan-card__actions {
-        width: 100%;
-        justify-content: flex-start;
-        flex-wrap: wrap;
-        padding-left: 58px;
-      }
-      .mass-song-plan-card__body {
-        padding-left: 14px;
-      }
-      .mass-song-plan-footer {
-        justify-content: stretch;
-      }
-      .mass-song-plan-footer .btn-home-create-event,
-      .mass-song-plan-footer .btn-create {
-        flex: 1;
-        min-width: 140px;
-      }
     }
     /* Mass Builder Setup — bento grid + hybrid card heads (matches song plan) */
     .flow-setup-bento {
@@ -4841,26 +4795,6 @@
         grid-template-columns: 1fr;
       }
     }
-    @media (max-width: 720px) {
-      .flow-readings-preview-row {
-        grid-template-columns: 1fr;
-      }
-      .flow-reading-tile,
-      .flow-reading-tile:nth-child(odd) {
-        border-right: none;
-        border-bottom: 1px solid var(--line-soft);
-      }
-      .flow-reading-tile:last-child {
-        border-bottom: none;
-      }
-      .flow-setup-footer__toggles {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .flow-bento-cell {
-        padding: var(--space-2);
-      }
-    }
     .flow-accordion-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -4872,16 +4806,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 0 14px;
+      margin: 0 0 8px;
     }
     .flow-builder-tabs-bar .flow-builder-tabs {
       flex: 0 1 auto;
       margin: 0;
       min-width: 0;
     }
+    .dashboard:has(#flow-page.active) {
+      padding-top: var(--space-2);
+    }
     .dashboard:has(#flow-page.active) > #flow-page {
       width: min(var(--content-max), 100%);
       margin-inline: auto;
+      gap: 0;
+    }
+    #flow-page .flow-builder-tabs-bar {
+      margin-top: 0;
     }
     #flow-page .flow-workspace {
       width: 100%;
@@ -4942,11 +4883,6 @@
     @media (min-width: 1100px) {
       #flow-page .field-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-    }
-    @media (max-width: 720px) {
-      #flow-page .field-grid {
-        grid-template-columns: 1fr;
       }
     }
     #flow-page .mass-song-slot {
@@ -5712,32 +5648,6 @@
     .song-composer-layout {
       align-items: stretch;
       min-height: 240px;
-    }
-    @media (min-width: 721px) {
-      .lyrics-workspace-mockup .song-composer-layout {
-        display: grid !important;
-        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
-        gap: 12px;
-        align-items: stretch !important;
-        min-width: 0;
-        width: 100%;
-        min-height: 260px;
-      }
-      .lyrics-workspace-mockup .song-composer-main {
-        grid-column: 1 !important;
-        display: flex !important;
-        flex-direction: column;
-        min-height: 0;
-        height: 100%;
-      }
-      .lyrics-workspace-mockup .song-composer-recent {
-        grid-column: 2 !important;
-        max-width: 100%;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        height: 100%;
-      }
     }
     .song-composer-main {
       display: flex;
@@ -7191,20 +7101,6 @@
       background-image: linear-gradient(135deg, #ececef, #dcdde2);
     }
     .mass-song-pick-row .plan-btn { flex-shrink: 0; }
-    @media (max-width: 720px) {
-      .song-ppt-viewer {
-        grid-template-columns: 1fr;
-      }
-      .song-ppt-organizer {
-        position: static;
-      }
-      .song-slide-plan__list {
-        max-height: 240px;
-      }
-    }
-    @media (max-width: 640px) {
-      .song-preview-panel__sheet { width: 100%; }
-    }
 
     .global-controls {
       display: grid;
@@ -7507,14 +7403,6 @@
       max-width: 100%;
       min-width: 0;
     }
-    @media (max-width: 900px) {
-      .calendar-page-workspace {
-        grid-template-columns: 1fr;
-      }
-      .cal-detail-panel {
-        order: 2;
-      }
-    }
     .calendar-month-card {
       min-width: 0;
       overflow: hidden;
@@ -7782,81 +7670,6 @@
       .hero { grid-template-columns: 1fr; }
       .hero-metrics { min-width: 0; }
     }
-    @media (min-width: 721px) {
-      .liturgical-indicator-wrap {
-        max-width: min(210px, 24vw);
-      }
-    }
-    @media (max-width: 768px) {
-      .app-header__search-wrap { display: none; }
-      .account-menu-btn__name { display: none; }
-      .account-menu-btn { padding-right: 8px; }
-      .app-shell { --nav-width-expanded: 0px; }
-      .dashboard {
-        padding:
-          var(--space-4)
-          var(--layout-gutter)
-          80px;
-        margin-left: 0;
-        scroll-padding-top: var(--space-4);
-      }
-      .app-header { width: 100%; margin: 0; border-radius: 0; }
-      .app-header__main,
-      .app-header__nav-row { padding-inline: var(--layout-gutter); }
-      .route-jump-float {
-        left: 12px;
-        bottom: 12px;
-        max-width: calc(100vw - 24px);
-      }
-      .app-bottom-right {
-        right: 12px;
-        bottom: 12px;
-        max-width: calc(100vw - 24px);
-      }
-      .flow-dock-float {
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-      .toast-stack {
-        width: 100%;
-        max-width: none;
-      }
-      .route-switcher { width: 100%; max-width: none; min-width: 0; flex: 1; }
-      .liturgical-indicator-wrap { max-width: min(148px, 38vw); }
-      :root { --topbar-chip-height: 40px; --app-header-stack: 120px; }
-      .app-header__main { padding: 10px var(--space-3); gap: 10px; }
-      .brand-block__name { font-size: 1.2rem; }
-      .brand-block__tagline { font-size: 0.625rem; }
-      .liturgical-indicator__season,
-      .liturgical-indicator__year { font-size: 0.6875rem; }
-      .liturgical-indicator__chevron { display: none; }
-      .app-header-nav .nav-link { padding: 0 2px; }
-      .app-header-nav .nav-label { display: none; }
-      .app-header-nav .nav-link .nav-icon { width: 17px; height: 17px; }
-      .btn-create span:not(.btn-create__icon) { display: none; }
-      .btn-create { padding: 0 12px; }
-      .hero, .panel, .tool-card { padding: 15px; border-radius: 18px; }
-      .home-bento-grid .flow-bento-cell { padding: var(--space-4); }
-      .hero-metrics, .global-controls, .field-grid, .builder-grid, .theme-grid { grid-template-columns: 1fr; }
-      .block-top:not(.block-top-lyrics) { grid-template-columns: auto minmax(0, 1fr); }
-      .block-top:not(.block-top-lyrics) select, .block-top:not(.block-top-lyrics) .inline-actions { grid-column: 1 / -1; }
-      .block-top.block-top-lyrics .block-field-type,
-      .block-top.block-top-lyrics .block-field-name { flex: 1 1 100%; min-width: 0; }
-      .timeline-body { grid-template-columns: 1fr; }
-      .lyrics-structured-head { flex-direction: column; align-items: stretch; }
-      .lyrics-structured-actions { width: 100%; }
-      .lyrics-structured-actions .primary,
-      .lyrics-structured-actions .secondary,
-      .lyrics-structured-actions .ghost { flex: 1 1 auto; }
-      .lyrics-workspace-mockup .song-composer-layout { grid-template-columns: 1fr !important; }
-      .lyrics-workspace-mockup .song-composer-main,
-      .lyrics-workspace-mockup .song-composer-recent { grid-column: 1 !important; }
-      .song-composer-recent-list { max-height: min(160px, 24vh); }
-      .lyrics-workspace-row { grid-template-columns: 1fr; }
-      .lyrics-editor-main { min-height: 8rem; }
-      .lyrics-details-meta-grid { grid-template-columns: 1fr; }
-    }
-
     .song-catalog-panel {
       border: 1px solid var(--line);
       border-radius: 14px;
@@ -8479,12 +8292,215 @@
         animation: none;
       }
     }
+
+    /* Mass generate receipt — minimalist pre-flight summary */
+    .ui-card--gen-receipt {
+      width: min(540px, 100%);
+    }
+    .mass-gen-receipt {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      font-size: var(--text-sm);
+    }
+    .mass-gen-receipt__meta {
+      text-align: center;
+      padding-bottom: var(--space-3);
+      margin-bottom: var(--space-3);
+      border-bottom: 1px dashed var(--line-soft);
+    }
+    .mass-gen-receipt__title {
+      margin: 0 0 2px;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .mass-gen-receipt__sub {
+      margin: 0;
+      font-size: var(--text-xs);
+      color: var(--muted);
+    }
+    .mass-gen-receipt__stamp {
+      margin: 6px 0 0;
+      font-size: 0.65rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .mass-gen-receipt__alert {
+      padding: 7px 10px;
+      margin-bottom: var(--space-3);
+      border-radius: var(--radius-md);
+      background: hsl(38 92% 95%);
+      border: 1px solid hsl(38 80% 78%);
+      font-size: var(--text-xs);
+      line-height: 1.4;
+      color: hsl(32 80% 28%);
+      text-align: center;
+    }
+    html[data-theme="dark"] .mass-gen-receipt__alert {
+      background: hsl(38 40% 14%);
+      border-color: hsl(38 35% 28%);
+      color: hsl(38 70% 72%);
+    }
+    .mass-gen-receipt__view {
+      display: block;
+    }
+    .mass-gen-receipt__edit-panel {
+      display: none;
+    }
+    .mass-gen-receipt.is-editing .mass-gen-receipt__view {
+      display: none;
+    }
+    .mass-gen-receipt.is-editing .mass-gen-receipt__edit-panel {
+      display: block;
+    }
+    .mass-gen-receipt__line {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      padding: 4px 0;
+      font-size: var(--text-xs);
+      line-height: 1.35;
+    }
+    .mass-gen-receipt__line-label {
+      flex-shrink: 0;
+      color: var(--muted);
+    }
+    .mass-gen-receipt__line-dots {
+      flex: 1;
+      border-bottom: 1px dotted var(--line-soft);
+      min-width: 8px;
+      margin: 0 2px;
+      height: 0;
+      align-self: center;
+    }
+    .mass-gen-receipt__line-value {
+      flex-shrink: 1;
+      text-align: right;
+      color: var(--ink);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 62%;
+    }
+    .mass-gen-receipt__line--missing .mass-gen-receipt__line-value {
+      color: hsl(32 85% 38%);
+    }
+    html[data-theme="dark"] .mass-gen-receipt__line--missing .mass-gen-receipt__line-value {
+      color: hsl(38 80% 68%);
+    }
+    .mass-gen-receipt__foot {
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px dashed var(--line-soft);
+      font-size: var(--text-xs);
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.45;
+    }
+    .mass-gen-receipt__section {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: var(--space-3) 0 var(--space-2);
+    }
+    .mass-gen-receipt__section:first-of-type {
+      margin-top: 0;
+    }
+    .mass-gen-receipt__row {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: var(--space-2);
+      align-items: start;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .mass-gen-receipt__row:last-child {
+      border-bottom: none;
+    }
+    .mass-gen-receipt__label {
+      font-size: var(--text-xs);
+      color: var(--muted);
+      padding-top: 5px;
+    }
+    .mass-gen-receipt__value {
+      color: var(--ink);
+      min-width: 0;
+    }
+    .mass-gen-receipt__row--missing .mass-gen-receipt__label {
+      color: hsl(32 85% 38%);
+    }
+    html[data-theme="dark"] .mass-gen-receipt__row--missing .mass-gen-receipt__label {
+      color: hsl(38 80% 68%);
+    }
+    .mass-gen-receipt__missing-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: hsl(38 90% 88%);
+      color: hsl(32 85% 32%);
+      vertical-align: middle;
+    }
+    html[data-theme="dark"] .mass-gen-receipt__missing-badge {
+      background: hsl(38 45% 22%);
+      color: hsl(38 75% 75%);
+    }
+    .mass-gen-receipt__edit {
+      width: 100%;
+      padding: 4px 6px;
+      margin: -4px -6px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      line-height: 1.35;
+    }
+    .mass-gen-receipt__edit:hover {
+      background: var(--surface-muted, rgba(0, 0, 0, 0.03));
+    }
+    .mass-gen-receipt__edit:focus {
+      outline: none;
+      border-color: var(--line-soft);
+      background: var(--surface-solid);
+      box-shadow: 0 0 0 2px var(--focus-ring, rgba(0, 0, 0, 0.08));
+    }
+    .mass-gen-receipt__edit--missing {
+      color: hsl(32 85% 32%);
+      background: hsl(38 90% 96%);
+    }
+    html[data-theme="dark"] .mass-gen-receipt__edit--missing {
+      color: hsl(38 75% 78%);
+      background: hsl(38 30% 14%);
+    }
+    .mass-gen-receipt__edit-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: var(--text-xs);
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+    }
+    .mass-gen-receipt__edit-link:hover {
+      color: var(--ink);
+    }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260609e" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260623" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260615" />
   <style id="verbum-layout-overrides">
-    /* Loaded last — wins over external sheets */
+    /* Loaded after design-system — desktop layout wins over external sheets */
     body { background: var(--bg); }
     .dashboard { background: transparent; }
     .app-header { background: var(--surface-solid); }
@@ -8604,7 +8620,33 @@
       background: color-mix(in srgb, var(--good, var(--color-primary, #2d6a4f)) 88%, #000);
       color: #fff;
     }
+    /* LiturgyFlow wordmark — loaded last so header fonts cannot be overridden */
+    .brand-block__name.wordmark {
+      font-family: inherit;
+      font-weight: inherit;
+      letter-spacing: 0;
+      color: inherit;
+      line-height: 1;
+    }
+    .wordmark__liturgy {
+      font-family: var(--brand-font-liturgy);
+      font-weight: 400;
+      font-style: normal;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .wordmark__flow {
+      font-family: var(--brand-font-flow);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--brand-flow-color);
+      margin-left: -0.17em;
+      font-size: 1.08em;
+      letter-spacing: -0.03em;
+      transform: translateY(0.025em);
+    }
   </style>
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260626" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/auth.js" defer></script>
 </head>
@@ -8620,7 +8662,7 @@
               </svg>
             </span>
             <span class="brand-block__text">
-              <span class="brand-block__name">LiturgyFlow</span>
+              <span class="brand-block__name wordmark" aria-hidden="true"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
               <span class="brand-block__tagline">Mass slides &amp; posters</span>
             </span>
           </a>
@@ -8762,7 +8804,7 @@
           </div>
         </div>
         <div class="app-header__nav-row">
-          <nav class="app-header-nav" id="admin-sidebar" aria-label="Main navigation">
+          <nav class="app-header-nav app-nav--desktop" id="admin-sidebar" aria-label="Main navigation">
             <a class="nav-link" data-route="/home" href="/home">
               <img src="/static/icons/home.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Home</span>
@@ -8816,7 +8858,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                 </span>
                 <div class="home-card-head__text">
-              <h3>Upcoming Sunday</h3>
+              <h3>Upcoming Sunday Gospel</h3>
                   <p id="home-sunday-label">Loading…</p>
                 </div>
                 <a class="home-card-head__action" href="/mass/builder" data-route="/mass/builder">View full Mass ›</a>
@@ -9543,16 +9585,16 @@ Lord, hear our prayer</textarea>
 
             <div class="flow-builder-tab-panel flow-builder-tab-panel--songs" id="flow-panel-songs" role="tabpanel" aria-labelledby="flow-tab-songs" data-flow-panel="songs" hidden>
             <div class="song-plan-layout">
-              <aside class="flow-bento-cell song-plan-summary mass-summary-sidebar" aria-labelledby="mass-summary-heading">
-                <header class="flow-bento-cell__head home-card-head">
-                  <span class="home-card-head__icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                  </span>
+              <aside class="flow-bento-cell song-plan-summary mass-summary-sidebar is-collapsible" id="mass-summary-sidebar" aria-labelledby="mass-summary-heading">
+                <header class="flow-bento-cell__head home-card-head song-plan-summary__head">
                   <div class="home-card-head__text">
                     <h3 id="mass-summary-heading">Mass summary</h3>
-                    <p><span id="mass-summary-date-label">—</span> · <span id="mass-summary-season-label">Ordinary Time</span></p>
-              </div>
+                  </div>
+                  <button type="button" class="song-plan-summary__toggle" id="mass-summary-toggle" aria-expanded="false" aria-controls="mass-summary-panel" aria-label="Show mass summary details" title="Show summary">
+                    <svg class="song-plan-summary__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
                 </header>
+                <div class="song-plan-summary__panel" id="mass-summary-panel">
                 <div class="mass-summary-lang-field mass-song-plan-lang-field">
                   <label for="mass-song-plan-lang">Language</label>
                   <select id="mass-song-plan-lang" class="mass-song-plan-lang-select">
@@ -9595,6 +9637,7 @@ Lord, hear our prayer</textarea>
                   <a href="/settings/app" data-route="/settings/app" class="mass-summary-link">Preferences</a>
                   <a href="/library/songs" data-route="/library/songs" class="mass-summary-link">Song library</a>
                 </nav>
+                </div>
               </aside>
               <div class="song-plan-main">
                 <div id="mass-song-plan" class="mass-song-plan-root" role="region" aria-label="Mass song slots"></div>
@@ -9962,6 +10005,74 @@ Lord, hear our prayer</textarea>
         </div>
       </section>
     </main>
+    <nav class="app-bottom-nav app-nav--mobile" id="app-bottom-nav" aria-label="Main navigation">
+      <a class="nav-link" data-route="/home" href="/home">
+        <img src="/static/icons/home.png" class="nav-icon" alt="" width="15" height="15" />
+        <span class="nav-label">Home</span>
+      </a>
+      <a class="nav-link" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
+        <img src="/static/icons/mass.png" class="nav-icon" alt="" width="15" height="15" />
+        <span class="nav-label">Mass</span>
+      </a>
+      <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+        <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
+        <span class="nav-label">Library</span>
+      </a>
+      <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+        <img src="/static/icons/media.png" class="nav-icon" alt="" width="15" height="15" />
+        <span class="nav-label">Media</span>
+      </a>
+      <button type="button" class="nav-link app-bottom-nav__more" id="app-bottom-nav-more" aria-expanded="false" aria-controls="app-more-sheet" aria-label="More pages">
+        <svg class="nav-icon app-bottom-nav__more-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="nav-label">More</span>
+      </button>
+    </nav>
+    <div class="ui-overlay ui-overlay--more-sheet" id="app-more-sheet" aria-hidden="true" role="presentation">
+      <div class="ui-overlay__backdrop" id="app-more-sheet-backdrop"></div>
+      <nav class="ui-card ui-card--more-sheet" role="dialog" aria-labelledby="app-more-sheet-title" aria-modal="true">
+        <header class="ui-card__header">
+          <div class="ui-card__header-text">
+            <h3 class="ui-card__title" id="app-more-sheet-title">More</h3>
+            <p class="ui-card__description">Calendar, design, settings, and other pages</p>
+          </div>
+          <button type="button" class="ghost ui-card__close" id="app-more-sheet-close" aria-label="Close">×</button>
+        </header>
+        <div class="ui-card__content app-more-sheet__links">
+          <a class="app-more-sheet__link nav-link" data-route="/mass/calendar" href="/mass/calendar">
+            <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="18" height="18" />
+            <span>Liturgical Calendar</span>
+          </a>
+          <a class="app-more-sheet__link nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+            <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
+            <span>Theme Lab</span>
+          </a>
+          <a class="app-more-sheet__link nav-link" data-route="/design/templates" href="/design/templates">
+            <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
+            <span>Templates</span>
+          </a>
+          <a class="app-more-sheet__link nav-link" data-route="/library/collections" href="/library/collections">
+            <img src="/static/icons/library.png" class="nav-icon" alt="" width="18" height="18" />
+            <span>Collections</span>
+          </a>
+          <a class="app-more-sheet__link nav-link" data-route="/media/history" href="/media/history">
+            <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
+            <span>History</span>
+          </a>
+          <a class="app-more-sheet__link nav-link" data-route="/settings/church" href="/settings/church">
+            <span class="app-more-sheet__link-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span>Church Profile</span>
+          </a>
+          <a class="app-more-sheet__link nav-link" data-route="/settings/app" href="/settings/app">
+            <span class="app-more-sheet__link-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            </span>
+            <span>Appearance</span>
+          </a>
+        </div>
+      </nav>
+    </div>
     <div class="route-jump-float" id="route-jump-float">
       <label for="route-switcher">Jump to</label>
       <select class="route-switcher" id="route-switcher" aria-label="Jump to page">
@@ -10002,6 +10113,25 @@ Lord, hear our prayer</textarea>
       </div>
       <p class="mass-gen-loader__msg" id="mass-gen-loader-msg">Generating Mass PowerPoint…</p>
     </div>
+  </div>
+
+  <div class="ui-overlay" id="mass-gen-receipt-modal" aria-hidden="true" role="presentation">
+    <div class="ui-overlay__backdrop" id="mass-gen-receipt-backdrop"></div>
+    <article class="ui-card ui-card--gen-receipt" role="dialog" aria-labelledby="mass-gen-receipt-title" aria-describedby="mass-gen-receipt-desc" aria-modal="true">
+      <header class="ui-card__header">
+        <div class="ui-card__header-text">
+          <h3 class="ui-card__title" id="mass-gen-receipt-title">Package summary</h3>
+          <p class="ui-card__description" id="mass-gen-receipt-desc">Review before generating. Use Quick edit to change anything.</p>
+        </div>
+        <button type="button" class="ghost ui-card__close" id="mass-gen-receipt-close" aria-label="Close">×</button>
+      </header>
+      <div class="ui-card__content" id="mass-gen-receipt-body"></div>
+      <footer class="ui-card__footer ui-card__footer--row">
+        <button type="button" class="secondary" id="mass-gen-receipt-cancel">Cancel</button>
+        <button type="button" class="secondary" id="mass-gen-receipt-edit">Quick edit</button>
+        <button type="button" class="primary" id="mass-gen-receipt-confirm">Generate</button>
+      </footer>
+    </article>
   </div>
 
   <div class="song-preview-panel" id="song-preview-panel" aria-hidden="true">
@@ -10052,12 +10182,17 @@ Lord, hear our prayer</textarea>
       if (Number.isNaN(d.getTime())) return "";
       return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     };
-    const postJSON = async (url, body) => {
-      if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+    const postJSON = async (url, body, opts) => {
+      const publicPreview = String(url).split("?")[0] === "/api/preview";
+      const skipAuthWait = !!(opts && opts.skipAuthWait) || publicPreview;
+      if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
       }
       const headers = { "Content-Type": "application/json" };
-      if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+      if (publicPreview && window.VerbumAuth && window.VerbumAuth.getCachedToken) {
+        const token = window.VerbumAuth.getCachedToken();
+        if (token) headers.Authorization = "Bearer " + token;
+      } else if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
         Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
       }
       const res = await fetch(url, {
@@ -10948,6 +11083,93 @@ Lord, hear our prayer</textarea>
       return false;
     }
 
+    function isMoreNavRoute(route) {
+      if (route === "/mass/calendar") return true;
+      if (route.startsWith("/design/")) return true;
+      if (route === "/library/collections") return true;
+      if (route === "/media/history") return true;
+      if (route.startsWith("/settings/")) return true;
+      return false;
+    }
+
+    function closeAppMoreSheet() {
+      const sheet = $("app-more-sheet");
+      const btn = $("app-bottom-nav-more");
+      if (sheet) {
+        sheet.classList.remove("is-open");
+        sheet.setAttribute("aria-hidden", "true");
+      }
+      if (btn) btn.setAttribute("aria-expanded", "false");
+      const anyOverlayOpen = document.querySelector(".ui-overlay.is-open, .modal.visible, .song-preview-panel.is-open");
+      if (!anyOverlayOpen) document.body.style.overflow = "";
+    }
+
+    function openAppMoreSheet() {
+      const sheet = $("app-more-sheet");
+      const btn = $("app-bottom-nav-more");
+      if (!sheet) return;
+      sheet.classList.add("is-open");
+      sheet.setAttribute("aria-hidden", "false");
+      if (btn) btn.setAttribute("aria-expanded", "true");
+      document.body.style.overflow = "hidden";
+    }
+
+    function initAppMoreSheet() {
+      const btn = $("app-bottom-nav-more");
+      const sheet = $("app-more-sheet");
+      const backdrop = $("app-more-sheet-backdrop");
+      const closeBtn = $("app-more-sheet-close");
+      if (!btn || !sheet) return;
+      btn.addEventListener("click", () => {
+        if (sheet.classList.contains("is-open")) closeAppMoreSheet();
+        else openAppMoreSheet();
+      });
+      backdrop && backdrop.addEventListener("click", closeAppMoreSheet);
+      closeBtn && closeBtn.addEventListener("click", closeAppMoreSheet);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && sheet.classList.contains("is-open")) closeAppMoreSheet();
+      });
+      sheet.querySelectorAll(".app-more-sheet__link[data-route]").forEach((link) => {
+        link.addEventListener("click", () => closeAppMoreSheet());
+      });
+    }
+
+    function initSongPlanSummaryCollapse() {
+      const aside = $("mass-summary-sidebar");
+      const btn = $("mass-summary-toggle");
+      if (!aside || !btn) return;
+      const mq = window.matchMedia("(max-width: 768px)");
+      function syncSummaryCollapseState() {
+        if (mq.matches) {
+          aside.classList.remove("is-expanded");
+          btn.setAttribute("aria-expanded", "false");
+          btn.setAttribute("aria-label", "Show mass summary details");
+          btn.title = "Show summary";
+        } else {
+          aside.classList.add("is-expanded");
+          btn.setAttribute("aria-expanded", "true");
+          btn.setAttribute("aria-label", "Mass summary details");
+          btn.title = "";
+        }
+      }
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!mq.matches) return;
+        const open = aside.classList.toggle("is-expanded");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", open ? "Hide mass summary details" : "Show mass summary details");
+        btn.title = open ? "Hide summary" : "Show summary";
+      });
+      const head = aside.querySelector(".song-plan-summary__head");
+      head && head.addEventListener("click", (e) => {
+        if (!mq.matches) return;
+        if (e.target.closest(".song-plan-summary__toggle")) return;
+        btn.click();
+      });
+      mq.addEventListener("change", syncSummaryCollapseState);
+      syncSummaryCollapseState();
+    }
+
     function isSettingsRoute(route) {
       return route === "/settings/church" || route === "/settings/app";
     }
@@ -10973,9 +11195,12 @@ Lord, hear our prayer</textarea>
         page.classList.toggle("active", pageIsActiveForRoute(page, r));
         page.classList.remove("page--leaving");
       });
-      document.querySelectorAll(".app-header-nav .nav-link").forEach((link) => {
+      document.querySelectorAll(".app-header-nav .nav-link, .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link").forEach((link) => {
         link.classList.toggle("active", navLinkIsActive(link, r));
       });
+      const moreBtn = $("app-bottom-nav-more");
+      if (moreBtn) moreBtn.classList.toggle("active", isMoreNavRoute(r));
+      closeAppMoreSheet();
       syncSettingsLayout(r);
       const rs = $("route-switcher");
       if (rs) rs.value = r;
@@ -11017,6 +11242,8 @@ Lord, hear our prayer</textarea>
         if (sec && sid && ["entrance", "offertory", "communion", "recessional", "meditation"].includes(sec)) {
           loadSongIntoEditor(sec, sid, { clearSearch: false }).catch(() => {});
           history.replaceState({}, "", r);
+        } else {
+          autoAnalyzeLyricsOnLibraryTab();
         }
       }
       if (r === "/library/collections") {
@@ -11058,7 +11285,7 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    document.querySelectorAll(".app-header-nav .nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach(bindSpaRouteLink);
+    document.querySelectorAll(".app-header-nav .nav-link, .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach(bindSpaRouteLink);
 
     document.addEventListener("click", (event) => {
       const link = event.target.closest(".app-membership-banner a[data-route]");
@@ -11179,6 +11406,16 @@ Lord, hear our prayer</textarea>
 
     function analyzeLyrics() {
       syncInputPanelToStructuredEditor({ quiet: false });
+    }
+
+    function autoAnalyzeLyricsOnLibraryTab() {
+      const input = $("lyrics-input");
+      if (!input || !input.value.trim()) {
+        if (!lyricBlocks.length) renderLyrics();
+        return;
+      }
+      syncInputPanelToStructuredEditor({ quiet: true });
+      autoResizeLyricsMainInput();
     }
 
     function setLyricsStatus(message, kind) {
@@ -16222,16 +16459,19 @@ Lord, hear our prayer</textarea>
       }
       $("btn-load-flow").disabled = true;
       if ($("btn-load-flow-inline")) $("btn-load-flow-inline").disabled = true;
-      setMassSongPlanRefreshing(true);
+      if (!auto) setMassSongPlanRefreshing(true);
       const recsWrap = $("mass-summary-recs");
       const moodList = $("mass-summary-mood-picks");
-      if (recsWrap && !recsWrap.hidden && moodList) {
+      if (!auto && recsWrap && !recsWrap.hidden && moodList) {
         recsWrap.classList.add("is-refreshing");
         moodList.setAttribute("aria-busy", "true");
         moodList.innerHTML = massMoodPickSkeletonHtml(massMoodPickSelections.length || 5);
       }
       try {
-        const data = await postJSON("/api/preview", { date });
+        const [data] = await Promise.all([
+          postJSON("/api/preview", { date }),
+          loadSongCatalog(),
+        ]);
         flowPreviewData = Object.assign({}, data, { __previewDate: date });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         applyLiturgicalSeasonTheme(data.season || "");
@@ -16246,7 +16486,7 @@ Lord, hear our prayer</textarea>
         if (defaults.communion_1) selectedLyricsSongs.communion_1 = defaults.communion_1;
         if (defaults.communion_2) selectedLyricsSongs.communion_2 = defaults.communion_2;
         if (defaults.recessional) selectedLyricsSongs.recessional = defaults.recessional;
-        await loadSongCatalog();
+        rebuildMassPlanSongPool();
         renderMassSongPlan();
         revealStaggerChildren($("mass-song-plan"), ".mass-song-plan-card:not(.mass-song-plan-card--skeleton)");
         revealStaggerChildren(moodList, ".mass-summary-mood-pick:not(.mass-summary-mood-pick--skeleton)");
@@ -16278,7 +16518,7 @@ Lord, hear our prayer</textarea>
         updateFlowParagraphPreviews();
         renderFlowSongCount();
         updatePosterLivePreview();
-        notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
+        if (!auto) notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
       } catch (error) {
         notify(error.message || "Could not load readings.", "error");
         renderMassSongPlan();
@@ -16519,11 +16759,389 @@ Lord, hear our prayer</textarea>
       syncOpenAiPosterUi();
     }
 
+    let massGenReceiptResolve = null;
+    let massGenReceiptEditMode = false;
+    let massGenReceiptOptionsCache = null;
+
+    function receiptSlotShortLabel(song) {
+      const map = {
+        entrance: "Entrance",
+        offertory: "Offertory",
+        communion_1: "Communion I",
+        communion_2: "Communion II",
+        recessional: "Recessional",
+      };
+      return map[song.slotKey] || song.label;
+    }
+
+    function receiptCelebrantDisplay(model) {
+      if (model.coCelebrant) return model.mainCelebrant + " · " + model.coCelebrant;
+      return model.mainCelebrant || "—";
+    }
+
+    function receiptFootnote(model) {
+      const parts = [];
+      if (model.collection) parts.push(model.collection);
+      if (model.aiPoster) parts.push(model.aiBackend === "gemini" ? "Gemini poster" : "OpenAI poster");
+      if (model.creed) parts.push(model.creed);
+      return parts.join(" · ");
+    }
+
+    function receiptViewLine(label, value, missing) {
+      const cls = "mass-gen-receipt__line" + (missing ? " mass-gen-receipt__line--missing" : "");
+      const display = value || "—";
+      const suffix = missing ? " · no lyrics" : "";
+      return (
+        "<div class=\"" + cls + "\">" +
+          "<span class=\"mass-gen-receipt__line-label\">" + escapeHtml(label) + "</span>" +
+          "<span class=\"mass-gen-receipt__line-dots\" aria-hidden=\"true\"></span>" +
+          "<span class=\"mass-gen-receipt__line-value\">" + escapeHtml(display + suffix) + "</span>" +
+        "</div>"
+      );
+    }
+
+    function renderMassGenerateReceiptView(model) {
+      const alertHtml = model.missingLyricsCount > 0
+        ? "<div class=\"mass-gen-receipt__alert\" role=\"alert\">" +
+            escapeHtml(model.missingLyricsCount + " missing lyrics") +
+          "</div>"
+        : "";
+      const selectedSongs = model.songs.filter((s) => s.id);
+      const songLines = selectedSongs.length
+        ? selectedSongs.map((song) => receiptViewLine(
+            receiptSlotShortLabel(song),
+            song.title,
+            song.missingLyrics
+          )).join("")
+        : receiptViewLine("Songs", "None selected", false);
+      const foot = receiptFootnote(model);
+      return (
+        alertHtml +
+        "<div class=\"mass-gen-receipt__meta\">" +
+          "<p class=\"mass-gen-receipt__title\">" + escapeHtml(formatMassSummaryDate(model.date)) + "</p>" +
+          "<p class=\"mass-gen-receipt__sub\">" + escapeHtml(receiptCelebrantDisplay(model)) + "</p>" +
+          (model.gospelRef ? "<p class=\"mass-gen-receipt__stamp\">" + escapeHtml(model.gospelRef) + "</p>" : "") +
+        "</div>" +
+        receiptViewLine("Mass", model.massTitle, false) +
+        songLines +
+        (foot ? "<p class=\"mass-gen-receipt__foot\">" + escapeHtml(foot) + "</p>" : "") +
+        "<p class=\"mass-gen-receipt__foot\">" + model.selectedSongCount + " song" + (model.selectedSongCount === 1 ? "" : "s") + "</p>"
+      );
+    }
+
+    function lookupMassPlanSong(id) {
+      if (!id) return null;
+      rebuildMassPlanSongPool();
+      return massPlanAllSongs.find((s) => String(s.id) === String(id)) || null;
+    }
+
+    function songSlotHasLyrics(slotKey, id) {
+      if (!id) return true;
+      const row = lookupMassPlanSong(id);
+      const sec = (SLOT_TO_HYMN_SECTION[slotKey] || slotKey).toLowerCase();
+      if (massSongLyricsCache.has(sec + "|" + id)) return true;
+      return !!(row && row.has_lyrics);
+    }
+
+    function buildMassGenerateReceiptModel(options) {
+      const o = options || {};
+      const date = o.date || ($("mass-date") && $("mass-date").value) || "";
+      const celebrant = (o.celebrant != null ? o.celebrant : getMassCelebrantLine()).trim();
+      const mainCelebrant = ($("celebrant") && $("celebrant").value.trim()) || celebrant.split(" · ")[0].trim();
+      const coCelebrant = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
+      const preview = previewForMassSummary();
+      const creedSel = $("flow-creed-choice");
+      const creed = creedSel && creedSel.value === "apostles" ? "Apostles' Creed" : "Nicene Creed";
+      const collFormatted = getFormattedCollectionAmount();
+      const foodLines = getFlowFoodSponsorsLines();
+      const posterOpts = readOpenAiPosterSettings();
+      const useAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useAi;
+      const songs = lyricSongSlots.map((slot) => {
+        const id = (selectedLyricsSongs[slot.key] || "").trim();
+        const row = id ? lookupMassPlanSong(id) : null;
+        const missingLyrics = !!(id && !songSlotHasLyrics(slot.key, id));
+        return {
+          slotKey: slot.key,
+          label: slot.custom ? ((slot.label || "").trim() || "Custom section") : slot.label,
+          section: slot.section || SLOT_TO_HYMN_SECTION[slot.key] || slot.key,
+          id,
+          title: row ? row.title : (id || ""),
+          missingLyrics,
+        };
+      });
+      return {
+        date,
+        mainCelebrant,
+        coCelebrant,
+        celebrant,
+        massTitle: preview && preview.title ? preview.title : "Sunday Mass",
+        gospelRef: preview && preview.gospel_reference ? preview.gospel_reference : "",
+        creed,
+        collection: collFormatted || "",
+        foodSponsors: foodLines,
+        aiPoster: useAiPoster,
+        aiBackend: o.ai_poster_backend || posterOpts.backend || "openai",
+        songs,
+        missingLyricsCount: songs.filter((s) => s.missingLyrics).length,
+        selectedSongCount: songs.filter((s) => s.id).length,
+      };
+    }
+
+    function receiptCelebrantFieldHtml(model) {
+      if (celebrantNamesCache.length) {
+        const opts = celebrantNamesCache.map((name) =>
+          "<option value=\"" + escapeHtml(name) + "\"" + (name === model.mainCelebrant ? " selected" : "") + ">" + escapeHtml(name) + "</option>"
+        ).join("");
+        return "<select class=\"mass-gen-receipt__edit\" id=\"receipt-celebrant\">" + opts + "</select>";
+      }
+      return "<input type=\"text\" class=\"mass-gen-receipt__edit\" id=\"receipt-celebrant\" value=\"" + escapeHtml(model.mainCelebrant) + "\" maxlength=\"200\" autocomplete=\"name\" />";
+    }
+
+    function renderMassGenerateReceiptEditPanel(model) {
+      const songRows = model.songs.map((song) => {
+        const rowCls = "mass-gen-receipt__row" + (song.missingLyrics ? " mass-gen-receipt__row--missing" : "");
+        const editCls = "mass-gen-receipt__edit" + (song.missingLyrics ? " mass-gen-receipt__edit--missing" : "");
+        const datalistId = "receipt-songs-" + song.slotKey;
+        const candidates = massPlanAllSongs.filter((row) => {
+          if (!songMatchesPlanLangFilter(row, massSongPlanLanguage)) return false;
+          const sec = song.section;
+          if (!sec) return true;
+          return row.section === sec || (sec === "communion" && row.section === "communion");
+        }).slice(0, 80);
+        const options = candidates.map((row) =>
+          "<option value=\"" + escapeHtml(row.title) + "\" data-id=\"" + escapeHtml(row.id) + "\"></option>"
+        ).join("");
+        const missingBadge = song.missingLyrics
+          ? "<span class=\"mass-gen-receipt__missing-badge\">No lyrics</span>"
+          : "";
+        const editLyricsBtn = song.missingLyrics && song.id
+          ? "<button type=\"button\" class=\"mass-gen-receipt__edit-link\" data-receipt-add-lyrics=\"" + escapeHtml(song.slotKey) + "\">Add lyrics</button>"
+          : "";
+        return (
+          "<div class=\"" + rowCls + "\" data-receipt-slot=\"" + escapeHtml(song.slotKey) + "\">" +
+            "<span class=\"mass-gen-receipt__label\">" + escapeHtml(receiptSlotShortLabel(song)) + "</span>" +
+            "<div class=\"mass-gen-receipt__value\">" +
+              "<input type=\"text\" class=\"" + editCls + "\" " +
+                "id=\"receipt-song-" + escapeHtml(song.slotKey) + "\" " +
+                "list=\"" + datalistId + "\" " +
+                "data-receipt-song-input=\"" + escapeHtml(song.slotKey) + "\" " +
+                "data-song-id=\"" + escapeHtml(song.id) + "\" " +
+                "value=\"" + escapeHtml(song.title || "") + "\" " +
+                "placeholder=\"—\" autocomplete=\"off\" />" +
+              "<datalist id=\"" + datalistId + "\">" + options + "</datalist>" +
+              missingBadge + editLyricsBtn +
+            "</div>" +
+          "</div>"
+        );
+      }).join("");
+      return (
+        "<div class=\"mass-gen-receipt__section\">Edit</div>" +
+        "<div class=\"mass-gen-receipt__row\">" +
+          "<span class=\"mass-gen-receipt__label\">Date</span>" +
+          "<input type=\"date\" class=\"mass-gen-receipt__edit\" id=\"receipt-date\" value=\"" + escapeHtml(model.date) + "\" />" +
+        "</div>" +
+        "<div class=\"mass-gen-receipt__row\">" +
+          "<span class=\"mass-gen-receipt__label\">Celebrant</span>" +
+          receiptCelebrantFieldHtml(model) +
+        "</div>" +
+        "<div class=\"mass-gen-receipt__row\">" +
+          "<span class=\"mass-gen-receipt__label\">Co-celebrant</span>" +
+          "<input type=\"text\" class=\"mass-gen-receipt__edit\" id=\"receipt-co-celebrant\" value=\"" + escapeHtml(model.coCelebrant) + "\" placeholder=\"Optional\" maxlength=\"200\" />" +
+        "</div>" +
+        songRows
+      );
+    }
+
+    function renderMassGenerateReceipt(model) {
+      const body = $("mass-gen-receipt-body");
+      if (!body) return;
+      const rootCls = "mass-gen-receipt" + (massGenReceiptEditMode ? " is-editing" : "");
+      body.innerHTML =
+        "<div class=\"" + rootCls + "\" id=\"mass-gen-receipt-root\">" +
+          "<div class=\"mass-gen-receipt__view\" id=\"mass-gen-receipt-view\">" +
+            renderMassGenerateReceiptView(model) +
+          "</div>" +
+          "<div class=\"mass-gen-receipt__edit-panel\" id=\"mass-gen-receipt-edit-panel\">" +
+            renderMassGenerateReceiptEditPanel(model) +
+          "</div>" +
+        "</div>";
+      bindMassGenerateReceiptEvents();
+      syncMassGenerateReceiptEditButton();
+    }
+
+    function syncMassGenerateReceiptEditButton() {
+      const btn = $("mass-gen-receipt-edit");
+      if (!btn) return;
+      btn.textContent = massGenReceiptEditMode ? "Done editing" : "Quick edit";
+      btn.setAttribute("aria-pressed", massGenReceiptEditMode ? "true" : "false");
+    }
+
+    function refreshMassGenerateReceiptView() {
+      const view = $("mass-gen-receipt-view");
+      if (!view || !massGenReceiptOptionsCache) return;
+      view.innerHTML = renderMassGenerateReceiptView(buildMassGenerateReceiptModel(massGenReceiptOptionsCache));
+    }
+
+    function setMassGenerateReceiptEditMode(on) {
+      massGenReceiptEditMode = !!on;
+      const root = $("mass-gen-receipt-root");
+      if (root) root.classList.toggle("is-editing", massGenReceiptEditMode);
+      syncMassGenerateReceiptEditButton();
+      if (massGenReceiptEditMode) {
+        if (massGenReceiptOptionsCache) {
+          const panel = $("mass-gen-receipt-edit-panel");
+          if (panel) panel.innerHTML = renderMassGenerateReceiptEditPanel(buildMassGenerateReceiptModel(massGenReceiptOptionsCache));
+          bindMassGenerateReceiptEvents();
+        }
+        const body = $("mass-gen-receipt-body");
+        const missingInp = body && body.querySelector(".mass-gen-receipt__edit--missing");
+        if (missingInp) {
+          missingInp.focus();
+          missingInp.select();
+          return;
+        }
+        const dateInp = $("receipt-date");
+        if (dateInp) dateInp.focus();
+      } else {
+        applyMassGenerateReceiptEdits();
+        refreshMassGenerateReceiptView();
+      }
+    }
+
+    function toggleMassGenerateReceiptEditMode() {
+      setMassGenerateReceiptEditMode(!massGenReceiptEditMode);
+    }
+
+    function bindMassGenerateReceiptEvents() {
+      const body = $("mass-gen-receipt-body");
+      if (!body) return;
+      body.querySelectorAll("[data-receipt-song-input]").forEach((inp) => {
+        inp.addEventListener("change", () => syncReceiptSongInput(inp));
+        inp.addEventListener("blur", () => syncReceiptSongInput(inp));
+      });
+      body.querySelectorAll("[data-receipt-add-lyrics]").forEach((btn) => {
+        btn.addEventListener("click", () => openReceiptAddLyrics(btn.dataset.receiptAddLyrics));
+      });
+    }
+
+    async function openReceiptAddLyrics(slotKey) {
+      const id = selectedLyricsSongs[slotKey];
+      const slot = lyricSongSlots.find((s) => s.key === slotKey);
+      if (!id || !slot) return;
+      const sec = slot.section || SLOT_TO_HYMN_SECTION[slotKey] || slotKey;
+      closeMassGenerateReceiptModal({ confirmed: false });
+      showRoute("/library/songs");
+      try {
+        await loadSongIntoEditor(sec, id);
+      } catch (_e) { /* ignore */ }
+    }
+
+    function syncReceiptSongInput(inp) {
+      const slotKey = inp.dataset.receiptSongInput;
+      const val = (inp.value || "").trim();
+      if (!val) {
+        selectedLyricsSongs[slotKey] = "";
+        inp.dataset.songId = "";
+        updateMassSlotChip(slotKey);
+        updateMassSongPreviewButton(slotKey);
+        renderFlowSongCount();
+        refreshReceiptSongRow(slotKey);
+        return;
+      }
+      rebuildMassPlanSongPool();
+      const slot = lyricSongSlots.find((s) => s.key === slotKey);
+      const sec = slot ? slot.section : null;
+      let match = massPlanAllSongs.find((row) => row.title.toLowerCase() === val.toLowerCase());
+      if (!match) {
+        match = massPlanAllSongs.find((row) => {
+          if (sec && row.section && row.section !== sec && !(sec === "communion" && row.section === "communion")) return false;
+          return row.title.toLowerCase().includes(val.toLowerCase());
+        });
+      }
+      if (match) {
+        selectedLyricsSongs[slotKey] = match.id;
+        inp.value = match.title;
+        inp.dataset.songId = match.id;
+      }
+      updateMassSlotChip(slotKey);
+      updateMassSongPreviewButton(slotKey);
+      renderFlowSongCount();
+      refreshReceiptSongRow(slotKey);
+    }
+
+    function refreshReceiptSongRow(slotKey) {
+      if (!massGenReceiptEditMode) {
+        refreshMassGenerateReceiptView();
+        return;
+      }
+      const row = document.querySelector(".mass-gen-receipt__row[data-receipt-slot=\"" + slotKey + "\"]");
+      const inp = $("receipt-song-" + slotKey);
+      if (!row || !inp) return;
+      const id = (selectedLyricsSongs[slotKey] || "").trim();
+      const missing = !!(id && !songSlotHasLyrics(slotKey, id));
+      row.classList.toggle("mass-gen-receipt__row--missing", missing);
+      inp.classList.toggle("mass-gen-receipt__edit--missing", missing);
+      const valueWrap = inp.parentElement;
+      if (!valueWrap) return;
+      valueWrap.querySelectorAll(".mass-gen-receipt__missing-badge, [data-receipt-add-lyrics]").forEach((el) => el.remove());
+      if (missing) {
+        const badge = document.createElement("span");
+        badge.className = "mass-gen-receipt__missing-badge";
+        badge.textContent = "No lyrics";
+        valueWrap.appendChild(badge);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "mass-gen-receipt__edit-link";
+        btn.dataset.receiptAddLyrics = slotKey;
+        btn.textContent = "Add lyrics";
+        btn.addEventListener("click", () => openReceiptAddLyrics(slotKey));
+        valueWrap.appendChild(btn);
+      }
+    }
+
+    function updateReceiptAlertBanner() {
+      if (massGenReceiptEditMode) return;
+      refreshMassGenerateReceiptView();
+    }
+
+    function applyMassGenerateReceiptEdits() {
+      const dateInp = $("receipt-date");
+      if (dateInp && dateInp.value && $("mass-date")) {
+        $("mass-date").value = dateInp.value;
+        if ($("poster-mass-date")) $("poster-mass-date").value = dateInp.value;
+      }
+      const celField = $("receipt-celebrant");
+      if (celField && celField.value) setCelebrantPickerValue(celField.value.trim());
+      const coInp = $("receipt-co-celebrant");
+      if (coInp && $("co-celebrant")) $("co-celebrant").value = coInp.value.trim();
+      renderMassSummarySidebar();
+    }
+
+    function openMassGenerateReceiptModal(model, options) {
+      return new Promise((resolve) => {
+        massGenReceiptResolve = resolve;
+        massGenReceiptEditMode = false;
+        massGenReceiptOptionsCache = options || {};
+        renderMassGenerateReceipt(model);
+        setUiOverlayOpen($("mass-gen-receipt-modal"), true);
+      });
+    }
+
+    function closeMassGenerateReceiptModal(result) {
+      massGenReceiptEditMode = false;
+      massGenReceiptOptionsCache = null;
+      setUiOverlayOpen($("mass-gen-receipt-modal"), false);
+      if (massGenReceiptResolve) {
+        massGenReceiptResolve(result || { confirmed: false });
+        massGenReceiptResolve = null;
+      }
+    }
+
     async function runFullMassGenerate(options) {
       const o = options || {};
       const statusFn = o.setStatus || setFlowStatus;
-      const date = o.date || $("mass-date").value;
-      const celebrant = (o.celebrant != null ? o.celebrant : getMassCelebrantLine()).trim();
+      let date = o.date || $("mass-date").value;
+      let celebrant = (o.celebrant != null ? o.celebrant : getMassCelebrantLine()).trim();
       const celebrantMain = ($("celebrant") && $("celebrant").value.trim()) || "";
       if (!date || !celebrantMain) {
         statusFn("Enter Mass date and select a celebrant in Basics before generating.", "error");
@@ -16549,6 +17167,23 @@ Lord, hear our prayer</textarea>
       const church = getCommunityName();
       if (church) body.community_name = church;
       try {
+        body.hymn_typography = buildHymnTypographyPayload();
+        if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
+          return null;
+        }
+        await ensureLyricsCachedForSelectedSongs();
+        const receiptResult = await openMassGenerateReceiptModal(buildMassGenerateReceiptModel(o), o);
+        if (!receiptResult || !receiptResult.confirmed) {
+          return null;
+        }
+        applyMassGenerateReceiptEdits();
+        date = ($("mass-date") && $("mass-date").value) || o.date || date;
+        celebrant = getMassCelebrantLine().trim() || (o.celebrant != null ? o.celebrant : celebrant).trim();
+        body.date = date;
+        body.celebrant = celebrant;
+        body.songs = selectedSongsForGenerate();
+        await ensureLyricsCachedForSelectedSongs();
+
         setMassGenLoading(true, "Preparing Mass package…");
         let divider_bn = null;
         const divIn = $("flow-divider-poster");
@@ -16600,12 +17235,6 @@ Lord, hear our prayer</textarea>
         const creedSel = $("flow-creed-choice");
         body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
         body.hymn_lyrics_layout = readHymnLyricsLayout();
-        if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
-          setMassGenLoading(false);
-          return null;
-        }
-        body.hymn_typography = buildHymnTypographyPayload();
-        await ensureLyricsCachedForSelectedSongs();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
         const logoCb = $("flow-include-church-logo");
         const nameCb = $("flow-include-church-name");
@@ -17027,18 +17656,28 @@ Lord, hear our prayer</textarea>
       }).join("");
     }
 
+    let songCatalogLoadPromise = null;
+
     async function loadSongCatalog() {
+      if (songCatalogLoadPromise) return songCatalogLoadPromise;
+      songCatalogLoadPromise = (async () => {
+        try {
+          const res = await fetch("/api/catalog/songs");
+          const data = await res.json();
+          if (data.ok) songCatalogData = data.catalog;
+        } catch (_e) {
+          songCatalogData = null;
+        }
+        renderSongCatalog();
+        rebuildMassPlanSongPool();
+        lyricSongSlots.forEach((s) => updateMassSlotChip(s.key));
+        if (typeof updateMassSummaryMoodPicks === "function") updateMassSummaryMoodPicks();
+      })();
       try {
-        const res = await fetch("/api/catalog/songs");
-        const data = await res.json();
-        if (data.ok) songCatalogData = data.catalog;
-      } catch (_e) {
-        songCatalogData = null;
+        await songCatalogLoadPromise;
+      } finally {
+        songCatalogLoadPromise = null;
       }
-      renderSongCatalog();
-      rebuildMassPlanSongPool();
-      lyricSongSlots.forEach((s) => updateMassSlotChip(s.key));
-      if (typeof updateMassSummaryMoodPicks === "function") updateMassSummaryMoodPicks();
     }
 
     function filterSongCatalogRows(rows, secKey, query) {
@@ -17308,6 +17947,7 @@ Lord, hear our prayer</textarea>
         else if (logoPreviewModal && logoPreviewModal.classList.contains("is-open")) closeLogoPreviewModal();
         else if (parishModal && parishModal.classList.contains("is-open")) closeParishSubmitModal();
         else if (delModal && delModal.classList.contains("is-open")) closeSongDeleteModal();
+        else if ($("mass-gen-receipt-modal") && $("mass-gen-receipt-modal").classList.contains("is-open")) closeMassGenerateReceiptModal({ confirmed: false });
       });
     }
 
@@ -17438,6 +18078,18 @@ Lord, hear our prayer</textarea>
       await runFullMassGenerate({ setStatus: setFlowStatus, autoDownloadPptx: true });
       $("btn-generate-flow").disabled = false;
     });
+
+    (function bindMassGenReceiptModal() {
+      const cancelReceipt = () => closeMassGenerateReceiptModal({ confirmed: false });
+      $("mass-gen-receipt-cancel") && $("mass-gen-receipt-cancel").addEventListener("click", cancelReceipt);
+      $("mass-gen-receipt-close") && $("mass-gen-receipt-close").addEventListener("click", cancelReceipt);
+      $("mass-gen-receipt-backdrop") && $("mass-gen-receipt-backdrop").addEventListener("click", cancelReceipt);
+      $("mass-gen-receipt-edit") && $("mass-gen-receipt-edit").addEventListener("click", () => toggleMassGenerateReceiptEditMode());
+      $("mass-gen-receipt-confirm") && $("mass-gen-receipt-confirm").addEventListener("click", () => {
+        if (massGenReceiptEditMode) applyMassGenerateReceiptEdits();
+        closeMassGenerateReceiptModal({ confirmed: true });
+      });
+    })();
 
     $("church-logo-avatar") && $("church-logo-avatar").addEventListener("click", () => {
       if (currentLogoPreviewUrl) openLogoPreviewModal();
@@ -17853,7 +18505,10 @@ Lord, hear our prayer</textarea>
     renderCalendarDow();
     loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
     bindCelebrantSelect();
-    loadSongCatalog();
+    loadSongCatalog().then(() => {
+      renderMassSongPlan();
+      renderFlowSongCount();
+    });
     renderComposerRecent();
     renderCollectionsRecent();
     refreshSavedPosters();
@@ -17866,8 +18521,6 @@ Lord, hear our prayer</textarea>
     autoResizeLyricsMainInput();
     renderThemeGrid();
     restoreMassSongPlanLang();
-    renderMassSongPlan();
-    renderFlowSongCount();
     renderHistoryList();
     bindHomeNewsSettings();
     initHomeNewsExpandModal();
@@ -17885,9 +18538,11 @@ Lord, hear our prayer</textarea>
     });
     initHomeEventModal();
     initReadingExpandModal();
+    initAppMoreSheet();
+    initSongPlanSummaryCollapse();
     refreshHomeMission();
     updatePosterLivePreview();
-    setTimeout(() => loadFlowData(true), 250);
+    loadFlowData(true);
   </script>
 </body>
 </html>

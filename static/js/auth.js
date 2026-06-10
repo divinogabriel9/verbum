@@ -206,6 +206,32 @@
       base + "?redirect_url=" + encodeURIComponent(path + window.location.search);
   }
 
+  function resolveRequestUrl(input) {
+    if (typeof input === "string") return input;
+    if (input && input.url) return input.url;
+    return "";
+  }
+
+  function resolveRequestMethod(init) {
+    return ((init && init.method) || "GET").toUpperCase();
+  }
+
+  /** Read-only liturgy endpoints — do not block on Supabase session hydration. */
+  function isPublicApiRequest(input, init) {
+    const raw = resolveRequestUrl(input);
+    if (!raw.includes("/api/")) return false;
+    let path = raw;
+    try {
+      path = new URL(raw, window.location.origin).pathname;
+    } catch (_e) {
+      path = raw.split("?")[0];
+    }
+    const method = resolveRequestMethod(init);
+    if (method === "GET" && path.startsWith("/api/catalog/songs")) return true;
+    if (method === "POST" && path === "/api/preview") return true;
+    return false;
+  }
+
   function patchFetch() {
     if (window.__verbumFetchPatched) return;
     window.__verbumFetchPatched = true;
@@ -217,13 +243,22 @@
         return nativeFetch(input, init);
       }
 
-      const token = await getSessionToken();
-      if (!token) {
-        return nativeFetch(input, init);
-      }
-
       const nextInit = init ? { ...init } : {};
       const headers = new Headers(nextInit.headers || {});
+
+      if (isPublicApiRequest(input, init)) {
+        if (state.cachedToken && !headers.has("Authorization")) {
+          headers.set("Authorization", "Bearer " + state.cachedToken);
+        }
+        nextInit.headers = headers;
+        return nativeFetch(input, nextInit);
+      }
+
+      const token = await getSessionToken();
+      if (!token) {
+        return nativeFetch(input, nextInit);
+      }
+
       if (!headers.has("Authorization")) {
         headers.set("Authorization", "Bearer " + token);
       }
@@ -444,6 +479,7 @@
       }
     },
     getSessionToken,
+    getCachedToken: () => state.cachedToken,
     refreshSession,
     getAuthHeaders,
     waitUntilReady,
