@@ -520,7 +520,8 @@ iframe {
     gap: var(--space-3);
   }
 
-  .song-plan-summary {
+  .song-plan-summary,
+  .settings-layout .settings-nav-card.song-plan-summary {
     position: static;
   }
 

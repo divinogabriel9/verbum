@@ -66,8 +66,11 @@ from services.api_security import (
     AuthSession,
     optional_session,
     register_security_middleware,
+    require_approved_membership,
     require_session_when_auth,
 )
+from services.membership_config import can_edit_logo, membership_payload, parish_name_is_locked
+from services.user_church_context import get_church_profile_context
 from services.image_generation_quota import (
     get_quota_status,
     reserve_daily_image_generation,
@@ -76,6 +79,7 @@ from services.image_generation_quota import (
 from services.input_limits import public_limits
 from services import input_limits as L
 from services.input_validation import check_hymn_overrides, check_string_list
+from routes.admin import register_admin_routes
 from routes.auth import register_auth_routes
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
@@ -208,6 +212,7 @@ app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
 app.mount("/preview", StaticFiles(directory=str(_PREVIEW_DIR)), name="preview")
 
 register_auth_routes(app, templates)
+register_admin_routes(app)
 register_security_middleware(app)
 
 
@@ -624,17 +629,21 @@ def generate_image(
     )
 
 
-def _community_api_payload() -> dict[str, Any]:
+def _community_api_payload(session: Optional[AuthSession] = None) -> dict[str, Any]:
     profile = load_community()
     logo_exists = logo_file_absolute().is_file()
     celebrants = profile.get("celebrant_names")
     if not isinstance(celebrants, list):
         celebrants = get_celebrant_names()
+    church_ctx = get_church_profile_context()
+    user = session.user if session else None
+    membership = membership_payload(church_ctx, user=user)
     return {
         "ok": True,
         "community_name": get_community_name(),
         "celebrant_names": celebrants,
         "logo_url": "/uploads/community_logo.png" if logo_exists else None,
+        **membership,
     }
 
 
@@ -642,7 +651,7 @@ def _community_api_payload() -> dict[str, Any]:
 def api_community(
     session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> dict[str, Any]:
-    return _community_api_payload()
+    return _community_api_payload(session)
 
 
 @app.post("/api/community")
@@ -650,21 +659,37 @@ def api_set_community_name(
     body: CommunityNameBody,
     session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> dict[str, Any]:
-    name = body.community_name.strip()
-    if session and supabase_enabled():
-        _sync_church_profile_to_supabase(session, community_name=name)
-    else:
-        update_community(community_name=name)
-    return _community_api_payload()
+    return api_submit_parish_name(body, session)
+
+
+@app.post("/api/community/submit-parish")
+def api_submit_parish_name(
+    body: CommunityNameBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    if not session or not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Sign in is required to submit parish name.")
+    from services.supabase_client import submit_parish_name
+
+    saved = submit_parish_name(
+        session.user.user_id,
+        body.community_name.strip(),
+        access_token=session.token,
+    )
+    from services.user_church_context import set_church_profile
+
+    set_church_profile(saved)
+    return _community_api_payload(session)
 
 
 @app.post("/api/community/profile")
 def api_set_community_profile(
     body: CommunityProfileBody,
-    session: Optional[AuthSession] = Depends(require_session_when_auth),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     kwargs: dict[str, Any] = {}
-    if body.community_name is not None:
+    church_ctx = get_church_profile_context()
+    if body.community_name is not None and not parish_name_is_locked(church_ctx):
         kwargs["community_name"] = body.community_name.strip()
     if body.celebrant_names is not None:
         kwargs["celebrant_names"] = body.celebrant_names
@@ -678,7 +703,7 @@ def api_set_community_profile(
         )
     else:
         update_community(**kwargs)
-    return _community_api_payload()
+    return _community_api_payload(session)
 
 
 @app.get("/api/settings/gemini-api-key")
@@ -718,6 +743,13 @@ async def api_upload_logo(
     file: UploadFile = File(...),
     session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> dict[str, Any]:
+    if session and supabase_enabled():
+        church_ctx = get_church_profile_context()
+        if not can_edit_logo(church_ctx):
+            raise HTTPException(
+                status_code=409,
+                detail="Parish logo is locked and cannot be changed.",
+            )
     ctype = (file.content_type or "").split(";")[0].strip().lower()
     if ctype not in _ALLOWED_LOGO_TYPES:
         raise HTTPException(
@@ -750,13 +782,21 @@ async def api_upload_logo(
 
     if session and supabase_enabled():
         _sync_church_profile_to_supabase(session, logo_path=LOGO_RELATIVE)
+        church_ctx = get_church_profile_context()
+        if parish_name_is_locked(church_ctx) and not (church_ctx or {}).get("logo_locked_at"):
+            from services.supabase_client import lock_church_logo
+
+            lock_church_logo(session.user.user_id, access_token=session.token)
     else:
         update_community(logo_path=LOGO_RELATIVE)
-    return {
+    out: dict[str, Any] = {
         "ok": True,
         "logo_url": "/uploads/community_logo.png",
         "message": "Logo saved. It will appear on the next generated poster.",
     }
+    if session:
+        out.update(membership_payload(get_church_profile_context(), user=session.user))
+    return out
 
 
 @app.post("/api/upload/mass-divider")
@@ -940,7 +980,7 @@ def api_preview(body: PreviewBody) -> Any:
 def api_generate(
     body: GenerateBody,
     request: Request,
-    session: Optional[AuthSession] = Depends(optional_session),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> Any:
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
     divider_path = None
@@ -1067,7 +1107,10 @@ def api_generate(
 
 
 @app.post("/api/regenerate-pptx")
-def api_regenerate_pptx(body: GenerateBody) -> Any:
+def api_regenerate_pptx(
+    body: GenerateBody,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> Any:
     """Rebuild the Mass PowerPoint with current hymn typography (overwrites existing .pptx)."""
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
     divider_path = None

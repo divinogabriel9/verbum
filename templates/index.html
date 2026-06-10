@@ -12,9 +12,11 @@
       try {
         var k = "verbumColorTheme";
         var m = localStorage.getItem(k) || "system";
-        var d = m === "dark" || (m !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        var isOled = m === "oled";
+        var d = m === "dark" || isOled || (m !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.setAttribute("data-theme", d ? "dark" : "light");
         document.documentElement.setAttribute("data-theme-preference", m);
+        if (isOled) document.documentElement.setAttribute("data-dark-variant", "oled");
       } catch (_e) { /* ignore */ }
     })();
   </script>
@@ -157,30 +159,47 @@
       --accent: #824D5D;
     }
 
+    /* Supabase-inspired dark: obsidian canvas, charcoal borders, snow text */
     html[data-theme="dark"] {
       color-scheme: dark;
-      --bg: #0E161A;
-      --bg-top: #121C22;
-      --surface: #1A2A32;
-      --surface-2: #223640;
-      --surface-solid: #243845;
-      --card-border: #3A5260;
-      --ink: #F0EBE8;
-      --muted: #A8B5BC;
-      --ink-subtle: #8A9AA3;
-      --line: #3D5260;
-      --line-soft: #2E424E;
-      --on-accent: #FFFFFF;
-      --shadow-light: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.25);
-      --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.28), 0 8px 24px rgba(0, 0, 0, 0.32);
-      --shadow-large: 0 4px 16px rgba(0, 0, 0, 0.32), 0 16px 40px rgba(0, 0, 0, 0.38);
-      --shadow-sm: var(--shadow-light);
-      --shadow-card: var(--shadow-light);
-      --shadow: var(--shadow-medium);
-      --shadow-hover: var(--shadow-large);
+      --bg: #121212;
+      --bg-top: #1c1c1c;
+      --surface: #1c1c1c;
+      --surface-2: #242424;
+      --surface-solid: #2e2e2e;
+      --card-border: #2e2e2e;
+      --ink: #fafafa;
+      --muted: #b4b4b4;
+      --ink-subtle: #898989;
+      --line: #393939;
+      --line-soft: #2e2e2e;
+      --on-accent: #fafafa;
+      --good: #3ecf8e;
+      --color-primary: #3ecf8e;
+      --color-primary-active: #2ab77a;
+      --on-primary: #1c1c1c;
+      --shadow-light: none;
+      --shadow-medium: none;
+      --shadow-large: none;
+      --shadow-sm: none;
+      --shadow-card: none;
+      --shadow: none;
+      --shadow-hover: none;
       --shadow-glow: none;
       --shadow-glow-soft: none;
-      --app-scrim: rgba(14, 22, 26, 0.62);
+      --app-scrim: rgba(0, 0, 0, 0.72);
+    }
+    /* OLED: true black canvas for AMOLED displays */
+    html[data-theme="dark"][data-dark-variant="oled"] {
+      --bg: #000000;
+      --bg-top: #000000;
+      --surface: #0a0a0a;
+      --surface-2: #111111;
+      --surface-solid: #161616;
+      --card-border: #1a1a1a;
+      --line: #222222;
+      --line-soft: #1a1a1a;
+      --app-scrim: rgba(0, 0, 0, 0.88);
     }
     html[data-theme="dark"] body {
       background: var(--bg);
@@ -252,9 +271,11 @@
       color: var(--muted);
     }
     html[data-theme="dark"] .eyebrow,
-    html[data-theme="dark"] .metric strong,
     html[data-theme="dark"] .app-header-nav .nav-link.active {
-      color: color-mix(in srgb, var(--good) 85%, #fff);
+      color: var(--good);
+    }
+    html[data-theme="dark"] .metric strong {
+      color: var(--ink);
     }
     html[data-theme="dark"] .app-header-nav .nav-link {
       color: var(--muted);
@@ -285,9 +306,13 @@
       border-color: var(--line);
     }
     html[data-theme="dark"] .primary {
-      color: var(--on-primary, #fff);
-      background: var(--color-primary, #f54e00);
-      border-color: var(--color-primary, #f54e00);
+      color: var(--on-primary, #1c1c1c);
+      background: var(--color-primary, #3ecf8e);
+      border-color: var(--color-primary, #3ecf8e);
+    }
+    html[data-theme="dark"] .primary:hover {
+      background: var(--color-primary-active, #2ab77a);
+      border-color: var(--color-primary-active, #2ab77a);
     }
     html[data-theme="dark"] .app-header,
     html[data-theme="dark"] .topbar,
@@ -305,27 +330,31 @@
       color: var(--ink);
     }
     html[data-theme="dark"] .nav-link:hover {
-      background: rgba(255, 255, 255, 0.06);
+      background: color-mix(in srgb, var(--ink) 5%, transparent);
     }
     html[data-theme="dark"] .flow-builder-tabs button:hover {
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--surface-solid);
     }
     html[data-theme="dark"] .mass-song-plan-root .plan-btn .button-inner {
-      background-image: linear-gradient(135deg, #3d4658, #2a3140);
+      background: var(--surface-solid);
+      background-image: none;
       border-color: var(--line);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      box-shadow: none;
     }
     html[data-theme="dark"] .mass-song-plan-root .plan-btn .button-inner span {
-      background-image: linear-gradient(135deg, #f0f3fa, #b8c2d8);
-      -webkit-background-clip: text;
-      background-clip: text;
+      background-image: none;
+      color: var(--ink);
+      -webkit-background-clip: border-box;
+      background-clip: border-box;
     }
     html[data-theme="dark"] .uiverse-btn .button-inner {
-      background-image: linear-gradient(135deg, #4a5468, #353e50);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      background: var(--surface-2);
+      background-image: none;
+      box-shadow: none;
     }
     html[data-theme="dark"] .uiverse-btn .button-inner span {
-      background-image: linear-gradient(135deg, #f5f7fc, #c8d0e4);
+      background-image: none;
+      color: var(--ink);
     }
     html[data-theme="dark"] .song-filter-row button.active {
       background: color-mix(in srgb, var(--liturgical-accent) 22%, var(--surface));
@@ -336,6 +365,10 @@
     .theme-pref-option:has(input:checked) {
       border-color: color-mix(in srgb, var(--liturgical-accent) 50%, var(--line));
       background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface));
+    }
+    html[data-theme="dark"] .theme-pref-option:has(input:checked) {
+      border-color: var(--good);
+      background: color-mix(in srgb, var(--good) 12%, var(--surface));
     }
 
     .mea-culpa-regular {
@@ -774,7 +807,7 @@
       -webkit-backdrop-filter: none;
     }
     html[data-theme="dark"] .app-header {
-      background: var(--surface-solid);
+      background: var(--bg-top);
       border-bottom-color: var(--line);
       box-shadow: none;
     }
@@ -1121,6 +1154,12 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .account-menu-divider {
+      height: 1px;
+      margin: 4px 10px;
+      border: none;
+      background: var(--line);
+    }
     .app-menu-panel--account .app-menu-item {
       display: grid;
       grid-template-columns: 18px 1fr;
@@ -1257,7 +1296,11 @@
       background: var(--surface-solid);
       box-shadow: var(--shadow-card);
       opacity: 0;
+      overflow: visible;
       transition: opacity 0.3s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .route-jump-float .vb-select {
+      overflow: visible;
     }
     .route-jump-float:hover,
     .route-jump-float:focus-within {
@@ -1918,6 +1961,23 @@
       max-width: var(--content-max);
       margin: 0 auto;
     }
+    /* Sticky shell: hover lift lives on inner card so transform does not break sticky */
+    .settings-layout .settings-nav-card.song-plan-summary {
+      position: sticky;
+      top: var(--space-2);
+      align-self: start;
+      z-index: 3;
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+    }
+    .settings-layout .settings-nav-card__inner {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      width: 100%;
+    }
     .settings-nav-list {
       display: flex;
       flex-direction: column;
@@ -1930,10 +1990,11 @@
       font-weight: 600;
       color: var(--good);
       text-decoration: none;
-      padding: 8px 4px;
+      padding: 8px 10px;
       min-height: 40px;
       display: inline-flex;
       align-items: center;
+      gap: 8px;
       width: 100%;
       border: none;
       border-radius: 8px;
@@ -1955,6 +2016,21 @@
     .settings-sidebar-link:focus-visible {
       outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
       outline-offset: 2px;
+    }
+    .settings-sidebar-link__icon {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      color: currentColor;
+      opacity: 0.9;
+    }
+    .settings-sidebar-link__icon svg {
+      width: 16px;
+      height: 16px;
+      display: block;
     }
     .settings-panel[hidden] {
       display: none !important;
@@ -2408,6 +2484,14 @@
       z-index: 0;
     }
     .home-news-item__img--placeholder {
+      object-fit: cover;
+      object-position: center;
+    }
+    html[data-theme="dark"] .home-news-item__media:has(.home-news-item__img--placeholder) {
+      background: #0a0a0a;
+      border-right-color: color-mix(in srgb, var(--line) 70%, #000);
+    }
+    html[data-theme="dark"] .home-news-item__img--placeholder {
       object-fit: cover;
       object-position: center;
     }
@@ -4230,7 +4314,8 @@
       .song-plan-layout {
         grid-template-columns: 1fr;
       }
-      .song-plan-summary {
+      .song-plan-summary,
+      .settings-layout .settings-nav-card.song-plan-summary {
         position: static;
       }
       .mass-summary-stats {
@@ -5056,12 +5141,12 @@
     }
     .celebrant-settings-list {
       list-style: none;
-      margin: 0 0 12px;
+      margin: 0 0 8px;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-height: 220px;
+      gap: 3px;
+      max-height: 280px;
       overflow-y: auto;
     }
     .celebrant-settings-list:empty {
@@ -5071,18 +5156,108 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 8px;
       border: 1px solid var(--line-soft);
       background: var(--surface-solid);
       font-size: var(--text-sm);
       font-weight: 600;
+      line-height: 1.25;
     }
     .celebrant-settings-list__item button {
       flex-shrink: 0;
-      padding: 6px 10px;
+      padding: 3px 8px;
       font-size: var(--text-xs);
+    }
+    .church-identity-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+    .church-logo-avatar {
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid var(--line-soft);
+      background: var(--surface-2);
+      padding: 0;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .church-logo-avatar:hover:not(:disabled) {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .church-logo-avatar:disabled {
+      cursor: default;
+      opacity: 0.85;
+    }
+    .church-logo-avatar__img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .church-logo-avatar__placeholder {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1;
+    }
+    .church-identity-row__name {
+      flex: 1;
+      min-width: 0;
+    }
+    .church-logo-upload-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-top: 4px;
+    }
+    .church-logo-upload-row[hidden] {
+      display: none !important;
+    }
+    .logo-preview-modal__img {
+      display: block;
+      max-width: min(92vw, 520px);
+      max-height: min(72vh, 520px);
+      width: auto;
+      height: auto;
+      margin: 0 auto;
+      border-radius: 12px;
+      object-fit: contain;
+    }
+    .app-membership-banner {
+      margin: 0 0 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+      font-size: var(--text-sm);
+      line-height: 1.45;
+    }
+    .app-membership-banner[hidden] {
+      display: none !important;
+    }
+    .app-membership-banner.is-pending {
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--line-soft));
+    }
+    .app-membership-banner.is-error {
+      border-color: color-mix(in srgb, var(--danger, #dc2626) 40%, var(--line-soft));
+    }
+    .app-membership-banner a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .app-membership-banner a:hover {
+      text-decoration: underline;
     }
     .flow-input-list-item {
       display: flex;
@@ -5342,8 +5517,17 @@
       font-weight: 700;
       text-shadow: 0 0 12px color-mix(in srgb, var(--wb-neon) 40%, transparent);
     }
+    html[data-theme="dark"] .uiverse-btn--generate .button-outer {
+      box-shadow: none;
+    }
+    html[data-theme="dark"] .uiverse-btn--generate .button-inner {
+      background: var(--good);
+      background-image: none;
+      box-shadow: none;
+    }
     html[data-theme="dark"] .uiverse-btn--generate .button-inner span {
-      color: var(--wb-midnight);
+      color: #1c1c1c;
+      text-shadow: none;
     }
     .uiverse-btn.is-disabled {
       cursor: not-allowed;
@@ -6222,11 +6406,11 @@
       padding: 0 12px 12px;
     }
     .empty-state {
-      border: 1px dashed #cbd5e1;
+      border: 1px dashed var(--line);
       border-radius: 18px;
       padding: 22px;
       color: var(--muted);
-      background: rgba(248, 250, 252, 0.8);
+      background: var(--surface-2);
       text-align: center;
     }
 
@@ -6236,20 +6420,27 @@
       gap: 12px;
     }
     .theme-card-wrap {
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      background: var(--surface-solid);
       display: flex;
       flex-direction: column;
       overflow: hidden;
       box-shadow: var(--shadow-sm);
     }
     .theme-card-wrap.active {
-      border-color: rgba(109, 93, 252, 0.65);
-      box-shadow: 0 0 0 4px rgba(109, 93, 252, 0.11), var(--shadow-sm);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--card-border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent) 12%, transparent);
     }
     .theme-card-wrap.lit-match {
-      box-shadow: 0 0 0 2px rgba(19, 138, 93, 0.45), var(--shadow-sm);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 40%, transparent);
+    }
+    html[data-theme="dark"] .theme-card-wrap.active {
+      border-color: color-mix(in srgb, var(--good) 60%, var(--card-border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 14%, transparent);
+    }
+    html[data-theme="dark"] .theme-card-wrap.lit-match {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 45%, transparent);
     }
     .theme-card {
       min-height: 176px;
@@ -6257,6 +6448,7 @@
       border: 0;
       border-radius: 0;
       background: transparent;
+      color: var(--ink);
       text-align: left;
       overflow: hidden;
       position: relative;
@@ -6272,7 +6464,7 @@
       border: 1px solid rgba(255, 255, 255, 0.55);
       box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
     }
-    .theme-card strong { display: block; margin-top: 12px; font-size: 0.98rem; }
+    .theme-card strong { display: block; margin-top: 12px; font-size: 0.98rem; color: var(--ink); }
     .theme-card span { display: block; margin-top: 4px; color: var(--muted); font-size: 0.78rem; line-height: 1.35; }
     .theme-mini-row {
       display: grid;
@@ -6303,20 +6495,27 @@
       gap: 10px;
       align-items: center;
       padding: 10px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
     }
     .color-field label {
       margin: 0 0 2px;
       font-size: 0.68rem;
+      color: var(--muted);
     }
     .color-field input[type="text"] {
       padding: 0;
       border: 0;
       box-shadow: none;
-      color: #475569;
+      background: transparent;
+      color: var(--ink);
       font-size: 0.82rem;
+    }
+    .color-field input[type="color"] {
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-solid);
     }
 
     .slide-preview {
@@ -7526,20 +7725,23 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 0;
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--line-soft);
+      background: var(--surface-solid);
     }
     .theme-card-actions button {
       flex: 1 1 auto;
       padding: 8px 10px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       font-size: 0.78rem;
       font-weight: 700;
     }
     .theme-card-actions .danger-theme-del {
       flex: 1 1 100%;
-      color: #be123c;
-      border-color: rgba(244, 114, 182, 0.35);
-      background: rgba(255, 241, 246, 0.65);
+      color: var(--danger);
+      border-color: color-mix(in srgb, var(--danger) 28%, var(--card-border));
+      background: color-mix(in srgb, var(--danger) 8%, var(--surface-solid));
     }
 
     .admin-card, .song-catalog-panel, .flow-para-preview {
@@ -8278,7 +8480,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260609d" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260609e" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260615" />
   <style id="verbum-layout-overrides">
@@ -8529,18 +8731,13 @@
                   </div>
                 </div>
                 <div class="vb-dropdown-list">
-                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" role="menuitem">
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" id="account-settings-link" role="menuitem">
                     <span class="app-menu-item__icon" aria-hidden="true">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
                     </span>
-                    <span class="vb-dropdown-item__label">Church profile</span>
+                    <span class="vb-dropdown-item__label">Settings</span>
                   </a>
-                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/app" data-route="/settings/app" role="menuitem">
-                    <span class="app-menu-item__icon" aria-hidden="true">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-                    </span>
-                    <span class="vb-dropdown-item__label">Appearance</span>
-                  </a>
+                  <hr class="account-menu-divider" id="account-menu-divider" aria-hidden="true" />
                   <a class="vb-dropdown-item app-menu-item" href="/sign-in" id="account-sign-in-link" role="menuitem" hidden>
                     <span class="app-menu-item__icon" aria-hidden="true">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
@@ -8611,6 +8808,7 @@
       </header>
     <main class="dashboard">
       <section class="page" id="home-page" data-route="/home">
+          <div class="app-membership-banner" id="home-membership-banner" hidden aria-live="polite"></div>
           <div class="home-bento-grid">
             <article class="flow-bento-cell home-bento-cell--gospel is-gospel-preview" id="home-gospel-card" tabindex="0" role="button" aria-label="Open full Gospel preview">
               <header class="flow-bento-cell__head home-card-head">
@@ -8812,6 +9010,71 @@
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="song-metadata-cancel">Cancel</button>
             <button type="button" class="primary" id="song-metadata-save">Save changes</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="parish-submit-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="parish-submit-backdrop"></div>
+        <article class="ui-card" role="alertdialog" aria-labelledby="parish-submit-title" aria-describedby="parish-submit-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="parish-submit-title">Confirm parish profile</h3>
+              <p class="ui-card__description" id="parish-submit-desc">Verify spelling and logo. After you submit, the parish name and logo cannot be changed. A superadmin must approve your membership before Mass generation and other parish features unlock.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="parish-submit-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__body" style="padding: 0 1.25rem 1rem;">
+            <div class="church-identity-row" style="align-items:center;margin-bottom:12px;">
+              <div class="church-logo-avatar" id="parish-submit-logo-wrap" style="cursor:default;box-shadow:none;">
+                <img class="church-logo-avatar__img" id="parish-submit-logo-img" alt="" hidden />
+                <span class="church-logo-avatar__placeholder" id="parish-submit-logo-placeholder">—</span>
+              </div>
+              <div class="church-identity-row__name">
+                <p class="muted" style="margin:0 0 6px;">Parish name</p>
+                <p id="parish-submit-name-preview" style="margin:0;font-size:1.15rem;font-weight:600;"></p>
+              </div>
+            </div>
+            <p class="muted" id="parish-submit-logo-note" style="margin:0;font-size:0.85rem;" hidden>No logo selected — you can add one after approval (one upload only).</p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="parish-submit-cancel">Go back</button>
+            <button type="button" class="primary" id="parish-submit-confirm">Submit parish profile</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="logo-preview-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="logo-preview-backdrop"></div>
+        <article class="ui-card" role="dialog" aria-labelledby="logo-preview-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="logo-preview-title">Church logo</h3>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="logo-preview-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__body" style="padding: 0 1.25rem 1.25rem;">
+            <img class="logo-preview-modal__img" id="logo-preview-modal-img" src="" alt="Church logo preview" />
+          </div>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="logo-lock-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="logo-lock-backdrop"></div>
+        <article class="ui-card" role="alertdialog" aria-labelledby="logo-lock-title" aria-describedby="logo-lock-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="logo-lock-title">Confirm church logo</h3>
+              <p class="ui-card__description" id="logo-lock-desc">This logo cannot be changed after upload. Make sure it is the correct image for your parish.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="logo-lock-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__body" style="padding: 0 1.25rem 1rem;text-align:center;">
+            <img class="logo-preview-modal__img" id="logo-lock-preview-img" src="" alt="Logo to upload" style="max-height:220px;" />
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="logo-lock-cancel">Go back</button>
+            <button type="button" class="primary" id="logo-lock-confirm">Upload &amp; lock logo</button>
           </footer>
         </article>
       </div>
@@ -9057,6 +9320,7 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="flow-page" data-route="/mass/builder">
+        <div class="app-membership-banner" id="flow-membership-banner" hidden aria-live="polite"></div>
         <div class="sr-only-host" id="flow-downloads-host" aria-hidden="true">
           <div class="download-row" id="download-row">
           <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
@@ -9524,35 +9788,64 @@ Lord, hear our prayer</textarea>
 
       <section class="page" id="settings-page">
         <div class="settings-layout song-plan-layout">
-          <aside class="flow-bento-cell settings-nav-card song-plan-summary" aria-labelledby="settings-nav-heading">
-            <header class="flow-bento-cell__head home-card-head">
-              <span class="home-card-head__icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-              </span>
-              <div class="home-card-head__text">
-                <h3 id="settings-nav-heading">Settings</h3>
-                <p>Parish profile and app appearance</p>
-              </div>
-            </header>
-            <nav class="settings-nav-list" id="settings-sidebar-nav" aria-label="Settings navigation">
-              <a class="settings-sidebar-link" href="/settings/church" data-route="/settings/church">Church Profile</a>
-              <a class="settings-sidebar-link" href="/settings/app" data-route="/settings/app">Appearance &amp; theme</a>
-            </nav>
+          <aside class="settings-nav-card song-plan-summary" aria-labelledby="settings-nav-heading">
+            <div class="flow-bento-cell settings-nav-card__inner">
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3 id="settings-nav-heading">Settings</h3>
+                  <p>Parish profile and app appearance</p>
+                </div>
+              </header>
+              <nav class="settings-nav-list" id="settings-sidebar-nav" aria-label="Settings navigation">
+                <a class="settings-sidebar-link" href="/settings/church" data-route="/settings/church">
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
+                  </span>
+                  Church Profile
+                </a>
+                <a class="settings-sidebar-link" href="/settings/app" data-route="/settings/app">
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+                  </span>
+                  Appearance &amp; theme
+                </a>
+              </nav>
+            </div>
           </aside>
           <div class="settings-main song-plan-main">
             <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church">
               <header class="flow-bento-cell__head home-card-head">
                 <span class="home-card-head__icon" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
                 </span>
                 <div class="home-card-head__text">
                   <h3>Church Profile</h3>
                   <p>Community name, celebrants, and logo used across Mass media.</p>
                 </div>
               </header>
+                <div id="settings-membership-banner" class="status" hidden aria-live="polite"></div>
                 <div class="field">
-                  <label for="settings-church-name">Community name</label>
-                  <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" />
+                  <label>Parish identity</label>
+                  <div class="church-identity-row">
+                    <button type="button" class="church-logo-avatar" id="church-logo-avatar" aria-label="Preview church logo" disabled>
+                      <img class="church-logo-avatar__img" id="church-logo-avatar-img" alt="" hidden />
+                      <span class="church-logo-avatar__placeholder" id="church-logo-avatar-placeholder" aria-hidden="true">+</span>
+                    </button>
+                    <div class="church-identity-row__name">
+                      <label for="settings-church-name" class="sr-only">Parish / community name</label>
+                      <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" autocomplete="organization" />
+                      <p class="muted" id="settings-church-name-hint" style="margin-top:6px;font-size:0.85rem;" hidden>Parish name is locked after submission and cannot be changed.</p>
+                      <p class="muted" id="settings-church-logo-hint" style="margin-top:4px;font-size:0.85rem;" hidden>Logo is locked after submission and cannot be changed.</p>
+                    </div>
+                  </div>
+                  <div class="church-logo-upload-row" id="church-logo-upload-row">
+                    <input type="file" id="church-logo" accept="image/png,image/jpeg,image/webp,image/gif" style="flex: 1;" />
+                    <button type="button" class="secondary" id="btn-upload-logo" style="white-space: nowrap;">Upload logo</button>
+                  </div>
+                  <p class="status" id="logo-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
                 </div>
                 <div class="field">
                   <label for="settings-celebrant-new">Mass celebrants</label>
@@ -9563,34 +9856,42 @@ Lord, hear our prayer</textarea>
                     <button type="button" class="secondary" id="btn-settings-celebrant-add">Add</button>
                   </div>
                 </div>
-                <div class="field">
-                  <label for="church-logo">Church logo</label>
-                  <div style="display: flex; gap: 8px; align-items: flex-start;">
-                    <input type="file" id="church-logo" accept="image/png,image/jpeg,image/webp,image/gif" style="flex: 1;" />
-                    <button type="button" class="secondary" id="btn-upload-logo" style="white-space: nowrap;">Upload</button>
-                  </div>
-                  <p class="status" id="logo-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
-                  <div id="logo-preview" style="margin-top: 8px; max-width: 200px;"></div>
-                </div>
                 <div class="actions">
-                  <button type="button" class="primary" id="btn-save-community-api">Save church profile</button>
+                  <button type="button" class="primary" id="btn-submit-parish-name" hidden>Submit parish profile</button>
+                  <button type="button" class="primary" id="btn-save-community-api" hidden>Save church profile</button>
                 </div>
                 <p class="status" id="settings-church-status" aria-live="polite"></p>
+
+                <section id="settings-admin-memberships" hidden aria-labelledby="settings-admin-heading">
+                  <hr class="settings-divider" />
+                  <h3 id="settings-admin-heading">Pending parish memberships</h3>
+                  <p class="muted">Approve or reject users who submitted a parish name. Only superadmins see this panel.</p>
+                  <ul class="celebrant-settings-list" id="settings-admin-pending-list" aria-live="polite"></ul>
+                  <p class="status" id="settings-admin-status" aria-live="polite"></p>
+                </section>
             </article>
             <article class="settings-panel flow-bento-cell" id="settings-panel-app" data-settings-panel="appearance" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <span class="home-card-head__icon" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
                 </span>
                 <div class="home-card-head__text">
                   <h3>Appearance &amp; theme</h3>
-                  <p>Choose light or dark interface, or match your device setting.</p>
+                  <p>Light, Supabase-style dark, true-black OLED, or match your device.</p>
                 </div>
               </header>
                 <div class="theme-preference-row" role="radiogroup" aria-label="Color theme">
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="light" /> Light</label>
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="dark" /> Dark</label>
+                  <label class="theme-pref-option"><input type="radio" name="theme-preference" value="oled" /> OLED</label>
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="system" checked /> System</label>
+                </div>
+
+                <h3 style="margin-top:18px;">Header toggle dark mode</h3>
+                <p class="muted">When you use the sun/moon button in the top bar, which dark theme should it switch to?</p>
+                <div class="theme-preference-row" role="radiogroup" aria-label="Header toggle dark mode">
+                  <label class="theme-pref-option"><input type="radio" name="toggle-dark-preference" value="dark" checked /> Dark</label>
+                  <label class="theme-pref-option"><input type="radio" name="toggle-dark-preference" value="oled" /> OLED</label>
                 </div>
 
                 <hr class="settings-divider" />
@@ -9766,7 +10067,13 @@ Lord, hear our prayer</textarea>
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        if (res.status === 401 && window.VerbumAuth && window.VerbumAuth.redirectToSignIn) {
+        if (
+          res.status === 401 &&
+          window.VerbumAuth &&
+          window.VerbumAuth.isReady &&
+          window.VerbumAuth.isReady() &&
+          window.VerbumAuth.redirectToSignIn
+        ) {
           window.VerbumAuth.redirectToSignIn();
         }
         const message = data.detail || data.error || res.statusText;
@@ -9793,6 +10100,7 @@ Lord, hear our prayer</textarea>
     }
 
     const THEME_STORAGE_KEY = "verbumColorTheme";
+    const TOGGLE_DARK_STORAGE_KEY = "verbumToggleDarkMode";
     const ACCENT_STORAGE_KEY = "verbumAccentColor";
     const HOME_NEWS_ENABLED_KEY = "verbumHomeNewsEnabled";
     const HOME_NEWS_VATICAN_KEY = "verbumHomeNewsVatican";
@@ -9855,11 +10163,32 @@ Lord, hear our prayer</textarea>
       return u;
     }
 
-    const HOME_NEWS_PLACEHOLDER_SRC = "/static/images/news-no-image-placeholder.png";
+    const HOME_NEWS_PLACEHOLDER_LIGHT = "/static/images/news-no-image-placeholder.png";
+    const HOME_NEWS_PLACEHOLDER_DARK = "/static/images/news-no-image-placeholder-dark.png";
+
+    function getHomeNewsPlaceholderSrc() {
+      return (document.documentElement.getAttribute("data-theme") || "light") === "dark"
+        ? HOME_NEWS_PLACEHOLDER_DARK
+        : HOME_NEWS_PLACEHOLDER_LIGHT;
+    }
+
+    function applyNewsPlaceholderImg(img) {
+      if (!img) return;
+      img.onerror = null;
+      img.src = getHomeNewsPlaceholderSrc();
+      img.classList.add("home-news-item__img--placeholder");
+    }
+    window.__applyNewsPlaceholderImg = applyNewsPlaceholderImg;
+
+    function refreshHomeNewsPlaceholders() {
+      document.querySelectorAll(".home-news-item__img--placeholder").forEach((img) => {
+        img.src = getHomeNewsPlaceholderSrc();
+      });
+    }
 
     function homeNewsPlaceholderHtml() {
       return (
-        '<img class="home-news-item__img home-news-item__img--placeholder" src="' + HOME_NEWS_PLACEHOLDER_SRC + '" alt="" loading="lazy" decoding="async" />'
+        '<img class="home-news-item__img home-news-item__img--placeholder" src="' + getHomeNewsPlaceholderSrc() + '" alt="" loading="lazy" decoding="async" />'
       );
     }
 
@@ -9872,7 +10201,7 @@ Lord, hear our prayer</textarea>
       return (
         '<div class="home-news-item__media">' +
         '<img class="home-news-item__img" src="' + escapeHtml(thumb) + '" alt="" loading="lazy" decoding="async" width="96" height="72" ' +
-        'onerror="this.onerror=null;this.src=\'' + HOME_NEWS_PLACEHOLDER_SRC + '\';this.classList.add(\'home-news-item__img--placeholder\');" />' +
+        'onerror="this.onerror=null;window.__applyNewsPlaceholderImg&&window.__applyNewsPlaceholderImg(this);" />' +
         "</div>"
       );
     }
@@ -10433,28 +10762,55 @@ Lord, hear our prayer</textarea>
       });
     }
 
+    function getToggleDarkPreference() {
+      try {
+        const v = localStorage.getItem(TOGGLE_DARK_STORAGE_KEY);
+        return v === "oled" ? "oled" : "dark";
+      } catch (_e) {
+        return "dark";
+      }
+    }
+
+    function setToggleDarkPreference(value) {
+      const pref = value === "oled" ? "oled" : "dark";
+      try { localStorage.setItem(TOGGLE_DARK_STORAGE_KEY, pref); } catch (_e) { /* ignore */ }
+      syncToggleDarkPreferenceUI(pref);
+      const resolved = document.documentElement.getAttribute("data-theme") || "light";
+      if (resolved !== "dark") syncColorThemeUI(null, resolved);
+    }
+
+    function syncToggleDarkPreferenceUI(pref) {
+      const mode = pref || getToggleDarkPreference();
+      document.querySelectorAll('input[name="toggle-dark-preference"]').forEach((inp) => {
+        inp.checked = inp.value === mode;
+      });
+    }
+
     function resolveColorTheme(preference) {
       let pref = preference;
       if (pref == null) {
         try { pref = localStorage.getItem(THEME_STORAGE_KEY) || "system"; } catch (_e) { pref = "system"; }
       }
-      if (pref === "dark") return "dark";
+      if (pref === "dark" || pref === "oled") return "dark";
       if (pref === "light") return "light";
       return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
 
     function syncColorThemeUI(preference, resolved) {
-      const pref = preference || "system";
+      const pref = preference || document.documentElement.getAttribute("data-theme-preference") || "system";
       const btn = $("theme-toggle-btn");
       if (btn) {
         const isDark = resolved === "dark";
+        const toggleDark = getToggleDarkPreference();
+        const darkLabel = toggleDark === "oled" ? "Switch to OLED mode" : "Switch to dark mode";
         btn.setAttribute("aria-pressed", isDark ? "true" : "false");
-        btn.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
-        btn.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+        btn.setAttribute("aria-label", isDark ? "Switch to light mode" : darkLabel);
+        btn.title = isDark ? "Switch to light mode" : darkLabel;
       }
       document.querySelectorAll('input[name="theme-preference"]').forEach((inp) => {
         inp.checked = inp.value === pref;
       });
+      syncToggleDarkPreferenceUI();
     }
 
     function applyColorTheme(preference) {
@@ -10466,7 +10822,13 @@ Lord, hear our prayer</textarea>
       const resolved = resolveColorTheme(pref);
       document.documentElement.setAttribute("data-theme", resolved);
       document.documentElement.setAttribute("data-theme-preference", pref);
+      if (pref === "oled") {
+        document.documentElement.setAttribute("data-dark-variant", "oled");
+      } else {
+        document.documentElement.removeAttribute("data-dark-variant");
+      }
       syncColorThemeUI(pref, resolved);
+      if (typeof refreshHomeNewsPlaceholders === "function") refreshHomeNewsPlaceholders();
       return resolved;
     }
 
@@ -10477,12 +10839,17 @@ Lord, hear our prayer</textarea>
       if (btn) {
         btn.addEventListener("click", () => {
           const resolved = document.documentElement.getAttribute("data-theme") || "light";
-          applyColorTheme(resolved === "dark" ? "light" : "dark");
+          applyColorTheme(resolved === "dark" ? "light" : getToggleDarkPreference());
         });
       }
       document.querySelectorAll('input[name="theme-preference"]').forEach((inp) => {
         inp.addEventListener("change", () => {
           if (inp.checked) applyColorTheme(inp.value);
+        });
+      });
+      document.querySelectorAll('input[name="toggle-dark-preference"]').forEach((inp) => {
+        inp.addEventListener("change", () => {
+          if (inp.checked) setToggleDarkPreference(inp.value);
         });
       });
       try {
@@ -10622,7 +10989,10 @@ Lord, hear our prayer</textarea>
         refreshHomeMission();
         refreshCatholicNews();
       }
-      if (r === "/settings/app") syncHomeNewsSettingsUI();
+      if (r === "/settings/app") {
+        syncHomeNewsSettingsUI();
+        refreshGeminiSettings();
+      }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/settings/church") {
         syncChurchFieldsToSettings();
@@ -10676,7 +11046,9 @@ Lord, hear our prayer</textarea>
       applyRouteState(r, replaceOnly);
     }
 
-    document.querySelectorAll(".app-header-nav .nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach((link) => {
+    function bindSpaRouteLink(link) {
+      if (!link || link.dataset.routeBound === "1") return;
+      link.dataset.routeBound = "1";
       link.addEventListener("click", (event) => {
         const route = link.dataset.route;
         if (!route) return;
@@ -10684,6 +11056,15 @@ Lord, hear our prayer</textarea>
         event.stopPropagation();
         showRoute(route);
       });
+    }
+
+    document.querySelectorAll(".app-header-nav .nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach(bindSpaRouteLink);
+
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest(".app-membership-banner a[data-route]");
+      if (!link) return;
+      event.preventDefault();
+      showRoute(link.dataset.route);
     });
     const routeSwitcherEl = $("route-switcher");
     if (routeSwitcherEl) routeSwitcherEl.addEventListener("change", (event) => showRoute(event.target.value));
@@ -13848,6 +14229,9 @@ Lord, hear our prayer</textarea>
     }
 
     async function saveCelebrantNamesToDatabase() {
+      if (!churchMembershipState.can_edit_church_profile) {
+        throw new Error("Submit your parish name and wait for superadmin approval first.");
+      }
       const data = await postJSON("/api/community/profile", { celebrant_names: celebrantNamesCache });
       applyCelebrantNamesFromServer(data.celebrant_names || celebrantNamesCache);
       return data;
@@ -13898,43 +14282,402 @@ Lord, hear our prayer</textarea>
       return Math.round((sun - t0) / 86400000);
     }
 
-    async function refreshCommunity() {
+    let churchMembershipState = {
+      membership_status: "draft",
+      community_name_locked: false,
+      logo_locked: false,
+      can_edit_parish_name: true,
+      can_edit_logo: true,
+      can_edit_church_profile: false,
+      is_superadmin: false,
+    };
+    let pendingLogoUploadFile = null;
+    let currentLogoPreviewUrl = "";
+
+    function updateChurchLogoAvatar(logoUrl) {
+      const btn = $("church-logo-avatar");
+      const img = $("church-logo-avatar-img");
+      const ph = $("church-logo-avatar-placeholder");
+      if (!btn) return;
+      if (logoUrl) {
+        currentLogoPreviewUrl = logoUrl;
+        const bust = logoUrl + (logoUrl.includes("?") ? "&" : "?") + "t=" + Date.now();
+        if (img) {
+          img.src = bust;
+          img.hidden = false;
+        }
+        if (ph) ph.hidden = true;
+        btn.disabled = false;
+        btn.setAttribute("aria-label", "Preview church logo");
+      } else {
+        currentLogoPreviewUrl = "";
+        if (img) {
+          img.hidden = true;
+          img.removeAttribute("src");
+        }
+        if (ph) ph.hidden = false;
+        btn.disabled = true;
+        btn.setAttribute("aria-label", "No church logo");
+      }
+    }
+
+    function openLogoPreviewModal() {
+      if (!currentLogoPreviewUrl) return;
+      const img = $("logo-preview-modal-img");
+      if (img) {
+        img.src = currentLogoPreviewUrl + (currentLogoPreviewUrl.includes("?") ? "&" : "?") + "t=" + Date.now();
+      }
+      setUiOverlayOpen($("logo-preview-modal"), true);
+    }
+
+    function closeLogoPreviewModal() {
+      setUiOverlayOpen($("logo-preview-modal"), false);
+    }
+
+    function closeLogoLockModal() {
+      setUiOverlayOpen($("logo-lock-modal"), false);
+      pendingLogoUploadFile = null;
+      if ($("church-logo")) $("church-logo").value = "";
+    }
+
+    function syncGlobalMembershipBanner(data) {
+      const state = data || churchMembershipState;
+      const status = state.membership_status || "draft";
+      const banners = [$("home-membership-banner"), $("flow-membership-banner")];
+      let html = "";
+      let cls = "app-membership-banner";
+      let show = false;
+
+      if (status === "pending") {
+        show = true;
+        cls += " is-pending";
+        html = "Your parish membership is pending approval. Mass generation unlocks after a superadmin approves your profile. <a href=\"/settings/church\" data-route=\"/settings/church\">Open Church Profile</a>";
+      } else if (status === "rejected") {
+        show = true;
+        cls += " is-error";
+        html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> or contact the administrator.";
+      } else if (status === "draft" && state.can_edit_parish_name) {
+        show = true;
+        html = "Submit your parish name and optional logo in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> before generating Mass media.";
+      }
+
+      banners.forEach((el) => {
+        if (!el) return;
+        if (!show) {
+          el.hidden = true;
+          el.innerHTML = "";
+          el.className = "app-membership-banner";
+          return;
+        }
+        el.hidden = false;
+        el.className = cls;
+        el.innerHTML = html;
+        el.querySelectorAll("a[data-route]").forEach(bindSpaRouteLink);
+      });
+    }
+
+    function syncMembershipUi(data) {
+      if (!data) return;
+      churchMembershipState = {
+        membership_status: data.membership_status || "draft",
+        community_name_locked: !!data.community_name_locked,
+        logo_locked: !!data.logo_locked,
+        can_edit_parish_name: data.can_edit_parish_name != null
+          ? !!data.can_edit_parish_name
+          : (!data.community_name_locked && (data.membership_status || "draft") === "draft"),
+        can_edit_logo: data.can_edit_logo != null ? !!data.can_edit_logo : !data.logo_locked,
+        can_edit_church_profile: !!data.can_edit_church_profile,
+        is_superadmin: !!data.is_superadmin,
+      };
+
+      const nameInput = $("settings-church-name");
+      const nameHint = $("settings-church-name-hint");
+      const logoHint = $("settings-church-logo-hint");
+      const banner = $("settings-membership-banner");
+      const submitBtn = $("btn-submit-parish-name");
+      const saveBtn = $("btn-save-community-api");
+      const celebrantNew = $("settings-celebrant-new");
+      const celebrantAdd = $("btn-settings-celebrant-add");
+      const logoInput = $("church-logo");
+      const logoUpload = $("btn-upload-logo");
+      const logoUploadRow = $("church-logo-upload-row");
+      const adminSection = $("settings-admin-memberships");
+
+      const locked = churchMembershipState.community_name_locked;
+      const logoLocked = churchMembershipState.logo_locked;
+      const status = churchMembershipState.membership_status;
+      const canName = churchMembershipState.can_edit_parish_name;
+      const canLogo = churchMembershipState.can_edit_logo;
+      const canProfile = churchMembershipState.can_edit_church_profile;
+
+      if (nameInput) {
+        nameInput.readOnly = locked || !canName;
+        nameInput.setAttribute("aria-readonly", locked || !canName ? "true" : "false");
+      }
+      if (nameHint) nameHint.hidden = !locked;
+      if (logoHint) logoHint.hidden = !logoLocked;
+      if (logoUploadRow) logoUploadRow.hidden = !canLogo;
+      [logoInput, logoUpload].forEach((el) => {
+        if (el) el.disabled = !canLogo;
+      });
+
+      if (submitBtn) submitBtn.hidden = !canName;
+      if (saveBtn) saveBtn.hidden = !canProfile;
+
+      [celebrantNew, celebrantAdd].forEach((el) => {
+        if (el) el.disabled = !canProfile;
+      });
+
+      if (banner) {
+        let msg = "";
+        let cls = "status";
+        if (status === "pending") {
+          msg = "Your parish membership is pending superadmin approval. Mass generation and celebrant saving unlock after approval.";
+          cls = "status";
+        } else if (status === "rejected") {
+          msg = "Your parish membership was not approved. Contact the site administrator if you believe this is an error.";
+          cls = "status error";
+        } else if (status === "draft" && canName) {
+          msg = "Enter your parish name and optional logo, then submit once. Name and logo cannot be changed later; a superadmin will confirm your membership.";
+          cls = "status";
+        } else if (status === "approved" && locked) {
+          msg = "Membership approved. Parish name and logo are locked; you can update celebrants below.";
+          cls = "status ok";
+        }
+        if (msg) {
+          banner.hidden = false;
+          banner.textContent = msg;
+          banner.className = cls;
+        } else {
+          banner.hidden = true;
+          banner.textContent = "";
+        }
+      }
+
+      syncGlobalMembershipBanner(data);
+
+      if (adminSection) {
+        adminSection.hidden = !churchMembershipState.is_superadmin;
+        if (churchMembershipState.is_superadmin) {
+          refreshAdminPendingMemberships();
+        }
+      }
+    }
+
+    function applyCommunityPayload(data) {
+      if (!data) return;
+      if (data.community_name != null && $("settings-church-name")) {
+        $("settings-church-name").value = data.community_name;
+      }
+      updateChurchLogoAvatar(data.logo_url || "");
+      syncMembershipUi(data);
+      applyCelebrantNamesFromServer(data.celebrant_names || []);
+      bindCelebrantSelect();
+    }
+
+    async function fetchCommunityFromServer() {
+      const auth = window.VerbumAuth;
+      const headers = auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
+      const res = await fetch("/api/community", { headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(
+          typeof data.detail === "string" ? data.detail : (res.statusText || "Could not load church profile.")
+        );
+        err.status = res.status;
+        throw err;
+      }
+      if (auth && auth.setCommunityPayload) auth.setCommunityPayload(data);
+      applyCommunityPayload(data);
+      updateAccountMenuDisplay();
+      if (!celebrantNamesCache.length) {
+        migrateCelebrantsFromBrowserStorage().then(() => {
+          applyCelebrantNamesFromServer(celebrantNamesCache);
+          bindCelebrantSelect();
+        });
+      }
+      return data;
+    }
+
+    function openParishSubmitModal() {
+      const name = ($("settings-church-name") && $("settings-church-name").value.trim()) || "";
+      if (!name) {
+        const statusEl = $("settings-church-status");
+        if (statusEl) {
+          statusEl.textContent = "Enter your parish name before submitting.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
+      const preview = $("parish-submit-name-preview");
+      if (preview) preview.textContent = name;
+      const modalImg = $("parish-submit-logo-img");
+      const modalPh = $("parish-submit-logo-placeholder");
+      const logoNote = $("parish-submit-logo-note");
+      const hasLogo = !!currentLogoPreviewUrl;
+      if (modalImg && modalPh) {
+        if (hasLogo) {
+          modalImg.src = currentLogoPreviewUrl + (currentLogoPreviewUrl.includes("?") ? "&" : "?") + "t=" + Date.now();
+          modalImg.hidden = false;
+          modalPh.hidden = true;
+        } else {
+          modalImg.hidden = true;
+          modalPh.hidden = false;
+          modalPh.textContent = "—";
+        }
+      }
+      if (logoNote) logoNote.hidden = hasLogo;
+      setUiOverlayOpen($("parish-submit-modal"), true);
+    }
+
+    function closeParishSubmitModal() {
+      setUiOverlayOpen($("parish-submit-modal"), false);
+    }
+
+    async function confirmParishSubmitFromModal() {
+      const name = ($("settings-church-name") && $("settings-church-name").value.trim()) || "";
+      if (!name) return;
+      const statusEl = $("settings-church-status");
+      const confirmBtn = $("parish-submit-confirm");
+      if (statusEl) {
+        statusEl.textContent = "Submitting parish name…";
+        statusEl.className = "status";
+      }
+      if (confirmBtn) confirmBtn.disabled = true;
+      try {
+        const saved = await postJSON("/api/community/submit-parish", { community_name: name });
+        closeParishSubmitModal();
+        if (statusEl) {
+          statusEl.textContent = "Parish name submitted. Waiting for superadmin approval.";
+          statusEl.className = "status ok";
+        }
+        applyCommunityPayload(saved);
+        updateAccountMenuDisplay();
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Submit failed";
+          statusEl.className = "status error";
+        }
+      } finally {
+        if (confirmBtn) confirmBtn.disabled = false;
+      }
+    }
+
+    async function refreshAdminPendingMemberships() {
+      const listEl = $("settings-admin-pending-list");
+      const statusEl = $("settings-admin-status");
+      if (!listEl || !churchMembershipState.is_superadmin) return;
+      if (statusEl) {
+        statusEl.textContent = "Loading pending memberships…";
+        statusEl.className = "status";
+      }
       try {
         const auth = window.VerbumAuth;
-        if (!auth) return;
-        if (auth.waitUntilReady) {
-          await auth.waitUntilReady();
-        }
-        if (auth.isReady && !auth.isReady()) return;
-        const cfg = auth.getConfig ? auth.getConfig() : null;
-        if (cfg && cfg.auth_enabled && auth && auth.getUser && !auth.getUser()) {
-          const statusEl = $("settings-church-status");
-          if (statusEl && normalizeRoute(window.location.pathname) === "/settings/church") {
-            statusEl.textContent = "Sign in to load and save your church profile.";
-            statusEl.className = "status error";
-          }
-          return;
-        }
-        let headers = auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
-        let res = await fetch("/api/community", { headers });
-        if (!res.ok && res.status === 401 && auth && auth.refreshSession) {
-          await auth.refreshSession();
-          headers = await auth.getAuthHeaders();
-          res = await fetch("/api/community", { headers });
-        }
+        const headers = auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
+        const res = await fetch("/api/admin/memberships/pending", { headers });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const msg = data.detail || res.statusText || "Could not load church profile.";
-          const statusEl = $("settings-church-status");
-          if (statusEl && res.status === 401) {
-            statusEl.textContent = "Sign in to load and save your church profile.";
-            statusEl.className = "status error";
-          } else if (statusEl) {
-            statusEl.textContent = typeof msg === "string" ? msg : "Could not load church profile.";
-            statusEl.className = "status error";
-          }
-          return;
+        if (!res.ok) throw new Error(data.detail || "Could not load pending memberships.");
+        const pending = Array.isArray(data.pending) ? data.pending : [];
+        if (!pending.length) {
+          listEl.innerHTML = "<li class=\"muted\">No pending memberships.</li>";
+        } else {
+          listEl.innerHTML = pending.map((row) => {
+            const parish = escapeHtml(row.community_name || "—");
+            const email = escapeHtml((row.profile && row.profile.email) || row.user_id || "—");
+            const uid = encodeURIComponent(row.user_id || "");
+            return (
+              "<li style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);\">" +
+                "<span><strong>" + parish + "</strong><br><span class=\"muted\">" + email + "</span></span>" +
+                "<span style=\"display:flex;gap:8px;\">" +
+                  "<button type=\"button\" class=\"secondary btn-admin-reject\" data-user-id=\"" + uid + "\">Reject</button>" +
+                  "<button type=\"button\" class=\"primary btn-admin-approve\" data-user-id=\"" + uid + "\">Approve</button>" +
+                "</span>" +
+              "</li>"
+            );
+          }).join("");
+          listEl.querySelectorAll(".btn-admin-approve").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              actOnMembership(btn.getAttribute("data-user-id"), "approve").catch((err) => {
+                if (statusEl) {
+                  statusEl.textContent = err.message || "Approve failed";
+                  statusEl.className = "status error";
+                }
+              });
+            });
+          });
+          listEl.querySelectorAll(".btn-admin-reject").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              actOnMembership(btn.getAttribute("data-user-id"), "reject").catch((err) => {
+                if (statusEl) {
+                  statusEl.textContent = err.message || "Reject failed";
+                  statusEl.className = "status error";
+                }
+              });
+            });
+          });
         }
+        if (statusEl) {
+          statusEl.textContent = "";
+          statusEl.className = "status";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Could not load pending memberships.";
+          statusEl.className = "status error";
+        }
+      }
+    }
+
+    async function actOnMembership(userId, action) {
+      if (!userId) return;
+      const statusEl = $("settings-admin-status");
+      const auth = window.VerbumAuth;
+      const headers = auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
+      const res = await fetch(
+        "/api/admin/memberships/" + encodeURIComponent(userId) + "/" + action,
+        { method: "POST", headers }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Action failed.");
+      if (statusEl) {
+        statusEl.textContent = action === "approve" ? "Membership approved." : "Membership rejected.";
+        statusEl.className = "status ok";
+      }
+      await refreshAdminPendingMemberships();
+    }
+
+    async function refreshCommunity() {
+      const auth = window.VerbumAuth;
+      if (!auth) return;
+      if (!auth.isReady || !auth.isReady()) {
+        if (auth.waitUntilReady) await auth.waitUntilReady();
+      }
+      if (auth.isReady && !auth.isReady()) return;
+
+      const cfg = auth.getConfig ? auth.getConfig() : null;
+      if (cfg && cfg.auth_enabled && auth.getUser && !auth.getUser()) {
+        const statusEl = $("settings-church-status");
+        if (statusEl && normalizeRoute(window.location.pathname) === "/settings/church") {
+          statusEl.textContent = "Sign in to load and save your church profile.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
+
+      const cached = auth.getCommunityPayload ? auth.getCommunityPayload() : null;
+      const cacheReady = cached && cached.membership_status !== undefined;
+      if (cached) {
+        applyCommunityPayload(cached);
+        updateAccountMenuDisplay();
+      }
+
+      if (cacheReady) {
+        fetchCommunityFromServer().catch(() => { /* keep cached UI */ });
+        return;
+      }
+
+      try {
+        await fetchCommunityFromServer();
         const statusEl = $("settings-church-status");
         if (
           statusEl &&
@@ -13944,26 +14687,18 @@ Lord, hear our prayer</textarea>
           statusEl.textContent = "";
           statusEl.className = "status";
         }
-        if (data.community_name && $("settings-church-name")) {
-          $("settings-church-name").value = data.community_name;
-        }
-        updateAccountMenuDisplay();
-        applyCelebrantNamesFromServer(data.celebrant_names || []);
-        if (!celebrantNamesCache.length) {
-          await migrateCelebrantsFromBrowserStorage();
-          applyCelebrantNamesFromServer(celebrantNamesCache);
-        }
-        bindCelebrantSelect();
-        if (data.logo_url) {
-          const preview = $("logo-preview");
-          if (preview) {
-            preview.innerHTML = "<img src=\"" + data.logo_url + "?t=" + Date.now() + "\" alt=\"Church logo\" style=\"max-width:100%;height:auto;border-radius:8px;\" />";
+      } catch (error) {
+        if (cached) return;
+        const statusEl = $("settings-church-status");
+        if (statusEl) {
+          if (error.status === 401) {
+            statusEl.textContent = "Sign in to load and save your church profile.";
+          } else {
+            statusEl.textContent = error.message || "Could not load church profile.";
           }
+          statusEl.className = "status error";
         }
-      } catch (_error) {
-        // optional
       }
-      refreshGeminiSettings();
     }
 
     async function refreshGeminiSettings() {
@@ -13984,10 +14719,42 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    function queueLogoUpload(file) {
+      const statusEl = $("logo-status");
+      if (!file) {
+        if (statusEl) {
+          statusEl.textContent = "Please select a file.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
+      if (!churchMembershipState.can_edit_logo) {
+        if (statusEl) {
+          statusEl.textContent = "Parish logo is locked and cannot be changed.";
+          statusEl.className = "status error";
+        }
+        if ($("church-logo")) $("church-logo").value = "";
+        return;
+      }
+      if (churchMembershipState.community_name_locked && !churchMembershipState.logo_locked) {
+        pendingLogoUploadFile = file;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = $("logo-lock-preview-img");
+          if (img) img.src = reader.result;
+          setUiOverlayOpen($("logo-lock-modal"), true);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      uploadLogo(file);
+    }
+
     async function uploadLogo(file) {
       const statusEl = $("logo-status");
       const uploadBtn = $("btn-upload-logo");
-      if (!file) {
+      const chosen = file || pendingLogoUploadFile;
+      if (!chosen) {
         if (statusEl) {
           statusEl.textContent = "Please select a file.";
           statusEl.className = "status error";
@@ -14001,13 +14768,21 @@ Lord, hear our prayer</textarea>
       if (uploadBtn) uploadBtn.disabled = true;
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", chosen);
         const logoHeaders = window.VerbumAuth && window.VerbumAuth.getAuthHeaders
           ? await window.VerbumAuth.getAuthHeaders()
           : {};
         const res = await fetch("/api/upload-logo", { method: "POST", headers: logoHeaders, body: formData });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Upload failed");
+        closeLogoLockModal();
+        if (data.logo_url) {
+          updateChurchLogoAvatar(data.logo_url);
+          if (window.VerbumAuth && window.VerbumAuth.setCommunityPayload) {
+            window.VerbumAuth.setCommunityPayload(data);
+          }
+          syncMembershipUi(data);
+        }
         if (statusEl) {
           statusEl.textContent = data.message || "Logo uploaded successfully!";
           statusEl.className = "status ok";
@@ -14021,6 +14796,7 @@ Lord, hear our prayer</textarea>
         }
       } finally {
         if (uploadBtn) uploadBtn.disabled = false;
+        pendingLogoUploadFile = null;
       }
     }
 
@@ -15268,7 +16044,9 @@ Lord, hear our prayer</textarea>
       if (select.classList.contains("lyric-block__pill-select")) wrap.classList.add("vb-select--pill");
       if (select.classList.contains("flow-slide-pick-select")) wrap.classList.add("vb-select--slide-pick");
       if (select.classList.contains("mass-song-plan-lang-select")) wrap.classList.add("vb-select--sm");
-      if (select.classList.contains("route-switcher")) wrap.classList.add("vb-select--sm");
+      if (select.classList.contains("route-switcher")) {
+        wrap.classList.add("vb-select--sm", "vb-select--drop-up");
+      }
       if (select.id === "flow-collection-currency") wrap.classList.add("vb-select--sm");
 
       const triggerId = (select.id || "vb-select-" + Math.random().toString(36).slice(2, 9)) + "-trigger";
@@ -16500,9 +17278,35 @@ Lord, hear our prayer</textarea>
           setLyricsStatus(err.message || "Delete failed.", "error");
         });
       });
+      const parishModal = $("parish-submit-modal");
+      const logoPreviewModal = $("logo-preview-modal");
+      const logoLockModal = $("logo-lock-modal");
+      [
+        ["parish-submit-backdrop", closeParishSubmitModal],
+        ["parish-submit-close", closeParishSubmitModal],
+        ["parish-submit-cancel", closeParishSubmitModal],
+        ["logo-preview-backdrop", closeLogoPreviewModal],
+        ["logo-preview-close", closeLogoPreviewModal],
+        ["logo-lock-backdrop", closeLogoLockModal],
+        ["logo-lock-close", closeLogoLockModal],
+        ["logo-lock-cancel", closeLogoLockModal],
+      ].forEach(([id, fn]) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", fn);
+      });
+      $("parish-submit-confirm") && $("parish-submit-confirm").addEventListener("click", () => {
+        confirmParishSubmitFromModal();
+      });
+      $("logo-lock-confirm") && $("logo-lock-confirm").addEventListener("click", () => {
+        uploadLogo(pendingLogoUploadFile);
+      });
+
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
         if (metaModal && metaModal.classList.contains("is-open")) closeSongMetadataModal();
+        else if (logoLockModal && logoLockModal.classList.contains("is-open")) closeLogoLockModal();
+        else if (logoPreviewModal && logoPreviewModal.classList.contains("is-open")) closeLogoPreviewModal();
+        else if (parishModal && parishModal.classList.contains("is-open")) closeParishSubmitModal();
         else if (delModal && delModal.classList.contains("is-open")) closeSongDeleteModal();
       });
     }
@@ -16635,14 +17439,18 @@ Lord, hear our prayer</textarea>
       $("btn-generate-flow").disabled = false;
     });
 
+    $("church-logo-avatar") && $("church-logo-avatar").addEventListener("click", () => {
+      if (currentLogoPreviewUrl) openLogoPreviewModal();
+    });
+
     $("btn-upload-logo").addEventListener("click", () => {
       const file = $("church-logo").files[0];
-      uploadLogo(file);
+      queueLogoUpload(file);
     });
 
     $("church-logo").addEventListener("change", async (event) => {
       const file = event.target.files[0];
-      if (file) await uploadLogo(file);
+      if (file) queueLogoUpload(file);
     });
 
     $("settings-church-name").addEventListener("input", () => {
@@ -16650,20 +17458,20 @@ Lord, hear our prayer</textarea>
       updateAccountMenuDisplay();
     });
 
+    $("btn-submit-parish-name") && $("btn-submit-parish-name").addEventListener("click", openParishSubmitModal);
+
     $("btn-save-community-api").addEventListener("click", async () => {
-      const name = $("settings-church-name").value.trim();
-      if (!name) {
-        $("settings-church-status").textContent = "Community name is required (at least one character).";
+      if (!churchMembershipState.can_edit_church_profile) {
+        $("settings-church-status").textContent = "Submit your parish name and wait for superadmin approval first.";
         $("settings-church-status").className = "status error";
         return;
       }
       $("settings-church-status").textContent = "Saving…";
       try {
         const saved = await postJSON("/api/community/profile", {
-          community_name: name,
           celebrant_names: celebrantNamesCache,
         });
-        applyCelebrantNamesFromServer(saved.celebrant_names || celebrantNamesCache);
+        applyCommunityPayload(saved);
         $("settings-church-status").textContent = "Saved church profile to database.";
         $("settings-church-status").className = "status ok";
         updateAccountMenuDisplay();

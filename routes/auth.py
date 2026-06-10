@@ -10,7 +10,9 @@ from fastapi.templating import Jinja2Templates
 
 from services.api_security import AuthSession, optional_session
 from services.auth_config import auth_enabled, public_auth_config, supabase_enabled
-from services.supabase_client import get_church_profile, get_profile
+from services.membership_config import membership_payload
+from services.supabase_client import get_profile
+from services.user_church_context import get_church_profile_context
 
 
 def register_auth_routes(app, templates: Jinja2Templates) -> None:
@@ -41,9 +43,9 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
         if supabase_enabled():
             try:
                 payload["profile"] = get_profile(user.user_id, access_token=session.token)
-                payload["church_profile"] = get_church_profile(
-                    user.user_id, access_token=session.token
-                )
+                church = get_church_profile_context()
+                payload["church_profile"] = church
+                payload["membership"] = membership_payload(church, user=user)
             except Exception as exc:
                 payload["supabase_error"] = str(exc)
 

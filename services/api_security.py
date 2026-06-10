@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Annotated, Optional
+from typing import Optional
 
-from fastapi import Depends, Header, HTTPException, Request, Response
+from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from services.auth_config import auth_enabled
-from services.supabase_auth import AuthUser, require_auth_user, verify_supabase_token
+from services.supabase_auth import AuthUser, verify_supabase_token
 from services.user_church_context import clear_church_profile, set_church_profile
 
 
@@ -30,37 +30,58 @@ def _extract_bearer(authorization: Optional[str]) -> Optional[str]:
     return token or None
 
 
-async def optional_session(
-    authorization: Annotated[Optional[str], Header()] = None,
-) -> Optional[AuthSession]:
+async def optional_session(request: Request) -> Optional[AuthSession]:
     if not auth_enabled():
         return None
-    token = _extract_bearer(authorization)
-    if not token:
-        return None
-    user = verify_supabase_token(token)
-    return AuthSession(user=user, token=token)
+    return getattr(request.state, "auth_session", None)
 
 
-async def require_session(
-    authorization: Annotated[Optional[str], Header()] = None,
-) -> Optional[AuthSession]:
+async def require_session(request: Request) -> Optional[AuthSession]:
     """Require Supabase session when auth is enabled; otherwise return None."""
     if not auth_enabled():
         return None
-    user = await require_auth_user(authorization)
-    token = _extract_bearer(authorization) or ""
-    return AuthSession(user=user, token=token)
+    session = await optional_session(request)
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    return session
 
 
-async def require_session_when_auth(
-    authorization: Annotated[Optional[str], Header()] = None,
-) -> Optional[AuthSession]:
+async def require_session_when_auth(request: Request) -> Optional[AuthSession]:
     """Require a session when auth is enabled; otherwise allow anonymous use."""
-    session = await optional_session(authorization)
+    session = await optional_session(request)
     if auth_enabled() and not session:
         raise HTTPException(status_code=401, detail="Sign in required.")
     return session
+
+
+async def require_approved_membership(request: Request) -> Optional[AuthSession]:
+    """Require an approved parish membership when auth is enabled."""
+    from services.membership_config import membership_allows_full_access
+    from services.user_church_context import get_church_profile_context
+
+    session = await require_session_when_auth(request)
+    if not auth_enabled() or not session:
+        return session
+
+    church = get_church_profile_context()
+    if membership_allows_full_access(church, user=session.user):
+        return session
+
+    status = (church or {}).get("membership_status") or "draft"
+    if status == "pending":
+        raise HTTPException(
+            status_code=403,
+            detail="Your parish membership is pending superadmin approval.",
+        )
+    if status == "rejected":
+        raise HTTPException(
+            status_code=403,
+            detail="Your parish membership was not approved. Contact support.",
+        )
+    raise HTTPException(
+        status_code=403,
+        detail="Submit your parish name in Church Profile and wait for approval.",
+    )
 
 
 # Mutating API routes that must not be anonymous when auth is configured.
@@ -68,6 +89,7 @@ PROTECTED_API_PREFIXES: tuple[str, ...] = (
     "/api/generate",
     "/api/regenerate-pptx",
     "/api/community",
+    "/api/admin/",
     "/api/settings/",
     "/api/upload",
     "/api/saved-posters",
@@ -93,17 +115,20 @@ def _is_protected_api(path: str, method: str) -> bool:
 
 
 class UserChurchMiddleware(BaseHTTPMiddleware):
-    """Load the signed-in user's church profile for this request."""
+    """Verify JWT once, load church profile, and attach session to the request."""
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         clear_church_profile()
+        request.state.auth_session = None
         if auth_enabled():
             token = _extract_bearer(request.headers.get("authorization"))
             if token:
                 try:
                     user = verify_supabase_token(token)
+                    session = AuthSession(user=user, token=token)
+                    request.state.auth_session = session
                     from services.supabase_client import get_church_profile
 
                     profile = get_church_profile(user.user_id, access_token=token)
@@ -114,6 +139,7 @@ class UserChurchMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         finally:
             clear_church_profile()
+            request.state.auth_session = None
 
 
 class AuthGuardMiddleware(BaseHTTPMiddleware):
@@ -121,20 +147,16 @@ class AuthGuardMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         if auth_enabled() and _is_protected_api(request.url.path, request.method):
-            token = _extract_bearer(request.headers.get("authorization"))
-            if not token:
-                return Response(
-                    content='{"detail":"Sign in required."}',
-                    status_code=401,
-                    media_type="application/json",
+            if not getattr(request.state, "auth_session", None):
+                token = _extract_bearer(request.headers.get("authorization"))
+                detail = (
+                    "Invalid or expired session."
+                    if token
+                    else "Sign in required."
                 )
-            try:
-                verify_supabase_token(token)
-            except HTTPException as exc:
-                detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
                 return Response(
                     content=json.dumps({"detail": detail}),
-                    status_code=exc.status_code,
+                    status_code=401,
                     media_type="application/json",
                 )
         return await call_next(request)
@@ -197,10 +219,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 def register_security_middleware(app) -> None:
     from services.rate_limit import RateLimitMiddleware
 
-    # Middleware runs in reverse registration order for the request path, so the
-    # rate limiter (added last) executes first — rejecting floods before any
-    # auth, DB, or business logic runs.
+    # Middleware runs in reverse registration order on the request path.
+    # RateLimit (outermost) → UserChurch (verify JWT + load profile) → AuthGuard
+    # → SecurityHeaders → route handlers.
     app.add_middleware(SecurityHeadersMiddleware)
-    app.add_middleware(UserChurchMiddleware)
     app.add_middleware(AuthGuardMiddleware)
+    app.add_middleware(UserChurchMiddleware)
     app.add_middleware(RateLimitMiddleware)

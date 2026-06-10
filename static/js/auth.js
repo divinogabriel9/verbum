@@ -7,8 +7,79 @@
     session: null,
     user: null,
     profile: null,
+    churchProfile: null,
+    communityPayload: null,
+    cachedToken: null,
     ready: false,
+    hydrated: false,
+    initialSessionPromise: null,
   };
+
+  function applySession(session) {
+    state.session = session || null;
+    state.user = session && session.user ? session.user : null;
+    state.cachedToken =
+      session && session.access_token ? session.access_token : null;
+    if (!state.user) {
+      state.profile = null;
+      state.churchProfile = null;
+      state.communityPayload = null;
+    }
+  }
+
+  function churchRowToCommunityPayload(row, membership) {
+    if (!row) return null;
+    const logoPath = (row.logo_path || "").trim();
+    const status = (row.membership_status || "draft").toLowerCase();
+    const locked = !!row.community_name_locked_at;
+    const m = membership || {};
+    return {
+      ok: true,
+      community_name: row.community_name || "",
+      celebrant_names: Array.isArray(row.celebrant_names) ? row.celebrant_names : [],
+      logo_url: logoPath ? "/uploads/community_logo.png" : null,
+      membership_status: m.membership_status || status,
+      community_name_locked: m.community_name_locked != null ? m.community_name_locked : locked,
+      logo_locked: m.logo_locked != null ? m.logo_locked : !!row.logo_locked_at,
+      can_edit_parish_name: m.can_edit_parish_name != null ? m.can_edit_parish_name : !locked,
+      can_edit_logo: m.can_edit_logo != null ? m.can_edit_logo : !row.logo_locked_at,
+      can_edit_church_profile: m.can_edit_church_profile != null ? m.can_edit_church_profile : status === "approved",
+      is_superadmin: !!m.is_superadmin,
+    };
+  }
+
+  function setChurchProfile(row, membership) {
+    state.churchProfile = row || null;
+    state.communityPayload = churchRowToCommunityPayload(row, membership);
+  }
+
+  /** Wait for Supabase to restore session from localStorage before auth decisions. */
+  function waitForInitialSession(supabase, timeoutMs) {
+    if (state.hydrated) {
+      return Promise.resolve(state.session);
+    }
+    if (!state.initialSessionPromise) {
+      state.initialSessionPromise = new Promise((resolve) => {
+        let settled = false;
+        const finish = (session) => {
+          if (settled) return;
+          settled = true;
+          state.hydrated = true;
+          applySession(session);
+          resolve(session || null);
+        };
+        const timer = setTimeout(() => finish(state.session), timeoutMs || 5000);
+        supabase.auth.onAuthStateChange((event, session) => {
+          applySession(session);
+          if (event === "INITIAL_SESSION") {
+            clearTimeout(timer);
+            finish(session);
+          }
+        });
+      });
+    }
+    return state.initialSessionPromise;
+  }
 
   async function loadConfig() {
     const res = await fetch("/api/auth/config");
@@ -61,22 +132,23 @@
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        storage: window.localStorage,
       },
     });
 
-    const { data } = await state.supabase.auth.getSession();
-    state.session = data.session || null;
-    state.user = state.session && state.session.user ? state.session.user : null;
+    await waitForInitialSession(state.supabase);
 
-    state.supabase.auth.onAuthStateChange((_event, session) => {
-      state.session = session;
-      state.user = session && session.user ? session.user : null;
-      if (!state.user) state.profile = null;
-      updateAccountMenuDisplay();
-      if (state.user) {
-        refreshUserProfile().then(updateAccountMenuDisplay);
-      }
-    });
+    if (!state.supabase._verbumAuthListener) {
+      state.supabase._verbumAuthListener = true;
+      state.supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "INITIAL_SESSION") return;
+        applySession(session);
+        updateAccountMenuDisplay();
+        if (state.user) {
+          refreshUserProfile().then(updateAccountMenuDisplay);
+        }
+      });
+    }
 
     return state.supabase;
   }
@@ -84,10 +156,15 @@
   async function getSessionToken() {
     await ensureSupabase();
     if (!state.supabase) return null;
+    if (!state.hydrated) {
+      await waitForInitialSession(state.supabase);
+    }
+    if (state.cachedToken) {
+      return state.cachedToken;
+    }
     const { data } = await state.supabase.auth.getSession();
-    state.session = data.session || null;
-    state.user = state.session && state.session.user ? state.session.user : null;
-    return state.session && state.session.access_token ? state.session.access_token : null;
+    applySession(data.session || null);
+    return state.cachedToken;
   }
 
   async function refreshSession() {
@@ -194,6 +271,9 @@
           last_name: data.last_name || null,
           email: data.email || user.email || null,
         };
+        if (data.church_profile) {
+          setChurchProfile(data.church_profile, data.membership);
+        }
       }
     } catch (_err) {
       // optional enrichment
@@ -208,6 +288,7 @@
     const signOutBtn = document.getElementById("account-sign-out-btn");
     const signInLink = document.getElementById("account-sign-in-link");
     const signUpLink = document.getElementById("account-sign-up-link");
+    const menuDivider = document.getElementById("account-menu-divider");
     const menuWrap = document.querySelector(".account-menu-wrap");
     const user =
       state.user || (state.session && state.session.user ? state.session.user : null);
@@ -217,6 +298,7 @@
         if (signInLink) signInLink.hidden = true;
         if (signUpLink) signUpLink.hidden = true;
         if (signOutBtn) signOutBtn.hidden = true;
+        if (menuDivider) menuDivider.hidden = true;
         if (headerEl) headerEl.hidden = true;
         if (menuWrap) menuWrap.classList.remove("is-authenticated");
         return;
@@ -228,6 +310,7 @@
       if (signOutBtn) signOutBtn.hidden = true;
       if (signInLink) signInLink.hidden = false;
       if (signUpLink) signUpLink.hidden = false;
+      if (menuDivider) menuDivider.hidden = false;
       if (menuWrap) menuWrap.classList.remove("is-authenticated");
       return;
     }
@@ -235,6 +318,7 @@
     if (signInLink) signInLink.hidden = true;
     if (signUpLink) signUpLink.hidden = true;
     if (signOutBtn) signOutBtn.hidden = false;
+    if (menuDivider) menuDivider.hidden = false;
     if (menuWrap) menuWrap.classList.add("is-authenticated");
 
     const firstName = getUserFirstName(user);
@@ -258,6 +342,9 @@
     state.session = null;
     state.user = null;
     state.profile = null;
+    state.churchProfile = null;
+    state.communityPayload = null;
+    state.cachedToken = null;
     updateAccountMenuDisplay();
     const cfg = state.config;
     window.location.href = ((cfg && cfg.sign_in_url) || "/sign-in") + "?switch=1";
@@ -307,6 +394,10 @@
         });
       }
 
+      if (!state.hydrated && state.supabase) {
+        await waitForInitialSession(state.supabase);
+      }
+
       if (!state.user && !publicPaths.includes(path)) {
         redirectToSignIn();
         return;
@@ -329,6 +420,29 @@
     getSupabase: () => state.supabase,
     getUser: () =>
       state.user || (state.session && state.session.user ? state.session.user : null),
+    getChurchProfile: () => state.churchProfile,
+    getCommunityPayload: () => state.communityPayload,
+    setCommunityPayload: (data) => {
+      if (!data) return;
+      state.communityPayload = {
+        ...(state.communityPayload || {}),
+        ...data,
+      };
+      if (state.churchProfile) {
+        state.churchProfile = {
+          ...state.churchProfile,
+          community_name: data.community_name != null ? data.community_name : state.churchProfile.community_name,
+          celebrant_names: data.celebrant_names || state.churchProfile.celebrant_names || [],
+          membership_status: data.membership_status || state.churchProfile.membership_status,
+          community_name_locked_at: data.community_name_locked
+            ? state.churchProfile.community_name_locked_at || new Date().toISOString()
+            : state.churchProfile.community_name_locked_at,
+          logo_locked_at: data.logo_locked
+            ? state.churchProfile.logo_locked_at || new Date().toISOString()
+            : state.churchProfile.logo_locked_at,
+        };
+      }
+    },
     getSessionToken,
     refreshSession,
     getAuthHeaders,

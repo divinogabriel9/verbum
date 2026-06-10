@@ -1,0 +1,87 @@
+"""Parish membership and superadmin configuration."""
+
+from __future__ import annotations
+
+import os
+from functools import lru_cache
+from typing import Any, Optional
+
+from services.supabase_auth import AuthUser
+
+
+def _clean(value: str | None) -> str:
+    return (value or "").strip()
+
+
+@lru_cache(maxsize=1)
+def superadmin_emails() -> frozenset[str]:
+    raw = _clean(os.environ.get("SUPERADMIN_EMAILS"))
+    if not raw:
+        return frozenset()
+    return frozenset(e.lower() for e in raw.split(",") if e.strip())
+
+
+def is_superadmin_user(user: Optional[AuthUser]) -> bool:
+    if not user or not user.email:
+        return False
+    return user.email.strip().lower() in superadmin_emails()
+
+
+def membership_allows_full_access(
+    church_row: Optional[dict[str, Any]],
+    *,
+    user: Optional[AuthUser] = None,
+    profile_role: Optional[str] = None,
+) -> bool:
+    if is_superadmin_user(user) or (profile_role or "").strip() == "superadmin":
+        return True
+    if not church_row:
+        return False
+    status = (church_row.get("membership_status") or "draft").strip().lower()
+    return status == "approved"
+
+
+def parish_name_is_locked(church_row: Optional[dict[str, Any]]) -> bool:
+    if not church_row:
+        return False
+    return bool(church_row.get("community_name_locked_at"))
+
+
+def logo_is_locked(church_row: Optional[dict[str, Any]]) -> bool:
+    if not church_row:
+        return False
+    return bool(church_row.get("logo_locked_at"))
+
+
+def can_edit_logo(church_row: Optional[dict[str, Any]]) -> bool:
+    if not church_row or logo_is_locked(church_row):
+        return False
+    if not parish_name_is_locked(church_row):
+        return True
+    status = (church_row.get("membership_status") or "draft").strip().lower()
+    has_logo = bool((church_row.get("logo_path") or "").strip())
+    return status == "approved" and not has_logo
+
+
+def membership_payload(
+    church_row: Optional[dict[str, Any]],
+    *,
+    user: Optional[AuthUser] = None,
+    profile_role: Optional[str] = None,
+) -> dict[str, Any]:
+    row = church_row or {}
+    status = (row.get("membership_status") or "draft").strip().lower()
+    locked = parish_name_is_locked(row)
+    logo_locked = logo_is_locked(row)
+    superadmin = is_superadmin_user(user) or (profile_role or "").strip() == "superadmin"
+    return {
+        "membership_status": status,
+        "community_name_locked": locked,
+        "logo_locked": logo_locked,
+        "can_edit_parish_name": not locked and status in {"draft", ""},
+        "can_edit_logo": can_edit_logo(row),
+        "can_edit_church_profile": membership_allows_full_access(
+            row, user=user, profile_role=profile_role
+        ),
+        "is_superadmin": superadmin,
+    }

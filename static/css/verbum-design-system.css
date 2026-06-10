@@ -143,32 +143,57 @@
   --app-blur: 12px;
 }
 
+/* Supabase-inspired dark palette */
 html[data-theme="dark"] {
-  --bg: #1a1916;
-  --bg-top: #22211d;
-  --surface: #26251e;
-  --surface-2: #2e2c26;
-  --surface-solid: #26251e;
-  --card-border: #3d3a34;
-  --line: #3d3a34;
-  --line-soft: #333029;
-  --ink: #f7f7f4;
-  --muted: #a09c92;
-  --ink-subtle: #807d72;
-  --design-hairline: #3d3a34;
-  --design-hairline-soft: #333029;
-  --design-hairline-strong: #4a4740;
-  --design-surface-card: #26251e;
-  --design-canvas: #1a1916;
-  --design-canvas-soft: #22211d;
-  --design-ink: #f7f7f4;
-  --design-muted: #a09c92;
+  --bg: #121212;
+  --bg-top: #1c1c1c;
+  --surface: #1c1c1c;
+  --surface-2: #242424;
+  --surface-solid: #2e2e2e;
+  --card-border: #2e2e2e;
+  --line: #393939;
+  --line-soft: #2e2e2e;
+  --ink: #fafafa;
+  --muted: #b4b4b4;
+  --ink-subtle: #898989;
+  --design-hairline: #2e2e2e;
+  --design-hairline-soft: #242424;
+  --design-hairline-strong: #393939;
+  --design-surface-card: #1c1c1c;
+  --design-canvas: #121212;
+  --design-canvas-soft: #1c1c1c;
+  --design-ink: #fafafa;
+  --design-muted: #b4b4b4;
+  --design-muted-soft: #898989;
   --shadow-light: none;
   --shadow-medium: none;
   --shadow-large: none;
-  --color-primary: #3d8b66;
-  --color-primary-active: #4da378;
-  --app-scrim: rgba(14, 22, 26, 0.62);
+  --good: #3ecf8e;
+  --color-primary: #3ecf8e;
+  --color-primary-active: #2ab77a;
+  --on-primary: #1c1c1c;
+  --app-scrim: rgba(0, 0, 0, 0.72);
+  --vb-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.48);
+  --apple-card-shadow-rest: none;
+  --apple-card-shadow-hover: 0 0 0 1px color-mix(in srgb, var(--ink) 8%, var(--card-border));
+}
+
+html[data-theme="dark"][data-dark-variant="oled"] {
+  --bg: #000000;
+  --bg-top: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #111111;
+  --surface-solid: #161616;
+  --card-border: #1a1a1a;
+  --line: #222222;
+  --line-soft: #1a1a1a;
+  --design-hairline: #1a1a1a;
+  --design-hairline-soft: #111111;
+  --design-hairline-strong: #222222;
+  --design-surface-card: #0a0a0a;
+  --design-canvas: #000000;
+  --design-canvas-soft: #000000;
+  --app-scrim: rgba(0, 0, 0, 0.88);
 }
 
 html {
@@ -366,7 +391,7 @@ textarea {
   border-radius: 0;
   border: none;
   border-bottom: 1px solid var(--line);
-  background: var(--surface-solid);
+  background: var(--bg-top);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
@@ -838,7 +863,10 @@ input[type="color"] {
 }
 
 /* —— Tables & lists —— */
-.celebrant-settings-list__item,
+.celebrant-settings-list__item {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
 .flow-input-list-item,
 .notification-item {
   padding: var(--space-3) var(--space-4);
@@ -1443,6 +1471,12 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   background: color-mix(in srgb, var(--ink) 4%, var(--surface-solid));
 }
 
+html[data-theme="dark"] .vb-dropdown-item:hover,
+html[data-theme="dark"] .global-search-item:hover,
+html[data-theme="dark"] .app-menu-item:hover {
+  background: color-mix(in srgb, var(--ink) 6%, var(--surface-2));
+}
+
 .vb-dropdown-item.is-active,
 .vb-dropdown-item[aria-selected="true"],
 .global-search-item.is-active,
@@ -1498,6 +1532,17 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
 }
 
 .account-menu-header[hidden] {
+  display: none;
+}
+
+.account-menu-divider {
+  height: 1px;
+  margin: 4px 10px;
+  border: none;
+  background: var(--line);
+}
+
+.account-menu-divider[hidden] {
   display: none;
 }
 
@@ -1676,6 +1721,21 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   left: 0;
   right: 0;
   min-width: 100%;
+}
+
+.vb-select--drop-up .vb-select__panel {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.vb-select--drop-up .vb-dropdown-panel {
+  transform-origin: bottom center;
+  transform: scale(0.98) translateY(4px);
+}
+
+.vb-select--drop-up .vb-dropdown-panel.is-open,
+.vb-select--drop-up .vb-dropdown-panel:not([hidden]) {
+  transform: scale(1) translateY(0);
 }
 
 .vb-select--sm .vb-select__trigger {
@@ -1939,8 +1999,19 @@ html[data-theme="dark"] .metric,
 html[data-theme="dark"] .theme-card-wrap,
 html[data-theme="dark"] .mass-song-plan-card,
 html[data-theme="dark"] .cal-reading-card {
-  --apple-card-shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --apple-card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.28), 0 16px 40px rgba(0, 0, 0, 0.32);
+  --apple-card-shadow-rest: none;
+  --apple-card-shadow-hover: 0 0 0 1px color-mix(in srgb, var(--ink) 10%, var(--card-border));
+}
+
+html[data-theme="dark"][data-dark-variant="oled"] .flow-bento-cell,
+html[data-theme="dark"][data-dark-variant="oled"] .panel:not(.flow-builder-shell),
+html[data-theme="dark"][data-dark-variant="oled"] .tool-card,
+html[data-theme="dark"][data-dark-variant="oled"] .admin-card,
+html[data-theme="dark"][data-dark-variant="oled"] .metric,
+html[data-theme="dark"][data-dark-variant="oled"] .theme-card-wrap,
+html[data-theme="dark"][data-dark-variant="oled"] .mass-song-plan-card,
+html[data-theme="dark"][data-dark-variant="oled"] .cal-reading-card {
+  --apple-card-shadow-hover: 0 0 0 1px var(--line);
 }
 
 @media (prefers-reduced-motion: reduce) {
