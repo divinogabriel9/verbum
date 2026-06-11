@@ -150,6 +150,30 @@ def list_celebrant_names() -> list[str]:
     return [str(r["name"]) for r in rows]
 
 
+def append_celebrant_name(name: str) -> list[str]:
+    """Add one celebrant if not already present; returns full list."""
+    clean = str(name or "").strip()[: L.CELEBRANT_NAME]
+    if not clean:
+        return list_celebrant_names()
+    existing = list_celebrant_names()
+    if any(x.lower() == clean.lower() for x in existing):
+        return existing
+    now = datetime.now(timezone.utc).isoformat()
+    with _with_db() as conn:
+        max_order = conn.execute(
+            "SELECT COALESCE(MAX(sort_order), -1) FROM mass_celebrants"
+        ).fetchone()[0]
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO mass_celebrants (name, sort_order, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (clean, int(max_order) + 1, now),
+        )
+        conn.commit()
+    return list_celebrant_names()
+
+
 def replace_celebrant_names(names: list[str]) -> list[str]:
     normalized = _normalize_names(names)
     now = datetime.now(timezone.utc).isoformat()

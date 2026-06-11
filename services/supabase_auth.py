@@ -33,6 +33,7 @@ class AuthUser:
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     image_url: Optional[str] = None
+    role: str = "member"
 
 
 @lru_cache(maxsize=4)

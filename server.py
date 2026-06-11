@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, model_validator
@@ -61,15 +61,22 @@ from services.song_catalog import (
     save_lyrics_song,
     update_catalog_song,
 )
-from services.auth_config import supabase_enabled
+from services.auth_config import auth_enabled, supabase_enabled
 from services.api_security import (
     AuthSession,
     optional_session,
     register_security_middleware,
     require_approved_membership,
     require_session_when_auth,
+    require_superadmin,
 )
-from services.membership_config import can_edit_logo, membership_payload, parish_name_is_locked
+from services.membership_config import (
+    can_edit_logo,
+    is_superadmin_user,
+    membership_payload,
+    parish_name_is_locked,
+)
+from services.pending_submissions import submit_pending_priest, submit_pending_song
 from services.user_church_context import get_church_profile_context
 from services.image_generation_quota import (
     get_quota_status,
@@ -211,9 +218,31 @@ app.mount("/media", StaticFiles(directory=str(_OUTPUT_DIR)), name="media")
 app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
 app.mount("/preview", StaticFiles(directory=str(_PREVIEW_DIR)), name="preview")
 
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> FileResponse:
+    return FileResponse(
+        _STATIC_DIR / "brand" / "favicon.ico",
+        media_type="image/vnd.microsoft.icon",
+    )
+
 register_auth_routes(app, templates)
 register_admin_routes(app)
 register_security_middleware(app)
+
+
+@app.on_event("startup")
+def _bootstrap_superadmin_roles() -> None:
+    if not supabase_enabled():
+        return
+    try:
+        from services.supabase_client import bootstrap_superadmin_roles_from_env
+
+        count = bootstrap_superadmin_roles_from_env()
+        if count:
+            print(f"[Verbum] Promoted {count} profile(s) to superadmin from SUPERADMIN_EMAILS.")
+    except Exception as exc:
+        print(f"[Verbum] Superadmin bootstrap skipped: {exc}")
 
 
 def _sync_church_profile_to_supabase(
@@ -475,6 +504,10 @@ class SaveLyricsBody(BaseModel):
     author: str = Field("", max_length=L.SONG_AUTHOR)
 
 
+class PriestSubmissionBody(BaseModel):
+    name: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
+
+
 class CatalogSongPatchBody(BaseModel):
     title: Optional[str] = Field(None, max_length=L.SONG_TITLE)
     author: Optional[str] = Field(None, max_length=L.SONG_AUTHOR)
@@ -525,7 +558,9 @@ def _extract_ppt_text_slides(ppt: Path) -> list[dict[str, Any]]:
 
 
 @app.post("/api/ppt-preview/refresh")
-def api_ppt_preview_refresh() -> dict[str, Any]:
+def api_ppt_preview_refresh(
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     """Render PPT slides to PNG images for in-app visual preview."""
     ppt = _latest_pptx_path()
     if not ppt or not ppt.is_file():
@@ -599,7 +634,7 @@ def _enforce_ai_image_quota(
 def generate_image(
     body: GenerateImageBody,
     request: Request,
-    session: Optional[AuthSession] = Depends(optional_session),
+    session: Optional[AuthSession] = Depends(require_superadmin),
 ) -> GenerateImageResponse:
     import base64
 
@@ -716,7 +751,10 @@ def api_get_gemini_api_key_status() -> dict[str, Any]:
 
 
 @app.post("/api/settings/gemini-api-key")
-def api_save_gemini_api_key(body: GeminiApiKeyBody) -> dict[str, Any]:
+def api_save_gemini_api_key(
+    body: GeminiApiKeyBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     from services.env_config import gemini_api_key_hint, save_gemini_api_key
 
     try:
@@ -800,25 +838,36 @@ async def api_upload_logo(
 
 
 @app.post("/api/upload/mass-divider")
-async def api_upload_mass_divider(file: UploadFile = File(...)) -> dict[str, Any]:
+async def api_upload_mass_divider(
+    file: UploadFile = File(...),
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="divider")
     return {"ok": True, "basename": name, "url": f"/uploads/mass_assets/{name}"}
 
 
 @app.post("/api/upload/announcement-slide")
-async def api_upload_announcement_slide(file: UploadFile = File(...)) -> dict[str, Any]:
+async def api_upload_announcement_slide(
+    file: UploadFile = File(...),
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="announce")
     return {"ok": True, "basename": name, "url": f"/uploads/mass_assets/{name}"}
 
 
 @app.post("/api/upload/saved-poster")
-async def api_upload_saved_poster(file: UploadFile = File(...)) -> dict[str, Any]:
+async def api_upload_saved_poster(
+    file: UploadFile = File(...),
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _SAVED_POSTER_DIR, prefix="poster")
     return {"ok": True, "basename": name, "url": f"/uploads/saved_posters/{name}"}
 
 
 @app.get("/api/saved-posters")
-def api_list_saved_posters() -> dict[str, Any]:
+def api_list_saved_posters(
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     if not _SAVED_POSTER_DIR.is_dir():
         return {"ok": True, "posters": []}
     rows = []
@@ -829,7 +878,10 @@ def api_list_saved_posters() -> dict[str, Any]:
 
 
 @app.delete("/api/saved-posters/{basename}")
-def api_delete_saved_poster(basename: str) -> dict[str, Any]:
+def api_delete_saved_poster(
+    basename: str,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     p = _resolve_child_file(_SAVED_POSTER_DIR, basename)
     if not p:
         raise HTTPException(status_code=404, detail="Poster not found.")
@@ -862,7 +914,12 @@ def api_get_catalog_song(section: str, hymn_id: str) -> dict[str, Any]:
 
 
 @app.patch("/api/catalog/songs/{section}/{hymn_id:path}")
-def api_patch_catalog_song(section: str, hymn_id: str, body: CatalogSongPatchBody) -> dict[str, Any]:
+def api_patch_catalog_song(
+    section: str,
+    hymn_id: str,
+    body: CatalogSongPatchBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     res = update_catalog_song(
         section=section,
         hymn_id=hymn_id,
@@ -878,7 +935,11 @@ def api_patch_catalog_song(section: str, hymn_id: str, body: CatalogSongPatchBod
 
 
 @app.delete("/api/catalog/songs/{section}/{hymn_id:path}")
-def api_delete_catalog_song(section: str, hymn_id: str) -> dict[str, Any]:
+def api_delete_catalog_song(
+    section: str,
+    hymn_id: str,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     res = delete_catalog_song(section=section, hymn_id=hymn_id)
     if not res.get("ok"):
         raise HTTPException(status_code=400, detail=res.get("error") or "Delete failed.")
@@ -886,7 +947,10 @@ def api_delete_catalog_song(section: str, hymn_id: str) -> dict[str, Any]:
 
 
 @app.post("/api/design/analyze-template")
-async def api_design_analyze_template(file: UploadFile = File(...)) -> dict[str, Any]:
+async def api_design_analyze_template(
+    file: UploadFile = File(...),
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     ctype = (file.content_type or "").split(";")[0].strip().lower()
     if ctype not in {
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -1174,7 +1238,10 @@ def api_regenerate_pptx(
 
 
 @app.post("/api/songs/refresh")
-def api_refresh_songs(body: RefreshSongsBody) -> dict[str, Any]:
+def api_refresh_songs(
+    body: RefreshSongsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     sec = body.section.strip().lower()
     if sec not in {"entrance", "offertory", "communion", "recessional", "meditation"}:
         raise HTTPException(status_code=400, detail="Invalid section.")
@@ -1188,7 +1255,10 @@ def api_refresh_songs(body: RefreshSongsBody) -> dict[str, Any]:
 
 
 @app.post("/api/songs/refresh-all")
-def api_refresh_all_songs(body: RefreshAllSongsBody) -> dict[str, Any]:
+def api_refresh_all_songs(
+    body: RefreshAllSongsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     songs = refresh_all_song_sections(
         date=body.date.strip(),
         current_ids=body.current_ids or {},
@@ -1198,7 +1268,10 @@ def api_refresh_all_songs(body: RefreshAllSongsBody) -> dict[str, Any]:
 
 
 @app.post("/api/songs/import")
-def api_import_songs(body: ImportSongsBody) -> dict[str, Any]:
+def api_import_songs(
+    body: ImportSongsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     summary = import_titles(
         {
             "entrance": body.entrance,
@@ -1211,13 +1284,19 @@ def api_import_songs(body: ImportSongsBody) -> dict[str, Any]:
 
 
 @app.post("/api/songs/import-list")
-def api_import_song_rows(body: ImportSongRowsBody) -> dict[str, Any]:
+def api_import_song_rows(
+    body: ImportSongRowsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     summary = import_song_rows([s.model_dump() for s in body.songs])
     return {"ok": True, **summary}
 
 
 @app.post("/api/songs/fetch-lyrics")
-def api_fetch_lyrics(body: FetchLyricsBody) -> dict[str, Any]:
+def api_fetch_lyrics(
+    body: FetchLyricsBody,
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     if not body.selections:
         return {"ok": True, "updated": 0, "skipped": 0, "results": []}
     results = [fetch_and_store_for_selection({"section": s.section, "id": s.id}) for s in body.selections]
@@ -1227,7 +1306,22 @@ def api_fetch_lyrics(body: FetchLyricsBody) -> dict[str, Any]:
 
 
 @app.post("/api/lyrics/save")
-def api_save_lyrics(body: SaveLyricsBody) -> dict[str, Any]:
+def api_save_lyrics(
+    body: SaveLyricsBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    if auth_enabled() and session and not is_superadmin_user(session.user):
+        result = submit_pending_song(
+            session,
+            title=body.title,
+            lyrics=body.lyrics,
+            sections=body.sections,
+            language=body.language,
+            author=body.author,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Could not submit song.")
+        return result
     result = save_lyrics_song(
         title=body.title,
         lyrics=body.lyrics,
@@ -1237,4 +1331,29 @@ def api_save_lyrics(body: SaveLyricsBody) -> dict[str, Any]:
     )
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error") or "Could not save lyrics.")
+    return result
+
+
+@app.post("/api/submissions/priest")
+def api_submit_priest(
+    body: PriestSubmissionBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if is_superadmin_user(session.user):
+        from services import community_store
+
+        names = community_store.append_celebrant_name(body.name.strip())
+        if supabase_enabled():
+            from services.pending_submissions import sync_celebrants_to_supabase_profiles
+
+            sync_celebrants_to_supabase_profiles()
+        else:
+            update_community(celebrant_names=names)
+        payload = _community_api_payload(session)
+        return {"ok": True, "celebrant_names": names, **payload}
+    result = submit_pending_priest(session, name=body.name)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Could not submit priest.")
     return result

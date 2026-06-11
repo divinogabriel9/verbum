@@ -6,6 +6,7 @@ import os
 from functools import lru_cache
 from typing import Any, Optional
 
+from services.auth_config import auth_enabled
 from services.supabase_auth import AuthUser
 
 
@@ -22,7 +23,11 @@ def superadmin_emails() -> frozenset[str]:
 
 
 def is_superadmin_user(user: Optional[AuthUser]) -> bool:
-    if not user or not user.email:
+    if not user:
+        return False
+    if (user.role or "").strip() == "superadmin":
+        return True
+    if not user.email:
         return False
     return user.email.strip().lower() in superadmin_emails()
 
@@ -33,7 +38,9 @@ def membership_allows_full_access(
     user: Optional[AuthUser] = None,
     profile_role: Optional[str] = None,
 ) -> bool:
-    if is_superadmin_user(user) or (profile_role or "").strip() == "superadmin":
+    if is_superadmin_user(user):
+        return True
+    if (profile_role or "").strip() == "superadmin":
         return True
     if not church_row:
         return False
@@ -74,14 +81,24 @@ def membership_payload(
     locked = parish_name_is_locked(row)
     logo_locked = logo_is_locked(row)
     superadmin = is_superadmin_user(user) or (profile_role or "").strip() == "superadmin"
+    role = (user.role if user else None) or profile_role or "member"
+    auth_on = auth_enabled()
+    signed_in = user is not None
+    can_use_full_app = superadmin or not auth_on
+    can_submit = signed_in and auth_on and not superadmin
     return {
         "membership_status": status,
         "community_name_locked": locked,
         "logo_locked": logo_locked,
-        "can_edit_parish_name": not locked and status in {"draft", ""},
-        "can_edit_logo": can_edit_logo(row),
-        "can_edit_church_profile": membership_allows_full_access(
-            row, user=user, profile_role=profile_role
+        "can_edit_parish_name": not locked and status in {"draft", ""} and signed_in,
+        "can_edit_logo": (
+            (can_edit_logo(row) and superadmin)
+            or (not locked and status in {"draft", ""})
         ),
+        "can_edit_church_profile": can_use_full_app,
+        "can_use_full_app": can_use_full_app,
+        "can_submit_song": can_submit or can_use_full_app,
+        "can_submit_priest": can_submit or can_use_full_app,
         "is_superadmin": superadmin,
+        "role": (role or "member").strip().lower(),
     }

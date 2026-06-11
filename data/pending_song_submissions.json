@@ -1,0 +1,18 @@
+[
+  {
+    "id": "c79cc446083b42859ce735f6d42d452c",
+    "status": "pending",
+    "created_at": "2026-06-11T14:46:33.165265+00:00",
+    "submitted_by_user_id": "d31246f5-086c-42bc-b6b1-151fa1c01ca8",
+    "submitted_by_email": "admin@gfcc.com",
+    "payload": {
+      "title": "Sing a New Song",
+      "lyrics": "Chorus\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 1\nYahweh's people dance for joy\nO come before the Lord\nAnd play for him on glad tambourines\nAnd let your trumpet sound\n\nChorus 2\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 2\nRise, O children, from your sleep;\nYour Savior now has come\nHe has turned your sorrow to joy\nAnd filled your soul with song\n\nChorus 3\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging Alleluia\nSinging Alleluia",
+      "sections": [
+        "entrance"
+      ],
+      "language": "English",
+      "author": ""
+    }
+  }
+]

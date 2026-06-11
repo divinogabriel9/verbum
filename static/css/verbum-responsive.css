@@ -1093,7 +1093,7 @@ iframe {
   }
 
   .ui-overlay .ui-card {
-    width: min(400px, 100%);
+    width: var(--ui-card-width, min(480px, 100%));
     max-width: 100%;
     margin-bottom: 0;
     max-height: min(90vh, 900px);
@@ -1102,12 +1102,17 @@ iframe {
     transform-origin: center center;
   }
 
+  .ui-overlay .ui-card.ui-card--gen-receipt {
+    width: var(--ui-card-width-receipt, min(600px, 100%));
+  }
+
   .ui-overlay.is-open .ui-card {
     transform: scale(1) translateY(0);
   }
 
-  .ui-card--reading {
-    width: min(900px, 96vw);
+  .ui-overlay .ui-card.ui-card--reading {
+    width: min(var(--ui-card-width-reading, 900px), calc(100vw - var(--space-4) * 2));
+    max-width: min(var(--ui-card-width-reading, 900px), calc(100vw - var(--space-4) * 2));
   }
 
   .ui-card--news-expand {
@@ -1273,21 +1278,10 @@ iframe {
   }
 }
 
-/* —— Song Composer: main 2/3 left · recent 1/3 right (wins over legacy layout rules) —— */
+/* —— Song Composer: panel grid placement lives in emil-motion.css —— */
 @media (min-width: 769px) {
-  .lyrics-workspace-mockup .song-composer-layout,
-  #lyrics-workspace .song-composer-layout {
-    display: grid !important;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) !important;
-    gap: 12px;
-    align-items: stretch;
-    width: 100%;
-  }
-
   .lyrics-workspace-mockup .song-composer-main,
   #lyrics-workspace .song-composer-main {
-    grid-column: 1 !important;
-    grid-row: 1;
     min-width: 0;
     display: flex !important;
     flex-direction: column;
@@ -1297,8 +1291,6 @@ iframe {
 
   .lyrics-workspace-mockup .song-composer-recent,
   #lyrics-workspace .song-composer-recent {
-    grid-column: 2 !important;
-    grid-row: 1;
     min-width: 0;
     max-width: 100%;
     width: auto;
@@ -1306,26 +1298,6 @@ iframe {
     flex-direction: column;
     min-height: 0;
     height: 100%;
-  }
-
-  .lyrics-workspace-mockup .song-composer-layout,
-  #lyrics-workspace .song-composer-layout {
-    min-height: 260px;
-    align-items: stretch !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .lyrics-workspace-mockup .song-composer-layout,
-  #lyrics-workspace .song-composer-layout {
-    grid-template-columns: 1fr !important;
-  }
-
-  .lyrics-workspace-mockup .song-composer-main,
-  .lyrics-workspace-mockup .song-composer-recent,
-  #lyrics-workspace .song-composer-main,
-  #lyrics-workspace .song-composer-recent {
-    grid-column: 1 !important;
   }
 }
 

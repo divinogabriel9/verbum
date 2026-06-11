@@ -303,3 +303,28 @@ def record_generation(
             "output_summary": output_summary or {},
         }
     ).execute()
+
+
+def bootstrap_superadmin_roles_from_env() -> int:
+    """Promote SUPERADMIN_EMAILS to profiles.role=superadmin (service role only)."""
+    from services.membership_config import superadmin_emails
+
+    emails = superadmin_emails()
+    if not emails or not supabase_enabled():
+        return 0
+    try:
+        client = get_service_client()
+    except RuntimeError:
+        return 0
+
+    updated = 0
+    for email in emails:
+        result = (
+            client.table("profiles")
+            .update({"role": "superadmin"})
+            .eq("email", email)
+            .neq("role", "superadmin")
+            .execute()
+        )
+        updated += len(result.data or [])
+    return updated

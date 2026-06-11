@@ -39,6 +39,11 @@
   --space-lg: var(--space-5);
   --space-xl: var(--space-6);
 
+  /* —— Modal / dialog card widths (excludes ui-card--news-expand) —— */
+  --ui-card-width: min(480px, 100%);
+  --ui-card-width-receipt: min(600px, 100%);
+  --ui-card-width-reading: 900px;
+
   /* —— Border radius (DESIGN.md rounded.*) —— */
   --radius-sm: 8px;
   --radius-md: 8px;

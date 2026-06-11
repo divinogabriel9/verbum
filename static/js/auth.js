@@ -9,6 +9,7 @@
     profile: null,
     churchProfile: null,
     communityPayload: null,
+    membership: null,
     cachedToken: null,
     ready: false,
     hydrated: false,
@@ -24,6 +25,7 @@
       state.profile = null;
       state.churchProfile = null;
       state.communityPayload = null;
+      state.membership = null;
     }
   }
 
@@ -44,6 +46,9 @@
       can_edit_parish_name: m.can_edit_parish_name != null ? m.can_edit_parish_name : !locked,
       can_edit_logo: m.can_edit_logo != null ? m.can_edit_logo : !row.logo_locked_at,
       can_edit_church_profile: m.can_edit_church_profile != null ? m.can_edit_church_profile : status === "approved",
+      can_use_full_app: m.can_use_full_app != null ? m.can_use_full_app : !!m.is_superadmin,
+      can_submit_song: m.can_submit_song != null ? m.can_submit_song : !m.is_superadmin,
+      can_submit_priest: m.can_submit_priest != null ? m.can_submit_priest : !m.is_superadmin,
       is_superadmin: !!m.is_superadmin,
     };
   }
@@ -305,10 +310,17 @@
           first_name: data.first_name || null,
           last_name: data.last_name || null,
           email: data.email || user.email || null,
+          role: data.role || (data.profile && data.profile.role) || "member",
         };
+        if (data.membership) {
+          state.membership = data.membership;
+        }
         if (data.church_profile) {
           setChurchProfile(data.church_profile, data.membership);
         }
+        window.dispatchEvent(
+          new CustomEvent("verbum:membership", { detail: data.membership || null })
+        );
       }
     } catch (_err) {
       // optional enrichment
@@ -457,6 +469,7 @@
       state.user || (state.session && state.session.user ? state.session.user : null),
     getChurchProfile: () => state.churchProfile,
     getCommunityPayload: () => state.communityPayload,
+    getMembership: () => state.membership,
     setCommunityPayload: (data) => {
       if (!data) return;
       state.communityPayload = {

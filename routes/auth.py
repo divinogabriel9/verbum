@@ -38,14 +38,19 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
             "first_name": user.first_name,
             "last_name": user.last_name,
             "image_url": user.image_url,
+            "role": user.role,
         }
 
         if supabase_enabled():
             try:
-                payload["profile"] = get_profile(user.user_id, access_token=session.token)
+                profile_row = get_profile(user.user_id, access_token=session.token)
+                payload["profile"] = profile_row
                 church = get_church_profile_context()
                 payload["church_profile"] = church
-                payload["membership"] = membership_payload(church, user=user)
+                profile_role = (profile_row or {}).get("role") if profile_row else user.role
+                payload["membership"] = membership_payload(
+                    church, user=user, profile_role=profile_role
+                )
             except Exception as exc:
                 payload["supabase_error"] = str(exc)
 

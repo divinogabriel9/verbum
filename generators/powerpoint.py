@@ -56,6 +56,7 @@ _MAX_CHARS_READING = 820
 _MAX_MARKED_BODY = 2600
 # Hymn / lyrics slides (black screen, gold title, white ALL CAPS body — projector style)
 _LYRIC_MAX_LINES_PER_SLIDE = 6
+_HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD = 6
 _HYMN_TITLE_PT = 38.5
 _HYMN_BODY_PT = 56.0
 _HYMN_REF_TITLE_PT = 36.0
@@ -74,6 +75,8 @@ _HYMN_BG = RGBColor(0, 0, 0)
 _HYMN_GOLD_TITLE = RGBColor(255, 204, 77)
 _HYMN_BODY_WHITE = RGBColor(255, 255, 255)
 _HYMN_CHORUS_COLOR = RGBColor(0xFF, 0xB8, 0x00)
+_HYMN_PAREN_COLOR = RGBColor(0x87, 0xCE, 0xEB)
+_PAREN_IN_LYRICS_RE = re.compile(r"\([^)]*\)")
 _HYMN_BRAND_WHITE = RGBColor(255, 255, 255)
 _HYMN_FOOTER_MUTED = RGBColor(140, 140, 145)
 _HYMN_TITLE_FONT = "Georgia"
@@ -392,6 +395,44 @@ def _lyric_continuation_textbox_geometry(slide_width: int, slide_height: int) ->
 
 def _word_count(line: str) -> int:
     return len((line or "").split())
+
+
+def _paren_span_containing(text: str, idx: int) -> Optional[Tuple[int, int]]:
+    """Return ``(start, end)`` of a ``(...)`` group that would be split at ``idx``."""
+    depth = 0
+    start: Optional[int] = None
+    for i, ch in enumerate(text):
+        if ch == "(":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == ")":
+            if depth <= 0:
+                continue
+            depth -= 1
+            if depth == 0 and start is not None:
+                end = i + 1
+                if start < idx < end:
+                    return (start, end)
+                start = None
+    return None
+
+
+def _break_splits_parens(text: str, idx: int) -> bool:
+    return _paren_span_containing(text, idx) is not None
+
+
+def _split_line_preserving_parens(text: str, idx: int) -> Tuple[str, str]:
+    """Split at ``idx``, moving any bracketed lyric entirely to the next line."""
+    span = _paren_span_containing(text, idx)
+    if span is None:
+        return text[:idx].strip(), text[idx:].strip(" ,-;:.")
+    start, _end = span
+    return text[:start].strip(), text[start:].strip(" ,-;:.")
+
+
+def _lyric_paragraph_count(text: str) -> int:
+    return len([ln for ln in (text or "").splitlines() if ln.strip()])
 
 
 def _enforce_min_words_per_line(
@@ -2315,6 +2356,8 @@ def optimizeLineBreaks(lyrics_text: str) -> List[str]:
         midpoint = len(raw) // 2
         for m in break_re.finditer(raw):
             idx = m.start()
+            if _break_splits_parens(raw, idx):
+                continue
             left_n = _word_count(raw[:idx])
             right_n = _word_count(raw[idx:])
             if left_n < min_words or right_n < min_words:
@@ -2322,8 +2365,7 @@ def optimizeLineBreaks(lyrics_text: str) -> List[str]:
             if candidate is None or abs(idx - midpoint) < abs(candidate - midpoint):
                 candidate = idx
         if candidate is not None:
-            first = raw[:candidate].strip()
-            second = raw[candidate:].strip(" ,-;:.")
+            first, second = _split_line_preserving_parens(raw, candidate)
             if first and second and _word_count(first) >= min_words and _word_count(second) >= min_words:
                 out.extend([first, second])
                 continue
@@ -2332,7 +2374,14 @@ def optimizeLineBreaks(lyrics_text: str) -> List[str]:
         if cut < min_words or len(words) - cut < min_words:
             out.append(raw)
             continue
-        out.extend([" ".join(words[:cut]), " ".join(words[cut:])])
+        prefix = " ".join(words[:cut])
+        idx = raw.find(prefix)
+        split_at = idx + len(prefix) if idx >= 0 else len(prefix)
+        first, second = _split_line_preserving_parens(raw, split_at)
+        if first and second and _word_count(first) >= min_words and _word_count(second) >= min_words:
+            out.extend([first, second])
+        else:
+            out.append(raw)
     return _enforce_min_words_per_line(out)
 
 
@@ -2381,6 +2430,8 @@ def _chunk_section_for_slides(section_text: str, max_lines: int = _LYRIC_MAX_LIN
     line_list = [ln for ln in cleaned.splitlines() if ln.strip()]
     if not line_list:
         return [cleaned]
+    if len(line_list) > _HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD:
+        return ["\n".join(line_list)]
     if len(line_list) <= max_lines:
         return ["\n".join(line_list)]
     return split_lyrics(line_list, max_lines=max_lines)
@@ -2432,6 +2483,16 @@ def _is_chorus_block_kind(block_kind: str) -> bool:
     return (block_kind or "").strip().lower() in ("chorus", "refrain")
 
 
+def _dual_second_verse_italic(
+    group: List[Tuple[str, str]],
+    block_index: int,
+) -> bool:
+    """Italicize the lower block when a dual slide pairs two non-chorus verses."""
+    if len(group) != 2 or block_index != 1:
+        return False
+    return all(not _is_chorus_block_kind(kind) for _text, kind in group)
+
+
 def _fill_hymn_body_caps(
     tf,
     chunk: str,
@@ -2439,6 +2500,7 @@ def _fill_hymn_body_caps(
     typography: Optional[HymnTypographySettings] = None,
     box_height_inches: Optional[float] = None,
     block_kind: str = "verse",
+    italic_body: bool = False,
 ) -> None:
     """ALL CAPS Poppins on black; reference deck uses 75 pt and 0.7 line spacing."""
     box_h = float(box_height_inches or 0.0) or float(SLIDE_HEIGHT.inches * 0.72)
@@ -2453,19 +2515,39 @@ def _fill_hymn_body_caps(
     align = _pp_align(typography.body_align if typography else "center")
     is_chorus = _is_chorus_block_kind(block_kind)
     body_color = _HYMN_CHORUS_COLOR if is_chorus else _HYMN_BODY_WHITE
+    use_italic = is_chorus or italic_body
+
+    def _style_hymn_body_run(run, *, is_paren: bool) -> None:
+        font = run.font
+        font.name = _HYMN_REF_BODY_FONT
+        font.size = Pt(size_pt)
+        font.bold = True
+        font.italic = use_italic or is_paren
+        font.color.rgb = _HYMN_PAREN_COLOR if is_paren else body_color
 
     def _apply_body_para(p, text: str) -> None:
-        p.text = text
         p.alignment = align
         p.line_spacing = _HYMN_REF_LINE_SPACING
-        targets = list(p.runs) if p.runs else [p]
-        for target in targets:
-            font = target.font
-            font.name = _HYMN_REF_BODY_FONT
-            font.size = Pt(size_pt)
-            font.bold = True
-            font.italic = is_chorus
-            font.color.rgb = body_color
+        segments: List[Tuple[str, bool]] = []
+        last = 0
+        for match in _PAREN_IN_LYRICS_RE.finditer(text):
+            if match.start() > last:
+                segments.append((text[last : match.start()], False))
+            segments.append((match.group(0), True))
+            last = match.end()
+        if last < len(text):
+            segments.append((text[last:], False))
+        if not segments:
+            segments = [(text, False)]
+
+        first_seg, first_paren = segments[0]
+        p.text = first_seg
+        if p.runs:
+            _style_hymn_body_run(p.runs[0], is_paren=first_paren)
+        for seg, is_paren in segments[1:]:
+            run = p.add_run()
+            run.text = seg
+            _style_hymn_body_run(run, is_paren=is_paren)
 
     tf.clear()
     first = True
@@ -2499,16 +2581,24 @@ def _lyric_blocks_for_slides(text: str) -> List[Tuple[str, str]]:
 def _pair_blocks_for_dual_slides(
     blocks: List[Tuple[str, str]],
 ) -> List[List[Tuple[str, str]]]:
-    """Even count → two blocks per slide; odd remainder → one full-bleed block."""
+    """Pair two blocks per slide unless a block exceeds the solo paragraph threshold."""
     slides: List[List[Tuple[str, str]]] = []
     i = 0
     n = len(blocks)
     while i < n:
-        if n - i == 1:
+        if _lyric_paragraph_count(blocks[i][0]) > _HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD:
             slides.append([blocks[i]])
-            break
-        slides.append([blocks[i], blocks[i + 1]])
-        i += 2
+            i += 1
+            continue
+        if (
+            i + 1 < n
+            and _lyric_paragraph_count(blocks[i + 1][0]) <= _HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD
+        ):
+            slides.append([blocks[i], blocks[i + 1]])
+            i += 2
+        else:
+            slides.append([blocks[i]])
+            i += 1
     return slides
 
 
@@ -2541,6 +2631,7 @@ def _add_hymn_lyric_box(
     block_kind: str,
     *,
     typography: Optional[HymnTypographySettings] = None,
+    italic_body: bool = False,
 ) -> None:
     box = slide.shapes.add_textbox(left, top, width, height)
     tf = box.text_frame
@@ -2553,6 +2644,7 @@ def _add_hymn_lyric_box(
         typography=typography,
         box_height_inches=_length_to_inches(height),
         block_kind=block_kind,
+        italic_body=italic_body,
     )
 
 
@@ -2652,7 +2744,34 @@ def _add_hymn_lyric_slides_dual(
         _set_slide_bg(slide, _HYMN_BG)
         _apply_hymn_branding(slide)
 
-        if len(group) == 1:
+        if len(group) == 1 and group_i == 0:
+            title_top = _HYMN_TITLE_TOP
+            w = SLIDE_WIDTH - 2 * MARGIN_SIDE
+            title_box = slide.shapes.add_textbox(MARGIN_SIDE, title_top, w, Inches(0.95))
+            tft = title_box.text_frame
+            _prep_tf(tft)
+            tft.clear()
+            title_pt = max(typo.title_pt, _HYMN_REF_TITLE_PT)
+            _apply_hymn_song_title(
+                tft.paragraphs[0],
+                title,
+                title_pt=title_pt,
+                title_align=_pp_align(typo.title_align),
+            )
+            body_top = title_top + Inches(1.05)
+            body_h = SLIDE_HEIGHT - body_top - Inches(0.95)
+            lyric_left, lyric_w = _lyric_textbox_geometry(prs.slide_width)
+            _add_hymn_lyric_box(
+                slide,
+                lyric_left,
+                body_top,
+                lyric_w,
+                body_h,
+                group[0][0],
+                group[0][1],
+                typography=typo,
+            )
+        elif len(group) == 1:
             _add_hymn_lyric_box(
                 slide,
                 0,
@@ -2695,6 +2814,7 @@ def _add_hymn_lyric_slides_dual(
                 group[1][0],
                 group[1][1],
                 typography=typo,
+                italic_body=_dual_second_verse_italic(group, 1),
             )
         else:
             _add_hymn_lyric_box(
@@ -2716,6 +2836,7 @@ def _add_hymn_lyric_slides_dual(
                 group[1][0],
                 group[1][1],
                 typography=typo,
+                italic_body=_dual_second_verse_italic(group, 1),
             )
 
         _add_hymn_footer(slide, footer_section)

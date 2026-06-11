@@ -197,3 +197,253 @@ button {
 @keyframes emil-refresh-spin {
   to { transform: rotate(360deg); }
 }
+
+/* Song Composer — panel grid, rail morph, expandable body */
+.song-composer-panel {
+  transition:
+    padding var(--motion-duration-base) var(--motion-ease-in-out),
+    gap var(--motion-duration-base) var(--motion-ease-in-out);
+}
+
+.song-composer-panel:not(.song-composer-panel--deflated) {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: stretch;
+}
+
+.song-composer-panel:not(.song-composer-panel--deflated) .song-composer-rail,
+.song-composer-panel:not(.song-composer-panel--deflated) .song-composer-rail__cluster {
+  display: contents;
+}
+
+.song-composer-rail .song-composer-head__copy {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.song-composer-rail .song-composer-toolbar-row {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  width: 100%;
+}
+
+.song-composer-rail .song-composer-collapse-btn {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
+  flex-shrink: 0;
+}
+
+.song-composer-panel:not(.song-composer-panel--deflated) .song-composer-expandable {
+  grid-column: 1;
+  grid-row: 3;
+  min-width: 0;
+}
+
+.song-composer-panel:not(.song-composer-panel--deflated) .song-composer-main {
+  min-height: 260px;
+}
+
+.song-composer-panel:not(.song-composer-panel--deflated) .song-composer-recent {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity var(--motion-duration-base) var(--motion-ease-out),
+    transform var(--motion-duration-base) var(--motion-ease-out);
+  transition-delay: 40ms;
+}
+
+.song-composer-head__copy h3 {
+  transition:
+    font-size var(--motion-duration-base) var(--motion-ease-out),
+    letter-spacing var(--motion-duration-base) var(--motion-ease-out),
+    color var(--motion-duration-base) var(--motion-ease-out),
+    transform var(--motion-duration-base) var(--motion-ease-out);
+  transform-origin: left center;
+}
+
+.song-composer-upload-btn {
+  transition:
+    opacity var(--motion-duration-base) var(--motion-ease-out),
+    transform var(--motion-duration-base) var(--motion-ease-out);
+}
+
+.song-composer-collapse-btn svg {
+  transition: transform var(--motion-duration-base) var(--motion-ease-out);
+}
+
+.song-composer-expandable {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--motion-duration-base) var(--motion-ease-out);
+}
+
+.song-composer-expandable__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.song-composer-expandable__content {
+  transition:
+    opacity var(--motion-duration-base) var(--motion-ease-out),
+    transform var(--motion-duration-base) var(--motion-ease-out);
+  transition-delay: 40ms;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transform-origin: top center;
+}
+
+.song-composer-panel--deflated {
+  gap: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.song-composer-panel--deflated .song-composer-rail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto;
+  gap: 0 10px;
+  align-items: center;
+}
+
+.song-composer-panel--deflated .song-composer-rail__cluster {
+  display: contents;
+}
+
+.song-composer-panel--deflated .song-composer-head__copy {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.song-composer-panel--deflated .song-composer-head__copy h3 {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.song-composer-panel--deflated .song-composer-toolbar-row {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+}
+
+.song-composer-panel--deflated .song-composer-collapse-btn {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  justify-self: end;
+}
+
+.song-composer-panel--deflated .song-composer-collapse-btn svg {
+  transform: rotate(180deg);
+}
+
+.song-composer-panel--deflated .song-composer-upload-btn {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.song-composer-panel--deflated .song-composer-expandable {
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--motion-duration-exit) var(--motion-ease-out);
+}
+
+.song-composer-panel--deflated .song-composer-expandable__content {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  transition:
+    opacity var(--motion-duration-exit) var(--motion-ease-out),
+    transform var(--motion-duration-exit) var(--motion-ease-out);
+  transition-delay: 0ms;
+  pointer-events: none;
+}
+
+.song-composer-panel--deflated .song-composer-recent {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  transition:
+    opacity var(--motion-duration-exit) var(--motion-ease-out),
+    visibility 0s linear var(--motion-duration-exit);
+}
+
+.song-composer-panel--deflated .song-composer-main {
+  min-height: 0;
+}
+
+.song-composer-collapse-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (max-width: 768px) {
+  .song-composer-panel:not(.song-composer-panel--deflated) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .song-composer-panel:not(.song-composer-panel--deflated) .song-composer-rail .song-composer-collapse-btn {
+    grid-column: 1;
+    justify-self: end;
+  }
+
+  .song-composer-panel:not(.song-composer-panel--deflated) .song-composer-expandable {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .song-composer-panel:not(.song-composer-panel--deflated) .song-composer-recent {
+    grid-column: 1;
+    grid-row: 4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .song-composer-panel,
+  .song-composer-head__copy h3,
+  .song-composer-upload-btn,
+  .song-composer-collapse-btn svg,
+  .song-composer-rail,
+  .song-composer-rail__cluster,
+  .song-composer-expandable,
+  .song-composer-expandable__content,
+  .song-composer-recent {
+    transition: none !important;
+  }
+
+  .song-composer-panel--deflated .song-composer-expandable__content {
+    transform: none;
+  }
+
+  .song-composer-panel--deflated .song-composer-upload-btn {
+    transform: none;
+  }
+}

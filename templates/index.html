@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{{ title }}</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="/static/brand/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="/static/brand/favicon-192x192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
@@ -71,7 +75,7 @@
       --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
       --brand-font-liturgy: "Times New Roman", Times, "Liberation Serif", serif;
       --brand-font-flow: "Playfair Display", Georgia, serif;
-      --brand-flow-color: #F87C6B;
+      --brand-flow-color: var(--liturgical-accent);
       --sidebar-gap: 16px;
       --space-1: 4px;
       --space-2: 8px;
@@ -119,6 +123,9 @@
       --motion-ease-out: var(--ease-out);
       --motion-ease-in-out: var(--ease-in-out);
       --motion-ease-hover: var(--ease-hover);
+      --ui-card-width: min(480px, 100%);
+      --ui-card-width-receipt: min(600px, 100%);
+      --ui-card-width-reading: 900px;
       --app-scrim: rgba(21, 51, 61, 0.48);
       --app-blur: 12px;
     }
@@ -858,20 +865,20 @@
     }
     .brand-block__mark {
       flex-shrink: 0;
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 10px;
-      background: color-mix(in srgb, var(--good) 14%, var(--surface-solid));
-      border: 1px solid color-mix(in srgb, var(--good) 22%, var(--line));
-      color: var(--good);
+      border-radius: 50%;
+      background: #fbdec0;
+      overflow: hidden;
     }
-    .brand-block__mark svg {
-      width: 20px;
-      height: 20px;
+    .brand-block__mark-img {
       display: block;
+      height: 30px;
+      width: auto;
+      object-fit: contain;
     }
     .brand-block__text {
       display: flex;
@@ -1962,6 +1969,12 @@
       margin: 20px 0;
       background: linear-gradient(90deg, transparent, var(--line), transparent);
     }
+    .settings-admin-subhead {
+      margin: 16px 0 8px;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--ink);
+    }
     /* Settings — song-plan-style split (nav card | content card) */
     .settings-layout {
       width: 100%;
@@ -2785,7 +2798,7 @@
     .ui-card {
       position: relative;
       z-index: 1;
-      width: min(400px, 100%);
+      width: var(--ui-card-width);
       max-height: min(90vh, 900px);
       display: flex;
       flex-direction: column;
@@ -2805,8 +2818,9 @@
       opacity: 1;
       transform: scale(1) translateY(0);
     }
-    .ui-card--reading {
-      width: min(900px, 96vw);
+    .ui-overlay .ui-card.ui-card--reading {
+      width: min(var(--ui-card-width-reading), calc(100vw - var(--space-4) * 2));
+      max-width: min(var(--ui-card-width-reading), calc(100vw - var(--space-4) * 2));
     }
     .ui-card__header {
       display: flex;
@@ -2917,6 +2931,15 @@
     .event-date-range {
       position: relative;
     }
+    .event-date-range--open {
+      z-index: 1;
+    }
+    #home-event-modal .ui-card.ui-card--calendar-open {
+      overflow: visible;
+    }
+    #home-event-modal .ui-card--calendar-open .ui-card__content {
+      overflow: visible;
+    }
     .event-date-trigger {
       display: flex;
       align-items: center;
@@ -2958,6 +2981,16 @@
         opacity var(--motion-duration-base) var(--motion-ease-out),
         transform var(--motion-duration-base) var(--motion-ease-out),
         visibility 0s linear var(--motion-duration-base);
+    }
+    #home-event-modal .event-date-popover:not([hidden]) {
+      position: static;
+      margin-top: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      transform: none;
+    }
+    #home-event-modal .event-date-popover[hidden] {
+      display: none !important;
     }
     .event-date-popover:not([hidden]) {
       opacity: 1;
@@ -5195,6 +5228,14 @@
     .app-membership-banner a:hover {
       text-decoration: underline;
     }
+    body.is-limited-member [data-superadmin-only] {
+      display: none !important;
+    }
+    body.is-limited-member #flow-page.is-readonly .flow-member-lock,
+    body.is-limited-member #theme-page.is-readonly .theme-member-lock {
+      pointer-events: none;
+      opacity: 0.55;
+    }
     .flow-input-list-item {
       display: flex;
       align-items: flex-start;
@@ -5547,16 +5588,36 @@
       gap: 12px;
       align-items: start;
     }
-    .song-composer-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: nowrap;
-      min-width: 0;
-    }
     .song-composer-head__copy h3 {
       margin: 0;
+    }
+    .song-composer-collapse-btn {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      background: var(--surface-2);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .song-composer-collapse-btn:hover {
+      color: var(--ink);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 8%, var(--surface-2));
+    }
+    .song-composer-collapse-btn:focus-visible {
+      outline: 2px solid var(--good);
+      outline-offset: 2px;
+    }
+    .song-composer-collapse-btn svg {
+      width: 12px;
+      height: 12px;
+      display: block;
     }
     .lyrics-structured-actions .ghost#btn-clear-lyrics {
       display: inline-flex;
@@ -5647,7 +5708,7 @@
     }
     .song-composer-layout {
       align-items: stretch;
-      min-height: 240px;
+      min-height: 0;
     }
     .song-composer-main {
       display: flex;
@@ -7019,6 +7080,16 @@
       -webkit-text-fill-color: #ffb800;
       font-style: italic;
     }
+    .hymn-slide .hymn-lines.hymn-lines--dual-second,
+    .hymn-slide .hymn-lines-editable.hymn-lines--dual-second {
+      font-style: italic;
+    }
+    .hymn-slide .hymn-lines .hymn-paren,
+    .hymn-slide .hymn-lines-editable .hymn-paren {
+      color: #87ceeb !important;
+      -webkit-text-fill-color: #87ceeb;
+      font-style: italic;
+    }
     .hymn-slide .hymn-title-text,
     .hymn-slide .hymn-title-editable {
       font-family: Georgia, "Times New Roman", serif;
@@ -8295,13 +8366,13 @@
 
     /* Mass generate receipt — minimalist pre-flight summary */
     .ui-card--gen-receipt {
-      width: min(540px, 100%);
+      width: var(--ui-card-width-receipt);
     }
     .mass-gen-receipt {
       display: flex;
       flex-direction: column;
       gap: 0;
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
     }
     .mass-gen-receipt__meta {
       text-align: center;
@@ -8311,18 +8382,18 @@
     }
     .mass-gen-receipt__title {
       margin: 0 0 2px;
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       font-weight: 600;
       color: var(--ink);
     }
     .mass-gen-receipt__sub {
       margin: 0;
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       color: var(--muted);
     }
     .mass-gen-receipt__stamp {
       margin: 6px 0 0;
-      font-size: 0.65rem;
+      font-size: 0.72rem;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted);
@@ -8333,7 +8404,7 @@
       border-radius: var(--radius-md);
       background: hsl(38 92% 95%);
       border: 1px solid hsl(38 80% 78%);
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       line-height: 1.4;
       color: hsl(32 80% 28%);
       text-align: center;
@@ -8360,8 +8431,8 @@
       align-items: baseline;
       gap: 4px;
       padding: 4px 0;
-      font-size: var(--text-xs);
-      line-height: 1.35;
+      font-size: var(--text-sm);
+      line-height: 1.4;
     }
     .mass-gen-receipt__line-label {
       flex-shrink: 0;
@@ -8395,13 +8466,13 @@
       margin-top: var(--space-3);
       padding-top: var(--space-3);
       border-top: 1px dashed var(--line-soft);
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       color: var(--muted);
       text-align: center;
       line-height: 1.45;
     }
     .mass-gen-receipt__section {
-      font-size: 0.65rem;
+      font-size: 0.72rem;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -8423,7 +8494,7 @@
       border-bottom: none;
     }
     .mass-gen-receipt__label {
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       color: var(--muted);
       padding-top: 5px;
     }
@@ -8442,7 +8513,7 @@
       margin-left: 6px;
       padding: 1px 6px;
       border-radius: 999px;
-      font-size: 0.65rem;
+      font-size: 0.72rem;
       font-weight: 600;
       background: hsl(38 90% 88%);
       color: hsl(32 85% 32%);
@@ -8483,7 +8554,7 @@
     .mass-gen-receipt__edit-link {
       display: inline-block;
       margin-top: 4px;
-      font-size: var(--text-xs);
+      font-size: var(--text-sm);
       color: var(--muted);
       text-decoration: underline;
       text-underline-offset: 2px;
@@ -8497,8 +8568,8 @@
       color: var(--ink);
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260623" />
-  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260609" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260627" />
+  <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <style id="verbum-layout-overrides">
     /* Loaded after design-system — desktop layout wins over external sheets */
     body { background: var(--bg); }
@@ -8646,7 +8717,7 @@
       transform: translateY(0.025em);
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260626" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260627" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/auth.js" defer></script>
 </head>
@@ -8656,14 +8727,18 @@
         <div class="app-header__main">
           <a href="/home" class="brand-block" id="topbar-title" data-route="/home" aria-label="LiturgyFlow — Home">
             <span class="brand-block__mark" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22c4-4 8-7.5 8-12a8 8 0 1 0-16 0c0 4.5 4 8 8 12z" />
-                <path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-              </svg>
+              <img
+                src="/static/brand/liturgyflow-logo.png"
+                alt=""
+                class="brand-block__mark-img"
+                width="36"
+                height="40"
+                decoding="async"
+              />
             </span>
             <span class="brand-block__text">
               <span class="brand-block__name wordmark" aria-hidden="true"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
-              <span class="brand-block__tagline">Mass slides &amp; posters</span>
+              <span class="brand-block__tagline">Plan Better. Serve Better.</span>
             </span>
           </a>
         <p class="sr-only" id="topbar-breadcrumb">Home</p>
@@ -8956,7 +9031,7 @@
             <div class="field event-date-range">
               <label id="home-event-date-label">Dates</label>
               <button type="button" class="event-date-trigger" id="home-event-date-trigger" aria-labelledby="home-event-date-label" aria-expanded="false" aria-controls="home-event-date-popover">
-                <span class="event-date-trigger__placeholder" id="home-event-date-trigger-label">Select check-in and check-out</span>
+                <span class="event-date-trigger__placeholder" id="home-event-date-trigger-label">Select dates</span>
               </button>
               <div class="event-date-popover" id="home-event-date-popover" hidden>
                 <div class="event-date-cal" id="home-event-date-cal" role="application" aria-label="Event date range calendar"></div>
@@ -9140,14 +9215,12 @@
 
       <section class="page" id="lyrics-page" data-route="/library/songs">
         <div class="lyrics-workspace-mockup" id="lyrics-workspace">
-          <section class="panel song-composer-panel" aria-label="Song composer toolbar">
-            <header class="song-composer-head">
-              <div class="song-composer-head__copy">
-                <h3>Song Composer</h3>
-              </div>
-            </header>
-            <div class="song-composer-layout">
-              <div class="song-composer-main">
+          <section class="panel song-composer-panel" id="song-composer-panel" aria-label="Song composer toolbar">
+            <div class="song-composer-rail">
+              <div class="song-composer-rail__cluster">
+                <div class="song-composer-head__copy">
+                  <h3>Song Composer</h3>
+                </div>
                 <div class="song-composer-toolbar-row">
                   <div class="song-composer-search-wrap">
                     <input type="search" id="song-catalog-search" placeholder="Search songs by title or author…" maxlength="120" autocomplete="off" aria-label="Search songs in library" />
@@ -9159,19 +9232,37 @@
                   </label>
                   <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,text/plain" tabindex="-1" />
                 </div>
-                <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap">
-                  <h4 class="song-composer-catalog-label">Songs library</h4>
-                  <div class="song-catalog-panel song-composer-catalog-panel">
-                    <div class="song-catalog-scroll" id="song-catalog-root"></div>
+              </div>
+              <button
+                type="button"
+                class="song-composer-collapse-btn"
+                id="song-composer-collapse-btn"
+                aria-expanded="true"
+                aria-controls="song-composer-expandable"
+                title="Collapse song library"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg>
+              </button>
+            </div>
+            <div class="song-composer-expandable" id="song-composer-expandable">
+              <div class="song-composer-expandable__inner">
+                <div class="song-composer-expandable__content">
+                  <div class="song-composer-main">
+                    <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap">
+                      <h4 class="song-composer-catalog-label">Songs library</h4>
+                      <div class="song-catalog-panel song-composer-catalog-panel">
+                        <div class="song-catalog-scroll" id="song-catalog-root"></div>
+                      </div>
+                    </div>
+                    <p class="status song-composer-status" id="lyrics-status" aria-live="polite"></p>
                   </div>
                 </div>
-                <p class="status song-composer-status" id="lyrics-status" aria-live="polite"></p>
               </div>
-              <aside class="song-composer-recent" aria-label="Recent songs">
-                <h4 class="song-composer-recent__title">Recent</h4>
-                <div class="song-composer-recent-list" id="song-composer-recent-list" role="list"></div>
-              </aside>
             </div>
+            <aside class="song-composer-recent" aria-label="Recent songs">
+              <h4 class="song-composer-recent__title">Recent</h4>
+              <div class="song-composer-recent-list" id="song-composer-recent-list" role="list"></div>
+            </aside>
           </section>
 
           <div class="lyrics-workspace-row">
@@ -9296,7 +9387,7 @@ Lord, hear our prayer</textarea>
             </div>
           </section>
 
-          <aside class="panel">
+          <aside class="panel theme-member-lock">
             <div class="panel-head">
               <div>
                 <h3>Custom Theme Builder</h3>
@@ -9371,7 +9462,7 @@ Lord, hear our prayer</textarea>
           <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
           </div>
         </div>
-        <div class="workspace flow-workspace">
+        <div class="workspace flow-workspace flow-member-lock">
           <div class="panel flow-builder-shell">
             <div class="flow-builder-tabs-bar">
               <div class="flow-builder-tabs" role="tablist" aria-label="Mass builder sections">
@@ -9907,9 +9998,14 @@ Lord, hear our prayer</textarea>
 
                 <section id="settings-admin-memberships" hidden aria-labelledby="settings-admin-heading">
                   <hr class="settings-divider" />
-                  <h3 id="settings-admin-heading">Pending parish memberships</h3>
-                  <p class="muted">Approve or reject users who submitted a parish name. Only superadmins see this panel.</p>
+                  <h3 id="settings-admin-heading">Superadmin approvals</h3>
+                  <p class="muted">Approve or reject parish memberships, song submissions, and priest names.</p>
+                  <h4 class="settings-admin-subhead">Pending parish memberships</h4>
                   <ul class="celebrant-settings-list" id="settings-admin-pending-list" aria-live="polite"></ul>
+                  <h4 class="settings-admin-subhead">Pending songs</h4>
+                  <ul class="celebrant-settings-list" id="settings-admin-pending-songs" aria-live="polite"></ul>
+                  <h4 class="settings-admin-subhead">Pending priests</h4>
+                  <ul class="celebrant-settings-list" id="settings-admin-pending-priests" aria-live="polite"></ul>
                   <p class="status" id="settings-admin-status" aria-live="polite"></p>
                 </section>
             </article>
@@ -9956,6 +10052,7 @@ Lord, hear our prayer</textarea>
 
                 <hr class="settings-divider" />
 
+                <div data-superadmin-only>
                 <h3>AI integrations</h3>
                 <p class="muted">Gemini poster art uses a <strong>Google AI Studio</strong> API key (usually starts with <code>AIza</code>). Image models often require billing enabled on your Google account. Stored in <code>.env.gemini</code>.</p>
                 <div class="field">
@@ -9967,6 +10064,7 @@ Lord, hear our prayer</textarea>
                   <button type="button" class="secondary" id="btn-save-gemini-api-key">Save Gemini key</button>
                 </div>
                 <p class="status" id="settings-gemini-status" aria-live="polite"></p>
+                </div>
 
                 <hr class="settings-divider" />
 
@@ -11303,6 +11401,7 @@ Lord, hear our prayer</textarea>
     let lyricsInputDebounce = null;
     const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
     const LINES_PER_SLIDE = 6;
+    const HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD = 6;
 
     function countBlockLines(text) {
       return (text || "").trim().split(/\n/).filter((ln) => ln.trim()).length;
@@ -11739,7 +11838,11 @@ Lord, hear our prayer</textarea>
         const updated = result.updated || [];
         const isNew = created.length > 0;
         const isEdited = !isNew && updated.length > 0;
-        setLyricsStatus("Saved lyrics for " + result.title + " in " + result.sections.join(", ") + ".", "ok");
+        if (result.pending) {
+          setLyricsStatus(result.message || "Song submitted for superadmin approval.", "ok");
+        } else {
+          setLyricsStatus("Saved lyrics for " + result.title + " in " + (result.sections || []).join(", ") + ".", "ok");
+        }
         pushSongHistory({
           title: result.title,
           section: $("lyrics-save-section").value,
@@ -11826,7 +11929,8 @@ Lord, hear our prayer</textarea>
       $("theme-grid").innerHTML = allThemes.map((theme) => {
         const isActive = activeTheme.id === theme.id;
         const isLit = litId && theme.id === litId;
-        const canDelete = customThemes.some((t) => t.id === theme.id);
+        const canDelete = churchMembershipState.is_superadmin && customThemes.some((t) => t.id === theme.id);
+        const canMutate = churchMembershipState.is_superadmin;
         return (
           '<div class="theme-card-wrap' + (isActive ? " active" : "") + (isLit ? " lit-match" : "") + '">' +
             '<button type="button" class="theme-card" data-theme-card="1" data-theme-id="' + theme.id + '">' +
@@ -11843,10 +11947,10 @@ Lord, hear our prayer</textarea>
               '<strong>' + escapeHtml(theme.name) + '</strong>' +
               '<span>' + escapeHtml(theme.note) + '</span>' +
             '</button>' +
-            '<div class="theme-card-actions">' +
+            '<div class="theme-card-actions theme-member-lock">' +
               '<button type="button" class="secondary" data-theme-action="preview" data-theme-id="' + theme.id + '">Preview</button>' +
-              '<button type="button" class="primary" data-theme-action="apply" data-theme-id="' + theme.id + '">Apply</button>' +
-              '<button type="button" class="secondary" data-theme-action="customize" data-theme-id="' + theme.id + '">Customize</button>' +
+              (canMutate ? '<button type="button" class="primary" data-theme-action="apply" data-theme-id="' + theme.id + '">Apply</button>' : "") +
+              (canMutate ? '<button type="button" class="secondary" data-theme-action="customize" data-theme-id="' + theme.id + '">Customize</button>' : "") +
               (canDelete ? '<button type="button" class="ghost danger-theme-del" data-theme-action="delete" data-theme-id="' + theme.id + '" title="Delete saved preset">Delete</button>' : "") +
             '</div>' +
           '</div>'
@@ -11906,6 +12010,10 @@ Lord, hear our prayer</textarea>
     $("saved-theme-dropdown").addEventListener("change", (event) => {
       const id = event.target.value;
       if (!id) return;
+      if (!guardSuperadminAction()) {
+        event.target.value = "";
+        return;
+      }
       const theme = customThemes.find((t) => t.id === id);
       if (!theme) return;
       activeTheme = Object.assign({}, theme);
@@ -11948,6 +12056,7 @@ Lord, hear our prayer</textarea>
           return;
         }
         if (action === "apply") {
+          if (!guardSuperadminAction()) return;
           activeTheme = theme;
           renderThemeGrid();
           updateThemeIndicators();
@@ -11957,6 +12066,7 @@ Lord, hear our prayer</textarea>
           return;
         }
         if (action === "customize") {
+          if (!guardSuperadminAction()) return;
           applyPresetToBuilder(theme);
           showRoute("/design/theme-lab");
           window.scrollTo({ top: 0, behavior: "smooth" });
@@ -11965,6 +12075,7 @@ Lord, hear our prayer</textarea>
           return;
         }
         if (action === "delete") {
+          if (!guardSuperadminAction()) return;
           if (!customThemes.some((t) => t.id === id)) {
             return;
           }
@@ -12019,6 +12130,7 @@ Lord, hear our prayer</textarea>
     });
     $("btn-preview-custom-theme").addEventListener("click", () => openThemeModal(themeFromBuilder()));
     $("btn-save-theme").addEventListener("click", () => {
+      if (!guardSuperadminAction()) return;
       const theme = themeFromBuilder();
       customThemes.push(theme);
       localStorage.setItem("customThemes", JSON.stringify(customThemes));
@@ -12491,10 +12603,9 @@ Lord, hear our prayer</textarea>
       return order.filter((idx) => !disabled.has(idx)).length;
     }
 
-    function countDualPreviewSlides(plan, chunkCount) {
-      const enabled = countEnabledSlides(plan, chunkCount);
-      if (enabled <= 0) return 0;
-      return Math.ceil(enabled / 2);
+    function countDualPreviewSlides(plan, chunks) {
+      const items = enabledChunkItems(chunks, plan);
+      return pairChunksForDualPreview(items).length;
     }
 
     function pairChunksForDualPreview(items) {
@@ -12502,12 +12613,21 @@ Lord, hear our prayer</textarea>
       let i = 0;
       const n = items.length;
       while (i < n) {
-        if (n - i === 1) {
+        if (countBlockLines(items[i].chunk) > HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD) {
           slides.push([items[i]]);
-          break;
+          i += 1;
+          continue;
         }
-        slides.push([items[i], items[i + 1]]);
-        i += 2;
+        if (
+          i + 1 < n
+          && countBlockLines(items[i + 1].chunk) <= HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD
+        ) {
+          slides.push([items[i], items[i + 1]]);
+          i += 2;
+        } else {
+          slides.push([items[i]]);
+          i += 1;
+        }
       }
       return slides;
     }
@@ -12794,6 +12914,10 @@ Lord, hear our prayer</textarea>
       return "verse";
     }
 
+    function dualPairBothNonChorus(group) {
+      return group.length === 2 && group.every((item) => item.kind !== "chorus");
+    }
+
     function hymnPreviewSlideStyle(section, slideIndex, chunk) {
       const typo = getHymnTypoForSlide(section, slideIndex);
       const bodyPt = autoHymnBodyPtForChunk(chunk, typo.body_pt);
@@ -12850,7 +12974,7 @@ Lord, hear our prayer</textarea>
     function renderSongSlidePlanEditor(plan, chunks, layout) {
       const enabled = countEnabledSlides(plan, chunks.length);
       const layoutMode = layout === "dual" ? "dual" : "single";
-      const previewSlides = layoutMode === "dual" ? countDualPreviewSlides(plan, chunks.length) : enabled;
+      const previewSlides = layoutMode === "dual" ? countDualPreviewSlides(plan, chunks) : enabled;
       const countLabel = layoutMode === "dual"
         ? previewSlides + " preview slides · " + enabled + " blocks in deck"
         : enabled + " of " + chunks.length + " in deck";
@@ -12916,10 +13040,11 @@ Lord, hear our prayer</textarea>
         const pos = order.indexOf(chunkIdx);
         return pos >= 0 ? pos : 0;
       }
-      const enabled = enabledChunkItems(chunks, plan);
-      const posInEnabled = enabled.findIndex((item) => item.chunkIdx === chunkIdx);
-      if (posInEnabled < 0) return 0;
-      return Math.floor(posInEnabled / 2);
+      const groups = pairChunksForDualPreview(enabledChunkItems(chunks, plan));
+      for (let si = 0; si < groups.length; si++) {
+        if (groups[si].some((item) => item.chunkIdx === chunkIdx)) return si;
+      }
+      return 0;
     }
 
     function bindSongPreviewLayoutToggle() {
@@ -13172,6 +13297,10 @@ Lord, hear our prayer</textarea>
           blocks.push(section);
           return;
         }
+        if (lines.length > HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD) {
+          blocks.push(section);
+          return;
+        }
         if (lines.length <= max) {
           blocks.push(section);
           return;
@@ -13191,10 +13320,29 @@ Lord, hear our prayer</textarea>
       return "";
     }
 
+    function formatHymnBracketedLine(line) {
+      const upper = (line || "").toUpperCase();
+      const re = /\([^)]*\)/g;
+      let last = 0;
+      let match;
+      let html = "";
+      while ((match = re.exec(upper)) !== null) {
+        if (match.index > last) {
+          html += escapeHtml(upper.slice(last, match.index));
+        }
+        html += '<span class="hymn-paren">' + escapeHtml(match[0]) + "</span>";
+        last = match.index + match[0].length;
+      }
+      if (last < upper.length) {
+        html += escapeHtml(upper.slice(last));
+      }
+      return html || escapeHtml(upper);
+    }
+
     function formatHymnBodyHtml(chunk) {
       const lines = chunk.split("\n").map((ln) => ln.trim()).filter(Boolean);
-      if (!lines.length) return escapeHtml((chunk || "").trim().toUpperCase());
-      return lines.map((ln) => escapeHtml(ln.toUpperCase())).join("<br>");
+      if (!lines.length) return formatHymnBracketedLine((chunk || "").trim());
+      return lines.map((ln) => formatHymnBracketedLine(ln)).join("<br>");
     }
 
     function updateMassSongPreviewButton(slotKey) {
@@ -13232,12 +13380,14 @@ Lord, hear our prayer</textarea>
       const titleHtml = showTitle
         ? "<h4 class=\"hymn-title-text\">" + escapeHtml(meta.title || "Hymn") + "</h4>"
         : "";
+      const dualSecondItalic = dualPairBothNonChorus(group);
       const blocksHtml = group.map((item, bi) => {
         const chorusCls = item.kind === "chorus" ? " hymn-lines--chorus" : "";
+        const secondVerseCls = dualSecondItalic && bi === 1 ? " hymn-lines--dual-second" : "";
         const posCls = bi === 0 ? " hymn-body-dual-top" : " hymn-body-dual-bottom";
         return (
           "<div class=\"hymn-body hymn-body-dual-block" + posCls + "\">" +
-            "<div class=\"hymn-lines" + chorusCls + "\">" + formatHymnBodyHtml(item.chunk) + "</div>" +
+            "<div class=\"hymn-lines" + chorusCls + secondVerseCls + "\">" + formatHymnBodyHtml(item.chunk) + "</div>" +
           "</div>"
         );
       }).join("");
@@ -13316,7 +13466,7 @@ Lord, hear our prayer</textarea>
       }).join("");
       }
       const enabled = countEnabledSlides(slidePlan, allChunks.length);
-      const previewCount = layout === "dual" ? countDualPreviewSlides(slidePlan, allChunks.length) : enabled;
+      const previewCount = layout === "dual" ? countDualPreviewSlides(slidePlan, allChunks) : enabled;
       const countLabel = layout === "dual"
         ? previewCount + " slides · " + enabled + " blocks"
         : enabled + " of " + allChunks.length + " slides in deck";
@@ -14313,10 +14463,13 @@ Lord, hear our prayer</textarea>
     function renderSettingsCelebrantList() {
       const ul = $("settings-celebrant-list");
       if (!ul) return;
+      const canRemove = churchMembershipState.is_superadmin;
       ul.innerHTML = celebrantNamesCache.map((name, i) => (
         "<li class=\"celebrant-settings-list__item\">" +
           "<span>" + escapeHtml(name) + "</span>" +
-          "<button type=\"button\" class=\"ghost mini\" data-remove-celebrant=\"" + i + "\">Remove</button>" +
+          (canRemove
+            ? "<button type=\"button\" class=\"ghost mini\" data-remove-celebrant=\"" + i + "\">Remove</button>"
+            : "") +
         "</li>"
       )).join("");
     }
@@ -14467,7 +14620,7 @@ Lord, hear our prayer</textarea>
 
     async function saveCelebrantNamesToDatabase() {
       if (!churchMembershipState.can_edit_church_profile) {
-        throw new Error("Submit your parish name and wait for superadmin approval first.");
+        throw new Error("Superadmin access is required to edit the celebrant list directly.");
       }
       const data = await postJSON("/api/community/profile", { celebrant_names: celebrantNamesCache });
       applyCelebrantNamesFromServer(data.celebrant_names || celebrantNamesCache);
@@ -14479,15 +14632,28 @@ Lord, hear our prayer</textarea>
       if (!n) return false;
       const key = n.toLowerCase();
       if (celebrantNamesCache.some((x) => x.toLowerCase() === key)) return false;
-      celebrantNamesCache.push(n);
-      renderSettingsCelebrantList();
-      renderCelebrantSelect(n);
+      if (!churchMembershipState.can_submit_priest && !churchMembershipState.can_edit_church_profile) {
+        throw new Error("Sign in to submit a priest name for approval.");
+      }
+      if (churchMembershipState.is_superadmin) {
+        celebrantNamesCache.push(n);
+        renderSettingsCelebrantList();
+        renderCelebrantSelect(n);
+        try {
+          await saveCelebrantNamesToDatabase();
+        } catch (_e) {
+          celebrantNamesCache = celebrantNamesCache.filter((x) => x !== n);
+          renderSettingsCelebrantList();
+          return false;
+        }
+        return true;
+      }
       try {
-        await saveCelebrantNamesToDatabase();
+        const data = await postJSON("/api/submissions/priest", { name: n });
+        return { pending: true, message: data.message || "Priest submitted for superadmin approval." };
       } catch (_e) {
         return false;
       }
-      return true;
     }
 
     async function migrateCelebrantsFromBrowserStorage() {
@@ -14526,8 +14692,26 @@ Lord, hear our prayer</textarea>
       can_edit_parish_name: true,
       can_edit_logo: true,
       can_edit_church_profile: false,
+      can_use_full_app: true,
+      can_submit_song: true,
+      can_submit_priest: true,
       is_superadmin: false,
+      role: "member",
     };
+
+    function guardSuperadminAction(message) {
+      if (churchMembershipState.is_superadmin) return true;
+      const msg = message || "This action is limited to the superadmin account.";
+      notify(msg, "error");
+      return false;
+    }
+
+    function guardFullAppAction(message) {
+      if (churchMembershipState.can_use_full_app) return true;
+      const msg = message || "Mass generation and parish tools are limited to the superadmin account.";
+      notify(msg, "error");
+      return false;
+    }
     let pendingLogoUploadFile = null;
     let currentLogoPreviewUrl = "";
 
@@ -14585,17 +14769,21 @@ Lord, hear our prayer</textarea>
       let cls = "app-membership-banner";
       let show = false;
 
-      if (status === "pending") {
+      if (!state.is_superadmin && state.can_submit_song) {
         show = true;
         cls += " is-pending";
-        html = "Your parish membership is pending approval. Mass generation unlocks after a superadmin approves your profile. <a href=\"/settings/church\" data-route=\"/settings/church\">Open Church Profile</a>";
+        html = "Your account can submit songs and priest names for superadmin approval. Mass generation and other parish tools are limited to the site superadmin.";
+      } else if (status === "pending") {
+        show = true;
+        cls += " is-pending";
+        html = "Your parish membership is pending approval. <a href=\"/settings/church\" data-route=\"/settings/church\">Open Church Profile</a>";
       } else if (status === "rejected") {
         show = true;
         cls += " is-error";
         html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> or contact the administrator.";
       } else if (status === "draft" && state.can_edit_parish_name) {
         show = true;
-        html = "Submit your parish name and optional logo in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> before generating Mass media.";
+        html = "Submit your parish name and optional logo in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a>.";
       }
 
       banners.forEach((el) => {
@@ -14624,7 +14812,11 @@ Lord, hear our prayer</textarea>
           : (!data.community_name_locked && (data.membership_status || "draft") === "draft"),
         can_edit_logo: data.can_edit_logo != null ? !!data.can_edit_logo : !data.logo_locked,
         can_edit_church_profile: !!data.can_edit_church_profile,
+        can_use_full_app: data.can_use_full_app != null ? !!data.can_use_full_app : !!data.can_edit_church_profile,
+        can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : !data.is_superadmin,
+        can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : !data.is_superadmin,
         is_superadmin: !!data.is_superadmin,
+        role: (data.role || "member").toLowerCase(),
       };
 
       const nameInput = $("settings-church-name");
@@ -14646,6 +14838,7 @@ Lord, hear our prayer</textarea>
       const canName = churchMembershipState.can_edit_parish_name;
       const canLogo = churchMembershipState.can_edit_logo;
       const canProfile = churchMembershipState.can_edit_church_profile;
+      const canSubmitPriest = churchMembershipState.can_submit_priest || canProfile;
 
       if (nameInput) {
         nameInput.readOnly = locked || !canName;
@@ -14662,14 +14855,20 @@ Lord, hear our prayer</textarea>
       if (saveBtn) saveBtn.hidden = !canProfile;
 
       [celebrantNew, celebrantAdd].forEach((el) => {
-        if (el) el.disabled = !canProfile;
+        if (el) el.disabled = !canSubmitPriest;
       });
 
       if (banner) {
         let msg = "";
         let cls = "status";
-        if (status === "pending") {
-          msg = "Your parish membership is pending superadmin approval. Mass generation and celebrant saving unlock after approval.";
+        if (churchMembershipState.is_superadmin) {
+          msg = "Superadmin account — full access to Mass generation, songs, and parish settings.";
+          cls = "status ok";
+        } else if (canSubmitPriest) {
+          msg = "You can submit priest names and songs for superadmin approval. Mass generation is limited to the superadmin account.";
+          cls = "status";
+        } else if (status === "pending") {
+          msg = "Your parish membership is pending superadmin approval.";
           cls = "status";
         } else if (status === "rejected") {
           msg = "Your parish membership was not approved. Contact the site administrator if you believe this is an error.";
@@ -14677,9 +14876,6 @@ Lord, hear our prayer</textarea>
         } else if (status === "draft" && canName) {
           msg = "Enter your parish name and optional logo, then submit once. Name and logo cannot be changed later; a superadmin will confirm your membership.";
           cls = "status";
-        } else if (status === "approved" && locked) {
-          msg = "Membership approved. Parish name and logo are locked; you can update celebrants below.";
-          cls = "status ok";
         }
         if (msg) {
           banner.hidden = false;
@@ -14697,9 +14893,62 @@ Lord, hear our prayer</textarea>
         adminSection.hidden = !churchMembershipState.is_superadmin;
         if (churchMembershipState.is_superadmin) {
           refreshAdminPendingMemberships();
+          refreshAdminPendingSongs();
+          refreshAdminPendingPriests();
         }
       }
+      renderSettingsCelebrantList();
+      syncGenerateButtons();
+      syncPrivilegedUi();
     }
+
+    function syncPrivilegedUi() {
+      const sa = !!churchMembershipState.is_superadmin;
+      const canFull = !!churchMembershipState.can_use_full_app;
+      document.body.classList.toggle("is-superadmin", sa);
+      document.body.classList.toggle("is-limited-member", !canFull);
+
+      const flowPage = $("flow-page");
+      if (flowPage) flowPage.classList.toggle("is-readonly", !canFull);
+      const themePage = $("theme-page");
+      if (themePage) themePage.classList.toggle("is-readonly", !sa);
+
+      [
+        "btn-save-theme",
+        "btn-analyze-template-pptx",
+        "btn-save-gemini-api-key",
+        "saved-poster-upload",
+      ].forEach((id) => {
+        const el = $(id);
+        if (el) el.disabled = !sa;
+      });
+
+      const geminiInp = $("settings-gemini-api-key");
+      if (geminiInp) geminiInp.disabled = !sa;
+
+      const posterGen = $("btn-poster-generate");
+      if (posterGen) posterGen.disabled = !canFull;
+
+      const tplUpload = $("template-pptx-upload");
+      if (tplUpload) tplUpload.disabled = !sa;
+
+      if (typeof renderThemeGrid === "function") renderThemeGrid();
+      if (typeof renderSongCatalog === "function") renderSongCatalog();
+    }
+
+    function syncGenerateButtons() {
+      const canGen = churchMembershipState.can_use_full_app;
+      ["btn-generate-flow", "btn-generate-flow-inline"].forEach((id) => {
+        const btn = $(id);
+        if (!btn) return;
+        btn.disabled = !canGen;
+        btn.title = canGen ? "" : "Mass generation is limited to the superadmin account.";
+      });
+    }
+
+    window.addEventListener("verbum:membership", (event) => {
+      if (event.detail) syncMembershipUi(event.detail);
+    });
 
     function applyCommunityPayload(data) {
       if (!data) return;
@@ -14881,6 +15130,144 @@ Lord, hear our prayer</textarea>
         statusEl.className = "status ok";
       }
       await refreshAdminPendingMemberships();
+    }
+
+    async function adminAuthHeaders() {
+      const auth = window.VerbumAuth;
+      return auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
+    }
+
+    async function actOnSubmission(kind, submissionId, action) {
+      if (!submissionId) return;
+      const statusEl = $("settings-admin-status");
+      const headers = await adminAuthHeaders();
+      const res = await fetch(
+        "/api/admin/submissions/" + kind + "/" + encodeURIComponent(submissionId) + "/" + action,
+        { method: "POST", headers }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Action failed.");
+      if (statusEl) {
+        statusEl.textContent = action === "approve"
+          ? (kind === "songs" ? "Song approved and added to the library." : "Priest approved and added to the list.")
+          : (kind === "songs" ? "Song submission rejected." : "Priest submission rejected.");
+        statusEl.className = "status ok";
+      }
+      if (kind === "songs") {
+        await refreshAdminPendingSongs();
+        await loadSongCatalog();
+      } else {
+        await refreshAdminPendingPriests();
+        await refreshCommunity();
+      }
+    }
+
+    async function refreshAdminPendingSongs() {
+      const listEl = $("settings-admin-pending-songs");
+      if (!listEl || !churchMembershipState.is_superadmin) return;
+      try {
+        const res = await fetch("/api/admin/submissions/songs/pending", { headers: await adminAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Could not load pending songs.");
+        const pending = Array.isArray(data.pending) ? data.pending : [];
+        if (!pending.length) {
+          listEl.innerHTML = "<li class=\"muted\">No pending songs.</li>";
+          return;
+        }
+        listEl.innerHTML = pending.map((row) => {
+          const payload = row.payload || {};
+          const title = escapeHtml(payload.title || "Untitled");
+          const email = escapeHtml(row.submitted_by_email || row.submitted_by_user_id || "—");
+          const sid = encodeURIComponent(row.id || "");
+          return (
+            "<li style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);\">" +
+              "<span><strong>" + title + "</strong><br><span class=\"muted\">" + email + "</span></span>" +
+              "<span style=\"display:flex;gap:8px;\">" +
+                "<button type=\"button\" class=\"secondary btn-admin-song-reject\" data-submission-id=\"" + sid + "\">Reject</button>" +
+                "<button type=\"button\" class=\"primary btn-admin-song-approve\" data-submission-id=\"" + sid + "\">Approve</button>" +
+              "</span>" +
+            "</li>"
+          );
+        }).join("");
+        listEl.querySelectorAll(".btn-admin-song-approve").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            actOnSubmission("songs", btn.getAttribute("data-submission-id"), "approve").catch((err) => {
+              const statusEl = $("settings-admin-status");
+              if (statusEl) {
+                statusEl.textContent = err.message || "Approve failed";
+                statusEl.className = "status error";
+              }
+            });
+          });
+        });
+        listEl.querySelectorAll(".btn-admin-song-reject").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            actOnSubmission("songs", btn.getAttribute("data-submission-id"), "reject").catch((err) => {
+              const statusEl = $("settings-admin-status");
+              if (statusEl) {
+                statusEl.textContent = err.message || "Reject failed";
+                statusEl.className = "status error";
+              }
+            });
+          });
+        });
+      } catch (err) {
+        listEl.innerHTML = "<li class=\"muted\">" + escapeHtml(err.message || "Could not load pending songs.") + "</li>";
+      }
+    }
+
+    async function refreshAdminPendingPriests() {
+      const listEl = $("settings-admin-pending-priests");
+      if (!listEl || !churchMembershipState.is_superadmin) return;
+      try {
+        const res = await fetch("/api/admin/submissions/priests/pending", { headers: await adminAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Could not load pending priests.");
+        const pending = Array.isArray(data.pending) ? data.pending : [];
+        if (!pending.length) {
+          listEl.innerHTML = "<li class=\"muted\">No pending priests.</li>";
+          return;
+        }
+        listEl.innerHTML = pending.map((row) => {
+          const payload = row.payload || {};
+          const name = escapeHtml(payload.name || "—");
+          const email = escapeHtml(row.submitted_by_email || row.submitted_by_user_id || "—");
+          const sid = encodeURIComponent(row.id || "");
+          return (
+            "<li style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);\">" +
+              "<span><strong>" + name + "</strong><br><span class=\"muted\">" + email + "</span></span>" +
+              "<span style=\"display:flex;gap:8px;\">" +
+                "<button type=\"button\" class=\"secondary btn-admin-priest-reject\" data-submission-id=\"" + sid + "\">Reject</button>" +
+                "<button type=\"button\" class=\"primary btn-admin-priest-approve\" data-submission-id=\"" + sid + "\">Approve</button>" +
+              "</span>" +
+            "</li>"
+          );
+        }).join("");
+        listEl.querySelectorAll(".btn-admin-priest-approve").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            actOnSubmission("priests", btn.getAttribute("data-submission-id"), "approve").catch((err) => {
+              const statusEl = $("settings-admin-status");
+              if (statusEl) {
+                statusEl.textContent = err.message || "Approve failed";
+                statusEl.className = "status error";
+              }
+            });
+          });
+        });
+        listEl.querySelectorAll(".btn-admin-priest-reject").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            actOnSubmission("priests", btn.getAttribute("data-submission-id"), "reject").catch((err) => {
+              const statusEl = $("settings-admin-status");
+              if (statusEl) {
+                statusEl.textContent = err.message || "Reject failed";
+                statusEl.className = "status error";
+              }
+            });
+          });
+        });
+      } catch (err) {
+        listEl.innerHTML = "<li class=\"muted\">" + escapeHtml(err.message || "Could not load pending priests.") + "</li>";
+      }
     }
 
     async function refreshCommunity() {
@@ -15609,21 +15996,37 @@ Lord, hear our prayer</textarea>
       const startIn = $("home-event-date-start");
       const endIn = $("home-event-date-end");
       const start = eventDateRangeState.start || (startIn && startIn.value) || "";
-      const end = eventDateRangeState.end || (endIn && endIn.value) || start;
+      const end = eventDateRangeState.end || (endIn && endIn.value) || "";
       if (startIn) startIn.value = start || "";
-      if (endIn) endIn.value = end || start || "";
+      if (endIn) endIn.value = end || "";
       if (!label) return;
-      const text = formatEventRangeLabel(start, end);
-      label.textContent = text || "Select check-in and check-out";
+      let text = "";
+      if (start && end) text = formatEventRangeLabel(start, end);
+      else if (start) text = formatNiceDate(start) + " – …";
+      label.textContent = text || "Select dates";
       label.classList.toggle("event-date-trigger__placeholder", !text);
+    }
+
+    function setEventDatePopoverOpen(open) {
+      const pop = $("home-event-date-popover");
+      const trigger = $("home-event-date-trigger");
+      const range = pop && pop.closest(".event-date-range");
+      const card = $("home-event-modal") && $("home-event-modal").querySelector(".ui-card");
+      if (!pop || !trigger) return;
+      pop.hidden = !open;
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      if (range) range.classList.toggle("event-date-range--open", !!open);
+      if (card) card.classList.toggle("ui-card--calendar-open", !!open);
+      if (open) renderEventDateCalendar();
+    }
+
+    function closeEventDatePopover() {
+      setEventDatePopoverOpen(false);
     }
 
     function resetEventDateRangePicker() {
       eventDateRangeState = { month: new Date(), start: null, end: null };
-      const pop = $("home-event-date-popover");
-      const trigger = $("home-event-date-trigger");
-      if (pop) pop.hidden = true;
-      if (trigger) trigger.setAttribute("aria-expanded", "false");
+      closeEventDatePopover();
       updateEventDateTriggerLabel();
       renderEventDateCalendar();
     }
@@ -15670,6 +16073,10 @@ Lord, hear our prayer</textarea>
           eventDateRangeState.start = eventDateRangeState.end;
           eventDateRangeState.end = tmp;
         }
+        updateEventDateTriggerLabel();
+        renderEventDateCalendar();
+        closeEventDatePopover();
+        return;
       }
       updateEventDateTriggerLabel();
       renderEventDateCalendar();
@@ -15681,14 +16088,13 @@ Lord, hear our prayer</textarea>
       const cal = $("home-event-date-cal");
       if (!trigger || !pop || !cal) return;
 
-      trigger.addEventListener("click", () => {
-        const open = pop.hidden;
-        pop.hidden = !open;
-        trigger.setAttribute("aria-expanded", open ? "true" : "false");
-        if (open) renderEventDateCalendar();
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setEventDatePopoverOpen(pop.hidden);
       });
 
       cal.addEventListener("click", (e) => {
+        e.stopPropagation();
         const nav = e.target.closest("[data-cal-nav]");
         if (nav) {
           const dir = parseInt(nav.getAttribute("data-cal-nav"), 10) || 0;
@@ -15705,8 +16111,7 @@ Lord, hear our prayer</textarea>
       document.addEventListener("click", (e) => {
         if (pop.hidden) return;
         if (e.target.closest(".event-date-range")) return;
-        pop.hidden = true;
-        trigger.setAttribute("aria-expanded", "false");
+        closeEventDatePopover();
       });
     }
 
@@ -15790,17 +16195,21 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    function openHomeEventModal() {
-      const modal = $("home-event-modal");
-      if (!modal) return;
+    function resetHomeEventModalForm() {
       const nameIn = $("home-event-modal-name");
       const timeIn = $("home-event-modal-time");
       if (nameIn) nameIn.value = "";
       if (timeIn) timeIn.value = "";
       resetEventDateRangePicker();
+    }
+
+    function openHomeEventModal() {
+      const modal = $("home-event-modal");
+      if (!modal) return;
       modal.classList.add("is-open");
       modal.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
+      const nameIn = $("home-event-modal-name");
       if (nameIn) nameIn.focus();
     }
 
@@ -15811,8 +16220,7 @@ Lord, hear our prayer</textarea>
       modal.setAttribute("aria-hidden", "true");
       const readingOpen = $("reading-expand-modal") && $("reading-expand-modal").classList.contains("is-open");
       if (!readingOpen) document.body.style.overflow = "";
-      const pop = $("home-event-date-popover");
-      if (pop) pop.hidden = true;
+      resetHomeEventModalForm();
     }
 
     function initHomeEventModal() {
@@ -15839,7 +16247,7 @@ Lord, hear our prayer</textarea>
           const date = ($("home-event-date-start") && $("home-event-date-start").value.trim()) ||
             eventDateRangeState.start || "";
           const dateEnd = ($("home-event-date-end") && $("home-event-date-end").value.trim()) ||
-            eventDateRangeState.end || date;
+            eventDateRangeState.end || "";
           const time = ($("home-event-modal-time") && $("home-event-modal-time").value.trim()) || "";
           if (!name) {
             notify("Enter an event name.", "error");
@@ -15847,6 +16255,10 @@ Lord, hear our prayer</textarea>
           }
           if (!date) {
             notify("Choose event dates.", "error");
+            return;
+          }
+          if (!dateEnd) {
+            notify("Select an end date.", "error");
             return;
           }
           addUserEvent(name, date, dateEnd, time);
@@ -16568,6 +16980,7 @@ Lord, hear our prayer</textarea>
     }
 
     async function uploadMassImage(file, endpoint) {
+      if (!guardFullAppAction()) throw new Error("Upload not allowed for this account.");
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch(endpoint, { method: "POST", body: fd });
@@ -16856,10 +17269,14 @@ Lord, hear our prayer</textarea>
       const foodLines = getFlowFoodSponsorsLines();
       const posterOpts = readOpenAiPosterSettings();
       const useAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useAi;
+      rebuildMassPlanSongPool();
       const songs = lyricSongSlots.map((slot) => {
         const id = (selectedLyricsSongs[slot.key] || "").trim();
-        const row = id ? lookupMassPlanSong(id) : null;
-        const missingLyrics = !!(id && !songSlotHasLyrics(slot.key, id));
+        const row = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
+        const sec = (SLOT_TO_HYMN_SECTION[slot.key] || slot.key).toLowerCase();
+        const missingLyrics = !!(id && !(
+          massSongLyricsCache.has(sec + "|" + id) || (row && row.has_lyrics)
+        ));
         return {
           slotKey: slot.key,
           label: slot.custom ? ((slot.label || "").trim() || "Custom section") : slot.label,
@@ -16961,11 +17378,8 @@ Lord, hear our prayer</textarea>
           "<div class=\"mass-gen-receipt__view\" id=\"mass-gen-receipt-view\">" +
             renderMassGenerateReceiptView(model) +
           "</div>" +
-          "<div class=\"mass-gen-receipt__edit-panel\" id=\"mass-gen-receipt-edit-panel\">" +
-            renderMassGenerateReceiptEditPanel(model) +
-          "</div>" +
+          "<div class=\"mass-gen-receipt__edit-panel\" id=\"mass-gen-receipt-edit-panel\"></div>" +
         "</div>";
-      bindMassGenerateReceiptEvents();
       syncMassGenerateReceiptEditButton();
     }
 
@@ -17140,6 +17554,10 @@ Lord, hear our prayer</textarea>
     async function runFullMassGenerate(options) {
       const o = options || {};
       const statusFn = o.setStatus || setFlowStatus;
+      if (!churchMembershipState.can_use_full_app) {
+        statusFn("Mass generation is limited to the superadmin account.", "error");
+        return null;
+      }
       let date = o.date || $("mass-date").value;
       let celebrant = (o.celebrant != null ? o.celebrant : getMassCelebrantLine()).trim();
       const celebrantMain = ($("celebrant") && $("celebrant").value.trim()) || "";
@@ -17168,10 +17586,6 @@ Lord, hear our prayer</textarea>
       if (church) body.community_name = church;
       try {
         body.hymn_typography = buildHymnTypographyPayload();
-        if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
-          return null;
-        }
-        await ensureLyricsCachedForSelectedSongs();
         const receiptResult = await openMassGenerateReceiptModal(buildMassGenerateReceiptModel(o), o);
         if (!receiptResult || !receiptResult.confirmed) {
           return null;
@@ -17182,6 +17596,9 @@ Lord, hear our prayer</textarea>
         body.date = date;
         body.celebrant = celebrant;
         body.songs = selectedSongsForGenerate();
+        if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
+          return null;
+        }
         await ensureLyricsCachedForSelectedSongs();
 
         setMassGenLoading(true, "Preparing Mass package…");
@@ -17706,6 +18123,7 @@ Lord, hear our prayer</textarea>
         return;
       }
       const visible = q ? sections.filter((s) => s.rows.length) : sections;
+      const canEditCatalog = churchMembershipState.is_superadmin;
       root.innerHTML = visible.map(({ sec, allRows, rows }) => {
         const open = q ? true : songCatalogExpanded[sec.key] === true;
         const countLabel = q ? rows.length + " / " + allRows.length : String(allRows.length);
@@ -17725,10 +18143,12 @@ Lord, hear our prayer</textarea>
                       (formatGospelMoodsLabel(row.gospel_moods) ? " · " + escapeHtml(formatGospelMoodsLabel(row.gospel_moods)) : "") +
                     "</div>" +
                   "</div>" +
-                  "<div class=\"song-row-actions\">" +
-                    "<button type=\"button\" data-act=\"edit\">Edit</button>" +
-                    "<button type=\"button\" data-act=\"del\">Delete</button>" +
-                  "</div>" +
+                  (canEditCatalog
+                    ? "<div class=\"song-row-actions\">" +
+                        "<button type=\"button\" data-act=\"edit\">Edit</button>" +
+                        "<button type=\"button\" data-act=\"del\">Delete</button>" +
+                      "</div>"
+                    : "") +
                 "</div>"
               )).join("") : "<p class=\"muted\" style=\"padding:10px 14px;\">No matches.</p>") +
             "</div></div>"
@@ -17822,6 +18242,7 @@ Lord, hear our prayer</textarea>
     }
 
     async function saveSongMetadataFromModal() {
+      if (!guardSuperadminAction()) return;
       if (!songMetaEditCtx) return;
       const title = ($("song-metadata-edit-title") && $("song-metadata-edit-title").value.trim()) || "";
       if (!title) {
@@ -17862,6 +18283,7 @@ Lord, hear our prayer</textarea>
     }
 
     async function confirmSongDeleteFromModal() {
+      if (!guardSuperadminAction()) return;
       if (!songDeletePending) return;
       const { section, id, title } = songDeletePending;
       const res = await fetch(
@@ -18021,7 +18443,44 @@ Lord, hear our prayer</textarea>
     }
 
     let songCatalogSearchDebounce = null;
+
+    function syncSongComposerCollapseBtn() {
+      const panel = $("song-composer-panel");
+      const btn = $("song-composer-collapse-btn");
+      if (!panel || !btn) return;
+      const deflated = panel.classList.contains("song-composer-panel--deflated");
+      btn.setAttribute("aria-expanded", deflated ? "false" : "true");
+      btn.title = deflated ? "Expand song library" : "Collapse song library";
+      btn.setAttribute("aria-label", deflated ? "Expand song library" : "Collapse song library");
+    }
+
+    function setSongComposerDeflated(deflated) {
+      const panel = $("song-composer-panel");
+      if (!panel) return;
+      panel.classList.toggle("song-composer-panel--deflated", !!deflated);
+      syncSongComposerCollapseBtn();
+    }
+
+    function expandSongComposerPanel() {
+      setSongComposerDeflated(false);
+    }
+
+    function initSongComposerCollapse() {
+      const btn = $("song-composer-collapse-btn");
+      if (!btn) return;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const panel = $("song-composer-panel");
+        if (!panel) return;
+        setSongComposerDeflated(!panel.classList.contains("song-composer-panel--deflated"));
+      });
+      syncSongComposerCollapseBtn();
+    }
+
     function applySongCatalogSearch(sourceEl) {
+      if (sourceEl && sourceEl.id === "song-catalog-search") {
+        expandSongComposerPanel();
+      }
       songCatalogFilter = (sourceEl && sourceEl.value) || "";
       syncSongCatalogSearchInputs(sourceEl);
       syncSongSearchClearButton();
@@ -18044,10 +18503,12 @@ Lord, hear our prayer</textarea>
       const el = $(id);
       if (!el) return;
       el.addEventListener("input", () => {
+        if (id === "song-catalog-search") expandSongComposerPanel();
         clearTimeout(songCatalogSearchDebounce);
         songCatalogSearchDebounce = setTimeout(() => applySongCatalogSearch(el), 100);
       });
       el.addEventListener("focus", () => {
+        if (id === "song-catalog-search") expandSongComposerPanel();
         clearTimeout(songCatalogSearchDebounce);
         applySongCatalogSearch(el);
       });
@@ -18135,6 +18596,7 @@ Lord, hear our prayer</textarea>
     });
 
     $("btn-save-gemini-api-key") && $("btn-save-gemini-api-key").addEventListener("click", async () => {
+      if (!guardSuperadminAction()) return;
       const inp = $("settings-gemini-api-key");
       const statusEl = $("settings-gemini-status");
       const key = inp && inp.value.trim();
@@ -18185,7 +18647,9 @@ Lord, hear our prayer</textarea>
       }
       inp.value = "";
       if (statusEl) {
-        statusEl.textContent = "Celebrant saved to database.";
+        statusEl.textContent = ok.pending
+          ? (ok.message || "Priest submitted for superadmin approval.")
+          : "Celebrant saved to database.";
         statusEl.className = "status ok";
       }
     });
@@ -18199,6 +18663,7 @@ Lord, hear our prayer</textarea>
     $("settings-celebrant-list").addEventListener("click", async (e) => {
       const btn = e.target.closest("[data-remove-celebrant]");
       if (!btn) return;
+      if (!churchMembershipState.is_superadmin) return;
       const idx = parseInt(btn.dataset.removeCelebrant, 10);
       if (Number.isNaN(idx) || idx < 0 || idx >= celebrantNamesCache.length) return;
       const statusEl = $("settings-church-status");
@@ -18232,6 +18697,7 @@ Lord, hear our prayer</textarea>
       if (el) el.addEventListener("input", updatePosterLivePreview);
     });
     $("btn-poster-generate").addEventListener("click", async () => {
+      if (!guardFullAppAction()) return;
       const st = (m, k, meta) => {
         const el = $("poster-status");
         if (el) {
@@ -18310,6 +18776,7 @@ Lord, hear our prayer</textarea>
       savedPosterListEl.addEventListener("click", async (e) => {
         const b = e.target.closest("button[data-del-poster]");
         if (!b) return;
+        if (!guardSuperadminAction()) return;
         if (!window.confirm("Delete this saved poster from the server?")) return;
         const name = b.dataset.delPoster;
         await fetch("/api/saved-posters/" + encodeURIComponent(name), { method: "DELETE" });
@@ -18320,6 +18787,10 @@ Lord, hear our prayer</textarea>
     const savedPosterUpload = $("saved-poster-upload");
     if (savedPosterUpload) {
       savedPosterUpload.addEventListener("change", async (e) => {
+        if (!guardSuperadminAction()) {
+          e.target.value = "";
+          return;
+        }
         const file = e.target.files[0];
         if (!file) return;
         const st = $("saved-poster-status");
@@ -18342,6 +18813,7 @@ Lord, hear our prayer</textarea>
     const btnAnalyzeTpl = $("btn-analyze-template-pptx");
     if (btnAnalyzeTpl) {
       btnAnalyzeTpl.addEventListener("click", async () => {
+        if (!guardSuperadminAction()) return;
         const inp = $("template-pptx-upload");
         const st = $("template-analyze-status");
         if (!inp || !inp.files[0]) {
@@ -18540,6 +19012,7 @@ Lord, hear our prayer</textarea>
     initReadingExpandModal();
     initAppMoreSheet();
     initSongPlanSummaryCollapse();
+    initSongComposerCollapse();
     refreshHomeMission();
     updatePosterLivePreview();
     loadFlowData(true);

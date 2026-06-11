@@ -55,33 +55,20 @@ async def require_session_when_auth(request: Request) -> Optional[AuthSession]:
 
 
 async def require_approved_membership(request: Request) -> Optional[AuthSession]:
-    """Require an approved parish membership when auth is enabled."""
-    from services.membership_config import membership_allows_full_access
-    from services.user_church_context import get_church_profile_context
+    """Require superadmin (full app access) when auth is enabled."""
+    return await require_superadmin(request)
+
+
+async def require_superadmin(request: Request) -> Optional[AuthSession]:
+    """Only superadmin emails may use protected parish/Mass features when auth is on."""
+    from services.membership_config import is_superadmin_user
 
     session = await require_session_when_auth(request)
-    if not auth_enabled() or not session:
+    if not auth_enabled():
         return session
-
-    church = get_church_profile_context()
-    if membership_allows_full_access(church, user=session.user):
-        return session
-
-    status = (church or {}).get("membership_status") or "draft"
-    if status == "pending":
-        raise HTTPException(
-            status_code=403,
-            detail="Your parish membership is pending superadmin approval.",
-        )
-    if status == "rejected":
-        raise HTTPException(
-            status_code=403,
-            detail="Your parish membership was not approved. Contact support.",
-        )
-    raise HTTPException(
-        status_code=403,
-        detail="Submit your parish name in Church Profile and wait for approval.",
-    )
+    if not session or not is_superadmin_user(session.user):
+        raise HTTPException(status_code=403, detail="Superadmin access required.")
+    return session
 
 
 # Mutating API routes that must not be anonymous when auth is configured.
@@ -96,6 +83,7 @@ PROTECTED_API_PREFIXES: tuple[str, ...] = (
     "/api/catalog/songs",
     "/api/songs/",
     "/api/lyrics/",
+    "/api/submissions/",
     "/api/design/",
     "/generate-image",
 )
@@ -127,12 +115,24 @@ class UserChurchMiddleware(BaseHTTPMiddleware):
             if token:
                 try:
                     user = verify_supabase_token(token)
+                    from services.supabase_client import get_church_profile, get_profile
+
+                    profile_row = get_profile(user.user_id, access_token=token) or {}
+                    role = (profile_row.get("role") or "member").strip().lower()
+                    if role not in {"member", "superadmin"}:
+                        role = "member"
+                    user = AuthUser(
+                        user_id=user.user_id,
+                        email=user.email,
+                        first_name=user.first_name,
+                        last_name=user.last_name,
+                        image_url=user.image_url,
+                        role=role,
+                    )
                     session = AuthSession(user=user, token=token)
                     request.state.auth_session = session
-                    from services.supabase_client import get_church_profile
-
-                    profile = get_church_profile(user.user_id, access_token=token)
-                    set_church_profile(profile)
+                    church_profile = get_church_profile(user.user_id, access_token=token)
+                    set_church_profile(church_profile)
                 except HTTPException:
                     pass
         try:
