@@ -169,10 +169,23 @@ class AuthGuardMiddleware(BaseHTTPMiddleware):
 def _build_csp() -> str:
     from services.auth_config import supabase_url
 
-    connect = ["'self'", "https://*.supabase.co", "https://*.supabase.in"]
+    connect = [
+        "'self'",
+        "https://*.supabase.co",
+        "https://*.supabase.in",
+        # EWTN live radio (HLS manifests + segments via hls.js)
+        "https://ewtn-sgrewind.streamguys1.com",
+        "https://ewtn-ice.streamguys1.com",
+    ]
     sb = supabase_url()
     if sb:
         connect.append(sb)
+    media = [
+        "'self'",
+        "blob:",
+        "https://ewtn-sgrewind.streamguys1.com",
+        "https://ewtn-ice.streamguys1.com",
+    ]
     return "; ".join(
         [
             "default-src 'self'",
@@ -185,6 +198,7 @@ def _build_csp() -> str:
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "connect-src " + " ".join(dict.fromkeys(connect)),
+            "media-src " + " ".join(dict.fromkeys(media)),
         ]
     )
 

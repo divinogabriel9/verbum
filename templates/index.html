@@ -428,7 +428,11 @@
       .page.page--leaving,
       .flow-builder-tab-panel:not([hidden]),
       .liturgical-indicator-panel:not([hidden]),
+      .live-radio-panel:not([hidden]),
       .event-date-popover:not([hidden]) {
+        animation: none !important;
+      }
+      .live-radio-pill__dot {
         animation: none !important;
       }
       .ui-overlay,
@@ -1048,6 +1052,23 @@
       outline-offset: -2px;
       z-index: 1;
     }
+    .app-header-nav .nav-link[hidden],
+    .app-bottom-nav .nav-link[hidden],
+    .app-more-sheet__link.nav-link[hidden] {
+      display: none !important;
+    }
+    .settings-nav-tabs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 4px;
+    }
+    .settings-nav-tabs-list .toggle {
+      padding: 8px 0;
+    }
+    .settings-nav-tabs-list .toggle.is-locked {
+      opacity: 0.72;
+    }
     .create-menu-wrap,
     .account-menu-wrap {
       position: relative;
@@ -1567,9 +1588,353 @@
       opacity: 0 !important;
       pointer-events: none !important;
     }
-    .liturgical-indicator-wrap {
+    .header-chips-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      flex-shrink: 1;
+      max-width: min(380px, 52vw);
+    }
+    .live-radio-wrap {
       position: relative;
       flex-shrink: 0;
+      min-width: 0;
+      max-width: min(168px, 34vw);
+    }
+    .live-radio-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      max-width: 100%;
+      height: var(--topbar-chip-height);
+      min-height: var(--topbar-chip-height);
+      padding: 0 6px 0 4px;
+      border-radius: var(--radius-pill);
+      border: 1px solid color-mix(in srgb, #ef4444 28%, var(--line));
+      background: color-mix(in srgb, #ef4444 7%, var(--surface-solid));
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .live-radio-pill.is-playing {
+      border-color: color-mix(in srgb, #ef4444 42%, var(--line));
+      background: color-mix(in srgb, #ef4444 11%, var(--surface-solid));
+    }
+    .live-radio-pill__play {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .live-radio-pill__play:hover {
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+    }
+    .live-radio-pill__play svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    .live-radio-pill__play .live-radio-icon-pause { display: none; }
+    .live-radio-pill.is-playing .live-radio-pill__play .live-radio-icon-play { display: none; }
+    .live-radio-pill.is-playing .live-radio-pill__play .live-radio-icon-pause { display: block; }
+    .live-radio-pill__body {
+      flex: 1;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin: 0;
+      padding: 0 2px 0 0;
+      border: none;
+      background: transparent;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+      overflow: hidden;
+    }
+    .live-radio-pill__body:hover .live-radio-pill__label {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .live-radio-pill__live {
+      position: relative;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      color: var(--ink);
+      opacity: 0.88;
+    }
+    .live-radio-pill__live svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    .live-radio-pill__dot {
+      position: absolute;
+      top: -1px;
+      right: -2px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 0 2px color-mix(in srgb, #ef4444 22%, var(--surface-solid));
+      animation: live-radio-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes live-radio-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.82); }
+    }
+    .live-radio-pill__label {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .live-radio-pill__menu {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .live-radio-pill__menu:hover {
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+      color: var(--ink);
+    }
+    .live-radio-pill__menu svg {
+      width: 13px;
+      height: 13px;
+    }
+    .live-radio-panel {
+      top: calc(100% + 8px);
+      left: 0;
+      right: auto;
+      z-index: 52;
+      display: block;
+      width: 173px;
+      height: 98px;
+      max-height: 98px;
+      padding: 0;
+      box-sizing: border-box;
+      border-color: color-mix(in srgb, #ef4444 18%, var(--card-border));
+      overflow: hidden;
+    }
+    .live-radio-panel__art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      object-fit: cover;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .live-radio-panel__scrim {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ink) 18%, transparent) 0%,
+        color-mix(in srgb, var(--ink) 42%, transparent) 100%
+      );
+    }
+    .live-radio-panel__center {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+      padding: 0 22px;
+      box-sizing: border-box;
+    }
+    .live-radio-panel__channel-btn {
+      position: absolute;
+      top: 50%;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      transform: translateY(-50%);
+      background: color-mix(in srgb, #fff 22%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #fff;
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .live-radio-panel__channel-btn--prev { left: 5px; }
+    .live-radio-panel__channel-btn--next { right: 5px; }
+    .live-radio-panel__channel-btn:hover {
+      background: color-mix(in srgb, #fff 36%, transparent);
+    }
+    .live-radio-panel__channel-btn:active {
+      transform: translateY(-50%) scale(0.94);
+    }
+    .live-radio-panel__channel-btn svg {
+      width: 12px;
+      height: 12px;
+      display: block;
+    }
+    .live-radio-panel__label {
+      max-width: 100%;
+      padding: 2px 8px;
+      border-radius: 5px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: color-mix(in srgb, #000 38%, transparent);
+      text-align: center;
+    }
+    .live-radio-panel__station {
+      margin: 0;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.2;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .live-radio-panel__channel-pos {
+      display: none;
+    }
+    .live-radio-panel__play {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: color-mix(in srgb, #fff 88%, transparent);
+      color: var(--ink);
+      box-shadow: 0 2px 10px color-mix(in srgb, #000 28%, transparent);
+      cursor: pointer;
+      transition: transform var(--motion-duration-micro) var(--motion-ease-out),
+        background var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .live-radio-panel__play:hover {
+      background: #fff;
+    }
+    .live-radio-panel__play:active { transform: scale(0.96); }
+    .live-radio-panel__play svg {
+      width: 13px;
+      height: 13px;
+    }
+    .live-radio-panel__play .live-radio-icon-pause { display: none; }
+    .live-radio-wrap.is-playing .live-radio-panel__play .live-radio-icon-play { display: none; }
+    .live-radio-wrap.is-playing .live-radio-panel__play .live-radio-icon-pause { display: block; }
+    .settings-radio-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .settings-radio-option {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      margin: 0;
+      padding: 6px 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      background: var(--surface-solid);
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .settings-radio-option:hover {
+      border-color: color-mix(in srgb, var(--good) 30%, var(--line));
+      background: color-mix(in srgb, var(--good) 5%, var(--surface-solid));
+    }
+    .settings-radio-option.is-selected {
+      border-color: color-mix(in srgb, var(--good) 45%, var(--line));
+      background: color-mix(in srgb, var(--good) 9%, var(--surface-solid));
+    }
+    .settings-radio-option__art {
+      width: 52px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+    }
+    .settings-radio-option__text strong {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+    .settings-radio-option__text span {
+      display: block;
+      margin-top: 1px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+    .settings-radio-option__mark {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--good);
+      opacity: 0;
+    }
+    .settings-radio-option.is-selected .settings-radio-option__mark {
+      opacity: 1;
+    }
+    .liturgical-indicator-wrap {
+      position: relative;
+      flex-shrink: 1;
       min-width: 0;
       max-width: min(200px, 30vw);
       display: flex;
@@ -2087,6 +2452,119 @@
       line-height: var(--leading-caption);
       letter-spacing: var(--tracking-caption);
       color: var(--muted);
+    }
+    /* Appearance settings — compact density for more options on screen */
+    .settings-layout #settings-panel-app.flow-bento-cell {
+      padding: var(--space-2) var(--space-3);
+    }
+    #settings-panel-app .home-card-head {
+      margin-bottom: var(--space-1);
+      padding-bottom: var(--space-1);
+    }
+    #settings-panel-app h3 {
+      margin: 10px 0 3px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    #settings-panel-app h3:first-of-type {
+      margin-top: 0;
+    }
+    #settings-panel-app > .muted,
+    #settings-panel-app .field > .muted,
+    #settings-panel-app [data-superadmin-only] > .muted {
+      margin: 0 0 5px;
+      font-size: 0.76rem;
+      line-height: 1.38;
+    }
+    #settings-panel-app .settings-divider {
+      margin: 10px 0;
+    }
+    #settings-panel-app .theme-preference-row {
+      gap: 5px;
+      margin-top: 3px;
+    }
+    #settings-panel-app .theme-pref-option {
+      padding: 5px 9px;
+      gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    #settings-panel-app .accent-preset-row {
+      gap: 7px;
+      margin: 5px 0 7px;
+    }
+    #settings-panel-app .accent-swatch {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+    }
+    #settings-panel-app .accent-custom-row {
+      gap: 8px;
+      margin-top: 2px;
+    }
+    #settings-panel-app .accent-custom-row input[type="color"] {
+      width: 40px;
+      height: 34px;
+    }
+    #settings-panel-app .field {
+      margin: 0 0 6px;
+    }
+    #settings-panel-app .field label {
+      margin-bottom: 3px;
+      font-size: 0.78rem;
+    }
+    #settings-panel-app .field input[type="password"],
+    #settings-panel-app .field input[type="text"] {
+      padding: 6px 8px;
+      font-size: 0.82rem;
+    }
+    #settings-panel-app .toggle {
+      gap: 6px;
+      padding: 3px 0;
+      margin-bottom: 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    #settings-panel-app .toggle input {
+      width: 16px;
+      height: 16px;
+    }
+    #settings-panel-app .settings-nav-tabs-list {
+      gap: 0;
+      margin-top: 2px;
+    }
+    #settings-panel-app .settings-nav-tabs-list .toggle {
+      padding: 3px 0;
+    }
+    #settings-panel-app .actions {
+      margin-top: 6px;
+      gap: 6px;
+    }
+    #settings-panel-app .actions .secondary,
+    #settings-panel-app .actions .primary {
+      padding: 6px 10px;
+      font-size: 0.78rem;
+    }
+    #settings-panel-app .status {
+      margin-top: 4px;
+      font-size: 0.76rem;
+    }
+    #settings-panel-app .settings-footnote {
+      margin-top: 10px;
+      font-size: 0.76rem;
+      line-height: 1.38;
+    }
+    #settings-panel-app #settings-gemini-api-key-hint {
+      margin-top: 4px;
+      font-size: 0.72rem;
+    }
+    @media (min-width: 560px) {
+      #settings-panel-app .settings-nav-tabs-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 10px;
+      }
     }
     .route-switcher {
       display: block;
@@ -8720,6 +9198,7 @@
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260627" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/auth.js" defer></script>
+  <script src="/static/js/hls.min.js" defer></script>
 </head>
 <body data-season="ordinary">
   <div class="app-shell">
@@ -8770,6 +9249,46 @@
               </div>
               </div>
           <div class="app-header__utilities">
+          <div class="header-chips-wrap">
+          <div class="live-radio-wrap" id="live-radio-wrap">
+            <div class="live-radio-pill" id="live-radio-pill">
+              <button type="button" class="live-radio-pill__play" id="live-radio-play-btn" aria-label="Play live radio">
+                <svg class="live-radio-icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                <svg class="live-radio-icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              </button>
+              <button type="button" class="live-radio-pill__body" id="live-radio-settings-btn" title="Choose EWTN radio station">
+                <span class="live-radio-pill__live" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.247 7.761a6 6 0 0 1 0 8.478"/><path d="M19.075 4.933a10 10 0 0 1 0 14.134"/><path d="M4.925 19.067a10 10 0 0 1 0-14.134"/><path d="M7.753 16.239a6 6 0 0 1 0-8.478"/><circle cx="12" cy="12" r="2"/></svg>
+                  <span class="live-radio-pill__dot"></span>
+                </span>
+                <span class="live-radio-pill__label">Live Radio</span>
+              </button>
+              <button type="button" class="live-radio-pill__menu" id="live-radio-menu-btn" aria-expanded="false" aria-controls="live-radio-panel" aria-label="Open radio player">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="vb-dropdown-panel vb-dropdown-panel--right live-radio-panel" id="live-radio-panel" role="dialog" aria-labelledby="live-radio-panel-title" hidden>
+              <img class="live-radio-panel__art" id="live-radio-art" src="https://www.ewtn.com/img/od/live-generic-radio.jpg" alt="" width="173" height="98" />
+              <div class="live-radio-panel__scrim" aria-hidden="true"></div>
+              <button type="button" class="live-radio-panel__channel-btn live-radio-panel__channel-btn--prev" id="live-radio-prev" aria-label="Previous station">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button type="button" class="live-radio-panel__channel-btn live-radio-panel__channel-btn--next" id="live-radio-next" aria-label="Next station">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <div class="live-radio-panel__center">
+                <button type="button" class="live-radio-panel__play" id="live-radio-panel-play" aria-label="Play live radio">
+                  <svg class="live-radio-icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                  <svg class="live-radio-icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                </button>
+                <div class="live-radio-panel__label">
+                  <p class="live-radio-panel__station" id="live-radio-panel-title">EWTN Radio</p>
+                  <p class="live-radio-panel__channel-pos" id="live-radio-channel-pos" aria-hidden="true">1 / 5</p>
+                </div>
+              </div>
+            </div>
+            <audio id="live-radio-audio" preload="none" playsinline crossorigin="anonymous"></audio>
+          </div>
           <div class="liturgical-indicator-wrap">
             <button type="button" class="liturgical-indicator" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
                 <img src="/static/icons/calendar.png" class="liturgical-indicator__icon" alt="" width="16" height="16" aria-hidden="true" />
@@ -8807,6 +9326,7 @@
               </ul>
               </div>
             </div>
+          </div>
             <div class="notif-wrap">
               <button type="button" class="notif-btn" id="notif-toggle-btn" aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel" title="Notifications">
                 <img src="/static/icons/notifications.png" class="notif-icon" alt="" width="20" height="20" />
@@ -8880,27 +9400,27 @@
         </div>
         <div class="app-header__nav-row">
           <nav class="app-header-nav app-nav--desktop" id="admin-sidebar" aria-label="Main navigation">
-            <a class="nav-link" data-route="/home" href="/home">
+            <a class="nav-link" data-nav-tab="home" data-route="/home" href="/home">
               <img src="/static/icons/home.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Home</span>
             </a>
-            <a class="nav-link" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
+            <a class="nav-link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
               <img src="/static/icons/mass.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Mass</span>
             </a>
-            <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+            <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
               <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Library</span>
             </a>
-            <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+            <a class="nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
               <img src="/static/icons/media.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Media</span>
             </a>
-            <a class="nav-link" data-route="/mass/calendar" href="/mass/calendar">
+            <a class="nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
               <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Calendar</span>
             </a>
-            <a class="nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+            <a class="nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
               <img src="/static/icons/design.png" class="nav-icon" alt="" width="15" height="15" />
               <span class="nav-label">Design</span>
             </a>
@@ -10026,7 +10546,7 @@ Lord, hear our prayer</textarea>
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="system" checked /> System</label>
                 </div>
 
-                <h3 style="margin-top:18px;">Header toggle dark mode</h3>
+                <h3>Header toggle dark mode</h3>
                 <p class="muted">When you use the sun/moon button in the top bar, which dark theme should it switch to?</p>
                 <div class="theme-preference-row" role="radiogroup" aria-label="Header toggle dark mode">
                   <label class="theme-pref-option"><input type="radio" name="toggle-dark-preference" value="dark" checked /> Dark</label>
@@ -10058,7 +10578,7 @@ Lord, hear our prayer</textarea>
                 <div class="field">
                   <label for="settings-gemini-api-key">Gemini API key</label>
                   <input type="password" id="settings-gemini-api-key" autocomplete="off" placeholder="AIza…" maxlength="512" />
-                  <p class="muted" id="settings-gemini-api-key-hint" style="margin-top:6px;font-size:0.78rem;">Not configured.</p>
+                  <p class="muted" id="settings-gemini-api-key-hint">Not configured.</p>
                 </div>
                 <div class="actions">
                   <button type="button" class="secondary" id="btn-save-gemini-api-key">Save Gemini key</button>
@@ -10070,11 +10590,11 @@ Lord, hear our prayer</textarea>
 
                 <h3>Home news card</h3>
                 <p class="muted">Show world Catholic headlines beside the Sunday Gospel on Home. Refreshes each time you open Home.</p>
-                <label class="toggle" style="margin-bottom:10px;">
+                <label class="toggle">
                   <input type="checkbox" id="settings-home-news-enabled" checked />
                   Show news card on Home
                 </label>
-                <label class="toggle" style="margin-bottom:8px;">
+                <label class="toggle">
                   <input type="checkbox" id="settings-home-news-vatican" checked />
                   Vatican News
                 </label>
@@ -10082,6 +10602,21 @@ Lord, hear our prayer</textarea>
                   <input type="checkbox" id="settings-home-news-cna" checked />
                   Catholic News Agency
                 </label>
+
+                <hr class="settings-divider" />
+
+                <h3>Navigation tabs</h3>
+                <p class="muted">Home, Mass, and Library are always visible. Turn on optional tabs below to add them to your navigation — your choices are remembered for next time.</p>
+                <div class="settings-nav-tabs-list" id="settings-nav-tabs-list" role="group" aria-label="Visible navigation tabs"></div>
+
+                <hr class="settings-divider" />
+
+                <section id="settings-live-radio">
+                  <h3>EWTN Live Radio</h3>
+                  <p class="muted">Default stream for the Live Radio pill in the header. Streams from <a href="https://www.ewtn.com/live/radio" target="_blank" rel="noopener noreferrer">EWTN 24/7 Radio</a>.</p>
+                  <div class="settings-radio-list" id="settings-radio-list" aria-live="polite"></div>
+                  <p class="status" id="settings-radio-status" aria-live="polite"></p>
+                </section>
 
                 <hr class="settings-divider" />
 
@@ -10093,7 +10628,7 @@ Lord, hear our prayer</textarea>
                   <label class="theme-pref-option"><input type="radio" name="visual-style" value="midnight" /> Midnight</label>
                 </div>
 
-                <p class="muted" style="margin-top:16px;">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for slide colors and typography.</p>
+                <p class="muted settings-footnote">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for slide colors and typography.</p>
                 <div class="actions">
                   <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
                   <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
@@ -10104,19 +10639,19 @@ Lord, hear our prayer</textarea>
       </section>
     </main>
     <nav class="app-bottom-nav app-nav--mobile" id="app-bottom-nav" aria-label="Main navigation">
-      <a class="nav-link" data-route="/home" href="/home">
+      <a class="nav-link" data-nav-tab="home" data-route="/home" href="/home">
         <img src="/static/icons/home.png" class="nav-icon" alt="" width="15" height="15" />
         <span class="nav-label">Home</span>
       </a>
-      <a class="nav-link" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
+      <a class="nav-link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
         <img src="/static/icons/mass.png" class="nav-icon" alt="" width="15" height="15" />
         <span class="nav-label">Mass</span>
       </a>
-      <a class="nav-link" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+      <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
         <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
         <span class="nav-label">Library</span>
       </a>
-      <a class="nav-link" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+      <a class="nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
         <img src="/static/icons/media.png" class="nav-icon" alt="" width="15" height="15" />
         <span class="nav-label">Media</span>
       </a>
@@ -10136,23 +10671,23 @@ Lord, hear our prayer</textarea>
           <button type="button" class="ghost ui-card__close" id="app-more-sheet-close" aria-label="Close">×</button>
         </header>
         <div class="ui-card__content app-more-sheet__links">
-          <a class="app-more-sheet__link nav-link" data-route="/mass/calendar" href="/mass/calendar">
+          <a class="app-more-sheet__link nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
             <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Liturgical Calendar</span>
           </a>
-          <a class="app-more-sheet__link nav-link" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+          <a class="app-more-sheet__link nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
             <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Theme Lab</span>
           </a>
-          <a class="app-more-sheet__link nav-link" data-route="/design/templates" href="/design/templates">
+          <a class="app-more-sheet__link nav-link" data-nav-tab="design" data-route="/design/templates" href="/design/templates">
             <img src="/static/icons/design.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Templates</span>
           </a>
-          <a class="app-more-sheet__link nav-link" data-route="/library/collections" href="/library/collections">
+          <a class="app-more-sheet__link nav-link" data-nav-tab="library" data-route="/library/collections" href="/library/collections">
             <img src="/static/icons/library.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Collections</span>
           </a>
-          <a class="app-more-sheet__link nav-link" data-route="/media/history" href="/media/history">
+          <a class="app-more-sheet__link nav-link" data-nav-tab="media" data-route="/media/history" href="/media/history">
             <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
             <span>History</span>
           </a>
@@ -10174,15 +10709,15 @@ Lord, hear our prayer</textarea>
     <div class="route-jump-float" id="route-jump-float">
       <label for="route-switcher">Jump to</label>
       <select class="route-switcher" id="route-switcher" aria-label="Jump to page">
-        <option value="/home">Home</option>
-        <option value="/mass/builder">Mass Builder</option>
-        <option value="/library/songs">Song Library</option>
-        <option value="/library/collections">Collections</option>
-        <option value="/media/posters">Posters</option>
-        <option value="/media/history">History</option>
-        <option value="/mass/calendar">Liturgical Calendar</option>
-        <option value="/design/theme-lab">Theme Lab</option>
-        <option value="/design/templates">Templates</option>
+        <option value="/home" data-nav-tab="home">Home</option>
+        <option value="/mass/builder" data-nav-tab="mass">Mass Builder</option>
+        <option value="/library/songs" data-nav-tab="library">Song Library</option>
+        <option value="/library/collections" data-nav-tab="library">Collections</option>
+        <option value="/media/posters" data-nav-tab="media">Posters</option>
+        <option value="/media/history" data-nav-tab="media">History</option>
+        <option value="/mass/calendar" data-nav-tab="calendar">Liturgical Calendar</option>
+        <option value="/design/theme-lab" data-nav-tab="design">Theme Lab</option>
+        <option value="/design/templates" data-nav-tab="design">Templates</option>
         <option value="/settings/church">Church Profile</option>
         <option value="/settings/app">Appearance &amp; theme</option>
       </select>
@@ -10338,6 +10873,42 @@ Lord, hear our prayer</textarea>
     const HOME_NEWS_ENABLED_KEY = "verbumHomeNewsEnabled";
     const HOME_NEWS_VATICAN_KEY = "verbumHomeNewsVatican";
     const HOME_NEWS_CNA_KEY = "verbumHomeNewsCna";
+    const NAV_TABS_ENABLED_KEY = "verbumNavTabsEnabled";
+    const NAV_TABS_HIDDEN_KEY = "verbumNavTabsHidden"; // legacy — migrated on read
+    const NAV_TAB_DEFS = [
+      { id: "home", label: "Home", required: true },
+      { id: "mass", label: "Mass", required: true },
+      { id: "library", label: "Library", required: true },
+      { id: "media", label: "Media" },
+      { id: "calendar", label: "Calendar" },
+      { id: "design", label: "Design" },
+    ];
+
+    function getOptionalNavTabIds() {
+      return NAV_TAB_DEFS.filter((def) => !def.required).map((def) => def.id);
+    }
+
+    function migrateNavTabPrefs() {
+      try {
+        if (localStorage.getItem(NAV_TABS_ENABLED_KEY) !== null) return;
+        const optional = getOptionalNavTabIds();
+        const raw = localStorage.getItem(NAV_TABS_HIDDEN_KEY);
+        if (raw === null) {
+          localStorage.setItem(NAV_TABS_ENABLED_KEY, "[]");
+          return;
+        }
+        const hidden = JSON.parse(raw);
+        if (!Array.isArray(hidden)) {
+          localStorage.setItem(NAV_TABS_ENABLED_KEY, "[]");
+          return;
+        }
+        const hiddenSet = new Set(hidden.filter((id) => optional.includes(id)));
+        localStorage.setItem(
+          NAV_TABS_ENABLED_KEY,
+          JSON.stringify(optional.filter((id) => !hiddenSet.has(id)))
+        );
+      } catch (_e) { /* ignore */ }
+    }
 
     function getHomeNewsPrefs() {
       const readBool = (key, defaultOn) => {
@@ -10378,6 +10949,478 @@ Lord, hear our prayer</textarea>
         cna.checked = prefs.cna;
         cna.disabled = !prefs.enabled;
       }
+    }
+
+    function getEnabledOptionalNavTabIds() {
+      migrateNavTabPrefs();
+      const optional = new Set(getOptionalNavTabIds());
+      try {
+        const raw = localStorage.getItem(NAV_TABS_ENABLED_KEY);
+        if (!raw) return new Set();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return new Set();
+        return new Set(parsed.filter((id) => optional.has(id)));
+      } catch (_e) {
+        return new Set();
+      }
+    }
+
+    function saveEnabledOptionalNavTabIds(enabled) {
+      const optional = new Set(getOptionalNavTabIds());
+      try {
+        localStorage.setItem(
+          NAV_TABS_ENABLED_KEY,
+          JSON.stringify([...enabled].filter((id) => optional.has(id)))
+        );
+      } catch (_e) { /* ignore */ }
+    }
+
+    function isNavTabVisible(tabId) {
+      const def = NAV_TAB_DEFS.find((row) => row.id === tabId);
+      if (!def) return false;
+      if (def.required) return true;
+      return getEnabledOptionalNavTabIds().has(tabId);
+    }
+
+    function routeToNavTabId(route) {
+      const r = normalizeRoute(route || "");
+      if (r === "/home") return "home";
+      if (r === "/mass/calendar") return "calendar";
+      if (r.startsWith("/mass/")) return "mass";
+      if (r.startsWith("/library/")) return "library";
+      if (r.startsWith("/media/")) return "media";
+      if (r.startsWith("/design/")) return "design";
+      return null;
+    }
+
+    function syncNavTabSettingsUI() {
+      const list = $("settings-nav-tabs-list");
+      if (!list) return;
+      const enabled = getEnabledOptionalNavTabIds();
+      list.innerHTML = NAV_TAB_DEFS.map((def) => {
+        const locked = !!def.required;
+        const checked = locked || enabled.has(def.id);
+        const id = "settings-nav-tab-" + def.id;
+        const cls = "toggle" + (locked ? " is-locked" : "");
+        const note = locked ? " <span class=\"muted\" style=\"font-size:0.78rem;\">(always on)</span>" : "";
+        return (
+          "<label class=\"" + cls + "\">" +
+            "<input type=\"checkbox\" id=\"" + id + "\" data-nav-tab-toggle=\"" + escapeHtml(def.id) + "\" " +
+              (checked ? "checked" : "") + (locked ? " disabled" : "") + " />" +
+            escapeHtml(def.label) + note +
+          "</label>"
+        );
+      }).join("");
+    }
+
+    function applyNavTabVisibility() {
+      document.querySelectorAll("[data-nav-tab]").forEach((el) => {
+        el.hidden = !isNavTabVisible(el.dataset.navTab);
+      });
+      const headerNav = document.querySelector(".app-header-nav");
+      const bottomNav = $("app-bottom-nav");
+      if (headerNav) {
+        const visibleCount = headerNav.querySelectorAll(".nav-link:not([hidden])").length;
+        headerNav.classList.toggle("is-tab-balanced", visibleCount > 0 && visibleCount < NAV_TAB_DEFS.length);
+      }
+      if (bottomNav) {
+        const visibleCount = bottomNav.querySelectorAll(".nav-link:not([hidden])").length;
+        bottomNav.classList.toggle("is-tab-balanced", visibleCount > 0);
+      }
+      const switcher = $("route-switcher");
+      if (switcher) {
+        switcher.querySelectorAll("option[data-nav-tab]").forEach((opt) => {
+          const visible = isNavTabVisible(opt.dataset.navTab);
+          opt.hidden = !visible;
+          opt.disabled = !visible;
+        });
+      }
+    }
+
+    function redirectIfHiddenNavRoute() {
+      const route = normalizeRoute(window.location.pathname);
+      const tabId = routeToNavTabId(route);
+      if (tabId && !isNavTabVisible(tabId)) {
+        showRoute("/home", true);
+        return true;
+      }
+      return false;
+    }
+
+    function bindNavTabSettings() {
+      syncNavTabSettingsUI();
+      const list = $("settings-nav-tabs-list");
+      if (!list) return;
+      list.addEventListener("change", (e) => {
+        const inp = e.target.closest("[data-nav-tab-toggle]");
+        if (!inp) return;
+        const tabId = inp.dataset.navTabToggle;
+        const def = NAV_TAB_DEFS.find((row) => row.id === tabId);
+        if (!def || def.required) return;
+        const enabled = getEnabledOptionalNavTabIds();
+        if (inp.checked) enabled.add(tabId);
+        else enabled.delete(tabId);
+        saveEnabledOptionalNavTabIds(enabled);
+        applyNavTabVisibility();
+        if (redirectIfHiddenNavRoute()) {
+          notify("That section is hidden. Redirected to Home.", "info");
+        }
+      });
+    }
+
+    const EWTN_RADIO_STORAGE_KEY = "verbumEwtRadioStationId";
+    const EWTN_HLS_FALLBACK = {
+      us: "https://ewtn-sgrewind.streamguys1.com/sgrewind/english/chunks.m3u8",
+      extra: "https://ewtn-sgrewind.streamguys1.com/sgrewind/classics/chunks.m3u8",
+      gbie: "https://ewtn-sgrewind.streamguys1.com/sgrewind/sky/chunks.m3u8",
+      philippines: "https://ewtn-sgrewind.streamguys1.com/sgrewind/philippines/chunks.m3u8",
+      catolica: "https://ewtn-sgrewind.streamguys1.com/sgrewind/spanish/chunks.m3u8",
+    };
+    let ewtnRadioStations = [];
+    let ewtnRadioPlaying = false;
+    let ewtnHls = null;
+    let ewtnRadioActiveId = null;
+
+    function getEwtRadioHlsUrl(station) {
+      if (!station) return "";
+      return station.hls_url || EWTN_HLS_FALLBACK[station.id] || "";
+    }
+
+    function getEwtRadioStationId() {
+      try {
+        const id = localStorage.getItem(EWTN_RADIO_STORAGE_KEY) || "us";
+        return ewtnRadioStations.some((s) => s.id === id) ? id : (ewtnRadioStations[0] && ewtnRadioStations[0].id) || "us";
+      } catch (_e) {
+        return "us";
+      }
+    }
+
+    function saveEwtRadioStationId(id) {
+      try {
+        localStorage.setItem(EWTN_RADIO_STORAGE_KEY, id);
+      } catch (_e) { /* ignore */ }
+    }
+
+    function getEwtRadioDefaultStation() {
+      const id = getEwtRadioStationId();
+      return ewtnRadioStations.find((s) => s.id === id) || ewtnRadioStations[0] || null;
+    }
+
+    function getEwtRadioActiveStationId() {
+      if (ewtnRadioActiveId && ewtnRadioStations.some((s) => s.id === ewtnRadioActiveId)) {
+        return ewtnRadioActiveId;
+      }
+      return getEwtRadioStationId();
+    }
+
+    function getEwtRadioActiveStation() {
+      const id = getEwtRadioActiveStationId();
+      return ewtnRadioStations.find((s) => s.id === id) || ewtnRadioStations[0] || null;
+    }
+
+    function setLiveRadioPlayingUi(playing) {
+      ewtnRadioPlaying = !!playing;
+      const pill = $("live-radio-pill");
+      const wrap = $("live-radio-wrap");
+      if (pill) pill.classList.toggle("is-playing", ewtnRadioPlaying);
+      if (wrap) wrap.classList.toggle("is-playing", ewtnRadioPlaying);
+      const playBtn = $("live-radio-play-btn");
+      const panelPlay = $("live-radio-panel-play");
+      const label = playing ? "Pause live radio" : "Play live radio";
+      if (playBtn) playBtn.setAttribute("aria-label", label);
+      if (panelPlay) panelPlay.setAttribute("aria-label", label);
+    }
+
+    function syncLiveRadioPanelUi() {
+      const station = getEwtRadioActiveStation();
+      const title = $("live-radio-panel-title");
+      const art = $("live-radio-art");
+      const pos = $("live-radio-channel-pos");
+      if (station) {
+        if (title) title.textContent = station.name;
+        if (art && station.image_url) {
+          art.src = station.image_url;
+          art.alt = station.name + " artwork";
+        }
+      }
+      if (pos && ewtnRadioStations.length) {
+        const idx = ewtnRadioStations.findIndex((s) => s.id === getEwtRadioActiveStationId());
+        pos.textContent = (idx >= 0 ? idx + 1 : 1) + " / " + ewtnRadioStations.length;
+      }
+    }
+
+    function syncLiveRadioUi() {
+      if (!ewtnRadioActiveId) ewtnRadioActiveId = getEwtRadioStationId();
+      syncLiveRadioPanelUi();
+      renderSettingsRadioList();
+    }
+
+    async function stepLiveRadioChannel(delta) {
+      if (!ewtnRadioStations.length) return;
+      const currentId = getEwtRadioActiveStationId();
+      const idx = ewtnRadioStations.findIndex((s) => s.id === currentId);
+      const base = idx >= 0 ? idx : 0;
+      const nextIdx = (base + delta + ewtnRadioStations.length) % ewtnRadioStations.length;
+      ewtnRadioActiveId = ewtnRadioStations[nextIdx].id;
+      syncLiveRadioPanelUi();
+      const wasPlaying = ewtnRadioPlaying;
+      const audio = $("live-radio-audio");
+      resetEwtRadioAudio(audio);
+      setLiveRadioPlayingUi(false);
+      if (!wasPlaying) return;
+      try {
+        await startEwtRadioPlayback(getEwtRadioActiveStation());
+        setLiveRadioPlayingUi(true);
+      } catch (e) {
+        resetEwtRadioAudio(audio);
+        console.error("Live radio channel switch failed:", e);
+        notify("Could not switch channel. Try play again.", "error");
+      }
+    }
+
+    function renderSettingsRadioList() {
+      const list = $("settings-radio-list");
+      if (!list) return;
+      const selected = getEwtRadioStationId();
+      if (!ewtnRadioStations.length) {
+        list.innerHTML = "<p class=\"muted\">Loading EWTN stations…</p>";
+        return;
+      }
+      list.innerHTML = ewtnRadioStations.map((station) => (
+        "<button type=\"button\" class=\"settings-radio-option" + (station.id === selected ? " is-selected" : "") + "\" " +
+          "data-ewtn-radio-id=\"" + escapeHtml(station.id) + "\">" +
+          "<img class=\"settings-radio-option__art\" src=\"" + escapeHtml(station.image_url || "") + "\" alt=\"\" loading=\"lazy\" width=\"52\" height=\"40\" />" +
+          "<span class=\"settings-radio-option__text\">" +
+            "<strong>" + escapeHtml(station.name) + "</strong>" +
+            "<span>EWTN 24/7 live stream</span>" +
+          "</span>" +
+          "<span class=\"settings-radio-option__mark\" aria-hidden=\"true\">Default</span>" +
+        "</button>"
+      )).join("");
+    }
+
+    async function loadEwtRadioCatalog() {
+      const status = $("settings-radio-status");
+      try {
+        const res = await fetch("/api/ewtn/radio");
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.detail || data.error || "Could not load radio stations.");
+        ewtnRadioStations = Array.isArray(data.stations) ? data.stations : [];
+        if (!ewtnRadioActiveId) ewtnRadioActiveId = getEwtRadioStationId();
+        syncLiveRadioUi();
+        if (status) status.textContent = "";
+      } catch (e) {
+        if (status) status.textContent = e.message || "Could not load EWTN radio.";
+        notify(e.message || "Could not load EWTN radio.", "error");
+      }
+    }
+
+    function destroyEwtRadioHls() {
+      if (ewtnHls) {
+        try { ewtnHls.destroy(); } catch (_e) { /* ignore */ }
+        ewtnHls = null;
+      }
+    }
+
+    function resetEwtRadioAudio(audio) {
+      if (!audio) return;
+      destroyEwtRadioHls();
+      audio.pause();
+      audio.removeAttribute("src");
+      try { audio.load(); } catch (_e) { /* ignore */ }
+      delete audio.dataset.stationId;
+    }
+
+    function waitForAudioCanPlay(audio, timeoutMs) {
+      const ms = timeoutMs || 15000;
+      return new Promise((resolve, reject) => {
+        if (audio.readyState >= 2) {
+          resolve();
+          return;
+        }
+        let timer = null;
+        const cleanup = () => {
+          if (timer) clearTimeout(timer);
+          audio.removeEventListener("canplay", onReady);
+          audio.removeEventListener("error", onErr);
+        };
+        const onReady = () => { cleanup(); resolve(); };
+        const onErr = () => {
+          cleanup();
+          const code = audio.error && audio.error.code;
+          reject(new Error(code ? "Audio error " + code : "Audio failed to load"));
+        };
+        timer = setTimeout(() => { cleanup(); reject(new Error("Radio stream timed out")); }, ms);
+        audio.addEventListener("canplay", onReady);
+        audio.addEventListener("error", onErr);
+      });
+    }
+
+    function loadEwtRadioWithHls(audio, station) {
+      const hlsUrl = getEwtRadioHlsUrl(station);
+      if (!hlsUrl) return Promise.reject(new Error("No HLS stream"));
+      if (window.Hls && Hls.isSupported()) {
+        return new Promise((resolve, reject) => {
+          destroyEwtRadioHls();
+          ewtnHls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          ewtnHls.attachMedia(audio);
+          ewtnHls.on(Hls.Events.MANIFEST_PARSED, () => resolve());
+          ewtnHls.on(Hls.Events.ERROR, (_evt, data) => {
+            if (data && data.fatal) reject(data);
+          });
+          ewtnHls.loadSource(hlsUrl);
+        });
+      }
+      if (audio.canPlayType("application/vnd.apple.mpegurl")) {
+        audio.src = hlsUrl;
+        audio.load();
+        return waitForAudioCanPlay(audio);
+      }
+      return Promise.reject(new Error("HLS not supported"));
+    }
+
+    async function startEwtRadioPlayback(station) {
+      const audio = $("live-radio-audio");
+      if (!audio || !station) throw new Error("No station");
+      resetEwtRadioAudio(audio);
+      try {
+        await loadEwtRadioWithHls(audio, station);
+      } catch (_hlsErr) {
+        if (!station.stream_url) throw _hlsErr;
+        audio.src = station.stream_url;
+        audio.load();
+        await waitForAudioCanPlay(audio);
+      }
+      audio.dataset.stationId = station.id;
+      await audio.play();
+    }
+
+    async function toggleLiveRadioPlay() {
+      const audio = $("live-radio-audio");
+      const station = getEwtRadioActiveStation();
+      if (!audio || !station || (!getEwtRadioHlsUrl(station) && !station.stream_url)) {
+        notify("Choose a radio station in Settings first.", "info");
+        openLiveRadioSettings();
+        return;
+      }
+      if (ewtnRadioPlaying) {
+        audio.pause();
+        setLiveRadioPlayingUi(false);
+        return;
+      }
+      if (
+        audio.dataset.stationId === station.id &&
+        (ewtnHls || audio.src) &&
+        audio.paused
+      ) {
+        try {
+          await audio.play();
+          setLiveRadioPlayingUi(true);
+          return;
+        } catch (_e) { /* reload stream below */ }
+      }
+      try {
+        await startEwtRadioPlayback(station);
+        setLiveRadioPlayingUi(true);
+      } catch (e) {
+        resetEwtRadioAudio(audio);
+        console.error("Live radio playback failed:", e);
+        notify("Could not start playback. Tap play again or pick another station in Settings.", "error");
+        setLiveRadioPlayingUi(false);
+      }
+    }
+
+    function selectEwtRadioStation(id) {
+      if (!ewtnRadioStations.some((s) => s.id === id)) return;
+      const wasPlaying = ewtnRadioPlaying;
+      saveEwtRadioStationId(id);
+      ewtnRadioActiveId = id;
+      syncLiveRadioUi();
+      const audio = $("live-radio-audio");
+      resetEwtRadioAudio(audio);
+      setLiveRadioPlayingUi(false);
+      if (wasPlaying) toggleLiveRadioPlay();
+      const station = getEwtRadioDefaultStation();
+      const status = $("settings-radio-status");
+      if (status) status.textContent = (station ? station.name : "Station") + " is now your default.";
+    }
+
+    function openLiveRadioSettings() {
+      window.__scrollToLiveRadio = true;
+      showRoute("/settings/app");
+    }
+
+    function initLiveRadio() {
+      const playBtn = $("live-radio-play-btn");
+      const panelPlay = $("live-radio-panel-play");
+      const settingsBtn = $("live-radio-settings-btn");
+      const menuBtn = $("live-radio-menu-btn");
+      const prevBtn = $("live-radio-prev");
+      const nextBtn = $("live-radio-next");
+      const panel = $("live-radio-panel");
+      const audio = $("live-radio-audio");
+      const list = $("settings-radio-list");
+
+      if (playBtn) {
+        playBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleLiveRadioPlay();
+        });
+      }
+      if (panelPlay) {
+        panelPlay.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleLiveRadioPlay();
+        });
+      }
+      if (settingsBtn) {
+        settingsBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openLiveRadioSettings();
+        });
+      }
+      if (prevBtn) {
+        prevBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          stepLiveRadioChannel(-1);
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          stepLiveRadioChannel(1);
+        });
+      }
+      if (menuBtn && panel) {
+        menuBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (panel.hidden) {
+            closeHeaderMenus("live-radio-panel");
+            syncLiveRadioPanelUi();
+            setVbDropdownOpen(panel, menuBtn, true);
+          } else {
+            setVbDropdownOpen(panel, menuBtn, false);
+          }
+        });
+      }
+      if (list) {
+        list.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-ewtn-radio-id]");
+          if (!btn) return;
+          selectEwtRadioStation(btn.dataset.ewtnRadioId);
+        });
+      }
+      if (audio) {
+        audio.addEventListener("playing", () => setLiveRadioPlayingUi(true));
+        audio.addEventListener("pause", () => setLiveRadioPlayingUi(false));
+        audio.addEventListener("ended", () => setLiveRadioPlayingUi(false));
+        audio.addEventListener("error", () => {
+          setLiveRadioPlayingUi(false);
+          destroyEwtRadioHls();
+          notify("Radio stream interrupted. Try play again or pick another station.", "error");
+        });
+      }
+      loadEwtRadioCatalog();
     }
 
     function formatNewsDate(isoOrRaw) {
@@ -11314,7 +12357,16 @@ Lord, hear our prayer</textarea>
       }
       if (r === "/settings/app") {
         syncHomeNewsSettingsUI();
+        syncNavTabSettingsUI();
+        if (typeof renderSettingsRadioList === "function") renderSettingsRadioList();
         refreshGeminiSettings();
+        if (window.__scrollToLiveRadio) {
+          window.__scrollToLiveRadio = false;
+          requestAnimationFrame(() => {
+            const el = $("settings-live-radio");
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        }
       }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/settings/church") {
@@ -11355,7 +12407,12 @@ Lord, hear our prayer</textarea>
 
     function showRoute(route, replaceOnly = false) {
       if (typeof closeHeaderMenus === "function") closeHeaderMenus();
-      const r = normalizeRoute(route);
+      let r = normalizeRoute(route);
+      const tabId = routeToNavTabId(r);
+      if (tabId && !isNavTabVisible(tabId)) {
+        notify("That section is hidden. Turn it back on in Settings → Appearance.", "info");
+        r = "/home";
+      }
       const leaving = document.querySelector(".page.active");
       const next = Array.from(document.querySelectorAll(".page")).find((p) => pageIsActiveForRoute(p, r));
       const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -16335,6 +17392,7 @@ Lord, hear our prayer</textarea>
       if (typeof closeMassSongResultPanels === "function") closeMassSongResultPanels(null);
       [
         ["liturgical-indicator-panel", "liturgical-indicator-btn"],
+        ["live-radio-panel", "live-radio-menu-btn"],
         ["account-menu-panel", "account-menu-btn"],
         ["create-menu-panel", "create-menu-btn"],
         ["notif-panel", "notif-toggle-btn"],
@@ -16348,7 +17406,7 @@ Lord, hear our prayer</textarea>
       if (window.__verbumDropdownDismissBound) return;
       window.__verbumDropdownDismissBound = true;
       const dropdownRoots =
-        ".account-menu-wrap, .create-menu-wrap, .liturgical-indicator-wrap, " +
+        ".account-menu-wrap, .create-menu-wrap, .liturgical-indicator-wrap, .live-radio-wrap, " +
         ".notif-wrap, .app-header__search-wrap, .vb-select, .celebrant-picker, " +
         ".mass-song-plan-row__search";
       document.addEventListener("click", (e) => {
@@ -16474,6 +17532,11 @@ Lord, hear our prayer</textarea>
     function filterGlobalSearchItems(query) {
       const q = (query || "").trim();
       const scored = GLOBAL_SEARCH_ITEMS
+        .filter((item) => {
+          if (!item.route) return true;
+          const tabId = routeToNavTabId(item.route);
+          return !tabId || isNavTabVisible(tabId);
+        })
         .map((item) => ({ item, score: scoreGlobalSearchItem(item, q) }))
         .filter((row) => row.score > 0)
         .sort((a, b) => b.score - a.score || a.item.label.localeCompare(b.item.label))
@@ -18995,6 +20058,10 @@ Lord, hear our prayer</textarea>
     restoreMassSongPlanLang();
     renderHistoryList();
     bindHomeNewsSettings();
+    bindNavTabSettings();
+    applyNavTabVisibility();
+    redirectIfHiddenNavRoute();
+    initLiveRadio();
     initHomeNewsExpandModal();
     initLiturgicalIndicatorPanel();
     initDashboardDropdownDismiss();

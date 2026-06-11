@@ -29,6 +29,7 @@ load_project_dotenv()
 
 from services.calendar_month import fetch_calendar_month
 from services.catholic_news import fetch_catholic_headlines
+from services.ewtn_radio import ewtn_radio_catalog
 
 from pipeline import (
     GenerationResult,
@@ -1023,6 +1024,12 @@ def api_catholic_news(
         offset=off,
         max_age_days=age,
     )
+
+
+@app.get("/api/ewtn/radio")
+def api_ewtn_radio() -> Any:
+    """EWTN live radio stations (stream URLs from ewtn.com/live/radio)."""
+    return ewtn_radio_catalog()
 
 
 @app.get("/api/calendar/month")
