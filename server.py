@@ -989,6 +989,7 @@ def index(request: Request) -> Any:
 
 
 @app.get("/home", response_class=HTMLResponse)
+@app.get("/radio", response_class=HTMLResponse)
 @app.get("/mass/builder", response_class=HTMLResponse)
 @app.get("/mass/calendar", response_class=HTMLResponse)
 @app.get("/media/posters", response_class=HTMLResponse)

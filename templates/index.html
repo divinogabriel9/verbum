@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{{ title }}</title>
   <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" href="/static/brand/favicon-32x32.png" sizes="32x32" />
-  <link rel="icon" type="image/png" href="/static/brand/favicon-192x192.png" sizes="192x192" />
+  <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=3" sizes="32x32" />
+  <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=3" sizes="192x192" />
   <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -27,11 +27,11 @@
   <style>
     :root {
       color-scheme: light;
-      /* Winter Berry palette No.21 — sophisticated, minimal, timeless */
+      /* Winter Berry palette + app icon accent (#a10f0d) */
       --wb-frost: #E6DFD9;
       --wb-midnight: #15333D;
       --wb-petal: #C1A3A1;
-      --wb-berry: #824D5D;
+      --wb-berry: #a10f0d;
       --wb-stone: #788898;
       --wb-neon: #4DFFC8;
       --wb-neon-dim: #2DD4A8;
@@ -45,11 +45,11 @@
       --muted: #5C6B75;
       --line: #E2E8F0;
       --line-soft: #EDF2F7;
-      --accent: #824D5D;
+      --accent: #a10f0d;
       --accent-2: #788898;
       --accent-3: #C1A3A1;
-      --liturgical-accent: #824D5D;
-      --liturgical-glow: #C1A3A1;
+      --liturgical-accent: #a10f0d;
+      --liturgical-glow: #d45250;
       --liturgical-secondary: #788898;
       --on-accent: #FFFFFF;
       --ink-subtle: #6A7A84;
@@ -92,7 +92,14 @@
       --header-height: 56px;
       --topbar-chip-height: 36px;
       --app-header-nav-height: 44px;
-      --app-header-stack: 104px;
+      /* Main row: 12px pad ×2 + max(brand 44px, chips) + gap below fixed header */
+      --app-header-stack: calc(max(var(--topbar-chip-height), 44px) + 24px + 12px);
+      --app-header-glass-bg: color-mix(in srgb, var(--surface-solid) 28%, transparent);
+      --app-header-glass-border: color-mix(in srgb, var(--line) 42%, transparent);
+      --app-header-glass-blur: 24px;
+      --app-header-offset: calc(var(--app-header-stack) + var(--safe-top));
+      --main-content-top: calc(var(--app-header-offset) + var(--layout-gap));
+      --app-sidebar-width: 72px;
       --layout-gutter: clamp(20px, 3vw, 40px);
       --layout-gap: var(--space-5);
       --app-header-pad-x: var(--layout-gutter);
@@ -136,39 +143,7 @@
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
     }
-    /* Liturgical season: missalette ribbon colors (skipped when data-user-accent is set) */
-    body[data-season="advent"]:not([data-user-accent]) {
-      --liturgical-accent: #5A4A6A;
-      --liturgical-glow: #9B8AAB;
-      --liturgical-secondary: #788898;
-      --accent: #5A4A6A;
-    }
-    body[data-season="christmas"]:not([data-user-accent]) {
-      --liturgical-accent: #8B5A3C;
-      --liturgical-glow: #D4B896;
-      --liturgical-secondary: #788898;
-      --accent: #8B5A3C;
-    }
-    body[data-season="lent"]:not([data-user-accent]) {
-      --liturgical-accent: #5C3D52;
-      --liturgical-glow: #A8889E;
-      --liturgical-secondary: #6A7A8A;
-      --accent: #5C3D52;
-    }
-    body[data-season="easter"]:not([data-user-accent]) {
-      --liturgical-accent: #9B4D5E;
-      --liturgical-glow: #E8B4BC;
-      --liturgical-secondary: #788898;
-      --accent: #9B4D5E;
-    }
-    body[data-season="ordinary"]:not([data-user-accent]) {
-      --liturgical-accent: #824D5D;
-      --liturgical-glow: #C1A3A1;
-      --liturgical-secondary: #788898;
-      --accent: #824D5D;
-    }
-
-    /* Supabase-inspired dark: obsidian canvas, charcoal borders, snow text */
+    /* App icon accent — fixed; not tied to liturgical season */
     html[data-theme="dark"] {
       color-scheme: dark;
       --bg: #121212;
@@ -182,7 +157,11 @@
       --ink-subtle: #898989;
       --line: #393939;
       --line-soft: #2e2e2e;
-      --on-accent: #fafafa;
+      --accent: #a10f0d;
+      --liturgical-accent: #a10f0d;
+      --liturgical-glow: #d45250;
+      --liturgical-secondary: #788898;
+      --on-accent: #FFFFFF;
       --good: #3ecf8e;
       --color-primary: #3ecf8e;
       --color-primary-active: #2ab77a;
@@ -212,36 +191,6 @@
     }
     html[data-theme="dark"] body {
       background: var(--bg);
-    }
-    html[data-theme="dark"] body[data-season="advent"]:not([data-user-accent]) {
-      --liturgical-accent: #9B8AAB;
-      --liturgical-glow: #C4B5CE;
-      --liturgical-secondary: #788898;
-      --accent: #9B8AAB;
-    }
-    html[data-theme="dark"] body[data-season="christmas"]:not([data-user-accent]) {
-      --liturgical-accent: #D4B896;
-      --liturgical-glow: #E8D4BC;
-      --liturgical-secondary: #788898;
-      --accent: #D4B896;
-    }
-    html[data-theme="dark"] body[data-season="lent"]:not([data-user-accent]) {
-      --liturgical-accent: #A8889E;
-      --liturgical-glow: #C9A8B8;
-      --liturgical-secondary: #6A7A8A;
-      --accent: #A8889E;
-    }
-    html[data-theme="dark"] body[data-season="easter"]:not([data-user-accent]) {
-      --liturgical-accent: #E8B4BC;
-      --liturgical-glow: #F0D0D6;
-      --liturgical-secondary: #788898;
-      --accent: #E8B4BC;
-    }
-    html[data-theme="dark"] body[data-season="ordinary"]:not([data-user-accent]) {
-      --liturgical-accent: #C1A3A1;
-      --liturgical-glow: #D4B8B6;
-      --liturgical-secondary: #788898;
-      --accent: #C1A3A1;
     }
 
     /* Visual style presets (App Settings) */
@@ -323,7 +272,6 @@
       background: var(--color-primary-active, #2ab77a);
       border-color: var(--color-primary-active, #2ab77a);
     }
-    html[data-theme="dark"] .app-header,
     html[data-theme="dark"] .topbar,
     html[data-theme="dark"] .hero,
     html[data-theme="dark"] .panel,
@@ -473,6 +421,7 @@
       --nav-width: 0px;
       display: flex;
       flex-direction: column;
+      align-items: stretch;
       min-height: 100vh;
       max-height: 100vh;
       overflow: hidden;
@@ -480,6 +429,152 @@
       max-width: 100%;
       margin: 0;
       padding: 0;
+    }
+    @media (min-width: 769px) {
+      .app-shell.app-shell--sidebar {
+        flex-direction: row;
+      }
+      .app-shell.app-shell--sidebar > .app-body {
+        margin-left: var(--app-sidebar-width);
+        width: calc(100% - var(--app-sidebar-width));
+      }
+    }
+    .app-body {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      height: 100dvh;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .app-sidebar {
+      flex-shrink: 0;
+      width: var(--app-sidebar-width);
+      height: 100dvh;
+      max-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 8px 16px;
+      background: var(--surface-solid);
+      border-right: 1px solid var(--line-soft);
+      z-index: 30;
+      box-sizing: border-box;
+    }
+    @media (min-width: 769px) {
+      .app-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        align-self: auto;
+      }
+    }
+    .app-sidebar__brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      background: transparent;
+      transition: transform var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .app-sidebar__brand:hover { transform: scale(1.03); }
+    .app-sidebar__brand:focus-visible {
+      outline: 2px solid var(--good);
+      outline-offset: 2px;
+    }
+    .app-sidebar__brand-img {
+      display: block;
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+    .app-sidebar__nav {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+    }
+    .app-sidebar__nav::-webkit-scrollbar { display: none; }
+    .app-sidebar__link {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--liturgical-accent, #8b1e2d);
+      text-decoration: none;
+      cursor: pointer;
+      transition:
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        color var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .app-sidebar__link:hover {
+      background: color-mix(in srgb, var(--liturgical-accent, #8b1e2d) 10%, transparent);
+      transform: none;
+    }
+    .app-sidebar__link.active {
+      background: var(--liturgical-accent, #8b1e2d);
+      color: #fff;
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--liturgical-accent, #8b1e2d) 35%, transparent);
+    }
+    .app-sidebar__link:focus-visible {
+      outline: 2px solid var(--good);
+      outline-offset: 2px;
+    }
+    .app-sidebar__link[hidden] { display: none !important; }
+    .app-sidebar__icon {
+      width: 22px;
+      height: 22px;
+      display: block;
+      flex-shrink: 0;
+    }
+    .app-sidebar__link .nav-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .app-sidebar__link[data-nav-tooltip]:hover::after,
+    .app-sidebar__link[data-nav-tooltip]:focus-visible::after {
+      content: attr(data-nav-tooltip);
+      position: absolute;
+      left: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 60;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(45, 51, 72, 0.92);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: var(--shadow-sm);
     }
     .app-shell.nav-expanded,
     .app-shell.nav-pinned {
@@ -691,8 +786,8 @@
       background: currentColor;
       opacity: 0.65;
     }
-    .nav-link,
-    .nav-section-label {
+    .side-nav .nav-link,
+    .side-nav .nav-section-label {
       position: relative;
       display: flex;
       align-items: center;
@@ -700,7 +795,7 @@
       gap: 0;
     }
 
-    .nav-link {
+    .side-nav .nav-link {
       padding: 10px 12px;
       border-radius: 14px;
       color: var(--muted);
@@ -709,18 +804,18 @@
       border: 1px solid transparent;
       transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
     }
-    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link {
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .side-nav .nav-link {
       justify-content: center;
       padding-left: 8px;
       padding-right: 8px;
     }
-    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-section-label {
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .side-nav .nav-section-label {
       justify-content: center;
       padding-left: 8px;
       padding-right: 8px;
     }
 
-    .nav-label {
+    .side-nav .nav-label {
       opacity: 0;
       max-width: 0;
       overflow: hidden;
@@ -728,22 +823,22 @@
       pointer-events: none;
       transition: opacity 0.2s ease, max-width 0.2s ease;
     }
-    .app-shell.nav-expanded .nav-label,
-    .app-shell.nav-pinned .nav-label {
+    .app-shell.nav-expanded .side-nav .nav-label,
+    .app-shell.nav-pinned .side-nav .nav-label {
       opacity: 1;
       max-width: 200px;
       pointer-events: auto;
     }
-    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link.sub {
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .side-nav .nav-link.sub {
       display: none;
     }
-    .app-shell.nav-expanded .nav-link.sub,
-    .app-shell.nav-pinned .nav-link.sub {
+    .app-shell.nav-expanded .side-nav .nav-link.sub,
+    .app-shell.nav-pinned .side-nav .nav-link.sub {
       display: flex;
       padding-left: 16px;
     }
 
-    .nav-link:hover {
+    .side-nav .nav-link:hover {
       background: rgba(255, 255, 255, 0.55);
       color: var(--ink);
       transform: translateX(2px);
@@ -756,14 +851,14 @@
       box-shadow: inset 3px 0 0 var(--liturgical-accent);
     }
 
-    .nav-link.sub {
+    .side-nav .nav-link.sub {
       font-size: 0.82rem;
       font-weight: 500;
       color: var(--muted);
     }
 
-    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-link[data-nav-tooltip]:hover::after,
-    .app-shell:not(.nav-expanded):not(.nav-pinned) .nav-section-label[data-nav-tooltip]:hover::after {
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .side-nav .nav-link[data-nav-tooltip]:hover::after,
+    .app-shell:not(.nav-expanded):not(.nav-pinned) .side-nav .nav-section-label[data-nav-tooltip]:hover::after {
       content: attr(data-nav-tooltip);
       position: absolute;
       left: 70px;
@@ -791,11 +886,14 @@
       flex-direction: column;
       align-items: stretch;
       gap: var(--layout-gap);
-      padding: var(--layout-gap) var(--layout-gutter) 88px;
+      padding:
+        var(--main-content-top)
+        var(--layout-gutter)
+        var(--layout-gap);
       overflow-y: auto;
       overflow-x: hidden;
-      scroll-padding-top: var(--space-4);
-      transition: margin-left 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      scroll-padding-top: var(--app-header-offset);
+      -webkit-overflow-scrolling: touch;
     }
     .dashboard > * {
       width: min(var(--content-max), 100%);
@@ -811,10 +909,12 @@
       box-shadow: var(--shadow-card);
     }
 
-    /* App header — full-width two-row shell (flat, edge-to-edge) */
+    /* App header — fixed frosted glass; dashboard scrolls beneath */
     .app-header {
-      position: sticky;
+      position: fixed;
       top: 0;
+      right: 0;
+      left: 0;
       z-index: 22;
       flex-shrink: 0;
       display: flex;
@@ -823,33 +923,74 @@
       width: 100%;
       max-width: 100%;
       margin: 0;
-      padding: 0;
+      padding: var(--safe-top) 0 0;
       align-self: stretch;
       border-radius: 0;
       overflow: visible;
-      background: var(--surface-solid);
+      background: var(--app-header-glass-bg);
       border: none;
-      border-bottom: 1px solid var(--line);
-      box-shadow: none;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
+      border-bottom: 1px solid var(--app-header-glass-border);
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 3%, transparent);
+      backdrop-filter: blur(var(--app-header-glass-blur)) saturate(1.15);
+      -webkit-backdrop-filter: blur(var(--app-header-glass-blur)) saturate(1.15);
+    }
+    @media (min-width: 769px) {
+      .app-header {
+        left: var(--app-sidebar-width);
+        width: calc(100% - var(--app-sidebar-width));
+      }
     }
     html[data-theme="dark"] .app-header {
-      background: var(--bg-top);
-      border-bottom-color: var(--line);
-      box-shadow: none;
+      --app-header-glass-bg: color-mix(in srgb, var(--bg-top) 32%, transparent);
+      --app-header-glass-border: color-mix(in srgb, var(--line) 38%, transparent);
+      border-bottom-color: var(--app-header-glass-border);
+      box-shadow: 0 1px 0 color-mix(in srgb, #000 18%, transparent);
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .app-header {
+        background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+      }
+      html[data-theme="dark"] .app-header {
+        background: color-mix(in srgb, var(--bg-top) 90%, transparent);
+      }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .app-header {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: var(--surface-solid);
+      }
+      html[data-theme="dark"] .app-header {
+        background: var(--bg-top);
+      }
     }
     .app-header__main {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas: "brand search utilities";
       align-items: center;
-      gap: 20px;
+      gap: 16px 20px;
       width: 100%;
-      max-width: var(--content-max);
-      margin-inline: auto;
+      max-width: none;
+      margin: 0;
       padding: 12px var(--app-header-pad-x);
       min-height: var(--header-height);
       box-sizing: border-box;
+    }
+    .app-header__main > .brand-block {
+      grid-area: brand;
+      min-width: 0;
+    }
+    .app-header__main > .app-header__search-wrap {
+      grid-area: search;
+      min-width: 0;
+      max-width: 520px;
+      width: 100%;
+      justify-self: center;
+    }
+    .app-header__main > .app-header__utilities {
+      grid-area: utilities;
+      justify-self: end;
     }
     .brand-block {
       display: inline-flex;
@@ -861,6 +1002,10 @@
       border-radius: 10px;
       padding: 2px 4px 2px 0;
       transition: opacity var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .brand-block--text-only {
+      gap: 0;
+      padding: 0;
     }
     .brand-block:hover { opacity: 0.92; }
     .brand-block:focus-visible {
@@ -874,15 +1019,15 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      background: #fbdec0;
+      border-radius: 10px;
+      background: transparent;
       overflow: hidden;
     }
     .brand-block__mark-img {
       display: block;
-      height: 30px;
-      width: auto;
-      object-fit: contain;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     .brand-block__text {
       display: flex;
@@ -955,9 +1100,11 @@
     .app-header__utilities {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-shrink: 0;
+      min-width: 0;
       justify-self: end;
+      justify-content: flex-end;
     }
     .app-header__nav-row {
       display: flex;
@@ -1086,7 +1233,7 @@
       padding: 0 16px;
       border: none;
       border-radius: 8px;
-      background: var(--good);
+      background: var(--liturgical-accent, #8b1e2d);
       color: #fff;
       font-size: 0.8125rem;
       font-weight: 600;
@@ -1095,7 +1242,7 @@
         transform var(--motion-duration-micro) var(--motion-ease-out);
     }
     .btn-create:hover {
-      background: color-mix(in srgb, var(--good) 88%, #000);
+      background: color-mix(in srgb, var(--liturgical-accent, #8b1e2d) 88%, #000);
     }
     .btn-create:active { transform: scale(0.97); }
     .btn-create__icon {
@@ -1593,23 +1740,16 @@
       text-decoration: none;
       color: var(--liturgical-accent);
     }
-    .side-nav {
-      display: none !important;
-      width: 0 !important;
-      min-width: 0 !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      transform: none !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-    }
+    .side-nav { display: none !important; }
+    .app-header__nav-row { display: none; }
     .header-chips-wrap {
       display: flex;
       align-items: center;
       gap: 6px;
       min-width: 0;
-      flex-shrink: 1;
-      max-width: min(380px, 52vw);
+      flex: 1 1 auto;
+      justify-content: flex-end;
+      flex-wrap: nowrap;
     }
     .live-radio-wrap {
       position: relative;
@@ -1940,6 +2080,113 @@
     .settings-radio-option.is-selected .settings-radio-option__mark {
       opacity: 1;
     }
+    .radio-page-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: var(--space-md);
+      width: 100%;
+    }
+    .radio-page-player {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+    .radio-page-hero {
+      position: relative;
+      min-height: 220px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--line-soft);
+      background: color-mix(in srgb, var(--liturgical-accent, #8b1e2d) 8%, var(--surface-2));
+    }
+    .radio-page-hero__art {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .radio-page-hero__scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%);
+      pointer-events: none;
+    }
+    .radio-page-hero__meta {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: var(--space-4);
+      color: #fff;
+    }
+    .radio-page-hero__meta strong {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .radio-page-hero__meta span {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.8125rem;
+      opacity: 0.9;
+    }
+    .radio-page-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: var(--space-2) 0;
+    }
+    .radio-page-controls__btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--line-soft);
+      border-radius: 50%;
+      background: var(--surface-solid);
+      color: var(--ink);
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .radio-page-controls__btn:hover {
+      background: var(--surface-2);
+    }
+    .radio-page-controls__play {
+      width: 56px;
+      height: 56px;
+      border: none;
+      background: var(--liturgical-accent, #8b1e2d);
+      color: #fff;
+      box-shadow: 0 6px 20px color-mix(in srgb, var(--liturgical-accent, #8b1e2d) 30%, transparent);
+    }
+    .radio-page-controls__play svg {
+      width: 22px;
+      height: 22px;
+    }
+    .radio-page-controls__btn svg {
+      width: 18px;
+      height: 18px;
+    }
+    .radio-page-controls__play .live-radio-icon-pause { display: none; }
+    .radio-page-layout.is-playing .radio-page-controls__play .live-radio-icon-play { display: none; }
+    .radio-page-layout.is-playing .radio-page-controls__play .live-radio-icon-pause { display: block; }
+    .radio-page-stations {
+      min-width: 0;
+    }
+    .radio-page-stations .settings-radio-list {
+      max-height: min(60vh, 520px);
+      overflow-y: auto;
+    }
+    @media (max-width: 900px) {
+      .radio-page-layout {
+        grid-template-columns: 1fr;
+      }
+    }
     .liturgical-indicator-wrap {
       position: relative;
       flex-shrink: 1;
@@ -1959,8 +2206,8 @@
       min-height: var(--topbar-chip-height);
       padding: 0 10px 0 8px;
       border-radius: var(--radius-pill);
-      border: 1px solid color-mix(in srgb, var(--good) 22%, var(--line));
-      background: color-mix(in srgb, var(--good) 9%, var(--surface-solid));
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 22%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 9%, var(--surface-solid));
       box-shadow: none;
       cursor: pointer;
       font: inherit;
@@ -1975,10 +2222,19 @@
     }
     .liturgical-indicator:hover,
     .liturgical-indicator[aria-expanded="true"] {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 14%, var(--surface-solid));
+    }
+    .liturgical-indicator:active { transform: scale(0.97); }
+    .liturgical-indicator--ordinary {
+      border-color: color-mix(in srgb, var(--good) 22%, var(--line));
+      background: color-mix(in srgb, var(--good) 9%, var(--surface-solid));
+    }
+    .liturgical-indicator--ordinary:hover,
+    .liturgical-indicator--ordinary[aria-expanded="true"] {
       border-color: color-mix(in srgb, var(--good) 35%, var(--line));
       background: color-mix(in srgb, var(--good) 14%, var(--surface-solid));
     }
-    .liturgical-indicator:active { transform: scale(0.97); }
     .liturgical-indicator__icon {
       flex-shrink: 0;
       width: 16px;
@@ -1992,6 +2248,14 @@
     }
     .liturgical-indicator__bar {
       display: none;
+      flex-shrink: 0;
+      width: 3px;
+      height: 18px;
+      border-radius: 2px;
+      background: var(--good);
+    }
+    .liturgical-indicator--ordinary .liturgical-indicator__bar {
+      display: block;
     }
     .liturgical-indicator__lines {
       display: flex;
@@ -2010,10 +2274,13 @@
       font-weight: 600;
       line-height: 1.15;
       letter-spacing: -0.01em;
-      color: var(--good);
+      color: var(--liturgical-accent);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .liturgical-indicator--ordinary .liturgical-indicator__season {
+      color: var(--good);
     }
     .liturgical-indicator__year {
       margin: 0;
@@ -5437,9 +5704,6 @@
       margin: 0;
       min-width: 0;
     }
-    .dashboard:has(#flow-page.active) {
-      padding-top: var(--space-2);
-    }
     .dashboard:has(#flow-page.active) > #flow-page {
       width: min(var(--content-max), 100%);
       margin-inline: auto;
@@ -6736,7 +7000,7 @@
       gap: 6px;
     }
     .lyric-block {
-      border: 1px solid var(--line-soft);
+      border: 1px solid #c4b5fd;
       border-radius: 10px;
       background: var(--surface-solid);
       overflow: visible;
@@ -6748,118 +7012,132 @@
       z-index: 40;
     }
     .lyric-block:focus-within {
-      border-color: rgba(167, 139, 250, 0.45);
+      border-color: #8b5cf6;
     }
     .lyric-block.dragging { opacity: 0.55; }
+    .lyric-block.type-verse { border-color: #c4b5fd; }
+    .lyric-block.type-verse:focus-within { border-color: #8b5cf6; }
+    .lyric-block.type-chorus { border-color: #d4a0b8; }
+    .lyric-block.type-chorus:focus-within { border-color: #c47a9a; }
+    .lyric-block.type-bridge { border-color: #8fb8a8; }
+    .lyric-block.type-bridge:focus-within { border-color: #6fa892; }
+    .lyric-block.type-response { border-color: #d4b878; }
+    .lyric-block.type-response:focus-within { border-color: #c49a48; }
     .lyric-block__head {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr);
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       padding: 6px 8px;
-      border-bottom: 1px solid var(--line-soft);
-      background: rgba(248, 250, 255, 0.6);
+      border-bottom: 1px solid rgba(109, 93, 252, 0.35);
+      background: #ede9fe;
       overflow: visible;
       position: relative;
     }
     .lyric-block__head .vb-select {
-      flex-shrink: 0;
       width: auto;
+      min-width: 0;
+      max-width: 100%;
+      justify-self: start;
     }
-    .lyric-block.type-verse .lyric-block__head { background: rgba(109, 93, 252, 0.12); border-bottom-color: rgba(109, 93, 252, 0.2); }
-    .lyric-block.type-chorus .lyric-block__head { background: rgba(244, 114, 182, 0.12); border-bottom-color: rgba(244, 114, 182, 0.2); }
-    .lyric-block.type-bridge .lyric-block__head { background: rgba(16, 185, 129, 0.12); border-bottom-color: rgba(16, 185, 129, 0.2); }
-    .lyric-block.type-response .lyric-block__head { background: rgba(217, 119, 6, 0.12); border-bottom-color: rgba(217, 119, 6, 0.2); }
+    .lyric-block.type-verse .lyric-block__head { background: #ede9fe; border-bottom-color: rgba(109, 93, 252, 0.35); }
+    .lyric-block.type-chorus .lyric-block__head { background: #f5dce8; border-bottom-color: rgba(196, 122, 154, 0.35); }
+    .lyric-block.type-bridge .lyric-block__head { background: #d4ebe3; border-bottom-color: rgba(111, 168, 146, 0.35); }
+    .lyric-block.type-response .lyric-block__head { background: #f5ecd8; border-bottom-color: rgba(196, 154, 72, 0.35); }
     .lyric-block__drag {
       width: 22px;
       height: 22px;
       display: grid;
       place-items: center;
       border: 0;
-      border-radius: 6px;
+      border-radius: 4px;
       background: transparent;
-      color: #8b93a8;
-      font-size: 0.7rem;
-      font-weight: 800;
+      color: #9aa8a0;
       cursor: grab;
       user-select: none;
       flex-shrink: 0;
     }
-    .lyric-block__pill {
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: var(--radius-pill);
-      border: 0;
-      flex-shrink: 0;
-    }
-    .lyric-block.type-verse .lyric-block__pill { background: rgba(109, 93, 252, 0.14); color: #5b21b6; }
-    .lyric-block.type-chorus .lyric-block__pill { background: rgba(244, 114, 182, 0.14); color: #9d174d; }
-    .lyric-block.type-bridge .lyric-block__pill { background: rgba(16, 185, 129, 0.14); color: #047857; }
-    .lyric-block.type-response .lyric-block__pill { background: rgba(217, 119, 6, 0.14); color: #b45309; }
-    .lyric-block__meta {
-      flex: 1;
-      min-width: 0;
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .lyric-block__drag svg {
+      display: block;
     }
     .lyric-block__actions {
       display: flex;
-      gap: 2px;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      margin-left: 0;
+      justify-self: end;
+      grid-column: 3;
+    }
+    .lyric-block .lyric-block__actions .lyric-block__btn {
+      box-sizing: border-box;
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 28px;
+      max-height: 28px;
+      padding: 0;
+      margin: 0;
+      border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+      color: #3d4a44;
+      font-size: 0;
+      line-height: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+      transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+    }
+    .lyric-block .lyric-block__actions .lyric-block__btn svg {
+      display: block;
+      width: 15px;
+      height: 15px;
+      max-width: none;
       flex-shrink: 0;
     }
-    .lyric-block__btn {
-      width: 26px;
-      height: 26px;
-      padding: 0;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      color: #6b7289;
-      font-size: 0.78rem;
-      line-height: 1;
-      cursor: pointer;
-      transition: background 0.12s ease, color 0.12s ease;
-    }
     .lyric-block__btn:hover:not(:disabled) {
-      background: rgba(167, 139, 250, 0.12);
+      background: rgba(61, 74, 68, 0.08);
       color: var(--ink);
     }
     .lyric-block__btn:disabled {
-      opacity: 0.35;
+      opacity: 0.28;
       cursor: not-allowed;
+      color: #b0bab4;
     }
-    .lyric-block__btn.danger:hover:not(:disabled) {
-      background: rgba(225, 29, 72, 0.1);
-      color: #be123c;
+    button.lyric-block__btn.danger {
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      box-shadow: none;
     }
-    .lyric-block__toggle {
-      width: 22px;
-      height: 22px;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      color: #8b93a8;
-      font-size: 0.65rem;
-      cursor: pointer;
-      flex-shrink: 0;
+    button.lyric-block__btn.danger:hover:not(:disabled) {
+      background: #d32f2f;
+      color: #fff;
+      border: none;
+      box-shadow: none;
     }
     .lyric-block__body {
       padding: 6px 8px 8px;
     }
     .lyric-block.collapsed .lyric-block__body { display: none; }
+    .lyric-block__ta-wrap {
+      border: 1px solid var(--line-soft);
+      border-radius: 4px;
+      background: var(--surface-solid);
+      overflow: hidden;
+    }
     .lyric-block__ta {
       width: 100%;
       min-height: 52px;
       padding: 8px 10px;
-      border: 1px solid var(--line-soft);
-      border-radius: 8px;
-      background: #fff;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
       color: var(--ink);
       font-size: 0.88rem;
       line-height: 1.45;
@@ -6867,10 +7145,78 @@
       overflow: hidden;
       field-sizing: content;
       outline: none;
+      display: block;
     }
     .lyric-block__ta:focus {
-      border-color: rgba(167, 139, 250, 0.5);
-      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.12);
+      outline: none;
+    }
+    .lyric-block__ta-wrap:focus-within {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 35%, var(--line));
+      box-shadow: none;
+    }
+    .lyric-block__ta-foot {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      min-height: 20px;
+      padding: 0 8px 5px;
+      pointer-events: none;
+    }
+    .lyric-block__char-count {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      display: none;
+    }
+    .lyric-block__ta-foot > .lyric-block__char-count {
+      display: inline;
+    }
+    .lyric-block__ta-wrap > .input-char-count,
+    .lyric-block__ta-wrap .input-char-count {
+      display: none !important;
+    }
+    html[data-theme="dark"] .lyric-block.type-verse { border-color: color-mix(in srgb, #8b5cf6 32%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-verse:focus-within { border-color: color-mix(in srgb, #8b5cf6 50%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-chorus { border-color: color-mix(in srgb, #f472b6 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-chorus:focus-within { border-color: color-mix(in srgb, #f472b6 45%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-bridge { border-color: color-mix(in srgb, #34d399 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-bridge:focus-within { border-color: color-mix(in srgb, #34d399 45%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-response { border-color: color-mix(in srgb, #fbbf24 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-response:focus-within { border-color: color-mix(in srgb, #fbbf24 45%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-verse .lyric-block__head {
+      background: color-mix(in srgb, #6d5dfc 14%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #6d5dfc 22%, var(--line));
+    }
+    html[data-theme="dark"] .lyric-block.type-chorus .lyric-block__head {
+      background: color-mix(in srgb, #f472b6 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #f472b6 20%, var(--line));
+    }
+    html[data-theme="dark"] .lyric-block.type-bridge .lyric-block__head {
+      background: color-mix(in srgb, #34d399 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #34d399 20%, var(--line));
+    }
+    html[data-theme="dark"] .lyric-block.type-response .lyric-block__head {
+      background: color-mix(in srgb, #fbbf24 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #fbbf24 20%, var(--line));
+    }
+    html[data-theme="dark"] .lyric-block__btn {
+      color: var(--muted);
+    }
+    html[data-theme="dark"] .lyric-block__btn:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--ink) 8%, transparent);
+      color: var(--ink);
+    }
+    html[data-theme="dark"] .lyric-block__btn:disabled {
+      color: color-mix(in srgb, var(--muted) 55%, var(--surface-2));
+    }
+    html[data-theme="dark"] .lyric-block__drag {
+      color: var(--muted);
+    }
+    html[data-theme="dark"] .lyric-block__ta-wrap {
+      background: var(--surface-2);
+      border-color: var(--line);
     }
     .lyrics-block-list .empty-state {
       border-radius: 10px;
@@ -6951,24 +7297,6 @@
       padding: 8px;
       font-weight: 850;
     }
-    .lyric-block__pill-select {
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: var(--radius-pill);
-      border: 0;
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: none;
-      padding-right: 8px;
-    }
-    .lyric-block.type-verse .lyric-block__pill-select { background: rgba(109, 93, 252, 0.14); color: #5b21b6; }
-    .lyric-block.type-chorus .lyric-block__pill-select { background: rgba(244, 114, 182, 0.14); color: #9d174d; }
-    .lyric-block.type-bridge .lyric-block__pill-select { background: rgba(16, 185, 129, 0.14); color: #047857; }
-    .lyric-block.type-response .lyric-block__pill-select { background: rgba(217, 119, 6, 0.14); color: #b45309; }
     .block-body { padding: 12px; }
     .block-body textarea { min-height: 130px; }
     .block-tools {
@@ -9169,13 +9497,20 @@
       color: var(--ink);
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260627" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260630" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <style id="verbum-layout-overrides">
     /* Loaded after design-system — desktop layout wins over external sheets */
     body { background: var(--bg); }
+    .dashboard {
+      padding:
+        var(--main-content-top, calc(var(--app-header-offset) + var(--layout-gap)))
+        var(--layout-gutter)
+        var(--layout-gap);
+      scroll-padding-top: var(--app-header-offset);
+    }
     .dashboard { background: transparent; }
-    .app-header { background: var(--surface-solid); }
+    .app-header { background: var(--app-header-glass-bg); }
     .app-header-nav .nav-link.active::before { display: none !important; }
     /* Six-tab nav — even columns, icon + label in proportion */
     .app-header-nav .nav-link,
@@ -9284,12 +9619,12 @@
     }
     /* Header Create CTA — always liturgical green (loads last) */
     .btn-create {
-      background: var(--good, var(--color-primary, #2d6a4f));
+      background: var(--liturgical-accent, #8b1e2d);
       color: #fff;
       border: none;
     }
     .btn-create:hover {
-      background: color-mix(in srgb, var(--good, var(--color-primary, #2d6a4f)) 88%, #000);
+      background: color-mix(in srgb, var(--liturgical-accent, #8b1e2d) 88%, #000);
       color: #fff;
     }
     /* LiturgyFlow wordmark — loaded last so header fonts cannot be overridden */
@@ -9317,8 +9652,47 @@
       letter-spacing: -0.03em;
       transform: translateY(0.025em);
     }
+    /* Sidebar shell — layout lock (loads last) */
+    .app-shell.app-shell--sidebar {
+      height: 100dvh;
+      max-height: 100dvh;
+      min-height: 100dvh;
+    }
+    @media (max-width: 768px) {
+      .app-shell.app-shell--sidebar {
+        height: auto;
+        max-height: none;
+        min-height: 100dvh;
+      }
+      .app-body {
+        height: auto;
+        max-height: none;
+        min-height: 0;
+      }
+    }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260627" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260630" />
+  <style id="verbum-lyric-toolbar-fix">
+    /* Beats global svg { max-width:100%; height:auto } in verbum-responsive.css */
+    .lyric-block__btn-glyph,
+    .lyric-block .lyric-block__actions .lyric-block__btn svg {
+      width: 15px !important;
+      height: 15px !important;
+      max-width: none !important;
+      min-width: 15px;
+      min-height: 15px;
+      flex-shrink: 0;
+      display: block;
+    }
+    .lyric-block .lyric-block__actions .lyric-block__btn {
+      padding: 0 !important;
+      min-width: 28px !important;
+      min-height: 28px !important;
+      width: 28px !important;
+      height: 28px !important;
+      overflow: visible !important;
+    }
+  </style>
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -9350,7 +9724,7 @@
       width: 28px;
       height: 28px;
       border: 2px solid var(--line, #e2e8f0);
-      border-top-color: var(--accent, #824d5d);
+      border-top-color: var(--accent, #a10f0d);
       border-radius: 50%;
       animation: auth-gate-spin 0.7s linear infinite;
     }
@@ -9360,6 +9734,22 @@
   </style>
   <script>
     document.documentElement.setAttribute("data-auth-gate", "pending");
+    (function revealAuthGateEarly() {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
+            const raw = localStorage.getItem(key);
+            if (raw && raw !== "null") {
+              document.documentElement.removeAttribute("data-auth-gate");
+              break;
+            }
+          }
+        }
+      } catch (_err) {
+        /* ignore storage access errors */
+      }
+    })();
   </script>
   {% endif %}
 </head>
@@ -9369,27 +9759,53 @@
     <span>Checking your session…</span>
   </div>
   {% endif %}
-  <div class="app-shell">
+  <div class="app-shell app-shell--sidebar">
+    <aside class="app-sidebar app-nav--desktop" id="app-sidebar" aria-label="Main navigation">
+      <a href="/home" class="app-sidebar__brand" data-route="/home" aria-label="LiturgyFlow — Home">
+        <img src="/static/brand/app-icon.png?v=3" alt="" class="app-sidebar__brand-img" width="44" height="44" decoding="async" />
+      </a>
+      <nav class="app-sidebar__nav" id="admin-sidebar">
+        <a class="app-sidebar__link" data-nav-tab="home" data-route="/home" href="/home" data-nav-tooltip="Home">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span class="nav-label">Home</span>
+        </a>
+        <a class="app-sidebar__link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder" data-nav-tooltip="Mass">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v6"/><path d="m9 9 3-3 3 3"/></svg>
+          <span class="nav-label">Mass</span>
+        </a>
+        <a class="app-sidebar__link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs" data-nav-tooltip="Library">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span class="nav-label">Library</span>
+        </a>
+        <a class="app-sidebar__link" data-nav-tab="radio" data-route="/radio" href="/radio" data-nav-tooltip="Radio">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/></svg>
+          <span class="nav-label">Radio</span>
+        </a>
+        <a class="app-sidebar__link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters" data-nav-tooltip="Media">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span class="nav-label">Media</span>
+        </a>
+        <a class="app-sidebar__link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar" data-nav-tooltip="Calendar">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span class="nav-label">Calendar</span>
+        </a>
+        <a class="app-sidebar__link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab" data-nav-tooltip="Design">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          <span class="nav-label">Design</span>
+        </a>
+      </nav>
+    </aside>
+    <div class="app-body">
       <header class="app-header" id="app-header">
+        <p class="sr-only" id="topbar-breadcrumb">Home</p>
+        <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
         <div class="app-header__main">
-          <a href="/home" class="brand-block" id="topbar-title" data-route="/home" aria-label="LiturgyFlow — Home">
-            <span class="brand-block__mark" aria-hidden="true">
-              <img
-                src="/static/brand/liturgyflow-logo.png"
-                alt=""
-                class="brand-block__mark-img"
-                width="36"
-                height="40"
-                decoding="async"
-              />
-            </span>
+          <a href="/home" class="brand-block brand-block--text-only" id="topbar-title" data-route="/home" aria-label="LiturgyFlow — Home">
             <span class="brand-block__text">
-              <span class="brand-block__name wordmark" aria-hidden="true"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
+              <span class="brand-block__name wordmark"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
               <span class="brand-block__tagline">Plan Better. Serve Better.</span>
             </span>
           </a>
-        <p class="sr-only" id="topbar-breadcrumb">Home</p>
-        <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
           <div class="app-header__search-wrap">
             <label class="app-header__search" for="app-global-search">
               <svg class="app-header__search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -9417,6 +9833,22 @@
               </div>
               </div>
           <div class="app-header__utilities">
+          <div class="create-menu-wrap">
+            <button type="button" class="btn-create" id="create-menu-btn" aria-expanded="false" aria-controls="create-menu-panel" aria-haspopup="menu">
+              <span class="btn-create__icon" aria-hidden="true">+</span>
+              <span>Create</span>
+              <svg class="btn-create__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <div class="vb-dropdown-panel vb-dropdown-panel--right app-menu-panel" id="create-menu-panel" role="menu" hidden>
+              <div class="vb-dropdown-list">
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="pptx" role="menuitem">Create PPTX</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="event" role="menuitem">Create event</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="poster" role="menuitem">Create poster</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="song" role="menuitem">Add song</button>
+                <button type="button" class="vb-dropdown-item app-menu-item" data-create="collection" role="menuitem">New collection</button>
+              </div>
+            </div>
+          </div>
           <div class="header-chips-wrap">
           <div class="live-radio-wrap" id="live-radio-wrap">
             <div class="live-radio-pill" id="live-radio-pill">
@@ -9456,7 +9888,7 @@
             <audio id="live-radio-audio" preload="none" playsinline crossorigin="anonymous"></audio>
           </div>
           <div class="liturgical-indicator-wrap">
-            <button type="button" class="liturgical-indicator" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
+            <button type="button" class="liturgical-indicator liturgical-indicator--ordinary" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
                 <img src="/static/icons/calendar.png" class="liturgical-indicator__icon" alt="" width="16" height="16" aria-hidden="true" />
               <span class="liturgical-indicator__bar" id="topbar-liturgical-color-bar" aria-hidden="true"></span>
               <span class="liturgical-indicator__lines">
@@ -9492,7 +9924,6 @@
               </ul>
               </div>
             </div>
-          </div>
             <div class="notif-wrap">
               <button type="button" class="notif-btn" id="notif-toggle-btn" aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel" title="Notifications">
                 <img src="/static/icons/notifications.png" class="notif-icon" alt="" width="20" height="20" />
@@ -9563,49 +9994,6 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="app-header__nav-row">
-          <nav class="app-header-nav app-nav--desktop" id="admin-sidebar" aria-label="Main navigation">
-            <a class="nav-link" data-nav-tab="home" data-route="/home" href="/home">
-              <img src="/static/icons/home.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Home</span>
-            </a>
-            <a class="nav-link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
-              <img src="/static/icons/mass.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Mass</span>
-            </a>
-            <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
-              <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Library</span>
-            </a>
-            <a class="nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
-              <img src="/static/icons/media.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Media</span>
-            </a>
-            <a class="nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
-              <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Calendar</span>
-            </a>
-            <a class="nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
-              <img src="/static/icons/design.png" class="nav-icon" alt="" width="15" height="15" />
-              <span class="nav-label">Design</span>
-            </a>
-          </nav>
-          <div class="create-menu-wrap">
-            <button type="button" class="btn-create" id="create-menu-btn" aria-expanded="false" aria-controls="create-menu-panel" aria-haspopup="menu">
-              <span class="btn-create__icon" aria-hidden="true">+</span>
-              <span>Create</span>
-              <svg class="btn-create__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
-            <div class="vb-dropdown-panel vb-dropdown-panel--right app-menu-panel" id="create-menu-panel" role="menu" hidden>
-              <div class="vb-dropdown-list">
-                <button type="button" class="vb-dropdown-item app-menu-item" data-create="pptx" role="menuitem">Create PPTX</button>
-                <button type="button" class="vb-dropdown-item app-menu-item" data-create="event" role="menuitem">Create event</button>
-                <button type="button" class="vb-dropdown-item app-menu-item" data-create="poster" role="menuitem">Create poster</button>
-                <button type="button" class="vb-dropdown-item app-menu-item" data-create="song" role="menuitem">Add song</button>
-                <button type="button" class="vb-dropdown-item app-menu-item" data-create="collection" role="menuitem">New collection</button>
-              </div>
-            </div>
           </div>
         </div>
       </header>
@@ -9901,7 +10289,7 @@
 
       <section class="page" id="lyrics-page" data-route="/library/songs">
         <div class="lyrics-workspace-mockup" id="lyrics-workspace">
-          <section class="panel song-composer-panel" id="song-composer-panel" aria-label="Song composer toolbar">
+          <section class="panel song-composer-panel song-composer-panel--deflated" id="song-composer-panel" aria-label="Song composer toolbar">
             <div class="song-composer-rail">
               <div class="song-composer-rail__cluster">
                 <div class="song-composer-head__copy">
@@ -9923,9 +10311,10 @@
                 type="button"
                 class="song-composer-collapse-btn"
                 id="song-composer-collapse-btn"
-                aria-expanded="true"
+                aria-expanded="false"
                 aria-controls="song-composer-expandable"
-                title="Collapse song library"
+                title="Expand song library"
+                aria-label="Expand song library"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg>
               </button>
@@ -10730,18 +11119,15 @@ Lord, hear our prayer</textarea>
                 <hr class="settings-divider" />
 
                 <h3>Accent color</h3>
-                <p class="muted">App chrome glow and highlights. Choose a missalette color or pick your own. Reset to follow the liturgical season from the calendar.</p>
+                <p class="muted">App chrome follows the Verbum icon color by default. Liturgical green appears only on the Ordinary Time season pill in the header.</p>
                 <div class="accent-preset-row" role="group" aria-label="Accent presets">
-                  <button type="button" class="accent-swatch" data-accent="#166534" data-accent-glow="#4ADE80" title="Ordinary — green" style="background: linear-gradient(135deg, #166534, #4ADE80);"></button>
-                  <button type="button" class="accent-swatch" data-accent="#5B21B6" data-accent-glow="#C4B5FD" title="Advent — violet" style="background: linear-gradient(135deg, #5B21B6, #C4B5FD);"></button>
-                  <button type="button" class="accent-swatch" data-accent="#B45309" data-accent-glow="#FCD34D" title="Christmas — gold" style="background: linear-gradient(135deg, #B45309, #FCD34D);"></button>
-                  <button type="button" class="accent-swatch" data-accent="#6B21A8" data-accent-glow="#E9D5FF" title="Lent — purple" style="background: linear-gradient(135deg, #6B21A8, #E9D5FF);"></button>
-                  <button type="button" class="accent-swatch" data-accent="#BE123C" data-accent-glow="#FDA4AF" title="Easter — rose" style="background: linear-gradient(135deg, #BE123C, #FDA4AF);"></button>
+                  <button type="button" class="accent-swatch" data-accent="#a10f0d" data-accent-glow="#d45250" data-accent-default="1" title="Verbum app icon" style="background: linear-gradient(135deg, #a10f0d, #d45250);"></button>
+                  <button type="button" class="accent-swatch" data-accent="#166534" data-accent-glow="#4ADE80" title="Ordinary Time — liturgical green" style="background: linear-gradient(135deg, #166534, #4ADE80);"></button>
                 </div>
                 <div class="field accent-custom-row">
                   <label for="app-accent-color">Custom accent</label>
-                  <input type="color" id="app-accent-color" value="#166534" aria-label="Custom accent color" />
-                  <button type="button" class="secondary" id="btn-reset-accent">Follow liturgical season</button>
+                  <input type="color" id="app-accent-color" value="#a10f0d" aria-label="Custom accent color" />
+                  <button type="button" class="secondary" id="btn-reset-accent">Reset to app default</button>
                 </div>
 
                 <hr class="settings-divider" />
@@ -10780,7 +11166,7 @@ Lord, hear our prayer</textarea>
                 <hr class="settings-divider" />
 
                 <h3>Navigation tabs</h3>
-                <p class="muted">Home, Mass, and Library are always visible. Turn on optional tabs below to add them to your navigation — your choices are remembered for next time.</p>
+                <p class="muted">Home, Mass, Library, and Radio are always visible. Turn on optional tabs below to add them to your navigation — your choices are remembered for next time.</p>
                 <div class="settings-nav-tabs-list" id="settings-nav-tabs-list" role="group" aria-label="Visible navigation tabs"></div>
 
                 <hr class="settings-divider" />
@@ -10825,9 +11211,9 @@ Lord, hear our prayer</textarea>
         <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
         <span class="nav-label">Library</span>
       </a>
-      <a class="nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
-        <img src="/static/icons/media.png" class="nav-icon" alt="" width="15" height="15" />
-        <span class="nav-label">Media</span>
+      <a class="nav-link" data-nav-tab="radio" data-route="/radio" href="/radio">
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/></svg>
+        <span class="nav-label">Radio</span>
       </a>
       <button type="button" class="nav-link app-bottom-nav__more" id="app-bottom-nav-more" aria-expanded="false" aria-controls="app-more-sheet" aria-label="More pages">
         <svg class="nav-icon app-bottom-nav__more-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -10845,6 +11231,10 @@ Lord, hear our prayer</textarea>
           <button type="button" class="ghost ui-card__close" id="app-more-sheet-close" aria-label="Close">×</button>
         </header>
         <div class="ui-card__content app-more-sheet__links">
+          <a class="app-more-sheet__link nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+            <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
+            <span>Media</span>
+          </a>
           <a class="app-more-sheet__link nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
             <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Liturgical Calendar</span>
@@ -10887,6 +11277,7 @@ Lord, hear our prayer</textarea>
         <option value="/mass/builder" data-nav-tab="mass">Mass Builder</option>
         <option value="/library/songs" data-nav-tab="library">Song Library</option>
         <option value="/library/collections" data-nav-tab="library">Collections</option>
+        <option value="/radio" data-nav-tab="radio">Live Radio</option>
         <option value="/media/posters" data-nav-tab="media">Posters</option>
         <option value="/media/history" data-nav-tab="media">History</option>
         <option value="/mass/calendar" data-nav-tab="calendar">Liturgical Calendar</option>
@@ -10902,6 +11293,7 @@ Lord, hear our prayer</textarea>
         <button type="button" class="uiverse-btn" id="btn-load-flow"><div class="button-outer"><div class="button-inner"><span>Load readings</span></div></div></button>
         <button type="button" class="uiverse-btn uiverse-btn--generate" id="btn-generate-flow"><div class="button-outer"><div class="button-inner"><span>Generate package</span></div></div></button>
       </div>
+    </div>
     </div>
   </div>
 
@@ -10979,6 +11371,30 @@ Lord, hear our prayer</textarea>
 
   <script>
     const $ = (id) => document.getElementById(id);
+
+    function syncAppHeaderOffset() {
+      const header = $("app-header");
+      if (!header) return;
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      if (height > 0) {
+        document.documentElement.style.setProperty("--app-header-offset", height + "px");
+      }
+    }
+
+    function initAppHeaderOffset() {
+      const header = $("app-header");
+      if (!header || header.dataset.offsetBound === "1") return;
+      header.dataset.offsetBound = "1";
+      syncAppHeaderOffset();
+      if (typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(() => syncAppHeaderOffset()).observe(header);
+      }
+      window.addEventListener("resize", syncAppHeaderOffset, { passive: true });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(syncAppHeaderOffset);
+      }
+    }
+    initAppHeaderOffset();
     const escapeHtml = (value) => {
       const div = document.createElement("div");
       div.textContent = String(value || "");
@@ -11053,6 +11469,7 @@ Lord, hear our prayer</textarea>
       { id: "home", label: "Home", required: true },
       { id: "mass", label: "Mass", required: true },
       { id: "library", label: "Library", required: true },
+      { id: "radio", label: "Radio", required: true },
       { id: "media", label: "Media" },
       { id: "calendar", label: "Calendar" },
       { id: "design", label: "Design" },
@@ -11159,6 +11576,7 @@ Lord, hear our prayer</textarea>
     function routeToNavTabId(route) {
       const r = normalizeRoute(route || "");
       if (r === "/home") return "home";
+      if (r === "/radio") return "radio";
       if (r === "/mass/calendar") return "calendar";
       if (r.startsWith("/mass/")) return "mass";
       if (r.startsWith("/library/")) return "library";
@@ -11191,11 +11609,11 @@ Lord, hear our prayer</textarea>
       document.querySelectorAll("[data-nav-tab]").forEach((el) => {
         el.hidden = !isNavTabVisible(el.dataset.navTab);
       });
-      const headerNav = document.querySelector(".app-header-nav");
+      const sidebarNav = document.querySelector(".app-sidebar__nav");
       const bottomNav = $("app-bottom-nav");
-      if (headerNav) {
-        const visibleCount = headerNav.querySelectorAll(".nav-link:not([hidden])").length;
-        headerNav.classList.toggle("is-tab-balanced", visibleCount > 0 && visibleCount < NAV_TAB_DEFS.length);
+      if (sidebarNav) {
+        const visibleCount = sidebarNav.querySelectorAll(".app-sidebar__link:not([hidden])").length;
+        sidebarNav.classList.toggle("is-tab-balanced", visibleCount > 0 && visibleCount < NAV_TAB_DEFS.length);
       }
       if (bottomNav) {
         const visibleCount = bottomNav.querySelectorAll(".nav-link:not([hidden])").length;
@@ -11296,13 +11714,17 @@ Lord, hear our prayer</textarea>
       ewtnRadioPlaying = !!playing;
       const pill = $("live-radio-pill");
       const wrap = $("live-radio-wrap");
+      const pageLayout = $("radio-page-layout");
       if (pill) pill.classList.toggle("is-playing", ewtnRadioPlaying);
       if (wrap) wrap.classList.toggle("is-playing", ewtnRadioPlaying);
+      if (pageLayout) pageLayout.classList.toggle("is-playing", ewtnRadioPlaying);
       const playBtn = $("live-radio-play-btn");
       const panelPlay = $("live-radio-panel-play");
+      const pagePlay = $("radio-page-play");
       const label = playing ? "Pause live radio" : "Play live radio";
       if (playBtn) playBtn.setAttribute("aria-label", label);
       if (panelPlay) panelPlay.setAttribute("aria-label", label);
+      if (pagePlay) pagePlay.setAttribute("aria-label", label);
     }
 
     function syncLiveRadioPanelUi() {
@@ -11310,16 +11732,26 @@ Lord, hear our prayer</textarea>
       const title = $("live-radio-panel-title");
       const art = $("live-radio-art");
       const pos = $("live-radio-channel-pos");
+      const pageTitle = $("radio-page-station-title");
+      const pageArt = $("radio-page-art");
+      const pagePos = $("radio-page-channel-pos");
       if (station) {
         if (title) title.textContent = station.name;
+        if (pageTitle) pageTitle.textContent = station.name;
         if (art && station.image_url) {
           art.src = station.image_url;
           art.alt = station.name + " artwork";
         }
+        if (pageArt && station.image_url) {
+          pageArt.src = station.image_url;
+          pageArt.alt = station.name + " artwork";
+        }
       }
-      if (pos && ewtnRadioStations.length) {
+      if (ewtnRadioStations.length) {
         const idx = ewtnRadioStations.findIndex((s) => s.id === getEwtRadioActiveStationId());
-        pos.textContent = (idx >= 0 ? idx + 1 : 1) + " / " + ewtnRadioStations.length;
+        const posText = (idx >= 0 ? idx + 1 : 1) + " / " + ewtnRadioStations.length;
+        if (pos) pos.textContent = posText;
+        if (pagePos) pagePos.textContent = posText;
       }
     }
 
@@ -11352,15 +11784,14 @@ Lord, hear our prayer</textarea>
       }
     }
 
-    function renderSettingsRadioList() {
-      const list = $("settings-radio-list");
-      if (!list) return;
+    function renderRadioStationList(listEl) {
+      if (!listEl) return;
       const selected = getEwtRadioStationId();
       if (!ewtnRadioStations.length) {
-        list.innerHTML = "<p class=\"muted\">Loading EWTN stations…</p>";
+        listEl.innerHTML = "<p class=\"muted\">Loading EWTN stations…</p>";
         return;
       }
-      list.innerHTML = ewtnRadioStations.map((station) => (
+      listEl.innerHTML = ewtnRadioStations.map((station) => (
         "<button type=\"button\" class=\"settings-radio-option" + (station.id === selected ? " is-selected" : "") + "\" " +
           "data-ewtn-radio-id=\"" + escapeHtml(station.id) + "\">" +
           "<img class=\"settings-radio-option__art\" src=\"" + escapeHtml(station.image_url || "") + "\" alt=\"\" loading=\"lazy\" width=\"52\" height=\"40\" />" +
@@ -11373,8 +11804,14 @@ Lord, hear our prayer</textarea>
       )).join("");
     }
 
+    function renderSettingsRadioList() {
+      renderRadioStationList($("settings-radio-list"));
+      renderRadioStationList($("radio-page-list"));
+    }
+
     async function loadEwtRadioCatalog() {
       const status = $("settings-radio-status");
+      const pageStatus = $("radio-page-status");
       try {
         const res = await fetch("/api/ewtn/radio");
         const data = await res.json();
@@ -11383,9 +11820,12 @@ Lord, hear our prayer</textarea>
         if (!ewtnRadioActiveId) ewtnRadioActiveId = getEwtRadioStationId();
         syncLiveRadioUi();
         if (status) status.textContent = "";
+        if (pageStatus) pageStatus.textContent = "";
       } catch (e) {
-        if (status) status.textContent = e.message || "Could not load EWTN radio.";
-        notify(e.message || "Could not load EWTN radio.", "error");
+        const msg = e.message || "Could not load EWTN radio.";
+        if (status) status.textContent = msg;
+        if (pageStatus) pageStatus.textContent = msg;
+        notify(msg, "error");
       }
     }
 
@@ -11520,8 +11960,7 @@ Lord, hear our prayer</textarea>
     }
 
     function openLiveRadioSettings() {
-      window.__scrollToLiveRadio = true;
-      showRoute("/settings/app");
+      showRoute("/radio");
     }
 
     function initLiveRadio() {
@@ -11582,6 +12021,35 @@ Lord, hear our prayer</textarea>
           const btn = e.target.closest("[data-ewtn-radio-id]");
           if (!btn) return;
           selectEwtRadioStation(btn.dataset.ewtnRadioId);
+        });
+      }
+      const pageList = $("radio-page-list");
+      if (pageList) {
+        pageList.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-ewtn-radio-id]");
+          if (!btn) return;
+          selectEwtRadioStation(btn.dataset.ewtnRadioId);
+        });
+      }
+      const pagePlay = $("radio-page-play");
+      const pagePrev = $("radio-page-prev");
+      const pageNext = $("radio-page-next");
+      if (pagePlay) {
+        pagePlay.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleLiveRadioPlay();
+        });
+      }
+      if (pagePrev) {
+        pagePrev.addEventListener("click", (e) => {
+          e.stopPropagation();
+          stepLiveRadioChannel(-1);
+        });
+      }
+      if (pageNext) {
+        pageNext.addEventListener("click", (e) => {
+          e.stopPropagation();
+          stepLiveRadioChannel(1);
         });
       }
       if (audio) {
@@ -12071,35 +12539,31 @@ Lord, hear our prayer</textarea>
     function syncAccentSwatchUI(hex) {
       document.querySelectorAll(".accent-swatch").forEach((btn) => {
         const match = hex && btn.dataset.accent && btn.dataset.accent.toLowerCase() === hex.toLowerCase();
-        btn.classList.toggle("active", !!match);
+        const isDefault = !hex && btn.dataset.accentDefault === "1";
+        btn.classList.toggle("active", !!match || isDefault);
       });
       const picker = $("app-accent-color");
       if (picker && hex) picker.value = hex;
     }
 
-  /** Missalette ribbon accents — must match `body[data-season]` / dark theme CSS blocks. */
-    const SEASON_ACCENT_PALETTES = {
-      advent: {
-        light: { accent: "#5A4A6A", glow: "#7A6A8A", secondary: "#B8A8C8" },
-        dark: { accent: "#9B8AAB", glow: "#BBAACB", secondary: "#4A3A5A" },
-      },
-      christmas: {
-        light: { accent: "#8B5A3C", glow: "#AB7A5C", secondary: "#D4B896" },
-        dark: { accent: "#D4B896", glow: "#F4D8B6", secondary: "#6B4A2C" },
-      },
-      lent: {
-        light: { accent: "#5C3D52", glow: "#7A5D72", secondary: "#B898A8" },
-        dark: { accent: "#A8889E", glow: "#C8A8BE", secondary: "#5C3D52" },
-      },
-      easter: {
-        light: { accent: "#9B4D5E", glow: "#BB6D7E", secondary: "#E8B4BC" },
-        dark: { accent: "#E8B4BC", glow: "#FFccd4", secondary: "#9B4D5E" },
-      },
-      ordinary: {
-        light: { accent: "#824D5D", glow: "#A86D7D", secondary: "#C1A3A1" },
-        dark: { accent: "#C1A3A1", glow: "#E1C3C1", secondary: "#624D4D" },
-      },
+    /** App icon accent — default app chrome, not season-driven. */
+    const APP_ICON_ACCENT_PALETTE = {
+      light: { accent: "#a10f0d", glow: "#d45250", secondary: "#788898" },
+      dark: { accent: "#a10f0d", glow: "#d45250", secondary: "#788898" },
     };
+
+    function resolveAppIconAccentPalette() {
+      const mode = resolveColorTheme() === "dark" ? "dark" : "light";
+      return APP_ICON_ACCENT_PALETTE[mode];
+    }
+
+    function resetAppAccentToDefault() {
+      clearUserAccentOverrides();
+      const palette = resolveAppIconAccentPalette();
+      const picker = $("app-accent-color");
+      if (picker && palette) picker.value = palette.accent;
+      syncAccentSwatchUI(null);
+    }
 
     function clearUserAccentOverrides() {
       const body = document.body;
@@ -12112,26 +12576,7 @@ Lord, hear our prayer</textarea>
     }
 
     function followLiturgicalSeasonAccent() {
-      clearUserAccentOverrides();
-      const seasonStr = window.__liturgicalSeasonRaw || "";
-      applyLiturgicalSeasonTheme(seasonStr);
-      const preset = document.body.getAttribute("data-season") || "ordinary";
-      const mode = resolveColorTheme();
-      const palette = (SEASON_ACCENT_PALETTES[preset] || SEASON_ACCENT_PALETTES.ordinary)[mode];
-      const picker = $("app-accent-color");
-      if (picker && palette) picker.value = palette.accent;
-      if (typeof presetThemes !== "undefined" && Array.isArray(presetThemes)) {
-        const seasonTheme = presetThemes.find((t) => t.id === preset);
-        if (seasonTheme) {
-          activeTheme = { ...seasonTheme };
-          if (typeof updateThemeIndicators === "function") updateThemeIndicators();
-          if (typeof renderThemeGrid === "function") renderThemeGrid();
-          const preview = $("theme-live-preview");
-          if (preview && typeof applyThemeToPreview === "function") {
-            applyThemeToPreview(preview, activeTheme);
-          }
-        }
-      }
+      resetAppAccentToDefault();
     }
 
     function applyUserAccent(hex, persist = true) {
@@ -12178,12 +12623,7 @@ Lord, hear our prayer</textarea>
       const storedAccent = readStoredUserAccent();
       if (storedAccent) applyUserAccent(storedAccent, false);
       else {
-        syncAccentSwatchUI(null);
-        const preset = document.body.getAttribute("data-season") || "ordinary";
-        const mode = resolveColorTheme();
-        const palette = (SEASON_ACCENT_PALETTES[preset] || SEASON_ACCENT_PALETTES.ordinary)[mode];
-        const picker = $("app-accent-color");
-        if (picker && palette) picker.value = palette.accent;
+        resetAppAccentToDefault();
       }
 
       document.querySelectorAll(".accent-swatch").forEach((btn) => {
@@ -12202,7 +12642,7 @@ Lord, hear our prayer</textarea>
       const resetAccent = $("btn-reset-accent");
       if (resetAccent) {
         resetAccent.addEventListener("click", () => {
-          followLiturgicalSeasonAccent();
+          resetAppAccentToDefault();
         });
       }
       document.querySelectorAll('input[name="visual-style"]').forEach((inp) => {
@@ -12314,6 +12754,7 @@ Lord, hear our prayer</textarea>
       "/home": "Mission control for the upcoming Sunday Mass.",
       "/mass/builder": "Assemble songs, timeline, and generate the full package.",
       "/mass/calendar": "Monthly liturgical view with readings context.",
+      "/radio": "EWTN 24/7 Catholic radio while you plan.",
       "/media/posters": "Poster and social graphic configuration.",
       "/media/history": "Recent downloads from this browser.",
       "/library/songs": "Song library and lyrics structuring.",
@@ -12344,20 +12785,16 @@ Lord, hear our prayer</textarea>
       return parts[0] + ' <span aria-hidden="true">›</span> <span>' + parts[1] + "</span>";
     }
 
-    function applyLiturgicalSeasonTheme(seasonStr) {
+    function applyLiturgicalSeasonTheme(seasonStr, liturgicalColor) {
       window.__liturgicalSeasonRaw = String(seasonStr || "");
       const preset = liturgicalPresetIdFromSeason(seasonStr || "");
       document.body.setAttribute("data-season", preset || "ordinary");
       window.__liturgicalPresetId = preset || "ordinary";
-      if (!document.body.hasAttribute("data-user-accent")) {
-        ["--liturgical-accent", "--liturgical-glow", "--liturgical-secondary", "--accent", "--on-accent"].forEach((prop) => {
-          document.body.style.removeProperty(prop);
-        });
-      }
       const seasonEl = $("home-liturgical-season");
       if (seasonEl) {
         seasonEl.textContent = formatLiturgicalSeasonLabel(seasonStr || "");
       }
+      applyLiturgicalIndicatorStyle(preset, liturgicalColor);
     }
 
     const legacyRoutes = {
@@ -12401,6 +12838,7 @@ Lord, hear our prayer</textarea>
     function isMoreNavRoute(route) {
       if (route === "/mass/calendar") return true;
       if (route.startsWith("/design/")) return true;
+      if (route.startsWith("/media/")) return true;
       if (route === "/library/collections") return true;
       if (route === "/media/history") return true;
       if (route.startsWith("/settings/")) return true;
@@ -12506,11 +12944,12 @@ Lord, hear our prayer</textarea>
     }
 
     function applyRouteState(r, replaceOnly) {
+      syncAppHeaderOffset();
       document.querySelectorAll(".page").forEach((page) => {
         page.classList.toggle("active", pageIsActiveForRoute(page, r));
         page.classList.remove("page--leaving");
       });
-      document.querySelectorAll(".app-header-nav .nav-link, .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link").forEach((link) => {
+      document.querySelectorAll(".app-sidebar .app-sidebar__link, .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link").forEach((link) => {
         link.classList.toggle("active", navLinkIsActive(link, r));
       });
       const moreBtn = $("app-bottom-nav-more");
@@ -12614,7 +13053,18 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    document.querySelectorAll(".app-header-nav .nav-link, .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach(bindSpaRouteLink);
+    document.querySelectorAll(".app-sidebar__link[data-route], .app-sidebar__brand[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach(bindSpaRouteLink);
+
+    const appSidebar = document.getElementById("app-sidebar");
+    if (appSidebar && appSidebar.dataset.spaBound !== "1") {
+      appSidebar.dataset.spaBound = "1";
+      appSidebar.addEventListener("click", (event) => {
+        const link = event.target.closest("a[data-route]");
+        if (!link || !appSidebar.contains(link)) return;
+        event.preventDefault();
+        showRoute(link.dataset.route);
+      });
+    }
 
     document.addEventListener("click", (event) => {
       const link = event.target.closest(".app-membership-banner a[data-route]");
@@ -12631,6 +13081,21 @@ Lord, hear our prayer</textarea>
     let lyricsSyncLock = false;
     let lyricsInputDebounce = null;
     const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
+    const LYRIC_BLOCK_DRAG_SVG =
+      '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">' +
+      '<circle cx="2.5" cy="2" r="1.1"/><circle cx="7.5" cy="2" r="1.1"/>' +
+      '<circle cx="2.5" cy="7" r="1.1"/><circle cx="7.5" cy="7" r="1.1"/>' +
+      '<circle cx="2.5" cy="12" r="1.1"/><circle cx="7.5" cy="12" r="1.1"/></svg>';
+    const LYRIC_BLOCK_ICON_UP =
+      '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>';
+    const LYRIC_BLOCK_ICON_DOWN =
+      '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+    const LYRIC_BLOCK_ICON_DUPLICATE =
+      '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    const LYRIC_BLOCK_ICON_DELETE =
+      '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>';
     const LINES_PER_SLIDE = 6;
     const HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD = 6;
 
@@ -12653,6 +13118,41 @@ Lord, hear our prayer</textarea>
 
     function autoResizeAllLyricTextareas() {
       document.querySelectorAll(".lyric-block__ta").forEach(autoResizeLyricTextarea);
+    }
+
+    function pruneLyricBlockCounters(scope) {
+      const wraps = scope && scope.classList && scope.classList.contains("lyric-block__ta-wrap")
+        ? [scope]
+        : Array.from((scope || document).querySelectorAll(".lyric-block__ta-wrap"));
+      wraps.forEach((wrap) => {
+        wrap.querySelectorAll(".input-char-count").forEach((node) => node.remove());
+        wrap.querySelectorAll(":scope > .lyric-block__char-count").forEach((node) => node.remove());
+        const foot = wrap.querySelector(".lyric-block__ta-foot");
+        if (!foot) return;
+        foot.querySelectorAll(".lyric-block__char-count").forEach((node, index) => {
+          if (index > 0) node.remove();
+        });
+      });
+    }
+
+    function syncLyricBlockCharCount(ta) {
+      const wrap = ta && ta.closest(".lyric-block__ta-wrap");
+      if (!wrap) return;
+      pruneLyricBlockCounters(wrap);
+      const foot = wrap.querySelector(".lyric-block__ta-foot");
+      let counter = foot && foot.querySelector(":scope > .lyric-block__char-count");
+      if (foot && !counter) {
+        counter = document.createElement("span");
+        counter.className = "lyric-block__char-count";
+        counter.setAttribute("aria-live", "polite");
+        foot.appendChild(counter);
+      }
+      if (counter) counter.textContent = ((ta && ta.value) || "").length + "/4000";
+    }
+
+    function syncAllLyricBlockCharCounts(scope) {
+      const root = scope || document;
+      root.querySelectorAll(".lyric-block__ta").forEach(syncLyricBlockCharCount);
     }
 
     function autoResizeLyricsMainInput() {
@@ -12813,34 +13313,40 @@ Lord, hear our prayer</textarea>
         return;
       }
       list.innerHTML = lyricBlocks.map((block, index) => {
-        const lines = countBlockLines(block.text);
-        const slides = lines ? Math.ceil(lines / LINES_PER_SLIDE) : 0;
         const collapsed = !!block.collapsed;
+        const charCount = (block.text || "").length;
         const typeOpts = Object.keys(typeLabels).map((type) => (
           '<option value="' + type + '"' + (block.type === type ? " selected" : "") + ">" + typeLabels[type] + "</option>"
         )).join("");
         return (
           '<article class="lyric-block type-' + block.type + (collapsed ? " collapsed" : "") + '" draggable="true" data-id="' + block.id + '" data-index="' + index + '">' +
             '<div class="lyric-block__head">' +
-              '<span class="lyric-block__drag" title="Drag to reorder" aria-hidden="true">⋮⋮</span>' +
+              '<span class="lyric-block__drag" title="Drag to reorder" aria-hidden="true">' + LYRIC_BLOCK_DRAG_SVG + "</span>" +
               '<select class="lyric-block__pill-select" data-action="type" aria-label="Section type">' + typeOpts + "</select>" +
-              '<span class="lyric-block__meta">' + lines + " line" + (lines === 1 ? "" : "s") + " · ~" + slides + " slide" + (slides === 1 ? "" : "s") + "</span>" +
               '<div class="lyric-block__actions">' +
-                '<button type="button" class="lyric-block__btn" data-action="move-up" title="Move up" aria-label="Move up"' + (index === 0 ? " disabled" : "") + ">↑</button>" +
-                '<button type="button" class="lyric-block__btn" data-action="move-down" title="Move down" aria-label="Move down"' + (index === lyricBlocks.length - 1 ? " disabled" : "") + ">↓</button>" +
-                '<button type="button" class="lyric-block__btn" data-action="duplicate" title="Duplicate" aria-label="Duplicate">⧉</button>' +
-                '<button type="button" class="lyric-block__btn danger" data-action="delete" title="Delete" aria-label="Delete">×</button>' +
-                '<button type="button" class="lyric-block__toggle" data-action="toggle-collapse" title="' + (collapsed ? "Expand" : "Collapse") + '" aria-expanded="' + (!collapsed) + '">' + (collapsed ? "▸" : "▾") + "</button>" +
+                '<button type="button" class="lyric-block__btn" data-action="move-up" title="Move up" aria-label="Move up"' + (index === 0 ? " disabled" : "") + ">" + LYRIC_BLOCK_ICON_UP + "</button>" +
+                '<button type="button" class="lyric-block__btn" data-action="move-down" title="Move down" aria-label="Move down"' + (index === lyricBlocks.length - 1 ? " disabled" : "") + ">" + LYRIC_BLOCK_ICON_DOWN + "</button>" +
+                '<button type="button" class="lyric-block__btn" data-action="duplicate" title="Duplicate" aria-label="Duplicate">' + LYRIC_BLOCK_ICON_DUPLICATE + "</button>" +
+                '<button type="button" class="lyric-block__btn danger" data-action="delete" title="Delete" aria-label="Delete">' + LYRIC_BLOCK_ICON_DELETE + "</button>" +
               "</div>" +
             "</div>" +
             '<div class="lyric-block__body">' +
-              '<textarea class="lyric-block__ta" data-action="text" data-limit-key="lyric_block" maxlength="4000" rows="2" spellcheck="true">' + escapeHtml(block.text) + "</textarea>" +
+              '<div class="lyric-block__ta-wrap">' +
+                '<textarea class="lyric-block__ta" data-action="text" data-limit-key="lyric_block" maxlength="4000" rows="2" spellcheck="true">' + escapeHtml(block.text) + "</textarea>" +
+                '<div class="lyric-block__ta-foot">' +
+                  '<span class="lyric-block__char-count" aria-live="polite">' + charCount + "/4000</span>" +
+                "</div>" +
+              "</div>" +
             "</div>" +
           "</article>"
         );
       }).join("");
       syncStructuredEditorToInputPanel();
-      requestAnimationFrame(autoResizeAllLyricTextareas);
+      requestAnimationFrame(() => {
+        autoResizeAllLyricTextareas();
+        syncAllLyricBlockCharCounts(list);
+        setTimeout(() => syncAllLyricBlockCharCounts(list), 0);
+      });
       initVerbumSelects(list);
     }
 
@@ -12852,12 +13358,7 @@ Lord, hear our prayer</textarea>
       if (event.target.dataset.action === "text") {
         block.text = event.target.value;
         autoResizeLyricTextarea(event.target);
-        const meta = card.querySelector(".lyric-block__meta");
-        if (meta) {
-          const lines = countBlockLines(block.text);
-          const slides = lines ? Math.ceil(lines / LINES_PER_SLIDE) : 0;
-          meta.textContent = lines + " line" + (lines === 1 ? "" : "s") + " · ~" + slides + " slide" + (slides === 1 ? "" : "s");
-        }
+        syncLyricBlockCharCount(event.target);
       }
       lyricStats();
       syncStructuredEditorToInputPanel();
@@ -16886,7 +17387,15 @@ Lord, hear our prayer</textarea>
       const hex = (lc && lc.hex) ? String(lc.hex).trim() : "";
       const bar = $("topbar-liturgical-color-bar");
       if (!bar) return;
-      bar.style.background = hex || "var(--liturgical-glow)";
+      bar.style.background = hex || "var(--good)";
+    }
+
+    function applyLiturgicalIndicatorStyle(preset, liturgicalColor) {
+      const btn = $("liturgical-indicator-btn");
+      if (!btn) return;
+      const isOrdinary = (preset || "ordinary") === "ordinary";
+      btn.classList.toggle("liturgical-indicator--ordinary", isOrdinary);
+      if (isOrdinary) applyLiturgicalColorBar(liturgicalColor);
     }
 
     const WYD_2027_START_ISO = "2027-08-03";
@@ -17646,6 +18155,7 @@ Lord, hear our prayer</textarea>
       { id: "page-home", label: "Home", hint: "Page", group: "Pages", route: "/home", keywords: ["home", "dashboard", "liturgyflow", "sunday"] },
       { id: "page-mass", label: "Mass Builder", hint: "Page", group: "Pages", route: "/mass/builder", keywords: ["mass", "builder", "pptx", "powerpoint", "slides", "generate"] },
       { id: "page-songs", label: "Song Library", hint: "Page", group: "Pages", route: "/library/songs", keywords: ["library", "song", "lyrics", "hymn", "music"] },
+      { id: "page-radio", label: "Live Radio", hint: "Page", group: "Pages", route: "/radio", keywords: ["radio", "ewtn", "stream", "listen", "live"] },
       { id: "page-collections", label: "Collections", hint: "Page", group: "Pages", route: "/library/collections", keywords: ["collection", "setlist"] },
       { id: "page-posters", label: "Posters", hint: "Page", group: "Pages", route: "/media/posters", keywords: ["media", "poster", "graphic", "social"] },
       { id: "page-history", label: "History", hint: "Page", group: "Pages", route: "/media/history", keywords: ["history", "download", "recent"] },
@@ -18074,12 +18584,11 @@ Lord, hear our prayer</textarea>
         const data = await postJSON("/api/preview", { date: sun });
         window.__homePreview = Object.assign({}, data, { __previewDate: sun });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
-        applyLiturgicalSeasonTheme(data.season || "");
+        applyLiturgicalSeasonTheme(data.season || "", data.liturgical_color || null);
         const seasonLabel = formatLiturgicalSeasonLabel(data.season || "");
         const yearLabel = formatLectionaryYearLabel(data.lectionary_cycle || "");
         if ($("home-liturgical-season")) $("home-liturgical-season").textContent = seasonLabel;
         if ($("home-liturgical-year")) $("home-liturgical-year").textContent = yearLabel;
-        applyLiturgicalColorBar(data.liturgical_color || null);
         updateLiturgicalCountdowns();
         const fullG = (data.gospel_text || "").trim();
         if ($("home-gospel-quote")) {
@@ -18123,7 +18632,7 @@ Lord, hear our prayer</textarea>
         ]);
         flowPreviewData = Object.assign({}, data, { __previewDate: date });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
-        applyLiturgicalSeasonTheme(data.season || "");
+        applyLiturgicalSeasonTheme(data.season || "", data.liturgical_color || null);
         renderThemeGrid();
         const season = [data.season, data.lectionary_cycle].filter(Boolean).join(" - ") || "Season loaded";
         const seasonEl = $("season-indicator");
@@ -20218,18 +20727,11 @@ Lord, hear our prayer</textarea>
       loadPinState();
     })();
     renderCalendarDow();
-    loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
     bindCelebrantSelect();
-    loadSongCatalog().then(() => {
-      renderMassSongPlan();
-      renderFlowSongCount();
-    });
     renderComposerRecent();
     renderCollectionsRecent();
-    refreshSavedPosters();
     bindSocialExportControls();
     bindOpenAiPosterControls();
-    refreshAiImageQuotaHint();
     showRoute(currentRoute(), true);
     analyzeLyrics();
     updateLyricsWordStats();
@@ -20256,9 +20758,24 @@ Lord, hear our prayer</textarea>
     initAppMoreSheet();
     initSongPlanSummaryCollapse();
     initSongComposerCollapse();
-    refreshHomeMission();
-    updatePosterLivePreview();
-    loadFlowData(true);
+
+    const bootDeferredData = () => {
+      loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
+      loadSongCatalog().then(() => {
+        renderMassSongPlan();
+        renderFlowSongCount();
+      });
+      refreshSavedPosters();
+      refreshHomeMission();
+      refreshAiImageQuotaHint();
+      updatePosterLivePreview();
+      loadFlowData(true);
+    };
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(bootDeferredData, { timeout: 800 });
+    } else {
+      setTimeout(bootDeferredData, 0);
+    }
     }
 
     let dashboardBooted = false;
@@ -20290,7 +20807,7 @@ Lord, hear our prayer</textarea>
       }
     }
   </script>
-  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/auth.js?v=20260621"></script>
   <script>
     scheduleDashboardBoot();
   </script>

@@ -1,8 +1,8 @@
-"""In-process sliding-window rate limiting to blunt abuse and DoS.
+"""Sliding-window rate limiting to blunt abuse and DoS.
 
-Dependency-free and suitable for a single app instance (Render free/standard,
-one Docker container). For horizontally scaled deployments, back this with a
-shared store (Redis) instead — see ``_Bucket`` for the swap point.
+Uses Redis (Render Key Value) when ``REDIS_URL`` is set; otherwise an in-process
+deque per instance. For horizontally scaled deployments, configure Redis so limits
+are shared across all app instances.
 
 Limits are tiered by route cost:
   * ``auth``        — token/identity probing (cheap to us, but abused for enumeration)
@@ -19,12 +19,38 @@ from __future__ import annotations
 import os
 import threading
 import time
+import uuid
 from collections import deque
-from typing import Deque, Dict, Tuple
+from typing import Deque, Dict, Optional, Tuple
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+
+from services.redis_client import get_redis
+
+_KEY_PREFIX = "verbum:rl:"
+
+_RATE_LIMIT_LUA = """
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+local member = ARGV[4]
+
+redis.call('ZREMRANGEBYSCORE', key, '-inf', now - window)
+local count = redis.call('ZCARD', key)
+if count >= limit then
+  local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
+  if oldest[2] then
+    return {0, math.ceil(oldest[2] + window - now)}
+  end
+  return {0, math.ceil(window)}
+end
+redis.call('ZADD', key, now, member)
+redis.call('EXPIRE', key, math.ceil(window) + 1)
+return {1, 0}
+"""
 
 
 def _int_env(name: str, default: int) -> int:
@@ -107,8 +133,12 @@ def _client_key(request: Request) -> str:
     return "ip:" + (client.host if client else "unknown")
 
 
+def _redis_key(tier: str, client_key: str) -> str:
+    return f"{_KEY_PREFIX}{tier}:{client_key}"
+
+
 class _Bucket:
-    """Sliding-window request log per (key, tier)."""
+    """Sliding-window request log per (key, tier) — single-instance fallback."""
 
     __slots__ = ("hits",)
 
@@ -116,16 +146,13 @@ class _Bucket:
         self.hits: Deque[float] = deque()
 
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app) -> None:
-        super().__init__(app)
+class _InMemoryRateLimiter:
+    def __init__(self) -> None:
         self._buckets: Dict[Tuple[str, str], _Bucket] = {}
         self._lock = threading.Lock()
         self._last_sweep = time.monotonic()
-        self._enabled = (os.environ.get("RATE_LIMIT_ENABLED", "1").strip() != "0")
 
     def _sweep(self, now: float) -> None:
-        # Drop empty/idle buckets occasionally to bound memory.
         if now - self._last_sweep < 120:
             return
         self._last_sweep = now
@@ -139,7 +166,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         for key in stale:
             self._buckets.pop(key, None)
 
-    def _check(self, key: str, tier: str, now: float) -> Tuple[bool, int]:
+    def check(self, key: str, tier: str, now: float) -> Tuple[bool, int]:
         max_req, window = _TIERS[tier]
         bucket_key = (key, tier)
         with self._lock:
@@ -157,6 +184,51 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             hits.append(now)
             self._sweep(now)
             return True, 0
+
+
+class _RedisRateLimiter:
+    def __init__(self) -> None:
+        self._script = None
+        self._fallback = _InMemoryRateLimiter()
+
+    def _eval(self, key: str, tier: str, now: float) -> Optional[Tuple[bool, int]]:
+        client = get_redis()
+        if client is None:
+            return None
+        max_req, window = _TIERS[tier]
+        if self._script is None:
+            self._script = client.register_script(_RATE_LIMIT_LUA)
+        member = f"{now}:{uuid.uuid4().hex[:8]}"
+        allowed, retry_after = self._script(
+            keys=[_redis_key(tier, key)],
+            args=[now, window, max_req, member],
+        )
+        return bool(int(allowed)), max(1, int(retry_after))
+
+    def check(self, key: str, tier: str, now: float) -> Tuple[bool, int]:
+        try:
+            result = self._eval(key, tier, now)
+            if result is not None:
+                return result
+        except Exception:
+            pass
+        return self._fallback.check(key, tier, time.monotonic())
+
+
+_memory_limiter = _InMemoryRateLimiter()
+_redis_limiter = _RedisRateLimiter()
+
+
+def _check_rate_limit(key: str, tier: str) -> Tuple[bool, int]:
+    if get_redis() is not None:
+        return _redis_limiter.check(key, tier, time.time())
+    return _memory_limiter.check(key, tier, time.monotonic())
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app) -> None:
+        super().__init__(app)
+        self._enabled = (os.environ.get("RATE_LIMIT_ENABLED", "1").strip() != "0")
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -181,8 +253,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if not tier:
             return await call_next(request)
 
-        now = time.monotonic()
-        allowed, retry_after = self._check(_client_key(request), tier, now)
+        allowed, retry_after = _check_rate_limit(_client_key(request), tier)
         if not allowed:
             return Response(
                 content='{"detail":"Too many requests. Please slow down."}',

@@ -388,18 +388,22 @@ textarea {
 
 .dashboard {
   gap: var(--layout-gap);
-  padding: var(--layout-gap) var(--layout-gutter) 88px;
+  padding:
+    var(--main-content-top, calc(var(--app-header-offset, 72px) + var(--layout-gap, 24px)))
+    var(--layout-gutter, clamp(20px, 3vw, 40px))
+    var(--layout-gap, 24px);
+  scroll-padding-top: var(--app-header-offset, 72px);
 }
 
-/* —— App header (full-width flat shell) —— */
+/* —— App header (fixed frosted glass) —— */
 .app-header {
   border-radius: 0;
   border: none;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-top);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: none;
+  border-bottom: 1px solid var(--app-header-glass-border, color-mix(in srgb, var(--line) 55%, transparent));
+  background: var(--app-header-glass-bg, color-mix(in srgb, var(--bg-top) 28%, transparent));
+  backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.15);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 .brand-logo:hover,
@@ -518,8 +522,7 @@ textarea {
 .secondary,
 .ghost,
 .mini,
-.danger,
-button.lyric-block__btn {
+.danger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -595,7 +598,6 @@ button:hover {
 }
 
 .danger,
-button.lyric-block__btn.danger,
 .theme-card-actions .danger-theme-del {
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 8%, var(--surface-solid));
@@ -603,7 +605,7 @@ button.lyric-block__btn.danger,
 }
 
 .danger:hover,
-button.lyric-block__btn.danger:hover:not(:disabled) {
+.theme-card-actions .danger-theme-del:hover {
   background: color-mix(in srgb, var(--danger) 14%, var(--surface-solid));
 }
 
@@ -1749,33 +1751,58 @@ html[data-theme="dark"] .app-menu-item:hover {
 
 .vb-select--pill .vb-select__trigger {
   min-height: auto;
-  padding: 3px 10px 3px 8px;
+  padding: 4px 10px 4px 10px;
   border-radius: var(--radius-pill);
   border: none;
-  font-size: var(--type-fine);
+  font-size: 0.8rem;
   font-weight: 600;
-  letter-spacing: var(--tracking-fine);
+  letter-spacing: 0;
   text-transform: none;
 }
 
 .lyric-block.type-verse .vb-select--pill .vb-select__trigger {
-  background: rgba(109, 93, 252, 0.14);
+  background: #c4b5fd;
   color: #5b21b6;
 }
 
 .lyric-block.type-chorus .vb-select--pill .vb-select__trigger {
-  background: rgba(244, 114, 182, 0.14);
-  color: #9d174d;
+  background: #e0a8c0;
+  color: #4a3038;
 }
 
 .lyric-block.type-bridge .vb-select--pill .vb-select__trigger {
-  background: rgba(16, 185, 129, 0.14);
-  color: #047857;
+  background: #a8cfc2;
+  color: #2d4438;
 }
 
 .lyric-block.type-response .vb-select--pill .vb-select__trigger {
-  background: rgba(217, 119, 6, 0.14);
-  color: #b45309;
+  background: #d8bc78;
+  color: #4a3c20;
+}
+
+.lyric-block .vb-select--pill .vb-select__chevron {
+  color: currentColor;
+  opacity: 0.65;
+}
+
+html[data-theme="dark"] .lyric-block.type-verse .vb-select--pill .vb-select__trigger {
+  background: color-mix(in srgb, #8b5cf6 24%, var(--surface-solid));
+  color: #ddd6fe;
+}
+
+html[data-theme="dark"] .lyric-block.type-chorus .vb-select--pill .vb-select__trigger {
+  background: color-mix(in srgb, #f472b6 22%, var(--surface-solid));
+  color: #fbcfe8;
+}
+
+html[data-theme="dark"] .lyric-block.type-bridge .vb-select--pill .vb-select__trigger {
+  background: color-mix(in srgb, #34d399 22%, var(--surface-solid));
+  color: #a7f3d0;
+}
+
+html[data-theme="dark"] .lyric-block.type-response .vb-select--pill .vb-select__trigger {
+  background: color-mix(in srgb, #fbbf24 22%, var(--surface-solid));
+  color: #fde68a;
 }
 
 .vb-select--pill .vb-select__panel {
@@ -1784,10 +1811,10 @@ html[data-theme="dark"] .app-menu-item:hover {
 }
 
 .vb-select--pill .vb-dropdown-item {
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .vb-select--pill .vb-dropdown-item--verse {

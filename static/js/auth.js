@@ -73,7 +73,8 @@
           applySession(session);
           resolve(session || null);
         };
-        const timer = setTimeout(() => finish(state.session), timeoutMs || 5000);
+        const maxWait = typeof timeoutMs === "number" ? timeoutMs : 1500;
+        const timer = setTimeout(() => finish(state.session), maxWait);
         supabase.auth.onAuthStateChange((event, session) => {
           applySession(session);
           if (event === "INITIAL_SESSION") {
@@ -81,6 +82,16 @@
             finish(session);
           }
         });
+        supabase.auth
+          .getSession()
+          .then(({ data, error }) => {
+            if (settled || error || !data || !data.session) return;
+            clearTimeout(timer);
+            finish(data.session);
+          })
+          .catch(() => {
+            /* wait for INITIAL_SESSION or timeout */
+          });
       });
     }
     return state.initialSessionPromise;
@@ -215,6 +226,26 @@
     document.documentElement.removeAttribute("data-auth-gate");
     const overlay = document.getElementById("auth-gate-overlay");
     if (overlay) overlay.remove();
+  }
+
+  function hasCachedSupabaseSession() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
+          const raw = localStorage.getItem(key);
+          if (raw && raw !== "null") return true;
+        }
+      }
+    } catch (_err) {
+      /* ignore storage access errors */
+    }
+    return false;
+  }
+
+  function revealAuthGateOptimistic() {
+    if (!window.__VERBUM_AUTH_GATE__) return;
+    if (hasCachedSupabaseSession()) revealAuthGate();
   }
 
   function resolveRequestUrl(input) {
@@ -406,6 +437,8 @@
     const publicPaths = ["/sign-in", "/sign-up", "/health"];
     const path = window.location.pathname || "/";
 
+    revealAuthGateOptimistic();
+
     try {
       await loadConfig();
       if (!state.config.auth_enabled) {
@@ -427,10 +460,6 @@
       }
 
       updateAccountMenuDisplay();
-      if (state.user) {
-        await refreshUserProfile();
-        updateAccountMenuDisplay();
-      }
 
       const signOutBtn = document.getElementById("account-sign-out-btn");
       if (signOutBtn && !signOutBtn.dataset.bound) {
@@ -447,10 +476,6 @@
         });
       }
 
-      if (!state.hydrated && state.supabase) {
-        await waitForInitialSession(state.supabase);
-      }
-
       if (!state.user && !publicPaths.includes(path)) {
         redirectToSignIn();
         return;
@@ -461,6 +486,10 @@
       window.dispatchEvent(
         new CustomEvent("verbum:auth-ready", { detail: { user: state.user } })
       );
+
+      if (state.user) {
+        refreshUserProfile().then(updateAccountMenuDisplay);
+      }
     } catch (err) {
       console.warn("[Verbum auth]", err);
       if (state.config && state.config.auth_enabled && !publicPaths.includes(path)) {

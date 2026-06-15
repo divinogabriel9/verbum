@@ -92,8 +92,11 @@
     const counter = ensureCounter(el);
     if (!counter || !max) return;
     const len = (el.value || "").length;
-    counter.textContent = len + " / " + max;
-    counter.style.color = len >= max ? "var(--warn)" : "";
+    const compact = el.classList.contains("lyric-block__ta");
+    counter.textContent = compact ? (len + "/" + max) : (len + " / " + max);
+    if (!compact) {
+      counter.style.color = len >= max ? "var(--warn)" : "";
+    }
   }
 
   function clampValue(el, max) {
@@ -106,6 +109,19 @@
 
   function bindElement(el) {
     if (!el || el.dataset.limitBound === "1") return;
+    if (el.classList.contains("lyric-block__ta")) {
+      const max = limitFor(el) || limits.lyric_block || 4000;
+      el.dataset.limitBound = "1";
+      el.setAttribute("maxlength", String(max));
+      const clampHandler = function () {
+        clampValue(el, max);
+      };
+      el.addEventListener("input", clampHandler);
+      el.addEventListener("paste", function () {
+        setTimeout(clampHandler, 0);
+      });
+      return;
+    }
     const max = limitFor(el);
     if (!max) return;
     el.dataset.limitBound = "1";
@@ -128,7 +144,7 @@
 
   function bindAll(root) {
     const scope = root || document;
-    scope.querySelectorAll("input[type='text'], input[type='search'], input[type='password'], textarea").forEach(bindElement);
+    scope.querySelectorAll("input[type='text'], input[type='search'], input[type='password'], textarea:not(.lyric-block__ta)").forEach(bindElement);
     scope.querySelectorAll(".lyric-block__ta").forEach(function (el) {
       el.setAttribute("data-limit-key", "lyric_block");
       bindElement(el);

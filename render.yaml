@@ -3,6 +3,13 @@
 # Apply: https://dashboard.render.com/blueprint/new?repo=https://github.com/divinogabriel9/verbum
 
 services:
+  - type: keyvalue
+    name: verbum-cache
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
   - type: web
     name: verbum
     runtime: docker
@@ -12,6 +19,11 @@ services:
     autoDeployTrigger: commit
     envVars:
       # Render injects RENDER_EXTERNAL_URL; auth_config uses it when APP_PUBLIC_URL is unset.
+      - key: REDIS_URL
+        fromService:
+          name: verbum-cache
+          type: keyvalue
+          property: connectionString
       - key: OPENAI_API_KEY
         sync: false
       - key: GEMINI_API_KEY
