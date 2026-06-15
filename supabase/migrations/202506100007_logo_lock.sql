@@ -12,6 +12,8 @@ where community_name_locked_at is not null
 create or replace function public.church_profiles_lock_logo()
 returns trigger
 language plpgsql
+security definer
+set search_path = ''
 as $$
 begin
   if tg_op = 'UPDATE'
@@ -22,6 +24,8 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function public.church_profiles_lock_logo() from public, anon, authenticated;
 
 drop trigger if exists church_profiles_lock_logo on public.church_profiles;
 create trigger church_profiles_lock_logo

@@ -211,6 +211,12 @@
       base + "?redirect_url=" + encodeURIComponent(path + window.location.search);
   }
 
+  function revealAuthGate() {
+    document.documentElement.removeAttribute("data-auth-gate");
+    const overlay = document.getElementById("auth-gate-overlay");
+    if (overlay) overlay.remove();
+  }
+
   function resolveRequestUrl(input) {
     if (typeof input === "string") return input;
     if (input && input.url) return input.url;
@@ -232,7 +238,6 @@
       path = raw.split("?")[0];
     }
     const method = resolveRequestMethod(init);
-    if (method === "GET" && path.startsWith("/api/catalog/songs")) return true;
     if (method === "POST" && path === "/api/preview") return true;
     return false;
   }
@@ -261,7 +266,7 @@
 
       const token = await getSessionToken();
       if (!token) {
-        return nativeFetch(input, nextInit);
+        return Promise.reject(new Error("Sign in required."));
       }
 
       if (!headers.has("Authorization")) {
@@ -404,6 +409,7 @@
     try {
       await loadConfig();
       if (!state.config.auth_enabled) {
+        revealAuthGate();
         state.ready = true;
         window.dispatchEvent(
           new CustomEvent("verbum:auth-ready", { detail: { user: null } })
@@ -450,6 +456,7 @@
         return;
       }
 
+      revealAuthGate();
       state.ready = true;
       window.dispatchEvent(
         new CustomEvent("verbum:auth-ready", { detail: { user: state.user } })
@@ -497,9 +504,11 @@
     getAuthHeaders,
     waitUntilReady,
     redirectToSignIn,
+    revealAuthGate,
     signOut,
     isReady: () => state.ready,
     initMainAppAuth,
+    refreshUserProfile,
     updateAccountMenuDisplay,
   };
 

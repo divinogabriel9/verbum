@@ -891,12 +891,18 @@ def api_delete_saved_poster(
 
 
 @app.get("/api/catalog/songs")
-def api_catalog_songs() -> dict[str, Any]:
+def api_catalog_songs(
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
     return {"ok": True, "catalog": catalog_for_api()}
 
 
 @app.get("/api/catalog/songs/{section}/{hymn_id:path}")
-def api_get_catalog_song(section: str, hymn_id: str) -> dict[str, Any]:
+def api_get_catalog_song(
+    section: str,
+    hymn_id: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
     row = get_hymn(section.strip().lower(), hymn_id)
     if not row:
         raise HTTPException(status_code=404, detail="Song not found.")
@@ -978,7 +984,7 @@ def index(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "LiturgyFlow"},
+        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
     )
 
 
@@ -1001,7 +1007,7 @@ def dashboard(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "LiturgyFlow"},
+        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
     )
 
 

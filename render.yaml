@@ -1,0 +1,52 @@
+# LiturgyFlow (Verbum) — Render Blueprint
+# Repo: https://github.com/divinogabriel9/verbum
+# Apply: https://dashboard.render.com/blueprint/new?repo=https://github.com/divinogabriel9/verbum
+
+services:
+  - type: web
+    name: verbum
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      # Render injects RENDER_EXTERNAL_URL; auth_config uses it when APP_PUBLIC_URL is unset.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPERADMIN_EMAILS
+        sync: false
+      - key: IMAGE_GENERATION_DAILY_LIMIT
+        value: "1"
+      - key: RATE_LIMIT_ENABLED
+        value: "1"
+      - key: RATE_LIMIT_AUTH_MAX
+        value: "30"
+      - key: RATE_LIMIT_AUTH_WINDOW
+        value: "60"
+      - key: RATE_LIMIT_EXPENSIVE_MAX
+        value: "20"
+      - key: RATE_LIMIT_EXPENSIVE_WINDOW
+        value: "60"
+      - key: RATE_LIMIT_API_MAX
+        value: "120"
+      - key: RATE_LIMIT_API_WINDOW
+        value: "60"
+      - key: RATE_LIMIT_DEFAULT_MAX
+        value: "300"
+      - key: RATE_LIMIT_DEFAULT_WINDOW
+        value: "60"
+      - key: MAX_REQUEST_BODY_BYTES
+        value: "12582912"

@@ -1,0 +1,184 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Setup Component - Compact</title>
+<!-- Load Tailwind CSS v3 with forms and container-queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="custom-styling">
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .focus-ring:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            --tw-ring-offset-width: 2px;
+            --tw-ring-color: #4f46e5;
+            box-shadow: 0 0 0 var(--tw-ring-offset-width) white, 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+        }
+        
+        input[type="file"]::file-selector-button {
+            background-color: #f8fafc;
+            color: #475569;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            transition: all 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        /* Fixed Dimensions Constraint */
+        .fixed-card-container {
+            width: 1360px;
+            height: 400px;
+        }
+    </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" data-snapdom="injected-import"></head>
+<body class="bg-slate-50 min-h-screen flex justify-center items-center p-4">
+<!-- BEGIN: MainCard -->
+<div class="fixed-card-container bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/60 overflow-hidden flex flex-col" data-purpose="setup-card">
+<!-- BEGIN: CardHeader -->
+<header class="px-6 border-b border-slate-100 bg-white shrink-0 py-2"><h1 class="text-xl font-bold text-slate-900 tracking-tight leading-tight">Setup</h1><p class="text-[12px] text-slate-500 mt-0">Configure date, celebrant details, stewardship reporting, and media assets.</p></header>
+<!-- END: CardHeader -->
+<!-- BEGIN: MainGridContent -->
+<main class="flex-grow overflow-hidden p-4">
+<div class="grid grid-cols-4 h-full gap-6">
+<!-- SECTION: Basics -->
+<section class="space-y-3" data-purpose="section-basics">
+<h2 class="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Basics</h2>
+<div class="space-y-3">
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700" for="mass-date">Mass date</label>
+<input class="w-full rounded-lg border-slate-200 bg-slate-50/30 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[13px] transition-all py-1.5" id="mass-date" type="date" value="2026-06-14">
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700" for="celebrant">Mass celebrant</label>
+<select class="w-full rounded-lg border-slate-200 bg-slate-50/30 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[13px] transition-all py-1.5" id="celebrant">
+<option>Rev. Fr. Jonrey Lauron, RCJ</option>
+<option>Other Celebrant</option>
+</select>
+<a class="text-[11px] font-medium text-indigo-600 hover:text-indigo-700 mt-0.5 inline-flex items-center transition-colors" href="#">Settings → Church Profile</a>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700" for="co-celebrant">Co-celebrant <span class="text-slate-400 font-normal ml-0.5">(opt)</span></label>
+<input class="w-full rounded-lg border-slate-200 bg-slate-50/30 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[13px] transition-all py-1.5 placeholder:text-slate-400" id="co-celebrant" placeholder="e.g. Fr. Jane Doe" type="text">
+</div>
+</div>
+</section>
+<!-- SECTION: Stewardship -->
+<section class="space-y-3" data-purpose="section-stewardship">
+<h2 class="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Stewardship</h2>
+<div class="space-y-3">
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700" for="collection-amount">Collection amount</label>
+<div class="flex">
+<select class="rounded-l-lg border-r-0 border-slate-200 bg-slate-100 text-[12px] font-medium text-slate-600 focus:ring-0 focus:border-slate-200 px-2">
+<option>₩ KRW</option>
+<option>$ USD</option>
+</select>
+<input class="w-full rounded-r-lg border-slate-200 bg-slate-50/30 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[13px] transition-all py-1.5" id="collection-amount" type="text" value="12,500">
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700" for="collection-date">Collection date</label>
+<input class="w-full rounded-lg border-slate-200 bg-slate-50/30 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[13px] transition-all py-1.5" id="collection-date" type="date" value="2026-06-07">
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700" for="food-sponsors">Food sponsors</label>
+<div class="flex gap-1.5">
+<input class="flex-grow rounded-lg border-slate-200 bg-slate-50/30 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-[13px] transition-all py-1.5 placeholder:text-slate-400" id="food-sponsors" placeholder="Name/family" type="text">
+<button class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-semibold rounded-lg transition-all shadow-md shadow-indigo-100 active:scale-[0.98]" type="button">Add</button>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: Assets -->
+<section class="space-y-3" data-purpose="section-assets">
+<h2 class="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Assets</h2>
+<div class="space-y-4">
+<div class="flex flex-col gap-1.5">
+<label class="text-[12px] font-semibold text-slate-700">Divider poster</label>
+<input class="block w-full text-[11px] text-slate-500 border border-slate-200 rounded-lg bg-slate-50/30 cursor-pointer focus:outline-none focus:border-indigo-500 transition-all pr-2" type="file">
+<p class="text-[10px] text-slate-400">Rec. 16:9 ratio</p>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-[12px] font-semibold text-slate-700">Announcements</label>
+<input class="block w-full text-[11px] text-slate-500 border border-slate-200 rounded-lg bg-slate-50/30 cursor-pointer focus:outline-none focus:border-indigo-500 transition-all pr-2" multiple="" type="file">
+<p class="text-[10px] text-slate-400">Before final blessing</p>
+</div>
+</div>
+</section>
+<!-- SECTION: Settings -->
+<section class="space-y-3" data-purpose="section-settings">
+<h2 class="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">Output Settings</h2>
+<div class="space-y-3">
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700">Hymn lyrics</label>
+<div class="inline-flex p-0.5 bg-slate-100 rounded-lg w-full" role="group">
+<button class="flex-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-transparent rounded-md hover:text-slate-900 transition-colors" type="button">1/slide</button>
+<button class="flex-1 px-2 py-1 text-[11px] font-semibold text-white bg-indigo-600 rounded-md shadow-sm" type="button">2/slide</button>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[12px] font-semibold text-slate-700">Poster style</label>
+<select class="rounded-lg border-slate-200 bg-white text-[12px] font-medium text-slate-700 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm py-1.5">
+<option>Cinematic</option>
+<option>Minimalist</option>
+<option>Classic</option>
+</select>
+</div>
+<div class="grid grid-cols-2 gap-x-2 gap-y-2 pt-1">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" type="checkbox">
+<span class="text-[11px] font-medium text-slate-600 group-hover:text-slate-900">Parish Logo</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" type="checkbox">
+<span class="text-[11px] font-medium text-slate-600 group-hover:text-slate-900">Parish</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" type="checkbox">
+<span class="text-[11px] font-medium text-slate-600 group-hover:text-slate-900">OpenAI</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" type="checkbox">
+<span class="text-[11px] font-medium text-slate-600 group-hover:text-slate-900">Gemini</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" type="checkbox">
+<span class="text-[11px] font-medium text-slate-600 group-hover:text-slate-900">Text on poster</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="w-3.5 h-3.5 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" type="checkbox">
+<span class="text-[11px] font-medium text-slate-600 group-hover:text-slate-900">Social sizes</span>
+</label></div>
+</div>
+</section>
+</div>
+</main>
+<!-- END: MainGridContent -->
+<!-- BEGIN: CompactFooter -->
+<footer class="bg-slate-50/80 border-t border-slate-100 px-6 flex items-center shrink-0 justify-end py-2">
+
+<div class="flex items-center gap-2 px-3 py-1 bg-white/50 border border-slate-200/50 rounded-full">
+<div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">1 generation remaining <span class="font-medium text-slate-400 lowercase italic">(utc)</span></p>
+</div>
+</footer>
+<!-- END: CompactFooter -->
+</div>
+<!-- END: MainCard -->
+
+
+
+
+</body></html>

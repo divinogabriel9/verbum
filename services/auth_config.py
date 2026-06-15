@@ -48,7 +48,9 @@ def supabase_jwt_secret() -> str:
 
 def app_public_url() -> str:
     """Public app URL for email confirm redirects (no trailing slash)."""
-    raw = _clean(os.environ.get("APP_PUBLIC_URL"))
+    raw = _clean(os.environ.get("APP_PUBLIC_URL")) or _clean(
+        os.environ.get("RENDER_EXTERNAL_URL")
+    )
     return raw.rstrip("/") if raw else ""
 
 

@@ -33,6 +33,8 @@ where coalesce(trim(community_name), '') <> '';
 create or replace function public.church_profiles_lock_parish_name()
 returns trigger
 language plpgsql
+security definer
+set search_path = ''
 as $$
 begin
   if tg_op = 'UPDATE'
@@ -43,6 +45,8 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function public.church_profiles_lock_parish_name() from public, anon, authenticated;
 
 drop trigger if exists church_profiles_lock_parish_name on public.church_profiles;
 create trigger church_profiles_lock_parish_name

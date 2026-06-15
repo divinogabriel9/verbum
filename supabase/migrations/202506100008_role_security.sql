@@ -15,8 +15,8 @@ as $$
   );
 $$;
 
-revoke all on function public.is_superadmin(uuid) from public;
-grant execute on function public.is_superadmin(uuid) to authenticated, service_role;
+revoke all on function public.is_superadmin(uuid) from public, anon, authenticated;
+grant execute on function public.is_superadmin(uuid) to service_role;
 
 create or replace function public.profiles_guard_role()
 returns trigger

@@ -91,11 +91,10 @@ PROTECTED_API_PREFIXES: tuple[str, ...] = (
 
 def _is_protected_api(path: str, method: str) -> bool:
     if method.upper() in {"GET", "HEAD", "OPTIONS"}:
-        # Read-only catalog/community remain public for liturgy browsing.
-        if path.startswith("/api/catalog/songs") and method.upper() == "GET":
-            return False
-        if path == "/api/community" and method.upper() == "GET":
-            return auth_enabled()
+        if path.startswith("/api/catalog/songs") and auth_enabled():
+            return True
+        if path == "/api/community" and auth_enabled():
+            return True
         if path.startswith("/api/settings/gemini-api-key") and method.upper() == "GET":
             return False
         return False

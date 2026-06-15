@@ -1,8 +1,7 @@
 -- Verbum profiles schema (Supabase Auth)
 -- Run in Supabase SQL Editor. Requires Supabase Auth (email/password or other providers).
 --
--- If you previously ran Clerk-era migrations, tables may use text user ids.
--- That breaks RLS (`auth.uid()` is uuid). Drop and recreate below.
+-- Drops existing profile tables so user ids stay uuid (required for RLS with auth.uid()).
 
 drop trigger if exists on_auth_user_created on auth.users;
 drop function if exists public.handle_new_user() cascade;

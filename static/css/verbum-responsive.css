@@ -1514,9 +1514,8 @@ iframe {
     grid-template-columns: 1fr;
   }
 
-  .flow-setup-footer__toggles {
-    flex-direction: column;
-    align-items: flex-start;
+  .flow-setup-output-checks {
+    grid-template-columns: 1fr;
   }
 
   .flow-bento-cell {

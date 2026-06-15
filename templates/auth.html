@@ -19,6 +19,8 @@
         var isOled = m === "oled";
         var d = m === "dark" || isOled || (m !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.setAttribute("data-theme", d ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme-preference", m);
+        document.documentElement.style.colorScheme = d ? "dark" : "light";
         if (isOled) document.documentElement.setAttribute("data-dark-variant", "oled");
       } catch (_e) { /* ignore */ }
     })();
@@ -55,23 +57,122 @@
       --line: #1a1a1a;
     }
     * { box-sizing: border-box; }
+    @property --auth-aurora-angle {
+      syntax: "<angle>";
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @keyframes auth-aurora-rotate {
+      to { --auth-aurora-angle: 360deg; }
+    }
+    @keyframes auth-aurora-pulse {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 0.85; }
+    }
     body {
       margin: 0;
       min-height: 100vh;
       font-family: var(--font);
-      background: var(--bg);
+      background: #191a1f;
       color: var(--ink);
       display: grid;
       place-items: center;
       padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    html[data-theme="light"] body {
+      background: #eef2f6;
+    }
+    .auth-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    #auth-aurora-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+    #auth-dot-grid {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .auth-shell-wrap {
+      position: relative;
+      z-index: 2;
+      width: min(100%, 420px);
     }
     .auth-shell {
-      width: min(100%, 420px);
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      box-shadow: none;
+      position: relative;
+      width: 100%;
+      background: color-mix(in srgb, var(--surface) 82%, transparent);
+      backdrop-filter: blur(20px) saturate(1.2);
+      -webkit-backdrop-filter: blur(20px) saturate(1.2);
+      border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
       padding: 28px 24px 24px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    html[data-theme="dark"] .auth-shell {
+      background: color-mix(in srgb, var(--surface) 72%, transparent);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+    }
+    .auth-shell::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: conic-gradient(
+        from var(--auth-aurora-angle, 0deg),
+        #9154E7,
+        #6056F0,
+        #40D9C6,
+        #4285F4,
+        #9154E7
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 0;
+      animation: auth-aurora-rotate 12s linear infinite;
+      --auth-aurora-angle: 0deg;
+    }
+    .auth-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow:
+        inset 0 0 60px color-mix(in srgb, #6056F0 12%, transparent),
+        inset 0 0 120px color-mix(in srgb, #40D9C6 8%, transparent);
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: 0;
+      animation: auth-aurora-pulse 5s ease-in-out infinite;
+    }
+    .auth-shell > * {
+      position: relative;
+      z-index: 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .auth-shell::before,
+      .auth-shell::after {
+        animation: none;
+      }
     }
     .auth-brand { text-align: center; margin-bottom: 20px; }
     .auth-brand h1.wordmark {
@@ -173,9 +274,62 @@
       cursor: pointer;
     }
     .auth-secondary:hover { background: var(--bg); }
+    .auth-theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 78%, transparent);
+      backdrop-filter: blur(16px) saturate(1.2);
+      -webkit-backdrop-filter: blur(16px) saturate(1.2);
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .auth-theme-toggle:hover {
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
+      transform: scale(1.04);
+    }
+    .auth-theme-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .auth-theme-toggle svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .auth-theme-toggle .theme-icon-moon { display: none; }
+    html[data-theme="dark"] .auth-theme-toggle .theme-icon-sun { display: none; }
+    html[data-theme="dark"] .auth-theme-toggle .theme-icon-moon { display: block; }
   </style>
 </head>
 <body>
+  <button type="button" class="auth-theme-toggle" id="auth-theme-toggle" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+    <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+    <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  </button>
+  <div class="auth-bg" aria-hidden="true">
+    <canvas id="auth-aurora-canvas"></canvas>
+    <div id="auth-dot-grid"></div>
+  </div>
+  <div class="auth-shell-wrap">
   <div class="auth-shell">
     <div class="auth-brand">
       <h1 class="wordmark" aria-label="LiturgyFlow"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></h1>
@@ -232,10 +386,13 @@
       {% endif %}
     </p>
   </div>
+  </div>
 
+  <script src="/static/js/auth-theme.js"></script>
   <script>
     window.__VERBUM_AUTH_MODE__ = {{ mode | tojson }};
   </script>
+  <script src="/static/js/auth-aurora-bg.js" defer></script>
   <script src="/static/js/auth-page.js" defer></script>
 </body>
 </html>
