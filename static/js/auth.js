@@ -35,21 +35,24 @@
     const status = (row.membership_status || "draft").toLowerCase();
     const locked = !!row.community_name_locked_at;
     const m = membership || {};
+    const superadmin = !!m.is_superadmin;
+    const approved = status === "approved";
+    const fullAccess = m.can_use_full_app != null ? !!m.can_use_full_app : (superadmin || approved);
     return {
       ok: true,
       community_name: row.community_name || "",
       celebrant_names: Array.isArray(row.celebrant_names) ? row.celebrant_names : [],
-      logo_url: logoPath ? "/uploads/community_logo.png" : null,
+      logo_url: null,
       membership_status: m.membership_status || status,
       community_name_locked: m.community_name_locked != null ? m.community_name_locked : locked,
       logo_locked: m.logo_locked != null ? m.logo_locked : !!row.logo_locked_at,
       can_edit_parish_name: m.can_edit_parish_name != null ? m.can_edit_parish_name : !locked,
       can_edit_logo: m.can_edit_logo != null ? m.can_edit_logo : !row.logo_locked_at,
-      can_edit_church_profile: m.can_edit_church_profile != null ? m.can_edit_church_profile : status === "approved",
-      can_use_full_app: m.can_use_full_app != null ? m.can_use_full_app : !!m.is_superadmin,
-      can_submit_song: m.can_submit_song != null ? m.can_submit_song : !m.is_superadmin,
-      can_submit_priest: m.can_submit_priest != null ? m.can_submit_priest : !m.is_superadmin,
-      is_superadmin: !!m.is_superadmin,
+      can_edit_church_profile: m.can_edit_church_profile != null ? m.can_edit_church_profile : fullAccess,
+      can_use_full_app: fullAccess,
+      can_submit_song: m.can_submit_song != null ? !!m.can_submit_song : (!superadmin && !fullAccess),
+      can_submit_priest: m.can_submit_priest != null ? !!m.can_submit_priest : (!superadmin && !fullAccess),
+      is_superadmin: superadmin,
     };
   }
 
@@ -198,8 +201,16 @@
 
   async function getAuthHeaders(extra) {
     const headers = { ...(extra || {}) };
-    const cfg = state.config || (await loadConfig());
-    if (!cfg.auth_enabled) return headers;
+    if (!state.config) {
+      const cfg = await loadConfig();
+      if (!cfg.auth_enabled) return headers;
+    } else if (!state.config.auth_enabled) {
+      return headers;
+    }
+    if (state.cachedToken) {
+      headers.Authorization = "Bearer " + state.cachedToken;
+      return headers;
+    }
     const token = await getSessionToken();
     if (token) headers.Authorization = "Bearer " + token;
     return headers;

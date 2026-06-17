@@ -1,7 +1,7 @@
 [
   {
     "id": "c79cc446083b42859ce735f6d42d452c",
-    "status": "pending",
+    "status": "rejected",
     "created_at": "2026-06-11T14:46:33.165265+00:00",
     "submitted_by_user_id": "d31246f5-086c-42bc-b6b1-151fa1c01ca8",
     "submitted_by_email": "admin@gfcc.com",
@@ -13,6 +13,7 @@
       ],
       "language": "English",
       "author": ""
-    }
+    },
+    "resolved_at": "2026-06-16T17:19:53.446040+00:00"
   }
 ]

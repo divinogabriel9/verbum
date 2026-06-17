@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
-from services.auth_config import auth_enabled
+from services.auth_config import auth_enabled, auth_misconfigured
 from services.supabase_auth import AuthUser, verify_supabase_token
 from services.user_church_context import clear_church_profile, set_church_profile
 
@@ -18,6 +20,39 @@ from services.user_church_context import clear_church_profile, set_church_profil
 class AuthSession:
     user: AuthUser
     token: str
+
+
+_AUTH_CONTEXT_TTL_S = 90.0
+_auth_context_cache: dict[str, tuple[float, AuthSession, Optional[dict[str, Any]]]] = {}
+
+
+def _auth_cache_key(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _get_cached_auth_context(
+    token: str,
+) -> Optional[tuple[AuthSession, Optional[dict[str, Any]]]]:
+    row = _auth_context_cache.get(_auth_cache_key(token))
+    if not row:
+        return None
+    expires_at, session, church_profile = row
+    if time.monotonic() >= expires_at:
+        _auth_context_cache.pop(_auth_cache_key(token), None)
+        return None
+    return session, church_profile
+
+
+def _store_auth_context(
+    token: str,
+    session: AuthSession,
+    church_profile: Optional[dict[str, Any]],
+) -> None:
+    _auth_context_cache[_auth_cache_key(token)] = (
+        time.monotonic() + _AUTH_CONTEXT_TTL_S,
+        session,
+        church_profile,
+    )
 
 
 def _extract_bearer(authorization: Optional[str]) -> Optional[str]:
@@ -48,6 +83,8 @@ async def require_session(request: Request) -> Optional[AuthSession]:
 
 async def require_session_when_auth(request: Request) -> Optional[AuthSession]:
     """Require a session when auth is enabled; otherwise allow anonymous use."""
+    if auth_misconfigured():
+        raise HTTPException(status_code=503, detail="Auth is required but not configured.")
     session = await optional_session(request)
     if auth_enabled() and not session:
         raise HTTPException(status_code=401, detail="Sign in required.")
@@ -55,14 +92,42 @@ async def require_session_when_auth(request: Request) -> Optional[AuthSession]:
 
 
 async def require_approved_membership(request: Request) -> Optional[AuthSession]:
-    """Require superadmin (full app access) when auth is enabled."""
-    return await require_superadmin(request)
+    """Require approved parish membership (or superadmin) when auth is enabled."""
+    from services.membership_config import membership_allows_full_access
+    from services.user_church_context import get_church_profile_context
+
+    if auth_misconfigured():
+        raise HTTPException(status_code=503, detail="Auth is required but not configured.")
+    session = await require_session_when_auth(request)
+    if not auth_enabled():
+        return session
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    church = get_church_profile_context()
+    if membership_allows_full_access(
+        church, user=session.user, profile_role=session.user.role
+    ):
+        return session
+    status = ((church or {}).get("membership_status") or "draft").strip().lower()
+    if status == "pending":
+        raise HTTPException(
+            status_code=403,
+            detail="Parish membership is pending approval.",
+        )
+    if status == "rejected":
+        raise HTTPException(
+            status_code=403,
+            detail="Parish membership was not approved.",
+        )
+    raise HTTPException(status_code=403, detail="Approved parish membership is required.")
 
 
 async def require_superadmin(request: Request) -> Optional[AuthSession]:
     """Only superadmin emails may use protected parish/Mass features when auth is on."""
     from services.membership_config import is_superadmin_user
 
+    if auth_misconfigured():
+        raise HTTPException(status_code=503, detail="Auth is required but not configured.")
     session = await require_session_when_auth(request)
     if not auth_enabled():
         return session
@@ -90,15 +155,33 @@ PROTECTED_API_PREFIXES: tuple[str, ...] = (
 
 
 def _is_protected_api(path: str, method: str) -> bool:
+    auth_active = auth_enabled() or auth_misconfigured()
     if method.upper() in {"GET", "HEAD", "OPTIONS"}:
-        if path.startswith("/api/catalog/songs") and auth_enabled():
+        if path.startswith("/api/files/") and auth_active:
             return True
-        if path == "/api/community" and auth_enabled():
+        if path.startswith("/api/catalog/songs") and auth_active:
+            return True
+        if path.startswith("/api/readings/") and auth_active:
+            return True
+        if path == "/api/community" and auth_active:
             return True
         if path.startswith("/api/settings/gemini-api-key") and method.upper() == "GET":
             return False
         return False
     return any(path == prefix or path.startswith(prefix) for prefix in PROTECTED_API_PREFIXES)
+
+
+def _is_lightweight_auth_get(path: str, method: str) -> bool:
+    """Read-only routes that only need a valid JWT, not Supabase profile round-trips."""
+    if method.upper() not in {"GET", "HEAD"}:
+        return False
+    if path.startswith("/api/catalog/songs"):
+        return True
+    if path.startswith("/api/readings/"):
+        return True
+    if path == "/api/calendar/month":
+        return True
+    return False
 
 
 class UserChurchMiddleware(BaseHTTPMiddleware):
@@ -112,28 +195,41 @@ class UserChurchMiddleware(BaseHTTPMiddleware):
         if auth_enabled():
             token = _extract_bearer(request.headers.get("authorization"))
             if token:
-                try:
-                    user = verify_supabase_token(token)
-                    from services.supabase_client import get_church_profile, get_profile
-
-                    profile_row = get_profile(user.user_id, access_token=token) or {}
-                    role = (profile_row.get("role") or "member").strip().lower()
-                    if role not in {"member", "superadmin"}:
-                        role = "member"
-                    user = AuthUser(
-                        user_id=user.user_id,
-                        email=user.email,
-                        first_name=user.first_name,
-                        last_name=user.last_name,
-                        image_url=user.image_url,
-                        role=role,
-                    )
-                    session = AuthSession(user=user, token=token)
+                lightweight = _is_lightweight_auth_get(request.url.path, request.method)
+                cached = _get_cached_auth_context(token)
+                if cached:
+                    session, church_profile = cached
                     request.state.auth_session = session
-                    church_profile = get_church_profile(user.user_id, access_token=token)
-                    set_church_profile(church_profile)
-                except HTTPException:
-                    pass
+                    if church_profile is not None:
+                        set_church_profile(church_profile)
+                else:
+                    try:
+                        user = verify_supabase_token(token)
+                        if lightweight:
+                            session = AuthSession(user=user, token=token)
+                            request.state.auth_session = session
+                        else:
+                            from services.supabase_client import get_church_profile, get_profile
+
+                            profile_row = get_profile(user.user_id, access_token=token) or {}
+                            role = (profile_row.get("role") or "member").strip().lower()
+                            if role not in {"member", "superadmin"}:
+                                role = "member"
+                            user = AuthUser(
+                                user_id=user.user_id,
+                                email=user.email,
+                                first_name=user.first_name,
+                                last_name=user.last_name,
+                                image_url=user.image_url,
+                                role=role,
+                            )
+                            session = AuthSession(user=user, token=token)
+                            request.state.auth_session = session
+                            church_profile = get_church_profile(user.user_id, access_token=token)
+                            set_church_profile(church_profile)
+                            _store_auth_context(token, session, church_profile)
+                    except HTTPException:
+                        pass
         try:
             return await call_next(request)
         finally:
@@ -145,7 +241,15 @@ class AuthGuardMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        if auth_enabled() and _is_protected_api(request.url.path, request.method):
+        if _is_protected_api(request.url.path, request.method):
+            if auth_misconfigured():
+                return Response(
+                    content=json.dumps({"detail": "Auth is required but not configured."}),
+                    status_code=503,
+                    media_type="application/json",
+                )
+            if not auth_enabled():
+                return await call_next(request)
             if not getattr(request.state, "auth_session", None):
                 token = _extract_bearer(request.headers.get("authorization"))
                 detail = (

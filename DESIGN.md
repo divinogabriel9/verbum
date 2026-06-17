@@ -8,8 +8,8 @@ typography-path: .cursor/design-references/apple/DESIGN.md
 overrides: .cursor/design-references/verbum-overrides.md
 description: >-
   Verbum liturgy planning UI — light SaaS dashboard built on Cal.com patterns
-  (white cards, Inter, calendar-friendly density) with forest-green liturgical
-  accent, grey canvas, and Mea Culpa wordmark. Home uses a 12-col bento grid.
+  (white cards, Inter, calendar-friendly density) with Winter Berry
+  accent (#a10f0d), grey canvas, and Mea Culpa wordmark. Home uses a 12-col bento grid.
   Read cal/DESIGN.md for component anatomy; apply verbum-overrides for brand colors.
 ---
 
@@ -31,11 +31,11 @@ Calm, professional parish planning tool — not a dark IDE, not a marketing land
 | Ink | `--ink` `#15333D` | Titles, body |
 | Muted | `--muted` `#5C6B75` | Secondary text, hints |
 | Hairline | `--line` `#E2E8F0` | Borders, dividers |
-| Primary CTA | `--good` `#2D6A4F` | Create, active nav, links on scripture |
-| On primary | `#FFFFFF` | Text on green buttons |
+| Primary CTA | `--good` `#a10f0d` | Create, active nav, links on scripture |
+| On primary | `#FFFFFF` | Text on accent buttons |
 | Card border | `--card-border` `#E4E9EF` | Bento cells |
 
-Liturgical season may tint `--liturgical-accent` via `body[data-season]` — preserve green for primary actions unless user sets custom accent.
+Liturgical season may tint `--liturgical-accent` via `body[data-season]` — preserve berry accent for primary actions unless user sets custom accent.
 
 ## 3. Typography
 
@@ -58,20 +58,20 @@ Labels use **sentence case** (Apple caption-strong), not uppercase micro-type. S
 ### App header (two rows)
 
 - Row 1: brand | search (pill, ⌘K) | liturgical pill + notifications + theme + account
-- Row 2: nav tabs (underline active state) | green **+ Create**
+- Row 2: nav tabs (underline active state) | berry **+ Create**
 - Full width, flat bottom border — no floating pill header
 
 ### Bento card (`home-bento-grid`)
 
 - Background white, 1px `--card-border`, `16px` radius, light shadow
-- Head: icon square (green tint) + title + optional action link
+- Head: icon square (berry tint) + title + optional action link
 - Padding `24px`, gap `24px` on grid
 
 ### Buttons
 
 - **Primary:** `--good` fill, white text, `8px` radius, `scale(0.97)` on press
-- **Secondary / outline:** white fill, hairline border, green text for liturgical actions
-- **Nav:** color-only hover; active = green text + 2px bottom rule
+- **Secondary / outline:** white fill, hairline border, berry text for liturgical actions
+- **Nav:** color-only hover; active = berry text + 2px bottom rule
 
 ### Search
 
@@ -95,7 +95,7 @@ Labels use **sentence case** (Apple caption-strong), not uppercase micro-type. S
 ### Do
 
 - Use Cal.com card rhythm (rounded lg, soft surfaces) for new dashboard panels
-- Keep liturgical green sparse — actions and active states only
+- Keep berry accent sparse — actions and active states only
 - Align header and main content to the same horizontal gutter
 - Show full gospel text on Home without inner scrollers
 
@@ -116,9 +116,9 @@ Labels use **sentence case** (Apple caption-strong), not uppercase micro-type. S
 
 ```
 Polish this screen to match DESIGN.md (Verbum + Cal.com layout, Apple.com typography).
-Keep --good green CTAs, Mea Culpa wordmark, grey canvas #EEF2F6.
+Keep --good berry CTAs (#a10f0d), Mea Culpa wordmark, grey canvas #EEF2F6.
 17px body / 14px caption, negative tracking, system font stack. Follow emil-design-eng for motion.
 Read cal/DESIGN.md for cards; apple/DESIGN.md for type scale.
 ```
 
-**Quick colors:** canvas `#EEF2F6` · card `#FFFFFF` · ink `#15333D` · primary `#2D6A4F` · border `#E4E9EF`
+**Quick colors:** canvas `#EEF2F6` · card `#FFFFFF` · ink `#15333D` · primary `#a10f0d` · border `#E4E9EF`

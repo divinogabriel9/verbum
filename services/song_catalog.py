@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from pathlib import Path
 from typing import Any, Optional
 
 from services.gospel_mood import gospel_moods_for_song, normalize_gospel_moods
+from services.hymn_library import invalidate_library_cache, load_library
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LIBRARY_PATH = _PROJECT_ROOT / "data" / "hymn_library.json"
@@ -20,28 +22,42 @@ _PART_MAP = {
     "meditation": "meditation",
 }
 
+_catalog_api_cache: dict[bool, tuple[float, dict[str, list[dict[str, Any]]]]] = {}
+_CATALOG_API_TTL_S = 120.0
+_catalog_lite_bytes: Optional[bytes] = None
+_catalog_lite_etag: str = ""
+_catalog_lite_mtime: float = 0.0
+
+
+def _invalidate_catalog_api_cache() -> None:
+    global _catalog_lite_bytes, _catalog_lite_etag, _catalog_lite_mtime
+    _catalog_api_cache.clear()
+    _catalog_lite_bytes = None
+    _catalog_lite_etag = ""
+    _catalog_lite_mtime = 0.0
+
+
+def _explicit_gospel_moods(item: dict[str, Any]) -> list[str]:
+    return normalize_gospel_moods(item.get("gospel_moods"))
+
 
 def _blank_library() -> dict[str, list[dict[str, Any]]]:
     return {k: [] for k in _SECTIONS}
 
 
 def load_catalog() -> dict[str, list[dict[str, Any]]]:
-    if not _LIBRARY_PATH.is_file():
-        return _blank_library()
-    try:
-        raw = json.loads(_LIBRARY_PATH.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return _blank_library()
+    lib = load_library()
     out = _blank_library()
     for sec in _SECTIONS:
-        rows = raw.get(sec) or []
-        out[sec] = [x for x in rows if isinstance(x, dict)]
+        out[sec] = [x for x in (lib.get(sec) or []) if isinstance(x, dict)]
     return out
 
 
 def save_catalog(data: dict[str, list[dict[str, Any]]]) -> None:
     _LIBRARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     _LIBRARY_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    invalidate_library_cache()
+    _invalidate_catalog_api_cache()
 
 
 def make_song_id(title: str) -> str:
@@ -286,7 +302,12 @@ def find_catalog_row_by_id(hymn_id: str) -> tuple[Optional[str], Optional[dict[s
     return None, None
 
 
-def catalog_for_api() -> dict[str, list[dict[str, Any]]]:
+def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[dict[str, Any]]]:
+    now = time.monotonic()
+    cached = _catalog_api_cache.get(include_inferred_moods)
+    if cached and now - cached[0] < _CATALOG_API_TTL_S:
+        return cached[1]
+
     data = load_catalog()
     out: dict[str, list[dict[str, Any]]] = {}
     for sec in _SECTIONS:
@@ -298,6 +319,11 @@ def catalog_for_api() -> dict[str, list[dict[str, Any]]]:
             title = str(item.get("title") or "").strip()
             if not hid or not title:
                 continue
+            moods = (
+                gospel_moods_for_song(item)
+                if include_inferred_moods
+                else _explicit_gospel_moods(item)
+            )
             rows.append(
                 {
                     "id": hid,
@@ -305,11 +331,30 @@ def catalog_for_api() -> dict[str, list[dict[str, Any]]]:
                     "author": str(item.get("author") or "").strip(),
                     "language": str(item.get("language") or "English"),
                     "has_lyrics": bool(str(item.get("lyrics") or "").strip()),
-                    "gospel_moods": gospel_moods_for_song(item),
+                    "gospel_moods": moods,
                 }
             )
         out[sec] = rows
+    _catalog_api_cache[include_inferred_moods] = (now, out)
     return out
+
+
+def catalog_lite_response() -> tuple[bytes, str]:
+    """Pre-serialized lite catalog JSON + weak ETag (by library mtime)."""
+    global _catalog_lite_bytes, _catalog_lite_etag, _catalog_lite_mtime
+    try:
+        mtime = _LIBRARY_PATH.stat().st_mtime if _LIBRARY_PATH.is_file() else 0.0
+    except OSError:
+        mtime = 0.0
+    if _catalog_lite_bytes is not None and mtime == _catalog_lite_mtime:
+        return _catalog_lite_bytes, _catalog_lite_etag
+    payload = {"ok": True, "catalog": catalog_for_api(include_inferred_moods=False)}
+    body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    etag = f'W/"cat-lite-{int(mtime)}-{len(body)}"'
+    _catalog_lite_bytes = body
+    _catalog_lite_etag = etag
+    _catalog_lite_mtime = mtime
+    return body, etag
 
 
 def update_catalog_song(

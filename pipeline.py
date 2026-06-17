@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 import logging
 import os
 import random
+import time
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -280,37 +281,57 @@ def _resolve_divider_poster_path(
     return None
 
 
-def fetch_preview(date: str) -> PreviewPayload:
-    data = get_liturgical_data(date)
+_PREVIEW_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
+_PREVIEW_CACHE: dict[tuple[str, bool], tuple[float, PreviewPayload]] = {}
+_PREVIEW_CACHE_TTL_S = 600.0
+
+
+def _empty_songs_by_section() -> dict[str, list[dict[str, Any]]]:
+    return {sec: [] for sec in _PREVIEW_SECTIONS}
+
+
+def fetch_preview(date: str, *, readings_only: bool = False) -> PreviewPayload:
+    d = (date or "").strip()
+    cache_key = (d, readings_only)
+    now = time.monotonic()
+    cached = _PREVIEW_CACHE.get(cache_key)
+    if cached and now - cached[0] < _PREVIEW_CACHE_TTL_S:
+        return cached[1]
+
+    data = get_liturgical_data(d)
     if not data:
         return PreviewPayload(
             ok=False,
             error="Unable to fetch liturgical data. Use a valid date (YYYY-MM-DD).",
         )
-    liturgical_color = get_liturgical_color(date)
+    liturgical_color = get_liturgical_color(d)
     gospel_text = data.get("gospel_text") or ""
     gospel_slide_quote = (data.get("gospel_slide_quote") or "").strip()
     base_quote = gospel_slide_quote or gospel_text or ""
     sentences = split_slide_sentences(base_quote)
     season_key = str(liturgical_color.get("season") or "ordinary_time")
-    by_sec_base = recommend_sections(season_key=season_key, per_section=7)
-    by_sec_web: dict[str, list[dict[str, Any]]] = {}
-    web_enabled = os.getenv("SONG_WEB_FETCH", "1").strip().lower() not in {"0", "false", "off", "no"}
-    if web_enabled:
-        by_sec_web = discover_hymns_for_readings(
-            gospel_reference=str(data.get("gospel_reference") or ""),
-            season_key=season_key,
-            max_candidates=18,
-            fetch_lyrics_count=10,
-        )
-    for sec in ("entrance", "offertory", "communion", "recessional", "meditation"):
-        for row in by_sec_web.get(sec) or []:
-            row["source"] = "web"
-            row["language"] = str(row.get("language") or "")
-            row["has_lyrics"] = bool(row.get("has_lyrics", False))
-    by_sec = _merge_song_sections(by_sec_base, by_sec_web, cap=10)
+    if readings_only:
+        by_sec = _empty_songs_by_section()
+        default_picks: dict[str, str] = {}
+    else:
+        by_sec_base = recommend_sections(season_key=season_key, per_section=7)
+        by_sec_web: dict[str, list[dict[str, Any]]] = {}
+        web_enabled = os.getenv("SONG_WEB_FETCH", "1").strip().lower() not in {"0", "false", "off", "no"}
+        if web_enabled:
+            by_sec_web = discover_hymns_for_readings(
+                gospel_reference=str(data.get("gospel_reference") or ""),
+                season_key=season_key,
+                max_candidates=18,
+                fetch_lyrics_count=10,
+            )
+        for sec in _PREVIEW_SECTIONS:
+            for row in by_sec_web.get(sec) or []:
+                row["source"] = "web"
+                row["language"] = str(row.get("language") or "")
+                row["has_lyrics"] = bool(row.get("has_lyrics", False))
+        by_sec = _merge_song_sections(by_sec_base, by_sec_web, cap=10)
+        default_picks = default_song_selections_for_date(season_key)
     g_quote_preview = (first_sentence_slide_quote(base_quote) or "").strip()
-    default_picks = default_song_selections_for_date(season_key)
     est_slides = 78 + min(12, len(sentences))
     fr_txt = data.get("first_reading_text") or ""
     sr_txt = data.get("second_reading_text") or ""
@@ -322,7 +343,7 @@ def fetch_preview(date: str) -> PreviewPayload:
         psalm_ref,
         psalm_response=psalm_resp,
     )
-    return PreviewPayload(
+    result = PreviewPayload(
         ok=True,
         title=data.get("title") or "Sunday Mass Celebration",
         gospel_reference=data.get("gospel_reference") or "N/A",
@@ -345,6 +366,8 @@ def fetch_preview(date: str) -> PreviewPayload:
         psalm_refrains=psalm_refrains,
         gospel_text=gospel_text,
     )
+    _PREVIEW_CACHE[cache_key] = (now, result)
+    return result
 
 
 @dataclass

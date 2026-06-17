@@ -12,13 +12,15 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import uuid
 import zipfile
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, model_validator
@@ -56,6 +58,7 @@ from services.ppt_preview_render import render_ppt_preview_pngs
 from services.ppt_template_analyze import analyze_pptx_theme
 from services.song_catalog import (
     catalog_for_api,
+    catalog_lite_response,
     delete_catalog_song,
     import_song_rows,
     import_titles,
@@ -79,6 +82,7 @@ from services.membership_config import (
 )
 from services.pending_submissions import submit_pending_priest, submit_pending_song
 from services.user_church_context import get_church_profile_context
+from services.readings_snapshot import readings_snapshot, warm_readings_for_date
 from services.image_generation_quota import (
     get_quota_status,
     reserve_daily_image_generation,
@@ -87,6 +91,21 @@ from services.image_generation_quota import (
 from services.input_limits import public_limits
 from services import input_limits as L
 from services.input_validation import check_hymn_overrides, check_string_list
+from services.private_files import (
+    media_file_url,
+    media_type_for,
+    preview_file_url,
+    resolve_under_root,
+    upload_file_url,
+)
+from services.storage_assets import (
+    delete_user_asset,
+    download_user_asset,
+    list_user_assets,
+    signed_asset_url,
+    storage_ready,
+    upload_user_asset,
+)
 from routes.admin import register_admin_routes
 from routes.auth import register_auth_routes
 
@@ -134,6 +153,32 @@ def _resolve_child_file(parent: Path, basename: str) -> Optional[Path]:
     return cand if cand.is_file() else None
 
 
+def _safe_storage_leaf(basename: str, *, folder: str) -> str:
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        raise HTTPException(status_code=400, detail="Invalid asset name.")
+    return f"{folder.strip('/')}/{base}"
+
+
+def _materialize_storage_asset(
+    session: Optional[AuthSession], storage_path: str, *, suffix: str = ".png"
+) -> Optional[Path]:
+    if not session or not storage_ready(session.token):
+        return None
+    key = (storage_path or "").strip()
+    if not key:
+        return None
+    try:
+        raw = download_user_asset(access_token=session.token, path=key)
+    except Exception:
+        return None
+    tmp = tempfile.NamedTemporaryFile(prefix="verbum_asset_", suffix=suffix, delete=False)
+    tmp.write(raw)
+    tmp.flush()
+    tmp.close()
+    return Path(tmp.name)
+
+
 async def _save_uploaded_image(file: UploadFile, dest_dir: Path, *, prefix: str) -> str:
     ctype = (file.content_type or "").split(";")[0].strip().lower()
     if ctype not in _ALLOWED_IMAGE_TYPES:
@@ -153,7 +198,7 @@ async def _save_uploaded_image(file: UploadFile, dest_dir: Path, *, prefix: str)
 
 
 def _ai_poster_download_urls() -> dict[str, str]:
-    """Stable URLs under ``/media/posters/`` for Hugging Face layout exports."""
+    """Private URLs for Hugging Face layout exports."""
     base = _OUTPUT_DIR / "posters"
     out: dict[str, str] = {}
     mapping = {
@@ -164,7 +209,7 @@ def _ai_poster_download_urls() -> dict[str, str]:
     for key, fname in mapping.items():
         p = base / fname
         if p.is_file():
-            out[key] = f"/media/posters/{fname}"
+            out[key] = media_file_url(f"posters/{fname}")
     return out
 
 
@@ -211,13 +256,11 @@ def _write_mass_bundle_zip(result: GenerationResult) -> None:
 
 
 app = FastAPI(title="LiturgyFlow")
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
 _STATIC_DIR = _PROJECT / "static"
 _STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
-app.mount("/media", StaticFiles(directory=str(_OUTPUT_DIR)), name="media")
-app.mount("/uploads", StaticFiles(directory=str(_UPLOAD_DIR)), name="uploads")
-app.mount("/preview", StaticFiles(directory=str(_PREVIEW_DIR)), name="preview")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -232,18 +275,66 @@ register_admin_routes(app)
 register_security_middleware(app)
 
 
+@app.get("/api/files/media/{file_path:path}")
+def api_serve_media_file(
+    file_path: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> FileResponse:
+    path = resolve_under_root(_OUTPUT_DIR, file_path)
+    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+
+
+@app.get("/api/files/uploads/{file_path:path}")
+def api_serve_upload_file(
+    file_path: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> FileResponse:
+    path = resolve_under_root(_UPLOAD_DIR, file_path)
+    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+
+
+@app.get("/api/files/preview/{filename}")
+def api_serve_preview_file(
+    filename: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> FileResponse:
+    path = resolve_under_root(_PREVIEW_DIR, filename)
+    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+
+
 @app.on_event("startup")
 def _bootstrap_superadmin_roles() -> None:
-    if not supabase_enabled():
-        return
-    try:
-        from services.supabase_client import bootstrap_superadmin_roles_from_env
+    if supabase_enabled():
+        try:
+            from services.supabase_client import bootstrap_superadmin_roles_from_env
 
-        count = bootstrap_superadmin_roles_from_env()
-        if count:
-            print(f"[Verbum] Promoted {count} profile(s) to superadmin from SUPERADMIN_EMAILS.")
-    except Exception as exc:
-        print(f"[Verbum] Superadmin bootstrap skipped: {exc}")
+            count = bootstrap_superadmin_roles_from_env()
+            if count:
+                print(f"[Verbum] Promoted {count} profile(s) to superadmin from SUPERADMIN_EMAILS.")
+        except Exception as exc:
+            print(f"[Verbum] Superadmin bootstrap skipped: {exc}")
+
+    import threading
+    from datetime import date, timedelta
+
+    def _upcoming_sunday_iso() -> str:
+        today = date.today()
+        days = (6 - today.weekday()) % 7
+        return (today + timedelta(days=days)).isoformat()
+
+    def _warm() -> None:
+        try:
+            warm_readings_for_date(_upcoming_sunday_iso())
+        except Exception as exc:
+            print(f"[Verbum] Readings warm-up skipped: {exc}")
+        try:
+            from services.song_catalog import catalog_lite_response
+
+            catalog_lite_response()
+        except Exception as exc:
+            print(f"[Verbum] Catalog warm-up skipped: {exc}")
+
+    threading.Thread(target=_warm, daemon=True).start()
 
 
 def _sync_church_profile_to_supabase(
@@ -361,6 +452,10 @@ class GeminiApiKeyBody(BaseModel):
 
 class PreviewBody(BaseModel):
     date: str = Field(..., min_length=8, description="YYYY-MM-DD")
+    readings_only: bool = Field(
+        False,
+        description="Skip hymn recommendations and web hymn discovery for faster readings-only UI.",
+    )
 
 
 class GenerateBody(BaseModel):
@@ -560,7 +655,7 @@ def _extract_ppt_text_slides(ppt: Path) -> list[dict[str, Any]]:
 
 @app.post("/api/ppt-preview/refresh")
 def api_ppt_preview_refresh(
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     """Render PPT slides to PNG images for in-app visual preview."""
     ppt = _latest_pptx_path()
@@ -592,7 +687,7 @@ def api_ppt_preview_refresh(
     slides = [
         {
             "index": i + 1,
-            "image_url": f"/preview/{f.name}?t={ts}&v={i}",
+            "image_url": preview_file_url(f.name) + f"?t={ts}&v={i}",
         }
         for i, f in enumerate(png_paths)
     ]
@@ -635,7 +730,7 @@ def _enforce_ai_image_quota(
 def generate_image(
     body: GenerateImageBody,
     request: Request,
-    session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> GenerateImageResponse:
     import base64
 
@@ -674,11 +769,20 @@ def _community_api_payload(session: Optional[AuthSession] = None) -> dict[str, A
     church_ctx = get_church_profile_context()
     user = session.user if session else None
     membership = membership_payload(church_ctx, user=user)
+    logo_url: Optional[str] = None
+    storage_logo = str((church_ctx or {}).get("logo_path") or "").strip()
+    if session and storage_ready(session.token) and storage_logo:
+        try:
+            logo_url = signed_asset_url(access_token=session.token, path=storage_logo)
+        except Exception:
+            logo_url = None
+    if not logo_url and logo_exists:
+        logo_url = upload_file_url("community_logo.png")
     return {
         "ok": True,
         "community_name": get_community_name(),
         "celebrant_names": celebrants,
-        "logo_url": "/uploads/community_logo.png" if logo_exists else None,
+        "logo_url": logo_url,
         **membership,
     }
 
@@ -819,8 +923,19 @@ async def api_upload_logo(
     out_path = logo_file_absolute()
     im.save(out_path, format="PNG", optimize=True)
 
+    logo_url = upload_file_url("community_logo.png")
     if session and supabase_enabled():
-        _sync_church_profile_to_supabase(session, logo_path=LOGO_RELATIVE)
+        raw_png = out_path.read_bytes()
+        stored = upload_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path="logo/community_logo.png",
+            raw=raw_png,
+            content_type="image/png",
+            upsert=True,
+        )
+        _sync_church_profile_to_supabase(session, logo_path=stored.path)
+        logo_url = stored.signed_url
         church_ctx = get_church_profile_context()
         if parish_name_is_locked(church_ctx) and not (church_ctx or {}).get("logo_locked_at"):
             from services.supabase_client import lock_church_logo
@@ -830,7 +945,7 @@ async def api_upload_logo(
         update_community(logo_path=LOGO_RELATIVE)
     out: dict[str, Any] = {
         "ok": True,
-        "logo_url": "/uploads/community_logo.png",
+        "logo_url": logo_url,
         "message": "Logo saved. It will appear on the next generated poster.",
     }
     if session:
@@ -841,48 +956,105 @@ async def api_upload_logo(
 @app.post("/api/upload/mass-divider")
 async def api_upload_mass_divider(
     file: UploadFile = File(...),
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="divider")
-    return {"ok": True, "basename": name, "url": f"/uploads/mass_assets/{name}"}
+    url = upload_file_url(f"mass_assets/{name}")
+    if session and storage_ready(session.token):
+        raw = (_MASS_ASSET_DIR / name).read_bytes()
+        stored = upload_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path=f"mass_assets/{name}",
+            raw=raw,
+            content_type=(file.content_type or "image/png"),
+            upsert=True,
+        )
+        url = stored.signed_url
+    return {"ok": True, "basename": name, "url": url}
 
 
 @app.post("/api/upload/announcement-slide")
 async def api_upload_announcement_slide(
     file: UploadFile = File(...),
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="announce")
-    return {"ok": True, "basename": name, "url": f"/uploads/mass_assets/{name}"}
+    url = upload_file_url(f"mass_assets/{name}")
+    if session and storage_ready(session.token):
+        raw = (_MASS_ASSET_DIR / name).read_bytes()
+        stored = upload_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path=f"mass_assets/{name}",
+            raw=raw,
+            content_type=(file.content_type or "image/png"),
+            upsert=True,
+        )
+        url = stored.signed_url
+    return {"ok": True, "basename": name, "url": url}
 
 
 @app.post("/api/upload/saved-poster")
 async def api_upload_saved_poster(
     file: UploadFile = File(...),
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _SAVED_POSTER_DIR, prefix="poster")
-    return {"ok": True, "basename": name, "url": f"/uploads/saved_posters/{name}"}
+    url = upload_file_url(f"saved_posters/{name}")
+    if session and storage_ready(session.token):
+        raw = (_SAVED_POSTER_DIR / name).read_bytes()
+        stored = upload_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path=f"saved_posters/{name}",
+            raw=raw,
+            content_type=(file.content_type or "image/png"),
+            upsert=True,
+        )
+        url = stored.signed_url
+    return {"ok": True, "basename": name, "url": url}
 
 
 @app.get("/api/saved-posters")
 def api_list_saved_posters(
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
+    if session and storage_ready(session.token):
+        rows = list_user_assets(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            prefix="saved_posters",
+        )
+        posters = [
+            {"basename": row["name"], "url": row["url"] or ""}
+            for row in rows
+            if Path(str(row.get("name") or "")).suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+        ]
+        posters.sort(key=lambda r: r["basename"], reverse=True)
+        return {"ok": True, "posters": posters}
     if not _SAVED_POSTER_DIR.is_dir():
         return {"ok": True, "posters": []}
     rows = []
     for p in sorted(_SAVED_POSTER_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
         if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
-            rows.append({"basename": p.name, "url": f"/uploads/saved_posters/{p.name}"})
+            rows.append({"basename": p.name, "url": upload_file_url(f"saved_posters/{p.name}")})
     return {"ok": True, "posters": rows}
 
 
 @app.delete("/api/saved-posters/{basename}")
 def api_delete_saved_poster(
     basename: str,
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
+    if session and storage_ready(session.token):
+        rel = _safe_storage_leaf(basename, folder="saved_posters")
+        delete_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path=rel,
+        )
+        return {"ok": True}
     p = _resolve_child_file(_SAVED_POSTER_DIR, basename)
     if not p:
         raise HTTPException(status_code=404, detail="Poster not found.")
@@ -892,9 +1064,25 @@ def api_delete_saved_poster(
 
 @app.get("/api/catalog/songs")
 def api_catalog_songs(
+    lite: bool = True,
+    if_none_match: Optional[str] = Header(None, alias="If-None-Match"),
     _session: Optional[AuthSession] = Depends(require_session_when_auth),
-) -> dict[str, Any]:
-    return {"ok": True, "catalog": catalog_for_api()}
+) -> Response:
+    if lite:
+        body, etag = catalog_lite_response()
+        headers = {
+            "Cache-Control": "private, max-age=300",
+            "ETag": etag,
+            "Vary": "Authorization",
+        }
+        if if_none_match and if_none_match.strip() == etag:
+            return Response(status_code=304, headers=headers)
+        return Response(content=body, media_type="application/json", headers=headers)
+    payload = {
+        "ok": True,
+        "catalog": catalog_for_api(include_inferred_moods=True),
+    }
+    return JSONResponse(payload, headers={"Cache-Control": "private, max-age=120"})
 
 
 @app.get("/api/catalog/songs/{section}/{hymn_id:path}")
@@ -902,11 +1090,11 @@ def api_get_catalog_song(
     section: str,
     hymn_id: str,
     _session: Optional[AuthSession] = Depends(require_session_when_auth),
-) -> dict[str, Any]:
+) -> JSONResponse:
     row = get_hymn(section.strip().lower(), hymn_id)
     if not row:
         raise HTTPException(status_code=404, detail="Song not found.")
-    return {
+    payload = {
         "ok": True,
         "section": section.strip().lower(),
         "song": {
@@ -918,6 +1106,7 @@ def api_get_catalog_song(
             "gospel_moods": gospel_moods_for_song(row),
         },
     }
+    return JSONResponse(payload, headers={"Cache-Control": "private, max-age=300"})
 
 
 @app.patch("/api/catalog/songs/{section}/{hymn_id:path}")
@@ -1048,9 +1237,28 @@ def api_calendar_month(year: int, month: int) -> Any:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.get("/api/readings/{date}")
+def api_readings(
+    date: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> JSONResponse:
+    """Fast lectionary readings for dashboard cards (no song discovery)."""
+    payload, from_cache = readings_snapshot(date.strip())
+    if not payload.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail=payload.get("error") or "Unable to load readings.",
+        )
+    max_age = 3600 if from_cache else 60
+    return JSONResponse(
+        payload,
+        headers={"Cache-Control": f"private, max-age={max_age}"},
+    )
+
+
 @app.post("/api/preview")
 def api_preview(body: PreviewBody) -> Any:
-    p = fetch_preview(body.date.strip())
+    p = fetch_preview(body.date.strip(), readings_only=body.readings_only)
     return _preview_to_json(p)
 
 
@@ -1061,15 +1269,27 @@ def api_generate(
     session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> Any:
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    temp_assets: list[Path] = []
     divider_path = None
     if body.divider_poster_basename and str(body.divider_poster_basename).strip():
-        divider_path = _resolve_child_file(_MASS_ASSET_DIR, str(body.divider_poster_basename).strip())
+        raw_divider = str(body.divider_poster_basename).strip()
+        divider_path = _resolve_child_file(_MASS_ASSET_DIR, raw_divider)
+        if not divider_path and session and storage_ready(session.token):
+            key = _safe_storage_leaf(raw_divider, folder="mass_assets")
+            divider_path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
+            if divider_path:
+                temp_assets.append(divider_path)
     ann_paths: list[Path] = []
     for raw in body.announcement_basenames or []:
         bn = str(raw).strip()
         if not bn:
             continue
         p = _resolve_child_file(_MASS_ASSET_DIR, bn)
+        if not p and session and storage_ready(session.token):
+            key = _safe_storage_leaf(bn, folder="mass_assets")
+            p = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
+            if p:
+                temp_assets.append(p)
         if p:
             ann_paths.append(p)
         if len(ann_paths) >= 24:
@@ -1086,40 +1306,44 @@ def api_generate(
             source=f"mass-poster:{backend}",
         )
 
-    result = generate_mass_media(
-        body.date.strip(),
-        body.celebrant.strip(),
-        sentence_index=body.sentence_index,
-        poster_template=body.poster_template,
-        include_social_exports=body.include_social_exports,
-        include_gospel_art=body.include_gospel_art,
-        include_ai_mass_poster=body.include_ai_mass_poster,
-        ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
-        ai_poster_style=body.ai_poster_style.strip() or "cinematic",
-        include_poster_text=body.include_poster_text,
-        community_name=body.community_name.strip() if body.community_name else None,
-        song_selections=song_map,
-        custom_theme=body.custom_theme,
-        divider_poster_path=divider_path,
-        announcement_image_paths=ann_paths or None,
-        mass_collection_amount=body.mass_collection_amount.strip() if body.mass_collection_amount else None,
-        mass_collection_date_label=body.mass_collection_date_label.strip()
-        if body.mass_collection_date_label
-        else None,
-        mass_collection_currency=body.mass_collection_currency.strip().upper()
-        if body.mass_collection_currency
-        else "PHP",
-        food_sponsors=sponsors or None,
-        psalm_text_override=psalm_override,
-        psalm_refrain_index=body.psalm_refrain_index,
-        gospel_quote_override=gospel_override,
-        hymn_typography=body.hymn_typography,
-        include_church_logo=body.include_church_logo,
-        include_church_name=body.include_church_name,
-        hymn_lyric_overrides=body.hymn_lyric_overrides,
-        creed_choice=body.creed_choice,
-        hymn_lyrics_layout=body.hymn_lyrics_layout,
-    )
+    try:
+        result = generate_mass_media(
+            body.date.strip(),
+            body.celebrant.strip(),
+            sentence_index=body.sentence_index,
+            poster_template=body.poster_template,
+            include_social_exports=body.include_social_exports,
+            include_gospel_art=body.include_gospel_art,
+            include_ai_mass_poster=body.include_ai_mass_poster,
+            ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
+            ai_poster_style=body.ai_poster_style.strip() or "cinematic",
+            include_poster_text=body.include_poster_text,
+            community_name=body.community_name.strip() if body.community_name else None,
+            song_selections=song_map,
+            custom_theme=body.custom_theme,
+            divider_poster_path=divider_path,
+            announcement_image_paths=ann_paths or None,
+            mass_collection_amount=body.mass_collection_amount.strip() if body.mass_collection_amount else None,
+            mass_collection_date_label=body.mass_collection_date_label.strip()
+            if body.mass_collection_date_label
+            else None,
+            mass_collection_currency=body.mass_collection_currency.strip().upper()
+            if body.mass_collection_currency
+            else "PHP",
+            food_sponsors=sponsors or None,
+            psalm_text_override=psalm_override,
+            psalm_refrain_index=body.psalm_refrain_index,
+            gospel_quote_override=gospel_override,
+            hymn_typography=body.hymn_typography,
+            include_church_logo=body.include_church_logo,
+            include_church_name=body.include_church_name,
+            hymn_lyric_overrides=body.hymn_lyric_overrides,
+            creed_choice=body.creed_choice,
+            hymn_lyrics_layout=body.hymn_lyrics_layout,
+        )
+    finally:
+        for p in temp_assets:
+            p.unlink(missing_ok=True)
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
     _write_mass_bundle_zip(result)
@@ -1134,11 +1358,41 @@ def api_generate(
             "rgb": list(lc.get("rgb", ())),
         }
     poster_ppt = result.poster_ppt_path
-    ppt_url = f"/media/{result.pptx_path.name}" if result.pptx_path and result.pptx_path.is_file() else None
-    poster_url = f"/media/{result.poster_path.name}" if result.poster_path and result.poster_path.is_file() else None
+    ppt_url = media_file_url(result.pptx_path.name) if result.pptx_path and result.pptx_path.is_file() else None
+    poster_url = media_file_url(result.poster_path.name) if result.poster_path and result.poster_path.is_file() else None
     poster_ppt_url = (
-        f"/media/{poster_ppt.name}" if poster_ppt and Path(poster_ppt).is_file() else None
+        media_file_url(poster_ppt.name) if poster_ppt and Path(poster_ppt).is_file() else None
     )
+    zip_url = media_file_url(_BUNDLE_NAME) if zip_ready else None
+    if session and storage_ready(session.token):
+        upload_items: list[tuple[str, Path, str]] = []
+        if result.pptx_path and result.pptx_path.is_file():
+            upload_items.append(("pptx_url", result.pptx_path, "application/vnd.openxmlformats-officedocument.presentationml.presentation"))
+        if result.poster_path and result.poster_path.is_file():
+            upload_items.append(("poster_url", result.poster_path, "image/png"))
+        if poster_ppt and Path(poster_ppt).is_file():
+            upload_items.append(("poster_ppt_url", Path(poster_ppt), "application/vnd.openxmlformats-officedocument.presentationml.presentation"))
+        bundle = _OUTPUT_DIR / _BUNDLE_NAME
+        if bundle.is_file():
+            upload_items.append(("zip_url", bundle, "application/zip"))
+        for key, file_path, ctype in upload_items:
+            rel = f"generated/{result.export_stem or 'latest'}/{file_path.name}"
+            stored = upload_user_asset(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                relative_path=rel,
+                raw=file_path.read_bytes(),
+                content_type=ctype,
+                upsert=True,
+            )
+            if key == "pptx_url":
+                ppt_url = stored.signed_url
+            elif key == "poster_url":
+                poster_url = stored.signed_url
+            elif key == "poster_ppt_url":
+                poster_ppt_url = stored.signed_url
+            elif key == "zip_url":
+                zip_url = stored.signed_url
     payload: dict[str, Any] = {
         "ok": True,
         "title": result.title,
@@ -1174,14 +1428,10 @@ def api_generate(
             )
         except Exception:
             pass
-    return {
-        **payload,
-        **(
-            {"zip_url": f"/media/{_BUNDLE_NAME}"}
-            if zip_ready
-            else {}
-        ),
-    }
+    out = {**payload}
+    if zip_url:
+        out["zip_url"] = zip_url
+    return out
 
 
 @app.post("/api/regenerate-pptx")
@@ -1191,15 +1441,27 @@ def api_regenerate_pptx(
 ) -> Any:
     """Rebuild the Mass PowerPoint with current hymn typography (overwrites existing .pptx)."""
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    temp_assets: list[Path] = []
     divider_path = None
     if body.divider_poster_basename and str(body.divider_poster_basename).strip():
-        divider_path = _resolve_child_file(_MASS_ASSET_DIR, str(body.divider_poster_basename).strip())
+        raw_divider = str(body.divider_poster_basename).strip()
+        divider_path = _resolve_child_file(_MASS_ASSET_DIR, raw_divider)
+        if not divider_path and session and storage_ready(session.token):
+            key = _safe_storage_leaf(raw_divider, folder="mass_assets")
+            divider_path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
+            if divider_path:
+                temp_assets.append(divider_path)
     ann_paths: list[Path] = []
     for raw in body.announcement_basenames or []:
         bn = str(raw).strip()
         if not bn:
             continue
         p = _resolve_child_file(_MASS_ASSET_DIR, bn)
+        if not p and session and storage_ready(session.token):
+            key = _safe_storage_leaf(bn, folder="mass_assets")
+            p = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
+            if p:
+                temp_assets.append(p)
         if p:
             ann_paths.append(p)
         if len(ann_paths) >= 24:
@@ -1207,41 +1469,55 @@ def api_regenerate_pptx(
     sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
     psalm_override = (body.psalm_text_override or "").strip() or None
     gospel_override = (body.gospel_quote_override or "").strip() or None
-    result = regenerate_mass_pptx(
-        body.date.strip(),
-        body.celebrant.strip(),
-        sentence_index=body.sentence_index,
-        song_selections=song_map,
-        custom_theme=body.custom_theme,
-        hymn_typography=body.hymn_typography,
-        divider_poster_path=divider_path,
-        announcement_image_paths=ann_paths or None,
-        mass_collection_amount=body.mass_collection_amount.strip()
-        if body.mass_collection_amount
-        else None,
-        mass_collection_date_label=body.mass_collection_date_label.strip()
-        if body.mass_collection_date_label
-        else None,
-        mass_collection_currency=body.mass_collection_currency.strip().upper()
-        if body.mass_collection_currency
-        else "PHP",
-        food_sponsors=sponsors or None,
-        psalm_text_override=psalm_override,
-        psalm_refrain_index=body.psalm_refrain_index,
-        gospel_quote_override=gospel_override,
-        include_church_logo=body.include_church_logo,
-        include_church_name=body.include_church_name,
-        hymn_lyric_overrides=body.hymn_lyric_overrides,
-        creed_choice=body.creed_choice,
-        hymn_lyrics_layout=body.hymn_lyrics_layout,
-    )
+    try:
+        result = regenerate_mass_pptx(
+            body.date.strip(),
+            body.celebrant.strip(),
+            sentence_index=body.sentence_index,
+            song_selections=song_map,
+            custom_theme=body.custom_theme,
+            hymn_typography=body.hymn_typography,
+            divider_poster_path=divider_path,
+            announcement_image_paths=ann_paths or None,
+            mass_collection_amount=body.mass_collection_amount.strip()
+            if body.mass_collection_amount
+            else None,
+            mass_collection_date_label=body.mass_collection_date_label.strip()
+            if body.mass_collection_date_label
+            else None,
+            mass_collection_currency=body.mass_collection_currency.strip().upper()
+            if body.mass_collection_currency
+            else "PHP",
+            food_sponsors=sponsors or None,
+            psalm_text_override=psalm_override,
+            psalm_refrain_index=body.psalm_refrain_index,
+            gospel_quote_override=gospel_override,
+            include_church_logo=body.include_church_logo,
+            include_church_name=body.include_church_name,
+            hymn_lyric_overrides=body.hymn_lyric_overrides,
+            creed_choice=body.creed_choice,
+            hymn_lyrics_layout=body.hymn_lyrics_layout,
+        )
+    finally:
+        for p in temp_assets:
+            p.unlink(missing_ok=True)
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "PowerPoint rebuild failed.")
     ppt_url = (
-        f"/media/{result.pptx_path.name}"
+        media_file_url(result.pptx_path.name)
         if result.pptx_path and result.pptx_path.is_file()
         else None
     )
+    if session and storage_ready(session.token) and result.pptx_path and result.pptx_path.is_file():
+        stored = upload_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path=f"generated/{result.export_stem or 'latest'}/{result.pptx_path.name}",
+            raw=result.pptx_path.read_bytes(),
+            content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            upsert=True,
+        )
+        ppt_url = stored.signed_url
     return {
         "ok": True,
         "slide_count": result.slide_count,

@@ -7,8 +7,8 @@
 
 :root {
   /* —— DESIGN.md primitives (Verbum + Cal.com base — see /DESIGN.md) —— */
-  --design-primary: #2d6a4f;
-  --design-primary-active: #245a42;
+  --design-primary: #a10f0d;
+  --design-primary-active: #7a0b0a;
   --design-ink: #15333d;
   --design-body: #5c6b75;
   --design-body-strong: #15333d;
@@ -22,7 +22,7 @@
   --design-surface-card: #ffffff;
   --design-surface-strong: #e4e9ef;
   --design-on-primary: #ffffff;
-  --design-success: #2d6a4f;
+  --design-success: #a10f0d;
   --design-error: #9b3d4e;
 
   /* —— Spacing scale (DESIGN.md base unit 4px) —— */
@@ -126,7 +126,7 @@
   --card-padding: var(--space-5);
   --input-height: 44px;
   --tab-height: 36px;
-  --header-height: 56px;
+  --header-height: 65px;
   --content-max: 1536px;
   --layout-gutter: clamp(20px, 3vw, 40px);
   --layout-gap: var(--space-5);
@@ -173,9 +173,9 @@ html[data-theme="dark"] {
   --shadow-light: none;
   --shadow-medium: none;
   --shadow-large: none;
-  --good: #3ecf8e;
-  --color-primary: #3ecf8e;
-  --color-primary-active: #2ab77a;
+  --good: #d45250;
+  --color-primary: #d45250;
+  --color-primary-active: #a10f0d;
   --on-primary: #1c1c1c;
   --app-scrim: rgba(0, 0, 0, 0.72);
   --vb-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.48);

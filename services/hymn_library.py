@@ -11,27 +11,74 @@ from services.gospel_mood import gospel_moods_for_song
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LIBRARY_PATH = _PROJECT_ROOT / "data" / "hymn_library.json"
 _WEB_CACHE_PATH = _PROJECT_ROOT / "data" / "web_hymn_cache.json"
+_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
+
+_EMPTY_LIBRARY: dict[str, list[dict[str, Any]]] = {k: [] for k in _SECTIONS}
+
+_library_cache: Optional[dict[str, Any]] = None
+_library_mtime: float = 0.0
+_id_index: Optional[dict[str, dict[str, Any]]] = None
+
+
+def _blank_library() -> dict[str, list[dict[str, Any]]]:
+    return {k: [] for k in _SECTIONS}
+
+
+def invalidate_library_cache() -> None:
+    """Drop in-memory hymn library cache after catalog writes."""
+    global _library_cache, _library_mtime, _id_index
+    _library_cache = None
+    _library_mtime = 0.0
+    _id_index = None
 
 
 def load_library() -> dict[str, Any]:
+    global _library_cache, _library_mtime, _id_index
     if not _LIBRARY_PATH.is_file():
-        return {
-            "entrance": [],
-            "offertory": [],
-            "communion": [],
-            "recessional": [],
-            "meditation": [],
-        }
+        _library_cache = dict(_EMPTY_LIBRARY)
+        _library_mtime = 0.0
+        _id_index = {}
+        return _library_cache
     try:
-        return json.loads(_LIBRARY_PATH.read_text(encoding="utf-8"))
+        mtime = _LIBRARY_PATH.stat().st_mtime
+    except OSError:
+        return dict(_EMPTY_LIBRARY)
+    if _library_cache is not None and mtime == _library_mtime:
+        return _library_cache
+    try:
+        raw = json.loads(_LIBRARY_PATH.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        return {
-            "entrance": [],
-            "offertory": [],
-            "communion": [],
-            "recessional": [],
-            "meditation": [],
-        }
+        _library_cache = dict(_EMPTY_LIBRARY)
+        _library_mtime = mtime
+        _id_index = {}
+        return _library_cache
+    out = _blank_library()
+    for sec in _SECTIONS:
+        rows = raw.get(sec) or []
+        out[sec] = [x for x in rows if isinstance(x, dict)]
+    _library_cache = out
+    _library_mtime = mtime
+    _id_index = None
+    return _library_cache
+
+
+def _build_id_index(lib: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    index: dict[str, dict[str, Any]] = {}
+    for sec in _SECTIONS:
+        for item in lib.get(sec) or []:
+            if not isinstance(item, dict):
+                continue
+            hid = str(item.get("id") or "").strip()
+            if hid and hid not in index:
+                index[hid] = item
+    return index
+
+
+def _id_index_for_library(lib: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    global _id_index
+    if _id_index is None:
+        _id_index = _build_id_index(lib)
+    return _id_index
 
 
 def _priority(item: dict[str, Any], season_key: str) -> int:
@@ -189,18 +236,15 @@ def web_cached_for_section(section: str, limit: int = 40) -> list[dict[str, Any]
 def get_hymn(section: str, hymn_id: str) -> Optional[dict[str, Any]]:
     hid = (hymn_id or "").strip()
     sec = (section or "").strip().lower()
-    if not hid or sec not in ("entrance", "offertory", "communion", "recessional", "meditation"):
+    if not hid or sec not in _SECTIONS:
         return None
-    for item in load_library().get(sec) or []:
+    lib = load_library()
+    indexed = _id_index_for_library(lib).get(hid)
+    if indexed is not None:
+        return indexed
+    for item in lib.get(sec) or []:
         if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
             return item
-    # Same id may be stored under another Mass section; resolve library-wide.
-    for scan_sec in ("entrance", "offertory", "communion", "recessional", "meditation"):
-        if scan_sec == sec:
-            continue
-        for item in load_library().get(scan_sec) or []:
-            if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
-                return item
     # Fallback: web-discovered hymns cached during preview.
     if hid.startswith("web_") and _WEB_CACHE_PATH.is_file():
         try:

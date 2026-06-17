@@ -6,7 +6,7 @@ These tokens **win** over the reference theme (currently Cal.com) for church/lit
 
 | Token | Value | Role |
 |-------|-------|------|
-| `--good` / liturgical accent | `#2D6A4F` | Primary actions, active nav, scripture refs |
+| `--good` / liturgical accent | `#a10f0d` | Primary actions, active nav, scripture refs |
 | `--brand-font` | Mea Culpa | Wordmark “Verbum” only |
 | `--font` | Apple system stack + Inter fallback | All UI and body (see Typography) |
 | `--ink` | `#15333D` | Headings and primary text |
@@ -36,18 +36,18 @@ Type **rhythm** follows [apple/DESIGN.md](apple/DESIGN.md) from awesome-design-m
 
 ## Liturgical season
 
-Season ribbons (`data-season` on `body`) may shift `--liturgical-accent` / `--liturgical-glow`. Do not replace forest green on primary CTAs unless user enables custom accent in Appearance settings.
+Season ribbons (`data-season` on `body`) may shift `--liturgical-accent` / `--liturgical-glow`. Do not replace berry accent on primary CTAs unless user enables custom accent in Appearance settings.
 
 ## Layout (home dashboard)
 
 - 12-column bento: gospel 7 / events 5, readings full width
 - Header: two rows (brand + search + utilities, then nav + Create)
-- Active nav: green underline only — no pill on brand
+- Active nav: berry underline only — no pill on brand
 - Motion: follow `.cursor/skills/emil-design-eng/` (≤300ms, ease-out)
 
 ## Do not import from reference themes
 
-- Cal.com near-black primary buttons → use `--good` green for Verbum CTAs
-- Apple Action Blue `#0066cc` → keep Verbum green CTAs
+- Cal.com near-black primary buttons → use `--good` berry for Verbum CTAs
+- Apple Action Blue `#0066cc` → keep Verbum berry CTAs
 - Cal Sans / Linear Display → use Apple system stack + Mea Culpa wordmark only
 - Dark-first Linear canvas → Verbum default is light mode

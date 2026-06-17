@@ -210,7 +210,7 @@ iframe {
     height: 20px;
     flex-shrink: 0;
     opacity: 0.88;
-    color: var(--liturgical-accent, #8b1e2d);
+    color: var(--liturgical-accent, #a10f0d);
   }
 
   .app-bottom-nav .nav-link.active .app-bottom-nav__svg-icon {
@@ -1405,8 +1405,7 @@ iframe {
 @media (max-width: 768px) {
   :root {
     --topbar-chip-height: 40px;
-    /* Taller chips + possible chip wrap on narrow screens */
-    --app-header-stack: calc(var(--topbar-chip-height) + 40px);
+    --app-header-stack: var(--header-height);
   }
 
   .header-chips-wrap {
@@ -1810,7 +1809,7 @@ iframe {
   }
 
   .app-header__main {
-    min-height: 64px;
+    min-height: var(--header-height);
     padding-block: var(--space-4);
   }
 

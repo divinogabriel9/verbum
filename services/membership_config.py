@@ -84,21 +84,19 @@ def membership_payload(
     role = (user.role if user else None) or profile_role or "member"
     auth_on = auth_enabled()
     signed_in = user is not None
-    can_use_full_app = superadmin or not auth_on
-    can_submit = signed_in and auth_on and not superadmin
+    full_access = membership_allows_full_access(row, user=user, profile_role=profile_role)
+    can_use_full_app = full_access or not auth_on
+    can_submit = signed_in and auth_on and not superadmin and not full_access
     return {
         "membership_status": status,
         "community_name_locked": locked,
         "logo_locked": logo_locked,
         "can_edit_parish_name": not locked and status in {"draft", ""} and signed_in,
-        "can_edit_logo": (
-            (can_edit_logo(row) and superadmin)
-            or (not locked and status in {"draft", ""})
-        ),
+        "can_edit_logo": signed_in and can_edit_logo(row),
         "can_edit_church_profile": can_use_full_app,
         "can_use_full_app": can_use_full_app,
-        "can_submit_song": can_submit or can_use_full_app,
-        "can_submit_priest": can_submit or can_use_full_app,
+        "can_submit_song": can_submit,
+        "can_submit_priest": can_submit,
         "is_superadmin": superadmin,
         "role": (role or "member").strip().lower(),
     }
