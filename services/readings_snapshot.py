@@ -76,6 +76,7 @@ def readings_snapshot(date: str) -> tuple[dict[str, Any], bool]:
         "sentence_count": len(sentences),
         "quote_attribution": data.get("quote_attribution"),
         "gospel_quote": (first_sentence_slide_quote(base_quote) or "").strip(),
+        "gospel_synopsis": synopsis_from_reading(gospel_text, max_chars=320) if gospel_text else "",
         "first_reading_reference": str(data.get("first_reading") or "").strip(),
         "first_reading_excerpt": synopsis_from_reading(fr_txt, max_chars=720) if fr_txt else "",
         "second_reading_reference": str(data.get("second_reading") or "").strip(),

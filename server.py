@@ -1222,6 +1222,35 @@ def api_catholic_news(
     )
 
 
+@app.get("/api/wyd-news")
+def api_wyd_news(limit: int = 6) -> Any:
+    """World Youth Day Seoul 2027 headlines (keyword-filtered) plus countdown metadata."""
+    from datetime import date
+
+    cap = max(1, min(int(limit), 15))
+    feed = fetch_catholic_headlines(
+        include_vatican=True,
+        include_cna=True,
+        max_items=cap,
+        offset=0,
+        max_age_days=0,
+        keywords=["world youth day", "wyd", "seoul 2027", "jornada mundial"],
+    )
+    event_start = date(2027, 8, 3)
+    event_end = date(2027, 8, 8)
+    days_until = (event_start - date.today()).days
+    return {
+        "ok": feed.get("ok", True),
+        "items": feed.get("items", []),
+        "errors": feed.get("errors", []),
+        "event_start": event_start.isoformat(),
+        "event_end": event_end.isoformat(),
+        "location": "Seoul, South Korea",
+        "days_until": days_until,
+        "official_url": "https://wydseoul.org/en",
+    }
+
+
 @app.get("/api/ewtn/radio")
 def api_ewtn_radio() -> Any:
     """EWTN live radio stations (stream URLs from ewtn.com/live/radio)."""
@@ -1254,6 +1283,16 @@ def api_readings(
         payload,
         headers={"Cache-Control": f"private, max-age={max_age}"},
     )
+
+
+@app.get("/api/gospel-image/{date}")
+def api_gospel_image(date: str) -> JSONResponse:
+    """Gospel-matched background image (Openverse / Creative Commons) for the home card."""
+    from services.gospel_image_search import fetch_gospel_background
+
+    payload = fetch_gospel_background(date.strip())
+    max_age = 21600 if payload.get("ok") else 300
+    return JSONResponse(payload, headers={"Cache-Control": f"public, max-age={max_age}"})
 
 
 @app.post("/api/preview")

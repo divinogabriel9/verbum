@@ -3335,6 +3335,249 @@
       flex-direction: column;
       cursor: default;
     }
+    .home-bento-cell--reflection {
+      grid-column: span 6;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .home-bento-grid .flow-bento-cell.home-bento-cell--reflection {
+      padding: 0;
+    }
+    .home-reflection-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    #home-reflection-card.has-bg .home-reflection-bg {
+      opacity: 1;
+    }
+    .home-reflection-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: var(--space-4);
+    }
+    .home-bento-cell--wyd {
+      grid-column: span 6;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .home-bento-grid .flow-bento-cell.home-bento-cell--wyd {
+      padding: 0;
+    }
+    .home-wyd-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-image: url("/static/images/wyd-seoul-2027.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .home-wyd-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: var(--space-4);
+    }
+    @media (max-width: 1024px) {
+      .home-bento-cell--reflection,
+      .home-bento-cell--wyd {
+        grid-column: span 12;
+      }
+    }
+    .home-reflection-verse {
+      flex: 0 1 auto;
+      font-style: italic;
+    }
+    .home-reflection-ref {
+      margin: 0;
+      font-size: var(--text-sm);
+      color: var(--muted);
+    }
+    .home-reflection-ref strong {
+      color: var(--ink);
+    }
+    .home-reflection-text {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: var(--text-sm);
+    }
+    #home-reflection-card.has-bg {
+      --refl-panel: color-mix(in srgb, var(--surface-solid) 78%, transparent);
+      --refl-border: color-mix(in srgb, var(--surface-solid) 60%, transparent);
+      --refl-ink: var(--ink);
+      --refl-muted: var(--muted);
+    }
+    #home-reflection-card.has-bg.text-light {
+      --refl-panel: color-mix(in srgb, #0b1418 62%, transparent);
+      --refl-border: color-mix(in srgb, #ffffff 22%, transparent);
+      --refl-ink: #ffffff;
+      --refl-muted: rgba(255, 255, 255, 0.86);
+    }
+    #home-reflection-card.has-bg.text-dark {
+      --refl-panel: color-mix(in srgb, #ffffff 80%, transparent);
+      --refl-border: color-mix(in srgb, #15333d 16%, transparent);
+      --refl-ink: #15333d;
+      --refl-muted: #41525c;
+    }
+    #home-reflection-card.has-bg .flow-bento-cell__head {
+      align-items: center;
+      gap: var(--space-2);
+      margin: 0 0 var(--space-3);
+      background: var(--refl-panel);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      border: 1px solid var(--refl-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2);
+      box-shadow: var(--shadow-light);
+    }
+    #home-reflection-card.has-bg .home-reflection-verse,
+    #home-reflection-card.has-bg .home-reflection-ref,
+    #home-reflection-card.has-bg .home-reflection-text {
+      background: var(--refl-panel);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      border: 1px solid var(--refl-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
+    }
+    #home-reflection-card.has-bg .home-card-head__text h3,
+    #home-reflection-card.has-bg .home-reflection-verse,
+    #home-reflection-card.has-bg .home-reflection-ref strong {
+      color: var(--refl-ink);
+    }
+    #home-reflection-card.has-bg .home-card-head__text p,
+    #home-reflection-card.has-bg .home-reflection-ref,
+    #home-reflection-card.has-bg .home-reflection-text {
+      color: var(--refl-muted);
+    }
+    #home-reflection-card.has-bg .home-card-head__icon svg {
+      color: var(--refl-ink);
+    }
+    .home-reflection-credit {
+      align-self: flex-start;
+      margin-top: auto;
+      font-size: var(--text-xs);
+      color: var(--muted);
+      text-decoration: none;
+    }
+    #home-reflection-card.has-bg .home-reflection-credit {
+      color: var(--refl-ink);
+      background: var(--refl-panel);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      border-radius: var(--radius-pill);
+      padding: 2px 10px;
+    }
+    .home-reflection-credit:hover {
+      text-decoration: underline;
+    }
+    .home-wyd-countdown {
+      align-self: center;
+      white-space: nowrap;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--on-accent);
+      background: var(--accent);
+      border-radius: var(--radius-pill);
+      padding: 4px 10px;
+    }
+    .home-wyd-list {
+      flex: 1 1 auto;
+    }
+    .home-bento-cell--wyd .home-news-item {
+      box-shadow: var(--shadow-light);
+      border-color: color-mix(in srgb, var(--line) 60%, transparent);
+    }
+    .home-bento-cell--wyd .flow-bento-cell__head {
+      align-items: center;
+      gap: var(--space-2);
+      margin: 0 0 var(--space-3);
+      background: color-mix(in srgb, var(--surface-solid) 32%, transparent);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+      border: 1px solid color-mix(in srgb, var(--surface-solid) 45%, transparent);
+      border-radius: var(--radius-md);
+      padding: var(--space-2);
+      box-shadow: var(--shadow-light);
+    }
+    .home-bento-cell--wyd .home-card-head__icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+    }
+    .home-bento-cell--wyd .home-card-head__icon svg {
+      width: 15px;
+      height: 15px;
+    }
+    .home-bento-cell--wyd .home-card-head__text p {
+      margin-top: 1px;
+    }
+    .home-wyd-foot {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-top: var(--space-2);
+    }
+    .home-wyd-status {
+      margin: 0;
+      font-size: var(--text-sm);
+      color: var(--ink);
+      font-weight: 500;
+      background: color-mix(in srgb, var(--surface-solid) 32%, transparent);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+      border: 1px solid color-mix(in srgb, var(--surface-solid) 45%, transparent);
+      border-radius: var(--radius-pill);
+      padding: 4px 12px;
+    }
+    .home-wyd-link {
+      flex-shrink: 0;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      background: color-mix(in srgb, var(--surface-solid) 32%, transparent);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+      border: 1px solid color-mix(in srgb, var(--surface-solid) 45%, transparent);
+      border-radius: var(--radius-pill);
+      padding: 4px 12px;
+    }
+    .home-wyd-link:hover {
+      text-decoration: underline;
+    }
+    .home-bento-cell--wyd {
+      cursor: pointer;
+    }
+    .home-bento-cell--wyd:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
     .home-gospel-ref {
       margin: var(--space-1) 0 0;
       font-size: var(--text-sm);
@@ -6037,13 +6280,19 @@
     /* ===== Mass setup — redesigned card layout ===== */
     .flow-setup-layout {
       display: grid;
-      grid-template-columns: clamp(300px, 32%, 400px) minmax(0, 1fr);
+      grid-template-columns: 270px minmax(0, 1fr) clamp(250px, 23%, 340px);
       gap: var(--space-3);
       align-items: start;
       width: 100%;
       min-width: 0;
     }
     .flow-setup-main {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+    .flow-setup-side {
       display: flex;
       flex-direction: column;
       gap: var(--space-3);
@@ -6113,8 +6362,273 @@
     }
     /* Stewardship row */
     .flow-setup-row--steward {
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.85fr);
+      grid-template-columns: minmax(0, 1fr);
       align-items: start;
+    }
+    /* Stewardship + Encouragement pair — stewardship half, encouragement half */
+    .flow-steward-pair {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: stretch;
+      min-width: 0;
+    }
+    .flow-steward-pair__main,
+    .flow-steward-pair__aside {
+      min-width: 0;
+      margin: 0;
+    }
+    /* Compact stewardship side of the pair */
+    .flow-steward-pair__main.flow-setup-card2 {
+      padding: var(--space-2) var(--space-3);
+    }
+    .flow-steward-pair__main .flow-steward-collection {
+      gap: 6px;
+    }
+    /* Mass setup cards: plain white surface with an interactive red dot field on hover */
+    #mass-step-target-basics.flow-setup-card2,
+    #mass-step-target-stewardship.flow-setup-card2,
+    #mass-step-target-liturgy.flow-setup-card2,
+    #mass-step-target-readings.flow-setup-card2,
+    #flow-sponsor-card.flow-setup-card2,
+    #mass-step-target-media.flow-setup-card2 {
+      position: relative;
+    }
+    .flow-card-dots-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .flow-card-dots {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* Lift card content above the dot field. No z-index, so dropdowns (z-index 60) still escape. */
+    #mass-step-target-basics.flow-setup-card2 > *:not(.flow-card-dots-wrap),
+    #mass-step-target-stewardship.flow-setup-card2 > *:not(.flow-card-dots-wrap),
+    #mass-step-target-liturgy.flow-setup-card2 > *:not(.flow-card-dots-wrap),
+    #mass-step-target-readings.flow-setup-card2 > *:not(.flow-card-dots-wrap),
+    #flow-sponsor-card.flow-setup-card2 > *:not(.flow-card-dots-wrap),
+    #mass-step-target-media.flow-setup-card2 > *:not(.flow-card-dots-wrap) {
+      position: relative;
+    }
+    /* Moment of Peace — calm liturgical micro-widget */
+    .flow-peace {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      background: #FFFDF8;
+      border: 1px solid #F1E4E0;
+      border-radius: 18px;
+      box-shadow: var(--shadow-light);
+      min-width: 0;
+      --peace-aurora-opacity: 0.55;
+      --peace-delay-a: 0s;
+      --peace-delay-b: -8s;
+    }
+    html[data-theme="dark"] .flow-peace {
+      background: color-mix(in srgb, var(--accent) 7%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--accent) 20%, var(--line));
+      --peace-aurora-opacity: 0.38;
+    }
+    /* Drifting red aurora — two desynced blob layers read as random motion */
+    .flow-peace::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(48% 48% at 28% 30%, color-mix(in srgb, var(--accent) 42%, transparent) 0%, transparent 100%),
+        radial-gradient(46% 46% at 74% 56%, color-mix(in srgb, var(--accent) 34%, transparent) 0%, transparent 100%),
+        radial-gradient(52% 52% at 50% 86%, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 100%);
+      background-repeat: no-repeat;
+      filter: blur(26px);
+      opacity: var(--peace-aurora-opacity);
+      will-change: transform, opacity;
+      animation:
+        flow-peace-aurora-a 23s ease-in-out infinite,
+        flow-peace-aurora-b 31s ease-in-out infinite;
+      animation-delay: var(--peace-delay-a), var(--peace-delay-b);
+      transition: opacity 600ms ease, filter 600ms ease;
+    }
+    /* Content sits above the aurora */
+    .flow-peace > *:not(.flow-card-dots-wrap) {
+      position: relative;
+      z-index: 1;
+    }
+    @keyframes flow-peace-aurora-a {
+      0%   { transform: translate(0%, 0%) scale(1); }
+      33%  { transform: translate(6%, -4%) scale(1.08); }
+      66%  { transform: translate(-5%, 5%) scale(0.95); }
+      100% { transform: translate(0%, 0%) scale(1); }
+    }
+    @keyframes flow-peace-aurora-b {
+      0%   { transform: translate(0%, 0%) rotate(0deg); }
+      50%  { transform: translate(-4%, -3%) rotate(8deg); }
+      100% { transform: translate(0%, 0%) rotate(0deg); }
+    }
+    /* Subtle hover response — aurora warms and eases closer */
+    .flow-peace:hover::before {
+      opacity: calc(var(--peace-aurora-opacity) + 0.18);
+      filter: blur(24px);
+    }
+    /* Calm the aurora down while the breathing exercise runs */
+    .flow-peace[data-state="breathing"]::before,
+    .flow-peace[data-state="completed"]::before {
+      opacity: calc(var(--peace-aurora-opacity) * 0.45);
+    }
+    .flow-peace__head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+    .flow-peace__icon {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 9%, transparent);
+    }
+    .flow-peace__icon svg {
+      width: 15px;
+      height: 15px;
+    }
+    .flow-peace__head-text {
+      min-width: 0;
+    }
+    .flow-peace__title {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+    .flow-peace__subtitle {
+      margin: 1px 0 0;
+      font-size: 0.7rem;
+      line-height: 1.25;
+      color: var(--muted);
+    }
+    /* Body keeps a stable height across states so the card never jumps */
+    .flow-peace__body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      text-align: center;
+    }
+    .flow-peace__message {
+      margin: 0;
+      max-width: 30ch;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+    .flow-peace__breath {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+    .flow-peace__breath-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 7%, transparent);
+      transform: scale(0.72);
+    }
+    .flow-peace__breath-text {
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: var(--ink);
+    }
+    .flow-peace__btn {
+      align-self: center;
+      min-width: 132px;
+      padding: 7px 18px;
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface-solid));
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--motion-duration-fast, 160ms) ease, border-color var(--motion-duration-fast, 160ms) ease, opacity var(--motion-duration-fast, 160ms) ease;
+    }
+    .flow-peace__btn:hover {
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+    }
+    .flow-peace__btn:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+    /* State machine: idle / breathing / completed */
+    .flow-peace[data-state="idle"] .flow-peace__message { display: block; }
+    .flow-peace[data-state="idle"] .flow-peace__breath { display: none; }
+    .flow-peace[data-state="breathing"] .flow-peace__message,
+    .flow-peace[data-state="completed"] .flow-peace__message { display: none; }
+    .flow-peace[data-state="breathing"] .flow-peace__breath,
+    .flow-peace[data-state="completed"] .flow-peace__breath { display: flex; }
+    .flow-peace[data-state="breathing"] .flow-peace__breath-circle {
+      animation: flow-peace-breathe 4s ease-in-out infinite;
+    }
+    @keyframes flow-peace-breathe {
+      0%, 100% { transform: scale(0.72); opacity: 0.7; }
+      50% { transform: scale(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .flow-peace__breath-circle { display: none; }
+      .flow-peace[data-state="breathing"] .flow-peace__breath-circle { animation: none; }
+      /* Keep a soft static red glow but no drifting motion */
+      .flow-peace::before { animation: none; transform: none; }
+      .flow-peace:hover::before { filter: blur(30px); }
+    }
+    @media (max-width: 900px) {
+      .flow-steward-pair {
+        grid-template-columns: 1fr;
+      }
+      .flow-peace__btn {
+        width: 100%;
+      }
+    }
+    /* Liturgy ordinary parts — 3 dropdowns per line, mass-flow order */
+    .flow-liturgy-parts {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2) var(--space-3);
+      align-items: start;
+    }
+    /* Gospel & Psalm long card — psalm left, gospel right */
+    .flow-gospsalm-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--space-2) var(--space-4);
+      align-items: start;
+    }
+    .flow-gospsalm-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      min-width: 0;
     }
     .flow-steward-collection {
       display: flex;
@@ -6169,6 +6683,25 @@
       max-height: 6.5rem;
       overflow-y: auto;
     }
+    /* Compact sponsor list — tight rows to fit many names */
+    .flow-input-list--compact {
+      margin-top: 8px;
+      gap: 4px;
+      max-height: 22rem;
+    }
+    .flow-input-list--compact .flow-input-list-item {
+      padding: 2px 6px 2px 9px;
+      font-size: 0.78rem;
+      line-height: 1.2;
+      border-radius: var(--radius-sm);
+      align-items: center;
+    }
+    .flow-input-list--compact .flow-input-list-remove {
+      width: 20px;
+      height: 20px;
+      font-size: 0.95rem;
+      border-radius: 6px;
+    }
     /* Liturgy row */
     .flow-setup-row--liturgy {
       grid-template-columns: minmax(140px, 0.65fr) minmax(0, 2.1fr);
@@ -6211,14 +6744,25 @@
     .flow-setup-card2 .vb-select--slide-pick .vb-dropdown-item,
     .flow-setup-card2 .vb-select--slide-pick .vb-dropdown-item__label {
       white-space: normal;
-      line-height: 1.45;
-      font-size: var(--text-sm);
+      line-height: 1.4;
+      font-size: 0.8rem;
       font-weight: 500;
     }
-    /* Media row */
+    /* Unify all dropdown text sizing inside the Mass setup cards (trigger value === options) */
+    .flow-setup-card2 .vb-select__trigger,
+    .flow-setup-card2 .vb-select__value,
+    .flow-setup-card2 .vb-dropdown-item,
+    .flow-setup-card2 .vb-dropdown-item__label,
+    .flow-setup-card2 .celebrant-picker__option,
+    .flow-setup-card2 .celebrant-picker__value {
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    /* Media row — stacked: uploads on top, poster style + checks at bottom */
     .flow-setup-row--media {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
-      align-items: start;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: stretch;
     }
     .flow-poster-file {
       text-align: center;
@@ -6345,8 +6889,12 @@
       .flow-setup-row--steward,
       .flow-setup-row--media,
       .flow-setup-row--liturgy,
-      .flow-liturgy-pick {
+      .flow-liturgy-pick,
+      .flow-gospsalm-row {
         grid-template-columns: 1fr;
+      }
+      .flow-liturgy-parts {
+        grid-template-columns: 1fr 1fr;
       }
       .flow-steward-collection .field--inline {
         flex-direction: column;
@@ -10784,6 +11332,46 @@
       <section class="page" id="home-page" data-route="/home">
           <div class="app-membership-banner" id="home-membership-banner" hidden aria-live="polite"></div>
           <div class="home-bento-grid">
+            <article class="flow-bento-cell home-bento-cell--reflection" id="home-reflection-card" aria-labelledby="home-reflection-heading">
+              <div class="home-reflection-bg" id="home-reflection-bg" aria-hidden="true"></div>
+              <div class="home-reflection-inner">
+                <header class="flow-bento-cell__head home-card-head">
+                  <span class="home-card-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 7c3 0 6 1 9 2 3-1 6-2 9-2"/><path d="M3 7v10c3 0 6 1 9 2 3-1 6-2 9-2V7"/></svg>
+                  </span>
+                  <div class="home-card-head__text">
+                    <h3 id="home-reflection-heading">Today's Gospel</h3>
+                    <p id="home-reflection-date">Loading…</p>
+                  </div>
+                </header>
+                <blockquote class="home-reflection-verse flow-reading-text flow-reading-text--gospel" id="home-reflection-verse">Today's Gospel verse will appear here.</blockquote>
+                <p class="home-reflection-ref"><strong id="home-reflection-ref">—</strong></p>
+                <p class="home-reflection-text" id="home-reflection-text">A short reflection on today's Gospel will appear here.</p>
+                <a class="home-reflection-credit" id="home-reflection-credit" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
+              </div>
+            </article>
+
+            <aside class="flow-bento-cell home-bento-cell--wyd" id="home-wyd-card" tabindex="0" aria-label="Visit the official World Youth Day Seoul 2027 website" aria-labelledby="home-wyd-heading">
+              <div class="home-wyd-bg" aria-hidden="true"></div>
+              <div class="home-wyd-inner">
+                <header class="flow-bento-cell__head home-card-head">
+                  <span class="home-card-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </span>
+                  <div class="home-card-head__text">
+                    <h3 id="home-wyd-heading">WYD Seoul 2027</h3>
+                    <p>World Youth Day · Aug 3–8, 2027 · Seoul, South Korea</p>
+                  </div>
+                  <span class="home-wyd-countdown" id="home-wyd-countdown" aria-live="polite">—</span>
+                </header>
+                <ul class="home-news-list home-wyd-list" id="home-wyd-list" aria-live="polite"></ul>
+                <div class="home-wyd-foot">
+                  <a class="home-wyd-link" id="home-wyd-link" href="https://wydseoul.org/en" target="_blank" rel="noopener noreferrer">Official site ›</a>
+                  <p class="muted home-wyd-status" id="home-wyd-status">Loading WYD news…</p>
+                </div>
+              </div>
+            </aside>
+
             <article class="flow-bento-cell home-bento-cell--gospel is-gospel-preview" id="home-gospel-card" tabindex="0" role="button" aria-label="Open full Gospel preview">
               <header class="flow-bento-cell__head home-card-head">
                 <span class="home-card-head__icon" aria-hidden="true">
@@ -11330,6 +11918,37 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="flow-builder-tab-panel" id="flow-panel-setup" role="tabpanel" aria-labelledby="flow-tab-setup" data-flow-panel="setup">
             <div class="flow-setup-layout" aria-label="Mass setup">
+              <aside class="flow-bento-cell flow-readings-sidebar" aria-label="Sunday readings">
+                <article class="flow-reading-block reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
+                  <header>
+                    <strong>First reading</strong>
+                    <span class="flow-reading-ref" id="flow-reading1-ref">—</span>
+                  </header>
+                  <div id="flow-reading1-body" class="flow-reading-text">Load readings to see text.</div>
+                </article>
+                <article class="flow-reading-block reading-preview-card" id="flow-psalm-preview-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
+                  <header>
+                    <strong>Psalm</strong>
+                    <span class="flow-reading-ref" id="flow-psalm-ref">—</span>
+                  </header>
+                  <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm">Load readings to see the full psalm text.</div>
+                </article>
+                <article class="flow-reading-block reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
+                  <header>
+                    <strong>Second reading</strong>
+                    <span class="flow-reading-ref" id="flow-reading2-ref">—</span>
+                  </header>
+                  <div id="flow-reading2-body" class="flow-reading-text">—</div>
+                </article>
+                <article class="flow-reading-block reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
+                  <header>
+                    <strong>Gospel</strong>
+                    <span class="flow-reading-ref" id="flow-gospel-ref">—</span>
+                  </header>
+                  <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel">Load readings to see the full Gospel.</div>
+                </article>
+              </aside>
+
               <div class="flow-setup-main">
 
                 <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-basics">
@@ -11359,7 +11978,8 @@ Lord, hear our prayer</textarea>
                   </div>
                 </article>
 
-                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-stewardship">
+                <div class="flow-steward-pair">
+                <article class="flow-bento-cell flow-setup-card2 flow-steward-pair__main" id="mass-step-target-stewardship">
                   <div class="flow-setup-row flow-setup-row--steward">
                     <div class="flow-steward-collection">
                       <div class="field field--inline">
@@ -11379,58 +11999,127 @@ Lord, hear our prayer</textarea>
                       </div>
                       <p class="muted flow-setup-field-hint" id="flow-collection-amount-hint">Formatted on the slide using the selected currency.</p>
                     </div>
-                    <div class="field flow-steward-sponsor">
-                      <label for="flow-food-sponsor-input">Sponsor</label>
-                      <div class="flow-input-group">
-                        <input type="text" id="flow-food-sponsor-input" placeholder="Type name" maxlength="120" autocomplete="off" />
-                        <button type="button" class="primary flow-setup-add-btn" id="btn-flow-food-add">Add</button>
-                      </div>
-                      <textarea id="flow-food-sponsors" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                  </div>
+                </article>
+
+                <aside class="flow-bento-cell flow-peace flow-steward-pair__aside" id="flow-peace-card" data-state="idle" aria-label="Moment of Peace">
+                  <header class="flow-peace__head">
+                    <span class="flow-peace__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.6 4.8 2.6 6.8 7 7-4.4.2-6.4 2.2-7 7-.6-4.8-2.6-6.8-7-7 4.4-.2 6.4-2.2 7-7Z"/></svg>
+                    </span>
+                    <div class="flow-peace__head-text">
+                      <h3 class="flow-peace__title">Moment of Peace</h3>
+                      <p class="flow-peace__subtitle">Before you continue.</p>
                     </div>
-                    <div class="flow-steward-list">
-                      <span class="flow-steward-list__title">Sponsor list</span>
-                      <ul id="flow-food-sponsors-list" class="flow-input-list" aria-live="polite"></ul>
+                  </header>
+
+                  <div class="flow-peace__body">
+                    <p class="flow-peace__message" id="flow-peace-message">Prepare with care. Let grace carry the rest.</p>
+                    <div class="flow-peace__breath" aria-hidden="true">
+                      <span class="flow-peace__breath-circle"></span>
+                      <span class="flow-peace__breath-text" id="flow-peace-breath-text" aria-live="polite">Breathe in</span>
+                    </div>
+                  </div>
+
+                  <button type="button" class="flow-peace__btn" id="flow-peace-btn">Take a breath</button>
+                </aside>
+                </div>
+
+                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-liturgy">
+                  <div class="flow-liturgy-parts">
+                    <div class="field">
+                      <label for="flow-penitential-choice">Penitential Act</label>
+                      <select id="flow-penitential-choice">
+                        <option value="confiteor" selected>I Confess (Confiteor)</option>
+                        <option value="form-b">Form B</option>
+                        <option value="form-c">Form C (Invocations)</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="flow-kyrie-choice">Kyrie</label>
+                      <select id="flow-kyrie-choice">
+                        <option value="english" selected>English</option>
+                        <option value="greek">Greek (Kyrie eleison)</option>
+                        <option value="latin">Latin</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="flow-gloria-choice">Gloria</label>
+                      <select id="flow-gloria-choice">
+                        <option value="english" selected>English</option>
+                        <option value="latin">Latin</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="flow-creed-choice">Creed</label>
+                      <select id="flow-creed-choice">
+                        <option value="nicene" selected>Nicene Creed</option>
+                        <option value="apostles">Apostles' Creed</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="flow-our-father-choice">Our Father</label>
+                      <select id="flow-our-father-choice">
+                        <option value="english" selected>English</option>
+                        <option value="latin">Latin (Pater Noster)</option>
+                        <option value="tagalog">Tagalog (Ama Namin)</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="flow-lamb-choice">Lamb of God</label>
+                      <select id="flow-lamb-choice">
+                        <option value="english" selected>English</option>
+                        <option value="latin">Latin (Agnus Dei)</option>
+                      </select>
                     </div>
                   </div>
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-readings">
-                  <div class="flow-setup-row flow-setup-row--liturgy">
-                    <div class="field flow-liturgy-creed">
-                      <label for="flow-creed-choice">Creed for Mass</label>
-                      <select id="flow-creed-choice" aria-describedby="flow-creed-choice-hint">
-                        <option value="nicene" selected>Nicene Creed</option>
-                        <option value="apostles">Apostles' Creed</option>
-                      </select>
-                      <p class="muted flow-setup-field-hint" id="flow-creed-choice-hint">Only one creed is included in the deck.</p>
-                    </div>
-                    <div class="flow-liturgy-picks">
-                      <div class="flow-liturgy-pick">
-                        <div class="field">
-                          <label for="flow-psalm-refrain">Responsorial psalm</label>
-                          <select id="flow-psalm-refrain" class="flow-slide-pick-select">
-                            <option value="" disabled selected>Load readings to choose a refrain</option>
-                          </select>
-                        </div>
-                        <div class="field">
-                          <label for="flow-psalm-custom">Custom psalm text <span class="muted">(optional)</span></label>
-                          <input type="text" id="flow-psalm-custom" maxlength="500" placeholder="Overrides refrain above" />
-                        </div>
+                  <div class="flow-gospsalm-row">
+                    <div class="flow-gospsalm-col">
+                      <div class="field">
+                        <label for="flow-psalm-refrain">Responsorial psalm</label>
+                        <select id="flow-psalm-refrain" class="flow-slide-pick-select">
+                          <option value="" disabled selected>Load readings to choose a refrain</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="flow-psalm-custom">Custom psalm text <span class="muted">(optional)</span></label>
+                        <input type="text" id="flow-psalm-custom" maxlength="500" placeholder="Overrides refrain above" />
                       </div>
                       <p class="muted flow-setup-field-hint" id="flow-psalm-label">Refrain line shown on the responsorial psalm slide.</p>
-                      <div class="flow-liturgy-pick">
-                        <div class="field">
-                          <label for="flow-gospel-sentence">Gospel</label>
-                          <select id="flow-gospel-sentence" class="flow-slide-pick-select">
-                            <option value="" disabled selected>Load readings to choose a sentence</option>
-                          </select>
-                        </div>
-                        <div class="field">
-                          <label for="flow-gospel-custom">Custom gospel text <span class="muted">(optional)</span></label>
-                          <input type="text" id="flow-gospel-custom" maxlength="2000" placeholder="Overrides sentence above" />
-                        </div>
+                    </div>
+                    <div class="flow-gospsalm-col">
+                      <div class="field">
+                        <label for="flow-gospel-sentence">Gospel</label>
+                        <select id="flow-gospel-sentence" class="flow-slide-pick-select">
+                          <option value="" disabled selected>Load readings to choose a sentence</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="flow-gospel-custom">Custom gospel text <span class="muted">(optional)</span></label>
+                        <input type="text" id="flow-gospel-custom" maxlength="2000" placeholder="Overrides sentence above" />
                       </div>
                     </div>
+                  </div>
+                </article>
+
+              </div>
+
+              <div class="flow-setup-side">
+                <article class="flow-bento-cell flow-setup-card2 flow-sponsor-card" id="flow-sponsor-card">
+                  <div class="field flow-steward-sponsor">
+                    <label for="flow-food-sponsor-input">Sponsor</label>
+                    <div class="flow-input-group">
+                      <input type="text" id="flow-food-sponsor-input" placeholder="Type name" maxlength="120" autocomplete="off" />
+                      <button type="button" class="primary flow-setup-add-btn" id="btn-flow-food-add">Add</button>
+                    </div>
+                    <textarea id="flow-food-sponsors" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                  </div>
+                  <div class="flow-steward-list">
+                    <span class="flow-steward-list__title">Sponsor list</span>
+                    <ul id="flow-food-sponsors-list" class="flow-input-list flow-input-list--compact" aria-live="polite"></ul>
                   </div>
                 </article>
 
@@ -11472,39 +12161,7 @@ Lord, hear our prayer</textarea>
                     </div>
                   </footer>
                 </article>
-
               </div>
-
-              <aside class="flow-bento-cell flow-readings-sidebar" aria-label="Sunday readings">
-                <article class="flow-reading-block reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
-                  <header>
-                    <strong>First reading</strong>
-                    <span class="flow-reading-ref" id="flow-reading1-ref">—</span>
-                  </header>
-                  <div id="flow-reading1-body" class="flow-reading-text">Load readings to see text.</div>
-                </article>
-                <article class="flow-reading-block reading-preview-card" id="flow-psalm-preview-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
-                  <header>
-                    <strong>Psalm</strong>
-                    <span class="flow-reading-ref" id="flow-psalm-ref">—</span>
-                  </header>
-                  <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm">Load readings to see the full psalm text.</div>
-                </article>
-                <article class="flow-reading-block reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
-                  <header>
-                    <strong>Second reading</strong>
-                    <span class="flow-reading-ref" id="flow-reading2-ref">—</span>
-                  </header>
-                  <div id="flow-reading2-body" class="flow-reading-text">—</div>
-                </article>
-                <article class="flow-reading-block reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
-                  <header>
-                    <strong>Gospel</strong>
-                    <span class="flow-reading-ref" id="flow-gospel-ref">—</span>
-                  </header>
-                  <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel">Load readings to see the full Gospel.</div>
-                </article>
-              </aside>
             </div>
             </div>
 
@@ -12955,7 +13612,7 @@ Lord, hear our prayer</textarea>
       const u = String(url || "").trim();
       if (!u) return "";
       if (u.includes("res.cloudinary.com") && u.includes("/upload/")) {
-        return u.replace("/upload/", "/upload/w_96,h_72,c_fill,q_auto,f_auto/");
+        return u.replace("/upload/", "/upload/w_240,h_180,c_fill,f_auto,q_70/");
       }
       return u;
     }
@@ -13847,6 +14504,8 @@ Lord, hear our prayer</textarea>
       if (r === "/home") {
         refreshHomeMission();
         refreshCatholicNews();
+        refreshHomeReflection();
+        refreshWydNews();
       }
       if (r === "/settings/app") {
         syncHomeNewsSettingsUI();
@@ -16818,6 +17477,226 @@ Lord, hear our prayer</textarea>
       }
     })();
 
+    /* Moment of Peace — reusable calm widget (idle → breathing → completed) */
+    (function initMomentOfPeace() {
+      const card = $("flow-peace-card");
+      if (!card || card.dataset.bound === "1") return;
+      card.dataset.bound = "1";
+      const btn = $("flow-peace-btn");
+      const messageEl = $("flow-peace-message");
+      const breathTextEl = $("flow-peace-breath-text");
+      if (!btn) return;
+
+      const MESSAGES = [
+        "Prepare with care. Let grace carry the rest.",
+        "Your quiet preparation is also a form of service.",
+        "Someone may pray more peacefully because of this work.",
+        "One careful detail can become peace for someone.",
+        "You are serving with care.",
+      ];
+      if (messageEl) {
+        messageEl.textContent = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+      }
+
+      // Randomize aurora start offsets so each visit drifts differently (negative delays start mid-cycle)
+      card.style.setProperty("--peace-delay-a", "-" + (Math.random() * 23).toFixed(2) + "s");
+      card.style.setProperty("--peace-delay-b", "-" + (Math.random() * 31).toFixed(2) + "s");
+
+      const BREATH_SEQUENCE = ["Breathe in", "Breathe out", "Continue with peace"];
+      let timers = [];
+      const clearTimers = () => { timers.forEach((t) => window.clearTimeout(t)); timers = []; };
+      const setState = (state) => { card.dataset.state = state; };
+
+      function completeBreathing() {
+        clearTimers();
+        setState("completed");
+        btn.disabled = false;
+        btn.textContent = "Ready";
+        timers.push(window.setTimeout(() => {
+          setState("idle");
+          btn.textContent = "Take a breath";
+        }, 1600));
+      }
+
+      function startBreathing() {
+        if (card.dataset.state === "breathing") return;
+        clearTimers();
+        setState("breathing");
+        btn.disabled = true;
+        if (breathTextEl) breathTextEl.textContent = BREATH_SEQUENCE[0];
+        timers.push(window.setTimeout(() => { if (breathTextEl) breathTextEl.textContent = BREATH_SEQUENCE[1]; }, 4000));
+        timers.push(window.setTimeout(() => { if (breathTextEl) breathTextEl.textContent = BREATH_SEQUENCE[2]; }, 8000));
+        timers.push(window.setTimeout(completeBreathing, 10000));
+      }
+
+      btn.addEventListener("click", startBreathing);
+    })();
+
+    /* Interactive red dot field behind each Mass setup card — glows toward the cursor on hover */
+    (function initMassCardDots() {
+      const ids = [
+        "mass-step-target-basics",
+        "mass-step-target-stewardship",
+        "mass-step-target-liturgy",
+        "mass-step-target-readings",
+        "flow-sponsor-card",
+        "mass-step-target-media",
+        "flow-peace-card",
+      ];
+      const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const BASE = { r: 161, g: 15, b: 13 };   // app red (--accent #a10f0d)
+      const GLOW = { r: 212, g: 82, b: 80 };   // brighter red (--liturgical-glow #d45250)
+      const DOT_SIZE = 2;
+      const GAP = 12;
+      const PROXIMITY = 110;
+      const GLOW_INTENSITY = 1;
+      const WAVE_SPEED = 0.5;
+
+      function setupCard(card) {
+        if (!card || card.dataset.dotsBound === "1") return;
+        card.dataset.dotsBound = "1";
+
+        const wrap = document.createElement("div");
+        wrap.className = "flow-card-dots-wrap";
+        const canvas = document.createElement("canvas");
+        canvas.className = "flow-card-dots";
+        canvas.setAttribute("aria-hidden", "true");
+        wrap.appendChild(canvas);
+        card.insertBefore(wrap, card.firstChild);
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        let dots = [];
+        let dpr = 1;
+        const mouse = { x: -1000, y: -1000 };
+        let raf = null;
+        let hovering = false;
+        let startTime = Date.now();
+
+        function buildGrid() {
+          const rect = card.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0) return false;
+          dpr = window.devicePixelRatio || 1;
+          canvas.width = Math.round(rect.width * dpr);
+          canvas.height = Math.round(rect.height * dpr);
+          canvas.style.width = rect.width + "px";
+          canvas.style.height = rect.height + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const cell = DOT_SIZE + GAP;
+          const cols = Math.ceil(rect.width / cell) + 1;
+          const rows = Math.ceil(rect.height / cell) + 1;
+          const offX = (rect.width - (cols - 1) * cell) / 2;
+          const offY = (rect.height - (rows - 1) * cell) / 2;
+          dots = [];
+          for (let row = 0; row < rows; row += 1) {
+            for (let col = 0; col < cols; col += 1) {
+              dots.push({ x: offX + col * cell, y: offY + row * cell, baseOpacity: 0.05 + Math.random() * 0.05 });
+            }
+          }
+          return true;
+        }
+
+        function clear() {
+          const rect = card.getBoundingClientRect();
+          ctx.clearRect(0, 0, rect.width, rect.height);
+        }
+
+        function drawStatic() {
+          if (!dots.length && !buildGrid()) return;
+          clear();
+          for (const d of dots) {
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, DOT_SIZE / 2, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(" + BASE.r + "," + BASE.g + "," + BASE.b + "," + d.baseOpacity + ")";
+            ctx.fill();
+          }
+        }
+
+        function draw() {
+          clear();
+          const mx = mouse.x;
+          const my = mouse.y;
+          const proxSq = PROXIMITY * PROXIMITY;
+          const time = (Date.now() - startTime) * 0.001 * WAVE_SPEED;
+          for (const d of dots) {
+            const dx = d.x - mx;
+            const dy = d.y - my;
+            const distSq = dx * dx + dy * dy;
+            const wave = Math.sin(d.x * 0.02 + d.y * 0.02 + time) * 0.5 + 0.5;
+            let opacity = d.baseOpacity + wave * 0.05;
+            let scale = 1 + wave * 0.2;
+            let r = BASE.r;
+            let g = BASE.g;
+            let b = BASE.b;
+            let glow = 0;
+            if (distSq < proxSq) {
+              const dist = Math.sqrt(distSq);
+              const t = 1 - dist / PROXIMITY;
+              const e = t * t * (3 - 2 * t);
+              r = Math.round(BASE.r + (GLOW.r - BASE.r) * e);
+              g = Math.round(BASE.g + (GLOW.g - BASE.g) * e);
+              b = Math.round(BASE.b + (GLOW.b - BASE.b) * e);
+              opacity = Math.min(0.95, opacity + e * 0.75);
+              scale = scale + e * 0.9;
+              glow = e * GLOW_INTENSITY;
+            }
+            const radius = (DOT_SIZE / 2) * scale;
+            if (glow > 0) {
+              const grd = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, radius * 4);
+              grd.addColorStop(0, "rgba(" + GLOW.r + "," + GLOW.g + "," + GLOW.b + "," + (glow * 0.4) + ")");
+              grd.addColorStop(0.5, "rgba(" + GLOW.r + "," + GLOW.g + "," + GLOW.b + "," + (glow * 0.1) + ")");
+              grd.addColorStop(1, "rgba(" + GLOW.r + "," + GLOW.g + "," + GLOW.b + ",0)");
+              ctx.beginPath();
+              ctx.arc(d.x, d.y, radius * 4, 0, Math.PI * 2);
+              ctx.fillStyle = grd;
+              ctx.fill();
+            }
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + opacity + ")";
+            ctx.fill();
+          }
+          if (hovering) raf = requestAnimationFrame(draw);
+        }
+
+        function start() {
+          if (prefersReduced) return;
+          buildGrid();
+          hovering = true;
+          startTime = Date.now();
+          if (!raf) raf = requestAnimationFrame(draw);
+        }
+
+        function stop() {
+          hovering = false;
+          mouse.x = -1000;
+          mouse.y = -1000;
+          if (raf) { cancelAnimationFrame(raf); raf = null; }
+          drawStatic();
+        }
+
+        card.addEventListener("mouseenter", start);
+        card.addEventListener("mousemove", (e) => {
+          const rect = canvas.getBoundingClientRect();
+          mouse.x = e.clientX - rect.left;
+          mouse.y = e.clientY - rect.top;
+        });
+        card.addEventListener("mouseleave", stop);
+
+        if (typeof ResizeObserver !== "undefined") {
+          const ro = new ResizeObserver(() => {
+            if (buildGrid() && !hovering) drawStatic();
+          });
+          ro.observe(card);
+        }
+
+        drawStatic();
+      }
+
+      ids.forEach((id) => setupCard(document.getElementById(id)));
+    })();
+
 
     $("mass-song-plan").addEventListener("mousedown", (e) => {
       const btn = e.target.closest("button[data-pick-slot]");
@@ -19697,6 +20576,166 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    function applyHomeReflectionData(data) {
+      if ($("home-reflection-date")) {
+        $("home-reflection-date").textContent = new Date().toLocaleDateString(undefined, {
+          weekday: "long", month: "long", day: "numeric",
+        });
+      }
+      const verse = (data.gospel_quote || data.gospel_text || "").trim();
+      if ($("home-reflection-verse")) {
+        $("home-reflection-verse").textContent = verse || "Today's Gospel verse will appear here.";
+      }
+      if ($("home-reflection-ref")) $("home-reflection-ref").textContent = data.gospel_reference || "—";
+      const reflection = (data.gospel_synopsis || "").trim();
+      if ($("home-reflection-text")) {
+        $("home-reflection-text").textContent = reflection || "A short reflection on today's Gospel will appear here.";
+      }
+    }
+
+    const reflectionImageCache = new Map();
+
+    function applyReflectionBackground(payload) {
+      const card = $("home-reflection-card");
+      const bg = $("home-reflection-bg");
+      const credit = $("home-reflection-credit");
+      if (!card || !bg) return;
+      const url = payload && payload.ok ? String(payload.image_url || "").trim() : "";
+      if (!url) {
+        card.classList.remove("has-bg", "text-light", "text-dark");
+        bg.style.backgroundImage = "";
+        if (credit) { credit.hidden = true; credit.removeAttribute("href"); }
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        bg.style.backgroundImage = 'url("' + url.replace(/"/g, '\\"') + '")';
+        card.classList.add("has-bg");
+        card.classList.remove("text-light", "text-dark");
+        card.classList.add(payload.text_mode === "dark" ? "text-dark" : "text-light");
+        if (credit) {
+          const who = (payload.creator || "Openverse").trim();
+          const lic = (payload.license || "").trim().toUpperCase();
+          credit.textContent = "Image: " + who + (lic ? " · " + lic : "");
+          credit.href = payload.source_url || payload.license_url || "https://openverse.org";
+          credit.hidden = false;
+        }
+      };
+      img.onerror = () => {
+        card.classList.remove("has-bg", "text-light", "text-dark");
+        if (credit) credit.hidden = true;
+      };
+      img.src = url;
+    }
+
+    async function refreshReflectionBackground(date) {
+      if (!$("home-reflection-card")) return;
+      if (reflectionImageCache.has(date)) {
+        applyReflectionBackground(reflectionImageCache.get(date));
+        return;
+      }
+      try {
+        const res = await fetch("/api/gospel-image/" + encodeURIComponent(date));
+        const payload = await res.json().catch(() => ({}));
+        if (res.ok && payload && payload.ok) {
+          reflectionImageCache.set(date, payload);
+          applyReflectionBackground(payload);
+        } else {
+          applyReflectionBackground(null);
+        }
+      } catch (e) {
+        applyReflectionBackground(null);
+      }
+    }
+
+    async function refreshHomeReflection() {
+      const today = formatDateInput(new Date());
+      if (!today) return;
+      const cached = readStoredReadings(today) || previewCache.get(previewCacheKey(today, true));
+      if (cached && cached.ok) applyHomeReflectionData(cached);
+      refreshReflectionBackground(today);
+      try {
+        const data = await fetchReadings(today);
+        applyHomeReflectionData(data);
+      } catch (e) {
+        if (!cached && $("home-reflection-text")) {
+          $("home-reflection-text").textContent = "Could not load today's Gospel.";
+        }
+      }
+    }
+
+    function setHomeWydCountdown(daysUntil) {
+      const el = $("home-wyd-countdown");
+      if (!el) return;
+      if (typeof daysUntil !== "number" || Number.isNaN(daysUntil)) {
+        el.textContent = "Aug 3, 2027";
+        return;
+      }
+      if (daysUntil > 1) el.textContent = daysUntil + " days to go";
+      else if (daysUntil === 1) el.textContent = "Tomorrow";
+      else if (daysUntil === 0) el.textContent = "Today";
+      else el.textContent = "Underway";
+    }
+
+    async function refreshWydNews() {
+      const list = $("home-wyd-list");
+      const status = $("home-wyd-status");
+      if (status) status.textContent = "Loading WYD news…";
+      try {
+        const headers = {};
+        if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+          Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+        }
+        const res = await fetch("/api/wyd-news", { headers });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error("WYD news unavailable");
+        setHomeWydCountdown(data.days_until);
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (list) {
+          list.innerHTML = items.map((item) => "<li>" + renderHomeNewsItemMarkup(item, false) + "</li>").join("");
+        }
+        if (status) {
+          status.textContent = items.length
+            ? ""
+            : "No recent World Youth Day headlines yet — follow the official site for updates.";
+          status.hidden = items.length > 0;
+        }
+      } catch (e) {
+        setHomeWydCountdown(undefined);
+        if (list) list.innerHTML = "";
+        if (status) {
+          status.hidden = false;
+          status.textContent = "Could not load WYD news — follow the official site for updates.";
+        }
+      }
+    }
+
+    const WYD_OFFICIAL_URL = "https://wydseoul.org/en";
+
+    function visitWydSite(skipConfirm) {
+      if (!skipConfirm && !window.confirm("Open the official World Youth Day Seoul 2027 website in a new tab?")) {
+        return;
+      }
+      window.open(WYD_OFFICIAL_URL, "_blank", "noopener");
+    }
+
+    function initWydCard() {
+      const card = $("home-wyd-card");
+      if (!card || card.dataset.bound === "1") return;
+      card.dataset.bound = "1";
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("a")) return;
+        visitWydSite(false);
+      });
+      card.addEventListener("keydown", (e) => {
+        if (e.target.closest("a")) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          visitWydSite(false);
+        }
+      });
+    }
+
     function applyHomePreviewData(data, sun) {
       window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
       applyLiturgicalSeasonTheme(data.season || "", data.liturgical_color || null);
@@ -21977,16 +23016,19 @@ Lord, hear our prayer</textarea>
     updateAccountMenuDisplay();
     initHomeEventModal();
     initReadingExpandModal();
+    initWydCard();
     initAppMoreSheet();
     initSongPlanSummaryCollapse();
     initSongComposerCollapse();
 
     refreshHomeMission();
+    refreshHomeReflection();
     const bootDeferredData = () => {
       loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
       refreshSavedPosters();
       refreshAiImageQuotaHint();
       updatePosterLivePreview();
+      refreshWydNews();
     };
     if (typeof requestIdleCallback === "function") {
       requestIdleCallback(bootDeferredData, { timeout: 400 });

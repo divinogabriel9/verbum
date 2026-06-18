@@ -161,6 +161,23 @@ def _filter_by_max_age(items: list[dict[str, Any]], max_age_days: int) -> list[d
     return filtered
 
 
+def _filter_by_keywords(
+    items: list[dict[str, Any]], keywords: Optional[list[str]]
+) -> list[dict[str, Any]]:
+    terms = [k.strip().lower() for k in (keywords or []) if k and k.strip()]
+    if not terms:
+        return items
+    matched: list[dict[str, Any]] = []
+    for row in items:
+        haystack = " ".join(
+            str(row.get(field) or "")
+            for field in ("title", "summary", "summary_full")
+        ).lower()
+        if any(term in haystack for term in terms):
+            matched.append(row)
+    return matched
+
+
 def fetch_catholic_headlines(
     *,
     include_vatican: bool = True,
@@ -168,6 +185,7 @@ def fetch_catholic_headlines(
     max_items: int = _MAX_TOTAL,
     offset: int = 0,
     max_age_days: int = _DEFAULT_MAX_AGE_DAYS,
+    keywords: Optional[list[str]] = None,
 ) -> dict[str, Any]:
     """Return merged headlines (newest first), paginated by offset/limit."""
     enabled: list[tuple[str, dict[str, str]]] = []
@@ -191,6 +209,7 @@ def fetch_catholic_headlines(
     age_cap = max(0, int(max_age_days))
     if age_cap:
         merged = _filter_by_max_age(merged, age_cap)
+    merged = _filter_by_keywords(merged, keywords)
     off = max(0, int(offset))
     cap = max(1, min(int(max_items), 15))
     page = merged[off : off + cap]
