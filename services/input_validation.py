@@ -71,3 +71,23 @@ def check_hymn_overrides(
                 _fail(f"hymn lyrics override ({sec}/{sid})", L.HYMN_OVERRIDE, len(text))
             cleaned[sec][sid] = text
     return cleaned
+
+
+def check_hymn_layout_overrides(
+    overrides: Optional[dict[str, dict[str, str]]],
+) -> Optional[dict[str, dict[str, str]]]:
+    """Per-song hymn slide layout overrides: { section: { song_id: 'single'|'dual' } }."""
+    if not overrides:
+        return overrides
+    cleaned: dict[str, dict[str, str]] = {}
+    for section, songs in overrides.items():
+        sec = check_length(str(section), field="hymn section", max_len=L.SECTION_KEY)
+        if not isinstance(songs, dict):
+            continue
+        block: dict[str, str] = {}
+        for song_id, layout in songs.items():
+            sid = check_length(str(song_id), field="hymn song id", max_len=L.SONG_ID)
+            block[sid] = "dual" if str(layout) == "dual" else "single"
+        if block:
+            cleaned[sec] = block
+    return cleaned

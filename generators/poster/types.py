@@ -90,7 +90,6 @@ class PosterContent:
     logo_path: Optional[Path] = None
     community_name: str = ""
     callout: str = ""
-    include_text_overlays: bool = True
     palette: Optional[PosterPalette] = None
 
     def resolved_palette(self) -> PosterPalette:

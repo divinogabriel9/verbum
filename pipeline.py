@@ -411,7 +411,7 @@ def generate_mass_media(
     include_ai_mass_poster: bool = False,
     ai_poster_backend: str = "openai",
     ai_poster_style: str = "cinematic",
-    include_poster_text: bool = True,
+    reuse_existing_poster: bool = False,
     community_name: Optional[str] = None,
     song_selections: Optional[Mapping[str, str]] = None,
     custom_theme: Optional[Mapping[str, Any]] = None,
@@ -429,7 +429,9 @@ def generate_mass_media(
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
+    our_father_choice: str = "english",
     hymn_lyrics_layout: str = "single",
+    hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -549,7 +551,7 @@ def generate_mass_media(
                 output_stem=stem,
                 output_dir=_out,
                 include_social_exports=include_social_exports,
-                include_poster_text=include_poster_text,
+                reuse_existing_hero=reuse_existing_poster,
                 gospel_quote=slide_line,
                 gospel_reference=gospel_ref,
                 liturgical_title=title.replace(" Celebration", "").strip() or title,
@@ -619,7 +621,9 @@ def generate_mass_media(
         include_church_name=include_church_name,
         hymn_lyric_overrides=hymn_lyric_overrides,
         creed_choice=creed_choice,
+        our_father_choice=our_father_choice,
         hymn_lyrics_layout=hymn_lyrics_layout,
+        hymn_layout_overrides=hymn_layout_overrides,
     )
 
     if include_social_exports and poster_path and poster_path.is_file():
@@ -677,7 +681,9 @@ def regenerate_mass_pptx(
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
+    our_father_choice: str = "english",
     hymn_lyrics_layout: str = "single",
+    hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
     data = get_liturgical_data(date)
@@ -773,7 +779,9 @@ def regenerate_mass_pptx(
         include_church_name=include_church_name,
         hymn_lyric_overrides=hymn_lyric_overrides,
         creed_choice=creed_choice,
+        our_father_choice=our_father_choice,
         hymn_lyrics_layout=hymn_lyrics_layout,
+        hymn_layout_overrides=hymn_layout_overrides,
     )
 
     return GenerationResult(

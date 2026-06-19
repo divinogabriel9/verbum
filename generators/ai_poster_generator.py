@@ -54,13 +54,13 @@ def _build_mass_poster_master(
     *,
     celebrant_name: Optional[str] = None,
     style: str = "cinematic",
-    include_poster_text: bool = True,
+    reuse_existing_hero: bool = False,
     gospel_quote: Optional[str] = None,
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
     image_backend: str = "openai",
 ) -> Image.Image:
-    """Liturgical load, AI hero (visual only), optional PIL text overlays."""
+    """Liturgical load, AI hero (visual only), composited as a full-bleed poster."""
     data = get_liturgical_data(date)
     if not data:
         raise ValueError(f"No liturgical data for {date!r}.")
@@ -92,19 +92,20 @@ def _build_mass_poster_master(
     hero_path = _IMAGES_DIR / f"{date_iso}_{resolved_style}_hero.png"
 
     display_title = (liturgical_title or title.replace(" Celebration", "").strip() or title)
-    visual_line = build_visual_scene_line(display_title, gospel_ref, gospel_full)
-    generate_sacred_illustration(
-        gospel_ref,
-        out_path=hero_path,
-        style=resolved_style,
-        visual_scene_line=visual_line,
-        image_backend=image_backend,
-        openai_size=_openai_widescreen_api_size(),
-        output_size=WIDESCREEN_16_9,
-        sunday_title=display_title,
-        gospel_text=gospel_full,
-        season_key=season_key,
-    )
+    if not (reuse_existing_hero and hero_path.is_file()):
+        visual_line = build_visual_scene_line(display_title, gospel_ref, gospel_full)
+        generate_sacred_illustration(
+            gospel_ref,
+            out_path=hero_path,
+            style=resolved_style,
+            visual_scene_line=visual_line,
+            image_backend=image_backend,
+            openai_size=_openai_widescreen_api_size(),
+            output_size=WIDESCREEN_16_9,
+            sunday_title=display_title,
+            gospel_text=gospel_full,
+            season_key=season_key,
+        )
 
     cycle = str(data.get("lectionary_cycle") or "").strip().upper() or "—"
 
@@ -120,7 +121,6 @@ def _build_mass_poster_master(
         logo_path=None,
         community_name=community,
         callout=callout_from_quote(quote_for_poster),
-        include_text_overlays=include_poster_text,
     )
     return compose_poster(PPT_SIZE, content, preset="gfcc_flat")
 
@@ -133,7 +133,7 @@ def generate_primary_openai_posters(
     output_stem: str,
     output_dir: Path,
     include_social_exports: bool = False,
-    include_poster_text: bool = True,
+    reuse_existing_hero: bool = False,
     gospel_quote: Optional[str] = None,
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
@@ -150,7 +150,7 @@ def generate_primary_openai_posters(
         date,
         celebrant_name=celebrant_name,
         style=style,
-        include_poster_text=include_poster_text,
+        reuse_existing_hero=reuse_existing_hero,
         gospel_quote=gospel_quote,
         gospel_reference=gospel_reference,
         liturgical_title=liturgical_title,
@@ -171,7 +171,6 @@ def create_mass_poster(
     celebrant_name: Optional[str] = None,
     language: str = "English",
     style: str = "cinematic",
-    include_poster_text: bool = True,
     gospel_quote: Optional[str] = None,
 ) -> dict[str, Path]:
     """
@@ -184,7 +183,6 @@ def create_mass_poster(
         date,
         celebrant_name=celebrant_name,
         style=style,
-        include_poster_text=include_poster_text,
         gospel_quote=gospel_quote,
     )
     _POSTERS_DIR.mkdir(parents=True, exist_ok=True)

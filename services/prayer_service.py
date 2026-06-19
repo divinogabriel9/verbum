@@ -91,6 +91,53 @@ but deliver us from evil.
 <<P>>Deliver us, Lord, we pray, from every evil, graciously grant peace in our days, that, by the help of your mercy, we may be always free from sin and safe from all distress, as we await the blessed hope and the coming of our Savior, Jesus Christ.
 
 <<A>>For the kingdom, the power, and the glory are yours now and for ever.""",
+    "our_father_malay": """<<A>>Bapa kami yang di syurga,
+dikuduskanlah nama-Mu,
+datanglah kerajaan-Mu,
+jadilah kehendak-Mu,
+di atas bumi seperti di dalam syurga.
+Berilah kami rezeki pada hari ini,
+dan ampunilah kesalahan kami,
+seperti kami mengampuni orang yang bersalah kepada kami.
+Dan janganlah masukkan kami ke dalam pencubaan,
+tetapi lepaskanlah kami daripada yang jahat.
+
+<<A>>Kerana Engkaulah Raja yang mulia dan berkuasa, untuk selama-lamanya. Amin.""",
+    "our_father_tagalog": """<<A>>Ama namin, sumasalangit ka,
+sambahin ang ngalan mo.
+Mapasaamin ang kaharian mo.
+Sundin ang loob mo,
+dito sa lupa para nang sa langit.
+Bigyan mo kami ngayon ng aming kakanin sa araw-araw.
+At patawarin mo kami sa aming mga sala,
+para nang pagpapatawad namin sa nagkakasala sa amin.
+At huwag mo kaming ipahintulot sa tukso,
+at iadya mo kami sa lahat ng masama.
+
+<<A>>Sapagkat iyo ang kaharian, at ang kapangyarihan, at ang kapurihan, ngayon at magpakailanman. Amen.""",
+    "our_father_visaya": """<<A>>Amahan namo nga anaa sa mga langit,
+pagdaygon ang imong ngalan.
+Umabot kanamo ang imong gingharian.
+Matuman ang imong pagbuot,
+dinhi sa yuta maingon sa langit.
+Ang kalan-on namo sa matag adlaw, ihatag kanamo karong adlawa.
+Ug pasayloa kami sa among mga sala,
+ingon nga nagapasaylo kami sa mga nakasala kanamo.
+Ug dili mo kami itugyan sa mga panulay,
+hinonoa luwasa kami sa dautan.
+
+<<A>>Kay imo ang gingharian, ug ang gahum, ug ang himaya, karon ug sa walay katapusan. Amen.""",
+    "our_father_korean": """<<A>>하늘에 계신 우리 아버지,
+아버지의 이름이 거룩히 빛나시며
+아버지의 나라가 오시며
+아버지의 뜻이 하늘에서와 같이 땅에서도 이루어지소서.
+오늘 저희에게 일용할 양식을 주시고
+저희에게 잘못한 이를 저희가 용서하오니
+저희 죄를 용서하시고
+저희를 유혹에 빠지지 않게 하시고
+악에서 구하소서.
+
+<<A>>주님께 나라와 권능과 영광이 영원히 있나이다. 아멘.""",
     "holy_holy": """<<A>>Holy, Holy, Holy Lord God of hosts.
 Heaven and earth are full of your glory.
 Hosanna in the highest.
@@ -121,6 +168,17 @@ _ALIASES: Final[dict[str, str]] = {
     "holyholy": "holy_holy",
     "mystery": "mystery_of_faith",
     "agnus": "lamb_of_god",
+    "our_father_english": "our_father",
+}
+
+_OUR_FATHER_LANGS: Final[dict[str, str]] = {
+    "english": "our_father",
+    "malay": "our_father_malay",
+    "tagalog": "our_father_tagalog",
+    "visaya": "our_father_visaya",
+    "cebuano": "our_father_visaya",
+    "bisaya": "our_father_visaya",
+    "korean": "our_father_korean",
 }
 
 
@@ -132,6 +190,17 @@ def get_prayer(name: str) -> str:
     key = (name or "").strip().lower().replace(" ", "_").replace("-", "_")
     key = _ALIASES.get(key, key)
     return _PRAYERS.get(key, f"<<D>>Unknown prayer key: {name}\n<<D>>Use get_prayer_keys() for valid names.")
+
+
+def get_our_father(choice: str = "english") -> str:
+    """
+    Return the marked Our Father text for the requested language.
+    Accepts: english | malay | tagalog | visaya (cebuano/bisaya) | korean.
+    Falls back to English for unknown values.
+    """
+    lang = (choice or "").strip().lower().replace("-", "_").replace(" ", "_")
+    key = _OUR_FATHER_LANGS.get(lang, "our_father")
+    return _PRAYERS.get(key, _PRAYERS["our_father"])
 
 
 def get_prayer_keys() -> tuple[str, ...]:

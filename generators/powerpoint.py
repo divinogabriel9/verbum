@@ -33,7 +33,7 @@ from services.mass_text_format import (
     pick_hymn_lyrics_for_slides,
     strip_reading_verse_markers,
 )
-from services.prayer_service import get_prayer
+from services.prayer_service import get_our_father, get_prayer
 from services.prayer_templates import PENITENTIAL_ACT
 from services.responsorial_reading import responsorial_section_title
 from . import gfcc_flow_content as GFCC
@@ -1500,6 +1500,15 @@ def _normalize_creed_choice(choice: str) -> str:
     return "nicene"
 
 
+def _normalize_our_father_choice(choice: str) -> str:
+    c = (choice or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if c in ("cebuano", "bisaya"):
+        return "visaya"
+    if c in ("english", "malay", "tagalog", "visaya", "korean"):
+        return c
+    return "english"
+
+
 def _apostles_creed_template_path() -> Optional[Path]:
     path = _PROJECT_ROOT / "data" / "reference" / _APOSTLES_CREED_TEMPLATE_FILENAME
     if path.is_file():
@@ -1800,6 +1809,102 @@ def _add_marked_chunked(prs: Presentation, footer: str, marked: str, theme: Slid
     for i, ch in enumerate(chunks):
         foot = footer if len(chunks) == 1 else f"{footer} ({i + 1}/{len(chunks)})"
         _add_marked_slide(prs, foot, ch, theme)
+
+
+def _is_wide_char(ch: str) -> bool:
+    """True for CJK / fullwidth glyphs that occupy roughly double Latin width."""
+    o = ord(ch)
+    return (
+        0x1100 <= o <= 0x115F  # Hangul Jamo
+        or 0x2E80 <= o <= 0xA4CF  # CJK radicals .. Yi
+        or 0xAC00 <= o <= 0xD7A3  # Hangul syllables
+        or 0xF900 <= o <= 0xFAFF  # CJK compatibility ideographs
+        or 0xFF00 <= o <= 0xFF60  # fullwidth forms
+    )
+
+
+def _rite_text_width_units(text: str) -> float:
+    return float(sum(2 if _is_wide_char(c) else 1 for c in text))
+
+
+def _fit_rite_font_pt(
+    items: List[Tuple[str, str]],
+    *,
+    strip_all: bool,
+    body_h: float,
+    max_pt: float = _SLIDE_TEXT_PT,
+    min_pt: float = 20.0,
+) -> float:
+    """Largest font (<= rite default) that fits all lines on one slide.
+
+    Width model: a glyph advances ~0.55 em on average; CJK glyphs count as
+    two width units (see ``_rite_text_width_units``). Wide-format slides are
+    20in across, so this avoids over-shrinking text into a narrow column.
+    """
+    usable_w_in = _length_to_inches(SLIDE_WIDTH - 2 * MARGIN_SIDE) * 0.96
+    for font_pt in range(int(max_pt), int(min_pt) - 1, -1):
+        line_h = _rite_line_height_inches(font_pt)
+        spacing = (font_pt * 0.14 + 4) / 72.0
+        em_in = font_pt / 72.0
+        cpl = max(1.0, usable_w_in / (em_in * 0.55))
+        total = 0.0
+        for role, line in items:
+            text = _rite_display_line(role, line, strip_all=strip_all)
+            wrapped = max(1, math.ceil(_rite_text_width_units(text) / cpl))
+            total += wrapped * line_h + spacing
+        if total <= body_h:
+            return float(font_pt)
+    return float(min_pt)
+
+
+def _add_our_father_slide(prs: Presentation, footer: str, marked: str, theme: SlideTheme) -> None:
+    """Render the complete Our Father on a single slide, auto-fitting the font."""
+    marked = _strip_marked_rubrics(marked)
+    if not _marked_has_projectable_content(marked):
+        return
+    items = [(r, ln) for r, ln in _parse_marked_lines(marked) if r != "direction"]
+    if not items:
+        return
+
+    strip_all = _suppress_all_role_prefix(footer)
+    body_h = _marked_body_height_inches()
+    font_pt = _fit_rite_font_pt(items, strip_all=strip_all, body_h=body_h)
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _apply_slide_branding(slide, theme)
+    lx, top, w = MARGIN_SIDE, _content_top(), SLIDE_WIDTH - 2 * MARGIN_SIDE
+    box_h = SLIDE_HEIGHT - top - Inches(1.1)
+
+    box = slide.shapes.add_textbox(lx, top, w, box_h)
+    tf = box.text_frame
+    _prep_tf(tf)
+    tf.clear()
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+
+    space_after = Pt(max(2.0, font_pt * 0.14))
+    first = True
+    for role, line in items:
+        p = tf.paragraphs[0] if first else tf.add_paragraph()
+        first = False
+        if role == "priest":
+            p.text = f"Priest: {line}"
+            _style_para(p, size_pt=font_pt, color=theme.emphasis, bold=True)
+            p.space_before = Pt(4)
+        elif role == "all":
+            p.text = line if strip_all else f"All: {line}"
+            _style_para(p, size_pt=font_pt, color=theme.primary, bold=True)
+            p.space_before = Pt(4)
+        elif role == "hymn":
+            p.text = line
+            _style_para(p, size_pt=font_pt, color=theme.primary, bold=True)
+        else:
+            p.text = line
+            _style_para(p, size_pt=font_pt, color=theme.primary, bold=False)
+        p.alignment = PP_ALIGN.CENTER
+        p.space_after = space_after
+
+    _add_community_footer(slide, footer, theme)
 
 
 # Mass divider poster (GFCC layout — rounded panels, season-themed palette)
@@ -2884,6 +2989,7 @@ def _try_library_hymn(
     hymn_typography: Optional[Mapping[str, Any]] = None,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     hymn_lyrics_layout: str = "single",
+    hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> bool:
     h = get_hymn(section, hymn_id)
     if not h:
@@ -2897,6 +3003,13 @@ def _try_library_hymn(
             ov = sec_block.get(hymn_id) or sec_block.get(str(hymn_id))
             if ov:
                 lyrics = pick_hymn_lyrics_for_slides(library_lyrics, str(ov))
+    layout = hymn_lyrics_layout
+    if hymn_layout_overrides:
+        layout_block = hymn_layout_overrides.get(section)
+        if isinstance(layout_block, Mapping):
+            ov_layout = layout_block.get(hymn_id) or layout_block.get(str(hymn_id))
+            if ov_layout:
+                layout = str(ov_layout)
     _add_hymn_lyric_slides(
         prs,
         footer,
@@ -2905,7 +3018,7 @@ def _try_library_hymn(
         theme,
         hymn_typography=hymn_typography,
         section=section,
-        hymn_lyrics_layout=hymn_lyrics_layout,
+        hymn_lyrics_layout=layout,
     )
     return True
 
@@ -3280,7 +3393,9 @@ def generate_mass_ppt(
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
+    our_father_choice: str = "english",
     hymn_lyrics_layout: str = "single",
+    hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
     global _ACTIVE_FONT, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template, _kyrie_template, _lotw_title_template, _gospel_acclamation_template, _apostles_creed_template, _nicene_creed_template
     _reference_mass_deck = None
@@ -3334,7 +3449,7 @@ def generate_mass_ppt(
 
     ent_id = str(sel.get("entrance") or "").strip()
     if not ent_id or not _try_library_hymn(
-        prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
+        prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         _add_marked_slide(
             prs,
@@ -3401,7 +3516,7 @@ def generate_mass_ppt(
     # --- Liturgy of the Eucharist ---
     off_id = str(sel.get("offertory") or "").strip()
     if not off_id or not _try_library_hymn(
-        prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
+        prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         _add_marked_slide(
             prs,
@@ -3419,7 +3534,7 @@ def generate_mass_ppt(
     _add_marked_slide(prs, "The Eucharistic Prayer", get_prayer("mystery_of_faith"), theme)
     _add_section_card(prs, "LITURGY OF\nTHE EUCHARIST", "Liturgy of the Eucharist", theme)
     _add_marked_slide(prs, "Great Amen", GFCC.GREAT_AMEN, theme)
-    _add_marked_chunked(prs, "Our Father", get_prayer("our_father"), theme)
+    _add_our_father_slide(prs, "Our Father", get_our_father(_normalize_our_father_choice(our_father_choice)), theme)
     _add_divider_cover(prs, **ctx)
     _add_sign_of_peace_slide(prs, theme)
     _add_lamb_of_god_slide(prs, theme)
@@ -3429,11 +3544,11 @@ def generate_mass_ppt(
     c2 = str(sel.get("communion_2") or "").strip()
     comm_ok = False
     if c1 and _try_library_hymn(
-        prs, "communion", c1, "Communion (1)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
+        prs, "communion", c1, "Communion (1)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         comm_ok = True
     if c2 and _try_library_hymn(
-        prs, "communion", c2, "Communion (2)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
+        prs, "communion", c2, "Communion (2)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         comm_ok = True
     if not comm_ok:
@@ -3446,7 +3561,7 @@ def generate_mass_ppt(
     med_id = str(sel.get("meditation") or "").strip()
     if med_id:
         _try_library_hymn(
-            prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
+            prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
         )
     extra_sections = sel.get("extra_sections") or []
     if isinstance(extra_sections, list):
@@ -3465,6 +3580,7 @@ def generate_mass_ppt(
                     hymn_typography=hymn_typography,
                     hymn_lyric_overrides=hymn_lyric_overrides,
                     hymn_lyrics_layout=hymn_lyrics_layout,
+                    hymn_layout_overrides=hymn_layout_overrides,
                 )
     _add_marked_slide(prs, "The Communion Rite", GFCC.POST_COMMUNION, theme)
     _add_divider_cover(prs, **ctx)
@@ -3489,7 +3605,7 @@ def generate_mass_ppt(
     _add_marked_slide(prs, "Final Blessing", GFCC.FINAL_BLESSING, theme)
     rec_id = str(sel.get("recessional") or "").strip()
     if not rec_id or not _try_library_hymn(
-        prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout
+        prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         _add_marked_slide(
             prs,

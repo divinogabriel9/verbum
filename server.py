@@ -90,7 +90,11 @@ from services.image_generation_quota import (
 )
 from services.input_limits import public_limits
 from services import input_limits as L
-from services.input_validation import check_hymn_overrides, check_string_list
+from services.input_validation import (
+    check_hymn_layout_overrides,
+    check_hymn_overrides,
+    check_string_list,
+)
 from services.private_files import (
     media_file_url,
     media_type_for,
@@ -484,9 +488,9 @@ class GenerateBody(BaseModel):
         max_length=L.AI_POSTER_STYLE,
         description="OpenAI hero art style key from data/styles.json (5 presets).",
     )
-    include_poster_text: bool = Field(
-        True,
-        description="When OpenAI poster is enabled, overlay title, quote, and celebrant on the hero.",
+    reuse_existing_poster: bool = Field(
+        False,
+        description="Reuse the cached hero art for this date+style instead of re-calling the AI image API.",
     )
     community_name: Optional[str] = Field(None, max_length=L.CHURCH_NAME)
     songs: Optional[SongSelection] = None
@@ -528,9 +532,17 @@ class GenerateBody(BaseModel):
         None,
         description="Per-section hymn lyric text overrides: { entrance: { song_id: lyrics } }.",
     )
+    hymn_layout_overrides: Optional[dict[str, dict[str, str]]] = Field(
+        None,
+        description="Per-song hymn slide layout overrides: { entrance: { song_id: 'single'|'dual' } }.",
+    )
     creed_choice: str = Field(
         "nicene",
         description="Creed for the Mass deck: nicene | apostles (only one is included).",
+    )
+    our_father_choice: str = Field(
+        "english",
+        description="Our Father language: english | malay | tagalog | visaya | korean.",
     )
     hymn_lyrics_layout: str = Field(
         "single",
@@ -552,6 +564,7 @@ class GenerateBody(BaseModel):
             item_max_len=L.FILE_BASENAME,
         ) or []
         self.hymn_lyric_overrides = check_hymn_overrides(self.hymn_lyric_overrides)
+        self.hymn_layout_overrides = check_hymn_layout_overrides(self.hymn_layout_overrides)
         return self
 
 
@@ -714,6 +727,23 @@ def api_image_quota(
 ) -> dict[str, Any]:
     subject = resolve_subject(session, request)
     return get_quota_status(subject)
+
+
+@app.get("/api/poster-exists")
+def api_poster_exists(date: str, style: str = "cinematic") -> dict[str, bool]:
+    """Report whether a cached AI hero already exists for this date + style.
+
+    Used by the UI to offer reusing a previously generated Sunday poster
+    instead of re-calling (and re-paying for) the AI image API.
+    """
+    from services.ai_styles import resolve_ai_image_style
+
+    iso = (date or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", iso):
+        return {"exists": False}
+    resolved_style = resolve_ai_image_style((style or "cinematic").strip())
+    hero_path = _OUTPUT_DIR / "images" / f"{iso}_{resolved_style}_hero.png"
+    return {"exists": hero_path.is_file()}
 
 
 def _enforce_ai_image_quota(
@@ -1356,7 +1386,7 @@ def api_generate(
             include_ai_mass_poster=body.include_ai_mass_poster,
             ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
             ai_poster_style=body.ai_poster_style.strip() or "cinematic",
-            include_poster_text=body.include_poster_text,
+            reuse_existing_poster=body.reuse_existing_poster,
             community_name=body.community_name.strip() if body.community_name else None,
             song_selections=song_map,
             custom_theme=body.custom_theme,
@@ -1378,7 +1408,9 @@ def api_generate(
             include_church_name=body.include_church_name,
             hymn_lyric_overrides=body.hymn_lyric_overrides,
             creed_choice=body.creed_choice,
+            our_father_choice=body.our_father_choice,
             hymn_lyrics_layout=body.hymn_lyrics_layout,
+            hymn_layout_overrides=body.hymn_layout_overrides,
         )
     finally:
         for p in temp_assets:
@@ -1535,7 +1567,9 @@ def api_regenerate_pptx(
             include_church_name=body.include_church_name,
             hymn_lyric_overrides=body.hymn_lyric_overrides,
             creed_choice=body.creed_choice,
+            our_father_choice=body.our_father_choice,
             hymn_lyrics_layout=body.hymn_lyrics_layout,
+            hymn_layout_overrides=body.hymn_layout_overrides,
         )
     finally:
         for p in temp_assets:
