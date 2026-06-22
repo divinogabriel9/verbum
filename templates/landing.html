@@ -21,105 +21,12 @@
     } catch (_e) { /* ignore */ }
   })();
 </script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <!-- Same type family as the LiturgyFlow app: Inter (UI/headlines) + Playfair Display (script accent) -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&amp;family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500;1,600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "tertiary-fixed": "#d9e2ff",
-                    "on-tertiary-fixed-variant": "#00419c",
-                    "surface": "#1e100e",
-                    "surface-dim": "#1e100e",
-                    "on-background": "#f9dcd8",
-                    "tertiary-container": "#004aaf",
-                    "surface-container-highest": "#42312e",
-                    "inverse-on-surface": "#3d2c2a",
-                    "surface-tint": "#ffb4a9",
-                    "secondary-fixed-dim": "#c6c6c7",
-                    "on-surface-variant": "#e3beb9",
-                    "inverse-surface": "#f9dcd8",
-                    "on-secondary-container": "#b4b5b5",
-                    "background": "#1e100e",
-                    "on-tertiary-fixed": "#001945",
-                    "on-error-container": "#ffdad6",
-                    "surface-variant": "#42312e",
-                    "inverse-primary": "#b7221b",
-                    "on-tertiary-container": "#aac1ff",
-                    "primary": "#ffb4a9",
-                    "surface-container-low": "#271816",
-                    "on-primary-fixed": "#410001",
-                    "surface-container-lowest": "#180b09",
-                    "error-container": "#93000a",
-                    "surface-container-high": "#372624",
-                    "primary-fixed": "#ffdad5",
-                    "on-secondary-fixed-variant": "#454747",
-                    "on-secondary-fixed": "#1a1c1c",
-                    "muted-crimson": "rgba(161, 15, 13, 0.15)",
-                    "primary-container": "#a10f0d",
-                    "surface-black": "#0A0A0A",
-                    "secondary": "#c6c6c7",
-                    "on-primary-fixed-variant": "#930005",
-                    "on-primary-container": "#ffada2",
-                    "on-secondary": "#2f3131",
-                    "outline-variant": "#5b403d",
-                    "surface-container": "#2b1c1a",
-                    "on-surface": "#f9dcd8",
-                    "surface-bright": "#473532",
-                    "on-error": "#690005",
-                    "secondary-fixed": "#e2e2e2",
-                    "deep-charcoal": "#121212",
-                    "error": "#ffb4ab",
-                    "tertiary": "#b0c6ff",
-                    "on-primary": "#690002",
-                    "primary-fixed-dim": "#ffb4a9",
-                    "soft-white": "#F5F5F7",
-                    "tertiary-fixed-dim": "#b0c6ff",
-                    "secondary-container": "#454747",
-                    "on-tertiary": "#002c6f",
-                    "outline": "#aa8984"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
-            },
-            "spacing": {
-                    "section-gap": "160px",
-                    "container-max": "1440px",
-                    "gutter": "24px",
-                    "margin-edge": "40px",
-                    "unit": "8px"
-            },
-            "fontFamily": {
-                    "body-md": ["Inter", "system-ui", "sans-serif"],
-                    "label-caps": ["Inter", "system-ui", "sans-serif"],
-                    "headline-md": ["Inter", "system-ui", "sans-serif"],
-                    "body-lg": ["Inter", "system-ui", "sans-serif"],
-                    "headline-lg": ["Inter", "system-ui", "sans-serif"],
-                    "headline-lg-mobile": ["Inter", "system-ui", "sans-serif"],
-                    "display-xl": ["Inter", "system-ui", "sans-serif"],
-                    "script": ["Playfair Display", "Georgia", "serif"]
-            },
-            "fontSize": {
-                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
-                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "500"}],
-                    "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
-                    "body-lg": ["20px", {"lineHeight": "32px", "fontWeight": "400"}],
-                    "headline-lg": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
-                    "headline-lg-mobile": ["40px", {"lineHeight": "44px", "fontWeight": "700"}],
-                    "display-xl": ["120px", {"lineHeight": "110px", "letterSpacing": "-0.04em", "fontWeight": "800"}]
-            }
-          },
-        },
-      }
-    </script>
+<!-- Prebuilt Tailwind utilities (regenerate with: npm run build:landing-css) -->
+<link rel="stylesheet" href="/static/css/landing.css?v=1"/>
 <style>
         body { font-family: "Inter", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
         .material-symbols-outlined {

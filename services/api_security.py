@@ -269,7 +269,7 @@ class AuthGuardMiddleware(BaseHTTPMiddleware):
 # talks to the Supabase REST/Auth host, so those origins are allowlisted.
 # 'unsafe-inline' is required for the inline <script>/<style> blocks in the
 # templates; tighten with nonces if those are refactored out.
-def _build_csp(*, landing: bool = False) -> str:
+def _build_csp() -> str:
     from services.auth_config import supabase_url
 
     connect = [
@@ -289,17 +289,6 @@ def _build_csp(*, landing: bool = False) -> str:
         "https://ewtn-sgrewind.streamguys1.com",
         "https://ewtn-ice.streamguys1.com",
     ]
-    # The public marketing landing page (templates/landing.html) renders with the
-    # Tailwind Play CDN, whose runtime compiler needs the cdn origin plus
-    # 'unsafe-eval'. We only relax script-src for that page; the app shell keeps
-    # the strict policy.
-    if landing:
-        script_src = (
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
-            "https://cdn.jsdelivr.net https://cdn.tailwindcss.com"
-        )
-    else:
-        script_src = "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net"
     return "; ".join(
         [
             "default-src 'self'",
@@ -310,22 +299,17 @@ def _build_csp(*, landing: bool = False) -> str:
             "img-src 'self' data: blob: https:",
             "font-src 'self' https://fonts.gstatic.com data:",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            script_src,
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "connect-src " + " ".join(dict.fromkeys(connect)),
             "media-src " + " ".join(dict.fromkeys(media)),
         ]
     )
 
 
-# Public pages that render with the Tailwind Play CDN and need the relaxed CSP.
-_LANDING_PATHS: frozenset[str] = frozenset({"/"})
-
-
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     def __init__(self, app) -> None:
         super().__init__(app)
         self._csp = _build_csp()
-        self._csp_landing = _build_csp(landing=True)
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -338,8 +322,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Permissions-Policy",
             "camera=(), microphone=(), geolocation=(), interest-cohort=()",
         )
-        csp = self._csp_landing if request.url.path in _LANDING_PATHS else self._csp
-        response.headers.setdefault("Content-Security-Policy", csp)
+        response.headers.setdefault("Content-Security-Policy", self._csp)
         response.headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")
         response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
         if request.url.scheme == "https":

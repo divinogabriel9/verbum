@@ -6,3 +6,5 @@ __pycache__/
 data/lectionary.sqlite
 data/uploads/
 .cursor/design-references/_vendor/
+node_modules/
+npm-debug.log*

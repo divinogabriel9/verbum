@@ -1,0 +1,13 @@
+{
+  "name": "liturgyflow-web-assets",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Front-end asset build for the LiturgyFlow marketing landing page.",
+  "scripts": {
+    "build:landing-css": "tailwindcss -c build/tailwind/landing.config.js -i build/tailwind/landing.input.css -o static/css/landing.css --minify",
+    "watch:landing-css": "tailwindcss -c build/tailwind/landing.config.js -i build/tailwind/landing.input.css -o static/css/landing.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
