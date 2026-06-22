@@ -6792,6 +6792,30 @@
       color: var(--ink);
       cursor: pointer;
     }
+    .flow-divider-poster-picks {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+      margin-top: var(--space-3);
+    }
+    @media (max-width: 640px) {
+      .flow-divider-poster-picks { grid-template-columns: minmax(0, 1fr); }
+    }
+    .flow-divider-poster-picks .field { min-width: 0; }
+    .flow-poster-thumb {
+      margin-top: 8px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--surface-muted, rgba(0,0,0,0.04));
+      aspect-ratio: 16 / 9;
+    }
+    .flow-poster-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
     .flow-setup-media-note {
       margin: var(--space-2) 0 0;
       text-align: center;
@@ -8556,6 +8580,110 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
+    }
+    /* Theme Lab — single Theme 1 card */
+    .theme-lab-layout { display: block; }
+    .theme-one-card { max-width: 760px; }
+    .theme-one-head { align-items: flex-start; gap: 12px; }
+    .theme-one-badge {
+      flex: none;
+      align-self: flex-start;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      color: #1a1200;
+      background: #ffb800;
+      white-space: nowrap;
+    }
+    .theme-one-palette {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0 4px;
+    }
+    .theme-one-swatch {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      padding: 10px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .theme-one-swatch em {
+      font-style: normal;
+      font-size: 0.62rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      opacity: 0.78;
+    }
+    @media (max-width: 560px) {
+      .theme-one-palette { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .theme-one-subhead {
+      margin: 18px 0 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .theme-one-fonts {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .theme-one-font {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px;
+      background: var(--surface-solid);
+    }
+    .theme-one-font > img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+      border: 1px solid var(--line);
+    }
+    .theme-one-font__meta strong {
+      display: block;
+      font-size: 0.95rem;
+    }
+    .theme-one-font__meta strong span {
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .theme-one-font__use {
+      margin: 3px 0 2px;
+      font-size: 0.82rem;
+      color: var(--ink);
+    }
+    .theme-one-font__sizes {
+      margin: 0;
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .theme-one-font__sizes code {
+      font-size: 0.72rem;
+      padding: 1px 5px;
+      border-radius: 5px;
+      background: var(--surface-muted, rgba(0,0,0,0.05));
+    }
+    @media (max-width: 560px) {
+      .theme-one-font { grid-template-columns: minmax(0, 1fr); }
     }
     .theme-card-wrap {
       border: 1px solid var(--card-border);
@@ -11826,68 +11954,60 @@ Lord, hear our prayer</textarea>
       </section>
 
       <section class="page" id="theme-page" data-route="/design/theme-lab">
-        <div class="workspace theme-workspace">
-          <section class="panel">
-            <div class="panel-head">
+        <div class="theme-lab-layout">
+          <section class="panel theme-one-card">
+            <div class="panel-head theme-one-head">
               <div>
-                <h3>Theme Grid</h3>
-                <p>Interactive cards apply fonts, color systems, and preview styling immediately.</p>
+                <h3>Theme 1 · Liturgy Flow</h3>
+                <p>The app's built-in deck theme, applied to every generated PowerPoint by default. <strong>Every slide sits on a black background with amber #FFB800 highlights</strong> — only the Mass divider background follows the liturgical season color, and AI posters are untouched.</p>
               </div>
+              <span class="theme-one-badge">Default · Active</span>
             </div>
-            <div class="theme-grid" id="theme-grid"></div>
-            <div class="field" style="margin-top:14px;">
-              <label for="saved-theme-dropdown">Additional saved themes</label>
-              <select id="saved-theme-dropdown">
-                <option value="">Choose a saved preset to apply…</option>
-              </select>
-            </div>
-          </section>
 
-          <aside class="panel theme-member-lock">
-            <div class="panel-head">
-              <div>
-                <h3>Custom Theme Builder</h3>
-                <p>Choose real colors and typography, preview instantly, then save the theme locally.</p>
-              </div>
+            <div class="theme-one-palette" aria-label="Theme 1 colors">
+              <span class="theme-one-swatch" style="background:#000000;color:#ffffff"><em>Background</em>#000000</span>
+              <span class="theme-one-swatch" style="background:#FFB800;color:#000000"><em>Highlight</em>#FFB800</span>
+              <span class="theme-one-swatch" style="background:#F0FDF4;color:#000000"><em>Body text</em>#F0FDF4</span>
+              <span class="theme-one-swatch" style="background:linear-gradient(135deg,#211733,#10251c,#3a1f1f);color:#ffffff"><em>Divider</em>Season</span>
             </div>
-            <div class="field">
-              <label for="custom-theme-name">Theme name</label>
-              <input type="text" id="custom-theme-name" value="Parish Evening" maxlength="80" />
-            </div>
-            <div class="builder-grid">
-              <div class="color-field">
-                <input type="color" id="theme-bg" value="#182033" />
-                <div><label for="theme-bg-text">Background</label><input type="text" id="theme-bg-text" value="#182033" maxlength="7" /></div>
-              </div>
-              <div class="color-field">
-                <input type="color" id="theme-primary" value="#f8c66a" />
-                <div><label for="theme-primary-text">Primary</label><input type="text" id="theme-primary-text" value="#f8c66a" maxlength="7" /></div>
-              </div>
-              <div class="color-field">
-                <input type="color" id="theme-accent" value="#f15f3a" />
-                <div><label for="theme-accent-text">Accent</label><input type="text" id="theme-accent-text" value="#f15f3a" maxlength="7" /></div>
-              </div>
-              <div class="color-field">
-                <input type="color" id="theme-text" value="#ffffff" />
-                <div><label for="theme-text-text">Text</label><input type="text" id="theme-text-text" value="#ffffff" maxlength="7" /></div>
-              </div>
-            </div>
-            <div class="field" style="margin-top:14px;">
-              <label for="theme-font">Font selector</label>
-              <select id="theme-font">
-                <option value="Inter, Segoe UI, sans-serif">Inter / modern sans</option>
-                <option value="Georgia, Times New Roman, serif">Georgia / classic serif</option>
-                <option value="Trebuchet MS, Segoe UI, sans-serif">Trebuchet / warm sans</option>
-                <option value="Palatino, Book Antiqua, serif">Palatino / formal serif</option>
-                <option value="Arial Black, Arial, sans-serif">Arial Black / bold display</option>
-              </select>
-            </div>
-            <div class="actions">
-              <button type="button" class="primary" id="btn-save-theme">Save custom theme</button>
-              <button type="button" class="secondary" id="btn-preview-custom-theme">Open preview</button>
-            </div>
+
+            <h4 class="theme-one-subhead">Typography — fonts used inside this theme</h4>
+            <ul class="theme-one-fonts">
+              <li class="theme-one-font">
+                <img src="/static/images/theme/georgia.png" alt="Georgia Bold type specimen showing uppercase and lowercase letters" loading="lazy" />
+                <div class="theme-one-font__meta">
+                  <strong>Georgia <span>Bold</span></strong>
+                  <p class="theme-one-font__use">Section tags &amp; kickers — e.g. “Liturgy of the Word”.</p>
+                  <p class="theme-one-font__sizes">36–50&nbsp;pt · amber highlight <code>#FFB800</code></p>
+                </div>
+              </li>
+              <li class="theme-one-font">
+                <img src="/static/images/theme/arial.png" alt="Arial type specimen showing uppercase and lowercase letters" loading="lazy" />
+                <div class="theme-one-font__meta">
+                  <strong>Arial <span>Regular / Bold</span></strong>
+                  <p class="theme-one-font__use">Dialogue &amp; readings — priest and assembly lines.</p>
+                  <p class="theme-one-font__sizes">55–100&nbsp;pt · off-white <code>#F0FDF4</code></p>
+                </div>
+              </li>
+              <li class="theme-one-font">
+                <img src="/static/images/theme/poppins.png" alt="Poppins Bold type specimen showing uppercase and lowercase letters" loading="lazy" />
+                <div class="theme-one-font__meta">
+                  <strong>Poppins <span>Bold</span></strong>
+                  <p class="theme-one-font__use">Hymn &amp; lyric slides, set ALL CAPS on black.</p>
+                  <p class="theme-one-font__sizes">66–75&nbsp;pt · white / amber chorus</p>
+                </div>
+              </li>
+              <li class="theme-one-font">
+                <img src="/static/images/theme/arialblack.png" alt="Arial Black type specimen showing uppercase and lowercase letters" loading="lazy" />
+                <div class="theme-one-font__meta">
+                  <strong>Arial Black</strong>
+                  <p class="theme-one-font__use">Emphasis — psalm response &amp; collection total.</p>
+                  <p class="theme-one-font__sizes">70–100&nbsp;pt · off-white <code>#F0FDF4</code></p>
+                </div>
+              </li>
+            </ul>
             <p class="status" id="theme-status" aria-live="polite"></p>
-          </aside>
+          </section>
         </div>
 
         <section class="tool-card">
@@ -11905,6 +12025,20 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="slide-footer"><span>Good Shepherd Community</span><span>Entrance Hymn</span></div>
           </div>
+        </section>
+
+        <section class="tool-card">
+          <div class="panel-head">
+            <div>
+              <h3>Actual deck preview</h3>
+              <p>Renders your most recently generated PowerPoint to images so you can verify the exact colors and alignment of every slide — this is the real deck, not a simulation. Generate a Mass first, then refresh.</p>
+            </div>
+            <div class="actions">
+              <button type="button" class="primary" id="btn-ppt-preview-refresh">Render actual deck</button>
+            </div>
+          </div>
+          <p class="status" id="ppt-preview-status" aria-live="polite"></p>
+          <div class="ppt-preview-grid" id="ppt-preview-grid" hidden></div>
         </section>
       </section>
 
@@ -12115,6 +12249,11 @@ Lord, hear our prayer</textarea>
                       </div>
                     </div>
                   </div>
+                  <div class="field flow-first-reading-override">
+                    <label for="flow-reading1-custom">Custom first reading <span class="muted">(optional — use if the first reading didn't load)</span></label>
+                    <input type="text" id="flow-reading1-ref-custom" maxlength="120" placeholder="Reference, e.g. 2 Kings 4:8-11, 14-16a" />
+                    <textarea id="flow-reading1-custom" maxlength="8000" rows="3" placeholder="Paste the first reading text to override the auto-fetched body."></textarea>
+                  </div>
                 </article>
 
               </div>
@@ -12162,6 +12301,28 @@ Lord, hear our prayer</textarea>
                         <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI</label>
                         <label><input type="checkbox" id="flow-use-gemini-poster" /> Gemini</label>
                       </div>
+                    </div>
+                  </div>
+                  <div class="flow-setup-row flow-divider-poster-picks">
+                    <div class="field">
+                      <label for="flow-lotw-poster">Liturgy of the Word poster</label>
+                      <select id="flow-lotw-poster">
+                        <option value="lotw1">Design 1 · Warm beige</option>
+                        <option value="lotw2">Design 2 · Light, cross accents</option>
+                        <option value="lotw3">Design 3 · Spotlight (dark)</option>
+                        <option value="lotw4">Design 4 · Soft light</option>
+                      </select>
+                      <div class="flow-poster-thumb"><img id="flow-lotw-poster-thumb" src="/static/images/posters/lotw1.png" alt="Liturgy of the Word divider poster preview" loading="lazy" /></div>
+                    </div>
+                    <div class="field">
+                      <label for="flow-lote-poster">Liturgy of the Eucharist poster</label>
+                      <select id="flow-lote-poster">
+                        <option value="lote1">Design 1 · Warm beige</option>
+                        <option value="lote2">Design 2 · Light, cross accents</option>
+                        <option value="lote3">Design 3 · Spotlight (dark)</option>
+                        <option value="lote4">Design 4 · Soft light</option>
+                      </select>
+                      <div class="flow-poster-thumb"><img id="flow-lote-poster-thumb" src="/static/images/posters/lote1.png" alt="Liturgy of the Eucharist divider poster preview" loading="lazy" /></div>
                     </div>
                   </div>
                   <p class="flow-setup-media-note">Recommended sizes 16:9 ratio</p>
@@ -12775,26 +12936,6 @@ Lord, hear our prayer</textarea>
       </div>
       <div class="song-preview-panel__body" id="song-preview-body">
         <p class="muted">Select a song with saved lyrics, then choose Preview.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="theme-modal" aria-hidden="true">
-    <div class="modal-box">
-      <div class="panel-head">
-        <div>
-          <h3 id="theme-modal-title">Theme preview</h3>
-          <p>Simulated slide with selected colors and font applied.</p>
-        </div>
-        <button type="button" class="secondary" id="btn-close-theme-modal">Close</button>
-      </div>
-      <div class="slide-preview" id="theme-modal-preview">
-        <div>
-          <div class="slide-kicker">Communion Meditation</div>
-          <h4>Taste and see the goodness of the Lord</h4>
-          <p>A production preview for hymn lyrics, gospel moment slides, dividers, and title pages.</p>
-        </div>
-        <div class="slide-footer"><span>Good Shepherd Community</span><span>Psalm Response</span></div>
       </div>
     </div>
   </div>
@@ -15140,32 +15281,15 @@ Lord, hear our prayer</textarea>
       }
     });
 
+    // Theme 1 is the app's single built-in deck theme ("Liturgy Flow"). The old
+    // theme grid / custom color builder were retired; the generated deck always uses
+    // Theme 1 (fonts + palette live in generators/powerpoint.py). These constants
+    // remain only to keep the live slide preview and theme indicators working.
     const presetThemes = [
-      { id: "advent", name: "Advent Violet", note: "Quiet anticipation with gold hierarchy.", bg: "#211733", primary: "#d8b4fe", accent: "#f8c66a", text: "#ffffff", font: "Georgia, Times New Roman, serif" },
-      { id: "christmas", name: "Christmas Gold", note: "Warm candlelight for feast days.", bg: "#2c1810", primary: "#ffd166", accent: "#ef476f", text: "#fff8e8", font: "Palatino, Book Antiqua, serif" },
-      { id: "lent", name: "Lenten Minimal", note: "Restrained violet and ash tones.", bg: "#1f2430", primary: "#b8a1ff", accent: "#7c3aed", text: "#f3f4f6", font: "Inter, Segoe UI, sans-serif" },
-      { id: "easter", name: "Easter Dawn", note: "Bright white, blue, and sunrise accents.", bg: "#f8fbff", primary: "#2563eb", accent: "#f59e0b", text: "#0f172a", font: "Trebuchet MS, Segoe UI, sans-serif" },
-      { id: "ordinary", name: "Ordinary Green", note: "Fresh green system for weekly use.", bg: "#10251c", primary: "#86efac", accent: "#22c55e", text: "#f0fdf4", font: "Inter, Segoe UI, sans-serif" },
+      { id: "theme1", name: "Theme 1", note: "Liturgy Flow — the built-in deck theme.", bg: "#000000", primary: "#f0fdf4", accent: "#ffb800", text: "#f0fdf4", font: "Arial, Helvetica, sans-serif" },
     ];
     let activeTheme = presetThemes[0];
-    let customThemes = JSON.parse(localStorage.getItem("customThemes") || "[]");
-    try {
-      const savedActiveTheme = JSON.parse(localStorage.getItem("activePptTheme") || "null");
-      if (savedActiveTheme && savedActiveTheme.bg && savedActiveTheme.text) {
-        activeTheme = {
-          id: savedActiveTheme.id || "saved-active-theme",
-          name: savedActiveTheme.name || "Saved Theme",
-          note: savedActiveTheme.note || "Previously selected PPT generation theme.",
-          bg: savedActiveTheme.bg,
-          primary: savedActiveTheme.primary,
-          accent: savedActiveTheme.accent,
-          text: savedActiveTheme.text,
-          font: savedActiveTheme.font || "Calibri, sans-serif",
-        };
-      }
-    } catch (_error) {
-      activeTheme = presetThemes[0];
-    }
+    let customThemes = [];
 
     function pptThemePayload(theme) {
       return {
@@ -15180,13 +15304,14 @@ Lord, hear our prayer</textarea>
 
     function updateThemeIndicators() {
       const activeName = $("active-theme-name");
-      if (activeName) activeName.textContent = activeTheme.name.split(" ")[0];
+      if (activeName) activeName.textContent = activeTheme.name;
       const pptTheme = $("ppt-theme-indicator");
       if (pptTheme) pptTheme.textContent = activeTheme.name;
       localStorage.setItem("activePptTheme", JSON.stringify(activeTheme));
     }
 
     function applyThemeToPreview(el, theme) {
+      if (!el || !theme) return;
       el.style.setProperty("--slide-bg", theme.bg);
       el.style.setProperty("--slide-primary", theme.primary);
       el.style.setProperty("--slide-accent", theme.accent);
@@ -15204,201 +15329,10 @@ Lord, hear our prayer</textarea>
     }
 
     function renderThemeGrid() {
-      const allThemes = presetThemes.concat(customThemes);
-      const ctc = $("custom-theme-count");
-      if (ctc) ctc.textContent = customThemes.length;
-      updateThemeIndicators();
-      const litId = window.__liturgicalPresetId || "";
-      $("theme-grid").innerHTML = allThemes.map((theme) => {
-        const isActive = activeTheme.id === theme.id;
-        const isLit = litId && theme.id === litId;
-        const canDelete = churchMembershipState.is_superadmin && customThemes.some((t) => t.id === theme.id);
-        const canMutate = churchMembershipState.is_superadmin;
-        return (
-          '<div class="theme-card-wrap' + (isActive ? " active" : "") + (isLit ? " lit-match" : "") + '">' +
-            '<button type="button" class="theme-card" data-theme-card="1" data-theme-id="' + theme.id + '">' +
-              '<div class="theme-mini-row" aria-hidden="true">' +
-                '<span class="theme-mini" style="background:' + theme.bg + '">Poster</span>' +
-                '<span class="theme-mini" style="background:' + theme.primary + ';color:' + theme.text + '">Slide</span>' +
-                '<span class="theme-mini" style="background:' + theme.accent + '">Social</span>' +
-              '</div>' +
-              '<div class="theme-swatch">' +
-                '<span style="background:' + theme.bg + '"></span>' +
-                '<span style="background:' + theme.primary + '"></span>' +
-                '<span style="background:' + theme.accent + '"></span>' +
-              '</div>' +
-              '<strong>' + escapeHtml(theme.name) + '</strong>' +
-              '<span>' + escapeHtml(theme.note) + '</span>' +
-            '</button>' +
-            '<div class="theme-card-actions theme-member-lock">' +
-              '<button type="button" class="secondary" data-theme-action="preview" data-theme-id="' + theme.id + '">Preview</button>' +
-              (canMutate ? '<button type="button" class="primary" data-theme-action="apply" data-theme-id="' + theme.id + '">Apply</button>' : "") +
-              (canMutate ? '<button type="button" class="secondary" data-theme-action="customize" data-theme-id="' + theme.id + '">Customize</button>' : "") +
-              (canDelete ? '<button type="button" class="ghost danger-theme-del" data-theme-action="delete" data-theme-id="' + theme.id + '" title="Delete saved preset">Delete</button>' : "") +
-            '</div>' +
-          '</div>'
-        );
-      }).join("");
-      applyThemeToPreview($("theme-live-preview"), activeTheme);
-      const drop = $("saved-theme-dropdown");
-      if (drop) {
-        drop.innerHTML = "<option value=\"\">Choose a saved preset to apply…</option>" +
-          customThemes.map((t) => "<option value=\"" + escapeHtml(t.id) + "\">" + escapeHtml(t.name) + "</option>").join("");
-        refreshVerbumSelect(drop);
-      }
-    }
-
-    function themeFromBuilder() {
-      return {
-        id: "custom-" + Date.now(),
-        name: $("custom-theme-name").value.trim() || "Custom Theme",
-        note: "Saved custom theme from the builder.",
-        bg: $("theme-bg").value,
-        primary: $("theme-primary").value,
-        accent: $("theme-accent").value,
-        text: $("theme-text").value,
-        font: $("theme-font").value,
-      };
-    }
-
-    function syncColorInputs(colorId, textId) {
-      const color = $(colorId);
-      const text = $(textId);
-      color.addEventListener("input", () => {
-        text.value = color.value;
-        activeTheme = themeFromBuilder();
-        updateThemeIndicators();
-        applyThemeToPreview($("theme-live-preview"), activeTheme);
-      });
-      text.addEventListener("input", () => {
-        if (/^#[0-9a-f]{6}$/i.test(text.value.trim())) {
-          color.value = text.value.trim();
-          activeTheme = themeFromBuilder();
-          updateThemeIndicators();
-          applyThemeToPreview($("theme-live-preview"), activeTheme);
-        }
-      });
-    }
-    [["theme-bg", "theme-bg-text"], ["theme-primary", "theme-primary-text"], ["theme-accent", "theme-accent-text"], ["theme-text", "theme-text-text"]].forEach((pair) => syncColorInputs(pair[0], pair[1]));
-    $("theme-font").addEventListener("change", () => {
-      activeTheme = themeFromBuilder();
-      updateThemeIndicators();
-      applyThemeToPreview($("theme-live-preview"), activeTheme);
-    });
-    $("custom-theme-name").addEventListener("input", () => {
-      activeTheme = themeFromBuilder();
-      updateThemeIndicators();
-    });
-
-    $("saved-theme-dropdown").addEventListener("change", (event) => {
-      const id = event.target.value;
-      if (!id) return;
-      if (!guardSuperadminAction()) {
-        event.target.value = "";
-        return;
-      }
-      const theme = customThemes.find((t) => t.id === id);
-      if (!theme) return;
-      activeTheme = Object.assign({}, theme);
-      renderThemeGrid();
-      updateThemeIndicators();
-      applyThemeToPreview($("theme-live-preview"), activeTheme);
-      $("theme-status").textContent = "Applied saved theme " + theme.name + ".";
-      $("theme-status").className = "status ok";
-      event.target.value = "";
-    });
-
-    function applyPresetToBuilder(theme) {
-      const setPair = (c, t, hex) => {
-        if ($(c)) $(c).value = hex;
-        if ($(t)) $(t).value = hex;
-      };
-      setPair("theme-bg", "theme-bg-text", theme.bg);
-      setPair("theme-primary", "theme-primary-text", theme.primary);
-      setPair("theme-accent", "theme-accent-text", theme.accent);
-      setPair("theme-text", "theme-text-text", theme.text);
-      if ($("theme-font")) $("theme-font").value = theme.font;
-      $("custom-theme-name").value = theme.name;
-      activeTheme = Object.assign({}, theme);
+      // Theme chooser retired — keep indicators and the live preview in sync with Theme 1.
       updateThemeIndicators();
       applyThemeToPreview($("theme-live-preview"), activeTheme);
     }
-
-    $("theme-grid").addEventListener("click", (event) => {
-      const actionBtn = event.target.closest("[data-theme-action]");
-      const cardBtn = event.target.closest(".theme-card[data-theme-card]");
-      const allThemes = presetThemes.concat(customThemes);
-      const id = (actionBtn && actionBtn.dataset.themeId) || (cardBtn && cardBtn.dataset.themeId);
-      if (!id) return;
-      const theme = allThemes.find((t) => t.id === id);
-      if (!theme) return;
-      if (actionBtn) {
-        const action = actionBtn.dataset.themeAction;
-        if (action === "preview") {
-          openThemeModal(theme);
-          return;
-        }
-        if (action === "apply") {
-          if (!guardSuperadminAction()) return;
-          activeTheme = theme;
-          renderThemeGrid();
-          updateThemeIndicators();
-          applyThemeToPreview($("theme-live-preview"), activeTheme);
-          $("theme-status").textContent = "Applied " + theme.name + " to exports.";
-          $("theme-status").className = "status ok";
-          return;
-        }
-        if (action === "customize") {
-          if (!guardSuperadminAction()) return;
-          applyPresetToBuilder(theme);
-          showRoute("/design/theme-lab");
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          $("theme-status").textContent = "Loaded " + theme.name + " into the custom builder.";
-          $("theme-status").className = "status ok";
-          return;
-        }
-        if (action === "delete") {
-          if (!guardSuperadminAction()) return;
-          if (!customThemes.some((t) => t.id === id)) {
-            return;
-          }
-          if (!window.confirm("Delete saved preset \"" + theme.name + "\"? This cannot be undone.")) {
-            return;
-          }
-          customThemes = customThemes.filter((t) => t.id !== id);
-          try {
-            localStorage.setItem("customThemes", JSON.stringify(customThemes));
-          } catch (_e) {
-            /* ignore */
-          }
-          if (activeTheme.id === id) {
-            activeTheme = presetThemes[0];
-            updateThemeIndicators();
-          }
-          renderThemeGrid();
-          $("theme-status").textContent = "Removed saved preset " + theme.name + ".";
-          $("theme-status").className = "status ok";
-          return;
-        }
-      }
-      if (cardBtn) {
-        openThemeModal(theme);
-      }
-    });
-
-    function openThemeModal(theme) {
-      $("theme-modal-title").textContent = theme.name + " preview";
-      applyThemeToPreview($("theme-modal-preview"), theme);
-      $("theme-modal").classList.add("visible");
-      $("theme-modal").setAttribute("aria-hidden", "false");
-    }
-    $("btn-close-theme-modal").addEventListener("click", () => {
-      $("theme-modal").classList.remove("visible");
-      $("theme-modal").setAttribute("aria-hidden", "true");
-    });
-    $("theme-modal").addEventListener("click", (event) => {
-      if (event.target.id === "theme-modal") $("btn-close-theme-modal").click();
-    });
 
     $("btn-close-song-preview") && $("btn-close-song-preview").addEventListener("click", closeSongPreviewPanel);
     $("song-preview-backdrop") && $("song-preview-backdrop").addEventListener("click", closeSongPreviewPanel);
@@ -15411,17 +15345,98 @@ Lord, hear our prayer</textarea>
         closeSongPreviewPanel();
       }
     });
-    $("btn-preview-custom-theme").addEventListener("click", () => openThemeModal(themeFromBuilder()));
-    $("btn-save-theme").addEventListener("click", () => {
-      if (!guardSuperadminAction()) return;
-      const theme = themeFromBuilder();
-      customThemes.push(theme);
-      localStorage.setItem("customThemes", JSON.stringify(customThemes));
-      activeTheme = theme;
-      renderThemeGrid();
-      $("theme-status").textContent = "Saved " + theme.name + " and applied it to preview.";
-      $("theme-status").className = "status ok";
-    });
+    (function wirePptDeckPreview() {
+      const btn = $("btn-ppt-preview-refresh");
+      if (!btn) return;
+      const statusEl = $("ppt-preview-status");
+      const grid = $("ppt-preview-grid");
+      const setStatus = (msg, cls) => {
+        if (!statusEl) return;
+        statusEl.textContent = msg || "";
+        statusEl.className = "status" + (cls ? " " + cls : "");
+      };
+      let objectUrls = [];
+      const revokeObjectUrls = () => {
+        objectUrls.forEach((u) => {
+          try { URL.revokeObjectURL(u); } catch (_e) { /* ignore */ }
+        });
+        objectUrls = [];
+      };
+      // <img src> cannot send the auth Bearer token, so /api/files/preview/* returns
+      // 401. Fetch each image with auth headers and show it via an object URL instead.
+      const loadAuthedImage = async (img, url) => {
+        try {
+          const res = await authorizedFetch(url);
+          if (!res.ok) throw new Error(String(res.status));
+          const blob = await res.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          objectUrls.push(objectUrl);
+          img.src = objectUrl;
+        } catch (_e) {
+          img.alt = "Slide image failed to load";
+          img.style.minHeight = "40px";
+        }
+      };
+      const renderImageSlides = (slides) => {
+        revokeObjectUrls();
+        grid.innerHTML = "";
+        grid.hidden = false;
+        grid.style.display = "grid";
+        grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(280px, 1fr))";
+        grid.style.gap = "14px";
+        grid.style.marginTop = "14px";
+        slides.forEach((s) => {
+          const fig = document.createElement("figure");
+          fig.style.cssText = "margin:0;border:1px solid var(--border,#d8dee9);border-radius:10px;overflow:hidden;background:#000;";
+          const img = document.createElement("img");
+          img.alt = "Slide " + s.index;
+          img.loading = "lazy";
+          img.style.cssText = "width:100%;display:block;";
+          const cap = document.createElement("figcaption");
+          cap.textContent = "Slide " + s.index;
+          cap.style.cssText = "font-size:0.75rem;padding:6px 8px;opacity:0.8;";
+          fig.appendChild(img);
+          fig.appendChild(cap);
+          grid.appendChild(fig);
+          loadAuthedImage(img, s.image_url);
+        });
+      };
+      const renderTextSlides = (slides) => {
+        revokeObjectUrls();
+        grid.innerHTML = "";
+        grid.hidden = false;
+        grid.style.display = "block";
+        grid.style.marginTop = "14px";
+        if (!slides.length) {
+          grid.innerHTML = '<p class="muted">No slides to show yet — generate a Mass deck first.</p>';
+          return;
+        }
+        slides.forEach((s) => {
+          const block = document.createElement("div");
+          block.style.cssText = "border:1px solid var(--border,#d8dee9);border-radius:10px;padding:10px 12px;margin-bottom:10px;white-space:pre-wrap;font-size:0.85rem;";
+          block.textContent = "Slide " + s.index + "\n" + (s.text || "");
+          grid.appendChild(block);
+        });
+      };
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        setStatus("Rendering the actual deck… this can take a few seconds.", "");
+        try {
+          const data = await postJSON("/api/ppt-preview/refresh", {});
+          const slides = (data && data.slides) || [];
+          if (data && data.mode === "image" && slides.length) {
+            renderImageSlides(slides);
+          } else {
+            renderTextSlides(slides);
+          }
+          setStatus((data && data.message) || "Preview updated.", "ok");
+        } catch (err) {
+          setStatus((err && err.message) || "Could not render the deck preview.", "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
 
     const MASS_SONG_LANG_KEY = "churchMediaMassSongLang";
     let massSongPlanLanguage = "all";
@@ -20610,6 +20625,20 @@ Lord, hear our prayer</textarea>
       });
     }
 
+    function initDividerPosterPickers() {
+      [["flow-lotw-poster", "flow-lotw-poster-thumb"], ["flow-lote-poster", "flow-lote-poster-thumb"]].forEach((pair) => {
+        const sel = $(pair[0]);
+        const thumb = $(pair[1]);
+        if (!sel || !thumb) return;
+        const sync = () => {
+          const id = (sel.value || "").trim();
+          if (/^lot[we][1-4]$/.test(id)) thumb.src = "/static/images/posters/" + id + ".png";
+        };
+        sel.addEventListener("change", sync);
+        sync();
+      });
+    }
+
 
     function initGlobalSearch() {
       const input = $("app-global-search");
@@ -20936,6 +20965,8 @@ Lord, hear our prayer</textarea>
         }
         populateGospelSentenceSelect(data);
         if ($("flow-gospel-custom")) $("flow-gospel-custom").value = "";
+        if ($("flow-reading1-custom")) $("flow-reading1-custom").value = "";
+        if ($("flow-reading1-ref-custom")) $("flow-reading1-ref-custom").value = "";
         populatePsalmRefrainSelect(data);
         if ($("flow-psalm-custom")) $("flow-psalm-custom").value = "";
         if ($("flow-psalm-ref")) {
@@ -21587,7 +21618,8 @@ Lord, hear our prayer</textarea>
       const aiBackend = o.ai_poster_backend || posterOpts.backend || "openai";
       const body = {
         date,
-        celebrant,
+        celebrant: celebrantMain,
+        co_celebrant: (($("co-celebrant") && $("co-celebrant").value.trim()) || ""),
         songs: selectedSongsForGenerate(),
         custom_theme: pptThemePayload(activeTheme),
         poster_template: o.poster_template || "liturgical_color",
@@ -21607,9 +21639,12 @@ Lord, hear our prayer</textarea>
         }
         applyMassGenerateReceiptEdits();
         date = ($("mass-date") && $("mass-date").value) || o.date || date;
+        const mainAfter = ($("celebrant") && $("celebrant").value.trim()) || celebrantMain;
+        const coAfter = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
         celebrant = getMassCelebrantLine().trim() || (o.celebrant != null ? o.celebrant : celebrant).trim();
         body.date = date;
-        body.celebrant = celebrant;
+        body.celebrant = mainAfter;
+        body.co_celebrant = coAfter;
         body.songs = selectedSongsForGenerate();
         if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
           return null;
@@ -21656,8 +21691,16 @@ Lord, hear our prayer</textarea>
             body.psalm_refrain_index = pidx;
           }
         }
+        const reading1Custom = ($("flow-reading1-custom") && $("flow-reading1-custom").value || "").trim();
+        const reading1RefCustom = ($("flow-reading1-ref-custom") && $("flow-reading1-ref-custom").value || "").trim();
+        if (reading1Custom) body.first_reading_text_override = reading1Custom;
+        if (reading1RefCustom) body.first_reading_ref_override = reading1RefCustom;
         if (divider_bn) body.divider_poster_basename = divider_bn;
         if (ann_bns.length) body.announcement_basenames = ann_bns;
+        const lotwSel = $("flow-lotw-poster");
+        const loteSel = $("flow-lote-poster");
+        body.lotw_poster = (lotwSel && lotwSel.value) || "lotw1";
+        body.lote_poster = (loteSel && loteSel.value) || "lote1";
         if (collFormatted) {
           body.mass_collection_amount = collFormatted;
           body.mass_collection_currency = readCollectionCurrencyCode();
@@ -21681,8 +21724,11 @@ Lord, hear our prayer</textarea>
         const fp = JSON.stringify({
           date,
           celebrant,
+          co_celebrant: body.co_celebrant || "",
           songs: body.songs,
           divider_poster_basename: body.divider_poster_basename || null,
+          lotw_poster: body.lotw_poster || "lotw1",
+          lote_poster: body.lote_poster || "lote1",
           announcement_basenames: body.announcement_basenames || [],
           mass_collection_amount: body.mass_collection_amount || null,
           mass_collection_currency: body.mass_collection_currency || null,
@@ -21690,6 +21736,8 @@ Lord, hear our prayer</textarea>
           food_sponsors: body.food_sponsors || [],
           psalm_text_override: body.psalm_text_override || null,
           psalm_refrain_index: body.psalm_refrain_index != null ? body.psalm_refrain_index : null,
+          first_reading_text_override: body.first_reading_text_override || null,
+          first_reading_ref_override: body.first_reading_ref_override || null,
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
@@ -23157,6 +23205,7 @@ Lord, hear our prayer</textarea>
     initAccountMenu();
     initCreateMenu();
     initVerbumSelects();
+    initDividerPosterPickers();
     syncOpenAiPosterUi();
     initGlobalSearch();
     updateAccountMenuDisplay();

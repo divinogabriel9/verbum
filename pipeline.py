@@ -403,6 +403,7 @@ def generate_mass_media(
     date: str,
     celebrant: str,
     *,
+    co_celebrant: str = "",
     sentence_index: Optional[int] = None,
     interactive_pick: bool = False,
     poster_template: str = "liturgical_color",
@@ -416,6 +417,8 @@ def generate_mass_media(
     song_selections: Optional[Mapping[str, str]] = None,
     custom_theme: Optional[Mapping[str, Any]] = None,
     divider_poster_path: Optional[Path] = None,
+    lotw_poster: str = "lotw1",
+    lote_poster: str = "lote1",
     announcement_image_paths: Optional[list[Path]] = None,
     mass_collection_amount: Optional[str] = None,
     mass_collection_date_label: Optional[str] = None,
@@ -423,7 +426,10 @@ def generate_mass_media(
     food_sponsors: Optional[list[str]] = None,
     psalm_text_override: Optional[str] = None,
     psalm_refrain_index: Optional[int] = None,
+    psalm_response_override: Optional[str] = None,
     gospel_quote_override: Optional[str] = None,
+    first_reading_text_override: Optional[str] = None,
+    first_reading_ref_override: Optional[str] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
@@ -436,12 +442,25 @@ def generate_mass_media(
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
 
+    # Posters keep the combined "Celebrant · Co-celebrant" line; the deck divider
+    # renders them in separate placeholders (see generate_mass_ppt).
+    co_celebrant = (co_celebrant or "").strip()
+    poster_celebrant = f"{celebrant} · {co_celebrant}" if co_celebrant else celebrant
+
     data = get_liturgical_data(date)
     if not data:
         return GenerationResult(
             ok=False,
             error="Unable to fetch liturgical data.",
         )
+
+    # Manual overrides (never mutate the cached payload object) — let users paste a
+    # first reading / refrain when the upstream sources miss them.
+    effective_psalm_override = (
+        (psalm_text_override or "").strip() or (psalm_response_override or "").strip() or None
+    )
+    first_reading_ref_val = (first_reading_ref_override or "").strip() or (data.get("first_reading") or "")
+    first_reading_text_val = (first_reading_text_override or "").strip() or (data.get("first_reading_text") or "")
 
     title = data.get("title") or "Sunday Mass Celebration"
     gospel_ref = data.get("gospel_reference") or "N/A"
@@ -498,7 +517,7 @@ def generate_mass_media(
         (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
         data.get("psalm") or "",
         psalm_response=(data.get("psalm_response") or "").strip(),
-        psalm_text_override=psalm_text_override,
+        psalm_text_override=effective_psalm_override,
         refrain_index=psalm_refrain_index,
     )
 
@@ -546,7 +565,7 @@ def generate_mass_media(
 
             poster_path, poster_ppt_path = generate_primary_openai_posters(
                 date,
-                celebrant_name=celebrant,
+                celebrant_name=poster_celebrant,
                 style=ai_poster_style,
                 output_stem=stem,
                 output_dir=_out,
@@ -568,7 +587,7 @@ def generate_mass_media(
         poster_path, poster_ppt_path = generate_mass_poster(
             title=title,
             gospel_reference=gospel_ref,
-            celebrant=celebrant,
+            celebrant=poster_celebrant,
             date=date,
             template=tpl,
             liturgical_color=liturgical_color,
@@ -594,12 +613,13 @@ def generate_mass_media(
         season=season,
         lectionary_cycle=cycle,
         celebrant=celebrant,
+        co_celebrant=co_celebrant,
         date=date,
         quote_attribution=quote_attr,
         quote_max_chars=400,
         gospel_full_text=gospel_text,
-        first_reading_ref=data.get("first_reading") or "",
-        first_reading_text=data.get("first_reading_text") or "",
+        first_reading_ref=first_reading_ref_val,
+        first_reading_text=first_reading_text_val,
         psalm_ref=data.get("psalm") or "",
         psalm_text=psalm_body,
         second_reading_ref=data.get("second_reading") or "",
@@ -611,6 +631,8 @@ def generate_mass_media(
         output_stem=stem,
         liturgical_poster_png=None,
         divider_poster_png=divider_for_ppt,
+        lotw_poster=lotw_poster,
+        lote_poster=lote_poster,
         announcement_image_paths=announcement_image_paths,
         mass_collection_amount=mass_collection_amount or "",
         mass_collection_date_label=mass_collection_date_label or "",
@@ -664,11 +686,14 @@ def regenerate_mass_pptx(
     date: str,
     celebrant: str,
     *,
+    co_celebrant: str = "",
     sentence_index: Optional[int] = None,
     song_selections: Optional[Mapping[str, str]] = None,
     custom_theme: Optional[Mapping[str, Any]] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     divider_poster_path: Optional[Path] = None,
+    lotw_poster: str = "lotw1",
+    lote_poster: str = "lote1",
     announcement_image_paths: Optional[list[Path]] = None,
     mass_collection_amount: Optional[str] = None,
     mass_collection_date_label: Optional[str] = None,
@@ -676,7 +701,10 @@ def regenerate_mass_pptx(
     food_sponsors: Optional[list[str]] = None,
     psalm_text_override: Optional[str] = None,
     psalm_refrain_index: Optional[int] = None,
+    psalm_response_override: Optional[str] = None,
     gospel_quote_override: Optional[str] = None,
+    first_reading_text_override: Optional[str] = None,
+    first_reading_ref_override: Optional[str] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
@@ -689,6 +717,13 @@ def regenerate_mass_pptx(
     data = get_liturgical_data(date)
     if not data:
         return GenerationResult(ok=False, error="Unable to fetch liturgical data.")
+
+    # Manual overrides (never mutate the cached payload object).
+    effective_psalm_override = (
+        (psalm_text_override or "").strip() or (psalm_response_override or "").strip() or None
+    )
+    first_reading_ref_val = (first_reading_ref_override or "").strip() or (data.get("first_reading") or "")
+    first_reading_text_val = (first_reading_text_override or "").strip() or (data.get("first_reading_text") or "")
 
     title = data.get("title") or "Sunday Mass Celebration"
     gospel_ref = data.get("gospel_reference") or "N/A"
@@ -741,7 +776,7 @@ def regenerate_mass_pptx(
         (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
         data.get("psalm") or "",
         psalm_response=(data.get("psalm_response") or "").strip(),
-        psalm_text_override=psalm_text_override,
+        psalm_text_override=effective_psalm_override,
         refrain_index=psalm_refrain_index,
     )
 
@@ -752,12 +787,13 @@ def regenerate_mass_pptx(
         season=season,
         lectionary_cycle=cycle,
         celebrant=celebrant,
+        co_celebrant=co_celebrant,
         date=date,
         quote_attribution=quote_attr,
         quote_max_chars=400,
         gospel_full_text=gospel_text,
-        first_reading_ref=data.get("first_reading") or "",
-        first_reading_text=data.get("first_reading_text") or "",
+        first_reading_ref=first_reading_ref_val,
+        first_reading_text=first_reading_text_val,
         psalm_ref=data.get("psalm") or "",
         psalm_text=psalm_body,
         second_reading_ref=data.get("second_reading") or "",
@@ -769,6 +805,8 @@ def regenerate_mass_pptx(
         output_stem=stem,
         liturgical_poster_png=None,
         divider_poster_png=divider_for_ppt,
+        lotw_poster=lotw_poster,
+        lote_poster=lote_poster,
         announcement_image_paths=announcement_image_paths,
         mass_collection_amount=mass_collection_amount or "",
         mass_collection_date_label=mass_collection_date_label or "",

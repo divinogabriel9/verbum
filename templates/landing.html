@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ title }} | Sunday Mass presentations in under 5 minutes</title>
+<link rel="icon" href="/favicon.ico" sizes="any"/>
+<link rel="icon" type="image/png" href="/static/brand/favicon-32x32.png?v=5" sizes="32x32"/>
+<link rel="icon" type="image/png" href="/static/brand/favicon-192x192.png?v=5" sizes="192x192"/>
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png?v=5"/>
+<script>
+  (function () {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") === k.length - 11) {
+          var raw = localStorage.getItem(k);
+          if (raw && raw !== "null") { window.location.replace("/home"); break; }
+        }
+      }
+    } catch (_e) { /* ignore */ }
+  })();
+</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<!-- Same type family as the LiturgyFlow app: Inter (UI/headlines) + Playfair Display (script accent) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&amp;family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500;1,600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#d9e2ff",
+                    "on-tertiary-fixed-variant": "#00419c",
+                    "surface": "#1e100e",
+                    "surface-dim": "#1e100e",
+                    "on-background": "#f9dcd8",
+                    "tertiary-container": "#004aaf",
+                    "surface-container-highest": "#42312e",
+                    "inverse-on-surface": "#3d2c2a",
+                    "surface-tint": "#ffb4a9",
+                    "secondary-fixed-dim": "#c6c6c7",
+                    "on-surface-variant": "#e3beb9",
+                    "inverse-surface": "#f9dcd8",
+                    "on-secondary-container": "#b4b5b5",
+                    "background": "#1e100e",
+                    "on-tertiary-fixed": "#001945",
+                    "on-error-container": "#ffdad6",
+                    "surface-variant": "#42312e",
+                    "inverse-primary": "#b7221b",
+                    "on-tertiary-container": "#aac1ff",
+                    "primary": "#ffb4a9",
+                    "surface-container-low": "#271816",
+                    "on-primary-fixed": "#410001",
+                    "surface-container-lowest": "#180b09",
+                    "error-container": "#93000a",
+                    "surface-container-high": "#372624",
+                    "primary-fixed": "#ffdad5",
+                    "on-secondary-fixed-variant": "#454747",
+                    "on-secondary-fixed": "#1a1c1c",
+                    "muted-crimson": "rgba(161, 15, 13, 0.15)",
+                    "primary-container": "#a10f0d",
+                    "surface-black": "#0A0A0A",
+                    "secondary": "#c6c6c7",
+                    "on-primary-fixed-variant": "#930005",
+                    "on-primary-container": "#ffada2",
+                    "on-secondary": "#2f3131",
+                    "outline-variant": "#5b403d",
+                    "surface-container": "#2b1c1a",
+                    "on-surface": "#f9dcd8",
+                    "surface-bright": "#473532",
+                    "on-error": "#690005",
+                    "secondary-fixed": "#e2e2e2",
+                    "deep-charcoal": "#121212",
+                    "error": "#ffb4ab",
+                    "tertiary": "#b0c6ff",
+                    "on-primary": "#690002",
+                    "primary-fixed-dim": "#ffb4a9",
+                    "soft-white": "#F5F5F7",
+                    "tertiary-fixed-dim": "#b0c6ff",
+                    "secondary-container": "#454747",
+                    "on-tertiary": "#002c6f",
+                    "outline": "#aa8984"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "160px",
+                    "container-max": "1440px",
+                    "gutter": "24px",
+                    "margin-edge": "40px",
+                    "unit": "8px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter", "system-ui", "sans-serif"],
+                    "label-caps": ["Inter", "system-ui", "sans-serif"],
+                    "headline-md": ["Inter", "system-ui", "sans-serif"],
+                    "body-lg": ["Inter", "system-ui", "sans-serif"],
+                    "headline-lg": ["Inter", "system-ui", "sans-serif"],
+                    "headline-lg-mobile": ["Inter", "system-ui", "sans-serif"],
+                    "display-xl": ["Inter", "system-ui", "sans-serif"],
+                    "script": ["Playfair Display", "Georgia", "serif"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "500"}],
+                    "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-lg": ["20px", {"lineHeight": "32px", "fontWeight": "400"}],
+                    "headline-lg": ["64px", {"lineHeight": "72px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["40px", {"lineHeight": "44px", "fontWeight": "700"}],
+                    "display-xl": ["120px", {"lineHeight": "110px", "letterSpacing": "-0.04em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: "Inter", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* LiturgyFlow wordmark — mirrors the in-app brand lockup */
+        .wordmark { display: inline-flex; align-items: baseline; line-height: 1; white-space: nowrap; transform: translateX(-0.065em); letter-spacing: 0; }
+        .wordmark__liturgy { font-family: "Times New Roman", Times, "Liberation Serif", serif; font-weight: 400; font-style: normal; color: #F5F5F7; letter-spacing: -0.02em; }
+        .wordmark__flow { font-family: "Playfair Display", Georgia, serif; font-weight: 500; font-style: italic; color: #ffb4a9; margin-left: -0.16em; font-size: 1.08em; letter-spacing: -0.03em; transform: translateY(0.02em); }
+        .hero-gradient {
+            background: radial-gradient(circle at 70% 30%, rgba(161, 15, 13, 0.15) 0%, transparent 70%);
+        }
+        .glass-card {
+            background: rgba(30, 16, 14, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 180, 169, 0.1);
+        }
+        .hover-lift {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .hover-lift:hover {
+            transform: scale(1.02);
+            border-color: #a10f0d;
+        }
+        .kinetic-dot {
+            width: 4px;
+            height: 4px;
+            background: #a10f0d;
+            border-radius: 50%;
+        }
+        ::selection {
+            background: #a10f0d;
+            color: #fff;
+        }
+        .reveal-on-scroll { 
+            opacity: 0; 
+            transform: translateY(30px); 
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .reveal-on-scroll.active { 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
+        @media (prefers-reduced-motion: reduce) { 
+            .reveal-on-scroll { 
+                transition: none; 
+                transform: none; 
+                opacity: 1; 
+            } 
+            .parallax-bg {
+                transform: none !important;
+            }
+        }
+        /* Parallax Optimization */
+        .parallax-wrapper {
+            will-change: transform;
+        }
+        .parallax-bg {
+            will-change: transform;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 backdrop-blur-xl border-b border-outline-variant/10 bg-background/80">
+<div class="flex justify-between items-center h-20 px-margin-edge max-w-container-max mx-auto">
+<a href="/" class="flex items-center gap-2.5">
+<img src="/static/brand/app-icon.png?v=5" alt="" width="32" height="32" class="w-8 h-8 rounded-lg"/>
+<span class="wordmark text-2xl" aria-label="LiturgyFlow"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
+</a>
+<div class="hidden md:flex gap-10 items-center">
+<a class="text-primary font-bold relative after:content-[''] after:absolute after:-bottom-2 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-primary after:rounded-full font-body-md text-body-md" href="#">Features</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-on-surface transition-colors" href="#">Pricing</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-on-surface transition-colors" href="#">Library</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-on-surface transition-colors" href="#">Community</a>
+</div>
+<a href="/sign-up" class="bg-primary-container text-on-primary-container px-8 py-3 rounded-full font-label-caps text-label-caps hover:scale-[1.02] transition-transform duration-200 active:scale-95">
+            Get Started
+        </a>
+</div>
+</nav>
+<main class="relative">
+<!-- Hero Section -->
+<section class="min-h-screen flex items-center pt-20 relative overflow-hidden hero-gradient" id="hero-section">
+<div class="px-margin-edge max-w-container-max mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<div class="lg:col-span-7 z-10">
+<span class="font-label-caps text-label-caps text-primary mb-6 block uppercase tracking-widest">Divine Design meets AI Precision</span>
+<h1 class="font-display-xl text-display-xl leading-none mb-8">
+                    Generate Beautiful <span class="text-primary-container">Sunday Mass</span> Presentations.
+                </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mb-12">
+                    Elevate your liturgy with prophetic excellence. We leverage high-end design principles and liturgical AI to transform your parish media in under 5 minutes.
+                </p>
+<div class="flex flex-wrap gap-6">
+<a href="/sign-up" class="bg-primary-container text-on-primary-container px-10 py-5 rounded-full font-label-caps text-label-caps text-sm hover:shadow-[0_0_20px_rgba(161,15,13,0.4)] transition-all">
+                        Create your account
+                    </a>
+<a href="/sign-in" class="border border-outline-variant/30 text-on-surface px-10 py-5 rounded-full font-label-caps text-label-caps text-sm flex items-center gap-3 hover:bg-white/5 transition-all">
+<span class="material-symbols-outlined">login</span>
+                        Sign in
+                    </a>
+</div>
+</div>
+<div class="lg:col-span-5 relative">
+<div class="parallax-wrapper aspect-[4/5] w-full glass-card rounded-2xl overflow-hidden shadow-2xl transform lg:rotate-3 hover:rotate-0 transition-transform duration-700" id="parallax-target">
+<img class="w-full h-full object-cover opacity-80 mix-blend-lighten" data-alt="A high-contrast, premium digital UI interface showing a liturgical presentation builder. The screen features deep charcoal backgrounds, elegant serif typography for scripture passages, and vibrant red accents highlighting active tools. Soft white ambient lighting illuminates the sleek, modern workstation in a minimalist creative studio setting." src="/static/images/landing/hero.png"/>
+</div>
+<!-- Overlapping Decorative Element -->
+<div class="absolute -bottom-10 -left-10 w-48 h-48 bg-primary-container/20 blur-3xl rounded-full"></div>
+</div>
+</div>
+</section>
+<!-- Speed Benefits / Stats -->
+<section class="py-section-gap bg-surface-container-lowest">
+<div class="px-margin-edge max-w-container-max mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="p-12 glass-card hover-lift rounded-lg">
+<div class="font-display-xl text-[80px] text-primary-container leading-none mb-4">5m</div>
+<div class="font-label-caps text-label-caps uppercase text-on-surface-variant">Average Generation Time</div>
+<p class="mt-6 text-on-surface-variant">From lectionary selection to export-ready slides. No manual copy-pasting required.</p>
+</div>
+<div class="p-12 glass-card hover-lift rounded-lg md:mt-12">
+<div class="font-display-xl text-[80px] text-primary-container leading-none mb-4">12k</div>
+<div class="font-label-caps text-label-caps uppercase text-on-surface-variant">Hymns &amp; Antiphons</div>
+<p class="mt-6 text-on-surface-variant">Access a comprehensive library of sacred music with pre-formatted typography.</p>
+</div>
+<div class="p-12 glass-card hover-lift rounded-lg md:mt-24">
+<div class="font-display-xl text-[80px] text-primary-container leading-none mb-4">98%</div>
+<div class="font-label-caps text-label-caps uppercase text-on-surface-variant">Accuracy Rate</div>
+<p class="mt-6 text-on-surface-variant">Liturgically verified AI ensuring every verse and reading matches the Roman Missal.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- How It Works - Fluid Flow -->
+<section class="py-section-gap relative">
+<div class="px-margin-edge max-w-container-max mx-auto">
+<div class="max-w-3xl mb-24">
+<h2 class="font-headline-lg text-headline-lg mb-8">From First Draft to Full Reinvention.</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">A streamlined workflow designed for busy parish staff. We handle the technical weight so you can focus on the sacred mysteries.</p>
+</div>
+<div class="space-y-40">
+<!-- Step 1 -->
+<div class="flex flex-col md:flex-row items-center gap-20 reveal-on-scroll">
+<div class="flex-1 order-2 md:order-1">
+<div class="text-primary-container font-display-xl text-headline-lg opacity-20 mb-4">01</div>
+<h3 class="font-headline-md text-headline-md mb-6">Select the Liturgy</h3>
+<p class="text-on-surface-variant text-body-lg mb-8">Choose the date, liturgical season, or specific feast day. Our system automatically pulls the correct readings, antiphons, and psalms from the Smart Lectionary.</p>
+<ul class="space-y-4">
+<li class="flex items-center gap-3"><span class="kinetic-dot"></span> Roman Missal Integration</li>
+<li class="flex items-center gap-3"><span class="kinetic-dot"></span> Bilingual Support (Eng/Esp)</li>
+</ul>
+</div>
+<div class="flex-1 order-1 md:order-2 glass-card p-4 rounded-xl">
+<img class="rounded-lg w-full aspect-video object-cover" data-alt="A minimalist digital dashboard interface for a church media tool. A clean calendar picker is highlighted with a soft red glow, surrounded by sleek dark surfaces and white hairline borders. The lighting is dramatic and focused, highlighting the ease of selecting a liturgical date." src="/static/images/landing/step-calendar.png"/>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col md:flex-row items-center gap-20 reveal-on-scroll">
+<div class="flex-1 glass-card p-4 rounded-xl">
+<img class="rounded-lg w-full aspect-video object-cover" data-alt="Close-up of a high-end typography engine interface. It shows a selection of elegant serif and sans-serif font pairings designed for large screens. A vibrant red cursor interacts with a layout grid, suggesting a sophisticated design-led tool for sacred text." src="/static/images/landing/step-typography.png"/>
+</div>
+<div class="flex-1">
+<div class="text-primary-container font-display-xl text-headline-lg opacity-20 mb-4">02</div>
+<h3 class="font-headline-md text-headline-md mb-6">Visual Harmonization</h3>
+<p class="text-on-surface-variant text-body-lg mb-8">Apply studio-grade templates that adapt to your parish's brand. Our kinetic engine ensures text remains legible across all screen types and lighting conditions.</p>
+<ul class="space-y-4">
+<li class="flex items-center gap-3"><span class="kinetic-dot"></span> Adaptive Layout Engine</li>
+<li class="flex items-center gap-3"><span class="kinetic-dot"></span> Custom Brand Anchors</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Grid (Sophisticated Capabilities) -->
+<section class="py-section-gap bg-surface-container relative overflow-hidden" id="capabilities-section">
+<!-- Parallax Background Layer -->
+<div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none parallax-bg opacity-10" id="capabilities-parallax">
+<div class="font-display-xl text-[24vw] select-none text-primary-container/40 leading-none whitespace-nowrap -rotate-6 uppercase">
+            EXCELLENCE
+        </div>
+</div>
+<div class="px-margin-edge max-w-container-max mx-auto relative z-10">
+<div class="text-center max-w-3xl mx-auto mb-20">
+<h2 class="font-headline-lg text-headline-lg mb-6">Sophisticated Capabilities</h2>
+<p class="text-on-surface-variant">The power of a creative agency, built into a simple browser tab.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<div class="p-8 border border-outline-variant/20 rounded-lg hover:border-primary-container transition-colors group bg-surface-container/80 backdrop-blur-sm reveal-on-scroll">
+<span class="material-symbols-outlined text-4xl mb-6 group-hover:text-primary transition-colors">auto_stories</span>
+<h4 class="font-headline-md text-xl mb-4">Smart Lectionary</h4>
+<p class="text-on-surface-variant text-sm">Automated reading retrieval for all three cycles (A, B, C) and weekday feasts.</p>
+</div>
+<div class="p-8 border border-outline-variant/20 rounded-lg hover:border-primary-container transition-colors group bg-surface-container/80 backdrop-blur-sm reveal-on-scroll" style="transition-delay: 100ms;">
+<span class="material-symbols-outlined text-4xl mb-6 group-hover:text-primary transition-colors">library_music</span>
+<h4 class="font-headline-md text-xl mb-4">Lyric Library</h4>
+<p class="text-on-surface-variant text-sm">Massive database of traditional and contemporary hymns with one-click formatting.</p>
+</div>
+<div class="p-8 border border-outline-variant/20 rounded-lg hover:border-primary-container transition-colors group bg-surface-container/80 backdrop-blur-sm reveal-on-scroll" style="transition-delay: 200ms;">
+<span class="material-symbols-outlined text-4xl mb-6 group-hover:text-primary transition-colors">dynamic_feed</span>
+<h4 class="font-headline-md text-xl mb-4">Mass Stream Sync</h4>
+<p class="text-on-surface-variant text-sm">Directly export overlays for OBS, vMix, or YouTube live stream environments.</p>
+</div>
+<div class="p-8 border border-outline-variant/20 rounded-lg hover:border-primary-container transition-colors group bg-surface-container/80 backdrop-blur-sm reveal-on-scroll" style="transition-delay: 300ms;">
+<span class="material-symbols-outlined text-4xl mb-6 group-hover:text-primary transition-colors">cloud_sync</span>
+<h4 class="font-headline-md text-xl mb-4">Cloud Archives</h4>
+<p class="text-on-surface-variant text-sm">Securely store and reuse your favorite liturgical arrangements and custom slides.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonial -->
+<section class="py-section-gap">
+<div class="px-margin-edge max-w-container-max mx-auto">
+<div class="flex flex-col lg:flex-row items-center gap-20">
+<div class="lg:w-1/3">
+<div class="relative">
+<div class="absolute -inset-4 bg-primary-container/10 blur-2xl rounded-full"></div>
+<img class="relative w-64 h-64 md:w-80 md:h-80 object-cover rounded-full border-2 border-primary-container/30" data-alt="A professional, soulful headshot of a Catholic Liturgy Director. The man is in his early 40s, smiling warmly, set against a dark, out-of-focus church interior with soft candlelit highlights. The image style is editorial and cinematic, with high contrast and deep shadows." src="/static/images/landing/testimonial.png"/>
+</div>
+</div>
+<div class="lg:w-2/3">
+<span class="material-symbols-outlined text-primary-container text-6xl mb-8">format_quote</span>
+<blockquote class="font-script text-headline-lg-mobile md:text-headline-lg italic mb-8">
+                        "LiturgyFlow hasn't just saved us time; it has elevated the dignity of our liturgy. Our visual prayer now matches the beauty of our music."
+                    </blockquote>
+<div>
+<p class="font-headline-md text-2xl">David St. Pierre</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase">Director of Liturgy, St. Jude Cathedral</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-section-gap overflow-hidden relative">
+<div class="px-margin-edge max-w-container-max mx-auto relative z-10 text-center">
+<h2 class="font-display-xl text-display-xl mb-12">Ready for Excellence?</h2>
+<a href="/sign-up" class="inline-block bg-primary-container text-on-primary-container px-16 py-8 rounded-full font-headline-md text-2xl hover:scale-105 transition-all shadow-[0_0_40px_rgba(161,15,13,0.3)]">
+                Start Generating Today
+            </a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest py-section-gap border-t border-outline-variant/10">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-edge max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-2">
+<div class="flex items-center gap-2.5 mb-6">
+<img src="/static/brand/app-icon.png?v=5" alt="" width="32" height="32" class="w-8 h-8 rounded-lg"/>
+<span class="wordmark text-2xl" aria-label="LiturgyFlow"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
+</div>
+<p class="text-on-surface-variant max-w-sm mb-8">
+                Beautiful Sunday Mass presentations for your parish — readings, hymns and design, ready in minutes.
+            </p>
+</div>
+<div>
+<h5 class="font-label-caps text-label-caps text-on-surface mb-6 uppercase">Product</h5>
+<ul class="space-y-4">
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Features</a></li>
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Pricing</a></li>
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Templates</a></li>
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Updates</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-caps text-label-caps text-on-surface mb-6 uppercase">Company</h5>
+<ul class="space-y-4">
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">About Us</a></li>
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Community</a></li>
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Support</a></li>
+<li><a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">Privacy</a></li>
+</ul>
+</div>
+</div>
+<div class="px-margin-edge max-w-container-max mx-auto mt-20 pt-8 border-t border-outline-variant/10 text-on-surface-variant text-sm flex flex-col md:flex-row justify-between items-center gap-4">
+<p>© 2026 LiturgyFlow. All rights reserved. Made for parish teams.</p>
+<div class="flex gap-6">
+<a class="hover:text-primary transition-colors" href="#">Twitter</a>
+<a class="hover:text-primary transition-colors" href="#">Instagram</a>
+<a class="hover:text-primary transition-colors" href="#">LinkedIn</a>
+</div>
+</div>
+</footer>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Intersection Observer for Animations ---
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const revealElements = document.querySelectorAll('.reveal-on-scroll');
+        revealElements.forEach(el => {
+            observer.observe(el);
+        });
+        
+        const generalObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section > div:not(.reveal-on-scroll):not(.parallax-bg)').forEach(section => {
+            if (!section.classList.contains('reveal-on-scroll')) {
+                section.classList.add('transition-all', 'duration-1000', 'opacity-0', 'translate-y-10');
+                generalObserver.observe(section);
+            }
+        });
+
+        // --- Multi-Element Parallax Handler ---
+        const parallaxElements = [
+            { 
+                el: document.getElementById('parallax-target'), 
+                section: document.getElementById('hero-section'),
+                speed: 0.125,
+                baseRotate: 3
+            },
+            {
+                el: document.getElementById('capabilities-parallax'),
+                section: document.getElementById('capabilities-section'),
+                speed: 0.2, // Faster for background
+                baseRotate: -6
+            }
+        ];
+        
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const windowHeight = window.innerHeight;
+
+            parallaxElements.forEach(item => {
+                if (!item.el || !item.section) return;
+
+                const rect = item.section.getBoundingClientRect();
+                const sectionTop = rect.top + scrollY;
+                const sectionHeight = rect.height;
+
+                // Check if section is within or near viewport
+                if (scrollY + windowHeight > sectionTop && scrollY < sectionTop + sectionHeight) {
+                    const relativeScroll = scrollY - sectionTop;
+                    const offset = relativeScroll * item.speed;
+                    
+                    // Specific logic for different elements
+                    if (item.el.id === 'parallax-target') {
+                        const rot = window.innerWidth >= 1024 ? item.baseRotate : 0;
+                        item.el.style.transform = `translateY(${offset}px) rotate(${rot}deg)`;
+                    } else if (item.el.id === 'capabilities-parallax') {
+                        // Background watermark parallax
+                        item.el.style.transform = `translateY(${offset}px) rotate(${item.baseRotate}deg)`;
+                    }
+                }
+            });
+        }, { passive: true });
+    });
+</script>
+</body></html>

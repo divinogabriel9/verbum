@@ -26,7 +26,10 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _CACHE_PATH = _PROJECT_ROOT / "readings_cache.json"
 _CACHE_LOCK = Lock()
 
-# Keys stored per date in readings_cache.json
+# Keys stored per date in readings_cache.json.
+# The first group holds reading *bodies* (prose); the *_ref group holds the
+# scraped scripture citations so a missing API reference (e.g. first reading)
+# survives across cache hits; mass_celebration holds the scraped mass-day title.
 CACHE_KEYS = (
     "first_reading",
     "psalm_text",
@@ -34,6 +37,11 @@ CACHE_KEYS = (
     "second_reading",
     "gospel",
     "gospel_acclamation",
+    "mass_celebration",
+    "first_reading_ref",
+    "psalm_ref",
+    "second_reading_ref",
+    "gospel_ref",
 )
 
 
@@ -947,6 +955,11 @@ def fetch_readings_for_date(
         ),
         "gospel_acclamation": gospel_acclamation,
         "mass_celebration": mass_celebration,
+        # Scraped citations — let a missing API reference (e.g. first reading) survive.
+        "first_reading_ref": (refs.get("first_reading") or "").strip(),
+        "psalm_ref": (refs.get("psalm") or "").strip(),
+        "second_reading_ref": (refs.get("second_reading") or "").strip(),
+        "gospel_ref": (refs.get("gospel") or "").strip(),
     }
 
     if use_cache:

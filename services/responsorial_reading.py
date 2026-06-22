@@ -14,7 +14,7 @@ from services.gospel_fallback import fetch_world_english_gospel
 from services.mass_text_format import reading_body_is_usable
 from services.psalm_cache import get_cached_psalm_text
 
-_PSALM_RE = re.compile(r"^(?:Psalm|Psalms)\s+(\d+)\b", re.I)
+_PSALM_RE = re.compile(r"^(?:Psalms?|Pss?)\.?\s+(\d+)\b", re.I)
 _SCRIPTURE_REF_RE = re.compile(
     r"^(?:\d+\s+)?[A-Za-z][A-Za-z\s]+?\s+\d+\s*:",
     re.I,

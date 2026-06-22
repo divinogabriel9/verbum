@@ -10,6 +10,7 @@ from services.lectionary_store import db_path, get_cached, ignore_cache, upsert
 from services.usccb_client import USCCB_HTTP_CHALLENGE, get_usccb_soup
 from services.mass_text_format import reading_body_is_usable
 from services.usccb_readings import (
+    collect_psalm_refrain_options,
     fetch_readings_for_date,
     is_usccb_nav_chrome_title,
     scrape_mass_celebration_from_soup,
@@ -55,6 +56,70 @@ def _payload_title_stale(payload: dict) -> bool:
     if title.endswith(" Celebration") and not celebration:
         return True
     return False
+
+
+def _payload_complete(payload: dict) -> bool:
+    """
+    Strict check that a payload has everything a Sunday deck needs.
+
+    Unlike ``_payload_readings_usable`` (passes if *any* one reading exists), this
+    requires the first-reading body, a derivable responsorial-psalm refrain, and
+    the gospel body — the exact fields that silently broke past decks. The second
+    reading is intentionally optional (weekday Masses don't have one).
+    """
+    if not payload:
+        return False
+    if _payload_title_stale(payload):
+        return False
+    if not reading_body_is_usable(
+        payload.get("first_reading_text") or "",
+        payload.get("first_reading") or "",
+    ):
+        return False
+    if not reading_body_is_usable(
+        payload.get("gospel_text") or "",
+        payload.get("gospel_reference") or "",
+    ):
+        return False
+    refrains = collect_psalm_refrain_options(
+        payload.get("psalm_text") or "",
+        payload.get("psalm") or "",
+        psalm_response=payload.get("psalm_response") or "",
+    )
+    if not refrains:
+        return False
+    return True
+
+
+def _merge_payloads(old: dict | None, new: dict | None) -> dict:
+    """
+    Field-level merge that prefers non-empty fresh values but falls back to cached
+    ones — so a partial live fetch (e.g. USCCB bot-challenge) can never blank out
+    reading text that was previously cached. ``new`` (live) wins per field only
+    when it carries content.
+    """
+    if not old:
+        return dict(new or {})
+    if not new:
+        return dict(old)
+    merged = dict(old)
+    for key, val in new.items():
+        if isinstance(val, str):
+            if val.strip():
+                merged[key] = val
+            elif key not in merged:
+                merged[key] = val
+        elif val is not None:
+            merged[key] = val
+        elif key not in merged:
+            merged[key] = val
+    # A failed scrape yields a generic "<Season> Celebration" title — never let it
+    # overwrite a real mass-day name already in the cache.
+    if _payload_title_stale(new) and not _payload_title_stale(old):
+        merged["title"] = old.get("title")
+        if (old.get("celebration") or "").strip():
+            merged["celebration"] = old.get("celebration")
+    return merged
 
 
 def _resolve_mass_celebration(
@@ -130,6 +195,11 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             second_reading_text = (blocks.get("second_reading") or "").strip()
             gospel_text = (blocks.get("gospel") or "").strip()
 
+            # The lectionary API occasionally omits a reference (the first reading
+            # is missing for some dates). Fall back to the citation scraped from USCCB.
+            if not gospel_reference:
+                gospel_reference = (blocks.get("gospel_ref") or "").strip()
+
             if not (
                 first_reading_text
                 or psalm_text
@@ -181,9 +251,12 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             "celebration": celebration,
             "season": season,
             "lectionary_cycle": lectionary_cycle,
-            "first_reading": readings.get("firstReading", ""),
-            "psalm": readings.get("psalm", ""),
-            "second_reading": readings.get("secondReading", ""),
+            "first_reading": (readings.get("firstReading", "") or "").strip()
+            or (blocks.get("first_reading_ref") or "").strip(),
+            "psalm": (readings.get("psalm", "") or "").strip()
+            or (blocks.get("psalm_ref") or "").strip(),
+            "second_reading": (readings.get("secondReading", "") or "").strip()
+            or (blocks.get("second_reading_ref") or "").strip(),
             "first_reading_text": first_reading_text,
             "psalm_text": psalm_text,
             "psalm_response": psalm_response,
@@ -214,25 +287,38 @@ def get_liturgical_data(date: str, *, use_cache: bool = True) -> dict | None:
 
     bypass_read = ignore_cache() or not use_cache
 
+    cached: dict | None = None
     if not bypass_read:
         cached = get_cached(normalized)
         if cached is not None and not _payload_readings_usable(cached):
             print(f"Lectionary cache stale (verse-only readings): {normalized}")
             cached = None
-        if cached is not None and _payload_title_stale(cached):
+        elif cached is not None and _payload_title_stale(cached):
             print(f"Lectionary cache stale (season-only title): {normalized}")
             cached = None
-        if cached is not None:
+        elif cached is not None and not _payload_complete(cached):
+            # Keep the partial data around for merge fallback, but refetch so the
+            # missing first reading / psalm refrain gets filled in.
+            print(f"Lectionary cache incomplete (missing first reading or psalm refrain): {normalized}")
+        elif cached is not None:
             print(f"Lectionary cache hit: {normalized}")
             return cached
 
     data = fetch_liturgical_data_live(normalized, use_readings_cache=not bypass_read)
     if data is None:
-        return None
+        # Live fetch failed entirely (network/USCCB down) — serve the best cached
+        # data we have rather than nothing.
+        if cached is not None:
+            print(f"Lectionary live fetch failed; serving cached data: {normalized}")
+        return cached
+
+    # Never let an incomplete live fetch (e.g. a USCCB bot-challenge) overwrite
+    # reading text that was previously cached.
+    merged = _merge_payloads(cached, data)
 
     should_write = os.environ.get("LECTIONARY_NO_WRITE_CACHE", "").strip() not in ("1", "true")
-    if use_cache and should_write:
-        upsert(normalized, data)
+    if use_cache and should_write and (cached is None or merged != cached):
+        upsert(normalized, merged)
         print(f"Lectionary saved to database: {db_path()}")
 
-    return data
+    return merged

@@ -465,6 +465,11 @@ class PreviewBody(BaseModel):
 class GenerateBody(BaseModel):
     date: str = Field(..., min_length=8)
     celebrant: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
+    co_celebrant: str = Field(
+        "",
+        max_length=L.CELEBRANT_NAME,
+        description="Optional co-celebrant name shown on the Mass divider; omitted when blank.",
+    )
     sentence_index: Optional[int] = Field(None, ge=0)
     poster_template: str = Field(
         "liturgical_color",
@@ -500,6 +505,16 @@ class GenerateBody(BaseModel):
         max_length=L.FILE_BASENAME,
         description="Basename of a file previously uploaded to mass_assets/.",
     )
+    lotw_poster: str = Field(
+        "lotw1",
+        max_length=16,
+        description="Liturgy of the Word divider poster design: lotw1 | lotw2 | lotw3 | lotw4.",
+    )
+    lote_poster: str = Field(
+        "lote1",
+        max_length=16,
+        description="Liturgy of the Eucharist divider poster design: lote1 | lote2 | lote3 | lote4.",
+    )
     announcement_basenames: list[str] = Field(default_factory=list)
     mass_collection_amount: Optional[str] = Field(None, max_length=L.COLLECTION_AMOUNT)
     mass_collection_currency: Optional[str] = Field(
@@ -511,10 +526,25 @@ class GenerateBody(BaseModel):
     food_sponsors: list[str] = Field(default_factory=list)
     psalm_text_override: Optional[str] = Field(None, max_length=L.PSALM_FULL)
     psalm_refrain_index: Optional[int] = Field(None, ge=0)
+    psalm_response_override: Optional[str] = Field(
+        None,
+        max_length=L.PSALM_REFRAIN,
+        description="Manual responsorial-psalm refrain; used when psalm_text_override is empty.",
+    )
     gospel_quote_override: Optional[str] = Field(
         None,
         max_length=L.GOSPEL_QUOTE,
         description="Exact Gospel line for slides; overrides sentence_index when non-empty.",
+    )
+    first_reading_text_override: Optional[str] = Field(
+        None,
+        max_length=L.READING_FULL,
+        description="Manual first-reading body; used when the upstream sources miss it.",
+    )
+    first_reading_ref_override: Optional[str] = Field(
+        None,
+        max_length=L.READING_REF,
+        description="Manual first-reading citation, e.g. '2 Kings 4:8-11, 14-16a'.",
     )
     hymn_typography: Optional[dict[str, Any]] = Field(
         None,
@@ -565,6 +595,10 @@ class GenerateBody(BaseModel):
         ) or []
         self.hymn_lyric_overrides = check_hymn_overrides(self.hymn_lyric_overrides)
         self.hymn_layout_overrides = check_hymn_layout_overrides(self.hymn_layout_overrides)
+        lotw = str(self.lotw_poster or "").strip().lower()
+        self.lotw_poster = lotw if lotw in {"lotw1", "lotw2", "lotw3", "lotw4"} else "lotw1"
+        lote = str(self.lote_poster or "").strip().lower()
+        self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
         return self
 
 
@@ -1199,10 +1233,11 @@ async def api_design_analyze_template(
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> Any:
-    # Starlette 0.28+: (request, name, context); request is injected into the template context.
+    # Public marketing landing page. Signed-in visitors are bounced to /home
+    # client-side (see landing.html); the app itself lives at /home and friends.
     return templates.TemplateResponse(
         request,
-        "index.html",
+        "landing.html",
         {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
     )
 
@@ -1379,6 +1414,7 @@ def api_generate(
         result = generate_mass_media(
             body.date.strip(),
             body.celebrant.strip(),
+            co_celebrant=(body.co_celebrant or "").strip(),
             sentence_index=body.sentence_index,
             poster_template=body.poster_template,
             include_social_exports=body.include_social_exports,
@@ -1391,6 +1427,8 @@ def api_generate(
             song_selections=song_map,
             custom_theme=body.custom_theme,
             divider_poster_path=divider_path,
+            lotw_poster=body.lotw_poster,
+            lote_poster=body.lote_poster,
             announcement_image_paths=ann_paths or None,
             mass_collection_amount=body.mass_collection_amount.strip() if body.mass_collection_amount else None,
             mass_collection_date_label=body.mass_collection_date_label.strip()
@@ -1402,7 +1440,10 @@ def api_generate(
             food_sponsors=sponsors or None,
             psalm_text_override=psalm_override,
             psalm_refrain_index=body.psalm_refrain_index,
+            psalm_response_override=(body.psalm_response_override or "").strip() or None,
             gospel_quote_override=gospel_override,
+            first_reading_text_override=(body.first_reading_text_override or "").strip() or None,
+            first_reading_ref_override=(body.first_reading_ref_override or "").strip() or None,
             hymn_typography=body.hymn_typography,
             include_church_logo=body.include_church_logo,
             include_church_name=body.include_church_name,
@@ -1544,11 +1585,14 @@ def api_regenerate_pptx(
         result = regenerate_mass_pptx(
             body.date.strip(),
             body.celebrant.strip(),
+            co_celebrant=(body.co_celebrant or "").strip(),
             sentence_index=body.sentence_index,
             song_selections=song_map,
             custom_theme=body.custom_theme,
             hymn_typography=body.hymn_typography,
             divider_poster_path=divider_path,
+            lotw_poster=body.lotw_poster,
+            lote_poster=body.lote_poster,
             announcement_image_paths=ann_paths or None,
             mass_collection_amount=body.mass_collection_amount.strip()
             if body.mass_collection_amount
@@ -1562,7 +1606,10 @@ def api_regenerate_pptx(
             food_sponsors=sponsors or None,
             psalm_text_override=psalm_override,
             psalm_refrain_index=body.psalm_refrain_index,
+            psalm_response_override=(body.psalm_response_override or "").strip() or None,
             gospel_quote_override=gospel_override,
+            first_reading_text_override=(body.first_reading_text_override or "").strip() or None,
+            first_reading_ref_override=(body.first_reading_ref_override or "").strip() or None,
             include_church_logo=body.include_church_logo,
             include_church_name=body.include_church_name,
             hymn_lyric_overrides=body.hymn_lyric_overrides,

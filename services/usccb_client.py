@@ -127,10 +127,12 @@ def get_usccb_soup(url: str) -> Tuple[Optional[BeautifulSoup], Optional[int]]:
             if html:
                 candidate = BeautifulSoup(html, "html.parser")
                 if _is_usccb_challenge_page(html, candidate):
+                    # Bot-check interstitials are usually transient. Keep retrying
+                    # with backoff instead of giving up on the first challenge —
+                    # a fresh request a moment later frequently returns the page.
                     soup = None
                     last_status = USCCB_HTTP_CHALLENGE
-                    break
-                if resp.status_code == 200:
+                elif resp.status_code == 200:
                     soup = candidate
                     last_status = 200
                     break
