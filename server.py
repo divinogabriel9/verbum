@@ -8,6 +8,7 @@ Run from project root:
 from __future__ import annotations
 
 import io
+import logging
 import os
 import re
 import shutil
@@ -28,6 +29,8 @@ from pydantic import BaseModel, Field, model_validator
 from services.env_config import load_project_dotenv
 
 load_project_dotenv()
+
+logger = logging.getLogger("server")
 
 from services.calendar_month import fetch_calendar_month
 from services.catholic_news import fetch_catholic_headlines
@@ -54,7 +57,7 @@ from services.community_config import (
 from services.gospel_mood import gospel_moods_for_song
 from services.hymn_library import get_hymn
 from services.lyrics_fetcher import fetch_and_store_for_selection
-from services.ppt_preview_render import render_ppt_preview_pngs
+from services.ppt_preview_render import convert_pptx_to_pdf, render_ppt_preview_pngs
 from services.ppt_template_analyze import analyze_pptx_theme
 from services.song_catalog import (
     catalog_for_api,
@@ -479,6 +482,10 @@ class GenerateBody(BaseModel):
         False,
         description="When true, also export 1080×1350 feed PNG and Instagram/Story/OG variants.",
     )
+    export_pdf: bool = Field(
+        False,
+        description="When true, also export a PDF of the generated deck (served alongside the .pptx).",
+    )
     include_gospel_art: bool = Field(True)
     include_ai_mass_poster: bool = Field(
         False,
@@ -536,16 +543,6 @@ class GenerateBody(BaseModel):
         max_length=L.GOSPEL_QUOTE,
         description="Exact Gospel line for slides; overrides sentence_index when non-empty.",
     )
-    first_reading_text_override: Optional[str] = Field(
-        None,
-        max_length=L.READING_FULL,
-        description="Manual first-reading body; used when the upstream sources miss it.",
-    )
-    first_reading_ref_override: Optional[str] = Field(
-        None,
-        max_length=L.READING_REF,
-        description="Manual first-reading citation, e.g. '2 Kings 4:8-11, 14-16a'.",
-    )
     hymn_typography: Optional[dict[str, Any]] = Field(
         None,
         description="Per-section hymn slide typography: entrance, communion, default, etc.",
@@ -557,6 +554,10 @@ class GenerateBody(BaseModel):
     include_church_name: bool = Field(
         False,
         description="When false, omit parish / community name from PowerPoint slides.",
+    )
+    include_footer: bool = Field(
+        True,
+        description="Developer option: when false, omit the bottom community/section footer tag from every slide.",
     )
     hymn_lyric_overrides: Optional[dict[str, dict[str, str]]] = Field(
         None,
@@ -1334,9 +1335,13 @@ def api_calendar_month(year: int, month: int) -> Any:
 @app.get("/api/readings/{date}")
 def api_readings(
     date: str,
-    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+    _session: Optional[AuthSession] = Depends(optional_session),
 ) -> JSONResponse:
-    """Fast lectionary readings for dashboard cards (no song discovery)."""
+    """Fast lectionary readings for dashboard cards (no song discovery).
+
+    Public liturgical data — anonymous-friendly, mirroring ``POST /api/preview``
+    so the home dashboard loads readings before/without sign-in.
+    """
     payload, from_cache = readings_snapshot(date.strip())
     if not payload.get("ok"):
         raise HTTPException(
@@ -1442,11 +1447,10 @@ def api_generate(
             psalm_refrain_index=body.psalm_refrain_index,
             psalm_response_override=(body.psalm_response_override or "").strip() or None,
             gospel_quote_override=gospel_override,
-            first_reading_text_override=(body.first_reading_text_override or "").strip() or None,
-            first_reading_ref_override=(body.first_reading_ref_override or "").strip() or None,
             hymn_typography=body.hymn_typography,
             include_church_logo=body.include_church_logo,
             include_church_name=body.include_church_name,
+            include_footer=body.include_footer,
             hymn_lyric_overrides=body.hymn_lyric_overrides,
             creed_choice=body.creed_choice,
             our_father_choice=body.our_father_choice,
@@ -1476,6 +1480,20 @@ def api_generate(
         media_file_url(poster_ppt.name) if poster_ppt and Path(poster_ppt).is_file() else None
     )
     zip_url = media_file_url(_BUNDLE_NAME) if zip_ready else None
+
+    pdf_url: Optional[str] = None
+    pdf_message = ""
+    pdf_path: Optional[Path] = None
+    if body.export_pdf and result.pptx_path and result.pptx_path.is_file():
+        soffice = _resolve_soffice_bin()
+        if soffice:
+            pdf_path = convert_pptx_to_pdf(result.pptx_path, _OUTPUT_DIR, soffice_bin=soffice)
+            if pdf_path and pdf_path.is_file():
+                pdf_url = media_file_url(pdf_path.name)
+            else:
+                pdf_message = "Could not render the PDF; the PowerPoint is still available."
+        else:
+            pdf_message = "Install LibreOffice to export a PDF; the PowerPoint is available."
     if session and storage_ready(session.token):
         upload_items: list[tuple[str, Path, str]] = []
         if result.pptx_path and result.pptx_path.is_file():
@@ -1487,16 +1505,27 @@ def api_generate(
         bundle = _OUTPUT_DIR / _BUNDLE_NAME
         if bundle.is_file():
             upload_items.append(("zip_url", bundle, "application/zip"))
+        if pdf_path and pdf_path.is_file():
+            upload_items.append(("pdf_url", pdf_path, "application/pdf"))
         for key, file_path, ctype in upload_items:
             rel = f"generated/{result.export_stem or 'latest'}/{file_path.name}"
-            stored = upload_user_asset(
-                user_id=session.user.user_id,
-                access_token=session.token,
-                relative_path=rel,
-                raw=file_path.read_bytes(),
-                content_type=ctype,
-                upsert=True,
-            )
+            try:
+                stored = upload_user_asset(
+                    user_id=session.user.user_id,
+                    access_token=session.token,
+                    relative_path=rel,
+                    raw=file_path.read_bytes(),
+                    content_type=ctype,
+                    upsert=True,
+                )
+            except Exception:
+                # Keep the local media URL for this file rather than failing the
+                # whole generation when one upload is rejected (e.g. an
+                # unsupported MIME type in the storage bucket policy).
+                logger.warning(
+                    "Storage upload failed for %s; serving local URL instead.", file_path.name
+                )
+                continue
             if key == "pptx_url":
                 ppt_url = stored.signed_url
             elif key == "poster_url":
@@ -1505,6 +1534,8 @@ def api_generate(
                 poster_ppt_url = stored.signed_url
             elif key == "zip_url":
                 zip_url = stored.signed_url
+            elif key == "pdf_url":
+                pdf_url = stored.signed_url
     payload: dict[str, Any] = {
         "ok": True,
         "title": result.title,
@@ -1518,6 +1549,10 @@ def api_generate(
     }
     if ppt_url:
         payload["pptx_url"] = ppt_url
+    if pdf_url:
+        payload["pdf_url"] = pdf_url
+    if pdf_message:
+        payload["pdf_message"] = pdf_message
     if poster_url:
         payload["poster_url"] = poster_url
     if poster_ppt_url:
@@ -1608,10 +1643,9 @@ def api_regenerate_pptx(
             psalm_refrain_index=body.psalm_refrain_index,
             psalm_response_override=(body.psalm_response_override or "").strip() or None,
             gospel_quote_override=gospel_override,
-            first_reading_text_override=(body.first_reading_text_override or "").strip() or None,
-            first_reading_ref_override=(body.first_reading_ref_override or "").strip() or None,
             include_church_logo=body.include_church_logo,
             include_church_name=body.include_church_name,
+            include_footer=body.include_footer,
             hymn_lyric_overrides=body.hymn_lyric_overrides,
             creed_choice=body.creed_choice,
             our_father_choice=body.our_father_choice,

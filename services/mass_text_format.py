@@ -125,6 +125,70 @@ _STRUCTURE_LABEL_INLINE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# --- Web-fetched lyric contamination (LyricFind/Hymnary scrape artifacts) ---
+# Trailing "Copy" button text that web pages append to section headers/lines.
+_COPY_BUTTON_TAIL_RE = re.compile(r"\s*\bcopy\b\s*$", re.IGNORECASE)
+# Standalone UI/navigation lines that leak when HTML is flattened to text.
+_WEB_UI_ARTIFACT_LINE_RE = re.compile(
+    r"^\s*(?:copy|embed|share|add\s+song|charts|languages|genres|report|print|"
+    r"edit|submit|cancel|save|powered\s+by\s+lyricfind|lyricfind|advertisement|"
+    r"sponsored|sign\s+in|log\s+in|subscribe|show\s+all|view\s+all)\s*$",
+    re.IGNORECASE,
+)
+# Licensing / boilerplate lines that should never reach a slide.
+_WEB_UI_ARTIFACT_PREFIX_RE = re.compile(
+    r"^\s*(?:lyrics\s+licensed|lyrics\s+powered|powered\s+by|songwriters?\s*:|"
+    r"written\s+by\s*:|source\s*:|copyright\b|all\s+rights\s+reserved|©|"
+    r"we\s+use\s+cookies|cookie\s+policy|terms\s+of\b|privacy\s+policy)",
+    re.IGNORECASE,
+)
+
+
+def _strip_trailing_copy_button(line: str) -> str:
+    """Drop a trailing 'Copy' button label, but only when it's clearly an artifact.
+
+    ``Verse 1 Copy`` -> ``Verse 1``; a lone ``Copy`` -> ``""``. A real lyric line
+    that happens to end in the word "copy" is left untouched.
+    """
+    match = _COPY_BUTTON_TAIL_RE.search(line)
+    if not match:
+        return line
+    head = line[: match.start()].rstrip()
+    if not head:
+        return ""
+    if _STRUCTURE_LABEL_LINE_RE.match(head):
+        return head
+    return line
+
+
+def sanitize_web_lyrics(raw: str) -> str:
+    """Scrub lyrics fetched from the web of UI/metadata artifacts.
+
+    Removes "Copy" button text appended to headers (``Verse 1 Copy`` -> ``Verse 1``),
+    standalone navigation/UI lines, and licensing boilerplate so structure labels
+    stay recognizable and no metadata leaks onto slides. Repeated lyric lines are
+    preserved on purpose (worship songs repeat intentionally).
+    """
+    text = (raw or "").strip()
+    if not text:
+        return ""
+    out: list[str] = []
+    for line in text.splitlines():
+        s = line.strip()
+        if not s:
+            if out and out[-1] != "":
+                out.append("")
+            continue
+        s = _strip_trailing_copy_button(s)
+        if not s:
+            continue
+        if _WEB_UI_ARTIFACT_LINE_RE.match(s) or _WEB_UI_ARTIFACT_PREFIX_RE.match(s):
+            continue
+        out.append(s)
+    cleaned = "\n".join(out)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
 
 def _non_empty_lyric_lines(text: str) -> list[str]:
     return [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
@@ -263,7 +327,7 @@ def parse_structured_lyric_sections_typed(lyrics: str) -> list[tuple[str, str]]:
     Returns ``(block_kind, body)`` pairs. ``block_kind`` is verse|chorus|bridge|etc.;
     unlabeled blocks default to ``verse``.
     """
-    raw = ensure_lyric_section_breaks(lyrics)
+    raw = ensure_lyric_section_breaks(sanitize_web_lyrics(lyrics))
     if not raw:
         return []
 
@@ -318,9 +382,10 @@ def parse_structured_lyric_sections(lyrics: str) -> list[str]:
 def clean_lyrics_for_projection(lyrics: str) -> str:
     """
     Remove structure labels (refrain, verse, chorus, stanza, bridge, response)
-    as standalone lines; collapse extra blank lines.
+    as standalone lines; collapse extra blank lines. Web-scrape artifacts
+    (``Copy`` buttons, navigation, licensing text) are scrubbed first.
     """
-    raw = (lyrics or "").splitlines()
+    raw = sanitize_web_lyrics(lyrics).splitlines()
     out: list[str] = []
     for line in raw:
         stripped = line.strip()

@@ -41,13 +41,30 @@ FOOTER_HEIGHT = Inches(0.85)
 
 # --- Hymn / lyric slides ----------------------------------------------------
 _HYMN_TITLE_TOP = Inches(0.12)
-HYMN_TITLE_BOX_H = Inches(0.95)
+HYMN_TITLE_BOX_H = Inches(0.95)  # title spans 0.12in .. 1.07in
 HYMN_BODY_TOP_OFFSET = Inches(1.05)  # body top relative to the title top
-_HYMN_DUAL_BOX_H = Inches(5.247)
-_HYMN_DUAL_TOP_FIRST = Inches(0.901)
-_HYMN_DUAL_BOTTOM_FIRST = Inches(5.984)
-_HYMN_DUAL_TOP_CONT = Inches(0.484)
-_HYMN_DUAL_BOTTOM_CONT = Inches(5.568)
+# Bottom safe margin for lyric bodies. The footer strip is now reclaimed for
+# lyrics (the footer is a debug-only overlay), so bodies extend nearly to the
+# bottom edge and only keep this small margin off the very edge.
+_LYRIC_BODY_BOTTOM_MARGIN = Inches(0.2)
+
+# Two-blocks-per-slide ("dual") geometry. The two verse boxes fill the slide
+# vertically: the top box's top edge is flush with the slide top (on non-title
+# continuation slides) and the bottom box's bottom edge is flush with the slide
+# bottom, separated only by a small gap.
+_HYMN_DUAL_GAP = Inches(0.3)  # small gap between the two verse boxes
+
+# Continuation (non-title) slides: top box flush to the top edge, bottom box
+# flush to the bottom edge, split evenly around the gap.
+_HYMN_DUAL_CONT_BOX_H = (SLIDE_HEIGHT - _HYMN_DUAL_GAP) / 2
+_HYMN_DUAL_TOP_CONT = 0  # flush with the top of the slide
+_HYMN_DUAL_BOTTOM_CONT = _HYMN_DUAL_CONT_BOX_H + _HYMN_DUAL_GAP
+
+# First (title) slides: top box clears the title; bottom box still runs flush to
+# the bottom edge, with the same small gap between the two boxes.
+_HYMN_DUAL_TOP_FIRST = Inches(1.20)  # below the title
+_HYMN_DUAL_FIRST_BOX_H = (SLIDE_HEIGHT - _HYMN_DUAL_TOP_FIRST - _HYMN_DUAL_GAP) / 2
+_HYMN_DUAL_BOTTOM_FIRST = _HYMN_DUAL_TOP_FIRST + _HYMN_DUAL_FIRST_BOX_H + _HYMN_DUAL_GAP
 
 # Full-bleed lyric textbox tuning (no side inset; spans the full slide width).
 _LYRIC_TF_SIDE_MARGIN = Inches(0)

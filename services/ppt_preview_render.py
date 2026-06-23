@@ -39,6 +39,36 @@ def _natural_sort_pngs(paths: list[Path]) -> list[Path]:
     return sorted(paths, key=key)
 
 
+def convert_pptx_to_pdf(
+    ppt: Path,
+    out_dir: Path,
+    *,
+    soffice_bin: str,
+    timeout: int = 120,
+) -> Optional[Path]:
+    """Convert ``ppt`` to a PDF in ``out_dir`` via LibreOffice. Returns the PDF path or ``None``."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        soffice_bin,
+        "--headless",
+        "--convert-to",
+        "pdf",
+        "--outdir",
+        str(out_dir),
+        str(ppt.resolve()),
+    ]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=timeout)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+        return None
+    # LibreOffice names the output after the input stem.
+    candidate = out_dir / f"{ppt.stem}.pdf"
+    if candidate.is_file():
+        return candidate
+    pdfs = sorted(out_dir.glob("*.pdf"))
+    return pdfs[0] if pdfs else None
+
+
 def _render_pdf_pages_to_pngs(pdf_path: Path, out_dir: Path) -> list[Path]:
     """Rasterize each PDF page to ``slide_0001.png`` … in ``out_dir``."""
     try:
@@ -86,24 +116,10 @@ def render_ppt_preview_pngs(
     # --- Primary: PDF export then pypdfium2 (full deck thumbnails) ---
     with tempfile.TemporaryDirectory(prefix="ppt_pdf_") as tmp:
         tmp_path = Path(tmp)
-        pdf_cmd = [
-            soffice_bin,
-            "--headless",
-            "--convert-to",
-            "pdf",
-            "--outdir",
-            str(tmp_path),
-            str(ppt.resolve()),
-        ]
-        try:
-            subprocess.run(pdf_cmd, check=True, capture_output=True, text=True, timeout=120)
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-            pdf_paths: list[Path] = []
-        else:
-            pdf_paths = sorted(tmp_path.glob("*.pdf"))
+        pdf_path = convert_pptx_to_pdf(ppt, tmp_path, soffice_bin=soffice_bin)
 
-        if pdf_paths:
-            pdf_pages = _render_pdf_pages_to_pngs(pdf_paths[0], out_dir)
+        if pdf_path is not None:
+            pdf_pages = _render_pdf_pages_to_pngs(pdf_path, out_dir)
             if pdf_pages:
                 if n_slides and len(pdf_pages) != n_slides:
                     message = (

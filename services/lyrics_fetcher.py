@@ -8,6 +8,7 @@ from urllib.error import URLError
 from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
 
+from services.mass_text_format import sanitize_web_lyrics
 from services.song_catalog import find_catalog_row_by_id, load_catalog, update_lyrics
 from services.web_hymn_discovery import extract_representative_text
 
@@ -82,7 +83,7 @@ def _extract_lyricfind_lyrics(page: str) -> str:
         return ""
     joined = "\n".join(out)
     joined = re.sub(r"\n{3,}", "\n\n", joined)
-    return joined[:6000].strip()
+    return sanitize_web_lyrics(joined[:6000])
 
 
 def fetch_and_store_for_selection(selection: dict[str, str]) -> dict[str, Any]:
@@ -123,6 +124,7 @@ def fetch_and_store_for_selection(selection: dict[str, str]) -> dict[str, Any]:
                 if lyrics2:
                     lyrics = lyrics2
                     source_used = lf
+        lyrics = sanitize_web_lyrics(lyrics)
         if not lyrics:
             return {"ok": False, "reason": "no_lyrics_found", "section": sec, "id": hid, "title": item.get("title")}
         ok = update_lyrics(sec, hid, lyrics, source_link=source_used)

@@ -58,10 +58,12 @@ from .deck_template import (
     _EMU_PER_INCH,
     _HYMN_DUAL_BOTTOM_CONT,
     _HYMN_DUAL_BOTTOM_FIRST,
-    _HYMN_DUAL_BOX_H,
+    _HYMN_DUAL_CONT_BOX_H,
+    _HYMN_DUAL_FIRST_BOX_H,
     _HYMN_DUAL_TOP_CONT,
     _HYMN_DUAL_TOP_FIRST,
     _HYMN_TITLE_TOP,
+    _LYRIC_BODY_BOTTOM_MARGIN,
     _LOGO_MAX_H,
     _LOGO_MAX_W,
     _LYRIC_SAFE_SIDE_RATIO,
@@ -128,6 +130,14 @@ _LYRIC_MAX_PT = int(_HYMN_REF_BODY_PT)
 _LYRIC_SOFT_WRAP_CHARS = 46
 _LYRIC_FIT_WIDTH_SAFETY = 0.96
 _LYRIC_FIT_HEIGHT_SAFETY = 0.90
+# Em->inch width fudge for Poppins Bold ALL CAPS on the projector surface. The
+# previous 0.80 under-measured wide lines, so the auto-fit never shrank them and
+# the text wrapped/overflowed the box (covering the title on dense slides). 0.92
+# matches observed Poppins Bold cap widths so the size range actually engages.
+_LYRIC_WIDTH_CALIBRATION = 0.92
+# Rendered line pitch vs. nominal at the configured line spacing (Poppins runs a
+# little taller than the bare spacing factor implies).
+_LYRIC_LINE_PITCH_FACTOR = 1.20
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _REFERENCE_DECK_FILENAME = "GCCC24May2026_Eastertide.pptx"
@@ -249,6 +259,10 @@ _nicene_creed_template: Optional[Presentation] = None
 class DeckBrandingOptions:
     include_logo: bool = True
     include_name: bool = True
+    # Developer option: when False, the bottom community/section footer tag (the
+    # small ~12pt line) is omitted from every slide. Kept on by default; it is a
+    # debugging aid that may be retired later.
+    include_footer: bool = True
 
 
 _deck_branding = DeckBrandingOptions()
@@ -496,6 +510,8 @@ def _apply_hymn_branding(slide) -> None:
 
 
 def _add_hymn_footer(slide, footer_section: str) -> None:
+    if not _deck_branding.include_footer:
+        return
     lx = MARGIN_SIDE
     w = SLIDE_WIDTH - 2 * MARGIN_SIDE
     y = SLIDE_HEIGHT - FOOTER_TOP_OFFSET
@@ -661,6 +677,45 @@ def _split_line_preserving_parens(text: str, idx: int) -> Tuple[str, str]:
         return text[:idx].strip(), text[idx:].strip(" ,-;:.")
     start, _end = span
     return text[:start].strip(), text[start:].strip(" ,-;:.")
+
+
+def _first_toplevel_paren_span(text: str) -> Optional[Tuple[int, int]]:
+    """Return ``(start, end)`` of the first top-level ``(...)`` group, or None."""
+    depth = 0
+    start: Optional[int] = None
+    for i, ch in enumerate(text):
+        if ch == "(":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == ")":
+            if depth > 0:
+                depth -= 1
+                if depth == 0 and start is not None:
+                    return (start, i + 1)
+    return None
+
+
+def _split_paren_echo_segments(line: str) -> List[Tuple[str, bool]]:
+    """Peel a trailing parenthetical echo onto its own row.
+
+    A line like ``main phrase (echo of the phrase)`` becomes two segments so the
+    parenthetical always moves to the next row and is never broken mid-way. Short
+    annotations (``(2x)``, ``(bis)``) and parentheticals with trailing text are
+    left inline. Returns ``(segment, is_paren)`` pairs; ``is_paren`` segments must
+    not be re-wrapped.
+    """
+    span = _first_toplevel_paren_span(line)
+    if span is None:
+        return [(line, False)]
+    start, end = span
+    before = line[:start].strip()
+    inner = line[start + 1 : end - 1]
+    # Only treat as an echo when there is lead-in text, the group runs to the end
+    # of the line, and the parenthetical is a real phrase (not a tiny annotation).
+    if not before or line[end:].strip() or len(inner.split()) < 2:
+        return [(line, False)]
+    return [(before, False), (line[start:end].strip(), True)]
 
 
 def _lyric_paragraph_count(text: str) -> int:
@@ -922,6 +977,8 @@ def _apply_lamb_of_god_typography(slide) -> None:
 
 
 def _add_community_footer(slide, footer_section: str, theme: SlideTheme):
+    if not _deck_branding.include_footer:
+        return
     lx = MARGIN_SIDE
     w = SLIDE_WIDTH - 2 * MARGIN_SIDE
     y = SLIDE_HEIGHT - FOOTER_TOP_OFFSET
@@ -2066,6 +2123,52 @@ def _patch_gospel_acclamation_alleluia_slide(slide, verse: str) -> None:
     shape.text_frame.text = body
 
 
+def _set_gospel_acclamation_alleluia_body(shape, verse: str) -> None:
+    """Inject the week's acclamation verse while preserving the master body format.
+
+    The master template's alleluia body (Arial 69 bold, centered, near-white) is
+    mirrored exactly: we read the formatting off the existing first run and reuse
+    it for every rebuilt line, instead of forcing a different deck font/alignment.
+    """
+    body = _format_gospel_acclamation_projection_text(verse)
+    if not body:
+        return
+    tf = shape.text_frame
+    ref_run = None
+    for para in tf.paragraphs:
+        if para.runs:
+            ref_run = para.runs[0]
+            break
+    ref_align = tf.paragraphs[0].alignment if tf.paragraphs else None
+    ref_name = ref_run.font.name if ref_run is not None else None
+    ref_size = ref_run.font.size if ref_run is not None else None
+    ref_bold = ref_run.font.bold if ref_run is not None else None
+    ref_color = None
+    if ref_run is not None:
+        try:
+            if ref_run.font.color is not None and ref_run.font.color.type is not None:
+                ref_color = ref_run.font.color.rgb
+        except (AttributeError, TypeError):
+            ref_color = None
+
+    lines = body.split("\n")
+    tf.clear()
+    for i, line in enumerate(lines):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        if ref_align is not None:
+            para.alignment = ref_align
+        run = para.add_run()
+        run.text = line
+        if ref_name:
+            run.font.name = ref_name
+        if ref_size is not None:
+            run.font.size = ref_size
+        if ref_bold is not None:
+            run.font.bold = ref_bold
+        if ref_color is not None:
+            run.font.color.rgb = ref_color
+
+
 def _apply_gospel_acclamation_typography(slide) -> None:
     """Title Georgia 50 pt; all body lines fixed 69 pt (no autofit shrink)."""
     _apply_rite_slide_title_typography(slide, "Gospel Acclamation", size_pt=_SECTION_TITLE_PT_LARGE)
@@ -2115,14 +2218,13 @@ def _add_gospel_acclamation_slides(
     evangelist/book name.
     """
     if _load_master_template() is not None:
-        verse_body = _format_gospel_acclamation_projection_text(gospel_acclamation_verse or "")
-
         def _finish_alleluia(slide, _i):
-            if verse_body:
-                shape = _gospel_acclamation_body_shape(slide)
-                if shape is not None:
-                    shape.text_frame.text = verse_body
-            _apply_gospel_acclamation_typography(slide)
+            shape = _gospel_acclamation_body_shape(slide)
+            if shape is not None:
+                _set_gospel_acclamation_alleluia_body(shape, gospel_acclamation_verse or "")
+            _apply_rite_slide_title_typography(
+                slide, "Gospel Acclamation", size_pt=_SECTION_TITLE_PT_LARGE
+            )
 
         def _finish_dialogue(slide, _i):
             ref = (gospel_reference or "").strip()
@@ -2813,6 +2915,23 @@ def _divider_fit_font_pt(
     return max(min_pt, pt)
 
 
+def _divider_fit_single_line_pt(
+    text: str,
+    *,
+    width_in: float,
+    max_pt: float,
+    min_pt: float,
+) -> float:
+    """Largest point size at which ``text`` fits on a single line within ``width_in``."""
+    plain = (text or "").strip()
+    if not plain:
+        return max_pt
+    pt = max_pt
+    while pt > min_pt and _divider_est_lines(plain, width_in, pt) > 1:
+        pt -= 1
+    return max(min_pt, pt)
+
+
 def _divider_add_textbox(
     slide,
     *,
@@ -2822,6 +2941,7 @@ def _divider_add_textbox(
     height,
     lines: List[Tuple[str, dict]],
     anchor_middle: bool = False,
+    no_wrap: bool = False,
 ) -> None:
     """Add a textbox; each item is (text, style kwargs for _style_para)."""
     if not any((t or "").strip() for t, _ in lines):
@@ -2830,6 +2950,8 @@ def _divider_add_textbox(
     tf = box.text_frame
     _prep_tf(tf)
     tf.clear()
+    if no_wrap:
+        tf.word_wrap = False
     if anchor_middle:
         tf.vertical_anchor = BODY_VERTICAL_ANCHOR
     first = True
@@ -2891,12 +3013,11 @@ def _render_default_divider_cover(
     )
 
     celebrant_name = (celebrant or "").strip() or "—"
-    celebrant_pt = _divider_fit_font_pt(
-        [celebrant_name],
+    celebrant_pt = _divider_fit_single_line_pt(
+        celebrant_name,
         width_in=7.206,
-        height_in=1.156,
         max_pt=61,
-        min_pt=34,
+        min_pt=20,
     )
     _divider_add_textbox(
         slide,
@@ -2915,6 +3036,7 @@ def _render_default_divider_cover(
         height=Inches(1.156),
         lines=[(celebrant_name, {"size_pt": celebrant_pt, "color": pal.primary, "bold": True})],
         anchor_middle=True,
+        no_wrap=True,
     )
 
     year_date_line = _divider_year_date_line(lectionary_cycle, date)
@@ -2953,12 +3075,11 @@ def _render_default_divider_cover(
             lines=[("CO-CELEBRANT:", {"size_pt": 37, "color": pal.label, "bold": True})],
             anchor_middle=True,
         )
-        co_pt = _divider_fit_font_pt(
-            [co_name],
+        co_pt = _divider_fit_single_line_pt(
+            co_name,
             width_in=7.206,
-            height_in=1.156,
             max_pt=52,
-            min_pt=28,
+            min_pt=20,
         )
         _divider_add_textbox(
             slide,
@@ -2968,6 +3089,7 @@ def _render_default_divider_cover(
             height=Inches(1.156),
             lines=[(co_name, {"size_pt": co_pt, "color": pal.primary, "bold": True})],
             anchor_middle=True,
+            no_wrap=True,
         )
 
     g_line = (gospel_quote or "").strip()
@@ -3139,18 +3261,26 @@ def measureRenderedText(lines: List[str], font_size_pt: float) -> Mapping[str, f
     Uses a conservative width model to keep projector readability.
     """
     safe_width_inches = float(SLIDE_WIDTH.inches) * _LYRIC_TEXTBOX_WIDTH_RATIO
-    line_height_inches = (font_size_pt * _HYMN_REF_LINE_SPACING * 1.12) / 72.0
+    line_height_inches = (
+        font_size_pt * _HYMN_REF_LINE_SPACING * _LYRIC_LINE_PITCH_FACTOR
+    ) / 72.0
+    avail_width_inches = safe_width_inches * _LYRIC_FIT_WIDTH_SAFETY
     max_line_inches = 0.0
+    visual_line_count = 0
     for line in lines:
         units = _token_width_units(line.strip().upper())
-        # 1 unit is approximated as ~0.63em for Poppins Bold in projection use.
-        # Conservative estimate for Poppins Bold ALL CAPS on projectors.
-        estimated = (units * font_size_pt * 0.80) / 72.0
+        estimated = (units * font_size_pt * _LYRIC_WIDTH_CALIBRATION) / 72.0
         if estimated > max_line_inches:
             max_line_inches = estimated
+        # Account for soft word-wrap: a line wider than the box becomes multiple
+        # visual lines, which is what actually pushes text past the box bounds.
+        if avail_width_inches > 0 and estimated > avail_width_inches:
+            visual_line_count += int(math.ceil(estimated / avail_width_inches))
+        else:
+            visual_line_count += 1
     return {
         "max_line_width_inches": max_line_inches,
-        "text_height_inches": len(lines) * line_height_inches,
+        "text_height_inches": visual_line_count * line_height_inches,
         "available_width_inches": safe_width_inches,
     }
 
@@ -3176,11 +3306,14 @@ def _lyric_lines_from_chunk(lyrics_text: str) -> List[str]:
         return []
     out: List[str] = []
     for raw in raw_lines:
-        if len(raw) <= _LYRIC_SOFT_WRAP_CHARS:
-            out.append(raw)
-            continue
-        wrapped = optimizeLineBreaks(raw)
-        out.extend(wrapped if wrapped else [raw])
+        for seg, is_paren in _split_paren_echo_segments(raw):
+            # A parenthetical echo always occupies its own row and is never broken,
+            # regardless of length (the auto-fit shrinks the font instead).
+            if is_paren or len(seg) <= _LYRIC_SOFT_WRAP_CHARS:
+                out.append(seg)
+                continue
+            wrapped = optimizeLineBreaks(seg)
+            out.extend(wrapped if wrapped else [seg])
     return out
 
 
@@ -3535,7 +3668,7 @@ def _add_hymn_lyric_slides_single(
     )
 
     body_top = title_top + HYMN_BODY_TOP_OFFSET
-    body_h = SLIDE_HEIGHT - body_top - FOOTER_TOP_OFFSET
+    body_h = SLIDE_HEIGHT - body_top - _LYRIC_BODY_BOTTOM_MARGIN
     lyric_left, lyric_w = _lyric_textbox_geometry(prs.slide_width)
     _add_hymn_lyric_box(
         slide0,
@@ -3607,7 +3740,7 @@ def _add_hymn_lyric_slides_dual(
                 title_align=_pp_align(typo.title_align),
             )
             body_top = title_top + HYMN_BODY_TOP_OFFSET
-            body_h = SLIDE_HEIGHT - body_top - FOOTER_TOP_OFFSET
+            body_h = SLIDE_HEIGHT - body_top - _LYRIC_BODY_BOTTOM_MARGIN
             lyric_left, lyric_w = _lyric_textbox_geometry(prs.slide_width)
             _add_hymn_lyric_box(
                 slide,
@@ -3648,7 +3781,7 @@ def _add_hymn_lyric_slides_dual(
                 0,
                 int(_HYMN_DUAL_TOP_FIRST),
                 full_w,
-                int(_HYMN_DUAL_BOX_H),
+                int(_HYMN_DUAL_FIRST_BOX_H),
                 group[0][0],
                 group[0][1],
                 typography=typo,
@@ -3658,7 +3791,7 @@ def _add_hymn_lyric_slides_dual(
                 0,
                 int(_HYMN_DUAL_BOTTOM_FIRST),
                 full_w,
-                int(_HYMN_DUAL_BOX_H),
+                int(_HYMN_DUAL_FIRST_BOX_H),
                 group[1][0],
                 group[1][1],
                 typography=typo,
@@ -3670,7 +3803,7 @@ def _add_hymn_lyric_slides_dual(
                 0,
                 int(_HYMN_DUAL_TOP_CONT),
                 full_w,
-                int(_HYMN_DUAL_BOX_H),
+                int(_HYMN_DUAL_CONT_BOX_H),
                 group[0][0],
                 group[0][1],
                 typography=typo,
@@ -3680,7 +3813,7 @@ def _add_hymn_lyric_slides_dual(
                 0,
                 int(_HYMN_DUAL_BOTTOM_CONT),
                 full_w,
-                int(_HYMN_DUAL_BOX_H),
+                int(_HYMN_DUAL_CONT_BOX_H),
                 group[1][0],
                 group[1][1],
                 typography=typo,
@@ -4111,6 +4244,7 @@ def generate_mass_ppt(
     hymn_typography: Optional[Mapping[str, Any]] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
+    include_footer: bool = True,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
@@ -4131,6 +4265,7 @@ def generate_mass_ppt(
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
+        include_footer=bool(include_footer),
     )
     prs = Presentation()
     prs.slide_width = SLIDE_WIDTH

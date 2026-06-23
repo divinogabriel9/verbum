@@ -7,7 +7,7 @@
         "ordinary_time",
         "easter"
       ],
-      "lyrics": "Chorus\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 1\nYahweh's people dance for joy\nO come before the Lord\nAnd play for him on glad tambourines\nAnd let your trumpet sound\n\nChorus 2\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 2\nRise, O children, from your sleep;\nYour Savior now has come\nHe has turned your sorrow to joy\nAnd filled your soul with song\n\nChorus 3\nSing a new song unto the Lord;\nLet your song be sung from mountains high\nSing a new song unto the Lord\nSinging Alleluia\nSinging Alleluia",
+      "lyrics": "Chorus\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 1\nYahweh's people dance for joy\nO come before the Lord\nAnd play for him on glad tambourines\nAnd let your trumpet sound\n\nChorus 2\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 2\nRise, O children, from your sleep;\nYour Savior now has come\nHe has turned your sorrow to joy\nAnd filled your soul with song\n\nChorus 3\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging Alleluia\nSinging Alleluia",
       "source": "lyrics_dashboard",
       "author": "",
       "language": "English",
@@ -288,10 +288,11 @@
       "seasons": [
         "all"
       ],
-      "lyrics": "CHRISTIFY THE GIFTS WE BRING TO YOU\nBOUNTY OF THE EARTH RECEIVE ANEW\nTAKE AND BLESS THE WORK OF OUR HANDS\nCHRISTIFY THESE GIFTS AT YOUR COMMAND\n\nRain and sunshine, seed and soil,\ndraw from us this offering toil.\nMake us worthy of your name\nas we share your bread and wine.\n\nCHRISTIFY THE GIFTS WE BRING TO YOU\nBOUNTY OF THE EARTH RECEIVE ANEW\nTAKE AND BLESS THE WORK OF OUR HANDS\nCHRISTIFY THESE GIFTS AT YOUR COMMAND\n\nBless us this day that we may prove\nworthy of the life we have in you.\nMake us your living body here,\nbringing your love to all we meet.\n\nCHRISTIFY THE GIFTS WE BRING TO YOU\nBOUNTY OF THE EARTH RECEIVE ANEW\nTAKE AND BLESS THE WORK OF OUR HANDS\nCHRISTIFY THESE GIFTS AT YOUR COMMAND",
+      "lyrics": "Verse 1\nChristify the gifts we bring to you\nBounty of the earth receive anew\nTake and bless the work of our hands\nChristify these gifts at your command\n\nVerse 2\nSun and moon and earth and wind and rain\nAll the world's contained in every grain\nAll the toil and dreams of humankind\nAll we are we bring as bread and wine\n\nVerse 3\nTurn the bread and wine our hearts implore (turn the bread and wine our hearts implore)\nTo the living presence of the lord (to the living presence of the lord)\nBlessed and broken shared with all in need (blessed and broken shared with all in need)\nAll our hungers sacred bread will feed\n\nVerse 4\nWith this bread and wine you christify (with this bread and wine you christify)\nNow our deepest thirst you satisfy (now our deepest thirst you satisfy)\nWe who by this bread you sanctify (we who by this bread you sanctify)\nDraw the world for you to christify\n\nVerse 5\nWe who by this bread you sanctify (we who by this bread you sanctify)\nDraw the world for You to christify",
       "gospel_moods": [
         "mercy"
-      ]
+      ],
+      "source": "lyrics_dashboard"
     },
     {
       "id": "take_o_take",
@@ -764,7 +765,7 @@
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster, cibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 2\nMula sa lupa, sumibol kang masigla,\nmatapos kang yurakan ng mga masasama.\nSumilang ang liwanag ng mga nawawala,\nTinapay ng Buhay, Pagkain ng dukha.\n\nVerse 1 copy\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster, cibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 3\nJesus, Food divine, be our strength each day,\nso we don’t tire as we witness to your love and care\nto those in greater need, both near and far away.\nMay we lead them back to you, all those who’ve gone astray.\n\nVerse 1 copy copy\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster, cibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 4\nEn la vida, Jesus, sea nuestro Consuelo.\nSea nuestro Amigo y Companero.\nSiempre podamos responder a su Llamada.\nSiempre dispuesto a hacer tu Voluntad.\n\nVerse 1 copy copy copy\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster, cibus et potus noster\nin itinere, in itinere ad domum Dei.",
+      "lyrics": "Chorus\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 1\nMula sa lupa, sumibol kang masigla,\nmatapos kang yurakan ng mga masasama.\nSumilang ang liwanag ng mga nawawala,\nTinapay ng Buhay, Pagkain ng dukha.\n\nChorus 2\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 2\nJesus, Food divine, be our strength each day,\nso we don’t tire as we witness to your love and care\nto those in greater need, both near and far away.\nMay we lead them back to you, all those who’ve gone astray.\n\nChorus 3\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 3\nEn la vida, Jesus, sea nuestro Consuelo.\nSea nuestro Amigo y Companero.\nSiempre podamos responder a su Llamada.\nSiempre dispuesto a hacer tu Voluntad.\n\nChorus 4\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.",
       "source": "lyrics_dashboard",
       "gospel_moods": [
         "reverent"
@@ -1049,6 +1050,17 @@
       "gospel_moods": [
         "reverent"
       ]
+    },
+    {
+      "id": "covenant_journey",
+      "title": "Covenant Journey",
+      "author": "",
+      "language": "English",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Verse 1\nLet me walk with you, as I journey to this land\nSearching for a meaning as each moment passes by\nLet the hand of time be like footprints in the sand\nAs I carry you from the dawn to the setting sun.\n\nChorus\nWith just one hand we can travel far together\nOne’s life sharing in love\nI will hold you forever\nYes, I love you with all my heart.\n\nVerse 2\nThere’ll be many crossroads as we walk  along the way\nThere’ll be many questions as we live life day by day\nThis will never matter if the Lord is always there\nHe will surely find the answers just because he cares",
+      "source": "lyrics_dashboard"
     }
   ],
   "meditation": [

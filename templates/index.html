@@ -1116,6 +1116,59 @@
       border-bottom-color: var(--app-header-glass-border);
       box-shadow: 0 1px 0 color-mix(in srgb, #000 18%, transparent);
     }
+
+    /* ── Branded dark header (neutral dark-theme background colors).
+       Applied in BOTH light and dark mode. The header is a self-contained
+       "dark island": we remap the design tokens its descendants consume so every
+       variable-driven control renders light-on-dark regardless of page theme. ── */
+    .app-header {
+      --app-header-glass-bg: color-mix(in srgb, #1c1c1c 82%, transparent);
+      --app-header-glass-border: rgba(255, 255, 255, 0.08);
+      /* neutral dark surfaces (matches the app's dark theme) */
+      --bg: #121212;
+      --bg-top: #1c1c1c;
+      --surface: #1c1c1c;
+      --surface-2: #242424;
+      --surface-solid: #2e2e2e;
+      --card-border: #2e2e2e;
+      --line: #393939;
+      --line-soft: #2e2e2e;
+      /* light ink on the dark bar */
+      --ink: #fafafa;
+      --muted: #b4b4b4;
+      --ink-subtle: #898989;
+      /* berry accents (matches dark theme) */
+      --good: #d45250;
+      --color-primary: #d45250;
+      --color-primary-active: #a10f0d;
+      --liturgical-accent: #d45250;
+      --liturgical-glow: #d45250;
+      --brand-flow-color: #f2f2f2;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Beat the existing dark-theme header rule for the glass background. */
+    html[data-theme="dark"] .app-header {
+      --app-header-glass-bg: color-mix(in srgb, #1c1c1c 82%, transparent);
+      --app-header-glass-border: rgba(255, 255, 255, 0.08);
+    }
+    /* Search field: force the dark-island look in light mode too (overrides the
+       hard-coded light #f4f5f7 background). */
+    .app-header .app-header__search {
+      background: color-mix(in srgb, #ffffff 7%, transparent);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .app-header .app-header__search-kbd {
+      background: color-mix(in srgb, #ffffff 6%, transparent);
+    }
+    /* Dark PNG icons need inverting to read on the warm-dark bar (all themes). */
+    .app-header .notif-btn .notif-icon,
+    .app-header .liturgical-indicator__icon,
+    .app-header .app-header-nav .nav-link .nav-icon {
+      filter: invert(1);
+      opacity: 0.9;
+    }
+
   /* Mass builder stepper — sits directly below the header border */
     .mass-builder-stepper {
       --stepper-complete: var(--color-primary-active);
@@ -6760,7 +6813,7 @@
     }
     /* Media row — stacked: uploads on top, poster style + checks at bottom */
     .flow-setup-row--media {
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: var(--space-3);
       align-items: stretch;
     }
@@ -6802,19 +6855,127 @@
       .flow-divider-poster-picks { grid-template-columns: minmax(0, 1fr); }
     }
     .flow-divider-poster-picks .field { min-width: 0; }
-    .flow-poster-thumb {
+    .flow-poster-picker-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+    .poster-picker {
+      position: relative;
       margin-top: 8px;
+    }
+    .poster-picker__trigger {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 1px solid var(--line);
       border-radius: 10px;
       overflow: hidden;
-      border: 1px solid var(--line);
       background: var(--surface-muted, rgba(0,0,0,0.04));
+      cursor: pointer;
+      position: relative;
       aspect-ratio: 16 / 9;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .flow-poster-thumb img {
+    .poster-picker__trigger:hover,
+    .poster-picker__trigger:focus-visible {
+      border-color: var(--liturgical-accent, var(--accent));
+      outline: none;
+    }
+    .poster-picker__trigger[aria-expanded="true"] {
+      border-color: var(--liturgical-accent, var(--accent));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--liturgical-accent, var(--accent)) 28%, transparent);
+    }
+    .poster-picker__current {
       display: block;
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .poster-picker__caret {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      pointer-events: none;
+    }
+    .poster-picker__caret svg {
+      width: 13px;
+      height: 13px;
+      transition: transform 0.2s ease;
+    }
+    .poster-picker__trigger[aria-expanded="true"] .poster-picker__caret svg {
+      transform: rotate(180deg);
+    }
+    .poster-picker__menu {
+      position: absolute;
+      z-index: 60;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+      max-height: min(60vh, 420px);
+      overflow-y: auto;
+    }
+    .poster-picker__menu[hidden] {
+      display: none;
+    }
+    .poster-picker__option {
+      display: block;
+      position: relative;
+      width: 100%;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      overflow: hidden;
+      background: none;
+      cursor: pointer;
+      aspect-ratio: 16 / 9;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+    .poster-picker__option:hover {
+      border-color: var(--liturgical-accent, var(--accent));
+      transform: translateY(-1px);
+    }
+    .poster-picker__option:focus-visible {
+      outline: none;
+      border-color: var(--liturgical-accent, var(--accent));
+    }
+    .poster-picker__option img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .poster-picker__option[aria-selected="true"] {
+      border-color: var(--liturgical-accent, var(--accent));
+      box-shadow: inset 0 0 0 2px var(--liturgical-accent, var(--accent));
+    }
+    .poster-picker__option[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--liturgical-accent, var(--accent)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 12px no-repeat;
     }
     .flow-setup-media-note {
       margin: var(--space-2) 0 0;
@@ -11043,13 +11204,10 @@
       letter-spacing: -0.03em;
       transform: translateY(0.025em);
     }
-    html[data-theme="dark"] .app-header .wordmark__flow {
+    .app-header .wordmark__flow {
       color: #f2f2f2;
     }
     .app-header__main > .brand-block .brand-block__tagline {
-      color: #4a5560;
-    }
-    html[data-theme="dark"] .app-header__main > .brand-block .brand-block__tagline {
       color: #9aa3ab;
     }
     /* Sidebar shell — layout lock (loads last) */
@@ -12048,6 +12206,7 @@ Lord, hear our prayer</textarea>
           <div class="download-row" id="download-row">
           <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
           <a href="#" id="dl-pptx" download>PowerPoint</a>
+          <a href="#" id="dl-pdf" download>PDF</a>
           <a href="#" id="dl-poster" download>Poster PNG</a>
           <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
           </div>
@@ -12249,11 +12408,6 @@ Lord, hear our prayer</textarea>
                       </div>
                     </div>
                   </div>
-                  <div class="field flow-first-reading-override">
-                    <label for="flow-reading1-custom">Custom first reading <span class="muted">(optional — use if the first reading didn't load)</span></label>
-                    <input type="text" id="flow-reading1-ref-custom" maxlength="120" placeholder="Reference, e.g. 2 Kings 4:8-11, 14-16a" />
-                    <textarea id="flow-reading1-custom" maxlength="8000" rows="3" placeholder="Paste the first reading text to override the auto-fetched body."></textarea>
-                  </div>
                 </article>
 
               </div>
@@ -12275,17 +12429,35 @@ Lord, hear our prayer</textarea>
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-media">
-                  <div class="flow-setup-row flow-setup-row--media">
-                    <div class="field flow-poster-file">
-                      <label for="flow-divider-poster">Divider poster</label>
-                      <input type="file" id="flow-divider-poster" accept="image/png,image/jpeg,image/webp,image/gif" />
-                      <p class="muted flow-setup-field-hint" id="flow-divider-status">Choose files</p>
+                  <div class="flow-setup-row flow-divider-poster-picks">
+                    <div class="field">
+                      <span class="flow-poster-picker-label" id="flow-lotw-poster-label">Liturgy of the Word poster</span>
+                      <input type="hidden" id="flow-lotw-poster" value="lotw1" />
+                      <div class="poster-picker" data-poster-picker data-target="flow-lotw-poster" data-prefix="lotw" data-name="Liturgy of the Word">
+                        <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-lotw-poster-label">
+                          <img class="poster-picker__current" src="/static/images/posters/lotw1.png" alt="Selected Liturgy of the Word poster" loading="lazy" />
+                          <span class="poster-picker__caret" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                          </span>
+                        </button>
+                        <div class="poster-picker__menu" role="listbox" aria-label="Liturgy of the Word poster designs" hidden></div>
+                      </div>
                     </div>
-                    <div class="field flow-poster-file">
-                      <label for="flow-announcement-posters">Announcement poster</label>
-                      <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
-                      <p class="muted flow-setup-field-hint" id="flow-announcement-status">Choose files</p>
+                    <div class="field">
+                      <span class="flow-poster-picker-label" id="flow-lote-poster-label">Liturgy of the Eucharist poster</span>
+                      <input type="hidden" id="flow-lote-poster" value="lote1" />
+                      <div class="poster-picker" data-poster-picker data-target="flow-lote-poster" data-prefix="lote" data-name="Liturgy of the Eucharist">
+                        <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-lote-poster-label">
+                          <img class="poster-picker__current" src="/static/images/posters/lote1.png" alt="Selected Liturgy of the Eucharist poster" loading="lazy" />
+                          <span class="poster-picker__caret" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                          </span>
+                        </button>
+                        <div class="poster-picker__menu" role="listbox" aria-label="Liturgy of the Eucharist poster designs" hidden></div>
+                      </div>
                     </div>
+                  </div>
+                  <div class="flow-setup-row">
                     <div class="flow-poster-style">
                       <div class="field flow-setup-footer__toggle-item" id="flow-openai-style-wrap">
                         <label for="flow-openai-poster-style">Poster style</label>
@@ -12303,26 +12475,22 @@ Lord, hear our prayer</textarea>
                       </div>
                     </div>
                   </div>
-                  <div class="flow-setup-row flow-divider-poster-picks">
-                    <div class="field">
-                      <label for="flow-lotw-poster">Liturgy of the Word poster</label>
-                      <select id="flow-lotw-poster">
-                        <option value="lotw1">Design 1 · Warm beige</option>
-                        <option value="lotw2">Design 2 · Light, cross accents</option>
-                        <option value="lotw3">Design 3 · Spotlight (dark)</option>
-                        <option value="lotw4">Design 4 · Soft light</option>
-                      </select>
-                      <div class="flow-poster-thumb"><img id="flow-lotw-poster-thumb" src="/static/images/posters/lotw1.png" alt="Liturgy of the Word divider poster preview" loading="lazy" /></div>
+                  <div class="flow-setup-row">
+                    <div class="field flow-export-pdf-field">
+                      <label class="flow-export-pdf-check"><input type="checkbox" id="flow-export-pdf" /> Also export PDF</label>
+                      <p class="muted flow-setup-field-hint">When checked, generating downloads the PowerPoint and a PDF side by side (handy to share a quick preview in your group chat).</p>
                     </div>
-                    <div class="field">
-                      <label for="flow-lote-poster">Liturgy of the Eucharist poster</label>
-                      <select id="flow-lote-poster">
-                        <option value="lote1">Design 1 · Warm beige</option>
-                        <option value="lote2">Design 2 · Light, cross accents</option>
-                        <option value="lote3">Design 3 · Spotlight (dark)</option>
-                        <option value="lote4">Design 4 · Soft light</option>
-                      </select>
-                      <div class="flow-poster-thumb"><img id="flow-lote-poster-thumb" src="/static/images/posters/lote1.png" alt="Liturgy of the Eucharist divider poster preview" loading="lazy" /></div>
+                  </div>
+                  <div class="flow-setup-row flow-setup-row--media">
+                    <div class="field flow-poster-file">
+                      <label for="flow-divider-poster">Divider poster</label>
+                      <input type="file" id="flow-divider-poster" accept="image/png,image/jpeg,image/webp,image/gif" />
+                      <p class="muted flow-setup-field-hint" id="flow-divider-status">Choose files</p>
+                    </div>
+                    <div class="field flow-poster-file">
+                      <label for="flow-announcement-posters">Announcement poster</label>
+                      <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
+                      <p class="muted flow-setup-field-hint" id="flow-announcement-status">Choose files</p>
                     </div>
                   </div>
                   <p class="flow-setup-media-note">Recommended sizes 16:9 ratio</p>
@@ -12655,6 +12823,24 @@ Lord, hear our prayer</textarea>
                     <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
                   </div>
                 </div>
+                <div class="field">
+                  <label>Developer options</label>
+                  <p class="muted" style="margin:0 0 10px;">Advanced toggles for debugging the generated deck.</p>
+                  <div class="settings-branding-toggles" role="group" aria-label="Developer options">
+                    <label><input type="checkbox" id="flow-hide-footer" /> Hide slide footer (the small bottom tag)</label>
+                  </div>
+                </div>
+                <script>
+                  (function () {
+                    var KEY = "churchMediaHideFooter";
+                    var cb = document.getElementById("flow-hide-footer");
+                    if (!cb) return;
+                    try { cb.checked = localStorage.getItem(KEY) === "1"; } catch (_e) { /* ignore */ }
+                    cb.addEventListener("change", function () {
+                      try { localStorage.setItem(KEY, cb.checked ? "1" : "0"); } catch (_e) { /* ignore */ }
+                    });
+                  })();
+                </script>
                 <div class="field">
                   <label for="settings-celebrant-new">Mass celebrants</label>
                   <p class="muted" style="margin:0 0 10px;">Saved to the app database. Names appear in Mass Builder → Basics.</p>
@@ -13020,6 +13206,16 @@ Lord, hear our prayer</textarea>
       return String(date || "").trim() + "|" + (readingsOnly ? "readings" : "full");
     }
 
+    /* Don't trust or persist a readings payload that is missing the first reading
+       or gospel — prevents a stale/incomplete cache from sticking for 7 days. */
+    function readingsPayloadComplete(data) {
+      if (!data || data.ok === false) return false;
+      const frRef = String(data.first_reading_reference || "").trim();
+      const frBody = String(data.first_reading_excerpt || data.first_reading_text || "").trim();
+      const gospel = String(data.gospel_text || data.gospel_quote || data.gospel_reference || "").trim();
+      return !!(frRef && frBody && gospel);
+    }
+
     function readStoredReadings(date) {
       try {
         const raw = localStorage.getItem(READINGS_LS_PREFIX + String(date || "").trim());
@@ -13048,7 +13244,7 @@ Lord, hear our prayer</textarea>
       const cacheKey = previewCacheKey(d, true);
       if (previewCache.has(cacheKey)) return previewCache.get(cacheKey);
       const stored = readStoredReadings(d);
-      if (stored && stored.ok) {
+      if (stored && readingsPayloadComplete(stored)) {
         previewCache.set(cacheKey, stored);
         return stored;
       }
@@ -13065,7 +13261,7 @@ Lord, hear our prayer</textarea>
           throw new Error(typeof message === "string" ? message : "Could not load readings.");
         }
         previewCache.set(cacheKey, data);
-        writeStoredReadings(d, data);
+        if (readingsPayloadComplete(data)) writeStoredReadings(d, data);
         return data;
       })()
         .finally(() => {
@@ -18196,6 +18392,7 @@ Lord, hear our prayer</textarea>
       const out = [];
       if (data.zip_url) out.push({ label: "ZIP bundle", url: data.zip_url, download: true });
       if (data.pptx_url) out.push({ label: "PowerPoint", url: data.pptx_url, download: true });
+      if (data.pdf_url) out.push({ label: "PDF", url: data.pdf_url, download: true });
       if (data.poster_url) out.push({ label: "Poster PNG", url: data.poster_url, download: true });
       if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
       return out;
@@ -20186,6 +20383,7 @@ Lord, hear our prayer</textarea>
         closeGlobalSearch();
       }
       if (typeof closeAllVerbumSelects === "function") closeAllVerbumSelects();
+      if (typeof closeAllPosterPickers === "function") closeAllPosterPickers();
       if (typeof closeCelebrantPicker === "function") closeCelebrantPicker();
       if (typeof closeMassSongResultPanels === "function") closeMassSongResultPanels(null);
       [
@@ -20206,7 +20404,7 @@ Lord, hear our prayer</textarea>
       const dropdownRoots =
         ".account-menu-wrap, .create-menu-wrap, .liturgical-indicator-wrap, .live-radio-wrap, " +
         ".notif-wrap, .app-header__search-wrap, .vb-select, .celebrant-picker, " +
-        ".mass-song-plan-row__search";
+        ".poster-picker, .mass-song-plan-row__search";
       document.addEventListener("click", (e) => {
         if (e.target.closest(dropdownRoots)) return;
         closeHeaderMenus();
@@ -20625,17 +20823,73 @@ Lord, hear our prayer</textarea>
       });
     }
 
+    const POSTER_DESIGNS = [
+      { n: 1, label: "Design 1 · Warm beige" },
+      { n: 2, label: "Design 2 · Light, cross accents" },
+      { n: 3, label: "Design 3 · Spotlight (dark)" },
+      { n: 4, label: "Design 4 · Soft light" },
+    ];
+
+    function closeAllPosterPickers(exceptPicker) {
+      document.querySelectorAll("[data-poster-picker]").forEach((picker) => {
+        if (exceptPicker && picker === exceptPicker) return;
+        const menu = picker.querySelector(".poster-picker__menu");
+        const trigger = picker.querySelector(".poster-picker__trigger");
+        if (menu) menu.hidden = true;
+        if (trigger) trigger.setAttribute("aria-expanded", "false");
+      });
+    }
+
     function initDividerPosterPickers() {
-      [["flow-lotw-poster", "flow-lotw-poster-thumb"], ["flow-lote-poster", "flow-lote-poster-thumb"]].forEach((pair) => {
-        const sel = $(pair[0]);
-        const thumb = $(pair[1]);
-        if (!sel || !thumb) return;
-        const sync = () => {
-          const id = (sel.value || "").trim();
-          if (/^lot[we][1-4]$/.test(id)) thumb.src = "/static/images/posters/" + id + ".png";
+      document.querySelectorAll("[data-poster-picker]").forEach((picker) => {
+        const target = $(picker.getAttribute("data-target"));
+        const prefix = picker.getAttribute("data-prefix");
+        const name = picker.getAttribute("data-name") || "poster";
+        const trigger = picker.querySelector(".poster-picker__trigger");
+        const current = picker.querySelector(".poster-picker__current");
+        const menu = picker.querySelector(".poster-picker__menu");
+        if (!target || !prefix || !trigger || !current || !menu) return;
+
+        const setSelected = (id) => {
+          if (!/^lot[we][1-4]$/.test(id)) return;
+          target.value = id;
+          current.src = "/static/images/posters/" + id + ".png";
+          menu.querySelectorAll(".poster-picker__option").forEach((opt) => {
+            opt.setAttribute("aria-selected", opt.getAttribute("data-value") === id ? "true" : "false");
+          });
+          target.dispatchEvent(new Event("change", { bubbles: true }));
         };
-        sel.addEventListener("change", sync);
-        sync();
+
+        menu.innerHTML = "";
+        POSTER_DESIGNS.forEach((design) => {
+          const id = prefix + design.n;
+          const opt = document.createElement("button");
+          opt.type = "button";
+          opt.className = "poster-picker__option";
+          opt.setAttribute("role", "option");
+          opt.setAttribute("data-value", id);
+          opt.setAttribute("aria-selected", id === target.value ? "true" : "false");
+          opt.setAttribute("aria-label", name + " — " + design.label);
+          opt.title = design.label;
+          opt.innerHTML = '<img src="/static/images/posters/' + id + '.png" alt="' + design.label + '" loading="lazy" />';
+          opt.addEventListener("click", () => {
+            setSelected(id);
+            closeAllPosterPickers();
+            trigger.focus();
+          });
+          menu.appendChild(opt);
+        });
+
+        trigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const opening = menu.hidden;
+          if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+          closeAllPosterPickers(picker);
+          menu.hidden = !opening;
+          trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+        });
+
+        setSelected(target.value || prefix + "1");
       });
     }
 
@@ -20712,7 +20966,7 @@ Lord, hear our prayer</textarea>
       const cached = readStoredReadings(sun)
         || (window.__homePreview && window.__homePreview.__previewDate === sun ? window.__homePreview : null)
         || previewCache.get(previewCacheKey(sun, true));
-      if (cached && cached.ok) {
+      if (cached && readingsPayloadComplete(cached)) {
         applyHomePreviewData(cached, sun);
       }
       try {
@@ -20965,8 +21219,6 @@ Lord, hear our prayer</textarea>
         }
         populateGospelSentenceSelect(data);
         if ($("flow-gospel-custom")) $("flow-gospel-custom").value = "";
-        if ($("flow-reading1-custom")) $("flow-reading1-custom").value = "";
-        if ($("flow-reading1-ref-custom")) $("flow-reading1-ref-custom").value = "";
         populatePsalmRefrainSelect(data);
         if ($("flow-psalm-custom")) $("flow-psalm-custom").value = "";
         if ($("flow-psalm-ref")) {
@@ -21691,10 +21943,6 @@ Lord, hear our prayer</textarea>
             body.psalm_refrain_index = pidx;
           }
         }
-        const reading1Custom = ($("flow-reading1-custom") && $("flow-reading1-custom").value || "").trim();
-        const reading1RefCustom = ($("flow-reading1-ref-custom") && $("flow-reading1-ref-custom").value || "").trim();
-        if (reading1Custom) body.first_reading_text_override = reading1Custom;
-        if (reading1RefCustom) body.first_reading_ref_override = reading1RefCustom;
         if (divider_bn) body.divider_poster_basename = divider_bn;
         if (ann_bns.length) body.announcement_basenames = ann_bns;
         const lotwSel = $("flow-lotw-poster");
@@ -21719,6 +21967,10 @@ Lord, hear our prayer</textarea>
         const nameCb = $("flow-include-church-name");
         body.include_church_logo = logoCb ? logoCb.checked : false;
         body.include_church_name = nameCb ? nameCb.checked : false;
+        const hideFooterCb = $("flow-hide-footer");
+        body.include_footer = hideFooterCb ? !hideFooterCb.checked : true;
+        const exportPdfCb = $("flow-export-pdf");
+        body.export_pdf = exportPdfCb ? exportPdfCb.checked : false;
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -21736,8 +21988,6 @@ Lord, hear our prayer</textarea>
           food_sponsors: body.food_sponsors || [],
           psalm_text_override: body.psalm_text_override || null,
           psalm_refrain_index: body.psalm_refrain_index != null ? body.psalm_refrain_index : null,
-          first_reading_text_override: body.first_reading_text_override || null,
-          first_reading_ref_override: body.first_reading_ref_override || null,
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
@@ -21751,6 +22001,7 @@ Lord, hear our prayer</textarea>
           custom_theme: body.custom_theme,
           include_church_logo: body.include_church_logo,
           include_church_name: body.include_church_name,
+          include_footer: body.include_footer,
         });
         const prev = localStorage.getItem(dupKey);
         if (prev && prev === fp) {
@@ -21813,6 +22064,7 @@ Lord, hear our prayer</textarea>
         const linkMap = o.links || [
           ["dl-zip", "zip_url"],
           ["dl-pptx", "pptx_url"],
+          ["dl-pdf", "pdf_url"],
           ["dl-poster", "poster_url"],
           ["dl-poster-ppt", "poster_ppt_url"],
         ];
@@ -21846,15 +22098,23 @@ Lord, hear our prayer</textarea>
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
         if (o.autoDownloadPptx && data.pptx_url) {
-          const pptxName = (data.export_stem ? data.export_stem + ".pptx" : "mass_presentation.pptx");
+          const stemName = data.export_stem || "mass_presentation";
           try {
-            await triggerBrowserDownload(data.pptx_url, pptxName);
-            statusFn("Deck generated. PowerPoint download started.", "ok", dlMeta);
+            await triggerBrowserDownload(data.pptx_url, stemName + ".pptx");
+            if (data.pdf_url) {
+              await triggerBrowserDownload(data.pdf_url, stemName + ".pdf");
+              statusFn("Deck generated. PowerPoint and PDF downloads started.", "ok", dlMeta);
+            } else {
+              statusFn("Deck generated. PowerPoint download started.", "ok", dlMeta);
+            }
           } catch (_dlErr) {
-            statusFn("Deck generated. Downloads are ready (use PowerPoint link if download did not start).", "ok", dlMeta);
+            statusFn("Deck generated. Downloads are ready (use the links if download did not start).", "ok", dlMeta);
           }
         } else {
           statusFn("Deck generated. Downloads are ready.", "ok", dlMeta);
+        }
+        if (data.pdf_message) {
+          notify(data.pdf_message, "warn");
         }
         refreshAiImageQuotaHint();
         return data;

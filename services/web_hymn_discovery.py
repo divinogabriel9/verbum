@@ -12,6 +12,8 @@ from urllib.error import URLError
 from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
 
+from services.mass_text_format import sanitize_web_lyrics
+
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _CACHE_PATH = _PROJECT_ROOT / "data" / "web_hymn_cache.json"
 _H_API = "https://hymnary.org/api/scripture?reference="
@@ -181,7 +183,7 @@ def discover_hymns_for_readings(
         if idx < fetch_lyrics_count and not str(ent.get("lyrics") or "").strip():
             try:
                 page_text = _read_text_url(row["text_link"])
-                rep = extract_representative_text(page_text)
+                rep = sanitize_web_lyrics(extract_representative_text(page_text))
                 if rep:
                     ent["lyrics"] = rep
             except (URLError, TimeoutError):

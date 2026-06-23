@@ -91,11 +91,20 @@ def _format_license(code: Optional[str]) -> str:
     return "CC " + c.upper()
 
 
-def _pick_result(items: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
-    for item in items:
-        if (item.get("url") or "").strip():
-            return item
-    return None
+def _pick_result(
+    items: list[dict[str, Any]], date: str = ""
+) -> Optional[dict[str, Any]]:
+    """Pick a usable image, rotating the choice by ``date`` for daily variety.
+
+    Selection is deterministic per date (so the same day always resolves to the
+    same image) but differs across days, so consecutive days get a fresh image
+    even when the Gospel keywords overlap.
+    """
+    valid = [item for item in items if (item.get("url") or "").strip()]
+    if not valid:
+        return None
+    seed = sum(ord(c) for c in (date or "")) if date else 0
+    return valid[seed % len(valid)]
 
 
 def _request_openverse(params: dict[str, Any]) -> list[dict[str, Any]]:
@@ -111,18 +120,24 @@ def _request_openverse(params: dict[str, Any]) -> list[dict[str, Any]]:
     return results if isinstance(results, list) else []
 
 
-def _fetch_openverse(query: str, fallback_query: str) -> Optional[dict[str, Any]]:
-    """Try the verse query (wide, then any), then a broad fallback query."""
+def _fetch_openverse(
+    query: str, fallback_query: str, date: str = ""
+) -> Optional[dict[str, Any]]:
+    """Try the verse query (wide, then any), then a broad fallback query.
+
+    A larger ``page_size`` widens the candidate pool so the per-date rotation in
+    ``_pick_result`` has room to surface a different image each day.
+    """
     attempts = [
-        {"q": query, "aspect_ratio": "wide", "page_size": 10, "mature": "false"},
-        {"q": query, "page_size": 10, "mature": "false"},
+        {"q": query, "aspect_ratio": "wide", "page_size": 30, "mature": "false"},
+        {"q": query, "page_size": 30, "mature": "false"},
     ]
     if fallback_query and fallback_query != query:
-        attempts.append({"q": fallback_query, "aspect_ratio": "wide", "page_size": 10, "mature": "false"})
-        attempts.append({"q": fallback_query, "page_size": 10, "mature": "false"})
+        attempts.append({"q": fallback_query, "aspect_ratio": "wide", "page_size": 30, "mature": "false"})
+        attempts.append({"q": fallback_query, "page_size": 30, "mature": "false"})
 
     for params in attempts:
-        picked = _pick_result(_request_openverse(params))
+        picked = _pick_result(_request_openverse(params), date)
         if picked:
             return picked
     return None
@@ -150,7 +165,7 @@ def fetch_gospel_background(date: str) -> dict[str, Any]:
     )
 
     try:
-        item = _fetch_openverse(query, f"Jesus Christ {_QUERY_BIAS}")
+        item = _fetch_openverse(query, f"Jesus Christ {_QUERY_BIAS}", d)
     except Exception as exc:  # network / parse failures degrade gracefully
         return {"ok": False, "error": f"Image search failed: {exc}", "query": query}
 

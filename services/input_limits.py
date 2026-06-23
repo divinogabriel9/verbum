@@ -12,8 +12,6 @@ SECTION_KEY = 40
 GOSPEL_QUOTE = 2000
 PSALM_REFRAIN = 500
 PSALM_FULL = 12000
-READING_FULL = 8000
-READING_REF = 120
 LYRICS_FULL = 50000
 LYRIC_BLOCK = 4000
 HYMN_OVERRIDE = 12000
@@ -53,8 +51,6 @@ def public_limits() -> dict[str, int]:
         "gospel_quote": GOSPEL_QUOTE,
         "psalm_refrain": PSALM_REFRAIN,
         "psalm_full": PSALM_FULL,
-        "reading_full": READING_FULL,
-        "reading_ref": READING_REF,
         "lyrics_full": LYRICS_FULL,
         "lyric_block": LYRIC_BLOCK,
         "hymn_override": HYMN_OVERRIDE,

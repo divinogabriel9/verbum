@@ -428,11 +428,10 @@ def generate_mass_media(
     psalm_refrain_index: Optional[int] = None,
     psalm_response_override: Optional[str] = None,
     gospel_quote_override: Optional[str] = None,
-    first_reading_text_override: Optional[str] = None,
-    first_reading_ref_override: Optional[str] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
+    include_footer: bool = True,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
     our_father_choice: str = "english",
@@ -455,12 +454,10 @@ def generate_mass_media(
         )
 
     # Manual overrides (never mutate the cached payload object) — let users paste a
-    # first reading / refrain when the upstream sources miss them.
+    # refrain when the upstream sources miss them.
     effective_psalm_override = (
         (psalm_text_override or "").strip() or (psalm_response_override or "").strip() or None
     )
-    first_reading_ref_val = (first_reading_ref_override or "").strip() or (data.get("first_reading") or "")
-    first_reading_text_val = (first_reading_text_override or "").strip() or (data.get("first_reading_text") or "")
 
     title = data.get("title") or "Sunday Mass Celebration"
     gospel_ref = data.get("gospel_reference") or "N/A"
@@ -618,8 +615,8 @@ def generate_mass_media(
         quote_attribution=quote_attr,
         quote_max_chars=400,
         gospel_full_text=gospel_text,
-        first_reading_ref=first_reading_ref_val,
-        first_reading_text=first_reading_text_val,
+        first_reading_ref=data.get("first_reading") or "",
+        first_reading_text=data.get("first_reading_text") or "",
         psalm_ref=data.get("psalm") or "",
         psalm_text=psalm_body,
         second_reading_ref=data.get("second_reading") or "",
@@ -641,6 +638,7 @@ def generate_mass_media(
         hymn_typography=hymn_typography,
         include_church_logo=include_church_logo,
         include_church_name=include_church_name,
+        include_footer=include_footer,
         hymn_lyric_overrides=hymn_lyric_overrides,
         creed_choice=creed_choice,
         our_father_choice=our_father_choice,
@@ -703,10 +701,9 @@ def regenerate_mass_pptx(
     psalm_refrain_index: Optional[int] = None,
     psalm_response_override: Optional[str] = None,
     gospel_quote_override: Optional[str] = None,
-    first_reading_text_override: Optional[str] = None,
-    first_reading_ref_override: Optional[str] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
+    include_footer: bool = True,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
     our_father_choice: str = "english",
@@ -722,8 +719,6 @@ def regenerate_mass_pptx(
     effective_psalm_override = (
         (psalm_text_override or "").strip() or (psalm_response_override or "").strip() or None
     )
-    first_reading_ref_val = (first_reading_ref_override or "").strip() or (data.get("first_reading") or "")
-    first_reading_text_val = (first_reading_text_override or "").strip() or (data.get("first_reading_text") or "")
 
     title = data.get("title") or "Sunday Mass Celebration"
     gospel_ref = data.get("gospel_reference") or "N/A"
@@ -792,8 +787,8 @@ def regenerate_mass_pptx(
         quote_attribution=quote_attr,
         quote_max_chars=400,
         gospel_full_text=gospel_text,
-        first_reading_ref=first_reading_ref_val,
-        first_reading_text=first_reading_text_val,
+        first_reading_ref=data.get("first_reading") or "",
+        first_reading_text=data.get("first_reading_text") or "",
         psalm_ref=data.get("psalm") or "",
         psalm_text=psalm_body,
         second_reading_ref=data.get("second_reading") or "",
@@ -815,6 +810,7 @@ def regenerate_mass_pptx(
         hymn_typography=hymn_typography,
         include_church_logo=include_church_logo,
         include_church_name=include_church_name,
+        include_footer=include_footer,
         hymn_lyric_overrides=hymn_lyric_overrides,
         creed_choice=creed_choice,
         our_father_choice=our_father_choice,
