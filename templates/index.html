@@ -3343,7 +3343,8 @@
     /* Home — flat bento on shared 12-col grid (matches header content width) */
     .home-bento-grid {
       display: grid;
-      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: minmax(280px, auto) repeat(3, minmax(230px, auto));
       gap: var(--layout-gap);
       align-items: stretch;
       width: 100%;
@@ -3367,26 +3368,33 @@
       border-bottom: 1px solid var(--line-soft);
     }
     .home-bento-cell--gospel {
-      grid-column: span 8;
+      grid-column: span 2;
       display: flex;
       flex-direction: column;
       gap: var(--space-3);
       min-height: 0;
     }
     .home-bento-cell--events {
-      grid-column: span 4;
+      grid-column: span 1;
       display: flex;
       flex-direction: column;
       min-height: 0;
     }
     .home-bento-cell--readings {
-      grid-column: span 12;
+      grid-column: span 3;
     }
     .home-bento-cell--news {
-      grid-column: span 12;
+      grid-column: span 1;
       display: flex;
       flex-direction: column;
-      cursor: default;
+      cursor: pointer;
+    }
+    .home-bento-cell--news .home-news-list,
+    .home-bento-cell--wyd .home-news-list {
+      grid-template-columns: 1fr;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
     }
     .home-bento-cell--reflection {
       grid-column: span 6;
@@ -3424,7 +3432,7 @@
       padding: var(--space-4);
     }
     .home-bento-cell--wyd {
-      grid-column: span 6;
+      grid-column: span 1;
       position: relative;
       display: flex;
       flex-direction: column;
@@ -3453,10 +3461,138 @@
       min-height: 0;
       padding: var(--space-4);
     }
-    @media (max-width: 1024px) {
-      .home-bento-cell--reflection,
-      .home-bento-cell--wyd {
-        grid-column: span 12;
+    @media (max-width: 960px) {
+      .home-bento-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+      }
+      .home-bento-grid .flow-bento-cell {
+        grid-column: 1 / -1 !important;
+      }
+    }
+    .home-bento-cell--mass {
+      grid-column: span 3;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: clamp(220px, 24vh, 300px);
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .home-bento-grid .flow-bento-cell.home-bento-cell--mass {
+      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 24%, var(--card-border));
+    }
+    .home-mass-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--liturgical-accent) 16%, transparent) 0%, transparent 55%),
+        radial-gradient(120% 160% at 0% 100%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .home-mass-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: var(--space-5);
+    }
+    .home-mass-card__head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--space-3);
+      border-bottom: 0;
+      margin: 0;
+      padding: 0;
+    }
+    .home-mass-card__head .home-card-head__text h3 {
+      font-size: var(--text-xl, 1.35rem);
+    }
+    .home-mass-cta {
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+    .home-mass-snippets {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .home-mass-snippet {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line-soft);
+      background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      text-decoration: none;
+      color: inherit;
+      transition: border-color var(--motion-duration-fast, 0.16s) ease,
+        transform var(--motion-duration-micro, 0.1s) ease,
+        box-shadow var(--motion-duration-fast, 0.16s) ease;
+    }
+    .home-mass-snippet:hover {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 45%, var(--line));
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-light);
+    }
+    .home-mass-snippet--next {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
+    }
+    .home-mass-snippet__label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .home-mass-snippet__label--accent {
+      color: var(--liturgical-accent);
+    }
+    .home-mass-snippet__title {
+      font-size: var(--text-md, 1rem);
+      line-height: 1.3;
+      color: var(--ink);
+    }
+    .home-mass-snippet__date {
+      font-size: var(--text-sm);
+      color: var(--muted);
+    }
+    .home-mass-snippet__ref {
+      font-size: var(--text-sm);
+      color: var(--liturgical-accent);
+      font-weight: 600;
+    }
+    .home-mass-snippet__ref:empty {
+      display: none;
+    }
+    .home-mass-snippet__action {
+      margin-top: auto;
+      padding-top: var(--space-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--liturgical-accent);
+    }
+    @media (max-width: 560px) {
+      .home-mass-card__head {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+      .home-mass-cta {
+        grid-column: 1 / -1;
+      }
+      .home-mass-snippets {
+        grid-template-columns: 1fr;
       }
     }
     .home-reflection-verse {
@@ -6217,7 +6353,7 @@
     }
     .home-bento-cell--gospel .flow-reading-text.flow-reading-text--gospel {
       max-height: none;
-      overflow: visible;
+      overflow: auto;
       flex: 1 1 auto;
       min-height: 0;
     }
@@ -9900,8 +10036,10 @@
       max-height: 14rem;
     }
     .home-bento-cell--gospel .flow-reading-text.flow-reading-text--gospel {
+      flex: 1 1 auto;
+      min-height: 0;
       max-height: none;
-      overflow: visible;
+      overflow: auto;
     }
     .flow-reading-ref {
       margin: 0 0 6px;
@@ -11628,45 +11766,38 @@
       <section class="page" id="home-page" data-route="/home">
           <div class="app-membership-banner" id="home-membership-banner" hidden aria-live="polite"></div>
           <div class="home-bento-grid">
-            <article class="flow-bento-cell home-bento-cell--reflection" id="home-reflection-card" aria-labelledby="home-reflection-heading">
-              <div class="home-reflection-bg" id="home-reflection-bg" aria-hidden="true"></div>
-              <div class="home-reflection-inner">
-                <header class="flow-bento-cell__head home-card-head">
+            <section class="flow-bento-cell home-bento-cell--mass" id="home-mass-card" aria-labelledby="home-mass-heading">
+              <div class="home-mass-bg" aria-hidden="true"></div>
+              <div class="home-mass-inner">
+                <header class="flow-bento-cell__head home-card-head home-mass-card__head">
                   <span class="home-card-head__icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 7c3 0 6 1 9 2 3-1 6-2 9-2"/><path d="M3 7v10c3 0 6 1 9 2 3-1 6-2 9-2V7"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20"/><path d="M3 3v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3"/><path d="m9 21 3-4 3 4"/></svg>
                   </span>
                   <div class="home-card-head__text">
-                    <h3 id="home-reflection-heading">Today's Gospel</h3>
-                    <p id="home-reflection-date">Loading…</p>
+                    <h3 id="home-mass-heading">Build this Sunday's Mass</h3>
+                    <p id="home-mass-sub">Readings, psalm, and hymn slides — a ready-to-project deck in minutes.</p>
                   </div>
+                  <a class="home-mass-cta uiverse-btn uiverse-btn--orange" href="/mass/builder" data-route="/mass/builder" aria-label="Open the Mass Builder">
+                    <div class="button-outer"><div class="button-inner"><span>Create now</span></div></div>
+                  </a>
                 </header>
-                <blockquote class="home-reflection-verse flow-reading-text flow-reading-text--gospel" id="home-reflection-verse">Today's Gospel verse will appear here.</blockquote>
-                <p class="home-reflection-ref"><strong id="home-reflection-ref">—</strong></p>
-                <p class="home-reflection-text" id="home-reflection-text">A short reflection on today's Gospel will appear here.</p>
-                <a class="home-reflection-credit" id="home-reflection-credit" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
-              </div>
-            </article>
-
-            <aside class="flow-bento-cell home-bento-cell--wyd" id="home-wyd-card" tabindex="0" aria-label="Visit the official World Youth Day Seoul 2027 website" aria-labelledby="home-wyd-heading">
-              <div class="home-wyd-bg" aria-hidden="true"></div>
-              <div class="home-wyd-inner">
-                <header class="flow-bento-cell__head home-card-head">
-                  <span class="home-card-head__icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                  </span>
-                  <div class="home-card-head__text">
-                    <h3 id="home-wyd-heading">WYD Seoul 2027</h3>
-                    <p>World Youth Day · Aug 3–8, 2027 · Seoul, South Korea</p>
-                  </div>
-                  <span class="home-wyd-countdown" id="home-wyd-countdown" aria-live="polite">—</span>
-                </header>
-                <ul class="home-news-list home-wyd-list" id="home-wyd-list" aria-live="polite"></ul>
-                <div class="home-wyd-foot">
-                  <a class="home-wyd-link" id="home-wyd-link" href="https://wydseoul.org/en" target="_blank" rel="noopener noreferrer">Official site ›</a>
-                  <p class="muted home-wyd-status" id="home-wyd-status">Loading WYD news…</p>
+                <div class="home-mass-snippets">
+                  <a class="home-mass-snippet home-mass-snippet--last" href="/mass/builder" data-route="/mass/builder" aria-label="Open last Sunday's Mass in the builder">
+                    <span class="home-mass-snippet__label">Last Sunday</span>
+                    <strong class="home-mass-snippet__title" id="home-mass-last-title">Loading…</strong>
+                    <span class="home-mass-snippet__date" id="home-mass-last-date">—</span>
+                    <span class="home-mass-snippet__ref" id="home-mass-last-ref"></span>
+                  </a>
+                  <a class="home-mass-snippet home-mass-snippet--next" href="/mass/builder" data-route="/mass/builder" aria-label="Prepare next Sunday's deck in the builder">
+                    <span class="home-mass-snippet__label home-mass-snippet__label--accent">Next Sunday</span>
+                    <strong class="home-mass-snippet__title" id="home-mass-next-title">Loading…</strong>
+                    <span class="home-mass-snippet__date" id="home-mass-next-date">—</span>
+                    <span class="home-mass-snippet__ref" id="home-mass-next-ref"></span>
+                    <span class="home-mass-snippet__action">Prepare deck ›</span>
+                  </a>
                 </div>
               </div>
-            </aside>
+            </section>
 
             <article class="flow-bento-cell home-bento-cell--gospel is-gospel-preview" id="home-gospel-card" tabindex="0" role="button" aria-label="Open full Gospel preview">
               <header class="flow-bento-cell__head home-card-head">
@@ -11734,22 +11865,57 @@
               </div>
             </article>
 
-            <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-panel" aria-labelledby="home-news-heading">
-              <header class="flow-bento-cell__head home-card-head home-news-panel__head home-news-panel__expand-zone" id="home-news-panel-head">
+            <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-vatican-panel" data-news-source="vatican" aria-labelledby="home-news-vatican-heading">
+              <header class="flow-bento-cell__head home-card-head home-news-panel__head home-news-panel__expand-zone">
                 <span class="home-card-head__icon" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M10 4h4"/><path d="M5 22V12l7-5 7 5v10"/><path d="M9 22v-6h6v6"/></svg>
                 </span>
                 <div class="home-card-head__text">
-                <h3 id="home-news-heading">World Catholic News</h3>
-                  <p>Tap the card to browse more · tap a headline to open the article.</p>
-              </div>
+                  <h3 id="home-news-vatican-heading">Vatican News</h3>
+                  <p>Tap to browse all · tap a headline to open it.</p>
+                </div>
                 <button type="button" class="btn-home-news-refresh" id="btn-home-news-refresh" aria-label="Refresh news feed" title="Refresh news">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
                   <span class="sr-only">Refresh</span>
                 </button>
               </header>
-              <ul class="home-news-list" id="home-news-list" aria-live="polite"></ul>
-              <p class="muted home-news-status home-news-panel__expand-zone" id="home-news-status">Loading news…</p>
+              <ul class="home-news-list" id="home-news-vatican-list" aria-live="polite"></ul>
+              <p class="muted home-news-status home-news-panel__expand-zone" id="home-news-vatican-status">Loading news…</p>
+            </aside>
+
+            <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-cna-panel" data-news-source="cna" aria-labelledby="home-news-cna-heading">
+              <header class="flow-bento-cell__head home-card-head home-news-panel__head home-news-panel__expand-zone">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Z"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3 id="home-news-cna-heading">Catholic News Agency</h3>
+                  <p>Tap to browse all · tap a headline to open it.</p>
+                </div>
+              </header>
+              <ul class="home-news-list" id="home-news-cna-list" aria-live="polite"></ul>
+              <p class="muted home-news-status home-news-panel__expand-zone" id="home-news-cna-status">Loading news…</p>
+            </aside>
+
+            <aside class="flow-bento-cell home-bento-cell--wyd" id="home-wyd-card" tabindex="0" aria-label="Visit the official World Youth Day Seoul 2027 website" aria-labelledby="home-wyd-heading">
+              <div class="home-wyd-bg" aria-hidden="true"></div>
+              <div class="home-wyd-inner">
+                <header class="flow-bento-cell__head home-card-head">
+                  <span class="home-card-head__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </span>
+                  <div class="home-card-head__text">
+                    <h3 id="home-wyd-heading">WYD Seoul 2027</h3>
+                    <p>World Youth Day · Aug 3–8, 2027 · Seoul, South Korea</p>
+                  </div>
+                  <span class="home-wyd-countdown" id="home-wyd-countdown" aria-live="polite">—</span>
+                </header>
+                <ul class="home-news-list home-wyd-list" id="home-wyd-list" aria-live="polite"></ul>
+                <div class="home-wyd-foot">
+                  <a class="home-wyd-link" id="home-wyd-link" href="https://wydseoul.org/en" target="_blank" rel="noopener noreferrer">Official site ›</a>
+                  <p class="muted home-wyd-status" id="home-wyd-status">Loading WYD news…</p>
+                </div>
+              </div>
             </aside>
         </div>
       </section>
@@ -14133,18 +14299,24 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    const HOME_NEWS_SOURCES = ["vatican", "cna"];
+
     function setHomeNewsRefreshing(active) {
-      const panel = $("home-news-panel");
-      const list = $("home-news-list");
-      if (panel) panel.classList.toggle("is-refreshing", !!active);
-      if (list) list.setAttribute("aria-busy", active ? "true" : "false");
+      HOME_NEWS_SOURCES.forEach((source) => {
+        const panel = $("home-news-" + source + "-panel");
+        const list = $("home-news-" + source + "-list");
+        if (panel) panel.classList.toggle("is-refreshing", !!active);
+        if (list) list.setAttribute("aria-busy", active ? "true" : "false");
+      });
     }
 
-    async function fetchCatholicNewsPage(limit, offset, maxAgeDays) {
+    async function fetchCatholicNewsPage(limit, offset, maxAgeDays, sources) {
       const prefs = getHomeNewsPrefs();
+      const wantVatican = sources ? !!sources.vatican : prefs.vatican;
+      const wantCna = sources ? !!sources.cna : prefs.cna;
       const params = new URLSearchParams({
-        vatican: prefs.vatican ? "true" : "false",
-        cna: prefs.cna ? "true" : "false",
+        vatican: wantVatican ? "true" : "false",
+        cna: wantCna ? "true" : "false",
         limit: String(limit),
         offset: String(offset),
         max_age_days: String(maxAgeDays != null ? maxAgeDays : HOME_NEWS_MAX_AGE_DAYS),
@@ -14161,27 +14333,25 @@ Lord, hear our prayer</textarea>
       hasMore: true,
     };
 
-    async function refreshCatholicNews() {
-      const panel = $("home-news-panel");
-      const list = $("home-news-list");
-      const status = $("home-news-status");
-      const refreshBtn = $("btn-home-news-refresh");
+    async function refreshNewsCard(source) {
+      const panel = $("home-news-" + source + "-panel");
+      const list = $("home-news-" + source + "-list");
+      const status = $("home-news-" + source + "-status");
       if (!panel || !list) return;
       const prefs = getHomeNewsPrefs();
-      if (!prefs.enabled || (!prefs.vatican && !prefs.cna)) {
+      if (!prefs.enabled || !prefs[source]) {
         panel.hidden = true;
         list.innerHTML = "";
-        setHomeNewsRefreshing(false);
         if (status) status.textContent = "";
         return;
       }
       panel.hidden = false;
-      setHomeNewsRefreshing(true);
-      list.innerHTML = homeNewsSkeletonHtml(6);
+      list.setAttribute("aria-busy", "true");
+      list.innerHTML = homeNewsSkeletonHtml(4);
       if (status) status.textContent = "Refreshing headlines…";
-      if (refreshBtn) refreshBtn.classList.add("is-loading");
       try {
-        const data = await fetchCatholicNewsPage(6, 0, HOME_NEWS_MAX_AGE_DAYS);
+        const sources = { vatican: source === "vatican", cna: source === "cna" };
+        const data = await fetchCatholicNewsPage(6, 0, HOME_NEWS_MAX_AGE_DAYS, sources);
         const items = data.items || [];
         if (!items.length) {
           list.innerHTML = "";
@@ -14198,14 +14368,23 @@ Lord, hear our prayer</textarea>
         revealStaggerChildren(list, ":scope > li");
         if (status) {
           status.textContent = (data.errors && data.errors.length)
-            ? "Some sources unavailable · tap card to browse more"
-            : "Tap card to browse more · tap a story to open it";
+            ? "Some headlines unavailable · tap to browse all"
+            : "Tap card to browse all · tap a story to open it";
         }
       } catch (e) {
         list.innerHTML = "";
         if (status) status.textContent = e.message || "Could not load Catholic news.";
       } finally {
-        setHomeNewsRefreshing(false);
+        list.setAttribute("aria-busy", "false");
+      }
+    }
+
+    async function refreshCatholicNews() {
+      const refreshBtn = $("btn-home-news-refresh");
+      if (refreshBtn) refreshBtn.classList.add("is-loading");
+      try {
+        await Promise.all(HOME_NEWS_SOURCES.map((source) => refreshNewsCard(source)));
+      } finally {
         if (refreshBtn) refreshBtn.classList.remove("is-loading");
       }
     }
@@ -14284,7 +14463,7 @@ Lord, hear our prayer</textarea>
     }
 
     function syncHomeNewsExpandModalWidth() {
-      const panel = $("home-news-panel");
+      const panel = document.querySelector(".home-bento-grid") || $("home-news-vatican-panel");
       const card = document.querySelector("#home-news-expand-modal .ui-card--news-expand");
       if (!panel || !card || panel.hidden) return;
       const panelWidth = panel.getBoundingClientRect().width;
@@ -14303,7 +14482,7 @@ Lord, hear our prayer</textarea>
       const backdrop = $("home-news-expand-backdrop");
       const closeBtn = $("home-news-expand-close");
       const scroll = $("home-news-expand-scroll");
-      const panel = $("home-news-panel");
+      const panels = Array.from(document.querySelectorAll(".home-news-panel"));
       const refreshBtn = $("btn-home-news-refresh");
 
       if (backdrop) backdrop.addEventListener("click", closeHomeNewsExpandModal);
@@ -14325,7 +14504,7 @@ Lord, hear our prayer</textarea>
         });
       }
 
-      if (panel) {
+      panels.forEach((panel) => {
         panel.querySelectorAll(".home-news-panel__expand-zone").forEach((zone) => {
           zone.addEventListener("click", (e) => {
             if (e.target.closest("#btn-home-news-refresh, button, a, input, select, textarea, label")) return;
@@ -14337,7 +14516,7 @@ Lord, hear our prayer</textarea>
           if (e.target.closest(".home-news-panel__expand-zone")) return;
           openHomeNewsExpandModal();
         });
-      }
+      });
 
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && modal && modal.classList.contains("is-open")) {
@@ -14846,9 +15025,9 @@ Lord, hear our prayer</textarea>
       const accountBtn = $("account-menu-btn");
       if (accountBtn) accountBtn.classList.toggle("is-active", isSettingsRoute(r));
       if (r === "/home") {
+        refreshHomeMassCard();
         refreshHomeMission();
         refreshCatholicNews();
-        refreshHomeReflection();
         refreshWydNews();
       }
       if (r === "/settings/app") {
@@ -14940,7 +15119,7 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    document.querySelectorAll(".app-sidebar__link[data-route], .app-sidebar__brand[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route]").forEach(bindSpaRouteLink);
+    document.querySelectorAll(".app-sidebar__link[data-route], .app-sidebar__brand[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
 
     const appSidebar = document.getElementById("app-sidebar");
     if (appSidebar && appSidebar.dataset.spaBound !== "1") {
@@ -17987,11 +18166,19 @@ Lord, hear our prayer</textarea>
             ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + opacity + ")";
             ctx.fill();
           }
-          if (hovering) raf = requestAnimationFrame(draw);
+          // Self-terminate if still hovering but the card was hidden (e.g. SPA route
+          // change sets the page to display:none, which does not reliably fire
+          // mouseleave). Without this the rAF loop runs forever on a hidden canvas.
+          if (hovering && card.offsetParent !== null) {
+            raf = requestAnimationFrame(draw);
+          } else {
+            hovering = false;
+            raf = null;
+          }
         }
 
         function start() {
-          if (prefersReduced) return;
+          if (prefersReduced || card.offsetParent === null) return;
           buildGrid();
           hovering = true;
           startTime = Date.now();
@@ -20978,6 +21165,45 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    function lastSundayISO(base = new Date()) {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+      const dow = d.getDay();
+      const back = dow === 0 ? 7 : dow;
+      d.setDate(d.getDate() - back);
+      return formatDateInput(d);
+    }
+
+    function setHomeMassSnippet(kind, data, iso) {
+      const titleEl = $("home-mass-" + kind + "-title");
+      const dateEl = $("home-mass-" + kind + "-date");
+      const refEl = $("home-mass-" + kind + "-ref");
+      if (dateEl) dateEl.textContent = formatNiceDate(iso);
+      if (titleEl) titleEl.textContent = (data && (data.title || "").trim()) || "Sunday Mass";
+      if (refEl) refEl.textContent = (data && (data.gospel_reference || "").trim()) || "";
+    }
+
+    async function populateHomeMassSnippet(kind, iso) {
+      const dateEl = $("home-mass-" + kind + "-date");
+      if (dateEl) dateEl.textContent = formatNiceDate(iso);
+      const cached = readStoredReadings(iso) || previewCache.get(previewCacheKey(iso, true));
+      if (cached) setHomeMassSnippet(kind, cached, iso);
+      try {
+        const data = await fetchReadings(iso);
+        setHomeMassSnippet(kind, data, iso);
+      } catch (e) {
+        if (!cached) {
+          const titleEl = $("home-mass-" + kind + "-title");
+          if (titleEl) titleEl.textContent = "Sunday Mass";
+        }
+      }
+    }
+
+    function refreshHomeMassCard() {
+      if (!$("home-mass-card")) return;
+      populateHomeMassSnippet("next", upcomingSundayISO());
+      populateHomeMassSnippet("last", lastSundayISO());
+    }
+
     function applyHomeReflectionData(data) {
       if ($("home-reflection-date")) {
         $("home-reflection-date").textContent = new Date().toLocaleDateString(undefined, {
@@ -23476,8 +23702,8 @@ Lord, hear our prayer</textarea>
     initSongPlanSummaryCollapse();
     initSongComposerCollapse();
 
+    refreshHomeMassCard();
     refreshHomeMission();
-    refreshHomeReflection();
     const bootDeferredData = () => {
       loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
       refreshSavedPosters();

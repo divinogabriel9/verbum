@@ -1268,21 +1268,29 @@ iframe {
 
 /* —— Wide layouts: align with existing app breakpoints (do not fight ≤1120px rules) —— */
 @media (min-width: 961px) {
+  .home-bento-cell--mass {
+    grid-column: span 3 !important;
+  }
+
   .home-bento-cell--gospel {
-    grid-column: span 8 !important;
+    grid-column: span 2 !important;
   }
 
   .home-bento-cell--events {
-    grid-column: span 4 !important;
+    grid-column: span 1 !important;
   }
 
   .home-bento-cell--readings {
-    grid-column: span 12 !important;
+    grid-column: span 3 !important;
+  }
+
+  .home-bento-cell--readings .flow-readings-preview-row {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
-  .home-bento-cell--news {
-    grid-column: span 12 !important;
+  .home-bento-cell--news,
+  .home-bento-cell--wyd {
+    grid-column: span 1 !important;
   }
 
 }

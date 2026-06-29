@@ -1243,6 +1243,28 @@ def index(request: Request) -> Any:
     )
 
 
+@app.get("/mass/builder/mobile", response_class=HTMLResponse)
+def mass_builder_mobile(request: Request) -> Any:
+    # Mobile-only, self-contained "Sacred Motion" Mass Builder flow (7 steps).
+    return templates.TemplateResponse(
+        request,
+        "mass_builder_mobile.html",
+        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
+    )
+
+
+@app.get("/mass/builder/wizard", response_class=HTMLResponse)
+def mass_builder_wizard(request: Request) -> Any:
+    # Self-contained "Sacred Kinetic" desktop Mass Builder wizard (7 steps),
+    # wired directly to the live APIs (/api/preview, /api/catalog/songs,
+    # /api/community, /api/image-quota, uploads, /api/generate).
+    return templates.TemplateResponse(
+        request,
+        "mass_builder_wizard.html",
+        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
+    )
+
+
 @app.get("/home", response_class=HTMLResponse)
 @app.get("/radio", response_class=HTMLResponse)
 @app.get("/mass/builder", response_class=HTMLResponse)

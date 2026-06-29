@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0F1117"/>
+<title>{{ title }} — Mass Builder</title>
+<link rel="icon" href="/favicon.ico" sizes="any"/>
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png?v=5"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<!-- Sacred Motion type: Bricolage Grotesque (headlines/body) + Material Symbols (icons) -->
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+<style>
+  /* ============================================================
+     SACRED MOTION — Design Tokens
+     ============================================================ */
+  :root {
+    --bg: #0F1117;
+    --bg-elev: #14161D;
+    --surface: rgba(25, 27, 34, 0.65);
+    --surface-solid: #191B22;
+    --recess: rgba(0, 0, 0, 0.20);
+    --hairline: rgba(255, 255, 255, 0.08);
+    --hairline-strong: rgba(255, 255, 255, 0.14);
+
+    --red: #E63946;
+    --red-bright: #FF5662;
+    --red-deep: #B22531;
+    --red-glow: rgba(230, 57, 70, 0.45);
+    --red-tint: rgba(230, 57, 70, 0.12);
+
+    --ink: #F4F5F7;
+    --ink-soft: #C4C8D2;
+    --muted: #8A8F9E;
+    --faint: #5B6070;
+    --slate-off: #2A2D38;
+    --green: #34D399;
+
+    --r-card: 24px;
+    --r-card-sm: 16px;
+    --r-field: 12px;
+    --r-pill: 999px;
+
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .scene {
+    position: fixed; inset: 0; overflow: hidden;
+    background:
+      radial-gradient(120% 80% at 80% -10%, rgba(230, 57, 70, 0.16) 0%, transparent 55%),
+      radial-gradient(90% 60% at -10% 110%, rgba(230, 57, 70, 0.10) 0%, transparent 50%),
+      radial-gradient(100% 100% at 50% 50%, #12141B 0%, #0F1117 70%, #0B0C11 100%);
+  }
+  .scene::after {
+    content: ""; position: absolute; inset: -50%;
+    background-image: radial-gradient(rgba(255,255,255,0.025) 0.5px, transparent 0.5px);
+    background-size: 3px 3px; opacity: 0.5; pointer-events: none;
+  }
+
+  /* App frame */
+  .app {
+    position: relative; z-index: 2;
+    height: 100dvh; max-width: 440px; margin: 0 auto;
+    display: flex; flex-direction: column;
+    padding-top: var(--safe-top);
+  }
+  @media (min-width: 460px) {
+    .scene { background-attachment: fixed; }
+    .app {
+      height: min(880px, 96dvh);
+      margin-top: max(2dvh, calc((100dvh - 880px) / 2));
+      border-radius: 38px; border: 1px solid var(--hairline);
+      box-shadow: 0 50px 120px -30px rgba(0,0,0,0.8), 0 0 0 10px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.03);
+      overflow: hidden; background: linear-gradient(180deg, #101218, #0D0F14);
+    }
+  }
+
+  /* Top bar */
+  .topbar { flex: none; padding: 16px 22px 6px; }
+  .topbar__row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .topbar__left { display: inline-flex; align-items: center; gap: 10px; }
+  .iconbtn {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--recess); border: 1px solid var(--hairline); color: var(--ink-soft);
+    cursor: pointer; text-decoration: none;
+  }
+  .iconbtn .material-symbols-outlined { font-size: 20px; }
+  .brand { display: inline-flex; align-items: baseline; line-height: 1; }
+  .brand__liturgy { font-weight: 700; letter-spacing: -0.03em; color: var(--ink); font-size: 18px; }
+  .brand__flow { font-weight: 600; font-style: italic; color: var(--red-bright); font-size: 18px; letter-spacing: -0.03em; margin-left: -0.04em; }
+  .step-count { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .step-count b { color: var(--red); font-weight: 700; }
+
+  /* Progress bar */
+  .progress { display: flex; gap: 6px; }
+  .progress__seg {
+    position: relative; flex: 1; height: 4px; border-radius: var(--r-pill);
+    background: rgba(255, 255, 255, 0.07); overflow: visible;
+  }
+  .progress__seg::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(90deg, var(--red-deep), var(--red));
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.55s var(--ease-out);
+  }
+  .progress__seg.done::before { transform: scaleX(1); }
+  .progress__seg.active::before { transform: scaleX(1); background: linear-gradient(90deg, var(--red), var(--red-bright)); }
+  .progress__seg.active { box-shadow: 0 0 0 1px rgba(230,57,70,0.25), 0 0 12px 1px var(--red-glow); }
+
+  /* Viewport + slides */
+  .viewport { flex: 1 1 auto; position: relative; overflow: hidden; }
+  .slides { position: absolute; inset: 0; }
+  .slide {
+    position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 12px 22px 28px;
+    opacity: 0; transform: translateX(40px) scale(0.98); pointer-events: none;
+    transition: opacity 0.45s var(--ease-out), transform 0.5s var(--ease-out);
+    scrollbar-width: none;
+  }
+  .slide::-webkit-scrollbar { display: none; }
+  .slide.is-active { opacity: 1; transform: none; pointer-events: auto; }
+  .slide.is-prev { transform: translateX(-40px) scale(0.98); }
+
+  /* Headline */
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--red-bright); margin: 4px 0 12px;
+  }
+  .eyebrow .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); box-shadow: 0 0 8px var(--red-glow); }
+  h1.title { font-size: 28px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.07; margin: 0 0 8px; }
+  h1.title em { font-style: italic; font-weight: 600; color: var(--red-bright); }
+  .subtitle { font-size: 14.5px; font-weight: 400; line-height: 1.5; color: var(--muted); margin: 0 0 20px; max-width: 36ch; }
+
+  /* Glass */
+  .glass {
+    background: var(--surface); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid var(--hairline); border-radius: var(--r-card);
+    box-shadow: 0 20px 40px -28px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .glass + .glass { margin-top: 14px; }
+  .glass--pad { padding: 18px; }
+  .glass--sm { border-radius: var(--r-card-sm); }
+
+  .group-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 18px 4px 10px; }
+  .group-label:first-child { margin-top: 4px; }
+  .helper { font-size: 12px; color: var(--faint); margin-top: 8px; line-height: 1.45; padding: 0 2px; }
+
+  /* Fields */
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  .input, .select, .textarea {
+    width: 100%; font-family: inherit; font-size: 16px; font-weight: 500; color: var(--ink);
+    background: var(--recess); border: 1px solid var(--hairline); border-radius: var(--r-field);
+    padding: 14px; outline: none; appearance: none;
+    transition: border-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), background 0.25s;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.35);
+  }
+  .input[type="date"] { color-scheme: dark; }
+  .input::placeholder, .textarea::placeholder { color: var(--faint); }
+  .input:focus, .select:focus, .textarea:focus {
+    border-color: var(--red); background: rgba(0,0,0,0.30);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 0 0 3px var(--red-tint), 0 0 14px -2px var(--red-glow);
+  }
+  .textarea { resize: none; min-height: 84px; line-height: 1.5; }
+  .input-wrap { position: relative; }
+  .input-wrap .ico { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: 20px; pointer-events: none; }
+  .select { padding-right: 40px; cursor: pointer; }
+
+  /* Priest search results */
+  .results { margin-top: 8px; border: 1px solid var(--hairline); border-radius: var(--r-field); overflow: hidden; background: var(--surface-solid); display: none; }
+  .results.show { display: block; }
+  .result {
+    display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer;
+    font-size: 14.5px; color: var(--ink-soft);
+  }
+  .result + .result { border-top: 1px solid var(--hairline); }
+  .result:active { background: rgba(255,255,255,0.03); }
+  .result .ava { width: 28px; height: 28px; border-radius: 50%; background: var(--red-tint); color: var(--red-bright); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+
+  /* Chips (selected priests / generic) */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip {
+    font-family: inherit; font-size: 13.5px; font-weight: 500; color: var(--ink-soft);
+    background: var(--recess); border: 1px solid var(--hairline); border-radius: var(--r-pill);
+    padding: 8px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+    transition: all 0.2s var(--ease-out);
+  }
+  .chip:active { transform: scale(0.96); }
+  .chip[aria-pressed="true"] {
+    color: #fff; background: linear-gradient(180deg, var(--red), var(--red-deep));
+    border-color: var(--red-bright); box-shadow: 0 6px 18px -8px var(--red-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .chip .material-symbols-outlined { font-size: 16px; }
+  .chip--remove .material-symbols-outlined { font-size: 16px; color: var(--muted); }
+
+  .addbtn {
+    width: 100%; margin-top: 12px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--red-bright);
+    background: var(--red-tint); border: 1px dashed rgba(230,57,70,0.4); border-radius: var(--r-field);
+    padding: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s var(--ease-out);
+  }
+  .addbtn:active { transform: scale(0.98); }
+  .addbtn .material-symbols-outlined { font-size: 18px; }
+
+  /* Ritual / part card (toggle + actions) */
+  .partcard { padding: 16px; }
+  .partcard + .partcard { margin-top: 12px; }
+  .partcard__top { display: flex; align-items: center; gap: 12px; }
+  .partcard__ico { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--red-tint); color: var(--red-bright); }
+  .partcard__ico .material-symbols-outlined { font-size: 22px; }
+  .partcard__text { flex: 1; min-width: 0; }
+  .partcard__title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .partcard__meta { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .partcard__actions { display: flex; gap: 8px; margin-top: 14px; }
+  .miniact {
+    flex: 1; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink-soft);
+    background: var(--recess); border: 1px solid var(--hairline); border-radius: 10px; padding: 9px;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 0.18s var(--ease-out);
+  }
+  .miniact:active { transform: scale(0.97); }
+  .miniact .material-symbols-outlined { font-size: 16px; }
+  .miniact[disabled] { opacity: 0.4; pointer-events: none; }
+
+  /* Pill switch */
+  .switch { flex: none; position: relative; width: 50px; height: 30px; border-radius: var(--r-pill); background: var(--slate-off); border: 1px solid var(--hairline); cursor: pointer; padding: 0; transition: background 0.3s var(--ease-out), border-color 0.3s; }
+  .switch__knob { position: absolute; top: 50%; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #C0C4CE; transform: translateY(-50%); transition: transform 0.32s var(--ease-spring), background 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+  .switch[aria-checked="true"] { background: linear-gradient(180deg, var(--red), var(--red-deep)); border-color: var(--red-bright); box-shadow: 0 0 14px -2px var(--red-glow); }
+  .switch[aria-checked="true"] .switch__knob { transform: translateY(-50%) translateX(20px); background: #fff; }
+
+  /* Imported reading rows (auto-imported, checked) */
+  .import-row { display: flex; align-items: center; gap: 13px; padding: 14px 16px; }
+  .import-row + .import-row { border-top: 1px solid var(--hairline); }
+  .import-row__check { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--green); display: grid; place-items: center; box-shadow: 0 0 12px -2px rgba(52,211,153,0.5); }
+  .import-row__check .material-symbols-outlined { font-size: 16px; color: #05281C; font-weight: 700; }
+  .import-row__text { flex: 1; min-width: 0; }
+  .import-row__title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .import-row__ref { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .import-row__view { flex: none; color: var(--faint); }
+  .import-row__view .material-symbols-outlined { font-size: 20px; }
+
+  .imported-banner { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--green); background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); border-radius: var(--r-pill); padding: 6px 12px; margin-bottom: 12px; }
+  .imported-banner .material-symbols-outlined { font-size: 15px; }
+
+  /* AI buttons */
+  .ai-row { display: flex; gap: 10px; }
+  .ai-btn {
+    flex: 1; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    border-radius: 12px; padding: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.18s var(--ease-out);
+  }
+  .ai-btn:active { transform: scale(0.97); }
+  .ai-btn--suggest { color: var(--red-bright); background: var(--red-tint); border: 1px solid rgba(230,57,70,0.3); }
+  .ai-btn--generate { color: #fff; background: linear-gradient(120deg, var(--red), var(--red-deep)); border: 1px solid var(--red-bright); box-shadow: 0 8px 22px -10px var(--red-glow); }
+  .ai-btn .material-symbols-outlined { font-size: 18px; }
+  .ai-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red-bright); background: var(--red-tint); border: 1px solid rgba(230,57,70,0.3); border-radius: var(--r-pill); padding: 4px 9px; }
+  .ai-badge .material-symbols-outlined { font-size: 13px; }
+
+  /* Song slots */
+  .slot { display: flex; align-items: center; gap: 13px; padding: 14px 16px; cursor: pointer; transition: background 0.2s; }
+  .slot + .slot { border-top: 1px solid var(--hairline); }
+  .slot:active { background: rgba(255,255,255,0.02); }
+  .slot__ico { flex: none; width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: rgba(255,255,255,0.05); color: var(--muted); transition: all 0.2s; }
+  .slot__ico .material-symbols-outlined { font-size: 20px; }
+  .slot__text { flex: 1; min-width: 0; }
+  .slot__label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .slot__song { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .slot.filled .slot__song { color: var(--ink); }
+  .slot.filled .slot__ico { background: var(--red-tint); color: var(--red-bright); }
+  .slot.active-slot { background: var(--red-tint); box-shadow: inset 3px 0 0 var(--red); }
+  .slot__add { flex: none; color: var(--faint); }
+  .slot__add .material-symbols-outlined { font-size: 22px; }
+  .slot.filled .slot__add { color: var(--red-bright); }
+
+  /* AI recommendation cards */
+  .reccard { padding: 15px 16px; }
+  .reccard + .reccard { margin-top: 10px; }
+  .reccard__top { display: flex; align-items: flex-start; gap: 12px; }
+  .reccard__art { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(150deg, rgba(230,57,70,0.25), rgba(230,57,70,0.05)); border: 1px solid rgba(230,57,70,0.25); color: var(--red-bright); }
+  .reccard__art .material-symbols-outlined { font-size: 24px; }
+  .reccard__text { flex: 1; min-width: 0; }
+  .reccard__title { font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
+  .reccard__by { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .reccard__add { flex: none; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--red-bright); background: linear-gradient(180deg, var(--red), var(--red-deep)); color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 6px 16px -8px var(--red-glow); transition: transform 0.16s; }
+  .reccard__add:active { transform: scale(0.92); }
+  .reccard__add .material-symbols-outlined { font-size: 20px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em; padding: 4px 9px; border-radius: var(--r-pill); }
+  .badge .material-symbols-outlined { font-size: 12px; }
+  .badge--rec { color: var(--red-bright); background: var(--red-tint); border: 1px solid rgba(230,57,70,0.3); }
+  .badge--pop { color: #FFC861; background: rgba(255,200,97,0.1); border: 1px solid rgba(255,200,97,0.25); }
+  .badge--gospel { color: #8FB8FF; background: rgba(143,184,255,0.1); border: 1px solid rgba(143,184,255,0.25); }
+
+  /* Checkboxes (review) */
+  .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+  .check-row { display: flex; align-items: center; gap: 10px; padding: 9px 2px; cursor: pointer; }
+  .check-row__box { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--hairline-strong); display: grid; place-items: center; transition: all 0.18s var(--ease-spring); }
+  .check-row__box .material-symbols-outlined { font-size: 15px; color: #fff; opacity: 0; transform: scale(0.4); transition: all 0.18s var(--ease-spring); }
+  .check-row[aria-checked="true"] .check-row__box { background: var(--red); border-color: var(--red); }
+  .check-row[aria-checked="true"] .check-row__box .material-symbols-outlined { opacity: 1; transform: scale(1); }
+  .check-row__label { font-size: 14px; font-weight: 500; color: var(--ink-soft); }
+
+  /* LOTW guide bookmark (Screen 3) */
+  .lotw { position: absolute; top: 90px; right: 0; z-index: 40; }
+  .lotw__tab {
+    display: flex; align-items: center; gap: 6px;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    padding: 14px 7px; background: linear-gradient(180deg, var(--red), var(--red-deep));
+    color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    border-radius: 12px 0 0 12px; border: 1px solid var(--red-bright); border-right: none;
+    cursor: pointer; box-shadow: -6px 6px 22px -8px var(--red-glow);
+    transition: transform 0.2s var(--ease-out);
+  }
+  .lotw__tab .material-symbols-outlined { writing-mode: horizontal-tb; transform: rotate(180deg); font-size: 18px; }
+  .lotw__tab:active { transform: translateX(2px); }
+
+  .lotw__panel {
+    position: absolute; top: 50%; right: 16px; width: min(300px, calc(100% - 64px));
+    transform: translateY(-50%) translateX(calc(100% + 30px));
+    background: #FBFBF8; color: #1A1A1A; border-radius: 6px 16px 16px 6px;
+    padding: 22px 22px 20px;
+    box-shadow: -20px 30px 60px -20px rgba(0,0,0,0.65), inset 4px 0 0 var(--red);
+    opacity: 0; pointer-events: none;
+    transition: transform 0.5s var(--ease-out), opacity 0.4s var(--ease-out);
+    z-index: 45;
+  }
+  .lotw__panel.open { transform: translateY(-50%) translateX(0); opacity: 1; pointer-events: auto; }
+  .lotw__eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--red-deep); }
+  .lotw__title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin: 6px 0 12px; color: #111; }
+  .lotw__steps { list-style: none; margin: 0; padding: 0; counter-reset: lotw; }
+  .lotw__steps li { position: relative; padding: 8px 0 8px 30px; font-size: 14px; font-weight: 500; color: #2A2A2A; border-bottom: 1px dashed rgba(0,0,0,0.12); counter-increment: lotw; }
+  .lotw__steps li:last-child { border-bottom: none; }
+  .lotw__steps li::before { content: counter(lotw); position: absolute; left: 0; top: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+  .lotw__close { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); background: #fff; color: #555; display: grid; place-items: center; cursor: pointer; }
+  .lotw__close .material-symbols-outlined { font-size: 18px; }
+  .lotw__scrim { position: absolute; inset: 0; background: rgba(8,9,12,0.55); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 42; }
+  .lotw__scrim.open { opacity: 1; pointer-events: auto; }
+
+  /* Receipt review */
+  .receipt {
+    background: var(--surface); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid var(--hairline); border-radius: var(--r-card); padding: 22px 20px 8px; position: relative;
+    box-shadow: 0 24px 50px -28px rgba(0,0,0,0.9);
+  }
+  .receipt__head { text-align: center; padding-bottom: 16px; }
+  .receipt__seal { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 12px; display: grid; place-items: center; background: var(--red-tint); color: var(--red-bright); border: 1px solid rgba(230,57,70,0.35); box-shadow: 0 0 22px -4px var(--red-glow); }
+  .receipt__seal .material-symbols-outlined { font-size: 28px; }
+  .receipt__title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .receipt__sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .dashed { border: none; border-top: 1.5px dashed var(--hairline-strong); margin: 4px -20px; }
+  .receipt__list { padding: 12px 0 6px; }
+  .rrow { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; }
+  .rrow__check { flex: none; margin-top: 1px; width: 20px; height: 20px; border-radius: 50%; background: var(--green); display: grid; place-items: center; }
+  .rrow__check .material-symbols-outlined { font-size: 14px; color: #05281C; font-weight: 700; }
+  .rrow__k { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .rrow__v { font-size: 14.5px; font-weight: 500; color: var(--ink); margin-top: 1px; }
+  .rrow__main { flex: 1; min-width: 0; }
+
+  .slides-estimate { text-align: center; padding: 16px 0 6px; }
+  .slides-estimate__n { font-size: 44px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; background: linear-gradient(180deg, #fff, var(--red-bright)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .slides-estimate__l { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+
+  /* Dock */
+  .dock { flex: none; padding: 12px 22px calc(16px + var(--safe-bottom)); background: linear-gradient(180deg, rgba(15,17,23,0) 0%, rgba(13,15,20,0.85) 35%, #0C0E13 100%); }
+  .dock__inner { display: flex; align-items: center; gap: 12px; }
+  .btn { font-family: inherit; cursor: pointer; border: none; border-radius: 14px; font-weight: 600; letter-spacing: -0.01em; transition: transform 0.16s var(--ease-out), box-shadow 0.25s, opacity 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn:active { transform: scale(0.97); }
+  .btn--primary { flex: 1; height: 54px; font-size: 16px; color: #fff; background: linear-gradient(180deg, var(--red-bright), var(--red) 55%, var(--red-deep)); box-shadow: 0 12px 30px -10px var(--red-glow), inset 0 1px 0 rgba(255,255,255,0.3); }
+  .btn--primary.generate { height: 58px; font-size: 17px; box-shadow: 0 0 0 1px var(--red-bright), 0 16px 40px -10px var(--red-glow), inset 0 1px 0 rgba(255,255,255,0.3); }
+  .btn--primary .material-symbols-outlined { font-size: 20px; }
+  .btn--ghost { flex: none; width: 54px; height: 54px; color: var(--ink-soft); background: var(--recess); border: 1px solid var(--hairline); }
+  .btn--ghost .material-symbols-outlined { font-size: 22px; }
+  .btn:disabled { opacity: 0.4; pointer-events: none; }
+
+  /* Stagger entrance */
+  .slide.is-active .stagger { animation: rise 0.55s var(--ease-out) both; }
+  .slide.is-active .stagger:nth-child(1) { animation-delay: 0.04s; }
+  .slide.is-active .stagger:nth-child(2) { animation-delay: 0.09s; }
+  .slide.is-active .stagger:nth-child(3) { animation-delay: 0.14s; }
+  .slide.is-active .stagger:nth-child(4) { animation-delay: 0.19s; }
+  .slide.is-active .stagger:nth-child(5) { animation-delay: 0.24s; }
+  .slide.is-active .stagger:nth-child(6) { animation-delay: 0.29s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  /* Empty / loading states */
+  .state-note { font-size: 13px; color: var(--muted); padding: 14px 16px; line-height: 1.5; }
+  .state-note .material-symbols-outlined { font-size: 16px; vertical-align: -3px; margin-right: 4px; color: var(--faint); }
+  .shimmer { position: relative; overflow: hidden; background: rgba(255,255,255,0.04); border-radius: 8px; }
+  .shimmer::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent); animation: sh 1.2s infinite; }
+  @keyframes sh { to { transform: translateX(100%); } }
+  .skel-row { height: 56px; margin: 8px; }
+
+  /* Bottom-sheet song picker */
+  .sheet__backdrop { position: absolute; inset: 0; background: rgba(8,9,12,0.6); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity 0.35s; z-index: 70; }
+  .sheet__backdrop.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 71;
+    max-height: 78%; display: flex; flex-direction: column;
+    background: #14161D; border-top: 1px solid var(--hairline-strong);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -24px 60px -20px rgba(0,0,0,0.85);
+    transform: translateY(110%); transition: transform 0.42s var(--ease-out);
+    padding-bottom: calc(10px + var(--safe-bottom));
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet__grip { width: 40px; height: 4px; border-radius: 999px; background: var(--hairline-strong); margin: 10px auto 4px; flex: none; }
+  .sheet__head { padding: 6px 20px 12px; flex: none; }
+  .sheet__title { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+  .sheet__sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .sheet__searchwrap { position: relative; margin-top: 12px; }
+  .sheet__searchwrap .ico { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: 19px; }
+  .sheet__search { width: 100%; font-family: inherit; font-size: 15px; color: var(--ink); background: var(--recess); border: 1px solid var(--hairline); border-radius: var(--r-field); padding: 12px 12px 12px 40px; outline: none; }
+  .sheet__search:focus { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-tint); }
+  .sheet__list { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 12px 12px; scrollbar-width: none; }
+  .sheet__list::-webkit-scrollbar { display: none; }
+  .pick { display: flex; align-items: center; gap: 12px; padding: 13px 12px; border-radius: 12px; cursor: pointer; transition: background 0.15s; }
+  .pick:active { background: rgba(255,255,255,0.04); }
+  .pick__ico { flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,0.05); color: var(--muted); }
+  .pick__ico .material-symbols-outlined { font-size: 19px; }
+  .pick__text { flex: 1; min-width: 0; }
+  .pick__title { font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pick__by { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pick__moods { display: flex; gap: 4px; flex: none; }
+  .pick__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); opacity: 0.55; }
+  .pick.selected { background: var(--red-tint); }
+  .pick.selected .pick__ico { background: var(--red-tint); color: var(--red-bright); }
+
+  /* Toast */
+  .toast { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%) translateY(16px); background: #1C1E26; border: 1px solid var(--hairline-strong); color: var(--ink); font-size: 13px; font-weight: 500; padding: 11px 16px; border-radius: 12px; box-shadow: 0 16px 40px -12px rgba(0,0,0,0.8); opacity: 0; pointer-events: none; transition: all 0.3s var(--ease-out); z-index: 80; display: inline-flex; align-items: center; gap: 8px; max-width: 80%; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast .material-symbols-outlined { font-size: 17px; color: var(--red-bright); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .progress__seg::before, .stagger { transition: none !important; animation: none !important; }
+    .slide { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true"></div>
+
+<main class="app">
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar__row">
+      <div class="topbar__left">
+        <a class="iconbtn" href="/mass/builder" aria-label="Exit to Mass builder"><span class="material-symbols-outlined">close</span></a>
+        <span class="brand" aria-label="LiturgyFlow"><span class="brand__liturgy">Liturgy</span><span class="brand__flow">Flow</span></span>
+      </div>
+      <span class="step-count">Step <b id="stepNow">1</b> of 7</span>
+    </div>
+    <div class="progress" id="progress" role="progressbar" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1">
+      <span class="progress__seg active"></span>
+      <span class="progress__seg"></span>
+      <span class="progress__seg"></span>
+      <span class="progress__seg"></span>
+      <span class="progress__seg"></span>
+      <span class="progress__seg"></span>
+      <span class="progress__seg"></span>
+    </div>
+  </header>
+
+  <!-- Slides -->
+  <div class="viewport">
+    <div class="slides" id="slides">
+
+      <!-- 1 · MASS INFORMATION -->
+      <section class="slide is-active" data-step="1">
+        <div class="eyebrow stagger"><span class="dot"></span> Mass Information</div>
+        <h1 class="title stagger">Let's prepare <em>today's Mass</em></h1>
+        <p class="subtitle stagger">Set the date and who's celebrating. We'll line up the readings automatically.</p>
+        <div class="glass glass--pad stagger">
+          <div class="field">
+            <label class="label" for="massDate">Mass date</label>
+            <div class="input-wrap">
+              <input class="input" id="massDate" type="date"/>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="label" for="celebrant">Celebrant</label>
+            <div class="input-wrap">
+              <input class="input" id="celebrant" type="text" placeholder="Search saved priests…" autocomplete="off"/>
+              <span class="ico material-symbols-outlined">search</span>
+            </div>
+            <div class="results" id="priestResults"></div>
+            <p class="helper" id="celebrantHint" style="display:none"></p>
+          </div>
+        </div>
+
+        <div class="glass glass--pad stagger" style="margin-top:14px">
+          <div class="label" style="margin-bottom:0">Co-celebrants <span style="color:var(--faint); font-weight:500; text-transform:none; letter-spacing:0">(optional)</span></div>
+          <div class="chips" id="coChips"></div>
+          <div class="input-wrap" id="coSearchWrap" style="display:none; margin-top:12px">
+            <input class="input" id="coSearch" type="text" placeholder="Search saved priests…" autocomplete="off"/>
+            <span class="ico material-symbols-outlined">search</span>
+          </div>
+          <div class="results" id="coResults"></div>
+          <button class="addbtn" id="addCo" type="button"><span class="material-symbols-outlined">person_add</span> Add priest</button>
+        </div>
+      </section>
+
+      <!-- 2 · INTRODUCTORY RITES -->
+      <section class="slide" data-step="2">
+        <div class="eyebrow">Step 02 · Introductory Rites</div>
+        <h1 class="title">Introductory <em>Rites</em></h1>
+        <p class="subtitle">Defaults are ready. Toggle off to write a custom text for any part.</p>
+
+        <div class="glass partcard" data-part="penitential">
+          <div class="partcard__top">
+            <span class="partcard__ico"><span class="material-symbols-outlined">self_improvement</span></span>
+            <div class="partcard__text"><div class="partcard__title">Penitential Act</div><div class="partcard__meta">Form A · Confiteor</div></div>
+            <button class="switch" type="button" role="switch" aria-checked="true" data-default><span class="switch__knob"></span></button>
+          </div>
+          <div class="partcard__actions">
+            <button class="miniact custom-btn" type="button" disabled><span class="material-symbols-outlined">edit_note</span> Custom text</button>
+            <button class="miniact preview-btn" type="button"><span class="material-symbols-outlined">visibility</span> Preview</button>
+          </div>
+        </div>
+
+        <div class="glass partcard" data-part="kyrie">
+          <div class="partcard__top">
+            <span class="partcard__ico"><span class="material-symbols-outlined">music_note</span></span>
+            <div class="partcard__text"><div class="partcard__title">Kyrie</div><div class="partcard__meta">Lord, have mercy</div></div>
+            <button class="switch" type="button" role="switch" aria-checked="true" data-default><span class="switch__knob"></span></button>
+          </div>
+          <div class="partcard__actions">
+            <button class="miniact custom-btn" type="button" disabled><span class="material-symbols-outlined">edit_note</span> Custom text</button>
+            <button class="miniact preview-btn" type="button"><span class="material-symbols-outlined">visibility</span> Preview</button>
+          </div>
+        </div>
+
+        <div class="glass partcard" data-part="gloria">
+          <div class="partcard__top">
+            <span class="partcard__ico"><span class="material-symbols-outlined">auto_awesome</span></span>
+            <div class="partcard__text"><div class="partcard__title">Gloria</div><div class="partcard__meta">Glory to God in the highest</div></div>
+            <button class="switch" type="button" role="switch" aria-checked="true" data-default><span class="switch__knob"></span></button>
+          </div>
+          <div class="partcard__actions">
+            <button class="miniact custom-btn" type="button" disabled><span class="material-symbols-outlined">edit_note</span> Custom text</button>
+            <button class="miniact preview-btn" type="button"><span class="material-symbols-outlined">visibility</span> Preview</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 · LITURGY OF THE WORD -->
+      <section class="slide" data-step="3">
+        <div class="eyebrow">Step 03 · Liturgy of the Word</div>
+        <h1 class="title">Liturgy of the <em>Word</em></h1>
+        <span class="imported-banner" id="readingsBanner"><span class="material-symbols-outlined">cloud_done</span> Auto-imported from the lectionary</span>
+        <div class="glass" style="margin-bottom:18px" id="readingsList">
+          <div class="import-row" data-reading="first">
+            <span class="import-row__check"><span class="material-symbols-outlined">check</span></span>
+            <div class="import-row__text"><div class="import-row__title">First Reading</div><div class="import-row__ref" data-ref="first">Loading…</div></div>
+            <span class="import-row__view"><span class="material-symbols-outlined">chevron_right</span></span>
+          </div>
+          <div class="import-row" data-reading="psalm">
+            <span class="import-row__check"><span class="material-symbols-outlined">check</span></span>
+            <div class="import-row__text"><div class="import-row__title">Responsorial Psalm</div><div class="import-row__ref" data-ref="psalm">Loading…</div></div>
+            <span class="import-row__view"><span class="material-symbols-outlined">chevron_right</span></span>
+          </div>
+          <div class="import-row" data-reading="second">
+            <span class="import-row__check"><span class="material-symbols-outlined">check</span></span>
+            <div class="import-row__text"><div class="import-row__title">Second Reading</div><div class="import-row__ref" data-ref="second">Loading…</div></div>
+            <span class="import-row__view"><span class="material-symbols-outlined">chevron_right</span></span>
+          </div>
+          <div class="import-row" data-reading="gospel">
+            <span class="import-row__check"><span class="material-symbols-outlined">check</span></span>
+            <div class="import-row__text"><div class="import-row__title">Gospel</div><div class="import-row__ref" data-ref="gospel">Loading…</div></div>
+            <span class="import-row__view"><span class="material-symbols-outlined">chevron_right</span></span>
+          </div>
+        </div>
+
+        <div class="group-label" style="display:flex; align-items:center; justify-content:space-between; margin-top:0">
+          <span>Prayer of the Faithful</span>
+          <span class="ai-badge"><span class="material-symbols-outlined">auto_awesome</span> AI</span>
+        </div>
+        <div class="glass glass--pad">
+          <p style="font-size:13.5px; color:var(--muted); margin:0 0 14px; line-height:1.5">Draft intercessions tuned to this Sunday's Gospel and your parish intentions.</p>
+          <div class="ai-row">
+            <button class="ai-btn ai-btn--suggest" id="pofSuggest" type="button"><span class="material-symbols-outlined">lightbulb</span> AI Suggest</button>
+            <button class="ai-btn ai-btn--generate" id="pofGenerate" type="button"><span class="material-symbols-outlined">auto_awesome</span> Generate</button>
+          </div>
+        </div>
+
+        <!-- LOTW bookmark -->
+        <button class="lotw__tab" id="lotwTab" type="button" aria-controls="lotwPanel" aria-expanded="false">
+          <span class="material-symbols-outlined">menu_book</span> LOTW Guide
+        </button>
+      </section>
+
+      <!-- 4 · LITURGY OF THE EUCHARIST -->
+      <section class="slide" data-step="4">
+        <div class="eyebrow">Step 04 · Liturgy of the Eucharist</div>
+        <h1 class="title">Liturgy of the <em>Eucharist</em></h1>
+        <p class="subtitle">Default versions are selected. Edit or preview each acclamation.</p>
+
+        <div class="glass partcard" data-part="creed">
+          <div class="partcard__top">
+            <span class="partcard__ico"><span class="material-symbols-outlined">verified_user</span></span>
+            <div class="partcard__text"><div class="partcard__title">Creed</div><div class="partcard__meta">Nicene Creed · default</div></div>
+          </div>
+          <div class="partcard__actions">
+            <button class="miniact" type="button"><span class="material-symbols-outlined">edit</span> Edit</button>
+            <button class="miniact preview-btn" type="button"><span class="material-symbols-outlined">visibility</span> Preview</button>
+          </div>
+        </div>
+        <div class="glass partcard" data-part="sanctus">
+          <div class="partcard__top">
+            <span class="partcard__ico"><span class="material-symbols-outlined">campaign</span></span>
+            <div class="partcard__text"><div class="partcard__title">Sanctus</div><div class="partcard__meta">Holy, Holy, Holy · default</div></div>
+          </div>
+          <div class="partcard__actions">
+            <button class="miniact" type="button"><span class="material-symbols-outlined">edit</span> Edit</button>
+            <button class="miniact preview-btn" type="button"><span class="material-symbols-outlined">visibility</span> Preview</button>
+          </div>
+        </div>
+        <div class="glass partcard" data-part="ourfather">
+          <div class="partcard__top">
+            <span class="partcard__ico"><span class="material-symbols-outlined">volunteer_activism</span></span>
+            <div class="partcard__text"><div class="partcard__title">Our Father</div><div class="partcard__meta">Spoken · default</div></div>
+          </div>
+          <div class="partcard__actions">
+            <button class="miniact" type="button"><span class="material-symbols-outlined">edit</span> Edit</button>
+            <button class="miniact preview-btn" type="button"><span class="material-symbols-outlined">visibility</span> Preview</button>
+          </div>
+        </div>
+        <div class="glass partcard" data-part="lamb">
+          <div class="partcard__top">
+            <span class="partcard__ico"><span class="material-symbols-outlined">pets</span></span>
+            <div class="partcard__text"><div class="partcard__title">Lamb of God</div><div class="partcard__meta">Agnus Dei · default</div></div>
+          </div>
+          <div class="partcard__actions">
+            <button class="miniact" type="button"><span class="material-symbols-outlined">edit</span> Edit</button>
+            <button class="miniact preview-btn" type="button"><span class="material-symbols-outlined">visibility</span> Preview</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 · SONG CHOOSER -->
+      <section class="slide" data-step="5">
+        <div class="eyebrow">Step 05 · Music Ministry</div>
+        <h1 class="title">Music <em>Ministry</em></h1>
+        <p class="subtitle">Tap a slot, then add from the AI recommendations below.</p>
+
+        <div class="glass" style="margin-bottom:18px" id="slotList">
+          <div class="slot active-slot" data-slot="Entrance">
+            <span class="slot__ico"><span class="material-symbols-outlined">door_front</span></span>
+            <div class="slot__text"><div class="slot__label">Entrance</div><div class="slot__song">Tap to choose a hymn</div></div>
+            <span class="slot__add"><span class="material-symbols-outlined">add_circle</span></span>
+          </div>
+          <div class="slot" data-slot="Offertory">
+            <span class="slot__ico"><span class="material-symbols-outlined">redeem</span></span>
+            <div class="slot__text"><div class="slot__label">Offertory</div><div class="slot__song">Tap to choose a hymn</div></div>
+            <span class="slot__add"><span class="material-symbols-outlined">add_circle</span></span>
+          </div>
+          <div class="slot" data-slot="Communion 1">
+            <span class="slot__ico"><span class="material-symbols-outlined">bakery_dining</span></span>
+            <div class="slot__text"><div class="slot__label">Communion 1</div><div class="slot__song">Tap to choose a hymn</div></div>
+            <span class="slot__add"><span class="material-symbols-outlined">add_circle</span></span>
+          </div>
+          <div class="slot" data-slot="Communion 2">
+            <span class="slot__ico"><span class="material-symbols-outlined">local_cafe</span></span>
+            <div class="slot__text"><div class="slot__label">Communion 2</div><div class="slot__song">Tap to choose a hymn</div></div>
+            <span class="slot__add"><span class="material-symbols-outlined">add_circle</span></span>
+          </div>
+          <div class="slot" data-slot="Recessional">
+            <span class="slot__ico"><span class="material-symbols-outlined">waving_hand</span></span>
+            <div class="slot__text"><div class="slot__label">Recessional</div><div class="slot__song">Tap to choose a hymn</div></div>
+            <span class="slot__add"><span class="material-symbols-outlined">add_circle</span></span>
+          </div>
+        </div>
+
+        <div class="group-label" style="display:flex; align-items:center; gap:8px; margin-top:0">
+          <span class="material-symbols-outlined" style="font-size:16px; color:var(--red-bright)">auto_awesome</span>
+          AI Recommendations <span id="recTarget" style="color:var(--red-bright); margin-left:auto; text-transform:none; letter-spacing:0; font-weight:600">Entrance</span>
+        </div>
+        <div id="recList"></div>
+      </section>
+
+      <!-- 6 · EXTRAS -->
+      <section class="slide" data-step="6">
+        <div class="eyebrow">Step 06 · Additional Details</div>
+        <h1 class="title">Additional <em>details</em></h1>
+        <p class="subtitle">The finishing touches that make the deck complete.</p>
+
+        <div class="glass glass--pad">
+          <div class="field">
+            <label class="label" for="collection">Mass collection</label>
+            <div class="input-wrap">
+              <input class="input" id="collection" type="text" placeholder="Building & Maintenance Fund" autocomplete="off"/>
+              <span class="ico material-symbols-outlined">savings</span>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="label" for="sponsor">Sponsor name</label>
+            <div class="input-wrap">
+              <input class="input" id="sponsor" type="text" placeholder="In memory of…" autocomplete="off"/>
+              <span class="ico material-symbols-outlined">favorite</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass glass--pad" style="margin-top:14px">
+          <div class="field" style="margin-bottom:0">
+            <label class="label" for="announce">Announcements</label>
+            <textarea class="textarea" id="announce" placeholder="Parish picnic next Sunday after the 9 AM Mass…"></textarea>
+          </div>
+        </div>
+
+        <div class="glass glass--pad" style="margin-top:14px">
+          <div class="partcard__top" style="margin-bottom:0">
+            <span class="partcard__ico"><span class="material-symbols-outlined">slideshow</span></span>
+            <div class="partcard__text"><div class="partcard__title">Custom slides</div><div class="partcard__meta" id="customMeta">None added</div></div>
+            <button class="switch" type="button" role="switch" aria-checked="false" data-key="customSlides"><span class="switch__knob"></span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7 · REVIEW & GENERATE -->
+      <section class="slide" data-step="7">
+        <div class="eyebrow">Step 07 · Review &amp; Generate</div>
+        <h1 class="title">Review &amp; <em>Generate</em></h1>
+        <p class="subtitle">One last look before we build your presentation.</p>
+
+        <div class="receipt">
+          <div class="receipt__head">
+            <div class="receipt__seal"><span class="material-symbols-outlined">receipt_long</span></div>
+            <div class="receipt__title">Mass Setup Summary</div>
+            <div class="receipt__sub">LiturgyFlow · Order of service</div>
+          </div>
+          <hr class="dashed"/>
+          <div class="receipt__list" id="receiptList"><!-- filled by JS --></div>
+          <hr class="dashed"/>
+          <div class="slides-estimate">
+            <div class="slides-estimate__n" id="slideEstimate">54</div>
+            <div class="slides-estimate__l">Estimated slides</div>
+          </div>
+        </div>
+
+        <div class="group-label">Save as default setup</div>
+        <div class="glass glass--pad">
+          <div class="check-grid" id="defaultGrid">
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Penitential Act"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Penitential Act</span></div>
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Kyrie"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Kyrie</span></div>
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Gloria"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Gloria</span></div>
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Creed"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Creed</span></div>
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Sanctus"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Sanctus</span></div>
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Our Father"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Our Father</span></div>
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Lamb of God"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Lamb of God</span></div>
+            <div class="check-row" role="checkbox" aria-checked="true" data-d="Song Preferences"><span class="check-row__box"><span class="material-symbols-outlined">check</span></span><span class="check-row__label">Song Prefs</span></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- LOTW slide-out panel + scrim (overlay for step 3) -->
+    <div class="lotw__scrim" id="lotwScrim" aria-hidden="true"></div>
+    <aside class="lotw__panel" id="lotwPanel" role="dialog" aria-modal="false" aria-labelledby="lotwHeading">
+      <button class="lotw__close" id="lotwClose" type="button" aria-label="Close guide"><span class="material-symbols-outlined">close</span></button>
+      <div class="lotw__eyebrow">Quick reference</div>
+      <h2 class="lotw__title" id="lotwHeading">LOTW Guide</h2>
+      <ol class="lotw__steps">
+        <li>First Reading</li>
+        <li>Psalm</li>
+        <li>Second Reading</li>
+        <li>Gospel</li>
+        <li>Homily</li>
+        <li>Creed</li>
+        <li>Prayer of the Faithful</li>
+      </ol>
+    </aside>
+
+    <div class="toast" id="toast"><span class="material-symbols-outlined">check_circle</span><span id="toastMsg"></span></div>
+
+    <!-- Song picker bottom sheet -->
+    <div class="sheet__backdrop" id="sheetBackdrop" aria-hidden="true"></div>
+    <div class="sheet" id="songSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet__grip"></div>
+      <div class="sheet__head">
+        <div class="sheet__title" id="sheetTitle">Choose a hymn</div>
+        <div class="sheet__sub" id="sheetSub">From your song library</div>
+        <div class="sheet__searchwrap">
+          <span class="ico material-symbols-outlined">search</span>
+          <input class="sheet__search" id="sheetSearch" type="text" placeholder="Search by title or composer…" autocomplete="off"/>
+        </div>
+      </div>
+      <div class="sheet__list" id="sheetList"></div>
+    </div>
+  </div>
+
+  <!-- Bottom dock -->
+  <footer class="dock">
+    <div class="dock__inner">
+      <button class="btn btn--ghost" id="backBtn" type="button" aria-label="Go back" disabled>
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <button class="btn btn--primary" id="nextBtn" type="button">
+        <span id="nextLabel">Continue</span>
+        <span class="material-symbols-outlined" id="nextIcon">arrow_forward</span>
+      </button>
+    </div>
+  </footer>
+</main>
+
+<!-- Reuse the app's auth helper so API calls carry the Supabase bearer token when auth is enabled -->
+<script src="/static/js/auth.js?v=20260621"></script>
+<script>
+(function () {
+  "use strict";
+  var TOTAL = 7;
+  var current = 1;
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var segs = Array.prototype.slice.call(document.querySelectorAll(".progress__seg"));
+  var progress = document.getElementById("progress");
+  var stepNow = document.getElementById("stepNow");
+  var backBtn = document.getElementById("backBtn");
+  var nextBtn = document.getElementById("nextBtn");
+  var nextLabel = document.getElementById("nextLabel");
+  var nextIcon = document.getElementById("nextIcon");
+
+  var SLOT_ORDER = ["Entrance", "Offertory", "Communion 1", "Communion 2", "Recessional"];
+  var SLOT_SECTION = { "Entrance": "entrance", "Offertory": "offertory", "Communion 1": "communion", "Communion 2": "communion", "Recessional": "recessional" };
+
+  var data = {
+    date: "", celebrant: "", coCelebrants: [],
+    songs: { "Entrance": null, "Offertory": null, "Communion 1": null, "Communion 2": null, "Recessional": null },
+    pof: false,
+    extras: { collection: "", sponsor: "", announcements: "", customSlides: false }
+  };
+
+  // Live data pulled from the app's own APIs
+  var celebrants = [];   // saved celebrant names (/api/community)
+  var catalog = {};      // section -> [songs] (/api/catalog/songs)
+  var readings = null;   // lectionary refs for the chosen date (/api/readings)
+  var activeSlot = "Entrance";
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]; }); }
+
+  /* ---- Authenticated fetch (reuses the desktop app's VerbumAuth helper) ---- */
+  async function authHeaders() {
+    try {
+      if (window.VerbumAuth) {
+        if (window.VerbumAuth.waitUntilReady) { try { await window.VerbumAuth.waitUntilReady(3000); } catch (_e) {} }
+        if (window.VerbumAuth.getAuthHeaders) return await window.VerbumAuth.getAuthHeaders();
+      }
+    } catch (_e) {}
+    return {};
+  }
+  async function apiGet(url) {
+    var headers = await authHeaders();
+    var res = await fetch(url, { headers: headers, credentials: "same-origin" });
+    if (!res.ok) throw new Error("HTTP " + res.status + " for " + url);
+    return res.json();
+  }
+
+  /* ---- Toast ---- */
+  var toast = document.getElementById("toast");
+  var toastMsg = document.getElementById("toastMsg");
+  var toastTimer = null;
+  function showToast(msg) {
+    toastMsg.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove("show"); }, 1900);
+  }
+
+  /* ---- Default date = today ---- */
+  var dateEl = document.getElementById("massDate");
+  (function () {
+    var d = new Date();
+    var iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    dateEl.value = iso; data.date = iso;
+  })();
+  dateEl.addEventListener("change", function () { data.date = dateEl.value; loadReadings(data.date); });
+
+  /* ---- Celebrant picker (saved priest names) ---- */
+  var celebrantEl = document.getElementById("celebrant");
+  var resultsEl = document.getElementById("priestResults");
+  function initials(name) {
+    var p = String(name || "").replace(/^(Fr\.|Fr|Mons\.|Msgr\.|Rev\.|Bishop|Cardinal|Deacon)\s+/i, "").trim().split(/\s+/);
+    var a = (p[0] || "").charAt(0); var b = (p[1] || "").charAt(0);
+    return (a + b).toUpperCase() || "?";
+  }
+  function availableCelebrants(query, exclude) {
+    var q = String(query || "").toLowerCase();
+    return celebrants.filter(function (p) {
+      if (exclude && exclude.indexOf(p) !== -1) return false;
+      return !q || p.toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  function renderResults(container, query, exclude, onPick) {
+    var matches = availableCelebrants(query, exclude);
+    if (!matches.length) { container.classList.remove("show"); container.innerHTML = ""; return; }
+    container.innerHTML = matches.slice(0, 6).map(function (p) {
+      return '<div class="result" data-name="' + esc(p) + '"><span class="ava">' + esc(initials(p)) + '</span>' + esc(p) + '</div>';
+    }).join("");
+    container.classList.add("show");
+    Array.prototype.forEach.call(container.querySelectorAll(".result"), function (r) {
+      r.addEventListener("click", function () { onPick(r.getAttribute("data-name")); });
+    });
+  }
+  celebrantEl.addEventListener("input", function () {
+    data.celebrant = celebrantEl.value.trim();   // free text is allowed too
+    renderResults(resultsEl, celebrantEl.value, data.coCelebrants, function (name) {
+      celebrantEl.value = name; data.celebrant = name; resultsEl.classList.remove("show");
+    });
+  });
+  celebrantEl.addEventListener("focus", function () { renderResults(resultsEl, celebrantEl.value, data.coCelebrants, function (name) { celebrantEl.value = name; data.celebrant = name; resultsEl.classList.remove("show"); }); });
+  document.addEventListener("click", function (e) {
+    if (!resultsEl.contains(e.target) && e.target !== celebrantEl) resultsEl.classList.remove("show");
+  });
+
+  /* ---- Co-celebrants (also from saved names, free text on Enter) ---- */
+  var coChips = document.getElementById("coChips");
+  var coSearchWrap = document.getElementById("coSearchWrap");
+  var coSearch = document.getElementById("coSearch");
+  var coResults = document.getElementById("coResults");
+  function renderCo() {
+    coChips.innerHTML = data.coCelebrants.map(function (n, i) {
+      return '<span class="chip" data-i="' + i + '">' + esc(n) + ' <span class="material-symbols-outlined chip-x">close</span></span>';
+    }).join("");
+    Array.prototype.forEach.call(coChips.querySelectorAll(".chip-x"), function (x) {
+      x.addEventListener("click", function () {
+        var i = parseInt(x.parentNode.getAttribute("data-i"), 10);
+        data.coCelebrants.splice(i, 1); renderCo();
+      });
+    });
+  }
+  function addCo(name) {
+    name = String(name || "").trim();
+    if (!name || data.coCelebrants.indexOf(name) !== -1 || name === data.celebrant) return;
+    data.coCelebrants.push(name); renderCo();
+  }
+  document.getElementById("addCo").addEventListener("click", function () {
+    var open = coSearchWrap.style.display !== "none";
+    coSearchWrap.style.display = open ? "none" : "block";
+    if (!open) { coSearch.value = ""; setTimeout(function () { try { coSearch.focus(); } catch (_e) {} }, 60); renderResults(coResults, "", data.coCelebrants.concat([data.celebrant]), function (n) { addCo(n); coSearch.value = ""; coResults.classList.remove("show"); }); }
+    else { coResults.classList.remove("show"); }
+  });
+  coSearch.addEventListener("input", function () {
+    renderResults(coResults, coSearch.value, data.coCelebrants.concat([data.celebrant]), function (n) { addCo(n); coSearch.value = ""; coResults.classList.remove("show"); });
+  });
+  coSearch.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); addCo(coSearch.value); coSearch.value = ""; coResults.classList.remove("show"); }
+  });
+
+  /* ---- Data loaders ---- */
+  async function loadCommunity() {
+    try {
+      var j = await apiGet("/api/community");
+      celebrants = Array.isArray(j.celebrant_names) ? j.celebrant_names.filter(Boolean) : [];
+    } catch (_e) { celebrants = []; }
+    var hint = document.getElementById("celebrantHint");
+    if (!celebrants.length && hint) {
+      hint.style.display = "block";
+      hint.textContent = "No saved priests yet — type a name here, or add them in Settings → Church.";
+    } else if (hint) { hint.style.display = "none"; }
+  }
+
+  function setRef(key, val) { var el = document.querySelector('[data-ref="' + key + '"]'); if (el) el.textContent = val; }
+  function setAllRefs(v) { ["first", "psalm", "second", "gospel"].forEach(function (k) { setRef(k, v); }); }
+  function applyReadings() {
+    var banner = document.getElementById("readingsBanner");
+    if (!readings || !readings.ok) {
+      setAllRefs("Will import on generate");
+      if (banner) banner.innerHTML = '<span class="material-symbols-outlined">info</span> Readings import automatically for this date';
+      return;
+    }
+    setRef("first", readings.first_reading_reference || "—");
+    setRef("psalm", readings.psalm_reference || readings.psalm || "—");
+    setRef("second", readings.second_reading_reference || "Not appointed today");
+    setRef("gospel", readings.gospel_reference || "—");
+    if (banner) {
+      var bits = [];
+      if (readings.title) bits.push(readings.title);
+      if (readings.lectionary_cycle) bits.push("Cycle " + readings.lectionary_cycle);
+      banner.innerHTML = '<span class="material-symbols-outlined">cloud_done</span> ' + (bits.length ? esc(bits.join(" · ")) : "Auto-imported from the lectionary");
+    }
+    renderRecs(); // season may influence recommendations
+  }
+  async function loadReadings(date) {
+    if (!date) return;
+    setAllRefs("Loading…");
+    try { readings = await apiGet("/api/readings/" + encodeURIComponent(date)); }
+    catch (_e) { readings = null; }
+    applyReadings();
+  }
+  async function loadCatalog() {
+    try {
+      var j = await apiGet("/api/catalog/songs?lite=true");
+      catalog = (j && j.catalog) ? j.catalog : {};
+    } catch (_e) { catalog = {}; }
+    renderRecs();
+  }
+
+  /* ---- Default toggles (rites) — toggling off enables custom-text ---- */
+  document.querySelectorAll(".switch[data-default]").forEach(function (sw) {
+    sw.addEventListener("click", function () {
+      var on = sw.getAttribute("aria-checked") === "true";
+      sw.setAttribute("aria-checked", on ? "false" : "true");
+      var card = sw.closest(".partcard");
+      var customBtn = card && card.querySelector(".custom-btn");
+      if (customBtn) customBtn.disabled = !on ? false : true; // when default off -> custom enabled
+    });
+  });
+
+  /* ---- Preview / generic part buttons ---- */
+  document.querySelectorAll(".preview-btn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var t = b.closest(".partcard").querySelector(".partcard__title").textContent;
+      showToast("Preview: " + t);
+    });
+  });
+  document.querySelectorAll(".custom-btn").forEach(function (b) {
+    b.addEventListener("click", function () { showToast("Custom text editor"); });
+  });
+
+  /* ---- Prayer of the Faithful AI ---- */
+  document.getElementById("pofSuggest").addEventListener("click", function () { data.pof = true; showToast("AI drafted 5 intercessions"); });
+  document.getElementById("pofGenerate").addEventListener("click", function () { data.pof = true; showToast("Generated Prayer of the Faithful"); });
+
+  /* ---- Song chooser (slots + library picker + AI recommendations) ---- */
+  var slotEls = {};
+  Array.prototype.forEach.call(document.querySelectorAll(".slot"), function (s) {
+    var name = s.getAttribute("data-slot");
+    slotEls[name] = s;
+    s.addEventListener("click", function () { openSheet(name); });
+  });
+  function setActiveSlot(name) {
+    activeSlot = name;
+    Object.keys(slotEls).forEach(function (k) { slotEls[k].classList.toggle("active-slot", k === name); });
+    var rt = document.getElementById("recTarget"); if (rt) rt.textContent = name;
+    renderRecs();
+  }
+  function fillSlot(name, song) {
+    data.songs[name] = { section: SLOT_SECTION[name], id: song.id, title: song.title, author: song.author || "" };
+    var s = slotEls[name];
+    s.classList.add("filled");
+    s.querySelector(".slot__song").textContent = song.title;
+    s.querySelector(".slot__add .material-symbols-outlined").textContent = "check_circle";
+  }
+  function firstEmptySlot() {
+    for (var i = 0; i < SLOT_ORDER.length; i++) if (!data.songs[SLOT_ORDER[i]]) return SLOT_ORDER[i];
+    return null;
+  }
+  function songById(section, id) {
+    return (catalog[section] || []).filter(function (s) { return String(s.id) === String(id); })[0];
+  }
+
+  /* Bottom-sheet library picker */
+  var sheet = document.getElementById("songSheet");
+  var sheetBackdrop = document.getElementById("sheetBackdrop");
+  var sheetList = document.getElementById("sheetList");
+  var sheetSearch = document.getElementById("sheetSearch");
+  var sheetSlot = null;
+  function openSheet(slot) {
+    sheetSlot = slot;
+    setActiveSlot(slot);
+    var section = SLOT_SECTION[slot];
+    var n = (catalog[section] || []).length;
+    document.getElementById("sheetTitle").textContent = slot;
+    document.getElementById("sheetSub").textContent = n ? (n + " hymns in your " + section + " library") : ("Your " + section + " library is empty");
+    sheetSearch.value = "";
+    renderSheetList("");
+    sheet.classList.add("open"); sheetBackdrop.classList.add("open");
+    setTimeout(function () { try { sheetSearch.focus(); } catch (_e) {} }, 280);
+  }
+  function closeSheet() { sheet.classList.remove("open"); sheetBackdrop.classList.remove("open"); sheetSlot = null; }
+  function renderSheetList(q) {
+    var section = SLOT_SECTION[sheetSlot];
+    var all = catalog[section] || [];
+    q = String(q || "").toLowerCase();
+    var list = q ? all.filter(function (s) { return (s.title || "").toLowerCase().indexOf(q) !== -1 || (s.author || "").toLowerCase().indexOf(q) !== -1; }) : all;
+    if (!list.length) {
+      sheetList.innerHTML = '<div class="state-note"><span class="material-symbols-outlined">library_music</span>' + (q ? "No matches for &ldquo;" + esc(q) + "&rdquo;." : "No songs in this section yet. Add hymns in your Song Library.") + '</div>';
+      return;
+    }
+    var chosenId = data.songs[sheetSlot] && data.songs[sheetSlot].id;
+    sheetList.innerHTML = list.map(function (s) {
+      var sel = (String(s.id) === String(chosenId)) ? " selected" : "";
+      var dots = (s.gospel_moods || []).slice(0, 3).map(function () { return '<span class="pick__dot"></span>'; }).join("");
+      return '<div class="pick' + sel + '" data-id="' + esc(s.id) + '">' +
+        '<span class="pick__ico"><span class="material-symbols-outlined">music_note</span></span>' +
+        '<div class="pick__text"><div class="pick__title">' + esc(s.title) + '</div><div class="pick__by">' + (esc(s.author) || "Traditional") + '</div></div>' +
+        '<div class="pick__moods">' + dots + '</div></div>';
+    }).join("");
+    Array.prototype.forEach.call(sheetList.querySelectorAll(".pick"), function (row) {
+      row.addEventListener("click", function () {
+        var song = songById(section, row.getAttribute("data-id"));
+        if (song) { fillSlot(sheetSlot, song); showToast("\u201C" + song.title + "\u201D \u2192 " + sheetSlot); renderRecs(); }
+        closeSheet();
+      });
+    });
+  }
+  sheetSearch.addEventListener("input", function () { renderSheetList(sheetSearch.value); });
+  sheetBackdrop.addEventListener("click", closeSheet);
+
+  /* Gospel-aware AI recommendations */
+  function seasonMood(season) {
+    var s = String(season || "").toLowerCase();
+    if (s.indexOf("easter") !== -1 || s.indexOf("christmas") !== -1) return "triumphant";
+    if (s.indexOf("lent") !== -1 || s.indexOf("advent") !== -1) return "solemn";
+    return "reverent";
+  }
+  function recsForSection(section) {
+    var mood = seasonMood(readings && readings.season);
+    var list = (catalog[section] || []).slice();
+    function score(s) { var m = s.gospel_moods || []; var sc = (m.indexOf(mood) !== -1 ? 4 : 0) + m.length + (s.has_lyrics ? 0.5 : 0); return sc; }
+    list.sort(function (a, b) { return score(b) - score(a); });
+    return { mood: mood, items: list.slice(0, 4) };
+  }
+  function recBadges(s, mood) {
+    var m = s.gospel_moods || []; var out = [];
+    if (m.indexOf(mood) !== -1) out.push('<span class="badge badge--rec"><span class="material-symbols-outlined">auto_awesome</span> Recommended</span>');
+    if (m.length) out.push('<span class="badge badge--gospel"><span class="material-symbols-outlined">menu_book</span> Gospel Theme</span>');
+    if (s.has_lyrics) out.push('<span class="badge badge--pop"><span class="material-symbols-outlined">trending_up</span> Popular</span>');
+    return out.join("");
+  }
+  function renderRecs() {
+    var recList = document.getElementById("recList");
+    if (!recList) return;
+    var section = SLOT_SECTION[activeSlot];
+    var loaded = Object.keys(catalog).length > 0;
+    var r = recsForSection(section);
+    if (!r.items.length) {
+      recList.innerHTML = '<div class="glass glass--pad"><div class="state-note" style="padding:2px"><span class="material-symbols-outlined">' + (loaded ? "info" : "hourglass_empty") + '</span>' + (loaded ? ("No " + section + " hymns to suggest yet — add some to your library.") : "Loading your song library…") + '</div></div>';
+      return;
+    }
+    recList.innerHTML = r.items.map(function (s) {
+      var chosen = data.songs[activeSlot] && String(data.songs[activeSlot].id) === String(s.id);
+      return '<div class="glass reccard" data-id="' + esc(s.id) + '">' +
+        '<div class="reccard__top"><span class="reccard__art"><span class="material-symbols-outlined">library_music</span></span>' +
+        '<div class="reccard__text"><div class="reccard__title">' + esc(s.title) + '</div><div class="reccard__by">' + (esc(s.author) || "Traditional") + '</div></div>' +
+        '<button class="reccard__add" type="button" aria-label="Add to ' + esc(activeSlot) + '"><span class="material-symbols-outlined">' + (chosen ? "check" : "add") + '</span></button></div>' +
+        '<div class="badges">' + recBadges(s, r.mood) + '</div></div>';
+    }).join("");
+    Array.prototype.forEach.call(recList.querySelectorAll(".reccard"), function (card) {
+      card.querySelector(".reccard__add").addEventListener("click", function (e) {
+        e.stopPropagation();
+        var song = songById(section, card.getAttribute("data-id"));
+        if (!song) return;
+        fillSlot(activeSlot, song);
+        showToast("\u201C" + song.title + "\u201D \u2192 " + activeSlot);
+        var nxt = firstEmptySlot();
+        if (nxt) setActiveSlot(nxt); else renderRecs();
+      });
+    });
+  }
+
+  /* ---- Extras ---- */
+  document.getElementById("collection").addEventListener("input", function (e) { data.extras.collection = e.target.value; });
+  document.getElementById("sponsor").addEventListener("input", function (e) { data.extras.sponsor = e.target.value; });
+  document.getElementById("announce").addEventListener("input", function (e) { data.extras.announcements = e.target.value; });
+  document.querySelector('.switch[data-key="customSlides"]').addEventListener("click", function () {
+    var sw = this; var on = sw.getAttribute("aria-checked") === "true";
+    sw.setAttribute("aria-checked", on ? "false" : "true");
+    data.extras.customSlides = !on;
+    document.getElementById("customMeta").textContent = !on ? "1 custom slide added" : "None added";
+  });
+
+  /* ---- Review checkboxes ---- */
+  document.querySelectorAll(".check-row").forEach(function (c) {
+    c.addEventListener("click", function () {
+      var on = c.getAttribute("aria-checked") === "true";
+      c.setAttribute("aria-checked", on ? "false" : "true");
+    });
+  });
+
+  /* ---- LOTW guide ---- */
+  var lotwTab = document.getElementById("lotwTab");
+  var lotwPanel = document.getElementById("lotwPanel");
+  var lotwScrim = document.getElementById("lotwScrim");
+  var lotwClose = document.getElementById("lotwClose");
+  function openLotw() { lotwPanel.classList.add("open"); lotwScrim.classList.add("open"); lotwTab.setAttribute("aria-expanded", "true"); }
+  function closeLotw() { lotwPanel.classList.remove("open"); lotwScrim.classList.remove("open"); lotwTab.setAttribute("aria-expanded", "false"); }
+  lotwTab.addEventListener("click", function () { lotwPanel.classList.contains("open") ? closeLotw() : openLotw(); });
+  lotwClose.addEventListener("click", closeLotw);
+  lotwScrim.addEventListener("click", closeLotw);
+
+  /* ---- Receipt + estimate ---- */
+  function rrow(key, value) {
+    return '<div class="rrow"><span class="rrow__check"><span class="material-symbols-outlined">check</span></span>' +
+           '<div class="rrow__main"><div class="rrow__k">' + esc(key) + '</div><div class="rrow__v">' + value + '</div></div></div>';
+  }
+  function prettyDate(iso) {
+    if (!iso) return "Not set";
+    var d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  }
+  function songCount() { return SLOT_ORDER.filter(function (k) { return data.songs[k]; }).length; }
+  function estimateSlides() {
+    var n = 8;                       // intro / titles / fixed parts
+    n += 16;                         // readings + psalm + gospel blocks
+    n += songCount() * 4;            // ~4 slides per song
+    if (data.pof) n += 3;
+    if (data.extras.announcements.trim()) n += 2;
+    if (data.extras.collection.trim()) n += 1;
+    if (data.extras.customSlides) n += 1;
+    return n;
+  }
+  function buildReceipt() {
+    var html = "";
+    html += rrow("Date", esc(prettyDate(data.date)) + (readings && readings.title ? " &middot; " + esc(readings.title) : ""));
+    html += rrow("Celebrant", data.celebrant ? esc(data.celebrant) + (data.coCelebrants.length ? " +" + data.coCelebrants.length + " co" : "") : "Not set");
+    html += rrow("Readings imported", readings && readings.ok ? "First &middot; Psalm &middot; Second &middot; Gospel" : "Will import on generate");
+    html += rrow("Songs selected", songCount() + " of 5");
+    html += rrow("Announcements added", data.extras.announcements.trim() ? "Yes" : "None");
+    html += rrow("Collection included", data.extras.collection.trim() ? esc(data.extras.collection) : "None");
+    document.getElementById("receiptList").innerHTML = html;
+    document.getElementById("slideEstimate").textContent = estimateSlides();
+  }
+
+  /* ---- Navigation ---- */
+  function render() {
+    slides.forEach(function (s) {
+      var step = parseInt(s.getAttribute("data-step"), 10);
+      s.classList.remove("is-active", "is-prev");
+      if (step === current) s.classList.add("is-active");
+      else if (step < current) s.classList.add("is-prev");
+    });
+    segs.forEach(function (seg, i) {
+      seg.classList.remove("active", "done");
+      if (i + 1 < current) seg.classList.add("done");
+      else if (i + 1 === current) seg.classList.add("active");
+    });
+    stepNow.textContent = current;
+    progress.setAttribute("aria-valuenow", current);
+    backBtn.disabled = current === 1;
+    var last = current === TOTAL;
+    nextLabel.textContent = last ? "Generate Presentation" : "Continue";
+    nextIcon.textContent = last ? "auto_awesome" : "arrow_forward";
+    nextBtn.classList.toggle("generate", last);
+    if (current !== 3) closeLotw();
+    if (last) buildReceipt();
+    var active = document.querySelector(".slide.is-active");
+    if (active) active.scrollTop = 0;
+  }
+  function go(n) { current = Math.max(1, Math.min(TOTAL, n)); render(); }
+
+  nextBtn.addEventListener("click", function () {
+    if (current === TOTAL) {
+      sessionStorage.setItem("liturgyflow_mass", JSON.stringify(data));
+      showToast("Generating your presentation…");
+      setTimeout(function () { window.location.href = "/mass/builder"; }, 1100);
+      return;
+    }
+    go(current + 1);
+  });
+  backBtn.addEventListener("click", function () { go(current - 1); });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closeSheet(); closeLotw(); return; }
+    if (sheet.classList.contains("open")) return;
+    if (e.key === "ArrowRight") nextBtn.click();
+    if (e.key === "ArrowLeft" && !backBtn.disabled) backBtn.click();
+  });
+
+  /* ---- Boot ---- */
+  render();
+  loadCommunity();
+  loadCatalog();
+  loadReadings(data.date);
+})();
+</script>
+</body>
+</html>
