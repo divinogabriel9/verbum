@@ -60,6 +60,7 @@ def readings_snapshot(date: str) -> tuple[dict[str, Any], bool]:
     fr_txt = data.get("first_reading_text") or ""
     sr_txt = data.get("second_reading_text") or ""
     raw_psalm = (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+    psalm_verses = (data.get("psalm_verses") or "").strip()
     psalm_ref = str(data.get("psalm") or "").strip()
     psalm_resp = (data.get("psalm_response") or "").strip()
 
@@ -82,6 +83,7 @@ def readings_snapshot(date: str) -> tuple[dict[str, Any], bool]:
         "second_reading_reference": str(data.get("second_reading") or "").strip(),
         "second_reading_excerpt": synopsis_from_reading(sr_txt, max_chars=720) if sr_txt else "",
         "psalm_text": raw_psalm,
+        "psalm_verses": psalm_verses,
         "psalm_reference": psalm_ref,
         "psalm": psalm_ref,
         "psalm_refrains": collect_psalm_refrain_options(

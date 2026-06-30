@@ -57,6 +57,7 @@ class PreviewPayload:
     second_reading_reference: str = ""
     second_reading_excerpt: str = ""
     psalm_text: str = ""
+    psalm_verses: str = ""
     psalm_reference: str = ""
     psalm_refrains: list[str] = field(default_factory=list)
     gospel_text: str = ""
@@ -362,6 +363,7 @@ def fetch_preview(date: str, *, readings_only: bool = False) -> PreviewPayload:
         second_reading_reference=str(data.get("second_reading") or "").strip(),
         second_reading_excerpt=synopsis_from_reading(sr_txt, max_chars=720) if sr_txt else "",
         psalm_text=raw_psalm,
+        psalm_verses=(data.get("psalm_verses") or "").strip(),
         psalm_reference=psalm_ref,
         psalm_refrains=psalm_refrains,
         gospel_text=gospel_text,

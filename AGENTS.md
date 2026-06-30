@@ -49,7 +49,7 @@ npm run watch:landing-css
 
 ## What we're building right now
 
-A **UI redesign** of the Mass Builder into a step-by-step **wizard** (`templates/mass_builder_wizard.html`, `static/js/mass_builder_wizard.js`, `static/css/mass_builder_wizard.css`) plus a mobile variant. Design briefs: `STITCH_DESIGN_BRIEF.md`, `BENTO_GRID_REDESIGN.md`. Wiring rules: `REDESIGN_INTEGRATION_CONTRACT.md`.
+A **UI redesign** of the Mass Builder into a step-by-step **wizard**, now built **in-place inside the main SPA** at `#flow-page` in `templates/index.html` (7 paginated steps: Mass Info → Introductory Rites → Liturgy of the Word → Eucharist → Music → Extras → Review). The wizard chrome is prefixed `mw-` (styles in the `#mw-wizard-styles` block, controller in the inline `(function(){…})()` IIFE just after the `#flow-page` section). It reuses every existing wired `id`/`data-*` and drives the legacy Setup/Songs panels under the hood. The old standalone prototypes (`mass_builder_wizard.*`, `mass_builder_mobile.html`) and their `/mass/builder/wizard` + `/mass/builder/mobile` routes have been **removed**. Design briefs: `STITCH_DESIGN_BRIEF.md`, `BENTO_GRID_REDESIGN.md`. Wiring rules: `REDESIGN_INTEGRATION_CONTRACT.md`.
 
 ## Critical rules — DO NOT break these
 

@@ -34,6 +34,7 @@ CACHE_KEYS = (
     "first_reading",
     "psalm_text",
     "psalm_response",
+    "psalm_verses",
     "second_reading",
     "gospel",
     "gospel_acclamation",
@@ -293,6 +294,49 @@ def _cache_entry_is_usable(entry: Mapping[str, str]) -> bool:
     if reading_body_is_usable(entry.get("second_reading") or ""):
         return True
     return False
+
+
+def _cache_entry_has_psalm_refrain(entry: Mapping[str, str]) -> bool:
+    """True when a responsorial-psalm refrain can be derived from the cached row."""
+    return bool(
+        collect_psalm_refrain_options(
+            entry.get("psalm_text") or "",
+            entry.get("psalm_ref") or "",
+            psalm_response=entry.get("psalm_response") or "",
+        )
+    )
+
+
+def _cache_entry_has_psalm(entry: Mapping[str, str]) -> bool:
+    """True when the row carries the responsorial psalm in some usable form.
+
+    Either the refrain (from USCCB) or the full verses (from the Bible API
+    fallback) counts — so a USCCB outage can't leave the psalm empty.
+    """
+    if _cache_entry_has_psalm_refrain(entry):
+        return True
+    return reading_body_is_usable(entry.get("psalm_verses") or "")
+
+
+def _cache_entry_is_complete(entry: Mapping[str, str]) -> bool:
+    """
+    Strict gate for serving a cached row without re-fetching.
+
+    A row is only "complete" if it carries the three things every Mass deck
+    needs: the first-reading body, the gospel body, and the responsorial psalm
+    (refrain or full verses). This prevents a partial row (e.g. a USCCB
+    bot-challenge that dropped the psalm while keeping the gospel) from being
+    treated as good and served forever — the exact failure that left the
+    upcoming psalm permanently empty. Incomplete rows fall through to a live
+    fetch and are repaired/merged in place.
+    """
+    if not reading_body_is_usable(entry.get("first_reading") or ""):
+        return False
+    if not reading_body_is_usable(entry.get("gospel") or ""):
+        return False
+    if not _cache_entry_has_psalm(entry):
+        return False
+    return True
 
 
 def get_readings_cache_entry(date: str) -> Optional[dict[str, str]]:
@@ -889,9 +933,10 @@ def fetch_readings_for_date(
     Returns dict with keys: first_reading, psalm_text, psalm_response, second_reading, gospel.
     """
     mass_date = date.strip()
+    cached_partial: Optional[dict[str, str]] = None
     if use_cache and not ignore_readings_cache():
         cached = get_readings_cache_entry(mass_date)
-        if cached and any(cached.get(k) for k in CACHE_KEYS):
+        if cached and _cache_entry_is_complete(cached):
             celebration = (cached.get("mass_celebration") or "").strip()
             if (not celebration or is_usccb_nav_chrome_title(celebration)) and usccb_url:
                 soup, _http = get_usccb_soup(usccb_url.strip())
@@ -901,6 +946,10 @@ def fetch_readings_for_date(
                         cached = {**cached, "mass_celebration": celebration}
                         set_readings_cache_entry(mass_date, cached)
             return cached
+        # Partial row (e.g. missing psalm): keep its good fields, but re-fetch
+        # so the gaps get filled instead of serving a permanently empty psalm.
+        if cached and any(cached.get(k) for k in CACHE_KEYS):
+            cached_partial = cached
 
     soup, _http = get_usccb_soup(usccb_url.strip()) if usccb_url else (None, None)
     empty_refs = {
@@ -935,6 +984,18 @@ def fetch_readings_for_date(
         pericope_href=pericope_links.get("psalm") or "",
     )
 
+    # Full responsorial-psalm verses from a USCCB-independent source (the Bible
+    # API / local psalm cache). USCCB blocks server/datacenter IPs (503/403/
+    # bot-challenge), so its refrain often can't be scraped in production; these
+    # verses guarantee the psalm text is still available for display. The refrain
+    # above (psalm_text) is still used for the slide when USCCB provides it.
+    psalm_verses = ""
+    psalm_ref = (refs.get("psalm") or "").strip()
+    if psalm_ref:
+        verses = fetch_responsorial_verses(psalm_ref)
+        if verses and reading_body_is_usable(verses, psalm_ref):
+            psalm_verses = verses.strip()
+
     entry = {
         "first_reading": _resolve_reading_body(
             refs.get("first_reading") or "",
@@ -943,6 +1004,7 @@ def fetch_readings_for_date(
         ),
         "psalm_text": psalm_text,
         "psalm_response": psalm_resp,
+        "psalm_verses": psalm_verses,
         "second_reading": _resolve_reading_body(
             refs.get("second_reading") or "",
             scraped_prose.get("second_reading"),
@@ -961,6 +1023,13 @@ def fetch_readings_for_date(
         "second_reading_ref": (refs.get("second_reading") or "").strip(),
         "gospel_ref": (refs.get("gospel") or "").strip(),
     }
+
+    # Never let a partial live fetch (e.g. a USCCB bot-challenge) blank out fields
+    # that a previous fetch already cached: keep the good cached value per key.
+    if cached_partial:
+        for key in CACHE_KEYS:
+            if not str(entry.get(key) or "").strip() and str(cached_partial.get(key) or "").strip():
+                entry[key] = cached_partial[key]
 
     if use_cache:
         set_readings_cache_entry(mass_date, entry)

@@ -31,6 +31,8 @@ def _payload_readings_usable(payload: dict) -> bool:
         return True
     if reading_body_is_usable(payload.get("psalm_text") or "", payload.get("psalm") or ""):
         return True
+    if reading_body_is_usable(payload.get("psalm_verses") or "", payload.get("psalm") or ""):
+        return True
     if reading_body_is_usable(
         payload.get("second_reading_text") or "",
         payload.get("second_reading") or "",
@@ -86,7 +88,12 @@ def _payload_complete(payload: dict) -> bool:
         payload.get("psalm") or "",
         psalm_response=payload.get("psalm_response") or "",
     )
-    if not refrains:
+    # The refrain (antiphon) is USCCB-only; when USCCB blocks the server we may
+    # only have the full psalm verses from the Bible API. Either satisfies "the
+    # psalm is present" so the payload isn't re-fetched on every load.
+    if not refrains and not reading_body_is_usable(
+        payload.get("psalm_verses") or "", payload.get("psalm") or ""
+    ):
         return False
     return True
 
@@ -178,6 +185,7 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
         quote_attribution = None
         first_reading_text = ""
         psalm_text = ""
+        psalm_verses = ""
         second_reading_text = ""
 
         psalm_response = ""
@@ -192,6 +200,7 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             first_reading_text = (blocks.get("first_reading") or "").strip()
             psalm_text = (blocks.get("psalm_text") or "").strip()
             psalm_response = (blocks.get("psalm_response") or "").strip()
+            psalm_verses = (blocks.get("psalm_verses") or "").strip()
             second_reading_text = (blocks.get("second_reading") or "").strip()
             gospel_text = (blocks.get("gospel") or "").strip()
 
@@ -203,6 +212,7 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             if not (
                 first_reading_text
                 or psalm_text
+                or psalm_verses
                 or second_reading_text
                 or gospel_text.strip()
             ):
@@ -260,6 +270,7 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             "first_reading_text": first_reading_text,
             "psalm_text": psalm_text,
             "psalm_response": psalm_response,
+            "psalm_verses": psalm_verses,
             "second_reading_text": second_reading_text,
             "gospel_reference": gospel_reference,
             "gospel_text": gospel_text,

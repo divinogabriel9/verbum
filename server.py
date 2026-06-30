@@ -34,7 +34,7 @@ logger = logging.getLogger("server")
 
 from services.calendar_month import fetch_calendar_month
 from services.catholic_news import fetch_catholic_headlines
-from services.ewtn_radio import ewtn_radio_catalog
+from services.catholic_radio import radio_catalog
 
 from pipeline import (
     GenerationResult,
@@ -404,6 +404,7 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "second_reading_reference": p.second_reading_reference,
         "second_reading_excerpt": p.second_reading_excerpt,
         "psalm_text": p.psalm_text,
+        "psalm_verses": p.psalm_verses,
         "psalm_reference": p.psalm_reference,
         "psalm_refrains": p.psalm_refrains,
         "gospel_text": p.gospel_text,
@@ -1243,28 +1244,6 @@ def index(request: Request) -> Any:
     )
 
 
-@app.get("/mass/builder/mobile", response_class=HTMLResponse)
-def mass_builder_mobile(request: Request) -> Any:
-    # Mobile-only, self-contained "Sacred Motion" Mass Builder flow (7 steps).
-    return templates.TemplateResponse(
-        request,
-        "mass_builder_mobile.html",
-        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
-    )
-
-
-@app.get("/mass/builder/wizard", response_class=HTMLResponse)
-def mass_builder_wizard(request: Request) -> Any:
-    # Self-contained "Sacred Kinetic" desktop Mass Builder wizard (7 steps),
-    # wired directly to the live APIs (/api/preview, /api/catalog/songs,
-    # /api/community, /api/image-quota, uploads, /api/generate).
-    return templates.TemplateResponse(
-        request,
-        "mass_builder_wizard.html",
-        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
-    )
-
-
 @app.get("/home", response_class=HTMLResponse)
 @app.get("/radio", response_class=HTMLResponse)
 @app.get("/mass/builder", response_class=HTMLResponse)
@@ -1312,25 +1291,41 @@ def api_catholic_news(
 
 @app.get("/api/wyd-news")
 def api_wyd_news(limit: int = 6) -> Any:
-    """World Youth Day Seoul 2027 headlines (keyword-filtered) plus countdown metadata."""
+    """World Youth Day Seoul 2027 announcements (official site) plus countdown metadata."""
     from datetime import date
 
+    from services.wyd_news import fetch_wyd_announcements
+
     cap = max(1, min(int(limit), 15))
-    feed = fetch_catholic_headlines(
-        include_vatican=True,
-        include_cna=True,
-        max_items=cap,
-        offset=0,
-        max_age_days=0,
-        keywords=["world youth day", "wyd", "seoul 2027", "jornada mundial"],
-    )
+    errors: list[str] = []
+
+    # Primary source: the official WYD announcement board (server-rendered).
+    items: list[Any] = []
+    try:
+        items = fetch_wyd_announcements(limit=cap)
+    except Exception as exc:  # pragma: no cover - defensive
+        errors.append(f"WYD site: {exc}")
+
+    # Fallback: keyword-filtered Catholic news if the official board is empty.
+    if not items:
+        feed = fetch_catholic_headlines(
+            include_vatican=True,
+            include_cna=True,
+            max_items=cap,
+            offset=0,
+            max_age_days=0,
+            keywords=["world youth day", "wyd", "seoul 2027", "jornada mundial"],
+        )
+        items = feed.get("items", [])
+        errors.extend(feed.get("errors", []))
+
     event_start = date(2027, 8, 3)
     event_end = date(2027, 8, 8)
     days_until = (event_start - date.today()).days
     return {
-        "ok": feed.get("ok", True),
-        "items": feed.get("items", []),
-        "errors": feed.get("errors", []),
+        "ok": bool(items) or not errors,
+        "items": items,
+        "errors": errors,
         "event_start": event_start.isoformat(),
         "event_end": event_end.isoformat(),
         "location": "Seoul, South Korea",
@@ -1341,8 +1336,8 @@ def api_wyd_news(limit: int = 6) -> Any:
 
 @app.get("/api/ewtn/radio")
 def api_ewtn_radio() -> Any:
-    """EWTN live radio stations (stream URLs from ewtn.com/live/radio)."""
-    return ewtn_radio_catalog()
+    """Catholic live radio stations (EWTN feeds + curated networks)."""
+    return radio_catalog()
 
 
 @app.get("/api/calendar/month")

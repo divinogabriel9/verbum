@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-visual-style="parchment">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -94,8 +94,8 @@
       --space-md: var(--space-4);
       --space-lg: var(--space-5);
       --space-xl: var(--space-6);
-      --header-height: 65px;
-      --topbar-chip-height: 36px;
+      --header-height: 54px;
+      --topbar-chip-height: 34px;
       --app-header-nav-height: 44px;
       /* Brand row height (nav row hidden; JS syncs measured height to --app-header-offset) */
       --app-header-stack: var(--header-height);
@@ -104,8 +104,11 @@
       --app-header-glass-blur: 24px;
       --app-header-offset: calc(var(--app-header-stack) + var(--safe-top));
       --main-content-top: calc(var(--app-header-offset) + var(--layout-gap));
-      --app-sidebar-width: 72px;
+      --app-sidebar-width: 64px;
       --app-sidebar-expanded-width: 220px;
+      /* Horizontal inset shared by the rail + flyout so icons never shift on expand */
+      --app-sidebar-pad-x: 10px;
+      --app-sidebar-item-pad-x: 12px;
       --layout-gutter: clamp(20px, 3vw, 40px);
       --layout-gap: var(--space-5);
       --app-header-pad-x: var(--layout-gutter);
@@ -199,16 +202,7 @@
       background: var(--bg);
     }
 
-    /* Visual style presets (App Settings) */
-    html[data-visual-style="midnight"][data-theme="dark"] {
-      --bg: #06050A;
-      --bg-top: #0C0A12;
-      --surface: #14111E;
-      --surface-2: #1A1626;
-      --surface-solid: #201C2E;
-      --ink: #FAF8FF;
-      --muted: #C4BCD6;
-    }
+    /* Visual style preset (Parchment is the sole/default style) */
     html[data-visual-style="parchment"][data-theme="light"] {
       --bg: #F5F2EC;
       --bg-top: #FFFFFF;
@@ -217,6 +211,8 @@
       --surface-solid: #FFFFFF;
       --card-border: #E8E4DC;
       --shadow-glow: 0 0 20px color-mix(in srgb, var(--liturgical-glow) 14%, transparent);
+      /* Warm parchment scrim behind popups instead of the cool Winter Berry teal */
+      --app-scrim: rgba(58, 44, 32, 0.46);
     }
     html[data-visual-style="parchment"][data-theme="dark"] {
       --bg: #12101A;
@@ -464,7 +460,7 @@
       flex-direction: column;
       align-items: stretch;
       gap: 10px;
-      padding: 14px 10px 16px;
+      padding: 14px var(--app-sidebar-pad-x) 16px;
       background: var(--surface-solid);
       border-right: 1px solid var(--line-soft);
       z-index: 30;
@@ -498,26 +494,21 @@
     .app-sidebar__brand {
       display: flex;
       align-items: center;
-      justify-content: center;
-      align-self: center;
-      width: 48px;
-      height: 48px;
+      justify-content: flex-start;
+      align-self: stretch;
+      width: 100%;
+      height: 44px;
+      padding-left: 2px;
       flex-shrink: 0;
       background: transparent;
-      overflow: hidden;
+      overflow: visible;
       text-decoration: none;
+      transform-origin: left center;
       transition:
-        width var(--motion-duration-slow) var(--ease-drawer),
-        transform var(--motion-duration-fast) var(--motion-ease-hover),
-        align-self var(--motion-duration-slow) var(--ease-drawer);
+        transform var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .app-sidebar.is-expanded .app-sidebar__brand {
-      align-self: flex-start;
-      justify-content: flex-start;
-      width: auto;
-      max-width: calc(100% - 4px);
-      margin-left: 2px;
-      overflow: visible;
+      max-width: 100%;
     }
     .app-sidebar__brand:hover { transform: scale(1.03); }
     .app-sidebar__brand:focus-visible {
@@ -526,8 +517,8 @@
     }
     .app-sidebar__brand-img {
       display: block;
-      width: 44px;
-      height: 44px;
+      width: 40px;
+      height: 40px;
       flex-shrink: 0;
       object-fit: contain;
     }
@@ -580,41 +571,34 @@
     .app-sidebar__nav::-webkit-scrollbar { display: none; }
     .app-sidebar__link {
       position: relative;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      align-self: center;
-      width: 44px;
+      justify-content: flex-start;
+      align-self: stretch;
+      width: 100%;
       height: 44px;
       margin: 0;
-      padding: 0;
+      padding: 0 var(--app-sidebar-item-pad-x);
+      gap: 10px;
       border: none;
       border-radius: 12px;
       background: transparent;
-      color: var(--liturgical-accent, #a10f0d);
+      color: var(--muted);
       text-decoration: none;
       cursor: pointer;
       transition:
-        width var(--motion-duration-slow) var(--ease-drawer),
-        padding var(--motion-duration-slow) var(--ease-drawer),
         background var(--motion-duration-fast) var(--motion-ease-hover),
         color var(--motion-duration-fast) var(--motion-ease-hover),
         box-shadow var(--motion-duration-fast) var(--motion-ease-hover);
     }
-    .app-sidebar.is-expanded .app-sidebar__link {
-      align-self: stretch;
-      justify-content: flex-start;
-      width: auto;
-      padding: 0 12px;
-      gap: 10px;
-    }
     .app-sidebar__link:hover {
-      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 10%, transparent);
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+      color: var(--ink);
     }
     .app-sidebar__link.active {
-      background: var(--liturgical-accent, #a10f0d);
-      color: #fff;
-      box-shadow: 0 4px 14px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 35%, transparent);
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 12%, transparent);
+      color: var(--liturgical-accent, #a10f0d);
+      box-shadow: none;
     }
     .app-sidebar__link:focus-visible {
       outline: 2px solid var(--good);
@@ -622,8 +606,8 @@
     }
     .app-sidebar__link[hidden] { display: none !important; }
     .app-sidebar__icon {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       display: block;
       flex-shrink: 0;
     }
@@ -645,7 +629,7 @@
       max-width: 140px;
     }
     .app-sidebar.is-expanded .app-sidebar__link.active .nav-label {
-      color: #fff;
+      color: var(--liturgical-accent, #a10f0d);
     }
     .app-sidebar__create {
       flex-shrink: 0;
@@ -1102,11 +1086,11 @@
       grid-template-columns: auto minmax(0, 1fr) auto;
       grid-template-areas: "brand search utilities";
       align-items: center;
-      gap: 16px 20px;
+      gap: 12px 20px;
       width: 100%;
       max-width: none;
       margin: 0;
-      padding: 12px var(--app-header-pad-x);
+      padding: 7px var(--app-header-pad-x);
       min-height: var(--header-height);
       box-sizing: border-box;
       border-bottom: 1px solid var(--app-header-glass-border);
@@ -1115,58 +1099,6 @@
     html[data-theme="dark"] .app-header__main {
       border-bottom-color: var(--app-header-glass-border);
       box-shadow: 0 1px 0 color-mix(in srgb, #000 18%, transparent);
-    }
-
-    /* ── Branded dark header (neutral dark-theme background colors).
-       Applied in BOTH light and dark mode. The header is a self-contained
-       "dark island": we remap the design tokens its descendants consume so every
-       variable-driven control renders light-on-dark regardless of page theme. ── */
-    .app-header {
-      --app-header-glass-bg: color-mix(in srgb, #1c1c1c 82%, transparent);
-      --app-header-glass-border: rgba(255, 255, 255, 0.08);
-      /* neutral dark surfaces (matches the app's dark theme) */
-      --bg: #121212;
-      --bg-top: #1c1c1c;
-      --surface: #1c1c1c;
-      --surface-2: #242424;
-      --surface-solid: #2e2e2e;
-      --card-border: #2e2e2e;
-      --line: #393939;
-      --line-soft: #2e2e2e;
-      /* light ink on the dark bar */
-      --ink: #fafafa;
-      --muted: #b4b4b4;
-      --ink-subtle: #898989;
-      /* berry accents (matches dark theme) */
-      --good: #d45250;
-      --color-primary: #d45250;
-      --color-primary-active: #a10f0d;
-      --liturgical-accent: #d45250;
-      --liturgical-glow: #d45250;
-      --brand-flow-color: #f2f2f2;
-      color: var(--ink);
-      -webkit-font-smoothing: antialiased;
-    }
-    /* Beat the existing dark-theme header rule for the glass background. */
-    html[data-theme="dark"] .app-header {
-      --app-header-glass-bg: color-mix(in srgb, #1c1c1c 82%, transparent);
-      --app-header-glass-border: rgba(255, 255, 255, 0.08);
-    }
-    /* Search field: force the dark-island look in light mode too (overrides the
-       hard-coded light #f4f5f7 background). */
-    .app-header .app-header__search {
-      background: color-mix(in srgb, #ffffff 7%, transparent);
-      border-color: rgba(255, 255, 255, 0.12);
-    }
-    .app-header .app-header__search-kbd {
-      background: color-mix(in srgb, #ffffff 6%, transparent);
-    }
-    /* Dark PNG icons need inverting to read on the warm-dark bar (all themes). */
-    .app-header .notif-btn .notif-icon,
-    .app-header .liturgical-indicator__icon,
-    .app-header .app-header-nav .nav-link .nav-icon {
-      filter: invert(1);
-      opacity: 0.9;
     }
 
   /* Mass builder stepper — sits directly below the header border */
@@ -1365,6 +1297,80 @@
     .app-header__main > .app-header__utilities {
       grid-area: utilities;
       justify-self: end;
+    }
+    /* Live ticker that fills the old search slot: rotates today's liturgy + Catholic headlines */
+    .app-header__main > .app-header__ticker {
+      grid-area: search;
+      justify-self: center;
+    }
+    .app-header__ticker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      max-width: 560px;
+      width: 100%;
+      height: var(--topbar-chip-height);
+      padding: 0 14px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--card-border);
+      background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+      color: var(--ink);
+      text-decoration: none;
+      overflow: hidden;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .app-header__ticker:hover {
+      background: var(--surface-2);
+      border-color: color-mix(in srgb, var(--ink) 14%, transparent);
+    }
+    .app-header__ticker:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+      outline-offset: 2px;
+    }
+    .app-header__ticker-kicker {
+      flex: 0 0 auto;
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      white-space: nowrap;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .app-header__ticker-viewport {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .app-header__ticker-text {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transform: translateY(0);
+      opacity: 1;
+      transition: transform 0.32s var(--motion-ease-out, ease), opacity 0.32s var(--motion-ease-out, ease);
+    }
+    .app-header__ticker.is-swapping .app-header__ticker-kicker { opacity: 0; }
+    .app-header__ticker.is-swapping .app-header__ticker-text {
+      transform: translateY(-70%);
+      opacity: 0;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .app-header__ticker-text { transition: opacity 0.2s linear; transform: none !important; }
+    }
+    @media (max-width: 900px) {
+      .app-header__main > .app-header__ticker { display: none; }
     }
     .brand-block {
       display: inline-flex;
@@ -2295,20 +2301,14 @@
       right: auto;
       z-index: 52;
       position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      display: block;
       width: 173px;
-      height: 89px;
-      max-height: 89px;
-      padding: 10px 8px 8px;
+      height: 98px;
+      max-height: 98px;
+      padding: 0;
       box-sizing: border-box;
-      border: 1px solid #1a1a1a;
+      border: 1px solid color-mix(in srgb, #ef4444 18%, var(--card-border));
       border-radius: 10px;
-      background: #8aad5c;
-      box-shadow: none;
       overflow: hidden;
     }
     .live-radio-panel__art {
@@ -2328,58 +2328,73 @@
       pointer-events: none;
       background: linear-gradient(
         180deg,
-        color-mix(in srgb, #fff 58%, transparent) 0%,
-        color-mix(in srgb, #fff 48%, transparent) 100%
+        color-mix(in srgb, var(--ink) 18%, transparent) 0%,
+        color-mix(in srgb, var(--ink) 42%, transparent) 100%
       );
     }
-    .live-radio-panel__controls {
+    .live-radio-panel__center {
       position: relative;
       z-index: 2;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
+      gap: 4px;
       width: 100%;
+      height: 100%;
+      padding: 0 22px;
+      box-sizing: border-box;
     }
     .live-radio-panel__channel-btn {
+      position: absolute;
+      top: 50%;
+      z-index: 3;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       margin: 0;
       padding: 0;
       border: none;
-      border-radius: 0;
-      background: transparent;
-      color: #000;
+      border-radius: 50%;
+      transform: translateY(-50%);
+      background: color-mix(in srgb, #fff 22%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #fff;
       cursor: pointer;
-      transition: opacity var(--motion-duration-fast) var(--motion-ease-hover),
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
         transform var(--motion-duration-micro) var(--motion-ease-out);
     }
+    .live-radio-panel__channel-btn--prev { left: 5px; }
+    .live-radio-panel__channel-btn--next { right: 5px; }
     .live-radio-panel__channel-btn:hover {
-      opacity: 0.72;
+      background: color-mix(in srgb, #fff 36%, transparent);
     }
     .live-radio-panel__channel-btn:active {
-      transform: scale(0.94);
+      transform: translateY(-50%) !important;
     }
     .live-radio-panel__channel-btn svg {
-      width: 18px;
-      height: 18px;
+      width: 12px;
+      height: 12px;
       display: block;
     }
-    .live-radio-panel__station {
-      position: relative;
-      z-index: 2;
-      margin: 0;
-      max-width: calc(100% - 8px);
-      font-size: 0.58rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      line-height: 1.1;
-      text-transform: uppercase;
-      color: #000;
+    .live-radio-panel__label {
+      max-width: 100%;
+      padding: 2px 8px;
+      border-radius: 5px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: color-mix(in srgb, #000 38%, transparent);
       text-align: center;
+    }
+    .live-radio-panel__station {
+      margin: 0;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.2;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2393,26 +2408,26 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 28px;
+      height: 28px;
       margin: 0;
       padding: 0;
       border: none;
       border-radius: 50%;
-      background: #000;
-      color: #fff;
+      background: color-mix(in srgb, #fff 88%, transparent);
+      color: var(--ink);
       box-shadow: none;
       cursor: pointer;
       transition: transform var(--motion-duration-micro) var(--motion-ease-out),
-        opacity var(--motion-duration-fast) var(--motion-ease-hover);
+        background var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .live-radio-panel__play:hover {
-      opacity: 0.88;
+      background: #fff;
     }
-    .live-radio-panel__play:active { transform: scale(0.96); }
+    .live-radio-panel__play:active { transform: none !important; }
     .live-radio-panel__play svg {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
     }
     .live-radio-panel__play .live-radio-icon-pause { display: none; }
     .live-radio-wrap.is-playing .live-radio-panel__play .live-radio-icon-play { display: none; }
@@ -3099,6 +3114,94 @@
     .settings-layout .settings-panel.flow-bento-cell {
       padding: var(--space-3);
     }
+
+    /* Settings rendered as a centered floating modal (ChatGPT-style) */
+    @keyframes vb-settings-overlay-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes vb-settings-card-in {
+      from { opacity: 0; transform: translateY(10px) scale(.985); }
+      to { opacity: 1; transform: none; }
+    }
+    #settings-page.active,
+    #settings-page.page--leaving {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 0;
+      padding: clamp(16px, 4vw, 48px);
+      background: color-mix(in srgb, #0b0a12 46%, transparent);
+      -webkit-backdrop-filter: blur(8px) saturate(115%);
+      backdrop-filter: blur(8px) saturate(115%);
+      animation: vb-settings-overlay-in var(--motion-duration-base, .2s) var(--motion-ease-out, ease) both;
+      overflow-y: auto;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #settings-page.active,
+      #settings-page.active .settings-layout { animation: none; }
+    }
+    #settings-page .settings-layout {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      width: 100%;
+      max-width: 680px;
+      max-height: min(86dvh, 880px);
+      margin: 0;
+      overflow-y: auto;
+      background: var(--surface-solid);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: 0 30px 70px -18px rgba(8, 7, 18, .5), 0 10px 28px -10px rgba(8, 7, 18, .38);
+      padding: clamp(18px, 2.6vw, 30px);
+      animation: vb-settings-card-in var(--motion-duration-base, .2s) var(--motion-ease-out, ease) both;
+    }
+    #settings-page .settings-nav-card { display: none !important; }
+    #settings-page .settings-main {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+    #settings-page .settings-layout .settings-panel.flow-bento-cell {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .settings-modal-close {
+      position: sticky;
+      top: 0;
+      align-self: flex-end;
+      flex: 0 0 auto;
+      margin: -4px -4px 0 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
+      color: var(--muted);
+      cursor: pointer;
+      z-index: 5;
+      transition: background var(--motion-duration-fast, .12s) ease,
+        color var(--motion-duration-fast, .12s) ease,
+        transform var(--motion-duration-fast, .12s) ease;
+    }
+    .settings-modal-close:hover { background: var(--surface-2); color: var(--ink); }
+    .settings-modal-close:active { transform: scale(.93); }
+    .settings-modal-close:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+      outline-offset: 2px;
+    }
+    .settings-modal-close svg { width: 18px; height: 18px; display: block; }
     .settings-layout .flow-bento-cell__head.home-card-head,
     .settings-layout .home-card-head {
       border-bottom: none;
@@ -11342,10 +11445,13 @@
       letter-spacing: -0.03em;
       transform: translateY(0.025em);
     }
-    .app-header .wordmark__flow {
+    html[data-theme="dark"] .app-header .wordmark__flow {
       color: #f2f2f2;
     }
     .app-header__main > .brand-block .brand-block__tagline {
+      color: #4a5560;
+    }
+    html[data-theme="dark"] .app-header__main > .brand-block .brand-block__tagline {
       color: #9aa3ab;
     }
     /* Sidebar shell — layout lock (loads last) */
@@ -11521,34 +11627,12 @@
               <span class="brand-block__tagline">Plan Better. Serve Better.</span>
             </span>
           </a>
-          <div class="app-header__search-wrap">
-            <label class="app-header__search" for="app-global-search">
-              <span class="app-header__search-icon-btn" aria-hidden="true">
-                <svg class="app-header__search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.3-4.3" />
-                </svg>
-              </span>
-              <input
-                type="search"
-                id="app-global-search"
-                placeholder="Search anything…"
-                maxlength="120"
-                autocomplete="off"
-                role="combobox"
-                aria-label="Search pages and actions"
-                aria-expanded="false"
-                aria-controls="global-search-panel"
-                aria-autocomplete="list"
-                aria-activedescendant=""
-              />
-              <kbd class="app-header__search-kbd" aria-hidden="true">⌘K</kbd>
-            </label>
-            <div class="vb-dropdown-panel global-search-panel" id="global-search-panel" role="listbox" aria-label="Search results" hidden>
-              <ul class="vb-dropdown-list global-search-list" id="global-search-list"></ul>
-              <p class="global-search-empty" id="global-search-empty" hidden>No matches — try “mass”, “calendar”, or a song title</p>
-              </div>
-              </div>
+          <a class="app-header__ticker" id="app-header-ticker" href="#" target="_blank" rel="noopener noreferrer" aria-label="Today's liturgy and Catholic news" hidden>
+            <span class="app-header__ticker-kicker" id="app-header-ticker-kicker">Today</span>
+            <span class="app-header__ticker-viewport">
+              <span class="app-header__ticker-text" id="app-header-ticker-text"></span>
+            </span>
+          </a>
           <div class="app-header__utilities">
           <div class="header-chips-wrap">
           <div class="live-radio-wrap" id="live-radio-wrap">
@@ -11569,24 +11653,26 @@
               </button>
             </div>
             <div class="vb-dropdown-panel vb-dropdown-panel--right live-radio-panel" id="live-radio-panel" role="dialog" aria-labelledby="live-radio-panel-title" hidden>
-              <img class="live-radio-panel__art" id="live-radio-art" src="https://www.ewtn.com/img/od/live-generic-radio.jpg" alt="" width="173" height="89" />
+              <img class="live-radio-panel__art" id="live-radio-art" src="https://www.ewtn.com/img/od/live-generic-radio.jpg" alt="" width="173" height="98" />
               <div class="live-radio-panel__scrim" aria-hidden="true"></div>
-              <div class="live-radio-panel__controls">
-                <button type="button" class="live-radio-panel__channel-btn live-radio-panel__channel-btn--prev" id="live-radio-prev" aria-label="Previous station">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/></svg>
-                </button>
+              <button type="button" class="live-radio-panel__channel-btn live-radio-panel__channel-btn--prev" id="live-radio-prev" aria-label="Previous station">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button type="button" class="live-radio-panel__channel-btn live-radio-panel__channel-btn--next" id="live-radio-next" aria-label="Next station">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <div class="live-radio-panel__center">
                 <button type="button" class="live-radio-panel__play" id="live-radio-panel-play" aria-label="Play live radio">
                   <svg class="live-radio-icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
                   <svg class="live-radio-icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
                 </button>
-                <button type="button" class="live-radio-panel__channel-btn live-radio-panel__channel-btn--next" id="live-radio-next" aria-label="Next station">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>
-                </button>
+                <div class="live-radio-panel__label">
+                  <p class="live-radio-panel__station" id="live-radio-panel-title">Live Radio</p>
+                  <p class="live-radio-panel__channel-pos" id="live-radio-channel-pos" aria-hidden="true">1 / 5</p>
+                </div>
               </div>
-              <p class="live-radio-panel__station" id="live-radio-panel-title">EWTN Radio</p>
-              <p class="live-radio-panel__channel-pos" id="live-radio-channel-pos" aria-hidden="true">1 / 5</p>
             </div>
-            <audio id="live-radio-audio" preload="none" playsinline crossorigin="anonymous"></audio>
+            <audio id="live-radio-audio" preload="none" playsinline></audio>
           </div>
           <div class="liturgical-indicator-wrap">
             <button type="button" class="liturgical-indicator liturgical-indicator--ordinary" id="liturgical-indicator-btn" aria-expanded="false" aria-controls="liturgical-indicator-panel" title="Liturgical season — click for countdowns">
@@ -12366,6 +12452,281 @@ Lord, hear our prayer</textarea>
         </section>
       </section>
 
+      <style id="mw-wizard-styles">
+        body.mw-on #mass-builder-stepper, body.mw-on #flow-dock-actions { display: none !important; }
+        body.mw-on .flow-builder-tabs-bar { display: none !important; }
+        body.mw-on .flow-setup-layout, body.mw-on .flow-setup-main, body.mw-on .flow-setup-side { display: block; }
+        body.mw-on .flow-builder-tab-panel[hidden] { display: none !important; }
+        body.mw-on [data-mw-step][hidden] { display: none !important; }
+        .mw-rite__body[hidden], .mw-bookmark[hidden], .mw-review[hidden] { display: none !important; }
+        body.mw-on select[data-mw-tunes] { display: none !important; }
+        #mw-wizard.mw { position: relative; background: var(--surface-solid); border: 0; border-radius: clamp(12px, 1.4vw, 18px); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible; }
+        .mw-progress { display: flex; gap: 4px; align-items: center; overflow-x: auto; padding: 18px 20px; border-bottom: 1px solid var(--line-soft); scrollbar-width: none; }
+        .mw-progress::-webkit-scrollbar { display: none; }
+        .mw-progress__item { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; opacity: .5; cursor: pointer; transition: opacity .25s; }
+        .mw-progress__item.is-active, .mw-progress__item.is-done { opacity: 1; }
+        .mw-progress__dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; background: var(--surface-2); color: var(--muted); border: 1.5px solid var(--card-border); transition: all .25s; }
+        .mw-progress__item.is-active .mw-progress__dot { background: var(--accent); color: var(--on-accent); border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--liturgical-glow) 30%, transparent); }
+        .mw-progress__item.is-done .mw-progress__dot { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+        .mw-progress__label { font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+        .mw-progress__item:not(:last-child)::after { content: ""; width: 26px; height: 2px; margin: 0 2px; border-radius: 2px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent), transparent); }
+        @media (max-width: 760px) { .mw-progress__label { display: none; } }
+        .mw-step-head { padding: 22px 24px 4px; }
+        .mw-step-head__eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0; }
+        .mw-step-head__title { font-family: var(--brand-font-flow); font-size: clamp(22px, 3vw, 32px); line-height: 1.15; margin: 6px 0 4px; color: var(--ink); }
+        .mw-step-head__sub { color: var(--muted); font-size: 14px; margin: 0; }
+        body.mw-on .flow-builder-tab-panel { padding: 8px 24px 16px; }
+        .mw-rite-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+        .mw-rite { border: 1px solid var(--card-border); border-radius: 16px; background: var(--surface); overflow: hidden; box-shadow: var(--shadow-light); }
+        .mw-rite__head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; background: none; border: 0; cursor: pointer; font: inherit; color: var(--ink); text-align: left; }
+        .mw-rite__title { font-weight: 700; font-size: 15px; }
+        .mw-rite__meta { display: flex; align-items: center; gap: 10px; }
+        .mw-rite__chev { transition: transform .25s; color: var(--muted); font-size: 14px; }
+        .mw-rite[data-open="true"] .mw-rite__chev { transform: rotate(180deg); }
+        .mw-rite__body { padding: 0 16px 16px; display: grid; gap: 12px; }
+        .mw-rite.is-default .field select { opacity: .55; }
+        .mw-play { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); cursor: not-allowed; font-size: 10px; }
+        .mw-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--ink); position: relative; }
+        .mw-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .mw-switch__track { width: 42px; height: 24px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--card-border); position: relative; transition: background .25s, border-color .25s; flex: none; }
+        .mw-switch__knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .25s; }
+        .mw-switch input:checked + .mw-switch__track { background: var(--accent); border-color: var(--accent); }
+        .mw-switch input:checked + .mw-switch__track .mw-switch__knob { transform: translateX(18px); }
+        .mw-link { align-self: flex-start; background: none; border: 0; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; padding: 0; }
+        .mw-link:hover { text-decoration: underline; }
+        .mw-ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); padding: 2px 8px; border-radius: 999px; }
+        .mw-card { border: 1px solid var(--card-border); border-radius: 18px; background: var(--surface); padding: 18px; box-shadow: var(--shadow-light); margin-top: 14px; }
+        .mw-card__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+        .mw-card__head h3 { margin: 0; font-size: 16px; }
+        .mw-nav { position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--line-soft); background: color-mix(in srgb, var(--surface-solid) 88%, transparent); backdrop-filter: blur(10px); }
+        .mw-btn { appearance: none; border: 1px solid var(--card-border); background: var(--surface); color: var(--ink); font-weight: 700; font-size: 14px; padding: 12px 22px; border-radius: 999px; cursor: pointer; transition: transform .12s, box-shadow .2s, background .2s; }
+        .mw-btn:active { transform: translateY(1px); }
+        .mw-btn--ghost { background: transparent; }
+        .mw-btn--primary, .mw-btn--generate { background: var(--accent); color: var(--on-accent); border-color: var(--accent); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--liturgical-glow) 70%, transparent); }
+        .mw-btn--primary:hover, .mw-btn--generate:hover { background: var(--color-primary-active); box-shadow: 0 8px 26px -6px color-mix(in srgb, var(--liturgical-glow) 80%, transparent); }
+        .mw-btn--generate { padding: 14px 26px; font-size: 15px; }
+        .mw-btn[disabled] { opacity: .5; cursor: not-allowed; }
+        .mw-btn--soft { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 25%, transparent); }
+        .mw-receipt { border: 1px dashed var(--card-border); border-radius: 18px; padding: 18px 20px; background: var(--surface-2); }
+        .mw-receipt__row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+        .mw-receipt__row:last-of-type { border-bottom: 0; }
+        .mw-receipt__row span { color: var(--muted); }
+        .mw-receipt__row strong { color: var(--ink); text-align: right; }
+        .mw-receipt__total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 2px solid var(--card-border); font-size: 16px; color: var(--muted); }
+        .mw-receipt__total strong { font-size: 26px; color: var(--accent); }
+        .mw-check-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+        .mw-check-grid label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); }
+        .mw-bookmark { position: fixed; right: 0; top: 38%; z-index: 60; }
+        .mw-bookmark__tab { width: 42px; height: 54px; border: none; border-radius: 14px 0 0 14px; background: var(--accent); color: #fff; font-size: 20px; cursor: pointer; box-shadow: -4px 6px 18px -6px color-mix(in srgb, var(--liturgical-glow) 80%, transparent); }
+        .mw-bookmark__panel { width: min(360px, 86vw); max-height: 70vh; overflow: auto; background: var(--surface); border: 1px solid var(--card-border); border-radius: 16px 0 0 16px; box-shadow: var(--shadow-large); padding: 18px; position: absolute; right: 42px; top: 0; transform: translateX(110%); opacity: 0; pointer-events: none; transition: transform .3s ease, opacity .3s ease; }
+        .mw-bookmark[data-open="true"] .mw-bookmark__panel { transform: translateX(0); opacity: 1; pointer-events: auto; }
+        .mw-bookmark__panel h4 { margin: 0 0 12px; color: var(--accent); }
+        .mw-guide-sec { margin-bottom: 14px; }
+        .mw-guide-sec h5 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+        .mw-guide-sec p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; }
+        .mw-guide-sec[data-pick] p { cursor: text; }
+        .mw-bookmark__hint { font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; transition: color .2s; }
+        .mw-modal { position: fixed; inset: 0; z-index: 120; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 12, 16, .5); }
+        .mw-modal[data-open="true"] { display: flex; }
+        .mw-modal__card { width: min(560px, 94vw); max-height: 80vh; overflow: auto; background: var(--surface); border: 1px solid var(--card-border); border-radius: 20px; box-shadow: var(--shadow-large); padding: 24px; }
+        .mw-modal__title { margin: 0 0 12px; color: var(--accent); font-family: var(--brand-font-flow); }
+        .mw-modal__text { white-space: pre-wrap; line-height: 1.6; color: var(--ink); font-size: 15px; }
+        .mw-modal__close { margin-top: 16px; }
+
+        /* ── Typeform-style, full-width questionnaire ─────────────────────── */
+        body.mw-on { --mw-pad-x: clamp(24px, 6vw, 88px); }
+        /* one step fills the screen: full width, generous height, left-aligned */
+        body.mw-on .flow-builder-tab-panel { max-width: none; margin: 0; padding: 8px var(--mw-pad-x) 44px; }
+        .mw-progress { justify-content: flex-start; padding: 22px var(--mw-pad-x); }
+        .mw-progress__dot { width: 34px; height: 34px; font-size: 14px; }
+        .mw-step-head { padding: clamp(24px, 5vh, 52px) var(--mw-pad-x) 14px; text-align: left; max-width: 1100px; }
+        .mw-step-head__eyebrow { font-size: 13px; }
+        .mw-step-head__title { font-size: clamp(30px, 4.4vw, 52px); line-height: 1.08; }
+        .mw-step-head__sub { font-size: clamp(16px, 1.5vw, 20px); }
+        /* stack grouped fields vertically, full width */
+        body.mw-on .flow-setup-row--3,
+        body.mw-on .flow-setup-row--steward,
+        body.mw-on .flow-gospsalm-row,
+        body.mw-on .flow-divider-poster-picks,
+        .mw-rite-grid { grid-template-columns: 1fr !important; gap: 22px; }
+        body.mw-on .flow-setup-row--centered .field,
+        body.mw-on .flow-setup-row--centered label { text-align: left; }
+        body.mw-on .flow-bento-cell.flow-setup-card2 { padding: 0; background: none; border: 0; box-shadow: none; }
+        body.mw-on .flow-setup-card2 .field { gap: 8px; }
+        body.mw-on .flow-setup-card2 label,
+        body.mw-on .flow-poster-picker-label { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+        /* inputs: big and left-aligned, capped to a readable width so they don't stretch */
+        body.mw-on .field input,
+        body.mw-on .field select,
+        body.mw-on .celebrant-picker__trigger { min-height: 56px; font-size: 16px; border-radius: 14px; }
+        body.mw-on .field input { padding: 0 18px; }
+        body.mw-on .field input,
+        body.mw-on .celebrant-picker { max-width: 640px; }
+        /* readings preview cards tile across the width */
+        body.mw-on .flow-readings-sidebar { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+        /* rites are plain cards (no dropdown collapse) */
+        .mw-rite { border-radius: 18px; }
+        .mw-rite__head { padding: 18px 22px; cursor: default; }
+        .mw-rite__chev { display: none; }
+        .mw-rite__title { font-size: 17px; }
+        .mw-rite__body { padding: 0 22px 22px; gap: 16px; }
+        /* tune list: one tappable item per tune (radio behavior) */
+        .mw-options { display: grid; gap: 10px; }
+        .mw-option { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 15px 16px; border: 1.5px solid var(--card-border); border-radius: 14px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; transition: border-color .18s, background .18s, transform .12s; }
+        .mw-option:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--card-border)); }
+        .mw-option:active { transform: scale(.995); }
+        .mw-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .mw-option__check { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card-border); display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 800; line-height: 1; transition: background .18s, border-color .18s; }
+        .mw-option__check::after { content: "\2713"; transform: scale(0); transition: transform .18s; }
+        .mw-option__label { flex: 1; min-width: 0; }
+        .mw-option__play { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 9%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); cursor: pointer; font-size: 11px; transition: background .18s, transform .12s; }
+        .mw-option__play:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+        .mw-option__play:active { transform: scale(.9); }
+        .mw-option[aria-checked="true"] { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+        .mw-option[aria-checked="true"] .mw-option__check { background: var(--accent); border-color: var(--accent); }
+        .mw-option[aria-checked="true"] .mw-option__check::after { transform: scale(1); }
+        .mw-rite__hint { font-size: 13px; color: var(--muted); margin: 2px 0 0; }
+        .mw-receipt, .mw-card.mw-default-setup { max-width: 860px; }
+        /* full-width nav bar, right-aligned action */
+        .mw-nav { padding: 18px var(--mw-pad-x); max-width: none; margin: 0; }
+        .mw-btn--primary, .mw-btn--generate { flex: 0 0 auto; min-width: 220px; min-height: 56px; font-size: 16px; }
+        /* per-step entrance animation */
+        .mw-step-anim { animation: mwIn .35s cubic-bezier(.22, .61, .36, 1); }
+        @keyframes mwIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .mw-step-anim { animation: none; } }
+
+        /* ── Vertical side rail (desktop) — reclaim vertical space ─────────── */
+        @media (min-width: 1024px) {
+          body.mw-on #mw-wizard.mw {
+            display: grid;
+            grid-template-columns: var(--mw-rail-w) minmax(0, 1fr);
+            grid-template-rows: auto 1fr auto;
+            align-items: stretch;
+            --mw-rail-w: 184px;
+            --mw-pad-x: clamp(28px, 3vw, 56px);
+          }
+          body.mw-on #mw-wizard.mw::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: var(--mw-rail-w);
+            width: 1px;
+            background: var(--line-soft);
+            pointer-events: none;
+          }
+          body.mw-on #mw-progress {
+            grid-column: 1;
+            grid-row: 1 / -1;
+            align-self: start;
+            position: sticky;
+            top: calc(var(--app-header-offset) + 16px);
+            max-height: calc(100dvh - var(--app-header-offset) - 32px);
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 18px 14px;
+            border-right: 0;
+            border-bottom: 0;
+            background: none;
+          }
+          body.mw-on #mw-progress .mw-progress__item {
+            flex: 0 0 auto;
+            width: 100%;
+            gap: 8px;
+            padding: 6px 9px;
+            border-radius: 10px;
+            position: relative;
+            cursor: default;
+            transition: opacity .25s var(--ease-out, ease);
+          }
+          body.mw-on #mw-progress .mw-progress__item.is-active::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 18px;
+            border-radius: 0 3px 3px 0;
+            background: var(--accent);
+          }
+          body.mw-on #mw-progress .mw-progress__label {
+            display: block;
+            font-size: 12px;
+            line-height: 1.25;
+            white-space: normal;
+          }
+          body.mw-on #mw-progress .mw-progress__item.is-active .mw-progress__label { color: var(--accent); }
+          body.mw-on #mw-progress .mw-progress__dot {
+            position: relative;
+            width: 26px;
+            height: 26px;
+            font-size: 12px;
+            background: var(--surface-solid);
+          }
+          body.mw-on #mw-progress .mw-progress__item.is-active .mw-progress__dot {
+            background: var(--accent);
+            box-shadow: none;
+          }
+          body.mw-on #mw-progress .mw-progress__item.is-done .mw-progress__dot {
+            background: color-mix(in srgb, var(--accent) 14%, transparent);
+          }
+          body.mw-on #mw-progress .mw-progress__item:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            left: calc(9px + 13px);
+            top: calc(50% + 13px);
+            width: 2px;
+            height: 12px;
+            margin: 0;
+            transform: translateX(-50%);
+            border-radius: 2px;
+            background: var(--line);
+          }
+          body.mw-on #mw-progress .mw-progress__item.is-done:not(:last-child)::after {
+            background: color-mix(in srgb, var(--accent) 45%, transparent);
+          }
+          body.mw-on .mw-step-head { grid-column: 2; grid-row: 1; }
+          body.mw-on #flow-panel-setup,
+          body.mw-on #flow-panel-songs { grid-column: 2; grid-row: 2; }
+          body.mw-on #mw-wizard > .mw-nav { grid-column: 2; grid-row: 3; }
+        }
+
+        /* ── Continue sits under the last question + Typeform reveal ───────── */
+        body.mw-on .mw-nav {
+          position: static;
+          border-top: 0;
+          background: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          justify-content: flex-start;
+          gap: 14px;
+          padding-top: 4px;
+        }
+        body.mw-on .mw-nav > span { display: none; }
+        body.mw-on #mw-next,
+        body.mw-on #mw-generate {
+          opacity: 0;
+          transform: translateY(8px);
+          pointer-events: none;
+          transition: opacity var(--motion-duration-base, .2s) var(--ease-out, ease),
+                      transform var(--motion-duration-base, .2s) var(--ease-out, ease);
+        }
+        body.mw-on #mw-next.is-ready,
+        body.mw-on #mw-generate.is-ready {
+          opacity: 1;
+          transform: none;
+          pointer-events: auto;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          body.mw-on #mw-next,
+          body.mw-on #mw-generate { transition: none; }
+        }
+      </style>
       <section class="page" id="flow-page" data-route="/mass/builder">
         <div class="app-membership-banner" id="flow-membership-banner" hidden aria-live="polite"></div>
         <div class="sr-only-host" id="flow-downloads-host" aria-hidden="true">
@@ -12378,7 +12739,21 @@ Lord, hear our prayer</textarea>
           </div>
         </div>
         <div class="workspace flow-workspace flow-member-lock">
-          <div class="panel flow-builder-shell">
+          <div class="panel flow-builder-shell mw" id="mw-wizard">
+            <div class="mw-progress" id="mw-progress" role="list" aria-label="Mass builder steps">
+              <div class="mw-progress__item is-active" data-mw-go="1" role="listitem"><span class="mw-progress__dot">1</span><span class="mw-progress__label">Mass Info</span></div>
+              <div class="mw-progress__item" data-mw-go="2" role="listitem"><span class="mw-progress__dot">2</span><span class="mw-progress__label">Introductory Rites</span></div>
+              <div class="mw-progress__item" data-mw-go="3" role="listitem"><span class="mw-progress__dot">3</span><span class="mw-progress__label">Liturgy of the Word</span></div>
+              <div class="mw-progress__item" data-mw-go="4" role="listitem"><span class="mw-progress__dot">4</span><span class="mw-progress__label">Eucharist</span></div>
+              <div class="mw-progress__item" data-mw-go="5" role="listitem"><span class="mw-progress__dot">5</span><span class="mw-progress__label">Music</span></div>
+              <div class="mw-progress__item" data-mw-go="6" role="listitem"><span class="mw-progress__dot">6</span><span class="mw-progress__label">Extras</span></div>
+              <div class="mw-progress__item" data-mw-go="7" role="listitem"><span class="mw-progress__dot">7</span><span class="mw-progress__label">Review</span></div>
+            </div>
+            <div class="mw-step-head">
+              <p class="mw-step-head__eyebrow" id="mw-eyebrow">Step 1 of 7</p>
+              <h2 class="mw-step-head__title" id="mw-title">Let’s Prepare Today’s Mass</h2>
+              <p class="mw-step-head__sub" id="mw-sub">Pick a date and who’s celebrating.</p>
+            </div>
             <div class="flow-builder-tabs-bar">
               <div class="flow-builder-tabs" role="tablist" aria-label="Mass builder sections">
                 <button type="button" role="tab" id="flow-tab-setup" aria-selected="true" aria-controls="flow-panel-setup" data-flow-tab="setup">Setup</button>
@@ -12387,7 +12762,7 @@ Lord, hear our prayer</textarea>
             </div>
             <div class="flow-builder-tab-panel" id="flow-panel-setup" role="tabpanel" aria-labelledby="flow-tab-setup" data-flow-panel="setup">
             <div class="flow-setup-layout" aria-label="Mass setup">
-              <aside class="flow-bento-cell flow-readings-sidebar" aria-label="Sunday readings">
+              <aside class="flow-bento-cell flow-readings-sidebar" aria-label="Sunday readings" data-mw-step="3" hidden>
                 <article class="flow-reading-block reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
                   <header>
                     <strong>First reading</strong>
@@ -12420,7 +12795,7 @@ Lord, hear our prayer</textarea>
 
               <div class="flow-setup-main">
 
-                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-basics">
+                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-basics" data-mw-step="1">
                   <div class="flow-setup-row flow-setup-row--3 flow-setup-row--centered">
                     <div class="field">
                       <label for="mass-date">Date</label>
@@ -12447,7 +12822,7 @@ Lord, hear our prayer</textarea>
                   </div>
                 </article>
 
-                <div class="flow-steward-pair">
+                <div class="flow-steward-pair" data-mw-step="6" hidden>
                 <article class="flow-bento-cell flow-setup-card2 flow-steward-pair__main" id="mass-step-target-stewardship">
                   <div class="flow-setup-row flow-setup-row--steward">
                     <div class="flow-steward-collection">
@@ -12494,59 +12869,95 @@ Lord, hear our prayer</textarea>
                 </aside>
                 </div>
 
-                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-liturgy">
-                  <div class="flow-liturgy-parts">
-                    <div class="field">
-                      <label for="flow-penitential-choice">Penitential Act</label>
-                      <select id="flow-penitential-choice">
-                        <option value="confiteor" selected>I Confess (Confiteor)</option>
-                        <option value="form-b">Form B</option>
-                        <option value="form-c">Form C (Invocations)</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="flow-kyrie-choice">Kyrie</label>
-                      <select id="flow-kyrie-choice">
-                        <option value="english" selected>English</option>
-                        <option value="greek">Greek (Kyrie eleison)</option>
-                        <option value="latin">Latin</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="flow-gloria-choice">Gloria</label>
-                      <select id="flow-gloria-choice">
-                        <option value="english" selected>English</option>
-                        <option value="latin">Latin</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="flow-creed-choice">Creed</label>
-                      <select id="flow-creed-choice">
-                        <option value="nicene" selected>Nicene Creed</option>
-                        <option value="apostles">Apostles' Creed</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="flow-our-father-choice">Our Father</label>
-                      <select id="flow-our-father-choice">
-                        <option value="english" selected>English</option>
-                        <option value="malay">Malay (Bapa Kami)</option>
-                        <option value="tagalog">Tagalog (Ama Namin)</option>
-                        <option value="visaya">Visaya (Amahan Namo)</option>
-                        <option value="korean">Korean (주님의 기도)</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="flow-lamb-choice">Lamb of God</label>
-                      <select id="flow-lamb-choice">
-                        <option value="english" selected>English</option>
-                        <option value="latin">Latin (Agnus Dei)</option>
-                      </select>
-                    </div>
+                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-liturgy" data-mw-step="2" hidden>
+                  <div class="flow-liturgy-parts mw-rite-grid">
+                    <article class="mw-rite" data-mw-rite>
+                      <div class="mw-rite__head"><span class="mw-rite__title">Penitential Act</span></div>
+                      <div class="mw-rite__body">
+                        <select id="flow-penitential-choice" data-mw-tunes data-vb-select="off" hidden>
+                          <option value="confiteor" selected>I Confess (Confiteor)</option>
+                          <option value="form-b">Form B</option>
+                          <option value="form-c">Form C (Invocations)</option>
+                        </select>
+                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                      </div>
+                    </article>
+                    <article class="mw-rite" data-mw-rite>
+                      <div class="mw-rite__head"><span class="mw-rite__title">Kyrie</span></div>
+                      <div class="mw-rite__body">
+                        <select id="flow-kyrie-choice" data-mw-tunes data-vb-select="off" hidden>
+                          <option value="english" selected>English</option>
+                          <option value="greek">Greek (Kyrie eleison)</option>
+                          <option value="latin">Latin</option>
+                        </select>
+                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                      </div>
+                    </article>
+                    <article class="mw-rite" data-mw-rite>
+                      <div class="mw-rite__head"><span class="mw-rite__title">Gloria</span></div>
+                      <div class="mw-rite__body">
+                        <select id="flow-gloria-choice" data-mw-tunes data-vb-select="off" hidden>
+                          <option value="english" selected>English</option>
+                          <option value="latin">Latin</option>
+                        </select>
+                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                      </div>
+                    </article>
                   </div>
                 </article>
 
-                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-readings">
+                <article class="flow-bento-cell flow-setup-card2" data-mw-step="4" hidden>
+                  <div class="flow-liturgy-parts mw-rite-grid">
+                    <article class="mw-rite" data-mw-rite>
+                      <div class="mw-rite__head"><span class="mw-rite__title">Creed</span></div>
+                      <div class="mw-rite__body">
+                        <select id="flow-creed-choice" data-mw-tunes data-vb-select="off" hidden>
+                          <option value="nicene" selected>Nicene Creed</option>
+                          <option value="apostles">Apostles' Creed</option>
+                        </select>
+                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                      </div>
+                    </article>
+                    <article class="mw-rite" data-mw-rite data-mw-placeholder>
+                      <div class="mw-rite__head"><span class="mw-rite__title">Sanctus</span></div>
+                      <div class="mw-rite__body">
+                        <div class="mw-options" role="radiogroup" aria-label="Sanctus tune">
+                          <div class="mw-option" role="radio" aria-checked="false" tabindex="0">
+                            <span class="mw-option__check" aria-hidden="true"></span>
+                            <span class="mw-option__label">Holy, Holy, Holy (default)</span>
+                            <span class="mw-option__play" data-mw-play role="button" tabindex="0" aria-label="Preview tune — coming soon" title="Preview tune — coming soon">▶</span>
+                          </div>
+                        </div>
+                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                      </div>
+                    </article>
+                    <article class="mw-rite" data-mw-rite>
+                      <div class="mw-rite__head"><span class="mw-rite__title">Our Father</span></div>
+                      <div class="mw-rite__body">
+                        <select id="flow-our-father-choice" data-mw-tunes data-vb-select="off" hidden>
+                          <option value="english" selected>English</option>
+                          <option value="malay">Malay (Bapa Kami)</option>
+                          <option value="tagalog">Tagalog (Ama Namin)</option>
+                          <option value="visaya">Visaya (Amahan Namo)</option>
+                          <option value="korean">Korean (주님의 기도)</option>
+                        </select>
+                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                      </div>
+                    </article>
+                    <article class="mw-rite" data-mw-rite>
+                      <div class="mw-rite__head"><span class="mw-rite__title">Lamb of God</span></div>
+                      <div class="mw-rite__body">
+                        <select id="flow-lamb-choice" data-mw-tunes data-vb-select="off" hidden>
+                          <option value="english" selected>English</option>
+                          <option value="latin">Latin (Agnus Dei)</option>
+                        </select>
+                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                      </div>
+                    </article>
+                  </div>
+                </article>
+
+                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-readings" data-mw-step="3" hidden>
                   <div class="flow-gospsalm-row">
                     <div class="flow-gospsalm-col">
                       <div class="field">
@@ -12574,12 +12985,17 @@ Lord, hear our prayer</textarea>
                       </div>
                     </div>
                   </div>
+                  <div class="mw-card mw-pof">
+                    <div class="mw-card__head"><h3>Prayer of the Faithful</h3><span class="mw-ai-badge">✦ AI</span></div>
+                    <p class="muted" style="margin:0 0 12px;">Generate intercessions from today’s Gospel and psalm. Fine-tune the Gospel and psalm lines above, or pull text from the 📖 guide.</p>
+                    <button type="button" class="mw-btn mw-btn--soft" id="mw-pof-generate" data-mw-pof disabled title="Coming soon">✦ Generate intercessions</button>
+                  </div>
                 </article>
 
               </div>
 
               <div class="flow-setup-side">
-                <article class="flow-bento-cell flow-setup-card2 flow-sponsor-card" id="flow-sponsor-card">
+                <article class="flow-bento-cell flow-setup-card2 flow-sponsor-card" id="flow-sponsor-card" data-mw-step="6" hidden>
                   <div class="field flow-steward-sponsor">
                     <label for="flow-food-sponsor-input">Sponsor</label>
                     <div class="flow-input-group">
@@ -12594,7 +13010,7 @@ Lord, hear our prayer</textarea>
                   </div>
                 </article>
 
-                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-media">
+                <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-media" data-mw-step="6" hidden>
                   <div class="flow-setup-row flow-divider-poster-picks">
                     <div class="field">
                       <span class="flow-poster-picker-label" id="flow-lotw-poster-label">Liturgy of the Word poster</span>
@@ -12666,6 +13082,31 @@ Lord, hear our prayer</textarea>
                       <p class="ai-image-quota-hint" id="flow-ai-quota-hint" aria-live="polite"></p>
                     </div>
                   </footer>
+                </article>
+
+                <article class="flow-bento-cell flow-setup-card2 mw-review" id="mw-review" data-mw-step="7" hidden>
+                  <div class="mw-receipt">
+                    <div class="mw-receipt__row"><span>Date</span><strong id="mw-sum-date">—</strong></div>
+                    <div class="mw-receipt__row"><span>Celebrant</span><strong id="mw-sum-celebrant">—</strong></div>
+                    <div class="mw-receipt__row"><span>Readings imported</span><strong id="mw-sum-readings">—</strong></div>
+                    <div class="mw-receipt__row"><span>Songs selected</span><strong id="mw-sum-songs">—</strong></div>
+                    <div class="mw-receipt__row"><span>Announcements added</span><strong id="mw-sum-ann">—</strong></div>
+                    <div class="mw-receipt__row"><span>Collection included</span><strong id="mw-sum-collection">—</strong></div>
+                    <div class="mw-receipt__total"><span>Estimated slides</span><strong id="mw-sum-slides">—</strong></div>
+                  </div>
+                  <div class="mw-card mw-default-setup">
+                    <div class="mw-card__head"><h3>Save as Default Setup</h3><span class="mw-ai-badge" title="Saved preferences coming soon">Preview</span></div>
+                    <div class="mw-check-grid">
+                      <label><input type="checkbox" data-mw-default-save checked> Penitential Act</label>
+                      <label><input type="checkbox" data-mw-default-save checked> Kyrie</label>
+                      <label><input type="checkbox" data-mw-default-save checked> Gloria</label>
+                      <label><input type="checkbox" data-mw-default-save checked> Creed</label>
+                      <label><input type="checkbox" data-mw-default-save checked> Sanctus</label>
+                      <label><input type="checkbox" data-mw-default-save checked> Our Father</label>
+                      <label><input type="checkbox" data-mw-default-save checked> Lamb of God</label>
+                      <label><input type="checkbox" data-mw-default-save checked> Song Preferences</label>
+                    </div>
+                  </div>
                 </article>
               </div>
             </div>
@@ -12744,9 +13185,265 @@ Lord, hear our prayer</textarea>
               </div>
             </div>
             </div>
+            <footer class="mw-nav">
+              <button type="button" class="mw-btn mw-btn--ghost" id="mw-back" data-mw-back hidden>Back</button>
+              <span style="flex:1"></span>
+              <button type="button" class="mw-btn mw-btn--primary" id="mw-next" data-mw-next>Continue</button>
+              <button type="button" class="mw-btn mw-btn--generate" id="mw-generate" data-mw-generate hidden>Generate Presentation</button>
+            </footer>
+          </div>
+        </div>
+
+        <div class="mw-bookmark" id="mw-bookmark" data-open="false" hidden>
+          <button type="button" class="mw-bookmark__tab" id="mw-bookmark-tab" aria-expanded="false" aria-controls="mw-bookmark-panel" title="LOTW Guide">📖</button>
+          <aside class="mw-bookmark__panel" id="mw-bookmark-panel">
+            <h4>LOTW Guide</h4>
+            <div class="mw-guide-sec"><h5>First Reading · <span id="mw-guide-r1-ref">—</span></h5><p id="mw-guide-r1">—</p></div>
+            <div class="mw-guide-sec" data-pick="psalm"><h5>Responsorial Psalm · <span id="mw-guide-psalm-ref">—</span></h5><p id="mw-guide-psalm">—</p></div>
+            <div class="mw-guide-sec"><h5>Second Reading · <span id="mw-guide-r2-ref">—</span></h5><p id="mw-guide-r2">—</p></div>
+            <div class="mw-guide-sec" data-pick="gospel"><h5>Gospel · <span id="mw-guide-gospel-ref">—</span></h5><p id="mw-guide-gospel">—</p></div>
+            <p class="mw-bookmark__hint">Select text in the Psalm or Gospel section to use it as your custom slide line.</p>
+          </aside>
+        </div>
+
+        <div class="mw-modal" id="mw-preview-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-preview-title">
+          <div class="mw-modal__card">
+            <h3 class="mw-modal__title" id="mw-preview-title">Preview</h3>
+            <div class="mw-modal__text" id="mw-preview-text"></div>
+            <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-preview-close">Close</button>
           </div>
         </div>
       </section>
+
+      <script>
+      (function () {
+        function $(id) { return document.getElementById(id); }
+        var flowPage = $('flow-page');
+        if (!flowPage) return;
+        var STEP_META = {
+          1: { title: 'Let’s Prepare Today’s Mass', sub: 'Pick a date and who’s celebrating.' },
+          2: { title: 'Introductory Rites', sub: 'Set the Penitential Act, Kyrie, and Gloria.' },
+          3: { title: 'Liturgy of the Word', sub: 'Readings import automatically — refine the psalm and Gospel lines.' },
+          4: { title: 'Liturgy of the Eucharist', sub: 'Creed, Sanctus, Our Father, and Lamb of God.' },
+          5: { title: 'Music Ministry', sub: 'Choose songs for each part of the Mass.' },
+          6: { title: 'Additional Details', sub: 'Stewardship, posters, and AI imagery.' },
+          7: { title: 'Review & Generate', sub: 'Confirm everything, then build your deck.' }
+        };
+        var current = 1;
+        var progItems = Array.prototype.slice.call(document.querySelectorAll('#mw-progress .mw-progress__item'));
+
+        function setPanels(step) {
+          var songs = step === 5;
+          var setup = $('flow-panel-setup'), songsP = $('flow-panel-songs');
+          if (setup) setup.hidden = songs;
+          if (songsP) songsP.hidden = !songs;
+          var ts = $('flow-tab-setup'), tg = $('flow-tab-songs');
+          if (ts) ts.setAttribute('aria-selected', String(!songs));
+          if (tg) tg.setAttribute('aria-selected', String(songs));
+        }
+        function fillGuide() {
+          var map = [['mw-guide-r1', 'flow-reading1-body'], ['mw-guide-r1-ref', 'flow-reading1-ref'],
+            ['mw-guide-psalm', 'flow-psalm-body'], ['mw-guide-psalm-ref', 'flow-psalm-ref'],
+            ['mw-guide-r2', 'flow-reading2-body'], ['mw-guide-r2-ref', 'flow-reading2-ref'],
+            ['mw-guide-gospel', 'flow-gospel-body'], ['mw-guide-gospel-ref', 'flow-gospel-ref']];
+          map.forEach(function (p) { var d = $(p[0]), s = $(p[1]); if (d && s) d.textContent = s.textContent; });
+        }
+        function readingsLoaded() {
+          var ref = $('flow-gospel-ref');
+          return !!(ref && ref.textContent && ref.textContent.trim() && ref.textContent.trim() !== '—');
+        }
+        function ensureReadings() {
+          var date = $('mass-date');
+          if (!date || !date.value) return;
+          if (!readingsLoaded()) { var b = $('btn-load-flow'); if (b) b.click(); }
+        }
+        function fillReceipt() {
+          var d = $('mass-date'); if ($('mw-sum-date')) $('mw-sum-date').textContent = (d && d.value) ? d.value : '—';
+          var cd = $('celebrant-display');
+          var cname = (cd && cd.textContent && cd.textContent.trim() && cd.textContent.indexOf('Select') < 0) ? cd.textContent.trim() : '—';
+          if ($('mw-sum-celebrant')) $('mw-sum-celebrant').textContent = cname;
+          if ($('mw-sum-readings')) $('mw-sum-readings').textContent = readingsLoaded() ? 'Yes' : 'Not loaded';
+          var sc = $('flow-song-count'), st = $('mass-summary-song-total');
+          if ($('mw-sum-songs')) $('mw-sum-songs').textContent = (sc ? sc.textContent : '0') + ' / ' + (st ? st.textContent : '5');
+          var ann = $('flow-announcement-posters'); var nann = (ann && ann.files) ? ann.files.length : 0;
+          if ($('mw-sum-ann')) $('mw-sum-ann').textContent = nann ? (nann + ' file' + (nann > 1 ? 's' : '')) : 'None';
+          var amt = $('flow-collection-amount');
+          if ($('mw-sum-collection')) $('mw-sum-collection').textContent = (amt && amt.value.trim()) ? ('Yes (' + amt.value.trim() + ')') : 'No';
+          var slides = '—';
+          if (window.__mwPreviewData && window.__mwPreviewData.estimated_slide_count) slides = window.__mwPreviewData.estimated_slide_count;
+          if ($('mw-sum-slides')) $('mw-sum-slides').textContent = slides;
+        }
+        function showStep(n) {
+          current = n;
+          setPanels(n);
+          Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-step]'), function (el) {
+            el.hidden = (parseInt(el.getAttribute('data-mw-step'), 10) !== n);
+          });
+          progItems.forEach(function (it) {
+            var s = parseInt(it.getAttribute('data-mw-go'), 10);
+            it.classList.toggle('is-active', s === n);
+            it.classList.toggle('is-done', s < n);
+          });
+          var meta = STEP_META[n] || { title: '', sub: '' };
+          if ($('mw-eyebrow')) $('mw-eyebrow').textContent = 'Step ' + n + ' of 7';
+          if ($('mw-title')) $('mw-title').textContent = meta.title;
+          if ($('mw-sub')) $('mw-sub').textContent = meta.sub;
+          if ($('mw-back')) $('mw-back').hidden = n === 1;
+          if ($('mw-next')) $('mw-next').hidden = n === 7;
+          if ($('mw-generate')) $('mw-generate').hidden = n !== 7;
+          var bm = $('mw-bookmark');
+          if (bm) { bm.hidden = n !== 3; if (n !== 3) { bm.setAttribute('data-open', 'false'); var t = $('mw-bookmark-tab'); if (t) t.setAttribute('aria-expanded', 'false'); } }
+          if (n === 3) { fillGuide(); ensureReadings(); }
+          if (n === 7) { fillReceipt(); }
+          restartAnim(n === 5 ? $('flow-panel-songs') : $('flow-panel-setup'));
+          refreshContinue();
+          var w = $('mw-wizard'); if (w && w.scrollIntoView) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        function validStep1() {
+          var d = $('mass-date');
+          if (!(d && d.value)) { if (d && d.focus) d.focus(); return false; }
+          return true;
+        }
+        function shake(el) {
+          if (!el) return; var i = 0; var seq = [-4, 4, -3, 3, 0];
+          (function s() { if (i >= seq.length) { el.style.transform = ''; return; } el.style.transform = 'translateX(' + seq[i++] + 'px)'; setTimeout(s, 55); })();
+        }
+        function next() {
+          if (current === 1) { if (!validStep1()) { shake($('mw-next')); return; } ensureReadings(); }
+          if (current < 7) showStep(current + 1);
+        }
+        function back() { if (current > 1) showStep(current - 1); }
+        function openPreview(title, text) {
+          var m = $('mw-preview-modal'); if (!m) return;
+          if ($('mw-preview-title')) $('mw-preview-title').textContent = title;
+          if ($('mw-preview-text')) $('mw-preview-text').textContent = text;
+          m.setAttribute('data-open', 'true'); m.setAttribute('aria-hidden', 'false');
+        }
+        function closePreview() { var m = $('mw-preview-modal'); if (!m) return; m.setAttribute('data-open', 'false'); m.setAttribute('aria-hidden', 'true'); }
+        function buildChoiceCards() {
+          Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-tunes]'), function (sel) {
+            if (sel.dataset.mwCards === '1') return; sel.dataset.mwCards = '1';
+            var wrap = document.createElement('div'); wrap.className = 'mw-options'; wrap.setAttribute('role', 'radiogroup');
+            var opts = Array.prototype.slice.call(sel.options).filter(function (o) { return o.value && !o.disabled; });
+            sel.selectedIndex = -1;
+            function sync(val) { Array.prototype.forEach.call(wrap.children, function (c) { c.setAttribute('aria-checked', String(c.getAttribute('data-val') === val)); }); }
+            function pick(val) { sel.value = val; sel.dispatchEvent(new Event('change', { bubbles: true })); sync(val); mwAdvanceAfterPick(wrap); }
+            opts.forEach(function (o) {
+              var item = document.createElement('div'); item.className = 'mw-option';
+              item.setAttribute('role', 'radio'); item.setAttribute('tabindex', '0'); item.setAttribute('data-val', o.value);
+              item.setAttribute('aria-checked', 'false');
+              item.innerHTML = '<span class="mw-option__check" aria-hidden="true"></span><span class="mw-option__label"></span>' +
+                '<span class="mw-option__play" data-mw-play role="button" tabindex="0" aria-label="Preview tune — coming soon" title="Preview tune — coming soon">▶</span>';
+              item.querySelector('.mw-option__label').textContent = o.textContent;
+              var play = item.querySelector('.mw-option__play');
+              play.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); });
+              play.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); } });
+              item.addEventListener('click', function () { pick(o.value); });
+              item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(o.value); } });
+              wrap.appendChild(item);
+            });
+            sel.style.display = 'none';
+            sel.insertAdjacentElement('afterend', wrap);
+            sel.addEventListener('change', function () { sync(sel.value); });
+          });
+        }
+        function restartAnim(el) { if (!el) return; el.classList.remove('mw-step-anim'); void el.offsetWidth; el.classList.add('mw-step-anim'); }
+        var mwPrefersReduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        function mwReveal(el) {
+          if (!el) return;
+          try { el.scrollIntoView({ behavior: mwPrefersReduced ? 'auto' : 'smooth', block: 'center' }); }
+          catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+          if (mwPrefersReduced) return;
+          el.classList.remove('emil-stagger-enter');
+          void el.offsetWidth;
+          el.classList.add('emil-stagger-enter');
+          var done = function () { el.classList.remove('emil-stagger-enter'); el.removeEventListener('animationend', done); };
+          el.addEventListener('animationend', done);
+        }
+        function mwAdvanceAfterPick(fromEl) {
+          if (!fromEl || !fromEl.closest) return;
+          var rite = fromEl.closest('.mw-rite');
+          if (rite) {
+            var next = rite.nextElementSibling;
+            while (next && (next.nodeType !== 1 || next.hidden || !next.classList.contains('mw-rite'))) next = next.nextElementSibling;
+            if (next) { mwReveal(next); return; }
+          }
+          var nb = $('mw-next');
+          if (nb && !nb.hidden) mwReveal(nb);
+        }
+        function selVal(id) { var s = $(id); return !!(s && s.value); }
+        function sanctusPicked() { return !!flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]'); }
+        var STEP_DONE = {
+          1: function () { var d = $('mass-date'); return !!(d && d.value); },
+          2: function () { return selVal('flow-penitential-choice') && selVal('flow-kyrie-choice') && selVal('flow-gloria-choice'); },
+          3: function () { return readingsLoaded(); },
+          4: function () { return selVal('flow-creed-choice') && sanctusPicked() && selVal('flow-our-father-choice') && selVal('flow-lamb-choice'); }
+        };
+        function stepReady(n) { return STEP_DONE[n] ? !!STEP_DONE[n]() : true; }
+        function refreshContinue() {
+          var nb = $('mw-next'); if (nb) nb.classList.toggle('is-ready', stepReady(current));
+          var g = $('mw-generate'); if (g) g.classList.toggle('is-ready', current === 7 && stepReady(7));
+        }
+        function flashHint(msg) {
+          var h = document.querySelector('#mw-bookmark-panel .mw-bookmark__hint'); if (!h) return;
+          var prev = h.getAttribute('data-base') || h.textContent;
+          h.setAttribute('data-base', prev);
+          h.textContent = msg; h.style.color = 'var(--accent)';
+          setTimeout(function () { h.textContent = prev; h.style.color = ''; }, 1800);
+        }
+        function init() {
+          if (flowPage.dataset.mwInit === '1') return; flowPage.dataset.mwInit = '1';
+          document.body.classList.add('mw-on');
+          if ($('mw-next')) $('mw-next').addEventListener('click', next);
+          if ($('mw-back')) $('mw-back').addEventListener('click', back);
+          if ($('mw-generate')) $('mw-generate').addEventListener('click', function () { var g = $('btn-generate-flow'); if (g) g.click(); });
+          progItems.forEach(function (it) { it.addEventListener('click', function () { var s = parseInt(it.getAttribute('data-mw-go'), 10); if (s) showStep(s); }); });
+          Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-play]'), function (p) {
+            p.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); });
+          });
+          Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-preview]'), function (b) {
+            b.addEventListener('click', function () { openPreview(b.getAttribute('data-mw-preview-title') || 'Preview', b.getAttribute('data-mw-preview-text') || ''); });
+          });
+          if ($('mw-preview-close')) $('mw-preview-close').addEventListener('click', closePreview);
+          var pm = $('mw-preview-modal'); if (pm) pm.addEventListener('click', function (e) { if (e.target === pm) closePreview(); });
+          var bt = $('mw-bookmark-tab');
+          if (bt) bt.addEventListener('click', function () {
+            var bm = $('mw-bookmark'); if (!bm) return;
+            var open = bm.getAttribute('data-open') === 'true';
+            bm.setAttribute('data-open', String(!open)); bt.setAttribute('aria-expanded', String(!open));
+          });
+          Array.prototype.forEach.call(document.querySelectorAll('#mw-bookmark-panel [data-pick]'), function (sec) {
+            sec.addEventListener('mouseup', function () {
+              var sel = (window.getSelection ? window.getSelection().toString() : '').trim(); if (!sel) return;
+              var which = sec.getAttribute('data-pick');
+              var target = which === 'gospel' ? $('flow-gospel-custom') : $('flow-psalm-custom');
+              if (target) { target.value = sel; target.dispatchEvent(new Event('input', { bubbles: true })); flashHint('Added to custom ' + which + ' text.'); }
+            });
+          });
+          if ($('mw-pof-generate')) $('mw-pof-generate').addEventListener('click', function (e) { e.preventDefault(); });
+          document.addEventListener('mw:preview', function () { if (current === 3) fillGuide(); if (current === 7) fillReceipt(); refreshContinue(); });
+          buildChoiceCards();
+          Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-options[aria-label] .mw-option'), function (opt) {
+            if (opt.hasAttribute('data-val') || opt.dataset.mwWired === '1') return;
+            opt.dataset.mwWired = '1';
+            function pickStandalone() {
+              var group = opt.closest('[role="radiogroup"]');
+              if (group) Array.prototype.forEach.call(group.querySelectorAll('.mw-option'), function (c) { c.setAttribute('aria-checked', 'false'); });
+              opt.setAttribute('aria-checked', 'true');
+              refreshContinue();
+              mwAdvanceAfterPick(opt);
+            }
+            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-play]')) { e.preventDefault(); return; } pickStandalone(); });
+            opt.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickStandalone(); } });
+          });
+          flowPage.addEventListener('input', refreshContinue, true);
+          flowPage.addEventListener('change', refreshContinue, true);
+          showStep(1);
+        }
+        if (document.readyState === 'complete') init();
+        else window.addEventListener('load', init);
+      })();
+      </script>
 
       <section class="page" id="calendar-page" data-route="/mass/calendar">
         <div class="workspace calendar-page-workspace">
@@ -12922,6 +13619,9 @@ Lord, hear our prayer</textarea>
 
       <section class="page" id="settings-page">
         <div class="settings-layout song-plan-layout">
+          <button type="button" class="settings-modal-close" id="settings-modal-close" aria-label="Close settings">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
           <aside class="settings-nav-card song-plan-summary" aria-labelledby="settings-nav-heading">
             <div class="flow-bento-cell settings-nav-card__inner">
               <header class="flow-bento-cell__head home-card-head">
@@ -13115,21 +13815,14 @@ Lord, hear our prayer</textarea>
                 <hr class="settings-divider" />
 
                 <section id="settings-live-radio">
-                  <h3>EWTN Live Radio</h3>
-                  <p class="muted">Default stream for the Live Radio pill in the header. Streams from <a href="https://www.ewtn.com/live/radio" target="_blank" rel="noopener noreferrer">EWTN 24/7 Radio</a>.</p>
-                  <div class="settings-radio-list" id="settings-radio-list" aria-live="polite"></div>
+                  <h3>Catholic Live Radio</h3>
+                  <p class="muted">Default station for the Live Radio pill in the header. Stations marked “official player” open in a new tab when a direct stream isn’t available in-browser.</p>
+                  <div class="field">
+                    <label for="settings-radio-select">Default station</label>
+                    <select id="settings-radio-select" aria-label="Default radio station"></select>
+                  </div>
                   <p class="status" id="settings-radio-status" aria-live="polite"></p>
                 </section>
-
-                <hr class="settings-divider" />
-
-                <h3>Visual style</h3>
-                <p class="muted">Overall atmosphere of the interface (independent of light/dark mode).</p>
-                <div class="theme-preference-row" role="radiogroup" aria-label="Visual style">
-                  <label class="theme-pref-option"><input type="radio" name="visual-style" value="missalette" checked /> Missalette</label>
-                  <label class="theme-pref-option"><input type="radio" name="visual-style" value="parchment" /> Parchment</label>
-                  <label class="theme-pref-option"><input type="radio" name="visual-style" value="midnight" /> Midnight</label>
-                </div>
 
                 <p class="muted settings-footnote">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for slide colors and typography.</p>
                 <div class="actions">
@@ -13379,7 +14072,8 @@ Lord, hear our prayer</textarea>
       const frRef = String(data.first_reading_reference || "").trim();
       const frBody = String(data.first_reading_excerpt || data.first_reading_text || "").trim();
       const gospel = String(data.gospel_text || data.gospel_quote || data.gospel_reference || "").trim();
-      return !!(frRef && frBody && gospel);
+      const psalm = String(data.psalm_text || data.psalm_verses || "").trim();
+      return !!(frRef && frBody && gospel && psalm);
     }
 
     function readStoredReadings(date) {
@@ -13830,11 +14524,15 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    function stationSubtitle(station) {
+      return isStationPlayable(station) ? "24/7 live stream" : "Opens official player";
+    }
+
     function renderRadioStationList(listEl) {
       if (!listEl) return;
-      const selected = getEwtRadioStationId();
+      const selected = getEwtRadioActiveStationId();
       if (!ewtnRadioStations.length) {
-        listEl.innerHTML = "<p class=\"muted\">Loading EWTN stations…</p>";
+        listEl.innerHTML = "<p class=\"muted\">Loading stations…</p>";
         return;
       }
       listEl.innerHTML = ewtnRadioStations.map((station) => (
@@ -13843,15 +14541,26 @@ Lord, hear our prayer</textarea>
           "<img class=\"settings-radio-option__art\" src=\"" + escapeHtml(station.image_url || "") + "\" alt=\"\" loading=\"lazy\" width=\"52\" height=\"40\" />" +
           "<span class=\"settings-radio-option__text\">" +
             "<strong>" + escapeHtml(station.name) + "</strong>" +
-            "<span>EWTN 24/7 live stream</span>" +
+            "<span>" + escapeHtml(stationSubtitle(station)) + "</span>" +
           "</span>" +
           "<span class=\"settings-radio-option__mark\" aria-hidden=\"true\">Default</span>" +
         "</button>"
       )).join("");
     }
 
+    function renderRadioStationDropdown(selectEl) {
+      if (!selectEl) return;
+      const selected = getEwtRadioStationId();
+      selectEl.innerHTML = ewtnRadioStations.map((station) => (
+        "<option value=\"" + escapeHtml(station.id) + "\"" + (station.id === selected ? " selected" : "") + ">" +
+          escapeHtml(station.name) + (isStationPlayable(station) ? "" : " (official player)") +
+        "</option>"
+      )).join("");
+      if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(selectEl);
+    }
+
     function renderSettingsRadioList() {
-      renderRadioStationList($("settings-radio-list"));
+      renderRadioStationDropdown($("settings-radio-select"));
       renderRadioStationList($("radio-page-list"));
     }
 
@@ -13955,14 +14664,34 @@ Lord, hear our prayer</textarea>
       await audio.play();
     }
 
+    function isStationPlayable(station) {
+      return !!(station && (getEwtRadioHlsUrl(station) || station.stream_url));
+    }
+
+    function openStationPage(station) {
+      if (station && station.page_url) {
+        window.open(station.page_url, "_blank", "noopener");
+        notify(station.name + " opens in its official live player.", "info");
+        return true;
+      }
+      return false;
+    }
+
     async function toggleLiveRadioPlay() {
       const audio = $("live-radio-audio");
       const station = getEwtRadioActiveStation();
-      if (!audio || !station || (!getEwtRadioHlsUrl(station) && !station.stream_url)) {
+      if (!station) {
         notify("Choose a radio station in Settings first.", "info");
         openLiveRadioSettings();
         return;
       }
+      if (!isStationPlayable(station)) {
+        if (!openStationPage(station)) {
+          notify("This station has no live stream available.", "info");
+        }
+        return;
+      }
+      if (!audio) return;
       if (ewtnRadioPlaying) {
         audio.pause();
         setLiveRadioPlayingUi(false);
@@ -13985,8 +14714,10 @@ Lord, hear our prayer</textarea>
       } catch (e) {
         resetEwtRadioAudio(audio);
         console.error("Live radio playback failed:", e);
-        notify("Could not start playback. Tap play again or pick another station in Settings.", "error");
         setLiveRadioPlayingUi(false);
+        if (!openStationPage(station)) {
+          notify("Could not start playback. Tap play again or pick another station in Settings.", "error");
+        }
       }
     }
 
@@ -13999,8 +14730,8 @@ Lord, hear our prayer</textarea>
       const audio = $("live-radio-audio");
       resetEwtRadioAudio(audio);
       setLiveRadioPlayingUi(false);
-      if (wasPlaying) toggleLiveRadioPlay();
       const station = getEwtRadioDefaultStation();
+      if (wasPlaying && isStationPlayable(station)) toggleLiveRadioPlay();
       const status = $("settings-radio-status");
       if (status) status.textContent = (station ? station.name : "Station") + " is now your default.";
     }
@@ -14018,7 +14749,7 @@ Lord, hear our prayer</textarea>
       const nextBtn = $("live-radio-next");
       const panel = $("live-radio-panel");
       const audio = $("live-radio-audio");
-      const list = $("settings-radio-list");
+      const settingsSelect = $("settings-radio-select");
 
       if (playBtn) {
         playBtn.addEventListener("click", (e) => {
@@ -14062,11 +14793,9 @@ Lord, hear our prayer</textarea>
           }
         });
       }
-      if (list) {
-        list.addEventListener("click", (e) => {
-          const btn = e.target.closest("[data-ewtn-radio-id]");
-          if (!btn) return;
-          selectEwtRadioStation(btn.dataset.ewtnRadioId);
+      if (settingsSelect) {
+        settingsSelect.addEventListener("change", () => {
+          if (settingsSelect.value) selectEwtRadioStation(settingsSelect.value);
         });
       }
       const pageList = $("radio-page-list");
@@ -14389,6 +15118,140 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    const HEADER_TICKER_ROTATE_MS = 6000;
+    let headerTickerItems = [];
+    let headerTickerIndex = 0;
+    let headerTickerTimer = null;
+
+    function buildLiturgicalTickerItem() {
+      const seasonEl = $("home-liturgical-season");
+      const yearEl = $("home-liturgical-year");
+      const season = seasonEl && seasonEl.textContent ? seasonEl.textContent.trim() : "";
+      const year = yearEl && yearEl.textContent ? yearEl.textContent.trim() : "";
+      if (!season) return null;
+      const text = year ? season + " · " + year : season;
+      return { kicker: "Liturgy", text: text, href: "/mass/calendar", external: false };
+    }
+
+    function renderHeaderTickerFrame() {
+      const root = $("app-header-ticker");
+      const kicker = $("app-header-ticker-kicker");
+      const textEl = $("app-header-ticker-text");
+      if (!root || !kicker || !textEl || !headerTickerItems.length) return;
+      const item = headerTickerItems[headerTickerIndex % headerTickerItems.length];
+      kicker.textContent = item.kicker;
+      textEl.textContent = item.text;
+      root.setAttribute("href", item.href || "#");
+      if (item.external) {
+        root.setAttribute("target", "_blank");
+        root.setAttribute("rel", "noopener noreferrer");
+      } else {
+        root.removeAttribute("target");
+        root.removeAttribute("rel");
+      }
+    }
+
+    function syncHeaderTickerLiturgy() {
+      const root = $("app-header-ticker");
+      if (!root) return;
+      const lit = buildLiturgicalTickerItem();
+      if (!lit) return;
+      const idx = headerTickerItems.findIndex((i) => i.kicker === "Liturgy");
+      if (idx >= 0) headerTickerItems[idx] = lit;
+      else headerTickerItems.unshift(lit);
+      if (root.hidden) {
+        root.hidden = false;
+        renderHeaderTickerFrame();
+        startHeaderTicker();
+      } else if (headerTickerItems.length === 1) {
+        renderHeaderTickerFrame();
+      }
+    }
+
+    function advanceHeaderTicker() {
+      const root = $("app-header-ticker");
+      if (!root || headerTickerItems.length < 2) return;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      headerTickerIndex = (headerTickerIndex + 1) % headerTickerItems.length;
+      if (reduce) {
+        renderHeaderTickerFrame();
+        return;
+      }
+      root.classList.add("is-swapping");
+      window.setTimeout(() => {
+        renderHeaderTickerFrame();
+        root.classList.remove("is-swapping");
+      }, 320);
+    }
+
+    function stopHeaderTicker() {
+      if (headerTickerTimer) {
+        window.clearInterval(headerTickerTimer);
+        headerTickerTimer = null;
+      }
+    }
+
+    function startHeaderTicker() {
+      stopHeaderTicker();
+      if (headerTickerItems.length < 2) return;
+      if (document.hidden) return;
+      headerTickerTimer = window.setInterval(advanceHeaderTicker, HEADER_TICKER_ROTATE_MS);
+    }
+
+    async function refreshHeaderTicker() {
+      const root = $("app-header-ticker");
+      if (!root) return;
+      const items = [];
+      const litItem = buildLiturgicalTickerItem();
+      if (litItem) items.push(litItem);
+      try {
+        const prefs = getHomeNewsPrefs();
+        if (prefs.enabled && (prefs.vatican || prefs.cna)) {
+          const data = await fetchCatholicNewsPage(8, 0, HOME_NEWS_MAX_AGE_DAYS, null);
+          (data.items || []).slice(0, 8).forEach((it) => {
+            if (!it || !it.title) return;
+            const src = (it.source || "").toLowerCase();
+            const kicker = src.indexOf("vatican") >= 0 ? "Vatican"
+              : src.indexOf("cna") >= 0 || src.indexOf("catholic news") >= 0 ? "CNA"
+              : "News";
+            items.push({ kicker: kicker, text: it.title, href: it.url || "#", external: true });
+          });
+        }
+      } catch (_e) { /* news optional; liturgy line still shows */ }
+      headerTickerItems = items;
+      headerTickerIndex = 0;
+      if (!items.length) {
+        root.hidden = true;
+        stopHeaderTicker();
+        return;
+      }
+      root.hidden = false;
+      renderHeaderTickerFrame();
+      startHeaderTicker();
+    }
+
+    function initHeaderTicker() {
+      const root = $("app-header-ticker");
+      if (!root) return;
+      root.addEventListener("mouseenter", stopHeaderTicker);
+      root.addEventListener("focus", stopHeaderTicker);
+      root.addEventListener("mouseleave", startHeaderTicker);
+      root.addEventListener("blur", startHeaderTicker);
+      root.addEventListener("click", (e) => {
+        const href = root.getAttribute("href");
+        if (!href || href === "#") { e.preventDefault(); return; }
+        if (!root.hasAttribute("target")) {
+          e.preventDefault();
+          showRoute(href);
+        }
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) stopHeaderTicker();
+        else startHeaderTicker();
+      });
+      refreshHeaderTicker();
+    }
+
     function closeHomeNewsExpandModal() {
       const modal = $("home-news-expand-modal");
       if (!modal) return;
@@ -14661,24 +15524,16 @@ Lord, hear our prayer</textarea>
       syncAccentSwatchUI(hex);
     }
 
-    function applyVisualStyle(styleId, persist = true) {
-      const style = styleId || "missalette";
+    function applyVisualStyle(_styleId, persist = true) {
+      const style = "parchment";
       document.documentElement.setAttribute("data-visual-style", style);
       if (persist) {
         try { localStorage.setItem(VISUAL_STYLE_STORAGE_KEY, style); } catch (_e) { /* ignore */ }
       }
-      document.querySelectorAll('input[name="visual-style"]').forEach((inp) => {
-        inp.checked = inp.value === style;
-      });
     }
 
     function initAppearanceSettings() {
-      applyVisualStyle(
-        (() => {
-          try { return localStorage.getItem(VISUAL_STYLE_STORAGE_KEY) || "missalette"; } catch (_e) { return "missalette"; }
-        })(),
-        false
-      );
+      applyVisualStyle("parchment", false);
       const storedAccent = readStoredUserAccent();
       if (storedAccent) applyUserAccent(storedAccent, false);
       else {
@@ -14704,11 +15559,6 @@ Lord, hear our prayer</textarea>
           resetAppAccentToDefault();
         });
       }
-      document.querySelectorAll('input[name="visual-style"]').forEach((inp) => {
-        inp.addEventListener("change", () => {
-          if (inp.checked) applyVisualStyle(inp.value);
-        });
-      });
     }
 
     function getToggleDarkPreference() {
@@ -14986,15 +15836,17 @@ Lord, hear our prayer</textarea>
       return route === "/settings/church" || route === "/settings/app";
     }
 
+    let lastNonSettingsRoute = "/home";
+
     function syncSettingsLayout(route) {
-      const panelKey = route === "/settings/app" ? "appearance" : "church";
+      const inSettings = isSettingsRoute(route);
       document.querySelectorAll(".settings-panel").forEach((panel) => {
-        const show = isSettingsRoute(route) && panel.dataset.settingsPanel === panelKey;
-        panel.hidden = !show;
+        panel.hidden = !inSettings;
       });
-      document.querySelectorAll(".settings-sidebar-link").forEach((link) => {
-        link.classList.toggle("active", link.dataset.route === route);
-      });
+    }
+
+    function closeSettingsModal() {
+      showRoute(lastNonSettingsRoute && !isSettingsRoute(lastNonSettingsRoute) ? lastNonSettingsRoute : "/home");
     }
 
     function pageIsActiveForRoute(page, route) {
@@ -15003,6 +15855,7 @@ Lord, hear our prayer</textarea>
     }
 
     function applyRouteState(r, replaceOnly) {
+      if (!isSettingsRoute(r)) lastNonSettingsRoute = r;
       syncAppHeaderOffset();
       syncMassBuilderStepperVisibility(r);
       document.querySelectorAll(".page").forEach((page) => {
@@ -15030,11 +15883,13 @@ Lord, hear our prayer</textarea>
         refreshCatholicNews();
         refreshWydNews();
       }
-      if (r === "/settings/app") {
+      if (isSettingsRoute(r)) {
         syncHomeNewsSettingsUI();
         syncNavTabSettingsUI();
         if (typeof renderSettingsRadioList === "function") renderSettingsRadioList();
         refreshGeminiSettings();
+        syncChurchFieldsToSettings();
+        refreshCommunity();
         if (window.__scrollToLiveRadio) {
           window.__scrollToLiveRadio = false;
           requestAnimationFrame(() => {
@@ -15044,10 +15899,6 @@ Lord, hear our prayer</textarea>
         }
       }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
-      if (r === "/settings/church") {
-        syncChurchFieldsToSettings();
-        refreshCommunity();
-      }
       if (r === "/mass/builder") {
         syncChurchFieldsFromSettings();
         refreshCommunity();
@@ -15141,6 +15992,20 @@ Lord, hear our prayer</textarea>
     const routeSwitcherEl = $("route-switcher");
     if (routeSwitcherEl) routeSwitcherEl.addEventListener("change", (event) => showRoute(event.target.value));
     window.addEventListener("popstate", () => showRoute(currentRoute(), true));
+
+    (function initSettingsModalChrome() {
+      const overlay = document.getElementById("settings-page");
+      const closeBtn = document.getElementById("settings-modal-close");
+      if (closeBtn) closeBtn.addEventListener("click", closeSettingsModal);
+      if (overlay) {
+        overlay.addEventListener("click", (event) => {
+          if (event.target === overlay) closeSettingsModal();
+        });
+      }
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && isSettingsRoute(currentRoute())) closeSettingsModal();
+      });
+    })();
 
     let lyricBlocks = [];
     let draggedLyricId = null;
@@ -18041,17 +18906,9 @@ Lord, hear our prayer</textarea>
       btn.addEventListener("click", startBreathing);
     })();
 
-    /* Interactive red dot field behind each Mass setup card — glows toward the cursor on hover */
+    /* Mass setup cards no longer paint an interactive red dot field on hover. */
     (function initMassCardDots() {
-      const ids = [
-        "mass-step-target-basics",
-        "mass-step-target-stewardship",
-        "mass-step-target-liturgy",
-        "mass-step-target-readings",
-        "flow-sponsor-card",
-        "mass-step-target-media",
-        "flow-peace-card",
-      ];
+      const ids = [];
       const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const BASE = { r: 161, g: 15, b: 13 };   // app red (--accent #a10f0d)
       const GLOW = { r: 212, g: 82, b: 80 };   // brighter red (--liturgical-glow #d45250)
@@ -21371,6 +22228,7 @@ Lord, hear our prayer</textarea>
       const yearLabel = formatLectionaryYearLabel(data.lectionary_cycle || "");
       if ($("home-liturgical-season")) $("home-liturgical-season").textContent = seasonLabel;
       if ($("home-liturgical-year")) $("home-liturgical-year").textContent = yearLabel;
+      if (typeof syncHeaderTickerLiturgy === "function") syncHeaderTickerLiturgy();
       updateLiturgicalCountdowns();
       const fullG = (data.gospel_text || "").trim();
       if ($("home-gospel-quote")) {
@@ -21380,7 +22238,7 @@ Lord, hear our prayer</textarea>
       updateHomeReadingCard("home-reading1-ref", "home-reading1-excerpt", data.first_reading_reference, data.first_reading_excerpt);
       updateHomeReadingCard("home-reading2-ref", "home-reading2-excerpt", data.second_reading_reference, data.second_reading_excerpt);
       const psalmRef = responsorialSectionLabel(data.psalm || data.psalm_reference || "") || "Responsorial Psalm";
-      const psalmFull = (data.psalm_text || "").trim();
+      const psalmFull = (data.psalm_text || data.psalm_verses || "").trim();
       updateHomeReadingCard("home-psalm-ref", "home-psalm-excerpt", psalmRef, psalmFull);
       const deferTheme = () => {
         renderThemeGrid();
@@ -21452,7 +22310,7 @@ Lord, hear our prayer</textarea>
           $("flow-psalm-ref").textContent = psalmRef;
         }
         if ($("flow-psalm-body")) {
-          const pt = (data.psalm_text || "").trim();
+          const pt = (data.psalm_verses || data.psalm_text || "").trim();
           $("flow-psalm-body").textContent = pt || "Full psalm text was not loaded.";
         }
         if ($("flow-psalm-label")) {
@@ -21462,6 +22320,8 @@ Lord, hear our prayer</textarea>
         updateFlowParagraphPreviews();
         renderFlowSongCount();
         updatePosterLivePreview();
+        window.__mwPreviewData = flowPreviewData;
+        try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
         if (!auto) notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
       } catch (error) {
         notify(error.message || "Could not load readings.", "error");
@@ -23694,6 +24554,7 @@ Lord, hear our prayer</textarea>
     initDividerPosterPickers();
     syncOpenAiPosterUi();
     initGlobalSearch();
+    initHeaderTicker();
     updateAccountMenuDisplay();
     initHomeEventModal();
     initReadingExpandModal();
