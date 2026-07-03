@@ -18537,7 +18537,7 @@ Lord, hear our prayer</textarea>
         return;
       }
       $("btn-save-lyrics").disabled = true;
-      setLyricsStatus("Saving lyrics to the hymn library...", "");
+      setLyricsStatus("Adding to library…", "");
       try {
         const result = await postJSON("/api/lyrics/save", {
           title,
@@ -26328,8 +26328,8 @@ Lord, hear our prayer</textarea>
       if (catalogRow) applySongMetaToForm(sec, catalogRow);
       setLyricsStatus(
         catalogRow
-          ? "Loading lyrics for \"" + catalogRow.title + "\"…"
-          : "Loading song…",
+          ? "Retrieving lyrics for \"" + catalogRow.title + "\"…"
+          : "Retrieving song…",
         ""
       );
       const data = await fetchSongDetail(sec, sid);
