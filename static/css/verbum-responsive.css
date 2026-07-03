@@ -696,6 +696,20 @@ iframe {
     gap: var(--space-3);
   }
 
+  .song-plan-layout .song-plan-main,
+  .song-plan-layout .song-plan-summary {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .song-plan-layout .song-plan-main {
+    order: 1;
+  }
+
+  .song-plan-layout .song-plan-summary {
+    order: 2;
+  }
+
   .song-plan-summary,
   .settings-layout .settings-nav-card.song-plan-summary {
     position: static;
@@ -1209,7 +1223,19 @@ iframe {
 
   /* Song plan tab — restore desktop two-column layout + card grid (undo mobile Phase A) */
   .song-plan-layout {
-    grid-template-columns: minmax(16rem, 350px) minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 350px) !important;
+  }
+
+  .song-plan-layout .song-plan-main {
+    grid-column: 1;
+    grid-row: 1;
+    order: 0;
+  }
+
+  .song-plan-layout .song-plan-summary {
+    grid-column: 2;
+    grid-row: 1;
+    order: 0;
   }
 
   .flow-builder-tab-panel--songs .mass-song-plan-card__top {

@@ -1,5 +1,6 @@
 import datetime as _dt
 import os
+import time
 
 import requests
 
@@ -58,6 +59,15 @@ def _payload_title_stale(payload: dict) -> bool:
     if title.endswith(" Celebration") and not celebration:
         return True
     return False
+
+
+_RETRY_DELAYS_S = (1.5, 3.0, 6.0)
+_MAX_FETCH_ATTEMPTS = len(_RETRY_DELAYS_S) + 1
+
+
+def payload_complete(payload: dict) -> bool:
+    """Public completeness check for readings payloads (first reading, psalm, gospel)."""
+    return _payload_complete(payload)
 
 
 def _payload_complete(payload: dict) -> bool:
@@ -285,10 +295,16 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
         return None
 
 
-def get_liturgical_data(date: str, *, use_cache: bool = True) -> dict | None:
+def get_liturgical_data(
+    date: str,
+    *,
+    use_cache: bool = True,
+    force_refresh: bool = False,
+) -> dict | None:
     """
     Liturgical data for Mass date YYYY-MM-DD.
     Uses SQLite cache (see data/lectionary.sqlite) unless LECTIONARY_IGNORE_CACHE=1.
+    Retries live fetches when readings are incomplete (USCCB/Bible API hiccups).
     """
     try:
         normalized = _normalize_mass_date(date)
@@ -296,7 +312,7 @@ def get_liturgical_data(date: str, *, use_cache: bool = True) -> dict | None:
         print("❌ Invalid date. Use YYYY-MM-DD.")
         return None
 
-    bypass_read = ignore_cache() or not use_cache
+    bypass_read = ignore_cache() or not use_cache or force_refresh
 
     cached: dict | None = None
     if not bypass_read:
@@ -315,21 +331,33 @@ def get_liturgical_data(date: str, *, use_cache: bool = True) -> dict | None:
             print(f"Lectionary cache hit: {normalized}")
             return cached
 
-    data = fetch_liturgical_data_live(normalized, use_readings_cache=not bypass_read)
-    if data is None:
-        # Live fetch failed entirely (network/USCCB down) — serve the best cached
-        # data we have rather than nothing.
+    best: dict | None = cached
+    for attempt in range(_MAX_FETCH_ATTEMPTS):
+        if attempt > 0:
+            delay = _RETRY_DELAYS_S[attempt - 1]
+            print(
+                f"Lectionary incomplete, retry {attempt}/{_MAX_FETCH_ATTEMPTS - 1} "
+                f"in {delay:.1f}s: {normalized}"
+            )
+            time.sleep(delay)
+        # Later attempts bypass the per-date readings JSON cache so USCCB/Bible
+        # gaps from a transient bot-challenge can be filled on retry.
+        use_readings_cache = not bypass_read and attempt == 0
+        data = fetch_liturgical_data_live(normalized, use_readings_cache=use_readings_cache)
+        if data is None:
+            continue
+        best = _merge_payloads(best, data)
+        if _payload_complete(best):
+            break
+
+    if best is None:
         if cached is not None:
             print(f"Lectionary live fetch failed; serving cached data: {normalized}")
         return cached
 
-    # Never let an incomplete live fetch (e.g. a USCCB bot-challenge) overwrite
-    # reading text that was previously cached.
-    merged = _merge_payloads(cached, data)
-
     should_write = os.environ.get("LECTIONARY_NO_WRITE_CACHE", "").strip() not in ("1", "true")
-    if use_cache and should_write and (cached is None or merged != cached):
-        upsert(normalized, merged)
+    if use_cache and should_write and (cached is None or best != cached):
+        upsert(normalized, best)
         print(f"Lectionary saved to database: {db_path()}")
 
-    return merged
+    return best

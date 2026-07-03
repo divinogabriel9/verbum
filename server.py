@@ -408,6 +408,7 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "psalm_reference": p.psalm_reference,
         "psalm_refrains": p.psalm_refrains,
         "gospel_text": p.gospel_text,
+        "readings_complete": p.readings_complete,
     }
 
 
@@ -463,6 +464,10 @@ class PreviewBody(BaseModel):
     readings_only: bool = Field(
         False,
         description="Skip hymn recommendations and web hymn discovery for faster readings-only UI.",
+    )
+    refresh: bool = Field(
+        False,
+        description="Bypass in-memory cache and retry live lectionary fetch.",
     )
 
 
@@ -1352,6 +1357,7 @@ def api_calendar_month(year: int, month: int) -> Any:
 @app.get("/api/readings/{date}")
 def api_readings(
     date: str,
+    refresh: bool = False,
     _session: Optional[AuthSession] = Depends(optional_session),
 ) -> JSONResponse:
     """Fast lectionary readings for dashboard cards (no song discovery).
@@ -1359,13 +1365,14 @@ def api_readings(
     Public liturgical data — anonymous-friendly, mirroring ``POST /api/preview``
     so the home dashboard loads readings before/without sign-in.
     """
-    payload, from_cache = readings_snapshot(date.strip())
+    payload, from_cache = readings_snapshot(date.strip(), force_refresh=refresh)
     if not payload.get("ok"):
         raise HTTPException(
             status_code=400,
             detail=payload.get("error") or "Unable to load readings.",
         )
-    max_age = 3600 if from_cache else 60
+    complete = bool(payload.get("readings_complete"))
+    max_age = 3600 if from_cache and complete else 15
     return JSONResponse(
         payload,
         headers={"Cache-Control": f"private, max-age={max_age}"},
@@ -1384,7 +1391,11 @@ def api_gospel_image(date: str) -> JSONResponse:
 
 @app.post("/api/preview")
 def api_preview(body: PreviewBody) -> Any:
-    p = fetch_preview(body.date.strip(), readings_only=body.readings_only)
+    p = fetch_preview(
+        body.date.strip(),
+        readings_only=body.readings_only,
+        force_refresh=body.refresh,
+    )
     return _preview_to_json(p)
 
 

@@ -7,13 +7,18 @@ from typing import Any, Optional
 
 from services.gospel_quote_extractor import first_sentence_slide_quote, split_slide_sentences
 from services.liturgical_calendar import get_liturgical_color
-from services.lectionary_service import get_liturgical_data
+from services.lectionary_service import get_liturgical_data, payload_complete
 from services.lectionary_store import get_cached
 from services.mass_text_format import synopsis_from_reading
 from services.usccb_readings import collect_psalm_refrain_options
 
 _MEMORY: dict[str, tuple[float, dict[str, Any]]] = {}
 _MEMORY_TTL_S = 600.0
+_MEMORY_INCOMPLETE_TTL_S = 15.0
+
+
+def invalidate_readings_memory(date: str) -> None:
+    _MEMORY.pop((date or "").strip(), None)
 
 
 def _liturgical_json(lc: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
@@ -27,31 +32,7 @@ def _liturgical_json(lc: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
     }
 
 
-def readings_snapshot(date: str) -> tuple[dict[str, Any], bool]:
-    """
-    Return (payload, served_from_persistent_cache).
-
-    ``served_from_persistent_cache`` is True when SQLite already had the date
-    before any network fetch (safe for longer HTTP cache headers).
-    """
-    d = (date or "").strip()
-    if not d:
-        return {"ok": False, "error": "Date required (YYYY-MM-DD)."}, False
-
-    now = time.monotonic()
-    mem = _MEMORY.get(d)
-    if mem and now - mem[0] < _MEMORY_TTL_S:
-        return mem[1], True
-
-    had_persistent = get_cached(d) is not None
-    data = get_liturgical_data(d)
-    if not data:
-        payload = {
-            "ok": False,
-            "error": "Unable to fetch liturgical data. Use a valid date (YYYY-MM-DD).",
-        }
-        return payload, had_persistent
-
+def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
     liturgical_color = get_liturgical_color(d)
     gospel_text = (data.get("gospel_text") or "").strip()
     gospel_slide_quote = (data.get("gospel_slide_quote") or "").strip()
@@ -64,7 +45,7 @@ def readings_snapshot(date: str) -> tuple[dict[str, Any], bool]:
     psalm_ref = str(data.get("psalm") or "").strip()
     psalm_resp = (data.get("psalm_response") or "").strip()
 
-    payload = {
+    return {
         "ok": True,
         "date": d,
         "title": data.get("title") or "Sunday Mass Celebration",
@@ -92,7 +73,44 @@ def readings_snapshot(date: str) -> tuple[dict[str, Any], bool]:
             psalm_response=psalm_resp,
         ),
         "gospel_text": gospel_text,
+        "readings_complete": payload_complete(data),
     }
+
+
+def readings_snapshot(date: str, *, force_refresh: bool = False) -> tuple[dict[str, Any], bool]:
+    """
+    Return (payload, served_from_persistent_cache).
+
+    ``served_from_persistent_cache`` is True when SQLite already had the date
+    before any network fetch (safe for longer HTTP cache headers).
+    """
+    d = (date or "").strip()
+    if not d:
+        return {"ok": False, "error": "Date required (YYYY-MM-DD)."}, False
+
+    now = time.monotonic()
+    if force_refresh:
+        invalidate_readings_memory(d)
+    else:
+        mem = _MEMORY.get(d)
+        if mem:
+            age = now - mem[0]
+            complete = bool(mem[1].get("readings_complete"))
+            ttl = _MEMORY_TTL_S if complete else _MEMORY_INCOMPLETE_TTL_S
+            if age < ttl:
+                return mem[1], True
+
+    had_persistent = get_cached(d) is not None
+    data = get_liturgical_data(d, force_refresh=force_refresh)
+    if not data:
+        payload = {
+            "ok": False,
+            "error": "Unable to fetch liturgical data. Use a valid date (YYYY-MM-DD).",
+            "readings_complete": False,
+        }
+        return payload, had_persistent
+
+    payload = _build_payload(d, data)
     _MEMORY[d] = (now, payload)
     return payload, had_persistent or get_cached(d) is not None
 

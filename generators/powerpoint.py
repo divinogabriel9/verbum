@@ -3225,6 +3225,12 @@ def _length_to_inches(value: Any) -> float:
     return float(value) / _EMU_PER_INCH
 
 
+def _lyric_fit_height_inches(box_height_inches: float) -> float:
+    """Usable lyric height after text-frame top/bottom padding from ``_prep_tf``."""
+    pad = _length_to_inches(Inches(0.08)) * 2
+    return max(0.5, float(box_height_inches) - pad)
+
+
 def split_lyrics(lines: List[str], max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE) -> List[str]:
     """Group lyric lines into slide blocks (each block is lines joined with newlines)."""
     if not lines:
@@ -3485,13 +3491,14 @@ def _fill_hymn_body_caps(
 ) -> None:
     """ALL CAPS Poppins on black; reference deck uses 75 pt and 0.7 line spacing."""
     box_h = float(box_height_inches or 0.0) or float(SLIDE_HEIGHT.inches * 0.72)
-    lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, box_h)
+    fit_h = _lyric_fit_height_inches(box_h)
+    lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, fit_h)
     size_pt = int(max(_HYMN_REF_BODY_PT_MIN, min(_LYRIC_MAX_PT, auto_fit_pt)))
     if typography:
         requested = int(round(typography.body_pt))
         if requested >= _HYMN_REF_BODY_PT_MIN:
             size_pt = min(size_pt, requested)
-    while size_pt > _LYRIC_MIN_PT and detectOverflow(lines, float(size_pt), box_h):
+    while size_pt > _LYRIC_MIN_PT and detectOverflow(lines, float(size_pt), fit_h):
         size_pt -= 2
     align = _pp_align(typography.body_align if typography else "center")
     is_chorus = _is_chorus_block_kind(block_kind)

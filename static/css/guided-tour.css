@@ -1,0 +1,402 @@
+/* LiturgyFlow guided tour — anchored tooltips, performance-first */
+
+.mw-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mw-progress-bar .mw-progress {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0;
+  padding-bottom: 18px;
+  border-bottom: none;
+}
+
+.mw-tour-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-solid));
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-fast, 150ms) var(--motion-ease-out, ease),
+    transform var(--motion-duration-micro, 100ms) var(--motion-ease-out, ease);
+}
+
+.mw-tour-btn:hover {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-solid));
+  transform: none;
+}
+
+.mw-tour-btn:active {
+  transform: scale(0.97);
+}
+
+.mw-tour-btn__icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+
+.home-mass-tour-link {
+  position: absolute;
+  top: var(--space-4, 16px);
+  left: var(--space-6, 24px);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--liturgical-accent) 32%, rgba(255, 255, 255, 0.55));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.58));
+  backdrop-filter: blur(12px) saturate(1.35);
+  -webkit-backdrop-filter: blur(12px) saturate(1.35);
+  color: color-mix(in srgb, var(--liturgical-accent) 82%, var(--ink));
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--liturgical-accent) 10%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition:
+    background var(--motion-duration-fast, 150ms) var(--motion-ease-out, ease),
+    border-color var(--motion-duration-fast, 150ms) var(--motion-ease-out, ease),
+    transform var(--motion-duration-micro, 100ms) var(--motion-ease-out, ease);
+}
+
+.home-mass-tour-link:hover {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.68));
+  border-color: color-mix(in srgb, var(--liturgical-accent) 48%, rgba(255, 255, 255, 0.65));
+  color: var(--liturgical-accent);
+}
+
+.home-mass-tour-link:active {
+  transform: scale(0.98);
+}
+
+html[data-theme="dark"] .home-mass-tour-link {
+  border-color: color-mix(in srgb, var(--liturgical-glow) 28%, rgba(255, 255, 255, 0.14));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  color: color-mix(in srgb, var(--liturgical-glow) 70%, #f8ead0);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .home-mass-tour-link:hover {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+  color: color-mix(in srgb, var(--liturgical-glow) 85%, #fff8ec);
+}
+
+/* ── Overlay ───────────────────────────────────────────────────────────── */
+@keyframes lf-tour-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+body.driver-active.driver-fade .driver-overlay.driver-overlay-animated {
+  animation: lf-tour-overlay-in 200ms var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both !important;
+}
+
+@keyframes lf-tour-highlight-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent),
+      0 8px 28px color-mix(in srgb, var(--ink) 10%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
+      0 0 0 9px color-mix(in srgb, var(--accent) 26%, transparent),
+      0 8px 28px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+}
+
+/* Fixed ring sits above the overlay cutout — not clipped by card overflow */
+.lf-tour-highlight-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 10001;
+  border-radius: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms var(--motion-ease-out, ease);
+}
+
+body.lf-tour-active .lf-tour-highlight-ring.is-visible {
+  opacity: 1;
+  visibility: visible;
+  animation: lf-tour-highlight-pulse 2s var(--motion-ease-in-out, ease-in-out) infinite;
+}
+
+body.lf-tour-active .driver-active-element {
+  border-radius: 10px;
+}
+
+/* Neutralise global button hover lift inside tour */
+body.lf-tour-active .lf-tour-popover button:hover,
+body.lf-tour-active .lf-tour-popover button:active {
+  transform: none !important;
+}
+
+/* ── Tooltip card ──────────────────────────────────────────────────────── */
+@keyframes lf-tour-popover-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.lf-tour-popover.driver-popover {
+  --lf-tour-width: 340px;
+  --lf-tour-btn-h: 40px;
+  width: var(--lf-tour-width);
+  min-width: var(--lf-tour-width);
+  max-width: min(var(--lf-tour-width), calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 20px;
+  background: var(--surface-solid);
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--line-soft) 90%, var(--accent) 8%);
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 6%, transparent),
+    0 16px 40px color-mix(in srgb, var(--ink) 11%, transparent);
+  font-family: inherit;
+  z-index: 1000000001 !important;
+}
+
+.lf-tour-popover.lf-tour-popover--ready {
+  animation: lf-tour-popover-in 200ms var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.lf-tour-popover .driver-popover-arrow {
+  border-width: 6px;
+}
+
+.lf-tour-popover .driver-popover-arrow-side-left { border-left-color: var(--surface-solid); }
+.lf-tour-popover .driver-popover-arrow-side-right { border-right-color: var(--surface-solid); }
+.lf-tour-popover .driver-popover-arrow-side-top { border-top-color: var(--surface-solid); }
+.lf-tour-popover .driver-popover-arrow-side-bottom { border-bottom-color: var(--surface-solid); }
+
+.lf-tour-popover .driver-popover-title {
+  display: block;
+  margin: 0 36px 0 0;
+  padding: 0;
+  font-family: var(--brand-font-flow, inherit);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.lf-tour-popover .driver-popover-progress-text.lf-tour-progress-top {
+  display: block;
+  order: -1;
+  margin: 0 0 8px;
+  padding: 0;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  line-height: 1.2;
+  color: var(--muted);
+}
+
+.lf-tour-popover .driver-popover-description {
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+.lf-tour-popover .driver-popover-footer.lf-tour-footer {
+  display: block;
+  margin: 20px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+  text-align: initial;
+}
+
+.lf-tour-popover .driver-popover-footer .driver-popover-progress-text:not(.lf-tour-progress-top) {
+  display: none;
+}
+
+.lf-tour-popover .driver-popover-navigation-btns {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+}
+
+/* ── Shared button base ────────────────────────────────────────────────── */
+.lf-tour-popover .driver-popover-prev-btn,
+.lf-tour-popover .driver-popover-next-btn,
+.lf-tour-popover .driver-popover-close-btn,
+.lf-tour-skip-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  margin: 0;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  text-shadow: none;
+  white-space: nowrap;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.lf-tour-popover .driver-popover-prev-btn,
+.lf-tour-popover .driver-popover-next-btn {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--lf-tour-btn-h);
+  min-width: 0;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.lf-tour-popover .driver-popover-next-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent, #fff);
+}
+
+.lf-tour-popover .driver-popover-prev-btn:hover,
+.lf-tour-popover .driver-popover-prev-btn:focus-visible {
+  background: color-mix(in srgb, var(--surface-2) 82%, var(--ink));
+  color: var(--ink);
+}
+
+.lf-tour-popover .driver-popover-next-btn:hover,
+.lf-tour-popover .driver-popover-next-btn:focus-visible {
+  background: color-mix(in srgb, var(--accent) 88%, #000);
+  border-color: color-mix(in srgb, var(--accent) 88%, #000);
+  color: var(--on-accent, #fff);
+}
+
+.lf-tour-popover .driver-popover-prev-btn:active,
+.lf-tour-popover .driver-popover-next-btn:active {
+  transform: scale(0.98) !important;
+}
+
+.lf-tour-popover .driver-popover-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.lf-tour-popover .driver-popover-close-btn:hover,
+.lf-tour-popover .driver-popover-close-btn:focus-visible {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+/* ── Skip ──────────────────────────────────────────────────────────────── */
+.lf-tour-skip-row {
+  display: flex;
+  justify-content: center;
+  margin: 12px -4px -4px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 35%, transparent);
+}
+
+.lf-tour-skip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.lf-tour-skip-btn:hover,
+.lf-tour-skip-btn:focus-visible {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+@media (max-width: 1024px) {
+  .lf-tour-popover.driver-popover {
+    --lf-tour-width: 320px;
+  }
+}
+
+@media (max-width: 760px) {
+  .mw-progress-bar { padding-inline: 14px; }
+  .mw-tour-btn span:not(.mw-tour-btn__icon) { display: none; }
+  .mw-tour-btn { padding: 8px 10px; margin-bottom: 14px; }
+
+  .lf-tour-popover.driver-popover {
+    --lf-tour-width: min(320px, calc(100vw - 24px));
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.driver-active.driver-fade .driver-overlay.driver-overlay-animated,
+  .lf-tour-popover.lf-tour-popover--ready,
+  body.lf-tour-active .lf-tour-highlight-ring.is-visible {
+    animation: none !important;
+  }
+
+  body.lf-tour-active .lf-tour-highlight-ring.is-visible {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent),
+      0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent),
+      0 8px 24px color-mix(in srgb, var(--ink) 8%, transparent);
+  }
+}

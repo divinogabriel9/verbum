@@ -28,7 +28,7 @@ from services.song_selection import default_song_selections_for_date, filter_son
 
 logger = logging.getLogger(__name__)
 from services.liturgical_calendar import get_liturgical_color
-from services.lectionary_service import get_liturgical_data
+from services.lectionary_service import get_liturgical_data, payload_complete
 from services.media_naming import mass_export_stem
 from services.web_hymn_discovery import discover_hymns_for_readings
 from services.lyrics_fetcher import ensure_lyrics_for_song
@@ -61,6 +61,7 @@ class PreviewPayload:
     psalm_reference: str = ""
     psalm_refrains: list[str] = field(default_factory=list)
     gospel_text: str = ""
+    readings_complete: bool = False
 
 
 def _merge_song_sections(
@@ -285,21 +286,39 @@ def _resolve_divider_poster_path(
 _PREVIEW_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
 _PREVIEW_CACHE: dict[tuple[str, bool], tuple[float, PreviewPayload]] = {}
 _PREVIEW_CACHE_TTL_S = 600.0
+_PREVIEW_INCOMPLETE_TTL_S = 15.0
+
+
+def invalidate_preview_cache(date: str | None = None) -> None:
+    if not date:
+        _PREVIEW_CACHE.clear()
+        return
+    d = date.strip()
+    for key in list(_PREVIEW_CACHE):
+        if key[0] == d:
+            del _PREVIEW_CACHE[key]
 
 
 def _empty_songs_by_section() -> dict[str, list[dict[str, Any]]]:
     return {sec: [] for sec in _PREVIEW_SECTIONS}
 
 
-def fetch_preview(date: str, *, readings_only: bool = False) -> PreviewPayload:
+def fetch_preview(date: str, *, readings_only: bool = False, force_refresh: bool = False) -> PreviewPayload:
     d = (date or "").strip()
     cache_key = (d, readings_only)
     now = time.monotonic()
-    cached = _PREVIEW_CACHE.get(cache_key)
-    if cached and now - cached[0] < _PREVIEW_CACHE_TTL_S:
-        return cached[1]
+    if force_refresh:
+        invalidate_preview_cache(d)
+    else:
+        cached = _PREVIEW_CACHE.get(cache_key)
+        if cached:
+            age = now - cached[0]
+            complete = cached[1].readings_complete
+            ttl = _PREVIEW_CACHE_TTL_S if complete else _PREVIEW_INCOMPLETE_TTL_S
+            if age < ttl:
+                return cached[1]
 
-    data = get_liturgical_data(d)
+    data = get_liturgical_data(d, force_refresh=force_refresh)
     if not data:
         return PreviewPayload(
             ok=False,
@@ -367,6 +386,7 @@ def fetch_preview(date: str, *, readings_only: bool = False) -> PreviewPayload:
         psalm_reference=psalm_ref,
         psalm_refrains=psalm_refrains,
         gospel_text=gospel_text,
+        readings_complete=payload_complete(data),
     )
     _PREVIEW_CACHE[cache_key] = (now, result)
     return result

@@ -340,6 +340,26 @@
     return name ? "Hello! " + name : "Hello!";
   }
 
+  function getTimeOfDayGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  }
+
+  function getHomeWelcomeLabel(user) {
+    const timeGreeting = getTimeOfDayGreeting();
+    const name = getUserFirstName(user);
+    if (name) return timeGreeting + ", " + name + "! Glad you're here.";
+    return "Welcome! " + timeGreeting + ".";
+  }
+
+  function getHomeWelcomeSubtext(user) {
+    const name = getUserFirstName(user);
+    if (name) return "Let's make this Sunday's Mass beautiful together.";
+    return "Your liturgy hub for readings, music, and slides — all in one place.";
+  }
+
   async function refreshUserProfile() {
     const user =
       state.user || (state.session && state.session.user ? state.session.user : null);
@@ -368,6 +388,7 @@
         window.dispatchEvent(
           new CustomEvent("verbum:membership", { detail: data.membership || null })
         );
+        window.dispatchEvent(new CustomEvent("verbum:profile-ready"));
       }
     } catch (_err) {
       // optional enrichment
@@ -550,6 +571,9 @@
     initMainAppAuth,
     refreshUserProfile,
     updateAccountMenuDisplay,
+    getUserFirstName,
+    getHomeWelcomeLabel,
+    getHomeWelcomeSubtext,
   };
 
   if (document.body && !window.__VERBUM_AUTH_MODE__) {
