@@ -142,6 +142,7 @@ PROTECTED_API_PREFIXES: tuple[str, ...] = (
     "/api/regenerate-pptx",
     "/api/community",
     "/api/admin/",
+    "/api/parish/",
     "/api/settings/",
     "/api/upload",
     "/api/saved-posters",

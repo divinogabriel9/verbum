@@ -68,7 +68,7 @@ from services.song_catalog import (
     save_lyrics_song,
     update_catalog_song,
 )
-from services.auth_config import auth_enabled, supabase_enabled
+from services.auth_config import auth_enabled, invite_contact_email, supabase_enabled
 from services.api_security import (
     AuthSession,
     optional_session,
@@ -115,6 +115,7 @@ from services.storage_assets import (
 )
 from routes.admin import register_admin_routes
 from routes.auth import register_auth_routes
+from routes.parish import register_parish_routes
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
 _BUNDLE_OPTIONAL = (
@@ -279,6 +280,7 @@ def favicon() -> FileResponse:
 
 register_auth_routes(app, templates)
 register_admin_routes(app)
+register_parish_routes(app)
 register_security_middleware(app)
 
 
@@ -1245,7 +1247,11 @@ def index(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "landing.html",
-        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
+        {
+            "title": "LiturgyFlow",
+            "auth_enabled": auth_enabled(),
+            "invite_contact_email": invite_contact_email(),
+        },
     )
 
 
@@ -1262,6 +1268,8 @@ def index(request: Request) -> Any:
 @app.get("/design/templates", response_class=HTMLResponse)
 @app.get("/settings/church", response_class=HTMLResponse)
 @app.get("/settings/app", response_class=HTMLResponse)
+@app.get("/settings/team", response_class=HTMLResponse)
+@app.get("/superadmin", response_class=HTMLResponse)
 @app.get("/lyrics-dashboard", response_class=HTMLResponse)
 @app.get("/theme-dashboard", response_class=HTMLResponse)
 @app.get("/mass-flow-dashboard", response_class=HTMLResponse)

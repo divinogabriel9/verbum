@@ -7,12 +7,47 @@ from typing import Any, Optional
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field
 
-from services.api_security import AuthSession, optional_session
-from services.auth_config import auth_enabled, public_auth_config, supabase_enabled
+from services.api_security import AuthSession, optional_session, require_session
+from services.auth_config import (
+    app_public_url,
+    auth_enabled,
+    invite_contact_email,
+    invite_only_signup,
+    public_auth_config,
+    supabase_enabled,
+)
 from services.membership_config import membership_payload
+from services.platform_invites import consume_invite, validate_invite_token
 from services.supabase_client import get_profile
 from services.user_church_context import get_church_profile_context
+
+
+class InviteConsumeBody(BaseModel):
+    token: str = Field(..., min_length=8, max_length=128)
+
+
+def _auth_page_context(
+    *,
+    mode: str,
+    title: str,
+    subtitle: str,
+    invite_token: str = "",
+    invite_valid: bool = False,
+    invite_email: Optional[str] = None,
+) -> dict[str, Any]:
+    contact = invite_contact_email()
+    return {
+        "title": title,
+        "subtitle": subtitle,
+        "mode": mode,
+        "invite_only": invite_only_signup(),
+        "invite_valid": invite_valid,
+        "invite_token": invite_token,
+        "invite_email": invite_email or "",
+        "invite_contact_email": contact,
+    }
 
 
 def register_auth_routes(app, templates: Jinja2Templates) -> None:
@@ -56,6 +91,31 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
 
         return payload
 
+    @app.get("/api/auth/invite/validate")
+    def api_validate_invite(token: str = "") -> dict[str, Any]:
+        if not invite_only_signup():
+            return {"ok": True, "invite_required": False}
+        row = validate_invite_token(token)
+        if not row:
+            return {"ok": False, "invite_required": True, "error": "Invalid or expired invite."}
+        email = (row.get("email") or "").strip()
+        return {
+            "ok": True,
+            "invite_required": True,
+            "email_locked": bool(email),
+            "email": email or None,
+        }
+
+    @app.post("/api/auth/invite/consume")
+    def api_consume_invite(
+        body: InviteConsumeBody,
+        session: AuthSession = Depends(require_session),
+    ) -> dict[str, Any]:
+        if not invite_only_signup():
+            return {"ok": True, "skipped": True}
+        row = consume_invite(body.token.strip(), accepted_by_user_id=session.user.user_id)
+        return {"ok": True, "invite": row}
+
     @app.get("/sign-in", response_class=HTMLResponse)
     def sign_in_page(request: Request) -> Any:
         if not auth_enabled():
@@ -66,11 +126,11 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
         return templates.TemplateResponse(
             request,
             "auth.html",
-            {
-                "title": "Sign in · Verbum",
-                "subtitle": "Sign in to your Verbum account",
-                "mode": "sign-in",
-            },
+            _auth_page_context(
+                mode="sign-in",
+                title="Sign in · LiturgyFlow",
+                subtitle="Sign in to your LiturgyFlow account",
+            ),
         )
 
     @app.get("/sign-up", response_class=HTMLResponse)
@@ -80,12 +140,27 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 status_code=503,
                 detail="Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY (or SUPABASE_ANON_KEY), and SUPABASE_JWT_SECRET to enable sign-up.",
             )
+        token = (request.query_params.get("invite") or "").strip()
+        invite_valid = False
+        invite_email: Optional[str] = None
+        if invite_only_signup():
+            if token:
+                row = validate_invite_token(token)
+                if row:
+                    invite_valid = True
+                    invite_email = (row.get("email") or "").strip() or None
+        else:
+            invite_valid = True
+
         return templates.TemplateResponse(
             request,
             "auth.html",
-            {
-                "title": "Sign up · Verbum",
-                "subtitle": "Create your Verbum account",
-                "mode": "sign-up",
-            },
+            _auth_page_context(
+                mode="sign-up",
+                title="Create account · LiturgyFlow",
+                subtitle="Complete your LiturgyFlow account",
+                invite_token=token if invite_valid else "",
+                invite_valid=invite_valid,
+                invite_email=invite_email,
+            ),
         )

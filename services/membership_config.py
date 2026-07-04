@@ -82,6 +82,7 @@ def membership_payload(
     logo_locked = logo_is_locked(row)
     superadmin = is_superadmin_user(user) or (profile_role or "").strip() == "superadmin"
     role = (user.role if user else None) or profile_role or "member"
+    parish_role = (row.get("parish_role") or "").strip().lower() or None
     auth_on = auth_enabled()
     signed_in = user is not None
     full_access = membership_allows_full_access(row, user=user, profile_role=profile_role)
@@ -99,4 +100,6 @@ def membership_payload(
         "can_submit_priest": can_submit,
         "is_superadmin": superadmin,
         "role": (role or "member").strip().lower(),
+        "parish_role": parish_role,
+        "parish_id": row.get("parish_id"),
     }

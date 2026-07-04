@@ -2,6 +2,10 @@
   "use strict";
 
   const mode = window.__VERBUM_AUTH_MODE__ || "sign-in";
+  const inviteOnly = !!window.__VERBUM_INVITE_ONLY__;
+  const inviteValid = !!window.__VERBUM_INVITE_VALID__;
+  const inviteToken = window.__VERBUM_INVITE_TOKEN__ || "";
+  const inviteEmail = window.__VERBUM_INVITE_EMAIL__ || "";
 
   function $(id) {
     return document.getElementById(id);
@@ -31,18 +35,51 @@
     return new URLSearchParams(window.location.search).get("switch") === "1";
   }
 
+  async function consumeInvite(token, accessToken) {
+    if (!token || !accessToken) return;
+    try {
+      await fetch("/api/auth/invite/consume", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + accessToken,
+        },
+        body: JSON.stringify({ token }),
+      });
+    } catch (_e) {
+      /* non-blocking */
+    }
+  }
+
+  function showInviteBlocked() {
+    const loading = $("auth-loading");
+    const blocked = $("auth-invite-blocked");
+    const form = $("auth-form");
+    const footer = $("auth-footer");
+    if (loading) loading.remove();
+    if (form) form.hidden = true;
+    if (footer) footer.hidden = true;
+    if (blocked) blocked.hidden = false;
+  }
+
   async function boot() {
     const loading = $("auth-loading");
     const form = $("auth-form");
     const signupFields = $("auth-signup-fields");
     const sessionPanel = $("auth-session-panel");
     const footer = document.querySelector(".auth-footer");
+    const blocked = $("auth-invite-blocked");
 
     try {
       const res = await fetch("/api/auth/config");
       const cfg = await res.json();
       if (!cfg.auth_enabled) {
         if (loading) loading.textContent = "Authentication is not configured on this server.";
+        return;
+      }
+
+      if (mode === "sign-up" && cfg.invite_only_signup && !inviteValid) {
+        showInviteBlocked();
         return;
       }
 
@@ -71,14 +108,24 @@
 
       function showLoginForm() {
         if (loading) loading.remove();
+        if (blocked) blocked.hidden = true;
         if (sessionPanel) sessionPanel.hidden = true;
         if (form) form.hidden = false;
         if (signupFields) signupFields.hidden = mode !== "sign-up";
         if (footer) footer.hidden = false;
+
+        if (mode === "sign-up" && inviteEmail) {
+          const emailInput = $("auth-email");
+          if (emailInput) {
+            emailInput.value = inviteEmail;
+            emailInput.readOnly = true;
+          }
+        }
       }
 
       function showExistingSession(user) {
         if (loading) loading.remove();
+        if (blocked) blocked.hidden = true;
         if (form) form.hidden = true;
         if (signupFields) signupFields.hidden = true;
         if (footer) footer.hidden = true;
@@ -110,7 +157,6 @@
         await client.auth.signOut();
       }
 
-      // Email confirm / magic links: finish auth then redirect.
       if (isAuthCallback()) {
         client.auth.onAuthStateChange((event, session) => {
           if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
@@ -161,6 +207,14 @@
             showError("Password must be at least 8 characters.");
             return;
           }
+          if (mode === "sign-up" && inviteOnly && !inviteToken) {
+            showError("A valid invitation link is required to create an account.");
+            return;
+          }
+          if (mode === "sign-up" && inviteEmail && email.toLowerCase() !== inviteEmail.toLowerCase()) {
+            showError("This invite is locked to " + inviteEmail + ".");
+            return;
+          }
 
           if (submitBtn) submitBtn.disabled = true;
 
@@ -184,6 +238,9 @@
               });
               if (error) throw error;
               if (data.session) {
+                if (inviteToken) {
+                  await consumeInvite(inviteToken, data.session.access_token);
+                }
                 if (churchName) {
                   await fetch("/api/community/profile", {
                     method: "POST",

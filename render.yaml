@@ -40,6 +40,12 @@ services:
         sync: false
       - key: SUPERADMIN_EMAILS
         sync: false
+      - key: INVITE_ONLY_SIGNUP
+        value: "1"
+      - key: INVITE_CONTACT_EMAIL
+        sync: false
+      - key: APP_PUBLIC_URL
+        sync: false
       - key: IMAGE_GENERATION_DAILY_LIMIT
         value: "1"
       - key: RATE_LIMIT_ENABLED

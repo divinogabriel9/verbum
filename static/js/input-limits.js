@@ -56,7 +56,7 @@
     "poster-gospel-quote": "gospel_quote",
     "settings-church-name": "church_name",
     "settings-celebrant-new": "celebrant_name",
-    "settings-gemini-api-key": "api_key",
+    "sa-gemini-api-key": "api_key",
   };
 
   function limitFor(el) {

@@ -75,6 +75,11 @@ def get_church_profile(
     uid = (user_id or "").strip()
     if not uid:
         return None
+    from services.parish_store import get_user_parish_context
+
+    ctx = get_user_parish_context(uid, access_token=access_token)
+    if ctx:
+        return ctx
     client = _client_for_user(access_token)
     result = (
         client.table("church_profiles").select("*").eq("user_id", uid).limit(1).execute()
@@ -97,13 +102,17 @@ def submit_parish_name(
     *,
     access_token: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Set parish name once; locks name and marks membership pending approval."""
+    from services.parish_store import get_user_parish_context, submit_parish_name_for_user
+
     uid = (user_id or "").strip()
     name = (community_name or "").strip()
     if not uid or not name:
         raise ValueError("Parish name is required.")
     if not access_token:
         raise ValueError("Access token is required.")
+
+    if get_user_parish_context(uid, access_token=access_token):
+        return submit_parish_name_for_user(uid, name, access_token=access_token)
 
     existing = get_church_profile(uid, access_token=access_token) or {}
     if _parish_is_locked(existing):
@@ -141,9 +150,14 @@ def lock_church_logo(
     access_token: Optional[str] = None,
 ) -> dict[str, Any]:
     """Lock logo after a one-time upload post-approval."""
+    from services.parish_store import get_user_parish_context, lock_parish_logo_for_user
+
     uid = (user_id or "").strip()
     if not uid or not access_token:
         raise ValueError("user_id and access token are required.")
+
+    if get_user_parish_context(uid, access_token=access_token):
+        return lock_parish_logo_for_user(uid, access_token=access_token)
 
     existing = get_church_profile(uid, access_token=access_token) or {}
     if _logo_is_locked(existing):
@@ -176,9 +190,21 @@ def upsert_church_profile(
     access_token: Optional[str] = None,
     allow_name_change: bool = False,
 ) -> dict[str, Any]:
+    from services.parish_store import get_user_parish_context, upsert_parish_for_user
+
     uid = (user_id or "").strip()
     if not uid:
         raise ValueError("user_id is required.")
+
+    if get_user_parish_context(uid, access_token=access_token):
+        return upsert_parish_for_user(
+            uid,
+            community_name=community_name,
+            logo_path=logo_path,
+            celebrant_names=celebrant_names,
+            access_token=access_token,
+            allow_name_change=allow_name_change,
+        )
 
     existing = get_church_profile(uid, access_token=access_token) or {}
     payload: dict[str, Any] = {
@@ -232,6 +258,12 @@ def upsert_church_profile(
 
 
 def list_pending_memberships() -> list[dict[str, Any]]:
+    from services.parish_store import list_pending_parish_memberships
+
+    pending = list_pending_parish_memberships()
+    if pending:
+        return pending
+
     client = get_service_client()
     result = (
         client.table("church_profiles")
@@ -260,12 +292,18 @@ def list_pending_memberships() -> list[dict[str, Any]]:
 
 
 def set_membership_status(user_id: str, status: str) -> dict[str, Any]:
+    from services.parish_store import get_member_for_user, set_parish_membership_status
+
     uid = (user_id or "").strip()
     if not uid:
         raise ValueError("user_id is required.")
     status = (status or "").strip().lower()
     if status not in {"approved", "rejected"}:
         raise ValueError("status must be approved or rejected.")
+
+    if get_member_for_user(uid):
+        parish = set_parish_membership_status(uid, status)
+        return parish
 
     client = get_service_client()
     result = (

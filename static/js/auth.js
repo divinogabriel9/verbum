@@ -424,7 +424,7 @@
       if (headerEl) headerEl.hidden = true;
       if (signOutBtn) signOutBtn.hidden = true;
       if (signInLink) signInLink.hidden = false;
-      if (signUpLink) signUpLink.hidden = false;
+      if (signUpLink) signUpLink.hidden = !!(state.config && state.config.invite_only_signup);
       if (menuDivider) menuDivider.hidden = false;
       if (menuWrap) menuWrap.classList.remove("is-authenticated");
       return;

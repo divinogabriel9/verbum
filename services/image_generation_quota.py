@@ -73,6 +73,15 @@ def resolve_subject(
     request: Optional[Request] = None,
 ) -> str:
     if session and session.user.user_id:
+        try:
+            from services.user_church_context import get_church_profile_context
+
+            ctx = get_church_profile_context()
+            parish_id = (ctx or {}).get("parish_id")
+            if parish_id:
+                return f"parish:{parish_id}"
+        except Exception:
+            pass
         return f"user:{session.user.user_id}"
     if request is not None:
         forwarded = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()

@@ -357,6 +357,17 @@
       </div>
     </div>
 
+    <div id="auth-invite-blocked" class="auth-session" {% if mode != "sign-up" or invite_valid or not invite_only %}hidden{% endif %}>
+      <p><strong>Invitation required</strong></p>
+      <p class="muted" style="margin:12px 0 0;font-size:0.9rem;color:var(--muted);">LiturgyFlow accounts are created by invitation only. Open the invite link your administrator sent you, or request access below.</p>
+      <div class="auth-session-actions" style="margin-top:16px;">
+        <a class="auth-submit" href="/sign-in" style="text-align:center;text-decoration:none;display:block;">Sign in</a>
+        {% if invite_contact_email %}
+        <a class="auth-secondary" href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request" style="text-align:center;text-decoration:none;display:block;">Contact administrator</a>
+        {% endif %}
+      </div>
+    </div>
+
     <form id="auth-form" hidden novalidate>
       <div id="auth-signup-fields" hidden>
         <div class="field">
@@ -389,7 +400,11 @@
 
     <p class="auth-footer" id="auth-footer">
       {% if mode == "sign-in" %}
-        New here? <a href="/sign-up">Create an account</a>
+        {% if invite_contact_email %}
+        Need access? <a href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request">Contact your administrator</a>
+        {% else %}
+        Need access? Contact your LiturgyFlow administrator.
+        {% endif %}
         · <a href="/sign-in?switch=1">Use a different account</a>
       {% else %}
         Already have an account? <a href="/sign-in">Sign in</a>
@@ -401,6 +416,10 @@
   <script src="/static/js/auth-theme.js"></script>
   <script>
     window.__VERBUM_AUTH_MODE__ = {{ mode | tojson }};
+    window.__VERBUM_INVITE_ONLY__ = {{ invite_only | tojson }};
+    window.__VERBUM_INVITE_VALID__ = {{ invite_valid | tojson }};
+    window.__VERBUM_INVITE_TOKEN__ = {{ invite_token | tojson }};
+    window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
   </script>
   <script src="/static/js/auth-aurora-bg.js" defer></script>
   <script src="/static/js/auth-page.js" defer></script>

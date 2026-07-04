@@ -90,9 +90,33 @@ def supabase_enabled() -> bool:
     )
 
 
+def invite_only_signup() -> bool:
+    """When true, /sign-up requires a valid ?invite= token."""
+    explicit = _clean(os.environ.get("INVITE_ONLY_SIGNUP")).lower()
+    if explicit in {"1", "true", "yes", "on"}:
+        return True
+    if explicit in {"0", "false", "no", "off"}:
+        return False
+    return auth_required()
+
+
+def invite_contact_email() -> str:
+    """Shown on landing/sign-in when users need an administrator."""
+    direct = _clean(os.environ.get("INVITE_CONTACT_EMAIL"))
+    if direct:
+        return direct
+    from services.membership_config import superadmin_emails
+
+    emails = superadmin_emails()
+    if emails:
+        return sorted(emails)[0]
+    return ""
+
+
 @lru_cache(maxsize=1)
 def public_auth_config() -> dict[str, str | bool]:
     base = app_public_url()
+    contact = invite_contact_email()
     return {
         "auth_enabled": auth_enabled(),
         "supabase_enabled": supabase_enabled(),
@@ -105,4 +129,6 @@ def public_auth_config() -> dict[str, str | bool]:
         "sign_up_url": "/sign-up",
         "after_sign_in_url": "/home",
         "after_sign_up_url": "/home",
+        "invite_only_signup": invite_only_signup(),
+        "invite_contact_email": contact,
     }

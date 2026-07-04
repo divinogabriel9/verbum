@@ -104,9 +104,16 @@
 <a class="text-on-surface-variant font-body-md text-body-md hover:text-on-surface transition-colors" href="#">Library</a>
 <a class="text-on-surface-variant font-body-md text-body-md hover:text-on-surface transition-colors" href="#">Community</a>
 </div>
-<a href="/sign-up" class="bg-primary-container text-on-primary-container px-8 py-3 rounded-full font-label-caps text-label-caps hover:scale-[1.02] transition-transform duration-200 active:scale-95">
-            Get Started
+<a href="/sign-in" class="border border-outline-variant/30 text-on-surface px-8 py-3 rounded-full font-label-caps text-label-caps hover:bg-white/5 transition-all">
+            Sign in
         </a>
+{% if invite_contact_email %}
+<a href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request" class="bg-primary-container text-on-primary-container px-8 py-3 rounded-full font-label-caps text-label-caps hover:scale-[1.02] transition-transform duration-200 active:scale-95">
+            Contact admin
+        </a>
+{% else %}
+<span class="text-on-surface-variant font-label-caps text-label-caps px-4">Invite only — contact your administrator</span>
+{% endif %}
 </div>
 </nav>
 <main class="relative">
@@ -122,13 +129,17 @@
                     Elevate your liturgy with prophetic excellence. We leverage high-end design principles and liturgical AI to transform your parish media in under 5 minutes.
                 </p>
 <div class="flex flex-wrap gap-6">
-<a href="/sign-up" class="bg-primary-container text-on-primary-container px-10 py-5 rounded-full font-label-caps text-label-caps text-sm hover:shadow-[0_0_20px_rgba(161,15,13,0.4)] transition-all">
-                        Create your account
-                    </a>
-<a href="/sign-in" class="border border-outline-variant/30 text-on-surface px-10 py-5 rounded-full font-label-caps text-label-caps text-sm flex items-center gap-3 hover:bg-white/5 transition-all">
+<a href="/sign-in" class="bg-primary-container text-on-primary-container px-10 py-5 rounded-full font-label-caps text-label-caps text-sm hover:shadow-[0_0_20px_rgba(161,15,13,0.4)] transition-all flex items-center gap-3">
 <span class="material-symbols-outlined">login</span>
                         Sign in
                     </a>
+{% if invite_contact_email %}
+<a href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request" class="border border-outline-variant/30 text-on-surface px-10 py-5 rounded-full font-label-caps text-label-caps text-sm hover:bg-white/5 transition-all">
+                        Request access
+                    </a>
+{% else %}
+<p class="text-on-surface-variant font-body-md text-body-md self-center">Accounts are invite-only. Contact your LiturgyFlow administrator.</p>
+{% endif %}
 </div>
 </div>
 <div class="lg:col-span-5 relative">
@@ -267,9 +278,16 @@
 <section class="py-section-gap overflow-hidden relative">
 <div class="px-margin-edge max-w-container-max mx-auto relative z-10 text-center">
 <h2 class="font-display-xl text-display-xl mb-12">Ready for Excellence?</h2>
-<a href="/sign-up" class="inline-block bg-primary-container text-on-primary-container px-16 py-8 rounded-full font-headline-md text-2xl hover:scale-105 transition-all shadow-[0_0_40px_rgba(161,15,13,0.3)]">
-                Start Generating Today
+<div class="flex flex-wrap justify-center gap-6">
+<a href="/sign-in" class="inline-block bg-primary-container text-on-primary-container px-16 py-8 rounded-full font-headline-md text-2xl hover:scale-105 transition-all shadow-[0_0_40px_rgba(161,15,13,0.3)]">
+                Sign in
             </a>
+{% if invite_contact_email %}
+<a href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request" class="inline-block border border-outline-variant/30 text-on-surface px-16 py-8 rounded-full font-headline-md text-2xl hover:bg-white/5 transition-all">
+                Contact admin
+            </a>
+{% endif %}
+</div>
 </div>
 </section>
 </main>

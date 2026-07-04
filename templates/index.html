@@ -1022,6 +1022,9 @@
       scroll-padding-top: var(--app-header-offset);
       -webkit-overflow-scrolling: touch;
     }
+    .dashboard:has(#calendar-page.active) {
+      overflow: hidden;
+    }
     .dashboard > * {
       width: min(var(--content-max), 100%);
       margin-inline: auto;
@@ -2863,6 +2866,192 @@
       font-weight: 600;
       color: var(--ink);
     }
+    /* Superadmin tools */
+    #superadmin-nav-link[hidden] { display: none !important; }
+    .sa-layout {
+      width: 100%;
+      max-width: var(--content-max);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .sa-layout { grid-template-columns: 1fr; }
+    }
+    .sa-nav-card {
+      position: sticky;
+      top: var(--space-2);
+      align-self: start;
+    }
+    .sa-nav-group { margin-bottom: 8px; }
+    .sa-nav-group__toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+    }
+    .sa-nav-group__toggle:hover { background: var(--surface-2); color: var(--ink); }
+    .sa-nav-group__chev { transition: transform 0.2s; font-size: 0.65rem; }
+    .sa-nav-group[data-open="false"] .sa-nav-group__chev { transform: rotate(-90deg); }
+    .sa-nav-group[data-open="false"] .sa-nav-group__links { display: none; }
+    .sa-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 10px;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--ink);
+      text-align: left;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+    .sa-nav-link:hover { background: var(--surface-2); }
+    .sa-nav-link.active {
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .sa-nav-link__badge {
+      margin-left: auto;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+      color: var(--warn);
+    }
+    .sa-panel[hidden] { display: none !important; }
+    .sa-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      margin: 16px 0 20px;
+    }
+    .sa-stat {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+    .sa-stat__label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 4px;
+    }
+    .sa-stat__value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+      line-height: 1.2;
+    }
+    .sa-stat__sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin: 4px 0 0;
+    }
+    .sa-activity-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .sa-activity-list li {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.88rem;
+    }
+    .sa-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .sa-table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+    }
+    .sa-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    .sa-table th,
+    .sa-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    .sa-table th {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--surface-2);
+    }
+    .sa-table tr:last-child td { border-bottom: 0; }
+    .sa-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .sa-toolbar input[type="search"] {
+      flex: 1;
+      min-width: 180px;
+      max-width: 320px;
+    }
+    .sa-empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .sa-skeleton {
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--surface-2), var(--line), var(--surface-2));
+      background-size: 200% 100%;
+      animation: saShimmer 1.2s ease-in-out infinite;
+    }
+    @keyframes saShimmer {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sa-skeleton { animation: none; }
+    }
     /* Settings — song-plan-style split (nav card | content card) */
     .settings-layout {
       width: 100%;
@@ -2978,40 +3167,55 @@
     }
     #settings-page .settings-layout {
       position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
+      display: grid;
+      grid-template-columns: minmax(0, 148px) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
       width: 100%;
-      max-width: 680px;
-      max-height: min(86dvh, 880px);
+      max-width: min(960px, 96vw);
+      height: min(86dvh, 820px);
+      min-height: min(86dvh, 820px);
+      max-height: min(86dvh, 820px);
       margin: 0;
-      overflow-y: auto;
+      overflow: hidden;
       background: var(--surface-solid);
       border: 1px solid var(--card-border);
       border-radius: 20px;
       box-shadow: 0 30px 70px -18px rgba(8, 7, 18, .5), 0 10px 28px -10px rgba(8, 7, 18, .38);
-      padding: clamp(18px, 2.6vw, 30px);
+      padding: 0;
       animation: vb-settings-card-in var(--motion-duration-base, .2s) var(--motion-ease-out, ease) both;
     }
     #settings-page .settings-nav-card { display: none !important; }
     #settings-page .settings-main {
+      grid-column: 2;
+      grid-row: 1;
       display: flex;
       flex-direction: column;
       gap: var(--space-3);
       min-width: 0;
+      min-height: 0;
+      height: 100%;
+      max-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: clamp(18px, 2.4vw, 28px) clamp(20px, 3vw, 36px);
+      padding-top: clamp(46px, 5vw, 54px);
     }
     #settings-page .settings-layout .settings-panel.flow-bento-cell {
       padding: 0;
       border: 0;
       background: transparent;
       box-shadow: none;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    #settings-page .settings-layout .settings-panel.flow-bento-cell[hidden] {
+      display: none !important;
     }
     .settings-modal-close {
-      position: sticky;
-      top: 0;
-      align-self: flex-end;
-      flex: 0 0 auto;
-      margin: -4px -4px 0 0;
+      position: absolute;
+      top: 14px;
+      right: 14px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -3022,7 +3226,7 @@
       background: var(--surface-solid);
       color: var(--muted);
       cursor: pointer;
-      z-index: 5;
+      z-index: 10;
       transition: background var(--motion-duration-fast, .12s) ease,
         color var(--motion-duration-fast, .12s) ease,
         transform var(--motion-duration-fast, .12s) ease;
@@ -3034,6 +3238,79 @@
       outline-offset: 2px;
     }
     .settings-modal-close svg { width: 18px; height: 18px; display: block; }
+    .settings-modal-tabs {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 2px;
+      margin: 0;
+      padding: clamp(16px, 2vw, 20px) 8px clamp(16px, 2vw, 20px) 12px;
+      min-height: 0;
+      height: 100%;
+      max-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      border-radius: 0;
+      background: color-mix(in srgb, var(--surface-2) 42%, var(--surface-solid));
+      border: none;
+      border-right: 1px solid var(--line-soft);
+    }
+    .settings-modal-tabs__title {
+      margin: 0 0 8px;
+      padding: 0 8px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: var(--tracking-body, 0);
+      line-height: 1.25;
+      color: var(--ink);
+    }
+    .settings-modal-tab {
+      flex: 0 0 auto;
+      min-width: 0;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      color: var(--muted);
+      text-decoration: none;
+      background: transparent;
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) ease, color var(--motion-duration-fast) ease;
+    }
+    .settings-modal-tab:hover {
+      color: var(--ink);
+      background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+    }
+    .settings-modal-tab.active {
+      background: var(--surface-solid);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--line-soft);
+    }
+    .settings-modal-tab:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
+      outline-offset: 2px;
+    }
+    @media (max-width: 640px) {
+      #settings-page .settings-layout {
+        grid-template-columns: minmax(0, 118px) minmax(0, 1fr);
+        max-width: min(100%, 96vw);
+        height: min(88dvh, 820px);
+        min-height: min(88dvh, 820px);
+        max-height: min(88dvh, 820px);
+      }
+      .settings-modal-tabs {
+        padding-left: 8px;
+        padding-right: 6px;
+      }
+      .settings-modal-tab {
+        font-size: 0.6875rem;
+        padding: 7px 6px;
+      }
+    }
     .settings-layout .flow-bento-cell__head.home-card-head,
     .settings-layout .home-card-head {
       border-bottom: none;
@@ -10692,9 +10969,33 @@
       max-width: 100%;
       min-width: 0;
     }
+    #calendar-page.active {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: visible;
+      flex-shrink: 1;
+      width: min(var(--content-max), 100%);
+    }
+    #calendar-page.active .calendar-page-workspace {
+      height: auto;
+      min-height: 0;
+      align-items: start;
+      overflow: visible;
+    }
     .calendar-month-card {
       min-width: 0;
-      overflow: hidden;
+      position: sticky;
+      top: 0;
+      align-self: start;
+      z-index: 1;
+      max-height: calc(100dvh - var(--main-content-top) - var(--layout-gap) * 2);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    #calendar-page.active .calendar-month-card {
+      flex-shrink: 0;
     }
     .calendar-grid {
       display: grid;
@@ -10797,11 +11098,204 @@
       0% { background-position: 100% 0; }
       100% { background-position: -100% 0; }
     }
+    .cal-cell-indicators {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .cal-health-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      font-size: 0.62rem;
+      font-weight: 900;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .cal-health-badge--healthy {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+    .cal-health-badge--warning {
+      background: #fef9c3;
+      color: #a16207;
+      border: 1px solid #fde047;
+      animation: cal-health-warning-pulse 1.4s ease-in-out infinite;
+    }
+    .cal-health-badge--critical {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+    .cal-cell--healthy {
+      border-color: color-mix(in srgb, #22c55e 42%, var(--line));
+    }
+    .cal-cell--healthy .cal-cell-day {
+      color: #15803d;
+    }
+    .cal-cell--warning {
+      border-color: color-mix(in srgb, #eab308 50%, var(--line));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, #eab308 18%, transparent);
+    }
+    .cal-cell--warning .cal-cell-day {
+      color: #a16207;
+    }
+    .cal-cell--critical {
+      border-color: color-mix(in srgb, #ef4444 55%, var(--line));
+      background: color-mix(in srgb, #ef4444 6%, var(--surface));
+    }
+    .cal-cell--critical .cal-cell-day {
+      color: #b91c1c;
+    }
+    @keyframes cal-health-warning-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.92); }
+    }
+    .cal-admin-banner {
+      margin: 0 0 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 8%, var(--surface));
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+    .cal-admin-fetch-progress {
+      display: none;
+      margin: 0 0 10px;
+      border-radius: 999px;
+      height: 8px;
+      background: var(--line-soft);
+      overflow: hidden;
+    }
+    .cal-admin-fetch-progress.is-active {
+      display: block;
+    }
+    .cal-admin-fetch-progress__bar {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--liturgical-accent, #a10f0d), color-mix(in srgb, var(--liturgical-accent, #a10f0d) 65%, #fff));
+      transition: width 0.25s ease;
+    }
+    .cal-admin-fetch-progress__label {
+      margin: 4px 0 0;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .cal-fetch-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 36px;
+      max-width: 100%;
+    }
+    .cal-fetch-btn.is-running {
+      border-color: #ef4444 !important;
+      color: #b91c1c;
+      box-shadow: 0 0 0 1px color-mix(in srgb, #ef4444 22%, transparent);
+    }
+    .cal-fetch-btn.is-running:hover {
+      background: color-mix(in srgb, #ef4444 10%, var(--surface));
+      border-color: #dc2626 !important;
+    }
+    .cal-fetch-btn__idle[hidden],
+    .cal-fetch-btn__running[hidden] {
+      display: none !important;
+    }
+    .cal-fetch-btn__running {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .cal-fetch-btn__spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: cal-fetch-spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes cal-fetch-spin {
+      to { transform: rotate(360deg); }
+    }
+    .cal-fetch-btn__label {
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .cal-fetch-btn__meta {
+      font-size: 0.72rem;
+      font-weight: 600;
+      opacity: 0.88;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #cal-readings-admin-fetch.cal-fetch-btn .cal-fetch-btn__meta {
+      max-width: min(220px, 42vw);
+    }
+    .cal-fetch-btn.cal-fetch-btn--toolbar .cal-fetch-btn__meta {
+      max-width: min(160px, 28vw);
+    }
+    .cal-admin-reading-block {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: var(--surface);
+    }
+    .cal-admin-reading-block.is-editing {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--liturgical-accent) 12%, transparent);
+    }
+    .cal-admin-reading-block__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .cal-admin-reading-block__head strong {
+      font-size: 0.82rem;
+    }
+    .cal-admin-reading-status {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .cal-admin-reading-status.ok { color: #15803d; }
+    .cal-admin-reading-status.warn { color: #a16207; }
+    .cal-admin-reading-status.bad { color: #b91c1c; }
+    html[data-theme="dark"] .cal-cell--healthy .cal-cell-day { color: #86efac; }
+    html[data-theme="dark"] .cal-cell--warning .cal-cell-day { color: #fde047; }
+    html[data-theme="dark"] .cal-cell--critical .cal-cell-day { color: #fca5a5; }
     html[data-theme="dark"] .cal-cell.sunday {
       background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface));
     }
     .cal-detail-panel {
       min-width: 0;
+      min-height: 0;
+      max-height: calc(100dvh - var(--main-content-top) - var(--layout-gap) * 2);
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    #calendar-page.active .cal-detail-panel {
+      position: sticky;
+      top: 0;
+      max-height: calc(100dvh - var(--main-content-top) - var(--layout-gap) * 2);
     }
     .cal-reading-stack {
       display: flex;
@@ -10958,6 +11452,28 @@
       .workspace, .workspace.theme-workspace, .workspace.flow-workspace { grid-template-columns: 1fr; }
       .hero { grid-template-columns: 1fr; }
       .hero-metrics { min-width: 0; }
+      #calendar-page.active {
+        max-height: none;
+        overflow: visible;
+      }
+      .dashboard:has(#calendar-page.active) {
+        overflow-y: auto;
+      }
+      #calendar-page.active .calendar-page-workspace {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+      }
+      .calendar-month-card {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+      .cal-detail-panel,
+      #calendar-page.active .cal-detail-panel {
+        max-height: none;
+        overflow: visible;
+      }
     }
     .song-catalog-panel {
       border: 1px solid var(--line);
@@ -12462,6 +12978,12 @@
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
                     </span>
                     <span class="vb-dropdown-item__label">Settings</span>
+                  </a>
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/superadmin" data-route="/superadmin" id="superadmin-nav-link" role="menuitem" hidden>
+                    <span class="app-menu-item__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                    </span>
+                    <span class="vb-dropdown-item__label">Superadmin</span>
                   </a>
                   <hr class="account-menu-divider" id="account-menu-divider" aria-hidden="true" />
                   <a class="vb-dropdown-item app-menu-item" href="/sign-in" id="account-sign-in-link" role="menuitem" hidden>
@@ -15046,17 +15568,80 @@ Lord, hear our prayer</textarea>
       })();
       </script>
 
+      <section class="page" id="radio-page" data-route="/radio">
+        <div class="workspace">
+          <div class="admin-card">
+            <header class="flow-bento-cell__head home-card-head" style="margin-bottom:var(--space-3);">
+              <span class="home-card-head__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/></svg>
+              </span>
+              <div class="home-card-head__text">
+                <h3 style="margin:0;">Live Radio</h3>
+                <p>EWTN Catholic radio streams while you plan Mass media.</p>
+              </div>
+            </header>
+            <div class="radio-page-layout" id="radio-page-layout">
+              <div class="radio-page-player">
+                <div class="radio-page-hero">
+                  <img class="radio-page-hero__art" id="radio-page-art" src="https://www.ewtn.com/img/od/live-generic-radio.jpg" alt="" width="640" height="360" />
+                  <div class="radio-page-hero__scrim" aria-hidden="true"></div>
+                  <div class="radio-page-hero__meta">
+                    <strong id="radio-page-station-title">Live Radio</strong>
+                    <span id="radio-page-channel-pos">—</span>
+                  </div>
+                </div>
+                <div class="radio-page-controls">
+                  <button type="button" class="radio-page-controls__btn" id="radio-page-prev" aria-label="Previous station">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/></svg>
+                  </button>
+                  <button type="button" class="radio-page-controls__btn radio-page-controls__play" id="radio-page-play" aria-label="Play live radio">
+                    <svg class="live-radio-icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                    <svg class="live-radio-icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                  </button>
+                  <button type="button" class="radio-page-controls__btn" id="radio-page-next" aria-label="Next station">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>
+                  </button>
+                </div>
+                <p class="status" id="radio-page-status" aria-live="polite"></p>
+              </div>
+              <div class="radio-page-stations">
+                <h3 style="margin:0 0 6px;">Stations</h3>
+                <p class="muted" style="margin:0 0 12px;">Tap a station to set your default. Stations marked unavailable cannot play in-browser.</p>
+                <div class="settings-radio-list" id="radio-page-list" aria-live="polite"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="page" id="calendar-page" data-route="/mass/calendar">
         <div class="workspace calendar-page-workspace">
           <div class="admin-card calendar-month-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
               <h3 style="margin:0;">Month view</h3>
               <div class="actions" style="margin:0;">
+                <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-missing-btn" hidden data-default-title="Live-fetch dates in this month that are missing or incomplete" title="Live-fetch dates in this month that are missing or incomplete">
+                  <span class="cal-fetch-btn__idle">Fetch missing</span>
+                  <span class="cal-fetch-btn__running" hidden>
+                    <span class="cal-fetch-btn__spinner" aria-hidden="true"></span>
+                    <span class="cal-fetch-btn__label">Stop</span>
+                    <span class="cal-fetch-btn__meta"></span>
+                  </span>
+                </button>
+                <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-month-btn" hidden data-default-title="Force live-fetch every date in this month from USCCB" title="Force live-fetch every date in this month from USCCB">
+                  <span class="cal-fetch-btn__idle">Fetch month</span>
+                  <span class="cal-fetch-btn__running" hidden>
+                    <span class="cal-fetch-btn__spinner" aria-hidden="true"></span>
+                    <span class="cal-fetch-btn__label">Stop</span>
+                    <span class="cal-fetch-btn__meta"></span>
+                  </span>
+                </button>
                 <button type="button" class="secondary" id="cal-prev" aria-label="Previous month">←</button>
                 <strong id="cal-month-label" style="min-width:140px;text-align:center;">—</strong>
                 <button type="button" class="secondary" id="cal-next" aria-label="Next month">→</button>
               </div>
             </div>
+            <p class="cal-admin-banner" id="cal-admin-banner" hidden>Superadmin readings cache — health badges and edits apply globally to all parishes.</p>
             <div class="calendar-grid" id="cal-dow-row"></div>
             <div class="calendar-grid" id="cal-grid" style="margin-top:6px;"></div>
             <p class="muted" id="cal-month-status" style="margin:10px 0 0;font-size:0.78rem;" aria-live="polite"></p>
@@ -15098,6 +15683,67 @@ Lord, hear our prayer</textarea>
           </div>
         </div>
       </section>
+
+      <div class="ui-overlay" id="cal-readings-admin-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="cal-readings-admin-backdrop"></div>
+        <article class="ui-card ui-card--reading" role="dialog" aria-labelledby="cal-readings-admin-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="cal-readings-admin-title">Readings cache</h3>
+              <p class="ui-card__description" id="cal-readings-admin-subtitle">Global data for all parishes</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="cal-readings-admin-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content" id="cal-readings-admin-body">
+            <p class="muted" id="cal-readings-admin-status">Loading…</p>
+            <div class="cal-admin-reading-block" data-admin-reading="first">
+              <div class="cal-admin-reading-block__head">
+                <strong>First reading</strong>
+                <span class="cal-admin-reading-status" data-admin-status="first">—</span>
+              </div>
+              <div class="field"><label for="cal-admin-first-ref">Citation (book &amp; verses)</label><input type="text" id="cal-admin-first-ref" data-admin-field="first_reading_ref" placeholder="e.g. Acts 2:14, 22–33" /></div>
+              <div class="field"><label for="cal-admin-first-text">Reading text</label><textarea rows="4" id="cal-admin-first-text" data-admin-field="first_reading" placeholder="Full text of the first reading"></textarea></div>
+            </div>
+            <div class="cal-admin-reading-block" data-admin-reading="second">
+              <div class="cal-admin-reading-block__head">
+                <strong>Second reading</strong>
+                <span class="cal-admin-reading-status" data-admin-status="second">—</span>
+              </div>
+              <div class="field"><label for="cal-admin-second-ref">Citation (book &amp; verses)</label><input type="text" id="cal-admin-second-ref" data-admin-field="second_reading_ref" placeholder="e.g. 1 Cor 15:1-8" /></div>
+              <div class="field"><label for="cal-admin-second-text">Reading text</label><textarea rows="4" id="cal-admin-second-text" data-admin-field="second_reading" placeholder="Full text (Sundays)"></textarea></div>
+            </div>
+            <div class="cal-admin-reading-block" data-admin-reading="psalm">
+              <div class="cal-admin-reading-block__head">
+                <strong>Psalm</strong>
+                <span class="cal-admin-reading-status" data-admin-status="psalm">—</span>
+              </div>
+              <div class="field"><label for="cal-admin-psalm-ref">Psalm citation</label><input type="text" id="cal-admin-psalm-ref" data-admin-field="psalm_ref" placeholder="e.g. Psalm 23" /></div>
+              <div class="field"><label for="cal-admin-psalm-response">Response (refrain)</label><input type="text" id="cal-admin-psalm-response" data-admin-field="psalm_response" placeholder="e.g. The Lord is my shepherd" /></div>
+              <div class="field"><label for="cal-admin-psalm-verses">Verse numbers &amp; strophe text</label><textarea rows="3" id="cal-admin-psalm-verses" data-admin-field="psalm_verses" placeholder="e.g. R. (25) 4–5, 8–9, 10, 14"></textarea></div>
+              <div class="field"><label for="cal-admin-psalm-text">Full psalm text</label><textarea rows="3" id="cal-admin-psalm-text" data-admin-field="psalm_text" placeholder="Optional full responsorial psalm"></textarea></div>
+            </div>
+            <div class="cal-admin-reading-block" data-admin-reading="gospel">
+              <div class="cal-admin-reading-block__head">
+                <strong>Gospel</strong>
+                <span class="cal-admin-reading-status" data-admin-status="gospel">—</span>
+              </div>
+              <div class="field"><label for="cal-admin-gospel-ref">Gospel citation (book &amp; verses)</label><input type="text" id="cal-admin-gospel-ref" data-admin-field="gospel_ref" placeholder="e.g. John 3:16-17" /></div>
+              <div class="field"><label for="cal-admin-gospel-text">Gospel text</label><textarea rows="5" id="cal-admin-gospel-text" data-admin-field="gospel" placeholder="Full Gospel reading"></textarea></div>
+            </div>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="primary" id="cal-readings-admin-save" hidden>Save</button>
+            <button type="button" class="secondary cal-fetch-btn" id="cal-readings-admin-fetch" hidden data-default-title="Force live-fetch from USCCB" title="Force live-fetch from USCCB">
+              <span class="cal-fetch-btn__idle">Fetch from USCCB</span>
+              <span class="cal-fetch-btn__running" hidden>
+                <span class="cal-fetch-btn__spinner" aria-hidden="true"></span>
+                <span class="cal-fetch-btn__label">Stop</span>
+                <span class="cal-fetch-btn__meta"></span>
+              </span>
+            </button>
+          </footer>
+        </article>
+      </div>
 
       <section class="page" id="posters-page" data-route="/media/posters">
         <div class="workspace">
@@ -15218,11 +15864,259 @@ Lord, hear our prayer</textarea>
         </div>
       </section>
 
+      <section class="page" id="superadmin-page" data-route="/superadmin">
+        <div class="sa-layout">
+          <aside class="sa-nav-card flow-bento-cell" aria-labelledby="sa-nav-heading">
+            <header class="flow-bento-cell__head home-card-head">
+              <span class="home-card-head__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+              </span>
+              <div class="home-card-head__text">
+                <h3 id="sa-nav-heading">Superadmin</h3>
+                <p>Platform mission control</p>
+              </div>
+            </header>
+            <nav class="sa-nav-list" id="sa-sidebar-nav" aria-label="Superadmin navigation">
+              <div class="sa-nav-group" data-open="true">
+                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>Overview</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+                <div class="sa-nav-group__links">
+                  <button type="button" class="sa-nav-link active" data-sa-panel="dashboard">Dashboard</button>
+                </div>
+              </div>
+              <div class="sa-nav-group" data-open="true">
+                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>Operations</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+                <div class="sa-nav-group__links">
+                  <button type="button" class="sa-nav-link" data-sa-panel="parishes">Parishes</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="users">Users</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="membership">Membership <span class="sa-nav-link__badge" id="sa-nav-badge-membership" hidden></span></button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="invites">Invites</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="generations">Generations</button>
+                </div>
+              </div>
+              <div class="sa-nav-group" data-open="true">
+                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>Content</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+                <div class="sa-nav-group__links">
+                  <button type="button" class="sa-nav-link" data-sa-panel="content-songs">Songs</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="content-readings">Readings cache</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="content-templates">Templates</button>
+                </div>
+              </div>
+              <div class="sa-nav-group" data-open="true">
+                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>System</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+                <div class="sa-nav-group__links">
+                  <button type="button" class="sa-nav-link" data-sa-panel="system-ai">AI &amp; Quota</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="system-maintenance">Maintenance</button>
+                </div>
+              </div>
+            </nav>
+          </aside>
+          <div class="sa-main">
+            <article class="sa-panel flow-bento-cell" id="sa-panel-dashboard" data-sa-panel="dashboard">
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Dashboard</h3>
+                  <p>Live platform stats and recent activity.</p>
+                </div>
+              </header>
+              <div class="sa-stat-grid" id="sa-dashboard-stats" aria-live="polite"></div>
+              <h4 class="settings-admin-subhead">Recent activity</h4>
+              <ul class="sa-activity-list" id="sa-dashboard-activity" aria-live="polite"></ul>
+              <h4 class="settings-admin-subhead">Quick actions</h4>
+              <div class="sa-quick-actions">
+                <button type="button" class="secondary" id="sa-btn-goto-membership">Open membership queue</button>
+                <button type="button" class="secondary" id="sa-btn-clear-readings-cache">Clear readings cache</button>
+                <button type="button" class="secondary" id="sa-btn-bootstrap-superadmins">Bootstrap superadmins</button>
+                <button type="button" class="secondary" data-sa-panel-jump="system-ai">Gemini settings</button>
+                <button type="button" class="secondary" id="sa-btn-goto-templates">PPTX templates</button>
+              </div>
+              <p class="status" id="sa-dashboard-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-parishes" data-sa-panel="parishes" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Parishes</h3>
+                  <p>Shared parish accounts — president plus up to 2 media team members.</p>
+                </div>
+              </header>
+              <div class="sa-toolbar">
+                <input type="search" id="sa-parishes-search" placeholder="Search parish or email…" maxlength="120" autocomplete="off" />
+                <button type="button" class="secondary" id="sa-parishes-refresh">Refresh</button>
+              </div>
+              <div class="sa-table-wrap" id="sa-parishes-table-wrap"></div>
+              <p class="status" id="sa-parishes-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-users" data-sa-panel="users" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Users</h3>
+                  <p>Registered accounts and parish linkage.</p>
+                </div>
+              </header>
+              <div class="sa-toolbar">
+                <input type="search" id="sa-users-search" placeholder="Search name or email…" maxlength="120" autocomplete="off" />
+                <button type="button" class="secondary" id="sa-users-refresh">Refresh</button>
+              </div>
+              <div class="sa-table-wrap" id="sa-users-table-wrap"></div>
+              <p class="status" id="sa-users-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-membership" data-sa-panel="membership" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Membership requests</h3>
+                  <p>Approve parish memberships, songs, and priest names.</p>
+                </div>
+              </header>
+              <h4 class="settings-admin-subhead">Pending parish memberships</h4>
+              <ul class="celebrant-settings-list" id="sa-admin-pending-list" aria-live="polite"></ul>
+              <h4 class="settings-admin-subhead">Pending songs</h4>
+              <ul class="celebrant-settings-list" id="sa-admin-pending-songs" aria-live="polite"></ul>
+              <h4 class="settings-admin-subhead">Pending priests</h4>
+              <ul class="celebrant-settings-list" id="sa-admin-pending-priests" aria-live="polite"></ul>
+              <p class="status" id="sa-admin-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-invites" data-sa-panel="invites" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Account invites</h3>
+                  <p>Create invite links for new parish accounts (invite-only signup).</p>
+                </div>
+              </header>
+              <div class="field">
+                <label for="sa-invite-email">Email (optional lock)</label>
+                <input type="email" id="sa-invite-email" autocomplete="off" placeholder="media@parish.org" maxlength="320" />
+              </div>
+              <div class="field">
+                <label for="sa-invite-note">Note (optional)</label>
+                <input type="text" id="sa-invite-note" maxlength="240" placeholder="Media team — St. Mary's" />
+              </div>
+              <div class="sa-quick-actions">
+                <button type="button" class="primary" id="sa-btn-create-invite">Create invite link</button>
+                <button type="button" class="secondary" id="sa-btn-refresh-invites">Refresh list</button>
+              </div>
+              <p class="status" id="sa-invite-create-status" aria-live="polite"></p>
+              <div class="field" id="sa-invite-url-wrap" hidden>
+                <label for="sa-invite-url">Latest invite URL</label>
+                <input type="text" id="sa-invite-url" readonly />
+                <button type="button" class="secondary" id="sa-btn-copy-invite-url" style="margin-top:8px;">Copy link</button>
+              </div>
+              <h4 class="settings-admin-subhead">Pending invites</h4>
+              <ul class="celebrant-settings-list" id="sa-invites-list" aria-live="polite"></ul>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-generations" data-sa-panel="generations" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Mass generations</h3>
+                  <p>Recent PowerPoint and media runs across parishes.</p>
+                </div>
+              </header>
+              <div class="sa-toolbar">
+                <input type="search" id="sa-generations-search" placeholder="Search date, celebrant…" maxlength="120" autocomplete="off" />
+                <button type="button" class="secondary" id="sa-generations-refresh">Refresh</button>
+              </div>
+              <div class="sa-table-wrap" id="sa-generations-table-wrap"></div>
+              <p class="status" id="sa-generations-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-content-songs" data-sa-panel="content-songs" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Song catalog</h3>
+                  <p>Manage the global hymn library.</p>
+                </div>
+              </header>
+              <p class="muted">Edit, import, and refresh songs in the Library. Superadmin-only catalog actions apply there.</p>
+              <div class="actions">
+                <button type="button" class="primary" id="sa-btn-open-library">Open song library</button>
+              </div>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-content-readings" data-sa-panel="content-readings" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Readings cache</h3>
+                  <p>USCCB / Bible readings stored locally per date.</p>
+                </div>
+              </header>
+              <p class="muted" id="sa-readings-cache-summary">Loading…</p>
+              <div class="field">
+                <label for="sa-readings-clear-date">Clear single date (optional)</label>
+                <input type="date" id="sa-readings-clear-date" />
+              </div>
+              <div class="sa-quick-actions">
+                <button type="button" class="secondary danger" id="sa-btn-clear-readings-all">Clear entire cache</button>
+                <button type="button" class="secondary" id="sa-btn-clear-readings-date">Clear selected date</button>
+              </div>
+              <p class="status" id="sa-readings-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-content-templates" data-sa-panel="content-templates" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Projection templates</h3>
+                  <p>Import slide themes from reference PowerPoint decks.</p>
+                </div>
+              </header>
+              <p class="muted">Opens the PPTX analyzer used to map deck colors and fonts into Theme Lab.</p>
+              <div class="actions">
+                <button type="button" class="primary" id="sa-btn-open-templates">Open template importer</button>
+              </div>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-system-ai" data-sa-panel="system-ai" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>AI &amp; quota</h3>
+                  <p>Gemini integration and daily image generation limits.</p>
+                </div>
+              </header>
+              <p class="muted" id="sa-ai-quota-summary">Loading quota…</p>
+              <div class="field">
+                <label for="sa-gemini-api-key">Gemini API key</label>
+                <input type="password" id="sa-gemini-api-key" autocomplete="off" placeholder="AIza…" maxlength="512" />
+                <p class="muted" id="sa-gemini-api-key-hint">Not configured.</p>
+              </div>
+              <div class="actions">
+                <button type="button" class="secondary" id="sa-btn-save-gemini-api-key">Save Gemini key</button>
+              </div>
+              <p class="status" id="sa-gemini-status" aria-live="polite"></p>
+            </article>
+
+            <article class="sa-panel flow-bento-cell" id="sa-panel-system-maintenance" data-sa-panel="system-maintenance" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Maintenance</h3>
+                  <p>Health checks and environment status (secrets never shown).</p>
+                </div>
+              </header>
+              <div id="sa-health-grid" class="sa-stat-grid" aria-live="polite"></div>
+              <h4 class="settings-admin-subhead">Environment</h4>
+              <ul class="sa-activity-list" id="sa-env-list" aria-live="polite"></ul>
+              <div class="sa-quick-actions">
+                <button type="button" class="secondary" id="sa-btn-refresh-health">Refresh health</button>
+                <button type="button" class="secondary" id="sa-btn-bootstrap-superadmins-2">Bootstrap superadmins</button>
+              </div>
+              <p class="status" id="sa-health-status" aria-live="polite"></p>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section class="page" id="settings-page">
-        <div class="settings-layout song-plan-layout">
+        <div class="settings-layout">
           <button type="button" class="settings-modal-close" id="settings-modal-close" aria-label="Close settings">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
+          <nav class="settings-modal-tabs" id="settings-modal-tabs" aria-label="Settings sections">
+            <h2 class="settings-modal-tabs__title" id="settings-modal-tabs-title">Settings</h2>
+            <a class="settings-modal-tab" href="/settings/church" data-route="/settings/church">Church Profile</a>
+            <a class="settings-modal-tab" href="/settings/team" data-route="/settings/team" id="settings-modal-tab-team" hidden>Parish Team</a>
+            <a class="settings-modal-tab" href="/settings/app" data-route="/settings/app">Appearance</a>
+          </nav>
           <aside class="settings-nav-card song-plan-summary" aria-labelledby="settings-nav-heading">
             <div class="flow-bento-cell settings-nav-card__inner">
               <header class="flow-bento-cell__head home-card-head">
@@ -15241,6 +16135,12 @@ Lord, hear our prayer</textarea>
                   </span>
                   Church Profile
                 </a>
+                <a class="settings-sidebar-link" href="/settings/team" data-route="/settings/team" id="settings-nav-team" hidden>
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </span>
+                  Parish Team
+                </a>
                 <a class="settings-sidebar-link" href="/settings/app" data-route="/settings/app">
                   <span class="settings-sidebar-link__icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
@@ -15250,7 +16150,7 @@ Lord, hear our prayer</textarea>
               </nav>
             </div>
           </aside>
-          <div class="settings-main song-plan-main">
+          <div class="settings-main">
             <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church">
               <header class="flow-bento-cell__head home-card-head">
                 <span class="home-card-head__icon" aria-hidden="true">
@@ -15322,19 +16222,37 @@ Lord, hear our prayer</textarea>
                   <button type="button" class="primary" id="btn-save-community-api" hidden>Save church profile</button>
                 </div>
                 <p class="status" id="settings-church-status" aria-live="polite"></p>
-
-                <section id="settings-admin-memberships" hidden aria-labelledby="settings-admin-heading">
-                  <hr class="settings-divider" />
-                  <h3 id="settings-admin-heading">Superadmin approvals</h3>
-                  <p class="muted">Approve or reject parish memberships, song submissions, and priest names.</p>
-                  <h4 class="settings-admin-subhead">Pending parish memberships</h4>
-                  <ul class="celebrant-settings-list" id="settings-admin-pending-list" aria-live="polite"></ul>
-                  <h4 class="settings-admin-subhead">Pending songs</h4>
-                  <ul class="celebrant-settings-list" id="settings-admin-pending-songs" aria-live="polite"></ul>
-                  <h4 class="settings-admin-subhead">Pending priests</h4>
-                  <ul class="celebrant-settings-list" id="settings-admin-pending-priests" aria-live="polite"></ul>
-                  <p class="status" id="settings-admin-status" aria-live="polite"></p>
-                </section>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-team" data-settings-panel="team" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Parish Team</h3>
+                  <p>Invite up to 2 media teammates to share your parish profile and AI quota.</p>
+                </div>
+              </header>
+              <p class="muted" id="settings-team-capacity" aria-live="polite"></p>
+              <h4 class="settings-admin-subhead">Members</h4>
+              <ul class="celebrant-settings-list" id="settings-team-members" aria-live="polite"></ul>
+              <h4 class="settings-admin-subhead">Invite media teammate</h4>
+              <div class="field">
+                <label for="settings-team-invite-email">Email (optional lock)</label>
+                <input type="email" id="settings-team-invite-email" placeholder="media@parish.org" maxlength="320" autocomplete="off" />
+              </div>
+              <div class="actions">
+                <button type="button" class="primary" id="settings-team-create-invite">Create invite link</button>
+                <button type="button" class="secondary" id="settings-team-refresh">Refresh</button>
+              </div>
+              <p class="status" id="settings-team-status" aria-live="polite"></p>
+              <div class="field" id="settings-team-url-wrap" hidden>
+                <label for="settings-team-invite-url">Latest invite URL</label>
+                <input type="text" id="settings-team-invite-url" readonly />
+                <button type="button" class="secondary" id="settings-team-copy-url" style="margin-top:8px;">Copy link</button>
+              </div>
+              <h4 class="settings-admin-subhead">Pending invites</h4>
+              <ul class="celebrant-settings-list" id="settings-team-invites" aria-live="polite"></ul>
             </article>
             <article class="settings-panel flow-bento-cell" id="settings-panel-app" data-settings-panel="appearance" hidden>
               <header class="flow-bento-cell__head home-card-head">
@@ -15372,22 +16290,6 @@ Lord, hear our prayer</textarea>
                   <label for="app-accent-color">Custom accent</label>
                   <input type="color" id="app-accent-color" value="#a10f0d" aria-label="Custom accent color" />
                   <button type="button" class="secondary" id="btn-reset-accent">Reset to app default</button>
-                </div>
-
-                <hr class="settings-divider" />
-
-                <div data-superadmin-only>
-                <h3>AI integrations</h3>
-                <p class="muted">Gemini poster art uses a <strong>Google AI Studio</strong> API key (usually starts with <code>AIza</code>). Image models often require billing enabled on your Google account. Stored in <code>.env.gemini</code>.</p>
-                <div class="field">
-                  <label for="settings-gemini-api-key">Gemini API key</label>
-                  <input type="password" id="settings-gemini-api-key" autocomplete="off" placeholder="AIza…" maxlength="512" />
-                  <p class="muted" id="settings-gemini-api-key-hint">Not configured.</p>
-                </div>
-                <div class="actions">
-                  <button type="button" class="secondary" id="btn-save-gemini-api-key">Save Gemini key</button>
-                </div>
-                <p class="status" id="settings-gemini-status" aria-live="polite"></p>
                 </div>
 
                 <hr class="settings-divider" />
@@ -17363,7 +18265,9 @@ Lord, hear our prayer</textarea>
       "/design/theme-lab": "Liturgical themes and custom slide styling.",
       "/design/templates": "Poster and slide template reference.",
       "/settings/church": "Community name and parish logo.",
+      "/settings/team": "Invite and manage your parish media team.",
       "/settings/app": "Light/dark mode, accent colors, and visual style.",
+      "/superadmin": "Platform mission control — superadmin only.",
     };
 
     const routeBreadcrumb = {
@@ -17377,7 +18281,9 @@ Lord, hear our prayer</textarea>
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
       "/settings/church": ["Settings", "Church Profile"],
+      "/settings/team": ["Settings", "Parish Team"],
       "/settings/app": ["Settings", "Appearance"],
+      "/superadmin": ["Superadmin"],
     };
 
     function formatRouteBreadcrumb(route) {
@@ -17524,8 +18430,56 @@ Lord, hear our prayer</textarea>
       syncSummaryCollapseState();
     }
 
+    function isSuperadminRoute(route) {
+      return route === "/superadmin";
+    }
+
+    function superadminToolsUnlocked() {
+      try {
+        return sessionStorage.getItem("verbum:sa-unlocked") === "1";
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function canUseCalendarReadingsAdmin() {
+      return !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
+    }
+
+    function syncCalendarAdminVisibility() {
+      const on = canUseCalendarReadingsAdmin();
+      const fetchMissingBtn = $("cal-admin-fetch-missing-btn");
+      const fetchMonthBtn = $("cal-admin-fetch-month-btn");
+      const banner = $("cal-admin-banner");
+      const modalFetchBtn = $("cal-readings-admin-fetch");
+      const modalSaveBtn = $("cal-readings-admin-save");
+      if (fetchMissingBtn) fetchMissingBtn.hidden = !on;
+      if (fetchMonthBtn) fetchMonthBtn.hidden = !on;
+      if (banner) banner.hidden = !on;
+      if (modalFetchBtn) modalFetchBtn.hidden = !on;
+      if (modalSaveBtn) modalSaveBtn.hidden = !on;
+      updateCalAdminFetchButtons();
+    }
+
+    function syncSuperadminNavVisibility() {
+      const link = $("superadmin-nav-link");
+      if (!link) return;
+      const show = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
+      link.hidden = !show;
+      syncCalendarAdminVisibility();
+      const calPage = $("calendar-page");
+      if (show && calPage && calPage.classList.contains("active")) {
+        calendarMonthKey = "";
+        loadCalendarMonth();
+      }
+    }
+
+    function canAccessSuperadminRoute() {
+      return !!churchMembershipState.is_superadmin;
+    }
+
     function isSettingsRoute(route) {
-      return route === "/settings/church" || route === "/settings/app";
+      return route === "/settings/church" || route === "/settings/team" || route === "/settings/app";
     }
 
     let lastNonSettingsRoute = "/home";
@@ -17862,9 +18816,29 @@ Lord, hear our prayer</textarea>
 
     function syncSettingsLayout(route) {
       const inSettings = isSettingsRoute(route);
+      const panelForRoute = {
+        "/settings/church": "church",
+        "/settings/team": "team",
+        "/settings/app": "appearance",
+      };
+      const activeKey = panelForRoute[route] || "church";
       document.querySelectorAll(".settings-panel").forEach((panel) => {
-        panel.hidden = !inSettings;
+        if (!inSettings) {
+          panel.hidden = true;
+          return;
+        }
+        panel.hidden = panel.dataset.settingsPanel !== activeKey;
       });
+      document.querySelectorAll(".settings-sidebar-link").forEach((link) => {
+        link.classList.toggle("active", link.dataset.route === route);
+      });
+      document.querySelectorAll(".settings-modal-tab").forEach((link) => {
+        link.classList.toggle("active", link.dataset.route === route);
+      });
+      if (inSettings) {
+        const settingsMain = document.querySelector("#settings-page .settings-main");
+        if (settingsMain) settingsMain.scrollTop = 0;
+      }
     }
 
     function closeSettingsModal() {
@@ -17909,9 +18883,9 @@ Lord, hear our prayer</textarea>
         syncHomeNewsSettingsUI();
         syncNavTabSettingsUI();
         if (typeof renderSettingsRadioList === "function") renderSettingsRadioList();
-        refreshGeminiSettings();
         syncChurchFieldsToSettings();
         refreshCommunity();
+        if (r === "/settings/team" && typeof loadSettingsParishTeam === "function") loadSettingsParishTeam();
         if (window.__scrollToLiveRadio) {
           window.__scrollToLiveRadio = false;
           requestAnimationFrame(() => {
@@ -17919,6 +18893,9 @@ Lord, hear our prayer</textarea>
             if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
           });
         }
+      }
+      if (r === "/superadmin") {
+        if (typeof initSuperadminPage === "function") initSuperadminPage();
       }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/mass/builder") {
@@ -17966,11 +18943,19 @@ Lord, hear our prayer</textarea>
       if (r === "/mass/calendar") {
         loadCalendarMonth();
       }
+      if (r === "/radio") {
+        syncLiveRadioUi();
+        renderRadioStationList($("radio-page-list"));
+      }
     }
 
     function showRoute(route, replaceOnly = false) {
       if (typeof closeHeaderMenus === "function") closeHeaderMenus();
       let r = normalizeRoute(route);
+      if (isSuperadminRoute(r) && !canAccessSuperadminRoute()) {
+        notify("Superadmin access required.", "error");
+        r = "/home";
+      }
       const from = normalizeRoute(currentRoute());
       if (from === "/mass/builder" && r !== "/mass/builder") {
         autoSaveMassBuilderDraftOnLeave();
@@ -18007,7 +18992,7 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    document.querySelectorAll(".app-sidebar__link[data-route], .app-sidebar__brand[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
+    document.querySelectorAll(".app-sidebar__link[data-route], .app-sidebar__brand[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .settings-modal-tab, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
 
     const appSidebar = document.getElementById("app-sidebar");
     if (appSidebar && appSidebar.dataset.spaBound !== "1") {
@@ -21708,7 +22693,14 @@ Lord, hear our prayer</textarea>
         can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : !data.is_superadmin,
         is_superadmin: !!data.is_superadmin,
         role: (data.role || "member").toLowerCase(),
+        parish_role: (data.parish_role || "").toLowerCase(),
       };
+
+      const teamNav = $("settings-nav-team");
+      const teamModalTab = $("settings-modal-tab-team");
+      const showTeam = churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin;
+      if (teamNav) teamNav.hidden = !showTeam;
+      if (teamModalTab) teamModalTab.hidden = !showTeam;
 
       const nameInput = $("settings-church-name");
       const nameHint = $("settings-church-name-hint");
@@ -21721,7 +22713,6 @@ Lord, hear our prayer</textarea>
       const logoInput = $("church-logo");
       const logoUpload = $("btn-upload-logo");
       const logoUploadRow = $("church-logo-upload-row");
-      const adminSection = $("settings-admin-memberships");
 
       const locked = churchMembershipState.community_name_locked;
       const logoLocked = churchMembershipState.logo_locked;
@@ -21780,14 +22771,9 @@ Lord, hear our prayer</textarea>
 
       syncGlobalMembershipBanner(data);
 
-      if (adminSection) {
-        adminSection.hidden = !churchMembershipState.is_superadmin;
-        if (churchMembershipState.is_superadmin) {
-          refreshAdminPendingMemberships();
-          refreshAdminPendingSongs();
-          refreshAdminPendingPriests();
-        }
-      }
+      syncSuperadminNavVisibility();
+      if (typeof refreshSuperadminMembershipBadge === "function") refreshSuperadminMembershipBadge();
+
       renderSettingsCelebrantList();
       syncGenerateButtons();
       syncPrivilegedUi();
@@ -21807,14 +22793,14 @@ Lord, hear our prayer</textarea>
       [
         "btn-save-theme",
         "btn-analyze-template-pptx",
-        "btn-save-gemini-api-key",
+        "sa-btn-save-gemini-api-key",
         "saved-poster-upload",
       ].forEach((id) => {
         const el = $(id);
         if (el) el.disabled = !sa;
       });
 
-      const geminiInp = $("settings-gemini-api-key");
+      const geminiInp = $("sa-gemini-api-key");
       if (geminiInp) geminiInp.disabled = !sa;
 
       const posterGen = $("btn-poster-generate");
@@ -21825,6 +22811,7 @@ Lord, hear our prayer</textarea>
 
       if (typeof renderThemeGrid === "function") renderThemeGrid();
       if (typeof renderSongCatalog === "function") renderSongCatalog();
+      syncSuperadminNavVisibility();
     }
 
     function syncGenerateButtons() {
@@ -21951,8 +22938,8 @@ Lord, hear our prayer</textarea>
     }
 
     async function refreshAdminPendingMemberships() {
-      const listEl = $("settings-admin-pending-list");
-      const statusEl = $("settings-admin-status");
+      const listEl = $("sa-admin-pending-list");
+      const statusEl = $("sa-admin-status");
       if (!listEl || !churchMembershipState.is_superadmin) return;
       if (statusEl) {
         statusEl.textContent = "Loading pending memberships…";
@@ -22017,7 +23004,7 @@ Lord, hear our prayer</textarea>
 
     async function actOnMembership(userId, action) {
       if (!userId) return;
-      const statusEl = $("settings-admin-status");
+      const statusEl = $("sa-admin-status");
       const auth = window.VerbumAuth;
       const headers = auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
       const res = await fetch(
@@ -22031,6 +23018,7 @@ Lord, hear our prayer</textarea>
         statusEl.className = "status ok";
       }
       await refreshAdminPendingMemberships();
+      if (normalizeRoute(currentRoute()) === "/superadmin") loadSaDashboard();
     }
 
     async function adminAuthHeaders() {
@@ -22040,7 +23028,7 @@ Lord, hear our prayer</textarea>
 
     async function actOnSubmission(kind, submissionId, action) {
       if (!submissionId) return;
-      const statusEl = $("settings-admin-status");
+      const statusEl = $("sa-admin-status");
       const headers = await adminAuthHeaders();
       const res = await fetch(
         "/api/admin/submissions/" + kind + "/" + encodeURIComponent(submissionId) + "/" + action,
@@ -22062,10 +23050,11 @@ Lord, hear our prayer</textarea>
         await refreshAdminPendingPriests();
         await refreshCommunity();
       }
+      if (normalizeRoute(currentRoute()) === "/superadmin") loadSaDashboard();
     }
 
     async function refreshAdminPendingSongs() {
-      const listEl = $("settings-admin-pending-songs");
+      const listEl = $("sa-admin-pending-songs");
       if (!listEl || !churchMembershipState.is_superadmin) return;
       try {
         const res = await fetch("/api/admin/submissions/songs/pending", { headers: await adminAuthHeaders() });
@@ -22094,7 +23083,7 @@ Lord, hear our prayer</textarea>
         listEl.querySelectorAll(".btn-admin-song-approve").forEach((btn) => {
           btn.addEventListener("click", () => {
             actOnSubmission("songs", btn.getAttribute("data-submission-id"), "approve").catch((err) => {
-              const statusEl = $("settings-admin-status");
+              const statusEl = $("sa-admin-status");
               if (statusEl) {
                 statusEl.textContent = err.message || "Approve failed";
                 statusEl.className = "status error";
@@ -22105,7 +23094,7 @@ Lord, hear our prayer</textarea>
         listEl.querySelectorAll(".btn-admin-song-reject").forEach((btn) => {
           btn.addEventListener("click", () => {
             actOnSubmission("songs", btn.getAttribute("data-submission-id"), "reject").catch((err) => {
-              const statusEl = $("settings-admin-status");
+              const statusEl = $("sa-admin-status");
               if (statusEl) {
                 statusEl.textContent = err.message || "Reject failed";
                 statusEl.className = "status error";
@@ -22119,7 +23108,7 @@ Lord, hear our prayer</textarea>
     }
 
     async function refreshAdminPendingPriests() {
-      const listEl = $("settings-admin-pending-priests");
+      const listEl = $("sa-admin-pending-priests");
       if (!listEl || !churchMembershipState.is_superadmin) return;
       try {
         const res = await fetch("/api/admin/submissions/priests/pending", { headers: await adminAuthHeaders() });
@@ -22148,7 +23137,7 @@ Lord, hear our prayer</textarea>
         listEl.querySelectorAll(".btn-admin-priest-approve").forEach((btn) => {
           btn.addEventListener("click", () => {
             actOnSubmission("priests", btn.getAttribute("data-submission-id"), "approve").catch((err) => {
-              const statusEl = $("settings-admin-status");
+              const statusEl = $("sa-admin-status");
               if (statusEl) {
                 statusEl.textContent = err.message || "Approve failed";
                 statusEl.className = "status error";
@@ -22159,7 +23148,7 @@ Lord, hear our prayer</textarea>
         listEl.querySelectorAll(".btn-admin-priest-reject").forEach((btn) => {
           btn.addEventListener("click", () => {
             actOnSubmission("priests", btn.getAttribute("data-submission-id"), "reject").catch((err) => {
-              const statusEl = $("settings-admin-status");
+              const statusEl = $("sa-admin-status");
               if (statusEl) {
                 statusEl.textContent = err.message || "Reject failed";
                 statusEl.className = "status error";
@@ -22170,6 +23159,660 @@ Lord, hear our prayer</textarea>
       } catch (err) {
         listEl.innerHTML = "<li class=\"muted\">" + escapeHtml(err.message || "Could not load pending priests.") + "</li>";
       }
+    }
+
+    const saState = {
+      panel: "dashboard",
+      parishes: { page: 1, q: "" },
+      users: { page: 1, q: "" },
+      generations: { page: 1, q: "" },
+      initialized: false,
+    };
+
+    function showSaPanel(panelId) {
+      saState.panel = panelId || "dashboard";
+      document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
+        link.classList.toggle("active", link.getAttribute("data-sa-panel") === saState.panel);
+      });
+      document.querySelectorAll(".sa-panel[data-sa-panel]").forEach((panel) => {
+        const on = panel.getAttribute("data-sa-panel") === saState.panel;
+        panel.hidden = !on;
+      });
+      if (saState.panel === "dashboard") loadSaDashboard();
+      else if (saState.panel === "parishes") loadSaParishes();
+      else if (saState.panel === "users") loadSaUsers();
+      else if (saState.panel === "membership") loadSaMembership();
+      else if (saState.panel === "invites") loadSaInvites();
+      else if (saState.panel === "generations") loadSaGenerations();
+      else if (saState.panel === "content-readings") loadSaReadingsCache();
+      else if (saState.panel === "system-ai") { refreshGeminiSettings(); loadSaAiQuotaSummary(); }
+      else if (saState.panel === "system-maintenance") loadSaHealth();
+    }
+
+    function saFormatStat(value, fallback) {
+      if (value === null || value === undefined) return fallback || "—";
+      return String(value);
+    }
+
+    function saRenderStatCard(label, value, sub) {
+      return (
+        "<div class=\"sa-stat\"><p class=\"sa-stat__label\">" + escapeHtml(label) + "</p>" +
+        "<p class=\"sa-stat__value\">" + escapeHtml(saFormatStat(value)) + "</p>" +
+        (sub ? "<p class=\"sa-stat__sub\">" + escapeHtml(sub) + "</p>" : "") +
+        "</div>"
+      );
+    }
+
+    async function saFetchAdmin(path, options) {
+      const headers = Object.assign({}, await adminAuthHeaders(), (options && options.headers) || {});
+      const res = await fetch(path, Object.assign({}, options || {}, { headers }));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.error || "Request failed.");
+      return data;
+    }
+
+    async function loadSaDashboard() {
+      const statsEl = $("sa-dashboard-stats");
+      const activityEl = $("sa-dashboard-activity");
+      if (!statsEl) return;
+      statsEl.innerHTML = Array(6).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
+      try {
+        const data = await saFetchAdmin("/api/admin/dashboard");
+        const c = data.cards || {};
+        statsEl.innerHTML = [
+          saRenderStatCard("Users", c.users_total),
+          saRenderStatCard("Approved parishes", c.parishes_approved),
+          saRenderStatCard("Pending parishes", c.parishes_pending),
+          saRenderStatCard("Generations today", c.generations_today),
+          saRenderStatCard("AI images today", c.ai_images_today),
+          saRenderStatCard("Pending songs", c.pending_songs, (c.pending_priests || 0) + " priests pending"),
+          saRenderStatCard("Supabase", c.supabase_ok ? "OK" : "Off", c.supabase_ok ? "Connected" : "Not configured"),
+          saRenderStatCard("Redis", c.redis_ok ? "OK" : "Off"),
+          saRenderStatCard("Readings cache", (c.readings_cache && c.readings_cache.entries) || 0, ((c.readings_cache && c.readings_cache.bytes) || 0) + " bytes"),
+        ].join("");
+        const activity = Array.isArray(data.recent_activity) ? data.recent_activity : [];
+        if (activityEl) {
+          activityEl.innerHTML = activity.length
+            ? activity.map((row) => (
+              "<li><span><strong>" + escapeHtml(String(row.label || "—")) + "</strong>" +
+              "<br><span class=\"muted\">" + escapeHtml(String(row.detail || row.type || "")) + "</span></span>" +
+              "<span class=\"muted\">" + escapeHtml(String(row.at || "").slice(0, 19)) + "</span></li>"
+            )).join("")
+            : "<li class=\"muted\">No recent activity.</li>";
+        }
+        refreshSuperadminMembershipBadge(c);
+      } catch (err) {
+        if (statsEl) statsEl.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Could not load dashboard.") + "</p>";
+      }
+    }
+
+    function refreshSuperadminMembershipBadge(cards) {
+      const badge = $("sa-nav-badge-membership");
+      if (!badge) return;
+      const pending = cards
+        ? ((cards.parishes_pending || 0) + (cards.pending_songs || 0) + (cards.pending_priests || 0))
+        : null;
+      if (pending === null) {
+        badge.hidden = true;
+        return;
+      }
+      if (pending > 0) {
+        badge.hidden = false;
+        badge.textContent = String(pending);
+      } else {
+        badge.hidden = true;
+        badge.textContent = "";
+      }
+    }
+
+    function saRenderTable(headers, rows, emptyMsg) {
+      if (!rows.length) return "<p class=\"sa-empty\">" + escapeHtml(emptyMsg || "No results.") + "</p>";
+      const head = "<thead><tr>" + headers.map((h) => "<th>" + escapeHtml(h) + "</th>").join("") + "</tr></thead>";
+      const body = "<tbody>" + rows.join("") + "</tbody>";
+      return "<table class=\"sa-table\">" + head + body + "</table>";
+    }
+
+    async function loadSaParishes() {
+      const wrap = $("sa-parishes-table-wrap");
+      const statusEl = $("sa-parishes-status");
+      if (!wrap) return;
+      wrap.innerHTML = "<div class=\"sa-empty\"><div class=\"sa-skeleton\"></div></div>";
+      try {
+        const q = saState.parishes.q || "";
+        const data = await saFetchAdmin("/api/admin/parishes?page=" + saState.parishes.page + "&q=" + encodeURIComponent(q));
+        const items = Array.isArray(data.items) ? data.items : [];
+        const rows = items.map((row) => (
+          "<tr><td>" + escapeHtml(row.community_name || "—") + "</td>" +
+          "<td>" + escapeHtml(row.owner_email || "—") + "</td>" +
+          "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
+          "<td>" + escapeHtml(row.members_label || (String(row.members_count || 1) + "/3")) + "</td>" +
+          "<td class=\"muted\">" + escapeHtml(String(row.updated_at || "").slice(0, 10)) + "</td></tr>"
+        ));
+        wrap.innerHTML = saRenderTable(["Parish", "Owner", "Status", "Members", "Updated"], rows, "No parishes found.");
+        if (statusEl) statusEl.textContent = data.total != null ? ("Showing " + items.length + " of " + data.total) : "";
+      } catch (err) {
+        wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
+      }
+    }
+
+    async function loadSaUsers() {
+      const wrap = $("sa-users-table-wrap");
+      const statusEl = $("sa-users-status");
+      if (!wrap) return;
+      wrap.innerHTML = "<div class=\"sa-empty\"><div class=\"sa-skeleton\"></div></div>";
+      try {
+        if (!saState.parishOptions) {
+          const optData = await saFetchAdmin("/api/admin/parishes/options");
+          saState.parishOptions = Array.isArray(optData.items) ? optData.items : [];
+        }
+        const q = saState.users.q || "";
+        const data = await saFetchAdmin("/api/admin/users?page=" + saState.users.page + "&q=" + encodeURIComponent(q));
+        const items = Array.isArray(data.items) ? data.items : [];
+        const parishOptions = saState.parishOptions || [];
+        const rows = items.map((row) => {
+          const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || "—";
+          const uid = encodeURIComponent(row.id || "");
+          const deleteBtn = row.can_delete
+            ? "<button type=\"button\" class=\"secondary sa-btn-delete-user\" data-user-id=\"" + uid + "\" data-user-email=\"" + escapeHtml(row.email || "") + "\">Delete</button>"
+            : "<span class=\"muted\">—</span>";
+          let roleCell = escapeHtml(row.parish_role || "—");
+          if (row.can_set_parish_role) {
+            const parishSelect = !row.parish_id
+              ? "<select class=\"sa-user-parish-pick\" data-user-id=\"" + uid + "\" style=\"max-width:140px;margin-right:6px;\">" +
+                "<option value=\"\">Assign parish…</option>" +
+                parishOptions.map((p) => (
+                  "<option value=\"" + escapeHtml(p.id || "") + "\">" + escapeHtml(p.community_name || "Parish") + "</option>"
+                )).join("") +
+                "</select>"
+              : "";
+            roleCell =
+              parishSelect +
+              "<select class=\"sa-user-parish-role\" data-user-id=\"" + uid + "\" data-parish-id=\"" + escapeHtml(row.parish_id || "") + "\" style=\"max-width:110px;\">" +
+              "<option value=\"president\"" + (row.parish_role === "president" ? " selected" : "") + ">President</option>" +
+              "<option value=\"media\"" + (row.parish_role === "media" ? " selected" : "") + ">Media</option>" +
+              "</select> " +
+              "<button type=\"button\" class=\"secondary sa-btn-save-parish-role\" data-user-id=\"" + uid + "\">Save</button>";
+          }
+          return (
+            "<tr><td>" + escapeHtml(name) + "</td>" +
+            "<td>" + escapeHtml(row.email || "—") + "</td>" +
+            "<td>" + escapeHtml(row.parish_name || "—") + "</td>" +
+            "<td>" + roleCell + "</td>" +
+            "<td>" + escapeHtml(row.role || "member") + "</td>" +
+            "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
+            "<td class=\"muted\">" + escapeHtml(String(row.created_at || "").slice(0, 10)) + "</td>" +
+            "<td>" + deleteBtn + "</td></tr>"
+          );
+        });
+        wrap.innerHTML = saRenderTable(["Name", "Email", "Parish", "Parish role", "Platform role", "Status", "Joined", "Actions"], rows, "No users found.");
+        wrap.querySelectorAll(".sa-btn-delete-user").forEach((btn) => {
+          btn.addEventListener("click", () => deleteSaUser(btn));
+        });
+        wrap.querySelectorAll(".sa-btn-save-parish-role").forEach((btn) => {
+          btn.addEventListener("click", () => saveSaUserParishRole(btn));
+        });
+        if (statusEl) statusEl.textContent = data.total != null ? ("Showing " + items.length + " of " + data.total) : "";
+      } catch (err) {
+        wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
+      }
+    }
+
+    async function saveSaUserParishRole(btn) {
+      const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
+      if (!uid) return;
+      const row = btn.closest("tr");
+      const roleEl = row && row.querySelector(".sa-user-parish-role");
+      const parishEl = row && row.querySelector(".sa-user-parish-pick");
+      const role = roleEl ? roleEl.value : "media";
+      let parishId = roleEl ? (roleEl.getAttribute("data-parish-id") || "") : "";
+      if (parishEl && parishEl.value) parishId = parishEl.value;
+      const statusEl = $("sa-users-status");
+      btn.disabled = true;
+      if (statusEl) { statusEl.textContent = "Saving parish role…"; statusEl.className = "status"; }
+      try {
+        await saFetchAdmin("/api/admin/users/" + encodeURIComponent(uid) + "/parish-role", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: role, parish_id: parishId || null }),
+        });
+        if (statusEl) { statusEl.textContent = "Parish role updated."; statusEl.className = "status ok"; }
+        notify("Parish role updated.", "ok");
+        loadSaUsers();
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = err.message || "Save failed."; statusEl.className = "status err"; }
+        btn.disabled = false;
+      }
+    }
+
+    async function parishFetch(path, options) {
+      const headers = Object.assign({}, await adminAuthHeaders(), (options && options.headers) || {});
+      const res = await fetch(path, Object.assign({}, options || {}, { headers }));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || data.error || "Request failed.");
+      return data;
+    }
+
+    async function loadSettingsParishTeam() {
+      const membersEl = $("settings-team-members");
+      const invitesEl = $("settings-team-invites");
+      const capEl = $("settings-team-capacity");
+      const statusEl = $("settings-team-status");
+      if (!membersEl) return;
+      membersEl.innerHTML = "<li class=\"muted\">Loading team…</li>";
+      if (invitesEl) invitesEl.innerHTML = "";
+      try {
+        const data = await parishFetch("/api/parish/team");
+        const members = Array.isArray(data.members) ? data.members : [];
+        const invites = Array.isArray(data.invites) ? data.invites : [];
+        if (capEl) {
+          capEl.textContent = (data.members_count || members.length) + " / " + (data.member_limit || 3) + " members";
+        }
+        if (!members.length) {
+          membersEl.innerHTML = "<li class=\"muted\">No members yet.</li>";
+        } else {
+          membersEl.innerHTML = members.map((m) => {
+            const name = [m.first_name, m.last_name].filter(Boolean).join(" ").trim() || m.email || "Member";
+            const role = (m.role || "media").toLowerCase();
+            const removeBtn = role !== "president"
+              ? " <button type=\"button\" class=\"secondary settings-team-remove\" data-user-id=\"" + escapeHtml(m.user_id || "") + "\">Remove</button>"
+              : "";
+            return "<li><strong>" + escapeHtml(name) + "</strong> · " + escapeHtml(role) + removeBtn + "</li>";
+          }).join("");
+          membersEl.querySelectorAll(".settings-team-remove").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const uid = btn.getAttribute("data-user-id");
+              if (!uid || !confirm("Remove this teammate from your parish?")) return;
+              btn.disabled = true;
+              try {
+                await parishFetch("/api/parish/team/members/" + encodeURIComponent(uid), { method: "DELETE" });
+                loadSettingsParishTeam();
+              } catch (err) {
+                if (statusEl) { statusEl.textContent = err.message || "Remove failed."; statusEl.className = "status err"; }
+                btn.disabled = false;
+              }
+            });
+          });
+        }
+        if (invitesEl) {
+          if (!invites.length) {
+            invitesEl.innerHTML = "<li class=\"muted\">No pending invites.</li>";
+          } else {
+            invitesEl.innerHTML = invites.map((row) => {
+              const email = escapeHtml(row.email || "Any email");
+              const url = escapeHtml(row.invite_url || "");
+              const exp = escapeHtml(String(row.expires_at || "").slice(0, 10));
+              return "<li><strong>" + email + "</strong><br><span class=\"muted\">Expires " + exp + "</span>" +
+                (url ? "<br><input type=\"text\" readonly value=\"" + url + "\" style=\"width:100%;margin-top:6px;font-size:0.8rem;\" />" : "") +
+                "</li>";
+            }).join("");
+          }
+        }
+        if (statusEl) statusEl.textContent = "";
+      } catch (err) {
+        membersEl.innerHTML = "<li class=\"muted\">" + escapeHtml(err.message || "Could not load team.") + "</li>";
+      }
+    }
+
+    async function acceptParishInviteFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const token = (params.get("parish_invite") || "").trim();
+      if (!token) return;
+      const auth = window.VerbumAuth;
+      if (!auth || !auth.isReady || !auth.isReady()) return;
+      try {
+        const data = await parishFetch("/api/parish/team/invites/accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+        params.delete("parish_invite");
+        const qs = params.toString();
+        history.replaceState({}, "", window.location.pathname + (qs ? "?" + qs : ""));
+        notify("You joined " + ((data.parish && data.parish.community_name) || "the parish") + ".", "ok");
+        if (auth.refreshUserProfile) await auth.refreshUserProfile();
+        refreshCommunity();
+      } catch (err) {
+        notify(err.message || "Could not accept parish invite.", "error");
+      }
+    }
+
+    async function deleteSaUser(btn) {
+      const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
+      const email = btn.getAttribute("data-user-email") || uid;
+      if (!uid) return;
+      if (!confirm("Delete account " + email + "? This cannot be undone.")) return;
+      btn.disabled = true;
+      const statusEl = $("sa-users-status");
+      if (statusEl) { statusEl.textContent = "Deleting user…"; statusEl.className = "status"; }
+      try {
+        await saFetchAdmin("/api/admin/users/" + encodeURIComponent(uid), { method: "DELETE" });
+        if (statusEl) { statusEl.textContent = "User deleted."; statusEl.className = "status ok"; }
+        notify("User deleted.", "ok");
+        loadSaUsers();
+        loadSaDashboard();
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = err.message || "Delete failed."; statusEl.className = "status err"; }
+        btn.disabled = false;
+      }
+    }
+
+    async function loadSaGenerations() {
+      const wrap = $("sa-generations-table-wrap");
+      const statusEl = $("sa-generations-status");
+      if (!wrap) return;
+      wrap.innerHTML = "<div class=\"sa-empty\"><div class=\"sa-skeleton\"></div></div>";
+      try {
+        const q = saState.generations.q || "";
+        const data = await saFetchAdmin("/api/admin/generations?page=" + saState.generations.page + "&q=" + encodeURIComponent(q));
+        const items = Array.isArray(data.items) ? data.items : [];
+        const rows = items.map((row) => (
+          "<tr><td>" + escapeHtml(String(row.mass_date || "—")) + "</td>" +
+          "<td>" + escapeHtml(row.title || row.celebrant || "—") + "</td>" +
+          "<td>" + escapeHtml(row.parish_name || row.user_email || "—") + "</td>" +
+          "<td>" + escapeHtml(row.slide_count != null ? String(row.slide_count) : "—") + "</td>" +
+          "<td class=\"muted\">" + escapeHtml(String(row.created_at || "").slice(0, 19)) + "</td></tr>"
+        ));
+        wrap.innerHTML = saRenderTable(["Mass date", "Title", "Parish / user", "Slides", "When"], rows, "No generations yet.");
+        if (statusEl) statusEl.textContent = data.total != null ? ("Showing " + items.length + " of " + data.total) : "";
+      } catch (err) {
+        wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
+      }
+    }
+
+    function loadSaMembership() {
+      refreshAdminPendingMemberships();
+      refreshAdminPendingSongs();
+      refreshAdminPendingPriests();
+    }
+
+    async function loadSaInvites() {
+      const listEl = $("sa-invites-list");
+      if (!listEl) return;
+      listEl.innerHTML = "<li class=\"muted\">Loading invites…</li>";
+      try {
+        const data = await saFetchAdmin("/api/admin/invites");
+        const invites = Array.isArray(data.invites) ? data.invites : [];
+        if (!invites.length) {
+          listEl.innerHTML = "<li class=\"muted\">No pending invites.</li>";
+          return;
+        }
+        listEl.innerHTML = invites.map((row) => {
+          const email = escapeHtml(row.email || "Any email");
+          const url = escapeHtml(row.invite_url || "");
+          const exp = escapeHtml(String(row.expires_at || "").slice(0, 10));
+          const note = escapeHtml(row.note || "");
+          return (
+            "<li style=\"padding:10px 0;border-bottom:1px solid var(--line);\">" +
+              "<strong>" + email + "</strong>" +
+              (note ? "<br><span class=\"muted\">" + note + "</span>" : "") +
+              "<br><span class=\"muted\">Expires " + exp + "</span>" +
+              (url ? "<br><code style=\"font-size:0.75rem;word-break:break-all;\">" + url + "</code>" : "") +
+            "</li>"
+          );
+        }).join("");
+      } catch (err) {
+        listEl.innerHTML = "<li class=\"muted\">" + escapeHtml(err.message || "Could not load invites.") + "</li>";
+      }
+    }
+
+    async function createSaInvite() {
+      const statusEl = $("sa-invite-create-status");
+      const emailEl = $("sa-invite-email");
+      const noteEl = $("sa-invite-note");
+      const urlWrap = $("sa-invite-url-wrap");
+      const urlInput = $("sa-invite-url");
+      if (statusEl) { statusEl.textContent = "Creating invite…"; statusEl.className = "status"; }
+      try {
+        const body = {
+          email: emailEl && emailEl.value.trim() ? emailEl.value.trim() : null,
+          note: noteEl && noteEl.value.trim() ? noteEl.value.trim() : null,
+          ttl_days: 7,
+        };
+        const data = await saFetchAdmin("/api/admin/invites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const url = data.invite_url || "";
+        if (urlWrap) urlWrap.hidden = !url;
+        if (urlInput) urlInput.value = url;
+        if (statusEl) {
+          statusEl.textContent = "Invite created. Copy the link and send it to the new user.";
+          statusEl.className = "status ok";
+        }
+        if (emailEl) emailEl.value = "";
+        if (noteEl) noteEl.value = "";
+        loadSaInvites();
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Could not create invite.";
+          statusEl.className = "status error";
+        }
+      }
+    }
+
+    async function loadSaReadingsCache() {
+      const summary = $("sa-readings-cache-summary");
+      if (!summary) return;
+      try {
+        const data = await saFetchAdmin("/api/admin/readings-cache/stats");
+        summary.textContent = (data.entries || 0) + " cached dates · " + (data.bytes || 0) + " bytes (" + (data.path || "readings_cache.json") + ")";
+      } catch (err) {
+        summary.textContent = err.message || "Could not load cache stats.";
+      }
+    }
+
+    async function loadSaAiQuotaSummary() {
+      const el = $("sa-ai-quota-summary");
+      if (!el) return;
+      try {
+        const res = await fetch("/api/image-quota");
+        const q = await res.json();
+        el.textContent = "Daily limit: " + (q.limit || "?") + " · Used: " + (q.used || 0) + " · Remaining: " + (q.remaining || 0) + " (UTC, per subject until parish quota ships).";
+      } catch (_e) {
+        el.textContent = "Could not load quota status.";
+      }
+    }
+
+    async function loadSaHealth() {
+      const grid = $("sa-health-grid");
+      const envList = $("sa-env-list");
+      if (!grid) return;
+      grid.innerHTML = Array(4).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
+      try {
+        const data = await saFetchAdmin("/api/admin/health");
+        const checks = data.checks || {};
+        grid.innerHTML = [
+          saRenderStatCard("Supabase", checks.supabase && checks.supabase.ok ? "OK" : "Issue", checks.supabase && checks.supabase.configured ? "Configured" : "Off"),
+          saRenderStatCard("Redis", checks.redis && checks.redis.ok ? "OK" : "Issue", checks.redis && checks.redis.configured ? "Configured" : "Off"),
+          saRenderStatCard("Auth", checks.auth && checks.auth.enabled ? "On" : "Off"),
+          saRenderStatCard("Readings cache", (data.readings_cache && data.readings_cache.entries) || 0),
+        ].join("");
+        if (envList) {
+          const env = data.env || {};
+          envList.innerHTML = Object.keys(env).map((key) => (
+            "<li><span>" + escapeHtml(key) + "</span><span class=\"muted\">" +
+            (env[key] === true || (typeof env[key] === "string" && env[key]) ? "set" : String(env[key] || "—")) +
+            "</span></li>"
+          )).join("");
+        }
+      } catch (err) {
+        grid.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Health check failed.") + "</p>";
+      }
+    }
+
+    async function saClearReadingsCache(date) {
+      const statusEl = $("sa-readings-status");
+      const body = date ? { date: date } : {};
+      if (statusEl) { statusEl.textContent = "Clearing…"; statusEl.className = "status"; }
+      try {
+        await saFetchAdmin("/api/admin/readings-cache/clear", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (statusEl) { statusEl.textContent = date ? ("Cleared " + date + ".") : "Entire readings cache cleared."; statusEl.className = "status ok"; }
+        loadSaReadingsCache();
+        if (saState.panel === "dashboard") loadSaDashboard();
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = err.message || "Clear failed."; statusEl.className = "status error"; }
+      }
+    }
+
+    async function saBootstrapSuperadmins(statusEl) {
+      if (!guardSuperadminAction()) return;
+      if (statusEl) { statusEl.textContent = "Bootstrapping…"; statusEl.className = "status"; }
+      try {
+        const data = await saFetchAdmin("/api/admin/bootstrap-superadmins", { method: "POST" });
+        if (statusEl) {
+          statusEl.textContent = "Promoted " + (data.promoted || 0) + " profile(s) from SUPERADMIN_EMAILS.";
+          statusEl.className = "status ok";
+        }
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = err.message || "Bootstrap failed."; statusEl.className = "status error"; }
+      }
+    }
+
+    function initSaNav() {
+      if (saState.initialized) return;
+      saState.initialized = true;
+      document.querySelectorAll(".sa-nav-group__toggle").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const group = btn.closest(".sa-nav-group");
+          if (!group) return;
+          const open = group.getAttribute("data-open") !== "false";
+          group.setAttribute("data-open", open ? "false" : "true");
+          btn.setAttribute("aria-expanded", open ? "false" : "true");
+        });
+      });
+      document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
+        link.addEventListener("click", () => showSaPanel(link.getAttribute("data-sa-panel")));
+      });
+      document.querySelectorAll("[data-sa-panel-jump]").forEach((btn) => {
+        btn.addEventListener("click", () => showSaPanel(btn.getAttribute("data-sa-panel-jump")));
+      });
+      $("sa-btn-goto-membership") && $("sa-btn-goto-membership").addEventListener("click", () => showSaPanel("membership"));
+      $("sa-btn-goto-templates") && $("sa-btn-goto-templates").addEventListener("click", () => showRoute("/design/templates"));
+      $("sa-btn-open-templates") && $("sa-btn-open-templates").addEventListener("click", () => showRoute("/design/templates"));
+      $("sa-btn-open-library") && $("sa-btn-open-library").addEventListener("click", () => showRoute("/library/songs"));
+      $("sa-btn-clear-readings-cache") && $("sa-btn-clear-readings-cache").addEventListener("click", () => {
+        if (!confirm("Clear the entire readings cache?")) return;
+        saClearReadingsCache(null);
+      });
+      $("sa-btn-clear-readings-all") && $("sa-btn-clear-readings-all").addEventListener("click", () => {
+        if (!confirm("Clear the entire readings cache?")) return;
+        saClearReadingsCache(null);
+      });
+      $("sa-btn-clear-readings-date") && $("sa-btn-clear-readings-date").addEventListener("click", () => {
+        const d = $("sa-readings-clear-date") && $("sa-readings-clear-date").value;
+        if (!d) { notify("Choose a date first.", "info"); return; }
+        saClearReadingsCache(d);
+      });
+      $("sa-btn-bootstrap-superadmins") && $("sa-btn-bootstrap-superadmins").addEventListener("click", () => saBootstrapSuperadmins($("sa-dashboard-status")));
+      $("sa-btn-bootstrap-superadmins-2") && $("sa-btn-bootstrap-superadmins-2").addEventListener("click", () => saBootstrapSuperadmins($("sa-health-status")));
+      $("sa-btn-refresh-health") && $("sa-btn-refresh-health").addEventListener("click", () => loadSaHealth());
+      const parishSearch = $("sa-parishes-search");
+      if (parishSearch) {
+        let t = null;
+        parishSearch.addEventListener("input", () => {
+          clearTimeout(t);
+          t = setTimeout(() => { saState.parishes.q = parishSearch.value.trim(); saState.parishes.page = 1; loadSaParishes(); }, 300);
+        });
+      }
+      const usersSearch = $("sa-users-search");
+      if (usersSearch) {
+        let t = null;
+        usersSearch.addEventListener("input", () => {
+          clearTimeout(t);
+          t = setTimeout(() => { saState.users.q = usersSearch.value.trim(); saState.users.page = 1; loadSaUsers(); }, 300);
+        });
+      }
+      const genSearch = $("sa-generations-search");
+      if (genSearch) {
+        let t = null;
+        genSearch.addEventListener("input", () => {
+          clearTimeout(t);
+          t = setTimeout(() => { saState.generations.q = genSearch.value.trim(); saState.generations.page = 1; loadSaGenerations(); }, 300);
+        });
+      }
+      $("sa-parishes-refresh") && $("sa-parishes-refresh").addEventListener("click", () => loadSaParishes());
+      $("sa-users-refresh") && $("sa-users-refresh").addEventListener("click", () => loadSaUsers());
+
+      $("settings-team-create-invite") && $("settings-team-create-invite").addEventListener("click", async () => {
+        const emailEl = $("settings-team-invite-email");
+        const statusEl = $("settings-team-status");
+        const urlWrap = $("settings-team-url-wrap");
+        const urlInput = $("settings-team-invite-url");
+        if (statusEl) { statusEl.textContent = "Creating invite…"; statusEl.className = "status"; }
+        try {
+          const data = await parishFetch("/api/parish/team/invites", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailEl ? emailEl.value.trim() : "" }),
+          });
+          const url = data.invite_url || "";
+          if (urlInput) urlInput.value = url;
+          if (urlWrap) urlWrap.hidden = !url;
+          if (statusEl) { statusEl.textContent = "Invite created. Send the link to your media teammate."; statusEl.className = "status ok"; }
+          loadSettingsParishTeam();
+        } catch (err) {
+          if (statusEl) { statusEl.textContent = err.message || "Could not create invite."; statusEl.className = "status err"; }
+        }
+      });
+      $("settings-team-refresh") && $("settings-team-refresh").addEventListener("click", () => loadSettingsParishTeam());
+      $("settings-team-copy-url") && $("settings-team-copy-url").addEventListener("click", async () => {
+        const inp = $("settings-team-invite-url");
+        if (!inp || !inp.value) return;
+        try {
+          await navigator.clipboard.writeText(inp.value);
+          notify("Invite link copied.", "ok");
+        } catch (_e) {
+          inp.select();
+          document.execCommand("copy");
+          notify("Invite link copied.", "ok");
+        }
+      });
+      $("sa-generations-refresh") && $("sa-generations-refresh").addEventListener("click", () => loadSaGenerations());
+      $("sa-btn-create-invite") && $("sa-btn-create-invite").addEventListener("click", () => createSaInvite());
+      $("sa-btn-refresh-invites") && $("sa-btn-refresh-invites").addEventListener("click", () => loadSaInvites());
+      $("sa-btn-copy-invite-url") && $("sa-btn-copy-invite-url").addEventListener("click", async () => {
+        const inp = $("sa-invite-url");
+        if (!inp || !inp.value) return;
+        try {
+          await navigator.clipboard.writeText(inp.value);
+          notify("Invite link copied.", "ok");
+        } catch (_e) {
+          inp.select();
+          document.execCommand("copy");
+          notify("Invite link copied.", "ok");
+        }
+      });
+    }
+
+    function initSuperadminPage() {
+      if (!canAccessSuperadminRoute()) return;
+      initSaNav();
+      showSaPanel(saState.panel || "dashboard");
+    }
+
+    function initSuperadminEasterEgg() {
+      const btn = $("liturgical-indicator-btn");
+      if (!btn || btn.dataset.saEggBound === "1") return;
+      btn.dataset.saEggBound = "1";
+      let clicks = 0;
+      let resetTimer = null;
+      btn.addEventListener("click", () => {
+        if (!churchMembershipState.is_superadmin) return;
+        if (!btn.classList.contains("liturgical-indicator--ordinary")) return;
+        clicks += 1;
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => { clicks = 0; }, 3000);
+        if (clicks < 7) return;
+        clicks = 0;
+        try { sessionStorage.setItem("verbum:sa-unlocked", "1"); } catch (_e) { /* ignore */ }
+        syncSuperadminNavVisibility();
+        notify("Superadmin tools unlocked.", "ok");
+      });
     }
 
     async function refreshCommunity() {
@@ -22228,7 +23871,7 @@ Lord, hear our prayer</textarea>
     }
 
     async function refreshGeminiSettings() {
-      const hintEl = $("settings-gemini-api-key-hint");
+      const hintEl = $("sa-gemini-api-key-hint");
       if (!hintEl) return;
       try {
         const res = await fetch("/api/settings/gemini-api-key");
@@ -24050,6 +25693,7 @@ Lord, hear our prayer</textarea>
         if (panel.hidden) openPanel();
         else closePanel();
       });
+      initSuperadminEasterEgg();
       startLiturgicalCountdownTimer();
     }
 
@@ -25851,6 +27495,7 @@ Lord, hear our prayer</textarea>
       if (!grid || !label) return;
       const y = calendarCursor.getFullYear();
       const m = calendarCursor.getMonth();
+      const adminMode = canUseCalendarReadingsAdmin();
       label.textContent = calendarCursor.toLocaleString(undefined, { month: "long", year: "numeric" });
       const first = new Date(y, m, 1);
       const startPad = first.getDay();
@@ -25869,12 +27514,20 @@ Lord, hear our prayer</textarea>
         if (hasData) classes.push("has-data");
         if (iso === calSelected) classes.push("selected");
         if (sunday && calendarMonthLoading && !day.gospel_reference) classes.push("loading");
+        let healthHtml = "";
+        if (adminMode && day.readings_health) {
+          const h = day.readings_health;
+          classes.push("cal-cell--" + h);
+          const icon = h === "healthy" ? "✓" : h === "warning" ? "⚠" : "!";
+          healthHtml = "<span class=\"cal-health-badge cal-health-badge--" + h + "\" aria-hidden=\"true\">" + icon + "</span>";
+        }
         const dotAttr = hex ? " style=\"background:" + escapeHtml(hex) + "\"" : "";
         const gospelLabel = day.gospel_reference ? escapeHtml(day.gospel_reference) : "";
         cells.push(
           "<button type=\"button\" class=\"" + classes.join(" ") + "\" data-cal=\"" + iso + "\">" +
           "<span class=\"cal-cell-top\"><span class=\"cal-cell-day\">" + d + "</span>" +
-          "<span class=\"cal-cell-dot\"" + dotAttr + " aria-hidden=\"true\"></span></span>" +
+          "<span class=\"cal-cell-indicators\">" + healthHtml +
+          "<span class=\"cal-cell-dot\"" + dotAttr + " aria-hidden=\"true\"></span></span></span>" +
           "<span class=\"cal-cell-gospel\">" + gospelLabel + "</span>" +
           "</button>"
         );
@@ -25887,11 +27540,15 @@ Lord, hear our prayer</textarea>
       const m = calendarCursor.getMonth() + 1;
       const key = y + "-" + m;
       calendarMonthLoading = true;
+      syncCalendarAdminVisibility();
       renderCalendarGrid();
       const status = $("cal-month-status");
       if (status) status.textContent = "Loading liturgical calendar…";
       try {
-        const res = await fetch("/api/calendar/month?year=" + y + "&month=" + m);
+        const endpoint = canUseCalendarReadingsAdmin()
+          ? "/api/admin/calendar/month?year=" + y + "&month=" + m
+          : "/api/calendar/month?year=" + y + "&month=" + m;
+        const res = await fetch(endpoint);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.detail || data.error || "Could not load month");
         calendarMonthData = data.days || {};
@@ -25904,6 +27561,435 @@ Lord, hear our prayer</textarea>
       } finally {
         calendarMonthLoading = false;
         renderCalendarGrid();
+      }
+    }
+
+    let calReadingsAdminDate = "";
+    let calReadingsAdminDetail = null;
+
+    const CAL_ADMIN_FIELD_KEYS = [
+      "first_reading_ref", "first_reading",
+      "second_reading_ref", "second_reading",
+      "psalm_ref", "psalm_response", "psalm_verses", "psalm_text",
+      "gospel_ref", "gospel",
+    ];
+
+    function setCalAdminFieldStatus(key, field) {
+      const el = document.querySelector("[data-admin-status=\"" + key + "\"]");
+      if (!el || !field) return;
+      const ok = !!field.ok;
+      el.textContent = ok ? "OK" : "Missing";
+      el.className = "cal-admin-reading-status " + (ok ? "ok" : "bad");
+    }
+
+    function fillCalReadingsAdminModal(detail) {
+      calReadingsAdminDetail = detail;
+      const entry = detail.entry || {};
+      const health = detail.health || {};
+      const modal = $("cal-readings-admin-modal");
+      const title = $("cal-readings-admin-title");
+      const subtitle = $("cal-readings-admin-subtitle");
+      const statusEl = $("cal-readings-admin-status");
+      if (title) title.textContent = "Readings — " + (detail.date || "");
+      if (subtitle) {
+        const h = health.status || "unknown";
+        subtitle.textContent = "Global cache · " + h.charAt(0).toUpperCase() + h.slice(1);
+      }
+      if (statusEl) {
+        statusEl.textContent = detail.title
+          ? (detail.title + (detail.season ? " · " + detail.season : ""))
+          : "No lectionary title cached yet.";
+      }
+      modal.querySelectorAll("[data-admin-field]").forEach((input) => {
+        const key = input.getAttribute("data-admin-field");
+        input.value = entry[key] || "";
+      });
+      modal.querySelectorAll("[data-admin-reading]").forEach((block) => {
+        block.classList.remove("is-editing");
+      });
+      const fields = health.fields || {};
+      setCalAdminFieldStatus("first", fields.first_reading);
+      setCalAdminFieldStatus("second", fields.second_reading);
+      setCalAdminFieldStatus("psalm", fields.psalm);
+      setCalAdminFieldStatus("gospel", fields.gospel);
+    }
+
+    function openCalReadingsAdminModal(iso) {
+      if (!canUseCalendarReadingsAdmin()) return;
+      calReadingsAdminDate = iso;
+      const modal = $("cal-readings-admin-modal");
+      const statusEl = $("cal-readings-admin-status");
+      if (statusEl) statusEl.textContent = "Loading readings cache…";
+      if (modal) {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+      }
+      fetch("/api/admin/readings-cache/" + encodeURIComponent(iso))
+        .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+          if (!ok) throw new Error(data.detail || "Could not load readings");
+          if (calReadingsAdminDate !== iso) return;
+          fillCalReadingsAdminModal(data);
+        })
+        .catch((err) => {
+          if (calReadingsAdminDate !== iso) return;
+          if (statusEl) statusEl.textContent = err.message || "Load failed.";
+        });
+    }
+
+    function closeCalReadingsAdminModal() {
+      calReadingsAdminDate = "";
+      calReadingsAdminDetail = null;
+      const modal = $("cal-readings-admin-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    function collectCalReadingsAdminPayload() {
+      const modal = $("cal-readings-admin-modal");
+      if (!modal) return {};
+      const payload = {};
+      CAL_ADMIN_FIELD_KEYS.forEach((key) => {
+        const input = modal.querySelector("[data-admin-field=\"" + key + "\"]");
+        if (input) payload[key] = input.value;
+      });
+      return payload;
+    }
+
+    async function saveCalReadingsAdminAll() {
+      if (!calReadingsAdminDate) return;
+      const saveBtn = $("cal-readings-admin-save");
+      const statusEl = $("cal-readings-admin-status");
+      const payload = collectCalReadingsAdminPayload();
+      if (saveBtn) saveBtn.disabled = true;
+      if (statusEl) statusEl.textContent = "Saving global readings cache…";
+      try {
+        const res = await fetch("/api/admin/readings-cache/" + encodeURIComponent(calReadingsAdminDate), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Save failed");
+        fillCalReadingsAdminModal(data);
+        if (statusEl) statusEl.textContent = "Saved — applies to all parishes.";
+        const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1);
+        if (calendarMonthKey === monthKey && data.health) {
+          calendarMonthData[calReadingsAdminDate] = Object.assign(
+            {},
+            calendarMonthData[calReadingsAdminDate] || {},
+            { readings_health: data.health.status }
+          );
+          renderCalendarGrid();
+        }
+        if (calSelected === calReadingsAdminDate) setCalDetail(calSelected);
+      } catch (err) {
+        if (statusEl) statusEl.textContent = err.message || "Could not save readings.";
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+      }
+    }
+
+    const CAL_ADMIN_MAX_FETCH_ATTEMPTS = 3;
+    const calAdminFetchJob = {
+      active: false,
+      cancelled: false,
+      abort: null,
+      mode: "",
+      scope: "",
+      total: 0,
+      done: 0,
+      improved: 0,
+    };
+
+    const CAL_ADMIN_FETCH_BUTTON_IDS = [
+      "cal-admin-fetch-missing-btn",
+      "cal-admin-fetch-month-btn",
+      "cal-readings-admin-fetch",
+    ];
+
+    function setCalFetchButtonState(btn, running, meta) {
+      if (!btn) return;
+      btn.classList.toggle("is-running", !!running);
+      btn.setAttribute("aria-busy", running ? "true" : "false");
+      btn.title = running ? "Click to stop fetch" : (btn.dataset.defaultTitle || btn.title || "");
+      const idle = btn.querySelector(".cal-fetch-btn__idle");
+      const runningWrap = btn.querySelector(".cal-fetch-btn__running");
+      if (idle) idle.hidden = !!running;
+      if (runningWrap) runningWrap.hidden = !running;
+      const metaEl = btn.querySelector(".cal-fetch-btn__meta");
+      if (metaEl) metaEl.textContent = meta || "";
+    }
+
+    function getCalAdminActiveFetchButton() {
+      if (!calAdminFetchJob.active) return null;
+      if (calAdminFetchJob.mode === "date") return $("cal-readings-admin-fetch");
+      if (calAdminFetchJob.mode === "month") {
+        return calAdminFetchJob.scope === "all"
+          ? $("cal-admin-fetch-month-btn")
+          : $("cal-admin-fetch-missing-btn");
+      }
+      return null;
+    }
+
+    function updateCalAdminFetchButtons(meta) {
+      const active = getCalAdminActiveFetchButton();
+      CAL_ADMIN_FETCH_BUTTON_IDS.forEach((id) => {
+        const btn = $(id);
+        if (!btn || btn.hidden) return;
+        const isActive = btn === active;
+        setCalFetchButtonState(btn, isActive, isActive ? (meta || "") : "");
+        btn.disabled = !!calAdminFetchJob.active && !isActive;
+      });
+      const saveBtn = $("cal-readings-admin-save");
+      if (saveBtn) saveBtn.disabled = !!calAdminFetchJob.active;
+    }
+
+    function calAdminSyncFetchButtonMeta(iso, attempt) {
+      let meta = iso + " · try " + attempt + "/" + CAL_ADMIN_MAX_FETCH_ATTEMPTS;
+      if (calAdminFetchJob.mode === "month") {
+        meta = (calAdminFetchJob.done + 1) + "/" + calAdminFetchJob.total + " · " + meta;
+      }
+      updateCalAdminFetchButtons(meta);
+    }
+
+    function calAdminFetchSleep(ms) {
+      return new Promise((resolve) => {
+        if (calAdminFetchJob.cancelled) {
+          resolve(false);
+          return;
+        }
+        const t = setTimeout(() => resolve(true), ms);
+        const check = setInterval(() => {
+          if (calAdminFetchJob.cancelled) {
+            clearTimeout(t);
+            clearInterval(check);
+            resolve(false);
+          }
+        }, 50);
+        setTimeout(() => clearInterval(check), ms + 50);
+      });
+    }
+
+    function updateCalAdminFetchStopButtons() {
+      updateCalAdminFetchButtons();
+    }
+
+    function updateCalAdminFetchProgress(done, total, label) {
+      if (label) updateCalAdminFetchButtons(label);
+    }
+
+    function beginCalAdminFetchJob(mode, total, scope) {
+      if (calAdminFetchJob.active) stopCalAdminFetchJob();
+      calAdminFetchJob.active = true;
+      calAdminFetchJob.cancelled = false;
+      calAdminFetchJob.abort = null;
+      calAdminFetchJob.mode = mode;
+      calAdminFetchJob.scope = scope || "";
+      calAdminFetchJob.total = total || 0;
+      calAdminFetchJob.done = 0;
+      calAdminFetchJob.improved = 0;
+      updateCalAdminFetchButtons(mode === "month" ? "Starting…" : "Fetching…");
+    }
+
+    function finishCalAdminFetchJob(message) {
+      const wasMonth = calAdminFetchJob.mode === "month";
+      calAdminFetchJob.active = false;
+      calAdminFetchJob.cancelled = false;
+      calAdminFetchJob.abort = null;
+      calAdminFetchJob.mode = "";
+      calAdminFetchJob.scope = "";
+      updateCalAdminFetchButtons();
+      if (message) {
+        const status = $("cal-month-status");
+        if (status && wasMonth) status.textContent = message;
+      }
+      syncCalendarAdminVisibility();
+    }
+
+    function stopCalAdminFetchJob() {
+      if (!calAdminFetchJob.active) return;
+      calAdminFetchJob.cancelled = true;
+      if (calAdminFetchJob.abort) calAdminFetchJob.abort.abort();
+      const status = $("cal-month-status");
+      const modalStatus = $("cal-readings-admin-status");
+      if (status && calAdminFetchJob.mode === "month") status.textContent = "Fetch stopped.";
+      if (modalStatus && calAdminFetchJob.mode === "date") modalStatus.textContent = "Fetch stopped.";
+    }
+
+    function calAdminDatesForMonthFetch(scope) {
+      const y = calendarCursor.getFullYear();
+      const m = calendarCursor.getMonth();
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const out = [];
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso = formatDateInput(new Date(y, m, d));
+        const health = (calendarMonthData[iso] || {}).readings_health;
+        if (scope === "all" || health !== "healthy") out.push(iso);
+      }
+      return out;
+    }
+
+    async function postCalAdminFetchDate(iso) {
+      calAdminFetchJob.abort = new AbortController();
+      const res = await fetch("/api/admin/readings-cache/fetch-date", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: iso }),
+        signal: calAdminFetchJob.abort.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Fetch failed");
+      return data;
+    }
+
+    function calAdminApplyFetchResult(iso, data) {
+      if (!data || !data.health) return;
+      const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1);
+      if (calendarMonthKey === monthKey) {
+        calendarMonthData[iso] = Object.assign({}, calendarMonthData[iso] || {}, { readings_health: data.health.status });
+        renderCalendarGrid();
+      }
+      if (calReadingsAdminDate === iso) fillCalReadingsAdminModal(data);
+      if (calSelected === iso) setCalDetail(iso);
+    }
+
+    async function fetchCalAdminDateWithRetries(iso, opts) {
+      const quietMonth = !!(opts && opts.quietMonthStatus);
+      const statusEl = $("cal-readings-admin-status");
+      const monthStatus = $("cal-month-status");
+      let lastData = null;
+      let lastBefore = "";
+      let attempts = 0;
+
+      for (let attempt = 1; attempt <= CAL_ADMIN_MAX_FETCH_ATTEMPTS; attempt++) {
+        if (calAdminFetchJob.cancelled) break;
+        attempts = attempt;
+        calAdminSyncFetchButtonMeta(iso, attempt);
+        const attemptLabel = "Fetching " + iso + " — attempt " + attempt + "/" + CAL_ADMIN_MAX_FETCH_ATTEMPTS + "…";
+        if (statusEl && calAdminFetchJob.mode === "date") statusEl.textContent = attemptLabel;
+        if (monthStatus && calAdminFetchJob.mode === "month" && !quietMonth) {
+          monthStatus.textContent = attemptLabel;
+        }
+        try {
+          lastData = await postCalAdminFetchDate(iso);
+          lastBefore = (lastData.fetch && lastData.fetch.before) || "";
+          calAdminApplyFetchResult(iso, lastData);
+          if (lastData.health && lastData.health.status === "healthy") {
+            calAdminFetchJob.improved += lastBefore !== "healthy" ? 1 : 0;
+            break;
+          }
+        } catch (err) {
+          if (err && err.name === "AbortError") break;
+          if (statusEl && calAdminFetchJob.mode === "date") {
+            statusEl.textContent = (err.message || "Fetch failed") + " (attempt " + attempt + "/" + CAL_ADMIN_MAX_FETCH_ATTEMPTS + ")";
+          }
+          if (attempt >= CAL_ADMIN_MAX_FETCH_ATTEMPTS) break;
+        }
+        if (attempt < CAL_ADMIN_MAX_FETCH_ATTEMPTS && !calAdminFetchJob.cancelled) {
+          await calAdminFetchSleep(500);
+        }
+      }
+      const exhausted = !calAdminFetchJob.cancelled
+        && attempts >= CAL_ADMIN_MAX_FETCH_ATTEMPTS
+        && lastData
+        && lastData.health
+        && lastData.health.status !== "healthy";
+      return { data: lastData, attempts, exhausted, cancelled: !!calAdminFetchJob.cancelled };
+    }
+
+    function calAdminFetchStatusMessage(fetchMeta, opts) {
+      if (opts && opts.cancelled) return "Fetch stopped.";
+      if (!fetchMeta) return "Fetch finished — no response.";
+      const before = fetchMeta.before || "?";
+      const after = fetchMeta.after || "?";
+      if (fetchMeta.stoppedMaxAttempts) {
+        return "Stopped after " + CAL_ADMIN_MAX_FETCH_ATTEMPTS + " attempts — still " + after + ". Edit manually or try later.";
+      }
+      if (fetchMeta.error) return "Fetch failed: " + fetchMeta.error;
+      if (after === "healthy" && before !== after) return "Fetched from USCCB — now healthy.";
+      if (after === "healthy") return "Fetched from USCCB — readings look complete.";
+      if (fetchMeta.fetched) return "Fetched from USCCB — still " + after + " (bot block or partial data).";
+      return "Could not fetch from USCCB. Try again later.";
+    }
+
+    async function fetchCalReadingsAdminDate(iso, opts) {
+      if (!canUseCalendarReadingsAdmin() || !iso) return null;
+      if (calAdminFetchJob.active) {
+        notify("Another fetch is already running. Stop it first.", "info");
+        return null;
+      }
+      beginCalAdminFetchJob("date", 1);
+      const statusEl = $("cal-readings-admin-status");
+      const monthStatus = $("cal-month-status");
+      try {
+        const result = await fetchCalAdminDateWithRetries(iso, opts);
+        const data = result.data;
+        if (result.cancelled) {
+          if (statusEl) statusEl.textContent = "Fetch stopped.";
+          return data;
+        }
+        const fetchMeta = Object.assign({}, (data && data.fetch) || {}, {
+          stoppedMaxAttempts: result.exhausted,
+        });
+        const msg = calAdminFetchStatusMessage(fetchMeta, { cancelled: false });
+        if (statusEl) statusEl.textContent = msg;
+        if (monthStatus && !(opts && opts.quietMonthStatus)) monthStatus.textContent = msg;
+        return data;
+      } catch (err) {
+        const message = err.message || "Fetch failed.";
+        if (statusEl) statusEl.textContent = message;
+        if (monthStatus && !(opts && opts.quietMonthStatus)) monthStatus.textContent = message;
+        return null;
+      } finally {
+        finishCalAdminFetchJob();
+      }
+    }
+
+    async function fetchCalendarMonthReadings(scope) {
+      if (!canUseCalendarReadingsAdmin()) return;
+      if (calAdminFetchJob.active) {
+        notify("Another fetch is already running.", "info");
+        return;
+      }
+      const allDays = scope === "all";
+      const dates = calAdminDatesForMonthFetch(scope || "missing");
+      if (!dates.length) {
+        const status = $("cal-month-status");
+        if (status) status.textContent = allDays ? "No dates in this month." : "All dates in this month look healthy.";
+        return;
+      }
+      beginCalAdminFetchJob("month", dates.length, scope || "missing");
+      const status = $("cal-month-status");
+      let improved = 0;
+      try {
+        for (let i = 0; i < dates.length; i++) {
+          if (calAdminFetchJob.cancelled) break;
+          const iso = dates[i];
+          calAdminFetchJob.done = i;
+          updateCalAdminFetchButtons((i + 1) + "/" + dates.length + " · " + iso);
+          if (status) status.textContent = "Fetching " + iso + " (" + (i + 1) + "/" + dates.length + ")…";
+          const beforeHealth = ((calendarMonthData[iso] || {}).readings_health) || "critical";
+          const result = await fetchCalAdminDateWithRetries(iso, { quietMonthStatus: true });
+          const afterHealth = ((calendarMonthData[iso] || {}).readings_health)
+            || ((result.data && result.data.health && result.data.health.status) || beforeHealth);
+          if (afterHealth === "healthy" && beforeHealth !== "healthy") improved += 1;
+          calAdminFetchJob.done = i + 1;
+          updateCalAdminFetchButtons((i + 1) + "/" + dates.length + " · done " + iso);
+          if (calAdminFetchJob.cancelled) break;
+          if (i < dates.length - 1) await calAdminFetchSleep(350);
+        }
+        const stopped = calAdminFetchJob.cancelled;
+        const summary = stopped
+          ? "Fetch stopped — processed " + calAdminFetchJob.done + " of " + dates.length + ", fixed " + improved + "."
+          : "Fetch complete — processed " + dates.length + " dates, fixed " + improved + ".";
+        calendarMonthKey = "";
+        await loadCalendarMonth();
+        if (calReadingsAdminDate) openCalReadingsAdminModal(calReadingsAdminDate);
+        finishCalAdminFetchJob(summary);
+      } catch (err) {
+        finishCalAdminFetchJob(err.message || "Fetch failed.");
       }
     }
 
@@ -26762,10 +28848,10 @@ Lord, hear our prayer</textarea>
       }
     });
 
-    $("btn-save-gemini-api-key") && $("btn-save-gemini-api-key").addEventListener("click", async () => {
+    $("sa-btn-save-gemini-api-key") && $("sa-btn-save-gemini-api-key").addEventListener("click", async () => {
       if (!guardSuperadminAction()) return;
-      const inp = $("settings-gemini-api-key");
-      const statusEl = $("settings-gemini-status");
+      const inp = $("sa-gemini-api-key");
+      const statusEl = $("sa-gemini-status");
       const key = inp && inp.value.trim();
       if (!key) {
         if (statusEl) {
@@ -27044,8 +29130,44 @@ Lord, hear our prayer</textarea>
     $("cal-grid").addEventListener("click", (e) => {
       const cell = e.target.closest(".cal-cell[data-cal]");
       if (!cell) return;
-      setCalDetail(cell.dataset.cal);
+      const iso = cell.dataset.cal;
+      setCalDetail(iso);
+      if (canUseCalendarReadingsAdmin()) openCalReadingsAdminModal(iso);
     });
+    function bindCalFetchToggleButton(btn, startFn) {
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        if (calAdminFetchJob.active && getCalAdminActiveFetchButton() === btn) {
+          stopCalAdminFetchJob();
+          return;
+        }
+        if (calAdminFetchJob.active) {
+          notify("Another fetch is already running. Stop it first.", "info");
+          return;
+        }
+        startFn();
+      });
+    }
+
+    bindCalFetchToggleButton($("cal-admin-fetch-missing-btn"), () => fetchCalendarMonthReadings("missing"));
+    bindCalFetchToggleButton($("cal-admin-fetch-month-btn"), () => {
+      if (!confirm("Force-fetch all " + calendarCursor.toLocaleString(undefined, { month: "long" }) + " dates from USCCB? Each date tries up to 3 times. Click the button again to stop.")) return;
+      fetchCalendarMonthReadings("all");
+    });
+    bindCalFetchToggleButton($("cal-readings-admin-fetch"), () => {
+      if (calReadingsAdminDate) fetchCalReadingsAdminDate(calReadingsAdminDate);
+    });
+    const calReadingsAdminSaveBtn = $("cal-readings-admin-save");
+    if (calReadingsAdminSaveBtn) {
+      calReadingsAdminSaveBtn.addEventListener("click", () => saveCalReadingsAdminAll());
+    }
+    const calReadingsAdminModal = $("cal-readings-admin-modal");
+    if (calReadingsAdminModal) {
+      ["cal-readings-admin-close", "cal-readings-admin-backdrop"].forEach((id) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", closeCalReadingsAdminModal);
+      });
+    }
     $("btn-cal-use-date").addEventListener("click", () => {
       if ($("mass-date")) {
         $("mass-date").value = calSelected;
@@ -27192,9 +29314,11 @@ Lord, hear our prayer</textarea>
             updateAccountMenuDisplay();
             updateHomeMassWelcome();
             refreshCommunity();
+            acceptParishInviteFromUrl();
           });
         } else {
           refreshCommunity();
+          acceptParishInviteFromUrl();
         }
       };
       if (!window.__VERBUM_AUTH_GATE__) {
