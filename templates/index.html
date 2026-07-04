@@ -1148,6 +1148,7 @@
       background: color-mix(in srgb, var(--surface-2) 60%, transparent);
       color: var(--ink);
       text-decoration: none;
+      cursor: pointer;
       overflow: hidden;
       transition: background var(--motion-duration-fast) var(--motion-ease-hover),
         border-color var(--motion-duration-fast) var(--motion-ease-hover);
@@ -1178,6 +1179,21 @@
       flex: 1 1 auto;
       min-width: 0;
       overflow: hidden;
+      transform: translateY(0);
+      opacity: 1;
+      transition: transform 0.32s var(--motion-ease-out, ease), opacity 0.32s var(--motion-ease-out, ease);
+    }
+    .app-header__ticker-track {
+      display: block;
+      width: 100%;
+      min-width: 0;
+      white-space: nowrap;
+      transform: translateX(0);
+      will-change: transform;
+    }
+    .app-header__ticker.is-marquee .app-header__ticker-track {
+      display: inline-block;
+      width: auto;
     }
     .app-header__ticker-text {
       display: block;
@@ -1188,17 +1204,22 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transform: translateY(0);
-      opacity: 1;
-      transition: transform 0.32s var(--motion-ease-out, ease), opacity 0.32s var(--motion-ease-out, ease);
+      max-width: 100%;
+    }
+    .app-header__ticker.is-marquee .app-header__ticker-text {
+      display: inline-block;
+      overflow: visible;
+      text-overflow: clip;
+      max-width: none;
     }
     .app-header__ticker.is-swapping .app-header__ticker-kicker { opacity: 0; }
-    .app-header__ticker.is-swapping .app-header__ticker-text {
+    .app-header__ticker.is-swapping .app-header__ticker-viewport {
       transform: translateY(-70%);
       opacity: 0;
     }
     @media (prefers-reduced-motion: reduce) {
-      .app-header__ticker-text { transition: opacity 0.2s linear; transform: none !important; }
+      .app-header__ticker-viewport { transition: opacity 0.2s linear; transform: none !important; }
+      .app-header__ticker-track { transform: none !important; transition: none !important; }
     }
     @media (max-width: 900px) {
       .app-header__main > .app-header__ticker { display: none; }
@@ -2333,10 +2354,24 @@
       opacity: 1;
     }
     .radio-page-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
-      gap: var(--space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
       width: 100%;
+    }
+    .radio-page-now-playing {
+      display: grid;
+      grid-template-columns: minmax(0, 168px) minmax(0, 1fr);
+      gap: var(--space-4);
+      align-items: center;
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line-soft);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--liturgical-accent, #a10f0d) 6%, var(--surface-solid)) 0%,
+        var(--surface-2) 100%
+      );
     }
     .radio-page-player {
       display: flex;
@@ -2346,71 +2381,198 @@
     }
     .radio-page-hero {
       position: relative;
-      min-height: 220px;
-      border-radius: var(--radius-lg);
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
       overflow: hidden;
-      border: 1px solid var(--line-soft);
-      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 8%, var(--surface-2));
+      border: 1px solid color-mix(in srgb, var(--line-soft) 80%, #fff 20%);
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 10%, var(--surface-2));
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 12%, transparent);
+    }
+    .radio-page-layout.is-playing .radio-page-hero {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 35%, transparent),
+        0 12px 32px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 18%, transparent);
     }
     .radio-page-hero__art {
       width: 100%;
       height: 100%;
-      min-height: 220px;
       object-fit: cover;
       display: block;
+    }
+    .radio-page-hero__video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      background: #000;
+      z-index: 1;
+    }
+    .radio-page-layout.is-library-video .radio-page-hero__video {
+      display: block;
+    }
+    .radio-page-layout.is-library-video.is-pip-active .radio-page-hero__video {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .radio-page-layout.is-library-video .radio-page-hero__art {
+      opacity: 0;
+    }
+    .radio-page-layout.is-library-video .radio-page-hero__scrim {
+      display: none;
+    }
+    .radio-page-layout.is-library-video.is-pip-active .radio-page-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background:
+        radial-gradient(circle at 70% 20%, color-mix(in srgb, #4a90c8 24%, #fff) 0%, transparent 52%),
+        linear-gradient(145deg, color-mix(in srgb, #1a3a5c 22%, var(--surface-2)) 0%, var(--surface-2) 100%);
+      pointer-events: none;
+    }
+    .radio-page-hero__pip {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 3;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.52);
+      color: #fff;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .radio-page-hero__pip:hover {
+      background: rgba(0, 0, 0, 0.68);
+    }
+    .radio-page-hero__pip:active {
+      transform: scale(0.96);
+    }
+    .radio-page-hero__pip svg {
+      width: 18px;
+      height: 18px;
+    }
+    .radio-page-layout.is-library-video .radio-page-hero__pip {
+      display: inline-flex;
+    }
+    .radio-page-layout.is-pip-active .radio-page-hero__pip {
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 82%, #000 18%);
+    }
+    .radio-page-layout.is-library-mode .radio-page-hero__live {
+      display: none !important;
+    }
+    .radio-page-layout.is-library-music .radio-page-hero__art {
+      opacity: 0;
+    }
+    .radio-page-layout.is-library-music .radio-page-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--liturgical-accent, #a10f0d) 22%, #fff) 0%, transparent 55%),
+        linear-gradient(145deg, color-mix(in srgb, var(--liturgical-accent, #a10f0d) 18%, var(--surface-2)) 0%, var(--surface-2) 100%);
+      pointer-events: none;
     }
     .radio-page-hero__scrim {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%);
+      background: linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.45) 100%);
       pointer-events: none;
     }
-    .radio-page-hero__meta {
+    .radio-page-hero__live {
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: var(--space-4);
+      top: 10px;
+      left: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       color: #fff;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-out),
+        transform var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .radio-page-layout.is-playing .radio-page-hero__live {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .radio-page-hero__live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ff4d4f;
+      box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.55);
+      animation: live-radio-pulse 1.5s ease-in-out infinite;
+    }
+    .radio-page-player__body {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+    .radio-page-hero__meta {
+      min-width: 0;
     }
     .radio-page-hero__meta strong {
       display: block;
-      font-size: 1.25rem;
+      font-size: 1.125rem;
       font-weight: 700;
       letter-spacing: -0.02em;
+      line-height: 1.25;
+      color: var(--ink);
     }
     .radio-page-hero__meta span {
       display: block;
       margin-top: 4px;
       font-size: 0.8125rem;
-      opacity: 0.9;
+      color: var(--muted);
     }
     .radio-page-controls {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: var(--space-2) 0;
+      gap: 12px;
+      flex-wrap: wrap;
     }
     .radio-page-controls__btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border: 1px solid var(--line-soft);
       border-radius: 50%;
       background: var(--surface-solid);
       color: var(--ink);
       cursor: pointer;
-      transition: background var(--motion-duration-fast) var(--motion-ease-hover);
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
     }
     .radio-page-controls__btn:hover {
       background: var(--surface-2);
     }
+    .radio-page-controls__btn:active {
+      transform: scale(0.97);
+    }
     .radio-page-controls__play {
-      width: 56px;
-      height: 56px;
+      width: 52px;
+      height: 52px;
       border: none;
       background: var(--liturgical-accent, #a10f0d);
       color: #fff;
@@ -2430,12 +2592,598 @@
     .radio-page-stations {
       min-width: 0;
     }
+    .radio-page-stations__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .radio-page-stations__head h4 {
+      margin: 0;
+      font-size: 0.9375rem;
+      font-weight: 700;
+    }
+    .radio-page-stations__head p {
+      margin: 0;
+      font-size: 0.75rem;
+    }
     .radio-page-stations .settings-radio-list {
-      max-height: min(60vh, 520px);
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
+    }
+    .media-hub-card--radio .settings-radio-option {
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      gap: 10px;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .media-hub-card--radio .settings-radio-option:active {
+      transform: scale(0.98);
+    }
+    .media-hub-card--radio .settings-radio-option.is-selected {
+      border-color: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 45%, var(--line-soft));
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 8%, var(--surface-solid));
+    }
+    .media-hub-card--radio .settings-radio-option__art {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+    }
+    .media-hub-workspace {
+      grid-template-columns: minmax(0, 1fr);
+      width: 100%;
+      max-width: none;
+      margin-inline: 0;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .dashboard:has(#radio-page.active) {
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-left: clamp(10px, 1.2vw, 16px);
+      padding-right: clamp(10px, 1.2vw, 16px);
+      padding-bottom: var(--layout-gap);
+    }
+    .dashboard:has(#radio-page.active) > #radio-page {
+      width: 100%;
+      max-width: none;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #radio-page.active {
+      min-height: 0;
+      gap: 0;
+    }
+    .media-hub-panel.admin-card {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: clamp(8px, 0.8vw, 12px);
+      overflow: hidden;
+      min-height: 0;
+      max-height: calc(100dvh - var(--main-content-top) - var(--layout-gap) * 2);
+    }
+    .media-hub-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.22fr) minmax(0, 0.72fr);
+      gap: clamp(8px, 0.8vw, 12px);
+      align-items: stretch;
+      width: 100%;
+    }
+    .media-hub-col {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: clamp(8px, 0.8vw, 10px);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+    .media-hub-col__head {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .media-hub-col__head h3 {
+      margin: 0;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .media-hub-col__head p {
+      margin: 0;
+      font-size: 0.6875rem;
+      line-height: 1.35;
+    }
+    .media-hub-col__body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+    }
+    .media-hub-col--radio .radio-page-layout {
+      flex: 1;
+      min-height: 0;
+      gap: 6px;
+    }
+    .media-hub-col--radio .radio-page-player {
+      flex-shrink: 0;
+    }
+    .media-hub-col--radio .radio-page-now-playing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .media-hub-col--radio .radio-page-hero {
+      aspect-ratio: 16 / 9;
+      max-height: none;
+      min-height: 0;
+      width: 100%;
+      max-width: none;
+      margin: 0 auto;
+      box-shadow: 0 8px 22px color-mix(in srgb, var(--ink) 11%, transparent);
+    }
+    .media-hub-col--radio .radio-page-layout.is-playing .radio-page-hero {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 35%, transparent),
+        0 10px 26px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 16%, transparent);
+    }
+    .media-hub-col--radio .radio-page-player__body {
+      width: 100%;
+      max-width: none;
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+      min-width: 0;
+    }
+    .media-hub-col--radio .radio-page-hero__meta {
+      text-align: center;
+      width: 100%;
+    }
+    .media-hub-col--radio .radio-page-hero__meta strong,
+    .media-hub-col--radio .radio-page-hero__meta span {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .media-hub-col--radio .radio-page-hero__meta strong {
+      font-size: 0.875rem;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .media-hub-col--radio .radio-page-hero__meta span {
+      margin-top: 2px;
+      font-size: 0.6875rem;
+    }
+    .media-hub-col--radio #radio-page-channel-pos {
+      display: none !important;
+    }
+    .media-hub-col--radio .radio-page-controls {
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .media-hub-col--radio .radio-page-status {
+      display: none;
+      text-align: center;
+      width: 100%;
+      margin: 0;
+      min-height: 0;
+      font-size: 0.6875rem;
+    }
+    .media-hub-col--radio .radio-page-status:not(:empty) {
+      display: block;
+    }
+    .media-hub-col--radio .radio-page-controls__btn {
+      width: 30px;
+      height: 30px;
+    }
+    .media-hub-col--radio .radio-page-controls__play {
+      width: 36px;
+      height: 36px;
+    }
+    .media-hub-col--radio .radio-page-controls__play svg {
+      width: 16px;
+      height: 16px;
+    }
+    .media-hub-col--radio .radio-page-controls__btn svg {
+      width: 14px;
+      height: 14px;
+    }
+    .media-hub-col--radio .radio-page-stations {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .media-hub-col--radio .radio-page-stations .settings-radio-list {
+      grid-template-columns: 1fr;
+      flex: 1;
+      min-height: 0;
+      max-height: none;
+      overflow-y: auto;
+      align-content: start;
+      gap: 6px;
+    }
+    .media-hub-col--radio .settings-radio-option {
+      padding: 6px 8px;
+    }
+    .media-hub-col--radio .settings-radio-option__art {
+      width: 34px;
+      height: 34px;
+    }
+    .media-hub-col--library .media-library,
+    .media-hub-col--library .media-library-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      grid-template-columns: 1fr;
+    }
+    .media-hub-col--library .media-library-section {
+      flex: 1;
+      min-height: 0;
+      padding: 6px;
+      overflow: hidden;
+    }
+    .media-hub-col--library .media-library-list {
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
     }
+    .media-hub-col--upload .media-upload-shell {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .media-hub-col--upload .media-dropzone {
+      flex: 0 0 auto;
+      min-height: 88px;
+      padding: 12px;
+      justify-content: center;
+    }
+    .media-hub-card {
+      width: 100%;
+      min-width: 0;
+    }
+    .media-hub-card__head {
+      margin-bottom: var(--space-3);
+    }
+    .media-upload-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .media-upload-status {
+      margin: 0;
+      font-size: 0.8125rem;
+    }
+    .media-library,
+    .media-library-body {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+    .media-library-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line-soft);
+      background: var(--surface-2);
+    }
+    .media-library-section__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .media-library-section__head h4 {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 0.9375rem;
+      font-weight: 700;
+    }
+    .media-library-section__head h4 svg {
+      width: 18px;
+      height: 18px;
+      color: var(--liturgical-accent, #a10f0d);
+      flex-shrink: 0;
+    }
+    .media-library-section__count {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--surface-solid);
+      border: 1px solid var(--line-soft);
+    }
+    .media-library-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(64px, 72px));
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      min-height: 48px;
+      align-content: start;
+      justify-content: start;
+    }
+    .media-library-empty {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 8px 2px;
+      font-size: 0.8125rem;
+    }
+    .media-thumb {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      max-width: 72px;
+    }
+    .media-thumb__frame {
+      position: relative;
+    }
+    .media-thumb__hit {
+      position: relative;
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-sm, 8px);
+      text-align: left;
+    }
+    .media-thumb__hit:focus-visible {
+      outline: 2px solid var(--liturgical-accent, #a10f0d);
+      outline-offset: 2px;
+    }
+    .media-thumb__surface {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm, 8px);
+      border: 1px solid var(--line-soft);
+      background: linear-gradient(
+        145deg,
+        color-mix(in srgb, var(--liturgical-accent, #a10f0d) 14%, var(--surface-2)) 0%,
+        var(--surface-solid) 100%
+      );
+      color: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 85%, var(--ink));
+      overflow: hidden;
+      transition: box-shadow var(--motion-duration-fast) var(--motion-ease-out),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .media-thumb__surface.is-video {
+      background: linear-gradient(
+        145deg,
+        color-mix(in srgb, #1a3a5c 18%, var(--surface-2)) 0%,
+        var(--surface-solid) 100%
+      );
+      color: #2f6fa8;
+    }
+    .media-thumb__art {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .media-thumb__surface.has-artwork .media-thumb__art {
+      opacity: 1;
+    }
+    .media-thumb__fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .media-thumb__surface.has-artwork .media-thumb__fallback {
+      opacity: 0;
+    }
+    .media-thumb__surface svg,
+    .media-thumb__fallback svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.55;
+    }
+    .media-thumb__play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in srgb, var(--ink) 28%, transparent);
+      opacity: 0;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .media-thumb__play-overlay svg {
+      width: 20px;
+      height: 20px;
+      color: #fff;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    }
+    .media-thumb__hit:hover .media-thumb__play-overlay,
+    .media-thumb.is-active .media-thumb__play-overlay {
+      opacity: 1;
+    }
+    .media-thumb.is-active .media-thumb__surface {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 45%, transparent),
+        0 8px 20px color-mix(in srgb, var(--ink) 12%, transparent);
+    }
+    .media-thumb__hit:active .media-thumb__surface {
+      transform: scale(0.98);
+    }
+    .media-thumb__title {
+      margin: 0;
+      font-size: 0.5625rem;
+      font-weight: 600;
+      line-height: 1.25;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+    }
+    .media-thumb__remove {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.58);
+      color: #fff;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.88;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-out),
+        transform var(--motion-duration-micro) var(--motion-ease-out),
+        background var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .media-thumb__remove:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.72);
+    }
+    .media-thumb__remove:active {
+      transform: scale(0.94);
+    }
+    .media-thumb__remove:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 1px;
+    }
+    .media-dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 88px;
+      padding: 12px;
+      border-radius: var(--radius-lg);
+      border: 1.5px dashed color-mix(in srgb, var(--line) 70%, var(--liturgical-accent, #a10f0d) 30%);
+      background: var(--surface-2);
+      color: var(--muted);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .media-dropzone:hover,
+    .media-dropzone.is-dragover {
+      border-color: var(--liturgical-accent, #a10f0d);
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 5%, var(--surface-solid));
+      color: var(--ink);
+    }
+    .media-dropzone:active {
+      transform: scale(0.99);
+    }
+    .media-dropzone__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 12%, var(--surface-solid));
+      color: var(--liturgical-accent, #a10f0d);
+    }
+    .media-dropzone__icon svg {
+      width: 22px;
+      height: 22px;
+    }
+    .media-dropzone__title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .media-dropzone__meta {
+      font-size: 0.75rem;
+      max-width: 28rem;
+      line-height: 1.45;
+    }
+    @media (max-width: 1100px) {
+      .media-hub-panel.admin-card {
+        min-height: 0;
+        max-height: none;
+      }
+      .media-hub-grid {
+        grid-template-columns: 1fr;
+      }
+      .media-hub-col--radio .radio-page-stations .settings-radio-list,
+      .media-hub-col--library .media-library-list {
+        max-height: 200px;
+      }
+    }
     @media (max-width: 900px) {
-      .radio-page-layout {
+      .radio-page-now-playing {
+        grid-template-columns: minmax(0, 132px) minmax(0, 1fr);
+      }
+    }
+    @media (max-width: 720px) {
+      .media-library,
+      .media-library-body {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .radio-page-stations .settings-radio-list {
         grid-template-columns: 1fr;
       }
     }
@@ -5464,7 +6212,8 @@
     .workspace.theme-workspace {
       grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
     }
-    .workspace.flow-workspace {
+    .workspace.flow-workspace,
+    .workspace.media-hub-workspace {
       grid-template-columns: minmax(0, 1fr);
       width: 100%;
       max-width: none;
@@ -12858,7 +13607,9 @@
           <a class="app-header__ticker" id="app-header-ticker" href="#" target="_blank" rel="noopener noreferrer" aria-label="Today's liturgy and Catholic news" hidden>
             <span class="app-header__ticker-kicker" id="app-header-ticker-kicker">Today</span>
             <span class="app-header__ticker-viewport">
-              <span class="app-header__ticker-text" id="app-header-ticker-text"></span>
+              <span class="app-header__ticker-track" id="app-header-ticker-track">
+                <span class="app-header__ticker-text" id="app-header-ticker-text"></span>
+              </span>
             </span>
           </a>
           <div class="app-header__utilities">
@@ -13451,6 +14202,23 @@
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="song-delete-cancel">Cancel</button>
             <button type="button" class="primary song-delete-confirm-btn" id="song-delete-confirm">Delete</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="media-delete-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="media-delete-backdrop"></div>
+        <article class="ui-card" role="alertdialog" aria-labelledby="media-delete-title" aria-describedby="media-delete-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="media-delete-title">Delete media?</h3>
+              <p class="ui-card__description" id="media-delete-desc">This file will be removed from your library.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="media-delete-close" aria-label="Close">×</button>
+          </header>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="media-delete-cancel">Cancel</button>
+            <button type="button" class="primary song-delete-confirm-btn" id="media-delete-confirm">Delete</button>
           </footer>
         </article>
       </div>
@@ -15584,48 +16352,107 @@ Lord, hear our prayer</textarea>
       </script>
 
       <section class="page" id="radio-page" data-route="/radio">
-        <div class="workspace">
-          <div class="admin-card">
-            <header class="flow-bento-cell__head home-card-head" style="margin-bottom:var(--space-3);">
-              <span class="home-card-head__icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/></svg>
-              </span>
-              <div class="home-card-head__text">
-                <h3 style="margin:0;">Live Radio</h3>
-                <p>EWTN Catholic radio streams while you plan Mass media.</p>
-              </div>
-            </header>
-            <div class="radio-page-layout" id="radio-page-layout">
-              <div class="radio-page-player">
-                <div class="radio-page-hero">
-                  <img class="radio-page-hero__art" id="radio-page-art" src="https://www.ewtn.com/img/od/live-generic-radio.jpg" alt="" width="640" height="360" />
-                  <div class="radio-page-hero__scrim" aria-hidden="true"></div>
-                  <div class="radio-page-hero__meta">
-                    <strong id="radio-page-station-title">Live Radio</strong>
-                    <span id="radio-page-channel-pos">—</span>
+        <div class="workspace media-hub-workspace">
+          <article class="admin-card media-hub-panel">
+            <div class="media-hub-grid">
+              <div class="media-hub-col media-hub-col--radio">
+                <header class="media-hub-col__head">
+                  <h3>Live Radio</h3>
+                  <p class="muted">EWTN streams · tap a station to set default</p>
+                </header>
+                <div class="media-hub-col__body">
+                  <div class="radio-page-layout" id="radio-page-layout">
+                    <div class="radio-page-player">
+                      <div class="radio-page-now-playing">
+                        <div class="radio-page-hero">
+                          <img class="radio-page-hero__art" id="radio-page-art" src="https://www.ewtn.com/img/od/live-generic-radio.jpg" alt="" width="640" height="360" />
+                          <video class="radio-page-hero__video" id="radio-page-video" playsinline preload="metadata"></video>
+                          <div class="radio-page-hero__scrim" aria-hidden="true"></div>
+                          <span class="radio-page-hero__live" aria-hidden="true"><span class="radio-page-hero__live-dot"></span>Live</span>
+                          <button type="button" class="radio-page-hero__pip" id="radio-page-pip" aria-label="Picture in picture" aria-pressed="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="14" height="12" rx="2"/><rect x="8" y="10" width="14" height="12" rx="2"/></svg>
+                          </button>
+                        </div>
+                        <div class="radio-page-player__body">
+                          <div class="radio-page-hero__meta">
+                            <strong id="radio-page-station-title">Live Radio</strong>
+                            <span id="radio-page-channel-pos">—</span>
+                          </div>
+                          <div class="radio-page-controls">
+                            <button type="button" class="radio-page-controls__btn" id="radio-page-prev" aria-label="Previous station">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/></svg>
+                            </button>
+                            <button type="button" class="radio-page-controls__btn radio-page-controls__play" id="radio-page-play" aria-label="Play live radio">
+                              <svg class="live-radio-icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                              <svg class="live-radio-icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                            </button>
+                            <button type="button" class="radio-page-controls__btn" id="radio-page-next" aria-label="Next station">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>
+                            </button>
+                          </div>
+                          <p class="status" id="radio-page-status" aria-live="polite"></p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="radio-page-stations">
+                      <div class="settings-radio-list" id="radio-page-list" aria-live="polite"></div>
+                    </div>
                   </div>
                 </div>
-                <div class="radio-page-controls">
-                  <button type="button" class="radio-page-controls__btn" id="radio-page-prev" aria-label="Previous station">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/></svg>
-                  </button>
-                  <button type="button" class="radio-page-controls__btn radio-page-controls__play" id="radio-page-play" aria-label="Play live radio">
-                    <svg class="live-radio-icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-                    <svg class="live-radio-icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-                  </button>
-                  <button type="button" class="radio-page-controls__btn" id="radio-page-next" aria-label="Next station">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>
-                  </button>
-                </div>
-                <p class="status" id="radio-page-status" aria-live="polite"></p>
               </div>
-              <div class="radio-page-stations">
-                <h3 style="margin:0 0 6px;">Stations</h3>
-                <p class="muted" style="margin:0 0 12px;">Tap a station to set your default. Stations marked unavailable cannot play in-browser.</p>
-                <div class="settings-radio-list" id="radio-page-list" aria-live="polite"></div>
+
+              <div class="media-hub-col media-hub-col--library" id="media-library-card">
+                <header class="media-hub-col__head">
+                  <h3>Songs &amp; video library</h3>
+                  <p class="muted">Uploaded MP3 and MP4 files, grouped by type</p>
+                </header>
+                <div class="media-hub-col__body">
+                  <div class="media-library" id="media-library">
+                    <section class="media-library-section" aria-labelledby="media-library-music-label">
+                      <div class="media-library-section__head">
+                        <h4 class="media-library-section__title" id="media-library-music-label">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                          Music
+                        </h4>
+                        <span class="media-library-section__count" id="media-library-music-count">0</span>
+                      </div>
+                      <ul class="media-library-list" id="media-library-music-list" aria-live="polite"></ul>
+                    </section>
+                    <section class="media-library-section" aria-labelledby="media-library-video-label">
+                      <div class="media-library-section__head">
+                        <h4 class="media-library-section__title" id="media-library-video-label">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+                          Video
+                        </h4>
+                        <span class="media-library-section__count" id="media-library-video-count">0</span>
+                      </div>
+                      <ul class="media-library-list" id="media-library-video-list" aria-live="polite"></ul>
+                    </section>
+                  </div>
+                </div>
+              </div>
+
+              <div class="media-hub-col media-hub-col--upload" id="media-upload-card">
+                <header class="media-hub-col__head">
+                  <h3>Upload media</h3>
+                  <p class="muted">MP3 or MP4 detected automatically</p>
+                </header>
+                <div class="media-hub-col__body">
+                  <div class="media-upload-shell">
+                    <label class="media-dropzone" id="media-upload-drop" for="media-upload-file">
+                      <span class="media-dropzone__icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                      </span>
+                      <span class="media-dropzone__title">Choose or drop MP3 / MP4</span>
+                      <span class="media-dropzone__meta">Up to 5 files · MP3 max 10 MB · MP4 max 11 MB</span>
+                    </label>
+                    <input type="file" id="media-upload-file" accept="audio/mpeg,.mp3,audio/mp3,video/mp4,.mp4" multiple hidden />
+                    <p class="muted media-upload-status" id="media-upload-status" aria-live="polite">New uploads appear in the library.</p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </article>
         </div>
       </section>
 
@@ -17030,6 +17857,16 @@ Lord, hear our prayer</textarea>
     let ewtnRadioPlaying = false;
     let ewtnHls = null;
     let ewtnRadioActiveId = null;
+    let mediaHubPlayerMode = "radio";
+    let savedMediaLibrary = { music: [], video: [] };
+    let libraryPlaylist = [];
+    let libraryTrackIndex = -1;
+    let libraryActiveItem = null;
+    let libraryPlayObjectUrl = null;
+
+    const MEDIA_THUMB_PLAY_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><polygon points=\"8 5 19 12 8 19 8 5\"/></svg>";
+    const MEDIA_THUMB_MUSIC_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>";
+    const MEDIA_THUMB_VIDEO_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\"/><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/></svg>";
 
     function getEwtRadioHlsUrl(station) {
       if (!station) return "";
@@ -17079,10 +17916,247 @@ Lord, hear our prayer</textarea>
       const playBtn = $("live-radio-play-btn");
       const panelPlay = $("live-radio-panel-play");
       const pagePlay = $("radio-page-play");
-      const label = playing ? "Pause live radio" : "Play live radio";
+      const label = mediaHubPlayerMode === "library"
+        ? (playing ? "Pause media" : "Play media")
+        : (playing ? "Pause live radio" : "Play live radio");
       if (playBtn) playBtn.setAttribute("aria-label", label);
       if (panelPlay) panelPlay.setAttribute("aria-label", label);
       if (pagePlay) pagePlay.setAttribute("aria-label", label);
+    }
+
+    function revokeLibraryObjectUrl() {
+      if (libraryPlayObjectUrl) {
+        URL.revokeObjectURL(libraryPlayObjectUrl);
+        libraryPlayObjectUrl = null;
+      }
+    }
+
+    function rebuildLibraryPlaylist() {
+      libraryPlaylist = savedMediaLibrary.music
+        .map((item) => Object.assign({ kind: "music" }, item))
+        .concat(savedMediaLibrary.video.map((item) => Object.assign({ kind: "video" }, item)));
+    }
+
+    function markActiveLibraryThumb(item) {
+      document.querySelectorAll(".media-thumb.is-active").forEach((el) => el.classList.remove("is-active"));
+      if (!item) return;
+      const sel = ".media-thumb[data-media-kind=\"" + item.kind + "\"][data-media-name=\"" + CSS.escape(item.basename) + "\"]";
+      const thumb = document.querySelector(sel);
+      if (thumb) thumb.classList.add("is-active");
+    }
+
+    function syncLibraryControllerUi() {
+      const item = libraryActiveItem;
+      const pageTitle = $("radio-page-station-title");
+      const pageArt = $("radio-page-art");
+      const title = item ? (item.display_name || item.basename || "Media") : "Media";
+      if (pageTitle) pageTitle.textContent = title;
+      if (pageArt && item) {
+        pageArt.alt = title + " artwork";
+      }
+    }
+
+    function libraryVideoPipSupported(video) {
+      return !!(document.pictureInPictureEnabled && video && typeof video.requestPictureInPicture === "function");
+    }
+
+    async function exitLibraryVideoPiP(video) {
+      if (video && document.pictureInPictureElement === video) {
+        try { await document.exitPictureInPicture(); } catch (_e) { /* ignore */ }
+        syncLibraryVideoPiPUi(video);
+      }
+    }
+
+    async function enterLibraryVideoPiP(video) {
+      if (!libraryVideoPipSupported(video)) {
+        notify("Picture-in-Picture is not available in this browser.", "info");
+        return false;
+      }
+      if (document.pictureInPictureElement === video) return true;
+      try {
+        await video.requestPictureInPicture();
+        syncLibraryVideoPiPUi(video);
+        return true;
+      } catch (err) {
+        if (err && err.name !== "AbortError") {
+          notify("Could not open Picture-in-Picture.", "info");
+        }
+        return false;
+      }
+    }
+
+    function syncLibraryVideoPiPUi(video) {
+      const layout = $("radio-page-layout");
+      const pipBtn = $("radio-page-pip");
+      const inPiP = !!(video && document.pictureInPictureElement === video);
+      if (layout) layout.classList.toggle("is-pip-active", inPiP);
+      if (pipBtn) {
+        pipBtn.setAttribute("aria-pressed", inPiP ? "true" : "false");
+        pipBtn.setAttribute("aria-label", inPiP ? "Exit picture in picture" : "Picture in picture");
+      }
+    }
+
+    async function toggleLibraryVideoPiP() {
+      const item = libraryActiveItem;
+      const video = $("radio-page-video");
+      if (!item || item.kind !== "video" || !video || !video.dataset.libraryMode) return;
+      if (document.pictureInPictureElement === video) {
+        await exitLibraryVideoPiP(video);
+        return;
+      }
+      try {
+        if (video.paused) await video.play();
+        await enterLibraryVideoPiP(video);
+        setLiveRadioPlayingUi(true);
+      } catch (_e) {
+        notify("Could not open Picture-in-Picture.", "error");
+      }
+    }
+
+    function setLibraryPlayerLayout(item) {
+      const layout = $("radio-page-layout");
+      if (!layout) return;
+      layout.classList.add("is-library-mode");
+      layout.classList.toggle("is-library-video", !!(item && item.kind === "video"));
+      layout.classList.toggle("is-library-music", !!(item && item.kind === "music"));
+    }
+
+    function clearLibraryPlayerLayout() {
+      const layout = $("radio-page-layout");
+      if (!layout) return;
+      layout.classList.remove("is-library-mode", "is-library-video", "is-library-music", "is-pip-active");
+      const pipBtn = $("radio-page-pip");
+      if (pipBtn) {
+        pipBtn.setAttribute("aria-pressed", "false");
+        pipBtn.setAttribute("aria-label", "Picture in picture");
+      }
+    }
+
+    function stopLibraryPlayback() {
+      const audio = $("live-radio-audio");
+      const video = $("radio-page-video");
+      if (audio && audio.dataset.libraryMode) {
+        audio.pause();
+        audio.removeAttribute("src");
+        try { audio.load(); } catch (_e) { /* ignore */ }
+        delete audio.dataset.libraryMode;
+      }
+      if (video) {
+        exitLibraryVideoPiP(video);
+        video.pause();
+        video.removeAttribute("src");
+        delete video.dataset.libraryMode;
+        try { video.load(); } catch (_e) { /* ignore */ }
+      }
+      revokeLibraryObjectUrl();
+      libraryActiveItem = null;
+      libraryTrackIndex = -1;
+      mediaHubPlayerMode = "radio";
+      clearLibraryPlayerLayout();
+      markActiveLibraryThumb(null);
+    }
+
+    async function resolveLibraryMediaUrl(url) {
+      if (!url) return "";
+      if (!isPrivateFileUrl(url)) return url;
+      const res = await authorizedFetch(url);
+      if (!res.ok) throw new Error("Could not load media.");
+      const blob = await res.blob();
+      revokeLibraryObjectUrl();
+      libraryPlayObjectUrl = URL.createObjectURL(blob);
+      return libraryPlayObjectUrl;
+    }
+
+    async function startLibraryPlayback(item) {
+      if (!item) return;
+      rebuildLibraryPlaylist();
+      libraryTrackIndex = libraryPlaylist.findIndex(
+        (row) => row.basename === item.basename && row.kind === item.kind
+      );
+      if (libraryTrackIndex < 0) {
+        libraryPlaylist.push(Object.assign({ kind: item.kind }, item));
+        libraryTrackIndex = libraryPlaylist.length - 1;
+      }
+      libraryActiveItem = libraryPlaylist[libraryTrackIndex];
+      mediaHubPlayerMode = "library";
+      const audio = $("live-radio-audio");
+      resetEwtRadioAudio(audio);
+      setLiveRadioPlayingUi(false);
+      setLibraryPlayerLayout(libraryActiveItem);
+      syncLibraryControllerUi();
+      markActiveLibraryThumb(libraryActiveItem);
+      const playUrl = await resolveLibraryMediaUrl(libraryActiveItem.url);
+      try {
+        if (libraryActiveItem.kind === "video") {
+          const video = $("radio-page-video");
+          if (audio) {
+            audio.pause();
+            audio.removeAttribute("src");
+            delete audio.dataset.libraryMode;
+          }
+          if (!video) throw new Error("Video player unavailable.");
+          video.src = playUrl;
+          video.dataset.libraryMode = "1";
+          await video.play();
+          setLiveRadioPlayingUi(true);
+        } else {
+          const video = $("radio-page-video");
+          if (video) {
+            await exitLibraryVideoPiP(video);
+            video.pause();
+            video.removeAttribute("src");
+            delete video.dataset.libraryMode;
+          }
+          if (!audio) throw new Error("Audio player unavailable.");
+          audio.src = playUrl;
+          audio.dataset.libraryMode = "1";
+          await audio.play();
+          setLiveRadioPlayingUi(true);
+        }
+      } catch (e) {
+        console.error("Library playback failed:", e);
+        setLiveRadioPlayingUi(false);
+        notify("Could not play file.", "error");
+      }
+    }
+
+    async function toggleLibraryPlayback() {
+      const item = libraryActiveItem;
+      if (!item) return;
+      const audio = $("live-radio-audio");
+      const video = $("radio-page-video");
+      try {
+        if (item.kind === "video" && video) {
+          if (!video.paused) {
+            await exitLibraryVideoPiP(video);
+            video.pause();
+            setLiveRadioPlayingUi(false);
+          } else {
+            await video.play();
+            setLiveRadioPlayingUi(true);
+          }
+          return;
+        }
+        if (audio) {
+          if (!audio.paused) {
+            audio.pause();
+            setLiveRadioPlayingUi(false);
+          } else {
+            await audio.play();
+            setLiveRadioPlayingUi(true);
+          }
+        }
+      } catch (_e) {
+        notify("Could not resume playback.", "error");
+      }
+    }
+
+    async function stepLibraryTrack(delta) {
+      if (!libraryPlaylist.length) rebuildLibraryPlaylist();
+      if (!libraryPlaylist.length) return;
+      if (libraryTrackIndex < 0) libraryTrackIndex = 0;
+      const nextIdx = (libraryTrackIndex + delta + libraryPlaylist.length) % libraryPlaylist.length;
+      await startLibraryPlayback(libraryPlaylist[nextIdx]);
     }
 
     function syncLiveRadioPanelUi() {
@@ -17120,6 +18194,10 @@ Lord, hear our prayer</textarea>
     }
 
     async function stepLiveRadioChannel(delta) {
+      if (mediaHubPlayerMode === "library") {
+        await stepLibraryTrack(delta);
+        return;
+      }
       if (!ewtnRadioStations.length) return;
       const currentId = getEwtRadioActiveStationId();
       const idx = ewtnRadioStations.findIndex((s) => s.id === currentId);
@@ -17291,6 +18369,10 @@ Lord, hear our prayer</textarea>
     }
 
     async function toggleLiveRadioPlay() {
+      if (mediaHubPlayerMode === "library") {
+        await toggleLibraryPlayback();
+        return;
+      }
       const audio = $("live-radio-audio");
       const station = getEwtRadioActiveStation();
       if (!station) {
@@ -17335,6 +18417,7 @@ Lord, hear our prayer</textarea>
 
     function selectEwtRadioStation(id) {
       if (!ewtnRadioStations.some((s) => s.id === id)) return;
+      stopLibraryPlayback();
       const wasPlaying = ewtnRadioPlaying;
       saveEwtRadioStationId(id);
       ewtnRadioActiveId = id;
@@ -17440,13 +18523,64 @@ Lord, hear our prayer</textarea>
         });
       }
       if (audio) {
-        audio.addEventListener("playing", () => setLiveRadioPlayingUi(true));
-        audio.addEventListener("pause", () => setLiveRadioPlayingUi(false));
-        audio.addEventListener("ended", () => setLiveRadioPlayingUi(false));
+        audio.addEventListener("playing", () => {
+          if (audio.dataset.libraryMode) mediaHubPlayerMode = "library";
+          setLiveRadioPlayingUi(true);
+        });
+        audio.addEventListener("pause", () => {
+          if (mediaHubPlayerMode === "library" && audio.dataset.libraryMode) setLiveRadioPlayingUi(false);
+          else if (mediaHubPlayerMode !== "library") setLiveRadioPlayingUi(false);
+        });
+        audio.addEventListener("ended", () => {
+          if (mediaHubPlayerMode === "library" && audio.dataset.libraryMode) setLiveRadioPlayingUi(false);
+          else setLiveRadioPlayingUi(false);
+        });
         audio.addEventListener("error", () => {
           setLiveRadioPlayingUi(false);
+          if (mediaHubPlayerMode === "library" && audio.dataset.libraryMode) {
+            notify("Could not play this file.", "error");
+            return;
+          }
           destroyEwtRadioHls();
           notify("Radio stream interrupted. Try play again or pick another station.", "error");
+        });
+      }
+      const pagePip = $("radio-page-pip");
+      if (pagePip) {
+        pagePip.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleLibraryVideoPiP();
+        });
+      }
+      const pageVideo = $("radio-page-video");
+      if (pageVideo) {
+        pageVideo.addEventListener("playing", () => {
+          mediaHubPlayerMode = "library";
+          setLiveRadioPlayingUi(true);
+        });
+        pageVideo.addEventListener("pause", () => {
+          if (mediaHubPlayerMode === "library") setLiveRadioPlayingUi(false);
+        });
+        pageVideo.addEventListener("ended", () => {
+          if (mediaHubPlayerMode === "library") {
+            exitLibraryVideoPiP(pageVideo);
+            syncLibraryVideoPiPUi(pageVideo);
+            setLiveRadioPlayingUi(false);
+          }
+        });
+        pageVideo.addEventListener("enterpictureinpicture", () => {
+          syncLibraryVideoPiPUi(pageVideo);
+        });
+        pageVideo.addEventListener("leavepictureinpicture", () => {
+          syncLibraryVideoPiPUi(pageVideo);
+          if (mediaHubPlayerMode !== "library" || !libraryActiveItem || libraryActiveItem.kind !== "video") return;
+          setLiveRadioPlayingUi(!pageVideo.paused);
+        });
+        pageVideo.addEventListener("error", () => {
+          if (mediaHubPlayerMode === "library") {
+            setLiveRadioPlayingUi(false);
+            notify("Could not play this video.", "error");
+          }
         });
       }
       loadEwtRadioCatalog();
@@ -17741,9 +18875,74 @@ Lord, hear our prayer</textarea>
     }
 
     const HEADER_TICKER_ROTATE_MS = 6000;
+    const HEADER_TICKER_HOLD_MS = 2200;
+    const HEADER_TICKER_HOLD_END_MS = 1400;
+    const HEADER_TICKER_SCROLL_PX_PER_SEC = 36;
     let headerTickerItems = [];
     let headerTickerIndex = 0;
-    let headerTickerTimer = null;
+    let headerTickerAdvanceTimer = null;
+    let headerTickerScrollTimer = null;
+
+    function clearHeaderTickerTimers() {
+      if (headerTickerAdvanceTimer) {
+        window.clearTimeout(headerTickerAdvanceTimer);
+        headerTickerAdvanceTimer = null;
+      }
+      if (headerTickerScrollTimer) {
+        window.clearTimeout(headerTickerScrollTimer);
+        headerTickerScrollTimer = null;
+      }
+    }
+
+    function resetHeaderTickerTrack() {
+      const root = $("app-header-ticker");
+      const track = $("app-header-ticker-track");
+      if (!track) return;
+      track.style.transition = "none";
+      track.style.transform = "translateX(0)";
+      if (root) root.classList.remove("is-marquee");
+    }
+
+    function setupHeaderTickerCycle() {
+      const root = $("app-header-ticker");
+      const viewport = root && root.querySelector(".app-header__ticker-viewport");
+      const track = $("app-header-ticker-track");
+      const textEl = $("app-header-ticker-text");
+      if (!root || !viewport || !track || !textEl || !headerTickerItems.length) return;
+      if (document.hidden) return;
+
+      clearHeaderTickerTimers();
+      resetHeaderTickerTrack();
+
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const canRotate = headerTickerItems.length >= 2;
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          root.classList.add("is-marquee");
+          const overflow = Math.ceil(textEl.scrollWidth - viewport.clientWidth);
+          let totalDelay = HEADER_TICKER_ROTATE_MS;
+
+          if (overflow > 6 && !reduce) {
+            const scrollMs = Math.max(2800, Math.round((overflow / HEADER_TICKER_SCROLL_PX_PER_SEC) * 1000));
+            totalDelay = HEADER_TICKER_HOLD_MS + scrollMs + HEADER_TICKER_HOLD_END_MS;
+            headerTickerScrollTimer = window.setTimeout(() => {
+              track.style.transition = "transform " + scrollMs + "ms linear";
+              track.style.transform = "translateX(-" + overflow + "px)";
+            }, HEADER_TICKER_HOLD_MS);
+          } else {
+            root.classList.remove("is-marquee");
+          }
+
+          if (!canRotate && overflow <= 6) return;
+
+          headerTickerAdvanceTimer = window.setTimeout(() => {
+            if (canRotate) advanceHeaderTicker();
+            else setupHeaderTickerCycle();
+          }, totalDelay);
+        });
+      });
+    }
 
     function buildLiturgicalTickerItem() {
       const seasonEl = $("home-liturgical-season");
@@ -17760,16 +18959,20 @@ Lord, hear our prayer</textarea>
       const kicker = $("app-header-ticker-kicker");
       const textEl = $("app-header-ticker-text");
       if (!root || !kicker || !textEl || !headerTickerItems.length) return;
+      resetHeaderTickerTrack();
       const item = headerTickerItems[headerTickerIndex % headerTickerItems.length];
+      const href = item.href || "#";
       kicker.textContent = item.kicker;
       textEl.textContent = item.text;
-      root.setAttribute("href", item.href || "#");
+      root.setAttribute("href", href);
       if (item.external) {
         root.setAttribute("target", "_blank");
         root.setAttribute("rel", "noopener noreferrer");
+        root.setAttribute("aria-label", item.kicker + ": " + item.text + " (opens in new tab)");
       } else {
         root.removeAttribute("target");
         root.removeAttribute("rel");
+        root.setAttribute("aria-label", item.kicker + ": " + item.text);
       }
     }
 
@@ -17787,37 +18990,38 @@ Lord, hear our prayer</textarea>
         startHeaderTicker();
       } else if (headerTickerItems.length === 1) {
         renderHeaderTickerFrame();
+        startHeaderTicker();
       }
     }
 
     function advanceHeaderTicker() {
       const root = $("app-header-ticker");
       if (!root || headerTickerItems.length < 2) return;
+      clearHeaderTickerTimers();
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       headerTickerIndex = (headerTickerIndex + 1) % headerTickerItems.length;
       if (reduce) {
         renderHeaderTickerFrame();
+        setupHeaderTickerCycle();
         return;
       }
       root.classList.add("is-swapping");
       window.setTimeout(() => {
         renderHeaderTickerFrame();
         root.classList.remove("is-swapping");
+        setupHeaderTickerCycle();
       }, 320);
     }
 
     function stopHeaderTicker() {
-      if (headerTickerTimer) {
-        window.clearInterval(headerTickerTimer);
-        headerTickerTimer = null;
-      }
+      clearHeaderTickerTimers();
     }
 
     function startHeaderTicker() {
       stopHeaderTicker();
-      if (headerTickerItems.length < 2) return;
+      if (!headerTickerItems.length) return;
       if (document.hidden) return;
-      headerTickerTimer = window.setInterval(advanceHeaderTicker, HEADER_TICKER_ROTATE_MS);
+      setupHeaderTickerCycle();
     }
 
     async function refreshHeaderTicker() {
@@ -17832,11 +19036,13 @@ Lord, hear our prayer</textarea>
           const data = await fetchCatholicNewsPage(8, 0, HOME_NEWS_MAX_AGE_DAYS, null);
           (data.items || []).slice(0, 8).forEach((it) => {
             if (!it || !it.title) return;
+            const link = String(it.link || it.url || "").trim();
+            if (!link) return;
             const src = (it.source || "").toLowerCase();
             const kicker = src.indexOf("vatican") >= 0 ? "Vatican"
               : src.indexOf("cna") >= 0 || src.indexOf("catholic news") >= 0 ? "CNA"
               : "News";
-            items.push({ kicker: kicker, text: it.title, href: it.url || "#", external: true });
+            items.push({ kicker: kicker, text: it.title, href: link, external: true });
           });
         }
       } catch (_e) { /* news optional; liturgy line still shows */ }
@@ -19036,6 +20242,7 @@ Lord, hear our prayer</textarea>
       if (r === "/radio") {
         syncLiveRadioUi();
         renderRadioStationList($("radio-page-list"));
+        refreshSavedMedia();
       }
     }
 
@@ -29114,6 +30321,324 @@ Lord, hear our prayer</textarea>
       }
     }
 
+    function mediaLibraryThumbHtml(kind, item) {
+      const title = String(item.display_name || item.basename || "");
+      const icon = kind === "video" ? MEDIA_THUMB_VIDEO_SVG : MEDIA_THUMB_MUSIC_SVG;
+      const surfaceClass = kind === "video" ? "media-thumb__surface is-video" : "media-thumb__surface is-music";
+      const surfaceInner = kind === "video"
+        ? "<video class=\"media-thumb__art\" muted playsinline preload=\"metadata\" data-media-url=\"" + escapeHtml(item.url || "") + "\" aria-hidden=\"true\"></video>" +
+          "<span class=\"media-thumb__fallback\" aria-hidden=\"true\">" + icon + "</span>"
+        : icon;
+      return (
+        "<li class=\"media-thumb\" data-media-kind=\"" + escapeHtml(kind) + "\" data-media-name=\"" + escapeHtml(item.basename) + "\">" +
+          "<div class=\"media-thumb__frame\">" +
+            "<button type=\"button\" class=\"media-thumb__hit\" data-play-media=\"" + escapeHtml(kind) + "\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Play " + escapeHtml(title) + "\">" +
+              "<span class=\"" + surfaceClass + "\">" + surfaceInner + "</span>" +
+              "<span class=\"media-thumb__play-overlay\">" + MEDIA_THUMB_PLAY_SVG + "</span>" +
+            "</button>" +
+            "<button type=\"button\" class=\"media-thumb__remove\" data-del-media=\"" + escapeHtml(kind) + "\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Delete " + escapeHtml(title) + "\">×</button>" +
+          "</div>" +
+          "<p class=\"media-thumb__title\" title=\"" + escapeHtml(title) + "\">" + escapeHtml(title) + "</p>" +
+        "</li>"
+      );
+    }
+
+    const MEDIA_UPLOAD_MAX_FILES = 5;
+    const mediaThumbObjectUrls = new Map();
+
+    function mediaThumbCacheKey(kind, basename) {
+      return kind + "|" + basename;
+    }
+
+    function revokeMediaThumbObjectUrl(key) {
+      const url = mediaThumbObjectUrls.get(key);
+      if (!url) return;
+      URL.revokeObjectURL(url);
+      mediaThumbObjectUrls.delete(key);
+    }
+
+    function pruneMediaThumbObjectUrls(activeKeys) {
+      for (const key of Array.from(mediaThumbObjectUrls.keys())) {
+        if (!activeKeys.has(key)) revokeMediaThumbObjectUrl(key);
+      }
+    }
+
+    async function resolveMediaThumbUrl(url) {
+      if (!url) return "";
+      if (!isPrivateFileUrl(url)) return url;
+      const res = await authorizedFetch(url);
+      if (!res.ok) throw new Error("Could not load media thumbnail.");
+      const blob = await res.blob();
+      return URL.createObjectURL(blob);
+    }
+
+    function markVideoThumbArtwork(video) {
+      const surface = video && video.closest(".media-thumb__surface");
+      if (surface) surface.classList.add("has-artwork");
+    }
+
+    async function hydrateVideoMediaThumb(video) {
+      if (!video || video.dataset.thumbReady === "1" || video.dataset.thumbLoading === "1") return;
+      const url = String(video.dataset.mediaUrl || "").trim();
+      if (!url) return;
+      const thumb = video.closest(".media-thumb");
+      const kind = thumb ? thumb.getAttribute("data-media-kind") : "video";
+      const basename = thumb ? thumb.getAttribute("data-media-name") : "";
+      const cacheKey = mediaThumbCacheKey(kind || "video", basename || url);
+      video.dataset.thumbLoading = "1";
+      try {
+        let src = mediaThumbObjectUrls.get(cacheKey);
+        if (!src) {
+          src = await resolveMediaThumbUrl(url);
+          if (src && isPrivateFileUrl(url)) mediaThumbObjectUrls.set(cacheKey, src);
+        }
+        video.src = src;
+        await new Promise((resolve, reject) => {
+          let settled = false;
+          const cleanup = () => {
+            video.removeEventListener("loadeddata", onLoaded);
+            video.removeEventListener("error", onError);
+          };
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            markVideoThumbArtwork(video);
+            video.dataset.thumbReady = "1";
+            delete video.dataset.thumbLoading;
+            resolve();
+          };
+          const fail = () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            delete video.dataset.thumbLoading;
+            reject(new Error("thumb load failed"));
+          };
+          const onError = () => { fail(); };
+          const onLoaded = () => {
+            const duration = Number(video.duration);
+            const seekTo = Number.isFinite(duration) && duration > 0
+              ? Math.min(0.75, Math.max(0.05, duration * 0.08))
+              : 0;
+            if (seekTo > 0) {
+              const seekTimeout = setTimeout(finish, 1500);
+              video.addEventListener("seeked", () => {
+                clearTimeout(seekTimeout);
+                finish();
+              }, { once: true });
+              try {
+                video.currentTime = seekTo;
+                return;
+              } catch (_e) { /* fall through */ }
+            }
+            finish();
+          };
+          video.addEventListener("loadeddata", onLoaded, { once: true });
+          video.addEventListener("error", onError, { once: true });
+          try { video.load(); } catch (_e) { onError(); }
+        });
+      } catch (_e) {
+        delete video.dataset.thumbLoading;
+      }
+    }
+
+    function hydrateVideoMediaThumbs(root) {
+      const scope = root || document;
+      scope.querySelectorAll(".media-thumb__art[data-media-url]").forEach((video) => {
+        hydrateVideoMediaThumb(video);
+      });
+    }
+
+    async function postMediaForm(url, fd) {
+      const headers = await catalogAuthHeaders();
+      const res = await fetch(url, { method: "POST", headers, body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.detail || data.error || res.statusText;
+        throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+      }
+      return data;
+    }
+
+    async function fetchSavedMedia() {
+      const headers = await catalogAuthHeaders();
+      return fetch("/api/saved-media", { headers });
+    }
+
+    function assignInputFiles(input, files) {
+      if (!input) return;
+      const dt = new DataTransfer();
+      Array.from(files || []).slice(0, MEDIA_UPLOAD_MAX_FILES).forEach((file) => {
+        if (file) dt.items.add(file);
+      });
+      input.files = dt.files;
+    }
+
+    function detectSavedMediaKind(file) {
+      if (!file) return null;
+      const name = String(file.name || "").trim().toLowerCase();
+      const type = String(file.type || "").trim().toLowerCase();
+      if (name.endsWith(".mp3") || type === "audio/mpeg" || type === "audio/mp3") return "music";
+      if (name.endsWith(".mp4") || type === "video/mp4") return "video";
+      return null;
+    }
+
+    async function refreshSavedMedia() {
+      const musicList = $("media-library-music-list");
+      const videoList = $("media-library-video-list");
+      const musicCount = $("media-library-music-count");
+      const videoCount = $("media-library-video-count");
+      if (!musicList && !videoList) return;
+      try {
+        const res = await fetchSavedMedia();
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.detail || "Could not load media.");
+        const musicRows = Array.isArray(data.music) ? data.music : [];
+        const videoRows = Array.isArray(data.video) ? data.video : [];
+        savedMediaLibrary = { music: musicRows, video: videoRows };
+        rebuildLibraryPlaylist();
+        if (libraryActiveItem) {
+          const stillThere = libraryPlaylist.some(
+            (row) => row.basename === libraryActiveItem.basename && row.kind === libraryActiveItem.kind
+          );
+          if (!stillThere) {
+            stopLibraryPlayback();
+            syncLiveRadioPanelUi();
+          } else if (libraryTrackIndex >= 0) libraryActiveItem = libraryPlaylist[libraryTrackIndex] || libraryActiveItem;
+        }
+        if (musicCount) musicCount.textContent = String(musicRows.length);
+        if (videoCount) videoCount.textContent = String(videoRows.length);
+        if (musicList) {
+          musicList.innerHTML = musicRows.length
+            ? musicRows.map((item) => mediaLibraryThumbHtml("music", item)).join("")
+            : "<li class=\"muted media-library-empty\">No songs uploaded yet.</li>";
+        }
+        if (videoList) {
+          videoList.innerHTML = videoRows.length
+            ? videoRows.map((item) => mediaLibraryThumbHtml("video", item)).join("")
+            : "<li class=\"muted media-library-empty\">No videos uploaded yet.</li>";
+          if (videoRows.length) hydrateVideoMediaThumbs(videoList);
+        }
+        pruneMediaThumbObjectUrls(new Set(
+          musicRows.map((item) => mediaThumbCacheKey("music", item.basename))
+            .concat(videoRows.map((item) => mediaThumbCacheKey("video", item.basename)))
+        ));
+        if (libraryActiveItem) markActiveLibraryThumb(libraryActiveItem);
+      } catch (_e) {
+        if (musicList) musicList.innerHTML = "<li class=\"muted media-library-empty\">Could not load music.</li>";
+        if (videoList) videoList.innerHTML = "<li class=\"muted media-library-empty\">Could not load video.</li>";
+        if (musicCount) musicCount.textContent = "—";
+        if (videoCount) videoCount.textContent = "—";
+      }
+    }
+
+    function wireMediaDropzone(dropId, inputId) {
+      const drop = $(dropId);
+      const input = $(inputId);
+      if (!drop || !input) return;
+      ["dragenter", "dragover"].forEach((evt) => {
+        drop.addEventListener(evt, (e) => {
+          e.preventDefault();
+          drop.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach((evt) => {
+        drop.addEventListener(evt, (e) => {
+          e.preventDefault();
+          drop.classList.remove("is-dragover");
+        });
+      });
+      drop.addEventListener("drop", (e) => {
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (!files || !files.length) return;
+        assignInputFiles(input, files);
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    }
+
+    async function uploadSavedMedia(kind, file, statusEl, inputEl, opts) {
+      if (!file) return;
+      const fd = new FormData();
+      fd.append("file", file);
+      const quiet = !!(opts && opts.quiet);
+      if (statusEl && !quiet) {
+        statusEl.textContent = "Uploading " + (kind === "music" ? "song" : "video") + "…";
+        statusEl.className = "status media-upload-status";
+      }
+      await postMediaForm("/api/upload/saved-media/" + kind, fd);
+      if (statusEl && !quiet) {
+        statusEl.textContent = (kind === "music" ? "MP3" : "MP4") + " saved to your library.";
+        statusEl.className = "status ok media-upload-status";
+      }
+      if (inputEl && !quiet) inputEl.value = "";
+    }
+
+    async function uploadSavedMediaBatch(fileList, statusEl, inputEl) {
+      const files = Array.from(fileList || []).filter(Boolean);
+      if (!files.length) return;
+      const batch = files.slice(0, MEDIA_UPLOAD_MAX_FILES);
+      if (files.length > MEDIA_UPLOAD_MAX_FILES && statusEl) {
+        statusEl.textContent = "Uploading first " + MEDIA_UPLOAD_MAX_FILES + " of " + files.length + " files…";
+        statusEl.className = "status media-upload-status";
+      }
+      let ok = 0;
+      const errors = [];
+      for (let i = 0; i < batch.length; i++) {
+        const file = batch[i];
+        const kind = detectSavedMediaKind(file);
+        if (!kind) {
+          errors.push((file.name || "File") + ": not MP3 or MP4");
+          continue;
+        }
+        if (statusEl) {
+          statusEl.textContent = "Uploading " + (i + 1) + " / " + batch.length + "…";
+          statusEl.className = "status media-upload-status";
+        }
+        try {
+          await uploadSavedMedia(kind, file, statusEl, null, { quiet: true });
+          ok += 1;
+        } catch (err) {
+          errors.push((file.name || "File") + ": " + (err.message || "upload failed"));
+        }
+      }
+      if (inputEl) inputEl.value = "";
+      await refreshSavedMedia();
+      if (!statusEl) return;
+      if (ok && !errors.length) {
+        statusEl.textContent = ok === 1 ? "1 file saved to your library." : ok + " files saved to your library.";
+        statusEl.className = "status ok media-upload-status";
+      } else if (ok && errors.length) {
+        statusEl.textContent = ok + " saved · " + errors.length + " failed. " + errors[0];
+        statusEl.className = "status error media-upload-status";
+      } else {
+        statusEl.textContent = errors[0] || "Upload failed.";
+        statusEl.className = "status error media-upload-status";
+      }
+    }
+
+    async function uploadSavedMediaAuto(file, statusEl, inputEl) {
+      if (!file) return;
+      const kind = detectSavedMediaKind(file);
+      if (!kind) {
+        if (statusEl) {
+          statusEl.textContent = "Only MP3 (music) or MP4 (video) files are allowed.";
+          statusEl.className = "status error media-upload-status";
+        }
+        if (inputEl) inputEl.value = "";
+        return;
+      }
+      try {
+        await uploadSavedMedia(kind, file, statusEl, inputEl);
+        await refreshSavedMedia();
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Upload failed";
+          statusEl.className = "status error media-upload-status";
+        }
+      }
+    }
+
     const savedPosterListEl = $("saved-poster-list");
     if (savedPosterListEl) {
       savedPosterListEl.addEventListener("click", async (e) => {
@@ -29152,6 +30677,114 @@ Lord, hear our prayer</textarea>
         }
       });
     }
+
+    wireMediaDropzone("media-upload-drop", "media-upload-file");
+
+    const mediaFileUpload = $("media-upload-file");
+    if (mediaFileUpload) {
+      mediaFileUpload.addEventListener("change", async (e) => {
+        if (!guardFullAppAction()) {
+          e.target.value = "";
+          return;
+        }
+        const files = e.target.files;
+        if (!files || !files.length) return;
+        const statusEl = $("media-upload-status");
+        if (files.length === 1) {
+          await uploadSavedMediaAuto(files[0], statusEl, e.target);
+          return;
+        }
+        await uploadSavedMediaBatch(files, statusEl, e.target);
+      });
+    }
+
+    let mediaDeletePending = null;
+
+    function closeMediaDeleteModal() {
+      setUiOverlayOpen($("media-delete-modal"), false);
+      mediaDeletePending = null;
+    }
+
+    function openMediaDeleteConfirmModal(kind, basename, title) {
+      mediaDeletePending = { kind: kind, basename: basename, title: title || "" };
+      const desc = $("media-delete-desc");
+      if (desc) {
+        desc.textContent = "Remove \"" + (title || "this file") + "\" from your library? This cannot be undone.";
+      }
+      setUiOverlayOpen($("media-delete-modal"), true);
+    }
+
+    async function confirmMediaDeleteFromModal() {
+      if (!guardFullAppAction()) return;
+      if (!mediaDeletePending) return;
+      const pending = mediaDeletePending;
+      const { kind, basename, title } = pending;
+      const deletingActive = libraryActiveItem
+        && libraryActiveItem.basename === basename
+        && libraryActiveItem.kind === kind;
+      try {
+        const headers = await catalogAuthHeaders();
+        const res = await fetch(
+          "/api/saved-media/" + encodeURIComponent(kind) + "/" + encodeURIComponent(basename),
+          { method: "DELETE", headers }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || data.error || "Delete failed");
+        closeMediaDeleteModal();
+        if (deletingActive) {
+          stopLibraryPlayback();
+          syncLiveRadioPanelUi();
+        }
+        await refreshSavedMedia();
+        notify("\"" + (title || "File") + "\" deleted.", "ok");
+      } catch (err) {
+        notify(err.message || "Could not delete file.", "error");
+      }
+    }
+
+    function initMediaDeleteModal() {
+      const modal = $("media-delete-modal");
+      if (!modal) return;
+      [
+        ["media-delete-backdrop", closeMediaDeleteModal],
+        ["media-delete-close", closeMediaDeleteModal],
+        ["media-delete-cancel", closeMediaDeleteModal],
+      ].forEach(([id, fn]) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", fn);
+      });
+      const confirmBtn = $("media-delete-confirm");
+      if (confirmBtn) confirmBtn.addEventListener("click", () => { confirmMediaDeleteFromModal(); });
+    }
+
+    function handleSavedMediaListClick(e) {
+      const delBtn = e.target.closest("button[data-del-media]");
+      if (delBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!guardFullAppAction()) return;
+        const kind = delBtn.dataset.delMedia;
+        const name = delBtn.dataset.mediaName;
+        if (!kind || !name) return;
+        const rows = kind === "music" ? savedMediaLibrary.music : savedMediaLibrary.video;
+        const item = rows.find((row) => row.basename === name);
+        openMediaDeleteConfirmModal(kind, name, item ? (item.display_name || item.basename) : name);
+        return;
+      }
+      const playBtn = e.target.closest("[data-play-media]");
+      if (playBtn) {
+        if (!guardFullAppAction()) return;
+        const kind = playBtn.dataset.playMedia;
+        const name = playBtn.dataset.mediaName;
+        const rows = kind === "music" ? savedMediaLibrary.music : savedMediaLibrary.video;
+        const item = rows.find((row) => row.basename === name);
+        if (item) startLibraryPlayback(Object.assign({ kind: kind }, item));
+      }
+    }
+
+    const mediaLibrary = $("media-library");
+    if (mediaLibrary) mediaLibrary.addEventListener("click", handleSavedMediaListClick);
+    initMediaDeleteModal();
 
     const btnAnalyzeTpl = $("btn-analyze-template-pptx");
     if (btnAnalyzeTpl) {

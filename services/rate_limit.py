@@ -83,6 +83,7 @@ _EXPENSIVE_PREFIXES = (
     "/generate-image",
     "/api/upload",
     "/api/saved-posters",
+    "/api/saved-media",
     "/api/design/import-pptx",
 )
 

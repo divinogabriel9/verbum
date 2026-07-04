@@ -8,6 +8,7 @@ Run from project root:
 from __future__ import annotations
 
 import io
+import json
 import logging
 import os
 import re
@@ -138,6 +139,16 @@ _MASS_ASSET_DIR = _UPLOAD_DIR / "mass_assets"
 _MASS_ASSET_DIR.mkdir(parents=True, exist_ok=True)
 _SAVED_POSTER_DIR = _UPLOAD_DIR / "saved_posters"
 _SAVED_POSTER_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_MEDIA_MUSIC_DIR = _UPLOAD_DIR / "saved_media" / "music"
+_SAVED_MEDIA_VIDEO_DIR = _UPLOAD_DIR / "saved_media" / "video"
+_SAVED_MEDIA_MUSIC_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_MEDIA_VIDEO_DIR.mkdir(parents=True, exist_ok=True)
+_SAVED_MEDIA_MANIFEST_PATH = _UPLOAD_DIR / "saved_media" / "manifest.json"
+
+_MAX_MUSIC_BYTES = 10_000_000
+_MAX_VIDEO_BYTES = 11_000_000
+_ALLOWED_MUSIC_TYPES = frozenset(("audio/mpeg", "audio/mp3", "application/octet-stream"))
+_ALLOWED_VIDEO_TYPES = frozenset(("video/mp4", "application/octet-stream"))
 
 _ALLOWED_LOGO_TYPES = frozenset(
     ("image/png", "image/jpeg", "image/webp", "image/gif", "image/x-png", "image/jpg")
@@ -203,6 +214,224 @@ async def _save_uploaded_image(file: UploadFile, dest_dir: Path, *, prefix: str)
     out = dest_dir / name
     out.write_bytes(raw)
     return name
+
+
+async def _save_uploaded_media(
+    file: UploadFile,
+    dest_dir: Path,
+    *,
+    prefix: str,
+    allowed_ext: str,
+    allowed_types: frozenset[str],
+    max_bytes: int,
+) -> str:
+    orig = Path(file.filename or "upload").name
+    ext = Path(orig).suffix.lower()
+    if ext != allowed_ext:
+        raise HTTPException(status_code=400, detail=f"Use a {allowed_ext.lstrip('.').upper()} file only.")
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype and ctype not in allowed_types and ctype != "application/octet-stream":
+        raise HTTPException(status_code=400, detail=f"Use a {allowed_ext.lstrip('.').upper()} file only.")
+    raw = await file.read()
+    if len(raw) > max_bytes:
+        mb = max(1, max_bytes // (1024 * 1024))
+        raise HTTPException(status_code=400, detail=f"File too large (max about {mb} MB).")
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    name = f"{prefix}_{uuid.uuid4().hex}{allowed_ext}"
+    out = dest_dir / name
+    out.write_bytes(raw)
+    return name
+
+
+def _manifest_user_key(session: Optional[AuthSession]) -> str:
+    if session and session.user and session.user.user_id:
+        return session.user.user_id
+    return "_local"
+
+
+def _load_saved_media_manifest() -> dict[str, Any]:
+    if not _SAVED_MEDIA_MANIFEST_PATH.is_file():
+        return {"users": {}}
+    try:
+        data = json.loads(_SAVED_MEDIA_MANIFEST_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"users": {}}
+    if not isinstance(data, dict):
+        return {"users": {}}
+    data.setdefault("users", {})
+    return data
+
+
+def _save_saved_media_manifest(data: dict[str, Any]) -> None:
+    _SAVED_MEDIA_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _SAVED_MEDIA_MANIFEST_PATH.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def _register_saved_media_meta(
+    session: Optional[AuthSession],
+    basename: str,
+    display_name: str,
+    kind: str,
+) -> None:
+    data = _load_saved_media_manifest()
+    users = data.setdefault("users", {})
+    user_key = _manifest_user_key(session)
+    users.setdefault(user_key, {})[basename] = {
+        "display_name": display_name,
+        "kind": kind,
+    }
+    _save_saved_media_manifest(data)
+
+
+def _unregister_saved_media_meta(session: Optional[AuthSession], basename: str) -> None:
+    data = _load_saved_media_manifest()
+    users = data.get("users", {})
+    user_key = _manifest_user_key(session)
+    bucket = users.get(user_key)
+    if not bucket or basename not in bucket:
+        return
+    del bucket[basename]
+    _save_saved_media_manifest(data)
+
+
+def _saved_media_display_name(
+    session: Optional[AuthSession],
+    basename: str,
+    *,
+    kind: str,
+) -> str:
+    user_key = _manifest_user_key(session)
+    entry = _load_saved_media_manifest().get("users", {}).get(user_key, {}).get(basename, {})
+    name = str(entry.get("display_name") or "").strip()
+    if name:
+        return name
+    stem = Path(basename).stem
+    if stem.startswith(f"{kind}_"):
+        return stem[len(kind) + 1 :] + Path(basename).suffix
+    return basename
+
+
+def _enrich_saved_media_rows(
+    rows: list[dict[str, str]],
+    *,
+    session: Optional[AuthSession],
+    kind: str,
+) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
+    for row in rows:
+        item = dict(row)
+        item["display_name"] = _saved_media_display_name(
+            session,
+            item.get("basename", ""),
+            kind=kind,
+        )
+        item["kind"] = kind
+        out.append(item)
+    return out
+
+
+def _list_saved_media_rows(
+    local_dir: Path,
+    *,
+    folder: str,
+    allowed_ext: str,
+    session: Optional[AuthSession],
+) -> list[dict[str, str]]:
+    local_items: list[dict[str, str]] = []
+    if local_dir.is_dir():
+        for p in sorted(local_dir.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
+            if p.is_file() and p.suffix.lower() == allowed_ext:
+                local_items.append({"basename": p.name, "url": upload_file_url(f"{folder}/{p.name}")})
+
+    if session and storage_ready(session.token):
+        try:
+            rows = list_user_assets(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                prefix=folder,
+            )
+            remote_items = [
+                {"basename": row["name"], "url": row["url"] or ""}
+                for row in rows
+                if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
+            ]
+            merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}
+            for item in remote_items:
+                merged[item["basename"]] = item
+            out = list(merged.values())
+            out.sort(key=lambda r: r["basename"], reverse=True)
+            return out
+        except Exception:
+            logger.warning("Could not list %s from storage; using local files.", folder, exc_info=True)
+    return local_items
+
+
+def _delete_saved_media_item(
+    session: Optional[AuthSession],
+    *,
+    basename: str,
+    local_dir: Path,
+    storage_folder: str,
+    allowed_ext: str,
+    not_found_detail: str,
+) -> dict[str, Any]:
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        raise HTTPException(status_code=400, detail="Invalid asset name.")
+    removed = False
+    if session and storage_ready(session.token):
+        try:
+            rel = _safe_storage_leaf(base, folder=storage_folder)
+            delete_user_asset(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                relative_path=rel,
+            )
+            removed = True
+        except HTTPException:
+            raise
+        except Exception:
+            logger.warning("Storage delete failed for %s", base, exc_info=True)
+    p = _resolve_child_file(local_dir, base)
+    if p and p.suffix.lower() == allowed_ext:
+        p.unlink(missing_ok=True)
+        removed = True
+    if not removed:
+        raise HTTPException(status_code=404, detail=not_found_detail)
+    _unregister_saved_media_meta(session, base)
+    return {"ok": True}
+
+
+def _upload_saved_media_url(
+    *,
+    session: Optional[AuthSession],
+    local_path: Path,
+    relative_path: str,
+    content_type: str,
+    local_url: str,
+) -> str:
+    if not session or not storage_ready(session.token):
+        return local_url
+    try:
+        stored = upload_user_asset(
+            user_id=session.user.user_id,
+            access_token=session.token,
+            relative_path=relative_path,
+            raw=local_path.read_bytes(),
+            content_type=content_type,
+            upsert=True,
+        )
+        return stored.signed_url
+    except Exception:
+        logger.warning(
+            "Storage upload failed for %s; serving local URL instead.",
+            relative_path,
+            exc_info=True,
+        )
+        return local_url
 
 
 def _ai_poster_download_urls() -> dict[str, str]:
@@ -1133,6 +1362,111 @@ def api_delete_saved_poster(
         raise HTTPException(status_code=404, detail="Poster not found.")
     p.unlink(missing_ok=True)
     return {"ok": True}
+
+
+@app.post("/api/upload/saved-media/music")
+async def api_upload_saved_media_music(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    name = await _save_uploaded_media(
+        file,
+        _SAVED_MEDIA_MUSIC_DIR,
+        prefix="music",
+        allowed_ext=".mp3",
+        allowed_types=_ALLOWED_MUSIC_TYPES,
+        max_bytes=_MAX_MUSIC_BYTES,
+    )
+    display_name = Path(file.filename or "upload").name
+    _register_saved_media_meta(session, name, display_name, "music")
+    url = upload_file_url(f"saved_media/music/{name}")
+    url = _upload_saved_media_url(
+        session=session,
+        local_path=_SAVED_MEDIA_MUSIC_DIR / name,
+        relative_path=f"saved_media/music/{name}",
+        content_type="audio/mpeg",
+        local_url=url,
+    )
+    return {"ok": True, "basename": name, "url": url, "display_name": display_name}
+
+
+@app.post("/api/upload/saved-media/video")
+async def api_upload_saved_media_video(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    name = await _save_uploaded_media(
+        file,
+        _SAVED_MEDIA_VIDEO_DIR,
+        prefix="video",
+        allowed_ext=".mp4",
+        allowed_types=_ALLOWED_VIDEO_TYPES,
+        max_bytes=_MAX_VIDEO_BYTES,
+    )
+    display_name = Path(file.filename or "upload").name
+    _register_saved_media_meta(session, name, display_name, "video")
+    url = upload_file_url(f"saved_media/video/{name}")
+    url = _upload_saved_media_url(
+        session=session,
+        local_path=_SAVED_MEDIA_VIDEO_DIR / name,
+        relative_path=f"saved_media/video/{name}",
+        content_type="video/mp4",
+        local_url=url,
+    )
+    return {"ok": True, "basename": name, "url": url, "display_name": display_name}
+
+
+@app.get("/api/saved-media")
+def api_list_saved_media(
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    music = _list_saved_media_rows(
+        _SAVED_MEDIA_MUSIC_DIR,
+        folder="saved_media/music",
+        allowed_ext=".mp3",
+        session=session,
+    )
+    video = _list_saved_media_rows(
+        _SAVED_MEDIA_VIDEO_DIR,
+        folder="saved_media/video",
+        allowed_ext=".mp4",
+        session=session,
+    )
+    return {
+        "ok": True,
+        "music": _enrich_saved_media_rows(music, session=session, kind="music"),
+        "video": _enrich_saved_media_rows(video, session=session, kind="video"),
+    }
+
+
+@app.delete("/api/saved-media/music/{basename}")
+def api_delete_saved_media_music(
+    basename: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    return _delete_saved_media_item(
+        session,
+        basename=basename,
+        local_dir=_SAVED_MEDIA_MUSIC_DIR,
+        storage_folder="saved_media/music",
+        allowed_ext=".mp3",
+        not_found_detail="Audio file not found.",
+    )
+
+
+@app.delete("/api/saved-media/video/{basename}")
+def api_delete_saved_media_video(
+    basename: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    return _delete_saved_media_item(
+        session,
+        basename=basename,
+        local_dir=_SAVED_MEDIA_VIDEO_DIR,
+        storage_folder="saved_media/video",
+        allowed_ext=".mp4",
+        not_found_detail="Video file not found.",
+    )
 
 
 @app.get("/api/catalog/songs")

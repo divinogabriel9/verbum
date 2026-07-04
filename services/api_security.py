@@ -146,6 +146,7 @@ PROTECTED_API_PREFIXES: tuple[str, ...] = (
     "/api/settings/",
     "/api/upload",
     "/api/saved-posters",
+    "/api/saved-media",
     "/api/catalog/songs",
     "/api/songs/",
     "/api/lyrics/",

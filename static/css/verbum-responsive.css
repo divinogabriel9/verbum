@@ -303,6 +303,7 @@ iframe {
   .workspace,
   .workspace.theme-workspace,
   .workspace.flow-workspace,
+  .workspace.media-hub-workspace,
   .calendar-page-workspace,
   .settings-layout,
   .home-bento,
@@ -1326,7 +1327,7 @@ iframe {
     grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   }
 
-  .workspace:not(.flow-workspace):not(.theme-workspace):not(.calendar-page-workspace) {
+  .workspace:not(.flow-workspace):not(.theme-workspace):not(.calendar-page-workspace):not(.media-hub-workspace) {
     grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.62fr);
   }
 
