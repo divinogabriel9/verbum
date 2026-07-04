@@ -66,6 +66,7 @@ class ReadingsFetchDateBody(BaseModel):
 class CreateInviteBody(BaseModel):
     email: Optional[str] = Field(None, max_length=320)
     note: Optional[str] = Field(None, max_length=240)
+    community_name: str = Field(..., min_length=1, max_length=120)
     ttl_days: int = Field(7, ge=1, le=90)
 
 
@@ -251,8 +252,12 @@ def register_admin_routes(app) -> None:
                 created_by_user_id=session.user.user_id,
                 email=body.email,
                 note=body.note,
+                community_name=body.community_name.strip(),
                 ttl_days=body.ttl_days,
+                invite_role="president",
             )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         tok = row.get("token") or ""

@@ -6,6 +6,7 @@
   const inviteValid = !!window.__VERBUM_INVITE_VALID__;
   const inviteToken = window.__VERBUM_INVITE_TOKEN__ || "";
   const inviteEmail = window.__VERBUM_INVITE_EMAIL__ || "";
+  let inviteCommunityName = window.__VERBUM_INVITE_COMMUNITY_NAME__ || "";
 
   function $(id) {
     return document.getElementById(id);
@@ -35,10 +36,38 @@
     return new URLSearchParams(window.location.search).get("switch") === "1";
   }
 
+  function applyInviteChurchName(name) {
+    const churchInput = $("auth-church-name");
+    const clean = (name || "").trim();
+    if (clean) {
+      inviteCommunityName = clean;
+    }
+    if (!churchInput) return;
+    churchInput.value = inviteCommunityName;
+    if (inviteOnly && inviteToken) {
+      churchInput.readOnly = true;
+      churchInput.setAttribute("aria-readonly", "true");
+      churchInput.tabIndex = -1;
+      const hint = $("auth-church-name-hint");
+      if (hint) hint.hidden = false;
+    } else if (inviteCommunityName) {
+      churchInput.readOnly = true;
+      churchInput.setAttribute("aria-readonly", "true");
+      churchInput.tabIndex = -1;
+      const hint = $("auth-church-name-hint");
+      if (hint) hint.hidden = false;
+    } else {
+      churchInput.readOnly = false;
+      churchInput.removeAttribute("aria-readonly");
+      churchInput.tabIndex = 0;
+      churchInput.placeholder = "e.g. St. Mary's Parish";
+    }
+  }
+
   async function consumeInvite(token, accessToken) {
     if (!token || !accessToken) return;
     try {
-      await fetch("/api/auth/invite/consume", {
+      const res = await fetch("/api/auth/invite/consume", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,8 +75,12 @@
         },
         body: JSON.stringify({ token }),
       });
-    } catch (_e) {
-      /* non-blocking */
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || data.error || "Could not apply invite.");
+      }
+    } catch (err) {
+      showError((err && err.message) || "Account created, but the invite could not be applied.");
     }
   }
 
@@ -83,6 +116,24 @@
         return;
       }
 
+      if (mode === "sign-up" && inviteToken) {
+        try {
+          const validateRes = await fetch(
+            "/api/auth/invite/validate?token=" + encodeURIComponent(inviteToken)
+          );
+          const validateData = await validateRes.json();
+          if (validateData.ok && validateData.community_name) {
+            applyInviteChurchName(validateData.community_name);
+          }
+        } catch (_e) {
+          /* non-blocking */
+        }
+      }
+
+      if (mode === "sign-up") {
+        applyInviteChurchName(inviteCommunityName);
+      }
+
       await new Promise((resolve, reject) => {
         const script = document.createElement("script");
         script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
@@ -113,6 +164,10 @@
         if (form) form.hidden = false;
         if (signupFields) signupFields.hidden = mode !== "sign-up";
         if (footer) footer.hidden = false;
+
+        if (mode === "sign-up") {
+          applyInviteChurchName(inviteCommunityName);
+        }
 
         if (mode === "sign-up" && inviteEmail) {
           const emailInput = $("auth-email");
@@ -196,7 +251,11 @@
           const password = ($("auth-password") && $("auth-password").value) || "";
           const firstName = ($("auth-first-name") && $("auth-first-name").value.trim()) || "";
           const lastName = ($("auth-last-name") && $("auth-last-name").value.trim()) || "";
-          const churchName = ($("auth-church-name") && $("auth-church-name").value.trim()) || "";
+          const churchName = (
+            (inviteCommunityName || "").trim() ||
+            ($("auth-church-name") && $("auth-church-name").value.trim()) ||
+            ""
+          ).trim();
           const submitBtn = $("auth-submit");
 
           if (!email || !password) {
@@ -209,6 +268,10 @@
           }
           if (mode === "sign-up" && inviteOnly && !inviteToken) {
             showError("A valid invitation link is required to create an account.");
+            return;
+          }
+          if (mode === "sign-up" && inviteOnly && !churchName) {
+            showError("This invite is missing a parish name. Ask your administrator for a new link.");
             return;
           }
           if (mode === "sign-up" && inviteEmail && email.toLowerCase() !== inviteEmail.toLowerCase()) {
@@ -240,16 +303,6 @@
               if (data.session) {
                 if (inviteToken) {
                   await consumeInvite(inviteToken, data.session.access_token);
-                }
-                if (churchName) {
-                  await fetch("/api/community/profile", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: "Bearer " + data.session.access_token,
-                    },
-                    body: JSON.stringify({ community_name: churchName }),
-                  });
                 }
                 window.location.href = cfg.after_sign_up_url;
                 return;

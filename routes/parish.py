@@ -10,10 +10,9 @@ from pydantic import BaseModel, Field
 from services.api_security import AuthSession, require_approved_membership, require_session
 from services.auth_config import app_public_url
 from services.membership_config import is_superadmin_user
+from services.platform_invites import create_invite, list_invites_for_parish
 from services.parish_invites import (
     consume_parish_invite,
-    create_parish_invite,
-    list_parish_invites,
     validate_parish_invite_token,
 )
 from services.parish_store import (
@@ -56,11 +55,11 @@ def register_parish_routes(app) -> None:
         if not parish_id:
             raise HTTPException(status_code=404, detail="Parish not found.")
         members = list_team_members(parish_id)
-        invites = list_parish_invites(parish_id)
+        invites = list_invites_for_parish(parish_id)
         base = app_public_url() or ""
         for row in invites:
             tok = row.get("token") or ""
-            row["invite_url"] = (base + "/home?parish_invite=" + tok) if tok else ""
+            row["invite_url"] = (base + "/sign-up?invite=" + tok) if tok else ""
         return {
             "ok": True,
             "parish_id": parish_id,
@@ -77,25 +76,35 @@ def register_parish_routes(app) -> None:
     ) -> dict[str, Any]:
         ctx = get_church_profile_context() or {}
         parish_id = str(ctx.get("parish_id") or "")
+        parish_name = (ctx.get("community_name") or "").strip()
         if not parish_id:
             raise HTTPException(status_code=404, detail="Parish not found.")
+        if not parish_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Your parish must have a name before inviting teammates.",
+            )
         if len(list_active_members(parish_id)) >= PARISH_MEMBER_LIMIT:
             raise HTTPException(
                 status_code=409,
                 detail=f"Parish already has {PARISH_MEMBER_LIMIT} members.",
             )
         try:
-            row = create_parish_invite(
-                parish_id=parish_id,
-                invited_by_user_id=session.user.user_id,
+            row = create_invite(
+                created_by_user_id=session.user.user_id,
                 email=body.email,
+                community_name=parish_name,
+                parish_id=parish_id,
+                invite_role="media",
                 ttl_days=body.ttl_days,
             )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         tok = row.get("token") or ""
         base = app_public_url() or ""
-        invite_url = (base + "/home?parish_invite=" + tok) if tok else ""
+        invite_url = (base + "/sign-up?invite=" + tok) if tok else ""
         return {"ok": True, "invite": row, "invite_url": invite_url}
 
     @app.post("/api/parish/team/invites/accept")

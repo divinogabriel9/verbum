@@ -227,6 +227,12 @@
       background: transparent;
       color: var(--ink);
     }
+    .field input[readonly] {
+      cursor: default;
+      pointer-events: none;
+      background: color-mix(in srgb, var(--line) 18%, transparent);
+      color: var(--muted);
+    }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .auth-submit {
       width: 100%;
@@ -372,7 +378,8 @@
       <div id="auth-signup-fields" hidden>
         <div class="field">
           <label for="auth-church-name">Church / community name</label>
-          <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="e.g. St. Mary's Parish" />
+          <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="Set by your administrator" />
+          <p class="muted" id="auth-church-name-hint" style="margin:6px 0 0;font-size:0.8rem;color:var(--muted);" hidden>Your administrator sets the parish name on the invite link.</p>
         </div>
         <div class="field-row">
           <div class="field">
@@ -420,6 +427,7 @@
     window.__VERBUM_INVITE_VALID__ = {{ invite_valid | tojson }};
     window.__VERBUM_INVITE_TOKEN__ = {{ invite_token | tojson }};
     window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
+    window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
   </script>
   <script src="/static/js/auth-aurora-bg.js" defer></script>
   <script src="/static/js/auth-page.js" defer></script>

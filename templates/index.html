@@ -511,6 +511,8 @@
       background: transparent;
       overflow: visible;
       text-decoration: none;
+      cursor: pointer;
+      user-select: none;
       transform-origin: left center;
       transition:
         transform var(--motion-duration-fast) var(--motion-ease-hover);
@@ -11197,6 +11199,19 @@
       min-height: 36px;
       max-width: 100%;
     }
+    .cal-fetch-btn[hidden],
+    #cal-admin-fetch-missing-btn[hidden],
+    #cal-admin-fetch-month-btn[hidden],
+    #cal-readings-admin-fetch[hidden] {
+      display: none !important;
+    }
+    body:not(.is-superadmin) #cal-admin-fetch-missing-btn,
+    body:not(.is-superadmin) #cal-admin-fetch-month-btn,
+    body:not(.is-superadmin) #cal-readings-admin-fetch,
+    body:not(.is-superadmin) #cal-readings-admin-save,
+    body:not(.is-superadmin) #cal-admin-banner {
+      display: none !important;
+    }
     .cal-fetch-btn.is-running {
       border-color: #ef4444 !important;
       color: #b91c1c;
@@ -12776,10 +12791,10 @@
   {% endif %}
   <div class="app-shell app-shell--sidebar">
     <aside class="app-sidebar app-nav--desktop" id="app-sidebar" aria-label="Main navigation">
-      <a href="/home" class="app-sidebar__brand" data-route="/home" aria-label="LiturgyFlow — Home">
+      <div class="app-sidebar__brand" id="app-sidebar-brand" role="img" aria-label="LiturgyFlow">
         <img src="/static/brand/app-icon.png?v=5" alt="" class="app-sidebar__brand-img" width="44" height="44" decoding="async" />
         <span class="app-sidebar__brand-wordmark wordmark" aria-hidden="true"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
-      </a>
+      </div>
       <nav class="app-sidebar__nav" id="admin-sidebar">
         <a class="app-sidebar__link" data-nav-tab="home" data-route="/home" href="/home" data-nav-tooltip="Home">
           <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -12789,17 +12804,17 @@
           <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v6"/><path d="m9 9 3-3 3 3"/></svg>
           <span class="nav-label">Mass</span>
         </a>
-        <a class="app-sidebar__link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs" data-nav-tooltip="Library">
-          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          <span class="nav-label">Library</span>
+        <a class="app-sidebar__link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs" data-nav-tooltip="Lyrics Library">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
+          <span class="nav-label">Lyrics Library</span>
         </a>
-        <a class="app-sidebar__link" data-nav-tab="radio" data-route="/radio" href="/radio" data-nav-tooltip="Radio">
-          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/></svg>
-          <span class="nav-label">Radio</span>
-        </a>
-        <a class="app-sidebar__link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters" data-nav-tooltip="Media">
-          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <a class="app-sidebar__link" data-nav-tab="radio" data-route="/radio" href="/radio" data-nav-tooltip="Media">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
           <span class="nav-label">Media</span>
+        </a>
+        <a class="app-sidebar__link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters" data-nav-tooltip="Posters">
+          <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          <span class="nav-label">Posters</span>
         </a>
         <a class="app-sidebar__link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar" data-nav-tooltip="Calendar">
           <svg class="app-sidebar__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -15986,6 +16001,10 @@ Lord, hear our prayer</textarea>
                 </div>
               </header>
               <div class="field">
+                <label for="sa-invite-parish-name">Parish name</label>
+                <input type="text" id="sa-invite-parish-name" maxlength="120" placeholder="e.g. St. Mary's Parish" autocomplete="organization" required />
+              </div>
+              <div class="field">
                 <label for="sa-invite-email">Email (optional lock)</label>
                 <input type="email" id="sa-invite-email" autocomplete="off" placeholder="media@parish.org" maxlength="320" />
               </div>
@@ -16230,7 +16249,7 @@ Lord, hear our prayer</textarea>
                 </span>
                 <div class="home-card-head__text">
                   <h3>Parish Team</h3>
-                  <p>Invite up to 2 media teammates to share your parish profile and AI quota.</p>
+                  <p>Invite media teammates to create an account and join your parish (parish name is set automatically).</p>
                 </div>
               </header>
               <p class="muted" id="settings-team-capacity" aria-live="polite"></p>
@@ -16312,7 +16331,7 @@ Lord, hear our prayer</textarea>
                 <hr class="settings-divider" />
 
                 <h3>Navigation tabs</h3>
-                <p class="muted">Home, Mass, Library, and Radio are always visible. Turn on optional tabs below to add them to your navigation — your choices are remembered for next time.</p>
+                <p class="muted">Home, Mass, Lyrics Library, and Media are always visible. Turn on optional tabs below to add them to your navigation — your choices are remembered for next time.</p>
                 <div class="settings-nav-tabs-list" id="settings-nav-tabs-list" role="group" aria-label="Visible navigation tabs"></div>
 
                 <hr class="settings-divider" />
@@ -16347,12 +16366,12 @@ Lord, hear our prayer</textarea>
         <span class="nav-label">Mass</span>
       </a>
       <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
-        <img src="/static/icons/library.png" class="nav-icon" alt="" width="15" height="15" />
-        <span class="nav-label">Library</span>
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
+        <span class="nav-label">Lyrics Library</span>
       </a>
       <a class="nav-link" data-nav-tab="radio" data-route="/radio" href="/radio">
-        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19.1"/></svg>
-        <span class="nav-label">Radio</span>
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+        <span class="nav-label">Media</span>
       </a>
       <button type="button" class="nav-link app-bottom-nav__more" id="app-bottom-nav-more" aria-expanded="false" aria-controls="app-more-sheet" aria-label="More pages">
         <svg class="nav-icon app-bottom-nav__more-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -16372,7 +16391,7 @@ Lord, hear our prayer</textarea>
         <div class="ui-card__content app-more-sheet__links">
           <a class="app-more-sheet__link nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
             <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
-            <span>Media</span>
+            <span>Posters</span>
           </a>
           <a class="app-more-sheet__link nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
             <img src="/static/icons/calendar.png" class="nav-icon" alt="" width="18" height="18" />
@@ -16416,7 +16435,7 @@ Lord, hear our prayer</textarea>
         <option value="/mass/builder" data-nav-tab="mass">Mass Builder</option>
         <option value="/library/songs" data-nav-tab="library">Song Library</option>
         <option value="/library/collections" data-nav-tab="library">Collections</option>
-        <option value="/radio" data-nav-tab="radio">Live Radio</option>
+        <option value="/radio" data-nav-tab="radio">Media</option>
         <option value="/media/posters" data-nav-tab="media">Posters</option>
         <option value="/media/history" data-nav-tab="media">History</option>
         <option value="/mass/calendar" data-nav-tab="calendar">Liturgical Calendar</option>
@@ -16807,9 +16826,9 @@ Lord, hear our prayer</textarea>
     const NAV_TAB_DEFS = [
       { id: "home", label: "Home", required: true },
       { id: "mass", label: "Mass", required: true },
-      { id: "library", label: "Library", required: true },
-      { id: "radio", label: "Radio", required: true },
-      { id: "media", label: "Media" },
+      { id: "library", label: "Lyrics Library", required: true },
+      { id: "radio", label: "Media", required: true },
+      { id: "media", label: "Posters" },
       { id: "calendar", label: "Calendar" },
       { id: "design", label: "Design" },
     ];
@@ -17702,7 +17721,16 @@ Lord, hear our prayer</textarea>
       }
     }
 
-    async function refreshCatholicNews() {
+    let homeNewsLastRefreshAt = 0;
+    let wydNewsLastRefreshAt = 0;
+    const HOME_NEWS_STALE_MS = 5 * 60 * 1000;
+
+    async function refreshCatholicNews(force) {
+      const prefs = getHomeNewsPrefs();
+      if (!prefs.enabled) return;
+      const now = Date.now();
+      if (!force && homeNewsLastRefreshAt && now - homeNewsLastRefreshAt < HOME_NEWS_STALE_MS) return;
+      homeNewsLastRefreshAt = now;
       const refreshBtn = $("btn-home-news-refresh");
       if (refreshBtn) refreshBtn.classList.add("is-loading");
       try {
@@ -17957,7 +17985,7 @@ Lord, hear our prayer</textarea>
       if (refreshBtn) {
         refreshBtn.addEventListener("click", (e) => {
           e.stopPropagation();
-          refreshCatholicNews();
+          refreshCatholicNews(true);
         });
       }
 
@@ -18005,7 +18033,7 @@ Lord, hear our prayer</textarea>
         }
         saveHomeNewsPrefs(prefs);
         syncHomeNewsSettingsUI();
-        if (normalizeRoute(window.location.pathname) === "/home") refreshCatholicNews();
+        if (normalizeRoute(window.location.pathname) === "/home") refreshCatholicNews(true);
       };
       if (en) en.addEventListener("change", onChange);
       if (va) va.addEventListener("change", onChange);
@@ -18274,10 +18302,11 @@ Lord, hear our prayer</textarea>
       "/home": ["Home"],
       "/mass/builder": ["Mass", "Builder"],
       "/mass/calendar": ["Mass", "Calendar"],
-      "/media/posters": ["Media", "Posters"],
-      "/media/history": ["Media", "History"],
-      "/library/songs": ["Library", "Songs"],
-      "/library/collections": ["Library", "Collections"],
+      "/media/posters": ["Posters", "Create"],
+      "/media/history": ["Posters", "History"],
+      "/radio": ["Media"],
+      "/library/songs": ["Lyrics Library", "Songs"],
+      "/library/collections": ["Lyrics Library", "Collections"],
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
       "/settings/church": ["Settings", "Church Profile"],
@@ -18447,18 +18476,61 @@ Lord, hear our prayer</textarea>
     }
 
     function syncCalendarAdminVisibility() {
-      const on = canUseCalendarReadingsAdmin();
+      const on = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
       const fetchMissingBtn = $("cal-admin-fetch-missing-btn");
       const fetchMonthBtn = $("cal-admin-fetch-month-btn");
       const banner = $("cal-admin-banner");
       const modalFetchBtn = $("cal-readings-admin-fetch");
       const modalSaveBtn = $("cal-readings-admin-save");
-      if (fetchMissingBtn) fetchMissingBtn.hidden = !on;
-      if (fetchMonthBtn) fetchMonthBtn.hidden = !on;
+      if (fetchMissingBtn) {
+        fetchMissingBtn.hidden = !on;
+        fetchMissingBtn.style.display = on ? "" : "none";
+      }
+      if (fetchMonthBtn) {
+        fetchMonthBtn.hidden = !on;
+        fetchMonthBtn.style.display = on ? "" : "none";
+      }
       if (banner) banner.hidden = !on;
-      if (modalFetchBtn) modalFetchBtn.hidden = !on;
+      if (modalFetchBtn) {
+        modalFetchBtn.hidden = !on;
+        modalFetchBtn.style.display = on ? "" : "none";
+      }
       if (modalSaveBtn) modalSaveBtn.hidden = !on;
       updateCalAdminFetchButtons();
+    }
+
+    let saUnlockPendingNotify = false;
+
+    function completeSuperadminUnlock() {
+      try { sessionStorage.setItem("verbum:sa-unlocked", "1"); } catch (_e) { /* ignore */ }
+      syncSuperadminNavVisibility();
+      if (typeof syncPrivilegedUi === "function") syncPrivilegedUi();
+      if (churchMembershipState.is_superadmin) {
+        notify("Superadmin tools unlocked.", "ok");
+        saUnlockPendingNotify = false;
+      } else {
+        saUnlockPendingNotify = true;
+      }
+    }
+
+    function initSuperadminEasterEgg() {
+      const brand = document.getElementById("app-sidebar-brand") || document.querySelector(".app-sidebar__brand");
+      if (!brand || brand.dataset.saEggBound === "1") return;
+      brand.dataset.saEggBound = "1";
+      let clicks = 0;
+      let resetTimer = null;
+      const SA_EGG_CLICKS = 7;
+      const SA_EGG_WINDOW_MS = 4000;
+
+      brand.addEventListener("click", () => {
+        clicks += 1;
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => { clicks = 0; }, SA_EGG_WINDOW_MS);
+        if (clicks < SA_EGG_CLICKS) return;
+        clicks = 0;
+        clearTimeout(resetTimer);
+        completeSuperadminUnlock();
+      });
     }
 
     function syncSuperadminNavVisibility() {
@@ -18466,6 +18538,7 @@ Lord, hear our prayer</textarea>
       if (!link) return;
       const show = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
       link.hidden = !show;
+      link.style.display = show ? "" : "none";
       syncCalendarAdminVisibility();
       const calPage = $("calendar-page");
       if (show && calPage && calPage.classList.contains("active")) {
@@ -18613,6 +18686,18 @@ Lord, hear our prayer</textarea>
       return !!(window.MassWizard && window.MassWizard.hasProgress && window.MassWizard.hasProgress());
     }
 
+    function massBuilderDraftCompareKey(draft) {
+      if (!draft) return "";
+      const d = Object.assign({}, draft);
+      delete d.savedAt;
+      return JSON.stringify(d);
+    }
+
+    function massBuilderDraftsEqual(a, b) {
+      if (!a || !b) return false;
+      return massBuilderDraftCompareKey(a) === massBuilderDraftCompareKey(b);
+    }
+
     function notifyMassBuilderDraftSaved(force) {
       if (typeof notify !== "function") return;
       const now = Date.now();
@@ -18624,8 +18709,11 @@ Lord, hear our prayer</textarea>
     function saveMassBuilderDraft(options) {
       if (!massBuilderHasDraftableProgress()) return false;
       const opts = options || {};
+      const next = collectMassBuilderDraft();
+      const existing = readMassBuilderDraft();
+      if (existing && massBuilderDraftsEqual(next, existing)) return false;
       try {
-        localStorage.setItem(massBuilderDraftStorageKey(), JSON.stringify(collectMassBuilderDraft()));
+        localStorage.setItem(massBuilderDraftStorageKey(), JSON.stringify(next));
         updateMassBuilderDraftHomeUI();
         if (opts.toast) notifyMassBuilderDraftSaved(!!opts.toastAlways);
         return true;
@@ -18646,6 +18734,8 @@ Lord, hear our prayer</textarea>
     function scheduleMassBuilderDraftAutoSave() {
       if (normalizeRoute(currentRoute()) !== "/mass/builder") return;
       if (!massBuilderHasDraftableProgress()) return;
+      const existing = readMassBuilderDraft();
+      if (existing && massBuilderDraftsEqual(collectMassBuilderDraft(), existing)) return;
       if (massDraftAutoSaveTimer) window.clearTimeout(massDraftAutoSaveTimer);
       massDraftAutoSaveTimer = window.setTimeout(() => {
         massDraftAutoSaveTimer = null;
@@ -18992,7 +19082,7 @@ Lord, hear our prayer</textarea>
       });
     }
 
-    document.querySelectorAll(".app-sidebar__link[data-route], .app-sidebar__brand[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .settings-modal-tab, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
+    document.querySelectorAll(".app-sidebar__link[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .settings-modal-tab, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
 
     const appSidebar = document.getElementById("app-sidebar");
     if (appSidebar && appSidebar.dataset.spaBound !== "1") {
@@ -22772,6 +22862,10 @@ Lord, hear our prayer</textarea>
       syncGlobalMembershipBanner(data);
 
       syncSuperadminNavVisibility();
+      if (saUnlockPendingNotify && churchMembershipState.is_superadmin && superadminToolsUnlocked()) {
+        notify("Superadmin tools unlocked.", "ok");
+        saUnlockPendingNotify = false;
+      }
       if (typeof refreshSuperadminMembershipBadge === "function") refreshSuperadminMembershipBadge();
 
       renderSettingsCelebrantList();
@@ -22812,6 +22906,7 @@ Lord, hear our prayer</textarea>
       if (typeof renderThemeGrid === "function") renderThemeGrid();
       if (typeof renderSongCatalog === "function") renderSongCatalog();
       syncSuperadminNavVisibility();
+      syncCalendarAdminVisibility();
     }
 
     function syncGenerateButtons() {
@@ -23439,9 +23534,10 @@ Lord, hear our prayer</textarea>
           } else {
             invitesEl.innerHTML = invites.map((row) => {
               const email = escapeHtml(row.email || "Any email");
+              const parish = escapeHtml(row.community_name || "Your parish");
               const url = escapeHtml(row.invite_url || "");
               const exp = escapeHtml(String(row.expires_at || "").slice(0, 10));
-              return "<li><strong>" + email + "</strong><br><span class=\"muted\">Expires " + exp + "</span>" +
+              return "<li><strong>" + email + "</strong><br><span class=\"muted\">Parish: " + parish + "</span><br><span class=\"muted\">Expires " + exp + "</span>" +
                 (url ? "<br><input type=\"text\" readonly value=\"" + url + "\" style=\"width:100%;margin-top:6px;font-size:0.8rem;\" />" : "") +
                 "</li>";
             }).join("");
@@ -23538,12 +23634,14 @@ Lord, hear our prayer</textarea>
         }
         listEl.innerHTML = invites.map((row) => {
           const email = escapeHtml(row.email || "Any email");
+          const parish = escapeHtml(row.community_name || "—");
           const url = escapeHtml(row.invite_url || "");
           const exp = escapeHtml(String(row.expires_at || "").slice(0, 10));
           const note = escapeHtml(row.note || "");
           return (
             "<li style=\"padding:10px 0;border-bottom:1px solid var(--line);\">" +
               "<strong>" + email + "</strong>" +
+              "<br><span class=\"muted\">Parish: " + parish + "</span>" +
               (note ? "<br><span class=\"muted\">" + note + "</span>" : "") +
               "<br><span class=\"muted\">Expires " + exp + "</span>" +
               (url ? "<br><code style=\"font-size:0.75rem;word-break:break-all;\">" + url + "</code>" : "") +
@@ -23557,13 +23655,23 @@ Lord, hear our prayer</textarea>
 
     async function createSaInvite() {
       const statusEl = $("sa-invite-create-status");
+      const parishEl = $("sa-invite-parish-name");
       const emailEl = $("sa-invite-email");
       const noteEl = $("sa-invite-note");
       const urlWrap = $("sa-invite-url-wrap");
       const urlInput = $("sa-invite-url");
+      const parishName = parishEl && parishEl.value.trim ? parishEl.value.trim() : "";
+      if (!parishName) {
+        if (statusEl) {
+          statusEl.textContent = "Enter the parish name for this invite.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
       if (statusEl) { statusEl.textContent = "Creating invite…"; statusEl.className = "status"; }
       try {
         const body = {
+          community_name: parishName,
           email: emailEl && emailEl.value.trim() ? emailEl.value.trim() : null,
           note: noteEl && noteEl.value.trim() ? noteEl.value.trim() : null,
           ttl_days: 7,
@@ -23580,6 +23688,7 @@ Lord, hear our prayer</textarea>
           statusEl.textContent = "Invite created. Copy the link and send it to the new user.";
           statusEl.className = "status ok";
         }
+        if (parishEl) parishEl.value = "";
         if (emailEl) emailEl.value = "";
         if (noteEl) noteEl.value = "";
         loadSaInvites();
@@ -23793,26 +23902,6 @@ Lord, hear our prayer</textarea>
       if (!canAccessSuperadminRoute()) return;
       initSaNav();
       showSaPanel(saState.panel || "dashboard");
-    }
-
-    function initSuperadminEasterEgg() {
-      const btn = $("liturgical-indicator-btn");
-      if (!btn || btn.dataset.saEggBound === "1") return;
-      btn.dataset.saEggBound = "1";
-      let clicks = 0;
-      let resetTimer = null;
-      btn.addEventListener("click", () => {
-        if (!churchMembershipState.is_superadmin) return;
-        if (!btn.classList.contains("liturgical-indicator--ordinary")) return;
-        clicks += 1;
-        clearTimeout(resetTimer);
-        resetTimer = setTimeout(() => { clicks = 0; }, 3000);
-        if (clicks < 7) return;
-        clicks = 0;
-        try { sessionStorage.setItem("verbum:sa-unlocked", "1"); } catch (_e) { /* ignore */ }
-        syncSuperadminNavVisibility();
-        notify("Superadmin tools unlocked.", "ok");
-      });
     }
 
     async function refreshCommunity() {
@@ -25203,7 +25292,7 @@ Lord, hear our prayer</textarea>
       { id: "page-home", label: "Home", hint: "Page", group: "Pages", route: "/home", keywords: ["home", "dashboard", "liturgyflow", "sunday"] },
       { id: "page-mass", label: "Mass Builder", hint: "Page", group: "Pages", route: "/mass/builder", keywords: ["mass", "builder", "pptx", "powerpoint", "slides", "generate"] },
       { id: "page-songs", label: "Song Library", hint: "Page", group: "Pages", route: "/library/songs", keywords: ["library", "song", "lyrics", "hymn", "music"] },
-      { id: "page-radio", label: "Live Radio", hint: "Page", group: "Pages", route: "/radio", keywords: ["radio", "ewtn", "stream", "listen", "live"] },
+      { id: "page-radio", label: "Media", hint: "Page", group: "Pages", route: "/radio", keywords: ["media", "radio", "ewtn", "stream", "listen", "live"] },
       { id: "page-collections", label: "Collections", hint: "Page", group: "Pages", route: "/library/collections", keywords: ["collection", "setlist"] },
       { id: "page-posters", label: "Posters", hint: "Page", group: "Pages", route: "/media/posters", keywords: ["media", "poster", "graphic", "social"] },
       { id: "page-history", label: "History", hint: "Page", group: "Pages", route: "/media/history", keywords: ["history", "download", "recent"] },
@@ -25693,7 +25782,6 @@ Lord, hear our prayer</textarea>
         if (panel.hidden) openPanel();
         else closePanel();
       });
-      initSuperadminEasterEgg();
       startLiturgicalCountdownTimer();
     }
 
@@ -26010,7 +26098,10 @@ Lord, hear our prayer</textarea>
       else el.textContent = "Underway";
     }
 
-    async function refreshWydNews() {
+    async function refreshWydNews(force) {
+      const now = Date.now();
+      if (!force && wydNewsLastRefreshAt && now - wydNewsLastRefreshAt < HOME_NEWS_STALE_MS) return;
+      wydNewsLastRefreshAt = now;
       const list = $("home-wyd-list");
       const status = $("home-wyd-status");
       if (status) status.textContent = "Loading WYD news…";
@@ -29243,6 +29334,7 @@ Lord, hear our prayer</textarea>
         if (!sidebar.contains(e.relatedTarget)) scheduleCollapse();
       });
     })();
+    initSuperadminEasterEgg();
     renderCalendarDow();
     bindCelebrantSelect();
     renderComposerRecent();

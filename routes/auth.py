@@ -36,6 +36,7 @@ def _auth_page_context(
     invite_token: str = "",
     invite_valid: bool = False,
     invite_email: Optional[str] = None,
+    invite_community_name: Optional[str] = None,
 ) -> dict[str, Any]:
     contact = invite_contact_email()
     return {
@@ -46,6 +47,7 @@ def _auth_page_context(
         "invite_valid": invite_valid,
         "invite_token": invite_token,
         "invite_email": invite_email or "",
+        "invite_community_name": invite_community_name or "",
         "invite_contact_email": contact,
     }
 
@@ -99,11 +101,13 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
         if not row:
             return {"ok": False, "invite_required": True, "error": "Invalid or expired invite."}
         email = (row.get("email") or "").strip()
+        community_name = (row.get("community_name") or "").strip()
         return {
             "ok": True,
             "invite_required": True,
             "email_locked": bool(email),
             "email": email or None,
+            "community_name": community_name or None,
         }
 
     @app.post("/api/auth/invite/consume")
@@ -113,7 +117,14 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
     ) -> dict[str, Any]:
         if not invite_only_signup():
             return {"ok": True, "skipped": True}
-        row = consume_invite(body.token.strip(), accepted_by_user_id=session.user.user_id)
+        try:
+            row = consume_invite(
+                body.token.strip(),
+                accepted_by_user_id=session.user.user_id,
+                access_token=session.token,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {"ok": True, "invite": row}
 
     @app.get("/sign-in", response_class=HTMLResponse)
@@ -143,12 +154,14 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
         token = (request.query_params.get("invite") or "").strip()
         invite_valid = False
         invite_email: Optional[str] = None
+        invite_community_name: Optional[str] = None
         if invite_only_signup():
             if token:
                 row = validate_invite_token(token)
                 if row:
                     invite_valid = True
                     invite_email = (row.get("email") or "").strip() or None
+                    invite_community_name = (row.get("community_name") or "").strip() or None
         else:
             invite_valid = True
 
@@ -162,5 +175,6 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 invite_token=token if invite_valid else "",
                 invite_valid=invite_valid,
                 invite_email=invite_email,
+                invite_community_name=invite_community_name,
             ),
         )
