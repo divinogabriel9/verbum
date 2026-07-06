@@ -1253,13 +1253,24 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
 .song-composer-search-wrap input {
   width: 100%;
   min-height: 36px;
-  padding: 8px 12px 8px 2.5rem;
+  padding: 8px 2.25rem 8px 2.5rem;
   border: 1px solid var(--design-hairline);
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
   color: var(--design-ink);
   background: var(--design-surface-card);
   box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.song-composer-search-wrap input::-webkit-search-decoration,
+.song-composer-search-wrap input::-webkit-search-cancel-button,
+.song-composer-search-wrap input::-webkit-search-results-button,
+.song-composer-search-wrap input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 
 .song-composer-search-wrap input::placeholder {
@@ -1267,23 +1278,20 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
 }
 
 .song-composer-search-wrap input:focus {
+  outline: none;
   border-color: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 55%, var(--design-hairline));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 14%, transparent);
-}
-
-.song-composer-search-wrap input:not(:placeholder-shown),
-.song-composer-search-wrap input:focus {
-  padding-right: 2.25rem;
 }
 
 .song-composer-search-clear {
   position: absolute;
   right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  height: 28px;
+  margin: auto 0;
   z-index: 2;
   width: 28px;
-  height: 28px;
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
@@ -1292,15 +1300,35 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   font-size: 1.125rem;
   line-height: 1;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+}
+
+.song-composer-search-clear.is-idle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .song-composer-search-clear:hover {
+  opacity: 1;
   color: var(--design-ink);
   background: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 10%, var(--design-surface-card));
 }
 
-.song-composer-search-clear[hidden] {
-  display: none !important;
+.song-composer-search-clear:focus {
+  outline: none;
+}
+
+.song-composer-search-clear:focus:not(:hover) {
+  opacity: 0.55;
+  color: var(--design-muted);
+  background: transparent;
+}
+
+.song-composer-search-clear.is-idle:focus:not(:hover) {
+  opacity: 0;
 }
 
 .song-composer-upload-btn {

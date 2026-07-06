@@ -154,6 +154,18 @@ def _parishes_approved_count() -> int | None:
     return _safe_count_supabase("church_profiles", filters={"membership_status": "approved"})
 
 
+def _recent_audit(limit: int = 5) -> list[dict[str, Any]]:
+    if not supabase_enabled():
+        return []
+    try:
+        from services.superadmin.audit_log import list_audit_log
+
+        data = list_audit_log(page=1, per_page=limit)
+        return list(data.get("items") or [])
+    except Exception:
+        return []
+
+
 def build_dashboard_payload() -> dict[str, Any]:
     pending_memberships = list_pending_memberships() if supabase_enabled() else []
     pending_songs = list_pending_songs()
@@ -211,6 +223,18 @@ def build_dashboard_payload() -> dict[str, Any]:
                 "at": row.get("created_at"),
                 "label": payload.get("title") or "Song submission",
                 "detail": row.get("submitted_by_email") or "",
+            }
+        )
+    for row in _recent_audit(5):
+        detail = row.get("detail") if isinstance(row.get("detail"), dict) else {}
+        detail_text = detail.get("title") or detail.get("name") or detail.get("target_name") or ""
+        activity.append(
+            {
+                "type": "audit",
+                "at": row.get("created_at"),
+                "label": f"{row.get('action') or 'action'} · {row.get('entity_type') or 'item'}",
+                "detail": detail_text or row.get("actor_email") or "",
+                "panel": "audit-log",
             }
         )
 

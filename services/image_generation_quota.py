@@ -120,6 +120,30 @@ def get_quota_status(subject: str) -> dict[str, Any]:
     return _get_quota_status_redis(subject, today)
 
 
+def quota_status_payload(
+    session: Optional[AuthSession],
+    request: Optional[Request] = None,
+) -> dict[str, Any]:
+    subject = resolve_subject(session, request)
+    status = get_quota_status(subject)
+    scope = "anonymous"
+    parish_id: str | None = None
+    if subject.startswith("parish:"):
+        scope = "parish"
+        parish_id = subject.split(":", 1)[1] or None
+    elif subject.startswith("user:"):
+        scope = "user"
+    elif subject.startswith("ip:"):
+        scope = "ip"
+    return {
+        **status,
+        "subject": subject,
+        "scope": scope,
+        "parish_id": parish_id,
+        "shared": scope == "parish",
+    }
+
+
 def _reserve_quota_sqlite(subject: str, *, source: str, today: str) -> dict[str, Any]:
     now = datetime.now(timezone.utc).isoformat()
 

@@ -8,7 +8,16 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from services.gospel_mood import GOSPEL_MOOD_KEYS, gospel_moods_for_song
 from services.hymn_library import section_candidates
+
+_GOSPEL_MOOD_RELATED: dict[str, tuple[str, ...]] = {
+    "triumphant": ("reverent",),
+    "solemn": ("reverent", "mercy"),
+    "mercy": ("solemn", "reverent"),
+    "journey": ("reverent", "mercy"),
+    "reverent": ("solemn", "journey"),
+}
 
 
 def _lang_bucket(lang: str) -> Optional[str]:
@@ -109,6 +118,90 @@ def default_song_selections_for_date(season_key: str) -> dict[str, str]:
                 used.add(hid)
 
     return out
+
+
+def _mood_match_score(song_moods: list[str], mood_key: str) -> int:
+    if mood_key in song_moods:
+        return 3
+    related = _GOSPEL_MOOD_RELATED.get(mood_key, ())
+    if any(m in song_moods for m in related):
+        return 2
+    return 1
+
+
+def _pick_mood_songs_for_section(
+    section: str,
+    mood_key: str,
+    season_key: str,
+    count: int,
+    used: set[str],
+) -> list[dict[str, Any]]:
+    rows = _filter_en_tl(section_candidates(season_key=season_key, section=section, limit=80))
+    scored: list[tuple[float, dict[str, Any]]] = []
+    for idx, row in enumerate(rows):
+        hid = str(row.get("id") or "").strip()
+        if not hid or hid in used:
+            continue
+        moods = gospel_moods_for_song(row)
+        match = _mood_match_score(moods, mood_key)
+        has_lyrics = 1 if str(row.get("lyrics") or "").strip() else 0
+        scored.append((match * 100 + has_lyrics * 10 - idx * 0.001, row))
+    scored.sort(key=lambda t: t[0], reverse=True)
+    picked: list[dict[str, Any]] = []
+    for _, row in scored:
+        hid = str(row.get("id") or "").strip()
+        if not hid or hid in used:
+            continue
+        picked.append(row)
+        used.add(hid)
+        if len(picked) >= count:
+            break
+    return picked
+
+
+def default_song_selections_for_gospel_mood(season_key: str, mood_key: str) -> dict[str, str]:
+    """
+    Return ids for entrance, offertory, communion_1, communion_2, recessional
+    ranked by how well each hymn's gospel_moods match the Sunday Gospel mood.
+    """
+    sk = (season_key or "ordinary_time").strip().lower().replace(" ", "_")
+    mk = (mood_key or "reverent").strip().lower()
+    if mk not in GOSPEL_MOOD_KEYS:
+        mk = "reverent"
+
+    used: set[str] = set()
+    out: dict[str, str] = {}
+
+    def assign(slot: str, section: str) -> None:
+        rows = _pick_mood_songs_for_section(section, mk, sk, 1, used)
+        if rows:
+            out[slot] = str(rows[0]["id"]).strip()
+
+    assign("entrance", "entrance")
+    assign("offertory", "offertory")
+    assign("recessional", "recessional")
+
+    communion_rows = _pick_mood_songs_for_section("communion", mk, sk, 2, used)
+    if communion_rows:
+        out["communion_1"] = str(communion_rows[0]["id"]).strip()
+    if len(communion_rows) > 1:
+        out["communion_2"] = str(communion_rows[1]["id"]).strip()
+
+    return out
+
+
+def default_song_selections_for_preview(season_key: str, preview: dict[str, Any]) -> dict[str, str]:
+    """Gospel-mood-aware defaults with season-only fallback when mood picks are thin."""
+    from services.gospel_mood import infer_gospel_mood_key_from_preview
+
+    mood_key = infer_gospel_mood_key_from_preview(preview)
+    picks = default_song_selections_for_gospel_mood(season_key, mood_key)
+    if len(picks) >= 4:
+        return picks
+    fallback = default_song_selections_for_date(season_key)
+    for slot, hid in fallback.items():
+        picks.setdefault(slot, hid)
+    return picks
 
 
 def filter_songs_rows_en_tl_only(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:

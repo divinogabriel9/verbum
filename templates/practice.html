@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#a10f0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>{{ title }} · LiturgyFlow</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6f8;
+      --ink: #15333d;
+      --muted: #5c6b75;
+      --accent: #a10f0d;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --lyrics-size: clamp(1.0625rem, 4.2vw, 1.1875rem);
+      --lyrics-leading: 1.7;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --dock-h: 64px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-size-adjust: 100%;
+    }
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .practice-top {
+      flex: 0 0 auto;
+      padding: calc(12px + var(--safe-top)) 16px 10px;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+    }
+    .practice-top__eyebrow {
+      margin: 0 0 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .practice-top h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.125rem, 4.5vw, 1.35rem);
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+    .practice-top p {
+      margin: 0;
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .practice-tabs {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .practice-tabs::-webkit-scrollbar { display: none; }
+    .practice-tab {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      min-height: 40px;
+    }
+    .practice-tab.is-active {
+      background: color-mix(in srgb, var(--accent) 10%, white);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+      color: var(--accent);
+    }
+    .practice-scroll {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 16px calc(var(--dock-h) + var(--safe-bottom) + 20px);
+    }
+    .practice-song-head {
+      margin-bottom: 14px;
+    }
+    .practice-song-head__slot {
+      margin: 0 0 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .practice-song-head h2 {
+      margin: 0 0 4px;
+      font-size: clamp(1.25rem, 5vw, 1.5rem);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+    .practice-song-head__meta {
+      margin: 0;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+    .practice-lyrics {
+      margin: 0;
+      padding: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      font-size: var(--lyrics-size);
+      line-height: var(--lyrics-leading);
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--ink);
+      text-transform: none;
+    }
+    .practice-dock {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+      display: flex;
+      gap: 10px;
+      padding: 10px 16px calc(10px + var(--safe-bottom));
+      background: color-mix(in srgb, var(--card) 94%, transparent);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .practice-dock button {
+      flex: 1;
+      min-height: 48px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .practice-dock button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .practice-pin-wrap {
+      padding: 24px 16px;
+    }
+    .practice-pin {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .practice-pin label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .practice-pin-row {
+      display: flex;
+      gap: 8px;
+    }
+    .practice-pin input {
+      flex: 1;
+      min-height: 52px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 0 14px;
+      font-size: 1.25rem;
+      letter-spacing: 0.25em;
+      text-align: center;
+    }
+    .practice-pin button {
+      min-height: 52px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 20px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      cursor: pointer;
+    }
+    .practice-status {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+      font-size: 0.9375rem;
+      line-height: 1.5;
+    }
+    .practice-status.error { color: #9b3d4e; }
+    .practice-footnote {
+      flex: 0 0 auto;
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      padding: 0 16px 10px;
+    }
+    @media (min-width: 600px) {
+      body {
+        align-items: center;
+        background: linear-gradient(180deg, #eef2f6 0%, var(--bg) 120px);
+      }
+      .practice-frame {
+        width: min(100%, 420px);
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+        box-shadow: 0 0 0 1px var(--line);
+      }
+      .practice-dock {
+        width: min(100%, 420px);
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 16px 16px 0 0;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="practice-frame">
+    <header class="practice-top" id="practice-top" hidden>
+      <p class="practice-top__eyebrow">Choir practice</p>
+      <h1 id="practice-title">Upcoming Mass</h1>
+      <p id="practice-sub"></p>
+    </header>
+
+    <nav class="practice-tabs" id="practice-tabs" hidden aria-label="Songs"></nav>
+
+    <main class="practice-scroll" id="practice-scroll">
+      <div id="practice-root">
+        <p class="practice-status" id="practice-loading">Loading practice set…</p>
+      </div>
+    </main>
+
+    <p class="practice-footnote" id="practice-footnote" hidden>Read-only lyrics · frozen at share time</p>
+
+    <footer class="practice-dock" id="practice-dock" hidden>
+      <button type="button" id="practice-prev">Previous</button>
+      <button type="button" id="practice-next">Next</button>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const token = {{ token|tojson }};
+      const root = document.getElementById("practice-root");
+      const scroll = document.getElementById("practice-scroll");
+      const top = document.getElementById("practice-top");
+      const tabs = document.getElementById("practice-tabs");
+      const dock = document.getElementById("practice-dock");
+      const footnote = document.getElementById("practice-footnote");
+      let state = { songs: [], index: 0, pin: "" };
+
+      function esc(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function formatDate(iso) {
+        if (!iso) return "";
+        try {
+          const d = new Date(iso + "T12:00:00");
+          return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+        } catch (_e) {
+          return iso;
+        }
+      }
+
+      function renderPinForm() {
+        top.hidden = true;
+        tabs.hidden = true;
+        dock.hidden = true;
+        footnote.hidden = true;
+        root.innerHTML =
+          '<div class="practice-pin-wrap">' +
+            '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
+              '<label id="practice-pin-label" for="practice-pin-input">Enter the 4-digit PIN from your choir leader</label>' +
+              '<div class="practice-pin-row">' +
+                '<input id="practice-pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••" />' +
+                '<button type="button" id="practice-pin-submit">Unlock</button>' +
+              '</div>' +
+            '</section>' +
+          '</div>';
+        const input = document.getElementById("practice-pin-input");
+        const btn = document.getElementById("practice-pin-submit");
+        btn.addEventListener("click", function () {
+          state.pin = (input.value || "").replace(/\D/g, "").slice(0, 4);
+          loadPractice();
+        });
+        input.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter") btn.click();
+        });
+        input.focus();
+      }
+
+      function renderPractice(data) {
+        const songs = Array.isArray(data.songs) ? data.songs : [];
+        state.songs = songs;
+        if (!songs.length) {
+          top.hidden = true;
+          tabs.hidden = true;
+          dock.hidden = true;
+          footnote.hidden = true;
+          root.innerHTML = '<p class="practice-status error">No songs in this practice link.</p>';
+          return;
+        }
+
+        const bits = [];
+        if (data.parish_name) bits.push(esc(data.parish_name));
+        if (data.mass_date) bits.push(formatDate(data.mass_date));
+        if (data.celebrant) bits.push(esc(data.celebrant));
+
+        document.getElementById("practice-title").textContent = data.mass_title || "Upcoming Mass";
+        document.getElementById("practice-sub").textContent = bits.join(" · ");
+        top.hidden = false;
+        footnote.hidden = false;
+
+        tabs.innerHTML = "";
+        tabs.hidden = songs.length < 2;
+        songs.forEach(function (song, i) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "practice-tab" + (i === state.index ? " is-active" : "");
+          btn.textContent = song.slot_label || song.title || ("Song " + (i + 1));
+          btn.addEventListener("click", function () {
+            state.index = i;
+            renderCurrentSong();
+            scroll.scrollTop = 0;
+          });
+          tabs.appendChild(btn);
+        });
+
+        dock.hidden = false;
+        document.getElementById("practice-prev").onclick = function () {
+          if (state.index > 0) {
+            state.index -= 1;
+            renderCurrentSong();
+            scroll.scrollTop = 0;
+          }
+        };
+        document.getElementById("practice-next").onclick = function () {
+          if (state.index < songs.length - 1) {
+            state.index += 1;
+            renderCurrentSong();
+            scroll.scrollTop = 0;
+          }
+        };
+        renderCurrentSong();
+      }
+
+      function renderCurrentSong() {
+        const song = state.songs[state.index];
+        if (!song) return;
+        const meta = [song.author, song.language].filter(Boolean).join(" · ");
+        root.innerHTML =
+          '<div class="practice-song-head">' +
+            '<p class="practice-song-head__slot">' + esc(song.slot_label || "Song") + '</p>' +
+            '<h2>' + esc(song.title || "Untitled") + '</h2>' +
+            (meta ? '<p class="practice-song-head__meta">' + esc(meta) + '</p>' : '') +
+          '</div>' +
+          '<pre class="practice-lyrics">' + esc(song.lyrics || "") + '</pre>';
+
+        document.querySelectorAll(".practice-tab").forEach(function (el, i) {
+          el.classList.toggle("is-active", i === state.index);
+          if (i === state.index) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+        });
+        const prev = document.getElementById("practice-prev");
+        const next = document.getElementById("practice-next");
+        if (prev) prev.disabled = state.index <= 0;
+        if (next) next.disabled = state.index >= state.songs.length - 1;
+      }
+
+      async function loadPractice() {
+        root.innerHTML = '<p class="practice-status">Loading practice set…</p>';
+        top.hidden = true;
+        tabs.hidden = true;
+        dock.hidden = true;
+        footnote.hidden = true;
+        const qs = state.pin ? ("?pin=" + encodeURIComponent(state.pin)) : "";
+        try {
+          const res = await fetch("/api/practice/" + encodeURIComponent(token) + qs);
+          const data = await res.json().catch(function () { return {}; });
+          if (!res.ok) {
+            root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "This link is invalid or expired.") + '</p>';
+            return;
+          }
+          if (data.requires_pin) {
+            renderPinForm();
+            return;
+          }
+          renderPractice(data);
+        } catch (_err) {
+          root.innerHTML = '<p class="practice-status error">Could not load practice lyrics. Check your connection.</p>';
+        }
+      }
+
+      if (!token) {
+        root.innerHTML = '<p class="practice-status error">Missing practice link.</p>';
+        return;
+      }
+      loadPractice();
+    })();
+  </script>
+</body>
+</html>

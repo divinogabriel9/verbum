@@ -1,0 +1,28 @@
+[
+  {
+    "id": "55abbe0a76d645d8b441dea8492d1385",
+    "created_at": "2026-07-06T06:39:17.583562+00:00",
+    "revoked_at": null,
+    "token": "rcVCts88hIpZg3FQhRPQtwGg-5J_oJmn",
+    "parish_id": null,
+    "created_by": null,
+    "mass_date": "2026-07-12",
+    "mass_title": "14th Sunday",
+    "parish_name": "Test Parish",
+    "celebrant": "Fr. Test",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "test",
+        "title": "Test Song",
+        "author": "",
+        "language": "",
+        "lyrics": "Line one\nLine two"
+      }
+    ],
+    "optional_pin": null,
+    "expires_at": "2026-07-13T06:39:17.583474+00:00"
+  }
+]

@@ -67,6 +67,13 @@ def make_song_id(title: str) -> str:
     return slug[:72]
 
 
+def format_song_title_case(title: str) -> str:
+    text = " ".join(str(title or "").split())
+    if not text:
+        return ""
+    return " ".join(part.capitalize() for part in text.split(" "))
+
+
 def import_titles(grouped_titles: dict[str, list[str]]) -> dict[str, Any]:
     """Upsert section-grouped song titles into the local hymn catalog."""
     data = load_catalog()
@@ -213,9 +220,10 @@ def save_lyrics_song(
     sections: list[str],
     language: str = "English",
     author: str = "",
+    gospel_moods: list[str] | None = None,
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
-    clean_title = str(title or "").strip()
+    clean_title = format_song_title_case(str(title or ""))
     clean_lyrics = str(lyrics or "").strip()
     if not clean_title or not clean_lyrics:
         return {"ok": False, "error": "Song title and lyrics are required."}
@@ -232,6 +240,7 @@ def save_lyrics_song(
     hid_base = make_song_id(clean_title)
     updated: list[str] = []
     created: list[str] = []
+    canonical_ids: set[str] = set()
 
     for sec in wanted:
         rows = data[sec]
@@ -267,13 +276,42 @@ def save_lyrics_song(
         auth = str(author or "").strip()
         if auth:
             target["author"] = auth
+        lang = str(language or "").strip()
+        if lang:
+            target["language"] = lang
+        if gospel_moods is not None:
+            moods = normalize_gospel_moods(gospel_moods)
+            if moods:
+                target["gospel_moods"] = moods
+            elif "gospel_moods" in target:
+                del target["gospel_moods"]
+        row_id = str(target.get("id") or "").strip()
+        if row_id:
+            canonical_ids.add(row_id)
+
+    title_key = clean_title.lower()
+    for sec in _SECTIONS:
+        if sec in wanted:
+            continue
+        kept: list[dict[str, Any]] = []
+        for row in data.get(sec) or []:
+            if not isinstance(row, dict):
+                continue
+            row_title = str(row.get("title") or "").strip().lower()
+            row_id = str(row.get("id") or "").strip()
+            if row_title == title_key or row_id in canonical_ids or row_id == hid_base:
+                continue
+            kept.append(row)
+        data[sec] = kept
 
     save_catalog(data)
     first_id = ""
+    primary_section = wanted[0] if wanted else ""
     for sec in wanted:
         for row in data.get(sec) or []:
             if str(row.get("title") or "").strip().lower() == clean_title.lower():
                 first_id = str(row.get("id") or "")
+                primary_section = sec
                 break
         if first_id:
             break
@@ -281,6 +319,7 @@ def save_lyrics_song(
         "ok": True,
         "title": clean_title,
         "id": first_id,
+        "section": primary_section,
         "sections": wanted,
         "created": created,
         "updated": updated,
@@ -329,7 +368,7 @@ def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[d
                     "id": hid,
                     "title": title,
                     "author": str(item.get("author") or "").strip(),
-                    "language": str(item.get("language") or "English"),
+                    "language": str(item.get("language") or "").strip(),
                     "has_lyrics": bool(str(item.get("lyrics") or "").strip()),
                     "gospel_moods": moods,
                 }
@@ -376,7 +415,7 @@ def update_catalog_song(
         if str(item.get("id") or "").strip() != hid:
             continue
         if title is not None:
-            nt = str(title).strip()
+            nt = format_song_title_case(str(title))
             if nt:
                 item["title"] = nt
         if author is not None:

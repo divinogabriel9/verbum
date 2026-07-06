@@ -22,12 +22,14 @@
         "ordinary_time",
         "easter"
       ],
-      "lyrics": "All creatures of our God and King,\nlift up your voice and with us sing\nAlleluia, alleluia!\n\nThou burning sun with golden beam,\nthou silver moon with softer gleam,\nO praise him, O praise him,\nalleluia, alleluia, alleluia!\n\nThou rushing wind that art so strong,\nye clouds that sail in heav'n along,\nO praise him, alleluia!\n\nThou rising morn, in praise rejoice,\nye lights of evening, find a voice,\nO praise him, O praise him,\nalleluia, alleluia, alleluia!\n\nThou flowing water, pure and clear,\nmake music for thy Lord to hear,\nAlleluia, alleluia!\n\nWhatsoever folk there be\nwho hold high spring in dignity,\nO praise him, alleluia!\n\nAnd all ye men of tender heart,\nforgiving others, take your part,\nO sing ye, alleluia!\n\nYe who long pain and sorrow bear,\npraise God and on him cast your care,\nO praise him, alleluia!\n\nLet all things their Creator bless,\nand worship him in humbleness,\nO praise him, alleluia!\n\nOh, praise the Father, praise the Son,\nand praise the Spirit, three in one,\nO praise him, alleluia!",
+      "lyrics": "Verse 1\nAll creatures of our God and King\nLift up your voice and with us sing\nO praise Him! Alleluia!\nThou, burning sun with golden beam\nThou, silver moon with softer gleam\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 2\nLet all things their Creator bless\nAnd worship Him in humbleness\nO praise Him! Alleluia!\nPraise, praise the Father, praise the Son\nAnd praise the Spirit, Three-in-One\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 3\nAll the redeemed washed by His blood\nCome and rejoice in His great love\nO praise Him! Alleluia!\nChrist has defeated every sin\nCast all your burdens now on Him\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 4\nHe shall return in pow’r to reign\nHeaven and earth will join to say\nO praise Him! Alleluia!\nThen who shall fall on bended knee?\nAll creatures of our God and King\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!",
       "gospel_moods": [
         "triumphant",
         "mercy",
         "reverent"
-      ]
+      ],
+      "source": "lyrics_dashboard",
+      "language": "English"
     },
     {
       "id": "here_i_am",
@@ -124,19 +126,6 @@
       ]
     },
     {
-      "id": "saved_hymn",
-      "title": "Saved Hymn",
-      "language": "English",
-      "seasons": [
-        "all"
-      ],
-      "lyrics": "Verse 1\nAmazing grace, how sweet the sound\nThat saved a soul like me\nI once was lost, but now am found\nWas blind, but now I see\n\nChorus\nAlleluia, alleluia\nLet every heart respond\nAlleluia, alleluia\nWe sing before the Lord\n\nVerse 2\nThrough many dangers, toils, and snares\nGrace has already come\n\nBridge\nThe Lord has promised good to me\nHis word my hope secures\n\nResponse\nLord, hear our prayer",
-      "source": "lyrics_dashboard",
-      "gospel_moods": [
-        "triumphant"
-      ]
-    },
-    {
       "id": "here_we_are",
       "title": "Here We Are",
       "author": "Don Moen",
@@ -145,6 +134,17 @@
         "all"
       ],
       "lyrics": "Chorus\nHere we are Lifting our hands to You\nHere we are Giving You thanks for all You do\nAnd as we praise And worship Your Holy name\nYou are here Dwelling within our praise\n\nVerse 1\nFor every answered prayer (for every answered prayer)\nFor always being there (oh Lord, You′re always there)\nFor love that hears us when we call\nFor arms that lift us when we fall, oh\nYou have always been right beside us\nLeading us all along the way\nAnd we've made it through (we made it through)\nBecause of You\n\nChorus 2\nAnd here we are Lifting our hands to You\nHere we are Giving You thanks for all You do\nAnd as we praise And worship Your Holy name\nYou are here, You are here\nDwelling within our praise\n\nVerse 2\nFor days, we cannot see (for days we cannot see)\nFor all that′s yet to be (so much is yet to be)\nThe trials we may have to face\nWhen we'll be leaning on Your grace, oh yes\nIt will be Your strength that saves us\nYour love that makes us strong\nAnd through it all (through it all)\nWe'll sing this song\n\nChorus 3\nAnd here we are Lifting our hands to You, oh we worship\nHere we are Giving You thanks for all You do\nAnd as we praise And worship your Holy name\nYou are here, You are here\nDwelling within our praise, oh yes, You are\n\nVerse 3\nYou are here\nDwelling within our praise\nYou are here\nDwelling within our praise\nOh yes, You are\nYes, You are (oh, we praise Your name)\nOh, we worship You Lord (oh, we worship You)",
+      "source": "lyrics_dashboard"
+    },
+    {
+      "id": "purihin_ang_panginoon",
+      "title": "Purihin ang Panginoon",
+      "author": "",
+      "language": "Tagalog",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Chorus\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta\n\nVerse 1\nSa ating pagkabagabag sa Diyos tayo'y tumawag\nSa ating mga kaaway tayo ay kanyang iniligtas\n\nChorus 2\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta\n\nVerse 2\nAng pasaning mabigat sa 'ting mga balikat\nPinagaan nang lubusan ng Diyos na tagapagligtas\n\nChorus 3\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta",
       "source": "lyrics_dashboard"
     }
   ],
@@ -254,6 +254,17 @@
         "all"
       ],
       "lyrics": "Verse 1\nTAKE, OH LORD, THIS OFFERING\nWITH HANDS OUTSTRETCH IMPLORING\nTAKE, OH LORD, THIS SACRIFICE\nAND LIFT IT TO THE SKIES\n\nVerse 2\nTHIS HUMBLE LIFE WE OFFER\nIN LOVING CARE PROTECT\nWITH CONTRITE HEARTS WE PRAY TO YOU\nYOUR MERCY GRANT US, LORD\n\nVerse 3\nLISTEN, LORD, THIS PRAY'R\nWE SEND TO YOU ON HIGH\nGRANT, OH LORD, TO THOSE WHO SEEK\nTHE SECRET OF YOUR LOVE",
+      "source": "lyrics_dashboard"
+    },
+    {
+      "id": "one_more_gift",
+      "title": "One More Gift",
+      "author": "",
+      "language": "English",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Chorus\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around\n\nVerse 1\nYour people have grown weary\nOf living in confusion\nWhen will we realize\nThat neither heaven is at peace?\nWhen we will live not in peace\n\nChorus 2\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around\n\nVerse 2\nGrant me serenity, within\nFor the confusions around\nAre mere reflections of what's within\nWhat's within me\n\nChorus 3\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around",
       "source": "lyrics_dashboard"
     }
   ],
@@ -425,6 +436,50 @@
       ],
       "lyrics": "Response\nOh kay ganda ng ating buhay\nNapupuspos ng pagpapala\nNg sakramentong mahiwaga\nKaloob ni Hesus sa’ting Gabay\n\nVerse 1\nOh kay tamis ng pagsasama\nNagmumula sa pagkakaisa\nBumubukal sa pagsasalo\nSa iisang hapag ay dumalo\n\nResponse 2\nPurihin si Hesus sa sakramento\nPurihin ng lahat ng tao\nPurihin siya ng Pilipino\nSa pagkakaisa’y lingapin mo",
       "source": "lyrics_dashboard"
+    },
+    {
+      "id": "anima_christi",
+      "title": "Anima Christi",
+      "author": "",
+      "language": "English",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Verse 1\n[Verse 1]\nSoul of Christ, sanctify me\nBody of Christ, save me\nWater from the side of Christ, wash me\nPassion of Christ, give me strength\n\nChorus\n[Pre-Chorus]\nHear me Jesus, hide me in Thy wounds\nThat I may never leave Thy side\n\nChorus 2\n[Chorus]\nFrom all the evil that surrounds me, defend me\nAnd when the call of death arrives, bid me come to Thee\nThat I may praise Thee with Thy saints forever\n\nChorus 3\n[Pre-Chorus]\nHear me Jesus, hide me in Thy wounds\nThat I may never lеave Thy side\n\nChorus 4\n[Chorus]\nFrom all the еvil that surrounds me, defend me\nAnd when the call of death arrives, bid me come to Thee\nThat I may praise Thee with Thy saints forever",
+      "source": "lyrics_dashboard",
+      "gospel_moods": [
+        "solemn",
+        "reverent"
+      ]
+    },
+    {
+      "id": "make_me_a_channel_of_your_peace",
+      "title": "Make Me a Channel of Your PEace",
+      "author": "",
+      "language": "English",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Verse 1\nMake me a channel of your peace.\nWhere there is hatred let me bring your love.\nWhere there is injury, your pardon, Lord\nAnd where there's doubt, true faith in you.\n\nVerse 2\nMake me a channel of your peace\nWhere there's despair in life, let me bring hope\nWhere there is darkness, only light\nAnd where there's sadness, ever joy.\n\nVerse 3\nOh, Master grant that I may never seek\nSo much to be consoled as to console\nTo be understood as to understand\nTo be loved as to love with all my soul.\n\nVerse 4\nMake me a channel of your peace\nIt is in pardoning that we are pardoned\nIn giving to all men that we receive\nAnd in dying that we're born to eternal life.\n\nVerse 5\nOh, Master grant that I may never seek\nSo much to be consoled as to console\nTo be understood as to understand\nTo be loved as to love with all my soul.\n\nVerse 6\nMake me a channel of your peace\nIt is in pardoning that we are pardoned\nIn giving to all men that we receive\nAnd in dying that we're born to eternal life.",
+      "source": "lyrics_dashboard",
+      "gospel_moods": [
+        "reverent"
+      ]
+    },
+    {
+      "id": "pagsibol",
+      "title": "Pagsibol",
+      "author": "",
+      "language": "Tagalog",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Verse 1\nBawat huni ng ibon sa pag-ihip ng amihan\nWangis Mo'y aking natatanaw\nPagdampi ng umaga sa nanlamig kong kalamnan\nInit Mo'y pangarap kong hagkan\n\nVerse 2\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nVerse 3\nNangungulilang malay binulungan ng tinig Mong\nNagdulot ng katiwasayan\nPaghahanap katwiran, nilusaw Mo sa simbuyong\nKarilagan ng pagmamahal\n\nChorus\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nChorus 2\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nVerse 4\nDalangin pa sana'y mapagtanto kong tunay\nKaganapan ng buhay ko'y Ikaw lamang",
+      "source": "lyrics_dashboard",
+      "gospel_moods": [
+        "triumphant",
+        "reverent"
+      ]
     }
   ],
   "recessional": [
@@ -568,6 +623,21 @@
       ],
       "lyrics": "Verse 1\nLet me walk with you, as I journey to this land\nSearching for a meaning as each moment passes by\nLet the hand of time be like footprints in the sand\nAs I carry you from the dawn to the setting sun.\n\nChorus\nWith just one hand we can travel far together\nOne’s life sharing in love\nI will hold you forever\nYes, I love you with all my heart.\n\nVerse 2\nThere’ll be many crossroads as we walk  along the way\nThere’ll be many questions as we live life day by day\nThis will never matter if the Lord is always there\nHe will surely find the answers just because he cares",
       "source": "lyrics_dashboard"
+    },
+    {
+      "id": "all_the_ends_of_the_world",
+      "title": "All The Ends Of The World",
+      "author": "",
+      "language": "English",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Verse 1\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nBreak into song at the deeds of the Lord,\nthe wonders God has done in every age.\n\nVerse 2\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nHeaven and earth shall rejoice in your might;\nevery heart, every nation call you Lord.\n\nVerse 3\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nThe Lord has made salvation known,\nfaithful to the promises of old.\nLet the ends of the earth, let the sea\nand all it holds make music before our God!",
+      "source": "lyrics_dashboard",
+      "gospel_moods": [
+        "triumphant",
+        "reverent"
+      ]
     }
   ],
   "meditation": [

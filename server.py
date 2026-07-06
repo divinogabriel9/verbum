@@ -10,6 +10,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+import base64
 import os
 import re
 import shutil
@@ -57,6 +58,7 @@ from services.community_config import (
 )
 from services.gospel_mood import gospel_moods_for_song
 from services.hymn_library import get_hymn
+from services.hymn_slide_preview import build_hymn_slide_preview
 from services.lyrics_fetcher import fetch_and_store_for_selection
 from services.ppt_preview_render import convert_pptx_to_pdf, render_ppt_preview_pngs
 from services.ppt_template_analyze import analyze_pptx_theme
@@ -64,6 +66,7 @@ from services.song_catalog import (
     catalog_for_api,
     catalog_lite_response,
     delete_catalog_song,
+    find_catalog_row_by_id,
     import_song_rows,
     import_titles,
     save_lyrics_song,
@@ -85,10 +88,16 @@ from services.membership_config import (
     parish_name_is_locked,
 )
 from services.pending_submissions import submit_pending_priest, submit_pending_song
+from services.choir_practice_shares import (
+    create_practice_share,
+    fetch_practice_share,
+    get_practice_share_by_token,
+)
+from services.practice_qr import practice_qr_data_url
 from services.user_church_context import get_church_profile_context
 from services.readings_snapshot import readings_snapshot, warm_readings_for_date
 from services.image_generation_quota import (
-    get_quota_status,
+    quota_status_payload,
     reserve_daily_image_generation,
     resolve_subject,
 )
@@ -883,6 +892,11 @@ class SaveLyricsBody(BaseModel):
     sections: list[str] = Field(default_factory=list)
     language: str = Field("English", max_length=L.LANGUAGE)
     author: str = Field("", max_length=L.SONG_AUTHOR)
+    gospel_moods: Optional[list[str]] = Field(
+        None,
+        max_length=L.MAX_GOSPEL_MOODS,
+        description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
+    )
 
 
 class PriestSubmissionBody(BaseModel):
@@ -903,6 +917,46 @@ class CatalogSongPatchBody(BaseModel):
 
 class GenerateImageBody(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=L.AI_PROMPT)
+
+
+class HymnSlidePreviewChunkBody(BaseModel):
+    text: str = Field("", max_length=L.LYRICS_FULL)
+    block_kind: str = Field("verse", max_length=32)
+
+
+class HymnSlidePreviewPlanBody(BaseModel):
+    order: list[int] = Field(default_factory=list, max_length=128)
+    disabled: list[int] = Field(default_factory=list, max_length=128)
+
+
+class HymnSlidePreviewBody(BaseModel):
+    hymn_title: str = Field("Hymn", max_length=L.SONG_TITLE)
+    section: str = Field("default", max_length=L.SECTION_KEY)
+    layout: str = Field("single", max_length=16)
+    hymn_typography: Optional[dict[str, Any]] = None
+    chunks: list[HymnSlidePreviewChunkBody] = Field(default_factory=list, max_length=128)
+    plan: Optional[HymnSlidePreviewPlanBody] = None
+
+
+class PracticeShareSongBody(BaseModel):
+    slot_key: str = Field("", max_length=64)
+    slot_label: str = Field("", max_length=120)
+    section: str = Field("", max_length=32)
+    hymn_id: str = Field(..., max_length=120)
+    title: str = Field(..., max_length=L.SONG_TITLE)
+    author: str = Field("", max_length=240)
+    language: str = Field("", max_length=32)
+    lyrics: str = Field("", max_length=L.LYRICS_FULL)
+
+
+class PracticeShareBody(BaseModel):
+    mass_date: str = Field(..., max_length=16)
+    mass_title: str = Field("", max_length=240)
+    parish_name: str = Field("", max_length=L.CHURCH_NAME)
+    celebrant: str = Field("", max_length=L.CELEBRANT_NAME)
+    songs: list[PracticeShareSongBody] = Field(default_factory=list, max_length=24)
+    ttl_days: int = Field(7, ge=1, le=30)
+    optional_pin: str = Field("", max_length=8)
 
 
 class GenerateImageResponse(BaseModel):
@@ -936,6 +990,24 @@ def _extract_ppt_text_slides(ppt: Path) -> list[dict[str, Any]]:
                     lines.append(txt)
         slides.append({"index": idx + 1, "text": "\n\n".join(lines)[:2000]})
     return slides
+
+
+@app.post("/api/hymn-slide-preview")
+def api_hymn_slide_preview(
+    body: HymnSlidePreviewBody,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Return hymn slide typography specs using the same fit logic as PPTX generation."""
+    chunks = [{"text": c.text, "block_kind": c.block_kind} for c in body.chunks]
+    plan = body.plan.model_dump() if body.plan else None
+    return build_hymn_slide_preview(
+        hymn_title=body.hymn_title,
+        section=body.section.strip().lower(),
+        layout=body.layout,
+        hymn_typography=body.hymn_typography,
+        chunks=chunks,
+        plan=plan,
+    )
 
 
 @app.post("/api/ppt-preview/refresh")
@@ -987,6 +1059,13 @@ def api_input_limits() -> dict[str, int]:
     return public_limits()
 
 
+@app.get("/api/platform/announcement")
+def api_platform_announcement() -> dict[str, Any]:
+    from services.platform_announcements import get_active_announcement
+
+    return get_active_announcement()
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -997,8 +1076,7 @@ def api_image_quota(
     request: Request,
     session: Optional[AuthSession] = Depends(optional_session),
 ) -> dict[str, Any]:
-    subject = resolve_subject(session, request)
-    return get_quota_status(subject)
+    return quota_status_payload(session, request)
 
 
 @app.get("/api/poster-exists")
@@ -1499,16 +1577,22 @@ def api_get_catalog_song(
     _session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> JSONResponse:
     row = get_hymn(section.strip().lower(), hymn_id)
+    resolved_section = section.strip().lower()
+    if row:
+        by_id_sec, by_id_row = find_catalog_row_by_id(hymn_id)
+        if by_id_row is not None and by_id_sec:
+            row = by_id_row
+            resolved_section = by_id_sec
     if not row:
         raise HTTPException(status_code=404, detail="Song not found.")
     payload = {
         "ok": True,
-        "section": section.strip().lower(),
+        "section": resolved_section,
         "song": {
             "id": str(row.get("id") or ""),
             "title": str(row.get("title") or ""),
             "author": str(row.get("author") or ""),
-            "language": str(row.get("language") or "English"),
+            "language": str(row.get("language") or "").strip(),
             "lyrics": str(row.get("lyrics") or ""),
             "gospel_moods": gospel_moods_for_song(row),
         },
@@ -1613,6 +1697,104 @@ def dashboard(request: Request) -> Any:
         "index.html",
         {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
     )
+
+
+def _practice_share_url(request: Request, token: str) -> str:
+    base = str(request.base_url).rstrip("/")
+    return f"{base}/practice/{token}"
+
+
+@app.get("/practice/{token}", response_class=HTMLResponse)
+def practice_page(request: Request, token: str) -> Any:
+    return templates.TemplateResponse(
+        request,
+        "practice.html",
+        {
+            "title": "Choir practice",
+            "token": (token or "").strip(),
+        },
+    )
+
+
+@app.get("/api/practice/qr/{token}")
+def api_practice_qr(token: str, request: Request) -> Response:
+    """QR code image for a valid practice share link."""
+    row = get_practice_share_by_token(token)
+    if not row:
+        raise HTTPException(status_code=404, detail="Practice link not found.")
+    url = _practice_share_url(request, token.strip())
+    data_url = practice_qr_data_url(url)
+    if not data_url:
+        raise HTTPException(status_code=503, detail="QR generation unavailable.")
+    header, encoded = data_url.split(",", 1)
+    raw = base64.b64decode(encoded)
+    media = "image/svg+xml" if "svg" in header else "image/png"
+    return Response(content=raw, media_type=media, headers={"Cache-Control": "private, max-age=3600"})
+
+
+@app.get("/api/practice/{token}")
+def api_practice_share(
+    token: str,
+    pin: str = "",
+) -> dict[str, Any]:
+    """Public read-only lyrics snapshot for choir rehearsal (token is the secret)."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    payload = fetch_practice_share(token, pin=pin or None)
+    if not payload.get("ok"):
+        raise HTTPException(status_code=404, detail=payload.get("error") or "Not found.")
+    return payload
+
+
+@app.post("/api/practice/share")
+def api_create_practice_share(
+    body: PracticeShareBody,
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    parish_id: Optional[str] = None
+    created_by: Optional[str] = None
+    if session:
+        created_by = session.user.user_id
+        try:
+            from services.parish_store import get_user_parish_context
+
+            ctx = get_user_parish_context(session.user.user_id)
+            pid = (ctx or {}).get("parish_id")
+            parish_id = str(pid).strip() if pid else None
+        except Exception:
+            parish_id = None
+
+    parish_name = (body.parish_name or "").strip()
+    if not parish_name:
+        parish_name = get_community_name()
+
+    songs = [s.model_dump() for s in body.songs]
+    try:
+        result = create_practice_share(
+            created_by_user_id=created_by,
+            parish_id=parish_id,
+            mass_date=body.mass_date.strip(),
+            mass_title=body.mass_title,
+            parish_name=parish_name,
+            celebrant=body.celebrant,
+            songs=songs,
+            ttl_days=body.ttl_days,
+            optional_pin=body.optional_pin or None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    token = str(result.get("token") or "")
+    share_url = _practice_share_url(request, token)
+    return {
+        **result,
+        "url": share_url,
+        "qr_url": f"/api/practice/qr/{token}",
+        "qr_data_url": practice_qr_data_url(share_url),
+    }
 
 
 @app.get("/api/catholic-news")
@@ -2142,6 +2324,7 @@ def api_save_lyrics(
         sections=body.sections,
         language=body.language,
         author=body.author,
+        gospel_moods=body.gospel_moods,
     )
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error") or "Could not save lyrics.")

@@ -18,9 +18,10 @@ from services.pending_submissions import (
 )
 from services.supabase_client import bootstrap_superadmin_roles_from_env, list_pending_memberships, set_membership_status
 from services.superadmin.dashboard import build_dashboard_payload
+from services.superadmin.audit_log import list_audit_log
 from services.superadmin.generations import list_generations
 from services.superadmin.health import build_health_payload
-from services.superadmin.parishes import list_parishes
+from services.superadmin.parishes import get_parish_detail, list_parishes
 from services.superadmin.users import delete_user, list_users, set_user_parish_role
 from services.superadmin.readings_admin import (
     fetch_admin_calendar_month,
@@ -30,8 +31,12 @@ from services.superadmin.readings_admin import (
     scan_month_readings,
 )
 from services.superadmin.readings_cache import cache_stats, clear_cache
+from services.superadmin.image_quota import list_parish_image_quota, list_parish_image_quota_paginated
 from services.auth_config import app_public_url
 from services.platform_invites import create_invite, list_invites
+from services.platform_announcements import get_admin_announcement, save_announcement
+from services.superadmin.merge_parishes import merge_parishes
+from services.superadmin.storage_browser import list_storage_browser
 
 
 class ReadingsCacheClearBody(BaseModel):
@@ -75,12 +80,88 @@ class AdminParishRoleBody(BaseModel):
     parish_id: Optional[str] = Field(None, max_length=64)
 
 
+class PlatformAnnouncementBody(BaseModel):
+    message: str = Field("", max_length=2000)
+    severity: str = Field("info", max_length=16)
+    link_url: Optional[str] = Field(None, max_length=500)
+    link_label: Optional[str] = Field(None, max_length=120)
+    active: bool = False
+    starts_at: Optional[str] = Field(None, max_length=40)
+    ends_at: Optional[str] = Field(None, max_length=40)
+
+
+class MergeParishesBody(BaseModel):
+    source_id: str = Field(..., min_length=8, max_length=64)
+    target_id: str = Field(..., min_length=8, max_length=64)
+
+
 def register_admin_routes(app) -> None:
     @app.get("/api/admin/dashboard")
     def api_admin_dashboard(
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         return build_dashboard_payload()
+
+    @app.get("/api/admin/image-quota")
+    def api_admin_image_quota(
+        q: str = Query(""),
+        page: int = Query(0, ge=0),
+        per_page: int = Query(25, ge=1, le=100),
+        limit: int = Query(0, ge=0, le=200),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        if page >= 1:
+            return list_parish_image_quota_paginated(q=q, page=page, per_page=per_page)
+        cap = limit if limit >= 1 else 100
+        return list_parish_image_quota(q=q, limit=cap)
+
+    @app.get("/api/admin/platform/announcement")
+    def api_admin_get_announcement(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return get_admin_announcement()
+
+    @app.put("/api/admin/platform/announcement")
+    def api_admin_save_announcement(
+        body: PlatformAnnouncementBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = save_announcement(
+            message=body.message,
+            severity=body.severity,
+            link_url=body.link_url,
+            link_label=body.link_label,
+            active=body.active,
+            starts_at=body.starts_at,
+            ends_at=body.ends_at,
+            acting_user_id=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Save failed.")
+        return result
+
+    @app.get("/api/admin/storage")
+    def api_admin_storage_browser(
+        prefix: str = Query(""),
+        page: int = Query(1, ge=1),
+        per_page: int = Query(50, ge=1, le=100),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return list_storage_browser(prefix=prefix, page=page, per_page=per_page)
+
+    @app.post("/api/admin/parishes/merge")
+    def api_admin_merge_parishes(
+        body: MergeParishesBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = merge_parishes(
+            body.source_id,
+            body.target_id,
+            acting_user_id=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Merge failed.")
+        return result
 
     @app.get("/api/admin/parishes")
     def api_admin_parishes(
@@ -90,6 +171,41 @@ def register_admin_routes(app) -> None:
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         return list_parishes(page=page, per_page=per_page, q=q)
+
+    @app.get("/api/admin/parishes/options")
+    def api_admin_parish_options(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        from services.superadmin.parishes import list_parish_options
+
+        return {"ok": True, "items": list_parish_options()}
+
+    @app.get("/api/admin/parishes/{parish_id}")
+    def api_admin_parish_detail(
+        parish_id: str,
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = get_parish_detail(parish_id)
+        if not result.get("ok"):
+            raise HTTPException(status_code=404, detail=result.get("error") or "Not found.")
+        return result
+
+    @app.get("/api/admin/audit-log")
+    def api_admin_audit_log(
+        page: int = Query(1, ge=1),
+        per_page: int = Query(25, ge=1, le=100),
+        q: str = Query(""),
+        action: str = Query(""),
+        entity_type: str = Query(""),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return list_audit_log(
+            page=page,
+            per_page=per_page,
+            q=q,
+            action=action,
+            entity_type=entity_type,
+        )
 
     @app.get("/api/admin/users")
     def api_admin_users(
@@ -131,14 +247,6 @@ def register_admin_routes(app) -> None:
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    @app.get("/api/admin/parishes/options")
-    def api_admin_parish_options(
-        _session: AuthSession = Depends(require_superadmin),
-    ) -> dict[str, Any]:
-        from services.superadmin.parishes import list_parish_options
-
-        return {"ok": True, "items": list_parish_options()}
 
     @app.get("/api/admin/generations")
     def api_admin_generations(
@@ -296,9 +404,11 @@ def register_admin_routes(app) -> None:
     @app.post("/api/admin/submissions/songs/{submission_id}/approve")
     def api_approve_song_submission(
         submission_id: str,
-        _session: AuthSession = Depends(require_superadmin),
+        session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
-        result = approve_song_submission(submission_id)
+        result = approve_song_submission(
+            submission_id, acting_user_id=session.user.user_id
+        )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Approve failed.")
         return result
@@ -306,9 +416,11 @@ def register_admin_routes(app) -> None:
     @app.post("/api/admin/submissions/songs/{submission_id}/reject")
     def api_reject_song_submission(
         submission_id: str,
-        _session: AuthSession = Depends(require_superadmin),
+        session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
-        result = reject_song_submission(submission_id)
+        result = reject_song_submission(
+            submission_id, acting_user_id=session.user.user_id
+        )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Reject failed.")
         return result
@@ -322,9 +434,11 @@ def register_admin_routes(app) -> None:
     @app.post("/api/admin/submissions/priests/{submission_id}/approve")
     def api_approve_priest_submission(
         submission_id: str,
-        _session: AuthSession = Depends(require_superadmin),
+        session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
-        result = approve_priest_submission(submission_id)
+        result = approve_priest_submission(
+            submission_id, acting_user_id=session.user.user_id
+        )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Approve failed.")
         return result
@@ -332,9 +446,11 @@ def register_admin_routes(app) -> None:
     @app.post("/api/admin/submissions/priests/{submission_id}/reject")
     def api_reject_priest_submission(
         submission_id: str,
-        _session: AuthSession = Depends(require_superadmin),
+        session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
-        result = reject_priest_submission(submission_id)
+        result = reject_priest_submission(
+            submission_id, acting_user_id=session.user.user_id
+        )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Reject failed.")
         return result

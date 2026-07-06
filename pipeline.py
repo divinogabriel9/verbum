@@ -24,7 +24,11 @@ from services.gospel_quote_extractor import (
     split_slide_sentences,
 )
 from services.hymn_library import get_hymn, recommend_sections, section_candidates, web_cached_for_section
-from services.song_selection import default_song_selections_for_date, filter_songs_rows_en_tl_only
+from services.song_selection import (
+    default_song_selections_for_date,
+    default_song_selections_for_preview,
+    filter_songs_rows_en_tl_only,
+)
 
 logger = logging.getLogger(__name__)
 from services.liturgical_calendar import get_liturgical_color
@@ -350,7 +354,15 @@ def fetch_preview(date: str, *, readings_only: bool = False, force_refresh: bool
                 row["language"] = str(row.get("language") or "")
                 row["has_lyrics"] = bool(row.get("has_lyrics", False))
         by_sec = _merge_song_sections(by_sec_base, by_sec_web, cap=10)
-        default_picks = default_song_selections_for_date(season_key)
+        g_quote_preview = (first_sentence_slide_quote(base_quote) or "").strip()
+        mood_preview = {
+            "season": data.get("season") or season_key,
+            "title": data.get("title") or "",
+            "gospel_reference": data.get("gospel_reference") or "",
+            "gospel_text": gospel_text,
+            "gospel_quote": g_quote_preview,
+        }
+        default_picks = default_song_selections_for_preview(season_key, mood_preview)
     g_quote_preview = (first_sentence_slide_quote(base_quote) or "").strip()
     est_slides = 78 + min(12, len(sentences))
     fr_txt = data.get("first_reading_text") or ""
