@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
+from services.practice_access import hash_pin, pin_required, verify_pin
 from services.song_catalog import find_catalog_row_by_id
 
 logger = logging.getLogger(__name__)
@@ -136,19 +137,20 @@ def _enrich_songs_from_catalog(songs: list[dict[str, Any]]) -> list[dict[str, An
     return out
 
 
-def _shape_public(row: dict[str, Any], *, pin_ok: bool) -> dict[str, Any]:
+def _shape_public(row: dict[str, Any], *, access_granted: bool) -> dict[str, Any]:
     snapshot = row.get("song_snapshot")
     songs = snapshot if isinstance(snapshot, list) else []
     mass_date = row.get("mass_date")
+    needs_pin = pin_required(row.get("optional_pin"))
     return {
         "ok": True,
-        "requires_pin": bool(row.get("optional_pin")) and not pin_ok,
+        "requires_pin": needs_pin and not access_granted,
         "mass_date": str(mass_date) if mass_date else "",
         "mass_title": str(row.get("mass_title") or "").strip(),
         "parish_name": str(row.get("parish_name") or "").strip(),
         "celebrant": str(row.get("celebrant") or "").strip(),
         "expires_at": row.get("expires_at"),
-        "songs": songs if pin_ok or not row.get("optional_pin") else [],
+        "songs": songs if access_granted or not needs_pin else [],
     }
 
 
@@ -181,6 +183,7 @@ def create_practice_share(
         raise ValueError("At least one song with lyrics is required.")
 
     pin = _normalize_pin(optional_pin)
+    pin_stored = hash_pin(pin) if pin else None
     token = secrets.token_urlsafe(24)
     expires_at = (_now() + timedelta(days=max(1, min(int(ttl_days), 30)))).isoformat()
     payload = {
@@ -192,7 +195,7 @@ def create_practice_share(
         "parish_name": (parish_name or "").strip(),
         "celebrant": (celebrant or "").strip(),
         "song_snapshot": normalized,
-        "optional_pin": pin,
+        "optional_pin": pin_stored,
         "expires_at": expires_at,
     }
 
@@ -278,20 +281,29 @@ def get_practice_share_by_token(token: str) -> Optional[dict[str, Any]]:
 def fetch_practice_share(
     token: str,
     *,
-    pin: Optional[str] = None,
+    unlocked: bool = False,
 ) -> dict[str, Any]:
     row = get_practice_share_by_token(token)
     if not row:
         return {"ok": False, "error": "This practice link is invalid or has expired."}
     stored_pin = row.get("optional_pin")
-    pin_ok = True
-    if stored_pin:
-        supplied = "".join(ch for ch in str(pin or "") if ch.isdigit())
-        pin_ok = supplied == str(stored_pin)
-    shaped = _shape_public(row, pin_ok=pin_ok)
+    access_granted = not pin_required(stored_pin) or unlocked
+    shaped = _shape_public(row, access_granted=access_granted)
     if shaped.get("requires_pin"):
         shaped["error"] = "PIN required."
     return shaped
+
+
+def verify_practice_share_pin(token: str, pin: str) -> dict[str, Any]:
+    row = get_practice_share_by_token(token)
+    if not row:
+        return {"ok": False, "error": "This practice link is invalid or has expired."}
+    stored_pin = row.get("optional_pin")
+    if not pin_required(stored_pin):
+        return fetch_practice_share(token, unlocked=True)
+    if not verify_pin(stored_pin, pin):
+        return {"ok": False, "error": "Incorrect PIN.", "requires_pin": True}
+    return fetch_practice_share(token, unlocked=True)
 
 
 def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) -> dict[str, Any]:

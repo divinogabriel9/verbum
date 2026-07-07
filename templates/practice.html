@@ -26,19 +26,35 @@
       --dock-h: 64px;
     }
     * { box-sizing: border-box; }
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
     html, body {
       margin: 0;
+      width: 100%;
+      max-width: 100%;
       min-height: 100%;
       background: var(--bg);
       color: var(--ink);
       font-family: Inter, system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
-      text-size-adjust: 100%;
     }
     body {
       min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      align-items: stretch;
+      overflow-x: clip;
+    }
+    .practice-frame {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
     }
     .practice-top {
       flex: 0 0 auto;
@@ -98,6 +114,7 @@
     }
     .practice-scroll {
       flex: 1 1 auto;
+      min-width: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding: 16px 16px calc(var(--dock-h) + var(--safe-bottom) + 20px);
@@ -127,8 +144,10 @@
     .practice-lyrics {
       margin: 0;
       padding: 0;
+      max-width: 100%;
       white-space: pre-wrap;
       word-wrap: break-word;
+      overflow-wrap: anywhere;
       font-family: Inter, system-ui, -apple-system, sans-serif;
       font-size: var(--lyrics-size);
       line-height: var(--lyrics-leading);
@@ -206,6 +225,11 @@
       font-size: 0.9375rem;
       cursor: pointer;
     }
+    .practice-pin-error {
+      margin: 10px 0 0;
+      font-size: 0.8125rem;
+      color: #9b3d4e;
+    }
     .practice-status {
       text-align: center;
       padding: 48px 20px;
@@ -221,23 +245,19 @@
       color: var(--muted);
       padding: 0 16px 10px;
     }
-    @media (min-width: 600px) {
+    @media (min-width: 1024px) and (hover: hover) {
       body {
         align-items: center;
         background: linear-gradient(180deg, #eef2f6 0%, var(--bg) 120px);
       }
       .practice-frame {
-        width: min(100%, 420px);
-        min-height: 100dvh;
-        display: flex;
-        flex-direction: column;
-        background: var(--bg);
+        max-width: 480px;
         box-shadow: 0 0 0 1px var(--line);
       }
       .practice-dock {
-        width: min(100%, 420px);
-        left: 50%;
-        transform: translateX(-50%);
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
         border-radius: 16px 16px 0 0;
       }
     }
@@ -279,7 +299,9 @@
       const tabs = document.getElementById("practice-tabs");
       const dock = document.getElementById("practice-dock");
       const footnote = document.getElementById("practice-footnote");
-      let state = { songs: [], index: 0, pin: "" };
+      let state = { songs: [], index: 0 };
+
+      const fetchOpts = { credentials: "same-origin" };
 
       function esc(s) {
         return String(s || "")
@@ -299,7 +321,7 @@
         }
       }
 
-      function renderPinForm() {
+      function renderPinForm(errorMsg) {
         top.hidden = true;
         tabs.hidden = true;
         dock.hidden = true;
@@ -308,22 +330,51 @@
           '<div class="practice-pin-wrap">' +
             '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
               '<label id="practice-pin-label" for="practice-pin-input">Enter the 4-digit PIN from your choir leader</label>' +
+              '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">The PIN is not included in the link — share it separately (e.g. in person or by text).</p>' +
               '<div class="practice-pin-row">' +
                 '<input id="practice-pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••" />' +
                 '<button type="button" id="practice-pin-submit">Unlock</button>' +
               '</div>' +
+              (errorMsg ? '<p class="practice-pin-error" role="alert">' + esc(errorMsg) + '</p>' : '') +
             '</section>' +
           '</div>';
         const input = document.getElementById("practice-pin-input");
         const btn = document.getElementById("practice-pin-submit");
         btn.addEventListener("click", function () {
-          state.pin = (input.value || "").replace(/\D/g, "").slice(0, 4);
-          loadPractice();
+          submitPin((input.value || "").replace(/\D/g, "").slice(0, 4));
         });
         input.addEventListener("keydown", function (ev) {
           if (ev.key === "Enter") btn.click();
         });
         input.focus();
+      }
+
+      async function submitPin(pin) {
+        if (pin.length !== 4) {
+          renderPinForm("Enter the full 4-digit PIN.");
+          return;
+        }
+        root.innerHTML = '<p class="practice-status">Checking PIN…</p>';
+        try {
+          const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/unlock", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pin: pin }),
+          });
+          const data = await res.json().catch(function () { return {}; });
+          if (res.status === 429) {
+            renderPinForm(data.detail || "Too many attempts. Wait a few minutes and try again.");
+            return;
+          }
+          if (!res.ok) {
+            renderPinForm(data.error || data.detail || "Incorrect PIN.");
+            return;
+          }
+          renderPractice(data);
+        } catch (_err) {
+          renderPinForm("Could not verify PIN. Check your connection.");
+        }
       }
 
       function renderPractice(data) {
@@ -409,10 +460,13 @@
         tabs.hidden = true;
         dock.hidden = true;
         footnote.hidden = true;
-        const qs = state.pin ? ("?pin=" + encodeURIComponent(state.pin)) : "";
         try {
-          const res = await fetch("/api/practice/" + encodeURIComponent(token) + qs);
+          const res = await fetch("/api/practice/" + encodeURIComponent(token), fetchOpts);
           const data = await res.json().catch(function () { return {}; });
+          if (res.status === 429) {
+            root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "Too many requests. Please try again shortly.") + '</p>';
+            return;
+          }
           if (!res.ok) {
             root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "This link is invalid or expired.") + '</p>';
             return;

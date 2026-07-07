@@ -92,6 +92,16 @@ from services.choir_practice_shares import (
     create_practice_share,
     fetch_practice_share,
     get_practice_share_by_token,
+    verify_practice_share_pin,
+)
+from services.practice_access import (
+    check_pin_unlock_allowed,
+    check_practice_fetch_allowed,
+    check_practice_share_create_allowed,
+    check_practice_token_allowed,
+    is_unlocked,
+    issue_unlock_cookie,
+    practice_no_store_headers,
 )
 from services.practice_qr import practice_qr_data_url
 from services.user_church_context import get_church_profile_context
@@ -959,6 +969,10 @@ class PracticeShareBody(BaseModel):
     optional_pin: str = Field("", max_length=8)
 
 
+class PracticeUnlockBody(BaseModel):
+    pin: str = Field("", max_length=8)
+
+
 class GenerateImageResponse(BaseModel):
     image: str
     path: str
@@ -1732,18 +1746,69 @@ def api_practice_qr(token: str, request: Request) -> Response:
     return Response(content=raw, media_type=media, headers={"Cache-Control": "private, max-age=3600"})
 
 
+def _practice_rate_limit_response(retry_after: int) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please slow down."},
+        headers={"Retry-After": str(max(1, retry_after)), **practice_no_store_headers()},
+    )
+
+
 @app.get("/api/practice/{token}")
 def api_practice_share(
     token: str,
-    pin: str = "",
-) -> dict[str, Any]:
+    request: Request,
+) -> Any:
     """Public read-only lyrics snapshot for choir rehearsal (token is the secret)."""
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
-    payload = fetch_practice_share(token, pin=pin or None)
+    tok = token.strip()
+    allowed, retry_after = check_practice_fetch_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    allowed_token, retry_token = check_practice_token_allowed(tok)
+    if not allowed_token:
+        return _practice_rate_limit_response(retry_token)
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    unlocked = is_unlocked(request, tok, row.get("expires_at"))
+    payload = fetch_practice_share(tok, unlocked=unlocked)
     if not payload.get("ok"):
         raise HTTPException(status_code=404, detail=payload.get("error") or "Not found.")
-    return payload
+    return JSONResponse(payload, headers=practice_no_store_headers())
+
+
+@app.post("/api/practice/{token}/unlock")
+def api_practice_unlock(
+    token: str,
+    body: PracticeUnlockBody,
+    request: Request,
+) -> Any:
+    """Verify PIN and issue a device-bound unlock cookie (PIN never goes in the URL)."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    allowed, retry_after = check_pin_unlock_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    allowed_token, retry_token = check_practice_token_allowed(tok)
+    if not allowed_token:
+        return _practice_rate_limit_response(retry_token)
+    result = verify_practice_share_pin(tok, body.pin or "")
+    if not result.get("ok"):
+        status = 401 if result.get("requires_pin") else 404
+        return JSONResponse(
+            result,
+            status_code=status,
+            headers=practice_no_store_headers(),
+        )
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    response = JSONResponse(result, headers=practice_no_store_headers())
+    issue_unlock_cookie(request, response, tok, row.get("expires_at"))
+    return response
 
 
 @app.post("/api/practice/share")
@@ -1768,6 +1833,11 @@ def api_create_practice_share(
     parish_name = (body.parish_name or "").strip()
     if not parish_name:
         parish_name = get_community_name()
+
+    actor_key = session.user.user_id if session else "anon"
+    allowed, retry_after = check_practice_share_create_allowed(request, actor_key)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
 
     songs = [s.model_dump() for s in body.songs]
     try:

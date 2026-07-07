@@ -14336,7 +14336,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260630" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260707b" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -14631,6 +14631,13 @@
                     </span>
                     <span class="vb-dropdown-item__label">Guided tour</span>
                   </button>
+                  <button type="button" class="vb-dropdown-item app-menu-item app-menu-item--theme" id="account-theme-toggle" role="menuitem">
+                    <span class="app-menu-item__icon" aria-hidden="true">
+                      <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                      <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    </span>
+                    <span class="vb-dropdown-item__label" id="account-theme-toggle-label">Dark mode</span>
+                  </button>
                   <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" id="account-settings-link" role="menuitem">
                     <span class="app-menu-item__icon" aria-hidden="true">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
@@ -14677,7 +14684,10 @@
             <section class="flow-bento-cell home-bento-cell--mass redesign-mass-card" id="home-mass-card" aria-labelledby="home-mass-heading">
               <div class="redesign-mass-bg" aria-hidden="true"></div>
               <div class="redesign-mass-inner">
-                <button type="button" class="home-mass-tour-link" id="home-mass-tour-link">New here? Take the 7-step tour</button>
+                <div class="home-mass-tour-banner" id="home-mass-tour-banner">
+                  <button type="button" class="home-mass-tour-link" id="home-mass-tour-link">New here? Take the 7-step tour</button>
+                  <button type="button" class="home-mass-tour-dismiss" id="home-mass-tour-dismiss" aria-label="Dismiss tour prompt">×</button>
+                </div>
 
                 <!-- Welcome + hero — vertically centered above stats -->
                 <div class="rmc-content">
@@ -14730,27 +14740,33 @@
             </section>
 
             <div class="home-bento-sidecol">
-              <aside class="flow-bento-cell home-bento-cell--events" aria-labelledby="home-events-heading">
-                <header class="flow-bento-cell__head home-card-head home-events-card__head">
+              <aside class="flow-bento-cell home-bento-cell--events is-collapsible" id="home-events-card" aria-labelledby="home-events-heading">
+                <header class="flow-bento-cell__head home-card-head home-events-card__head home-mobile-collapsible__head">
                   <div class="home-card-head__text">
                     <h3 id="home-events-heading">Events</h3>
                   </div>
                   <button type="button" class="btn-home-create-event" id="btn-home-create-event">Create event</button>
+                  <button type="button" class="home-mobile-collapsible__toggle" id="home-events-collapse-toggle" aria-expanded="false" aria-controls="home-events-panel" aria-label="Show events" title="Show events">
+                    <svg class="home-mobile-collapsible__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
                 </header>
-                <div class="home-events-scroll">
+                <div class="home-events-scroll home-mobile-collapsible__panel" id="home-events-panel">
                   <div class="home-events-board" id="home-events-board" aria-live="polite"></div>
                   <p class="home-events-card__empty" id="home-events-empty">No events</p>
                 </div>
               </aside>
 
-              <article class="flow-bento-cell home-bento-cell--songs" id="home-songs-card" aria-labelledby="home-songs-heading">
-                <header class="flow-bento-cell__head home-card-head">
+              <article class="flow-bento-cell home-bento-cell--songs is-collapsible" id="home-songs-card" aria-labelledby="home-songs-heading">
+                <header class="flow-bento-cell__head home-card-head home-mobile-collapsible__head">
                   <div class="home-card-head__text">
                     <h3 id="home-songs-heading">Songs</h3>
                     <p>Last Sunday Hymns · What's new! · Gospel mood</p>
                   </div>
+                  <button type="button" class="home-mobile-collapsible__toggle" id="home-songs-collapse-toggle" aria-expanded="false" aria-controls="home-songs-carousel" aria-label="Show songs" title="Show songs">
+                    <svg class="home-mobile-collapsible__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
                 </header>
-                <div class="home-songs-carousel" id="home-songs-carousel" aria-roledescription="carousel">
+                <div class="home-songs-carousel home-mobile-collapsible__panel" id="home-songs-carousel" aria-roledescription="carousel">
                   <div class="home-songs-carousel__viewport">
                     <section class="home-songs-slide is-active" data-home-songs-slide="last-week" aria-label="Last Sunday songs">
                       <h4 class="home-songs-slide__title">Last Sunday</h4>
@@ -15071,7 +15087,6 @@
           </div>
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="practice-share-cancel">Cancel</button>
-            <button type="button" class="primary" id="practice-share-native" hidden>Share link</button>
             <button type="button" class="primary" id="practice-share-generate">Generate</button>
           </footer>
         </article>
@@ -20718,6 +20733,14 @@
         btn.setAttribute("aria-label", isDark ? "Switch to light mode" : darkLabel);
         btn.title = isDark ? "Switch to light mode" : darkLabel;
       }
+      const accountThemeLabel = $("account-theme-toggle-label");
+      if (accountThemeLabel) {
+        const isDark = resolved === "dark";
+        const toggleDark = getToggleDarkPreference();
+        accountThemeLabel.textContent = isDark
+          ? "Light mode"
+          : (toggleDark === "oled" ? "OLED mode" : "Dark mode");
+      }
       document.querySelectorAll('input[name="theme-preference"]').forEach((inp) => {
         inp.checked = inp.value === pref;
       });
@@ -20751,6 +20774,14 @@
         btn.addEventListener("click", () => {
           const resolved = document.documentElement.getAttribute("data-theme") || "light";
           applyColorTheme(resolved === "dark" ? "light" : getToggleDarkPreference());
+        });
+      }
+      const accountThemeBtn = $("account-theme-toggle");
+      if (accountThemeBtn) {
+        accountThemeBtn.addEventListener("click", () => {
+          const resolved = document.documentElement.getAttribute("data-theme") || "light";
+          applyColorTheme(resolved === "dark" ? "light" : getToggleDarkPreference());
+          closeHeaderMenus();
         });
       }
       document.querySelectorAll('input[name="theme-preference"]').forEach((inp) => {
@@ -20963,6 +20994,61 @@
       });
       mq.addEventListener("change", syncSummaryCollapseState);
       syncSummaryCollapseState();
+    }
+
+    function initHomeTourBanner() {
+      const banner = $("home-mass-tour-banner");
+      const dismiss = $("home-mass-tour-dismiss");
+      if (!banner || !dismiss) return;
+      try {
+        if (localStorage.getItem("lf_home_tour_banner_dismissed") === "1") {
+          banner.classList.add("is-dismissed");
+        }
+      } catch (_err) { /* ignore */ }
+      dismiss.addEventListener("click", (e) => {
+        e.stopPropagation();
+        banner.classList.add("is-dismissed");
+        try { localStorage.setItem("lf_home_tour_banner_dismissed", "1"); } catch (_err) { /* ignore */ }
+      });
+    }
+
+    function initHomeMobileCollapsible(cardId, toggleId, labels) {
+      const card = $(cardId);
+      const btn = $(toggleId);
+      if (!card || !btn) return;
+      const mq = window.matchMedia("(max-width: 768px)");
+      const showLabel = (labels && labels.show) || "Show section";
+      const hideLabel = (labels && labels.hide) || "Hide section";
+      function syncState() {
+        if (mq.matches) {
+          card.classList.remove("is-expanded");
+          btn.setAttribute("aria-expanded", "false");
+          btn.setAttribute("aria-label", showLabel);
+          btn.title = showLabel;
+        } else {
+          card.classList.add("is-expanded");
+          btn.setAttribute("aria-expanded", "true");
+          btn.setAttribute("aria-label", hideLabel);
+          btn.title = "";
+        }
+      }
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!mq.matches) return;
+        const open = card.classList.toggle("is-expanded");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.setAttribute("aria-label", open ? hideLabel : showLabel);
+        btn.title = open ? hideLabel : showLabel;
+      });
+      const head = card.querySelector(".home-mobile-collapsible__head");
+      head && head.addEventListener("click", (e) => {
+        if (!mq.matches) return;
+        if (e.target.closest(".home-mobile-collapsible__toggle")) return;
+        if (e.target.closest(".btn-home-create-event")) return;
+        btn.click();
+      });
+      mq.addEventListener("change", syncState);
+      syncState();
     }
 
     function isSuperadminRoute(route) {
@@ -24514,14 +24600,12 @@
       const result = $("practice-share-result");
       const status = $("practice-share-status");
       const generateBtn = $("practice-share-generate");
-      const nativeBtn = $("practice-share-native");
       const cancelBtn = $("practice-share-cancel");
       if (setup) setup.hidden = false;
       if (loading) loading.hidden = true;
       if (result) result.hidden = true;
       if (status) { status.hidden = true; status.textContent = ""; status.className = "status error"; }
       if (generateBtn) { generateBtn.hidden = false; generateBtn.disabled = false; generateBtn.textContent = "Generate"; }
-      if (nativeBtn) nativeBtn.hidden = true;
       if (cancelBtn) cancelBtn.textContent = "Cancel";
       const noneMode = document.querySelector('input[name="practice-share-pin-mode"][value="none"]');
       if (noneMode) noneMode.checked = true;
@@ -24639,7 +24723,6 @@
       const result = $("practice-share-result");
       const status = $("practice-share-status");
       const generateBtn = $("practice-share-generate");
-      const nativeBtn = $("practice-share-native");
       const cancelBtn = $("practice-share-cancel");
       if (setup) setup.hidden = true;
       if (loading) loading.hidden = true;
@@ -24655,12 +24738,11 @@
       const meta = $("practice-share-meta");
       if (meta) {
         const exp = data.expires_at ? new Date(data.expires_at).toLocaleDateString() : "";
-        const pinNote = practiceShareLastHadPin ? " · PIN protected" : "";
+        const pinNote = practiceShareLastHadPin ? " · PIN protected — share the PIN separately" : "";
         meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + pinNote;
       }
       const sub = $("practice-share-sub");
       if (sub) sub.textContent = "Share this link or QR code in your choir group chat.";
-      if (nativeBtn && navigator.share && url) nativeBtn.hidden = false;
     }
 
     async function createPracticeShareLink() {
@@ -24739,20 +24821,6 @@
       }
     }
 
-    async function nativeSharePracticeLink() {
-      const url = practiceShareLastUrl || "";
-      if (!url || !navigator.share) return;
-      const preview = previewForMassSummary();
-      const title = (preview && preview.title) ? preview.title : "Choir practice";
-      try {
-        await navigator.share({
-          title: title,
-          text: "Lyrics for upcoming Mass rehearsal",
-          url: url,
-        });
-      } catch (_err) { /* user cancelled */ }
-    }
-
     function initPracticeShareUi() {
       [
         ["btn-practice-share", openPracticeShareModal],
@@ -24780,9 +24848,6 @@
       }
       $("practice-share-copy") && $("practice-share-copy").addEventListener("click", () => {
         copyPracticeShareLink();
-      });
-      $("practice-share-native") && $("practice-share-native").addEventListener("click", () => {
-        nativeSharePracticeLink();
       });
     }
 
@@ -34623,6 +34688,15 @@
     initWydCard();
     initAppMoreSheet();
     initSongPlanSummaryCollapse();
+    initHomeTourBanner();
+    initHomeMobileCollapsible("home-events-card", "home-events-collapse-toggle", {
+      show: "Show events",
+      hide: "Hide events",
+    });
+    initHomeMobileCollapsible("home-songs-card", "home-songs-collapse-toggle", {
+      show: "Show songs",
+      hide: "Hide songs",
+    });
     initSongComposerCollapse();
 
     refreshHomeMassCard();

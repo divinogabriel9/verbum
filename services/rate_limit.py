@@ -72,6 +72,26 @@ _TIERS: Dict[str, Tuple[int, int]] = {
         _int_env("RATE_LIMIT_DEFAULT_MAX", 300),
         _int_env("RATE_LIMIT_DEFAULT_WINDOW", 60),
     ),
+    "practice": (
+        _int_env("RATE_LIMIT_PRACTICE_MAX", 40),
+        _int_env("RATE_LIMIT_PRACTICE_WINDOW", 60),
+    ),
+    "practice_page": (
+        _int_env("RATE_LIMIT_PRACTICE_PAGE_MAX", 60),
+        _int_env("RATE_LIMIT_PRACTICE_PAGE_WINDOW", 60),
+    ),
+    "practice_pin": (
+        _int_env("RATE_LIMIT_PRACTICE_PIN_MAX", 8),
+        _int_env("RATE_LIMIT_PRACTICE_PIN_WINDOW", 900),
+    ),
+    "practice_token": (
+        _int_env("RATE_LIMIT_PRACTICE_TOKEN_MAX", 240),
+        _int_env("RATE_LIMIT_PRACTICE_TOKEN_WINDOW", 3600),
+    ),
+    "practice_create": (
+        _int_env("RATE_LIMIT_PRACTICE_CREATE_MAX", 12),
+        _int_env("RATE_LIMIT_PRACTICE_CREATE_WINDOW", 3600),
+    ),
 }
 
 # Hard ceiling on any single request body, in bytes (default 12 MB).
@@ -101,10 +121,20 @@ _EXEMPT_PREFIXES = (
 )
 
 
+_PRACTICE_PREFIXES = (
+    "/api/practice/",
+    "/practice/",
+)
+
+
 def _tier_for(path: str, method: str) -> str:
     for prefix in _EXEMPT_PREFIXES:
         if path.startswith(prefix):
             return ""  # exempt
+    if any(path == p or path.startswith(p) for p in _PRACTICE_PREFIXES):
+        if path.startswith("/practice/"):
+            return "practice_page"
+        return "practice"
     if any(path == p or path.startswith(p) for p in _AUTH_PREFIXES):
         return "auth"
     if method.upper() not in {"GET", "HEAD", "OPTIONS"} and any(
@@ -224,6 +254,13 @@ def _check_rate_limit(key: str, tier: str) -> Tuple[bool, int]:
     if get_redis() is not None:
         return _redis_limiter.check(key, tier, time.time())
     return _memory_limiter.check(key, tier, time.monotonic())
+
+
+def check_rate_limit_key(key: str, tier: str) -> Tuple[bool, int]:
+    """Check a custom bucket key against a named tier (for route-specific limits)."""
+    if tier not in _TIERS:
+        tier = "api"
+    return _check_rate_limit(key, tier)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
