@@ -26,11 +26,14 @@ def list_users(
     client = get_service_client()
     query = (
         client.table("profiles")
-        .select("id, email, first_name, last_name, role, created_at, updated_at", count="exact")
+        .select("id, email, first_name, last_name, phone, role, created_at, updated_at", count="exact")
         .order("created_at", desc=True)
     )
     if query_text:
-        query = query.or_(f"email.ilike.%{query_text}%,first_name.ilike.%{query_text}%,last_name.ilike.%{query_text}%")
+        query = query.or_(
+            f"email.ilike.%{query_text}%,first_name.ilike.%{query_text}%,"
+            f"last_name.ilike.%{query_text}%,phone.ilike.%{query_text}%"
+        )
 
     result = query.range(offset, offset + per_page - 1).execute()
     rows = list(result.data or [])
@@ -159,6 +162,16 @@ def delete_user(user_id: str, *, acting_user_id: str) -> dict[str, Any]:
         except Exception:
             pass
 
+    from services.admin_audit import log_admin_action
+
+    log_admin_action(
+        actor_user_id=acting_user_id,
+        action="delete",
+        entity_type="user",
+        entity_id=uid,
+        detail={"email": profile.get("email")},
+    )
+
     return {"ok": True, "deleted_user_id": uid, "email": profile.get("email")}
 
 
@@ -167,6 +180,7 @@ def set_user_parish_role(
     role: str,
     *,
     parish_id: Optional[str] = None,
+    acting_user_id: Optional[str] = None,
 ) -> dict[str, Any]:
     from services.parish_store import assign_user_to_parish, get_member_for_user, set_member_role
 
@@ -178,12 +192,30 @@ def set_user_parish_role(
     pid = (parish_id or "").strip()
     if pid:
         member = assign_user_to_parish(uid, pid, role)
+        from services.admin_audit import log_admin_action
+
+        log_admin_action(
+            actor_user_id=acting_user_id,
+            action="assign",
+            entity_type="parish_role",
+            entity_id=uid,
+            detail={"parish_id": pid, "role": role},
+        )
         return {"ok": True, "member": member, "parish_id": pid, "role": role}
 
     existing = get_member_for_user(uid)
     if not existing:
         raise ValueError("User has no parish. Provide parish_id to assign one.")
     member = set_member_role(uid, role)
+    from services.admin_audit import log_admin_action
+
+    log_admin_action(
+        actor_user_id=acting_user_id,
+        action="update",
+        entity_type="parish_role",
+        entity_id=uid,
+        detail={"parish_id": member.get("parish_id"), "role": role},
+    )
     return {
         "ok": True,
         "member": member,

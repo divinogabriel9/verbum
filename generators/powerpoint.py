@@ -3839,7 +3839,7 @@ def _add_hymn_lyric_slides(
     *,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     section: str = "",
-    hymn_lyrics_layout: str = "single",
+    hymn_lyrics_layout: str = "dual",
 ) -> None:
     del theme  # hymn slides use fixed projector palette, not liturgical theme
     if _normalize_hymn_lyrics_layout(hymn_lyrics_layout) == "dual":
@@ -3871,7 +3871,7 @@ def _try_library_hymn(
     *,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
-    hymn_lyrics_layout: str = "single",
+    hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> bool:
     h = get_hymn(section, hymn_id)
@@ -4256,7 +4256,7 @@ def generate_mass_ppt(
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
     our_father_choice: str = "english",
-    hymn_lyrics_layout: str = "single",
+    hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
     global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template, _kyrie_template, _lotw_title_template, _gospel_acclamation_template, _apostles_creed_template, _nicene_creed_template

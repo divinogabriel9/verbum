@@ -832,7 +832,7 @@ class GenerateBody(BaseModel):
         description="Our Father language: english | malay | tagalog | visaya | korean.",
     )
     hymn_lyrics_layout: str = Field(
-        "single",
+        "dual",
         description="Hymn slide layout: single (1 block/slide) | dual (2 blocks/slide).",
     )
 
@@ -942,7 +942,7 @@ class HymnSlidePreviewPlanBody(BaseModel):
 class HymnSlidePreviewBody(BaseModel):
     hymn_title: str = Field("Hymn", max_length=L.SONG_TITLE)
     section: str = Field("default", max_length=L.SECTION_KEY)
-    layout: str = Field("single", max_length=16)
+    layout: str = Field("dual", max_length=16)
     hymn_typography: Optional[dict[str, Any]] = None
     chunks: list[HymnSlidePreviewChunkBody] = Field(default_factory=list, max_length=128)
     plan: Optional[HymnSlidePreviewPlanBody] = None
@@ -1078,6 +1078,24 @@ def api_platform_announcement() -> dict[str, Any]:
     from services.platform_announcements import get_active_announcement
 
     return get_active_announcement()
+
+
+@app.get("/api/feature-flags")
+def api_feature_flags(
+    session: Optional[AuthSession] = Depends(optional_session),
+) -> dict[str, Any]:
+    from services.feature_flags import flags_payload
+    from services.parish_store import get_user_parish_context
+
+    parish_id: Optional[str] = None
+    if session:
+        try:
+            ctx = get_user_parish_context(session.user.user_id)
+            pid = (ctx or {}).get("parish_id")
+            parish_id = str(pid).strip() if pid else None
+        except Exception:
+            parish_id = None
+    return flags_payload(parish_id=parish_id)
 
 
 @app.get("/health")
@@ -1838,6 +1856,14 @@ def api_create_practice_share(
     allowed, retry_after = check_practice_share_create_allowed(request, actor_key)
     if not allowed:
         return _practice_rate_limit_response(retry_after)
+
+    from services.feature_flags import resolve_flags
+
+    if not resolve_flags(parish_id=parish_id).get("choir_practice_shares", True):
+        raise HTTPException(
+            status_code=403,
+            detail="Choir practice shares are temporarily disabled.",
+        )
 
     songs = [s.model_dump() for s in body.songs]
     try:

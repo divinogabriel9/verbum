@@ -375,6 +375,17 @@ iframe {
     padding:
       var(--space-2)
       var(--space-3);
+    gap: 6px 8px;
+    overflow: visible;
+  }
+
+  .app-header__main > .brand-block {
+    grid-area: brand;
+    justify-self: start;
+  }
+
+  .app-header__main > .app-header__utilities {
+    grid-area: utilities;
   }
 
   .app-header__search-wrap {
@@ -2000,6 +2011,37 @@ iframe {
 @media (max-width: 768px) {
   .app-header__main > .brand-block .brand-block__tagline {
     display: none;
+  }
+
+  /* Full LiturgyFlow wordmark — undo desktop optical offset that clips on narrow screens */
+  .app-header__main > .brand-block {
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+  }
+
+  .app-header__main > .brand-block .brand-block__text {
+    margin-left: 0;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .app-header__main > .brand-block .brand-block__name.wordmark {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 1.0625rem;
+    line-height: 1.2;
+    max-width: 100%;
+  }
+
+  .app-header__main > .brand-block .wordmark__liturgy,
+  .app-header__main > .brand-block .wordmark__flow {
+    flex-shrink: 0;
   }
 
   .app-header__utilities,

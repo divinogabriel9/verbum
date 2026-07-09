@@ -469,7 +469,7 @@ def generate_mass_media(
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
     our_father_choice: str = "english",
-    hymn_lyrics_layout: str = "single",
+    hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
@@ -741,7 +741,7 @@ def regenerate_mass_pptx(
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
     our_father_choice: str = "english",
-    hymn_lyrics_layout: str = "single",
+    hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""

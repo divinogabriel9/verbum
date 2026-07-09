@@ -37,6 +37,14 @@ from services.platform_invites import create_invite, list_invites
 from services.platform_announcements import get_admin_announcement, save_announcement
 from services.superadmin.merge_parishes import merge_parishes
 from services.superadmin.storage_browser import list_storage_browser
+from services.superadmin.analytics import build_analytics_payload
+from services.feature_flags import (
+    clear_parish_override,
+    list_admin_flags,
+    set_global_flag,
+    set_parish_override,
+)
+from services.admin_audit import log_admin_action
 
 
 class ReadingsCacheClearBody(BaseModel):
@@ -71,7 +79,9 @@ class ReadingsFetchDateBody(BaseModel):
 class CreateInviteBody(BaseModel):
     email: Optional[str] = Field(None, max_length=320)
     note: Optional[str] = Field(None, max_length=240)
-    community_name: str = Field(..., min_length=1, max_length=120)
+    community_name: Optional[str] = Field(None, max_length=120)
+    parish_id: Optional[str] = Field(None, max_length=64)
+    invite_role: Literal["president", "media"] = "president"
     ttl_days: int = Field(7, ge=1, le=90)
 
 
@@ -93,6 +103,14 @@ class PlatformAnnouncementBody(BaseModel):
 class MergeParishesBody(BaseModel):
     source_id: str = Field(..., min_length=8, max_length=64)
     target_id: str = Field(..., min_length=8, max_length=64)
+
+
+class FeatureFlagBody(BaseModel):
+    enabled: bool
+
+
+class ParishFeatureFlagBody(BaseModel):
+    enabled: bool
 
 
 def register_admin_routes(app) -> None:
@@ -138,6 +156,90 @@ def register_admin_routes(app) -> None:
         )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Save failed.")
+        ann = result.get("announcement") or {}
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="update",
+            entity_type="platform_announcement",
+            entity_id=str(ann.get("id") or "announcement"),
+            detail={"active": ann.get("active"), "severity": ann.get("severity")},
+        )
+        return result
+
+    @app.get("/api/admin/analytics")
+    def api_admin_analytics(
+        days: int = Query(14, ge=7, le=90),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return build_analytics_payload(days=days)
+
+    @app.get("/api/admin/feature-flags")
+    def api_admin_feature_flags(
+        parish_id: str = Query(""),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return list_admin_flags(parish_id=parish_id or None)
+
+    @app.put("/api/admin/feature-flags/{flag_key}")
+    def api_admin_set_feature_flag(
+        flag_key: str,
+        body: FeatureFlagBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = set_global_flag(
+            flag_key, enabled=body.enabled, acting_user_id=session.user.user_id
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Update failed.")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="update",
+            entity_type="feature_flag",
+            entity_id=flag_key,
+            detail={"enabled": body.enabled, "scope": "global"},
+        )
+        return result
+
+    @app.put("/api/admin/feature-flags/{flag_key}/parishes/{parish_id}")
+    def api_admin_set_parish_feature_flag(
+        flag_key: str,
+        parish_id: str,
+        body: ParishFeatureFlagBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = set_parish_override(
+            parish_id,
+            flag_key,
+            enabled=body.enabled,
+            acting_user_id=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Update failed.")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="update",
+            entity_type="feature_flag",
+            entity_id=flag_key,
+            detail={"enabled": body.enabled, "scope": "parish", "parish_id": parish_id},
+        )
+        return result
+
+    @app.delete("/api/admin/feature-flags/{flag_key}/parishes/{parish_id}")
+    def api_admin_clear_parish_feature_flag(
+        flag_key: str,
+        parish_id: str,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = clear_parish_override(parish_id, flag_key)
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Clear failed.")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="clear_override",
+            entity_type="feature_flag",
+            entity_id=flag_key,
+            detail={"parish_id": parish_id},
+        )
         return result
 
     @app.get("/api/admin/storage")
@@ -174,11 +276,16 @@ def register_admin_routes(app) -> None:
 
     @app.get("/api/admin/parishes/options")
     def api_admin_parish_options(
+        approved_only: bool = Query(False),
+        q: str = Query(""),
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         from services.superadmin.parishes import list_parish_options
 
-        return {"ok": True, "items": list_parish_options()}
+        return {
+            "ok": True,
+            "items": list_parish_options(approved_only=approved_only, q=q),
+        }
 
     @app.get("/api/admin/parishes/{parish_id}")
     def api_admin_parish_detail(
@@ -237,13 +344,14 @@ def register_admin_routes(app) -> None:
     def api_admin_set_parish_role(
         user_id: str,
         body: AdminParishRoleBody,
-        _session: AuthSession = Depends(require_superadmin),
+        session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         try:
             return set_user_parish_role(
                 user_id,
                 body.role,
                 parish_id=body.parish_id,
+                acting_user_id=session.user.user_id,
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -355,14 +463,22 @@ def register_admin_routes(app) -> None:
         body: CreateInviteBody,
         session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
+        parish_id = (body.parish_id or "").strip() or None
+        community_name = (body.community_name or "").strip()
+        if not parish_id and not community_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Provide parish_id for an existing parish or community_name for a new parish.",
+            )
         try:
             row = create_invite(
                 created_by_user_id=session.user.user_id,
                 email=body.email,
                 note=body.note,
-                community_name=body.community_name.strip(),
+                community_name=community_name or None,
+                parish_id=parish_id,
+                invite_role=body.invite_role,
                 ttl_days=body.ttl_days,
-                invite_role="president",
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -371,6 +487,18 @@ def register_admin_routes(app) -> None:
         tok = row.get("token") or ""
         base = app_public_url() or ""
         invite_url = (base + "/sign-up?invite=" + tok) if tok else ""
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="create",
+            entity_type="platform_invite",
+            entity_id=str(row.get("id") or tok),
+            detail={
+                "email": row.get("email"),
+                "community_name": row.get("community_name"),
+                "parish_id": row.get("parish_id"),
+                "invite_role": row.get("invite_role"),
+            },
+        )
         return {"ok": True, "invite": row, "invite_url": invite_url}
 
     @app.get("/api/admin/memberships/pending")
@@ -382,17 +510,31 @@ def register_admin_routes(app) -> None:
     @app.post("/api/admin/memberships/{user_id}/approve")
     def api_approve_membership(
         user_id: str,
-        _session: AuthSession = Depends(require_superadmin),
+        session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         row = set_membership_status(user_id, "approved")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="approve",
+            entity_type="parish_membership",
+            entity_id=user_id,
+            detail={"community_name": row.get("community_name"), "status": "approved"},
+        )
         return {"ok": True, "church_profile": row}
 
     @app.post("/api/admin/memberships/{user_id}/reject")
     def api_reject_membership(
         user_id: str,
-        _session: AuthSession = Depends(require_superadmin),
+        session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         row = set_membership_status(user_id, "rejected")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="reject",
+            entity_type="parish_membership",
+            entity_id=user_id,
+            detail={"community_name": row.get("community_name"), "status": "rejected"},
+        )
         return {"ok": True, "church_profile": row}
 
     @app.get("/api/admin/submissions/songs/pending")

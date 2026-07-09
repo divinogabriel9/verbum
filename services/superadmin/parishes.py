@@ -285,18 +285,28 @@ def get_parish_detail(parish_id: str) -> dict[str, Any]:
     }
 
 
-def list_parish_options(*, limit: int = 200) -> list[dict[str, Any]]:
+def list_parish_options(
+    *,
+    limit: int = 200,
+    approved_only: bool = False,
+    q: str = "",
+) -> list[dict[str, Any]]:
     if not supabase_enabled():
         return []
     client = get_service_client()
     try:
-        result = (
+        query = (
             client.table("parishes")
             .select("id, community_name, membership_status")
             .order("community_name")
             .limit(max(1, min(limit, 500)))
-            .execute()
         )
+        if approved_only:
+            query = query.eq("membership_status", "approved")
+        query_text = (q or "").strip()
+        if query_text:
+            query = query.ilike("community_name", f"%{query_text}%")
+        result = query.execute()
         return [
             {
                 "id": r.get("id"),

@@ -3786,6 +3786,13 @@
       gap: 8px;
       margin-top: 12px;
     }
+    .sa-chip-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
     .sa-table-wrap {
       overflow-x: auto;
       margin-top: 12px;
@@ -7335,6 +7342,38 @@
     }
     .practice-share-meta { margin: 0; font-size: 0.78rem; }
     .practice-share-pin-field { margin: 0; }
+    .pin-otp__cells {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .pin-otp__cell {
+      width: 3.25rem;
+      height: 3.25rem;
+      flex: 0 0 auto;
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      text-align: center;
+      font-size: 1.35rem;
+      font-weight: 600;
+      padding: 0;
+      color: var(--ink);
+      -moz-appearance: textfield;
+    }
+    .pin-otp__cell::-webkit-outer-spin-button,
+    .pin-otp__cell::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .pin-otp__cell:focus {
+      outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
+      border-color: color-mix(in srgb, var(--good) 55%, var(--line-soft));
+    }
+    #practice-share-footer.practice-share-footer--result #practice-share-generate,
+    #practice-share-footer.practice-share-footer--loading #practice-share-generate {
+      display: none;
+    }
     .song-plan-toolbar {
       display: flex;
       justify-content: flex-end;
@@ -14336,7 +14375,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260707b" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260707c" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -15064,8 +15103,15 @@
                 </label>
               </fieldset>
               <div class="field practice-share-pin-field" id="practice-share-pin-wrap" hidden>
-                <label for="practice-share-pin">Enter PIN</label>
-                <input type="password" id="practice-share-pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4 digits" autocomplete="off" />
+                <label>Create PIN</label>
+                <div class="pin-otp" id="practice-share-pin-otp">
+                  <div class="pin-otp__cells" role="group" aria-label="4-digit PIN">
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 1" />
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 2" />
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 3" />
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 4" />
+                  </div>
+                </div>
               </div>
             </div>
             <div class="practice-share-loading" id="practice-share-loading" hidden>
@@ -15085,7 +15131,7 @@
             </div>
             <p class="status error" id="practice-share-status" hidden aria-live="polite"></p>
           </div>
-          <footer class="ui-card__footer ui-card__footer--row">
+          <footer class="ui-card__footer ui-card__footer--row" id="practice-share-footer">
             <button type="button" class="secondary" id="practice-share-cancel">Cancel</button>
             <button type="button" class="primary" id="practice-share-generate">Generate</button>
           </footer>
@@ -17009,8 +17055,8 @@
                 <div class="mass-summary-lang-field mass-summary-layout-field">
                   <label id="mass-summary-hymn-layout-label">Hymn lyrics</label>
                   <div class="flow-segment flow-segment--full" role="radiogroup" aria-labelledby="mass-summary-hymn-layout-label">
-                    <label><input type="radio" name="flow-hymn-layout" value="single" checked /> 1 verse / slide</label>
-                    <label><input type="radio" name="flow-hymn-layout" value="dual" /> 2 verses / slide</label>
+                    <label><input type="radio" name="flow-hymn-layout" value="single" /> 1 verse / slide</label>
+                    <label><input type="radio" name="flow-hymn-layout" value="dual" checked /> 2 verses / slide</label>
                   </div>
                 </div>
                 <dl class="mass-summary-stats">
@@ -17827,6 +17873,7 @@
                 <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>Overview</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
                 <div class="sa-nav-group__links">
                   <button type="button" class="sa-nav-link active" data-sa-panel="dashboard">Dashboard</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="analytics">Analytics</button>
                 </div>
               </div>
               <div class="sa-nav-group" data-open="true">
@@ -17854,6 +17901,7 @@
                   <button type="button" class="sa-nav-link" data-sa-panel="system-ai">AI &amp; Quota</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="system-announcement">Announcement</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="system-storage">Storage</button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="system-flags">Feature flags</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="system-maintenance">Maintenance</button>
                 </div>
               </div>
@@ -17881,11 +17929,37 @@
               <p class="status" id="sa-dashboard-status" aria-live="polite"></p>
             </article>
 
+            <article class="sa-panel flow-bento-cell" id="sa-panel-analytics" data-sa-panel="analytics" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Analytics</h3>
+                  <p>Generations, signups, and parish activity (UTC).</p>
+                </div>
+              </header>
+              <div class="sa-toolbar">
+                <label for="sa-analytics-days" class="muted">Period</label>
+                <select id="sa-analytics-days" class="sa-filter-select">
+                  <option value="7">Last 7 days</option>
+                  <option value="14" selected>Last 14 days</option>
+                  <option value="30">Last 30 days</option>
+                </select>
+                <button type="button" class="secondary" id="sa-analytics-refresh">Refresh</button>
+              </div>
+              <div class="sa-stat-grid" id="sa-analytics-stats" aria-live="polite"></div>
+              <h4 class="settings-admin-subhead">Generations by day</h4>
+              <div class="sa-table-wrap" id="sa-analytics-gens-wrap"></div>
+              <h4 class="settings-admin-subhead">Signups by day</h4>
+              <div class="sa-table-wrap" id="sa-analytics-signups-wrap"></div>
+              <h4 class="settings-admin-subhead">Top parishes (period)</h4>
+              <div class="sa-table-wrap" id="sa-analytics-parishes-wrap"></div>
+              <p class="status" id="sa-analytics-status" aria-live="polite"></p>
+            </article>
+
             <article class="sa-panel flow-bento-cell" id="sa-panel-parishes" data-sa-panel="parishes" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Parishes</h3>
-                  <p>Shared parish accounts — president plus up to 2 media team members.</p>
+                  <p>Shared parish accounts — president plus up to 4 media team members.</p>
                 </div>
               </header>
               <div class="sa-toolbar">
@@ -17946,12 +18020,37 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Account invites</h3>
-                  <p>Create invite links for new parish accounts (invite-only signup).</p>
+                  <p>Invite a new president (new parish) or add a president/media teammate to an approved parish.</p>
                 </div>
               </header>
               <div class="field">
-                <label for="sa-invite-parish-name">Parish name</label>
-                <input type="text" id="sa-invite-parish-name" maxlength="120" placeholder="e.g. St. Mary's Parish" autocomplete="organization" required />
+                <span class="field-label">Invite type</span>
+                <div class="sa-quick-actions" role="radiogroup" aria-label="Invite type" style="margin-top:6px;">
+                  <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-existing" value="existing" checked /> Existing parish</label>
+                  <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-new" value="new" /> New parish</label>
+                </div>
+              </div>
+              <div id="sa-invite-existing-wrap">
+                <div class="field">
+                  <label for="sa-invite-parish-search">Parish</label>
+                  <input type="search" id="sa-invite-parish-search" maxlength="120" placeholder="Search approved parishes…" autocomplete="off" list="sa-invite-parish-datalist" />
+                  <datalist id="sa-invite-parish-datalist"></datalist>
+                  <input type="hidden" id="sa-invite-parish-id" value="" />
+                  <p class="muted" style="margin:6px 0 0;font-size:0.82rem;">Only approved parishes are listed.</p>
+                </div>
+                <div class="field">
+                  <label for="sa-invite-role">Role</label>
+                  <select id="sa-invite-role" class="sa-filter-select" style="max-width:220px;">
+                    <option value="media">Media team</option>
+                    <option value="president">Parish president</option>
+                  </select>
+                </div>
+              </div>
+              <div id="sa-invite-new-wrap" hidden>
+                <div class="field">
+                  <label for="sa-invite-parish-name">New parish name</label>
+                  <input type="text" id="sa-invite-parish-name" maxlength="120" placeholder="e.g. St. Mary's Parish" autocomplete="organization" />
+                </div>
               </div>
               <div class="field">
                 <label for="sa-invite-email">Email (optional lock)</label>
@@ -18155,6 +18254,17 @@
               <p class="status" id="sa-storage-status" aria-live="polite"></p>
             </article>
 
+            <article class="sa-panel flow-bento-cell" id="sa-panel-system-flags" data-sa-panel="system-flags" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <div class="home-card-head__text">
+                  <h3>Feature flags</h3>
+                  <p>Toggle platform capabilities globally. Parish-specific overrides use the API.</p>
+                </div>
+              </header>
+              <div class="sa-table-wrap" id="sa-flags-table-wrap"></div>
+              <p class="status" id="sa-flags-status" aria-live="polite"></p>
+            </article>
+
             <article class="sa-panel flow-bento-cell" id="sa-panel-audit-log" data-sa-panel="audit-log" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
@@ -18168,11 +18278,22 @@
                   <option value="">All actions</option>
                   <option value="approve">Approve</option>
                   <option value="reject">Reject</option>
+                  <option value="create">Create</option>
+                  <option value="delete">Delete</option>
+                  <option value="update">Update</option>
+                  <option value="merge">Merge</option>
                 </select>
                 <select id="sa-audit-entity-filter" class="sa-filter-select" aria-label="Filter by entity type">
                   <option value="">All types</option>
                   <option value="song_submission">Song submissions</option>
                   <option value="priest_submission">Priest submissions</option>
+                  <option value="parish_membership">Parish membership</option>
+                  <option value="platform_invite">Invites</option>
+                  <option value="user">Users</option>
+                  <option value="parish_role">Parish roles</option>
+                  <option value="feature_flag">Feature flags</option>
+                  <option value="parish">Parishes</option>
+                  <option value="platform_announcement">Announcements</option>
                 </select>
                 <button type="button" class="secondary" id="sa-audit-refresh">Refresh</button>
               </div>
@@ -21268,7 +21389,7 @@
         selectedLyricsSongs: Object.assign({}, selectedLyricsSongs),
         massCustomSlotSeq: massCustomSlotSeq,
         massSongPlanLanguage: massSongPlanLanguage,
-        hymnLayout: hymnLayout ? hymnLayout.value : "single",
+        hymnLayout: hymnLayout ? hymnLayout.value : "dual",
         readingsLoaded: !!(flowPreviewData && flowPreviewData.__previewDate),
         previewDate: flowPreviewData && flowPreviewData.__previewDate ? flowPreviewData.__previewDate : "",
       };
@@ -21433,7 +21554,7 @@
           if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(langSel);
         }
       }
-      const layoutVal = draft.hymnLayout || "single";
+      const layoutVal = draft.hymnLayout || "dual";
       document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
         el.checked = el.value === layoutVal;
       });
@@ -23185,7 +23306,8 @@
       if (picked && picked.value === "dual") return "dual";
       if (picked && picked.value === "single") return "single";
       const saved = localStorage.getItem(HYMN_LAYOUT_STORAGE_KEY);
-      return saved === "dual" ? "dual" : "single";
+      if (saved === "single" || saved === "dual") return saved;
+      return "dual";
     }
 
     function loadHymnSongLayoutDefaults() {
@@ -24574,6 +24696,54 @@
     let practiceShareLastUrl = "";
     let practiceShareLastHadPin = false;
 
+    function mountPinOtp(container) {
+      if (!container) return { getValue: () => "", clear: () => {}, focus: () => {} };
+      const cells = Array.from(container.querySelectorAll("[data-pin-cell]"));
+      const getValue = () => cells.map((c) => (c.value || "").replace(/\D/g, "").slice(0, 1)).join("");
+      const clear = () => { cells.forEach((c) => { c.value = ""; }); };
+      const focus = () => { cells[0]?.focus(); };
+      cells.forEach((cell, i) => {
+        cell.addEventListener("input", () => {
+          const v = (cell.value || "").replace(/\D/g, "");
+          cell.value = v.slice(-1);
+          if (cell.value && i < cells.length - 1) cells[i + 1].focus();
+        });
+        cell.addEventListener("keydown", (ev) => {
+          if (ev.key === "Backspace" && !cell.value && i > 0) {
+            cells[i - 1].focus();
+            cells[i - 1].value = "";
+            ev.preventDefault();
+          }
+          if (ev.key === "ArrowLeft" && i > 0) cells[i - 1].focus();
+          if (ev.key === "ArrowRight" && i < cells.length - 1) cells[i + 1].focus();
+        });
+        cell.addEventListener("paste", (ev) => {
+          ev.preventDefault();
+          const text = (ev.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, cells.length);
+          text.split("").forEach((ch, j) => { if (cells[j]) cells[j].value = ch; });
+          cells[Math.min(text.length, cells.length - 1)]?.focus();
+        });
+      });
+      return { getValue, clear, focus, cells };
+    }
+
+    let practiceSharePinOtp = null;
+
+    function getPracticeSharePin() {
+      return practiceSharePinOtp ? practiceSharePinOtp.getValue() : "";
+    }
+
+    function clearPracticeSharePin() {
+      practiceSharePinOtp?.clear();
+    }
+
+    function setPracticeShareFooterMode(mode) {
+      const footer = $("practice-share-footer");
+      if (!footer) return;
+      footer.classList.toggle("practice-share-footer--result", mode === "result");
+      footer.classList.toggle("practice-share-footer--loading", mode === "loading");
+    }
+
     function closePracticeShareModal() {
       setUiOverlayOpen($("practice-share-modal"), false);
     }
@@ -24585,12 +24755,12 @@
 
     function syncPracticeSharePinUi() {
       const wrap = $("practice-share-pin-wrap");
-      const pin = $("practice-share-pin");
       const usePin = practiceSharePinMode() === "pin";
       if (wrap) wrap.hidden = !usePin;
-      if (pin) {
-        if (!usePin) pin.value = "";
-        else pin.focus();
+      if (!usePin) {
+        clearPracticeSharePin();
+      } else {
+        practiceSharePinOtp?.focus();
       }
     }
 
@@ -24607,11 +24777,11 @@
       if (status) { status.hidden = true; status.textContent = ""; status.className = "status error"; }
       if (generateBtn) { generateBtn.hidden = false; generateBtn.disabled = false; generateBtn.textContent = "Generate"; }
       if (cancelBtn) cancelBtn.textContent = "Cancel";
+      setPracticeShareFooterMode("");
       const noneMode = document.querySelector('input[name="practice-share-pin-mode"][value="none"]');
       if (noneMode) noneMode.checked = true;
       syncPracticeSharePinUi();
-      const pin = $("practice-share-pin");
-      if (pin) pin.value = "";
+      clearPracticeSharePin();
       const url = $("practice-share-url");
       if (url) url.value = "";
       practiceShareLastUrl = "";
@@ -24730,6 +24900,7 @@
       if (generateBtn) generateBtn.hidden = true;
       if (result) result.hidden = false;
       if (cancelBtn) cancelBtn.textContent = "Close";
+      setPracticeShareFooterMode("result");
       const url = String(data.url || "");
       practiceShareLastUrl = url;
       const urlInput = $("practice-share-url");
@@ -24759,19 +24930,19 @@
         return;
       }
       const usePin = practiceSharePinMode() === "pin";
-      const pinRaw = usePin ? (($("practice-share-pin") && $("practice-share-pin").value || "").replace(/\D/g, "")) : "";
+      const pinRaw = usePin ? getPracticeSharePin() : "";
       if (usePin && pinRaw.length !== 4) {
         if (status) {
           status.textContent = "Enter a 4-digit PIN, or choose “No password”.";
           status.hidden = false;
         }
-        const pin = $("practice-share-pin");
-        if (pin) pin.focus();
+        practiceSharePinOtp?.focus();
         return;
       }
       if (setup) setup.hidden = true;
       if (loading) loading.hidden = false;
       if (generateBtn) generateBtn.disabled = true;
+      setPracticeShareFooterMode("loading");
       if (status) status.hidden = true;
       practiceShareLastHadPin = usePin;
       try {
@@ -24797,6 +24968,7 @@
         if (loading) loading.hidden = true;
         if (setup) setup.hidden = false;
         if (generateBtn) generateBtn.disabled = false;
+        setPracticeShareFooterMode("");
         if (status) {
           status.textContent = err.message || "Could not create practice link.";
           status.hidden = false;
@@ -24840,12 +25012,8 @@
       document.querySelectorAll('input[name="practice-share-pin-mode"]').forEach((el) => {
         el.addEventListener("change", syncPracticeSharePinUi);
       });
-      const pinInput = $("practice-share-pin");
-      if (pinInput) {
-        pinInput.addEventListener("input", () => {
-          pinInput.value = (pinInput.value || "").replace(/\D/g, "").slice(0, 4);
-        });
-      }
+      const pinOtpRoot = $("practice-share-pin-otp");
+      if (pinOtpRoot) practiceSharePinOtp = mountPinOtp(pinOtpRoot);
       $("practice-share-copy") && $("practice-share-copy").addEventListener("click", () => {
         copyPracticeShareLink();
       });
@@ -26827,16 +26995,18 @@
         panel.hidden = !on;
       });
       if (saState.panel === "dashboard") loadSaDashboard();
+      else if (saState.panel === "analytics") loadSaAnalytics();
       else if (saState.panel === "parishes") { loadSaParishes(); saPopulateMergeSelects(); }
       else if (saState.panel === "users") loadSaUsers();
       else if (saState.panel === "membership") loadSaMembership();
-      else if (saState.panel === "invites") loadSaInvites();
+      else if (saState.panel === "invites") { saSyncInviteModeUi(); loadSaInvites(); }
       else if (saState.panel === "generations") loadSaGenerations();
       else if (saState.panel === "audit-log") loadSaAuditLog();
       else if (saState.panel === "content-readings") loadSaReadingsCache();
       else if (saState.panel === "system-ai") { refreshGeminiSettings(); loadSaAiQuotaSummary(); loadSaParishQuotaTable(); }
       else if (saState.panel === "system-announcement") loadSaAnnouncementAdmin();
       else if (saState.panel === "system-storage") loadSaStorageBrowser();
+      else if (saState.panel === "system-flags") loadSaFeatureFlags();
       else if (saState.panel === "system-maintenance") loadSaHealth();
     }
 
@@ -26959,7 +27129,7 @@
           "<td>" + escapeHtml(row.community_name || "—") + "</td>" +
           "<td>" + escapeHtml(row.owner_email || "—") + "</td>" +
           "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
-          "<td>" + escapeHtml(row.members_label || (String(row.members_count || 1) + "/3")) + "</td>" +
+          "<td>" + escapeHtml(row.members_label || (String(row.members_count || 1) + "/5")) + "</td>" +
           "<td class=\"muted\">" + escapeHtml(String(row.updated_at || "").slice(0, 10)) + "</td></tr>"
           );
         });
@@ -27021,6 +27191,7 @@
           return (
             "<tr><td>" + escapeHtml(name) + "</td>" +
             "<td>" + escapeHtml(row.email || "—") + "</td>" +
+            "<td>" + escapeHtml(row.phone || "—") + "</td>" +
             "<td>" + escapeHtml(row.parish_name || "—") + "</td>" +
             "<td>" + roleCell + "</td>" +
             "<td>" + escapeHtml(row.role || "member") + "</td>" +
@@ -27029,7 +27200,7 @@
             "<td>" + deleteBtn + "</td></tr>"
           );
         });
-        wrap.innerHTML = saRenderTable(["Name", "Email", "Parish", "Parish role", "Platform role", "Status", "Joined", "Actions"], rows, "No users found.");
+        wrap.innerHTML = saRenderTable(["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Joined", "Actions"], rows, "No users found.");
         wrap.querySelectorAll(".sa-btn-delete-user").forEach((btn) => {
           btn.addEventListener("click", () => deleteSaUser(btn));
         });
@@ -27091,7 +27262,7 @@
         const members = Array.isArray(data.members) ? data.members : [];
         const invites = Array.isArray(data.invites) ? data.invites : [];
         if (capEl) {
-          capEl.textContent = (data.members_count || members.length) + " / " + (data.member_limit || 3) + " members";
+          capEl.textContent = (data.members_count || members.length) + " / " + (data.member_limit || 5) + " members";
         }
         if (!members.length) {
           membersEl.innerHTML = "<li class=\"muted\">No members yet.</li>";
@@ -27232,7 +27403,7 @@
         if (titleEl) titleEl.textContent = parish.community_name || "Parish";
         if (subEl) {
           subEl.textContent = (parish.membership_status || "draft") + " · " +
-            (parish.members_count || 0) + "/" + (parish.members_limit || 3) + " members";
+            (parish.members_count || 0) + "/" + (parish.members_limit || 5) + " members";
         }
         const memberRows = members.length
           ? members.map((m) => (
@@ -27280,11 +27451,92 @@
             "<div class=\"sa-table-wrap\"><table class=\"sa-table\"><thead><tr><th>Date</th><th>Title</th><th>When</th></tr></thead><tbody>" +
             genRows + "</tbody></table></div>" +
           "</section>" +
-          saParishDrawerActionsHtml(parish);
+          saParishDrawerActionsHtml(parish) +
+          "<section class=\"sa-detail-section\" id=\"sa-parish-drawer-flags\"><h4>Feature flags</h4><p class=\"muted\">Loading parish overrides…</p></section>";
         saBindParishDrawerActions(parish);
+        loadSaParishDrawerFlags(parish.id);
       } catch (err) {
         body.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Could not load parish.") + "</p>";
         if (subEl) subEl.textContent = "Load failed";
+      }
+    }
+
+    async function loadSaParishDrawerFlags(parishId) {
+      const section = $("sa-parish-drawer-flags");
+      if (!section || !parishId) return;
+      try {
+        const data = await saFetchAdmin("/api/admin/feature-flags?parish_id=" + encodeURIComponent(parishId));
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          section.innerHTML = "<h4>Feature flags</h4><p class=\"muted\">No feature flags configured.</p>";
+          return;
+        }
+        const rows = items.map((row) => {
+          const key = escapeHtml(row.key || "");
+          const globalOn = row.global_enabled ? "On" : "Off";
+          const override = row.has_parish_override
+            ? "<span class=\"muted\">Override: " + (row.enabled ? "On" : "Off") + "</span>"
+            : "<span class=\"muted\">Using global (" + globalOn + ")</span>";
+          const checked = row.enabled ? " checked" : "";
+          return (
+            "<div class=\"sa-parish-flag-row\" data-flag-key=\"" + key + "\" style=\"padding:8px 0;border-bottom:1px solid var(--line);\">" +
+              "<strong>" + escapeHtml(row.label || row.key || "—") + "</strong>" +
+              "<br><span class=\"muted\" style=\"font-size:0.8rem;\">" + escapeHtml(row.description || "") + "</span>" +
+              "<div style=\"margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;\">" +
+                "<label style=\"display:flex;align-items:center;gap:6px;\"><input type=\"checkbox\" class=\"sa-parish-flag-toggle\"" + checked + " data-flag-key=\"" + key + "\" /><span>Enabled for parish</span></label>" +
+                override +
+                (row.has_parish_override
+                  ? " <button type=\"button\" class=\"secondary sa-parish-flag-clear\" data-flag-key=\"" + key + "\" style=\"padding:2px 8px;font-size:0.78rem;\">Reset to global</button>"
+                  : "") +
+              "</div>" +
+            "</div>"
+          );
+        }).join("");
+        section.innerHTML = "<h4>Feature flags</h4><p class=\"muted\" style=\"font-size:0.82rem;margin:0 0 8px;\">Per-parish overrides stack on global defaults.</p>" + rows;
+        section.querySelectorAll(".sa-parish-flag-toggle").forEach((input) => {
+          input.addEventListener("change", () => saSaveParishDrawerFlag(parishId, input.getAttribute("data-flag-key"), input.checked, input));
+        });
+        section.querySelectorAll(".sa-parish-flag-clear").forEach((btn) => {
+          btn.addEventListener("click", () => saClearParishDrawerFlag(parishId, btn.getAttribute("data-flag-key")));
+        });
+      } catch (err) {
+        section.innerHTML = "<h4>Feature flags</h4><p class=\"muted\">" + escapeHtml(err.message || "Could not load flags.") + "</p>";
+      }
+    }
+
+    async function saSaveParishDrawerFlag(parishId, key, enabled, inputEl) {
+      if (!parishId || !key) return;
+      if (inputEl) inputEl.disabled = true;
+      try {
+        await saFetchAdmin(
+          "/api/admin/feature-flags/" + encodeURIComponent(key) + "/parishes/" + encodeURIComponent(parishId),
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled: !!enabled }),
+          }
+        );
+        notify("Parish flag saved.", "ok");
+        loadSaParishDrawerFlags(parishId);
+      } catch (err) {
+        if (inputEl) inputEl.checked = !enabled;
+        notify(err.message || "Could not save flag.", "error");
+      } finally {
+        if (inputEl) inputEl.disabled = false;
+      }
+    }
+
+    async function saClearParishDrawerFlag(parishId, key) {
+      if (!parishId || !key) return;
+      try {
+        await saFetchAdmin(
+          "/api/admin/feature-flags/" + encodeURIComponent(key) + "/parishes/" + encodeURIComponent(parishId),
+          { method: "DELETE" }
+        );
+        notify("Parish override cleared.", "ok");
+        loadSaParishDrawerFlags(parishId);
+      } catch (err) {
+        notify(err.message || "Could not clear override.", "error");
       }
     }
 
@@ -27414,6 +27666,128 @@
       const d = new Date(value);
       if (Number.isNaN(d.getTime())) return null;
       return d.toISOString();
+    }
+
+    async function loadSaAnalytics() {
+      const statsEl = $("sa-analytics-stats");
+      const gensWrap = $("sa-analytics-gens-wrap");
+      const signupsWrap = $("sa-analytics-signups-wrap");
+      const parishesWrap = $("sa-analytics-parishes-wrap");
+      const statusEl = $("sa-analytics-status");
+      const daysEl = $("sa-analytics-days");
+      const days = daysEl ? parseInt(daysEl.value, 10) || 14 : 14;
+      if (statsEl) statsEl.innerHTML = Array(4).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
+      try {
+        const data = await saFetchAdmin("/api/admin/analytics?days=" + days);
+        const s = data.summary || {};
+        if (statsEl) {
+          statsEl.innerHTML = [
+            saRenderStatCard("Generations (period)", s.generations_in_period),
+            saRenderStatCard("Signups (period)", s.signups_in_period),
+            saRenderStatCard("Generations today", s.generations_today),
+            saRenderStatCard("Active parishes (7d)", s.active_parishes_7d),
+          ].join("");
+        }
+        const genRows = (data.generations_by_day || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        ));
+        const signupRows = (data.signups_by_day || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        ));
+        const parishRows = (data.top_parishes || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.community_name || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        ));
+        if (gensWrap) gensWrap.innerHTML = saRenderTable(["Date", "Count"], genRows, "No generations in period.");
+        if (signupsWrap) signupsWrap.innerHTML = saRenderTable(["Date", "Count"], signupRows, "No signups in period.");
+        if (parishesWrap) parishesWrap.innerHTML = saRenderTable(["Parish", "Generations"], parishRows, "No parish activity.");
+        if (statusEl) {
+          statusEl.textContent = (s.period_start && s.period_end)
+            ? ("Period " + s.period_start + " → " + s.period_end + " (UTC)")
+            : "";
+        }
+      } catch (err) {
+        if (statsEl) statsEl.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
+      }
+    }
+
+    async function loadSaFeatureFlags() {
+      const wrap = $("sa-flags-table-wrap");
+      const statusEl = $("sa-flags-status");
+      if (!wrap) return;
+      wrap.innerHTML = "<div class=\"sa-empty\"><div class=\"sa-skeleton\"></div></div>";
+      try {
+        const data = await saFetchAdmin("/api/admin/feature-flags");
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          wrap.innerHTML = "<p class=\"sa-empty\">No feature flags configured.</p>";
+          return;
+        }
+        const rows = items.map((row) => {
+          const key = escapeHtml(row.key || "");
+          const checked = row.global_enabled ? " checked" : "";
+          return (
+            "<tr data-flag-key=\"" + key + "\">" +
+            "<td><strong>" + escapeHtml(row.label || row.key || "—") + "</strong><br><span class=\"muted\">" + escapeHtml(row.description || "") + "</span></td>" +
+            "<td><code style=\"font-size:0.75rem;\">" + key + "</code></td>" +
+            "<td><label style=\"display:flex;align-items:center;gap:8px;\"><input type=\"checkbox\" class=\"sa-flag-toggle\"" + checked + " data-flag-key=\"" + key + "\" /><span>Enabled globally</span></label></td>" +
+            "</tr>"
+          );
+        });
+        wrap.innerHTML = saRenderTable(["Feature", "Key", "Global"], rows, "No flags.");
+        wrap.querySelectorAll(".sa-flag-toggle").forEach((input) => {
+          input.addEventListener("change", () => saSaveFeatureFlag(input.getAttribute("data-flag-key"), input.checked, input));
+        });
+        if (statusEl) statusEl.textContent = items.length + " flag(s)";
+      } catch (err) {
+        wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
+      }
+    }
+
+    async function saSaveFeatureFlag(key, enabled, inputEl) {
+      const statusEl = $("sa-flags-status");
+      if (!key) return;
+      if (statusEl) { statusEl.textContent = "Saving…"; statusEl.className = "status"; }
+      if (inputEl) inputEl.disabled = true;
+      try {
+        await saFetchAdmin("/api/admin/feature-flags/" + encodeURIComponent(key), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: !!enabled }),
+        });
+        if (statusEl) { statusEl.textContent = "Saved."; statusEl.className = "status ok"; }
+        refreshFeatureFlags();
+      } catch (err) {
+        if (inputEl) inputEl.checked = !enabled;
+        if (statusEl) { statusEl.textContent = err.message || "Save failed."; statusEl.className = "status error"; }
+      } finally {
+        if (inputEl) inputEl.disabled = false;
+      }
+    }
+
+    let verbumFeatureFlags = {};
+
+    function applyFeatureFlagsUi() {
+      const flags = verbumFeatureFlags || {};
+      const practiceOn = flags.choir_practice_shares !== false;
+      ["btn-practice-share", "btn-practice-share-toolbar", "btn-practice-share-mobile", "btn-practice-share-wizard"].forEach((id) => {
+        const el = $(id);
+        if (el) el.hidden = !practiceOn;
+      });
+      const newsOn = flags.catholic_news_feed !== false;
+      document.querySelectorAll(".home-bento-cell--events, .home-news-card, #home-wyd-card").forEach((el) => {
+        if (el) el.hidden = !newsOn;
+      });
+    }
+
+    async function refreshFeatureFlags() {
+      try {
+        const res = await fetch("/api/feature-flags", { credentials: "same-origin" });
+        const data = await res.json().catch(() => ({}));
+        verbumFeatureFlags = data.flags || {};
+        applyFeatureFlagsUi();
+      } catch (_e) {
+        verbumFeatureFlags = {};
+      }
     }
 
     async function refreshPlatformAnnouncement() {
@@ -27607,6 +27981,46 @@
       refreshAdminPendingPriests();
     }
 
+    function saInviteMode() {
+      const existing = $("sa-invite-mode-existing");
+      return existing && existing.checked ? "existing" : "new";
+    }
+
+    function saSyncInviteModeUi() {
+      const mode = saInviteMode();
+      const existingWrap = $("sa-invite-existing-wrap");
+      const newWrap = $("sa-invite-new-wrap");
+      if (existingWrap) existingWrap.hidden = mode !== "existing";
+      if (newWrap) newWrap.hidden = mode !== "new";
+      if (mode === "existing") loadSaInviteParishOptions();
+    }
+
+    async function loadSaInviteParishOptions() {
+      const datalist = $("sa-invite-parish-datalist");
+      if (!datalist) return;
+      try {
+        const data = await saFetchAdmin("/api/admin/parishes/options?approved_only=true");
+        const items = Array.isArray(data.items) ? data.items : [];
+        saState.inviteParishOptions = items;
+        datalist.innerHTML = items.map((p) => (
+          "<option value=\"" + escapeHtml(p.community_name || "") + "\" data-id=\"" + escapeHtml(p.id || "") + "\"></option>"
+        )).join("");
+      } catch (_e) {
+        saState.inviteParishOptions = [];
+      }
+    }
+
+    function saResolveInviteParishId() {
+      const searchEl = $("sa-invite-parish-search");
+      const hiddenEl = $("sa-invite-parish-id");
+      const query = searchEl && searchEl.value.trim ? searchEl.value.trim().toLowerCase() : "";
+      const options = saState.inviteParishOptions || [];
+      const match = options.find((p) => String(p.community_name || "").trim().toLowerCase() === query);
+      const pid = match ? String(match.id || "") : "";
+      if (hiddenEl) hiddenEl.value = pid;
+      return pid;
+    }
+
     async function loadSaInvites() {
       const listEl = $("sa-invites-list");
       if (!listEl) return;
@@ -27621,13 +28035,14 @@
         listEl.innerHTML = invites.map((row) => {
           const email = escapeHtml(row.email || "Any email");
           const parish = escapeHtml(row.community_name || "—");
+          const role = escapeHtml(row.invite_role || "president");
           const url = escapeHtml(row.invite_url || "");
           const exp = escapeHtml(String(row.expires_at || "").slice(0, 10));
           const note = escapeHtml(row.note || "");
           return (
             "<li style=\"padding:10px 0;border-bottom:1px solid var(--line);\">" +
               "<strong>" + email + "</strong>" +
-              "<br><span class=\"muted\">Parish: " + parish + "</span>" +
+              "<br><span class=\"muted\">Parish: " + parish + " · Role: " + role + "</span>" +
               (note ? "<br><span class=\"muted\">" + note + "</span>" : "") +
               "<br><span class=\"muted\">Expires " + exp + "</span>" +
               (url ? "<br><code style=\"font-size:0.75rem;word-break:break-all;\">" + url + "</code>" : "") +
@@ -27642,26 +28057,44 @@
     async function createSaInvite() {
       const statusEl = $("sa-invite-create-status");
       const parishEl = $("sa-invite-parish-name");
+      const searchEl = $("sa-invite-parish-search");
+      const roleEl = $("sa-invite-role");
       const emailEl = $("sa-invite-email");
       const noteEl = $("sa-invite-note");
       const urlWrap = $("sa-invite-url-wrap");
       const urlInput = $("sa-invite-url");
-      const parishName = parishEl && parishEl.value.trim ? parishEl.value.trim() : "";
-      if (!parishName) {
-        if (statusEl) {
-          statusEl.textContent = "Enter the parish name for this invite.";
-          statusEl.className = "status error";
+      const mode = saInviteMode();
+      let body = {
+        email: emailEl && emailEl.value.trim() ? emailEl.value.trim() : null,
+        note: noteEl && noteEl.value.trim() ? noteEl.value.trim() : null,
+        ttl_days: 7,
+      };
+      if (mode === "existing") {
+        const parishId = saResolveInviteParishId();
+        const parishLabel = searchEl && searchEl.value.trim ? searchEl.value.trim() : "";
+        if (!parishId || !parishLabel) {
+          if (statusEl) {
+            statusEl.textContent = "Choose an approved parish from the list.";
+            statusEl.className = "status error";
+          }
+          return;
         }
-        return;
+        body.parish_id = parishId;
+        body.invite_role = roleEl ? roleEl.value : "media";
+      } else {
+        const parishName = parishEl && parishEl.value.trim ? parishEl.value.trim() : "";
+        if (!parishName) {
+          if (statusEl) {
+            statusEl.textContent = "Enter the new parish name for this invite.";
+            statusEl.className = "status error";
+          }
+          return;
+        }
+        body.community_name = parishName;
+        body.invite_role = "president";
       }
       if (statusEl) { statusEl.textContent = "Creating invite…"; statusEl.className = "status"; }
       try {
-        const body = {
-          community_name: parishName,
-          email: emailEl && emailEl.value.trim() ? emailEl.value.trim() : null,
-          note: noteEl && noteEl.value.trim() ? noteEl.value.trim() : null,
-          ttl_days: 7,
-        };
         const data = await saFetchAdmin("/api/admin/invites", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -27675,6 +28108,9 @@
           statusEl.className = "status ok";
         }
         if (parishEl) parishEl.value = "";
+        if (searchEl) searchEl.value = "";
+        const hiddenEl = $("sa-invite-parish-id");
+        if (hiddenEl) hiddenEl.value = "";
         if (emailEl) emailEl.value = "";
         if (noteEl) noteEl.value = "";
         loadSaInvites();
@@ -27921,6 +28357,8 @@
       }
       $("sa-btn-save-announcement") && $("sa-btn-save-announcement").addEventListener("click", () => saveSaAnnouncementAdmin());
       $("sa-btn-refresh-announcement") && $("sa-btn-refresh-announcement").addEventListener("click", () => loadSaAnnouncementAdmin());
+      $("sa-analytics-refresh") && $("sa-analytics-refresh").addEventListener("click", () => loadSaAnalytics());
+      $("sa-analytics-days") && $("sa-analytics-days").addEventListener("change", () => loadSaAnalytics());
       $("sa-storage-refresh") && $("sa-storage-refresh").addEventListener("click", () => loadSaStorageBrowser());
       $("sa-storage-up") && $("sa-storage-up").addEventListener("click", () => {
         const prefix = saState.storage.prefix || "";
@@ -28008,6 +28446,10 @@
       $("sa-generations-refresh") && $("sa-generations-refresh").addEventListener("click", () => loadSaGenerations());
       $("sa-btn-create-invite") && $("sa-btn-create-invite").addEventListener("click", () => createSaInvite());
       $("sa-btn-refresh-invites") && $("sa-btn-refresh-invites").addEventListener("click", () => loadSaInvites());
+      $("sa-invite-mode-existing") && $("sa-invite-mode-existing").addEventListener("change", saSyncInviteModeUi);
+      $("sa-invite-mode-new") && $("sa-invite-mode-new").addEventListener("change", saSyncInviteModeUi);
+      $("sa-invite-parish-search") && $("sa-invite-parish-search").addEventListener("change", saResolveInviteParishId);
+      $("sa-invite-parish-search") && $("sa-invite-parish-search").addEventListener("blur", saResolveInviteParishId);
       $("sa-btn-copy-invite-url") && $("sa-btn-copy-invite-url").addEventListener("click", async () => {
         const inp = $("sa-invite-url");
         if (!inp || !inp.value) return;
@@ -31649,7 +32091,7 @@
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
           our_father_choice: body.our_father_choice || "english",
-          hymn_lyrics_layout: body.hymn_lyrics_layout || "single",
+          hymn_lyrics_layout: body.hymn_lyrics_layout || "dual",
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
           ai_poster_backend: body.ai_poster_backend,
@@ -34711,6 +35153,7 @@
       refreshWydNews();
       refreshHomeReflection();
       refreshPlatformAnnouncement();
+      refreshFeatureFlags();
     };
     if (typeof requestIdleCallback === "function") {
       requestIdleCallback(bootDeferredData, { timeout: 400 });

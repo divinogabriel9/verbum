@@ -125,6 +125,15 @@
           if (validateData.ok && validateData.community_name) {
             applyInviteChurchName(validateData.community_name);
           }
+          if (validateData.ok && validateData.existing_parish) {
+            const hint = $("auth-church-name-hint");
+            if (hint) {
+              hint.textContent = "You will join this parish as " +
+                (validateData.invite_role === "president" ? "president" : "media team") +
+                " when signup completes.";
+              hint.hidden = false;
+            }
+          }
         } catch (_e) {
           /* non-blocking */
         }
@@ -251,6 +260,7 @@
           const password = ($("auth-password") && $("auth-password").value) || "";
           const firstName = ($("auth-first-name") && $("auth-first-name").value.trim()) || "";
           const lastName = ($("auth-last-name") && $("auth-last-name").value.trim()) || "";
+          const phone = ($("auth-phone") && $("auth-phone").value.trim()) || "";
           const churchName = (
             (inviteCommunityName || "").trim() ||
             ($("auth-church-name") && $("auth-church-name").value.trim()) ||
@@ -296,6 +306,7 @@
                     first_name: firstName || undefined,
                     last_name: lastName || undefined,
                     community_name: churchName || undefined,
+                    phone: phone || undefined,
                   },
                 },
               });

@@ -102,12 +102,17 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
             return {"ok": False, "invite_required": True, "error": "Invalid or expired invite."}
         email = (row.get("email") or "").strip()
         community_name = (row.get("community_name") or "").strip()
+        invite_role = (row.get("invite_role") or "president").strip().lower()
+        parish_id = str(row.get("parish_id") or "").strip()
         return {
             "ok": True,
             "invite_required": True,
             "email_locked": bool(email),
             "email": email or None,
             "community_name": community_name or None,
+            "invite_role": invite_role,
+            "parish_id": parish_id or None,
+            "existing_parish": bool(parish_id),
         }
 
     @app.post("/api/auth/invite/consume")

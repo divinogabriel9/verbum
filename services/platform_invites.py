@@ -56,6 +56,20 @@ def validate_invite_token(token: str) -> Optional[dict[str, Any]]:
     return row
 
 
+def _validate_existing_parish_invite(parish_id: str, role: str) -> dict[str, Any]:
+    from services.parish_store import PARISH_MEMBER_LIMIT, count_active_members, get_parish_by_id
+
+    parish = get_parish_by_id(parish_id)
+    if not parish:
+        raise ValueError("Parish not found.")
+    status = (parish.get("membership_status") or "").strip().lower()
+    if status != "approved":
+        raise ValueError("Only approved parishes can receive team invites.")
+    if role == "media" and count_active_members(parish_id) >= PARISH_MEMBER_LIMIT:
+        raise ValueError(f"Parish already has {PARISH_MEMBER_LIMIT} active members.")
+    return parish
+
+
 def create_invite(
     *,
     created_by_user_id: Optional[str] = None,
@@ -69,14 +83,19 @@ def create_invite(
     if not supabase_enabled():
         raise RuntimeError("Supabase is required for platform invites.")
     clean_email = (email or "").strip().lower() or None
-    clean_name = (community_name or "").strip()
-    if not clean_name:
-        raise ValueError("Parish name is required.")
     role = (invite_role or "president").strip().lower()
     if role not in {"president", "media"}:
         raise ValueError("invite_role must be president or media.")
     pid = (parish_id or "").strip() or None
-    if role == "media" and not pid:
+    clean_name = (community_name or "").strip()
+    if pid:
+        parish = _validate_existing_parish_invite(pid, role)
+        clean_name = (parish.get("community_name") or clean_name).strip()
+        if not clean_name:
+            raise ValueError("Parish name could not be resolved.")
+    elif not clean_name:
+        raise ValueError("Parish name is required for new parish invites.")
+    elif role == "media":
         raise ValueError("parish_id is required for media invites.")
     expires_at = (_now() + timedelta(days=max(1, min(ttl_days, 90)))).isoformat()
     token = secrets.token_urlsafe(32)
@@ -165,10 +184,10 @@ def consume_invite(
     invite_role = (row.get("invite_role") or "president").strip().lower()
     community_name = (row.get("community_name") or "").strip()
 
-    if parish_id and invite_role == "media":
+    if parish_id and invite_role in {"media", "president"}:
         from services.parish_store import assign_user_to_parish
 
-        assign_user_to_parish(uid, parish_id, "media")
+        assign_user_to_parish(uid, parish_id, invite_role)
     elif invite_role == "president" and community_name and access_token:
         from services.parish_store import get_user_parish_context
         from services.supabase_client import submit_parish_name

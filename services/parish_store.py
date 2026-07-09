@@ -1,4 +1,4 @@
-"""Shared parish model: parishes + parish_members (president + up to 2 media)."""
+"""Shared parish model: parishes + parish_members (president + up to 4 media)."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def _service_client():
 
     return get_service_client()
 
-PARISH_MEMBER_LIMIT = 3
+PARISH_MEMBER_LIMIT = 5
 
 
 def _shape_church_context(
