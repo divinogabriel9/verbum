@@ -3,13 +3,13 @@
     {
       "id": "sing_new_song",
       "title": "Sing a New Song",
+      "author": "",
+      "lyrics": "Chorus\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 1\nYahweh's people dance for joy\nO come before the Lord\nAnd play for him on glad tambourines\nAnd let your trumpet sound\n\nChorus 2\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 2\nRise, O children, from your sleep;\nYour Savior now has come\nHe has turned your sorrow to joy\nAnd filled your soul with song\n\nChorus 3\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging Alleluia\nSinging Alleluia",
+      "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time",
         "easter"
       ],
-      "lyrics": "Chorus\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 1\nYahweh's people dance for joy\nO come before the Lord\nAnd play for him on glad tambourines\nAnd let your trumpet sound\n\nChorus 2\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging alleluia\n\nVerse 2\nRise, O children, from your sleep;\nYour Savior now has come\nHe has turned your sorrow to joy\nAnd filled your soul with song\n\nChorus 3\nSing a new song unto the Lord;\nLet your song be sung\nfrom mountains high\nSing a new song unto the Lord\nSinging Alleluia\nSinging Alleluia",
-      "source": "lyrics_dashboard",
-      "author": "",
       "language": "English",
       "gospel_moods": [
         "triumphant"
@@ -18,26 +18,26 @@
     {
       "id": "all_creatures",
       "title": "All Creatures of Our God and King",
+      "lyrics": "Verse 1\nAll creatures of our God and King\nLift up your voice and with us sing\nO praise Him! Alleluia!\nThou, burning sun with golden beam\nThou, silver moon with softer gleam\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 2\nLet all things their Creator bless\nAnd worship Him in humbleness\nO praise Him! Alleluia!\nPraise, praise the Father, praise the Son\nAnd praise the Spirit, Three-in-One\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 3\nAll the redeemed washed by His blood\nCome and rejoice in His great love\nO praise Him! Alleluia!\nChrist has defeated every sin\nCast all your burdens now on Him\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 4\nHe shall return in pow’r to reign\nHeaven and earth will join to say\nO praise Him! Alleluia!\nThen who shall fall on bended knee?\nAll creatures of our God and King\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!",
+      "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time",
         "easter"
       ],
-      "lyrics": "Verse 1\nAll creatures of our God and King\nLift up your voice and with us sing\nO praise Him! Alleluia!\nThou, burning sun with golden beam\nThou, silver moon with softer gleam\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 2\nLet all things their Creator bless\nAnd worship Him in humbleness\nO praise Him! Alleluia!\nPraise, praise the Father, praise the Son\nAnd praise the Spirit, Three-in-One\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 3\nAll the redeemed washed by His blood\nCome and rejoice in His great love\nO praise Him! Alleluia!\nChrist has defeated every sin\nCast all your burdens now on Him\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 4\nHe shall return in pow’r to reign\nHeaven and earth will join to say\nO praise Him! Alleluia!\nThen who shall fall on bended knee?\nAll creatures of our God and King\nO praise Him! O praise Him!\nAlleluia! Alleluia! Alleluia!",
+      "language": "English",
       "gospel_moods": [
         "triumphant",
         "mercy",
         "reverent"
-      ],
-      "source": "lyrics_dashboard",
-      "language": "English"
+      ]
     },
     {
       "id": "here_i_am",
       "title": "Here I Am, Lord",
+      "lyrics": "I, the Lord of sea and sky,\nI have heard my people cry.\nAll who dwell in dark and sin,\nmy hand will save.\n\nI who made the stars of night,\nI will make their darkness bright.\nWho will bear my light to them?\nWhom shall I send?\n\nHere I am, Lord.\nIs it I, Lord?\nI have heard you calling in the night.\nI will go, Lord,\nif you lead me.\nI will hold your people in my heart.\n\nI, the Lord of snow and rain,\nI have borne my people's pain.\nI have wept for love of them,\nthey turn away.\n\nI will break their hearts of stone,\ngive them hearts for love alone.\nI will speak my word to them.\nWhom shall I send?\n\nHere I am, Lord.\nIs it I, Lord?\nI have heard you calling in the night.\nI will go, Lord,\nif you lead me.\nI will hold your people in my heart.\n\nI, the Lord of wind and flame,\nI will tend the poor and lame.\nI will set a feast for them.\nMy hand will save.\n\nFinest bread I will provide\ntill their hearts be satisfied.\nI will give my life to them.\nWhom shall I send?\n\nHere I am, Lord.\nIs it I, Lord?\nI have heard you calling in the night.\nI will go, Lord,\nif you lead me.\nI will hold your people in my heart.",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "I, the Lord of sea and sky,\nI have heard my people cry.\nAll who dwell in dark and sin,\nmy hand will save.\n\nI who made the stars of night,\nI will make their darkness bright.\nWho will bear my light to them?\nWhom shall I send?\n\nHere I am, Lord.\nIs it I, Lord?\nI have heard you calling in the night.\nI will go, Lord,\nif you lead me.\nI will hold your people in my heart.\n\nI, the Lord of snow and rain,\nI have borne my people's pain.\nI have wept for love of them,\nthey turn away.\n\nI will break their hearts of stone,\ngive them hearts for love alone.\nI will speak my word to them.\nWhom shall I send?\n\nHere I am, Lord.\nIs it I, Lord?\nI have heard you calling in the night.\nI will go, Lord,\nif you lead me.\nI will hold your people in my heart.\n\nI, the Lord of wind and flame,\nI will tend the poor and lame.\nI will set a feast for them.\nMy hand will save.\n\nFinest bread I will provide\ntill their hearts be satisfied.\nI will give my life to them.\nWhom shall I send?\n\nHere I am, Lord.\nIs it I, Lord?\nI have heard you calling in the night.\nI will go, Lord,\nif you lead me.\nI will hold your people in my heart.",
       "gospel_moods": [
         "mercy",
         "journey",
@@ -47,12 +47,12 @@
     {
       "id": "glory_praise",
       "title": "Glory and Praise to Our God",
+      "author": "Dan Schutte",
+      "lyrics": "Verse 1\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways\n\nVerse 2\nWe the daughters and sons of Him\nWho built the valleys and plains\nPraise the wonders our God has done\nIn every heart that sings\n\nVerse 3\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways\n\nVerse 4\nIn His wisdom He strengthens us\nLike gold that's tested in fire\nThough the power of sin prevails\nOur God is there to save\n\nVerse 5\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways\n\nVerse 6\nGod has watered our barren land\nAnd spent His merciful rain\nNow our rivers of life run full\nFor anyone to drink\n\nVerse 7\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways\n\nVerse 2\nWe the daughters and sons of Him\nWho built the valleys and plains\nPraise the wonders our God has done\nIn every heart that sings\n\nVerse 3\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways\n\nVerse 4\nIn His wisdom He strengthens us\nLike gold that's tested in fire\nThough the power of sin prevails\nOur God is there to save\n\nVerse 5\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways\n\nVerse 6\nGod has watered our barren land\nAnd spent His merciful rain\nNow our rivers of life run full\nFor anyone to drink\n\nVerse 7\nGlory and praise to our God\nWho alone gives light to our days\nMany are the blessings He bears\nTo those who trust in His ways",
-      "source": "lyrics_dashboard",
-      "author": "Dan Schutte",
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -62,11 +62,11 @@
     {
       "id": "joyful_joyful",
       "title": "Joyful, Joyful, We Adore Thee",
+      "lyrics": "Joyful, joyful, we adore thee,\nGod of glory, Lord of love;\nhearts unfold like flowers before thee,\nhailing thee, the sun above.\n\nMelt the clouds of sin and sadness,\ndrive the dark of doubt away;\ngiver of immortal gladness,\nfill us with the light of day.\n\nAll thy works with joy surround thee,\nearth and heav'n reflect thy rays,\nstars and angels sing around thee,\ncenter of unbroken praise.\n\nField and forest, vale and mountain,\nflowery meadow, flashing sea,\nchanting bird and flowing fountain,\ncall us to rejoice in thee.\n\nThou art giving and forgiving,\never blessing, ever blest,\nwell-spring of the joy of living,\nocean depth of happy rest!\n\nThou our Father, Christ our brother—\nall who live in love are thine;\nteach us how to love each other,\nlift us to the joy divine.\n\nMortals, join the mighty chorus,\nwhich the morning stars began;\nlove divine is reigning o'er us,\nleading to the light of man.\n",
       "seasons": [
         "easter",
         "ordinary_time"
       ],
-      "lyrics": "Joyful, joyful, we adore thee,\nGod of glory, Lord of love;\nhearts unfold like flowers before thee,\nhailing thee, the sun above.\n\nMelt the clouds of sin and sadness,\ndrive the dark of doubt away;\ngiver of immortal gladness,\nfill us with the light of day.\n\nAll thy works with joy surround thee,\nearth and heav'n reflect thy rays,\nstars and angels sing around thee,\ncenter of unbroken praise.\n\nField and forest, vale and mountain,\nflowery meadow, flashing sea,\nchanting bird and flowing fountain,\ncall us to rejoice in thee.\n\nThou art giving and forgiving,\never blessing, ever blest,\nwell-spring of the joy of living,\nocean depth of happy rest!\n\nThou our Father, Christ our brother—\nall who live in love are thine;\nteach us how to love each other,\nlift us to the joy divine.\n\nMortals, join the mighty chorus,\nwhich the morning stars began;\nlove divine is reigning o'er us,\nleading to the light of man.\n",
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -76,10 +76,10 @@
     {
       "id": "holy_holy_holy",
       "title": "Holy, Holy, Holy",
+      "lyrics": "Holy, holy, holy! Lord God Almighty!\nEarly in the morning our song shall rise to thee;\nholy, holy, holy! Merciful and mighty!\nGod in three Persons, blessed Trinity!\n\nHoly, holy, holy! All the saints adore thee,\ncasting down their golden crowns around the glassy sea;\ncherubim and seraphim falling down before thee,\nwho wert and art and evermore shalt be.\n\nHoly, holy, holy! Though the darkness hide thee,\nthough the eye of sinful man thy glory may not see,\nonly thou art holy; there is none beside thee,\nperfect in power, in love, and purity.\n\nHoly, holy, holy! Lord God Almighty!\nAll thy works shall praise thy name, in earth and sky and sea;\nholy, holy, holy! Merciful and mighty!\nGod in three Persons, blessed Trinity!",
       "seasons": [
         "all"
       ],
-      "lyrics": "Holy, holy, holy! Lord God Almighty!\nEarly in the morning our song shall rise to thee;\nholy, holy, holy! Merciful and mighty!\nGod in three Persons, blessed Trinity!\n\nHoly, holy, holy! All the saints adore thee,\ncasting down their golden crowns around the glassy sea;\ncherubim and seraphim falling down before thee,\nwho wert and art and evermore shalt be.\n\nHoly, holy, holy! Though the darkness hide thee,\nthough the eye of sinful man thy glory may not see,\nonly thou art holy; there is none beside thee,\nperfect in power, in love, and purity.\n\nHoly, holy, holy! Lord God Almighty!\nAll thy works shall praise thy name, in earth and sky and sea;\nholy, holy, holy! Merciful and mighty!\nGod in three Persons, blessed Trinity!",
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -89,11 +89,11 @@
     {
       "id": "crown_him",
       "title": "Crown Him with Many Crowns",
+      "lyrics": "Crown him with many crowns,\nthe Lamb upon his throne;\nhark! how the heavenly anthem drowns\nall music but its own.\nAwake, my soul, and sing\nof him who died for thee,\nand hail him as thy matchless King\nthrough all eternity.\n\nCrown him the Lord of life,\nwho triumphed o'er the grave,\nand rose victorious in the strife\nfor those he came to save.\nHis glories now we sing,\nwho died and rose on high,\nwho died, eternal life to bring,\nand lives that death may die.\n\nCrown him the Lord of peace,\nwhose power a scepter sways\nfrom pole to pole, that wars may cease,\nand all be prayer and praise.\nHis reign shall know no end,\nand round his pierced feet\nfair flowers of paradise extend\ntheir fragrance ever sweet.",
       "seasons": [
         "easter",
         "ordinary_time"
       ],
-      "lyrics": "Crown him with many crowns,\nthe Lamb upon his throne;\nhark! how the heavenly anthem drowns\nall music but its own.\nAwake, my soul, and sing\nof him who died for thee,\nand hail him as thy matchless King\nthrough all eternity.\n\nCrown him the Lord of life,\nwho triumphed o'er the grave,\nand rose victorious in the strife\nfor those he came to save.\nHis glories now we sing,\nwho died and rose on high,\nwho died, eternal life to bring,\nand lives that death may die.\n\nCrown him the Lord of peace,\nwhose power a scepter sways\nfrom pole to pole, that wars may cease,\nand all be prayer and praise.\nHis reign shall know no end,\nand round his pierced feet\nfair flowers of paradise extend\ntheir fragrance ever sweet.",
       "gospel_moods": [
         "triumphant",
         "reverent"
@@ -102,10 +102,10 @@
     {
       "id": "praise_to_lord",
       "title": "Praise to the Lord, the Almighty",
+      "lyrics": "Praise to the Lord, the Almighty, the King of creation!\nO my soul, praise him, for he is your health and salvation!\nAll you who hear, now to his altar draw near,\njoining in glad adoration.\n\nPraise to the Lord, who o'er all things is wondrously reigning,\nand, as on wings of an eagle, uplifting, sustaining.\nHave you not seen all that is needful has been\nsent by his gracious ordaining?\n\nPraise to the Lord, who will prosper your work and defend you;\nsurely his goodness and mercy shall daily attend you.\nPonder anew what the Almighty can do,\nwho with his love will befriend you.\n\nPraise to the Lord! O let all that is in me adore him!\nAll that has life and breath, come now with praises before him!\nLet the amen sound from his people again;\ngladly forever adore him!",
       "seasons": [
         "all"
       ],
-      "lyrics": "Praise to the Lord, the Almighty, the King of creation!\nO my soul, praise him, for he is your health and salvation!\nAll you who hear, now to his altar draw near,\njoining in glad adoration.\n\nPraise to the Lord, who o'er all things is wondrously reigning,\nand, as on wings of an eagle, uplifting, sustaining.\nHave you not seen all that is needful has been\nsent by his gracious ordaining?\n\nPraise to the Lord, who will prosper your work and defend you;\nsurely his goodness and mercy shall daily attend you.\nPonder anew what the Almighty can do,\nwho with his love will befriend you.\n\nPraise to the Lord! O let all that is in me adore him!\nAll that has life and breath, come now with praises before him!\nLet the amen sound from his people again;\ngladly forever adore him!",
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -115,12 +115,12 @@
     {
       "id": "awit_ng_paghahangad",
       "title": "Awit ng Paghahangad",
-      "language": "Tagalog",
+      "lyrics": "Verse 1\nOh Diyos, Ikaw ang laging hanap\nLoob ko'y Ikaw ang tanging hangad\nNauuhaw akong parang tigang na lupa\nSa tubig ng 'Yong pag-aaruga\n\nVerse 2\nIka'y pagmamasdan sa dakong banal\nNang makita ko ang 'Yong pagkarangal\nDadalangin akong nakataas aking kamay\nMagagalak na aawit ng papuring iaalay\n\nChorus\nGunita ko'y Ikaw habang nahihimlay\nPagkat ang tulong Mo sa tuwina'y taglay\nSa lilim ng Iyong mga pakpak\nUmaawit akong buong galak\n\nVerse 3\nAking kaluluwa'y kumakapit sa 'Yo\nKaligtasa'y t'yak kong hawak Mo ako\nMagdiriwang ang hari ang Diyos S'yang dahilan\nAng sa Iyo ay nangakong galak yaong makakamtan\n\nChorus 2\nGunita ko'y Ikaw habang nahihimlay\nPagkat ang tulong Mo sa tuwina'y taglay\nSa lilim ng Iyong mga pakpak\nUmaawit akong buong galak\n\nVerse 4\nUmaawit, umaawit\nUmaawit akong buong galak",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nOh Diyos, Ikaw ang laging hanap\nLoob ko'y Ikaw ang tanging hangad\nNauuhaw akong parang tigang na lupa\nSa tubig ng 'Yong pag-aaruga\n\nVerse 2\nIka'y pagmamasdan sa dakong banal\nNang makita ko ang 'Yong pagkarangal\nDadalangin akong nakataas aking kamay\nMagagalak na aawit ng papuring iaalay\n\nChorus\nGunita ko'y Ikaw habang nahihimlay\nPagkat ang tulong Mo sa tuwina'y taglay\nSa lilim ng Iyong mga pakpak\nUmaawit akong buong galak\n\nVerse 3\nAking kaluluwa'y kumakapit sa 'Yo\nKaligtasa'y t'yak kong hawak Mo ako\nMagdiriwang ang hari ang Diyos S'yang dahilan\nAng sa Iyo ay nangakong galak yaong makakamtan\n\nChorus 2\nGunita ko'y Ikaw habang nahihimlay\nPagkat ang tulong Mo sa tuwina'y taglay\nSa lilim ng Iyong mga pakpak\nUmaawit akong buong galak\n\nVerse 4\nUmaawit, umaawit\nUmaawit akong buong galak",
-      "source": "lyrics_dashboard",
+      "language": "Tagalog",
       "gospel_moods": [
         "reverent"
       ]
@@ -129,45 +129,45 @@
       "id": "here_we_are",
       "title": "Here We Are",
       "author": "Don Moen",
-      "language": "English",
+      "lyrics": "Chorus\nHere we are Lifting our hands to You\nHere we are Giving You thanks for all You do\nAnd as we praise And worship Your Holy name\nYou are here Dwelling within our praise\n\nVerse 1\nFor every answered prayer (for every answered prayer)\nFor always being there (oh Lord, You′re always there)\nFor love that hears us when we call\nFor arms that lift us when we fall, oh\nYou have always been right beside us\nLeading us all along the way\nAnd we've made it through (we made it through)\nBecause of You\n\nChorus 2\nAnd here we are Lifting our hands to You\nHere we are Giving You thanks for all You do\nAnd as we praise And worship Your Holy name\nYou are here, You are here\nDwelling within our praise\n\nVerse 2\nFor days, we cannot see (for days we cannot see)\nFor all that′s yet to be (so much is yet to be)\nThe trials we may have to face\nWhen we'll be leaning on Your grace, oh yes\nIt will be Your strength that saves us\nYour love that makes us strong\nAnd through it all (through it all)\nWe'll sing this song\n\nChorus 3\nAnd here we are Lifting our hands to You, oh we worship\nHere we are Giving You thanks for all You do\nAnd as we praise And worship your Holy name\nYou are here, You are here\nDwelling within our praise, oh yes, You are\n\nVerse 3\nYou are here\nDwelling within our praise\nYou are here\nDwelling within our praise\nOh yes, You are\nYes, You are (oh, we praise Your name)\nOh, we worship You Lord (oh, we worship You)",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Chorus\nHere we are Lifting our hands to You\nHere we are Giving You thanks for all You do\nAnd as we praise And worship Your Holy name\nYou are here Dwelling within our praise\n\nVerse 1\nFor every answered prayer (for every answered prayer)\nFor always being there (oh Lord, You′re always there)\nFor love that hears us when we call\nFor arms that lift us when we fall, oh\nYou have always been right beside us\nLeading us all along the way\nAnd we've made it through (we made it through)\nBecause of You\n\nChorus 2\nAnd here we are Lifting our hands to You\nHere we are Giving You thanks for all You do\nAnd as we praise And worship Your Holy name\nYou are here, You are here\nDwelling within our praise\n\nVerse 2\nFor days, we cannot see (for days we cannot see)\nFor all that′s yet to be (so much is yet to be)\nThe trials we may have to face\nWhen we'll be leaning on Your grace, oh yes\nIt will be Your strength that saves us\nYour love that makes us strong\nAnd through it all (through it all)\nWe'll sing this song\n\nChorus 3\nAnd here we are Lifting our hands to You, oh we worship\nHere we are Giving You thanks for all You do\nAnd as we praise And worship your Holy name\nYou are here, You are here\nDwelling within our praise, oh yes, You are\n\nVerse 3\nYou are here\nDwelling within our praise\nYou are here\nDwelling within our praise\nOh yes, You are\nYes, You are (oh, we praise Your name)\nOh, we worship You Lord (oh, we worship You)",
-      "source": "lyrics_dashboard"
+      "language": "English"
     },
     {
       "id": "purihin_ang_panginoon",
       "title": "Purihin ang Panginoon",
       "author": "",
-      "language": "Tagalog",
+      "lyrics": "Chorus\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta\n\nVerse 1\nSa ating pagkabagabag sa Diyos tayo'y tumawag\nSa ating mga kaaway tayo ay kanyang iniligtas\n\nChorus 2\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta\n\nVerse 2\nAng pasaning mabigat sa 'ting mga balikat\nPinagaan nang lubusan ng Diyos na tagapagligtas\n\nChorus 3\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Chorus\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta\n\nVerse 1\nSa ating pagkabagabag sa Diyos tayo'y tumawag\nSa ating mga kaaway tayo ay kanyang iniligtas\n\nChorus 2\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta\n\nVerse 2\nAng pasaning mabigat sa 'ting mga balikat\nPinagaan nang lubusan ng Diyos na tagapagligtas\n\nChorus 3\nPurihin ang panginoon umawit ng kagalakan\nAt tugtugin ang gitara at ang kaaya-ayang lira\nHipan ninyo ang trumpeta",
-      "source": "lyrics_dashboard"
+      "language": "Tagalog"
     }
   ],
   "offertory": [
     {
       "id": "christify",
       "title": "Christify",
+      "lyrics": "Verse 1\nChristify the gifts we bring to you\nBounty of the earth receive anew\nTake and bless the work of our hands\nChristify these gifts at your command\n\nVerse 2\nSun and moon and earth and wind and rain\nAll the world's contained in every grain\nAll the toil and dreams of humankind\nAll we are we bring as bread and wine\n\nVerse 3\nTurn the bread and wine our hearts implore (turn the bread and wine our hearts implore)\nTo the living presence of the lord (to the living presence of the lord)\nBlessed and broken shared with all in need (blessed and broken shared with all in need)\nAll our hungers sacred bread will feed\n\nVerse 4\nWith this bread and wine you christify (with this bread and wine you christify)\nNow our deepest thirst you satisfy (now our deepest thirst you satisfy)\nWe who by this bread you sanctify (we who by this bread you sanctify)\nDraw the world for you to christify\n\nVerse 5\nWe who by this bread you sanctify (we who by this bread you sanctify)\nDraw the world for You to christify",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nChristify the gifts we bring to you\nBounty of the earth receive anew\nTake and bless the work of our hands\nChristify these gifts at your command\n\nVerse 2\nSun and moon and earth and wind and rain\nAll the world's contained in every grain\nAll the toil and dreams of humankind\nAll we are we bring as bread and wine\n\nVerse 3\nTurn the bread and wine our hearts implore (turn the bread and wine our hearts implore)\nTo the living presence of the lord (to the living presence of the lord)\nBlessed and broken shared with all in need (blessed and broken shared with all in need)\nAll our hungers sacred bread will feed\n\nVerse 4\nWith this bread and wine you christify (with this bread and wine you christify)\nNow our deepest thirst you satisfy (now our deepest thirst you satisfy)\nWe who by this bread you sanctify (we who by this bread you sanctify)\nDraw the world for you to christify\n\nVerse 5\nWe who by this bread you sanctify (we who by this bread you sanctify)\nDraw the world for You to christify",
       "gospel_moods": [
         "mercy"
-      ],
-      "source": "lyrics_dashboard"
+      ]
     },
     {
       "id": "take_o_take",
       "title": "Take, O Take Me As I Am",
+      "lyrics": "Take, O take me as I am,\nrecreate the heart of clay;\nshape a new life in your pattern,\nWord of God, I humbly pray.\n\nSummon out whom I should serve;\ngive me courage, strength and nerve;\nbid me act the love I praise,\nall my busy, bustling days.\n\nTake the work my hands can offer;\ntake the loaves, the work of art;\ntake myself—each part I proffer—\ntake, O Lord, my broken heart.\n\nTake my life as wine outpoured:\ndrink from the fruit of every field.\nTake my love—I am your harp,\ntake my song, let your tune be heard.\n\nTake, O take me as I am,\nrecreate the heart of clay;\nshape a new life in your pattern,\nGod of love, I humbly pray.",
       "seasons": [
         "all"
       ],
-      "lyrics": "Take, O take me as I am,\nrecreate the heart of clay;\nshape a new life in your pattern,\nWord of God, I humbly pray.\n\nSummon out whom I should serve;\ngive me courage, strength and nerve;\nbid me act the love I praise,\nall my busy, bustling days.\n\nTake the work my hands can offer;\ntake the loaves, the work of art;\ntake myself—each part I proffer—\ntake, O Lord, my broken heart.\n\nTake my life as wine outpoured:\ndrink from the fruit of every field.\nTake my love—I am your harp,\ntake my song, let your tune be heard.\n\nTake, O take me as I am,\nrecreate the heart of clay;\nshape a new life in your pattern,\nGod of love, I humbly pray.",
       "gospel_moods": [
         "reverent"
       ]
@@ -175,10 +175,10 @@
     {
       "id": "gift_finest_wheat",
       "title": "Gift of Finest Wheat",
+      "lyrics": "You satisfy the hungry heart\nwith gift of finest wheat,\ncome give to us, O saving Lord,\nthe bread of life to eat.\n\nAs when the grain by saints believed\nwas blessed and broken, Lord,\nso may your Church in lands today\nbe fed, your praise restored.\n\nO Lord of harvest, grant that we\nwho share this mystery here\nmay follow you unceasingly\nin praise, in love, in fear.\n\nOne bread, one cup, one life, one Lord—\nwe offer, Christ, to you;\nuntil we share your banquet board\nwhere all the world is new.",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "You satisfy the hungry heart\nwith gift of finest wheat,\ncome give to us, O saving Lord,\nthe bread of life to eat.\n\nAs when the grain by saints believed\nwas blessed and broken, Lord,\nso may your Church in lands today\nbe fed, your praise restored.\n\nO Lord of harvest, grant that we\nwho share this mystery here\nmay follow you unceasingly\nin praise, in love, in fear.\n\nOne bread, one cup, one life, one Lord—\nwe offer, Christ, to you;\nuntil we share your banquet board\nwhere all the world is new.",
       "gospel_moods": [
         "mercy",
         "journey",
@@ -188,11 +188,11 @@
     {
       "id": "bread_of_life_offertory",
       "title": "I Am the Bread of Life",
+      "lyrics": "I am the Bread of life;\nall who come to me shall not hunger,\nand who believe in me shall not thirst.\nNo one can come to me unless\nmy Father beckons.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.\n\nThe bread that I will give\nis my flesh for the life of the world\nand if you eat of this bread,\nyou shall live forever,\nyes, live forever.\n\nUnless you eat\nof the flesh of the Son of Man\nand drink of his blood,\nand drink of his blood,\nthere is no life in you,\nthere is no life in you.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.",
       "seasons": [
         "ordinary_time",
         "easter"
       ],
-      "lyrics": "I am the Bread of life;\nall who come to me shall not hunger,\nand who believe in me shall not thirst.\nNo one can come to me unless\nmy Father beckons.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.\n\nThe bread that I will give\nis my flesh for the life of the world\nand if you eat of this bread,\nyou shall live forever,\nyes, live forever.\n\nUnless you eat\nof the flesh of the Son of Man\nand drink of his blood,\nand drink of his blood,\nthere is no life in you,\nthere is no life in you.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.",
       "gospel_moods": [
         "triumphant",
         "mercy"
@@ -201,10 +201,10 @@
     {
       "id": "one_bread_offertory",
       "title": "One Bread, One Body",
+      "lyrics": "One bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.\n\nGentile or Jew, servant or free,\nwoman or man, no more.\n\nMany the gifts, many the works,\nmany the ways we serve;\nmany the moments, many the hours,\nmany the talents shared.\n\nOne bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "One bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.\n\nGentile or Jew, servant or free,\nwoman or man, no more.\n\nMany the gifts, many the works,\nmany the ways we serve;\nmany the moments, many the hours,\nmany the talents shared.\n\nOne bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.",
       "gospel_moods": [
         "solemn",
         "mercy",
@@ -214,10 +214,10 @@
     {
       "id": "doxology",
       "title": "Doxology (Praise God from Whom All Blessings Flow)",
+      "lyrics": "Praise God, from whom all blessings flow;\npraise him, all creatures here below;\npraise him above, ye heavenly host;\npraise Father, Son, and Holy Ghost. Amen.\n\nLet earth and heaven adore his name,\nand every heart his grace proclaim;\nwith grateful songs and lifted voice,\nwe bless the Lord and now rejoice.",
       "seasons": [
         "all"
       ],
-      "lyrics": "Praise God, from whom all blessings flow;\npraise him, all creatures here below;\npraise him above, ye heavenly host;\npraise Father, Son, and Holy Ghost. Amen.\n\nLet earth and heaven adore his name,\nand every heart his grace proclaim;\nwith grateful songs and lifted voice,\nwe bless the Lord and now rejoice.",
       "gospel_moods": [
         "mercy",
         "reverent"
@@ -226,10 +226,10 @@
     {
       "id": "take_my_life",
       "title": "Take My Life and Let It Be",
+      "lyrics": "Take my life and let it be\nconsecrated, Lord, to thee;\ntake my moments and my days,\nlet them flow in ceaseless praise.\n\nTake my hands and let them move\nat the impulse of thy love;\ntake my feet and let them be\nswift and beautiful for thee.\n\nTake my voice and let me sing\nalways, only, for my King;\ntake my lips and let them be\nfilled with messages from thee.\n\nTake my silver and my gold,\nnot a mite would I withhold;\ntake my intellect and use\nevery power as thou shalt choose.\n\nTake my will and make it thine,\nit shall be no longer mine;\ntake my heart, it is thine own,\nit shall be thy royal throne.\n\nTake my love; my Lord, I pour\nat thy feet its treasure-store;\ntake myself, and I will be\never, only, all for thee.",
       "seasons": [
         "all"
       ],
-      "lyrics": "Take my life and let it be\nconsecrated, Lord, to thee;\ntake my moments and my days,\nlet them flow in ceaseless praise.\n\nTake my hands and let them move\nat the impulse of thy love;\ntake my feet and let them be\nswift and beautiful for thee.\n\nTake my voice and let me sing\nalways, only, for my King;\ntake my lips and let them be\nfilled with messages from thee.\n\nTake my silver and my gold,\nnot a mite would I withhold;\ntake my intellect and use\nevery power as thou shalt choose.\n\nTake my will and make it thine,\nit shall be no longer mine;\ntake my heart, it is thine own,\nit shall be thy royal throne.\n\nTake my love; my Lord, I pour\nat thy feet its treasure-store;\ntake myself, and I will be\never, only, all for thee.",
       "gospel_moods": [
         "reverent"
       ]
@@ -237,10 +237,10 @@
     {
       "id": "we_give_thee",
       "title": "We Give Thee But Thine Own",
+      "lyrics": "We give thee but thine own,\nwhate'er the gift may be;\nall that we have is thine alone,\na trust, O Lord, from thee.\n\nMay we thy bounties thus\nas stewards true receive,\nand gladly, as thou blessest us,\nto thee our firstfruits give.\n\nTo comfort and to bless,\nto find a balm for woe,\nto tend the lone and fatherless,\nis angels' work below.\n\nThe captive to release,\nto God the lost to bring,\nto teach the way of life and peace,\nit is a Christ-like thing.",
       "seasons": [
         "all"
       ],
-      "lyrics": "We give thee but thine own,\nwhate'er the gift may be;\nall that we have is thine alone,\na trust, O Lord, from thee.\n\nMay we thy bounties thus\nas stewards true receive,\nand gladly, as thou blessest us,\nto thee our firstfruits give.\n\nTo comfort and to bless,\nto find a balm for woe,\nto tend the lone and fatherless,\nis angels' work below.\n\nThe captive to release,\nto God the lost to bring,\nto teach the way of life and peace,\nit is a Christ-like thing.",
       "gospel_moods": [
         "mercy"
       ]
@@ -249,33 +249,33 @@
       "id": "take_oh_lord_this_offering",
       "title": "Take Oh Lord This Offering",
       "author": "",
-      "language": "English",
+      "lyrics": "Verse 1\nTAKE, OH LORD, THIS OFFERING\nWITH HANDS OUTSTRETCH IMPLORING\nTAKE, OH LORD, THIS SACRIFICE\nAND LIFT IT TO THE SKIES\n\nVerse 2\nTHIS HUMBLE LIFE WE OFFER\nIN LOVING CARE PROTECT\nWITH CONTRITE HEARTS WE PRAY TO YOU\nYOUR MERCY GRANT US, LORD\n\nVerse 3\nLISTEN, LORD, THIS PRAY'R\nWE SEND TO YOU ON HIGH\nGRANT, OH LORD, TO THOSE WHO SEEK\nTHE SECRET OF YOUR LOVE",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nTAKE, OH LORD, THIS OFFERING\nWITH HANDS OUTSTRETCH IMPLORING\nTAKE, OH LORD, THIS SACRIFICE\nAND LIFT IT TO THE SKIES\n\nVerse 2\nTHIS HUMBLE LIFE WE OFFER\nIN LOVING CARE PROTECT\nWITH CONTRITE HEARTS WE PRAY TO YOU\nYOUR MERCY GRANT US, LORD\n\nVerse 3\nLISTEN, LORD, THIS PRAY'R\nWE SEND TO YOU ON HIGH\nGRANT, OH LORD, TO THOSE WHO SEEK\nTHE SECRET OF YOUR LOVE",
-      "source": "lyrics_dashboard"
+      "language": "English"
     },
     {
       "id": "one_more_gift",
       "title": "One More Gift",
       "author": "",
-      "language": "English",
+      "lyrics": "Chorus\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around\n\nVerse 1\nYour people have grown weary\nOf living in confusion\nWhen will we realize\nThat neither heaven is at peace?\nWhen we will live not in peace\n\nChorus 2\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around\n\nVerse 2\nGrant me serenity, within\nFor the confusions around\nAre mere reflections of what's within\nWhat's within me\n\nChorus 3\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Chorus\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around\n\nVerse 1\nYour people have grown weary\nOf living in confusion\nWhen will we realize\nThat neither heaven is at peace?\nWhen we will live not in peace\n\nChorus 2\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around\n\nVerse 2\nGrant me serenity, within\nFor the confusions around\nAre mere reflections of what's within\nWhat's within me\n\nChorus 3\nIf there's one more gift I'd ask of you, Lord\nIt would be peace here on earth\nAs gentle as your children's laughter\nAll around, all around",
-      "source": "lyrics_dashboard"
+      "language": "English"
     }
   ],
   "communion": [
     {
       "id": "taste_and_see",
       "title": "Taste and See",
+      "lyrics": "Taste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.\n\nI will bless the Lord at all times,\nhis praise shall be always in my mouth.\n\nTaste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.\n\nGlorify the Lord with me,\nlet us exalt his name together.\n\nTaste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.\n\nLook to him that you may be radiant with joy,\nand your souls shall find their joy in him.\n\nTaste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.",
       "seasons": [
         "all"
       ],
-      "lyrics": "Taste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.\n\nI will bless the Lord at all times,\nhis praise shall be always in my mouth.\n\nTaste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.\n\nGlorify the Lord with me,\nlet us exalt his name together.\n\nTaste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.\n\nLook to him that you may be radiant with joy,\nand your souls shall find their joy in him.\n\nTaste and see the goodness of the Lord,\ntaste and see the goodness of the Lord.",
       "gospel_moods": [
         "mercy",
         "reverent"
@@ -284,10 +284,10 @@
     {
       "id": "one_bread_communion",
       "title": "One Bread, One Body",
+      "lyrics": "One bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.\n\nGentile or Jew, servant or free,\nwoman or man, no more.\n\nMany the gifts, many the works,\nmany the ways we serve.\nMany the moments, many the hours,\nmany the talents shared.\n\nOne bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "One bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.\n\nGentile or Jew, servant or free,\nwoman or man, no more.\n\nMany the gifts, many the works,\nmany the ways we serve.\nMany the moments, many the hours,\nmany the talents shared.\n\nOne bread, one body, one Lord of all,\none cup of blessing which we bless.\nAnd we, though many, throughout the earth,\nwe are one body in this one Lord.",
       "gospel_moods": [
         "solemn",
         "mercy",
@@ -297,10 +297,10 @@
     {
       "id": "bread_of_life_comm_1",
       "title": "I Am the Bread of Life",
+      "lyrics": "I am the Bread of life;\nall who come to me shall not hunger,\nand who believe in me shall not thirst.\nNo one can come to me unless\nmy Father beckons.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.\n\nThe bread that I will give\nis my flesh for the life of the world\nand if you eat of this bread,\nyou shall live forever,\nyes, live forever.\n\nUnless you eat\nof the flesh of the Son of Man\nand drink of his blood,\nand drink of his blood,\nthere is no life in you,\nthere is no life in you.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.",
       "seasons": [
         "all"
       ],
-      "lyrics": "I am the Bread of life;\nall who come to me shall not hunger,\nand who believe in me shall not thirst.\nNo one can come to me unless\nmy Father beckons.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.\n\nThe bread that I will give\nis my flesh for the life of the world\nand if you eat of this bread,\nyou shall live forever,\nyes, live forever.\n\nUnless you eat\nof the flesh of the Son of Man\nand drink of his blood,\nand drink of his blood,\nthere is no life in you,\nthere is no life in you.\n\nAnd I will raise them up,\nand I will raise them up,\nand I will raise them up on the last day.",
       "gospel_moods": [
         "mercy"
       ]
@@ -308,11 +308,11 @@
     {
       "id": "eat_this_bread",
       "title": "Eat This Bread",
+      "lyrics": "Eat this bread,\ndrink this cup,\ncome to me and never be hungry.\nEat this bread,\ndrink this cup,\ntrust in me and you will not thirst.\n\nIf you eat this bread,\nif you drink this cup,\nyou will have eternal life, eternal life.\n\nEat this bread,\ndrink this cup,\ncome to me and never be hungry.\nEat this bread,\ndrink this cup,\ntrust in me and you will not thirst.\n\nCome! Come! Come to the feast of life.\nCome! Come! Come to the Father's table.\n\nEat this bread,\ndrink this cup,\ncome to me and never be hungry.\nEat this bread,\ndrink this cup,\ntrust in me and you will not thirst.",
       "seasons": [
         "ordinary_time",
         "easter"
       ],
-      "lyrics": "Eat this bread,\ndrink this cup,\ncome to me and never be hungry.\nEat this bread,\ndrink this cup,\ntrust in me and you will not thirst.\n\nIf you eat this bread,\nif you drink this cup,\nyou will have eternal life, eternal life.\n\nEat this bread,\ndrink this cup,\ncome to me and never be hungry.\nEat this bread,\ndrink this cup,\ntrust in me and you will not thirst.\n\nCome! Come! Come to the feast of life.\nCome! Come! Come to the Father's table.\n\nEat this bread,\ndrink this cup,\ncome to me and never be hungry.\nEat this bread,\ndrink this cup,\ntrust in me and you will not thirst.",
       "gospel_moods": [
         "triumphant",
         "mercy"
@@ -321,10 +321,10 @@
     {
       "id": "table_of_plenty",
       "title": "Table of Plenty",
+      "lyrics": "Come to the feast of the Lord;\ncome to the table of plenty.\nGod will provide for all that we need,\nhere at the table of plenty.\n\nO come and sit at my table,\nfor here you will comfort the poor,\nand with the hungry share humble fare:\ncome and know life forevermore.\n\nO how abundant the welcome\nthat God has prepared for the least:\nlet all who are lonely and lost be restored\nat this table of love.\n\nCome to the feast of the Lord;\ncome to the table of plenty.\nGod will provide for all that we need,\nhere at the table of plenty.\n\nThis is the bread of rememberance,\nthe cup of the covenant poured.\nTaste and see how the Father adores:\nwe are his own.",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "Come to the feast of the Lord;\ncome to the table of plenty.\nGod will provide for all that we need,\nhere at the table of plenty.\n\nO come and sit at my table,\nfor here you will comfort the poor,\nand with the hungry share humble fare:\ncome and know life forevermore.\n\nO how abundant the welcome\nthat God has prepared for the least:\nlet all who are lonely and lost be restored\nat this table of love.\n\nCome to the feast of the Lord;\ncome to the table of plenty.\nGod will provide for all that we need,\nhere at the table of plenty.\n\nThis is the bread of rememberance,\nthe cup of the covenant poured.\nTaste and see how the Father adores:\nwe are his own.",
       "gospel_moods": [
         "solemn",
         "mercy",
@@ -334,10 +334,10 @@
     {
       "id": "let_us_break_bread",
       "title": "Let Us Break Bread Together",
+      "lyrics": "Let us break bread together on our knees,\nlet us break bread together on our knees.\nWhen I fall on my knees,\nwith my face to the rising sun,\nO Lord, have mercy on me.\n\nLet us drink wine together on our knees,\nlet us drink wine together on our knees.\nWhen I fall on my knees,\nwith my face to the rising sun,\nO Lord, have mercy on me.\n\nLet us praise God together on our knees,\nlet us praise God together on our knees.\nWhen I fall on my knees,\nwith my face to the rising sun,\nO Lord, have mercy on me.",
       "seasons": [
         "all"
       ],
-      "lyrics": "Let us break bread together on our knees,\nlet us break bread together on our knees.\nWhen I fall on my knees,\nwith my face to the rising sun,\nO Lord, have mercy on me.\n\nLet us drink wine together on our knees,\nlet us drink wine together on our knees.\nWhen I fall on my knees,\nwith my face to the rising sun,\nO Lord, have mercy on me.\n\nLet us praise God together on our knees,\nlet us praise God together on our knees.\nWhen I fall on my knees,\nwith my face to the rising sun,\nO Lord, have mercy on me.",
       "gospel_moods": [
         "mercy",
         "reverent"
@@ -346,11 +346,11 @@
     {
       "id": "jesus_my_lord",
       "title": "Jesus, My Lord, My God, My All",
+      "lyrics": "Jesus, my Lord, my God, my All,\nhear me, blest Savior, when I call;\nhear me, and from thy dwelling place,\npour down the riches of thy grace.\n\nJesus, too late I thee have sought,\nhow can I love thee as I ought?\nAnd how extol thy matchless fame,\nthe glorious beauty of thy name?\n\nJesus, what didst thou find in me,\nthat thou hast dealt so lovingly?\nHow great the joy that thou hast brought,\nso far exceeding hope or thought.\n\nJesus, my Lord, I thee adore,\nO make me love thee more and more,\nO make me love thee more and more.",
       "seasons": [
         "lent",
         "ordinary_time"
       ],
-      "lyrics": "Jesus, my Lord, my God, my All,\nhear me, blest Savior, when I call;\nhear me, and from thy dwelling place,\npour down the riches of thy grace.\n\nJesus, too late I thee have sought,\nhow can I love thee as I ought?\nAnd how extol thy matchless fame,\nthe glorious beauty of thy name?\n\nJesus, what didst thou find in me,\nthat thou hast dealt so lovingly?\nHow great the joy that thou hast brought,\nso far exceeding hope or thought.\n\nJesus, my Lord, I thee adore,\nO make me love thee more and more,\nO make me love thee more and more.",
       "gospel_moods": [
         "solemn",
         "reverent"
@@ -359,11 +359,11 @@
     {
       "id": "soul_of_my_savior",
       "title": "Soul of My Savior",
+      "lyrics": "Soul of my Savior, sanctify my breast,\nbody of Christ, be thou my saving guest;\nblood of my Savior, bathe me in thy tide,\nwash me with water flowing from thy side.\n\nStrength and protection may thy passion be,\nO blessed Jesus, hear and answer me;\ndeep in thy wounds, Lord, hide and shelter me,\nso shall I never, never part from thee.\n\nGuard and defend me from the foe malign,\nin death's dread moments make me only thine;\ncall me and bid me come to thee on high,\nwhere I may praise thee with thy saints for aye.",
       "seasons": [
         "lent",
         "all"
       ],
-      "lyrics": "Soul of my Savior, sanctify my breast,\nbody of Christ, be thou my saving guest;\nblood of my Savior, bathe me in thy tide,\nwash me with water flowing from thy side.\n\nStrength and protection may thy passion be,\nO blessed Jesus, hear and answer me;\ndeep in thy wounds, Lord, hide and shelter me,\nso shall I never, never part from thee.\n\nGuard and defend me from the foe malign,\nin death's dread moments make me only thine;\ncall me and bid me come to thee on high,\nwhere I may praise thee with thy saints for aye.",
       "gospel_moods": [
         "solemn",
         "mercy",
@@ -373,26 +373,26 @@
     {
       "id": "be_not_afraid",
       "title": "Be Not Afraid",
-      "language": "English",
+      "lyrics": "Verse 1\nYou shall cross the barrenn desert\nBut you shall not die of thirst\nYou shall wander far in safety\nThough you do not know the way\nYou shall speak your words to foreign men\nAnd they will understand\nYou shall see the face of God and live\n\nVerse 2\nBe not afraid\nI go before you always\nCome, follow me and I will give you rest\n\nVerse 3\nIf you pass through raging waters in the sea\nYou shall not drown\nIf you walk amid the burning flames\nYou shall not be harmed\nIf you stand before the power of hell\nAnd death is at your side\nKnow that I am with you through it all\n\nVerse 4\nBe not afraid\nI go before you always\nCome, follow me and I will give you rest\n\nVerse 5\nAnd blessed are your poor\nFor the kingdom shall be theirs\nBlest are you that weep and mourn\nFor one day you shall laugh\nAnd if wicked men insult and hate you\nAll because of me\nBlessed, blessed are you\n\nVerse 6\nBe not afraid\nI go before you always\nCome, follow me and I will give you rest",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nYou shall cross the barrenn desert\nBut you shall not die of thirst\nYou shall wander far in safety\nThough you do not know the way\nYou shall speak your words to foreign men\nAnd they will understand\nYou shall see the face of God and live\n\nVerse 2\nBe not afraid\nI go before you always\nCome, follow me and I will give you rest\n\nVerse 3\nIf you pass through raging waters in the sea\nYou shall not drown\nIf you walk amid the burning flames\nYou shall not be harmed\nIf you stand before the power of hell\nAnd death is at your side\nKnow that I am with you through it all\n\nVerse 4\nBe not afraid\nI go before you always\nCome, follow me and I will give you rest\n\nVerse 5\nAnd blessed are your poor\nFor the kingdom shall be theirs\nBlest are you that weep and mourn\nFor one day you shall laugh\nAnd if wicked men insult and hate you\nAll because of me\nBlessed, blessed are you\n\nVerse 6\nBe not afraid\nI go before you always\nCome, follow me and I will give you rest",
+      "language": "English",
       "gospel_moods": [
         "mercy"
-      ],
-      "source": "lyrics_dashboard"
+      ]
     },
     {
       "id": "iesu_panis_vitae",
       "title": "Iesu Panis Vitae",
       "author": "Bukas Palad Ministry",
-      "language": "Mix",
+      "lyrics": "Chorus\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 1\nMula sa lupa, sumibol kang masigla,\nmatapos kang yurakan ng mga masasama.\nSumilang ang liwanag ng mga nawawala,\nTinapay ng Buhay, Pagkain ng dukha.\n\nChorus 2\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 2\nJesus, Food divine, be our strength each day,\nso we don’t tire as we witness to your love and care\nto those in greater need, both near and far away.\nMay we lead them back to you, all those who’ve gone astray.\n\nChorus 3\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 3\nEn la vida, Jesus, sea nuestro Consuelo.\nSea nuestro Amigo y Companero.\nSiempre podamos responder a su Llamada.\nSiempre dispuesto a hacer tu Voluntad.\n\nChorus 4\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Chorus\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 1\nMula sa lupa, sumibol kang masigla,\nmatapos kang yurakan ng mga masasama.\nSumilang ang liwanag ng mga nawawala,\nTinapay ng Buhay, Pagkain ng dukha.\n\nChorus 2\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 2\nJesus, Food divine, be our strength each day,\nso we don’t tire as we witness to your love and care\nto those in greater need, both near and far away.\nMay we lead them back to you, all those who’ve gone astray.\n\nChorus 3\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.\n\nVerse 3\nEn la vida, Jesus, sea nuestro Consuelo.\nSea nuestro Amigo y Companero.\nSiempre podamos responder a su Llamada.\nSiempre dispuesto a hacer tu Voluntad.\n\nChorus 4\nIesu, Panis Vitae, Donum Patris.\nIesu, Fons Vitae, Fons Vitae Aquae.\nCibus et potus noster,\nCibus et potus noster\nin itinere, in itinere ad domum Dei.",
-      "source": "lyrics_dashboard",
+      "language": "Mix",
       "gospel_moods": [
         "reverent"
       ]
@@ -401,12 +401,12 @@
       "id": "manalig_ka",
       "title": "Manalig Ka",
       "author": "Tinig San Jose",
-      "language": "Tagalog",
+      "lyrics": "Verse 1\nIluom lahat ng takot sa iyong damdamin\nAng pangalan n'ya lagi ang tawagin\nAt siya'y nakikinig\nSa bawat hinaing\n\nVerse 2\nMagmasid\nAt mamulat sa kanyang kapangyarihan\nNabatid mo ba na siya'y naglalaan\nPatuloy na naghahatid ng tunay na kalayaan\n\nChorus\nManalig ka\nTuyuin ang luha sa mga mata\nHindi siya panaginip\nHindi siya isang pangarap\nSiya ay buhay manalig ka\n\nVerse 4\nAng ngayon tila walang mararating na bukas\nNgunit kung siya ang ating hayaang maglandas\nPag-asa ay muling mabibigkas\n\nChorus\nManalig ka\nTuyuin ang luha sa mga mata\nHindi siya panaginip\nHindi siya isang pangarap\nSiya ay buhay manalig ka\n\nVerse 6\nManalig ka\nTuyuin ang luha sa mga mata\nHindi siya natutulog\nHindi nakakalimot\nKay Hesus manalig ka\nKay Hesus manalig ka",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nIluom lahat ng takot sa iyong damdamin\nAng pangalan n'ya lagi ang tawagin\nAt siya'y nakikinig\nSa bawat hinaing\n\nVerse 2\nMagmasid\nAt mamulat sa kanyang kapangyarihan\nNabatid mo ba na siya'y naglalaan\nPatuloy na naghahatid ng tunay na kalayaan\n\nChorus\nManalig ka\nTuyuin ang luha sa mga mata\nHindi siya panaginip\nHindi siya isang pangarap\nSiya ay buhay manalig ka\n\nVerse 4\nAng ngayon tila walang mararating na bukas\nNgunit kung siya ang ating hayaang maglandas\nPag-asa ay muling mabibigkas\n\nChorus\nManalig ka\nTuyuin ang luha sa mga mata\nHindi siya panaginip\nHindi siya isang pangarap\nSiya ay buhay manalig ka\n\nVerse 6\nManalig ka\nTuyuin ang luha sa mga mata\nHindi siya natutulog\nHindi nakakalimot\nKay Hesus manalig ka\nKay Hesus manalig ka",
-      "source": "lyrics_dashboard",
+      "language": "Tagalog",
       "gospel_moods": [
         "reverent"
       ]
@@ -415,12 +415,12 @@
       "id": "you_are_mine",
       "title": "You are Mine",
       "author": "David Haas",
-      "language": "English",
+      "lyrics": "Verse 1\n[Verse 1]\nI will come to you in the silence\nI will lift you from all your fear\nYou will hear My voice\nI claim you as My choice\nBe still, and know I am near\n\nVerse 2\n[Verse 2]\nI am hope for all who are hopeless\nI am eyes for all who long to see\nIn the shadows of the night\nI will be your light\nCome and rest in Me\n\nVerse 3\n[Chorus]\nDo not be afraid, I am with you\nI have called you each by name\nCome and follow Me\nI will bring you home\nI love you and you are mine\n\nVerse 4\n[Verse 3]\nI am strength for all the despairing\nHealing for the ones who dwell in shame\nAll the blind will see, the lame will all run free\nAnd all will know My name\n\nVerse 5\n[Chorus]\nDo not be afraid, I am with you\nI have called you each by name\nCome and follow Me\nI will bring you home\nI love you and you are mine\n\nVerse 5\n[Verse 4]\nI am the Word that leads all to freedom\nI am the peace the world cannot give\nI will call your name, embracing all your pain\nStand up, now, walk, and live\n\nVerse 6\n[Chorus]\nDo not be afraid, I am with you\nI have called you each by name\nCome and follow Me\nI will bring you home\nI love you and you are mine",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\n[Verse 1]\nI will come to you in the silence\nI will lift you from all your fear\nYou will hear My voice\nI claim you as My choice\nBe still, and know I am near\n\nVerse 2\n[Verse 2]\nI am hope for all who are hopeless\nI am eyes for all who long to see\nIn the shadows of the night\nI will be your light\nCome and rest in Me\n\nVerse 3\n[Chorus]\nDo not be afraid, I am with you\nI have called you each by name\nCome and follow Me\nI will bring you home\nI love you and you are mine\n\nVerse 4\n[Verse 3]\nI am strength for all the despairing\nHealing for the ones who dwell in shame\nAll the blind will see, the lame will all run free\nAnd all will know My name\n\nVerse 5\n[Chorus]\nDo not be afraid, I am with you\nI have called you each by name\nCome and follow Me\nI will bring you home\nI love you and you are mine\n\nVerse 5\n[Verse 4]\nI am the Word that leads all to freedom\nI am the peace the world cannot give\nI will call your name, embracing all your pain\nStand up, now, walk, and live\n\nVerse 6\n[Chorus]\nDo not be afraid, I am with you\nI have called you each by name\nCome and follow Me\nI will bring you home\nI love you and you are mine",
-      "source": "lyrics_dashboard",
+      "language": "English",
       "gospel_moods": [
         "mercy",
         "journey"
@@ -430,23 +430,23 @@
       "id": "isang_bansa",
       "title": "Isang Bansa",
       "author": "",
-      "language": "Tagalog",
+      "lyrics": "Response\nOh kay ganda ng ating buhay\nNapupuspos ng pagpapala\nNg sakramentong mahiwaga\nKaloob ni Hesus sa’ting Gabay\n\nVerse 1\nOh kay tamis ng pagsasama\nNagmumula sa pagkakaisa\nBumubukal sa pagsasalo\nSa iisang hapag ay dumalo\n\nResponse 2\nPurihin si Hesus sa sakramento\nPurihin ng lahat ng tao\nPurihin siya ng Pilipino\nSa pagkakaisa’y lingapin mo",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Response\nOh kay ganda ng ating buhay\nNapupuspos ng pagpapala\nNg sakramentong mahiwaga\nKaloob ni Hesus sa’ting Gabay\n\nVerse 1\nOh kay tamis ng pagsasama\nNagmumula sa pagkakaisa\nBumubukal sa pagsasalo\nSa iisang hapag ay dumalo\n\nResponse 2\nPurihin si Hesus sa sakramento\nPurihin ng lahat ng tao\nPurihin siya ng Pilipino\nSa pagkakaisa’y lingapin mo",
-      "source": "lyrics_dashboard"
+      "language": "Tagalog"
     },
     {
       "id": "anima_christi",
       "title": "Anima Christi",
       "author": "",
-      "language": "English",
+      "lyrics": "Verse 1\n[Verse 1]\nSoul of Christ, sanctify me\nBody of Christ, save me\nWater from the side of Christ, wash me\nPassion of Christ, give me strength\n\nChorus\n[Pre-Chorus]\nHear me Jesus, hide me in Thy wounds\nThat I may never leave Thy side\n\nChorus 2\n[Chorus]\nFrom all the evil that surrounds me, defend me\nAnd when the call of death arrives, bid me come to Thee\nThat I may praise Thee with Thy saints forever\n\nChorus 3\n[Pre-Chorus]\nHear me Jesus, hide me in Thy wounds\nThat I may never lеave Thy side\n\nChorus 4\n[Chorus]\nFrom all the еvil that surrounds me, defend me\nAnd when the call of death arrives, bid me come to Thee\nThat I may praise Thee with Thy saints forever",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\n[Verse 1]\nSoul of Christ, sanctify me\nBody of Christ, save me\nWater from the side of Christ, wash me\nPassion of Christ, give me strength\n\nChorus\n[Pre-Chorus]\nHear me Jesus, hide me in Thy wounds\nThat I may never leave Thy side\n\nChorus 2\n[Chorus]\nFrom all the evil that surrounds me, defend me\nAnd when the call of death arrives, bid me come to Thee\nThat I may praise Thee with Thy saints forever\n\nChorus 3\n[Pre-Chorus]\nHear me Jesus, hide me in Thy wounds\nThat I may never lеave Thy side\n\nChorus 4\n[Chorus]\nFrom all the еvil that surrounds me, defend me\nAnd when the call of death arrives, bid me come to Thee\nThat I may praise Thee with Thy saints forever",
-      "source": "lyrics_dashboard",
+      "language": "English",
       "gospel_moods": [
         "solemn",
         "reverent"
@@ -456,12 +456,12 @@
       "id": "make_me_a_channel_of_your_peace",
       "title": "Make Me a Channel of Your PEace",
       "author": "",
-      "language": "English",
+      "lyrics": "Verse 1\nMake me a channel of your peace.\nWhere there is hatred let me bring your love.\nWhere there is injury, your pardon, Lord\nAnd where there's doubt, true faith in you.\n\nVerse 2\nMake me a channel of your peace\nWhere there's despair in life, let me bring hope\nWhere there is darkness, only light\nAnd where there's sadness, ever joy.\n\nVerse 3\nOh, Master grant that I may never seek\nSo much to be consoled as to console\nTo be understood as to understand\nTo be loved as to love with all my soul.\n\nVerse 4\nMake me a channel of your peace\nIt is in pardoning that we are pardoned\nIn giving to all men that we receive\nAnd in dying that we're born to eternal life.\n\nVerse 5\nOh, Master grant that I may never seek\nSo much to be consoled as to console\nTo be understood as to understand\nTo be loved as to love with all my soul.\n\nVerse 6\nMake me a channel of your peace\nIt is in pardoning that we are pardoned\nIn giving to all men that we receive\nAnd in dying that we're born to eternal life.",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nMake me a channel of your peace.\nWhere there is hatred let me bring your love.\nWhere there is injury, your pardon, Lord\nAnd where there's doubt, true faith in you.\n\nVerse 2\nMake me a channel of your peace\nWhere there's despair in life, let me bring hope\nWhere there is darkness, only light\nAnd where there's sadness, ever joy.\n\nVerse 3\nOh, Master grant that I may never seek\nSo much to be consoled as to console\nTo be understood as to understand\nTo be loved as to love with all my soul.\n\nVerse 4\nMake me a channel of your peace\nIt is in pardoning that we are pardoned\nIn giving to all men that we receive\nAnd in dying that we're born to eternal life.\n\nVerse 5\nOh, Master grant that I may never seek\nSo much to be consoled as to console\nTo be understood as to understand\nTo be loved as to love with all my soul.\n\nVerse 6\nMake me a channel of your peace\nIt is in pardoning that we are pardoned\nIn giving to all men that we receive\nAnd in dying that we're born to eternal life.",
-      "source": "lyrics_dashboard",
+      "language": "English",
       "gospel_moods": [
         "reverent"
       ]
@@ -470,12 +470,12 @@
       "id": "pagsibol",
       "title": "Pagsibol",
       "author": "",
-      "language": "Tagalog",
+      "lyrics": "Verse 1\nBawat huni ng ibon sa pag-ihip ng amihan\nWangis Mo'y aking natatanaw\nPagdampi ng umaga sa nanlamig kong kalamnan\nInit Mo'y pangarap kong hagkan\n\nVerse 2\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nVerse 3\nNangungulilang malay binulungan ng tinig Mong\nNagdulot ng katiwasayan\nPaghahanap katwiran, nilusaw Mo sa simbuyong\nKarilagan ng pagmamahal\n\nChorus\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nChorus 2\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nVerse 4\nDalangin pa sana'y mapagtanto kong tunay\nKaganapan ng buhay ko'y Ikaw lamang",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nBawat huni ng ibon sa pag-ihip ng amihan\nWangis Mo'y aking natatanaw\nPagdampi ng umaga sa nanlamig kong kalamnan\nInit Mo'y pangarap kong hagkan\n\nVerse 2\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nVerse 3\nNangungulilang malay binulungan ng tinig Mong\nNagdulot ng katiwasayan\nPaghahanap katwiran, nilusaw Mo sa simbuyong\nKarilagan ng pagmamahal\n\nChorus\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nChorus 2\nPanginoon, Ikaw ang kasibulan ng buhay\nPuso'y dalisay kailan pa man\nIpahintulot Mong ako'y mapahandusay\nSa sumasaibayong kaginhawahan\n\nVerse 4\nDalangin pa sana'y mapagtanto kong tunay\nKaganapan ng buhay ko'y Ikaw lamang",
-      "source": "lyrics_dashboard",
+      "language": "Tagalog",
       "gospel_moods": [
         "triumphant",
         "reverent"
@@ -486,10 +486,10 @@
     {
       "id": "we_are_called",
       "title": "We Are Called",
+      "lyrics": "We are called to act with justice,\nwe are called to love tenderly;\nwe are called to serve one another,\nto walk humbly with God.\n\nCome! live in the light!\nShine with the joy and the love of the Lord!\n\nGod of daybreak, God of shadow,\ncome into our restless lives;\nlift from us the fear of shadows,\nthat we may arise with light.\n\nWe are called to act with justice...\n\nCome! live in the light!...\n\nGod of newness, God of freshness,\ncome into our morning song:\ngive to us a new beginning,\nsend us forth with hearts made strong.\n\nWe are called to act with justice...\n\nCome! live in the light!...",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "We are called to act with justice,\nwe are called to love tenderly;\nwe are called to serve one another,\nto walk humbly with God.\n\nCome! live in the light!\nShine with the joy and the love of the Lord!\n\nGod of daybreak, God of shadow,\ncome into our restless lives;\nlift from us the fear of shadows,\nthat we may arise with light.\n\nWe are called to act with justice...\n\nCome! live in the light!...\n\nGod of newness, God of freshness,\ncome into our morning song:\ngive to us a new beginning,\nsend us forth with hearts made strong.\n\nWe are called to act with justice...\n\nCome! live in the light!...",
       "gospel_moods": [
         "mercy"
       ]
@@ -497,10 +497,10 @@
     {
       "id": "go_make",
       "title": "Go Make a Difference",
+      "lyrics": "Go make a difference;\nwe can make a difference\nin the name of the Lord.\n\nWe are sent in the power of love,\nbearing peace like a pure, holy dove\nto every nation, every land.\nGo make a difference.\n\nGo make a difference;\nwe can make a difference\nin the name of the Lord.\n\nWe are the salt of the earth,\ncalled to give the world a new taste:\nlove, justice, mercy, and praise.\nGo make a difference.\n\nGo make a difference;\nwe can make a difference\nin the name of the Lord.\n\nWe are a light on the hill,\nmay our good deeds shine, Lord, until\nall know your kingdom is near.\nGo make a difference.",
       "seasons": [
         "all"
       ],
-      "lyrics": "Go make a difference;\nwe can make a difference\nin the name of the Lord.\n\nWe are sent in the power of love,\nbearing peace like a pure, holy dove\nto every nation, every land.\nGo make a difference.\n\nGo make a difference;\nwe can make a difference\nin the name of the Lord.\n\nWe are the salt of the earth,\ncalled to give the world a new taste:\nlove, justice, mercy, and praise.\nGo make a difference.\n\nGo make a difference;\nwe can make a difference\nin the name of the Lord.\n\nWe are a light on the hill,\nmay our good deeds shine, Lord, until\nall know your kingdom is near.\nGo make a difference.",
       "gospel_moods": [
         "mercy",
         "reverent"
@@ -509,27 +509,27 @@
     {
       "id": "city_of_god",
       "title": "City of God",
+      "author": "",
+      "lyrics": "Verse 1\nAwake from your slumber\nArise from your sleep\nA new day is dawning\nFor all those who weep\n\nVerse 2\nThe people in darkness\nHave seen a great light\nThe Lord of our longing\nHas conquered the night\n\nChorus\nLet us build the city of God\nMay our tears be turned into dancing\nFor the Lord, our light and our love\nHas turned the night into day\n\nVerse 3\nWe are sons of the morning\nWe are daughters of day\nThe One who has loved us\nHas brightened our way\n\nChorus 2\nLet us build the city of God\nMay our tears be turned into dancing\nFor the Lord, our light and our love\nHas turned the night into day\n\nVerse 4\nGod is light\nIn Him there is no darkness\nLet us walk in His light\nHis children one and all\n\nVerse 5\nOh, comfort my people\nMake gentle your words\nProclaim to my city\nThe day of her birth\n\nChorus 3\nLet us build the city of God\nMay our tears be turned into dancing\nFor the Lord, our light and our love\nHas turned the night into day",
+      "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "Verse 1\nAwake from your slumber\nArise from your sleep\nA new day is dawning\nFor all those who weep\n\nVerse 2\nThe people in darkness\nHave seen a great light\nThe Lord of our longing\nHas conquered the night\n\nChorus\nLet us build the city of God\nMay our tears be turned into dancing\nFor the Lord, our light and our love\nHas turned the night into day\n\nVerse 3\nWe are sons of the morning\nWe are daughters of day\nThe One who has loved us\nHas brightened our way\n\nChorus 2\nLet us build the city of God\nMay our tears be turned into dancing\nFor the Lord, our light and our love\nHas turned the night into day\n\nVerse 4\nGod is light\nIn Him there is no darkness\nLet us walk in His light\nHis children one and all\n\nVerse 5\nOh, comfort my people\nMake gentle your words\nProclaim to my city\nThe day of her birth\n\nChorus 3\nLet us build the city of God\nMay our tears be turned into dancing\nFor the Lord, our light and our love\nHas turned the night into day",
-      "author": "",
       "language": "English",
       "gospel_moods": [
         "mercy",
         "journey",
         "reverent"
-      ],
-      "source": "lyrics_dashboard"
+      ]
     },
     {
       "id": "alleluia_sing",
       "title": "Alleluia! Sing to Jesus",
+      "lyrics": "Alleluia! Sing to Jesus!\nHis the scepter, his the throne;\nalleluia! His the triumph,\nhis the victory alone.\n\nHark! the songs of peaceful Zion\nthunder like a mighty flood;\nJesus out of every nation\nhath redeemed us by his blood.\n\nAlleluia! Not as orphans\nare we left in sorrow sore;\none with love exceeding father,\none with love exceeding mother,\nhe hath gone before.\n\nAlleluia! Bread of angels,\nthou on earth our food, our stay;\nalleluia! here the sinful\nto thy presence sing alway.\n\nAlleluia! King eternal,\nthou the Lord whom we adore;\nalleluia! Son and Father,\nHoly Spirit, one forevermore,\nwe would bow before.\n\nAlleluia! Sing to Jesus!\nHis the scepter, his the throne;\nalleluia! His the triumph,\nhis the victory alone.",
       "seasons": [
         "easter",
         "ordinary_time"
       ],
-      "lyrics": "Alleluia! Sing to Jesus!\nHis the scepter, his the throne;\nalleluia! His the triumph,\nhis the victory alone.\n\nHark! the songs of peaceful Zion\nthunder like a mighty flood;\nJesus out of every nation\nhath redeemed us by his blood.\n\nAlleluia! Not as orphans\nare we left in sorrow sore;\none with love exceeding father,\none with love exceeding mother,\nhe hath gone before.\n\nAlleluia! Bread of angels,\nthou on earth our food, our stay;\nalleluia! here the sinful\nto thy presence sing alway.\n\nAlleluia! King eternal,\nthou the Lord whom we adore;\nalleluia! Son and Father,\nHoly Spirit, one forevermore,\nwe would bow before.\n\nAlleluia! Sing to Jesus!\nHis the scepter, his the throne;\nalleluia! His the triumph,\nhis the victory alone.",
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -539,11 +539,11 @@
     {
       "id": "lead_me_lord",
       "title": "Lead Me, Lord",
+      "lyrics": "Lead me, Lord, lead me in thy righteousness,\nmake thy way plain before my face.\n\nFor it is thou, Lord, thou, Lord only,\nthat makest me dwell in safety.\n\nGuide me, Lord, guide me when I am weary,\nbe my strength when shadows fall.\n\nTurn my heart to thy holy word,\nbe my keeper, be my Lord.\n\nLead me, Lord, lead me in thy righteousness,\nmake thy way plain before my face.\n\nIn thy light we see light;\nin thy truth we find our way.\nBe our refuge and our fortress,\nbe our strength from day to day.\n\nLead me, Lord, lead me in thy righteousness,\nmake thy way plain before my face.",
       "seasons": [
         "lent",
         "ordinary_time"
       ],
-      "lyrics": "Lead me, Lord, lead me in thy righteousness,\nmake thy way plain before my face.\n\nFor it is thou, Lord, thou, Lord only,\nthat makest me dwell in safety.\n\nGuide me, Lord, guide me when I am weary,\nbe my strength when shadows fall.\n\nTurn my heart to thy holy word,\nbe my keeper, be my Lord.\n\nLead me, Lord, lead me in thy righteousness,\nmake thy way plain before my face.\n\nIn thy light we see light;\nin thy truth we find our way.\nBe our refuge and our fortress,\nbe our strength from day to day.\n\nLead me, Lord, lead me in thy righteousness,\nmake thy way plain before my face.",
       "gospel_moods": [
         "solemn",
         "journey",
@@ -553,10 +553,10 @@
     {
       "id": "to_jesus_christ_king",
       "title": "To Jesus Christ, Our Sovereign King",
+      "lyrics": "To Jesus Christ, our Sovereign King,\nwho is the world's salvation,\nall praise and homage do we bring,\nand thanks and adoration.\nChrist Jesus, Victor!\nChrist Jesus, Ruler!\nChrist Jesus, Lord and Redeemer!\n\nYour reign extend, O King benign,\nto every land and nation,\nfor in your kingdom, Lord divine,\nalone we find salvation.\nChrist Jesus, Victor!\nChrist Jesus, Ruler!\nChrist Jesus, Lord and Redeemer!\n\nWhen this our life of trials is past,\nbring us to your kingdom,\nwhere glory, joy and peace will last,\nfor all who know your freedom.\nChrist Jesus, Victor!\nChrist Jesus, Ruler!\nChrist Jesus, Lord and Redeemer!",
       "seasons": [
         "all"
       ],
-      "lyrics": "To Jesus Christ, our Sovereign King,\nwho is the world's salvation,\nall praise and homage do we bring,\nand thanks and adoration.\nChrist Jesus, Victor!\nChrist Jesus, Ruler!\nChrist Jesus, Lord and Redeemer!\n\nYour reign extend, O King benign,\nto every land and nation,\nfor in your kingdom, Lord divine,\nalone we find salvation.\nChrist Jesus, Victor!\nChrist Jesus, Ruler!\nChrist Jesus, Lord and Redeemer!\n\nWhen this our life of trials is past,\nbring us to your kingdom,\nwhere glory, joy and peace will last,\nfor all who know your freedom.\nChrist Jesus, Victor!\nChrist Jesus, Ruler!\nChrist Jesus, Lord and Redeemer!",
       "gospel_moods": [
         "triumphant",
         "reverent"
@@ -565,11 +565,11 @@
     {
       "id": "god_of_our_fathers",
       "title": "God of Our Fathers",
+      "lyrics": "God of our fathers, whose almighty hand\nleads forth in beauty all the starry band\nof shining worlds in splendor through the skies:\nour grateful songs before your throne arise.\n\nYour love divine has led us in the past;\nin this free land by you our lot is cast;\nyou are our ruler, guardian, guide, and stay;\nyour word our law, your paths our chosen way.\n\nRefresh your people on their toilsome way,\nlead us from night to never-ending day;\nfill all our lives with heaven-born love and grace\nuntil at last we meet before your face.",
       "seasons": [
         "ordinary_time",
         "all"
       ],
-      "lyrics": "God of our fathers, whose almighty hand\nleads forth in beauty all the starry band\nof shining worlds in splendor through the skies:\nour grateful songs before your throne arise.\n\nYour love divine has led us in the past;\nin this free land by you our lot is cast;\nyou are our ruler, guardian, guide, and stay;\nyour word our law, your paths our chosen way.\n\nRefresh your people on their toilsome way,\nlead us from night to never-ending day;\nfill all our lives with heaven-born love and grace\nuntil at last we meet before your face.",
       "gospel_moods": [
         "reverent"
       ]
@@ -577,10 +577,10 @@
     {
       "id": "onward_christian",
       "title": "Onward, Christian Soldiers",
+      "lyrics": "Onward, Christian soldiers,\nmarching as to war,\nwith the cross of Jesus\ngoing on before.\nChrist, the royal Master,\nleads against the foe;\nforward into battle,\nsee his banners go!\n\nOnward, Christian soldiers,\nmarching as to war,\nwith the cross of Jesus\ngoing on before.\n\nLike a mighty army\nmoves the Church of God;\nbrothers, we are treading\nwhere the saints have trod.\nWe are not divided,\nall one body we,\none in hope and doctrine,\none in charity.\n\nOnward, Christian soldiers,\nmarching as to war,\nwith the cross of Jesus\ngoing on before.",
       "seasons": [
         "ordinary_time"
       ],
-      "lyrics": "Onward, Christian soldiers,\nmarching as to war,\nwith the cross of Jesus\ngoing on before.\nChrist, the royal Master,\nleads against the foe;\nforward into battle,\nsee his banners go!\n\nOnward, Christian soldiers,\nmarching as to war,\nwith the cross of Jesus\ngoing on before.\n\nLike a mighty army\nmoves the Church of God;\nbrothers, we are treading\nwhere the saints have trod.\nWe are not divided,\nall one body we,\none in hope and doctrine,\none in charity.\n\nOnward, Christian soldiers,\nmarching as to war,\nwith the cross of Jesus\ngoing on before.",
       "gospel_moods": [
         "solemn"
       ]
@@ -588,12 +588,12 @@
     {
       "id": "shine_jesus_shine",
       "title": "Shine Jesus Shine",
-      "language": "English",
+      "lyrics": "Verse 1\nLord, the light of Your love is shining\nIn the midst of the darkness, shining\nJesus, light of the world, shine upon us\nSet us free by the truth You now bring us\nShine on me, shine on me\n\nVerse 2\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light\n\nVerse 3\nLord, I come to Your awesome presence\nFrom the shadows into Your radiance\nBy the blood, I may enter Your brightness\nSearch me, try me, consume all my darkness\nShine on me, shine on me\n\nVerse 4\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light\n\nVerse 3 copy\nAs we gaze on Your kingly brightness\nSo our faces display Your likeness\nEver changing from glory to glory\nMirrored here, may our lives tell Your story\nShine on me, shine on me\n\nVerse 5\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let, let there be light\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts, set them on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light!\n\nVerse 6\nLord, let there be light!\nLet there be light!",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nLord, the light of Your love is shining\nIn the midst of the darkness, shining\nJesus, light of the world, shine upon us\nSet us free by the truth You now bring us\nShine on me, shine on me\n\nVerse 2\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light\n\nVerse 3\nLord, I come to Your awesome presence\nFrom the shadows into Your radiance\nBy the blood, I may enter Your brightness\nSearch me, try me, consume all my darkness\nShine on me, shine on me\n\nVerse 4\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light\n\nVerse 3 copy\nAs we gaze on Your kingly brightness\nSo our faces display Your likeness\nEver changing from glory to glory\nMirrored here, may our lives tell Your story\nShine on me, shine on me\n\nVerse 5\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let, let there be light\nShine, Jesus, shine, fill this land with the Father's glory\nBlaze, Spirit, blaze, set our hearts, set them on fire\nFlow, river, flow, flood the nations with grace and mercy\nSend forth Your word, Lord, and let there be light!\n\nVerse 6\nLord, let there be light!\nLet there be light!",
-      "source": "lyrics_dashboard",
+      "language": "English",
       "gospel_moods": [
         "triumphant",
         "mercy"
@@ -603,12 +603,12 @@
       "id": "halina_t_humayag",
       "title": "Halina't Humayag",
       "author": "",
-      "language": "Tagalog",
+      "lyrics": "Verse 1\nHumayo't ihayag (Purihin Siya!)\nAt ating ibunyag (Awitan Siya!)\nPagliligtas ng Diyos na sa krus ni Hesus\nAng Siyang sa mundo'y tumubos\n\nVerse 2\nLangit at lupa, Siya'y papurihan\nAraw at tala, Siya'y parangalan\nAting 'pagdiwang pag-ibig ng Diyos sa tanan\nAleluya\n\nVerse 3\nHalina't sumayaw (Buong bayan!)\nLukso sabay sigaw (Sanlibutan!)\nAng ngalan Niyang angkin singningning ng bituin\nLiwanag ng Diyos sumaatin (KORO)\n\nVerse 2\nLangit at lupa, Siya'y papurihan\nAraw at tala, Siya'y parangalan\nAting 'pagdiwang pag-ibig ng Diyos sa tanan\nAleluya\n\nVerse 4\nAt isigaw sa lahat\nKalinga Niya'y wagas\nKayong dukha't salat\nPag-ibig Niya sa inyo at tapat",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nHumayo't ihayag (Purihin Siya!)\nAt ating ibunyag (Awitan Siya!)\nPagliligtas ng Diyos na sa krus ni Hesus\nAng Siyang sa mundo'y tumubos\n\nVerse 2\nLangit at lupa, Siya'y papurihan\nAraw at tala, Siya'y parangalan\nAting 'pagdiwang pag-ibig ng Diyos sa tanan\nAleluya\n\nVerse 3\nHalina't sumayaw (Buong bayan!)\nLukso sabay sigaw (Sanlibutan!)\nAng ngalan Niyang angkin singningning ng bituin\nLiwanag ng Diyos sumaatin (KORO)\n\nVerse 2\nLangit at lupa, Siya'y papurihan\nAraw at tala, Siya'y parangalan\nAting 'pagdiwang pag-ibig ng Diyos sa tanan\nAleluya\n\nVerse 4\nAt isigaw sa lahat\nKalinga Niya'y wagas\nKayong dukha't salat\nPag-ibig Niya sa inyo at tapat",
-      "source": "lyrics_dashboard",
+      "language": "Tagalog",
       "gospel_moods": [
         "reverent"
       ]
@@ -617,23 +617,23 @@
       "id": "covenant_journey",
       "title": "Covenant Journey",
       "author": "",
-      "language": "English",
+      "lyrics": "Verse 1\nLet me walk with you, as I journey to this land\nSearching for a meaning as each moment passes by\nLet the hand of time be like footprints in the sand\nAs I carry you from the dawn to the setting sun.\n\nChorus\nWith just one hand we can travel far together\nOne’s life sharing in love\nI will hold you forever\nYes, I love you with all my heart.\n\nVerse 2\nThere’ll be many crossroads as we walk  along the way\nThere’ll be many questions as we live life day by day\nThis will never matter if the Lord is always there\nHe will surely find the answers just because he cares",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nLet me walk with you, as I journey to this land\nSearching for a meaning as each moment passes by\nLet the hand of time be like footprints in the sand\nAs I carry you from the dawn to the setting sun.\n\nChorus\nWith just one hand we can travel far together\nOne’s life sharing in love\nI will hold you forever\nYes, I love you with all my heart.\n\nVerse 2\nThere’ll be many crossroads as we walk  along the way\nThere’ll be many questions as we live life day by day\nThis will never matter if the Lord is always there\nHe will surely find the answers just because he cares",
-      "source": "lyrics_dashboard"
+      "language": "English"
     },
     {
       "id": "all_the_ends_of_the_world",
       "title": "All The Ends Of The World",
       "author": "",
-      "language": "English",
+      "lyrics": "Verse 1\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nBreak into song at the deeds of the Lord,\nthe wonders God has done in every age.\n\nVerse 2\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nHeaven and earth shall rejoice in your might;\nevery heart, every nation call you Lord.\n\nVerse 3\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nThe Lord has made salvation known,\nfaithful to the promises of old.\nLet the ends of the earth, let the sea\nand all it holds make music before our God!",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nBreak into song at the deeds of the Lord,\nthe wonders God has done in every age.\n\nVerse 2\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nHeaven and earth shall rejoice in your might;\nevery heart, every nation call you Lord.\n\nVerse 3\nAll the ends of the earth, all you creatures of the sea,\nlift up your eyes to the wonders of the Lord.\nFor the Lord of the earth, the Master of the sea,\nhas come with justice for the world.\nThe Lord has made salvation known,\nfaithful to the promises of old.\nLet the ends of the earth, let the sea\nand all it holds make music before our God!",
-      "source": "lyrics_dashboard",
+      "language": "English",
       "gospel_moods": [
         "triumphant",
         "reverent"
@@ -644,11 +644,11 @@
     {
       "id": "med_pananaghoy",
       "title": "Pananaghoy (Meditation)",
-      "language": "Tagalog",
+      "lyrics": "(Add verses when available — optional post-Communion meditation.)",
       "seasons": [
         "all"
       ],
-      "lyrics": "(Add verses when available — optional post-Communion meditation.)",
+      "language": "Tagalog",
       "gospel_moods": [
         "reverent"
       ]

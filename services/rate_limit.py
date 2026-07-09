@@ -92,6 +92,10 @@ _TIERS: Dict[str, Tuple[int, int]] = {
         _int_env("RATE_LIMIT_PRACTICE_CREATE_MAX", 12),
         _int_env("RATE_LIMIT_PRACTICE_CREATE_WINDOW", 3600),
     ),
+    "catalog_lyrics": (
+        _int_env("CATALOG_LYRIC_FETCH_MAX", 60),
+        _int_env("CATALOG_LYRIC_FETCH_WINDOW", 3600),
+    ),
 }
 
 # Hard ceiling on any single request body, in bytes (default 12 MB).
@@ -100,6 +104,9 @@ MAX_BODY_BYTES = _int_env("MAX_REQUEST_BODY_BYTES", 12 * 1024 * 1024)
 _EXPENSIVE_PREFIXES = (
     "/api/generate",
     "/api/regenerate-pptx",
+    "/api/preview",
+    "/api/ppt-preview/refresh",
+    "/api/design/analyze-template",
     "/generate-image",
     "/api/upload",
     "/api/saved-posters",
@@ -153,9 +160,12 @@ def _client_key(request: Request) -> str:
     if auth.lower().startswith("bearer "):
         token = auth[7:].strip()
         if token:
-            # Cheap, collision-resistant enough for bucketing; no verification
-            # here (the auth guard handles that). Use a short slice of the token.
             return "tok:" + token[-24:]
+
+    if os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_URL"):
+        client = request.client
+        if client and client.host:
+            return "ip:" + client.host
 
     forwarded = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
     if forwarded:

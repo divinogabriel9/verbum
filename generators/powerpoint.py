@@ -4259,16 +4259,7 @@ def generate_mass_ppt(
     hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding, _reference_mass_deck, _lamb_of_god_template, _sign_of_peace_template, _gloria_template, _kyrie_template, _lotw_title_template, _gospel_acclamation_template, _apostles_creed_template, _nicene_creed_template
-    _reference_mass_deck = None
-    _lamb_of_god_template = None
-    _sign_of_peace_template = None
-    _gloria_template = None
-    _kyrie_template = None
-    _lotw_title_template = None
-    _gospel_acclamation_template = None
-    _apostles_creed_template = None
-    _nicene_creed_template = None
+    global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),

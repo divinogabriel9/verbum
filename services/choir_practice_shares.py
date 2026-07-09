@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LOCAL_PATH = _PROJECT_ROOT / "data" / "choir_practice_shares.json"
-_DEFAULT_TTL_DAYS = 7
+_DEFAULT_TTL_DAYS = 5
 _MAX_SONGS = 24
 _MAX_LYRICS_LEN = 12000
 
@@ -69,13 +69,11 @@ def _row_live(row: Optional[dict[str, Any]]) -> bool:
     return exp > _now()
 
 
-def _normalize_pin(pin: Optional[str]) -> Optional[str]:
+def _normalize_pin(pin: Optional[str]) -> str:
     clean = (pin or "").strip()
-    if not clean:
-        return None
     digits = "".join(ch for ch in clean if ch.isdigit())
-    if len(digits) != 4:
-        raise ValueError("PIN must be exactly 4 digits when provided.")
+    if len(digits) != 6:
+        raise ValueError("A 6-digit PIN is required for practice shares.")
     return digits
 
 
@@ -183,9 +181,9 @@ def create_practice_share(
         raise ValueError("At least one song with lyrics is required.")
 
     pin = _normalize_pin(optional_pin)
-    pin_stored = hash_pin(pin) if pin else None
+    pin_stored = hash_pin(pin)
     token = secrets.token_urlsafe(24)
-    expires_at = (_now() + timedelta(days=max(1, min(int(ttl_days), 30)))).isoformat()
+    expires_at = (_now() + timedelta(days=max(1, min(int(ttl_days), 14)))).isoformat()
     payload = {
         "token": token,
         "parish_id": (parish_id or "").strip() or None,

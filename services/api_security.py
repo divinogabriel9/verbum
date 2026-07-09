@@ -152,6 +152,8 @@ PROTECTED_API_PREFIXES: tuple[str, ...] = (
     "/api/lyrics/",
     "/api/submissions/",
     "/api/practice/share",
+    "/api/preview",
+    "/api/ppt-preview/refresh",
     "/api/design/",
     "/generate-image",
 )
@@ -168,8 +170,6 @@ def _is_protected_api(path: str, method: str) -> bool:
             return True
         if path == "/api/community" and auth_active:
             return True
-        if path.startswith("/api/settings/gemini-api-key") and method.upper() == "GET":
-            return False
         return False
     return any(path == prefix or path.startswith(prefix) for prefix in PROTECTED_API_PREFIXES)
 
@@ -303,10 +303,24 @@ def _build_csp() -> str:
             "font-src 'self' https://fonts.gstatic.com data:",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "worker-src 'self' blob:",
             "connect-src " + " ".join(dict.fromkeys(connect)),
             "media-src " + " ".join(dict.fromkeys(media)),
         ]
     )
+
+
+class StaticCacheMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers.setdefault(
+                "Cache-Control",
+                "public, max-age=31536000, immutable",
+            )
+        return response
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -342,6 +356,7 @@ def register_security_middleware(app) -> None:
     # Middleware runs in reverse registration order on the request path.
     # RateLimit (outermost) → UserChurch (verify JWT + load profile) → AuthGuard
     # → SecurityHeaders → route handlers.
+    app.add_middleware(StaticCacheMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(AuthGuardMiddleware)
     app.add_middleware(UserChurchMiddleware)

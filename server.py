@@ -27,6 +27,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, model_validator
+from starlette.concurrency import run_in_threadpool
 
 from services.env_config import load_project_dotenv
 
@@ -99,10 +100,16 @@ from services.practice_access import (
     check_practice_fetch_allowed,
     check_practice_share_create_allowed,
     check_practice_token_allowed,
+    ensure_practice_secret_configured,
     is_unlocked,
     issue_unlock_cookie,
     practice_no_store_headers,
 )
+from services.catalog_rate_limit import check_catalog_lyric_fetch_allowed
+from services.hymn_normalized_store import fetch_lyrics_from_normalized
+from services.lyric_audit import log_lyric_read
+from services.media_ownership import register_owned_files, session_may_access_media
+from services.runtime_config import is_production_runtime
 from services.practice_qr import practice_qr_data_url
 from services.user_church_context import get_church_profile_context
 from services.readings_snapshot import readings_snapshot, warm_readings_for_date
@@ -176,7 +183,33 @@ _MAX_LOGO_BYTES = 2_500_000
 _MAX_ASSET_BYTES = 8_000_000
 _ALLOWED_IMAGE_TYPES = _ALLOWED_LOGO_TYPES
 
-_BUNDLE_NAME = "mass_bundle.zip"
+_BUNDLE_NAME = "mass_bundle.zip"  # legacy fallback only
+
+
+def _bundle_zip_name(export_stem: str) -> str:
+    stem = (export_stem or "mass_bundle").strip() or "mass_bundle"
+    return f"{stem}_bundle.zip"
+
+
+def _collect_generation_owned_paths(result: GenerationResult) -> list[str]:
+    owned: list[str] = []
+    for attr in ("pptx_path", "poster_path", "poster_ppt_path"):
+        p = getattr(result, attr, None)
+        if p and Path(p).is_file():
+            owned.append(Path(p).name)
+    bundle = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
+    if bundle.is_file():
+        owned.append(bundle.name)
+    post_dir = _OUTPUT_DIR / "posters"
+    if post_dir.is_dir() and result.export_stem:
+        for child in post_dir.glob("*.png"):
+            if child.is_file():
+                owned.append(f"posters/{child.name}")
+    if result.export_stem:
+        gospel = _OUTPUT_DIR / f"{result.export_stem}_gospel_moment.png"
+        if gospel.is_file():
+            owned.append(gospel.name)
+    return owned
 
 
 def _resolve_child_file(parent: Path, basename: str) -> Optional[Path]:
@@ -477,9 +510,9 @@ def _latest_pptx_path() -> Optional[Path]:
     return max(cands, key=lambda p: p.stat().st_mtime)
 
 
-def _write_mass_bundle_zip(result: GenerationResult) -> None:
+def _write_mass_bundle_zip(result: GenerationResult) -> Path:
     """Pack generated PPT, posters, stem-based social PNGs, gospel art, and optional extras."""
-    out = _OUTPUT_DIR / _BUNDLE_NAME
+    out = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
     entries: list[tuple[Path, str]] = []
     for attr in ("pptx_path", "poster_path", "poster_ppt_path"):
         p = getattr(result, attr, None)
@@ -509,6 +542,7 @@ def _write_mass_bundle_zip(result: GenerationResult) -> None:
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
         for path, arc in entries:
             zf.write(path, arcname=arc)
+    return out
 
 
 app = FastAPI(title="LiturgyFlow")
@@ -535,8 +569,9 @@ register_security_middleware(app)
 @app.get("/api/files/media/{file_path:path}")
 def api_serve_media_file(
     file_path: str,
-    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> FileResponse:
+    session_may_access_media(file_path, session)
     path = resolve_under_root(_OUTPUT_DIR, file_path)
     return FileResponse(path, media_type=media_type_for(path), filename=path.name)
 
@@ -561,6 +596,12 @@ def api_serve_preview_file(
 
 @app.on_event("startup")
 def _bootstrap_superadmin_roles() -> None:
+    try:
+        ensure_practice_secret_configured()
+    except RuntimeError as exc:
+        if is_production_runtime():
+            raise
+        print(f"[Verbum] Practice secret check skipped: {exc}")
     if supabase_enabled():
         try:
             from services.supabase_client import bootstrap_superadmin_roles_from_env
@@ -965,12 +1006,12 @@ class PracticeShareBody(BaseModel):
     parish_name: str = Field("", max_length=L.CHURCH_NAME)
     celebrant: str = Field("", max_length=L.CELEBRANT_NAME)
     songs: list[PracticeShareSongBody] = Field(default_factory=list, max_length=24)
-    ttl_days: int = Field(7, ge=1, le=30)
-    optional_pin: str = Field("", max_length=8)
+    ttl_days: int = Field(5, ge=1, le=14)
+    optional_pin: str = Field(..., min_length=6, max_length=6)
 
 
 class PracticeUnlockBody(BaseModel):
-    pin: str = Field("", max_length=8)
+    pin: str = Field("", min_length=6, max_length=6)
 
 
 class GenerateImageResponse(BaseModel):
@@ -1259,7 +1300,9 @@ def api_set_community_profile(
 
 
 @app.get("/api/settings/gemini-api-key")
-def api_get_gemini_api_key_status() -> dict[str, Any]:
+def api_get_gemini_api_key_status(
+    _session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
     from services.env_config import gemini_api_key_configured, gemini_api_key_hint
 
     configured = gemini_api_key_configured()
@@ -1583,7 +1626,7 @@ def api_delete_saved_media_video(
 def api_catalog_songs(
     lite: bool = True,
     if_none_match: Optional[str] = Header(None, alias="If-None-Match"),
-    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> Response:
     if lite:
         body, etag = catalog_lite_response()
@@ -1606,8 +1649,16 @@ def api_catalog_songs(
 def api_get_catalog_song(
     section: str,
     hymn_id: str,
-    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> JSONResponse:
+    uid = session.user.user_id if session else None
+    allowed, retry_after = check_catalog_lyric_fetch_allowed(uid, hymn_id)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many hymn lyric requests. Please slow down.",
+            headers={"Retry-After": str(max(1, retry_after))},
+        )
     row = get_hymn(section.strip().lower(), hymn_id)
     resolved_section = section.strip().lower()
     if row:
@@ -1617,6 +1668,13 @@ def api_get_catalog_song(
             resolved_section = by_id_sec
     if not row:
         raise HTTPException(status_code=404, detail="Song not found.")
+    lyrics = fetch_lyrics_from_normalized(hymn_id) or str(row.get("lyrics") or "")
+    log_lyric_read(
+        user_id=uid,
+        hymn_id=hymn_id,
+        section=resolved_section,
+        source="catalog_api",
+    )
     payload = {
         "ok": True,
         "section": resolved_section,
@@ -1625,11 +1683,11 @@ def api_get_catalog_song(
             "title": str(row.get("title") or ""),
             "author": str(row.get("author") or ""),
             "language": str(row.get("language") or "").strip(),
-            "lyrics": str(row.get("lyrics") or ""),
+            "lyrics": lyrics,
             "gospel_moods": gospel_moods_for_song(row),
         },
     }
-    return JSONResponse(payload, headers={"Cache-Control": "private, max-age=300"})
+    return JSONResponse(payload, headers={"Cache-Control": "private, no-store"})
 
 
 @app.patch("/api/catalog/songs/{section}/{hymn_id:path}")
@@ -1637,7 +1695,7 @@ def api_patch_catalog_song(
     section: str,
     hymn_id: str,
     body: CatalogSongPatchBody,
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_superadmin),
 ) -> dict[str, Any]:
     res = update_catalog_song(
         section=section,
@@ -1647,6 +1705,7 @@ def api_patch_catalog_song(
         lyrics=body.lyrics,
         language=body.language,
         gospel_moods=body.gospel_moods,
+        updated_by=session.user.user_id if session else None,
     )
     if not res.get("ok"):
         raise HTTPException(status_code=400, detail=res.get("error") or "Update failed.")
@@ -1657,9 +1716,13 @@ def api_patch_catalog_song(
 def api_delete_catalog_song(
     section: str,
     hymn_id: str,
-    _session: Optional[AuthSession] = Depends(require_superadmin),
+    session: Optional[AuthSession] = Depends(require_superadmin),
 ) -> dict[str, Any]:
-    res = delete_catalog_song(section=section, hymn_id=hymn_id)
+    res = delete_catalog_song(
+        section=section,
+        hymn_id=hymn_id,
+        updated_by=session.user.user_id if session else None,
+    )
     if not res.get("ok"):
         raise HTTPException(status_code=400, detail=res.get("error") or "Delete failed.")
     return res
@@ -1833,7 +1896,7 @@ def api_practice_unlock(
 def api_create_practice_share(
     body: PracticeShareBody,
     request: Request,
-    session: Optional[AuthSession] = Depends(require_session_when_auth),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     parish_id: Optional[str] = None
     created_by: Optional[str] = None
@@ -2010,8 +2073,12 @@ def api_gospel_image(date: str) -> JSONResponse:
 
 
 @app.post("/api/preview")
-def api_preview(body: PreviewBody) -> Any:
-    p = fetch_preview(
+async def api_preview(
+    body: PreviewBody,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> Any:
+    p = await run_in_threadpool(
+        fetch_preview,
         body.date.strip(),
         readings_only=body.readings_only,
         force_refresh=body.refresh,
@@ -2020,7 +2087,7 @@ def api_preview(body: PreviewBody) -> Any:
 
 
 @app.post("/api/generate")
-def api_generate(
+async def api_generate(
     body: GenerateBody,
     request: Request,
     session: Optional[AuthSession] = Depends(require_approved_membership),
@@ -2064,7 +2131,8 @@ def api_generate(
         )
 
     try:
-        result = generate_mass_media(
+        result = await run_in_threadpool(
+            generate_mass_media,
             body.date.strip(),
             body.celebrant.strip(),
             co_celebrant=(body.co_celebrant or "").strip(),
@@ -2111,7 +2179,8 @@ def api_generate(
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
     _write_mass_bundle_zip(result)
-    zip_ready = (_OUTPUT_DIR / _BUNDLE_NAME).is_file()
+    bundle_rel = _bundle_zip_name(result.export_stem)
+    zip_ready = (_OUTPUT_DIR / bundle_rel).is_file()
     lc = result.liturgical_color
     liturgical_payload: Optional[dict[str, Any]] = None
     if lc:
@@ -2127,7 +2196,7 @@ def api_generate(
     poster_ppt_url = (
         media_file_url(poster_ppt.name) if poster_ppt and Path(poster_ppt).is_file() else None
     )
-    zip_url = media_file_url(_BUNDLE_NAME) if zip_ready else None
+    zip_url = media_file_url(bundle_rel) if zip_ready else None
 
     pdf_url: Optional[str] = None
     pdf_message = ""
@@ -2150,7 +2219,7 @@ def api_generate(
             upload_items.append(("poster_url", result.poster_path, "image/png"))
         if poster_ppt and Path(poster_ppt).is_file():
             upload_items.append(("poster_ppt_url", Path(poster_ppt), "application/vnd.openxmlformats-officedocument.presentationml.presentation"))
-        bundle = _OUTPUT_DIR / _BUNDLE_NAME
+        bundle = _OUTPUT_DIR / bundle_rel
         if bundle.is_file():
             upload_items.append(("zip_url", bundle, "application/zip"))
         if pdf_path and pdf_path.is_file():
@@ -2184,6 +2253,11 @@ def api_generate(
                 zip_url = stored.signed_url
             elif key == "pdf_url":
                 pdf_url = stored.signed_url
+    if session:
+        owned = _collect_generation_owned_paths(result)
+        if pdf_path and pdf_path.is_file():
+            owned.append(pdf_path.name)
+        register_owned_files(session.user.user_id, owned)
     payload: dict[str, Any] = {
         "ok": True,
         "title": result.title,
@@ -2230,7 +2304,7 @@ def api_generate(
 
 
 @app.post("/api/regenerate-pptx")
-def api_regenerate_pptx(
+async def api_regenerate_pptx(
     body: GenerateBody,
     session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> Any:
@@ -2265,7 +2339,8 @@ def api_regenerate_pptx(
     psalm_override = (body.psalm_text_override or "").strip() or None
     gospel_override = (body.gospel_quote_override or "").strip() or None
     try:
-        result = regenerate_mass_pptx(
+        result = await run_in_threadpool(
+            regenerate_mass_pptx,
             body.date.strip(),
             body.celebrant.strip(),
             co_celebrant=(body.co_celebrant or "").strip(),
@@ -2320,6 +2395,8 @@ def api_regenerate_pptx(
             upsert=True,
         )
         ppt_url = stored.signed_url
+    if session and result.pptx_path and result.pptx_path.is_file():
+        register_owned_files(session.user.user_id, [result.pptx_path.name])
     return {
         "ok": True,
         "slide_count": result.slide_count,
@@ -2421,6 +2498,7 @@ def api_save_lyrics(
         language=body.language,
         author=body.author,
         gospel_moods=body.gospel_moods,
+        updated_by=session.user.user_id if session else None,
     )
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error") or "Could not save lyrics.")

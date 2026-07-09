@@ -7,9 +7,14 @@ from pathlib import Path
 from typing import Any, Optional
 
 from services.gospel_mood import gospel_moods_for_song
+from services.hymn_catalog_store import (
+    catalog_library_path,
+    invalidate_catalog_cache,
+    load_catalog_dict,
+)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_LIBRARY_PATH = _PROJECT_ROOT / "data" / "hymn_library.json"
+_LIBRARY_PATH = catalog_library_path()
 _WEB_CACHE_PATH = _PROJECT_ROOT / "data" / "web_hymn_cache.json"
 _SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
 
@@ -30,34 +35,24 @@ def invalidate_library_cache() -> None:
     _library_cache = None
     _library_mtime = 0.0
     _id_index = None
+    invalidate_catalog_cache()
 
 
 def load_library() -> dict[str, Any]:
     global _library_cache, _library_mtime, _id_index
-    if not _LIBRARY_PATH.is_file():
-        _library_cache = dict(_EMPTY_LIBRARY)
-        _library_mtime = 0.0
-        _id_index = {}
+    from services.hymn_catalog_store import catalog_revision
+
+    revision = catalog_revision()
+    revision_key = hash(revision)
+    if _library_cache is not None and revision_key == _library_mtime:
         return _library_cache
-    try:
-        mtime = _LIBRARY_PATH.stat().st_mtime
-    except OSError:
-        return dict(_EMPTY_LIBRARY)
-    if _library_cache is not None and mtime == _library_mtime:
-        return _library_cache
-    try:
-        raw = json.loads(_LIBRARY_PATH.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        _library_cache = dict(_EMPTY_LIBRARY)
-        _library_mtime = mtime
-        _id_index = {}
-        return _library_cache
+    raw = load_catalog_dict()
     out = _blank_library()
     for sec in _SECTIONS:
         rows = raw.get(sec) or []
         out[sec] = [x for x in rows if isinstance(x, dict)]
     _library_cache = out
-    _library_mtime = mtime
+    _library_mtime = revision_key
     _id_index = None
     return _library_cache
 

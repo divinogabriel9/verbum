@@ -25,6 +25,8 @@ _READING_TAGS = ("h1", "h2", "h3", "h4")
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _CACHE_PATH = _PROJECT_ROOT / "readings_cache.json"
 _CACHE_LOCK = Lock()
+_file_cache_blob: Optional[dict[str, Any]] = None
+_file_cache_mtime: float = 0.0
 
 # Keys stored per date in readings_cache.json.
 # The first group holds reading *bodies* (prose); the *_ref group holds the
@@ -246,18 +248,31 @@ def readings_cache_path() -> Path:
 
 
 def _load_cache_file() -> dict[str, Any]:
+    global _file_cache_blob, _file_cache_mtime
     path = readings_cache_path()
     if not path.is_file():
+        _file_cache_blob = {}
+        _file_cache_mtime = 0.0
         return {}
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        mtime = 0.0
+    if _file_cache_blob is not None and mtime == _file_cache_mtime:
+        return _file_cache_blob
     try:
         with path.open(encoding="utf-8") as fh:
             data = json.load(fh)
-        return data if isinstance(data, dict) else {}
+        blob = data if isinstance(data, dict) else {}
     except (json.JSONDecodeError, OSError):
-        return {}
+        blob = {}
+    _file_cache_blob = blob
+    _file_cache_mtime = mtime
+    return blob
 
 
 def _save_cache_file(data: dict[str, Any]) -> None:
+    global _file_cache_blob, _file_cache_mtime
     path = readings_cache_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
@@ -265,6 +280,11 @@ def _save_cache_file(data: dict[str, Any]) -> None:
         json.dump(data, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
     tmp.replace(path)
+    try:
+        _file_cache_mtime = path.stat().st_mtime
+    except OSError:
+        _file_cache_mtime = 0.0
+    _file_cache_blob = data
 
 
 def _psalm_text_is_refrain_only(psalm_text: str) -> bool:

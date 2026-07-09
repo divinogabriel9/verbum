@@ -280,7 +280,7 @@
       path = raw.split("?")[0];
     }
     const method = resolveRequestMethod(init);
-    if (method === "POST" && path === "/api/preview") return true;
+    if (method === "POST" && path === "/api/preview") return false;
     return false;
   }
 
@@ -454,6 +454,12 @@
     if (state.supabase) {
       await state.supabase.auth.signOut({ scope: "global" });
     }
+    try {
+      sessionStorage.removeItem("verbum:sa-session-started");
+      sessionStorage.removeItem("verbum:sa-approval-done");
+      sessionStorage.removeItem("verbum:sa-approval-modal-dismissed");
+    } catch (_e) { /* ignore */ }
+    window.dispatchEvent(new CustomEvent("verbum:signed-out"));
     state.session = null;
     state.user = null;
     state.profile = null;

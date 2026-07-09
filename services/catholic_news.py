@@ -11,6 +11,8 @@ from typing import Any, Optional
 
 import requests
 
+from services.platform_cache import cached_call
+
 _FEED_TIMEOUT = 10
 _FEED_PARSE_LIMIT = 30
 _MAX_TOTAL = 6
@@ -178,7 +180,7 @@ def _filter_by_keywords(
     return matched
 
 
-def fetch_catholic_headlines(
+def _fetch_catholic_headlines_uncached(
     *,
     include_vatican: bool = True,
     include_cna: bool = True,
@@ -233,3 +235,31 @@ def fetch_catholic_headlines(
         "cutoff_date": cutoff_iso,
         "errors": errors,
     }
+
+
+def fetch_catholic_headlines(
+    *,
+    include_vatican: bool = True,
+    include_cna: bool = True,
+    max_items: int = _MAX_TOTAL,
+    offset: int = 0,
+    max_age_days: int = _DEFAULT_MAX_AGE_DAYS,
+    keywords: Optional[list[str]] = None,
+) -> dict[str, Any]:
+    kw_key = ",".join(sorted(keywords or []))
+    cache_key = (
+        f"verbum:news:v1:{int(include_vatican)}:{int(include_cna)}:"
+        f"{max_items}:{offset}:{max_age_days}:{kw_key}"
+    )
+    return cached_call(
+        cache_key,
+        600,
+        lambda: _fetch_catholic_headlines_uncached(
+            include_vatican=include_vatican,
+            include_cna=include_cna,
+            max_items=max_items,
+            offset=offset,
+            max_age_days=max_age_days,
+            keywords=keywords,
+        ),
+    )

@@ -38,6 +38,7 @@ from services.platform_announcements import get_admin_announcement, save_announc
 from services.superadmin.merge_parishes import merge_parishes
 from services.superadmin.storage_browser import list_storage_browser
 from services.superadmin.analytics import build_analytics_payload
+from services.superadmin.approvals_inbox import build_approvals_inbox
 from services.feature_flags import (
     clear_parish_override,
     list_admin_flags,
@@ -377,6 +378,22 @@ def register_admin_routes(app) -> None:
     ) -> dict[str, Any]:
         return cache_stats()
 
+    @app.post("/api/admin/practice-shares/purge-expired")
+    def api_admin_purge_expired_practice_shares(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        from services.auth_config import supabase_enabled
+        from services.supabase_client import get_service_client
+
+        if not supabase_enabled():
+            return {"ok": True, "deleted": 0, "message": "Supabase not configured."}
+        try:
+            result = get_service_client().rpc("purge_expired_practice_shares").execute()
+            deleted = int((result.data if result.data is not None else 0) or 0)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+        return {"ok": True, "deleted": deleted}
+
     @app.post("/api/admin/readings-cache/clear")
     def api_admin_readings_cache_clear(
         body: ReadingsCacheClearBody,
@@ -500,6 +517,12 @@ def register_admin_routes(app) -> None:
             },
         )
         return {"ok": True, "invite": row, "invite_url": invite_url}
+
+    @app.get("/api/admin/approvals/inbox")
+    def api_admin_approvals_inbox(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return build_approvals_inbox()
 
     @app.get("/api/admin/memberships/pending")
     def api_pending_memberships(

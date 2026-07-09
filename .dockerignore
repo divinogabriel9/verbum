@@ -5,5 +5,7 @@ __pycache__
 outputs
 .pdf_extract
 *.pptx
+!data/reference/**/*.pptx
 *.png
+!data/reference/**/*.png
 *.zip

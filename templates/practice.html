@@ -379,7 +379,7 @@
       }
 
       function pinOtpMarkup() {
-        return [1, 2, 3, 4].map(function (n) {
+        return [1, 2, 3, 4, 5, 6].map(function (n) {
           return '<input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="one-time-code" aria-label="Digit ' + n + '" />';
         }).join("");
       }
@@ -392,7 +392,7 @@
         root.innerHTML =
           '<div class="practice-pin-wrap">' +
             '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
-              '<label id="practice-pin-label">Enter the 4-digit PIN from your choir leader</label>' +
+              '<label id="practice-pin-label">Enter the 6-digit PIN from your choir leader</label>' +
               '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">The PIN is not included in the link — share it separately (e.g. in person or by text).</p>' +
               '<div class="practice-pin-entry">' +
                 '<div class="pin-otp__cells" id="practice-pin-otp" role="group" aria-labelledby="practice-pin-label">' +
@@ -417,8 +417,8 @@
       }
 
       async function submitPin(pin) {
-        if (pin.length !== 4) {
-          renderPinForm("Enter the full 4-digit PIN.");
+        if (pin.length !== 6) {
+          renderPinForm("Enter the full 6-digit PIN.");
           return;
         }
         root.innerHTML = '<p class="practice-status">Checking PIN…</p>';

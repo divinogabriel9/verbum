@@ -68,3 +68,11 @@ services:
         value: "60"
       - key: MAX_REQUEST_BODY_BYTES
         value: "12582912"
+      - key: PRACTICE_UNLOCK_SECRET
+        sync: false
+      - key: SONG_WEB_FETCH
+        value: "0"
+      - key: CATALOG_LYRIC_FETCH_MAX
+        value: "60"
+      - key: CATALOG_LYRIC_FETCH_WINDOW
+        value: "3600"

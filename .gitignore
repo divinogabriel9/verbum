@@ -4,7 +4,14 @@
 __pycache__/
 *.pyc
 data/lectionary.sqlite
+data/hymn_library.json
+data/web_hymn_cache.json
+data/pending_song_submissions.json
+data/choir_practice_shares.json
+data/media_ownership.json
 data/uploads/
+outputs/
+readings_cache.json
 data/.content_submissions_migrated
 .cursor/design-references/_vendor/
 node_modules/

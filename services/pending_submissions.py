@@ -375,6 +375,7 @@ def approve_song_submission(
         sections=list(payload.get("sections") or []),
         language=str(payload.get("language") or "English"),
         author=str(payload.get("author") or ""),
+        updated_by=acting_user_id,
     )
     if not result.get("ok"):
         return result

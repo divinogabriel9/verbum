@@ -9,11 +9,19 @@ from pathlib import Path
 from typing import Any, Optional
 
 from services.gospel_mood import gospel_moods_for_song, normalize_gospel_moods
-from services.hymn_library import invalidate_library_cache, load_library
+from services.hymn_catalog_store import (
+    catalog_library_path,
+    catalog_revision,
+    catalog_sections,
+    invalidate_catalog_cache,
+    load_catalog_dict,
+    save_catalog_dict,
+)
+from services.hymn_library import invalidate_library_cache
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_LIBRARY_PATH = _PROJECT_ROOT / "data" / "hymn_library.json"
-_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
+_LIBRARY_PATH = catalog_library_path()
+_SECTIONS = catalog_sections()
 _PART_MAP = {
     "entrance": "entrance",
     "offertory": "offertory",
@@ -46,17 +54,17 @@ def _blank_library() -> dict[str, list[dict[str, Any]]]:
 
 
 def load_catalog() -> dict[str, list[dict[str, Any]]]:
-    lib = load_library()
-    out = _blank_library()
-    for sec in _SECTIONS:
-        out[sec] = [x for x in (lib.get(sec) or []) if isinstance(x, dict)]
-    return out
+    return load_catalog_dict()
 
 
-def save_catalog(data: dict[str, list[dict[str, Any]]]) -> None:
-    _LIBRARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _LIBRARY_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+def save_catalog(
+    data: dict[str, list[dict[str, Any]]],
+    *,
+    updated_by: str | None = None,
+) -> None:
+    save_catalog_dict(data, updated_by=updated_by)
     invalidate_library_cache()
+    invalidate_catalog_cache()
     _invalidate_catalog_api_cache()
 
 
@@ -221,6 +229,7 @@ def save_lyrics_song(
     language: str = "English",
     author: str = "",
     gospel_moods: list[str] | None = None,
+    updated_by: str | None = None,
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
     clean_title = format_song_title_case(str(title or ""))
@@ -304,7 +313,7 @@ def save_lyrics_song(
             kept.append(row)
         data[sec] = kept
 
-    save_catalog(data)
+    save_catalog(data, updated_by=updated_by)
     first_id = ""
     primary_section = wanted[0] if wanted else ""
     for sec in wanted:
@@ -379,20 +388,18 @@ def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[d
 
 
 def catalog_lite_response() -> tuple[bytes, str]:
-    """Pre-serialized lite catalog JSON + weak ETag (by library mtime)."""
+    """Pre-serialized lite catalog JSON + weak ETag (by catalog revision)."""
     global _catalog_lite_bytes, _catalog_lite_etag, _catalog_lite_mtime
-    try:
-        mtime = _LIBRARY_PATH.stat().st_mtime if _LIBRARY_PATH.is_file() else 0.0
-    except OSError:
-        mtime = 0.0
-    if _catalog_lite_bytes is not None and mtime == _catalog_lite_mtime:
+    revision = catalog_revision()
+    revision_key = hash(revision)
+    if _catalog_lite_bytes is not None and revision_key == _catalog_lite_mtime:
         return _catalog_lite_bytes, _catalog_lite_etag
     payload = {"ok": True, "catalog": catalog_for_api(include_inferred_moods=False)}
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    etag = f'W/"cat-lite-{int(mtime)}-{len(body)}"'
+    etag = f'W/"cat-lite-{revision_key}-{len(body)}"'
     _catalog_lite_bytes = body
     _catalog_lite_etag = etag
-    _catalog_lite_mtime = mtime
+    _catalog_lite_mtime = revision_key
     return body, etag
 
 
@@ -405,6 +412,7 @@ def update_catalog_song(
     lyrics: Optional[str] = None,
     language: Optional[str] = None,
     gospel_moods: Optional[list[str]] = None,
+    updated_by: str | None = None,
 ) -> dict[str, Any]:
     sec = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
@@ -430,12 +438,17 @@ def update_catalog_song(
                 item["gospel_moods"] = moods
             elif "gospel_moods" in item:
                 del item["gospel_moods"]
-        save_catalog(data)
+        save_catalog(data, updated_by=updated_by)
         return {"ok": True}
     return {"ok": False, "error": "Song not found."}
 
 
-def delete_catalog_song(*, section: str, hymn_id: str) -> dict[str, Any]:
+def delete_catalog_song(
+    *,
+    section: str,
+    hymn_id: str,
+    updated_by: str | None = None,
+) -> dict[str, Any]:
     sec = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
     if sec not in _SECTIONS or not hid:
@@ -446,6 +459,6 @@ def delete_catalog_song(*, section: str, hymn_id: str) -> dict[str, Any]:
     if len(new_rows) == len(rows):
         return {"ok": False, "error": "Song not found."}
     data[sec] = new_rows
-    save_catalog(data)
+    save_catalog(data, updated_by=updated_by)
     return {"ok": True}
 

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
+from services.platform_cache import cached_call
 from services.supabase_client import get_service_client
 
 
@@ -20,14 +21,18 @@ def _service_client():
 def list_global_flags() -> list[dict[str, Any]]:
     if not supabase_enabled():
         return []
-    result = (
-        _service_client()
-        .table("platform_feature_flags")
-        .select("*")
-        .order("key")
-        .execute()
-    )
-    return list(result.data or [])
+
+    def _load() -> list[dict[str, Any]]:
+        result = (
+            _service_client()
+            .table("platform_feature_flags")
+            .select("*")
+            .order("key")
+            .execute()
+        )
+        return list(result.data or [])
+
+    return cached_call("verbum:flags:global", 180, _load)
 
 
 def resolve_flags(*, parish_id: Optional[str] = None) -> dict[str, bool]:

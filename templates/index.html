@@ -2046,6 +2046,96 @@
       text-decoration: none;
       color: var(--liturgical-accent);
     }
+    .sa-notif-section {
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .sa-notif-section__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .sa-notif-section__head h4 {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sa-notif-feed {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .sa-notif-item {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+    }
+    .sa-notif-item--done {
+      opacity: 0.82;
+      background: color-mix(in srgb, var(--surface) 96%, var(--muted) 4%);
+    }
+    .sa-notif-item__kind {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--accent);
+      margin: 0 0 4px;
+    }
+    .sa-notif-item__title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .sa-notif-item__sub,
+    .sa-notif-item__detail {
+      margin: 4px 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .sa-notif-item__status {
+      margin: 6px 0 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--liturgical-accent);
+    }
+    .sa-notif-item__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sa-notif-item__actions .secondary,
+    .sa-notif-item__actions .primary {
+      padding: 4px 10px;
+      font-size: 0.78rem;
+    }
+    .sa-approvals-modal-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+      max-height: min(52vh, 420px);
+      overflow-y: auto;
+    }
+    .sa-approvals-modal-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      background: var(--surface);
+    }
     .side-nav { display: none !important; }
     .app-header__nav-row { display: none; }
     .header-chips-wrap {
@@ -14634,6 +14724,13 @@
                   <button type="button" class="secondary" id="btn-clear-notifications">Clear all</button>
                 </div>
                 <div class="notif-panel__body">
+                  <div id="sa-notif-section" class="sa-notif-section" hidden>
+                    <div class="sa-notif-section__head">
+                      <h4>Superadmin notifications</h4>
+                      <span class="muted" id="sa-notif-count" style="font-size:0.78rem;"></span>
+                    </div>
+                    <ul class="sa-notif-feed" id="sa-notif-feed" aria-live="polite"></ul>
+                  </div>
                   <p class="muted" id="notification-empty">No notifications yet.</p>
                   <ul class="notification-feed" id="notification-feed" aria-live="polite"></ul>
                 </div>
@@ -15084,32 +15181,17 @@
           </header>
           <div class="ui-card__content practice-share-body">
             <div class="practice-share-setup" id="practice-share-setup">
-              <p class="practice-share-setup__lead">Choose whether choir members need a PIN to open the lyrics.</p>
-              <fieldset class="practice-share-pin-choice" id="practice-share-pin-choice">
-                <legend class="sr-only">Link protection</legend>
-                <label class="practice-share-pin-option">
-                  <input type="radio" name="practice-share-pin-mode" value="none" checked />
-                  <span class="practice-share-pin-option__text">
-                    <strong>No password</strong>
-                    <span class="muted">Anyone with the link can view lyrics</span>
-                  </span>
-                </label>
-                <label class="practice-share-pin-option">
-                  <input type="radio" name="practice-share-pin-mode" value="pin" />
-                  <span class="practice-share-pin-option__text">
-                    <strong>4-digit PIN</strong>
-                    <span class="muted">Share the PIN separately in your group chat</span>
-                  </span>
-                </label>
-              </fieldset>
-              <div class="field practice-share-pin-field" id="practice-share-pin-wrap" hidden>
+              <p class="practice-share-setup__lead">Create a 6-digit PIN for your choir. Share the PIN separately from the link.</p>
+              <div class="field practice-share-pin-field" id="practice-share-pin-wrap">
                 <label>Create PIN</label>
                 <div class="pin-otp" id="practice-share-pin-otp">
-                  <div class="pin-otp__cells" role="group" aria-label="4-digit PIN">
+                  <div class="pin-otp__cells" role="group" aria-label="6-digit PIN">
                     <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 1" />
                     <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 2" />
                     <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 3" />
                     <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 4" />
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 5" />
+                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 6" />
                   </div>
                 </div>
               </div>
@@ -15164,6 +15246,27 @@
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="parish-submit-cancel">Go back</button>
             <button type="button" class="primary" id="parish-submit-confirm">Submit parish profile</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="sa-approvals-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="sa-approvals-modal-backdrop"></div>
+        <article class="ui-card ui-card--popover-safe" role="dialog" aria-labelledby="sa-approvals-modal-title" aria-modal="true" style="max-width:min(560px, 94vw);">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="sa-approvals-modal-title">Superadmin approvals</h3>
+              <p class="ui-card__description" id="sa-approvals-modal-desc">Review and act on pending requests. Open items stay here until you approve or reject them.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="sa-approvals-modal-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__body" style="padding: 0 1.25rem 1rem;">
+            <ul class="sa-approvals-modal-list" id="sa-approvals-modal-list" aria-live="polite"></ul>
+            <p class="muted" id="sa-approvals-modal-empty" hidden style="margin:0;">No pending approvals right now.</p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="sa-approvals-modal-later">Remind me later</button>
+            <a href="/superadmin" class="secondary" data-route="/superadmin" id="sa-approvals-modal-open-admin" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Open superadmin</a>
           </footer>
         </article>
       </div>
@@ -18752,16 +18855,12 @@
       return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     };
     const postJSON = async (url, body, opts) => {
-      const publicPreview = String(url).split("?")[0] === "/api/preview";
-      const skipAuthWait = !!(opts && opts.skipAuthWait) || publicPreview;
+      const skipAuthWait = !!(opts && opts.skipAuthWait);
       if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
       }
       const headers = { "Content-Type": "application/json" };
-      if (publicPreview && window.VerbumAuth && window.VerbumAuth.getCachedToken) {
-        const token = window.VerbumAuth.getCachedToken();
-        if (token) headers.Authorization = "Bearer " + token;
-      } else if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+      if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
         Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
       }
       const res = await fetch(url, {
@@ -24749,19 +24848,13 @@
     }
 
     function practiceSharePinMode() {
-      const picked = document.querySelector('input[name="practice-share-pin-mode"]:checked');
-      return picked ? String(picked.value) : "none";
+      return "pin";
     }
 
     function syncPracticeSharePinUi() {
       const wrap = $("practice-share-pin-wrap");
-      const usePin = practiceSharePinMode() === "pin";
-      if (wrap) wrap.hidden = !usePin;
-      if (!usePin) {
-        clearPracticeSharePin();
-      } else {
-        practiceSharePinOtp?.focus();
-      }
+      if (wrap) wrap.hidden = false;
+      practiceSharePinOtp?.focus();
     }
 
     function resetPracticeShareModal() {
@@ -24778,8 +24871,6 @@
       if (generateBtn) { generateBtn.hidden = false; generateBtn.disabled = false; generateBtn.textContent = "Generate"; }
       if (cancelBtn) cancelBtn.textContent = "Cancel";
       setPracticeShareFooterMode("");
-      const noneMode = document.querySelector('input[name="practice-share-pin-mode"][value="none"]');
-      if (noneMode) noneMode.checked = true;
       syncPracticeSharePinUi();
       clearPracticeSharePin();
       const url = $("practice-share-url");
@@ -24805,7 +24896,7 @@
       setUiOverlayOpen($("practice-share-modal"), true);
       const sub = $("practice-share-sub");
       if (sub) {
-        sub.textContent = "Share lyrics for " + date + ". Choose a password or open access, then generate the link.";
+        sub.textContent = "Share lyrics for " + date + ". Set a 6-digit PIN, then generate the link.";
       }
     }
 
@@ -24929,11 +25020,10 @@
         }
         return;
       }
-      const usePin = practiceSharePinMode() === "pin";
-      const pinRaw = usePin ? getPracticeSharePin() : "";
-      if (usePin && pinRaw.length !== 4) {
+      const pinRaw = getPracticeSharePin();
+      if (pinRaw.length !== 6) {
         if (status) {
-          status.textContent = "Enter a 4-digit PIN, or choose “No password”.";
+          status.textContent = "Enter a 6-digit PIN for this practice link.";
           status.hidden = false;
         }
         practiceSharePinOtp?.focus();
@@ -24944,7 +25034,7 @@
       if (generateBtn) generateBtn.disabled = true;
       setPracticeShareFooterMode("loading");
       if (status) status.hidden = true;
-      practiceShareLastHadPin = usePin;
+      practiceShareLastHadPin = true;
       try {
         const songs = await collectPracticeShareSongs();
         if (!songs.length) {
@@ -24959,8 +25049,8 @@
           parish_name: parishName,
           celebrant: celebrant,
           songs: songs,
-          ttl_days: 7,
-          optional_pin: pinRaw || "",
+          ttl_days: 5,
+          optional_pin: pinRaw,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
         showPracticeShareResult(data);
@@ -25008,9 +25098,6 @@
       });
       $("practice-share-generate") && $("practice-share-generate").addEventListener("click", () => {
         createPracticeShareLink();
-      });
-      document.querySelectorAll('input[name="practice-share-pin-mode"]').forEach((el) => {
-        el.addEventListener("change", syncPracticeSharePinUi);
       });
       const pinOtpRoot = $("practice-share-pin-otp");
       if (pinOtpRoot) practiceSharePinOtp = mountPinOtp(pinOtpRoot);
@@ -25885,7 +25972,8 @@
     function updateNotifBadge() {
       const badge = $("notif-badge");
       if (!badge) return;
-      const n = appNotifications.length;
+      const saCount = typeof getSaApprovalBadgeCount === "function" ? getSaApprovalBadgeCount() : 0;
+      const n = appNotifications.length + saCount;
       if (n > 0) {
         badge.hidden = false;
         badge.textContent = n > 99 ? "99+" : String(n);
@@ -25900,12 +25988,13 @@
       const empty = $("notification-empty");
       if (!feed) return;
       feed.innerHTML = "";
-      if (!appNotifications.length) {
+      const hasSa = typeof renderSaApprovalNotifSection === "function" && renderSaApprovalNotifSection();
+      if (!appNotifications.length && !hasSa) {
         if (empty) empty.style.display = "";
         updateNotifBadge();
         return;
       }
-      if (empty) empty.style.display = "none";
+      if (empty) empty.style.display = appNotifications.length ? "none" : (hasSa ? "none" : "");
       appNotifications.forEach((item) => {
         const li = document.createElement("li");
         li.className = "notification-item notification-item--" + (item.kind || "info");
@@ -26005,9 +26094,6 @@
       if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
       return out;
     }
-
-    loadAppNotifications();
-    renderNotificationFeed();
 
     (function initNotifPanel() {
       const btn = $("notif-toggle-btn");
@@ -26308,6 +26394,9 @@
       role: "member",
     };
 
+    loadAppNotifications();
+    renderNotificationFeed();
+
     function guardSuperadminAction(message) {
       if (churchMembershipState.is_superadmin) return true;
       const msg = message || "This action is limited to the superadmin account.";
@@ -26542,6 +26631,13 @@
         saUnlockPendingNotify = false;
       }
       if (typeof refreshSuperadminMembershipBadge === "function") refreshSuperadminMembershipBadge();
+
+      if (churchMembershipState.is_superadmin) {
+        refreshSaApprovalInbox(true);
+      } else if (typeof renderSaApprovalNotifSection === "function") {
+        renderSaApprovalNotifSection();
+        updateNotifBadge();
+      }
 
       renderSettingsCelebrantList();
       syncGenerateButtons();
@@ -26792,7 +26888,12 @@
         statusEl.textContent = action === "approve" ? "Membership approved." : "Membership rejected.";
         statusEl.className = "status ok";
       }
+      const inboxItem = (saApprovalInbox || []).find(
+        (row) => row.kind === "membership" && String(row.entity_id) === String(userId)
+      );
+      if (inboxItem) markSaApprovalDone(inboxItem, action);
       await refreshAdminPendingMemberships();
+      if (typeof refreshSaApprovalInbox === "function") await refreshSaApprovalInbox(false);
       if (normalizeRoute(currentRoute()) === "/superadmin") loadSaDashboard();
     }
 
@@ -26800,6 +26901,282 @@
       const auth = window.VerbumAuth;
       return auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
     }
+
+    const SA_APPROVAL_DONE_KEY = "verbum:sa-approval-done";
+    const SA_APPROVAL_SESSION_KEY = "verbum:sa-session-started";
+    const SA_APPROVAL_MODAL_KEY = "verbum:sa-approval-modal-dismissed";
+    let saApprovalInbox = [];
+    let saApprovalDone = [];
+
+    function loadSaApprovalDone() {
+      try {
+        saApprovalDone = JSON.parse(sessionStorage.getItem(SA_APPROVAL_DONE_KEY) || "[]");
+        if (!Array.isArray(saApprovalDone)) saApprovalDone = [];
+      } catch (_e) {
+        saApprovalDone = [];
+      }
+    }
+
+    function saveSaApprovalDone() {
+      try {
+        sessionStorage.setItem(SA_APPROVAL_DONE_KEY, JSON.stringify(saApprovalDone.slice(0, 80)));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function beginSaApprovalSession() {
+      if (sessionStorage.getItem(SA_APPROVAL_SESSION_KEY)) return;
+      sessionStorage.setItem(SA_APPROVAL_SESSION_KEY, String(Date.now()));
+      sessionStorage.removeItem(SA_APPROVAL_DONE_KEY);
+      sessionStorage.removeItem(SA_APPROVAL_MODAL_KEY);
+      saApprovalDone = [];
+    }
+
+    function resetSaApprovalSession() {
+      sessionStorage.removeItem(SA_APPROVAL_SESSION_KEY);
+      sessionStorage.removeItem(SA_APPROVAL_DONE_KEY);
+      sessionStorage.removeItem(SA_APPROVAL_MODAL_KEY);
+      saApprovalDone = [];
+      saApprovalInbox = [];
+      renderSaApprovalNotifSection();
+    }
+
+    function getSaApprovalDoneEntry(id) {
+      return saApprovalDone.find((row) => row && row.id === id) || null;
+    }
+
+    function markSaApprovalDone(item, action) {
+      if (!item || !item.id) return;
+      const existing = getSaApprovalDoneEntry(item.id);
+      const entry = {
+        id: item.id,
+        kind: item.kind,
+        entity_id: item.entity_id,
+        title: item.title,
+        subtitle: item.subtitle,
+        detail: item.detail,
+        kind_label: item.kind_label,
+        action: action || "resolved",
+        at: new Date().toISOString(),
+      };
+      if (existing) {
+        Object.assign(existing, entry);
+      } else {
+        saApprovalDone.unshift(entry);
+      }
+      saveSaApprovalDone();
+      renderSaApprovalNotifSection();
+      renderSaApprovalsModal();
+      updateNotifBadge();
+      refreshSuperadminMembershipBadgeFromInbox();
+    }
+
+    function getSaApprovalBadgeCount() {
+      if (!churchMembershipState || !churchMembershipState.is_superadmin) return 0;
+      const pendingIds = new Set((saApprovalInbox || []).map((row) => row.id));
+      const open = (saApprovalInbox || []).filter((row) => !getSaApprovalDoneEntry(row.id)).length;
+      const doneSticky = (saApprovalDone || []).filter((row) => !pendingIds.has(row.id)).length;
+      return open + doneSticky;
+    }
+
+    function saApprovalActionLabel(action) {
+      if (action === "approve") return "Approved";
+      if (action === "reject") return "Rejected";
+      return "Resolved";
+    }
+
+    function saApprovalCardHtml(item, opts) {
+      const options = opts || {};
+      const done = getSaApprovalDoneEntry(item.id);
+      const isDone = !!done;
+      const kind = escapeHtml(item.kind_label || item.kind || "Approval");
+      const title = escapeHtml(item.title || "—");
+      const sub = escapeHtml(item.subtitle || "");
+      const detail = escapeHtml(item.detail || "");
+      const cardClass = options.modal ? "sa-approvals-modal-card" : "sa-notif-item" + (isDone ? " sa-notif-item--done" : "");
+      const tag = "li";
+      let actions = "";
+      if (!isDone) {
+        if (item.kind === "membership") {
+          actions =
+            "<button type=\"button\" class=\"secondary sa-approval-act\" data-kind=\"membership\" data-action=\"reject\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Reject</button>" +
+            "<button type=\"button\" class=\"primary sa-approval-act\" data-kind=\"membership\" data-action=\"approve\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Approve</button>";
+        } else {
+          actions =
+            "<button type=\"button\" class=\"secondary sa-approval-act\" data-kind=\"" + escapeHtml(item.kind || "") + "\" data-action=\"reject\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Reject</button>" +
+            "<button type=\"button\" class=\"primary sa-approval-act\" data-kind=\"" + escapeHtml(item.kind || "") + "\" data-action=\"approve\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Approve</button>";
+        }
+      } else {
+        actions = "<p class=\"sa-notif-item__status\">" + escapeHtml(saApprovalActionLabel(done.action)) + " · " + escapeHtml(formatNotificationTime(done.at)) + "</p>";
+      }
+      return (
+        "<" + tag + " class=\"" + cardClass + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">" +
+          "<p class=\"sa-notif-item__kind\">" + kind + "</p>" +
+          "<p class=\"sa-notif-item__title\">" + title + "</p>" +
+          (sub ? "<p class=\"sa-notif-item__sub\">" + sub + "</p>" : "") +
+          (detail ? "<p class=\"sa-notif-item__detail\">" + detail + "</p>" : "") +
+          "<div class=\"sa-notif-item__actions\">" + actions + "</div>" +
+        "</" + tag + ">"
+      );
+    }
+
+    function bindSaApprovalActions(root) {
+      if (!root) return;
+      root.querySelectorAll(".sa-approval-act").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          runSaApprovalAction(
+            btn.getAttribute("data-kind"),
+            btn.getAttribute("data-entity-id"),
+            btn.getAttribute("data-action"),
+            btn.getAttribute("data-item-id"),
+            btn
+          );
+        });
+      });
+    }
+
+    async function runSaApprovalAction(kind, entityId, action, itemId, btnEl) {
+      if (!kind || !entityId || !action) return;
+      if (btnEl) btnEl.disabled = true;
+      try {
+        if (kind === "membership") {
+          await actOnMembership(entityId, action);
+        } else {
+          await actOnSubmission(kind, entityId, action);
+        }
+      } catch (err) {
+        notify(err.message || "Action failed.", "error");
+      } finally {
+        if (btnEl) btnEl.disabled = false;
+      }
+    }
+
+    function renderSaApprovalNotifSection() {
+      const section = $("sa-notif-section");
+      const feed = $("sa-notif-feed");
+      const countEl = $("sa-notif-count");
+      if (!section || !feed) return false;
+      if (!churchMembershipState || !churchMembershipState.is_superadmin) {
+        section.hidden = true;
+        feed.innerHTML = "";
+        return false;
+      }
+      const openItems = (saApprovalInbox || []).filter((row) => !getSaApprovalDoneEntry(row.id));
+      const doneSticky = (saApprovalDone || []).slice();
+      const cards = openItems.concat(
+        doneSticky.filter((done) => !openItems.some((open) => open.id === done.id))
+      );
+      if (!cards.length) {
+        section.hidden = true;
+        feed.innerHTML = "";
+        if (countEl) countEl.textContent = "";
+        return false;
+      }
+      section.hidden = false;
+      if (countEl) {
+        countEl.textContent = openItems.length
+          ? (openItems.length + " pending")
+          : "All caught up";
+      }
+      feed.innerHTML = cards.map((item) => saApprovalCardHtml(item, { modal: false })).join("");
+      bindSaApprovalActions(feed);
+      return true;
+    }
+
+    function renderSaApprovalsModal() {
+      const listEl = $("sa-approvals-modal-list");
+      const emptyEl = $("sa-approvals-modal-empty");
+      if (!listEl) return;
+      const openItems = (saApprovalInbox || []).filter((row) => !getSaApprovalDoneEntry(row.id));
+      if (!openItems.length) {
+        listEl.innerHTML = "";
+        if (emptyEl) emptyEl.hidden = false;
+        return;
+      }
+      if (emptyEl) emptyEl.hidden = true;
+      listEl.innerHTML = openItems.map((item) => saApprovalCardHtml(item, { modal: true })).join("");
+      bindSaApprovalActions(listEl);
+    }
+
+    function openSaApprovalsModal() {
+      renderSaApprovalsModal();
+      const modal = $("sa-approvals-modal");
+      if (modal) {
+        setUiOverlayOpen(modal, true);
+        const adminLink = $("sa-approvals-modal-open-admin");
+        if (adminLink) bindSpaRouteLink(adminLink);
+      }
+    }
+
+    function closeSaApprovalsModal(dismiss) {
+      setUiOverlayOpen($("sa-approvals-modal"), false);
+      if (dismiss) {
+        try { sessionStorage.setItem(SA_APPROVAL_MODAL_KEY, "1"); } catch (_e) { /* ignore */ }
+      }
+    }
+
+    function maybeShowSaApprovalsLoginModal() {
+      if (!churchMembershipState || !churchMembershipState.is_superadmin) return;
+      const openCount = (saApprovalInbox || []).filter((row) => !getSaApprovalDoneEntry(row.id)).length;
+      if (!openCount) return;
+      if (sessionStorage.getItem(SA_APPROVAL_MODAL_KEY) === "1") return;
+      openSaApprovalsModal();
+    }
+
+    async function refreshSaApprovalInbox(showLoginModal) {
+      loadSaApprovalDone();
+      if (!churchMembershipState || !churchMembershipState.is_superadmin) {
+        saApprovalInbox = [];
+        renderSaApprovalNotifSection();
+        updateNotifBadge();
+        return;
+      }
+      try {
+        const data = await saFetchAdmin("/api/admin/approvals/inbox");
+        saApprovalInbox = Array.isArray(data.items) ? data.items : [];
+      } catch (_err) {
+        saApprovalInbox = [];
+      }
+      renderSaApprovalNotifSection();
+      renderNotificationFeed();
+      updateNotifBadge();
+      refreshSuperadminMembershipBadgeFromInbox();
+      if (showLoginModal) maybeShowSaApprovalsLoginModal();
+    }
+
+    function refreshSuperadminMembershipBadgeFromInbox() {
+      const open = (saApprovalInbox || []).filter((row) => !getSaApprovalDoneEntry(row.id)).length;
+      const badge = $("sa-nav-badge-membership");
+      if (!badge) return;
+      if (open > 0) {
+        badge.hidden = false;
+        badge.textContent = String(open);
+        badge.dataset.inboxCount = String(open);
+      } else {
+        delete badge.dataset.inboxCount;
+        if (!badge.dataset.dashboardCount) {
+          badge.hidden = true;
+          badge.textContent = "";
+        }
+      }
+    }
+
+    function initSaApprovalNotifications() {
+      loadSaApprovalDone();
+      const closeBtn = $("sa-approvals-modal-close");
+      const backdrop = $("sa-approvals-modal-backdrop");
+      const laterBtn = $("sa-approvals-modal-later");
+      if (closeBtn) closeBtn.addEventListener("click", () => closeSaApprovalsModal(true));
+      if (backdrop) backdrop.addEventListener("click", () => closeSaApprovalsModal(true));
+      if (laterBtn) laterBtn.addEventListener("click", () => closeSaApprovalsModal(true));
+      window.addEventListener("verbum:signed-out", resetSaApprovalSession);
+      window.addEventListener("verbum:auth-ready", (event) => {
+        const user = event.detail && event.detail.user;
+        if (!user) return;
+        beginSaApprovalSession();
+      });
+    }
+
+    initSaApprovalNotifications();
 
     async function actOnSubmission(kind, submissionId, action) {
       if (!submissionId) return;
@@ -26817,6 +27194,10 @@
           : (kind === "songs" ? "Song submission rejected." : "Priest submission rejected.");
         statusEl.className = "status ok";
       }
+      const inboxItem = (saApprovalInbox || []).find(
+        (row) => row.kind === kind && String(row.entity_id) === String(submissionId)
+      );
+      if (inboxItem) markSaApprovalDone(inboxItem, action);
       if (kind === "songs") {
         await refreshAdminPendingSongs();
         invalidateSongCatalogCaches();
@@ -26826,6 +27207,7 @@
         await refreshCommunity();
       }
       if (normalizeRoute(currentRoute()) === "/superadmin") loadSaDashboard();
+      if (typeof refreshSaApprovalInbox === "function") await refreshSaApprovalInbox(false);
     }
 
     async function refreshAdminPendingSongs() {
@@ -27085,15 +27467,21 @@
         ? ((cards.parishes_pending || 0) + (cards.pending_songs || 0) + (cards.pending_priests || 0))
         : null;
       if (pending === null) {
-        badge.hidden = true;
+        if (!badge.dataset.inboxCount) {
+          badge.hidden = true;
+        }
         return;
       }
       if (pending > 0) {
         badge.hidden = false;
         badge.textContent = String(pending);
+        badge.dataset.dashboardCount = String(pending);
       } else {
-        badge.hidden = true;
-        badge.textContent = "";
+        delete badge.dataset.dashboardCount;
+        if (!badge.dataset.inboxCount) {
+          badge.hidden = true;
+          badge.textContent = "";
+        }
       }
     }
 
@@ -27586,10 +27974,15 @@
         : "/api/admin/memberships/" + encodeURIComponent(userId) + "/reject";
       try {
         await saFetchAdmin(path, { method: "POST" });
+        const inboxItem = (saApprovalInbox || []).find(
+          (row) => row.kind === "membership" && String(row.entity_id) === String(userId)
+        );
+        if (inboxItem) markSaApprovalDone(inboxItem, action);
         notify(action === "approve" ? "Parish approved." : "Parish rejected.", action === "approve" ? "ok" : "info");
         if (saState.parishDrawerId) loadSaParishDetail(saState.parishDrawerId);
         loadSaParishes();
         loadSaDashboard();
+        if (typeof refreshSaApprovalInbox === "function") await refreshSaApprovalInbox(false);
       } catch (err) {
         notify(err.message || "Action failed.", "error");
       }
@@ -32877,7 +33270,7 @@
     const SONG_CATALOG_SEARCH_MAX_WORDS = 25;
     const songDetailCache = new Map();
     const songDetailInflight = new Map();
-    const SONG_DETAIL_SS_PREFIX = "verbumSong:";
+    const SONG_DETAIL_SS_PREFIX = "verbumSong:"; // legacy — no longer persisted
     let songDetailPrefetchTimer = null;
     let lyricsAnalyzeFrame = 0;
     const songCatalogExpanded = { entrance: false, offertory: false, communion: false, recessional: false, meditation: false };
@@ -32890,29 +33283,14 @@
       songCatalogLoaded = false;
       songDetailCache.clear();
       songDetailInflight.clear();
-      try {
-        const keys = [];
-        for (let i = 0; i < sessionStorage.length; i += 1) {
-          const k = sessionStorage.key(i);
-          if (k && k.startsWith(SONG_DETAIL_SS_PREFIX)) keys.push(k);
-        }
-        keys.forEach((k) => sessionStorage.removeItem(k));
-      } catch (_e) { /* ignore */ }
     }
 
-    function readStoredSongDetail(key) {
-      try {
-        const raw = sessionStorage.getItem(SONG_DETAIL_SS_PREFIX + key);
-        return raw ? JSON.parse(raw) : null;
-      } catch (_e) {
-        return null;
-      }
+    function readStoredSongDetail(_key) {
+      return null;
     }
 
-    function writeStoredSongDetail(key, data) {
-      try {
-        sessionStorage.setItem(SONG_DETAIL_SS_PREFIX + key, JSON.stringify(data));
-      } catch (_e) { /* quota */ }
+    function writeStoredSongDetail(_key, _data) {
+      /* lyrics stay in memory only — not sessionStorage */
     }
 
     async function catalogAuthHeaders() {

@@ -25,11 +25,7 @@ def superadmin_emails() -> frozenset[str]:
 def is_superadmin_user(user: Optional[AuthUser]) -> bool:
     if not user:
         return False
-    if (user.role or "").strip() == "superadmin":
-        return True
-    if not user.email:
-        return False
-    return user.email.strip().lower() in superadmin_emails()
+    return (user.role or "").strip() == "superadmin"
 
 
 def membership_allows_full_access(

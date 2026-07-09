@@ -16,6 +16,8 @@ from starlette.responses import Response
 
 from services.rate_limit import check_rate_limit_key
 
+from services.runtime_config import practice_unlock_secret_required
+
 logger = logging.getLogger(__name__)
 
 _PIN_PREFIX = "v1:"
@@ -23,12 +25,23 @@ _COOKIE_PREFIX = "vf_pu_"
 _PIN_PBKDF2_ROUNDS = 120_000
 
 
+def ensure_practice_secret_configured() -> None:
+    """Fail fast on startup when production lacks a dedicated unlock secret."""
+    _signing_secret()
+
+
 def _signing_secret() -> bytes:
-    raw = (
-        os.environ.get("PRACTICE_UNLOCK_SECRET", "").strip()
-        or os.environ.get("SUPABASE_JWT_SECRET", "").strip()
-        or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
-    )
+    raw = os.environ.get("PRACTICE_UNLOCK_SECRET", "").strip()
+    if not raw and practice_unlock_secret_required():
+        raise RuntimeError(
+            "PRACTICE_UNLOCK_SECRET is required in production. "
+            "Set it in Render environment variables."
+        )
+    if not raw:
+        raw = (
+            os.environ.get("SUPABASE_JWT_SECRET", "").strip()
+            or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        )
     if not raw:
         raw = "verbum-dev-practice-unlock-insecure"
         logger.warning("Practice unlock cookies use a dev-only secret; set PRACTICE_UNLOCK_SECRET in production.")
@@ -48,9 +61,9 @@ def hash_pin(pin: str) -> str:
 
 def verify_pin(stored: Optional[str], supplied: str) -> bool:
     if not stored:
-        return True
+        return False
     digits = "".join(ch for ch in str(supplied or "") if ch.isdigit())
-    if len(digits) != 4:
+    if len(digits) != 6:
         return False
     stored_s = str(stored)
     if stored_s.startswith(_PIN_PREFIX):

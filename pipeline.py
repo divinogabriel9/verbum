@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 from services.liturgical_calendar import get_liturgical_color
 from services.lectionary_service import get_liturgical_data, payload_complete
 from services.media_naming import mass_export_stem
+from services.runtime_config import song_web_fetch_enabled
 from services.web_hymn_discovery import discover_hymns_for_readings
 from services.lyrics_fetcher import ensure_lyrics_for_song
 from services.mass_text_format import synopsis_from_reading
@@ -124,7 +125,7 @@ def refresh_song_section(
         return []
     liturgical_color = get_liturgical_color(date)
     season_key = str(liturgical_color.get("season") or "ordinary_time")
-    web_enabled = os.getenv("SONG_WEB_FETCH", "1").strip().lower() not in {"0", "false", "off", "no"}
+    web_enabled = song_web_fetch_enabled()
     fresh_web: list[dict[str, Any]] = []
     if web_enabled:
         web_map = discover_hymns_for_readings(
@@ -340,7 +341,7 @@ def fetch_preview(date: str, *, readings_only: bool = False, force_refresh: bool
     else:
         by_sec_base = recommend_sections(season_key=season_key, per_section=7)
         by_sec_web: dict[str, list[dict[str, Any]]] = {}
-        web_enabled = os.getenv("SONG_WEB_FETCH", "1").strip().lower() not in {"0", "false", "off", "no"}
+        web_enabled = song_web_fetch_enabled()
         if web_enabled:
             by_sec_web = discover_hymns_for_readings(
                 gospel_reference=str(data.get("gospel_reference") or ""),

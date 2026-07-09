@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
+from services.platform_cache import cached_call
 from services.supabase_client import get_service_client
 
 _VALID_SEVERITIES = frozenset({"info", "warn", "success"})
@@ -55,20 +56,24 @@ def _shape(row: dict[str, Any] | None) -> dict[str, Any] | None:
 def get_active_announcement() -> dict[str, Any]:
     if not supabase_enabled():
         return {"ok": True, "announcement": None}
-    client = get_service_client()
-    result = (
-        client.table("platform_announcements")
-        .select("*")
-        .eq("active", True)
-        .order("updated_at", desc=True)
-        .limit(5)
-        .execute()
-    )
-    now = _now()
-    for row in result.data or []:
-        if _is_live(row, now=now):
-            return {"ok": True, "announcement": _shape(row)}
-    return {"ok": True, "announcement": None}
+
+    def _load() -> dict[str, Any]:
+        client = get_service_client()
+        result = (
+            client.table("platform_announcements")
+            .select("*")
+            .eq("active", True)
+            .order("updated_at", desc=True)
+            .limit(5)
+            .execute()
+        )
+        now = _now()
+        for row in result.data or []:
+            if _is_live(row, now=now):
+                return {"ok": True, "announcement": _shape(row)}
+        return {"ok": True, "announcement": None}
+
+    return cached_call("verbum:announcement:active", 120, _load)
 
 
 def get_admin_announcement() -> dict[str, Any]:
