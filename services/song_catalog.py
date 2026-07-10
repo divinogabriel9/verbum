@@ -395,9 +395,10 @@ def catalog_lite_response() -> tuple[bytes, str]:
     revision_key = hash(revision)
     if _catalog_lite_bytes is not None and revision_key == _catalog_lite_mtime:
         return _catalog_lite_bytes, _catalog_lite_etag
-    payload = {"ok": True, "catalog": catalog_for_api(include_inferred_moods=False)}
+    payload = {"ok": True, "catalog": catalog_for_api(include_inferred_moods=True)}
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    etag = f'W/"cat-lite-{revision_key}-{len(body)}"'
+    # v2: lite catalog includes inferred gospel_moods (was empty before → first-song picks)
+    etag = f'W/"cat-lite-v2-{revision_key}-{len(body)}"'
     _catalog_lite_bytes = body
     _catalog_lite_etag = etag
     _catalog_lite_mtime = revision_key

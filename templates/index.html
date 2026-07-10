@@ -25862,15 +25862,18 @@
         const match = moodMatchScore(moods, moodKey);
         const lyrics = row.has_lyrics ? 1 : 0;
         const lang = songMatchesPlanLangFilter(row, massSongPlanLanguage) ? 1 : 0;
-        return { row, score: match * 100 + lyrics * 10 + lang * 5 - idx * 0.001 };
+        return { row, match, score: match * 100 + lyrics * 10 + lang * 5 - idx * 0.001 };
       }).filter((item) => {
         const id = String(item.row.id || "");
         return id && !exclude.has(id);
       });
       if (!scored.length) return [];
       scored.sort((a, b) => b.score - a.score);
-      const topScore = scored[0].score;
-      const tier = scored.filter((item) => item.score >= topScore - 5);
+      // Prefer exact/related mood matches when available; avoid "first in section" ties.
+      const bestMatch = scored[0].match;
+      const preferred = bestMatch >= 2 ? scored.filter((item) => item.match >= 2) : scored;
+      const topScore = preferred[0].score;
+      const tier = preferred.filter((item) => item.score >= topScore - 5);
       const picked = [];
       shuffleArray(tier).forEach((item) => {
         const id = String(item.row.id || "");
@@ -26026,6 +26029,41 @@
       notify("Suggested songs added to your plan.", "ok");
     }
 
+    function selectionsFromSongIds(defaults, moodKey) {
+      const out = [];
+      const mood = moodKey || "reverent";
+      MOOD_PICK_SECTIONS.forEach((sec) => {
+        if (sec.slotKeys) {
+          sec.slotKeys.forEach((slotKey, i) => {
+            const id = String((defaults && defaults[slotKey]) || "").trim();
+            if (!id) return;
+            const row = ((songCatalogData && songCatalogData[sec.key]) || []).find((r) => String(r.id) === id);
+            out.push({
+              section: sec.key,
+              slotKey,
+              id,
+              title: (row && row.title) || catalogSongTitle(sec.key, id) || id,
+              label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
+              moodKey: mood,
+            });
+          });
+          return;
+        }
+        const id = String((defaults && defaults[sec.slotKey]) || "").trim();
+        if (!id) return;
+        const row = ((songCatalogData && songCatalogData[sec.key]) || []).find((r) => String(r.id) === id);
+        out.push({
+          section: sec.key,
+          slotKey: sec.slotKey,
+          id,
+          title: (row && row.title) || catalogSongTitle(sec.key, id) || id,
+          label: sec.label,
+          moodKey: mood,
+        });
+      });
+      return out;
+    }
+
     function applyDefaultSongSelectionsFromPreview(preview) {
       const defaults = (preview && preview.default_song_selections) || {};
       if (defaults.entrance) selectedLyricsSongs.entrance = defaults.entrance;
@@ -26038,7 +26076,20 @@
     function applyGospelMoodDefaultsToSongPlan() {
       const preview = flowPreviewData;
       const moodKey = preview ? inferGospelMoodKey(preview) : null;
+      const serverDefaults = (preview && preview.default_song_selections) || {};
+      const serverSlots = ["entrance", "offertory", "communion_1", "communion_2", "recessional"].filter(
+        (k) => String(serverDefaults[k] || "").trim()
+      );
       massMoodPickExcludeIds = new Set();
+
+      // Prefer API mood picks (full lyrics + gospel_moods). Client lite catalog used to
+      // recompute without moods and often fell back to the first song per section.
+      if (serverSlots.length >= 4) {
+        applyDefaultSongSelectionsFromPreview(preview);
+        massMoodPickSelections = selectionsFromSongIds(serverDefaults, moodKey || "reverent");
+        return true;
+      }
+
       let selections = [];
       if (moodKey && songCatalogData) {
         selections = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) => Object.assign({ moodKey }, p));

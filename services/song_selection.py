@@ -144,7 +144,7 @@ def _pick_mood_songs_for_section(
             continue
         moods = gospel_moods_for_song(row)
         match = _mood_match_score(moods, mood_key)
-        has_lyrics = 1 if str(row.get("lyrics") or "").strip() else 0
+        has_lyrics = 1 if row.get("has_lyrics") or str(row.get("lyrics") or "").strip() else 0
         scored.append((match * 100 + has_lyrics * 10 - idx * 0.001, row))
     scored.sort(key=lambda t: t[0], reverse=True)
     picked: list[dict[str, Any]] = []
@@ -196,6 +196,8 @@ def default_song_selections_for_preview(season_key: str, preview: dict[str, Any]
 
     mood_key = infer_gospel_mood_key_from_preview(preview)
     picks = default_song_selections_for_gospel_mood(season_key, mood_key)
+    # Fill any missing slots from season defaults — never replace mood picks with
+    # first-in-section songs when mood matching already returned a full set.
     if len(picks) >= 4:
         return picks
     fallback = default_song_selections_for_date(season_key)
