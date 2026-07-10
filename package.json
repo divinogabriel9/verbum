@@ -5,7 +5,12 @@
   "description": "Front-end asset build for the LiturgyFlow marketing landing page.",
   "scripts": {
     "build:landing-css": "tailwindcss -c build/tailwind/landing.config.js -i build/tailwind/landing.input.css -o static/css/landing.css --minify",
-    "watch:landing-css": "tailwindcss -c build/tailwind/landing.config.js -i build/tailwind/landing.input.css -o static/css/landing.css --watch"
+    "watch:landing-css": "tailwindcss -c build/tailwind/landing.config.js -i build/tailwind/landing.input.css -o static/css/landing.css --watch",
+    "loadtest:smoke": "k6 run loadtests/smoke.js",
+    "loadtest:load": "k6 run loadtests/load-readings.js",
+    "loadtest:stress": "k6 run --summary-trend-stats=avg,p(95),p(99),max loadtests/stress.js",
+    "loadtest:spike": "k6 run loadtests/spike.js",
+    "loadtest:preview": "k6 run loadtests/preview-auth.js"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.0"

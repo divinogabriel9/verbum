@@ -18,6 +18,61 @@ def _service_client():
     return get_service_client()
 
 
+def _upsert_normalized_song_row(
+    client: Any,
+    *,
+    section: str,
+    row: dict[str, Any],
+    now: str,
+) -> None:
+    hid = str(row.get("id") or "").strip()
+    if not hid:
+        return
+    meta = {
+        "id": hid,
+        "section": section,
+        "title": str(row.get("title") or ""),
+        "author": str(row.get("author") or ""),
+        "language": str(row.get("language") or "").strip(),
+        "gospel_moods": normalize_gospel_moods(row.get("gospel_moods")),
+        "updated_at": now,
+    }
+    lyrics = str(row.get("lyrics") or "")
+    client.table("hymn_songs").upsert(meta, on_conflict="id").execute()
+    client.table("hymn_song_lyrics").upsert(
+        {"hymn_id": hid, "lyrics": lyrics, "updated_at": now},
+        on_conflict="hymn_id",
+    ).execute()
+
+
+def sync_songs_to_normalized_tables(
+    catalog: dict[str, list[dict[str, Any]]],
+    song_ids: set[str] | frozenset[str],
+) -> None:
+    """Upsert only the given hymn ids into hymn_songs + hymn_song_lyrics."""
+    if not supabase_enabled() or not song_ids:
+        return
+    wanted = {str(sid or "").strip() for sid in song_ids if str(sid or "").strip()}
+    if not wanted:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    client = _service_client()
+    for section, rows in catalog.items():
+        sec = str(section or "").strip().lower()
+        if not sec or not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            hid = str(row.get("id") or "").strip()
+            if hid not in wanted:
+                continue
+            try:
+                _upsert_normalized_song_row(client, section=sec, row=row, now=now)
+            except Exception as exc:
+                logger.warning("hymn normalized sync failed for %s: %s", hid, exc)
+
+
 def sync_catalog_to_normalized_tables(
     catalog: dict[str, list[dict[str, Any]]],
 ) -> None:
@@ -36,22 +91,8 @@ def sync_catalog_to_normalized_tables(
             hid = str(row.get("id") or "").strip()
             if not hid:
                 continue
-            meta = {
-                "id": hid,
-                "section": sec,
-                "title": str(row.get("title") or ""),
-                "author": str(row.get("author") or ""),
-                "language": str(row.get("language") or "").strip(),
-                "gospel_moods": normalize_gospel_moods(row.get("gospel_moods")),
-                "updated_at": now,
-            }
-            lyrics = str(row.get("lyrics") or "")
             try:
-                client.table("hymn_songs").upsert(meta, on_conflict="id").execute()
-                client.table("hymn_song_lyrics").upsert(
-                    {"hymn_id": hid, "lyrics": lyrics, "updated_at": now},
-                    on_conflict="hymn_id",
-                ).execute()
+                _upsert_normalized_song_row(client, section=sec, row=row, now=now)
             except Exception as exc:
                 logger.warning("hymn normalized sync failed for %s: %s", hid, exc)
 

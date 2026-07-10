@@ -205,12 +205,29 @@
       flex-direction: column;
       gap: 14px;
     }
+    .pin-otp__wrap {
+      position: relative;
+      cursor: text;
+    }
+    .pin-otp__trap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      z-index: 2;
+      caret-color: transparent;
+    }
     .pin-otp__cells {
       display: flex;
       gap: 10px;
       justify-content: center;
+      pointer-events: none;
     }
-    .pin-otp__cell {
+    .pin-otp__box {
       width: 3.25rem;
       height: 3.5rem;
       flex: 0 0 auto;
@@ -220,16 +237,13 @@
       text-align: center;
       font-size: 1.5rem;
       font-weight: 600;
-      padding: 0;
+      line-height: 3.5rem;
       color: var(--ink);
-      -moz-appearance: textfield;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .pin-otp__cell::-webkit-outer-spin-button,
-    .pin-otp__cell::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .pin-otp__cell:focus {
+    .pin-otp__box.is-active {
       outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
       border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
     }
@@ -342,46 +356,83 @@
       }
 
       function mountPinOtp(container) {
-        if (!container) return { getValue: function () { return ""; }, focus: function () {} };
-        const cells = Array.prototype.slice.call(container.querySelectorAll("[data-pin-cell]"));
-        function getValue() {
-          return cells.map(function (c) { return (c.value || "").replace(/\D/g, "").slice(0, 1); }).join("");
+        if (!container) return { getValue: function () { return ""; }, focus: function () {}, clear: function () {} };
+        const trap = container.querySelector(".pin-otp__trap");
+        const boxes = Array.prototype.slice.call(container.querySelectorAll("[data-pin-box]"));
+        const limit = boxes.length || 6;
+        if (!trap) return { getValue: function () { return ""; }, focus: function () {}, clear: function () {} };
+
+        function sync() {
+          const val = (trap.value || "").replace(/\D/g, "").slice(0, limit);
+          if (trap.value !== val) trap.value = val;
+          boxes.forEach(function (box, i) {
+            const filled = i < val.length;
+            box.textContent = filled ? "\u2022" : "";
+            box.classList.toggle("is-filled", filled);
+            box.classList.toggle("is-active", !filled && i === val.length);
+          });
+          if (val.length >= limit) {
+            boxes.forEach(function (box) { box.classList.remove("is-active"); });
+            if (boxes[limit - 1]) boxes[limit - 1].classList.add("is-active");
+          }
         }
-        function focus() {
-          if (cells[0]) cells[0].focus();
+
+        function appendDigit(digit) {
+          const val = ((trap.value || "").replace(/\D/g, "") + digit).slice(0, limit);
+          trap.value = val;
+          sync();
         }
-        cells.forEach(function (cell, i) {
-          cell.addEventListener("input", function () {
-            const v = (cell.value || "").replace(/\D/g, "");
-            cell.value = v.slice(-1);
-            if (cell.value && i < cells.length - 1) cells[i + 1].focus();
-          });
-          cell.addEventListener("keydown", function (ev) {
-            if (ev.key === "Backspace" && !cell.value && i > 0) {
-              cells[i - 1].focus();
-              cells[i - 1].value = "";
-              ev.preventDefault();
-            }
-            if (ev.key === "ArrowLeft" && i > 0) cells[i - 1].focus();
-            if (ev.key === "ArrowRight" && i < cells.length - 1) cells[i + 1].focus();
-          });
-          cell.addEventListener("paste", function (ev) {
-            ev.preventDefault();
-            const text = (ev.clipboardData && ev.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, cells.length);
-            text.split("").forEach(function (ch, j) {
-              if (cells[j]) cells[j].value = ch;
-            });
-            const next = Math.min(text.length, cells.length - 1);
-            if (cells[next]) cells[next].focus();
-          });
+
+        trap.addEventListener("input", sync);
+        trap.addEventListener("paste", function (ev) {
+          ev.preventDefault();
+          const text = (ev.clipboardData && ev.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, limit);
+          trap.value = text;
+          sync();
         });
-        return { getValue: getValue, focus: focus, cells: cells };
+        container.addEventListener("click", function () { trap.focus(); });
+
+        function onDocKey(ev) {
+          if (!container.isConnected) {
+            document.removeEventListener("keydown", onDocKey, true);
+            return;
+          }
+          const t = ev.target;
+          if (t && t !== trap && (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "SELECT")) return;
+          if (/^\d$/.test(ev.key)) {
+            ev.preventDefault();
+            trap.focus();
+            appendDigit(ev.key);
+          } else if (ev.key === "Backspace") {
+            const val = (trap.value || "").replace(/\D/g, "");
+            if (document.activeElement !== trap || val.length) {
+              ev.preventDefault();
+              trap.focus();
+              trap.value = val.slice(0, -1);
+              sync();
+            }
+          }
+        }
+        document.addEventListener("keydown", onDocKey, true);
+
+        sync();
+        requestAnimationFrame(function () { trap.focus({ preventScroll: true }); });
+
+        return {
+          getValue: function () { return (trap.value || "").replace(/\D/g, "").slice(0, limit); },
+          clear: function () { trap.value = ""; sync(); trap.focus(); },
+          focus: function () { trap.focus(); },
+          destroy: function () { document.removeEventListener("keydown", onDocKey, true); },
+          cells: boxes,
+        };
       }
 
       function pinOtpMarkup() {
-        return [1, 2, 3, 4, 5, 6].map(function (n) {
-          return '<input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="one-time-code" aria-label="Digit ' + n + '" />';
+        const boxes = [1, 2, 3, 4, 5, 6].map(function () {
+          return '<span class="pin-otp__box" data-pin-box aria-hidden="true"></span>';
         }).join("");
+        return '<input type="tel" class="pin-otp__trap" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" aria-labelledby="practice-pin-label" />' +
+          '<div class="pin-otp__cells" aria-hidden="true">' + boxes + '</div>';
       }
 
       function renderPinForm(errorMsg) {
@@ -395,7 +446,7 @@
               '<label id="practice-pin-label">Enter the 6-digit PIN from your choir leader</label>' +
               '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">The PIN is not included in the link — share it separately (e.g. in person or by text).</p>' +
               '<div class="practice-pin-entry">' +
-                '<div class="pin-otp__cells" id="practice-pin-otp" role="group" aria-labelledby="practice-pin-label">' +
+                '<div class="pin-otp__wrap" id="practice-pin-otp" role="group" aria-labelledby="practice-pin-label">' +
                   pinOtpMarkup() +
                 '</div>' +
                 '<button type="button" class="practice-pin-submit" id="practice-pin-submit">Unlock</button>' +
@@ -408,11 +459,12 @@
         btn.addEventListener("click", function () {
           submitPin(otp.getValue());
         });
-        otp.cells.forEach(function (cell) {
-          cell.addEventListener("keydown", function (ev) {
+        const trapEnter = document.querySelector("#practice-pin-otp .pin-otp__trap");
+        if (trapEnter) {
+          trapEnter.addEventListener("keydown", function (ev) {
             if (ev.key === "Enter") btn.click();
           });
-        });
+        }
         otp.focus();
       }
 

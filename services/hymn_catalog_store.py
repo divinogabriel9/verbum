@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
-from services.hymn_normalized_store import sync_catalog_to_normalized_tables
+from services.hymn_normalized_store import (
+    sync_catalog_to_normalized_tables,
+    sync_songs_to_normalized_tables,
+)
 from services.runtime_config import mirror_catalog_to_local_disk
 
 logger = logging.getLogger(__name__)
@@ -222,6 +225,7 @@ def save_catalog_dict(
     data: dict[str, list[dict[str, Any]]],
     *,
     updated_by: str | None = None,
+    sync_song_ids: set[str] | frozenset[str] | None = None,
 ) -> None:
     """Persist catalog — Supabase when configured, always mirror to local JSON."""
     global _catalog_cache, _catalog_revision
@@ -236,7 +240,10 @@ def save_catalog_dict(
     if mirror_catalog_to_local_disk():
         _write_file_catalog(normalized)
     try:
-        sync_catalog_to_normalized_tables(normalized)
+        if sync_song_ids:
+            sync_songs_to_normalized_tables(normalized, sync_song_ids)
+        else:
+            sync_catalog_to_normalized_tables(normalized)
     except Exception as exc:
         logger.warning("Normalized hymn sync failed: %s", exc)
     _catalog_cache = normalized

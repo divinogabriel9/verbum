@@ -667,8 +667,9 @@
     }
     .create-menu-wrap--sidebar .btn-create__icon {
       width: 20px;
+      height: 20px;
       flex-shrink: 0;
-      text-align: center;
+      display: block;
     }
     .create-menu-wrap--sidebar .btn-create span:not(.btn-create__icon) {
       opacity: 0;
@@ -1536,9 +1537,10 @@
     }
     .btn-create:active { transform: scale(0.97); }
     .btn-create__icon {
-      font-size: 1rem;
-      line-height: 1;
-      font-weight: 500;
+      width: 18px;
+      height: 18px;
+      display: block;
+      flex-shrink: 0;
     }
     .btn-create__chevron,
     .account-menu-btn__chevron,
@@ -7432,12 +7434,29 @@
     }
     .practice-share-meta { margin: 0; font-size: 0.78rem; }
     .practice-share-pin-field { margin: 0; }
+    .pin-otp__wrap {
+      position: relative;
+      cursor: text;
+    }
+    .pin-otp__trap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      z-index: 2;
+      caret-color: transparent;
+    }
     .pin-otp__cells {
       display: flex;
       gap: 10px;
       justify-content: center;
+      pointer-events: none;
     }
-    .pin-otp__cell {
+    .pin-otp__box {
       width: 3.25rem;
       height: 3.25rem;
       flex: 0 0 auto;
@@ -7447,16 +7466,12 @@
       text-align: center;
       font-size: 1.35rem;
       font-weight: 600;
-      padding: 0;
       color: var(--ink);
-      -moz-appearance: textfield;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .pin-otp__cell::-webkit-outer-spin-button,
-    .pin-otp__cell::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .pin-otp__cell:focus {
+    .pin-otp__box.is-active {
       outline: 2px solid color-mix(in srgb, var(--good) 45%, transparent);
       border-color: color-mix(in srgb, var(--good) 55%, var(--line-soft));
     }
@@ -14465,7 +14480,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260707c" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260710h" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -14593,8 +14608,8 @@
       </nav>
       <div class="app-sidebar__create">
         <div class="create-menu-wrap create-menu-wrap--sidebar">
-          <button type="button" class="btn-create" id="create-menu-btn" aria-expanded="false" aria-controls="create-menu-panel" aria-haspopup="menu">
-            <span class="btn-create__icon" aria-hidden="true">+</span>
+          <button type="button" class="btn-create" id="create-menu-btn" aria-label="Create" aria-expanded="false" aria-controls="create-menu-panel" aria-haspopup="menu">
+            <svg class="btn-create__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
             <span>Create</span>
             <svg class="btn-create__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg>
           </button>
@@ -14615,6 +14630,9 @@
         <p class="sr-only" id="topbar-breadcrumb">Home</p>
         <p class="sr-only" id="topbar-route-desc">Mission control for the upcoming Sunday Mass.</p>
         <div class="app-header__main">
+          <button type="button" class="app-header__menu-btn" id="app-header-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="app-mobile-menu" hidden>
+            <svg class="app-header__menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          </button>
           <a href="/home" class="brand-block brand-block--text-only" id="topbar-title" data-route="/home" aria-label="LiturgyFlow — Home">
             <span class="brand-block__text">
               <span class="brand-block__name wordmark"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
@@ -14631,6 +14649,7 @@
           </a>
           <div class="app-header__utilities">
           <div class="header-chips-wrap">
+          <div class="header-create-host" id="header-create-host"></div>
           <div class="live-radio-wrap" id="live-radio-wrap">
             <div class="live-radio-pill" id="live-radio-pill">
               <button type="button" class="live-radio-pill__play" id="live-radio-play-btn" aria-label="Play live radio">
@@ -14737,12 +14756,12 @@
               </div>
             </div>
             <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
-              <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
               </svg>
-              <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              <svg class="theme-icon theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
               </svg>
             </button>
             <div class="account-menu-wrap">
@@ -14811,8 +14830,77 @@
           </div>
           </div>
         </div>
+        <div class="app-header__ticker-row" id="app-header-ticker-row" hidden aria-hidden="true"></div>
       </header>
+    <div class="ui-overlay ui-overlay--mobile-menu" id="app-mobile-menu" aria-hidden="true" role="presentation">
+      <div class="ui-overlay__backdrop" id="app-mobile-menu-backdrop"></div>
+      <aside class="app-mobile-menu" role="dialog" aria-modal="true" aria-labelledby="app-mobile-menu-title">
+        <header class="app-mobile-menu__head">
+          <span class="app-mobile-menu__brand wordmark" aria-hidden="true"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
+          <h2 class="sr-only" id="app-mobile-menu-title">Menu</h2>
+          <button type="button" class="ghost app-mobile-menu__close" id="app-mobile-menu-close" aria-label="Close menu">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </header>
+        <div class="app-mobile-menu__body">
+          <nav class="app-mobile-menu__pages" id="app-mobile-menu-pages" aria-label="More pages">
+            <a class="app-mobile-menu__link nav-link" data-nav-tab="radio" data-route="/radio" href="/radio">
+              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+              <span>Media</span>
+            </a>
+            <a class="app-mobile-menu__link nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
+              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span>Liturgical Calendar</span>
+            </a>
+            <a class="app-mobile-menu__link nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              <span>Posters</span>
+            </a>
+            <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+              <span>Theme Lab</span>
+            </a>
+            <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/templates" href="/design/templates">
+              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <span>Templates</span>
+            </a>
+            <a class="app-mobile-menu__link nav-link" data-nav-tab="library" data-route="/library/collections" href="/library/collections">
+              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span>Collections</span>
+            </a>
+            <a class="app-mobile-menu__link nav-link" data-nav-tab="media" data-route="/media/history" href="/media/history">
+              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span>History</span>
+            </a>
+          </nav>
+          <div class="app-mobile-menu__divider" aria-hidden="true"></div>
+          <div id="app-mobile-menu-account-host"></div>
+        </div>
+      </aside>
+    </div>
+    <div class="header-sheet-backdrop" id="header-sheet-backdrop" hidden aria-hidden="true"></div>
     <main class="dashboard">
+      <section class="page notifications-page" id="today-page" data-route="/notifications">
+        <div class="notifications-page__layout">
+          <header class="notifications-page__head">
+            <h2 class="notifications-page__title">Notifications</h2>
+          </header>
+          <details class="notifications-accordion notifications-accordion--liturgy" id="notifications-liturgy-accordion">
+            <summary class="notifications-accordion__summary">
+              <span class="notifications-accordion__label" id="notifications-accordion-season">Ordinary Time</span>
+              <span class="notifications-accordion__meta" id="notifications-accordion-year">Year A</span>
+            </summary>
+            <div class="notifications-accordion__body" id="today-liturgical-host"></div>
+          </details>
+          <details class="notifications-accordion notifications-accordion--alerts" id="notifications-alerts-accordion" open>
+            <summary class="notifications-accordion__summary">
+              <span class="notifications-accordion__label">Alerts</span>
+              <span class="notif-badge notifications-accordion__badge" id="notif-badge-accordion" hidden>0</span>
+            </summary>
+            <div class="notifications-accordion__body" id="today-notif-host"></div>
+          </details>
+        </div>
+      </section>
       <section class="page" id="home-page" data-route="/home">
           <div class="app-platform-banner" id="home-platform-banner" hidden aria-live="polite"></div>
           <div class="app-membership-banner" id="home-membership-banner" hidden aria-live="polite"></div>
@@ -15184,14 +15272,15 @@
               <p class="practice-share-setup__lead">Create a 6-digit PIN for your choir. Share the PIN separately from the link.</p>
               <div class="field practice-share-pin-field" id="practice-share-pin-wrap">
                 <label>Create PIN</label>
-                <div class="pin-otp" id="practice-share-pin-otp">
-                  <div class="pin-otp__cells" role="group" aria-label="6-digit PIN">
-                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 1" />
-                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 2" />
-                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 3" />
-                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 4" />
-                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 5" />
-                    <input type="password" inputmode="numeric" maxlength="1" class="pin-otp__cell" data-pin-cell autocomplete="off" aria-label="Digit 6" />
+                <div class="pin-otp pin-otp__wrap" id="practice-share-pin-otp">
+                  <input type="tel" class="pin-otp__trap" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" aria-label="6-digit PIN" />
+                  <div class="pin-otp__cells" aria-hidden="true">
+                    <span class="pin-otp__box" data-pin-box></span>
+                    <span class="pin-otp__box" data-pin-box></span>
+                    <span class="pin-otp__box" data-pin-box></span>
+                    <span class="pin-otp__box" data-pin-box></span>
+                    <span class="pin-otp__box" data-pin-box></span>
+                    <span class="pin-otp__box" data-pin-box></span>
                   </div>
                 </div>
               </div>
@@ -18197,13 +18286,30 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Song catalog</h3>
-                  <p>Manage the global hymn library.</p>
+                  <p>Global hymn library — shared across all parishes via Supabase.</p>
                 </div>
               </header>
-              <p class="muted">Edit, import, and refresh songs in the Library. Superadmin-only catalog actions apply there.</p>
-              <div class="actions">
-                <button type="button" class="primary" id="sa-btn-open-library">Open song library</button>
+              <p class="muted" style="font-size:0.86rem;">Add or edit lyrics in Song Library (superadmin saves publish directly). Use sync below to republish the catalog to Supabase if parishes are not seeing your latest changes.</p>
+              <div id="sa-hymn-catalog-grid" class="sa-stat-grid" aria-live="polite"></div>
+              <h4 class="settings-admin-subhead">Sections</h4>
+              <div class="sa-table-wrap" id="sa-hymn-catalog-sections-wrap" aria-live="polite">
+                <p class="muted">Loading catalog status…</p>
               </div>
+              <div class="sa-toolbar" style="margin-top:12px;">
+                <div class="field" style="margin:0;min-width:200px;">
+                  <label for="sa-hymn-sync-prefer">Publish from</label>
+                  <select id="sa-hymn-sync-prefer" class="sa-filter-select" style="max-width:100%;">
+                    <option value="active" selected>Active catalog (recommended)</option>
+                    <option value="local">Local hymn_library.json file</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sa-quick-actions">
+                <button type="button" class="primary" id="sa-btn-open-library">Open song library</button>
+                <button type="button" class="secondary" id="sa-btn-sync-hymn-catalog">Sync to Supabase</button>
+                <button type="button" class="secondary" id="sa-btn-refresh-hymn-catalog">Refresh status</button>
+              </div>
+              <p class="status" id="sa-hymn-catalog-status" aria-live="polite"></p>
             </article>
 
             <article class="sa-panel flow-bento-cell" id="sa-panel-content-readings" data-sa-panel="content-readings" hidden>
@@ -18283,8 +18389,14 @@
               <div id="sa-health-grid" class="sa-stat-grid" aria-live="polite"></div>
               <h4 class="settings-admin-subhead">Environment</h4>
               <ul class="sa-activity-list" id="sa-env-list" aria-live="polite"></ul>
+              <h4 class="settings-admin-subhead">API probes</h4>
+              <p class="muted" style="font-size:0.82rem;margin:0 0 10px;">On-demand route checks — status and latency only (no response bodies).</p>
+              <div class="sa-table-wrap" id="sa-health-probes-wrap" aria-live="polite">
+                <p class="muted" id="sa-health-probes-empty">Click Run API probes to test critical routes.</p>
+              </div>
               <div class="sa-quick-actions">
                 <button type="button" class="secondary" id="sa-btn-refresh-health">Refresh health</button>
+                <button type="button" class="secondary" id="sa-btn-run-api-probes">Run API probes</button>
                 <button type="button" class="secondary" id="sa-btn-bootstrap-superadmins-2">Bootstrap superadmins</button>
               </div>
               <p class="status" id="sa-health-status" aria-live="polite"></p>
@@ -18468,6 +18580,7 @@
             </div>
           </aside>
           <div class="settings-main">
+            <div class="settings-mobile-account-host" id="settings-mobile-account-host"></div>
             <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church">
               <header class="flow-bento-cell__head home-card-head">
                 <span class="home-card-head__icon" aria-hidden="true">
@@ -18656,25 +18769,23 @@
     </main>
     <nav class="app-bottom-nav app-nav--mobile" id="app-bottom-nav" aria-label="Main navigation">
       <a class="nav-link" data-nav-tab="home" data-route="/home" href="/home">
-        <img src="/static/icons/home.png" class="nav-icon" alt="" width="15" height="15" />
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span class="nav-label">Home</span>
       </a>
       <a class="nav-link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
-        <img src="/static/icons/mass.png" class="nav-icon" alt="" width="15" height="15" />
-        <span class="nav-label">Mass</span>
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v6"/><path d="m9 9 3-3 3 3"/></svg>
+        <span class="nav-label">Mass setup</span>
       </a>
+      <div class="app-bottom-nav__create-slot" id="bottom-nav-create-host" hidden aria-hidden="true"></div>
       <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
         <span class="nav-label">Lyrics Library</span>
       </a>
-      <a class="nav-link" data-nav-tab="radio" data-route="/radio" href="/radio">
-        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
-        <span class="nav-label">Media</span>
+      <a class="nav-link nav-link--mobile-only" data-nav-tab="notifications" data-route="/notifications" href="/notifications" id="app-bottom-nav-notifications">
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="nav-label">Notifications</span>
+        <span class="notif-badge notif-badge--nav" id="notif-badge-nav" hidden>0</span>
       </a>
-      <button type="button" class="nav-link app-bottom-nav__more" id="app-bottom-nav-more" aria-expanded="false" aria-controls="app-more-sheet" aria-label="More pages">
-        <svg class="nav-icon app-bottom-nav__more-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        <span class="nav-label">More</span>
-      </button>
     </nav>
     <div class="ui-overlay ui-overlay--more-sheet" id="app-more-sheet" aria-hidden="true" role="presentation">
       <div class="ui-overlay__backdrop" id="app-more-sheet-backdrop"></div>
@@ -18687,6 +18798,14 @@
           <button type="button" class="ghost ui-card__close" id="app-more-sheet-close" aria-label="Close">×</button>
         </header>
         <div class="ui-card__content app-more-sheet__links">
+          <a class="app-more-sheet__link nav-link app-more-sheet__link--mobile-only" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+            <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
+            <span>Lyrics Library</span>
+          </a>
+          <a class="app-more-sheet__link nav-link app-more-sheet__link--mobile-only" data-route="/radio" href="/radio">
+            <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+            <span>Media</span>
+          </a>
           <a class="app-more-sheet__link nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
             <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
             <span>Posters</span>
@@ -18844,6 +18963,159 @@
       }
     }
     initAppHeaderOffset();
+
+    const mobileChromeRestore = { inited: false, litBefore: null, notifBefore: null, tickerNext: null, createParent: null };
+
+    function isMobileChromeLayout() {
+      return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+    }
+
+    function initMobileChromeRestore() {
+      if (mobileChromeRestore.inited) return;
+      mobileChromeRestore.inited = true;
+      const notif = document.querySelector(".notif-wrap");
+      const themeBtn = $("theme-toggle-btn");
+      const main = document.querySelector(".app-header__main");
+      const createParent = document.querySelector(".app-sidebar__create");
+      if (notif) mobileChromeRestore.litBefore = notif;
+      if (themeBtn) mobileChromeRestore.notifBefore = themeBtn;
+      if (main) mobileChromeRestore.tickerNext = main.querySelector(".app-header__utilities");
+      if (createParent) mobileChromeRestore.createParent = createParent;
+    }
+
+    function restoreHeaderChipChild(wrap, beforeEl) {
+      const chips = document.querySelector(".header-chips-wrap");
+      if (!wrap || !chips) return;
+      if (beforeEl && beforeEl.parentElement === chips) {
+        chips.insertBefore(wrap, beforeEl);
+      } else {
+        chips.appendChild(wrap);
+      }
+    }
+
+    function syncMobileChromeLayout() {
+      initMobileChromeRestore();
+      const mobile = isMobileChromeLayout();
+      document.body.classList.toggle("mobile-chrome-tabs", mobile);
+
+      const menuBtn = $("app-header-menu-btn");
+      if (menuBtn) menuBtn.hidden = !mobile;
+
+      const litWrap = document.querySelector(".liturgical-indicator-wrap");
+      const notifWrap = document.querySelector(".notif-wrap");
+      const accountWrap = document.querySelector(".account-menu-wrap");
+      const createWrap = document.querySelector(".create-menu-wrap--sidebar");
+      const litHost = $("today-liturgical-host");
+      const notifHost = $("today-notif-host");
+      const accountHost = $("app-mobile-menu-account-host");
+      const createHost = $("bottom-nav-create-host");
+      const litPanel = $("liturgical-indicator-panel");
+      const notifPanel = $("notif-panel");
+      const accountPanel = $("account-menu-panel");
+      const ticker = $("app-header-ticker");
+      const tickerRow = $("app-header-ticker-row");
+      const main = document.querySelector(".app-header__main");
+
+      if (mobile) {
+        if (litWrap && litHost) litHost.appendChild(litWrap);
+        if (notifWrap && notifHost) notifHost.appendChild(notifWrap);
+        if (accountWrap && accountHost) accountHost.appendChild(accountWrap);
+        if (createWrap && createHost) {
+          createWrap.classList.add("create-menu-wrap--bottom-nav");
+          createWrap.classList.remove("create-menu-wrap--header");
+          createHost.appendChild(createWrap);
+          createHost.hidden = false;
+          createHost.setAttribute("aria-hidden", "false");
+        }
+        if (litPanel) {
+          litPanel.hidden = false;
+          litPanel.classList.add("today-page-panel");
+        }
+        if (notifPanel) {
+          notifPanel.hidden = false;
+          notifPanel.classList.add("today-page-panel");
+        }
+        if (accountPanel) {
+          accountPanel.hidden = false;
+          accountPanel.classList.add("mobile-menu-account-panel");
+        }
+        if (ticker && tickerRow) {
+          tickerRow.appendChild(ticker);
+          tickerRow.hidden = false;
+          tickerRow.setAttribute("aria-hidden", "false");
+        }
+        if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+        if (typeof closeMobileMenu === "function") closeMobileMenu();
+        if (normalizeRoute(currentRoute()) === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
+          updateLiturgicalCountdowns();
+        }
+        if (typeof syncNotificationsAccordionHeader === "function") syncNotificationsAccordionHeader();
+      } else {
+        restoreHeaderChipChild(litWrap, mobileChromeRestore.litBefore);
+        restoreHeaderChipChild(notifWrap, mobileChromeRestore.notifBefore);
+        restoreHeaderChipChild(accountWrap, null);
+        if (createWrap && mobileChromeRestore.createParent) {
+          createWrap.classList.remove("create-menu-wrap--bottom-nav", "create-menu-wrap--header");
+          mobileChromeRestore.createParent.appendChild(createWrap);
+        }
+        const createHostEl = $("bottom-nav-create-host");
+        if (createHostEl) {
+          createHostEl.hidden = true;
+          createHostEl.setAttribute("aria-hidden", "true");
+        }
+        if (litPanel) {
+          litPanel.hidden = true;
+          litPanel.classList.remove("today-page-panel");
+        }
+        if (notifPanel) {
+          notifPanel.hidden = true;
+          notifPanel.classList.remove("today-page-panel");
+        }
+        if (accountPanel) {
+          accountPanel.hidden = true;
+          accountPanel.classList.remove("mobile-menu-account-panel");
+        }
+        if (ticker && main && mobileChromeRestore.tickerNext) {
+          main.insertBefore(ticker, mobileChromeRestore.tickerNext);
+        }
+        if (tickerRow) {
+          tickerRow.hidden = true;
+          tickerRow.setAttribute("aria-hidden", "true");
+        }
+        if (typeof closeMobileMenu === "function") closeMobileMenu();
+      }
+      syncAppHeaderOffset();
+    }
+
+    function syncNotificationsAccordionHeader() {
+      const season = $("home-liturgical-season");
+      const year = $("home-liturgical-year");
+      const seasonEl = $("notifications-accordion-season");
+      const yearEl = $("notifications-accordion-year");
+      if (season && seasonEl) seasonEl.textContent = season.textContent || "Ordinary Time";
+      if (year && yearEl) yearEl.textContent = year.textContent || "";
+    }
+
+    function initNotificationsAccordions() {
+      const liturgyAcc = $("notifications-liturgy-accordion");
+      if (liturgyAcc && liturgyAcc.dataset.bound !== "1") {
+        liturgyAcc.dataset.bound = "1";
+        liturgyAcc.addEventListener("toggle", () => {
+          if (liturgyAcc.open && typeof updateLiturgicalCountdowns === "function") {
+            updateLiturgicalCountdowns();
+          }
+        });
+      }
+      syncNotificationsAccordionHeader();
+    }
+
+    function initMobileChromeLayout() {
+      syncMobileChromeLayout();
+      window.addEventListener("resize", () => {
+        syncMobileChromeLayout();
+        if (typeof applyNavTabVisibility === "function") applyNavTabVisibility();
+      }, { passive: true });
+    }
     const escapeHtml = (value) => {
       const div = document.createElement("div");
       div.textContent = String(value || "");
@@ -19230,6 +19502,8 @@
     }
 
     function isNavTabVisible(tabId) {
+      if (tabId === "notifications") return isMobileChromeLayout();
+      if (tabId === "radio" && isMobileChromeLayout()) return false;
       const def = NAV_TAB_DEFS.find((row) => row.id === tabId);
       if (!def) return false;
       if (def.required) return true;
@@ -19239,12 +19513,14 @@
     function routeToNavTabId(route) {
       const r = normalizeRoute(route || "");
       if (r === "/home") return "home";
+      if (r === "/notifications") return "notifications";
       if (r === "/radio") return "radio";
       if (r === "/mass/calendar") return "calendar";
       if (r.startsWith("/mass/")) return "mass";
       if (r.startsWith("/library/")) return "library";
       if (r.startsWith("/media/")) return "media";
       if (r.startsWith("/design/")) return "design";
+      if (r.startsWith("/settings/")) return null;
       return null;
     }
 
@@ -19957,6 +20233,7 @@
       if (menuBtn && panel) {
         menuBtn.addEventListener("click", (e) => {
           e.stopPropagation();
+          e.preventDefault();
           if (panel.hidden) {
             closeHeaderMenus("live-radio-panel");
             syncLiveRadioPanelUi();
@@ -21024,6 +21301,7 @@
 
     const routeMeta = {
       "/home": "Mission control for the upcoming Sunday Mass.",
+      "/notifications": "Liturgical season and app notifications.",
       "/mass/builder": "Assemble songs, timeline, and generate the full package.",
       "/mass/calendar": "Monthly liturgical view with readings context.",
       "/radio": "EWTN 24/7 Catholic radio while you plan.",
@@ -21041,6 +21319,7 @@
 
     const routeBreadcrumb = {
       "/home": ["Home"],
+      "/notifications": ["Notifications"],
       "/mass/builder": ["Mass", "Builder"],
       "/mass/calendar": ["Mass", "Calendar"],
       "/media/posters": ["Posters", "Create"],
@@ -21073,6 +21352,7 @@
         seasonEl.textContent = formatLiturgicalSeasonLabel(seasonStr || "");
       }
       applyLiturgicalIndicatorStyle(preset, liturgicalColor);
+      if (typeof syncNotificationsAccordionHeader === "function") syncNotificationsAccordionHeader();
       const ticker = $("app-header-ticker");
       if (ticker && ticker.classList.contains("is-liturgy")) {
         const accent = resolveTickerSeasonAccent();
@@ -21091,6 +21371,7 @@
     }
 
     const legacyRoutes = {
+      "/today": "/notifications",
       "/lyrics-dashboard": "/library/songs",
       "/theme-dashboard": "/design/theme-lab",
       "/mass-flow-dashboard": "/mass/builder",
@@ -21128,14 +21409,18 @@
       return false;
     }
 
-    function isMoreNavRoute(route) {
+    function isDrawerNavRoute(route) {
+      if (route === "/radio") return true;
       if (route === "/mass/calendar") return true;
       if (route.startsWith("/design/")) return true;
       if (route.startsWith("/media/")) return true;
       if (route === "/library/collections") return true;
       if (route === "/media/history") return true;
-      if (route.startsWith("/settings/")) return true;
       return false;
+    }
+
+    function isMoreNavRoute(route) {
+      return isDrawerNavRoute(route);
     }
 
     function closeAppMoreSheet() {
@@ -21148,6 +21433,68 @@
       if (btn) btn.setAttribute("aria-expanded", "false");
       const anyOverlayOpen = document.querySelector(".ui-overlay.is-open, .modal.visible, .song-preview-panel.is-open");
       if (!anyOverlayOpen) document.body.style.overflow = "";
+    }
+
+    function closeMobileMenu() {
+      const menu = $("app-mobile-menu");
+      const btn = $("app-header-menu-btn");
+      if (menu) {
+        menu.classList.remove("is-open");
+        menu.setAttribute("aria-hidden", "true");
+      }
+      if (btn) {
+        btn.setAttribute("aria-expanded", "false");
+        btn.classList.remove("is-active");
+      }
+      const anyOverlayOpen = document.querySelector(".ui-overlay.is-open, .modal.visible, .song-preview-panel.is-open");
+      if (!anyOverlayOpen) document.body.style.overflow = "";
+    }
+
+    function openMobileMenu() {
+      const menu = $("app-mobile-menu");
+      const btn = $("app-header-menu-btn");
+      if (!menu || !isMobileChromeLayout()) return;
+      closeAppMoreSheet();
+      if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+      menu.classList.add("is-open");
+      menu.setAttribute("aria-hidden", "false");
+      if (btn) {
+        btn.setAttribute("aria-expanded", "true");
+        btn.classList.add("is-active");
+      }
+      document.body.style.overflow = "hidden";
+    }
+
+    function initMobileMenu() {
+      const btn = $("app-header-menu-btn");
+      const menu = $("app-mobile-menu");
+      const backdrop = $("app-mobile-menu-backdrop");
+      const closeBtn = $("app-mobile-menu-close");
+      if (!btn || !menu) return;
+      btn.addEventListener("click", () => {
+        if (menu.classList.contains("is-open")) closeMobileMenu();
+        else openMobileMenu();
+      });
+      backdrop && backdrop.addEventListener("click", closeMobileMenu);
+      closeBtn && closeBtn.addEventListener("click", closeMobileMenu);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && menu.classList.contains("is-open")) closeMobileMenu();
+      });
+      const panel = $("account-menu-panel");
+      if (panel) {
+        panel.querySelectorAll(".nav-link[data-route], #account-sign-in-link, #account-sign-up-link").forEach((link) => {
+          link.addEventListener("click", () => closeMobileMenu());
+        });
+        panel.querySelectorAll("#account-tour-link, #account-sign-out-btn").forEach((link) => {
+          link.addEventListener("click", () => closeMobileMenu());
+        });
+      }
+      const pagesNav = $("app-mobile-menu-pages");
+      if (pagesNav) {
+        pagesNav.querySelectorAll(".app-mobile-menu__link[data-route]").forEach((link) => {
+          link.addEventListener("click", () => closeMobileMenu());
+        });
+      }
     }
 
     function openAppMoreSheet() {
@@ -21749,6 +22096,7 @@
 
     function pageIsActiveForRoute(page, route) {
       if (page.id === "settings-page") return isSettingsRoute(route);
+      if (page.id === "today-page") return route === "/notifications";
       return page.dataset.route === route;
     }
 
@@ -21759,12 +22107,13 @@
         page.classList.toggle("active", pageIsActiveForRoute(page, r));
         page.classList.remove("page--leaving");
       });
-      document.querySelectorAll(".app-sidebar .app-sidebar__link, .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link").forEach((link) => {
+      document.querySelectorAll(".app-sidebar .app-sidebar__link, .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .app-mobile-menu__link.nav-link").forEach((link) => {
         link.classList.toggle("active", navLinkIsActive(link, r));
       });
       const moreBtn = $("app-bottom-nav-more");
-      if (moreBtn) moreBtn.classList.toggle("active", isMoreNavRoute(r));
+      if (moreBtn) moreBtn.classList.toggle("active", isDrawerNavRoute(r));
       closeAppMoreSheet();
+      if (typeof closeMobileMenu === "function") closeMobileMenu();
       syncSettingsLayout(r);
       const rs = $("route-switcher");
       if (rs) rs.value = r;
@@ -21774,12 +22123,19 @@
       if (bc) bc.innerHTML = formatRouteBreadcrumb(r);
       const accountBtn = $("account-menu-btn");
       if (accountBtn) accountBtn.classList.toggle("is-active", isSettingsRoute(r));
+      const menuBtn = $("app-header-menu-btn");
+      if (menuBtn) menuBtn.classList.toggle("is-active", isSettingsRoute(r) || isDrawerNavRoute(r) || ($("app-mobile-menu") && $("app-mobile-menu").classList.contains("is-open")));
       if (r === "/home") {
         refreshHomeMassCard();
         refreshHomeMission();
         refreshCatholicNews();
         refreshWydNews();
         updateMassBuilderDraftHomeUI();
+      }
+      if (r === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
+        updateLiturgicalCountdowns();
+        if (typeof renderNotificationFeed === "function") renderNotificationFeed();
+        if (typeof syncNotificationsAccordionHeader === "function") syncNotificationsAccordionHeader();
       }
       if (isSettingsRoute(r)) {
         syncHomeNewsSettingsUI();
@@ -21869,7 +22225,9 @@
 
     function showRoute(route, replaceOnly = false) {
       if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+      if (typeof closeMobileMenu === "function") closeMobileMenu();
       let r = normalizeRoute(route);
+      if (r === "/notifications" && !isMobileChromeLayout()) r = "/home";
       if (isSuperadminRoute(r) && !canAccessSuperadminRoute()) {
         notify("Superadmin access required.", "error");
         r = "/home";
@@ -21879,7 +22237,7 @@
         autoSaveMassBuilderDraftOnLeave();
       }
       const tabId = routeToNavTabId(r);
-      if (tabId && !isNavTabVisible(tabId)) {
+      if (tabId && !isNavTabVisible(tabId) && !isSettingsRoute(r)) {
         notify("That section is hidden. Turn it back on in Settings → Appearance.", "info");
         r = "/home";
       }
@@ -22569,6 +22927,53 @@
       songSaveMoodSearchTitle = "";
     }
 
+    function buildExternalGoogleSearchUrl(query) {
+      const q = String(query || "").trim();
+      if (!q) return "";
+      return "https://www.google.com/search?" + new URLSearchParams({ q, hl: "en" }).toString();
+    }
+
+    function isIosDevice() {
+      return /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    }
+
+    function isAndroidDevice() {
+      return /Android/i.test(navigator.userAgent || "");
+    }
+
+    function externalGoogleSearchNavigateUrl(httpsUrl) {
+      const url = String(httpsUrl || "").trim();
+      if (!url) return "";
+      if (isIosDevice()) {
+        return url.replace(/^https:\/\//i, "x-safari-https://");
+      }
+      if (isAndroidDevice()) {
+        const path = url.replace(/^https?:\/\//i, "");
+        return "intent://" + path + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
+      }
+      return url;
+    }
+
+    function openExternalGoogleSearch(queryOrUrl) {
+      const raw = String(queryOrUrl || "").trim();
+      if (!raw) return;
+      const httpsUrl = /^https?:\/\//i.test(raw) ? raw : buildExternalGoogleSearchUrl(raw);
+      if (!httpsUrl) return;
+      const navigateUrl = externalGoogleSearchNavigateUrl(httpsUrl);
+      if (isIosDevice() || isAndroidDevice()) {
+        const a = document.createElement("a");
+        a.href = navigateUrl;
+        a.target = "_self";
+        a.rel = "noopener noreferrer";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+      window.open(httpsUrl, "_blank", "noopener,noreferrer");
+    }
+
     function buildSongMoodGoogleQuery(title, language) {
       const titleForSearch = songTitleWithLanguageForSearch(title, language);
       return "what is the mood of this song " + titleForSearch + " ?";
@@ -22584,7 +22989,7 @@
         return;
       }
       const query = buildSongMoodGoogleQuery(title, lang);
-      window.open("https://www.google.com/search?q=" + encodeURIComponent(query), "_blank", "noopener,noreferrer");
+      openExternalGoogleSearch(query);
     }
 
     function resetSongSaveSuccessModal() {
@@ -22653,7 +23058,7 @@
       };
       if (loading && !loading.hidden) {
         loading.classList.add("is-hiding");
-        window.setTimeout(reveal, 240);
+        window.setTimeout(reveal, 120);
       } else {
         reveal();
       }
@@ -22662,10 +23067,6 @@
     function showSongSaveSuccessModal(message, heading) {
       showSongSaveSuccessState(message, heading);
       setUiOverlayOpen($("song-save-success-modal"), true);
-    }
-
-    async function waitForSongSaveMinLoading(ms) {
-      await new Promise((resolve) => window.setTimeout(resolve, ms));
     }
 
     function openSongSaveMoodModal(title) {
@@ -22703,7 +23104,6 @@
       const saveLanguage = ($("lyrics-save-language") && $("lyrics-save-language").value) || "";
       showSongSaveProgressModal(title);
       $("btn-save-lyrics").disabled = true;
-      const saveStarted = Date.now();
       try {
         const result = await postJSON("/api/lyrics/save", {
           title,
@@ -22713,8 +23113,6 @@
           author: ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "",
           gospel_moods: getComposerSongMoods(),
         });
-        const elapsed = Date.now() - saveStarted;
-        if (elapsed < 700) await waitForSongSaveMinLoading(700 - elapsed);
         const created = result.created || [];
         const updated = result.updated || [];
         const isNew = created.length > 0;
@@ -22732,8 +23130,6 @@
           msg = "Saved lyrics for " + result.title + " in " + songSectionLabel(savedSection) + ".";
           heading = "Song saved";
         }
-        setLyricsStatus(msg, "ok");
-        showSongSaveSuccessState(msg, heading);
         if (savedSection) setComposerSongSection(savedSection);
         pushSongHistory({
           title: result.title,
@@ -22746,13 +23142,17 @@
           composerLoadedSong = { section: savedSection, id: result.id, title: result.title || title };
           if (saveLanguage) setComposerSongLanguage(saveLanguage);
         }
-        invalidateSongCatalogCaches();
         if (!result.pending) {
           mergeSavedSongIntoLocalCatalog(result);
-        }
-        await loadSongCatalog(true);
-        if (!result.pending) {
+          renderSongCatalog();
           document.dispatchEvent(new CustomEvent("verbum:song-catalog-changed"));
+        } else {
+          invalidateSongCatalogCaches();
+        }
+        setLyricsStatus(msg, "ok");
+        showSongSaveSuccessState(msg, heading);
+        if (!result.pending) {
+          void loadSongCatalog(true);
         }
       } catch (error) {
         closeSongSaveSuccessModal();
@@ -22859,7 +23259,9 @@
         if ($("lyrics-save-language")) $("lyrics-save-language").focus();
         return;
       }
-      await loadSongCatalog(true);
+      if (!songCatalogLoaded || !songCatalogData) {
+        await loadSongCatalog(true);
+      }
       const saveSection = ($("lyrics-save-section") && $("lyrics-save-section").value) || "";
       const matches = findExistingCatalogSongMatches(title);
       if (shouldConfirmSongOverwrite(title, saveSection, matches)) {
@@ -23259,10 +23661,138 @@
       panel.classList.remove("is-open");
       panel.hidden = true;
       syncUiCardPopoverOverflow(panel, false);
+      if (isHeaderSheetPanel(panel)) syncHeaderSheetBackdrop({ allowPointer: true });
+    }
+
+    const HEADER_SHEET_PANEL_IDS = new Set([
+      "notif-panel",
+      "account-menu-panel",
+      "liturgical-indicator-panel",
+      "live-radio-panel",
+    ]);
+
+    function isMobileHeaderSheet() {
+      return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+    }
+
+    function isHeaderSheetPanel(panel) {
+      if (!panel || !panel.id) return false;
+      if (isMobileChromeLayout() && panel.id !== "live-radio-panel" && panel.id !== "create-menu-panel") return false;
+      return HEADER_SHEET_PANEL_IDS.has(panel.id);
+    }
+
+    function suppressHeaderDismissBriefly(ms) {
+      const delay = typeof ms === "number" ? ms : 650;
+      window.__verbumHeaderDismissGuard = true;
+      window.clearTimeout(window.__verbumHeaderDismissGuardTimer);
+      window.__verbumHeaderDismissGuardTimer = window.setTimeout(() => {
+        window.__verbumHeaderDismissGuard = false;
+        const backdrop = $("header-sheet-backdrop");
+        if (backdrop && !backdrop.hidden) {
+          backdrop.style.pointerEvents = "auto";
+        }
+      }, delay);
+    }
+
+    function hasOpenHeaderSheet() {
+      if (isMobileChromeLayout()) {
+        const radio = $("live-radio-panel");
+        const create = $("create-menu-panel");
+        return !!((radio && !radio.hidden) || (create && !create.hidden));
+      }
+      return !!document.querySelector(
+        "#notif-panel:not([hidden]), #account-menu-panel:not([hidden]), " +
+        "#liturgical-indicator-panel:not([hidden]), #live-radio-panel:not([hidden])"
+      );
+    }
+
+    function syncHeaderSheetBackdrop(opts) {
+      const backdrop = $("header-sheet-backdrop");
+      if (!backdrop) return;
+      const allowPointer = !(opts && opts.allowPointer === false);
+      if (!isMobileHeaderSheet()) {
+        backdrop.hidden = true;
+        backdrop.setAttribute("aria-hidden", "true");
+        backdrop.style.pointerEvents = "none";
+        document.body.classList.remove("header-sheet-open");
+        return;
+      }
+      const showing = hasOpenHeaderSheet();
+      backdrop.hidden = !showing;
+      backdrop.setAttribute("aria-hidden", showing ? "false" : "true");
+      backdrop.style.pointerEvents = showing && allowPointer ? "auto" : "none";
+      document.body.classList.toggle("header-sheet-open", showing);
+    }
+
+    function bindMobileHeaderSheetTrigger(btn, onClick) {
+      if (!btn || typeof onClick !== "function") return;
+      btn.addEventListener("pointerdown", (e) => {
+        if (!isMobileHeaderSheet()) return;
+        if (e.pointerType === "touch") e.preventDefault();
+      }, { passive: false });
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        onClick(e);
+      });
+    }
+
+    function openHeaderSheetPanel(panel, btn) {
+      if (!panel) return;
+      if (isMobileHeaderSheet() && isHeaderSheetPanel(panel)) {
+        suppressHeaderDismissBriefly();
+      }
+      panel.hidden = false;
+      requestAnimationFrame(() => {
+        panel.classList.add("is-open");
+        syncUiCardPopoverOverflow(panel, true);
+      });
+      if (btn) btn.setAttribute("aria-expanded", "true");
+      if (isMobileHeaderSheet() && isHeaderSheetPanel(panel)) {
+        syncHeaderSheetBackdrop({ allowPointer: false });
+        window.setTimeout(() => syncHeaderSheetBackdrop({ allowPointer: true }), 650);
+      } else {
+        syncHeaderSheetBackdrop({ allowPointer: true });
+      }
+    }
+
+    function closeHeaderSheetPanel(panel, btn) {
+      if (!panel) return;
+      panel.classList.remove("is-open");
+      panel.hidden = true;
+      if (btn) btn.setAttribute("aria-expanded", "false");
+      syncUiCardPopoverOverflow(panel, false);
+      syncHeaderSheetBackdrop({ allowPointer: true });
+    }
+
+    function toggleHeaderSheetPanel(panel, btn, exceptPanelId) {
+      if (!panel) return;
+      if (panel.hidden) {
+        if (typeof closeHeaderMenus === "function") closeHeaderMenus(exceptPanelId || panel.id);
+        openHeaderSheetPanel(panel, btn);
+      } else {
+        closeHeaderSheetPanel(panel, btn);
+      }
+    }
+
+    function isInsideHeaderDropdownUI(target) {
+      if (!target || !target.closest) return false;
+      return !!target.closest(
+        ".account-menu-wrap, .liturgical-indicator-wrap, .live-radio-wrap, .notif-wrap, " +
+        "#notif-panel, #account-menu-panel, #liturgical-indicator-panel, #live-radio-panel"
+      );
     }
 
     function setVbDropdownOpen(panel, btn, open) {
       if (!panel) return;
+      if (open && isMobileHeaderSheet() && isHeaderSheetPanel(panel)) {
+        openHeaderSheetPanel(panel, btn);
+        return;
+      }
+      if (!open && isMobileHeaderSheet() && isHeaderSheetPanel(panel)) {
+        closeHeaderSheetPanel(panel, btn);
+        return;
+      }
       if (open) {
         panel.hidden = false;
         requestAnimationFrame(() => {
@@ -24795,35 +25325,97 @@
     let practiceShareLastUrl = "";
     let practiceShareLastHadPin = false;
 
-    function mountPinOtp(container) {
-      if (!container) return { getValue: () => "", clear: () => {}, focus: () => {} };
-      const cells = Array.from(container.querySelectorAll("[data-pin-cell]"));
-      const getValue = () => cells.map((c) => (c.value || "").replace(/\D/g, "").slice(0, 1)).join("");
-      const clear = () => { cells.forEach((c) => { c.value = ""; }); };
-      const focus = () => { cells[0]?.focus(); };
-      cells.forEach((cell, i) => {
-        cell.addEventListener("input", () => {
-          const v = (cell.value || "").replace(/\D/g, "");
-          cell.value = v.slice(-1);
-          if (cell.value && i < cells.length - 1) cells[i + 1].focus();
+    function mountPinOtp(container, opts) {
+      opts = opts || {};
+      if (!container) return { getValue: () => "", clear: () => {}, focus: () => {}, destroy: () => {} };
+      const trap = container.querySelector(".pin-otp__trap");
+      const boxes = Array.from(container.querySelectorAll("[data-pin-box]"));
+      const limit = boxes.length || 6;
+      if (!trap) return { getValue: () => "", clear: () => {}, focus: () => {}, destroy: () => {} };
+
+      const getValue = () => (trap.value || "").replace(/\D/g, "").slice(0, limit);
+
+      const trySubmit = () => {
+        if (getValue().length === limit && typeof opts.onSubmit === "function") {
+          opts.onSubmit(getValue());
+        }
+      };
+
+      const sync = () => {
+        const val = getValue();
+        if (trap.value !== val) trap.value = val;
+        boxes.forEach((box, i) => {
+          const filled = i < val.length;
+          box.textContent = filled ? "\u2022" : "";
+          box.classList.toggle("is-filled", filled);
+          box.classList.toggle("is-active", !filled && i === val.length);
         });
-        cell.addEventListener("keydown", (ev) => {
-          if (ev.key === "Backspace" && !cell.value && i > 0) {
-            cells[i - 1].focus();
-            cells[i - 1].value = "";
-            ev.preventDefault();
-          }
-          if (ev.key === "ArrowLeft" && i > 0) cells[i - 1].focus();
-          if (ev.key === "ArrowRight" && i < cells.length - 1) cells[i + 1].focus();
-        });
-        cell.addEventListener("paste", (ev) => {
+        if (val.length >= limit) {
+          boxes.forEach((box) => box.classList.remove("is-active"));
+          boxes[limit - 1]?.classList.add("is-active");
+        }
+      };
+
+      const appendDigit = (digit) => {
+        trap.value = ((trap.value || "").replace(/\D/g, "") + digit).slice(0, limit);
+        sync();
+      };
+
+      trap.addEventListener("input", sync);
+      trap.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
           ev.preventDefault();
-          const text = (ev.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, cells.length);
-          text.split("").forEach((ch, j) => { if (cells[j]) cells[j].value = ch; });
-          cells[Math.min(text.length, cells.length - 1)]?.focus();
-        });
+          trySubmit();
+        }
       });
-      return { getValue, clear, focus, cells };
+      trap.addEventListener("paste", (ev) => {
+        ev.preventDefault();
+        trap.value = (ev.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, limit);
+        sync();
+      });
+      container.addEventListener("click", () => trap.focus());
+
+      const onDocKey = (ev) => {
+        if (!container.isConnected) {
+          document.removeEventListener("keydown", onDocKey, true);
+          return;
+        }
+        const modal = document.getElementById("practice-share-modal");
+        if (modal && modal.getAttribute("aria-hidden") === "true") return;
+        const t = ev.target;
+        if (t && t !== trap && (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "SELECT")) return;
+        if (/^\d$/.test(ev.key)) {
+          ev.preventDefault();
+          trap.focus();
+          appendDigit(ev.key);
+        } else if (ev.key === "Backspace") {
+          const val = (trap.value || "").replace(/\D/g, "");
+          if (document.activeElement !== trap || val.length) {
+            ev.preventDefault();
+            trap.focus();
+            trap.value = val.slice(0, -1);
+            sync();
+          }
+        } else if (ev.key === "Enter") {
+          if (t && (t.tagName === "BUTTON" || t.tagName === "A")) return;
+          if (getValue().length === limit) {
+            ev.preventDefault();
+            trySubmit();
+          }
+        }
+      };
+      document.addEventListener("keydown", onDocKey, true);
+
+      sync();
+      requestAnimationFrame(() => trap.focus({ preventScroll: true }));
+
+      return {
+        getValue,
+        clear: () => { trap.value = ""; sync(); trap.focus(); },
+        focus: () => trap.focus(),
+        destroy: () => document.removeEventListener("keydown", onDocKey, true),
+        cells: boxes,
+      };
     }
 
     let practiceSharePinOtp = null;
@@ -24898,6 +25490,7 @@
       if (sub) {
         sub.textContent = "Share lyrics for " + date + ". Set a 6-digit PIN, then generate the link.";
       }
+      requestAnimationFrame(() => practiceSharePinOtp?.focus());
     }
 
     async function collectPracticeShareSongs() {
@@ -25004,7 +25597,7 @@
         meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + pinNote;
       }
       const sub = $("practice-share-sub");
-      if (sub) sub.textContent = "Share this link or QR code in your choir group chat.";
+      if (sub) sub.textContent = "Share this link or QR code in your choir group chat. Links expire 3 days after creation or the day after Mass, whichever is sooner.";
     }
 
     async function createPracticeShareLink() {
@@ -25049,7 +25642,7 @@
           parish_name: parishName,
           celebrant: celebrant,
           songs: songs,
-          ttl_days: 5,
+          ttl_days: 3,
           optional_pin: pinRaw,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
@@ -25100,7 +25693,11 @@
         createPracticeShareLink();
       });
       const pinOtpRoot = $("practice-share-pin-otp");
-      if (pinOtpRoot) practiceSharePinOtp = mountPinOtp(pinOtpRoot);
+      if (pinOtpRoot) {
+        practiceSharePinOtp = mountPinOtp(pinOtpRoot, {
+          onSubmit: () => $("practice-share-generate")?.click(),
+        });
+      }
       $("practice-share-copy") && $("practice-share-copy").addEventListener("click", () => {
         copyPracticeShareLink();
       });
@@ -25208,6 +25805,43 @@
       return 1;
     }
 
+    function shuffleArray(items) {
+      const arr = items.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function appendSectionSongSelections(selections, sec, songs) {
+      if (sec.slotKeys) {
+        sec.slotKeys.forEach((slotKey, i) => {
+          const row = songs[i];
+          if (!row) return;
+          selections.push({
+            section: sec.key,
+            slotKey,
+            id: row.id,
+            title: row.title || "",
+            label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
+          });
+        });
+        return;
+      }
+      const row = songs[0];
+      if (!row) return;
+      selections.push({
+        section: sec.key,
+        slotKey: sec.slotKey,
+        id: row.id,
+        title: row.title || "",
+        label: sec.label,
+      });
+    }
+
     function pickMoodSongsForSection(section, moodKey, count, excludeIds) {
       const rows = (songCatalogData && songCatalogData[section]) || [];
       if (!rows.length) return [];
@@ -25218,17 +25852,49 @@
         const lyrics = row.has_lyrics ? 1 : 0;
         const lang = songMatchesPlanLangFilter(row, massSongPlanLanguage) ? 1 : 0;
         return { row, score: match * 100 + lyrics * 10 + lang * 5 - idx * 0.001 };
-      });
-      scored.sort((a, b) => b.score - a.score);
-      const picked = [];
-      for (const item of scored) {
+      }).filter((item) => {
         const id = String(item.row.id || "");
-        if (!id || exclude.has(id)) continue;
+        return id && !exclude.has(id);
+      });
+      if (!scored.length) return [];
+      scored.sort((a, b) => b.score - a.score);
+      const topScore = scored[0].score;
+      const tier = scored.filter((item) => item.score >= topScore - 5);
+      const picked = [];
+      shuffleArray(tier).forEach((item) => {
+        const id = String(item.row.id || "");
+        if (!id || exclude.has(id)) return;
         picked.push(item.row);
         exclude.add(id);
-        if (picked.length >= count) break;
+      });
+      if (picked.length < count) {
+        scored.forEach((item) => {
+          if (picked.length >= count) return;
+          const id = String(item.row.id || "");
+          if (!id || exclude.has(id)) return;
+          picked.push(item.row);
+          exclude.add(id);
+        });
       }
-      return picked;
+      return picked.slice(0, count);
+    }
+
+    function pickRandomSongsForSection(section, count, excludeIds) {
+      const rows = (songCatalogData && songCatalogData[section]) || [];
+      if (!rows.length) return [];
+      const exclude = excludeIds || new Set();
+      const pool = rows.filter((row) => {
+        const id = String(row.id || "");
+        return id && !exclude.has(id);
+      });
+      const picked = [];
+      shuffleArray(pool).forEach((row) => {
+        const id = String(row.id || "");
+        if (!id || exclude.has(id)) return;
+        picked.push(row);
+        exclude.add(id);
+      });
+      return picked.slice(0, count);
     }
 
     function buildMassMoodPickSelections(moodKey, rotateExclude) {
@@ -25236,29 +25902,17 @@
       const selections = [];
       MOOD_PICK_SECTIONS.forEach((sec) => {
         const songs = pickMoodSongsForSection(sec.key, moodKey, sec.count || 1, exclude);
-        if (sec.slotKeys) {
-          sec.slotKeys.forEach((slotKey, i) => {
-            const row = songs[i];
-            if (!row) return;
-            selections.push({
-              section: sec.key,
-              slotKey,
-              id: row.id,
-              title: row.title || "",
-              label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
-            });
-          });
-          return;
-        }
-        const row = songs[0];
-        if (!row) return;
-        selections.push({
-          section: sec.key,
-          slotKey: sec.slotKey,
-          id: row.id,
-          title: row.title || "",
-          label: sec.label,
-        });
+        appendSectionSongSelections(selections, sec, songs);
+      });
+      return selections;
+    }
+
+    function buildRandomCatalogSelections(rotateExclude) {
+      const exclude = new Set(rotateExclude || []);
+      const selections = [];
+      MOOD_PICK_SECTIONS.forEach((sec) => {
+        const songs = pickRandomSongsForSection(sec.key, sec.count || 1, exclude);
+        appendSectionSongSelections(selections, sec, songs);
       });
       return selections;
     }
@@ -25373,17 +26027,20 @@
     function applyGospelMoodDefaultsToSongPlan() {
       const preview = flowPreviewData;
       const moodKey = preview ? inferGospelMoodKey(preview) : null;
-      if (!moodKey || !songCatalogData) {
-        applyDefaultSongSelectionsFromPreview(preview);
-        return false;
-      }
       massMoodPickExcludeIds = new Set();
-      massMoodPickSelections = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) => Object.assign({ moodKey }, p));
-      if (!massMoodPickSelections.length) {
+      let selections = [];
+      if (moodKey && songCatalogData) {
+        selections = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) => Object.assign({ moodKey }, p));
+      }
+      if (!selections.length && songCatalogData) {
+        selections = buildRandomCatalogSelections(massMoodPickExcludeIds).map((p) => Object.assign({ moodKey: moodKey || "reverent" }, p));
+      }
+      if (!selections.length) {
         applyDefaultSongSelectionsFromPreview(preview);
         return false;
       }
-      massMoodPickSelections.forEach((pick) => {
+      massMoodPickSelections = selections;
+      selections.forEach((pick) => {
         if (!pick.slotKey || !pick.id) return;
         selectedLyricsSongs[pick.slotKey] = pick.id;
       });
@@ -25971,16 +26628,21 @@
 
     function updateNotifBadge() {
       const badge = $("notif-badge");
-      if (!badge) return;
+      const navBadge = $("notif-badge-nav");
+      const accordionBadge = $("notif-badge-accordion");
       const saCount = typeof getSaApprovalBadgeCount === "function" ? getSaApprovalBadgeCount() : 0;
       const n = appNotifications.length + saCount;
-      if (n > 0) {
-        badge.hidden = false;
-        badge.textContent = n > 99 ? "99+" : String(n);
-      } else {
-        badge.hidden = true;
-        badge.textContent = "0";
-      }
+      const label = n > 99 ? "99+" : String(n);
+      [badge, navBadge, accordionBadge].forEach((el) => {
+        if (!el) return;
+        if (n > 0) {
+          el.hidden = false;
+          el.textContent = label;
+        } else {
+          el.hidden = true;
+          el.textContent = "0";
+        }
+      });
     }
 
     function renderNotificationFeed() {
@@ -26099,23 +26761,11 @@
       const btn = $("notif-toggle-btn");
       const panel = $("notif-panel");
       if (!btn || !panel) return;
-      function closeNotifPanel() {
-        setVbDropdownOpen(panel, btn, false);
-      }
-      function openNotifPanel() {
-        closeHeaderMenus("notif-panel");
-        setVbDropdownOpen(panel, btn, true);
-      }
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (panel.hidden) openNotifPanel();
-        else closeNotifPanel();
-      });
-      document.addEventListener("click", (e) => {
-        if (!panel.hidden && !e.target.closest(".notif-wrap")) closeNotifPanel();
+      bindMobileHeaderSheetTrigger(btn, () => {
+        toggleHeaderSheetPanel(panel, btn, "notif-panel");
       });
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !panel.hidden) closeNotifPanel();
+        if (e.key === "Escape" && !panel.hidden) closeHeaderSheetPanel(panel, btn);
       });
     })();
 
@@ -27385,6 +28035,7 @@
       else if (saState.panel === "generations") loadSaGenerations();
       else if (saState.panel === "audit-log") loadSaAuditLog();
       else if (saState.panel === "content-readings") loadSaReadingsCache();
+      else if (saState.panel === "content-songs") loadSaHymnCatalogStatus();
       else if (saState.panel === "system-ai") { refreshGeminiSettings(); loadSaAiQuotaSummary(); loadSaParishQuotaTable(); }
       else if (saState.panel === "system-announcement") loadSaAnnouncementAdmin();
       else if (saState.panel === "system-storage") loadSaStorageBrowser();
@@ -28515,6 +29166,74 @@
       }
     }
 
+    async function loadSaHymnCatalogStatus() {
+      const grid = $("sa-hymn-catalog-grid");
+      const sectionsWrap = $("sa-hymn-catalog-sections-wrap");
+      if (!grid) return;
+      grid.innerHTML = Array(4).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
+      if (sectionsWrap) sectionsWrap.innerHTML = "<p class=\"muted\">Loading…</p>";
+      try {
+        const data = await saFetchAdmin("/api/admin/hymn-catalog/status");
+        const counts = data.counts || {};
+        const supabase = data.supabase || {};
+        const supabaseLabel = supabase.configured === false
+          ? "Not configured"
+          : (supabase.seeded ? "Connected" : "Empty");
+        const remoteUpdated = supabase.updated_at
+          ? new Date(supabase.updated_at).toLocaleString()
+          : "—";
+        grid.innerHTML = [
+          saRenderStatCard("Songs", counts.total || 0, "In catalog"),
+          saRenderStatCard("With lyrics", counts.with_lyrics || 0, (counts.without_lyrics || 0) + " missing"),
+          saRenderStatCard("Supabase", supabaseLabel, remoteUpdated),
+          saRenderStatCard("Source", data.source === "supabase" ? "Remote" : "Local file", data.revision ? String(data.revision).slice(0, 19) : "—"),
+        ].join("");
+        if (sectionsWrap) {
+          const sections = data.sections || {};
+          const sectionKeys = Object.keys(sections);
+          const rows = sectionKeys.map((sec) => {
+            const row = sections[sec] || {};
+            return "<tr><td>" + escapeHtml(sec) + "</td><td>" + escapeHtml(String(row.total || 0)) + "</td><td>" + escapeHtml(String(row.with_lyrics || 0)) + "</td></tr>";
+          });
+          sectionsWrap.innerHTML = saRenderTable(["Section", "Songs", "With lyrics"], rows, "No sections in catalog.");
+        }
+      } catch (err) {
+        grid.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Could not load catalog status.") + "</p>";
+        if (sectionsWrap) sectionsWrap.innerHTML = "";
+      }
+    }
+
+    async function syncSaHymnCatalog() {
+      if (!guardSuperadminAction()) return;
+      const preferEl = $("sa-hymn-sync-prefer");
+      const statusEl = $("sa-hymn-catalog-status");
+      const btn = $("sa-btn-sync-hymn-catalog");
+      const prefer = (preferEl && preferEl.value) || "active";
+      const confirmMsg = prefer === "local"
+        ? "Publish hymn_library.json to Supabase? This overwrites the remote global catalog."
+        : "Republish the active hymn catalog to Supabase for all parishes?";
+      if (!confirm(confirmMsg)) return;
+      if (statusEl) { statusEl.textContent = "Syncing catalog to Supabase…"; statusEl.className = "status"; }
+      if (btn) btn.disabled = true;
+      try {
+        const data = await saFetchAdmin("/api/admin/hymn-catalog/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prefer: prefer }),
+        });
+        const counts = data.counts || {};
+        if (statusEl) {
+          statusEl.textContent = "Synced " + (counts.total || 0) + " songs (" + (counts.with_lyrics || 0) + " with lyrics) to Supabase.";
+          statusEl.className = "status ok";
+        }
+        loadSaHymnCatalogStatus();
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = err.message || "Sync failed."; statusEl.className = "status error"; }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     async function loadSaReadingsCache() {
       const summary = $("sa-readings-cache-summary");
       if (!summary) return;
@@ -28622,6 +29341,64 @@
       }
     }
 
+    function renderSaApiProbes(data) {
+      const wrap = $("sa-health-probes-wrap");
+      const statusEl = $("sa-health-status");
+      if (!wrap) return;
+      const probes = (data && data.probes) || [];
+      const summary = (data && data.summary) || {};
+      if (!probes.length) {
+        wrap.innerHTML = "<p class=\"muted\">No probes returned.</p>";
+        return;
+      }
+      const rows = probes.map((probe) => {
+        const skipped = probe.skipped;
+        const ok = probe.ok;
+        const statusLabel = skipped ? "skip" : (ok ? "pass" : "fail");
+        const statusClass = skipped ? "muted" : (ok ? "ok" : "error");
+        const note = probe.note ? ("<span class=\"muted\">" + escapeHtml(probe.note) + "</span>") : "—";
+        return "<tr>" +
+          "<td>" + escapeHtml(probe.label || "—") + "</td>" +
+          "<td class=\"muted\">" + escapeHtml(probe.method || "—") + "</td>" +
+          "<td><span class=\"status " + statusClass + "\">" + escapeHtml(statusLabel) + "</span></td>" +
+          "<td>" + (skipped ? "—" : escapeHtml(String(probe.status || "—"))) + "</td>" +
+          "<td>" + (skipped ? "—" : escapeHtml(String(probe.ms != null ? probe.ms : "—")) + " ms") + "</td>" +
+          "<td>" + note + "</td>" +
+          "</tr>";
+      }).join("");
+      wrap.innerHTML = "<table class=\"sa-table\" aria-label=\"API probe results\">" +
+        "<thead><tr><th>Route</th><th>Method</th><th>Result</th><th>Status</th><th>Latency</th><th>Note</th></tr></thead>" +
+        "<tbody>" + rows + "</tbody></table>";
+      if (statusEl) {
+        const failed = summary.failed || 0;
+        const passed = summary.passed || 0;
+        const tested = summary.tested || 0;
+        statusEl.textContent = failed
+          ? ("API probes: " + passed + "/" + tested + " passed (" + failed + " failed).")
+          : ("API probes: " + passed + "/" + tested + " passed.");
+        statusEl.className = failed ? "status error" : "status ok";
+      }
+    }
+
+    async function runSaApiProbes() {
+      if (!guardSuperadminAction()) return;
+      const wrap = $("sa-health-probes-wrap");
+      const statusEl = $("sa-health-status");
+      const btn = $("sa-btn-run-api-probes");
+      if (wrap) wrap.innerHTML = "<p class=\"muted\">Running probes…</p>";
+      if (statusEl) { statusEl.textContent = "Running API probes…"; statusEl.className = "status"; }
+      if (btn) btn.disabled = true;
+      try {
+        const data = await saFetchAdmin("/api/admin/health/probes");
+        renderSaApiProbes(data);
+      } catch (err) {
+        if (wrap) wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "API probes failed.") + "</p>";
+        if (statusEl) { statusEl.textContent = err.message || "API probes failed."; statusEl.className = "status error"; }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     async function saClearReadingsCache(date) {
       const statusEl = $("sa-readings-status");
       const body = date ? { date: date } : {};
@@ -28676,6 +29453,8 @@
       $("sa-btn-goto-templates") && $("sa-btn-goto-templates").addEventListener("click", () => showRoute("/design/templates"));
       $("sa-btn-open-templates") && $("sa-btn-open-templates").addEventListener("click", () => showRoute("/design/templates"));
       $("sa-btn-open-library") && $("sa-btn-open-library").addEventListener("click", () => showRoute("/library/songs"));
+      $("sa-btn-sync-hymn-catalog") && $("sa-btn-sync-hymn-catalog").addEventListener("click", () => syncSaHymnCatalog());
+      $("sa-btn-refresh-hymn-catalog") && $("sa-btn-refresh-hymn-catalog").addEventListener("click", () => loadSaHymnCatalogStatus());
       $("sa-btn-clear-readings-cache") && $("sa-btn-clear-readings-cache").addEventListener("click", () => {
         if (!confirm("Clear the entire readings cache?")) return;
         saClearReadingsCache(null);
@@ -28692,6 +29471,7 @@
       $("sa-btn-bootstrap-superadmins") && $("sa-btn-bootstrap-superadmins").addEventListener("click", () => saBootstrapSuperadmins($("sa-dashboard-status")));
       $("sa-btn-bootstrap-superadmins-2") && $("sa-btn-bootstrap-superadmins-2").addEventListener("click", () => saBootstrapSuperadmins($("sa-health-status")));
       $("sa-btn-refresh-health") && $("sa-btn-refresh-health").addEventListener("click", () => loadSaHealth());
+      $("sa-btn-run-api-probes") && $("sa-btn-run-api-probes").addEventListener("click", () => runSaApiProbes());
       const parishSearch = $("sa-parishes-search");
       if (parishSearch) {
         let t = null;
@@ -30320,6 +31100,7 @@
         if (exceptPanelId && panelId === exceptPanelId) return;
         setVbDropdownOpen($(panelId), $(btnId), false);
       });
+      syncHeaderSheetBackdrop({ allowPointer: true });
     }
 
     function initDashboardDropdownDismiss() {
@@ -30328,25 +31109,39 @@
       const dropdownRoots =
         ".account-menu-wrap, .create-menu-wrap, .liturgical-indicator-wrap, .live-radio-wrap, " +
         ".notif-wrap, .app-header__search-wrap, .vb-select, .celebrant-picker, " +
-        ".poster-picker, .mass-song-plan-row__search";
+        ".poster-picker, .mass-song-plan-row__search, " +
+        "#notif-panel, #account-menu-panel, #liturgical-indicator-panel, #live-radio-panel";
       document.addEventListener("click", (e) => {
+        if (window.__verbumHeaderDismissGuard) return;
+        if (isMobileHeaderSheet() && hasOpenHeaderSheet()) return;
+        if (isInsideHeaderDropdownUI(e.target)) return;
         if (e.target.closest(dropdownRoots)) return;
         closeHeaderMenus();
       });
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeHeaderMenus();
       });
+      const backdrop = $("header-sheet-backdrop");
+      if (backdrop) {
+        backdrop.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (window.__verbumHeaderDismissGuard) return;
+          closeHeaderMenus();
+        });
+        backdrop.addEventListener("touchend", (e) => {
+          e.stopPropagation();
+          if (window.__verbumHeaderDismissGuard) return;
+          closeHeaderMenus();
+        });
+      }
     }
 
     function initAccountMenu() {
       const btn = $("account-menu-btn");
       const panel = $("account-menu-panel");
       if (!btn || !panel) return;
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const open = panel.hidden;
-        closeHeaderMenus(open ? "account-menu-panel" : null);
-        setVbDropdownOpen(panel, btn, open);
+      bindMobileHeaderSheetTrigger(btn, () => {
+        toggleHeaderSheetPanel(panel, btn, "account-menu-panel");
       });
       panel.querySelectorAll(".nav-link[data-route]").forEach((link) => {
         link.addEventListener("click", () => closeHeaderMenus());
@@ -30363,7 +31158,11 @@
       const btn = $("create-menu-btn");
       const panel = $("create-menu-panel");
       if (!btn || !panel) return;
+      bindMobileHeaderSheetTrigger(btn, () => {
+        toggleHeaderSheetPanel(panel, btn, "create-menu-panel");
+      });
       btn.addEventListener("click", (e) => {
+        if (isMobileHeaderSheet()) return;
         e.stopPropagation();
         const open = panel.hidden;
         closeHeaderMenus(open ? "create-menu-panel" : null);
@@ -30868,19 +31667,9 @@
       const panel = $("liturgical-indicator-panel");
       if (!btn || !panel) return;
 
-      function closePanel() {
-        setVbDropdownOpen(panel, btn, false);
-      }
-      function openPanel() {
-        closeHeaderMenus("liturgical-indicator-panel");
-        setVbDropdownOpen(panel, btn, true);
-        updateLiturgicalCountdowns();
-      }
-
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (panel.hidden) openPanel();
-        else closePanel();
+      bindMobileHeaderSheetTrigger(btn, () => {
+        if (panel.hidden) updateLiturgicalCountdowns();
+        toggleHeaderSheetPanel(panel, btn, "liturgical-indicator-panel");
       });
       startLiturgicalCountdownTimer();
     }
@@ -33760,7 +34549,7 @@
       const subject = trimSongCatalogSearchText(query);
       const lang = String(language || "").trim();
       if (!subject || !lang || !songCatalogSearchMeetsMinimum(subject)) return "";
-      return "https://www.google.com/search?q=" + encodeURIComponent(songCatalogGoogleSearchPhrase(subject, { language: lang }));
+      return buildExternalGoogleSearchUrl(songCatalogGoogleSearchPhrase(subject, { language: lang }));
     }
 
     function songCatalogSearchHasNoMatchesForQuery(query) {
@@ -33876,7 +34665,7 @@
       }
       const url = songCatalogGoogleLyricsSearchUrl(query, lang);
       closeSongCatalogGoogleConfirmModal();
-      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      if (url) openExternalGoogleSearch(url);
     }
 
     function handleSongCatalogSearchEnter(e) {
@@ -35489,6 +36278,8 @@
     bindHomeNewsSettings();
     bindNavTabSettings();
     applyNavTabVisibility();
+    initMobileChromeLayout();
+    initNotificationsAccordions();
     redirectIfHiddenNavRoute();
     initLiveRadio();
     initHomeNewsExpandModal();
@@ -35507,6 +36298,7 @@
     initReadingExpandModal();
     initWydCard();
     initAppMoreSheet();
+    initMobileMenu();
     initSongPlanSummaryCollapse();
     initHomeTourBanner();
     initHomeMobileCollapsible("home-events-card", "home-events-collapse-toggle", {

@@ -6,7 +6,7 @@ import json
 import logging
 import secrets
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, time, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LOCAL_PATH = _PROJECT_ROOT / "data" / "choir_practice_shares.json"
-_DEFAULT_TTL_DAYS = 5
+_DEFAULT_TTL_DAYS = 3
+_MAX_TTL_DAYS = 7
 _MAX_SONGS = 24
 _MAX_LYRICS_LEN = 12000
 
@@ -158,6 +159,15 @@ def _service_client():
     return get_service_client()
 
 
+def _compute_expires_at(parsed_date: date, ttl_days: int) -> datetime:
+    """Expire at the sooner of TTL cap or the day after Mass."""
+    capped_ttl = max(1, min(int(ttl_days), _MAX_TTL_DAYS))
+    ttl_exp = _now() + timedelta(days=capped_ttl)
+    mass_end = datetime.combine(parsed_date, time(23, 59, 59), tzinfo=timezone.utc)
+    mass_cap = mass_end + timedelta(days=1)
+    return min(ttl_exp, mass_cap)
+
+
 def create_practice_share(
     *,
     created_by_user_id: Optional[str],
@@ -183,7 +193,7 @@ def create_practice_share(
     pin = _normalize_pin(optional_pin)
     pin_stored = hash_pin(pin)
     token = secrets.token_urlsafe(24)
-    expires_at = (_now() + timedelta(days=max(1, min(int(ttl_days), 14)))).isoformat()
+    expires_at = _compute_expires_at(parsed_date, ttl_days).isoformat()
     payload = {
         "token": token,
         "parish_id": (parish_id or "").strip() or None,

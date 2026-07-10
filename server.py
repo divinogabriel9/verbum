@@ -1006,7 +1006,7 @@ class PracticeShareBody(BaseModel):
     parish_name: str = Field("", max_length=L.CHURCH_NAME)
     celebrant: str = Field("", max_length=L.CELEBRANT_NAME)
     songs: list[PracticeShareSongBody] = Field(default_factory=list, max_length=24)
-    ttl_days: int = Field(5, ge=1, le=14)
+    ttl_days: int = Field(3, ge=1, le=7)
     optional_pin: str = Field(..., min_length=6, max_length=6)
 
 
@@ -1769,6 +1769,8 @@ def index(request: Request) -> Any:
 
 
 @app.get("/home", response_class=HTMLResponse)
+@app.get("/notifications", response_class=HTMLResponse)
+@app.get("/today", response_class=HTMLResponse)
 @app.get("/radio", response_class=HTMLResponse)
 @app.get("/mass/builder", response_class=HTMLResponse)
 @app.get("/mass/calendar", response_class=HTMLResponse)

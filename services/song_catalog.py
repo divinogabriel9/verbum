@@ -61,8 +61,9 @@ def save_catalog(
     data: dict[str, list[dict[str, Any]]],
     *,
     updated_by: str | None = None,
+    sync_song_ids: set[str] | frozenset[str] | None = None,
 ) -> None:
-    save_catalog_dict(data, updated_by=updated_by)
+    save_catalog_dict(data, updated_by=updated_by, sync_song_ids=sync_song_ids)
     invalidate_library_cache()
     invalidate_catalog_cache()
     _invalidate_catalog_api_cache()
@@ -313,7 +314,7 @@ def save_lyrics_song(
             kept.append(row)
         data[sec] = kept
 
-    save_catalog(data, updated_by=updated_by)
+    save_catalog(data, updated_by=updated_by, sync_song_ids=canonical_ids)
     first_id = ""
     primary_section = wanted[0] if wanted else ""
     for sec in wanted:

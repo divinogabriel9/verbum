@@ -20,7 +20,7 @@ from services.supabase_client import bootstrap_superadmin_roles_from_env, list_p
 from services.superadmin.dashboard import build_dashboard_payload
 from services.superadmin.audit_log import list_audit_log
 from services.superadmin.generations import list_generations
-from services.superadmin.health import build_health_payload
+from services.superadmin.health import build_api_probes, build_health_payload
 from services.superadmin.parishes import get_parish_detail, list_parishes
 from services.superadmin.users import delete_user, list_users, set_user_parish_role
 from services.superadmin.readings_admin import (
@@ -39,6 +39,10 @@ from services.superadmin.merge_parishes import merge_parishes
 from services.superadmin.storage_browser import list_storage_browser
 from services.superadmin.analytics import build_analytics_payload
 from services.superadmin.approvals_inbox import build_approvals_inbox
+from services.superadmin.hymn_catalog_admin import (
+    build_hymn_catalog_status,
+    sync_hymn_catalog_to_supabase,
+)
 from services.feature_flags import (
     clear_parish_override,
     list_admin_flags,
@@ -112,6 +116,10 @@ class FeatureFlagBody(BaseModel):
 
 class ParishFeatureFlagBody(BaseModel):
     enabled: bool
+
+
+class HymnCatalogSyncBody(BaseModel):
+    prefer: Literal["active", "local"] = "active"
 
 
 def register_admin_routes(app) -> None:
@@ -371,6 +379,42 @@ def register_admin_routes(app) -> None:
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         return build_health_payload()
+
+    @app.get("/api/admin/health/probes")
+    def api_admin_health_probes(
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return build_api_probes(session=session)
+
+    @app.get("/api/admin/hymn-catalog/status")
+    def api_admin_hymn_catalog_status(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return build_hymn_catalog_status()
+
+    @app.post("/api/admin/hymn-catalog/sync")
+    def api_admin_hymn_catalog_sync(
+        body: HymnCatalogSyncBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = sync_hymn_catalog_to_supabase(
+            updated_by=session.user.user_id,
+            prefer=body.prefer,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Sync failed.")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="hymn_catalog_sync",
+            entity_type="platform_hymn_catalog",
+            entity_id="global",
+            detail={
+                "prefer": body.prefer,
+                "total": (result.get("counts") or {}).get("total"),
+                "with_lyrics": (result.get("counts") or {}).get("with_lyrics"),
+            },
+        )
+        return result
 
     @app.get("/api/admin/readings-cache/stats")
     def api_admin_readings_cache_stats(
