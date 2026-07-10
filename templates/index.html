@@ -15656,7 +15656,7 @@
                     </span>
                     Clear
                   </button>
-                  <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Trim spacing">Tidy</button>
+                  <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Trim spacing and remove [Verse] / (Chorus) labels">Tidy</button>
                 </div>
               </div>
               <div class="lyrics-structured-body">
@@ -22899,14 +22899,31 @@
       setLyricsStatus("Editor cleared.", "");
     });
     $("btn-normalize-lyrics").addEventListener("click", () => {
+      flushLyricBlocksFromDom();
       lyricBlocks = lyricBlocks.map((block, index) => ({
         ...block,
         title: block.title.trim() || typeLabels[block.type] + " " + (index + 1),
-        text: block.text.replace(/[ \t]+$/gm, "").replace(/\n{3,}/g, "\n\n").trim(),
+        text: tidyLyricBlockText(block.text),
       }));
-      renderLyrics();
-      setLyricsStatus("Tidied spacing and empty labels.", "ok");
+      renderLyrics({ writeBack: true });
+      setLyricsStatus("Tidied spacing and removed section labels like [Verse] / (Chorus).", "ok");
     });
+
+    /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Verse:). */
+    function tidyLyricBlockText(raw) {
+      const headerRe = /^[\[(]?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$/i;
+      let lines = String(raw || "").replace(/[ \t]+$/gm, "").split("\n");
+      while (lines.length && headerRe.test(String(lines[0] || "").trim())) {
+        lines = lines.slice(1);
+      }
+      // Also drop any remaining standalone marker lines mid-block (duplicate labels).
+      lines = lines.filter((line) => {
+        const t = String(line || "").trim();
+        if (!t) return true;
+        return !headerRe.test(t);
+      });
+      return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    }
     function flushLyricBlocksFromDom() {
       document.querySelectorAll("#lyrics-block-list .lyric-block").forEach((card) => {
         const block = lyricBlocks.find((b) => b.id === card.dataset.id);
