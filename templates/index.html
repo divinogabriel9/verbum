@@ -22933,45 +22933,37 @@
       return "https://www.google.com/search?" + new URLSearchParams({ q, hl: "en" }).toString();
     }
 
-    function isIosDevice() {
-      return /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-    }
-
-    function isAndroidDevice() {
-      return /Android/i.test(navigator.userAgent || "");
-    }
-
-    function externalGoogleSearchNavigateUrl(httpsUrl) {
-      const url = String(httpsUrl || "").trim();
-      if (!url) return "";
-      if (isIosDevice()) {
-        return url.replace(/^https:\/\//i, "x-safari-https://");
+    function buildInBrowserGoogleSearchUrl(queryOrGoogleUrl) {
+      const raw = String(queryOrGoogleUrl || "").trim();
+      if (!raw) return "";
+      let query = raw;
+      if (/^https?:\/\//i.test(raw)) {
+        try {
+          const parsed = new URL(raw);
+          query = parsed.searchParams.get("q") || raw;
+        } catch (_e) {
+          query = raw;
+        }
       }
-      if (isAndroidDevice()) {
-        const path = url.replace(/^https?:\/\//i, "");
-        return "intent://" + path + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
-      }
-      return url;
+      query = String(query || "").trim();
+      if (!query) return "";
+      // Same-origin bridge page — avoids iOS/Android handing google.com to the Google app.
+      return "/go/google-search?" + new URLSearchParams({ q: query }).toString();
     }
 
     function openExternalGoogleSearch(queryOrUrl) {
-      const raw = String(queryOrUrl || "").trim();
-      if (!raw) return;
-      const httpsUrl = /^https?:\/\//i.test(raw) ? raw : buildExternalGoogleSearchUrl(raw);
-      if (!httpsUrl) return;
-      const navigateUrl = externalGoogleSearchNavigateUrl(httpsUrl);
-      if (isIosDevice() || isAndroidDevice()) {
-        const a = document.createElement("a");
-        a.href = navigateUrl;
-        a.target = "_self";
-        a.rel = "noopener noreferrer";
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        return;
-      }
-      window.open(httpsUrl, "_blank", "noopener,noreferrer");
+      const bridgeUrl = buildInBrowserGoogleSearchUrl(queryOrUrl);
+      if (!bridgeUrl) return;
+      const opened = window.open(bridgeUrl, "_blank", "noopener,noreferrer");
+      if (opened) return;
+      // Popup blocked: fall back to same-tab navigation of the bridge page.
+      const a = document.createElement("a");
+      a.href = bridgeUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
 
     function buildSongMoodGoogleQuery(title, language) {

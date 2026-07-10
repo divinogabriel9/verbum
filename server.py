@@ -28,6 +28,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, model_validator
 from starlette.concurrency import run_in_threadpool
+from urllib.parse import urlencode
 
 from services.env_config import load_project_dotenv
 
@@ -1145,6 +1146,43 @@ def api_feature_flags(
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/go/google-search", response_class=HTMLResponse)
+def go_google_search(q: str = "") -> HTMLResponse:
+    """Open Google search via a same-origin page so mobile stays in the browser.
+
+    Direct links to google.com often trigger the Google app (Universal Links /
+    App Links). Loading this LiturgyFlow URL in a new tab, then navigating with
+    location.replace, keeps the search in Safari/Chrome.
+    """
+    query = " ".join(str(q or "").split())[:500]
+    if not query:
+        raise HTTPException(status_code=400, detail="Missing search query.")
+    google_url = "https://www.google.com/search?" + urlencode({"q": query, "hl": "en"})
+    # Escape for HTML attribute + JS string
+    href = google_url.replace("&", "&amp;").replace('"', "&quot;")
+    js_url = json.dumps(google_url)
+    html = (
+        "<!DOCTYPE html><html lang=\"en\"><head>"
+        "<meta charset=\"utf-8\"/>"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>"
+        "<meta name=\"referrer\" content=\"no-referrer\"/>"
+        f"<meta http-equiv=\"refresh\" content=\"0;url={href}\"/>"
+        "<title>Opening Google search…</title>"
+        f"<script>location.replace({js_url});</script>"
+        "</head><body style=\"font:16px/1.4 system-ui,sans-serif;padding:24px;color:#1f2937\">"
+        "<p>Opening Google search in this tab…</p>"
+        f"<p><a href=\"{href}\" rel=\"noopener noreferrer\">Continue to Google</a></p>"
+        "</body></html>"
+    )
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Cache-Control": "no-store",
+            "Referrer-Policy": "no-referrer",
+        },
+    )
 
 
 @app.get("/api/image-quota")
