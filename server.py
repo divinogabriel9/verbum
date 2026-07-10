@@ -106,7 +106,10 @@ from services.practice_access import (
     practice_no_store_headers,
 )
 from services.catalog_rate_limit import check_catalog_lyric_fetch_allowed
-from services.hymn_normalized_store import fetch_lyrics_from_normalized
+from services.hymn_normalized_store import (
+    fetch_lyrics_from_normalized,
+    fetch_song_from_normalized,
+)
 from services.lyric_audit import log_lyric_read
 from services.media_ownership import register_owned_files, session_may_access_media
 from services.runtime_config import is_production_runtime
@@ -1006,7 +1009,7 @@ class PracticeShareBody(BaseModel):
     parish_name: str = Field("", max_length=L.CHURCH_NAME)
     celebrant: str = Field("", max_length=L.CELEBRANT_NAME)
     songs: list[PracticeShareSongBody] = Field(default_factory=list, max_length=24)
-    ttl_days: int = Field(3, ge=1, le=7)
+    ttl_days: int = Field(0, ge=0, le=7)
     optional_pin: str = Field(..., min_length=6, max_length=6)
 
 
@@ -1652,26 +1655,32 @@ def api_get_catalog_song(
     session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> JSONResponse:
     uid = session.user.user_id if session else None
-    allowed, retry_after = check_catalog_lyric_fetch_allowed(uid, hymn_id)
+    hid = (hymn_id or "").strip()
+    requested_sec = (section or "").strip().lower()
+    allowed, retry_after = check_catalog_lyric_fetch_allowed(uid, hid)
     if not allowed:
         raise HTTPException(
             status_code=429,
             detail="Too many hymn lyric requests. Please slow down.",
             headers={"Retry-After": str(max(1, retry_after))},
         )
-    row = get_hymn(section.strip().lower(), hymn_id)
-    resolved_section = section.strip().lower()
-    if row:
-        by_id_sec, by_id_row = find_catalog_row_by_id(hymn_id)
-        if by_id_row is not None and by_id_sec:
-            row = by_id_row
-            resolved_section = by_id_sec
+    row = get_hymn(requested_sec, hid)
+    resolved_section = requested_sec
+    by_id_sec, by_id_row = find_catalog_row_by_id(hid)
+    if by_id_row is not None and by_id_sec:
+        row = by_id_row
+        resolved_section = by_id_sec
+    if not row:
+        normalized = fetch_song_from_normalized(hid)
+        if normalized:
+            row = normalized
+            resolved_section = str(normalized.get("section") or requested_sec).strip().lower() or requested_sec
     if not row:
         raise HTTPException(status_code=404, detail="Song not found.")
-    lyrics = fetch_lyrics_from_normalized(hymn_id) or str(row.get("lyrics") or "")
+    lyrics = fetch_lyrics_from_normalized(hid) or str(row.get("lyrics") or "")
     log_lyric_read(
         user_id=uid,
-        hymn_id=hymn_id,
+        hymn_id=hid,
         section=resolved_section,
         source="catalog_api",
     )
@@ -1679,7 +1688,7 @@ def api_get_catalog_song(
         "ok": True,
         "section": resolved_section,
         "song": {
-            "id": str(row.get("id") or ""),
+            "id": str(row.get("id") or hid),
             "title": str(row.get("title") or ""),
             "author": str(row.get("author") or ""),
             "language": str(row.get("language") or "").strip(),

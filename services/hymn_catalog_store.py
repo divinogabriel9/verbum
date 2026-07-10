@@ -187,8 +187,8 @@ def load_catalog_dict(*, force: bool = False) -> dict[str, list[dict[str, Any]]]
                 if remote_rev and remote_rev == _catalog_revision:
                     return _catalog_cache
             except Exception as exc:
+                # Prefer a fresh Supabase/file load over a possibly stale worker cache.
                 logger.warning("Could not verify hymn catalog revision: %s", exc)
-                return _catalog_cache
         else:
             try:
                 mtime = str(int(_LIBRARY_PATH.stat().st_mtime)) if _LIBRARY_PATH.is_file() else "0"

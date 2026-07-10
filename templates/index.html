@@ -14480,7 +14480,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260710h" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260710i" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -25592,12 +25592,14 @@
       renderPracticeShareQr(data, url);
       const meta = $("practice-share-meta");
       if (meta) {
-        const exp = data.expires_at ? new Date(data.expires_at).toLocaleDateString() : "";
+        const exp = data.expires_at
+          ? new Date(data.expires_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+          : "";
         const pinNote = practiceShareLastHadPin ? " · PIN protected — share the PIN separately" : "";
         meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + pinNote;
       }
       const sub = $("practice-share-sub");
-      if (sub) sub.textContent = "Share this link or QR code in your choir group chat. Links expire 3 days after creation or the day after Mass, whichever is sooner.";
+      if (sub) sub.textContent = "Share this link or QR code in your choir group chat. Links expire 1 hour after you generate them.";
     }
 
     async function createPracticeShareLink() {
@@ -25642,7 +25644,7 @@
           parish_name: parishName,
           celebrant: celebrant,
           songs: songs,
-          ttl_days: 3,
+          ttl_days: 0,
           optional_pin: pinRaw,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
@@ -34230,7 +34232,26 @@
           "/api/catalog/songs/" + encodeURIComponent(sec) + "/" + encodeURIComponent(sid),
           { headers, cache: opts.forceNetwork ? "no-store" : "default" }
         );
-        if (!res.ok) throw new Error("Could not load song");
+        if (!res.ok) {
+          let detail = "";
+          try {
+            const errBody = await res.json();
+            detail = String((errBody && errBody.detail) || "").trim();
+          } catch (_e) { /* ignore */ }
+          if (res.status === 429) {
+            throw new Error(detail || "Too many song loads. Wait a minute and try again.");
+          }
+          if (res.status === 401) {
+            throw new Error("Sign in required to load songs.");
+          }
+          if (res.status === 403) {
+            throw new Error(detail || "You do not have access to load this song.");
+          }
+          if (res.status === 404) {
+            throw new Error(detail || "Song not found on the server. Try refreshing the page.");
+          }
+          throw new Error(detail || ("Could not load song (" + res.status + ")."));
+        }
         const data = await res.json();
         songDetailCache.set(key, data);
         writeStoredSongDetail(key, data);
@@ -34247,10 +34268,12 @@
       const sid = String(id || "").trim();
       if (!sec || !sid) return;
       if (songDetailCache.has(songDetailCacheKey(sec, sid))) return;
+      // Avoid burning the production lyric rate limit by prefetching every hovered row.
+      if (songDetailInflight.size > 0) return;
       clearTimeout(songDetailPrefetchTimer);
       songDetailPrefetchTimer = setTimeout(() => {
         fetchSongDetail(sec, sid).catch(() => {});
-      }, 140);
+      }, 450);
     }
 
     function recentSongDedupeKey(r) {
@@ -34909,16 +34932,15 @@
     }
 
     async function openSongMetadataModal(section, id) {
-      const res = await fetch("/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id));
-      if (!res.ok) throw new Error("Could not load song");
-      const data = await res.json();
+      const data = await fetchSongDetail(section, id, { forceNetwork: true });
       const s = data.song || {};
-      songMetaEditCtx = { section, id };
+      const resolvedSec = String(data.section || section || "").trim().toLowerCase() || section;
+      songMetaEditCtx = { section: resolvedSec, id };
       if ($("song-metadata-edit-title")) $("song-metadata-edit-title").value = s.title || "";
       if ($("song-metadata-edit-author")) $("song-metadata-edit-author").value = s.author || "";
       if ($("song-metadata-edit-language")) $("song-metadata-edit-language").value = s.language || "English";
       if ($("song-metadata-section-label")) {
-        $("song-metadata-section-label").textContent = "Section: " + songSectionLabel(section);
+        $("song-metadata-section-label").textContent = "Section: " + songSectionLabel(resolvedSec);
       }
       if ($("song-metadata-subtitle")) {
         $("song-metadata-subtitle").textContent = "Editing metadata for \"" + (s.title || "Song") + "\".";

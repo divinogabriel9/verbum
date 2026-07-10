@@ -117,3 +117,36 @@ def fetch_lyrics_from_normalized(hymn_id: str) -> Optional[str]:
     except Exception as exc:
         logger.debug("fetch_lyrics_from_normalized %s: %s", hid, exc)
         return None
+
+
+def fetch_song_from_normalized(hymn_id: str) -> Optional[dict[str, Any]]:
+    """Load one song from hymn_songs + hymn_song_lyrics (production fallback)."""
+    hid = (hymn_id or "").strip()
+    if not hid or not supabase_enabled():
+        return None
+    try:
+        client = _service_client()
+        meta_res = (
+            client.table("hymn_songs")
+            .select("id, section, title, author, language, gospel_moods")
+            .eq("id", hid)
+            .limit(1)
+            .execute()
+        )
+        meta_rows = meta_res.data or []
+        if not meta_rows:
+            return None
+        meta = meta_rows[0] if isinstance(meta_rows[0], dict) else {}
+        lyrics = fetch_lyrics_from_normalized(hid) or ""
+        return {
+            "id": str(meta.get("id") or hid),
+            "section": str(meta.get("section") or "").strip().lower(),
+            "title": str(meta.get("title") or ""),
+            "author": str(meta.get("author") or ""),
+            "language": str(meta.get("language") or "").strip(),
+            "lyrics": lyrics,
+            "gospel_moods": meta.get("gospel_moods") or [],
+        }
+    except Exception as exc:
+        logger.debug("fetch_song_from_normalized %s: %s", hid, exc)
+        return None

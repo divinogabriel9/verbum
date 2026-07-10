@@ -6,7 +6,7 @@ import json
 import logging
 import secrets
 import uuid
-from datetime import date, datetime, timedelta, time, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LOCAL_PATH = _PROJECT_ROOT / "data" / "choir_practice_shares.json"
-_DEFAULT_TTL_DAYS = 3
-_MAX_TTL_DAYS = 7
+_DEFAULT_TTL_HOURS = 1
 _MAX_SONGS = 24
 _MAX_LYRICS_LEN = 12000
 
@@ -159,13 +158,10 @@ def _service_client():
     return get_service_client()
 
 
-def _compute_expires_at(parsed_date: date, ttl_days: int) -> datetime:
-    """Expire at the sooner of TTL cap or the day after Mass."""
-    capped_ttl = max(1, min(int(ttl_days), _MAX_TTL_DAYS))
-    ttl_exp = _now() + timedelta(days=capped_ttl)
-    mass_end = datetime.combine(parsed_date, time(23, 59, 59), tzinfo=timezone.utc)
-    mass_cap = mass_end + timedelta(days=1)
-    return min(ttl_exp, mass_cap)
+def _compute_expires_at(*, ttl_hours: int = _DEFAULT_TTL_HOURS) -> datetime:
+    """Expire a fixed number of hours after generation (not Mass date)."""
+    hours = max(1, min(int(ttl_hours), 24))
+    return _now() + timedelta(hours=hours)
 
 
 def create_practice_share(
@@ -177,7 +173,7 @@ def create_practice_share(
     parish_name: str = "",
     celebrant: str = "",
     songs: list[dict[str, Any]],
-    ttl_days: int = _DEFAULT_TTL_DAYS,
+    ttl_days: int = 0,
     optional_pin: Optional[str] = None,
 ) -> dict[str, Any]:
     date_str = (mass_date or "").strip()
@@ -193,7 +189,9 @@ def create_practice_share(
     pin = _normalize_pin(optional_pin)
     pin_stored = hash_pin(pin)
     token = secrets.token_urlsafe(24)
-    expires_at = _compute_expires_at(parsed_date, ttl_days).isoformat()
+    # ttl_days is ignored — practice links always expire 1 hour after generation.
+    _ = ttl_days
+    expires_at = _compute_expires_at(ttl_hours=_DEFAULT_TTL_HOURS).isoformat()
     payload = {
         "token": token,
         "parish_id": (parish_id or "").strip() or None,

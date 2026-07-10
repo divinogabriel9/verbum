@@ -139,7 +139,7 @@ def is_unlocked(request: Request, token: str, share_expires_at: Any) -> bool:
 def issue_unlock_cookie(request: Request, response: Response, token: str, share_expires_at: Any) -> None:
     tok = (token or "").strip()
     share_exp = _parse_expires(share_expires_at)
-    exp = int(share_exp.timestamp()) if share_exp else int(time.time()) + 7 * 86400
+    exp = int(share_exp.timestamp()) if share_exp else int(time.time()) + 3600
     payload = f"{tok}|{exp}"
     sig = hmac.new(_signing_secret(), payload.encode("utf-8"), "sha256").hexdigest()
     max_age = max(60, exp - int(time.time()))
