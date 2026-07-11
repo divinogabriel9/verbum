@@ -84,7 +84,7 @@ def format_song_title_case(title: str) -> str:
 
 
 def _capitalize_first_alpha(token: str) -> str:
-    """Uppercase the first alphabetic character; leave the rest unchanged."""
+    """Uppercase the first alphabetic character of an already-lowercased token."""
     if not token:
         return token
     for i, ch in enumerate(token):
@@ -95,12 +95,16 @@ def _capitalize_first_alpha(token: str) -> str:
 
 def format_lyrics_first_letters(lyrics: str) -> str:
     """
-    Premiumize lyric text for practice/display: uppercase the first letter of
-    every word on every line. Preserves newlines, indent, and non-letter casing.
+    Premiumize lyric text in two steps so nothing is left out:
+      1) lowercase the entire text
+      2) uppercase the first letter of every word on every line
+    Preserves newlines and leading indent.
     """
     text = str(lyrics or "").replace("\r\n", "\n").replace("\r", "\n")
     if not text.strip():
         return text.strip()
+    # Step 1 — lowercase everything first.
+    text = text.lower()
     out_lines: list[str] = []
     for line in text.split("\n"):
         if not line.strip():
@@ -109,9 +113,94 @@ def format_lyrics_first_letters(lyrics: str) -> str:
         lead_len = len(line) - len(line.lstrip(" \t"))
         lead = line[:lead_len]
         body = line[lead_len:]
+        # Step 2 — uppercase the first letter of each word.
         parts = body.split(" ")
         out_lines.append(lead + " ".join(_capitalize_first_alpha(p) for p in parts))
     return "\n".join(out_lines).strip()
+
+
+_CHORUS_HEADER_RE = re.compile(
+    r"^([\[(]?\s*)chorus(\s*[\w\d.-]*)?(\s*[\])]?\s*[:.)-]?)\s*$",
+    re.IGNORECASE,
+)
+
+
+def normalize_lyric_section_headers(lyrics: str) -> str:
+    """Keep Verse 1/2/3; collapse Chorus 1/2/3 (and Refrain N) to plain Chorus/Refrain."""
+    text = str(lyrics or "").replace("\r\n", "\n").replace("\r", "\n")
+    if not text.strip():
+        return text.strip()
+    out: list[str] = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        m = _CHORUS_HEADER_RE.match(stripped)
+        if m:
+            # Preserve bracket style if present: [Chorus] / (Chorus) / Chorus
+            open_b = (m.group(1) or "").strip()
+            close_b = (m.group(3) or "").strip()
+            if open_b.startswith("[") or close_b.startswith("]"):
+                out.append("[Chorus]")
+            elif open_b.startswith("(") or close_b.startswith(")"):
+                out.append("(Chorus)")
+            else:
+                out.append("Chorus")
+            continue
+        out.append(line.rstrip())
+    return "\n".join(out).replace("\n\n\n", "\n\n").strip()
+
+
+def polish_lyrics_text(lyrics: str) -> str:
+    """Section-header cleanup + first-letter capitalization for saved lyrics."""
+    return format_lyrics_first_letters(normalize_lyric_section_headers(lyrics))
+
+
+def reformat_all_catalog_lyrics(*, updated_by: str | None = None) -> dict[str, Any]:
+    """
+    Scan every catalog song and rewrite lyrics with polished casing / chorus headers.
+    Persists via save_catalog (local + Supabase when configured).
+    """
+    data = load_catalog()
+    changed_ids: set[str] = set()
+    scanned = 0
+    updated = 0
+    skipped_empty = 0
+    per_section: dict[str, int] = {}
+
+    for sec in _SECTIONS:
+        rows = data.get(sec) or []
+        local = 0
+        for item in rows:
+            if not isinstance(item, dict):
+                continue
+            hid = str(item.get("id") or "").strip()
+            raw = str(item.get("lyrics") or "")
+            if not raw.strip():
+                skipped_empty += 1
+                continue
+            scanned += 1
+            polished = polish_lyrics_text(raw)
+            if polished == raw.replace("\r\n", "\n").replace("\r", "\n").strip():
+                continue
+            item["lyrics"] = polished
+            updated += 1
+            local += 1
+            if hid:
+                changed_ids.add(hid)
+        if local:
+            per_section[sec] = local
+
+    if changed_ids:
+        # updated_by must be a UUID when set (Supabase column); omit for batch jobs.
+        save_catalog(data, updated_by=updated_by, sync_song_ids=changed_ids)
+
+    return {
+        "ok": True,
+        "scanned": scanned,
+        "updated": updated,
+        "skipped_empty": skipped_empty,
+        "per_section": per_section,
+        "song_ids": sorted(changed_ids),
+    }
 
 
 def import_titles(grouped_titles: dict[str, list[str]]) -> dict[str, Any]:
@@ -243,7 +332,7 @@ def update_lyrics(section: str, hymn_id: str, lyrics: str, source_link: str = ""
     for item in data.get(sec) or []:
         if str(item.get("id") or "").strip() != hid:
             continue
-        item["lyrics"] = format_lyrics_first_letters(lyr)
+        item["lyrics"] = polish_lyrics_text(lyr)
         if source_link:
             item["text_link"] = source_link
         changed = True
@@ -265,7 +354,7 @@ def save_lyrics_song(
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
     clean_title = format_song_title_case(str(title or ""))
-    clean_lyrics = format_lyrics_first_letters(str(lyrics or ""))
+    clean_lyrics = polish_lyrics_text(str(lyrics or ""))
     if not clean_title or not clean_lyrics:
         return {"ok": False, "error": "Song title and lyrics are required."}
 
@@ -462,7 +551,7 @@ def update_catalog_song(
         if author is not None:
             item["author"] = str(author).strip()
         if lyrics is not None:
-            item["lyrics"] = format_lyrics_first_letters(str(lyrics))
+            item["lyrics"] = polish_lyrics_text(str(lyrics))
         if language is not None and str(language).strip():
             item["language"] = str(language).strip()
         if gospel_moods is not None:

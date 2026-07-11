@@ -95,6 +95,7 @@ from services.choir_practice_shares import (
     create_practice_share,
     fetch_practice_share,
     get_practice_share_by_token,
+    update_practice_share_lyrics,
     verify_practice_share_pin,
 )
 from services.practice_access import (
@@ -104,8 +105,10 @@ from services.practice_access import (
     check_practice_token_allowed,
     ensure_practice_secret_configured,
     is_unlocked,
+    issue_lead_token,
     issue_unlock_cookie,
     practice_no_store_headers,
+    verify_lead_token,
 )
 from services.catalog_rate_limit import check_catalog_lyric_fetch_allowed
 from services.hymn_normalized_store import (
@@ -1152,6 +1155,29 @@ class PracticeUnlockBody(BaseModel):
     pin: str = Field("", min_length=6, max_length=6)
 
 
+class PracticeLeadBody(BaseModel):
+    lead_token: str = Field(..., min_length=16, max_length=512)
+
+
+class PracticeLyricBlockBody(BaseModel):
+    id: str = Field("", max_length=64)
+    kind: str = Field("verse", max_length=32)
+    label: str = Field("", max_length=80)
+    body: str = Field("", max_length=L.LYRICS_FULL)
+    enabled: bool = True
+
+
+class PracticeLyricSongUpdateBody(BaseModel):
+    hymn_id: str = Field(..., max_length=120)
+    slot_key: str = Field("", max_length=64)
+    blocks: list[PracticeLyricBlockBody] = Field(default_factory=list, max_length=48)
+
+
+class PracticeLyricsUpdateBody(BaseModel):
+    lead_token: str = Field(..., min_length=16, max_length=512)
+    songs: list[PracticeLyricSongUpdateBody] = Field(default_factory=list, max_length=24)
+
+
 class GenerateImageResponse(BaseModel):
     image: str
     path: str
@@ -1986,12 +2012,14 @@ def _practice_share_url(request: Request, token: str) -> str:
 
 @app.get("/practice/{token}", response_class=HTMLResponse)
 def practice_page(request: Request, token: str) -> Any:
+    lead = (request.query_params.get("lead") or "").strip()
     return templates.TemplateResponse(
         request,
         "practice.html",
         {
             "title": "Choir practice",
             "token": (token or "").strip(),
+            "lead_token": lead,
         },
     )
 
@@ -2038,8 +2066,10 @@ def api_practice_share(
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
-    unlocked = is_unlocked(request, tok, row.get("expires_at"))
-    payload = fetch_practice_share(tok, unlocked=unlocked)
+    lead = (request.query_params.get("lead") or "").strip()
+    can_edit = bool(lead) and verify_lead_token(tok, lead, row.get("expires_at"))
+    unlocked = is_unlocked(request, tok, row.get("expires_at")) or can_edit
+    payload = fetch_practice_share(tok, unlocked=unlocked, can_edit=can_edit)
     if not payload.get("ok"):
         raise HTTPException(status_code=404, detail=payload.get("error") or "Not found.")
     return JSONResponse(payload, headers=practice_no_store_headers())
@@ -2075,6 +2105,55 @@ def api_practice_unlock(
     response = JSONResponse(result, headers=practice_no_store_headers())
     issue_unlock_cookie(request, response, tok, row.get("expires_at"))
     return response
+
+
+@app.post("/api/practice/{token}/lead")
+def api_practice_lead(
+    token: str,
+    body: PracticeLeadBody,
+    request: Request,
+) -> Any:
+    """Leader entry — unlock + edit mode via signed lead token (no PIN)."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    allowed, retry_after = check_practice_fetch_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    if not verify_lead_token(tok, body.lead_token, row.get("expires_at")):
+        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    payload = fetch_practice_share(tok, unlocked=True, can_edit=True)
+    response = JSONResponse(payload, headers=practice_no_store_headers())
+    issue_unlock_cookie(request, response, tok, row.get("expires_at"))
+    return response
+
+
+@app.post("/api/practice/{token}/lyrics")
+def api_practice_lyrics_update(
+    token: str,
+    body: PracticeLyricsUpdateBody,
+    request: Request,
+) -> Any:
+    """Practice-only lyric edits for the share leader. Never writes to the hymn catalog."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    allowed, retry_after = check_practice_fetch_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    if not verify_lead_token(tok, body.lead_token, row.get("expires_at")):
+        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    songs = [s.model_dump() for s in body.songs]
+    result = update_practice_share_lyrics(tok, songs_update=songs)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Could not save.")
+    return JSONResponse(result, headers=practice_no_store_headers())
 
 
 @app.post("/api/practice/share")
@@ -2133,10 +2212,13 @@ def api_create_practice_share(
 
     token = str(result.get("token") or "")
     share_url = _practice_share_url(request, token)
+    lead = issue_lead_token(token, result.get("expires_at"))
     # Return qr_url for async image load; skip embedding a data URL so create stays fast.
     return {
         **result,
         "url": share_url,
+        "lead_token": lead,
+        "lead_url": f"{share_url}?lead={lead}",
         "qr_url": f"/api/practice/qr/{token}",
         "qr_data_url": None,
     }

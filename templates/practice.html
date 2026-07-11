@@ -61,6 +61,43 @@
       background: var(--card);
       border-bottom: 1px solid var(--line);
     }
+    .practice-top__row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .practice-top__text {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .practice-top__action {
+      flex: 0 0 auto;
+      min-height: 36px;
+      border: 0;
+      border-radius: 10px;
+      padding: 0 14px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .practice-top__action:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+    .practice-top__action--secondary {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+    }
+    .practice-lead-note {
+      margin: 8px 0 0;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
     .practice-top__eyebrow {
       margin: 0 0 4px;
       font-size: 0.72rem;
@@ -278,6 +315,81 @@
       color: var(--muted);
       padding: 0 16px 10px;
     }
+    .practice-lyric-block--edit {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--card);
+    }
+    .practice-lyric-block--edit.is-off {
+      opacity: 0.55;
+      background: #f8fafc;
+    }
+    .practice-lyric-block__toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .practice-lyric-block__toolbar .practice-lyric-block__label {
+      margin: 0;
+      flex: 1 1 auto;
+    }
+    .practice-block-toggle {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .practice-block-toggle input {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .practice-lyric-block__edit {
+      width: 100%;
+      min-height: 6.5rem;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      font-size: var(--lyrics-size);
+      line-height: var(--lyrics-leading);
+      font-weight: 600;
+      color: var(--ink);
+      background: #fff;
+    }
+    .practice-lyric-block__edit:disabled {
+      background: #f1f5f9;
+      color: var(--muted);
+    }
+    .practice-sync-toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(16px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(120%);
+      background: #15333d;
+      color: #fff;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.28s ease, opacity 0.28s ease;
+      z-index: 40;
+      white-space: nowrap;
+    }
+    .practice-sync-toast.is-on {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
     @media (min-width: 1024px) and (hover: hover) {
       body {
         align-items: center;
@@ -296,9 +408,15 @@
 <body>
   <div class="practice-frame">
     <header class="practice-top" id="practice-top" hidden>
-      <p class="practice-top__eyebrow">Choir practice</p>
-      <h1 id="practice-title">Upcoming Mass</h1>
-      <p id="practice-sub"></p>
+      <div class="practice-top__row">
+        <div class="practice-top__text">
+          <p class="practice-top__eyebrow">Choir practice</p>
+          <h1 id="practice-title">Upcoming Mass</h1>
+          <p id="practice-sub"></p>
+        </div>
+        <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
+      </div>
+      <p class="practice-lead-note" id="practice-lead-note" hidden>Turn blocks off or edit verses, then Save. Changes sync to unlocked choir members for this practice only — not your song library.</p>
     </header>
 
     <nav class="practice-tabs" id="practice-tabs" hidden aria-label="Songs"></nav>
@@ -311,16 +429,31 @@
 
     <p class="practice-footnote" id="practice-footnote" hidden>Read-only lyrics · frozen at share time</p>
   </div>
+  <div class="practice-sync-toast" id="practice-sync-toast" aria-live="polite">Lyrics updated</div>
 
   <script>
     (function () {
       const token = {{ token|tojson }};
+      const leadToken = {{ lead_token|tojson }};
       const root = document.getElementById("practice-root");
       const scroll = document.getElementById("practice-scroll");
       const top = document.getElementById("practice-top");
       const tabs = document.getElementById("practice-tabs");
       const footnote = document.getElementById("practice-footnote");
-      let state = { songs: [], index: 0 };
+      const leadAction = document.getElementById("practice-lead-action");
+      const leadNote = document.getElementById("practice-lead-note");
+      const syncToast = document.getElementById("practice-sync-toast");
+      let state = {
+        songs: [],
+        index: 0,
+        isLeader: false,
+        editing: false,
+        revision: "",
+        dirty: false,
+        meta: {},
+      };
+      let pollTimer = null;
+      let toastTimer = null;
 
       const fetchOpts = { credentials: "same-origin" };
 
@@ -340,6 +473,56 @@
         } catch (_e) {
           return iso;
         }
+      }
+
+      function showSyncToast(msg) {
+        if (!syncToast) return;
+        syncToast.textContent = msg || "Lyrics updated";
+        syncToast.classList.add("is-on");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          syncToast.classList.remove("is-on");
+        }, 2200);
+      }
+
+      function syncLeadChrome() {
+        if (!leadAction) return;
+        if (!state.isLeader) {
+          leadAction.hidden = true;
+          if (leadNote) leadNote.hidden = true;
+          return;
+        }
+        leadAction.hidden = false;
+        leadAction.disabled = false;
+        if (state.editing) {
+          leadAction.textContent = "Save";
+          leadAction.classList.remove("practice-top__action--secondary");
+          if (leadNote) leadNote.hidden = false;
+        } else {
+          leadAction.textContent = "Edit";
+          leadAction.classList.add("practice-top__action--secondary");
+          if (leadNote) leadNote.hidden = true;
+        }
+      }
+
+      function setDirty(on) {
+        state.dirty = !!on;
+        syncLeadChrome();
+      }
+
+      function enterEditMode() {
+        if (!state.isLeader || state.editing) return;
+        state.editing = true;
+        setDirty(false);
+        renderCurrentSong();
+        syncLeadChrome();
+      }
+
+      function exitEditMode() {
+        state.editing = false;
+        setDirty(false);
+        renderCurrentSong();
+        syncLeadChrome();
       }
 
       function mountPinOtp(container) {
@@ -479,6 +662,9 @@
         top.hidden = true;
         tabs.hidden = true;
         footnote.hidden = true;
+        if (leadAction) leadAction.hidden = true;
+        if (leadNote) leadNote.hidden = true;
+        stopPoll();
         root.innerHTML =
           '<div class="practice-pin-wrap">' +
             '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
@@ -535,26 +721,76 @@
         }
       }
 
-      function renderPractice(data) {
-        const songs = Array.isArray(data.songs) ? data.songs : [];
+      function normalizeSongBlocks(song) {
+        const blocks = Array.isArray(song.blocks) ? song.blocks : [];
+        if (blocks.length) {
+          return blocks.map(function (b, i) {
+            return {
+              id: String(b.id || ("b" + i)),
+              kind: String(b.kind || "verse"),
+              label: String(b.label || b.kind || "Verse"),
+              body: String(b.body || ""),
+              enabled: b.enabled !== false,
+            };
+          });
+        }
+        return parseLyricSections(song.lyrics || "").map(function (sec, i) {
+          return {
+            id: "b" + i,
+            kind: sec.kind || "verse",
+            label: sec.label || "Verse",
+            body: sec.body || "",
+            enabled: true,
+          };
+        });
+      }
+
+      function applyPracticePayload(data, opts) {
+        opts = opts || {};
+        const songs = (Array.isArray(data.songs) ? data.songs : []).map(function (song) {
+          const item = Object.assign({}, song);
+          item.blocks = normalizeSongBlocks(item);
+          return item;
+        });
         state.songs = songs;
+        // Let's practice (lead token) is the source of truth for leader privilege.
+        state.isLeader = !!leadToken;
+        state.revision = String(data.revision || "");
+        state.meta = {
+          mass_title: data.mass_title || "",
+          parish_name: data.parish_name || "",
+          mass_date: data.mass_date || "",
+          celebrant: data.celebrant || "",
+        };
+        if (opts.resetDirty) setDirty(false);
+        if (opts.exitEditing) state.editing = false;
+        if (state.index >= songs.length) state.index = 0;
+      }
+
+      function renderPractice(data, opts) {
+        applyPracticePayload(data, Object.assign({ resetDirty: true, exitEditing: true }, opts || {}));
+        const songs = state.songs;
         if (!songs.length) {
           top.hidden = true;
           tabs.hidden = true;
           footnote.hidden = true;
+          if (leadAction) leadAction.hidden = true;
+          if (leadNote) leadNote.hidden = true;
           root.innerHTML = '<p class="practice-status error">No songs in this practice link.</p>';
           return;
         }
 
         const bits = [];
-        if (data.parish_name) bits.push(esc(data.parish_name));
-        if (data.mass_date) bits.push(formatDate(data.mass_date));
-        if (data.celebrant) bits.push(esc(data.celebrant));
+        if (state.meta.parish_name) bits.push(esc(state.meta.parish_name));
+        if (state.meta.mass_date) bits.push(formatDate(state.meta.mass_date));
+        if (state.meta.celebrant) bits.push(esc(state.meta.celebrant));
 
-        document.getElementById("practice-title").textContent = data.mass_title || "Upcoming Mass";
+        document.getElementById("practice-title").textContent = state.meta.mass_title || "Upcoming Mass";
         document.getElementById("practice-sub").textContent = bits.join(" · ");
         top.hidden = false;
         footnote.hidden = false;
+        footnote.textContent = "Live practice lyrics · updates when your leader saves";
+        syncLeadChrome();
 
         tabs.innerHTML = "";
         tabs.hidden = songs.length < 2;
@@ -564,6 +800,7 @@
           btn.className = "practice-tab" + (i === state.index ? " is-active" : "");
           btn.textContent = song.slot_label || song.title || ("Song " + (i + 1));
           btn.addEventListener("click", function () {
+            if (state.editing) flushCurrentSongEdits();
             state.index = i;
             renderCurrentSong();
             scroll.scrollTop = 0;
@@ -572,6 +809,7 @@
         });
 
         renderCurrentSong();
+        startPoll();
       }
 
       function capitalizeFirstAlpha(token) {
@@ -579,7 +817,7 @@
         if (!s) return s;
         for (let i = 0; i < s.length; i += 1) {
           const ch = s.charAt(i);
-          if (/[A-Za-z\u00C0-\u024F]/.test(ch)) {
+          if (/[a-zA-Z\u00C0-\u024F]/.test(ch)) {
             return s.slice(0, i) + ch.toUpperCase() + s.slice(i + 1);
           }
         }
@@ -587,8 +825,9 @@
       }
 
       function formatLyricsFirstLetters(raw) {
-        const text = String(raw || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+        let text = String(raw || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
         if (!text.trim()) return text.trim();
+        text = text.toLowerCase();
         return text.split("\n").map(function (line) {
           if (!line.trim()) return "";
           const leadMatch = line.match(/^[ \t]*/);
@@ -692,12 +931,37 @@
         return sections;
       }
 
-      function renderPracticeLyrics(raw) {
-        const sections = parseLyricSections(raw);
-        if (!sections.length) {
+      function renderPracticeLyrics(song) {
+        const blocks = Array.isArray(song.blocks) ? song.blocks : normalizeSongBlocks(song);
+        if (!blocks.length) {
           return '<p class="practice-status">No lyrics for this song.</p>';
         }
-        return '<div class="practice-lyrics">' + sections.map(function (sec) {
+        if (state.editing) {
+          return '<div class="practice-lyrics">' + blocks.map(function (sec, i) {
+            const kind = esc(sec.kind || "verse");
+            const label = esc(sec.label || "Verse");
+            const enabled = sec.enabled !== false;
+            return (
+              '<section class="practice-lyric-block practice-lyric-block--edit practice-lyric-block--' + kind + (enabled ? "" : " is-off") + '" data-block-index="' + i + '">' +
+                '<div class="practice-lyric-block__toolbar">' +
+                  '<p class="practice-lyric-block__label">' + label + '</p>' +
+                  '<label class="practice-block-toggle">' +
+                    '<input type="checkbox" data-block-enabled' + (enabled ? " checked" : "") + ' />' +
+                    '<span>On</span>' +
+                  '</label>' +
+                '</div>' +
+                '<textarea class="practice-lyric-block__edit" data-block-body rows="4"' + (enabled ? "" : " disabled") + '>' +
+                  esc(sec.body || "") +
+                '</textarea>' +
+              '</section>'
+            );
+          }).join("") + '</div>';
+        }
+        const visible = blocks.filter(function (b) { return b.enabled !== false; });
+        if (!visible.length) {
+          return '<p class="practice-status">No active lyric blocks for this song.</p>';
+        }
+        return '<div class="practice-lyrics">' + visible.map(function (sec) {
           const kind = esc(sec.kind || "verse");
           const label = esc(sec.label || "Verse");
           const body = esc(formatLyricsFirstLetters(sec.body || ""));
@@ -710,6 +974,38 @@
         }).join("") + '</div>';
       }
 
+      function flushCurrentSongEdits() {
+        if (!state.editing) return;
+        const song = state.songs[state.index];
+        if (!song || !Array.isArray(song.blocks)) return;
+        root.querySelectorAll("[data-block-index]").forEach(function (el) {
+          const i = Number(el.getAttribute("data-block-index"));
+          if (!song.blocks[i]) return;
+          const enabledEl = el.querySelector("[data-block-enabled]");
+          const bodyEl = el.querySelector("[data-block-body]");
+          song.blocks[i].enabled = !!(enabledEl && enabledEl.checked);
+          if (bodyEl) song.blocks[i].body = bodyEl.value;
+        });
+      }
+
+      function bindEditHandlers() {
+        if (!state.editing) return;
+        root.querySelectorAll("[data-block-index]").forEach(function (el) {
+          const enabledEl = el.querySelector("[data-block-enabled]");
+          const bodyEl = el.querySelector("[data-block-body]");
+          if (enabledEl) {
+            enabledEl.addEventListener("change", function () {
+              el.classList.toggle("is-off", !enabledEl.checked);
+              if (bodyEl) bodyEl.disabled = !enabledEl.checked;
+              setDirty(true);
+            });
+          }
+          if (bodyEl) {
+            bodyEl.addEventListener("input", function () { setDirty(true); });
+          }
+        });
+      }
+
       function renderCurrentSong() {
         const song = state.songs[state.index];
         if (!song) return;
@@ -720,7 +1016,9 @@
             '<h2>' + esc(song.title || "Untitled") + '</h2>' +
             (meta ? '<p class="practice-song-head__meta">' + esc(meta) + '</p>' : '') +
           '</div>' +
-          renderPracticeLyrics(song.lyrics || "");
+          renderPracticeLyrics(song);
+
+        bindEditHandlers();
 
         document.querySelectorAll(".practice-tab").forEach(function (el, i) {
           el.classList.toggle("is-active", i === state.index);
@@ -728,12 +1026,126 @@
         });
       }
 
+      async function savePracticeEdits() {
+        if (!state.isLeader || !state.editing || !leadToken) return;
+        flushCurrentSongEdits();
+        if (!state.dirty) {
+          exitEditMode();
+          return;
+        }
+        if (leadAction) {
+          leadAction.disabled = true;
+          leadAction.textContent = "Saving…";
+        }
+        const songs = state.songs.map(function (song) {
+          return {
+            hymn_id: song.hymn_id || "",
+            slot_key: song.slot_key || "",
+            blocks: (song.blocks || []).map(function (b) {
+              return {
+                id: b.id || "",
+                kind: b.kind || "verse",
+                label: b.label || "",
+                body: b.body || "",
+                enabled: b.enabled !== false,
+              };
+            }),
+          };
+        });
+        try {
+          const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lyrics", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lead_token: leadToken, songs: songs }),
+          });
+          const data = await res.json().catch(function () { return {}; });
+          if (!res.ok || !data.ok) {
+            throw new Error(data.detail || data.error || "Could not save.");
+          }
+          applyPracticePayload(data, { resetDirty: true, exitEditing: true });
+          showSyncToast("Synced to choir");
+          renderCurrentSong();
+          syncLeadChrome();
+        } catch (err) {
+          setDirty(true);
+          if (leadAction) leadAction.textContent = "Save";
+          showSyncToast(err.message || "Save failed");
+        }
+      }
+
+      function stopPoll() {
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      }
+
+      function practiceFetchUrl() {
+        let url = "/api/practice/" + encodeURIComponent(token);
+        if (state.isLeader && leadToken) {
+          url += "?lead=" + encodeURIComponent(leadToken);
+        }
+        return url;
+      }
+
+      function startPoll() {
+        stopPoll();
+        pollTimer = setInterval(async function () {
+          if (state.editing && state.dirty) return;
+          try {
+            const res = await fetch(practiceFetchUrl(), fetchOpts);
+            if (!res.ok) return;
+            const data = await res.json().catch(function () { return {}; });
+            if (data.requires_pin) return;
+            const nextRev = String(data.revision || "");
+            if (!nextRev || nextRev === state.revision) return;
+            const keepIndex = state.index;
+            const wasEditing = state.editing;
+            applyPracticePayload(data, { resetDirty: true });
+            state.editing = wasEditing && state.isLeader;
+            state.index = Math.min(keepIndex, Math.max(0, state.songs.length - 1));
+            renderCurrentSong();
+            syncLeadChrome();
+            if (!state.isLeader || !state.editing) showSyncToast("Lyrics updated");
+          } catch (_err) {
+            /* ignore transient poll errors */
+          }
+        }, 4000);
+      }
+
       async function loadPractice() {
         root.innerHTML = '<p class="practice-status">Loading practice set…</p>';
         top.hidden = true;
         tabs.hidden = true;
         footnote.hidden = true;
+        if (leadAction) leadAction.hidden = true;
+        if (leadNote) leadNote.hidden = true;
         try {
+          if (leadToken) {
+            const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lead", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ lead_token: leadToken }),
+            });
+            const data = await res.json().catch(function () { return {}; });
+            if (res.status === 429) {
+              root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "Too many requests. Please try again shortly.") + '</p>';
+              return;
+            }
+            if (!res.ok) {
+              root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "Leader link is invalid or expired.") + '</p>';
+              return;
+            }
+            try {
+              const clean = window.location.pathname;
+              window.history.replaceState({}, "", clean);
+            } catch (_e) { /* ignore */ }
+            renderPractice(data);
+            return;
+          }
+
           const res = await fetch("/api/practice/" + encodeURIComponent(token), fetchOpts);
           const data = await res.json().catch(function () { return {}; });
           if (res.status === 429) {
@@ -752,6 +1164,14 @@
         } catch (_err) {
           root.innerHTML = '<p class="practice-status error">Could not load practice lyrics. Check your connection.</p>';
         }
+      }
+
+      if (leadAction) {
+        leadAction.addEventListener("click", function () {
+          if (!state.isLeader) return;
+          if (state.editing) savePracticeEdits();
+          else enterEditMode();
+        });
       }
 
       if (!token) {

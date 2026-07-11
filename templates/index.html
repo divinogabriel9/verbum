@@ -5632,28 +5632,28 @@
       color: var(--muted);
     }
     .home-songs-slide--share {
-      justify-content: flex-start;
-      gap: 6px;
+      justify-content: center;
+      gap: 10px;
     }
     .home-songs-share {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       min-height: 0;
     }
     .home-songs-share__lead {
       margin: 0;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       line-height: 1.4;
       color: var(--muted);
     }
     .home-songs-share__btn {
       align-self: flex-start;
-      min-height: 32px;
+      min-height: 34px;
       padding: 6px 12px;
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       font-weight: 650;
-      border-radius: 8px;
+      border-radius: 9px;
       border: none;
       background: var(--liturgical-accent, #a10f0d);
       color: #fff;
@@ -5704,220 +5704,13 @@
         transform: none;
       }
     }
-    .practice-share-card--sections {
-      max-width: min(440px, 100%);
-      width: min(100%, 440px);
-      max-height: min(85vh, 620px);
-      border-radius: 0;
-      overflow: hidden;
-    }
-    .ui-overlay .ui-card.practice-share-card--sections.ui-card--popover-safe,
-    .ui-overlay .ui-card.practice-share-card--sections.ui-card--popover-open {
-      overflow: hidden;
-    }
-    .practice-share-card--sections .ui-card__header {
-      flex-shrink: 0;
-      padding: 14px 14px 8px;
-    }
-    .practice-share-card--sections .ui-card__description {
-      margin-top: 4px;
-      font-size: 0.78rem;
-    }
-    .practice-share-card--sections .ui-card__content {
-      flex: 1 1 auto;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
+    .practice-share-sections-list {
+      list-style: none;
+      margin: 0;
       padding: 0;
-      overflow: hidden;
-      max-height: none;
-    }
-    .practice-share-card--sections .practice-share-body {
-      gap: 0;
-      flex: 1 1 auto;
-      min-height: 0;
       display: flex;
       flex-direction: column;
-    }
-    .practice-share-card--sections .practice-share-sections-status-wrap,
-    .practice-share-card--sections #practice-share-sections-status {
-      margin: 0;
-      flex-shrink: 0;
-      padding: 6px 14px;
-    }
-    .practice-share-song-plan {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      flex: 1 1 auto;
-      min-height: 0;
-      max-height: min(48vh, 340px);
-      overflow-x: hidden;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-      border-top: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-    }
-    .practice-share-song-plan .ps-share-row {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--line);
-      border-radius: 0;
-      background: transparent;
-    }
-    .practice-share-song-plan .ps-share-row:last-child {
-      border-bottom: none;
-    }
-    .practice-share-song-plan .ps-share-row__head {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-    }
-    .practice-share-song-plan .ps-share-row__label {
-      flex: 1 1 auto;
-      min-width: 0;
-      font-size: 0.64rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--liturgical-accent);
-    }
-    .practice-share-song-plan .ps-share-row__label-input {
-      flex: 1 1 auto;
-      min-width: 0;
-      min-height: 26px;
-      padding: 2px 0;
-      border: none;
-      border-bottom: 1px solid var(--line);
-      border-radius: 0;
-      background: transparent;
-      color: var(--ink);
-      font-size: 0.78rem;
-      font-weight: 650;
-    }
-    .practice-share-song-plan .ps-share-row__label-input:focus {
-      outline: none;
-      border-bottom-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--line));
-    }
-    .practice-share-song-plan .ps-share-row__picked {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      min-height: 20px;
-    }
-    .practice-share-song-plan .ps-share-row__picked:not(.is-filled) .ps-share-row__title {
-      color: var(--muted);
-      font-weight: 500;
-    }
-    .practice-share-song-plan .ps-share-row__title {
-      margin: 0;
-      flex: 1 1 auto;
-      min-width: 0;
-      font-size: 0.84rem;
-      font-weight: 650;
-      color: var(--ink);
-      line-height: 1.3;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .practice-share-song-plan .ps-share-row__title.is-empty {
-      color: var(--muted);
-      font-weight: 500;
-    }
-    .practice-share-song-plan .ps-share-row__clear,
-    .practice-share-song-plan .ps-share-row__delete {
-      flex-shrink: 0;
-      width: 24px;
-      height: 24px;
-      display: grid;
-      place-items: center;
-      border: 1px solid transparent;
-      border-radius: 0;
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      line-height: 1;
-      font-size: 0.95rem;
-      transition: background 140ms cubic-bezier(0.23, 1, 0.32, 1),
-        color 140ms cubic-bezier(0.23, 1, 0.32, 1),
-        border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
-        transform 110ms cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    .practice-share-song-plan .ps-share-row__clear:hover,
-    .practice-share-song-plan .ps-share-row__delete:hover {
-      background: color-mix(in srgb, var(--ink) 6%, transparent);
-      border-color: var(--line);
-      color: var(--ink);
-    }
-    .practice-share-song-plan .ps-share-row__clear:active,
-    .practice-share-song-plan .ps-share-row__delete:active {
-      transform: scale(0.96);
-    }
-    .practice-share-song-plan .ps-share-row__delete svg {
-      width: 14px;
-      height: 14px;
-    }
-    .practice-share-song-plan .ps-share-row__search {
-      position: relative;
-    }
-    .practice-share-song-plan .mass-song-search-input {
-      width: 100%;
-      min-height: 34px;
-      padding: 6px 9px;
-      border: 1px solid var(--line);
-      border-radius: 0;
-      background: var(--surface-solid);
-      color: var(--ink);
-      font-size: 0.82rem;
-    }
-    .practice-share-song-plan .mass-song-search-input:focus {
-      outline: none;
-      border-color: var(--ink);
-      box-shadow: inset 0 0 0 1px var(--ink);
-    }
-    .practice-share-song-plan .mass-song-results {
-      z-index: 30;
-      border-radius: 0;
-    }
-    .practice-share-song-plan .mass-song-alert-host:empty,
-    .practice-share-song-plan .ps-share-row__meta:empty,
-    .practice-share-song-plan .ps-share-row__badge {
-      display: none !important;
-    }
-    .practice-share-song-plan .ps-share-row__meta {
-      margin: 0;
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
-    .practice-share-song-plan .ps-share-row__meta.is-warn {
-      color: var(--danger, #b42318);
-    }
-    .practice-share-card--sections .practice-share-add-section {
-      margin: 0;
-      flex-shrink: 0;
-      min-height: 36px;
-      border: none;
-      border-radius: 0;
-      font-size: 0.78rem;
-      background: transparent;
-    }
-    .practice-share-card--sections .practice-share-add-section:hover {
-      background: color-mix(in srgb, var(--ink) 4%, transparent);
-    }
-    .practice-share-card--sections .ui-card__footer {
-      flex-shrink: 0;
-      border-top: 1px solid var(--line);
-      padding: 10px 14px 14px;
-    }
-    .practice-share-card--sections .ui-card__footer .primary,
-    .practice-share-card--sections .ui-card__footer .secondary {
-      border-radius: 0;
+      gap: 8px;
     }
     .home-bento-cell--events .flow-bento-cell__head {
       flex-shrink: 0;
@@ -6355,7 +6148,8 @@
     .ui-card {
       position: relative;
       z-index: 1;
-      width: var(--ui-card-width);
+      width: auto;
+      max-width: min(96vw, 100%);
       max-height: min(90vh, 900px);
       display: flex;
       flex-direction: column;
@@ -6374,6 +6168,11 @@
     .ui-overlay.is-open .ui-card {
       opacity: 1;
       transform: scale(1) translateY(0);
+    }
+    /* Default size for ordinary modals. Specialty cards override below. */
+    .ui-overlay .ui-card:not(.practice-share-card):not(.ui-card--reading):not(.ui-card--news-expand):not(.song-save-result-card) {
+      width: min(480px, calc(100vw - 2rem));
+      max-width: min(480px, calc(100vw - 2rem));
     }
     .ui-overlay .ui-card.ui-card--reading {
       width: min(var(--ui-card-width-reading), calc(100vw - var(--space-4) * 2));
@@ -7324,9 +7123,13 @@
       letter-spacing: var(--tracking-caption);
       cursor: pointer;
     }
-    .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x:hover {
+    .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x:hover,
+    .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x:focus,
+    .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x:focus-visible {
       color: var(--ink);
-      background: var(--surface-2);
+      background: transparent;
+      outline: none;
+      box-shadow: none;
     }
     .flow-builder-tab-panel--songs .mass-song-plan-card__clear-x[hidden] {
       display: none;
@@ -7620,7 +7423,223 @@
       width: 100%;
       font: inherit;
     }
-    .practice-share-card { max-width: 420px; width: min(100%, 420px); }
+    .practice-share-card {
+      width: min(420px, calc(100vw - 2rem));
+      max-width: min(420px, calc(100vw - 2rem));
+    }
+    #practice-share-sections-modal .ui-card.practice-share-card.practice-share-card--plan,
+    .ui-overlay .ui-card.practice-share-card.practice-share-card--plan {
+      width: min(900px, calc(100vw - 2rem));
+      max-width: min(900px, calc(100vw - 2rem));
+      max-height: min(90vh, 920px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .practice-share-card--plan .mass-song-plan-card__clear-x,
+    .practice-share-card--plan .mass-song-plan-card__clear-x:hover,
+    .practice-share-card--plan .mass-song-plan-card__clear-x:focus,
+    .practice-share-card--plan .mass-song-plan-card__clear-x:focus-visible,
+    .practice-share-card--plan .mass-song-plan-card__btn--delete,
+    .practice-share-card--plan .mass-song-plan-card__btn--delete:hover,
+    .practice-share-card--plan .mass-song-plan-card__btn--delete:focus,
+    .practice-share-card--plan .mass-song-plan-card__btn--delete:focus-visible {
+      background: transparent !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+    .practice-share-card--plan .mass-song-plan-card__clear-x:hover,
+    .practice-share-card--plan .mass-song-plan-card__btn--delete:hover {
+      color: var(--ink);
+    }
+    .practice-share-card--plan .mass-song-plan-card__btn--delete:hover {
+      color: var(--danger, #b42318);
+    }
+    /* Don't flash a focus ring / border highlight when clicking × */
+    .practice-share-card--plan .mass-song-plan-card:focus-within:not(.is-results-open) {
+      border-color: var(--line-soft);
+    }
+    .practice-share-card--plan .mass-song-plan-card:has(.mass-song-plan-card__clear-x:focus),
+    .practice-share-card--plan .mass-song-plan-card:has(.mass-song-plan-card__btn--delete:focus) {
+      border-color: var(--line-soft);
+      overflow: hidden;
+      z-index: auto;
+    }
+    .practice-share-card--plan .ui-card__header,
+    .practice-share-card--plan .ui-card__footer {
+      flex-shrink: 0;
+    }
+    .practice-share-card--plan .ui-card__content {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .practice-share-card--plan.ui-card--popover-open {
+      overflow: hidden;
+    }
+    .ui-overlay .ui-card.practice-share-card--plan.ui-card--popover-open,
+    .ui-overlay .ui-card.practice-share-card--plan.ui-card--popover-safe {
+      overflow: hidden;
+    }
+    .ui-overlay .ui-card.practice-share-card--plan.ui-card--popover-open .ui-card__content,
+    .ui-overlay .ui-card.practice-share-card--plan.ui-card--popover-safe .ui-card__content {
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    .practice-share-plan-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .practice-share-card--plan .mass-song-plan-root {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .practice-share-card--plan .mass-song-plan-card,
+    .practice-share-card--plan .mass-song-slot {
+      border-radius: 10px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      padding: 0;
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .practice-share-card--plan .mass-song-plan-card:focus-within,
+    .practice-share-card--plan .mass-song-plan-card.is-results-open {
+      overflow: visible;
+      position: relative;
+      z-index: 5;
+      border-color: color-mix(in srgb, var(--good) 24%, var(--line-soft));
+    }
+    .practice-share-card--plan .mass-song-plan-card__row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+    .practice-share-card--plan .mass-song-plan-card__drag {
+      width: 14px;
+      margin-top: 10px;
+      opacity: 0.35;
+    }
+    .practice-share-card--plan .mass-song-plan-card__num {
+      width: 24px;
+      height: 24px;
+      margin-top: 6px;
+      font-size: 0.7rem;
+    }
+    .practice-share-card--plan .mass-song-plan-card__core {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .practice-share-card--plan .mass-song-plan-card__top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .practice-share-card--plan .mass-song-plan-card__part {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .practice-share-card--plan .mass-song-plan-card__part-input {
+      min-width: 0;
+      flex: 0 1 140px;
+      max-width: 180px;
+      min-height: 28px;
+      padding: 4px 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      background: var(--surface-solid);
+      color: var(--ink);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .practice-share-card--plan .mass-song-plan-card__title-wrap {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .practice-share-card--plan .mass-song-plan-card__title-picked {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      max-width: 100%;
+    }
+    .practice-share-card--plan .mass-song-plan-card__title {
+      font-size: 0.88rem;
+      font-weight: 650;
+    }
+    .practice-share-card--plan .mass-song-plan-card__badge,
+    .practice-share-card--plan .mass-song-plan-card__meta {
+      display: none;
+    }
+    .practice-share-card--plan .mass-song-plan-card__actions {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .practice-share-card--plan .mass-song-plan-card__btn--delete {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      min-height: 30px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+        background 140ms cubic-bezier(0.23, 1, 0.32, 1),
+        transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .practice-share-card--plan .mass-song-plan-card__btn--delete svg {
+      width: 15px;
+      height: 15px;
+    }
+    .practice-share-card--plan .mass-song-plan-card__btn--delete:hover {
+      color: var(--danger, #b42318);
+      background: transparent;
+    }
+    .practice-share-card--plan .mass-song-plan-card__btn--delete:active {
+      transform: scale(0.96);
+    }
+    .practice-share-card--plan .mass-song-plan-row__search {
+      position: relative;
+      min-width: 0;
+      width: 100%;
+      z-index: 1;
+    }
+    .practice-share-card--plan .mass-song-plan-card:focus-within .mass-song-plan-row__search,
+    .practice-share-card--plan .mass-song-plan-card.is-results-open .mass-song-plan-row__search {
+      z-index: 6;
+    }
+    .practice-share-card--plan .mass-song-plan-row__search .mass-song-results {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 80;
+      max-height: min(240px, 36vh);
+      overflow-y: auto;
+    }
+    .practice-share-card--plan .mass-song-add-custom {
+      align-self: flex-start;
+    }
     .practice-share-body { display: flex; flex-direction: column; gap: 12px; }
     .practice-share-setup__lead {
       margin: 0 0 4px;
@@ -7695,6 +7714,12 @@
       display: flex;
       gap: 8px;
       align-items: stretch;
+    }
+    .practice-share-lead-btn {
+      width: 100%;
+      margin-top: 12px;
+      min-height: 44px;
+      font-weight: 600;
     }
     .practice-share-url-row input {
       flex: 1;
@@ -11111,7 +11136,8 @@
       font-size: 0.8125rem;
     }
     .song-save-result-card {
-      max-width: 360px;
+      width: min(360px, calc(100vw - 2rem));
+      max-width: min(360px, calc(100vw - 2rem));
       text-align: center;
     }
     .song-save-result-card .ui-card__header {
@@ -15321,7 +15347,7 @@
                       <section class="home-songs-slide home-songs-slide--share" data-home-songs-slide="share" aria-label="Share lyrics for choir">
                         <h4 class="home-songs-slide__title">Share lyrics</h4>
                         <div class="home-songs-share">
-                          <p class="home-songs-share__lead">PIN-protected lyrics link for your choir.</p>
+                          <p class="home-songs-share__lead">Send this Sunday's song lyrics to your choir — PIN-protected link, no account needed.</p>
                           <button type="button" class="home-songs-share__btn" id="btn-home-practice-share">Share for choir</button>
                         </div>
                       </section>
@@ -15594,17 +15620,19 @@
 
       <div class="ui-overlay" id="practice-share-sections-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="practice-share-sections-backdrop"></div>
-        <article class="ui-card ui-card--popover-safe practice-share-card practice-share-card--sections" role="dialog" aria-labelledby="practice-share-sections-title" aria-modal="true">
+        <article class="ui-card practice-share-card practice-share-card--plan" role="dialog" aria-labelledby="practice-share-sections-title" aria-modal="true">
           <header class="ui-card__header">
             <div class="ui-card__header-text">
-              <h3 class="ui-card__title" id="practice-share-sections-title">Share lyrics</h3>
-              <p class="ui-card__description" id="practice-share-sections-sub">Choose songs, then create a PIN link.</p>
+              <h3 class="ui-card__title" id="practice-share-sections-title">Share lyrics for choir</h3>
+              <p class="ui-card__description" id="practice-share-sections-sub">Pick songs for each Mass section, then share a PIN-protected link.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="practice-share-sections-close" aria-label="Close">×</button>
           </header>
           <div class="ui-card__content practice-share-body">
-            <div id="practice-share-song-plan" class="mass-song-plan-root practice-share-song-plan" role="region" aria-label="Choir share song sections"></div>
-            <button type="button" class="mass-song-add-custom practice-share-add-section" id="practice-share-add-section">+ Add section</button>
+            <div class="practice-share-plan-wrap">
+              <div id="practice-share-song-plan" class="mass-song-plan-root" role="region" aria-label="Choir practice song sections"></div>
+              <button type="button" class="mass-song-add-custom" id="practice-share-add-section">+ Add section</button>
+            </div>
             <p class="status error" id="practice-share-sections-status" hidden aria-live="polite"></p>
           </div>
           <footer class="ui-card__footer ui-card__footer--row" id="practice-share-sections-footer">
@@ -15667,6 +15695,7 @@
                 <input type="text" id="practice-share-url" readonly />
                 <button type="button" class="secondary" id="practice-share-copy">Copy</button>
               </div>
+              <button type="button" class="primary practice-share-lead-btn" id="practice-share-lets-practice" hidden>Let’s practice</button>
               <p class="muted practice-share-meta" id="practice-share-meta"></p>
             </div>
             <p class="status error" id="practice-share-status" hidden aria-live="polite"></p>
@@ -16025,7 +16054,7 @@
                     </span>
                     Clear
                   </button>
-                  <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Trim spacing and remove [Verse] / (Chorus) labels">Tidy</button>
+                  <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Lowercase all text, then capitalize the first letter of each word; also trim spacing and section labels">Tidy</button>
                 </div>
               </div>
               <div class="lyrics-structured-body">
@@ -17212,6 +17241,7 @@
           <div class="download-row" id="download-row">
           <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
           <a href="#" id="dl-pptx" download>PowerPoint</a>
+          <a href="#" id="dl-pdf" download>PDF</a>
           <a href="#" id="dl-poster" download>Poster PNG</a>
           <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
           </div>
@@ -17534,6 +17564,12 @@
                         <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI</label>
                         <label><input type="checkbox" id="flow-use-gemini-poster" /> Gemini</label>
                       </div>
+                    </div>
+                  </div>
+                  <div class="flow-setup-row">
+                    <div class="field flow-export-pdf-field">
+                      <label class="flow-export-pdf-check"><input type="checkbox" id="flow-export-pdf" /> Also export PDF</label>
+                      <p class="muted flow-setup-field-hint">When checked, generating downloads the PowerPoint and a PDF side by side (handy to share a quick preview in your group chat).</p>
                     </div>
                   </div>
                   <div class="flow-setup-row flow-setup-row--media">
@@ -18542,7 +18578,7 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Users</h3>
-                  <p>Accounts, parish linkage, presence, and location for language targeting.</p>
+                  <p>Registered accounts and parish linkage.</p>
                 </div>
               </header>
               <div class="sa-toolbar">
@@ -18986,7 +19022,7 @@
                   <label>Developer options</label>
                   <p class="muted" style="margin:0 0 10px;">Advanced toggles for debugging the generated deck.</p>
                   <div class="settings-branding-toggles" role="group" aria-label="Developer options">
-                    <label><input type="checkbox" id="flow-hide-footer" checked /> Hide slide footer (the small bottom tag)</label>
+                    <label><input type="checkbox" id="flow-hide-footer" /> Hide slide footer (the small bottom tag)</label>
                   </div>
                 </div>
                 <script>
@@ -18994,10 +19030,7 @@
                     var KEY = "churchMediaHideFooter";
                     var cb = document.getElementById("flow-hide-footer");
                     if (!cb) return;
-                    try {
-                      var stored = localStorage.getItem(KEY);
-                      cb.checked = stored === null ? true : stored === "1";
-                    } catch (_e) { cb.checked = true; }
+                    try { cb.checked = localStorage.getItem(KEY) === "1"; } catch (_e) { /* ignore */ }
                     cb.addEventListener("change", function () {
                       try { localStorage.setItem(KEY, cb.checked ? "1" : "0"); } catch (_e) { /* ignore */ }
                     });
@@ -19493,7 +19526,6 @@
     };
     const postJSON = async (url, body, opts) => {
       const skipAuthWait = !!(opts && opts.skipAuthWait);
-      const timeoutMs = opts && opts.timeoutMs != null ? Number(opts.timeoutMs) : 0;
       if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
       }
@@ -19501,26 +19533,11 @@
       if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
         Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
       }
-      const controller = timeoutMs > 0 ? new AbortController() : null;
-      const timer = controller
-        ? setTimeout(() => controller.abort(), timeoutMs)
-        : null;
-      let res;
-      try {
-        res = await fetch(url, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
-          signal: controller ? controller.signal : undefined,
-        });
-      } catch (err) {
-        if (err && err.name === "AbortError") {
-          throw new Error("This request timed out. The server may still be finishing — try refreshing, or generate again.");
-        }
-        throw new Error("Lost connection to the server. If you were generating a Mass, refresh and try again.");
-      } finally {
-        if (timer) clearTimeout(timer);
-      }
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (
@@ -22152,7 +22169,7 @@
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
-        "flow-use-openai-poster", "flow-use-gemini-poster",
+        "flow-use-openai-poster", "flow-use-gemini-poster", "flow-export-pdf",
         "flow-include-church-logo", "flow-include-church-name", "flow-hide-footer",
         "flow-include-social-exports",
       ];
@@ -22697,20 +22714,6 @@
     let lyricsAnalyzeInFlight = false;
     let composerLoadedSong = null;
     const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
-    // Keep in sync with services/mass_text_format.py _STRUCTURE_LABEL_NAMES.
-    const LYRIC_STRUCTURE_LABEL =
-      "pre[- ]?chorus|post[- ]?chorus|pre[- ]?verse|post[- ]?verse|middle[- ]?8|" +
-      "refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|" +
-      "interlude|instrumental|ending|finale|hook|breakdown|spoken|solo|" +
-      "ad[- ]?lib|tag|turnaround|chant";
-    const LYRIC_STRUCTURE_HEADER_RE = new RegExp(
-      "^[\\[(]?\\s*(" + LYRIC_STRUCTURE_LABEL + ")(\\s*[\\w\\d.-]*)?\\s*[\\])]?\\s*[:.)-]?\\s*$",
-      "i"
-    );
-    const LYRIC_STRUCTURE_INLINE_RE = new RegExp(
-      "^(" + LYRIC_STRUCTURE_LABEL + ")\\s*:\\s*(.*)$",
-      "i"
-    );
     const LYRIC_BLOCK_DRAG_SVG =
       '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">' +
       '<circle cx="2.5" cy="2" r="1.1"/><circle cx="7.5" cy="2" r="1.1"/>' +
@@ -22761,17 +22764,22 @@
       if (!s) return s;
       for (let i = 0; i < s.length; i += 1) {
         const ch = s.charAt(i);
-        if (/[A-Za-z\u00C0-\u024F]/.test(ch)) {
+        if (/[a-zA-Z\u00C0-\u024F]/.test(ch)) {
           return s.slice(0, i) + ch.toUpperCase() + s.slice(i + 1);
         }
       }
       return s;
     }
 
-    /** Uppercase the first letter of every word on every lyric line (premium practice look). */
+    /**
+     * Premium lyric casing — two steps so nothing is left out:
+     * 1) lowercase all text
+     * 2) uppercase the first letter of every word
+     */
     function formatLyricsFirstLetters(raw) {
-      const text = String(raw || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      let text = String(raw || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
       if (!text.trim()) return text.trim();
+      text = text.toLowerCase();
       return text.split("\n").map((line) => {
         if (!line.trim()) return "";
         const leadMatch = line.match(/^[ \t]*/);
@@ -22885,8 +22893,8 @@
 
     function classifyLyricBlock(header, text, index) {
       const source = (header + " " + text).toLowerCase();
-      if (/post[- ]?chorus|chorus|refrain|\bhook\b|\btag\b/.test(source)) return "chorus";
-      if (/bridge|middle|breakdown/.test(source)) return "bridge";
+      if (/chorus|refrain/.test(source)) return "chorus";
+      if (/bridge|middle/.test(source)) return "bridge";
       if (/response|responsorial|lord, hear|amen/.test(source)) return "response";
       return "verse";
     }
@@ -22896,21 +22904,9 @@
       return chunks.map((chunk, index) => {
         const lines = chunk.split(/\n/).map((line) => line.trim()).filter(Boolean);
         const first = lines[0] || "";
-        const inline = LYRIC_STRUCTURE_INLINE_RE.exec(first);
-        const headerMatch = LYRIC_STRUCTURE_HEADER_RE.test(first) || !!inline;
-        let title;
-        let text;
-        if (inline) {
-          title = first;
-          const rest = (inline[2] || "").trim();
-          text = (rest ? [rest] : []).concat(lines.slice(1)).join("\n");
-        } else if (LYRIC_STRUCTURE_HEADER_RE.test(first)) {
-          title = first;
-          text = lines.slice(1).join("\n");
-        } else {
-          title = "Verse " + (index + 1);
-          text = lines.join("\n");
-        }
+        const headerMatch = /^(verse|chorus|refrain|bridge|response)\s*([\w\d]*)/i.test(first);
+        const title = headerMatch ? first : "Verse " + (index + 1);
+        const text = headerMatch ? lines.slice(1).join("\n") : lines.join("\n");
         const type = classifyLyricBlock(title, text, index);
         return { id: crypto.randomUUID(), type, title: title || typeLabels[type], text, collapsed: false };
       });
@@ -23356,27 +23352,39 @@
       setLyricsStatus("Editor cleared.", "");
     });
     $("btn-normalize-lyrics").addEventListener("click", () => {
-      flushLyricBlocksFromDom();
-      lyricBlocks = lyricBlocks.map((block, index) => ({
-        ...block,
-        title: lyricBlockSectionTitle(block, index),
-        text: formatLyricsFirstLetters(tidyLyricBlockText(block.text)),
-      }));
-      renderLyrics({ writeBack: true });
-      setLyricsStatus("Tidied spacing and removed section labels like [Verse] / (Chorus).", "ok");
+      if (lyricBlocks.length) {
+        flushLyricBlocksFromDom();
+        lyricBlocks = lyricBlocks.map((block, index) => ({
+          ...block,
+          title: lyricBlockSectionTitle(block, index),
+          text: formatLyricsFirstLetters(tidyLyricBlockText(block.text)),
+        }));
+        renderLyrics({ writeBack: true });
+      } else {
+        const input = $("lyrics-input");
+        if (!input || !String(input.value || "").trim()) {
+          setLyricsStatus("Add lyrics first, then click Tidy.", "error");
+          return;
+        }
+        input.value = formatLyricsFirstLetters(tidyLyricBlockText(input.value));
+        autoResizeLyricsMainInput();
+        updateLyricsWordStats();
+      }
+      setLyricsStatus("Tidied: lowercased all text, then capitalized the first letter of each word.", "ok");
     });
 
-    /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Outro:). */
+    /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Verse:). */
     function tidyLyricBlockText(raw) {
+      const headerRe = /^[\[(]?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$/i;
       let lines = String(raw || "").replace(/[ \t]+$/gm, "").split("\n");
-      while (lines.length && LYRIC_STRUCTURE_HEADER_RE.test(String(lines[0] || "").trim())) {
+      while (lines.length && headerRe.test(String(lines[0] || "").trim())) {
         lines = lines.slice(1);
       }
       // Also drop any remaining standalone marker lines mid-block (duplicate labels).
       lines = lines.filter((line) => {
         const t = String(line || "").trim();
         if (!t) return true;
-        return !LYRIC_STRUCTURE_HEADER_RE.test(t);
+        return !headerRe.test(t);
       });
       return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
     }
@@ -24043,12 +24051,8 @@
     }
 
     function updateMassSlotChip(key) {
-      const titleEl = $("mass-song-picked-" + key);
-      const statusEl = $("mass-song-status-" + key);
-      const alertEl = $("mass-song-alert-" + key);
-      const badgeEl = $("mass-song-badge-" + key);
-      const row = document.querySelector("[data-slot-key=\"" + key + "\"]");
-      if (!titleEl) return;
+      const cards = document.querySelectorAll(".mass-song-plan-card[data-slot-key=\"" + key + "\"]");
+      if (!cards.length) return;
       const id = selectedLyricsSongs[key] || "";
       let rowData = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
       if (id && !rowData) {
@@ -24056,57 +24060,57 @@
         rowData = massPlanAllSongs.find((s) => String(s.id) === String(id));
       }
       const missingLyrics = !!(id && rowData && !rowData.has_lyrics);
-      const clearBtn = row ? row.querySelector("[data-mass-song-clear]") : null;
-      const pickedWrap = row ? row.querySelector(".ps-share-row__picked") : null;
-      if (row) {
+      cards.forEach((row) => {
+        const titleEl = row.querySelector(".mass-song-plan-card__title");
+        const statusEl = row.querySelector(".mass-song-plan-card__meta");
+        const alertEl = row.querySelector(".mass-song-alert-host");
+        const badgeEl = row.querySelector(".mass-song-plan-card__badge");
+        const clearBtn = row.querySelector("[data-mass-song-clear]");
+        if (!titleEl) return;
         row.classList.toggle("has-selection", !!id);
         row.classList.toggle("mass-song-slot--missing-lyrics", missingLyrics);
-      }
-      if (pickedWrap) pickedWrap.classList.toggle("is-filled", !!id);
-      if (badgeEl) badgeEl.hidden = !id;
-      if (clearBtn) clearBtn.hidden = !id;
-      if (!id) {
-        titleEl.textContent = massSongPlanMountId === "practice-share-song-plan" ? "No song yet" : "Choose a song";
-        titleEl.classList.remove("has-selection");
-        titleEl.classList.add("is-empty");
+        if (badgeEl) badgeEl.hidden = !id;
+        if (clearBtn) clearBtn.hidden = !id;
+        if (!id) {
+          titleEl.textContent = "Choose a song";
+          titleEl.classList.remove("has-selection");
+          titleEl.classList.add("is-empty");
+          if (statusEl) {
+            statusEl.textContent = "";
+            statusEl.classList.remove("is-warn");
+          }
+          if (alertEl) alertEl.innerHTML = "";
+          return;
+        }
+        titleEl.textContent = rowData ? rowData.title : id;
+        titleEl.classList.add("has-selection");
+        titleEl.classList.remove("is-empty");
         if (statusEl) {
-          statusEl.textContent = "";
-          statusEl.classList.remove("is-warn");
+          if (missingLyrics) {
+            statusEl.textContent = "No lyrics";
+            statusEl.classList.add("is-warn");
+          } else {
+            const lang = rowData && rowData.language ? rowData.language : "";
+            statusEl.textContent = lang ? lang + " · Lyrics saved" : "Lyrics saved";
+            statusEl.classList.remove("is-warn");
+          }
         }
-        if (alertEl) alertEl.innerHTML = "";
-        return;
-      }
-      titleEl.textContent = rowData ? rowData.title : id;
-      titleEl.classList.add("has-selection");
-      titleEl.classList.remove("is-empty");
-      if (statusEl) {
-        if (missingLyrics) {
-          statusEl.textContent = "No lyrics";
-          statusEl.classList.add("is-warn");
-        } else if (massSongPlanMountId === "practice-share-song-plan") {
-          statusEl.textContent = "";
-          statusEl.classList.remove("is-warn");
-        } else {
-          const lang = rowData && rowData.language ? rowData.language : "";
-          statusEl.textContent = lang ? lang + " · Lyrics saved" : "Lyrics saved";
-          statusEl.classList.remove("is-warn");
+        if (alertEl) {
+          if (missingLyrics) {
+            alertEl.innerHTML =
+              "<div class=\"mass-song-lyrics-alert\" role=\"alert\">" +
+                "<span class=\"mass-song-lyrics-alert__icon\" aria-hidden=\"true\">!</span>" +
+                "<div>" +
+                  "<span class=\"mass-song-lyrics-alert__title\">Lyrics missing</span>" +
+                  "<span class=\"mass-song-lyrics-alert__text\">Add lyrics in Song Library before generating.</span>" +
+                "</div>" +
+              "</div>";
+          } else {
+            alertEl.innerHTML = "";
+          }
         }
-      }
-      if (alertEl) {
-        // Keep Music Ministry alerts; compact share modal hides empty hosts via CSS.
-        if (missingLyrics && massSongPlanMountId !== "practice-share-song-plan") {
-          alertEl.innerHTML =
-            "<div class=\"mass-song-lyrics-alert\" role=\"alert\">" +
-              "<span class=\"mass-song-lyrics-alert__icon\" aria-hidden=\"true\">!</span>" +
-              "<div>" +
-                "<span class=\"mass-song-lyrics-alert__title\">Lyrics missing</span>" +
-                "<span class=\"mass-song-lyrics-alert__text\">Add lyrics in Song Library before generating.</span>" +
-              "</div>" +
-            "</div>";
-        } else {
-          alertEl.innerHTML = "";
-        }
-      }
+      });
+      syncPracticeShareContinueEnabled();
     }
 
     function syncUiCardPopoverOverflow(panel, open) {
@@ -24131,6 +24135,7 @@
       if (!panel) return;
       panel.classList.remove("is-open");
       panel.hidden = true;
+      markSongPlanResultsOpen(panel, false);
       syncUiCardPopoverOverflow(panel, false);
       if (isHeaderSheetPanel(panel)) syncHeaderSheetBackdrop({ allowPointer: true });
     }
@@ -24279,12 +24284,25 @@
       }
     }
 
-    function renderMassSongResults(key, list, query) {
-      const box = $("mass-song-res-" + key);
-      if (!box) return;
+    function songPlanResultsBoxes(key) {
+      return [
+        $("mass-song-res-" + key),
+        $("ps-song-res-" + key),
+      ].filter(Boolean);
+    }
+
+    function markSongPlanResultsOpen(box, open) {
+      const card = box && box.closest(".mass-song-plan-card");
+      if (card) card.classList.toggle("is-results-open", !!open);
+    }
+
+    function renderMassSongResults(key, list, query, preferredBox) {
+      const boxes = preferredBox ? [preferredBox] : songPlanResultsBoxes(key);
+      if (!boxes.length) return;
       const q = String(query || "").trim();
+      let html = "";
       if (!list.length) {
-        let html = "<div class=\"vb-dropdown-empty mass-song-no-matches\">";
+        html = "<div class=\"vb-dropdown-empty mass-song-no-matches\">";
         if (q) {
           html += "<p><strong>No matches</strong> in your library.</p>";
           html += "<p class=\"mass-song-no-matches__hint\">Add this song in Song Composer, then return here to pick it.</p>";
@@ -24294,36 +24312,44 @@
           html += "<p>No matches. Clear the search or set Language to All.</p>";
         }
         html += "</div>";
+      } else {
+        html = "<ul class=\"vb-dropdown-list\">" + list.map((row) => {
+          const noLyrics = !row.has_lyrics;
+          const rowCls = "vb-dropdown-item mass-song-result-row" + (noLyrics ? " mass-song-result-row--no-lyrics" : "");
+          const lyricsBadge = noLyrics
+            ? "<span class=\"vb-dropdown-item__hint mass-song-lyrics-badge\" aria-label=\"No lyrics saved\">No lyrics</span>"
+            : "";
+          const meta = escapeHtml(row.section || "library") +
+              (row.author ? " · " + escapeHtml(row.author) : "") +
+              (row.language ? " · " + escapeHtml(row.language) : "") +
+            (row.source === "web" ? " · web hint" : "");
+          return (
+            "<li><button type=\"button\" class=\"" + rowCls + "\" role=\"option\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
+              "<span class=\"vb-dropdown-item__label\"><strong>" + escapeHtml(row.title) + "</strong>" +
+              "<span class=\"mass-song-result-meta\">" + meta + "</span></span>" +
+              lyricsBadge +
+            "</button></li>"
+          );
+        }).join("") + "</ul>";
+      }
+      boxes.forEach((box) => {
         box.innerHTML = html;
         openVbDropdownPanel(box);
-        return;
-      }
-      box.innerHTML = "<ul class=\"vb-dropdown-list\">" + list.map((row) => {
-        const noLyrics = !row.has_lyrics;
-        const rowCls = "vb-dropdown-item mass-song-result-row" + (noLyrics ? " mass-song-result-row--no-lyrics" : "");
-        const lyricsBadge = noLyrics
-          ? "<span class=\"vb-dropdown-item__hint mass-song-lyrics-badge\" aria-label=\"No lyrics saved\">No lyrics</span>"
-          : "";
-        const meta = escapeHtml(row.section || "library") +
-            (row.author ? " · " + escapeHtml(row.author) : "") +
-            (row.language ? " · " + escapeHtml(row.language) : "") +
-          (row.source === "web" ? " · web hint" : "");
-        return (
-          "<li><button type=\"button\" class=\"" + rowCls + "\" role=\"option\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
-            "<span class=\"vb-dropdown-item__label\"><strong>" + escapeHtml(row.title) + "</strong>" +
-            "<span class=\"mass-song-result-meta\">" + meta + "</span></span>" +
-            lyricsBadge +
-          "</button></li>"
-        );
-      }).join("") + "</ul>";
-      openVbDropdownPanel(box);
+        markSongPlanResultsOpen(box, true);
+      });
     }
 
     function closeMassSongResultPanels(exceptKey) {
-      lyricSongSlots.forEach((s) => {
-        if (exceptKey && s.key === exceptKey) return;
-        closeVbDropdownPanel($("mass-song-res-" + s.key));
+      document.querySelectorAll(".mass-song-results").forEach((box) => {
+        const key = box.dataset.slotKey || String(box.id || "")
+          .replace(/^mass-song-res-/, "")
+          .replace(/^ps-song-res-/, "");
+        if (exceptKey && key === exceptKey) return;
+        closeVbDropdownPanel(box);
+        markSongPlanResultsOpen(box, false);
       });
+      const stillOpen = document.querySelector("#practice-share-song-plan .mass-song-results:not([hidden])");
+      if (!stillOpen) clearPracticeShareDropdownPad();
     }
 
     const massSongLyricsCache = new Map();
@@ -25347,20 +25373,6 @@
       });
     }
 
-    let massSongPlanMountId = "mass-song-plan";
-
-    function setMassSongPlanMount(id) {
-      massSongPlanMountId = id || "mass-song-plan";
-    }
-
-    function clearInactiveMassSongPlanMount() {
-      const otherId = massSongPlanMountId === "mass-song-plan"
-        ? "practice-share-song-plan"
-        : "mass-song-plan";
-      const other = $(otherId);
-      if (other) other.innerHTML = "";
-    }
-
     function massSongSlotPartHtml(slot) {
       if (slot.custom) {
         return (
@@ -25381,6 +25393,8 @@
       );
     }
 
+    const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
+
     /** Match backend ``ensure_lyric_section_breaks`` — blank line before Verse/Chorus labels. */
     function ensureLyricSectionBreaks(raw) {
       const text = (raw || "").trim();
@@ -25388,7 +25402,7 @@
       const out = [];
       text.split("\n").forEach((line) => {
         const stripped = line.trim();
-        if (stripped && out.length && out[out.length - 1] !== "" && LYRIC_STRUCTURE_HEADER_RE.test(stripped)) {
+        if (stripped && out.length && out[out.length - 1] !== "" && _LYRIC_STRUCTURE_HEADER_RE.test(stripped)) {
           out.push("");
         }
         out.push(line);
@@ -25400,16 +25414,18 @@
     function parseLyricsSectionsForPreview(raw) {
       const parts = ensureLyricSectionBreaks(raw).split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
       if (!parts.length) return [];
+      const headerRe = /^\[?\s*(verse|chorus|refrain|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
+      const inlineRe = /^(refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp)\s*:\s*(.*)$/i;
       const sections = [];
       parts.forEach((chunk) => {
         const lines = chunk.split(/\n/).map((ln) => ln.trim()).filter(Boolean);
         if (!lines.length) return;
         const first = lines[0];
         let bodyLines;
-        if (LYRIC_STRUCTURE_HEADER_RE.test(first)) {
+        if (headerRe.test(first)) {
           bodyLines = lines.slice(1);
         } else {
-          const inline = LYRIC_STRUCTURE_INLINE_RE.exec(first);
+          const inline = inlineRe.exec(first);
           if (inline) {
             const rest = (inline[2] || "").trim();
             bodyLines = (rest ? [rest] : []).concat(lines.slice(1));
@@ -25417,7 +25433,6 @@
             bodyLines = lines;
           }
         }
-        bodyLines = bodyLines.filter((ln) => !LYRIC_STRUCTURE_HEADER_RE.test(ln));
         const body = bodyLines.join("\n").trim();
         if (body) sections.push(body);
       });
@@ -25769,47 +25784,12 @@
       return map[key] || custom || "section";
     }
 
-    function renderPracticeShareSongPlanHtml(slot) {
-      const label = slot.custom
-        ? ("<input type=\"text\" class=\"ps-share-row__label-input\" data-custom-label=\"" + escapeHtml(slot.key) + "\" " +
-            "value=\"" + escapeHtml(slot.label || "") + "\" maxlength=\"80\" " +
-            "placeholder=\"Section name\" aria-label=\"Section name\" />")
-        : ("<span class=\"ps-share-row__label\">" + escapeHtml(massSongSlotShortLabel(slot.key, slot.label)) + "</span>");
-      const del = slot.custom
-        ? ("<button type=\"button\" class=\"ps-share-row__delete mass-song-delete-section\" " +
-            "data-mass-song-delete=\"" + escapeHtml(slot.key) + "\" aria-label=\"Delete section\" title=\"Delete section\">" +
-            MASS_SONG_PLAN_TRASH_SVG + "</button>")
-        : "";
-      return (
-        "<div class=\"ps-share-row mass-song-slot" + (slot.custom ? " mass-song-slot--custom" : "") + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
-          "<div class=\"ps-share-row__head\">" +
-            label +
-            del +
-          "</div>" +
-          "<div class=\"ps-share-row__picked\">" +
-            "<strong class=\"ps-share-row__title is-empty\" id=\"mass-song-picked-" + escapeHtml(slot.key) + "\">No song yet</strong>" +
-            "<button type=\"button\" class=\"ps-share-row__clear mass-song-clear\" data-mass-song-clear=\"" + escapeHtml(slot.key) + "\" hidden aria-label=\"Clear song\" title=\"Clear song\">×</button>" +
-          "</div>" +
-          "<div class=\"ps-share-row__search mass-song-plan-row__search mass-song-pick\">" +
-            "<input type=\"search\" id=\"mass-song-q-" + escapeHtml(slot.key) + "\" class=\"mass-song-search-input\" maxlength=\"120\" autocomplete=\"off\" placeholder=\"Search to change…\" aria-label=\"Search " + escapeHtml((slot.label || "").trim() || "section") + "\" />" +
-            "<div class=\"mass-song-alert-host\" id=\"mass-song-alert-" + escapeHtml(slot.key) + "\"></div>" +
-            "<div class=\"vb-dropdown-panel mass-song-results\" id=\"mass-song-res-" + escapeHtml(slot.key) + "\" role=\"listbox\" hidden></div>" +
-          "</div>" +
-          "<span class=\"ps-share-row__badge\" id=\"mass-song-badge-" + escapeHtml(slot.key) + "\" hidden></span>" +
-          "<span class=\"ps-share-row__meta\" id=\"mass-song-status-" + escapeHtml(slot.key) + "\"></span>" +
-        "</div>"
-      );
-    }
-
-    function renderMassSongPlan() {
-      const plan = $(massSongPlanMountId);
-      if (!plan) return;
-      clearInactiveMassSongPlanMount();
-      rebuildMassPlanSongPool();
-      const compact = massSongPlanMountId === "practice-share-song-plan";
-      plan.innerHTML = compact
-        ? lyricSongSlots.map((slot) => renderPracticeShareSongPlanHtml(slot)).join("")
-        : lyricSongSlots.map((slot, index) => (
+    function buildMassSongPlanCardsHtml(idPrefix, opts) {
+      opts = opts || {};
+      const prefix = idPrefix || "mass-song";
+      const allowDeleteAll = !!opts.allowDeleteAll;
+      const slots = Array.isArray(opts.slots) ? opts.slots : lyricSongSlots;
+      return slots.map((slot, index) => (
         "<article class=\"mass-song-plan-card mass-song-slot" + (slot.custom ? " mass-song-slot--custom" : "") + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
           "<div class=\"mass-song-plan-card__row\">" +
             "<span class=\"mass-song-plan-card__drag\" aria-hidden=\"true\">" + MASS_SONG_PLAN_DRAG_SVG + "</span>" +
@@ -25817,36 +25797,151 @@
             "<div class=\"mass-song-plan-card__core\">" +
               "<div class=\"mass-song-plan-card__top\">" +
                 massSongSlotPartHtml(slot) +
-                massSongTitleWrapHtml(slot.key) +
-                "<span class=\"mass-song-plan-card__badge\" id=\"mass-song-badge-" + slot.key + "\" hidden>Selected</span>" +
-                "<span class=\"mass-song-plan-card__meta\" id=\"mass-song-status-" + slot.key + "\"></span>" +
+                "<div class=\"mass-song-plan-card__title-wrap\">" +
+                  "<span class=\"mass-song-plan-card__title-picked\">" +
+                    "<strong class=\"mass-song-plan-card__title is-empty\" id=\"" + prefix + "-picked-" + escapeHtml(slot.key) + "\">Choose a song</strong>" +
+                    massSongClearButtonHtml(slot.key) +
+                  "</span>" +
+                "</div>" +
+                "<span class=\"mass-song-plan-card__badge\" id=\"" + prefix + "-badge-" + escapeHtml(slot.key) + "\" hidden>Selected</span>" +
+                "<span class=\"mass-song-plan-card__meta\" id=\"" + prefix + "-status-" + escapeHtml(slot.key) + "\"></span>" +
                 "<div class=\"mass-song-plan-card__actions\">" +
-              massSongPreviewButtonHtml(slot.key) +
-                  (slot.custom ? massSongDeleteSectionButtonHtml(slot) : "") +
-            "</div>" +
-          "</div>" +
+                  massSongPreviewButtonHtml(slot.key) +
+                  ((allowDeleteAll || slot.custom) ? massSongDeleteSectionButtonHtml(slot) : "") +
+                "</div>" +
+              "</div>" +
               "<div class=\"mass-song-plan-row__search mass-song-pick\">" +
-                "<input type=\"search\" id=\"mass-song-q-" + slot.key + "\" class=\"mass-song-search-input\" maxlength=\"120\" autocomplete=\"off\" placeholder=\"Search " + escapeHtml(massSongSlotShortLabel(slot.key, slot.label).toLowerCase()) + "…\" aria-label=\"Search " + escapeHtml((slot.label || "").trim() || "section") + "\" />" +
-                "<div class=\"mass-song-alert-host\" id=\"mass-song-alert-" + slot.key + "\"></div>" +
-                "<div class=\"vb-dropdown-panel mass-song-results\" id=\"mass-song-res-" + slot.key + "\" role=\"listbox\" hidden></div>" +
+                "<input type=\"search\" id=\"" + prefix + "-q-" + escapeHtml(slot.key) + "\" class=\"mass-song-search-input\" maxlength=\"120\" autocomplete=\"off\" placeholder=\"Search " + escapeHtml(massSongSlotShortLabel(slot.key, slot.label).toLowerCase()) + "…\" aria-label=\"Search " + escapeHtml((slot.label || "").trim() || "section") + "\" />" +
+                "<div class=\"mass-song-alert-host\" id=\"" + prefix + "-alert-" + escapeHtml(slot.key) + "\"></div>" +
+                "<div class=\"vb-dropdown-panel mass-song-results\" id=\"" + prefix + "-res-" + escapeHtml(slot.key) + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\" role=\"listbox\" hidden></div>" +
               "</div>" +
             "</div>" +
           "</div>" +
         "</article>"
       )).join("");
-      lyricSongSlots.forEach((slot) => {
-        updateMassSlotChip(slot.key);
-        updateMassSongPreviewButton(slot.key);
-      });
+    }
+
+    function practiceShareVisibleSlots() {
+      return lyricSongSlots.filter((slot) => !practiceShareExcludedSlots.has(slot.key));
+    }
+
+    function renderMassSongPlan() {
+      const plan = $("mass-song-plan");
+      if (plan) {
+        rebuildMassPlanSongPool();
+        plan.innerHTML = buildMassSongPlanCardsHtml("mass-song");
+        lyricSongSlots.forEach((slot) => {
+          updateMassSlotChip(slot.key);
+          updateMassSongPreviewButton(slot.key);
+        });
+      }
       updateMassSongAddButton();
       renderMassSummarySidebar();
       renderFlowSongCount();
-      syncPracticeShareSectionsContinue();
+      if ($("practice-share-sections-modal") && $("practice-share-sections-modal").classList.contains("is-open")) {
+        renderPracticeShareSongPlan({ skipMassSync: true });
+      }
+    }
+
+    function renderPracticeShareSongPlan(opts) {
+      opts = opts || {};
+      const plan = $("practice-share-song-plan");
+      if (!plan) return 0;
+      rebuildMassPlanSongPool();
+      const slots = practiceShareVisibleSlots();
+      plan.innerHTML = buildMassSongPlanCardsHtml("ps-song", { allowDeleteAll: true, slots: slots });
+      slots.forEach((slot) => {
+        updateMassSlotChip(slot.key);
+      });
+      updateMassSongAddButton();
+      if (!opts.skipMassSync && $("mass-song-plan")) {
+        const massPlan = $("mass-song-plan");
+        if (massPlan && !massPlan.contains(document.activeElement)) {
+          massPlan.innerHTML = buildMassSongPlanCardsHtml("mass-song");
+          lyricSongSlots.forEach((slot) => {
+            updateMassSlotChip(slot.key);
+            updateMassSongPreviewButton(slot.key);
+          });
+        }
+      }
+      const available = slots.filter((slot) => !!(selectedLyricsSongs[slot.key] || "").trim()).length;
+      syncPracticeShareContinueEnabled();
+      return available;
+    }
+
+    function syncPracticeShareContinueEnabled() {
+      const continueBtn = $("practice-share-sections-continue");
+      if (!continueBtn) return;
+      const modal = $("practice-share-sections-modal");
+      if (!modal || !modal.classList.contains("is-open")) return;
+      const available = practiceShareVisibleSlots()
+        .filter((slot) => !!(selectedLyricsSongs[slot.key] || "").trim()).length;
+      continueBtn.disabled = available === 0;
+    }
+
+    function practiceShareScrollHost() {
+      const card = document.querySelector("#practice-share-sections-modal .practice-share-card--plan");
+      return card ? card.querySelector(".ui-card__content") : null;
+    }
+
+    function scrollPracticeShareSectionIntoView(slotKey, opts) {
+      opts = opts || {};
+      const plan = $("practice-share-song-plan");
+      const host = practiceShareScrollHost();
+      if (!plan || !host) return;
+      const card = plan.querySelector('.mass-song-plan-card[data-slot-key="' + slotKey + '"]');
+      if (!card) return;
+      const dropdownRoom = opts.dropdownRoom != null ? opts.dropdownRoom : 260;
+      plan.style.paddingBottom = dropdownRoom + "px";
+      const hostRect = host.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      const cardTopInHost = cardRect.top - hostRect.top + host.scrollTop;
+      const neededBottom = cardTopInHost + card.offsetHeight + dropdownRoom;
+      const viewBottom = host.scrollTop + host.clientHeight;
+      const viewTop = host.scrollTop;
+      let nextTop = host.scrollTop;
+      if (neededBottom > viewBottom) {
+        nextTop = neededBottom - host.clientHeight + 12;
+      } else if (cardTopInHost < viewTop + 8) {
+        nextTop = Math.max(0, cardTopInHost - 12);
+      }
+      nextTop = Math.max(0, Math.min(nextTop, Math.max(0, host.scrollHeight - host.clientHeight)));
+      if (Math.abs(nextTop - host.scrollTop) >= 2) {
+        host.scrollTo({
+          top: nextTop,
+          behavior: opts.instant || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        });
+      }
+    }
+
+    function clearPracticeShareDropdownPad() {
+      const plan = $("practice-share-song-plan");
+      if (plan) plan.style.paddingBottom = "";
+    }
+
+    function focusPracticeShareSectionSearch(slotKey) {
+      const inp = $("ps-song-q-" + slotKey);
+      if (!inp) return;
+      scrollPracticeShareSectionIntoView(slotKey, { dropdownRoom: 260 });
+      window.requestAnimationFrame(() => {
+        inp.focus({ preventScroll: true });
+        scrollPracticeShareSectionIntoView(slotKey, { dropdownRoom: 260 });
+      });
+    }
+
+    function focusNextPracticeShareSection(afterKey) {
+      const slots = practiceShareVisibleSlots();
+      const idx = slots.findIndex((s) => s.key === afterKey);
+      const next = slots.slice(idx + 1).find((s) => !(selectedLyricsSongs[s.key] || "").trim()) || slots[idx + 1];
+      if (!next) return;
+      focusPracticeShareSectionSearch(next.key);
     }
 
     let practiceShareLastUrl = "";
+    let practiceShareLastLeadUrl = "";
     let practiceShareLastHadPin = false;
     let practiceShareSlotFilter = null;
+    let practiceShareExcludedSlots = new Set();
 
     function mountPinOtp(container, opts) {
       opts = opts || {};
@@ -26013,19 +26108,11 @@
     }
 
     function closePracticeShareSectionsModal() {
-      const wasMounted = massSongPlanMountId === "practice-share-song-plan";
+      closeMassSongResultPanels();
+      clearPracticeShareDropdownPad();
+      const card = document.querySelector("#practice-share-sections-modal .ui-card");
+      if (card) card.classList.remove("ui-card--popover-open");
       setUiOverlayOpen($("practice-share-sections-modal"), false);
-      if (wasMounted) {
-        setMassSongPlanMount("mass-song-plan");
-        renderMassSongPlan();
-      }
-    }
-
-    function syncPracticeShareSectionsContinue() {
-      const continueBtn = $("practice-share-sections-continue");
-      const modal = $("practice-share-sections-modal");
-      if (!continueBtn || !modal || modal.getAttribute("aria-hidden") === "true") return;
-      continueBtn.disabled = selectedLyricsSongCount() === 0;
     }
 
     function practiceSharePinMode() {
@@ -26058,7 +26145,10 @@
       const url = $("practice-share-url");
       if (url) url.value = "";
       practiceShareLastUrl = "";
+      practiceShareLastLeadUrl = "";
       practiceShareLastHadPin = false;
+      const leadBtn = $("practice-share-lets-practice");
+      if (leadBtn) leadBtn.hidden = true;
       const qr = $("practice-share-qr");
       const qrFallback = $("practice-share-qr-fallback");
       if (qr) { qr.hidden = true; qr.removeAttribute("src"); }
@@ -26083,20 +26173,15 @@
     async function hydratePracticeShareSelections(targetDate) {
       const date = String(targetDate || upcomingSundayISO()).trim();
       ensurePracticeShareMassDate(date);
-      const hasCurrent = lyricSongSlots.some((slot) => !!(selectedLyricsSongs[slot.key] || "").trim());
-      if (!hasCurrent) {
-        const draft = readMassBuilderDraft();
-        const draftDate = (draft && (draft.previewDate || (draft.fields && draft.fields["mass-date"]))) || "";
-        if (draft && String(draftDate) === date) {
-          if (Array.isArray(draft.lyricSongSlots) && draft.lyricSongSlots.length) {
-            lyricSongSlots = JSON.parse(JSON.stringify(draft.lyricSongSlots));
-          }
-          if (draft.selectedLyricsSongs) {
-            selectedLyricsSongs = Object.assign({}, selectedLyricsSongs, draft.selectedLyricsSongs);
-          }
-        }
+      const draft = readMassBuilderDraft();
+      const draftDate = (draft && (draft.previewDate || (draft.fields && draft.fields["mass-date"]))) || "";
+      if (draft && draft.selectedLyricsSongs && String(draftDate) === date) {
+        HOME_SONG_SLOTS.forEach((slot) => {
+          const id = draft.selectedLyricsSongs[slot.key];
+          if (id) selectedLyricsSongs[slot.key] = id;
+        });
       }
-      let hasAny = lyricSongSlots.some((slot) => !!(selectedLyricsSongs[slot.key] || "").trim());
+      let hasAny = HOME_SONG_SLOTS.some((slot) => !!(selectedLyricsSongs[slot.key] || "").trim());
       if (!hasAny) {
         try {
           const data = await fetchPreview(date, { readingsOnly: false });
@@ -26137,46 +26222,47 @@
       requestAnimationFrame(() => practiceSharePinOtp?.focus());
     }
 
+    function renderPracticeShareSectionsList() {
+      return renderPracticeShareSongPlan();
+    }
+
     async function openPracticeShareSectionsModal() {
       const status = $("practice-share-sections-status");
       const continueBtn = $("practice-share-sections-continue");
       if (status) { status.hidden = true; status.textContent = ""; }
       if (continueBtn) continueBtn.disabled = true;
-      const dateEl = $("mass-date");
-      const dateHint = (dateEl && (dateEl.value || "").trim()) || upcomingSundayISO();
-      const date = await hydratePracticeShareSelections(dateHint);
-      setMassSongPlanMount("practice-share-song-plan");
-      renderMassSongPlan();
-      const available = selectedLyricsSongCount();
+      practiceShareExcludedSlots = new Set();
+      const date = await hydratePracticeShareSelections(upcomingSundayISO());
+      const available = renderPracticeShareSongPlan();
       const sub = $("practice-share-sections-sub");
       if (sub) {
-        sub.textContent = "Songs for " + date + " · then set a PIN.";
+        sub.textContent = available
+          ? ("Pick or change songs for " + date + ", then share a PIN-protected link.")
+          : "Search and pick songs for each section, then share.";
       }
       if (continueBtn) continueBtn.disabled = available === 0;
-      if (!available && status) {
-        status.textContent = "Choose at least one song below, or add a section.";
-        status.hidden = false;
-      }
+      closeMassSongResultPanels();
+      clearPracticeShareDropdownPad();
       setUiOverlayOpen($("practice-share-sections-modal"), true);
+      syncPracticeShareContinueEnabled();
     }
 
     function continuePracticeShareFromSections() {
       const status = $("practice-share-sections-status");
-      const keys = lyricSongSlots
-        .map((slot) => slot.key)
-        .filter((key) => !!(selectedLyricsSongs[key] || "").trim());
-      if (!keys.length) {
+      const selectedKeys = practiceShareVisibleSlots()
+        .filter((slot) => !!(selectedLyricsSongs[slot.key] || "").trim())
+        .map((slot) => slot.key);
+      if (!selectedKeys.length) {
         if (status) {
           status.textContent = "Pick at least one song before sharing.";
           status.hidden = false;
         }
-        syncPracticeShareSectionsContinue();
+        syncPracticeShareContinueEnabled();
         return;
       }
-      practiceShareSlotFilter = new Set(keys);
-      setMassSongPlanMount("mass-song-plan");
-      renderMassSongPlan();
-      setUiOverlayOpen($("practice-share-sections-modal"), false);
+      practiceShareSlotFilter = new Set(selectedKeys);
+      closeMassSongResultPanels();
+      closePracticeShareSectionsModal();
       openPracticeShareModal({ keepSlotFilter: true, allowHomeDate: true });
     }
 
@@ -26306,9 +26392,12 @@
       setPracticeShareFooterMode("result");
       const url = String(data.url || "");
       practiceShareLastUrl = url;
+      practiceShareLastLeadUrl = String(data.lead_url || "").trim();
       const urlInput = $("practice-share-url");
       if (urlInput) urlInput.value = url;
       renderPracticeShareQr(data, url);
+      const leadBtn = $("practice-share-lets-practice");
+      if (leadBtn) leadBtn.hidden = !practiceShareLastLeadUrl;
       const meta = $("practice-share-meta");
       if (meta) {
         const exp = data.expires_at
@@ -26319,6 +26408,12 @@
       }
       const sub = $("practice-share-sub");
       if (sub) sub.textContent = "Share this link or QR code in your choir group chat. Links expire 1 hour after you generate them.";
+    }
+
+    function openPracticeShareLead() {
+      const url = practiceShareLastLeadUrl;
+      if (!url) return;
+      window.open(url, "_blank", "noopener,noreferrer");
     }
 
     async function createPracticeShareLink() {
@@ -26401,10 +26496,10 @@
 
     function initPracticeShareUi() {
       [
-        ["btn-practice-share", () => { openPracticeShareSectionsModal(); }],
-        ["btn-practice-share-mobile", () => { openPracticeShareSectionsModal(); }],
-        ["btn-practice-share-toolbar", () => { openPracticeShareSectionsModal(); }],
-        ["btn-practice-share-wizard", () => { openPracticeShareSectionsModal(); }],
+        ["btn-practice-share", () => openPracticeShareModal()],
+        ["btn-practice-share-mobile", () => openPracticeShareModal()],
+        ["btn-practice-share-toolbar", () => openPracticeShareModal()],
+        ["btn-practice-share-wizard", () => openPracticeShareModal()],
         ["btn-home-practice-share", () => { openPracticeShareSectionsModal(); }],
         ["practice-share-sections-backdrop", closePracticeShareSectionsModal],
         ["practice-share-sections-close", closePracticeShareSectionsModal],
@@ -26428,6 +26523,9 @@
       }
       $("practice-share-copy") && $("practice-share-copy").addEventListener("click", () => {
         copyPracticeShareLink();
+      });
+      $("practice-share-lets-practice") && $("practice-share-lets-practice").addEventListener("click", () => {
+        openPracticeShareLead();
       });
     }
 
@@ -27203,6 +27301,13 @@
     })();
 
 
+    function songPlanSearchKeyFromInput(inp) {
+      if (!inp || !inp.id) return "";
+      if (inp.id.indexOf("mass-song-q-") === 0) return inp.id.slice("mass-song-q-".length);
+      if (inp.id.indexOf("ps-song-q-") === 0) return inp.id.slice("ps-song-q-".length);
+      return "";
+    }
+
     function syncCustomSlotLabel(key, rawValue, finalize) {
       const slot = lyricSongSlots.find((s) => s.key === key);
       if (!slot || !slot.custom) return;
@@ -27212,27 +27317,29 @@
         slot.label = rawValue || "";
       }
       const display = ((finalize ? slot.label : rawValue) || "").trim() || "section";
-      const searchInp = $("mass-song-q-" + key);
-      if (searchInp) {
-        searchInp.placeholder = "Search " + display.toLowerCase() + "…";
-        searchInp.setAttribute("aria-label", "Search " + display);
-      }
-      const delBtn = document.querySelector("[data-mass-song-delete=\"" + key + "\"]");
-      if (delBtn) {
+      ["mass-song-q-", "ps-song-q-"].forEach((prefix) => {
+        const searchInp = $(prefix + key);
+        if (searchInp) {
+          searchInp.placeholder = "Search " + display.toLowerCase() + "…";
+          searchInp.setAttribute("aria-label", "Search " + display);
+        }
+      });
+      document.querySelectorAll("[data-mass-song-delete=\"" + key + "\"]").forEach((delBtn) => {
         delBtn.setAttribute("aria-label", "Delete " + display + " section");
         delBtn.title = "Delete section";
-      }
+      });
     }
 
-    function addMassSongCustomSection() {
-      if (lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS) return;
-      massCustomSlotSeq += 1;
-      const key = "custom_" + massCustomSlotSeq;
-      lyricSongSlots.push({ key, label: "", section: "meditation", custom: true });
-      selectedLyricsSongs[key] = "";
-      renderMassSongPlan();
-      const labelInp = document.querySelector("[data-custom-label=\"" + key + "\"]");
-      if (labelInp) window.requestAnimationFrame(() => labelInp.focus());
+    function clearSongPlanSearchUi(key) {
+      ["mass-song-q-", "ps-song-q-"].forEach((prefix) => {
+        const inp = $(prefix + key);
+        if (inp) inp.value = "";
+      });
+      songPlanResultsBoxes(key).forEach((box) => {
+        closeVbDropdownPanel(box);
+        markSongPlanResultsOpen(box, false);
+        box.innerHTML = "";
+      });
     }
 
     function bindMassSongPlanRoot(root) {
@@ -27241,49 +27348,49 @@
 
       root.addEventListener("mousedown", (e) => {
         const btn = e.target.closest("button[data-pick-slot]");
-        if (!btn) return;
+        if (!btn || !root.contains(btn)) return;
         e.preventDefault();
         const key = btn.dataset.pickSlot;
         const pickId = btn.dataset.pickId;
         if (!key) return;
         selectedLyricsSongs[key] = pickId || "";
-        const inp = $("mass-song-q-" + key);
-        if (inp) inp.value = "";
-        const box = $("mass-song-res-" + key);
-        if (box) {
-          closeVbDropdownPanel(box);
-          box.innerHTML = "";
-        }
+        clearSongPlanSearchUi(key);
         updateMassSlotChip(key);
         updateMassSongPreviewButton(key);
         renderFlowSongCount();
-        syncPracticeShareSectionsContinue();
-        const status = $("practice-share-sections-status");
-        if (status && !status.hidden) {
-          status.hidden = true;
-          status.textContent = "";
+        if (root.id === "practice-share-song-plan") {
+          window.requestAnimationFrame(() => focusNextPracticeShareSection(key));
         }
       });
 
       root.addEventListener("input", (e) => {
         const labelInp = e.target.closest("[data-custom-label]");
-        if (labelInp) {
+        if (labelInp && root.contains(labelInp)) {
           syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, false);
           return;
         }
         const inp = e.target.closest(".mass-song-search-input");
-        if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
-        const key = inp.id.replace("mass-song-q-", "");
+        if (!inp || !root.contains(inp)) return;
+        const key = songPlanSearchKeyFromInput(inp);
+        if (!key) return;
+        if (root.id === "practice-share-song-plan") {
+          scrollPracticeShareSectionIntoView(key, { dropdownRoom: 260 });
+        }
         clearTimeout(massPlanSearchDebounce);
         massPlanSearchDebounce = setTimeout(() => {
           const rows = filterMassPlanSongs(inp.value);
-          renderMassSongResults(key, rows, inp.value);
+          const wrap = inp.closest(".mass-song-plan-row__search");
+          const preferred = wrap ? wrap.querySelector(".mass-song-results") : null;
+          renderMassSongResults(key, rows, inp.value, preferred);
+          if (root.id === "practice-share-song-plan") {
+            scrollPracticeShareSectionIntoView(key, { dropdownRoom: 260 });
+          }
         }, 100);
       });
 
       root.addEventListener("blur", (e) => {
         const labelInp = e.target.closest("[data-custom-label]");
-        if (!labelInp) return;
+        if (!labelInp || !root.contains(labelInp)) return;
         syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, true);
         const slot = lyricSongSlots.find((s) => s.key === labelInp.dataset.customLabel);
         if (slot) labelInp.value = slot.label;
@@ -27291,7 +27398,7 @@
 
       root.addEventListener("click", (e) => {
         const addComposer = e.target.closest(".mass-song-add-composer-btn");
-        if (addComposer) {
+        if (addComposer && root.contains(addComposer)) {
           e.preventDefault();
           navigateToComposerWithMassSearch(
             addComposer.dataset.massAddQuery || "",
@@ -27301,17 +27408,31 @@
           return;
         }
         const prev = e.target.closest(".mass-song-preview-btn");
-        if (prev && !prev.classList.contains("is-disabled")) {
+        if (prev && root.contains(prev) && !prev.classList.contains("is-disabled")) {
           const slotKey = prev.dataset.previewSlot;
           if (slotKey) openMassSongPreview(slotKey);
           return;
         }
         const del = e.target.closest("[data-mass-song-delete]");
-        if (del) {
+        if (del && root.contains(del)) {
           const key = del.dataset.massSongDelete;
           const slot = lyricSongSlots.find((s) => s.key === key);
-          if (!slot || !slot.custom) return;
-          const name = (slot.label || "").trim() || "this section";
+          if (!slot) return;
+          const name = massSongSlotShortLabel(slot.key, slot.label) || (slot.label || "").trim() || "this section";
+          if (root.id === "practice-share-song-plan") {
+            if (!window.confirm("Remove \"" + name + "\" from this share?")) return;
+            if (slot.custom) {
+              lyricSongSlots = lyricSongSlots.filter((s) => s.key !== key);
+              delete selectedLyricsSongs[key];
+            } else {
+              practiceShareExcludedSlots.add(key);
+            }
+            closeMassSongResultPanels();
+            renderPracticeShareSongPlan({ skipMassSync: !slot.custom });
+            if (slot.custom) renderMassSongPlan();
+            return;
+          }
+          if (!slot.custom) return;
           if (!window.confirm("Delete \"" + name + "\"? Any selected song for this section will be removed.")) return;
           lyricSongSlots = lyricSongSlots.filter((s) => s.key !== key);
           delete selectedLyricsSongs[key];
@@ -27319,48 +27440,72 @@
           return;
         }
         const clr = e.target.closest("[data-mass-song-clear]");
-        if (!clr) return;
+        if (!clr || !root.contains(clr)) return;
         const key = clr.dataset.massSongClear;
         if (!key) return;
         selectedLyricsSongs[key] = "";
-        const inp = $("mass-song-q-" + key);
-        if (inp) inp.value = "";
-        const box = $("mass-song-res-" + key);
-        if (box) {
-          closeVbDropdownPanel(box);
-          box.innerHTML = "";
-        }
+        clearSongPlanSearchUi(key);
         updateMassSlotChip(key);
         updateMassSongPreviewButton(key);
         renderFlowSongCount();
-        syncPracticeShareSectionsContinue();
       });
 
       root.addEventListener("keydown", (e) => {
         const inp = e.target.closest(".mass-song-search-input");
-        if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
-        if (e.key !== "Enter") return;
+        if (!inp || !root.contains(inp)) return;
+        const key = songPlanSearchKeyFromInput(inp);
+        if (!key || e.key !== "Enter") return;
         const query = String(inp.value || "").trim();
         if (!query) return;
         const rows = filterMassPlanSongs(inp.value);
         if (rows.length) return;
         e.preventDefault();
-        const key = inp.id.replace("mass-song-q-", "");
         navigateToComposerWithMassSearch(query, key, { openGoogle: true });
       });
 
       root.addEventListener("focusin", (e) => {
         const inp = e.target.closest(".mass-song-search-input");
-        if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
-        const key = inp.id.replace("mass-song-q-", "");
+        if (!inp || !root.contains(inp)) return;
+        const key = songPlanSearchKeyFromInput(inp);
+        if (!key) return;
+        // Practice share: only open results after the user types (not on bare focus / modal open).
+        if (root.id === "practice-share-song-plan") {
+          scrollPracticeShareSectionIntoView(key, { dropdownRoom: 260 });
+          if (!String(inp.value || "").trim()) {
+            closeMassSongResultPanels();
+            return;
+          }
+        }
         closeMassSongResultPanels(key);
         const rows = filterMassPlanSongs(inp.value);
-        renderMassSongResults(key, rows, inp.value);
+        const wrap = inp.closest(".mass-song-plan-row__search");
+        const preferred = wrap ? wrap.querySelector(".mass-song-results") : null;
+        renderMassSongResults(key, rows, inp.value, preferred);
+        if (root.id === "practice-share-song-plan") {
+          window.requestAnimationFrame(() => {
+            scrollPracticeShareSectionIntoView(key, { dropdownRoom: 260 });
+          });
+        }
       }, true);
     }
 
     bindMassSongPlanRoot($("mass-song-plan"));
     bindMassSongPlanRoot($("practice-share-song-plan"));
+
+    function addCustomMassSongSection(focusInPracticeShare) {
+      if (lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS) return;
+      massCustomSlotSeq += 1;
+      const key = "custom_" + massCustomSlotSeq;
+      lyricSongSlots.push({ key, label: "", section: "meditation", custom: true });
+      selectedLyricsSongs[key] = "";
+      renderMassSongPlan();
+      const scope = focusInPracticeShare ? $("practice-share-song-plan") : $("mass-song-plan");
+      const labelInp = (scope || document).querySelector("[data-custom-label=\"" + key + "\"]");
+      if (labelInp) window.requestAnimationFrame(() => labelInp.focus());
+    }
+
+    $("mass-song-add-custom") && $("mass-song-add-custom").addEventListener("click", () => addCustomMassSongSection(false));
+    $("practice-share-add-section") && $("practice-share-add-section").addEventListener("click", () => addCustomMassSongSection(true));
 
     function selectedLyricsSongCount() {
       return lyricSongSlots.filter((slot) => !!(selectedLyricsSongs[slot.key] || "")).length;
@@ -27388,15 +27533,15 @@
       massMoodPickExcludeIds = new Set();
       renderMassSummarySidebar();
       lyricSongSlots.forEach((slot) => {
-        const box = $("mass-song-res-" + slot.key);
-        const inp = $("mass-song-q-" + slot.key);
-        if (!inp || !box || box.hidden) return;
-        renderMassSongResults(slot.key, filterMassPlanSongs(inp.value), inp.value);
+        songPlanResultsBoxes(slot.key).forEach((box) => {
+          if (box.hidden) return;
+          const wrap = box.closest(".mass-song-plan-row__search");
+          const inp = wrap ? wrap.querySelector(".mass-song-search-input") : null;
+          if (!inp) return;
+          renderMassSongResults(slot.key, filterMassPlanSongs(inp.value), inp.value, box);
+        });
       });
     });
-
-    $("mass-song-add-custom") && $("mass-song-add-custom").addEventListener("click", addMassSongCustomSection);
-    $("practice-share-add-section") && $("practice-share-add-section").addEventListener("click", addMassSongCustomSection);
 
     $("mass-summary-recs-refresh") && $("mass-summary-recs-refresh").addEventListener("click", () => refreshMassMoodPicks());
     $("mass-summary-recs-add") && $("mass-summary-recs-add").addEventListener("click", () => applyMassMoodPicksToSongPlan());
@@ -27613,6 +27758,7 @@
       const out = [];
       if (data.zip_url) out.push({ label: "ZIP bundle", url: data.zip_url, download: true });
       if (data.pptx_url) out.push({ label: "PowerPoint", url: data.pptx_url, download: true });
+      if (data.pdf_url) out.push({ label: "PDF", url: data.pdf_url, download: true });
       if (data.poster_url) out.push({ label: "Poster PNG", url: data.poster_url, download: true });
       if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
       return out;
@@ -29096,24 +29242,11 @@
             "<td>" + roleCell + "</td>" +
             "<td>" + escapeHtml(row.role || "member") + "</td>" +
             "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
-            "<td>" + (row.online
-              ? "<span class=\"status ok\">Online</span>"
-              : "<span class=\"muted\">Offline</span>") + "</td>" +
-            "<td class=\"muted\" title=\"" + escapeHtml(row.last_seen_at || "") + "\">" +
-              escapeHtml(row.last_seen_at ? String(row.last_seen_at).replace("T", " ").slice(0, 16) : "—") +
-            "</td>" +
-            "<td>" + escapeHtml(row.location_label || "—") +
-              (row.language_hint ? "<div class=\"muted\" style=\"font-size:0.78rem;\">Lang: " + escapeHtml(row.language_hint) + "</div>" : "") +
-            "</td>" +
             "<td class=\"muted\">" + escapeHtml(String(row.created_at || "").slice(0, 10)) + "</td>" +
             "<td>" + deleteBtn + "</td></tr>"
           );
         });
-        wrap.innerHTML = saRenderTable(
-          ["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Presence", "Last seen", "Location", "Joined", "Actions"],
-          rows,
-          "No users found."
-        );
+        wrap.innerHTML = saRenderTable(["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Joined", "Actions"], rows, "No users found.");
         wrap.querySelectorAll(".sa-btn-delete-user").forEach((btn) => {
           btn.addEventListener("click", () => deleteSaUser(btn));
         });
@@ -33424,26 +33557,14 @@
       const steps = massGenProgressState.steps;
       if (!steps.length) return;
       let i = Math.max(0, fromIndex);
-      const hardCap = Math.max(0, steps.length - 1);
-      const softCap = Math.max(0, steps.length - 2);
+      const cap = Math.max(0, steps.length - 2);
       massGenProgressState.simTimer = setInterval(() => {
-        if (i < softCap) {
-          advanceMassGenStep(i);
-          i += 1;
+        if (i >= cap) {
+          clearMassGenProgressTimers();
           return;
         }
-        // After soft-cap (~62% on the standard flow), keep the bar creeping
-        // slowly so a long server wait does not look frozen.
-        const cur = massGenProgressState.current;
-        const pctNow = massGenPercentFromStep(cur, steps.length) || 0;
-        if (pctNow < 92) {
-          updateMassGenPercent(Math.min(92, pctNow + 1));
-          if (cur < hardCap && pctNow >= 80) {
-            advanceMassGenStep(hardCap, { percent: Math.min(92, pctNow + 1) });
-          }
-          return;
-        }
-        clearMassGenProgressTimers();
+        advanceMassGenStep(i);
+        i += 1;
       }, paceMs || 2400);
     }
 
@@ -34214,6 +34335,8 @@
         body.include_church_name = nameCb ? nameCb.checked : false;
         const hideFooterCb = $("flow-hide-footer");
         body.include_footer = hideFooterCb ? !hideFooterCb.checked : true;
+        const exportPdfCb = $("flow-export-pdf");
+        body.export_pdf = exportPdfCb ? exportPdfCb.checked : false;
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -34312,10 +34435,7 @@
           step: workIdx,
         });
         startMassGenStepSimulation(workIdx + 1, body.include_ai_mass_poster && !body.reuse_existing_poster ? 2800 : 2200);
-        // Cap wait so a wedged server/reload cannot leave the loader stuck at ~62%.
-        const data = await postJSON("/api/generate", body, {
-          timeoutMs: body.include_ai_mass_poster && !body.reuse_existing_poster ? 8 * 60 * 1000 : 4 * 60 * 1000,
-        });
+        const data = await postJSON("/api/generate", body);
         clearMassGenProgressTimers();
         advanceMassGenStep(genSteps.length - 1, { message: "Finalizing presentation…", percent: 100 });
         localStorage.setItem(dupKey, fp);
@@ -34324,6 +34444,7 @@
         const linkMap = o.links || [
           ["dl-zip", "zip_url"],
           ["dl-pptx", "pptx_url"],
+          ["dl-pdf", "pdf_url"],
           ["dl-poster", "poster_url"],
           ["dl-poster-ppt", "poster_ppt_url"],
         ];
@@ -34356,31 +34477,28 @@
           poster_url: data.poster_url,
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
-        // Show success immediately; don't keep the 100% overlay waiting on a
-        // multi‑MB blob download (or a failed media auth check).
-        const successUi = showMassGenSuccess(
-          "Presentation successfully generated.",
-          "Your PowerPoint is ready."
-        );
         if (o.autoDownloadPptx && data.pptx_url) {
           const stemName = data.export_stem || "mass_presentation";
-          triggerBrowserDownload(data.pptx_url, stemName + ".pptx")
-            .then(() => {
+          try {
+            await triggerBrowserDownload(data.pptx_url, stemName + ".pptx");
+            if (data.pdf_url) {
+              await triggerBrowserDownload(data.pdf_url, stemName + ".pdf");
+              statusFn("Presentation ready. PowerPoint and PDF downloads started.", "ok", dlMeta);
+            } else {
               statusFn("Presentation ready. PowerPoint download started.", "ok", dlMeta);
-            })
-            .catch(() => {
-              statusFn(
-                "Presentation ready. Use the PowerPoint download link if the file did not start automatically.",
-                "ok",
-                dlMeta
-              );
-            });
+            }
+          } catch (_dlErr) {
+            statusFn("Presentation ready. Use the download links if your browser did not start automatically.", "ok", dlMeta);
+          }
         } else {
           statusFn("Presentation ready.", "ok", dlMeta);
         }
+        if (data.pdf_message) {
+          notify(data.pdf_message, "warn");
+        }
         refreshAiImageQuotaHint();
         clearMassBuilderDraft();
-        await successUi;
+        await showMassGenSuccess("Presentation successfully generated.", "Your PowerPoint is ready.");
         return data;
       } catch (error) {
         clearMassGenProgressTimers();

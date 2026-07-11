@@ -154,6 +154,41 @@ def issue_unlock_cookie(request: Request, response: Response, token: str, share_
     )
 
 
+def issue_lead_token(token: str, share_expires_at: Any) -> str:
+    """Signed leader token — opens practice in edit mode without PIN."""
+    tok = (token or "").strip()
+    share_exp = _parse_expires(share_expires_at)
+    exp = int(share_exp.timestamp()) if share_exp else int(time.time()) + 3600
+    payload = f"lead|{tok}|{exp}"
+    sig = hmac.new(_signing_secret(), payload.encode("utf-8"), "sha256").hexdigest()
+    return f"{payload}|{sig}"
+
+
+def verify_lead_token(token: str, lead_token: str, share_expires_at: Any = None) -> bool:
+    raw = (lead_token or "").strip()
+    tok = (token or "").strip()
+    if not raw or not tok:
+        return False
+    try:
+        kind, cookie_token, exp_s, sig = raw.split("|", 3)
+        exp = int(exp_s)
+    except ValueError:
+        return False
+    if kind != "lead" or cookie_token != tok:
+        return False
+    payload = f"lead|{tok}|{exp}"
+    expected = hmac.new(_signing_secret(), payload.encode("utf-8"), "sha256").hexdigest()
+    if not hmac.compare_digest(sig, expected):
+        return False
+    now = int(time.time())
+    if exp <= now:
+        return False
+    share_exp = _parse_expires(share_expires_at)
+    if share_exp and share_exp.timestamp() <= now:
+        return False
+    return True
+
+
 def _parse_expires(expires: Any) -> Optional[datetime]:
     if not expires:
         return None
