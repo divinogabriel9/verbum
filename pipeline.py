@@ -289,7 +289,9 @@ def _resolve_divider_poster_path(
 
 
 _PREVIEW_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
-_PREVIEW_CACHE: dict[tuple[str, bool], tuple[float, PreviewPayload]] = {}
+# Bump when default_song_selections semantics change (e.g. mood-only, no first-song).
+_PREVIEW_CACHE_VERSION = 2
+_PREVIEW_CACHE: dict[tuple[str, bool, int], tuple[float, PreviewPayload]] = {}
 _PREVIEW_CACHE_TTL_S = 600.0
 _PREVIEW_INCOMPLETE_TTL_S = 15.0
 
@@ -310,7 +312,7 @@ def _empty_songs_by_section() -> dict[str, list[dict[str, Any]]]:
 
 def fetch_preview(date: str, *, readings_only: bool = False, force_refresh: bool = False) -> PreviewPayload:
     d = (date or "").strip()
-    cache_key = (d, readings_only)
+    cache_key = (d, readings_only, _PREVIEW_CACHE_VERSION)
     now = time.monotonic()
     if force_refresh:
         invalidate_preview_cache(d)

@@ -83,6 +83,37 @@ def format_song_title_case(title: str) -> str:
     return " ".join(part.capitalize() for part in text.split(" "))
 
 
+def _capitalize_first_alpha(token: str) -> str:
+    """Uppercase the first alphabetic character; leave the rest unchanged."""
+    if not token:
+        return token
+    for i, ch in enumerate(token):
+        if ch.isalpha():
+            return token[:i] + ch.upper() + token[i + 1 :]
+    return token
+
+
+def format_lyrics_first_letters(lyrics: str) -> str:
+    """
+    Premiumize lyric text for practice/display: uppercase the first letter of
+    every word on every line. Preserves newlines, indent, and non-letter casing.
+    """
+    text = str(lyrics or "").replace("\r\n", "\n").replace("\r", "\n")
+    if not text.strip():
+        return text.strip()
+    out_lines: list[str] = []
+    for line in text.split("\n"):
+        if not line.strip():
+            out_lines.append("")
+            continue
+        lead_len = len(line) - len(line.lstrip(" \t"))
+        lead = line[:lead_len]
+        body = line[lead_len:]
+        parts = body.split(" ")
+        out_lines.append(lead + " ".join(_capitalize_first_alpha(p) for p in parts))
+    return "\n".join(out_lines).strip()
+
+
 def import_titles(grouped_titles: dict[str, list[str]]) -> dict[str, Any]:
     """Upsert section-grouped song titles into the local hymn catalog."""
     data = load_catalog()
@@ -212,7 +243,7 @@ def update_lyrics(section: str, hymn_id: str, lyrics: str, source_link: str = ""
     for item in data.get(sec) or []:
         if str(item.get("id") or "").strip() != hid:
             continue
-        item["lyrics"] = lyr
+        item["lyrics"] = format_lyrics_first_letters(lyr)
         if source_link:
             item["text_link"] = source_link
         changed = True
@@ -234,7 +265,7 @@ def save_lyrics_song(
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
     clean_title = format_song_title_case(str(title or ""))
-    clean_lyrics = str(lyrics or "").strip()
+    clean_lyrics = format_lyrics_first_letters(str(lyrics or ""))
     if not clean_title or not clean_lyrics:
         return {"ok": False, "error": "Song title and lyrics are required."}
 
@@ -431,7 +462,7 @@ def update_catalog_song(
         if author is not None:
             item["author"] = str(author).strip()
         if lyrics is not None:
-            item["lyrics"] = str(lyrics)
+            item["lyrics"] = format_lyrics_first_letters(str(lyrics))
         if language is not None and str(language).strip():
             item["language"] = str(language).strip()
         if gospel_moods is not None:

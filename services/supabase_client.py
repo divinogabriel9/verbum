@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Optional
 
+import httpx
 from fastapi import HTTPException
 
 from services.auth_config import (
@@ -15,10 +16,34 @@ from services.auth_config import (
     supabase_url,
 )
 
+# postgrest-py defaults to http2=True; on macOS that can wedge with
+# httpx.ReadError Errno 35 (EAGAIN) and block FastAPI's thread pool.
+_HTTP_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
+_STORAGE_TIMEOUT_S = 60
+
 
 def _require_supabase() -> None:
     if not supabase_enabled():
         raise RuntimeError("Supabase is not configured.")
+
+
+def _httpx_client() -> httpx.Client:
+    return httpx.Client(
+        timeout=_HTTP_TIMEOUT,
+        follow_redirects=True,
+        http2=False,
+    )
+
+
+def _client_options(**kwargs: Any):
+    from supabase import ClientOptions
+
+    return ClientOptions(
+        httpx_client=_httpx_client(),
+        postgrest_client_timeout=_HTTP_TIMEOUT,
+        storage_client_timeout=_STORAGE_TIMEOUT_S,
+        **kwargs,
+    )
 
 
 @lru_cache(maxsize=1)
@@ -30,13 +55,13 @@ def get_service_client():
     key = supabase_service_role_key()
     if not key:
         raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY is required for server-side operations.")
-    return create_client(supabase_url(), key)
+    return create_client(supabase_url(), key, options=_client_options())
 
 
 def get_user_client(access_token: str):
     """User-scoped client — enforces Supabase RLS."""
     _require_supabase()
-    from supabase import ClientOptions, create_client
+    from supabase import create_client
 
     token = (access_token or "").strip()
     if not token:
@@ -49,7 +74,7 @@ def get_user_client(access_token: str):
     return create_client(
         supabase_url(),
         anon,
-        options=ClientOptions(headers={"Authorization": f"Bearer {token}"}),
+        options=_client_options(headers={"Authorization": f"Bearer {token}"}),
     )
 
 

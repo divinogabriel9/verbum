@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 _PIN_PREFIX = "v1:"
 _COOKIE_PREFIX = "vf_pu_"
-_PIN_PBKDF2_ROUNDS = 120_000
+_PIN_PBKDF2_ROUNDS = 40_000
 
 
 def ensure_practice_secret_configured() -> None:

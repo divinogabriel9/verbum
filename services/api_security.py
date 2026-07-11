@@ -93,8 +93,11 @@ async def require_session_when_auth(request: Request) -> Optional[AuthSession]:
 
 async def require_approved_membership(request: Request) -> Optional[AuthSession]:
     """Require approved parish membership (or superadmin) when auth is enabled."""
+    from starlette.concurrency import run_in_threadpool
+
     from services.membership_config import membership_allows_full_access
-    from services.user_church_context import get_church_profile_context
+    from services.supabase_client import get_church_profile, get_profile
+    from services.user_church_context import get_church_profile_context, set_church_profile
 
     if auth_misconfigured():
         raise HTTPException(status_code=503, detail="Auth is required but not configured.")
@@ -103,9 +106,38 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
         return session
     if not session:
         raise HTTPException(status_code=401, detail="Sign in required.")
+
     church = get_church_profile_context()
+    profile_role = session.user.role
+    # Middleware may skip Supabase on lightweight GETs; load membership here if needed.
+    if church is None:
+        try:
+            profile_row = await run_in_threadpool(
+                get_profile, session.user.user_id, access_token=session.token
+            ) or {}
+            profile_role = (profile_row.get("role") or session.user.role or "member").strip().lower()
+            church = await run_in_threadpool(
+                get_church_profile, session.user.user_id, access_token=session.token
+            )
+            if church is not None:
+                set_church_profile(church)
+            if profile_role in {"member", "superadmin"} and profile_role != session.user.role:
+                enriched = AuthUser(
+                    user_id=session.user.user_id,
+                    email=session.user.email,
+                    first_name=session.user.first_name,
+                    last_name=session.user.last_name,
+                    image_url=session.user.image_url,
+                    role=profile_role,
+                )
+                session = AuthSession(user=enriched, token=session.token)
+                request.state.auth_session = session
+            _store_auth_context(session.token, session, church)
+        except Exception:
+            church = get_church_profile_context()
+
     if membership_allows_full_access(
-        church, user=session.user, profile_role=session.user.role
+        church, user=session.user, profile_role=profile_role
     ):
         return session
     status = ((church or {}).get("membership_status") or "draft").strip().lower()
@@ -193,6 +225,8 @@ class UserChurchMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        from starlette.concurrency import run_in_threadpool
+
         clear_church_profile()
         request.state.auth_session = None
         if auth_enabled():
@@ -209,12 +243,18 @@ class UserChurchMiddleware(BaseHTTPMiddleware):
                     try:
                         user = verify_supabase_token(token)
                         if lightweight:
+                            # JWT only — membership is resolved in Depends when needed.
                             session = AuthSession(user=user, token=token)
                             request.state.auth_session = session
                         else:
                             from services.supabase_client import get_church_profile, get_profile
 
-                            profile_row = get_profile(user.user_id, access_token=token) or {}
+                            try:
+                                profile_row = await run_in_threadpool(
+                                    get_profile, user.user_id, access_token=token
+                                ) or {}
+                            except Exception:
+                                profile_row = {}
                             role = (profile_row.get("role") or "member").strip().lower()
                             if role not in {"member", "superadmin"}:
                                 role = "member"
@@ -228,7 +268,12 @@ class UserChurchMiddleware(BaseHTTPMiddleware):
                             )
                             session = AuthSession(user=user, token=token)
                             request.state.auth_session = session
-                            church_profile = get_church_profile(user.user_id, access_token=token)
+                            try:
+                                church_profile = await run_in_threadpool(
+                                    get_church_profile, user.user_id, access_token=token
+                                )
+                            except Exception:
+                                church_profile = None
                             set_church_profile(church_profile)
                             _store_auth_context(token, session, church_profile)
                     except HTTPException:

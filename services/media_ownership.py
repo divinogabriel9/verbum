@@ -21,7 +21,10 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _REGISTRY_PATH = _PROJECT_ROOT / "data" / "media_ownership.json"
 _REDIS_PREFIX = "verbum:media_owner:"
 _OWNER_TTL_S = 7 * 24 * 3600
-_lock = threading.Lock()
+# RLock: register_owned_files holds the lock while calling _load_local_registry.
+# A plain Lock deadlocked there and left /api/generate hanging after the PPTX
+# was already written (Mass Builder UI stuck at ~63%).
+_lock = threading.RLock()
 _local_registry: dict[str, str] = {}
 _local_loaded = False
 
@@ -87,8 +90,10 @@ def register_owned_files(user_id: str, relative_paths: list[str]) -> None:
         except Exception as exc:
             logger.warning("Redis media ownership register failed: %s", exc)
 
+    # Load outside the write section when possible; RLock still guards races.
+    _load_local_registry()
     with _lock:
-        reg = _load_local_registry().copy()
+        reg = dict(_local_registry)
         for rel in paths:
             reg[rel] = uid
         _save_local_registry(reg)

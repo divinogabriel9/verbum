@@ -165,6 +165,7 @@
         updateAccountMenuDisplay();
         if (state.user) {
           refreshUserProfile().then(updateAccountMenuDisplay);
+          startPresenceHeartbeat();
         }
       });
     }
@@ -389,10 +390,62 @@
           new CustomEvent("verbum:membership", { detail: data.membership || null })
         );
         window.dispatchEvent(new CustomEvent("verbum:profile-ready"));
+        sendPresenceHeartbeat();
       }
     } catch (_err) {
       // optional enrichment
     }
+  }
+
+  let _presenceTimer = null;
+  let _presenceBound = false;
+
+  function preferredLanguageForPresence() {
+    try {
+      const lang = (localStorage.getItem("churchMediaMassSongLang") || "").trim();
+      if (!lang || /^(all|any)$/i.test(lang)) return null;
+      return lang;
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  async function sendPresenceHeartbeat() {
+    const user =
+      state.user || (state.session && state.session.user ? state.session.user : null);
+    if (!user || document.visibilityState === "hidden") return;
+    try {
+      const headers = await getAuthHeaders();
+      headers["Content-Type"] = "application/json";
+      let timezone = null;
+      try {
+        timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+      } catch (_tzErr) {
+        timezone = null;
+      }
+      await fetch("/api/auth/heartbeat", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          timezone: timezone,
+          preferred_language: preferredLanguageForPresence(),
+        }),
+        keepalive: true,
+      });
+    } catch (_err) {
+      // presence is best-effort
+    }
+  }
+
+  function startPresenceHeartbeat() {
+    if (_presenceBound) return;
+    _presenceBound = true;
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") sendPresenceHeartbeat();
+    });
+    window.addEventListener("focus", () => sendPresenceHeartbeat());
+    if (_presenceTimer) clearInterval(_presenceTimer);
+    _presenceTimer = setInterval(sendPresenceHeartbeat, 2 * 60 * 1000);
   }
 
   function updateAccountMenuDisplay() {
@@ -527,6 +580,7 @@
 
       if (state.user) {
         refreshUserProfile().then(updateAccountMenuDisplay);
+        startPresenceHeartbeat();
       }
     } catch (err) {
       console.warn("[Verbum auth]", err);

@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
 import uuid
 import zipfile
 from pathlib import Path
@@ -62,7 +63,7 @@ from services.gospel_mood import gospel_moods_for_song
 from services.hymn_library import get_hymn
 from services.hymn_slide_preview import build_hymn_slide_preview
 from services.lyrics_fetcher import fetch_and_store_for_selection
-from services.ppt_preview_render import convert_pptx_to_pdf, render_ppt_preview_pngs
+from services.ppt_preview_render import render_ppt_preview_pngs
 from services.ppt_template_analyze import analyze_pptx_theme
 from services.song_catalog import (
     catalog_for_api,
@@ -515,7 +516,12 @@ def _latest_pptx_path() -> Optional[Path]:
 
 
 def _write_mass_bundle_zip(result: GenerationResult) -> Path:
-    """Pack generated PPT, posters, stem-based social PNGs, gospel art, and optional extras."""
+    """Pack generated PPT, posters, stem-based social PNGs, gospel art, and optional extras.
+
+    Uses ZIP_STORED (no recompress) — .pptx/.png are already compressed, and
+    DEFLATED was slow enough to leave the Mass Builder UI stuck after the deck
+    was already written.
+    """
     out = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
     entries: list[tuple[Path, str]] = []
     for attr in ("pptx_path", "poster_path", "poster_ppt_path"):
@@ -543,10 +549,138 @@ def _write_mass_bundle_zip(result: GenerationResult) -> Path:
             p = _OUTPUT_DIR / name
             if p.is_file() and all(o[0] != p for o in entries):
                 entries.append((p, name))
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as zf:
         for path, arc in entries:
             zf.write(path, arcname=arc)
     return out
+
+
+def _finish_generation_side_effects(
+    *,
+    result: GenerationResult,
+    user_id: Optional[str],
+    access_token: Optional[str],
+    mass_date: str,
+    celebrant: str,
+    skip_ownership: bool = False,
+) -> None:
+    """Zip + storage + analytics — never on the HTTP request path."""
+    try:
+        _write_mass_bundle_zip(result)
+        print(f"[generate] background zip ready stem={result.export_stem}", flush=True)
+    except Exception:
+        logger.warning("background bundle zip failed", exc_info=True)
+
+    if user_id and not skip_ownership:
+        try:
+            register_owned_files(user_id, _collect_generation_owned_paths(result))
+        except Exception:
+            logger.warning("register_owned_files failed", exc_info=True)
+
+    # Re-register zip path after it exists so the ZIP download link works.
+    if user_id and result.export_stem:
+        try:
+            bundle_name = _bundle_zip_name(result.export_stem)
+            if (_OUTPUT_DIR / bundle_name).is_file():
+                register_owned_files(user_id, [bundle_name])
+        except Exception:
+            logger.warning("register zip ownership failed", exc_info=True)
+
+    if user_id and access_token and storage_ready(access_token):
+        stem = result.export_stem or "latest"
+        upload_items: list[tuple[str, str, str]] = []
+        if result.pptx_path and result.pptx_path.is_file():
+            upload_items.append(
+                (
+                    f"generated/{stem}/{result.pptx_path.name}",
+                    str(result.pptx_path),
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                )
+            )
+        if result.poster_path and result.poster_path.is_file():
+            upload_items.append(
+                (f"generated/{stem}/{result.poster_path.name}", str(result.poster_path), "image/png")
+            )
+        poster_ppt = result.poster_ppt_path
+        if poster_ppt and Path(poster_ppt).is_file():
+            upload_items.append(
+                (
+                    f"generated/{stem}/{Path(poster_ppt).name}",
+                    str(Path(poster_ppt)),
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                )
+            )
+        bundle = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
+        if bundle.is_file():
+            upload_items.append((f"generated/{stem}/{bundle.name}", str(bundle), "application/zip"))
+        if upload_items:
+            _upload_generation_assets_best_effort(
+                user_id=user_id,
+                access_token=access_token,
+                export_stem=stem,
+                items=upload_items,
+            )
+
+    if user_id and access_token and supabase_enabled():
+        try:
+            from services.supabase_client import record_generation
+
+            record_generation(
+                user_id,
+                mass_date=mass_date,
+                celebrant=celebrant,
+                output_summary={
+                    "title": result.title,
+                    "slide_count": result.slide_count,
+                    "export_stem": result.export_stem,
+                },
+                access_token=access_token,
+            )
+        except Exception:
+            pass
+
+
+def _upload_generation_assets_best_effort(
+    *,
+    user_id: str,
+    access_token: str,
+    export_stem: str,
+    items: list[tuple[str, str, str]],
+) -> None:
+    """Best-effort Supabase uploads that must never block the HTTP response.
+
+    ``items`` is ``(relative_path, absolute_file_path, content_type)``.
+    """
+    for rel, file_path_s, ctype in items:
+        path = Path(file_path_s)
+        if not path.is_file():
+            continue
+        try:
+            upload_user_asset(
+                user_id=user_id,
+                access_token=access_token,
+                relative_path=rel,
+                raw=path.read_bytes(),
+                content_type=ctype,
+                upsert=True,
+            )
+        except Exception:
+            logger.warning(
+                "Background storage upload failed for %s (stem=%s).",
+                path.name,
+                export_stem or "latest",
+                exc_info=True,
+            )
+
+
+def _spawn_daemon(target, *, name: str, kwargs: dict[str, Any]) -> None:
+    """Fire-and-forget worker.
+
+    Do not use FastAPI BackgroundTasks here: with BaseHTTPMiddleware the client
+    does not receive the response until background tasks finish, which is what
+    left the Mass Builder UI stuck at ~62% after the .pptx was already written.
+    """
+    threading.Thread(target=target, kwargs=kwargs, name=name, daemon=True).start()
 
 
 app = FastAPI(title="LiturgyFlow")
@@ -785,7 +919,7 @@ class GenerateBody(BaseModel):
     )
     export_pdf: bool = Field(
         False,
-        description="When true, also export a PDF of the generated deck (served alongside the .pptx).",
+        description="Deprecated — PDF export was removed from /api/generate. Ignored if set.",
     )
     include_gospel_art: bool = Field(True)
     include_ai_mass_poster: bool = Field(
@@ -1144,7 +1278,9 @@ def api_feature_flags(
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+async def health() -> dict[str, str]:
+    # Async so a wedged sync thread pool (e.g. hung Supabase/httpx) cannot
+    # make the health check itself hang.
     return {"status": "ok"}
 
 
@@ -1997,11 +2133,12 @@ def api_create_practice_share(
 
     token = str(result.get("token") or "")
     share_url = _practice_share_url(request, token)
+    # Return qr_url for async image load; skip embedding a data URL so create stays fast.
     return {
         **result,
         "url": share_url,
         "qr_url": f"/api/practice/qr/{token}",
-        "qr_data_url": practice_qr_data_url(share_url),
+        "qr_data_url": None,
     }
 
 
@@ -2136,11 +2273,18 @@ async def api_preview(
 
 
 @app.post("/api/generate")
-async def api_generate(
+def api_generate(
     body: GenerateBody,
     request: Request,
     session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> Any:
+    """Build Mass media and return local download URLs.
+
+    Sync ``def`` (not async): FastAPI runs this in a worker thread so
+    BaseHTTPMiddleware cannot deadlock against ``run_in_threadpool`` while the
+    UI sits at ~62%. PDF export was removed from this path entirely.
+    """
+    print(f"[generate] start date={body.date!r}", flush=True)
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
     temp_assets: list[Path] = []
     divider_path = None
@@ -2180,8 +2324,8 @@ async def api_generate(
         )
 
     try:
-        result = await run_in_threadpool(
-            generate_mass_media,
+        print("[generate] building media…", flush=True)
+        result = generate_mass_media(
             body.date.strip(),
             body.celebrant.strip(),
             co_celebrant=(body.co_celebrant or "").strip(),
@@ -2227,9 +2371,12 @@ async def api_generate(
             p.unlink(missing_ok=True)
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
-    _write_mass_bundle_zip(result)
+
+    print("[generate] ppt ready — returning URLs (zip/upload in background)", flush=True)
     bundle_rel = _bundle_zip_name(result.export_stem)
+    # Prefer an existing zip from a prior run; never block the response on zipping.
     zip_ready = (_OUTPUT_DIR / bundle_rel).is_file()
+
     lc = result.liturgical_color
     liturgical_payload: Optional[dict[str, Any]] = None
     if lc:
@@ -2247,67 +2394,32 @@ async def api_generate(
     )
     zip_url = media_file_url(bundle_rel) if zip_ready else None
 
-    pdf_url: Optional[str] = None
-    pdf_message = ""
-    pdf_path: Optional[Path] = None
-    if body.export_pdf and result.pptx_path and result.pptx_path.is_file():
-        soffice = _resolve_soffice_bin()
-        if soffice:
-            pdf_path = convert_pptx_to_pdf(result.pptx_path, _OUTPUT_DIR, soffice_bin=soffice)
-            if pdf_path and pdf_path.is_file():
-                pdf_url = media_file_url(pdf_path.name)
-            else:
-                pdf_message = "Could not render the PDF; the PowerPoint is still available."
-        else:
-            pdf_message = "Install LibreOffice to export a PDF; the PowerPoint is available."
-    if session and storage_ready(session.token):
-        upload_items: list[tuple[str, Path, str]] = []
-        if result.pptx_path and result.pptx_path.is_file():
-            upload_items.append(("pptx_url", result.pptx_path, "application/vnd.openxmlformats-officedocument.presentationml.presentation"))
-        if result.poster_path and result.poster_path.is_file():
-            upload_items.append(("poster_url", result.poster_path, "image/png"))
-        if poster_ppt and Path(poster_ppt).is_file():
-            upload_items.append(("poster_ppt_url", Path(poster_ppt), "application/vnd.openxmlformats-officedocument.presentationml.presentation"))
-        bundle = _OUTPUT_DIR / bundle_rel
-        if bundle.is_file():
-            upload_items.append(("zip_url", bundle, "application/zip"))
-        if pdf_path and pdf_path.is_file():
-            upload_items.append(("pdf_url", pdf_path, "application/pdf"))
-        for key, file_path, ctype in upload_items:
-            rel = f"generated/{result.export_stem or 'latest'}/{file_path.name}"
-            try:
-                stored = upload_user_asset(
-                    user_id=session.user.user_id,
-                    access_token=session.token,
-                    relative_path=rel,
-                    raw=file_path.read_bytes(),
-                    content_type=ctype,
-                    upsert=True,
-                )
-            except Exception:
-                # Keep the local media URL for this file rather than failing the
-                # whole generation when one upload is rejected (e.g. an
-                # unsupported MIME type in the storage bucket policy).
-                logger.warning(
-                    "Storage upload failed for %s; serving local URL instead.", file_path.name
-                )
-                continue
-            if key == "pptx_url":
-                ppt_url = stored.signed_url
-            elif key == "poster_url":
-                poster_url = stored.signed_url
-            elif key == "poster_ppt_url":
-                poster_ppt_url = stored.signed_url
-            elif key == "zip_url":
-                zip_url = stored.signed_url
-            elif key == "pdf_url":
-                pdf_url = stored.signed_url
+    # Ownership must be registered before the response — the browser downloads
+    # immediately and /api/files/media/* 404s without it (UI stuck at 100%).
     if session:
-        owned = _collect_generation_owned_paths(result)
-        if pdf_path and pdf_path.is_file():
-            owned.append(pdf_path.name)
-        register_owned_files(session.user.user_id, owned)
-    payload: dict[str, Any] = {
+        try:
+            print("[generate] registering ownership…", flush=True)
+            register_owned_files(session.user.user_id, _collect_generation_owned_paths(result))
+            print("[generate] ownership ok", flush=True)
+        except Exception:
+            logger.warning("register_owned_files failed", exc_info=True)
+
+    uid = session.user.user_id if session else None
+    token = session.token if session else None
+    _spawn_daemon(
+        _finish_generation_side_effects,
+        name="mass-gen-finish",
+        kwargs={
+            "result": result,
+            "user_id": uid,
+            "access_token": token,
+            "mass_date": body.date.strip(),
+            "celebrant": body.celebrant.strip(),
+            "skip_ownership": True,
+        },
+    )
+
+    out: dict[str, Any] = {
         "ok": True,
         "title": result.title,
         "gospel_reference": result.gospel_reference,
@@ -2317,38 +2429,20 @@ async def api_generate(
         "selected_songs": result.selected_songs,
         "slide_count": result.slide_count,
         "export_stem": result.export_stem,
+        "ai_poster_urls": _ai_poster_download_urls(),
     }
     if ppt_url:
-        payload["pptx_url"] = ppt_url
-    if pdf_url:
-        payload["pdf_url"] = pdf_url
-    if pdf_message:
-        payload["pdf_message"] = pdf_message
+        out["pptx_url"] = ppt_url
     if poster_url:
-        payload["poster_url"] = poster_url
+        out["poster_url"] = poster_url
     if poster_ppt_url:
-        payload["poster_ppt_url"] = poster_ppt_url
-    payload["ai_poster_urls"] = _ai_poster_download_urls()
-    if session and supabase_enabled():
-        try:
-            from services.supabase_client import record_generation
-
-            record_generation(
-                session.user.user_id,
-                mass_date=body.date.strip(),
-                celebrant=body.celebrant.strip(),
-                output_summary={
-                    "title": result.title,
-                    "slide_count": result.slide_count,
-                    "export_stem": result.export_stem,
-                },
-                access_token=session.token,
-            )
-        except Exception:
-            pass
-    out = {**payload}
+        out["poster_ppt_url"] = poster_ppt_url
     if zip_url:
         out["zip_url"] = zip_url
+    print(
+        f"[generate] done stem={result.export_stem} slides={result.slide_count} pptx={bool(ppt_url)}",
+        flush=True,
+    )
     return out
 
 
@@ -2435,15 +2529,23 @@ async def api_regenerate_pptx(
         else None
     )
     if session and storage_ready(session.token) and result.pptx_path and result.pptx_path.is_file():
-        stored = upload_user_asset(
-            user_id=session.user.user_id,
-            access_token=session.token,
-            relative_path=f"generated/{result.export_stem or 'latest'}/{result.pptx_path.name}",
-            raw=result.pptx_path.read_bytes(),
-            content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            upsert=True,
+        stem = result.export_stem or "latest"
+        _spawn_daemon(
+            _upload_generation_assets_best_effort,
+            name="mass-regen-upload",
+            kwargs={
+                "user_id": session.user.user_id,
+                "access_token": session.token,
+                "export_stem": stem,
+                "items": [
+                    (
+                        f"generated/{stem}/{result.pptx_path.name}",
+                        str(result.pptx_path),
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    )
+                ],
+            },
         )
-        ppt_url = stored.signed_url
     if session and result.pptx_path and result.pptx_path.is_file():
         register_owned_files(session.user.user_id, [result.pptx_path.name])
     return {

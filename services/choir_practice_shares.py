@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
 from services.practice_access import hash_pin, pin_required, verify_pin
-from services.song_catalog import find_catalog_row_by_id
+from services.song_catalog import format_lyrics_first_letters, format_song_title_case
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +84,8 @@ def _normalize_songs(songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not isinstance(raw, dict):
             continue
         hymn_id = str(raw.get("hymn_id") or raw.get("id") or "").strip()
-        title = str(raw.get("title") or "").strip()
-        lyrics = str(raw.get("lyrics") or "").strip()
+        title = format_song_title_case(str(raw.get("title") or "").strip())
+        lyrics = format_lyrics_first_letters(str(raw.get("lyrics") or ""))
         if not hymn_id or not title or not lyrics:
             continue
         if len(lyrics) > _MAX_LYRICS_LEN:
@@ -111,14 +111,29 @@ def _normalize_songs(songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _enrich_songs_from_catalog(songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Fill missing lyrics from the local catalog when the client only sent ids."""
+    from services.song_catalog import load_catalog
+
+    catalog = load_catalog()
+    by_id: dict[str, tuple[str, dict[str, Any]]] = {}
+    for sec, rows in (catalog or {}).items():
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            hid = str(row.get("id") or "").strip()
+            if hid and hid not in by_id:
+                by_id[hid] = (str(sec), row)
+
     out: list[dict[str, Any]] = []
     for raw in songs:
         item = dict(raw)
         lyrics = str(item.get("lyrics") or "").strip()
         hymn_id = str(item.get("hymn_id") or "").strip()
         if not lyrics and hymn_id:
-            sec, row = find_catalog_row_by_id(hymn_id)
-            if row:
+            hit = by_id.get(hymn_id)
+            if hit:
+                sec, row = hit
                 lyrics = str(row.get("lyrics") or "").strip()
                 if not item.get("title"):
                     item["title"] = str(row.get("title") or "").strip()
@@ -130,7 +145,7 @@ def _enrich_songs_from_catalog(songs: list[dict[str, Any]]) -> list[dict[str, An
                     item["section"] = sec
         if not lyrics:
             continue
-        item["lyrics"] = lyrics
+        item["lyrics"] = format_lyrics_first_letters(lyrics)
         out.append(item)
     return out
 

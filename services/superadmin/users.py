@@ -6,6 +6,7 @@ from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
 from services.supabase_client import get_service_client
+from services.user_presence import enrich_user_presence
 
 
 def list_users(
@@ -24,9 +25,13 @@ def list_users(
     query_text = (q or "").strip().lower()
 
     client = get_service_client()
+    select_cols = (
+        "id, email, first_name, last_name, phone, role, created_at, updated_at, "
+        "last_seen_at, last_seen_country, last_seen_region, last_seen_timezone, preferred_language"
+    )
     query = (
         client.table("profiles")
-        .select("id, email, first_name, last_name, phone, role, created_at, updated_at", count="exact")
+        .select(select_cols, count="exact")
         .order("created_at", desc=True)
     )
     if query_text:
@@ -35,7 +40,21 @@ def list_users(
             f"last_name.ilike.%{query_text}%,phone.ilike.%{query_text}%"
         )
 
-    result = query.range(offset, offset + per_page - 1).execute()
+    try:
+        result = query.range(offset, offset + per_page - 1).execute()
+    except Exception:
+        # Older DBs without presence columns — fall back gracefully.
+        query = (
+            client.table("profiles")
+            .select("id, email, first_name, last_name, phone, role, created_at, updated_at", count="exact")
+            .order("created_at", desc=True)
+        )
+        if query_text:
+            query = query.or_(
+                f"email.ilike.%{query_text}%,first_name.ilike.%{query_text}%,"
+                f"last_name.ilike.%{query_text}%,phone.ilike.%{query_text}%"
+            )
+        result = query.range(offset, offset + per_page - 1).execute()
     rows = list(result.data or [])
     total = int(result.count or len(rows))
 
@@ -97,15 +116,17 @@ def list_users(
             and platform_role != "superadmin"
         )
         items.append(
-            {
-                **row,
-                "parish_id": parish_id or None,
-                "parish_name": parish_name,
-                "membership_status": membership_status,
-                "parish_role": parish_role,
-                "can_delete": can_delete,
-                "can_set_parish_role": platform_role != "superadmin",
-            }
+            enrich_user_presence(
+                {
+                    **row,
+                    "parish_id": parish_id or None,
+                    "parish_name": parish_name,
+                    "membership_status": membership_status,
+                    "parish_role": parish_role,
+                    "can_delete": can_delete,
+                    "can_set_parish_role": platform_role != "superadmin",
+                }
+            )
         )
 
     return {"ok": True, "items": items, "total": total, "page": page, "per_page": per_page}

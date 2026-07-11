@@ -5530,29 +5530,40 @@
       flex: 1 1 auto;
       min-height: 0;
       gap: var(--space-2);
+      user-select: none;
+      -webkit-user-select: none;
     }
     .home-songs-carousel__viewport {
       position: relative;
       flex: 1 1 auto;
       min-height: 0;
       overflow: hidden;
+      touch-action: pan-y;
+      cursor: grab;
+    }
+    .home-songs-carousel__viewport.is-dragging {
+      cursor: grabbing;
+    }
+    .home-songs-carousel__track {
+      display: flex;
+      height: 100%;
+      width: 100%;
+      will-change: transform;
+      transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .home-songs-carousel__track.is-dragging {
+      transition: none;
     }
     .home-songs-slide {
-      position: absolute;
-      inset: 0;
+      flex: 0 0 100%;
+      width: 100%;
+      max-width: 100%;
       display: flex;
       flex-direction: column;
       min-height: 0;
-      opacity: 0;
-      transform: translateY(8px);
-      pointer-events: none;
-      transition: opacity var(--motion-duration-base) var(--motion-ease-out),
-        transform var(--motion-duration-base) var(--motion-ease-out);
-    }
-    .home-songs-slide.is-active {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
+      min-width: 0;
+      box-sizing: border-box;
+      padding-right: 2px;
     }
     .home-songs-slide__title {
       margin: 0 0 var(--space-1);
@@ -5620,12 +5631,49 @@
       font-size: 0.72rem;
       color: var(--muted);
     }
+    .home-songs-slide--share {
+      justify-content: center;
+      gap: 10px;
+    }
+    .home-songs-share {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+    .home-songs-share__lead {
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    .home-songs-share__btn {
+      align-self: flex-start;
+      min-height: 34px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 650;
+      border-radius: 9px;
+      border: none;
+      background: var(--liturgical-accent, #a10f0d);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+        background var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .home-songs-share__btn:hover {
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 88%, #000);
+    }
+    .home-songs-share__btn:active {
+      transform: scale(0.97);
+    }
     .home-songs-carousel__dots {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       flex-shrink: 0;
+      pointer-events: none;
     }
     .home-songs-carousel__dot {
       width: 7px;
@@ -5634,21 +5682,178 @@
       border: none;
       border-radius: 50%;
       background: color-mix(in srgb, var(--ink) 18%, transparent);
-      cursor: pointer;
+      pointer-events: none;
       transition: transform var(--motion-duration-micro) var(--motion-ease-out),
-        background var(--motion-duration-fast) var(--motion-ease-hover);
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        width 180ms cubic-bezier(0.23, 1, 0.32, 1);
     }
     .home-songs-carousel__dot[aria-current="true"] {
       background: var(--liturgical-accent);
-      transform: scale(1.2);
-    }
-    .home-songs-carousel__dot:hover {
-      background: color-mix(in srgb, var(--liturgical-accent) 55%, transparent);
+      width: 16px;
+      border-radius: 999px;
+      transform: none;
     }
     @media (prefers-reduced-motion: reduce) {
-      .home-songs-slide {
+      .home-songs-carousel__track {
         transition: none;
       }
+      .home-songs-share__btn {
+        transition: none;
+      }
+      .home-songs-share__btn:active {
+        transform: none;
+      }
+    }
+    .practice-share-card--sections {
+      max-width: min(560px, 100%);
+      width: min(100%, 560px);
+    }
+    .practice-share-card--sections .ui-card__content {
+      max-height: min(62vh, 520px);
+      overflow: auto;
+    }
+    .practice-share-song-plan {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .practice-share-song-plan .mass-song-plan-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-solid);
+      overflow: visible;
+    }
+    .practice-share-song-plan .mass-song-plan-card__row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    .practice-share-song-plan .mass-song-plan-card__drag {
+      display: none;
+    }
+    .practice-share-song-plan .mass-song-plan-card__num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      margin-top: 2px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+    }
+    .practice-share-song-plan .mass-song-plan-card__core {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .practice-share-song-plan .mass-song-plan-card__top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .practice-share-song-plan .mass-song-plan-card__part {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--liturgical-accent);
+    }
+    .practice-share-song-plan .mass-song-plan-card__part-input {
+      min-width: 0;
+      flex: 0 1 140px;
+      max-width: 160px;
+      min-height: 28px;
+      padding: 4px 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--surface-solid);
+      color: var(--ink);
+      font-size: 0.78rem;
+      font-weight: 650;
+    }
+    .practice-share-song-plan .mass-song-plan-card__title-wrap {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .practice-share-song-plan .mass-song-plan-card__title-picked {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .practice-share-song-plan .mass-song-plan-card__title {
+      margin: 0;
+      font-size: 0.88rem;
+      font-weight: 650;
+      color: var(--ink);
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .practice-share-song-plan .mass-song-plan-card__title.is-empty {
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .practice-share-song-plan .mass-song-plan-card__clear-x {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--ink) 8%, transparent);
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1;
+    }
+    .practice-share-song-plan .mass-song-plan-card__actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .practice-share-song-plan .mass-song-plan-card__btn--delete {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .practice-share-song-plan .mass-song-plan-card__btn--delete svg {
+      width: 16px;
+      height: 16px;
+    }
+    .practice-share-song-plan .mass-song-plan-row__search {
+      position: relative;
+    }
+    .practice-share-song-plan .mass-song-search-input {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-solid);
+      color: var(--ink);
+      font-size: 0.875rem;
+    }
+    .practice-share-song-plan .mass-song-results {
+      z-index: 30;
+    }
+    .practice-share-add-section {
+      margin-top: 4px;
     }
     .home-bento-cell--events .flow-bento-cell__head {
       flex-shrink: 0;
@@ -7434,6 +7639,40 @@
     }
     .practice-share-meta { margin: 0; font-size: 0.78rem; }
     .practice-share-pin-field { margin: 0; }
+    .practice-share-loading[hidden] { display: none !important; }
+    .practice-share-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 12px 4px 4px;
+      text-align: center;
+      min-height: 200px;
+    }
+    .practice-share-loading .loader-wrapper {
+      font-size: 0.72em;
+      margin-bottom: 4px;
+    }
+    .practice-share-loading .loader-halo {
+      width: 11em;
+      height: 11em;
+    }
+    .practice-share-loading__title {
+      margin: 10px 0 4px;
+      font-size: 1rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      line-height: 1.35;
+    }
+    .practice-share-loading__msg {
+      margin: 0;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: var(--muted);
+      max-width: 16rem;
+    }
     .pin-otp__wrap {
       position: relative;
       cursor: text;
@@ -13607,7 +13846,8 @@
       border: 1px solid var(--line-soft);
       box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
     }
-    .mass-gen-loader .loader-wrapper {
+    .mass-gen-loader .loader-wrapper,
+    .practice-share-loading .loader-wrapper {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -13618,7 +13858,8 @@
       position: relative;
       margin-bottom: 8px;
     }
-    .mass-gen-loader .loader-halo {
+    .mass-gen-loader .loader-halo,
+    .practice-share-loading .loader-halo {
       position: absolute;
       width: 12em;
       height: 12em;
@@ -13806,10 +14047,14 @@
     }
     .mass-gen-loader .book,
     .mass-gen-loader .book__pg-shadow,
-    .mass-gen-loader .book__pg {
+    .mass-gen-loader .book__pg,
+    .practice-share-loading .book,
+    .practice-share-loading .book__pg-shadow,
+    .practice-share-loading .book__pg {
       animation: mass-gen-cover 5s ease-in-out infinite;
     }
-    .mass-gen-loader .book {
+    .mass-gen-loader .book,
+    .practice-share-loading .book {
       background-color: #a10f0d;
       border-radius: 0.25em;
       box-shadow:
@@ -13823,7 +14068,8 @@
       transform: translate3d(0, 0, 0);
       transform-style: preserve-3d;
     }
-    .mass-gen-loader .book::before {
+    .mass-gen-loader .book::before,
+    .practice-share-loading .book::before {
       content: "✝";
       position: absolute;
       top: 50%;
@@ -13834,7 +14080,8 @@
       pointer-events: none;
       z-index: 2;
     }
-    .mass-gen-loader .book::after {
+    .mass-gen-loader .book::after,
+    .practice-share-loading .book::after {
       content: "";
       position: absolute;
       bottom: -1.2em;
@@ -13847,12 +14094,15 @@
       z-index: 2;
     }
     .mass-gen-loader .book__pg-shadow,
-    .mass-gen-loader .book__pg {
+    .mass-gen-loader .book__pg,
+    .practice-share-loading .book__pg-shadow,
+    .practice-share-loading .book__pg {
       position: absolute;
       left: 0.25em;
       width: calc(50% - 0.25em);
     }
-    .mass-gen-loader .book__pg-shadow {
+    .mass-gen-loader .book__pg-shadow,
+    .practice-share-loading .book__pg-shadow {
       animation-name: mass-gen-shadow;
       background-image: linear-gradient(
         -45deg,
@@ -13865,7 +14115,8 @@
       transform: scaleY(0);
       transform-origin: 100% 0%;
     }
-    .mass-gen-loader .book__pg {
+    .mass-gen-loader .book__pg,
+    .practice-share-loading .book__pg {
       animation-name: mass-gen-pg1;
       background-color: hsl(223, 10%, 100%);
       background-image: linear-gradient(
@@ -13878,7 +14129,10 @@
     }
     .mass-gen-loader .book__pg--2,
     .mass-gen-loader .book__pg--3,
-    .mass-gen-loader .book__pg--4 {
+    .mass-gen-loader .book__pg--4,
+    .practice-share-loading .book__pg--2,
+    .practice-share-loading .book__pg--3,
+    .practice-share-loading .book__pg--4 {
       background-image: repeating-linear-gradient(
           hsl(223, 10%, 10%) 0 0.125em,
           hsla(223, 10%, 10%, 0) 0.125em 0.5em
@@ -13888,10 +14142,14 @@
       background-position: center;
       background-size: 2.5em 4.125em, 100% 100%;
     }
-    .mass-gen-loader .book__pg--2 { animation-name: mass-gen-pg2; }
-    .mass-gen-loader .book__pg--3 { animation-name: mass-gen-pg3; }
-    .mass-gen-loader .book__pg--4 { animation-name: mass-gen-pg4; }
-    .mass-gen-loader .book__pg--5 { animation-name: mass-gen-pg5; }
+    .mass-gen-loader .book__pg--2,
+    .practice-share-loading .book__pg--2 { animation-name: mass-gen-pg2; }
+    .mass-gen-loader .book__pg--3,
+    .practice-share-loading .book__pg--3 { animation-name: mass-gen-pg3; }
+    .mass-gen-loader .book__pg--4,
+    .practice-share-loading .book__pg--4 { animation-name: mass-gen-pg4; }
+    .mass-gen-loader .book__pg--5,
+    .practice-share-loading .book__pg--5 { animation-name: mass-gen-pg5; }
 
     @keyframes mass-gen-cover {
       from, 5%, 45%, 55%, 95%, to {
@@ -14068,7 +14326,10 @@
     @media (prefers-reduced-motion: reduce) {
       .mass-gen-loader .book,
       .mass-gen-loader .book__pg-shadow,
-      .mass-gen-loader .book__pg {
+      .mass-gen-loader .book__pg,
+      .practice-share-loading .book,
+      .practice-share-loading .book__pg-shadow,
+      .practice-share-loading .book__pg {
         animation: none;
       }
       .mass-gen-loader__step-spinner {
@@ -14984,31 +15245,41 @@
                 <header class="flow-bento-cell__head home-card-head home-mobile-collapsible__head">
                   <div class="home-card-head__text">
                     <h3 id="home-songs-heading">Songs</h3>
-                    <p>Last Sunday Hymns · What's new! · Gospel mood</p>
+                    <p>Share for choir · Last Sunday · What's new · Gospel mood</p>
                   </div>
                   <button type="button" class="home-mobile-collapsible__toggle" id="home-songs-collapse-toggle" aria-expanded="false" aria-controls="home-songs-carousel" aria-label="Show songs" title="Show songs">
                     <svg class="home-mobile-collapsible__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                   </button>
                 </header>
                 <div class="home-songs-carousel home-mobile-collapsible__panel" id="home-songs-carousel" aria-roledescription="carousel">
-                  <div class="home-songs-carousel__viewport">
-                    <section class="home-songs-slide is-active" data-home-songs-slide="last-week" aria-label="Last Sunday songs">
-                      <h4 class="home-songs-slide__title">Last Sunday</h4>
-                      <ul class="home-songs-list" id="home-songs-last-week"></ul>
-                    </section>
-                    <section class="home-songs-slide" data-home-songs-slide="new" aria-label="Newly added songs">
-                      <h4 class="home-songs-slide__title">Newly added</h4>
-                      <ul class="home-songs-list" id="home-songs-new"></ul>
-                    </section>
-                    <section class="home-songs-slide" data-home-songs-slide="mood" aria-label="Gospel mood summary">
-                      <h4 class="home-songs-slide__title">This Sunday's mood</h4>
-                      <p class="home-songs-mood-summary home-songs-mood-summary--empty" id="home-songs-mood-summary">Load Sunday readings for this week's Gospel mood.</p>
-                    </section>
+                  <div class="home-songs-carousel__viewport" id="home-songs-viewport">
+                    <div class="home-songs-carousel__track" id="home-songs-track">
+                      <section class="home-songs-slide home-songs-slide--share" data-home-songs-slide="share" aria-label="Share lyrics for choir">
+                        <h4 class="home-songs-slide__title">Share lyrics</h4>
+                        <div class="home-songs-share">
+                          <p class="home-songs-share__lead">Send this Sunday's song lyrics to your choir — PIN-protected link, no account needed.</p>
+                          <button type="button" class="home-songs-share__btn" id="btn-home-practice-share">Share for choir</button>
+                        </div>
+                      </section>
+                      <section class="home-songs-slide" data-home-songs-slide="last-week" aria-label="Last Sunday songs">
+                        <h4 class="home-songs-slide__title">Last Sunday</h4>
+                        <ul class="home-songs-list" id="home-songs-last-week"></ul>
+                      </section>
+                      <section class="home-songs-slide" data-home-songs-slide="new" aria-label="Newly added songs">
+                        <h4 class="home-songs-slide__title">Newly added</h4>
+                        <ul class="home-songs-list" id="home-songs-new"></ul>
+                      </section>
+                      <section class="home-songs-slide" data-home-songs-slide="mood" aria-label="Gospel mood summary">
+                        <h4 class="home-songs-slide__title">This Sunday's mood</h4>
+                        <p class="home-songs-mood-summary home-songs-mood-summary--empty" id="home-songs-mood-summary">Load Sunday readings for this week's Gospel mood.</p>
+                      </section>
+                    </div>
                   </div>
-                  <div class="home-songs-carousel__dots" role="tablist" aria-label="Song carousel slides">
-                    <button type="button" class="home-songs-carousel__dot" data-home-songs-dot="0" role="tab" aria-label="Last Sunday songs" aria-current="true"></button>
-                    <button type="button" class="home-songs-carousel__dot" data-home-songs-dot="1" role="tab" aria-label="Newly added songs"></button>
-                    <button type="button" class="home-songs-carousel__dot" data-home-songs-dot="2" role="tab" aria-label="Gospel mood summary"></button>
+                  <div class="home-songs-carousel__dots" role="group" aria-label="Song carousel position">
+                    <span class="home-songs-carousel__dot" data-home-songs-dot="0" aria-label="Share lyrics" aria-current="true"></span>
+                    <span class="home-songs-carousel__dot" data-home-songs-dot="1" aria-label="Last Sunday songs"></span>
+                    <span class="home-songs-carousel__dot" data-home-songs-dot="2" aria-label="Newly added songs"></span>
+                    <span class="home-songs-carousel__dot" data-home-songs-dot="3" aria-label="Gospel mood summary"></span>
                   </div>
                 </div>
               </article>
@@ -15257,6 +15528,28 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="practice-share-sections-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="practice-share-sections-backdrop"></div>
+        <article class="ui-card ui-card--popover-safe practice-share-card practice-share-card--sections" role="dialog" aria-labelledby="practice-share-sections-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="practice-share-sections-title">Share lyrics for choir</h3>
+              <p class="ui-card__description" id="practice-share-sections-sub">Pick songs for each Mass section, then share.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="practice-share-sections-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content practice-share-body">
+            <div id="practice-share-song-plan" class="mass-song-plan-root practice-share-song-plan" role="region" aria-label="Choir share song sections"></div>
+            <button type="button" class="mass-song-add-custom practice-share-add-section" id="practice-share-add-section">+ Add section</button>
+            <p class="status error" id="practice-share-sections-status" hidden aria-live="polite"></p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row" id="practice-share-sections-footer">
+            <button type="button" class="secondary" id="practice-share-sections-cancel">Cancel</button>
+            <button type="button" class="primary" id="practice-share-sections-continue">Share</button>
+          </footer>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="practice-share-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="practice-share-backdrop"></div>
         <article class="ui-card ui-card--popover-safe practice-share-card" role="dialog" aria-labelledby="practice-share-title" aria-modal="true">
@@ -15285,8 +15578,20 @@
                 </div>
               </div>
             </div>
-            <div class="practice-share-loading" id="practice-share-loading" hidden>
-              <p class="muted">Generating link…</p>
+            <div class="practice-share-loading" id="practice-share-loading" hidden role="status" aria-live="polite">
+              <div class="loader-wrapper">
+                <div class="loader-halo"></div>
+                <div class="book" aria-hidden="true">
+                  <div class="book__pg-shadow"></div>
+                  <div class="book__pg"></div>
+                  <div class="book__pg book__pg--2"></div>
+                  <div class="book__pg book__pg--3"></div>
+                  <div class="book__pg book__pg--4"></div>
+                  <div class="book__pg book__pg--5"></div>
+                </div>
+              </div>
+              <p class="practice-share-loading__title">Generating practice link</p>
+              <p class="practice-share-loading__msg" id="practice-share-loading-msg">Freezing lyrics and building your QR…</p>
             </div>
             <div class="practice-share-result" id="practice-share-result" hidden>
               <div class="practice-share-qr-wrap">
@@ -16843,7 +17148,6 @@
           <div class="download-row" id="download-row">
           <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
           <a href="#" id="dl-pptx" download>PowerPoint</a>
-          <a href="#" id="dl-pdf" download>PDF</a>
           <a href="#" id="dl-poster" download>Poster PNG</a>
           <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
           </div>
@@ -17166,12 +17470,6 @@
                         <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI</label>
                         <label><input type="checkbox" id="flow-use-gemini-poster" /> Gemini</label>
                       </div>
-                    </div>
-                  </div>
-                  <div class="flow-setup-row">
-                    <div class="field flow-export-pdf-field">
-                      <label class="flow-export-pdf-check"><input type="checkbox" id="flow-export-pdf" /> Also export PDF</label>
-                      <p class="muted flow-setup-field-hint">When checked, generating downloads the PowerPoint and a PDF side by side (handy to share a quick preview in your group chat).</p>
                     </div>
                   </div>
                   <div class="flow-setup-row flow-setup-row--media">
@@ -18180,7 +18478,7 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Users</h3>
-                  <p>Registered accounts and parish linkage.</p>
+                  <p>Accounts, parish linkage, presence, and location for language targeting.</p>
                 </div>
               </header>
               <div class="sa-toolbar">
@@ -19128,6 +19426,7 @@
     };
     const postJSON = async (url, body, opts) => {
       const skipAuthWait = !!(opts && opts.skipAuthWait);
+      const timeoutMs = opts && opts.timeoutMs != null ? Number(opts.timeoutMs) : 0;
       if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
       }
@@ -19135,11 +19434,26 @@
       if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
         Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
       }
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-      });
+      const controller = timeoutMs > 0 ? new AbortController() : null;
+      const timer = controller
+        ? setTimeout(() => controller.abort(), timeoutMs)
+        : null;
+      let res;
+      try {
+        res = await fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+          signal: controller ? controller.signal : undefined,
+        });
+      } catch (err) {
+        if (err && err.name === "AbortError") {
+          throw new Error("This request timed out. The server may still be finishing — try refreshing, or generate again.");
+        }
+        throw new Error("Lost connection to the server. If you were generating a Mass, refresh and try again.");
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (
@@ -21771,7 +22085,7 @@
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
-        "flow-use-openai-poster", "flow-use-gemini-poster", "flow-export-pdf",
+        "flow-use-openai-poster", "flow-use-gemini-poster",
         "flow-include-church-logo", "flow-include-church-name", "flow-hide-footer",
         "flow-include-social-exports",
       ];
@@ -22014,6 +22328,10 @@
       else if (savedPsalmRefrain !== "" && savedPsalmRefrain != null) setMassBuilderFieldValue("flow-psalm-refrain", savedPsalmRefrain);
       if (savedGospelCustom) setMassBuilderFieldValue("flow-gospel-custom", savedGospelCustom);
       else if (savedGospelSentence !== "" && savedGospelSentence != null) setMassBuilderFieldValue("flow-gospel-sentence", savedGospelSentence);
+      // Replace sticky first-in-section / legacy first-song drafts with gospel-mood picks.
+      if (typeof songPlanNeedsMoodReload === "function" && songPlanNeedsMoodReload()) {
+        if (typeof applyGospelMoodDefaultsToSongPlan === "function") applyGospelMoodDefaultsToSongPlan();
+      }
       if (typeof renderMassSongPlan === "function") renderMassSongPlan();
       if (window.MassWizard && window.MassWizard.setStep) {
         window.MassWizard.setStep(draft.step || 1);
@@ -22357,6 +22675,47 @@
       }).join(" ");
     }
 
+    function capitalizeFirstAlpha(token) {
+      const s = String(token || "");
+      if (!s) return s;
+      for (let i = 0; i < s.length; i += 1) {
+        const ch = s.charAt(i);
+        if (/[A-Za-z\u00C0-\u024F]/.test(ch)) {
+          return s.slice(0, i) + ch.toUpperCase() + s.slice(i + 1);
+        }
+      }
+      return s;
+    }
+
+    /** Uppercase the first letter of every word on every lyric line (premium practice look). */
+    function formatLyricsFirstLetters(raw) {
+      const text = String(raw || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      if (!text.trim()) return text.trim();
+      return text.split("\n").map((line) => {
+        if (!line.trim()) return "";
+        const leadMatch = line.match(/^[ \t]*/);
+        const lead = leadMatch ? leadMatch[0] : "";
+        const body = line.slice(lead.length);
+        return lead + body.split(" ").map(capitalizeFirstAlpha).join(" ");
+      }).join("\n").trim();
+    }
+
+    function applyLyricsFirstLettersToEditor() {
+      if (lyricBlocks.length) {
+        flushLyricBlocksFromDom();
+        lyricBlocks = lyricBlocks.map((block) => Object.assign({}, block, {
+          text: formatLyricsFirstLetters(block.text || ""),
+        }));
+        renderLyrics({ writeBack: true });
+        return serializedLyrics();
+      }
+      const input = $("lyrics-input");
+      if (!input) return "";
+      const formatted = formatLyricsFirstLetters(input.value);
+      input.value = formatted;
+      return formatted;
+    }
+
     function normalizeSongTitleInput(inputEl) {
       if (!inputEl) return "";
       const formatted = formatSongTitleCase(inputEl.value);
@@ -22430,10 +22789,13 @@
 
     function addLyricBlockOfType(type) {
       const n = lyricBlocks.filter((b) => b.type === type).length + 1;
+      const label = typeLabels[type] || "Section";
+      // Chorus stays "Chorus" (no Chorus 1/2/3). Verses and other types may number.
+      const title = type === "chorus" ? label : label + " " + n;
       lyricBlocks.push({
         id: crypto.randomUUID(),
         type: type,
-        title: typeLabels[type] + " " + n,
+        title,
         text: "",
         collapsed: false,
       });
@@ -22646,6 +23008,8 @@
     function lyricBlockSectionTitle(block, index) {
       const type = block.type || "verse";
       const label = typeLabels[type] || "Section";
+      // Chorus is always "Chorus" — never Chorus 1 / 2 / 3.
+      if (type === "chorus") return label;
       const sameTypeIndex = lyricBlocks.slice(0, index + 1).filter((b) => b.type === type).length;
       if (type === "verse" || sameTypeIndex > 1) return label + " " + sameTypeIndex;
       return label;
@@ -22902,8 +23266,8 @@
       flushLyricBlocksFromDom();
       lyricBlocks = lyricBlocks.map((block, index) => ({
         ...block,
-        title: block.title.trim() || typeLabels[block.type] + " " + (index + 1),
-        text: tidyLyricBlockText(block.text),
+        title: lyricBlockSectionTitle(block, index),
+        text: formatLyricsFirstLetters(tidyLyricBlockText(block.text)),
       }));
       renderLyrics({ writeBack: true });
       setLyricsStatus("Tidied spacing and removed section labels like [Verse] / (Chorus).", "ok");
@@ -23108,7 +23472,7 @@
       } else if ($("lyrics-input").value.trim()) {
         syncInputPanelToStructuredEditor({ quiet: true, writeBack: false });
       }
-      const lyrics = serializedLyrics();
+      const lyrics = applyLyricsFirstLettersToEditor();
       const saveSection = ($("lyrics-save-section") && $("lyrics-save-section").value) || "";
       const saveLanguage = ($("lyrics-save-language") && $("lyrics-save-language").value) || "";
       showSongSaveProgressModal(title);
@@ -24878,8 +25242,25 @@
     }
 
     function updateMassSongAddButton() {
-      const addBtn = $("mass-song-add-custom");
-      if (addBtn) addBtn.hidden = lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS;
+      const atMax = lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS;
+      ["mass-song-add-custom", "practice-share-add-section"].forEach((id) => {
+        const addBtn = $(id);
+        if (addBtn) addBtn.hidden = atMax;
+      });
+    }
+
+    let massSongPlanMountId = "mass-song-plan";
+
+    function setMassSongPlanMount(id) {
+      massSongPlanMountId = id || "mass-song-plan";
+    }
+
+    function clearInactiveMassSongPlanMount() {
+      const otherId = massSongPlanMountId === "mass-song-plan"
+        ? "practice-share-song-plan"
+        : "mass-song-plan";
+      const other = $(otherId);
+      if (other) other.innerHTML = "";
     }
 
     function massSongSlotPartHtml(slot) {
@@ -25294,8 +25675,9 @@
     }
 
     function renderMassSongPlan() {
-      const plan = $("mass-song-plan");
+      const plan = $(massSongPlanMountId);
       if (!plan) return;
+      clearInactiveMassSongPlanMount();
       rebuildMassPlanSongPool();
       plan.innerHTML = lyricSongSlots.map((slot, index) => (
         "<article class=\"mass-song-plan-card mass-song-slot" + (slot.custom ? " mass-song-slot--custom" : "") + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
@@ -25329,10 +25711,12 @@
       updateMassSongAddButton();
       renderMassSummarySidebar();
       renderFlowSongCount();
+      syncPracticeShareSectionsContinue();
     }
 
     let practiceShareLastUrl = "";
     let practiceShareLastHadPin = false;
+    let practiceShareSlotFilter = null;
 
     function mountPinOtp(container, opts) {
       opts = opts || {};
@@ -25341,6 +25725,9 @@
       const boxes = Array.from(container.querySelectorAll("[data-pin-box]"));
       const limit = boxes.length || 6;
       if (!trap) return { getValue: () => "", clear: () => {}, focus: () => {}, destroy: () => {} };
+      let revealIndex = -1;
+      let revealTimer = null;
+      let lastLen = 0;
 
       const getValue = () => (trap.value || "").replace(/\D/g, "").slice(0, limit);
 
@@ -25350,27 +25737,57 @@
         }
       };
 
-      const sync = () => {
-        const val = getValue();
-        if (trap.value !== val) trap.value = val;
-        boxes.forEach((box, i) => {
-          const filled = i < val.length;
-          box.textContent = filled ? "\u2022" : "";
-          box.classList.toggle("is-filled", filled);
-          box.classList.toggle("is-active", !filled && i === val.length);
-        });
-        if (val.length >= limit) {
-          boxes.forEach((box) => box.classList.remove("is-active"));
-          boxes[limit - 1]?.classList.add("is-active");
+      const clearRevealTimer = () => {
+        if (revealTimer) {
+          clearTimeout(revealTimer);
+          revealTimer = null;
         }
       };
 
+      const scheduleMask = (index) => {
+        clearRevealTimer();
+        revealIndex = index;
+        revealTimer = setTimeout(() => {
+          revealIndex = -1;
+          revealTimer = null;
+          sync();
+        }, 700);
+      };
+
+      const sync = () => {
+        const val = getValue();
+        if (trap.value !== val) trap.value = val;
+        const lastFilled = val.length - 1;
+        boxes.forEach((box, i) => {
+          const filled = i < val.length;
+          if (!filled) box.textContent = "";
+          else if (i === revealIndex) box.textContent = val.charAt(i);
+          else box.textContent = "\u2022";
+          box.classList.toggle("is-filled", filled);
+          box.classList.toggle("is-active", filled && i === lastFilled);
+        });
+        lastLen = val.length;
+      };
+
       const appendDigit = (digit) => {
-        trap.value = ((trap.value || "").replace(/\D/g, "") + digit).slice(0, limit);
+        const prev = getValue();
+        if (prev.length >= limit) return;
+        const val = (prev + digit).slice(0, limit);
+        trap.value = val;
+        scheduleMask(val.length - 1);
         sync();
       };
 
-      trap.addEventListener("input", sync);
+      trap.addEventListener("input", () => {
+        const val = getValue();
+        if (trap.value !== val) trap.value = val;
+        if (val.length > lastLen) scheduleMask(val.length - 1);
+        else if (val.length < lastLen) {
+          clearRevealTimer();
+          revealIndex = -1;
+        }
+        sync();
+      });
       trap.addEventListener("keydown", (ev) => {
         if (ev.key === "Enter") {
           ev.preventDefault();
@@ -25379,7 +25796,13 @@
       });
       trap.addEventListener("paste", (ev) => {
         ev.preventDefault();
-        trap.value = (ev.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, limit);
+        const text = (ev.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, limit);
+        trap.value = text;
+        if (text.length) scheduleMask(text.length - 1);
+        else {
+          clearRevealTimer();
+          revealIndex = -1;
+        }
         sync();
       });
       container.addEventListener("click", () => trap.focus());
@@ -25402,6 +25825,8 @@
           if (document.activeElement !== trap || val.length) {
             ev.preventDefault();
             trap.focus();
+            clearRevealTimer();
+            revealIndex = -1;
             trap.value = val.slice(0, -1);
             sync();
           }
@@ -25420,9 +25845,18 @@
 
       return {
         getValue,
-        clear: () => { trap.value = ""; sync(); trap.focus(); },
+        clear: () => {
+          clearRevealTimer();
+          revealIndex = -1;
+          trap.value = "";
+          sync();
+          trap.focus();
+        },
         focus: () => trap.focus(),
-        destroy: () => document.removeEventListener("keydown", onDocKey, true),
+        destroy: () => {
+          clearRevealTimer();
+          document.removeEventListener("keydown", onDocKey, true);
+        },
         cells: boxes,
       };
     }
@@ -25448,6 +25882,22 @@
       setUiOverlayOpen($("practice-share-modal"), false);
     }
 
+    function closePracticeShareSectionsModal() {
+      const wasMounted = massSongPlanMountId === "practice-share-song-plan";
+      setUiOverlayOpen($("practice-share-sections-modal"), false);
+      if (wasMounted) {
+        setMassSongPlanMount("mass-song-plan");
+        renderMassSongPlan();
+      }
+    }
+
+    function syncPracticeShareSectionsContinue() {
+      const continueBtn = $("practice-share-sections-continue");
+      const modal = $("practice-share-sections-modal");
+      if (!continueBtn || !modal || modal.getAttribute("aria-hidden") === "true") return;
+      continueBtn.disabled = selectedLyricsSongCount() === 0;
+    }
+
     function practiceSharePinMode() {
       return "pin";
     }
@@ -25459,6 +25909,7 @@
     }
 
     function resetPracticeShareModal() {
+      stopPracticeShareLoadingAnim();
       const setup = $("practice-share-setup");
       const loading = $("practice-share-loading");
       const result = $("practice-share-result");
@@ -25486,43 +25937,146 @@
       if (sub) sub.textContent = "Anyone with the link can read these lyrics — no account needed.";
     }
 
-    function openPracticeShareModal() {
+    function ensurePracticeShareMassDate(preferredDate) {
       const dateEl = $("mass-date");
-      const date = dateEl ? (dateEl.value || "").trim() : "";
+      if (!dateEl) return "";
+      const preferred = String(preferredDate || "").trim();
+      const current = (dateEl.value || "").trim();
+      if (preferred && current !== preferred) {
+        dateEl.value = preferred;
+        dateEl.dispatchEvent(new Event("change", { bubbles: true }));
+        if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
+      }
+      return (dateEl.value || "").trim() || preferred || upcomingSundayISO();
+    }
+
+    async function hydratePracticeShareSelections(targetDate) {
+      const date = String(targetDate || upcomingSundayISO()).trim();
+      ensurePracticeShareMassDate(date);
+      const hasCurrent = lyricSongSlots.some((slot) => !!(selectedLyricsSongs[slot.key] || "").trim());
+      if (!hasCurrent) {
+        const draft = readMassBuilderDraft();
+        const draftDate = (draft && (draft.previewDate || (draft.fields && draft.fields["mass-date"]))) || "";
+        if (draft && String(draftDate) === date) {
+          if (Array.isArray(draft.lyricSongSlots) && draft.lyricSongSlots.length) {
+            lyricSongSlots = JSON.parse(JSON.stringify(draft.lyricSongSlots));
+          }
+          if (draft.selectedLyricsSongs) {
+            selectedLyricsSongs = Object.assign({}, selectedLyricsSongs, draft.selectedLyricsSongs);
+          }
+        }
+      }
+      let hasAny = lyricSongSlots.some((slot) => !!(selectedLyricsSongs[slot.key] || "").trim());
+      if (!hasAny) {
+        try {
+          const data = await fetchPreview(date, { readingsOnly: false });
+          if (data && data.default_song_selections) {
+            HOME_SONG_SLOTS.forEach((slot) => {
+              const id = data.default_song_selections[slot.key];
+              if (id) selectedLyricsSongs[slot.key] = id;
+            });
+          }
+        } catch (_e) { /* optional */ }
+      }
+      await loadSongCatalog();
+      rebuildMassPlanSongPool();
+      return date;
+    }
+
+    function openPracticeShareModal(opts) {
+      opts = opts || {};
+      const dateEl = $("mass-date");
+      let date = dateEl ? (dateEl.value || "").trim() : "";
+      if (!date && opts.allowHomeDate) {
+        date = ensurePracticeShareMassDate(upcomingSundayISO());
+      }
       if (!date) {
         window.alert("Choose a Mass date first, then pick your songs.");
         return;
       }
+      if (!opts.keepSlotFilter) practiceShareSlotFilter = null;
       resetPracticeShareModal();
       setUiOverlayOpen($("practice-share-modal"), true);
       const sub = $("practice-share-sub");
       if (sub) {
-        sub.textContent = "Share lyrics for " + date + ". Set a 6-digit PIN, then generate the link.";
+        const n = practiceShareSlotFilter ? practiceShareSlotFilter.size : 0;
+        sub.textContent = n
+          ? ("Share " + n + " section" + (n === 1 ? "" : "s") + " for " + date + ". Set a 6-digit PIN, then generate the link.")
+          : ("Share lyrics for " + date + ". Set a 6-digit PIN, then generate the link.");
       }
       requestAnimationFrame(() => practiceSharePinOtp?.focus());
+    }
+
+    async function openPracticeShareSectionsModal() {
+      const status = $("practice-share-sections-status");
+      const continueBtn = $("practice-share-sections-continue");
+      if (status) { status.hidden = true; status.textContent = ""; }
+      if (continueBtn) continueBtn.disabled = true;
+      const dateEl = $("mass-date");
+      const dateHint = (dateEl && (dateEl.value || "").trim()) || upcomingSundayISO();
+      const date = await hydratePracticeShareSelections(dateHint);
+      setMassSongPlanMount("practice-share-song-plan");
+      renderMassSongPlan();
+      const available = selectedLyricsSongCount();
+      const sub = $("practice-share-sections-sub");
+      if (sub) {
+        sub.textContent = "Pick or change songs for " + date + ", then share a PIN-protected link.";
+      }
+      if (continueBtn) continueBtn.disabled = available === 0;
+      if (!available && status) {
+        status.textContent = "Choose at least one song below, or add a section.";
+        status.hidden = false;
+      }
+      setUiOverlayOpen($("practice-share-sections-modal"), true);
+    }
+
+    function continuePracticeShareFromSections() {
+      const status = $("practice-share-sections-status");
+      const keys = lyricSongSlots
+        .map((slot) => slot.key)
+        .filter((key) => !!(selectedLyricsSongs[key] || "").trim());
+      if (!keys.length) {
+        if (status) {
+          status.textContent = "Pick at least one song before sharing.";
+          status.hidden = false;
+        }
+        syncPracticeShareSectionsContinue();
+        return;
+      }
+      practiceShareSlotFilter = new Set(keys);
+      setMassSongPlanMount("mass-song-plan");
+      renderMassSongPlan();
+      setUiOverlayOpen($("practice-share-sections-modal"), false);
+      openPracticeShareModal({ keepSlotFilter: true, allowHomeDate: true });
     }
 
     async function collectPracticeShareSongs() {
       rebuildMassPlanSongPool();
       const songs = [];
       for (const slot of lyricSongSlots) {
+        if (practiceShareSlotFilter && !practiceShareSlotFilter.has(slot.key)) continue;
         const id = selectedLyricsSongs[slot.key] || "";
         if (!id) continue;
         let row = massPlanAllSongs.find((s) => String(s.id) === String(id));
+        if (!row && songCatalogData) {
+          const sec = typeof catalogSectionForSlot === "function" ? catalogSectionForSlot(slot.key) : (slot.section || slot.key);
+          const catalogRow = ((songCatalogData[sec] || []).find((s) => String(s.id) === String(id))) || null;
+          if (catalogRow) {
+            row = {
+              id: String(catalogRow.id),
+              title: catalogRow.title || "Song",
+              author: catalogRow.author || "",
+              language: catalogRow.language || "",
+              section: sec,
+            };
+          }
+        }
         if (!row) continue;
         const section = resolveMassSongSection(slot.key, row);
         const cacheKey = section + "|" + id;
-        let lyrics = (massSongLyricsCache.get(cacheKey) || "").trim();
-        if (!lyrics) {
-          try {
-            const data = await fetchSongDetail(section, id);
-            lyrics = (data.song && data.song.lyrics) ? String(data.song.lyrics).trim() : "";
-            if (lyrics) massSongLyricsCache.set(cacheKey, lyrics);
-          } catch (_err) {
-            lyrics = "";
-          }
-        }
-        if (!lyrics) continue;
+        // Prefer cached lyrics; otherwise send id/title and let the server fill from catalog
+        // (avoids sequential network fetches that make Generate feel slow).
+        const lyrics = (massSongLyricsCache.get(cacheKey) || "").trim();
         songs.push({
           slot_key: slot.key,
           slot_label: massSongSlotShortLabel(slot.key, slot.label),
@@ -25580,7 +26134,33 @@
       showFallback();
     }
 
+    let practiceShareLoadingTimer = null;
+
+    function stopPracticeShareLoadingAnim() {
+      if (practiceShareLoadingTimer) {
+        clearInterval(practiceShareLoadingTimer);
+        practiceShareLoadingTimer = null;
+      }
+    }
+
+    function startPracticeShareLoadingAnim() {
+      stopPracticeShareLoadingAnim();
+      const msgEl = $("practice-share-loading-msg");
+      const msgs = [
+        "Freezing lyrics and building your QR…",
+        "Securing your practice PIN…",
+        "Almost ready to share…",
+      ];
+      let i = 0;
+      if (msgEl) msgEl.textContent = msgs[0];
+      practiceShareLoadingTimer = setInterval(() => {
+        i = (i + 1) % msgs.length;
+        if (msgEl) msgEl.textContent = msgs[i];
+      }, 1600);
+    }
+
     function showPracticeShareResult(data) {
+      stopPracticeShareLoadingAnim();
       const setup = $("practice-share-setup");
       const loading = $("practice-share-loading");
       const result = $("practice-share-result");
@@ -25638,6 +26218,7 @@
       if (generateBtn) generateBtn.disabled = true;
       setPracticeShareFooterMode("loading");
       if (status) status.hidden = true;
+      startPracticeShareLoadingAnim();
       practiceShareLastHadPin = true;
       try {
         const songs = await collectPracticeShareSongs();
@@ -25659,6 +26240,7 @@
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
         showPracticeShareResult(data);
       } catch (err) {
+        stopPracticeShareLoadingAnim();
         if (loading) loading.hidden = true;
         if (setup) setup.hidden = false;
         if (generateBtn) generateBtn.disabled = false;
@@ -25689,10 +26271,15 @@
 
     function initPracticeShareUi() {
       [
-        ["btn-practice-share", openPracticeShareModal],
-        ["btn-practice-share-mobile", openPracticeShareModal],
-        ["btn-practice-share-toolbar", openPracticeShareModal],
-        ["btn-practice-share-wizard", openPracticeShareModal],
+        ["btn-practice-share", () => { openPracticeShareSectionsModal(); }],
+        ["btn-practice-share-mobile", () => { openPracticeShareSectionsModal(); }],
+        ["btn-practice-share-toolbar", () => { openPracticeShareSectionsModal(); }],
+        ["btn-practice-share-wizard", () => { openPracticeShareSectionsModal(); }],
+        ["btn-home-practice-share", () => { openPracticeShareSectionsModal(); }],
+        ["practice-share-sections-backdrop", closePracticeShareSectionsModal],
+        ["practice-share-sections-close", closePracticeShareSectionsModal],
+        ["practice-share-sections-cancel", closePracticeShareSectionsModal],
+        ["practice-share-sections-continue", continuePracticeShareFromSections],
         ["practice-share-backdrop", closePracticeShareModal],
         ["practice-share-close", closePracticeShareModal],
         ["practice-share-cancel", closePracticeShareModal],
@@ -25857,23 +26444,25 @@
       const rows = (songCatalogData && songCatalogData[section]) || [];
       if (!rows.length) return [];
       const exclude = excludeIds || new Set();
-      const scored = rows.map((row, idx) => {
+      const scored = rows.map((row) => {
         const moods = songGospelMoods(row);
         const match = moodMatchScore(moods, moodKey);
         const lyrics = row.has_lyrics ? 1 : 0;
         const lang = songMatchesPlanLangFilter(row, massSongPlanLanguage) ? 1 : 0;
-        return { row, match, score: match * 100 + lyrics * 10 + lang * 5 - idx * 0.001 };
+        // Random jitter — never break ties by catalog index (first-song trap).
+        const jitter = Math.random() * 0.5;
+        return { row, match, score: match * 100 + lyrics * 10 + lang * 5 + jitter };
       }).filter((item) => {
         const id = String(item.row.id || "");
         return id && !exclude.has(id);
       });
       if (!scored.length) return [];
       scored.sort((a, b) => b.score - a.score);
-      // Prefer exact/related mood matches when available; avoid "first in section" ties.
       const bestMatch = scored[0].match;
-      const preferred = bestMatch >= 2 ? scored.filter((item) => item.match >= 2) : scored;
-      const topScore = preferred[0].score;
-      const tier = preferred.filter((item) => item.score >= topScore - 5);
+      const minMatch = bestMatch >= 2 ? 2 : 1;
+      const preferred = scored.filter((item) => item.match >= minMatch);
+      const topMatch = preferred[0].match;
+      const tier = preferred.filter((item) => item.match === topMatch);
       const picked = [];
       shuffleArray(tier).forEach((item) => {
         const id = String(item.row.id || "");
@@ -25881,6 +26470,15 @@
         picked.push(item.row);
         exclude.add(id);
       });
+      if (picked.length < count) {
+        preferred.forEach((item) => {
+          if (picked.length >= count) return;
+          const id = String(item.row.id || "");
+          if (!id || exclude.has(id)) return;
+          picked.push(item.row);
+          exclude.add(id);
+        });
+      }
       if (picked.length < count) {
         scored.forEach((item) => {
           if (picked.length >= count) return;
@@ -26064,49 +26662,104 @@
       return out;
     }
 
-    function applyDefaultSongSelectionsFromPreview(preview) {
-      const defaults = (preview && preview.default_song_selections) || {};
-      if (defaults.entrance) selectedLyricsSongs.entrance = defaults.entrance;
-      if (defaults.offertory) selectedLyricsSongs.offertory = defaults.offertory;
-      if (defaults.communion_1) selectedLyricsSongs.communion_1 = defaults.communion_1;
-      if (defaults.communion_2) selectedLyricsSongs.communion_2 = defaults.communion_2;
-      if (defaults.recessional) selectedLyricsSongs.recessional = defaults.recessional;
+    function songPlanLooksLikeCatalogHead() {
+      if (!songCatalogData) return false;
+      const checks = [
+        ["entrance", "entrance", 0],
+        ["offertory", "offertory", 0],
+        ["recessional", "recessional", 0],
+        ["communion_1", "communion", 0],
+        ["communion_2", "communion", 1],
+      ];
+      let hits = 0;
+      let compared = 0;
+      checks.forEach(([slot, sec, idx]) => {
+        const id = String(selectedLyricsSongs[slot] || "").trim();
+        const row = ((songCatalogData[sec] || [])[idx]) || null;
+        if (!id || !row || !row.id) return;
+        compared += 1;
+        if (String(row.id) === id) hits += 1;
+      });
+      return compared >= 3 && hits >= Math.min(3, compared);
+    }
+
+    // Legacy EN/TL "first unused" defaults (removed server-side). Sticky drafts still carry these.
+    const LEGACY_FIRST_SONG_DEFAULTS = {
+      entrance: "sing_new_song",
+      offertory: "gift_finest_wheat",
+      recessional: "we_are_called",
+      communion_1: "manalig_ka",
+      communion_2: "isang_bansa",
+    };
+
+    function songPlanLooksLikeLegacyFirstDefaults() {
+      let hits = 0;
+      let compared = 0;
+      Object.keys(LEGACY_FIRST_SONG_DEFAULTS).forEach((slot) => {
+        const id = String(selectedLyricsSongs[slot] || "").trim();
+        if (!id) return;
+        compared += 1;
+        if (id === LEGACY_FIRST_SONG_DEFAULTS[slot]) hits += 1;
+      });
+      return compared >= 3 && hits >= Math.min(3, compared);
+    }
+
+    function songPlanNeedsMoodReload() {
+      return songPlanLooksLikeCatalogHead() || songPlanLooksLikeLegacyFirstDefaults();
+    }
+
+    function applySongSelectionsToPlan(selections) {
+      if (!selections || !selections.length) return false;
+      massMoodPickSelections = selections;
+      massMoodPickExcludeIds = new Set();
+      selections.forEach((pick) => {
+        if (!pick.slotKey || !pick.id) return;
+        selectedLyricsSongs[pick.slotKey] = pick.id;
+        massMoodPickExcludeIds.add(String(pick.id));
+      });
+      return true;
     }
 
     function applyGospelMoodDefaultsToSongPlan() {
       const preview = flowPreviewData;
-      const moodKey = preview ? inferGospelMoodKey(preview) : null;
+      const moodKey = (preview && inferGospelMoodKey(preview)) || "reverent";
       const serverDefaults = (preview && preview.default_song_selections) || {};
-      const serverSlots = ["entrance", "offertory", "communion_1", "communion_2", "recessional"].filter(
-        (k) => String(serverDefaults[k] || "").trim()
-      );
       massMoodPickExcludeIds = new Set();
 
-      // Prefer API mood picks (full lyrics + gospel_moods). Client lite catalog used to
-      // recompute without moods and often fell back to the first song per section.
-      if (serverSlots.length >= 4) {
-        applyDefaultSongSelectionsFromPreview(preview);
-        massMoodPickSelections = selectionsFromSongIds(serverDefaults, moodKey || "reverent");
-        return true;
+      // 1) Client mood ranking from catalog (inferred moods included in lite API).
+      let selections = [];
+      if (songCatalogData) {
+        selections = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) =>
+          Object.assign({ moodKey }, p)
+        );
       }
 
-      let selections = [];
-      if (moodKey && songCatalogData) {
-        selections = buildMassMoodPickSelections(moodKey, massMoodPickExcludeIds).map((p) => Object.assign({ moodKey }, p));
+      // 2) Server gospel-mood defaults when client pool is thin.
+      if (selections.length < 4) {
+        const fromServer = selectionsFromSongIds(serverDefaults, moodKey);
+        if (fromServer.length >= 4) {
+          return applySongSelectionsToPlan(fromServer);
+        }
+        if (fromServer.length > selections.length) {
+          selections = fromServer;
+        }
       }
-      if (!selections.length && songCatalogData) {
-        selections = buildRandomCatalogSelections(massMoodPickExcludeIds).map((p) => Object.assign({ moodKey: moodKey || "reverent" }, p));
+
+      // 3) Random catalog picks — never first-in-section order.
+      if (selections.length < 4 && songCatalogData) {
+        massMoodPickExcludeIds = new Set(selections.map((p) => String(p.id || "")).filter(Boolean));
+        const randomFill = buildRandomCatalogSelections(massMoodPickExcludeIds).map((p) =>
+          Object.assign({ moodKey }, p)
+        );
+        const bySlot = {};
+        selections.concat(randomFill).forEach((p) => {
+          if (p.slotKey && p.id && !bySlot[p.slotKey]) bySlot[p.slotKey] = p;
+        });
+        selections = Object.keys(bySlot).map((k) => bySlot[k]);
       }
-      if (!selections.length) {
-        applyDefaultSongSelectionsFromPreview(preview);
-        return false;
-      }
-      massMoodPickSelections = selections;
-      selections.forEach((pick) => {
-        if (!pick.slotKey || !pick.id) return;
-        selectedLyricsSongs[pick.slotKey] = pick.id;
-      });
-      return true;
+
+      if (!selections.length) return false;
+      return applySongSelectionsToPlan(selections);
     }
 
     function formatGospelMoodsLabel(moods) {
@@ -26420,26 +27073,6 @@
     })();
 
 
-    $("mass-song-plan").addEventListener("mousedown", (e) => {
-      const btn = e.target.closest("button[data-pick-slot]");
-      if (!btn) return;
-      e.preventDefault();
-      const key = btn.dataset.pickSlot;
-      const pickId = btn.dataset.pickId;
-      if (!key) return;
-      selectedLyricsSongs[key] = pickId || "";
-      const inp = $("mass-song-q-" + key);
-      if (inp) inp.value = "";
-      const box = $("mass-song-res-" + key);
-      if (box) {
-        closeVbDropdownPanel(box);
-        box.innerHTML = "";
-      }
-      updateMassSlotChip(key);
-      updateMassSongPreviewButton(key);
-      renderFlowSongCount();
-    });
-
     function syncCustomSlotLabel(key, rawValue, finalize) {
       const slot = lyricSongSlots.find((s) => s.key === key);
       if (!slot || !slot.custom) return;
@@ -26461,98 +27094,143 @@
       }
     }
 
-    $("mass-song-plan").addEventListener("input", (e) => {
-      const labelInp = e.target.closest("[data-custom-label]");
-      if (!labelInp) return;
-      syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, false);
-    });
-
-    $("mass-song-plan").addEventListener("blur", (e) => {
-      const labelInp = e.target.closest("[data-custom-label]");
-      if (!labelInp) return;
-      syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, true);
-      const slot = lyricSongSlots.find((s) => s.key === labelInp.dataset.customLabel);
-      if (slot) labelInp.value = slot.label;
-    }, true);
-
-    $("mass-song-plan").addEventListener("click", (e) => {
-      const addComposer = e.target.closest(".mass-song-add-composer-btn");
-      if (addComposer) {
-        e.preventDefault();
-        navigateToComposerWithMassSearch(
-          addComposer.dataset.massAddQuery || "",
-          addComposer.dataset.massAddComposer || "",
-          { openGoogle: true }
-        );
-        return;
-      }
-      const prev = e.target.closest(".mass-song-preview-btn");
-      if (prev && !prev.classList.contains("is-disabled")) {
-        const slotKey = prev.dataset.previewSlot;
-        if (slotKey) openMassSongPreview(slotKey);
-        return;
-      }
-      const del = e.target.closest("[data-mass-song-delete]");
-      if (del) {
-        const key = del.dataset.massSongDelete;
-        const slot = lyricSongSlots.find((s) => s.key === key);
-        if (!slot || !slot.custom) return;
-        const name = (slot.label || "").trim() || "this section";
-        if (!window.confirm("Delete \"" + name + "\"? Any selected song for this section will be removed.")) return;
-        lyricSongSlots = lyricSongSlots.filter((s) => s.key !== key);
-        delete selectedLyricsSongs[key];
-        renderMassSongPlan();
-        return;
-      }
-      const clr = e.target.closest("[data-mass-song-clear]");
-      if (!clr) return;
-      const key = clr.dataset.massSongClear;
-      if (!key) return;
+    function addMassSongCustomSection() {
+      if (lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS) return;
+      massCustomSlotSeq += 1;
+      const key = "custom_" + massCustomSlotSeq;
+      lyricSongSlots.push({ key, label: "", section: "meditation", custom: true });
       selectedLyricsSongs[key] = "";
-      const inp = $("mass-song-q-" + key);
-      if (inp) inp.value = "";
-      const box = $("mass-song-res-" + key);
-      if (box) {
-        closeVbDropdownPanel(box);
-        box.innerHTML = "";
-      }
-      updateMassSlotChip(key);
-      updateMassSongPreviewButton(key);
-      renderFlowSongCount();
-    });
+      renderMassSongPlan();
+      const labelInp = document.querySelector("[data-custom-label=\"" + key + "\"]");
+      if (labelInp) window.requestAnimationFrame(() => labelInp.focus());
+    }
 
-    $("mass-song-plan").addEventListener("input", (e) => {
-      const inp = e.target.closest(".mass-song-search-input");
-      if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
-      const key = inp.id.replace("mass-song-q-", "");
-      clearTimeout(massPlanSearchDebounce);
-      massPlanSearchDebounce = setTimeout(() => {
+    function bindMassSongPlanRoot(root) {
+      if (!root || root.dataset.songPlanBound) return;
+      root.dataset.songPlanBound = "1";
+
+      root.addEventListener("mousedown", (e) => {
+        const btn = e.target.closest("button[data-pick-slot]");
+        if (!btn) return;
+        e.preventDefault();
+        const key = btn.dataset.pickSlot;
+        const pickId = btn.dataset.pickId;
+        if (!key) return;
+        selectedLyricsSongs[key] = pickId || "";
+        const inp = $("mass-song-q-" + key);
+        if (inp) inp.value = "";
+        const box = $("mass-song-res-" + key);
+        if (box) {
+          closeVbDropdownPanel(box);
+          box.innerHTML = "";
+        }
+        updateMassSlotChip(key);
+        updateMassSongPreviewButton(key);
+        renderFlowSongCount();
+        syncPracticeShareSectionsContinue();
+        const status = $("practice-share-sections-status");
+        if (status && !status.hidden) {
+          status.hidden = true;
+          status.textContent = "";
+        }
+      });
+
+      root.addEventListener("input", (e) => {
+        const labelInp = e.target.closest("[data-custom-label]");
+        if (labelInp) {
+          syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, false);
+          return;
+        }
+        const inp = e.target.closest(".mass-song-search-input");
+        if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
+        const key = inp.id.replace("mass-song-q-", "");
+        clearTimeout(massPlanSearchDebounce);
+        massPlanSearchDebounce = setTimeout(() => {
+          const rows = filterMassPlanSongs(inp.value);
+          renderMassSongResults(key, rows, inp.value);
+        }, 100);
+      });
+
+      root.addEventListener("blur", (e) => {
+        const labelInp = e.target.closest("[data-custom-label]");
+        if (!labelInp) return;
+        syncCustomSlotLabel(labelInp.dataset.customLabel, labelInp.value, true);
+        const slot = lyricSongSlots.find((s) => s.key === labelInp.dataset.customLabel);
+        if (slot) labelInp.value = slot.label;
+      }, true);
+
+      root.addEventListener("click", (e) => {
+        const addComposer = e.target.closest(".mass-song-add-composer-btn");
+        if (addComposer) {
+          e.preventDefault();
+          navigateToComposerWithMassSearch(
+            addComposer.dataset.massAddQuery || "",
+            addComposer.dataset.massAddComposer || "",
+            { openGoogle: true }
+          );
+          return;
+        }
+        const prev = e.target.closest(".mass-song-preview-btn");
+        if (prev && !prev.classList.contains("is-disabled")) {
+          const slotKey = prev.dataset.previewSlot;
+          if (slotKey) openMassSongPreview(slotKey);
+          return;
+        }
+        const del = e.target.closest("[data-mass-song-delete]");
+        if (del) {
+          const key = del.dataset.massSongDelete;
+          const slot = lyricSongSlots.find((s) => s.key === key);
+          if (!slot || !slot.custom) return;
+          const name = (slot.label || "").trim() || "this section";
+          if (!window.confirm("Delete \"" + name + "\"? Any selected song for this section will be removed.")) return;
+          lyricSongSlots = lyricSongSlots.filter((s) => s.key !== key);
+          delete selectedLyricsSongs[key];
+          renderMassSongPlan();
+          return;
+        }
+        const clr = e.target.closest("[data-mass-song-clear]");
+        if (!clr) return;
+        const key = clr.dataset.massSongClear;
+        if (!key) return;
+        selectedLyricsSongs[key] = "";
+        const inp = $("mass-song-q-" + key);
+        if (inp) inp.value = "";
+        const box = $("mass-song-res-" + key);
+        if (box) {
+          closeVbDropdownPanel(box);
+          box.innerHTML = "";
+        }
+        updateMassSlotChip(key);
+        updateMassSongPreviewButton(key);
+        renderFlowSongCount();
+        syncPracticeShareSectionsContinue();
+      });
+
+      root.addEventListener("keydown", (e) => {
+        const inp = e.target.closest(".mass-song-search-input");
+        if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
+        if (e.key !== "Enter") return;
+        const query = String(inp.value || "").trim();
+        if (!query) return;
+        const rows = filterMassPlanSongs(inp.value);
+        if (rows.length) return;
+        e.preventDefault();
+        const key = inp.id.replace("mass-song-q-", "");
+        navigateToComposerWithMassSearch(query, key, { openGoogle: true });
+      });
+
+      root.addEventListener("focusin", (e) => {
+        const inp = e.target.closest(".mass-song-search-input");
+        if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
+        const key = inp.id.replace("mass-song-q-", "");
+        closeMassSongResultPanels(key);
         const rows = filterMassPlanSongs(inp.value);
         renderMassSongResults(key, rows, inp.value);
-      }, 100);
-    });
+      }, true);
+    }
 
-    $("mass-song-plan").addEventListener("keydown", (e) => {
-      const inp = e.target.closest(".mass-song-search-input");
-      if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
-      if (e.key !== "Enter") return;
-      const query = String(inp.value || "").trim();
-      if (!query) return;
-      const rows = filterMassPlanSongs(inp.value);
-      if (rows.length) return;
-      e.preventDefault();
-      const key = inp.id.replace("mass-song-q-", "");
-      navigateToComposerWithMassSearch(query, key, { openGoogle: true });
-    });
-
-    $("mass-song-plan").addEventListener("focusin", (e) => {
-      const inp = e.target.closest(".mass-song-search-input");
-      if (!inp || !inp.id || inp.id.indexOf("mass-song-q-") !== 0) return;
-      const key = inp.id.replace("mass-song-q-", "");
-      closeMassSongResultPanels(key);
-      const rows = filterMassPlanSongs(inp.value);
-      renderMassSongResults(key, rows, inp.value);
-    }, true);
+    bindMassSongPlanRoot($("mass-song-plan"));
+    bindMassSongPlanRoot($("practice-share-song-plan"));
 
     function selectedLyricsSongCount() {
       return lyricSongSlots.filter((slot) => !!(selectedLyricsSongs[slot.key] || "")).length;
@@ -26587,16 +27265,8 @@
       });
     });
 
-    $("mass-song-add-custom") && $("mass-song-add-custom").addEventListener("click", () => {
-      if (lyricSongSlots.length >= MASS_SONG_PLAN_MAX_SECTIONS) return;
-      massCustomSlotSeq += 1;
-      const key = "custom_" + massCustomSlotSeq;
-      lyricSongSlots.push({ key, label: "", section: "meditation", custom: true });
-      selectedLyricsSongs[key] = "";
-      renderMassSongPlan();
-      const labelInp = document.querySelector("[data-custom-label=\"" + key + "\"]");
-      if (labelInp) window.requestAnimationFrame(() => labelInp.focus());
-    });
+    $("mass-song-add-custom") && $("mass-song-add-custom").addEventListener("click", addMassSongCustomSection);
+    $("practice-share-add-section") && $("practice-share-add-section").addEventListener("click", addMassSongCustomSection);
 
     $("mass-summary-recs-refresh") && $("mass-summary-recs-refresh").addEventListener("click", () => refreshMassMoodPicks());
     $("mass-summary-recs-add") && $("mass-summary-recs-add").addEventListener("click", () => applyMassMoodPicksToSongPlan());
@@ -26813,7 +27483,6 @@
       const out = [];
       if (data.zip_url) out.push({ label: "ZIP bundle", url: data.zip_url, download: true });
       if (data.pptx_url) out.push({ label: "PowerPoint", url: data.pptx_url, download: true });
-      if (data.pdf_url) out.push({ label: "PDF", url: data.pdf_url, download: true });
       if (data.poster_url) out.push({ label: "Poster PNG", url: data.poster_url, download: true });
       if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
       return out;
@@ -28297,11 +28966,24 @@
             "<td>" + roleCell + "</td>" +
             "<td>" + escapeHtml(row.role || "member") + "</td>" +
             "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
+            "<td>" + (row.online
+              ? "<span class=\"status ok\">Online</span>"
+              : "<span class=\"muted\">Offline</span>") + "</td>" +
+            "<td class=\"muted\" title=\"" + escapeHtml(row.last_seen_at || "") + "\">" +
+              escapeHtml(row.last_seen_at ? String(row.last_seen_at).replace("T", " ").slice(0, 16) : "—") +
+            "</td>" +
+            "<td>" + escapeHtml(row.location_label || "—") +
+              (row.language_hint ? "<div class=\"muted\" style=\"font-size:0.78rem;\">Lang: " + escapeHtml(row.language_hint) + "</div>" : "") +
+            "</td>" +
             "<td class=\"muted\">" + escapeHtml(String(row.created_at || "").slice(0, 10)) + "</td>" +
             "<td>" + deleteBtn + "</td></tr>"
           );
         });
-        wrap.innerHTML = saRenderTable(["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Joined", "Actions"], rows, "No users found.");
+        wrap.innerHTML = saRenderTable(
+          ["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Presence", "Last seen", "Location", "Joined", "Actions"],
+          rows,
+          "No users found."
+        );
         wrap.querySelectorAll(".sa-btn-delete-user").forEach((btn) => {
           btn.addEventListener("click", () => deleteSaUser(btn));
         });
@@ -31912,38 +32594,121 @@
 
     function initHomeSongsCarousel() {
       const root = $("home-songs-carousel");
-      if (!root || root.dataset.bound) return;
+      const viewport = $("home-songs-viewport");
+      const track = $("home-songs-track");
+      if (!root || !viewport || !track || root.dataset.bound) return;
       root.dataset.bound = "1";
-      const slides = [...root.querySelectorAll(".home-songs-slide")];
+      const slides = [...track.querySelectorAll(".home-songs-slide")];
       const dots = [...root.querySelectorAll("[data-home-songs-dot]")];
       const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const slideCount = slides.length;
+      let dragX = 0;
+      let startX = 0;
+      let startY = 0;
+      let dragging = false;
+      let axisLocked = "";
+      let pointerId = null;
 
-      function go(n) {
-        homeSongsCarouselIdx = (n + slides.length) % slides.length;
-        slides.forEach((s, i) => s.classList.toggle("is-active", i === homeSongsCarouselIdx));
+      function setTrackOffset(px, animate) {
+        track.classList.toggle("is-dragging", !animate);
+        track.style.transform = "translate3d(" + px + "px, 0, 0)";
+      }
+
+      function go(n, opts) {
+        opts = opts || {};
+        homeSongsCarouselIdx = Math.max(0, Math.min(slideCount - 1, n));
+        const width = viewport.clientWidth || 1;
+        setTrackOffset(-homeSongsCarouselIdx * width, opts.animate !== false);
+        slides.forEach((s, i) => {
+          s.setAttribute("aria-hidden", i === homeSongsCarouselIdx ? "false" : "true");
+        });
         dots.forEach((d, i) => d.setAttribute("aria-current", i === homeSongsCarouselIdx ? "true" : "false"));
       }
 
       function startAutoplay() {
         if (homeSongsCarouselTimer) clearInterval(homeSongsCarouselTimer);
         homeSongsCarouselTimer = null;
-        if (prefersReduced || slides.length < 2) return;
-        homeSongsCarouselTimer = setInterval(() => go(homeSongsCarouselIdx + 1), 6000);
+        if (prefersReduced || slideCount < 2) return;
+        homeSongsCarouselTimer = setInterval(() => {
+          go(homeSongsCarouselIdx >= slideCount - 1 ? 0 : homeSongsCarouselIdx + 1);
+        }, 7000);
       }
 
-      dots.forEach((d, i) => {
-        d.addEventListener("click", () => {
-          go(i);
-          startAutoplay();
-        });
-      });
-      root.addEventListener("mouseenter", () => {
+      function stopAutoplay() {
         if (homeSongsCarouselTimer) clearInterval(homeSongsCarouselTimer);
         homeSongsCarouselTimer = null;
-      });
-      root.addEventListener("mouseleave", startAutoplay);
+      }
 
-      go(0);
+      function onPointerDown(ev) {
+        if (ev.pointerType === "mouse" && ev.button !== 0) return;
+        if (ev.target && ev.target.closest("button, a, input, label")) return;
+        dragging = true;
+        axisLocked = "";
+        pointerId = ev.pointerId;
+        startX = ev.clientX;
+        startY = ev.clientY;
+        dragX = 0;
+        stopAutoplay();
+        viewport.classList.add("is-dragging");
+        track.classList.add("is-dragging");
+        try { viewport.setPointerCapture(ev.pointerId); } catch (_e) { /* optional */ }
+      }
+
+      function onPointerMove(ev) {
+        if (!dragging || ev.pointerId !== pointerId) return;
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        if (!axisLocked) {
+          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+          axisLocked = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+          if (axisLocked === "y") {
+            dragging = false;
+            viewport.classList.remove("is-dragging");
+            track.classList.remove("is-dragging");
+            go(homeSongsCarouselIdx, { animate: false });
+            startAutoplay();
+            return;
+          }
+        }
+        if (axisLocked !== "x") return;
+        ev.preventDefault();
+        const width = viewport.clientWidth || 1;
+        const base = -homeSongsCarouselIdx * width;
+        const atStart = homeSongsCarouselIdx === 0 && dx > 0;
+        const atEnd = homeSongsCarouselIdx === slideCount - 1 && dx < 0;
+        dragX = (atStart || atEnd) ? dx * 0.35 : dx;
+        setTrackOffset(base + dragX, false);
+      }
+
+      function onPointerUp(ev) {
+        if (ev.pointerId !== pointerId) return;
+        const wasDragging = dragging;
+        dragging = false;
+        pointerId = null;
+        viewport.classList.remove("is-dragging");
+        track.classList.remove("is-dragging");
+        if (!wasDragging || axisLocked === "y") {
+          startAutoplay();
+          return;
+        }
+        const width = viewport.clientWidth || 1;
+        const threshold = Math.min(72, width * 0.18);
+        if (dragX <= -threshold) go(homeSongsCarouselIdx + 1);
+        else if (dragX >= threshold) go(homeSongsCarouselIdx - 1);
+        else go(homeSongsCarouselIdx);
+        dragX = 0;
+        startAutoplay();
+      }
+
+      viewport.addEventListener("pointerdown", onPointerDown);
+      viewport.addEventListener("pointermove", onPointerMove, { passive: false });
+      viewport.addEventListener("pointerup", onPointerUp);
+      viewport.addEventListener("pointercancel", onPointerUp);
+      root.addEventListener("mouseenter", stopAutoplay);
+      root.addEventListener("mouseleave", startAutoplay);
+      window.addEventListener("resize", () => go(homeSongsCarouselIdx, { animate: false }));
+
+      go(0, { animate: false });
       startAutoplay();
     }
 
@@ -32250,13 +33015,8 @@
         if (seasonEl) seasonEl.textContent = season;
         songOptionsBySection = data.songs_by_section || songOptionsBySection;
         if (!massDraftRestoring) {
-          const prevPreviewDate = window.__massSongPlanPreviewDate || "";
-          const coreKeys = ["entrance", "offertory", "communion_1", "communion_2", "recessional"];
-          const allEmpty = coreKeys.every((k) => !String(selectedLyricsSongs[k] || "").trim());
-          const dateChanged = !!(prevPreviewDate && prevPreviewDate !== date);
-          if (allEmpty || dateChanged) {
-            applyGospelMoodDefaultsToSongPlan();
-          }
+          // Always preload from gospel mood — never keep first-in-section leftovers.
+          applyGospelMoodDefaultsToSongPlan();
           window.__massSongPlanPreviewDate = date;
         }
         rebuildMassPlanSongPool();
@@ -32534,14 +33294,26 @@
       const steps = massGenProgressState.steps;
       if (!steps.length) return;
       let i = Math.max(0, fromIndex);
-      const cap = Math.max(0, steps.length - 2);
+      const hardCap = Math.max(0, steps.length - 1);
+      const softCap = Math.max(0, steps.length - 2);
       massGenProgressState.simTimer = setInterval(() => {
-        if (i >= cap) {
-          clearMassGenProgressTimers();
+        if (i < softCap) {
+          advanceMassGenStep(i);
+          i += 1;
           return;
         }
-        advanceMassGenStep(i);
-        i += 1;
+        // After soft-cap (~62% on the standard flow), keep the bar creeping
+        // slowly so a long server wait does not look frozen.
+        const cur = massGenProgressState.current;
+        const pctNow = massGenPercentFromStep(cur, steps.length) || 0;
+        if (pctNow < 92) {
+          updateMassGenPercent(Math.min(92, pctNow + 1));
+          if (cur < hardCap && pctNow >= 80) {
+            advanceMassGenStep(hardCap, { percent: Math.min(92, pctNow + 1) });
+          }
+          return;
+        }
+        clearMassGenProgressTimers();
       }, paceMs || 2400);
     }
 
@@ -33312,8 +34084,6 @@
         body.include_church_name = nameCb ? nameCb.checked : false;
         const hideFooterCb = $("flow-hide-footer");
         body.include_footer = hideFooterCb ? !hideFooterCb.checked : true;
-        const exportPdfCb = $("flow-export-pdf");
-        body.export_pdf = exportPdfCb ? exportPdfCb.checked : false;
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -33412,7 +34182,10 @@
           step: workIdx,
         });
         startMassGenStepSimulation(workIdx + 1, body.include_ai_mass_poster && !body.reuse_existing_poster ? 2800 : 2200);
-        const data = await postJSON("/api/generate", body);
+        // Cap wait so a wedged server/reload cannot leave the loader stuck at ~62%.
+        const data = await postJSON("/api/generate", body, {
+          timeoutMs: body.include_ai_mass_poster && !body.reuse_existing_poster ? 8 * 60 * 1000 : 4 * 60 * 1000,
+        });
         clearMassGenProgressTimers();
         advanceMassGenStep(genSteps.length - 1, { message: "Finalizing presentation…", percent: 100 });
         localStorage.setItem(dupKey, fp);
@@ -33421,7 +34194,6 @@
         const linkMap = o.links || [
           ["dl-zip", "zip_url"],
           ["dl-pptx", "pptx_url"],
-          ["dl-pdf", "pdf_url"],
           ["dl-poster", "poster_url"],
           ["dl-poster-ppt", "poster_ppt_url"],
         ];
@@ -33454,28 +34226,31 @@
           poster_url: data.poster_url,
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
+        // Show success immediately; don't keep the 100% overlay waiting on a
+        // multi‑MB blob download (or a failed media auth check).
+        const successUi = showMassGenSuccess(
+          "Presentation successfully generated.",
+          "Your PowerPoint is ready."
+        );
         if (o.autoDownloadPptx && data.pptx_url) {
           const stemName = data.export_stem || "mass_presentation";
-          try {
-            await triggerBrowserDownload(data.pptx_url, stemName + ".pptx");
-            if (data.pdf_url) {
-              await triggerBrowserDownload(data.pdf_url, stemName + ".pdf");
-              statusFn("Presentation ready. PowerPoint and PDF downloads started.", "ok", dlMeta);
-            } else {
+          triggerBrowserDownload(data.pptx_url, stemName + ".pptx")
+            .then(() => {
               statusFn("Presentation ready. PowerPoint download started.", "ok", dlMeta);
-            }
-          } catch (_dlErr) {
-            statusFn("Presentation ready. Use the download links if your browser did not start automatically.", "ok", dlMeta);
-          }
+            })
+            .catch(() => {
+              statusFn(
+                "Presentation ready. Use the PowerPoint download link if the file did not start automatically.",
+                "ok",
+                dlMeta
+              );
+            });
         } else {
           statusFn("Presentation ready.", "ok", dlMeta);
         }
-        if (data.pdf_message) {
-          notify(data.pdf_message, "warn");
-        }
         refreshAiImageQuotaHint();
         clearMassBuilderDraft();
-        await showMassGenSuccess("Presentation successfully generated.", "Your PowerPoint is ready.");
+        await successUi;
         return data;
       } catch (error) {
         clearMassGenProgressTimers();

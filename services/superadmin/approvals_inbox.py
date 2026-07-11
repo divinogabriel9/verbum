@@ -23,7 +23,12 @@ def build_approvals_inbox() -> dict[str, Any]:
     items: list[dict[str, Any]] = []
 
     if supabase_enabled():
-        for row in list_pending_memberships():
+        try:
+            pending_memberships = list_pending_memberships()
+        except Exception:
+            # Transient Supabase/httpx failures must not 500 the whole inbox.
+            pending_memberships = []
+        for row in pending_memberships:
             uid = str(row.get("user_id") or "").strip()
             if not uid:
                 continue

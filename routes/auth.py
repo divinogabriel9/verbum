@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
-from services.api_security import AuthSession, optional_session, require_session
+from services.api_security import AuthSession, _store_auth_context, optional_session, require_session
 from services.auth_config import (
     app_public_url,
     auth_enabled,
@@ -20,12 +20,19 @@ from services.auth_config import (
 )
 from services.membership_config import membership_payload
 from services.platform_invites import consume_invite, validate_invite_token
-from services.supabase_client import get_profile
-from services.user_church_context import get_church_profile_context
+from services.supabase_auth import AuthUser
+from services.supabase_client import get_church_profile, get_profile
+from services.user_church_context import get_church_profile_context, set_church_profile
 
 
 class InviteConsumeBody(BaseModel):
     token: str = Field(..., min_length=8, max_length=128)
+
+
+class PresenceHeartbeatBody(BaseModel):
+    timezone: Optional[str] = Field(None, max_length=64)
+    preferred_language: Optional[str] = Field(None, max_length=40)
+    region: Optional[str] = Field(None, max_length=80)
 
 
 def _auth_page_context(
@@ -83,8 +90,28 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 profile_row = get_profile(user.user_id, access_token=session.token)
                 payload["profile"] = profile_row
                 church = get_church_profile_context()
+                if church is None:
+                    church = get_church_profile(user.user_id, access_token=session.token)
+                    if church is not None:
+                        set_church_profile(church)
                 payload["church_profile"] = church
                 profile_role = (profile_row or {}).get("role") if profile_row else user.role
+                if profile_role and str(profile_role).strip().lower() == "superadmin":
+                    enriched = AuthUser(
+                        user_id=user.user_id,
+                        email=user.email,
+                        first_name=user.first_name,
+                        last_name=user.last_name,
+                        image_url=user.image_url,
+                        role="superadmin",
+                    )
+                    _store_auth_context(
+                        session.token,
+                        AuthSession(user=enriched, token=session.token),
+                        church,
+                    )
+                elif church is not None:
+                    _store_auth_context(session.token, session, church)
                 payload["membership"] = membership_payload(
                     church, user=user, profile_role=profile_role
                 )
@@ -92,6 +119,28 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 payload["supabase_error"] = str(exc)
 
         return payload
+
+    @app.post("/api/auth/heartbeat")
+    def api_auth_heartbeat(
+        request: Request,
+        body: PresenceHeartbeatBody,
+        session: AuthSession = Depends(require_session),
+    ) -> dict[str, Any]:
+        from services.user_presence import (
+            country_from_request_headers,
+            record_heartbeat,
+            region_from_request_headers,
+        )
+
+        country = country_from_request_headers(request.headers)
+        region = (body.region or "").strip() or region_from_request_headers(request.headers)
+        return record_heartbeat(
+            session.user.user_id,
+            country=country,
+            region=region,
+            timezone_name=body.timezone,
+            preferred_language=body.preferred_language,
+        )
 
     @app.get("/api/auth/invite/validate")
     def api_validate_invite(token: str = "") -> dict[str, Any]:
