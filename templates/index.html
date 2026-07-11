@@ -7546,7 +7546,7 @@
       align-items: center;
       gap: 8px;
       min-width: 0;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
     }
     .practice-share-card--plan .mass-song-plan-card__part {
       font-size: 0.68rem;
@@ -7569,18 +7569,59 @@
       font-weight: 600;
     }
     .practice-share-card--plan .mass-song-plan-card__title-wrap {
-      flex: 1 1 auto;
+      flex: 0 1 auto;
       min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
     }
     .practice-share-card--plan .mass-song-plan-card__title-picked {
       display: inline-flex;
       align-items: center;
+      justify-content: flex-start;
       gap: 4px;
       max-width: 100%;
+      width: auto;
+      min-width: 0;
+      overflow: hidden;
+      vertical-align: middle;
     }
     .practice-share-card--plan .mass-song-plan-card__title {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 100%;
+      display: block;
       font-size: 0.88rem;
       font-weight: 650;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transform: translateX(0);
+      will-change: transform;
+    }
+    .practice-share-card--plan .mass-song-plan-card.is-title-marquee .mass-song-plan-card__title {
+      overflow: visible;
+      text-overflow: clip;
+    }
+    .practice-share-card--plan .mass-song-plan-card__clear-x {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .practice-share-card--plan .mass-song-plan-card__clear-x[hidden] {
+      display: none !important;
     }
     .practice-share-card--plan .mass-song-plan-card__badge,
     .practice-share-card--plan .mass-song-plan-card__meta {
@@ -14831,7 +14872,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260710i" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260711k" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -14967,6 +15008,7 @@
           <div class="vb-dropdown-panel app-menu-panel" id="create-menu-panel" role="menu" hidden>
             <div class="vb-dropdown-list">
               <button type="button" class="vb-dropdown-item app-menu-item" data-create="pptx" role="menuitem">Create PPTX</button>
+              <button type="button" class="vb-dropdown-item app-menu-item" data-create="share-lyrics" role="menuitem">Share lyrics</button>
               <button type="button" class="vb-dropdown-item app-menu-item" data-create="event" role="menuitem">Create event</button>
               <button type="button" class="vb-dropdown-item app-menu-item" data-create="poster" role="menuitem">Create poster</button>
               <button type="button" class="vb-dropdown-item app-menu-item" data-create="song" role="menuitem">Add song</button>
@@ -19185,6 +19227,10 @@
         <span class="notif-badge notif-badge--nav" id="notif-badge-nav" hidden>0</span>
       </a>
     </nav>
+    <button type="button" class="app-bottom-nav-peek" id="app-bottom-nav-peek" hidden aria-label="Show navigation" aria-controls="app-bottom-nav" aria-expanded="false">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+    <div class="app-bottom-nav-gesture" id="app-bottom-nav-gesture" hidden aria-hidden="true"></div>
     <div class="ui-overlay ui-overlay--more-sheet" id="app-more-sheet" aria-hidden="true" role="presentation">
       <div class="ui-overlay__backdrop" id="app-more-sheet-backdrop"></div>
       <nav class="ui-card ui-card--more-sheet" role="dialog" aria-labelledby="app-more-sheet-title" aria-modal="true">
@@ -24080,6 +24126,7 @@
             statusEl.classList.remove("is-warn");
           }
           if (alertEl) alertEl.innerHTML = "";
+          if (typeof clearPracticeShareTitleMarquee === "function") clearPracticeShareTitleMarquee(row);
           return;
         }
         titleEl.textContent = rowData ? rowData.title : id;
@@ -24109,8 +24156,67 @@
             alertEl.innerHTML = "";
           }
         }
+        if (typeof setupPracticeShareTitleMarquee === "function") setupPracticeShareTitleMarquee(row);
       });
       syncPracticeShareContinueEnabled();
+    }
+
+    const PS_TITLE_HOLD_MS = 2200;
+    const PS_TITLE_HOLD_END_MS = 1400;
+    const PS_TITLE_SCROLL_PX_PER_SEC = 36;
+
+    function clearPracticeShareTitleMarquee(card) {
+      if (!card) return;
+      if (card._psTitleTimers) {
+        card._psTitleTimers.forEach((id) => window.clearTimeout(id));
+        card._psTitleTimers = null;
+      }
+      const titleEl = card.querySelector(".mass-song-plan-card__title");
+      if (titleEl) {
+        titleEl.style.transition = "none";
+        titleEl.style.transform = "translateX(0)";
+      }
+      card.classList.remove("is-title-marquee");
+    }
+
+    function setupPracticeShareTitleMarquee(card) {
+      if (!card || !card.closest("#practice-share-sections-modal")) return;
+      const wrap = card.querySelector(".mass-song-plan-card__title-wrap");
+      const titleEl = card.querySelector(".mass-song-plan-card__title");
+      if (!wrap || !titleEl) return;
+
+      clearPracticeShareTitleMarquee(card);
+      if (titleEl.classList.contains("is-empty")) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (!card.isConnected) return;
+          const viewW = wrap.clientWidth;
+          if (viewW < 24) return;
+          // Natural width needs unconstrained title for accurate overflow measure
+          card.classList.add("is-title-marquee");
+          const textW = Math.ceil(titleEl.scrollWidth);
+          const overflow = textW - viewW;
+          if (overflow <= 6) {
+            card.classList.remove("is-title-marquee");
+            titleEl.style.transition = "none";
+            titleEl.style.transform = "translateX(0)";
+            return;
+          }
+          const scrollMs = Math.max(2800, Math.round((overflow / PS_TITLE_SCROLL_PX_PER_SEC) * 1000));
+          const startTimer = window.setTimeout(() => {
+            titleEl.style.transition = "transform " + scrollMs + "ms linear";
+            titleEl.style.transform = "translateX(-" + overflow + "px)";
+          }, PS_TITLE_HOLD_MS);
+          const loopTimer = window.setTimeout(() => {
+            titleEl.style.transition = "none";
+            titleEl.style.transform = "translateX(0)";
+            setupPracticeShareTitleMarquee(card);
+          }, PS_TITLE_HOLD_MS + scrollMs + PS_TITLE_HOLD_END_MS);
+          card._psTitleTimers = [startTimer, loopTimer];
+        });
+      });
     }
 
     function syncUiCardPopoverOverflow(panel, open) {
@@ -24145,6 +24251,7 @@
       "account-menu-panel",
       "liturgical-indicator-panel",
       "live-radio-panel",
+      "create-menu-panel",
     ]);
 
     function isMobileHeaderSheet() {
@@ -25338,7 +25445,7 @@
         "<circle cx=\"9\" cy=\"17\" r=\"1.25\"/><circle cx=\"15\" cy=\"17\" r=\"1.25\"/>" +
       "</svg>";
     const MASS_SONG_PLAN_TRASH_SVG =
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
+      "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
         "<path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/>" +
       "</svg>";
 
@@ -25849,7 +25956,10 @@
       if (!plan) return 0;
       rebuildMassPlanSongPool();
       const slots = practiceShareVisibleSlots();
-      plan.innerHTML = buildMassSongPlanCardsHtml("ps-song", { allowDeleteAll: true, slots: slots });
+      plan.innerHTML = buildMassSongPlanCardsHtml("ps-song", {
+        allowDeleteAll: true,
+        slots: slots,
+      });
       slots.forEach((slot) => {
         updateMassSlotChip(slot.key);
       });
@@ -25891,9 +26001,28 @@
       if (!plan || !host) return;
       const card = plan.querySelector('.mass-song-plan-card[data-slot-key="' + slotKey + '"]');
       if (!card) return;
+
+      const mobile = !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+      const hostRect = host.getBoundingClientRect();
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const behavior = opts.instant || reduceMotion ? "auto" : "smooth";
+
+      // Mobile: results are in-flow. Pin the section card title at the top of the
+      // sheet so the title stays visible, with search + first results below it.
+      if (mobile) {
+        plan.style.paddingBottom = "12px";
+        const titleRow = card.querySelector(".mass-song-plan-card__top") || card;
+        const titleTop = titleRow.getBoundingClientRect().top - hostRect.top + host.scrollTop;
+        const maxTop = Math.max(0, host.scrollHeight - host.clientHeight);
+        const nextTop = Math.max(0, Math.min(titleTop - 8, maxTop));
+        if (Math.abs(nextTop - host.scrollTop) >= 2) {
+          host.scrollTo({ top: nextTop, behavior: behavior });
+        }
+        return;
+      }
+
       const dropdownRoom = opts.dropdownRoom != null ? opts.dropdownRoom : 260;
       plan.style.paddingBottom = dropdownRoom + "px";
-      const hostRect = host.getBoundingClientRect();
       const cardRect = card.getBoundingClientRect();
       const cardTopInHost = cardRect.top - hostRect.top + host.scrollTop;
       const neededBottom = cardTopInHost + card.offsetHeight + dropdownRoom;
@@ -25907,10 +26036,7 @@
       }
       nextTop = Math.max(0, Math.min(nextTop, Math.max(0, host.scrollHeight - host.clientHeight)));
       if (Math.abs(nextTop - host.scrollTop) >= 2) {
-        host.scrollTo({
-          top: nextTop,
-          behavior: opts.instant || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-        });
+        host.scrollTo({ top: nextTop, behavior: behavior });
       }
     }
 
@@ -26103,16 +26229,164 @@
       footer.classList.toggle("practice-share-footer--loading", mode === "loading");
     }
 
-    function closePracticeShareModal() {
-      setUiOverlayOpen($("practice-share-modal"), false);
+    let practiceShareNavHideTimer = null;
+    const PRACTICE_SHARE_NAV_HIDE_MS = 3200;
+    let practiceShareNavGesture = null;
+
+    function isPracticeShareSheetOpen() {
+      const sections = $("practice-share-sections-modal");
+      const pin = $("practice-share-modal");
+      return !!(
+        (sections && sections.classList.contains("is-open")) ||
+        (pin && pin.classList.contains("is-open"))
+      );
     }
 
-    function closePracticeShareSectionsModal() {
+    function clearPracticeShareNavHideTimer() {
+      if (practiceShareNavHideTimer) {
+        clearTimeout(practiceShareNavHideTimer);
+        practiceShareNavHideTimer = null;
+      }
+      document.body.classList.remove("bottom-nav-autohide");
+    }
+
+    function collapsePracticeShareBottomNav() {
+      if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
+      clearPracticeShareNavHideTimer();
+      document.body.classList.add("bottom-nav-collapsed");
+      const peek = $("app-bottom-nav-peek");
+      if (peek) {
+        peek.hidden = false;
+        peek.setAttribute("aria-expanded", "false");
+        peek.setAttribute("aria-label", "Show navigation");
+      }
+      const gesture = $("app-bottom-nav-gesture");
+      if (gesture) gesture.hidden = false;
+    }
+
+    function schedulePracticeShareNavAutoHide() {
+      clearPracticeShareNavHideTimer();
+      if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
+      if (document.body.classList.contains("bottom-nav-collapsed")) return;
+      // Restart CSS countdown bar
+      void document.body.offsetWidth;
+      document.body.classList.add("bottom-nav-autohide");
+      practiceShareNavHideTimer = setTimeout(() => {
+        practiceShareNavHideTimer = null;
+        collapsePracticeShareBottomNav();
+      }, PRACTICE_SHARE_NAV_HIDE_MS);
+    }
+
+    function syncPracticeShareBottomNavChrome() {
+      const peek = $("app-bottom-nav-peek");
+      const gesture = $("app-bottom-nav-gesture");
+      clearPracticeShareNavHideTimer();
+      if (!isMobileChromeLayout()) {
+        document.body.classList.remove("bottom-nav-sheet-open", "bottom-nav-collapsed");
+        if (peek) peek.hidden = true;
+        if (gesture) gesture.hidden = true;
+        return;
+      }
+      const open = isPracticeShareSheetOpen();
+      document.body.classList.toggle("bottom-nav-sheet-open", open);
+      if (open) {
+        document.body.classList.add("bottom-nav-collapsed");
+        if (peek) {
+          peek.hidden = false;
+          peek.setAttribute("aria-expanded", "false");
+          peek.setAttribute("aria-label", "Show navigation");
+        }
+        if (gesture) gesture.hidden = false;
+      } else {
+        document.body.classList.remove("bottom-nav-collapsed");
+        if (peek) peek.hidden = true;
+        if (gesture) gesture.hidden = true;
+      }
+    }
+
+    function expandPracticeShareBottomNav() {
+      if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
+      document.body.classList.remove("bottom-nav-collapsed");
+      const peek = $("app-bottom-nav-peek");
+      if (peek) {
+        peek.hidden = true;
+        peek.setAttribute("aria-expanded", "true");
+      }
+      const gesture = $("app-bottom-nav-gesture");
+      if (gesture) gesture.hidden = true;
+      schedulePracticeShareNavAutoHide();
+    }
+
+    function initPracticeShareBottomNavGestures() {
+      if (practiceShareNavGesture) return;
+      const zone = $("app-bottom-nav-gesture");
+      const nav = $("app-bottom-nav");
+      let startY = 0;
+      let startX = 0;
+      let tracking = false;
+
+      function touchPoint(e) {
+        if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0];
+        if (e.touches && e.touches[0]) return e.touches[0];
+        return e;
+      }
+
+      function onStart(e) {
+        if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
+        const t = touchPoint(e);
+        startY = t.clientY;
+        startX = t.clientX;
+        tracking = true;
+      }
+
+      function onEnd(e) {
+        if (!tracking) return;
+        tracking = false;
+        if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
+        const t = touchPoint(e);
+        const dy = t.clientY - startY;
+        const dx = Math.abs(t.clientX - startX);
+        if (dx > 56) return;
+        const collapsed = document.body.classList.contains("bottom-nav-collapsed");
+        if (collapsed && dy < -28) {
+          expandPracticeShareBottomNav();
+        } else if (!collapsed && dy > 28) {
+          collapsePracticeShareBottomNav();
+        }
+      }
+
+      if (zone) {
+        zone.addEventListener("touchstart", onStart, { passive: true });
+        zone.addEventListener("touchend", onEnd, { passive: true });
+        zone.addEventListener("touchcancel", () => { tracking = false; }, { passive: true });
+      }
+      if (nav) {
+        nav.addEventListener("touchstart", (e) => {
+          if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
+          onStart(e);
+          if (!document.body.classList.contains("bottom-nav-collapsed")) {
+            schedulePracticeShareNavAutoHide();
+          }
+        }, { passive: true });
+        nav.addEventListener("touchend", onEnd, { passive: true });
+        nav.addEventListener("touchcancel", () => { tracking = false; }, { passive: true });
+      }
+      practiceShareNavGesture = true;
+    }
+
+    function closePracticeShareModal() {
+      setUiOverlayOpen($("practice-share-modal"), false);
+      syncPracticeShareBottomNavChrome();
+    }
+
+    function closePracticeShareSectionsModal(opts) {
+      opts = opts || {};
       closeMassSongResultPanels();
       clearPracticeShareDropdownPad();
       const card = document.querySelector("#practice-share-sections-modal .ui-card");
       if (card) card.classList.remove("ui-card--popover-open");
       setUiOverlayOpen($("practice-share-sections-modal"), false);
+      if (!opts.skipNavSync) syncPracticeShareBottomNavChrome();
     }
 
     function practiceSharePinMode() {
@@ -26220,6 +26494,7 @@
           : ("Share lyrics for " + date + ". Set a 6-digit PIN, then generate the link.");
       }
       requestAnimationFrame(() => practiceSharePinOtp?.focus());
+      syncPracticeShareBottomNavChrome();
     }
 
     function renderPracticeShareSectionsList() {
@@ -26244,6 +26519,7 @@
       closeMassSongResultPanels();
       clearPracticeShareDropdownPad();
       setUiOverlayOpen($("practice-share-sections-modal"), true);
+      syncPracticeShareBottomNavChrome();
       syncPracticeShareContinueEnabled();
     }
 
@@ -26262,7 +26538,7 @@
       }
       practiceShareSlotFilter = new Set(selectedKeys);
       closeMassSongResultPanels();
-      closePracticeShareSectionsModal();
+      closePracticeShareSectionsModal({ skipNavSync: true });
       openPracticeShareModal({ keepSlotFilter: true, allowHomeDate: true });
     }
 
@@ -26508,10 +26784,12 @@
         ["practice-share-backdrop", closePracticeShareModal],
         ["practice-share-close", closePracticeShareModal],
         ["practice-share-cancel", closePracticeShareModal],
+        ["app-bottom-nav-peek", expandPracticeShareBottomNav],
       ].forEach(([id, fn]) => {
         const el = $(id);
         if (el) el.addEventListener("click", fn);
       });
+      initPracticeShareBottomNavGestures();
       $("practice-share-generate") && $("practice-share-generate").addEventListener("click", () => {
         createPracticeShareLink();
       });
@@ -32181,6 +32459,9 @@
           const action = item.getAttribute("data-create");
           if (action === "pptx") {
             showRoute("/mass/builder");
+          } else if (action === "share-lyrics") {
+            if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
+            else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
           } else if (action === "event") {
             if (typeof openHomeEventModal === "function") openHomeEventModal();
           } else if (action === "poster") {

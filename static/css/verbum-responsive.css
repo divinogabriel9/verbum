@@ -858,6 +858,424 @@ iframe {
     transform: translateY(0);
   }
 
+  /* Practice share — same full-bleed bottom sheet chrome as Create (+) */
+  #practice-share-sections-modal.ui-overlay,
+  #practice-share-modal.ui-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+
+  #practice-share-sections-modal .ui-card.practice-share-card,
+  #practice-share-sections-modal .ui-card.practice-share-card.practice-share-card--plan,
+  #practice-share-modal .ui-card.practice-share-card,
+  .ui-overlay .ui-card.practice-share-card,
+  .ui-overlay .ui-card.practice-share-card.practice-share-card--plan {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    max-height: min(94dvh, 900px) !important;
+    border-radius: calc(var(--radius-lg) + 2px) calc(var(--radius-lg) + 2px) 0 0 !important;
+    border: 1px solid var(--line-soft);
+    border-bottom: none;
+    box-shadow: 0 -10px 40px color-mix(in srgb, var(--ink) 14%, transparent);
+    background: var(--surface-solid);
+  }
+
+  /* Sheet open: hide bottom nav; peek / swipe restores it above the overlay */
+  body.bottom-nav-sheet-open .app-bottom-nav {
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s;
+  }
+
+  body.bottom-nav-sheet-open.bottom-nav-collapsed .app-bottom-nav {
+    transform: translateY(110%);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  body.bottom-nav-sheet-open:not(.bottom-nav-collapsed) .app-bottom-nav {
+    z-index: 70;
+  }
+
+  body.bottom-nav-sheet-open.bottom-nav-autohide .app-bottom-nav::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: color-mix(in srgb, var(--accent, #c45c4a) 85%, transparent);
+    transform-origin: left center;
+    animation: bottom-nav-autohide-progress 3.2s linear forwards;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  @keyframes bottom-nav-autohide-progress {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+  }
+
+  .app-bottom-nav-peek {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--safe-bottom) + 10px);
+    z-index: 71;
+    width: 44px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    background: var(--surface-solid);
+    color: var(--ink-muted, var(--ink));
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 12%, transparent);
+    transform: translateX(-50%);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-bottom-nav-peek svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  body.bottom-nav-sheet-open.bottom-nav-collapsed .app-bottom-nav-peek {
+    display: flex;
+  }
+
+  .app-bottom-nav-gesture {
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--safe-bottom) + 36px);
+    z-index: 69;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.bottom-nav-sheet-open.bottom-nav-collapsed .app-bottom-nav-gesture {
+    display: block;
+  }
+
+  body.bottom-nav-sheet-open #practice-share-sections-modal .ui-card__footer,
+  body.bottom-nav-sheet-open #practice-share-modal .ui-card__footer {
+    padding-bottom: calc(14px + var(--safe-bottom));
+  }
+
+  #practice-share-sections-modal .ui-card__header,
+  #practice-share-modal .ui-card__header {
+    padding: 18px 16px 0;
+    position: relative;
+  }
+
+  #practice-share-sections-modal .ui-card__header::before,
+  #practice-share-modal .ui-card__header::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink) 16%, transparent);
+    transform: translateX(-50%);
+  }
+
+  #practice-share-sections-modal .ui-card__title,
+  #practice-share-modal .ui-card__title {
+    font-size: 1.0625rem;
+    font-weight: 650;
+  }
+
+  #practice-share-sections-modal .ui-card__description,
+  #practice-share-modal .ui-card__description {
+    margin-top: 4px;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  #practice-share-sections-modal .ui-card__content,
+  #practice-share-modal .ui-card__content {
+    padding: 12px 16px 8px;
+  }
+
+  #practice-share-sections-modal .ui-card__footer,
+  #practice-share-modal .ui-card__footer {
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--line-soft);
+    background: var(--surface-solid);
+    gap: 8px;
+  }
+
+  #practice-share-sections-modal .ui-card__footer .primary,
+  #practice-share-sections-modal .ui-card__footer .secondary,
+  #practice-share-modal .ui-card__footer .primary,
+  #practice-share-modal .ui-card__footer .secondary {
+    flex: 1 1 0;
+    min-height: 44px;
+  }
+
+  /* Practice share section cards — section · title on one row; delete pinned right */
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-root {
+    gap: 6px;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-slot {
+    border-radius: 8px;
+    border: 1px solid var(--line-soft);
+    background: var(--surface-solid);
+    overflow: visible;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    padding: 8px 10px;
+    min-width: 0;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__drag,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__num {
+    display: none;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__core {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 40px;
+    align-items: center;
+    column-gap: 8px;
+    min-width: 0;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part-input {
+    grid-column: 1;
+    flex: none;
+    width: auto;
+    max-width: 4.75rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part::after {
+    content: "·";
+    margin-left: 6px;
+    color: color-mix(in srgb, var(--muted) 55%, transparent);
+    font-weight: 400;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part-input {
+    border-bottom-color: var(--line-soft);
+    color: var(--ink);
+    max-width: 4.75rem;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part-input:focus {
+    outline: none;
+    border-bottom-color: color-mix(in srgb, var(--good) 55%, var(--line));
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title-wrap {
+    grid-column: 2;
+    flex: none;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    overflow: hidden;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title-picked {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title-picked .mass-song-plan-card__title {
+    display: block;
+    width: max-content;
+    max-width: none;
+    min-width: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    transform: translateX(0);
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card:not(.is-title-marquee) .mass-song-plan-card__title {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title.has-selection {
+    color: var(--good);
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title.is-empty {
+    color: var(--muted);
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__badge,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__meta,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__clear-x {
+    display: none !important;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__actions {
+    grid-column: 3;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    width: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
+    justify-self: end;
+    align-self: center;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__btn--delete {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 8px;
+    background: transparent !important;
+    color: var(--muted) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__btn--delete svg {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    max-width: none !important;
+    flex-shrink: 0;
+    stroke: currentColor;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-search-input {
+    min-height: 44px;
+    padding: 8px 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    z-index: 1;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card.is-results-open,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card:focus-within {
+    z-index: 8;
+    overflow: visible;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card.is-results-open .mass-song-plan-row__search,
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card:focus-within .mass-song-plan-row__search {
+    z-index: 9;
+  }
+
+  /* Keep search results in document flow so the sheet scroll area doesn't clip them */
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 6px;
+    max-height: min(240px, 42vh);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    background: var(--surface-solid);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 12%, transparent);
+    transform: none !important;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results[hidden] {
+    display: none !important;
+    margin: 0 !important;
+    max-height: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results:not([hidden]),
+  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results.is-open {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  #practice-share-sections-modal .practice-share-card--plan .ui-card__content,
+  #practice-share-sections-modal.ui-overlay .ui-card.practice-share-card--plan .ui-card__content {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title {
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+
   .ui-card--reading {
     width: 100%;
     max-width: 100%;
@@ -2381,7 +2799,7 @@ iframe {
     flex-shrink: 0;
   }
 
-  body.mobile-chrome-tabs .vb-dropdown-panel.create-menu-panel:not([hidden]) {
+  body.mobile-chrome-tabs #create-menu-panel:not([hidden]) {
     position: fixed;
     left: 0;
     right: 0;
@@ -2392,9 +2810,15 @@ iframe {
     margin: 0;
     border-radius: calc(var(--radius-lg) + 2px) calc(var(--radius-lg) + 2px) 0 0;
     border-bottom: none;
-    z-index: 55;
+    z-index: 57;
     transform: none !important;
     box-shadow: 0 -10px 40px color-mix(in srgb, var(--ink) 14%, transparent);
+  }
+
+  /* Sheet lives inside header/nav stacking contexts — lift them above the dim */
+  body.header-sheet-open .app-header,
+  body.header-sheet-open .app-bottom-nav {
+    z-index: 56;
   }
 
   /* Bottom nav — mobile tab set (5 items + center create FAB) */
