@@ -263,9 +263,8 @@ class DeckBrandingOptions:
     include_logo: bool = True
     include_name: bool = True
     # Developer option: when False, the bottom community/section footer tag (the
-    # small ~12pt line) is omitted from every slide. Kept on by default; it is a
-    # debugging aid that may be retired later.
-    include_footer: bool = True
+    # small ~12pt line) is omitted from every slide. Off by default.
+    include_footer: bool = False
 
 
 _deck_branding = DeckBrandingOptions()
@@ -4255,7 +4254,7 @@ def generate_mass_ppt(
     hymn_typography: Optional[Mapping[str, Any]] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
-    include_footer: bool = True,
+    include_footer: bool = False,
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",

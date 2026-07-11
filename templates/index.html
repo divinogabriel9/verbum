@@ -19311,15 +19311,17 @@
                   <label>Developer options</label>
                   <p class="muted" style="margin:0 0 10px;">Advanced toggles for debugging the generated deck.</p>
                   <div class="settings-branding-toggles" role="group" aria-label="Developer options">
-                    <label><input type="checkbox" id="flow-hide-footer" /> Hide slide footer (the small bottom tag)</label>
+                    <label><input type="checkbox" id="flow-show-footer" /> Show slide footer (the small bottom tag)</label>
                   </div>
                 </div>
                 <script>
                   (function () {
-                    var KEY = "churchMediaHideFooter";
-                    var cb = document.getElementById("flow-hide-footer");
+                    var KEY = "churchMediaShowFooter";
+                    var cb = document.getElementById("flow-show-footer");
                     if (!cb) return;
-                    try { cb.checked = localStorage.getItem(KEY) === "1"; } catch (_e) { /* ignore */ }
+                    try {
+                      cb.checked = localStorage.getItem(KEY) === "1";
+                    } catch (_e) { /* ignore */ }
                     cb.addEventListener("change", function () {
                       try { localStorage.setItem(KEY, cb.checked ? "1" : "0"); } catch (_e) { /* ignore */ }
                     });
@@ -22463,7 +22465,7 @@
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-openai-poster", "flow-use-gemini-poster",
-        "flow-include-church-logo", "flow-include-church-name", "flow-hide-footer",
+        "flow-include-church-logo", "flow-include-church-name", "flow-show-footer",
         "flow-include-social-exports",
       ];
     }
@@ -35125,8 +35127,8 @@
         const nameCb = $("flow-include-church-name");
         body.include_church_logo = logoCb ? logoCb.checked : false;
         body.include_church_name = nameCb ? nameCb.checked : false;
-        const hideFooterCb = $("flow-hide-footer");
-        body.include_footer = hideFooterCb ? !hideFooterCb.checked : true;
+        const showFooterCb = $("flow-show-footer");
+        body.include_footer = showFooterCb ? !!showFooterCb.checked : false;
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({

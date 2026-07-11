@@ -994,8 +994,8 @@ class GenerateBody(BaseModel):
         description="When false, omit parish / community name from PowerPoint slides.",
     )
     include_footer: bool = Field(
-        True,
-        description="Developer option: when false, omit the bottom community/section footer tag from every slide.",
+        False,
+        description="Developer option: when true, show the bottom community/section footer tag on slides.",
     )
     hymn_lyric_overrides: Optional[dict[str, dict[str, str]]] = Field(
         None,
