@@ -3885,6 +3885,43 @@
       font-size: 0.88rem;
       cursor: pointer;
     }
+    .feature-flag-off {
+      opacity: 0.52;
+      filter: grayscale(0.45);
+      cursor: not-allowed !important;
+      user-select: none;
+    }
+    .feature-flag-off:not(button):not(a):not(label):not(input):not(select) {
+      pointer-events: none;
+    }
+    .feature-flag-off input,
+    .feature-flag-off select,
+    .feature-flag-off button,
+    .feature-flag-off a,
+    .feature-flag-off textarea {
+      cursor: not-allowed !important;
+    }
+    button.feature-flag-off,
+    a.feature-flag-off,
+    label.feature-flag-off,
+    input.feature-flag-off,
+    select.feature-flag-off {
+      pointer-events: auto;
+    }
+    .feature-flag-hint {
+      display: block;
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px dashed color-mix(in srgb, var(--line) 70%, #9a8b6a);
+      background: color-mix(in srgb, var(--surface-2, #f4f1ea) 88%, #e8dfc8);
+      color: color-mix(in srgb, var(--ink, #2a241c) 72%, #6b5e45);
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+    .feature-flag-hint[hidden] {
+      display: none !important;
+    }
     .sa-table-wrap {
       overflow-x: auto;
       margin-top: 12px;
@@ -9381,11 +9418,67 @@
       align-items: stretch;
     }
     .flow-poster-file {
-      text-align: center;
+      position: relative;
+      text-align: left;
     }
     .flow-poster-file > label {
       display: block;
       width: 100%;
+    }
+    .flow-poster-file > input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .flow-poster-drop {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      cursor: pointer;
+    }
+    .flow-poster-drop__title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+    .flow-poster-drop__zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 112px;
+      padding: 18px 14px;
+      border: 1.5px dashed color-mix(in srgb, var(--line) 88%, var(--muted));
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+      color: var(--muted);
+      text-align: center;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .flow-poster-drop:hover .flow-poster-drop__zone,
+    .flow-poster-file:focus-within .flow-poster-drop__zone {
+      border-color: var(--liturgical-accent, var(--accent));
+      background: color-mix(in srgb, var(--liturgical-accent, var(--accent)) 6%, var(--surface));
+      color: var(--ink);
+    }
+    .flow-poster-drop__icon {
+      width: 22px;
+      height: 22px;
+      opacity: 0.75;
+    }
+    .flow-poster-drop__hint {
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.3;
     }
     .flow-poster-style {
       display: flex;
@@ -9393,10 +9486,24 @@
       gap: var(--space-2);
       min-width: 0;
     }
+    .flow-poster-style__ai {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .flow-poster-style__ai-label {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
     .flow-poster-style .flow-setup-output-checks {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
       margin: 0;
     }
     .flow-poster-style .flow-setup-output-checks label {
@@ -9409,25 +9516,49 @@
       cursor: pointer;
     }
     .flow-divider-poster-picks {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-3);
+      display: block;
       margin-top: var(--space-3);
     }
-    @media (max-width: 640px) {
-      .flow-divider-poster-picks { grid-template-columns: minmax(0, 1fr); }
+    .flow-divider-poster-picks .field {
+      min-width: 0;
+      margin: 0;
     }
-    .flow-divider-poster-picks .field { min-width: 0; }
+    .flow-divider-poster-picks__row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(148px, 220px);
+      gap: 10px 16px;
+      align-items: center;
+    }
+    .flow-divider-poster-picks__copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .flow-divider-poster-picks__copy .flow-setup-field-hint {
+      margin: 0;
+    }
+    @media (max-width: 560px) {
+      .flow-divider-poster-picks__row {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+      }
+    }
     .flow-poster-picker-label {
       display: block;
       font-size: 0.82rem;
       font-weight: 600;
       color: var(--ink);
-      margin-bottom: 2px;
+      margin-bottom: 0;
     }
     .poster-picker {
       position: relative;
       margin-top: 8px;
+    }
+    .poster-picker--pair {
+      margin-top: 0;
+      width: 100%;
+      z-index: 40;
     }
     .poster-picker__trigger {
       display: block;
@@ -9442,6 +9573,10 @@
       aspect-ratio: 16 / 9;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
+    .poster-picker--pair .poster-picker__trigger {
+      aspect-ratio: auto;
+      padding: 5px;
+    }
     .poster-picker__trigger:hover,
     .poster-picker__trigger:focus-visible {
       border-color: var(--liturgical-accent, var(--accent));
@@ -9451,18 +9586,49 @@
       border-color: var(--liturgical-accent, var(--accent));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--liturgical-accent, var(--accent)) 28%, transparent);
     }
+    .poster-picker__trigger:active {
+      transform: scale(0.97);
+    }
     .poster-picker__current {
       display: block;
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
+    .poster-picker__pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px;
+      width: 100%;
+    }
+    .poster-picker__pair-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .poster-picker__pair-item img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-radius: 6px;
+      background: var(--surface-muted, rgba(0,0,0,0.04));
+    }
+    .poster-picker__pair-caption {
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.15;
+    }
     .poster-picker__caret {
       position: absolute;
-      right: 8px;
-      bottom: 8px;
-      width: 24px;
-      height: 24px;
+      right: 6px;
+      bottom: 6px;
+      width: 22px;
+      height: 22px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
@@ -9472,8 +9638,8 @@
       pointer-events: none;
     }
     .poster-picker__caret svg {
-      width: 13px;
-      height: 13px;
+      width: 12px;
+      height: 12px;
       transition: transform 0.2s ease;
     }
     .poster-picker__trigger[aria-expanded="true"] .poster-picker__caret svg {
@@ -9495,6 +9661,18 @@
       gap: 8px;
       max-height: min(60vh, 420px);
       overflow-y: auto;
+      transform-origin: top center;
+    }
+    .poster-picker--pair .poster-picker__menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: auto;
+      right: 0;
+      width: max(100%, min(300px, calc(100vw - 24px)));
+      max-height: min(38vh, 240px);
+      padding: 6px;
+      gap: 5px;
+      z-index: 240;
     }
     .poster-picker__menu[hidden] {
       display: none;
@@ -9512,6 +9690,11 @@
       aspect-ratio: 16 / 9;
       transition: border-color 0.15s ease, transform 0.1s ease;
     }
+    .poster-picker__option--pair {
+      aspect-ratio: auto;
+      padding: 4px;
+      overflow: visible;
+    }
     .poster-picker__option:hover {
       border-color: var(--liturgical-accent, var(--accent));
       transform: translateY(-1px);
@@ -9520,11 +9703,17 @@
       outline: none;
       border-color: var(--liturgical-accent, var(--accent));
     }
+    .poster-picker__option:active {
+      transform: scale(0.97);
+    }
     .poster-picker__option img {
       display: block;
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .poster-picker__option--pair .poster-picker__pair-item img {
+      height: auto;
     }
     .poster-picker__option[aria-selected="true"] {
       border-color: var(--liturgical-accent, var(--accent));
@@ -9533,12 +9722,17 @@
     .poster-picker__option[aria-selected="true"]::after {
       content: "";
       position: absolute;
-      top: 5px;
-      right: 5px;
-      width: 18px;
-      height: 18px;
+      top: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
       border-radius: 999px;
-      background: var(--liturgical-accent, var(--accent)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 12px no-repeat;
+      background: var(--liturgical-accent, var(--accent)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 11px no-repeat;
+      z-index: 1;
+    }
+    #mass-step-target-media.flow-setup-card2,
+    #mass-step-target-media.mw-extras-block {
+      overflow: visible;
     }
     .flow-setup-media-note {
       margin: var(--space-2) 0 0;
@@ -16359,7 +16553,6 @@
         body.mw-on .flow-setup-row--3,
         body.mw-on .flow-setup-row--steward,
         body.mw-on .flow-gospsalm-row,
-        body.mw-on .flow-divider-poster-picks,
         .mw-rite-grid { grid-template-columns: 1fr !important; gap: 22px; }
         body.mw-on .flow-setup-row--centered .field,
         body.mw-on .flow-setup-row--centered label { text-align: left; }
@@ -17061,15 +17254,17 @@
         body.mw-on .mw-step-canvas.is-extras-step .mw-extras-block {
           display: flex;
           flex-direction: column;
-          gap: 14px;
-          padding: 0 0 22px;
-          margin: 0 0 22px;
-          border-bottom: 1px solid var(--line-soft);
+          gap: 16px;
+          padding: 20px 22px;
+          margin: 0 0 16px;
+          border: 1px solid var(--card-border);
+          border-radius: 18px;
+          background: var(--surface);
+          box-shadow: var(--shadow-light);
+          overflow: visible;
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-extras-block:last-of-type {
-          padding-bottom: 0;
           margin-bottom: 0;
-          border-bottom: 0;
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-extras-block__head {
           display: flex;
@@ -17093,6 +17288,9 @@
           grid-template-columns: 1fr;
           gap: 14px;
         }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-extras-block .field {
+          max-width: none;
+        }
         body.mw-on .mw-step-canvas.is-extras-step .mw-extras-stewardship-grid .field {
           max-width: none;
         }
@@ -17100,7 +17298,7 @@
           display: flex;
           flex-direction: column;
           gap: 12px;
-          margin-top: 14px;
+          margin-top: 0;
           padding-top: 0;
           border-top: 0;
         }
@@ -17132,23 +17330,43 @@
           }
         }
         body.mw-on .mw-step-canvas.is-extras-step .flow-divider-poster-picks {
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-          gap: 14px;
+          display: block !important;
           margin: 0;
         }
+        body.mw-on .mw-step-canvas.is-extras-step .flow-divider-poster-picks__row {
+          grid-template-columns: minmax(0, 1fr) minmax(148px, 220px);
+          gap: 10px 16px;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #mass-step-target-media {
+          overflow: visible;
+        }
         body.mw-on .mw-step-canvas.is-extras-step #mass-step-target-media .flow-setup-row {
-          margin-top: 14px;
+          margin-top: 12px;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #mass-step-target-media .flow-setup-row.flow-divider-poster-picks {
+          margin-top: 0;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #mass-step-target-media .flow-setup-row--poster-style {
+          margin-top: 10px;
         }
         body.mw-on .mw-step-canvas.is-extras-step #mass-step-target-media .flow-setup-row--media {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 14px;
+          margin-top: 14px;
         }
         body.mw-on .mw-step-canvas.is-extras-step .flow-poster-style {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 12px 16px;
-          align-items: end;
+          grid-template-columns: minmax(0, 1.2fr) minmax(160px, 0.9fr);
+          gap: 10px 18px;
+          align-items: start;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .flow-poster-style .field {
+          max-width: none;
+          margin: 0;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .flow-poster-style__ai {
+          padding-top: 2px;
         }
         body.mw-on .mw-step-canvas.is-extras-step .flow-poster-style .flow-setup-output-checks {
           display: flex;
@@ -17161,15 +17379,23 @@
           margin: 10px 0 0;
           font-size: var(--mw-type-fine);
         }
-        body.mw-on .mw-step-canvas.is-extras-step .flow-setup-footer {
-          margin-top: 14px;
-          padding-top: 14px;
-          border-top: 1px solid var(--line-soft);
+        body.mw-on .mw-step-canvas.is-extras-step .flow-poster-file {
+          position: relative;
+          max-width: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .flow-poster-file .flow-setup-field-hint {
+          margin: 6px 0 0;
+          text-align: center;
         }
         @media (min-width: 540px) {
           body.mw-on .mw-step-canvas.is-extras-step .mw-extras-stewardship-grid {
             grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
             align-items: start;
+          }
+        }
+        @media (max-width: 640px) {
+          body.mw-on .mw-step-canvas.is-extras-step .flow-poster-style {
+            grid-template-columns: minmax(0, 1fr);
           }
         }
 
@@ -17270,6 +17496,9 @@
           body.mw-on .mw-step-canvas.is-extras-step #mass-step-target-media .flow-setup-row--media {
             grid-template-columns: 1fr !important;
           }
+          body.mw-on .mw-step-canvas.is-extras-step .flow-divider-poster-picks__row {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-main { order: 1; }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-summary { order: 2; }
           body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt { order: 2; }
@@ -17283,7 +17512,6 @@
           <div class="download-row" id="download-row">
           <a href="#" id="dl-zip" download>PowerPoint + poster ZIP</a>
           <a href="#" id="dl-pptx" download>PowerPoint</a>
-          <a href="#" id="dl-pdf" download>PDF</a>
           <a href="#" id="dl-poster" download>Poster PNG</a>
           <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
           </div>
@@ -17390,6 +17618,9 @@
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2 mw-extras-block" id="mass-step-target-stewardship" data-mw-step="6" hidden>
+                  <header class="mw-extras-block__head">
+                    <h3 class="mw-extras-block__title">Stewardship &amp; Collection</h3>
+                  </header>
                   <div class="mw-extras-stewardship-grid">
                     <div class="field">
                       <label id="flow-collection-date-label" for="flow-collection-date-trigger">Collection date</label>
@@ -17418,7 +17649,7 @@
                   </div>
                   <div class="mw-extras-sponsor-panel" id="flow-sponsor-card">
                     <div class="field flow-steward-sponsor">
-                      <label for="flow-food-sponsor-input">Food sponsor</label>
+                      <label for="flow-food-sponsor-input">Food Sponsors</label>
                       <div class="flow-input-group mw-extras-sponsor-input-row">
                         <input type="text" id="flow-food-sponsor-input" placeholder="Type name" maxlength="120" autocomplete="off" />
                         <button type="button" class="primary flow-setup-add-btn" id="btn-flow-food-add">Add</button>
@@ -17564,33 +17795,42 @@
                   </header>
                   <div class="flow-setup-row flow-divider-poster-picks">
                     <div class="field">
-                      <span class="flow-poster-picker-label" id="flow-lotw-poster-label">Liturgy of the Word poster</span>
                       <input type="hidden" id="flow-lotw-poster" value="lotw1" />
-                      <div class="poster-picker" data-poster-picker data-target="flow-lotw-poster" data-prefix="lotw" data-name="Liturgy of the Word">
-                        <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-lotw-poster-label">
-                          <img class="poster-picker__current" src="/static/images/posters/lotw1.png" alt="Selected Liturgy of the Word poster" loading="lazy" />
-                          <span class="poster-picker__caret" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                          </span>
-                        </button>
-                        <div class="poster-picker__menu" role="listbox" aria-label="Liturgy of the Word poster designs" hidden></div>
-                      </div>
-                    </div>
-                    <div class="field">
-                      <span class="flow-poster-picker-label" id="flow-lote-poster-label">Liturgy of the Eucharist poster</span>
                       <input type="hidden" id="flow-lote-poster" value="lote1" />
-                      <div class="poster-picker" data-poster-picker data-target="flow-lote-poster" data-prefix="lote" data-name="Liturgy of the Eucharist">
-                        <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-lote-poster-label">
-                          <img class="poster-picker__current" src="/static/images/posters/lote1.png" alt="Selected Liturgy of the Eucharist poster" loading="lazy" />
-                          <span class="poster-picker__caret" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                          </span>
-                        </button>
-                        <div class="poster-picker__menu" role="listbox" aria-label="Liturgy of the Eucharist poster designs" hidden></div>
+                      <div class="flow-divider-poster-picks__row">
+                        <div class="flow-divider-poster-picks__copy">
+                          <span class="flow-poster-picker-label" id="flow-liturgy-poster-label">Liturgy divider posters</span>
+                          <p class="muted flow-setup-field-hint">Word and Eucharist designs are paired for a matching style.</p>
+                        </div>
+                        <div
+                          class="poster-picker poster-picker--pair"
+                          data-poster-picker
+                          data-pair="1"
+                          data-lotw-target="flow-lotw-poster"
+                          data-lote-target="flow-lote-poster"
+                          data-name="Liturgy divider"
+                        >
+                          <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-liturgy-poster-label">
+                            <span class="poster-picker__pair" aria-hidden="true">
+                              <span class="poster-picker__pair-item">
+                                <img class="poster-picker__current" data-pair-role="lotw" src="/static/images/posters/lotw1.png" alt="" loading="lazy" />
+                                <span class="poster-picker__pair-caption">Word</span>
+                              </span>
+                              <span class="poster-picker__pair-item">
+                                <img class="poster-picker__current" data-pair-role="lote" src="/static/images/posters/lote1.png" alt="" loading="lazy" />
+                                <span class="poster-picker__pair-caption">Eucharist</span>
+                              </span>
+                            </span>
+                            <span class="poster-picker__caret" aria-hidden="true">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </span>
+                          </button>
+                          <div class="poster-picker__menu" role="listbox" aria-label="Liturgy divider poster pairs" hidden></div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div class="flow-setup-row">
+                  <div class="flow-setup-row flow-setup-row--poster-style">
                     <div class="flow-poster-style">
                       <div class="field flow-setup-footer__toggle-item" id="flow-openai-style-wrap">
                         <label for="flow-openai-poster-style">Poster style</label>
@@ -17602,37 +17842,44 @@
                           <option value="modern">Modern</option>
                         </select>
                       </div>
-                      <div class="flow-setup-output-checks">
-                        <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI</label>
-                        <label><input type="checkbox" id="flow-use-gemini-poster" /> Gemini</label>
+                      <div class="flow-poster-style__ai">
+                        <div class="flow-setup-quota-badge">
+                          <span class="flow-setup-quota-badge__dot" aria-hidden="true"></span>
+                          <p class="ai-image-quota-hint" id="flow-ai-quota-hint" aria-live="polite"></p>
+                        </div>
+                        <p class="flow-poster-style__ai-label">AI Generation Controls</p>
+                        <div class="flow-setup-output-checks">
+                          <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI</label>
+                          <label><input type="checkbox" id="flow-use-gemini-poster" /> Gemini</label>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div class="flow-setup-row">
-                    <div class="field flow-export-pdf-field">
-                      <label class="flow-export-pdf-check"><input type="checkbox" id="flow-export-pdf" /> Also export PDF</label>
-                      <p class="muted flow-setup-field-hint">When checked, generating downloads the PowerPoint and a PDF side by side (handy to share a quick preview in your group chat).</p>
                     </div>
                   </div>
                   <div class="flow-setup-row flow-setup-row--media">
                     <div class="field flow-poster-file">
-                      <label for="flow-divider-poster">Divider poster</label>
+                      <label class="flow-poster-drop" for="flow-divider-poster">
+                        <span class="flow-poster-drop__title">Divider poster</span>
+                        <span class="flow-poster-drop__zone">
+                          <svg class="flow-poster-drop__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V6"/><path d="m8 10 4-4 4 4"/><path d="M4 18h16"/></svg>
+                          <span class="flow-poster-drop__hint">Drag &amp; drop or click to upload</span>
+                        </span>
+                      </label>
                       <input type="file" id="flow-divider-poster" accept="image/png,image/jpeg,image/webp,image/gif" />
                       <p class="muted flow-setup-field-hint" id="flow-divider-status">Choose files</p>
                     </div>
                     <div class="field flow-poster-file">
-                      <label for="flow-announcement-posters">Announcement poster</label>
+                      <label class="flow-poster-drop" for="flow-announcement-posters">
+                        <span class="flow-poster-drop__title">Announcement poster</span>
+                        <span class="flow-poster-drop__zone">
+                          <svg class="flow-poster-drop__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V6"/><path d="m8 10 4-4 4 4"/><path d="M4 18h16"/></svg>
+                          <span class="flow-poster-drop__hint">Drag &amp; drop or click to upload</span>
+                        </span>
+                      </label>
                       <input type="file" id="flow-announcement-posters" accept="image/png,image/jpeg,image/webp,image/gif" multiple />
                       <p class="muted flow-setup-field-hint" id="flow-announcement-status">Choose files</p>
                     </div>
                   </div>
                   <p class="flow-setup-media-note">Recommended sizes 16:9 ratio</p>
-                  <footer class="flow-setup-footer" aria-label="AI image quota">
-                    <div class="flow-setup-quota-badge">
-                      <span class="flow-setup-quota-badge__dot" aria-hidden="true"></span>
-                      <p class="ai-image-quota-hint" id="flow-ai-quota-hint" aria-live="polite"></p>
-                    </div>
-                  </footer>
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2 mw-review" id="mw-review" data-mw-step="7" hidden>
@@ -22215,7 +22462,7 @@
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
-        "flow-use-openai-poster", "flow-use-gemini-poster", "flow-export-pdf",
+        "flow-use-openai-poster", "flow-use-gemini-poster",
         "flow-include-church-logo", "flow-include-church-name", "flow-hide-footer",
         "flow-include-social-exports",
       ];
@@ -22231,6 +22478,16 @@
       const target = $(targetId);
       if (!target || !value) return;
       target.value = value;
+      const pairPicker = document.querySelector("[data-poster-picker][data-pair]");
+      if (pairPicker) {
+        const lotwEl = $(pairPicker.getAttribute("data-lotw-target") || "flow-lotw-poster");
+        const loteEl = $(pairPicker.getAttribute("data-lote-target") || "flow-lote-poster");
+        const lotwVal = (lotwEl && lotwEl.value) || "lotw1";
+        const loteVal = (loteEl && loteEl.value) || "lote1";
+        const pairN = posterPairNumberFromIds(lotwVal, loteVal);
+        setPairedPosterSelection(pairPicker, pairN);
+        return;
+      }
       const picker = document.querySelector('[data-poster-picker][data-target="' + targetId + '"]');
       if (!picker) return;
       const current = picker.querySelector(".poster-picker__current");
@@ -22242,6 +22499,41 @@
         });
       }
       target.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function posterPairNumberFromIds(lotwId, loteId) {
+      const fromLotw = String(lotwId || "").match(/^lotw([1-4])$/i);
+      const fromLote = String(loteId || "").match(/^lote([1-4])$/i);
+      if (fromLotw) return parseInt(fromLotw[1], 10);
+      if (fromLote) return parseInt(fromLote[1], 10);
+      return 1;
+    }
+
+    function setPairedPosterSelection(picker, pairN) {
+      if (!picker) return;
+      const n = Math.max(1, Math.min(4, parseInt(pairN, 10) || 1));
+      const lotwId = "lotw" + n;
+      const loteId = "lote" + n;
+      const lotwEl = $(picker.getAttribute("data-lotw-target") || "flow-lotw-poster");
+      const loteEl = $(picker.getAttribute("data-lote-target") || "flow-lote-poster");
+      if (lotwEl) {
+        lotwEl.value = lotwId;
+        lotwEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (loteEl) {
+        loteEl.value = loteId;
+        loteEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      const lotwImg = picker.querySelector('.poster-picker__current[data-pair-role="lotw"]');
+      const loteImg = picker.querySelector('.poster-picker__current[data-pair-role="lote"]');
+      if (lotwImg) lotwImg.src = "/static/images/posters/" + lotwId + ".png";
+      if (loteImg) loteImg.src = "/static/images/posters/" + loteId + ".png";
+      const menu = picker.querySelector(".poster-picker__menu");
+      if (menu) {
+        menu.querySelectorAll(".poster-picker__option").forEach((opt) => {
+          opt.setAttribute("aria-selected", String(opt.getAttribute("data-pair")) === String(n) ? "true" : "false");
+        });
+      }
     }
 
     function setMassBuilderFieldValue(id, value) {
@@ -22359,8 +22651,7 @@
       showRoute("/mass/builder");
       requestAnimationFrame(() => {
         if ($("mass-date")) {
-          $("mass-date").value = upcomingSundayISO();
-          syncMassDatePickerByInputId("mass-date");
+          ensureMassBuilderDefaultDate({ force: true });
         }
         if (window.MassWizard && window.MassWizard.setStep) window.MassWizard.setStep(1);
         loadFlowData(true).catch(() => {});
@@ -22416,6 +22707,7 @@
       const savedPsalmRefrain = f["flow-psalm-refrain"];
       const savedGospelSentence = f["flow-gospel-sentence"];
       if (f["mass-date"]) setMassBuilderFieldValue("mass-date", f["mass-date"]);
+      ensureMassBuilderDefaultDate();
       if (typeof setCelebrantPickerValue === "function") setCelebrantPickerValue(f.celebrant || "");
       else if ($("celebrant")) $("celebrant").value = f.celebrant || "";
       massBuilderDraftFieldIds().forEach((id) => {
@@ -22427,8 +22719,15 @@
         const opt = document.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option');
         if (opt) opt.click();
       }
-      restoreMassBuilderPosterPicker("flow-lotw-poster", f["flow-lotw-poster"] || "lotw1");
-      restoreMassBuilderPosterPicker("flow-lote-poster", f["flow-lote-poster"] || "lote1");
+      {
+        const lotwVal = f["flow-lotw-poster"] || "lotw1";
+        const loteVal = f["flow-lote-poster"] || "lote1";
+        const lotwEl = $("flow-lotw-poster");
+        const loteEl = $("flow-lote-poster");
+        if (lotwEl) lotwEl.value = lotwVal;
+        if (loteEl) loteEl.value = loteVal;
+        restoreMassBuilderPosterPicker("flow-lotw-poster", lotwVal);
+      }
       if (Array.isArray(draft.foodSponsors) && typeof renderFlowFoodSponsorsList === "function") {
         renderFlowFoodSponsorsList(draft.foodSponsors);
         if (typeof syncFlowFoodSponsorsHidden === "function") syncFlowFoodSponsorsHidden();
@@ -22448,7 +22747,7 @@
       document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
         el.checked = el.value === layoutVal;
       });
-      const date = f["mass-date"] || "";
+      const date = ($("mass-date") && $("mass-date").value) || f["mass-date"] || "";
       if (date && typeof loadFlowData === "function") {
         await loadFlowData(true);
       }
@@ -22611,6 +22910,7 @@
         const draft = readMassBuilderDraft();
         if (massDraftSkipRestore) {
           massDraftSkipRestore = false;
+          ensureMassBuilderDefaultDate({ force: true });
           const massDate = $("mass-date") && $("mass-date").value;
           if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
             loadFlowData(true);
@@ -22618,6 +22918,7 @@
         } else if (draft) {
           restoreMassBuilderDraft(draft).catch(() => {});
         } else {
+          ensureMassBuilderDefaultDate();
           const massDate = $("mass-date") && $("mass-date").value;
           if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
             loadFlowData(true);
@@ -26473,6 +26774,10 @@
     }
 
     function openPracticeShareModal(opts) {
+      if (!isFeatureEnabled("choir_practice_shares")) {
+        notify(FEATURE_OFF_HINT, "info");
+        return;
+      }
       opts = opts || {};
       const dateEl = $("mass-date");
       let date = dateEl ? (dateEl.value || "").trim() : "";
@@ -26502,6 +26807,10 @@
     }
 
     async function openPracticeShareSectionsModal() {
+      if (!isFeatureEnabled("choir_practice_shares")) {
+        notify(FEATURE_OFF_HINT, "info");
+        return;
+      }
       const status = $("practice-share-sections-status");
       const continueBtn = $("practice-share-sections-continue");
       if (status) { status.hidden = true; status.textContent = ""; }
@@ -28036,7 +28345,6 @@
       const out = [];
       if (data.zip_url) out.push({ label: "ZIP bundle", url: data.zip_url, download: true });
       if (data.pptx_url) out.push({ label: "PowerPoint", url: data.pptx_url, download: true });
-      if (data.pdf_url) out.push({ label: "PDF", url: data.pdf_url, download: true });
       if (data.poster_url) out.push({ label: "Poster PNG", url: data.poster_url, download: true });
       if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
       return out;
@@ -28299,9 +28607,10 @@
     }
 
     function upcomingSundayISO(base = new Date()) {
+      // Next Sunday on or after `base` (local calendar day). If today is Sunday, use today.
       const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
-      const dow = d.getDay();
-      const add = (7 - dow) % 7;
+      const dow = d.getDay(); // 0 = Sunday
+      const add = dow === 0 ? 0 : 7 - dow;
       d.setDate(d.getDate() + add);
       return formatDateInput(d);
     }
@@ -28309,10 +28618,33 @@
     function daysUntilUpcomingSunday() {
       const today = new Date();
       const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const sun = new Date(t0);
-      const dow = t0.getDay();
-      sun.setDate(t0.getDate() + ((7 - dow) % 7));
+      const sun = parseLocalDateISO(upcomingSundayISO(t0));
+      if (!sun) return 0;
       return Math.round((sun - t0) / 86400000);
+    }
+
+    function isPastLocalDateISO(iso) {
+      const d = parseLocalDateISO(iso);
+      if (!d) return true;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return d.getTime() < today.getTime();
+    }
+
+    function ensureMassBuilderDefaultDate(opts) {
+      const el = $("mass-date");
+      if (!el) return upcomingSundayISO();
+      const next = upcomingSundayISO();
+      const cur = (el.value || "").trim();
+      const force = !!(opts && opts.force);
+      // Never keep a past Mass date (common when an old draft still has last Sunday).
+      if (force || !cur || isPastLocalDateISO(cur)) {
+        el.value = next;
+        if ($("poster-mass-date")) $("poster-mass-date").value = next;
+        if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      return el.value || next;
     }
 
     let churchMembershipState = {
@@ -30094,17 +30426,128 @@
     }
 
     let verbumFeatureFlags = {};
+    const FEATURE_OFF_HINT = "This feature is turned off for maintenance.";
+
+    function isFeatureEnabled(flagKey) {
+      const flags = verbumFeatureFlags || {};
+      if (!flagKey || !(flagKey in flags)) return true;
+      return flags[flagKey] !== false;
+    }
+
+    function ensureFeatureFlagHint(host, hintId) {
+      if (!host) return null;
+      let hint = document.getElementById(hintId);
+      if (!hint) {
+        hint = document.createElement("p");
+        hint.id = hintId;
+        hint.className = "feature-flag-hint";
+        hint.setAttribute("role", "status");
+        host.appendChild(hint);
+      }
+      return hint;
+    }
+
+    function setFeatureFlagDisabled(el, disabled, title) {
+      if (!el) return;
+      el.classList.toggle("feature-flag-off", !!disabled);
+      el.setAttribute("aria-disabled", disabled ? "true" : "false");
+      if (disabled) {
+        el.setAttribute("title", title || FEATURE_OFF_HINT);
+      } else if (el.getAttribute("title") === FEATURE_OFF_HINT || el.getAttribute("title") === title) {
+        el.removeAttribute("title");
+      }
+      if ("disabled" in el && (el.tagName === "BUTTON" || el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA")) {
+        el.disabled = !!disabled;
+      }
+      if (el.tagName === "A") {
+        if (disabled) el.setAttribute("tabindex", "-1");
+        else el.removeAttribute("tabindex");
+      }
+    }
 
     function applyFeatureFlagsUi() {
-      const flags = verbumFeatureFlags || {};
-      const practiceOn = flags.choir_practice_shares !== false;
-      ["btn-practice-share", "btn-practice-share-toolbar", "btn-practice-share-mobile", "btn-practice-share-wizard"].forEach((id) => {
+      const practiceOn = isFeatureEnabled("choir_practice_shares");
+      const newsOn = isFeatureEnabled("catholic_news_feed");
+      const aiOn = isFeatureEnabled("ai_image_generation");
+      const socialOn = isFeatureEnabled("social_poster_export");
+
+      [
+        "btn-practice-share",
+        "btn-practice-share-toolbar",
+        "btn-practice-share-mobile",
+        "btn-practice-share-wizard",
+        "btn-home-practice-share",
+      ].forEach((id) => {
         const el = $(id);
-        if (el) el.hidden = !practiceOn;
+        if (!el) return;
+        setFeatureFlagDisabled(el, !practiceOn);
       });
-      const newsOn = flags.catholic_news_feed !== false;
-      document.querySelectorAll(".home-bento-cell--events, .home-news-card, #home-wyd-card").forEach((el) => {
-        if (el) el.hidden = !newsOn;
+
+      document.querySelectorAll(".home-bento-cell--news, #home-wyd-card").forEach((el, idx) => {
+        if (!el) return;
+        setFeatureFlagDisabled(el, !newsOn);
+        const hint = ensureFeatureFlagHint(el, "feature-hint-news-" + idx);
+        if (hint) {
+          hint.hidden = newsOn;
+          hint.textContent = FEATURE_OFF_HINT;
+        }
+        el.querySelectorAll("a, button, input, select").forEach((child) => {
+          if (child.classList.contains("feature-flag-hint")) return;
+          setFeatureFlagDisabled(child, !newsOn);
+        });
+      });
+
+      const aiControls = [
+        "flow-use-openai-poster",
+        "flow-use-gemini-poster",
+        "poster-use-openai-poster",
+        "poster-use-gemini-poster",
+        "flow-openai-poster-style",
+        "poster-openai-poster-style",
+      ];
+      aiControls.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        if (!aiOn && el.type === "checkbox") el.checked = false;
+        setFeatureFlagDisabled(el, !aiOn);
+        const label = el.closest("label");
+        if (label) setFeatureFlagDisabled(label, !aiOn);
+      });
+      ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
+        const wrap = $(id);
+        if (wrap) setFeatureFlagDisabled(wrap, !aiOn);
+      });
+      const aiHosts = [
+        $("flow-ai-quota-hint") && (
+          $("flow-ai-quota-hint").closest(".flow-poster-style__ai") ||
+          $("flow-ai-quota-hint").closest(".flow-setup-footer") ||
+          $("flow-ai-quota-hint").parentElement
+        ),
+        $("poster-ai-quota-hint") && $("poster-ai-quota-hint").parentElement,
+      ];
+      aiHosts.forEach((host, idx) => {
+        if (!host) return;
+        const hint = ensureFeatureFlagHint(host, "feature-hint-ai-" + idx);
+        if (hint) {
+          hint.hidden = aiOn;
+          hint.textContent = FEATURE_OFF_HINT;
+        }
+      });
+
+      ["flow-include-social-exports", "poster-include-social"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        if (!socialOn && el.type === "checkbox") el.checked = false;
+        setFeatureFlagDisabled(el, !socialOn);
+        const label = el.closest("label") || el.parentElement;
+        if (label) {
+          setFeatureFlagDisabled(label, !socialOn);
+          const hint = ensureFeatureFlagHint(label.parentElement || label, "feature-hint-social-" + id);
+          if (hint) {
+            hint.hidden = socialOn;
+            hint.textContent = FEATURE_OFF_HINT;
+          }
+        }
       });
     }
 
@@ -30116,6 +30559,7 @@
         applyFeatureFlagsUi();
       } catch (_e) {
         verbumFeatureFlags = {};
+        applyFeatureFlagsUi();
       }
     }
 
@@ -32854,13 +33298,70 @@
 
     function initDividerPosterPickers() {
       document.querySelectorAll("[data-poster-picker]").forEach((picker) => {
+        const trigger = picker.querySelector(".poster-picker__trigger");
+        const menu = picker.querySelector(".poster-picker__menu");
+        if (!trigger || !menu) return;
+
+        const isPair = picker.hasAttribute("data-pair");
+        if (isPair) {
+          const lotwEl = $(picker.getAttribute("data-lotw-target") || "flow-lotw-poster");
+          const loteEl = $(picker.getAttribute("data-lote-target") || "flow-lote-poster");
+          const name = picker.getAttribute("data-name") || "Liturgy divider";
+
+          menu.innerHTML = "";
+          POSTER_DESIGNS.forEach((design) => {
+            const n = design.n;
+            const lotwId = "lotw" + n;
+            const loteId = "lote" + n;
+            const opt = document.createElement("button");
+            opt.type = "button";
+            opt.className = "poster-picker__option poster-picker__option--pair";
+            opt.setAttribute("role", "option");
+            opt.setAttribute("data-pair", String(n));
+            opt.setAttribute("data-value", lotwId + "+" + loteId);
+            opt.setAttribute("aria-label", name + " — " + design.label);
+            opt.title = design.label;
+            opt.innerHTML =
+              '<span class="poster-picker__pair">' +
+                '<span class="poster-picker__pair-item">' +
+                  '<img src="/static/images/posters/' + lotwId + '.png" alt="" loading="lazy" />' +
+                  '<span class="poster-picker__pair-caption">Word</span>' +
+                "</span>" +
+                '<span class="poster-picker__pair-item">' +
+                  '<img src="/static/images/posters/' + loteId + '.png" alt="" loading="lazy" />' +
+                  '<span class="poster-picker__pair-caption">Eucharist</span>' +
+                "</span>" +
+              "</span>";
+            opt.addEventListener("click", () => {
+              setPairedPosterSelection(picker, n);
+              closeAllPosterPickers();
+              trigger.focus();
+            });
+            menu.appendChild(opt);
+          });
+
+          trigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const opening = menu.hidden;
+            if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+            closeAllPosterPickers(picker);
+            menu.hidden = !opening;
+            trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+          });
+
+          const initial = posterPairNumberFromIds(
+            (lotwEl && lotwEl.value) || "lotw1",
+            (loteEl && loteEl.value) || "lote1"
+          );
+          setPairedPosterSelection(picker, initial);
+          return;
+        }
+
         const target = $(picker.getAttribute("data-target"));
         const prefix = picker.getAttribute("data-prefix");
         const name = picker.getAttribute("data-name") || "poster";
-        const trigger = picker.querySelector(".poster-picker__trigger");
         const current = picker.querySelector(".poster-picker__current");
-        const menu = picker.querySelector(".poster-picker__menu");
-        if (!target || !prefix || !trigger || !current || !menu) return;
+        if (!target || !prefix || !current) return;
 
         const setSelected = (id) => {
           if (!/^lot[we][1-4]$/.test(id)) return;
@@ -33942,6 +34443,7 @@
     })();
 
     function readSocialExportSettings(o) {
+      if (!isFeatureEnabled("social_poster_export")) return false;
       if (o && o.include_social != null) return !!o.include_social;
       const flowCb = $("flow-include-social-exports");
       const posterCb = $("poster-include-social");
@@ -33965,6 +34467,15 @@
     }
 
     function readOpenAiPosterSettings() {
+      if (!isFeatureEnabled("ai_image_generation")) {
+        return {
+          useOpenai: false,
+          useGemini: false,
+          useAi: false,
+          backend: null,
+          style: "cinematic",
+        };
+      }
       const flowOpenAi = $("flow-use-openai-poster");
       const flowGemini = $("flow-use-gemini-poster");
       const posterOpenAi = $("poster-use-openai-poster");
@@ -34616,8 +35127,6 @@
         body.include_church_name = nameCb ? nameCb.checked : false;
         const hideFooterCb = $("flow-hide-footer");
         body.include_footer = hideFooterCb ? !hideFooterCb.checked : true;
-        const exportPdfCb = $("flow-export-pdf");
-        body.export_pdf = exportPdfCb ? exportPdfCb.checked : false;
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -34725,7 +35234,6 @@
         const linkMap = o.links || [
           ["dl-zip", "zip_url"],
           ["dl-pptx", "pptx_url"],
-          ["dl-pdf", "pdf_url"],
           ["dl-poster", "poster_url"],
           ["dl-poster-ppt", "poster_ppt_url"],
         ];
@@ -34758,28 +35266,30 @@
           poster_url: data.poster_url,
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
+        // Show success immediately; don't keep the overlay waiting on a multi‑MB blob download.
+        const successUi = showMassGenSuccess(
+          "Presentation successfully generated.",
+          "Your PowerPoint is ready."
+        );
         if (o.autoDownloadPptx && data.pptx_url) {
           const stemName = data.export_stem || "mass_presentation";
-          try {
-            await triggerBrowserDownload(data.pptx_url, stemName + ".pptx");
-            if (data.pdf_url) {
-              await triggerBrowserDownload(data.pdf_url, stemName + ".pdf");
-              statusFn("Presentation ready. PowerPoint and PDF downloads started.", "ok", dlMeta);
-            } else {
+          triggerBrowserDownload(data.pptx_url, stemName + ".pptx")
+            .then(() => {
               statusFn("Presentation ready. PowerPoint download started.", "ok", dlMeta);
-            }
-          } catch (_dlErr) {
-            statusFn("Presentation ready. Use the download links if your browser did not start automatically.", "ok", dlMeta);
-          }
+            })
+            .catch(() => {
+              statusFn(
+                "Presentation ready. Use the PowerPoint download link if the file did not start automatically.",
+                "ok",
+                dlMeta
+              );
+            });
         } else {
           statusFn("Presentation ready.", "ok", dlMeta);
         }
-        if (data.pdf_message) {
-          notify(data.pdf_message, "warn");
-        }
         refreshAiImageQuotaHint();
         clearMassBuilderDraft();
-        await showMassGenSuccess("Presentation successfully generated.", "Your PowerPoint is ready.");
+        await successUi;
         return data;
       } catch (error) {
         clearMassGenProgressTimers();
@@ -36952,9 +37462,9 @@
         date,
         celebrant,
         poster_template: $("poster-template").value,
-        include_social: $("poster-include-social").checked,
-        include_ai: ($("poster-use-openai-poster") && $("poster-use-openai-poster").checked)
-          || ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked),
+        include_social: isFeatureEnabled("social_poster_export") && $("poster-include-social").checked,
+        include_ai: isFeatureEnabled("ai_image_generation") && (($("poster-use-openai-poster") && $("poster-use-openai-poster").checked)
+          || ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)),
         ai_poster_backend: ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)
           ? "gemini"
           : "openai",
@@ -37595,7 +38105,7 @@
       if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
     });
 
-    $("mass-date").value = upcomingSundayISO();
+    ensureMassBuilderDefaultDate({ force: true });
     if ($("poster-mass-date")) $("poster-mass-date").value = $("mass-date").value;
     if ($("flow-collection-date")) $("flow-collection-date").value = previousSundayISO();
     syncMassDatePickerByInputId("mass-date");
@@ -37759,7 +38269,7 @@
     }
   </script>
   <script src="/static/js/driver.js?v=20260703"></script>
-  <script src="/static/js/guided-tour.js?v=20260703i"></script>
+  <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260703"></script>
   <script>
     scheduleDashboardBoot();

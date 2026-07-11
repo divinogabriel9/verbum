@@ -23,6 +23,9 @@
       --lyrics-leading: 1.7;
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --motion-duration-base: 200ms;
+      --motion-duration-exit: 120ms;
+      --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     }
     * { box-sizing: border-box; }
     html {
@@ -142,6 +145,14 @@
       cursor: pointer;
       white-space: nowrap;
       min-height: 40px;
+      transition:
+        background-color var(--motion-duration-base) var(--motion-ease-out),
+        border-color var(--motion-duration-base) var(--motion-ease-out),
+        color var(--motion-duration-base) var(--motion-ease-out),
+        transform 100ms var(--motion-ease-out);
+    }
+    .practice-tab:active {
+      transform: scale(0.97);
     }
     .practice-tab.is-active {
       background: color-mix(in srgb, var(--accent) 10%, white);
@@ -154,6 +165,27 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       padding: 16px 16px calc(20px + var(--safe-bottom));
+    }
+    #practice-root {
+      transform-origin: center top;
+    }
+    #practice-root.is-tab-exit {
+      opacity: 0;
+      transform: scale(0.98);
+      transition:
+        opacity var(--motion-duration-exit) var(--motion-ease-out),
+        transform var(--motion-duration-exit) var(--motion-ease-out);
+    }
+    #practice-root.is-tab-enter {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    #practice-root.is-tab-enter.is-tab-enter-active {
+      opacity: 1;
+      transform: scale(1);
+      transition:
+        opacity var(--motion-duration-base) var(--motion-ease-out),
+        transform var(--motion-duration-base) var(--motion-ease-out);
     }
     .practice-song-head {
       margin-bottom: 14px;
@@ -454,6 +486,10 @@
       };
       let pollTimer = null;
       let toastTimer = null;
+      let tabAnimToken = 0;
+      const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const TAB_EXIT_MS = 120;
+      const TAB_ENTER_MS = 200;
 
       const fetchOpts = { credentials: "same-origin" };
 
@@ -800,10 +836,9 @@
           btn.className = "practice-tab" + (i === state.index ? " is-active" : "");
           btn.textContent = song.slot_label || song.title || ("Song " + (i + 1));
           btn.addEventListener("click", function () {
+            if (i === state.index) return;
             if (state.editing) flushCurrentSongEdits();
-            state.index = i;
-            renderCurrentSong();
-            scroll.scrollTop = 0;
+            switchPracticeTab(i);
           });
           tabs.appendChild(btn);
         });
@@ -1006,7 +1041,7 @@
         });
       }
 
-      function renderCurrentSong() {
+      function paintCurrentSong() {
         const song = state.songs[state.index];
         if (!song) return;
         const meta = [song.author, song.language].filter(Boolean).join(" · ");
@@ -1024,6 +1059,47 @@
           el.classList.toggle("is-active", i === state.index);
           if (i === state.index) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
         });
+      }
+
+      function clearTabMotionClasses() {
+        root.classList.remove("is-tab-exit", "is-tab-enter", "is-tab-enter-active");
+      }
+
+      function renderCurrentSong() {
+        tabAnimToken += 1;
+        clearTabMotionClasses();
+        paintCurrentSong();
+      }
+
+      function switchPracticeTab(nextIndex) {
+        if (nextIndex === state.index) return;
+        if (prefersReducedMotion || !root.innerHTML.trim()) {
+          state.index = nextIndex;
+          renderCurrentSong();
+          scroll.scrollTop = 0;
+          return;
+        }
+
+        const token = ++tabAnimToken;
+        clearTabMotionClasses();
+        // Force style flush so exit transition always runs from visible state.
+        void root.offsetWidth;
+        root.classList.add("is-tab-exit");
+
+        window.setTimeout(function () {
+          if (token !== tabAnimToken) return;
+          state.index = nextIndex;
+          paintCurrentSong();
+          scroll.scrollTop = 0;
+          clearTabMotionClasses();
+          root.classList.add("is-tab-enter");
+          void root.offsetWidth;
+          root.classList.add("is-tab-enter-active");
+          window.setTimeout(function () {
+            if (token !== tabAnimToken) return;
+            clearTabMotionClasses();
+          }, TAB_ENTER_MS);
+        }, TAB_EXIT_MS);
       }
 
       async function savePracticeEdits() {
@@ -1089,30 +1165,41 @@
         return url;
       }
 
+      async function pollPracticeOnce() {
+        if (document.hidden) return;
+        if (state.editing && state.dirty) return;
+        try {
+          const res = await fetch(practiceFetchUrl(), fetchOpts);
+          if (!res.ok) return;
+          const data = await res.json().catch(function () { return {}; });
+          if (data.requires_pin) return;
+          const nextRev = String(data.revision || "");
+          if (!nextRev || nextRev === state.revision) return;
+          const keepIndex = state.index;
+          const wasEditing = state.editing;
+          applyPracticePayload(data, { resetDirty: true });
+          state.editing = wasEditing && state.isLeader;
+          state.index = Math.min(keepIndex, Math.max(0, state.songs.length - 1));
+          renderCurrentSong();
+          syncLeadChrome();
+          if (!state.isLeader || !state.editing) showSyncToast("Lyrics updated");
+        } catch (_err) {
+          /* ignore transient poll errors */
+        }
+      }
+
       function startPoll() {
         stopPoll();
-        pollTimer = setInterval(async function () {
-          if (state.editing && state.dirty) return;
-          try {
-            const res = await fetch(practiceFetchUrl(), fetchOpts);
-            if (!res.ok) return;
-            const data = await res.json().catch(function () { return {}; });
-            if (data.requires_pin) return;
-            const nextRev = String(data.revision || "");
-            if (!nextRev || nextRev === state.revision) return;
-            const keepIndex = state.index;
-            const wasEditing = state.editing;
-            applyPracticePayload(data, { resetDirty: true });
-            state.editing = wasEditing && state.isLeader;
-            state.index = Math.min(keepIndex, Math.max(0, state.songs.length - 1));
-            renderCurrentSong();
-            syncLeadChrome();
-            if (!state.isLeader || !state.editing) showSyncToast("Lyrics updated");
-          } catch (_err) {
-            /* ignore transient poll errors */
-          }
-        }, 4000);
+        if (document.hidden) return;
+        pollTimer = setInterval(pollPracticeOnce, 4000);
       }
+
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) stopPoll();
+        else if (state.songs.length) startPoll();
+      });
+
+      window.addEventListener("pagehide", stopPoll);
 
       async function loadPractice() {
         root.innerHTML = '<p class="practice-status">Loading practice set…</p>';

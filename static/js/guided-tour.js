@@ -404,7 +404,7 @@
         element: "#mw-generate",
         popover: {
           title: "Generate your package",
-          description: "Builds your PowerPoint deck, poster images, and optional PDF into one download package. Review the receipt, then grab the PPTX or full ZIP.",
+          description: "Builds your PowerPoint deck and poster images into one download package. Review the receipt, then grab the PPTX or full ZIP.",
           side: "top",
           align: "end",
         },
