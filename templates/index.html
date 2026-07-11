@@ -5632,28 +5632,28 @@
       color: var(--muted);
     }
     .home-songs-slide--share {
-      justify-content: center;
-      gap: 10px;
+      justify-content: flex-start;
+      gap: 6px;
     }
     .home-songs-share {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       min-height: 0;
     }
     .home-songs-share__lead {
       margin: 0;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       line-height: 1.4;
       color: var(--muted);
     }
     .home-songs-share__btn {
       align-self: flex-start;
-      min-height: 34px;
+      min-height: 32px;
       padding: 6px 12px;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 650;
-      border-radius: 9px;
+      border-radius: 8px;
       border: none;
       background: var(--liturgical-accent, #a10f0d);
       color: #fff;
@@ -5705,94 +5705,120 @@
       }
     }
     .practice-share-card--sections {
-      max-width: min(560px, 100%);
-      width: min(100%, 560px);
+      max-width: min(440px, 100%);
+      width: min(100%, 440px);
+      max-height: min(85vh, 620px);
+      border-radius: 0;
+      overflow: hidden;
+    }
+    .ui-overlay .ui-card.practice-share-card--sections.ui-card--popover-safe,
+    .ui-overlay .ui-card.practice-share-card--sections.ui-card--popover-open {
+      overflow: hidden;
+    }
+    .practice-share-card--sections .ui-card__header {
+      flex-shrink: 0;
+      padding: 14px 14px 8px;
+    }
+    .practice-share-card--sections .ui-card__description {
+      margin-top: 4px;
+      font-size: 0.78rem;
     }
     .practice-share-card--sections .ui-card__content {
-      max-height: min(62vh, 520px);
-      overflow: auto;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      max-height: none;
+    }
+    .practice-share-card--sections .practice-share-body {
+      gap: 0;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .practice-share-card--sections .practice-share-sections-status-wrap,
+    .practice-share-card--sections #practice-share-sections-status {
+      margin: 0;
+      flex-shrink: 0;
+      padding: 6px 14px;
     }
     .practice-share-song-plan {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      min-width: 0;
-    }
-    .practice-share-song-plan .mass-song-plan-card {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--surface-solid);
-      overflow: visible;
-    }
-    .practice-share-song-plan .mass-song-plan-card__row {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 10px 12px;
-    }
-    .practice-share-song-plan .mass-song-plan-card__drag {
-      display: none;
-    }
-    .practice-share-song-plan .mass-song-plan-card__num {
-      flex-shrink: 0;
-      width: 22px;
-      height: 22px;
-      margin-top: 2px;
-      display: grid;
-      place-items: center;
-      border-radius: 999px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--muted);
-      background: color-mix(in srgb, var(--ink) 6%, transparent);
-    }
-    .practice-share-song-plan .mass-song-plan-card__core {
+      gap: 0;
       flex: 1 1 auto;
-      min-width: 0;
+      min-height: 0;
+      max-height: min(48vh, 340px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .practice-share-song-plan .ps-share-row {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
     }
-    .practice-share-song-plan .mass-song-plan-card__top {
+    .practice-share-song-plan .ps-share-row:last-child {
+      border-bottom: none;
+    }
+    .practice-share-song-plan .ps-share-row__head {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 6px;
       min-width: 0;
     }
-    .practice-share-song-plan .mass-song-plan-card__part {
-      font-size: 0.68rem;
+    .practice-share-song-plan .ps-share-row__label {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 0.64rem;
       font-weight: 800;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--liturgical-accent);
     }
-    .practice-share-song-plan .mass-song-plan-card__part-input {
+    .practice-share-song-plan .ps-share-row__label-input {
+      flex: 1 1 auto;
       min-width: 0;
-      flex: 0 1 140px;
-      max-width: 160px;
-      min-height: 28px;
-      padding: 4px 8px;
-      border: 1px solid var(--line-soft);
-      border-radius: 8px;
-      background: var(--surface-solid);
+      min-height: 26px;
+      padding: 2px 0;
+      border: none;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
       color: var(--ink);
       font-size: 0.78rem;
       font-weight: 650;
     }
-    .practice-share-song-plan .mass-song-plan-card__title-wrap {
-      flex: 1 1 auto;
-      min-width: 0;
+    .practice-share-song-plan .ps-share-row__label-input:focus {
+      outline: none;
+      border-bottom-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--line));
     }
-    .practice-share-song-plan .mass-song-plan-card__title-picked {
+    .practice-share-song-plan .ps-share-row__picked {
       display: flex;
       align-items: center;
       gap: 6px;
       min-width: 0;
+      min-height: 20px;
     }
-    .practice-share-song-plan .mass-song-plan-card__title {
+    .practice-share-song-plan .ps-share-row__picked:not(.is-filled) .ps-share-row__title {
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .practice-share-song-plan .ps-share-row__title {
       margin: 0;
-      font-size: 0.88rem;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 0.84rem;
       font-weight: 650;
       color: var(--ink);
       line-height: 1.3;
@@ -5800,60 +5826,98 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .practice-share-song-plan .mass-song-plan-card__title.is-empty {
+    .practice-share-song-plan .ps-share-row__title.is-empty {
       color: var(--muted);
       font-weight: 500;
     }
-    .practice-share-song-plan .mass-song-plan-card__clear-x {
+    .practice-share-song-plan .ps-share-row__clear,
+    .practice-share-song-plan .ps-share-row__delete {
       flex-shrink: 0;
-      width: 22px;
-      height: 22px;
-      border: none;
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--ink) 8%, transparent);
-      color: var(--muted);
-      cursor: pointer;
-      line-height: 1;
-    }
-    .practice-share-song-plan .mass-song-plan-card__actions {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-left: auto;
-    }
-    .practice-share-song-plan .mass-song-plan-card__btn--delete {
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       display: grid;
       place-items: center;
-      border: none;
-      border-radius: 8px;
+      border: 1px solid transparent;
+      border-radius: 0;
       background: transparent;
       color: var(--muted);
       cursor: pointer;
+      line-height: 1;
+      font-size: 0.95rem;
+      transition: background 140ms cubic-bezier(0.23, 1, 0.32, 1),
+        color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+        border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+        transform 110ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    .practice-share-song-plan .mass-song-plan-card__btn--delete svg {
-      width: 16px;
-      height: 16px;
+    .practice-share-song-plan .ps-share-row__clear:hover,
+    .practice-share-song-plan .ps-share-row__delete:hover {
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+      border-color: var(--line);
+      color: var(--ink);
     }
-    .practice-share-song-plan .mass-song-plan-row__search {
+    .practice-share-song-plan .ps-share-row__clear:active,
+    .practice-share-song-plan .ps-share-row__delete:active {
+      transform: scale(0.96);
+    }
+    .practice-share-song-plan .ps-share-row__delete svg {
+      width: 14px;
+      height: 14px;
+    }
+    .practice-share-song-plan .ps-share-row__search {
       position: relative;
     }
     .practice-share-song-plan .mass-song-search-input {
       width: 100%;
-      min-height: 38px;
-      padding: 8px 12px;
+      min-height: 34px;
+      padding: 6px 9px;
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 0;
       background: var(--surface-solid);
       color: var(--ink);
-      font-size: 0.875rem;
+      font-size: 0.82rem;
+    }
+    .practice-share-song-plan .mass-song-search-input:focus {
+      outline: none;
+      border-color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--ink);
     }
     .practice-share-song-plan .mass-song-results {
       z-index: 30;
+      border-radius: 0;
     }
-    .practice-share-add-section {
-      margin-top: 4px;
+    .practice-share-song-plan .mass-song-alert-host:empty,
+    .practice-share-song-plan .ps-share-row__meta:empty,
+    .practice-share-song-plan .ps-share-row__badge {
+      display: none !important;
+    }
+    .practice-share-song-plan .ps-share-row__meta {
+      margin: 0;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .practice-share-song-plan .ps-share-row__meta.is-warn {
+      color: var(--danger, #b42318);
+    }
+    .practice-share-card--sections .practice-share-add-section {
+      margin: 0;
+      flex-shrink: 0;
+      min-height: 36px;
+      border: none;
+      border-radius: 0;
+      font-size: 0.78rem;
+      background: transparent;
+    }
+    .practice-share-card--sections .practice-share-add-section:hover {
+      background: color-mix(in srgb, var(--ink) 4%, transparent);
+    }
+    .practice-share-card--sections .ui-card__footer {
+      flex-shrink: 0;
+      border-top: 1px solid var(--line);
+      padding: 10px 14px 14px;
+    }
+    .practice-share-card--sections .ui-card__footer .primary,
+    .practice-share-card--sections .ui-card__footer .secondary {
+      border-radius: 0;
     }
     .home-bento-cell--events .flow-bento-cell__head {
       flex-shrink: 0;
@@ -15257,7 +15321,7 @@
                       <section class="home-songs-slide home-songs-slide--share" data-home-songs-slide="share" aria-label="Share lyrics for choir">
                         <h4 class="home-songs-slide__title">Share lyrics</h4>
                         <div class="home-songs-share">
-                          <p class="home-songs-share__lead">Send this Sunday's song lyrics to your choir — PIN-protected link, no account needed.</p>
+                          <p class="home-songs-share__lead">PIN-protected lyrics link for your choir.</p>
                           <button type="button" class="home-songs-share__btn" id="btn-home-practice-share">Share for choir</button>
                         </div>
                       </section>
@@ -15533,8 +15597,8 @@
         <article class="ui-card ui-card--popover-safe practice-share-card practice-share-card--sections" role="dialog" aria-labelledby="practice-share-sections-title" aria-modal="true">
           <header class="ui-card__header">
             <div class="ui-card__header-text">
-              <h3 class="ui-card__title" id="practice-share-sections-title">Share lyrics for choir</h3>
-              <p class="ui-card__description" id="practice-share-sections-sub">Pick songs for each Mass section, then share.</p>
+              <h3 class="ui-card__title" id="practice-share-sections-title">Share lyrics</h3>
+              <p class="ui-card__description" id="practice-share-sections-sub">Choose songs, then create a PIN link.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="practice-share-sections-close" aria-label="Close">×</button>
           </header>
@@ -18922,7 +18986,7 @@
                   <label>Developer options</label>
                   <p class="muted" style="margin:0 0 10px;">Advanced toggles for debugging the generated deck.</p>
                   <div class="settings-branding-toggles" role="group" aria-label="Developer options">
-                    <label><input type="checkbox" id="flow-hide-footer" /> Hide slide footer (the small bottom tag)</label>
+                    <label><input type="checkbox" id="flow-hide-footer" checked /> Hide slide footer (the small bottom tag)</label>
                   </div>
                 </div>
                 <script>
@@ -18930,7 +18994,10 @@
                     var KEY = "churchMediaHideFooter";
                     var cb = document.getElementById("flow-hide-footer");
                     if (!cb) return;
-                    try { cb.checked = localStorage.getItem(KEY) === "1"; } catch (_e) { /* ignore */ }
+                    try {
+                      var stored = localStorage.getItem(KEY);
+                      cb.checked = stored === null ? true : stored === "1";
+                    } catch (_e) { cb.checked = true; }
                     cb.addEventListener("change", function () {
                       try { localStorage.setItem(KEY, cb.checked ? "1" : "0"); } catch (_e) { /* ignore */ }
                     });
@@ -22630,6 +22697,20 @@
     let lyricsAnalyzeInFlight = false;
     let composerLoadedSong = null;
     const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
+    // Keep in sync with services/mass_text_format.py _STRUCTURE_LABEL_NAMES.
+    const LYRIC_STRUCTURE_LABEL =
+      "pre[- ]?chorus|post[- ]?chorus|pre[- ]?verse|post[- ]?verse|middle[- ]?8|" +
+      "refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|" +
+      "interlude|instrumental|ending|finale|hook|breakdown|spoken|solo|" +
+      "ad[- ]?lib|tag|turnaround|chant";
+    const LYRIC_STRUCTURE_HEADER_RE = new RegExp(
+      "^[\\[(]?\\s*(" + LYRIC_STRUCTURE_LABEL + ")(\\s*[\\w\\d.-]*)?\\s*[\\])]?\\s*[:.)-]?\\s*$",
+      "i"
+    );
+    const LYRIC_STRUCTURE_INLINE_RE = new RegExp(
+      "^(" + LYRIC_STRUCTURE_LABEL + ")\\s*:\\s*(.*)$",
+      "i"
+    );
     const LYRIC_BLOCK_DRAG_SVG =
       '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">' +
       '<circle cx="2.5" cy="2" r="1.1"/><circle cx="7.5" cy="2" r="1.1"/>' +
@@ -22804,8 +22885,8 @@
 
     function classifyLyricBlock(header, text, index) {
       const source = (header + " " + text).toLowerCase();
-      if (/chorus|refrain/.test(source)) return "chorus";
-      if (/bridge|middle/.test(source)) return "bridge";
+      if (/post[- ]?chorus|chorus|refrain|\bhook\b|\btag\b/.test(source)) return "chorus";
+      if (/bridge|middle|breakdown/.test(source)) return "bridge";
       if (/response|responsorial|lord, hear|amen/.test(source)) return "response";
       return "verse";
     }
@@ -22815,9 +22896,21 @@
       return chunks.map((chunk, index) => {
         const lines = chunk.split(/\n/).map((line) => line.trim()).filter(Boolean);
         const first = lines[0] || "";
-        const headerMatch = /^(verse|chorus|refrain|bridge|response)\s*([\w\d]*)/i.test(first);
-        const title = headerMatch ? first : "Verse " + (index + 1);
-        const text = headerMatch ? lines.slice(1).join("\n") : lines.join("\n");
+        const inline = LYRIC_STRUCTURE_INLINE_RE.exec(first);
+        const headerMatch = LYRIC_STRUCTURE_HEADER_RE.test(first) || !!inline;
+        let title;
+        let text;
+        if (inline) {
+          title = first;
+          const rest = (inline[2] || "").trim();
+          text = (rest ? [rest] : []).concat(lines.slice(1)).join("\n");
+        } else if (LYRIC_STRUCTURE_HEADER_RE.test(first)) {
+          title = first;
+          text = lines.slice(1).join("\n");
+        } else {
+          title = "Verse " + (index + 1);
+          text = lines.join("\n");
+        }
         const type = classifyLyricBlock(title, text, index);
         return { id: crypto.randomUUID(), type, title: title || typeLabels[type], text, collapsed: false };
       });
@@ -23273,18 +23366,17 @@
       setLyricsStatus("Tidied spacing and removed section labels like [Verse] / (Chorus).", "ok");
     });
 
-    /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Verse:). */
+    /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Outro:). */
     function tidyLyricBlockText(raw) {
-      const headerRe = /^[\[(]?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$/i;
       let lines = String(raw || "").replace(/[ \t]+$/gm, "").split("\n");
-      while (lines.length && headerRe.test(String(lines[0] || "").trim())) {
+      while (lines.length && LYRIC_STRUCTURE_HEADER_RE.test(String(lines[0] || "").trim())) {
         lines = lines.slice(1);
       }
       // Also drop any remaining standalone marker lines mid-block (duplicate labels).
       lines = lines.filter((line) => {
         const t = String(line || "").trim();
         if (!t) return true;
-        return !headerRe.test(t);
+        return !LYRIC_STRUCTURE_HEADER_RE.test(t);
       });
       return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
     }
@@ -23955,7 +24047,7 @@
       const statusEl = $("mass-song-status-" + key);
       const alertEl = $("mass-song-alert-" + key);
       const badgeEl = $("mass-song-badge-" + key);
-      const row = document.querySelector(".mass-song-plan-card[data-slot-key=\"" + key + "\"]");
+      const row = document.querySelector("[data-slot-key=\"" + key + "\"]");
       if (!titleEl) return;
       const id = selectedLyricsSongs[key] || "";
       let rowData = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
@@ -23965,14 +24057,16 @@
       }
       const missingLyrics = !!(id && rowData && !rowData.has_lyrics);
       const clearBtn = row ? row.querySelector("[data-mass-song-clear]") : null;
+      const pickedWrap = row ? row.querySelector(".ps-share-row__picked") : null;
       if (row) {
         row.classList.toggle("has-selection", !!id);
         row.classList.toggle("mass-song-slot--missing-lyrics", missingLyrics);
       }
+      if (pickedWrap) pickedWrap.classList.toggle("is-filled", !!id);
       if (badgeEl) badgeEl.hidden = !id;
       if (clearBtn) clearBtn.hidden = !id;
       if (!id) {
-        titleEl.textContent = "Choose a song";
+        titleEl.textContent = massSongPlanMountId === "practice-share-song-plan" ? "No song yet" : "Choose a song";
         titleEl.classList.remove("has-selection");
         titleEl.classList.add("is-empty");
         if (statusEl) {
@@ -23989,6 +24083,9 @@
         if (missingLyrics) {
           statusEl.textContent = "No lyrics";
           statusEl.classList.add("is-warn");
+        } else if (massSongPlanMountId === "practice-share-song-plan") {
+          statusEl.textContent = "";
+          statusEl.classList.remove("is-warn");
         } else {
           const lang = rowData && rowData.language ? rowData.language : "";
           statusEl.textContent = lang ? lang + " · Lyrics saved" : "Lyrics saved";
@@ -23996,7 +24093,8 @@
         }
       }
       if (alertEl) {
-        if (missingLyrics) {
+        // Keep Music Ministry alerts; compact share modal hides empty hosts via CSS.
+        if (missingLyrics && massSongPlanMountId !== "practice-share-song-plan") {
           alertEl.innerHTML =
             "<div class=\"mass-song-lyrics-alert\" role=\"alert\">" +
               "<span class=\"mass-song-lyrics-alert__icon\" aria-hidden=\"true\">!</span>" +
@@ -25283,8 +25381,6 @@
       );
     }
 
-    const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
-
     /** Match backend ``ensure_lyric_section_breaks`` — blank line before Verse/Chorus labels. */
     function ensureLyricSectionBreaks(raw) {
       const text = (raw || "").trim();
@@ -25292,7 +25388,7 @@
       const out = [];
       text.split("\n").forEach((line) => {
         const stripped = line.trim();
-        if (stripped && out.length && out[out.length - 1] !== "" && _LYRIC_STRUCTURE_HEADER_RE.test(stripped)) {
+        if (stripped && out.length && out[out.length - 1] !== "" && LYRIC_STRUCTURE_HEADER_RE.test(stripped)) {
           out.push("");
         }
         out.push(line);
@@ -25304,18 +25400,16 @@
     function parseLyricsSectionsForPreview(raw) {
       const parts = ensureLyricSectionBreaks(raw).split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
       if (!parts.length) return [];
-      const headerRe = /^\[?\s*(verse|chorus|refrain|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
-      const inlineRe = /^(refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp)\s*:\s*(.*)$/i;
       const sections = [];
       parts.forEach((chunk) => {
         const lines = chunk.split(/\n/).map((ln) => ln.trim()).filter(Boolean);
         if (!lines.length) return;
         const first = lines[0];
         let bodyLines;
-        if (headerRe.test(first)) {
+        if (LYRIC_STRUCTURE_HEADER_RE.test(first)) {
           bodyLines = lines.slice(1);
         } else {
-          const inline = inlineRe.exec(first);
+          const inline = LYRIC_STRUCTURE_INLINE_RE.exec(first);
           if (inline) {
             const rest = (inline[2] || "").trim();
             bodyLines = (rest ? [rest] : []).concat(lines.slice(1));
@@ -25323,6 +25417,7 @@
             bodyLines = lines;
           }
         }
+        bodyLines = bodyLines.filter((ln) => !LYRIC_STRUCTURE_HEADER_RE.test(ln));
         const body = bodyLines.join("\n").trim();
         if (body) sections.push(body);
       });
@@ -25674,12 +25769,47 @@
       return map[key] || custom || "section";
     }
 
+    function renderPracticeShareSongPlanHtml(slot) {
+      const label = slot.custom
+        ? ("<input type=\"text\" class=\"ps-share-row__label-input\" data-custom-label=\"" + escapeHtml(slot.key) + "\" " +
+            "value=\"" + escapeHtml(slot.label || "") + "\" maxlength=\"80\" " +
+            "placeholder=\"Section name\" aria-label=\"Section name\" />")
+        : ("<span class=\"ps-share-row__label\">" + escapeHtml(massSongSlotShortLabel(slot.key, slot.label)) + "</span>");
+      const del = slot.custom
+        ? ("<button type=\"button\" class=\"ps-share-row__delete mass-song-delete-section\" " +
+            "data-mass-song-delete=\"" + escapeHtml(slot.key) + "\" aria-label=\"Delete section\" title=\"Delete section\">" +
+            MASS_SONG_PLAN_TRASH_SVG + "</button>")
+        : "";
+      return (
+        "<div class=\"ps-share-row mass-song-slot" + (slot.custom ? " mass-song-slot--custom" : "") + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
+          "<div class=\"ps-share-row__head\">" +
+            label +
+            del +
+          "</div>" +
+          "<div class=\"ps-share-row__picked\">" +
+            "<strong class=\"ps-share-row__title is-empty\" id=\"mass-song-picked-" + escapeHtml(slot.key) + "\">No song yet</strong>" +
+            "<button type=\"button\" class=\"ps-share-row__clear mass-song-clear\" data-mass-song-clear=\"" + escapeHtml(slot.key) + "\" hidden aria-label=\"Clear song\" title=\"Clear song\">×</button>" +
+          "</div>" +
+          "<div class=\"ps-share-row__search mass-song-plan-row__search mass-song-pick\">" +
+            "<input type=\"search\" id=\"mass-song-q-" + escapeHtml(slot.key) + "\" class=\"mass-song-search-input\" maxlength=\"120\" autocomplete=\"off\" placeholder=\"Search to change…\" aria-label=\"Search " + escapeHtml((slot.label || "").trim() || "section") + "\" />" +
+            "<div class=\"mass-song-alert-host\" id=\"mass-song-alert-" + escapeHtml(slot.key) + "\"></div>" +
+            "<div class=\"vb-dropdown-panel mass-song-results\" id=\"mass-song-res-" + escapeHtml(slot.key) + "\" role=\"listbox\" hidden></div>" +
+          "</div>" +
+          "<span class=\"ps-share-row__badge\" id=\"mass-song-badge-" + escapeHtml(slot.key) + "\" hidden></span>" +
+          "<span class=\"ps-share-row__meta\" id=\"mass-song-status-" + escapeHtml(slot.key) + "\"></span>" +
+        "</div>"
+      );
+    }
+
     function renderMassSongPlan() {
       const plan = $(massSongPlanMountId);
       if (!plan) return;
       clearInactiveMassSongPlanMount();
       rebuildMassPlanSongPool();
-      plan.innerHTML = lyricSongSlots.map((slot, index) => (
+      const compact = massSongPlanMountId === "practice-share-song-plan";
+      plan.innerHTML = compact
+        ? lyricSongSlots.map((slot) => renderPracticeShareSongPlanHtml(slot)).join("")
+        : lyricSongSlots.map((slot, index) => (
         "<article class=\"mass-song-plan-card mass-song-slot" + (slot.custom ? " mass-song-slot--custom" : "") + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\">" +
           "<div class=\"mass-song-plan-card__row\">" +
             "<span class=\"mass-song-plan-card__drag\" aria-hidden=\"true\">" + MASS_SONG_PLAN_DRAG_SVG + "</span>" +
@@ -26020,7 +26150,7 @@
       const available = selectedLyricsSongCount();
       const sub = $("practice-share-sections-sub");
       if (sub) {
-        sub.textContent = "Pick or change songs for " + date + ", then share a PIN-protected link.";
+        sub.textContent = "Songs for " + date + " · then set a PIN.";
       }
       if (continueBtn) continueBtn.disabled = available === 0;
       if (!available && status) {

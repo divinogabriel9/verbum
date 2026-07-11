@@ -598,20 +598,38 @@
         }).join("\n").trim();
       }
 
-      const STRUCTURE_LABEL_RE = /^\s*\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\s*\]?\s*[:.)-]?\s*$/i;
-      const STRUCTURE_INLINE_RE = /^\s*(refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp)\s*:\s*(.*)$/i;
+      const STRUCTURE_LABEL_NAMES =
+        "pre[- ]?chorus|post[- ]?chorus|pre[- ]?verse|post[- ]?verse|middle[- ]?8|" +
+        "refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|" +
+        "interlude|instrumental|ending|finale|hook|breakdown|spoken|solo|" +
+        "ad[- ]?lib|tag|turnaround|chant";
+      const STRUCTURE_LABEL_RE = new RegExp(
+        "^\\s*[\\[(]?\\s*(" + STRUCTURE_LABEL_NAMES + ")(\\s*[\\w\\d.-]*)?\\s*[\\])]?\\s*[:.)-]?\\s*$",
+        "i"
+      );
+      const STRUCTURE_INLINE_RE = new RegExp(
+        "^\\s*(" + STRUCTURE_LABEL_NAMES + ")\\s*:\\s*(.*)$",
+        "i"
+      );
+
+      function normalizeStructureKind(raw) {
+        let kind = String(raw || "").trim().toLowerCase().replace(/[\s_]+/g, "-").replace(/-+/g, "-");
+        const aliases = {
+          refrain: "chorus",
+          prechorus: "pre-chorus",
+          postchorus: "post-chorus",
+          middle8: "bridge",
+          "middle-8": "bridge",
+          adlib: "ad-lib",
+        };
+        return aliases[kind] || kind;
+      }
 
       function structureKindFromLabel(line) {
         const m = String(line || "").trim().match(STRUCTURE_LABEL_RE);
-        if (m) {
-          const kind = String(m[1] || "").toLowerCase();
-          return kind === "refrain" ? "chorus" : kind;
-        }
+        if (m) return normalizeStructureKind(m[1] || "");
         const inline = String(line || "").trim().match(STRUCTURE_INLINE_RE);
-        if (inline) {
-          const kind = String(inline[1] || "").toLowerCase();
-          return kind === "refrain" ? "chorus" : kind;
-        }
+        if (inline) return normalizeStructureKind(inline[1] || "");
         return "";
       }
 

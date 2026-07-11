@@ -115,13 +115,20 @@ def format_krw_won(amount_raw: str) -> str:
     return f"{n:,} won"
 
 
+# Longer / hyphenated labels first so "pre-chorus" is not eaten as "chorus".
+_STRUCTURE_LABEL_NAMES = (
+    r"pre[- ]?chorus|post[- ]?chorus|pre[- ]?verse|post[- ]?verse|middle[- ]?8|"
+    r"refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|"
+    r"interlude|instrumental|ending|finale|hook|breakdown|spoken|solo|"
+    r"ad[- ]?lib|tag|turnaround|chant"
+)
 _STRUCTURE_LABEL_LINE_RE = re.compile(
-    r"^\s*\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\s*\]?\s*[:.)-]?\s*$",
+    rf"^\s*[\[(]?\s*({_STRUCTURE_LABEL_NAMES})(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$",
     re.IGNORECASE,
 )
 _STRUCTURE_HEADER_RE = _STRUCTURE_LABEL_LINE_RE
 _STRUCTURE_LABEL_INLINE_RE = re.compile(
-    r"^\s*(refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp)\s*:\s*(.*)$",
+    rf"^\s*({_STRUCTURE_LABEL_NAMES})\s*:\s*(.*)$",
     re.IGNORECASE,
 )
 
@@ -306,17 +313,32 @@ def pick_hymn_lyrics_for_slides(library_lyrics: str, override: str | None) -> st
     return resolved
 
 
+def _normalize_structure_kind(raw: str) -> str:
+    """Canonicalize a structure label to a slide block kind."""
+    kind = re.sub(r"[\s_]+", "-", (raw or "").strip().lower())
+    kind = re.sub(r"-+", "-", kind).strip("-")
+    aliases = {
+        "refrain": "chorus",
+        "prechorus": "pre-chorus",
+        "postchorus": "post-chorus",
+        "preverse": "pre-verse",
+        "postverse": "post-verse",
+        "middle8": "bridge",
+        "middle-8": "bridge",
+        "adlib": "ad-lib",
+    }
+    return aliases.get(kind, kind)
+
+
 def _structure_kind_from_label_line(line: str) -> str | None:
-    """Map a structure label line to verse|chorus|bridge|response|stanza|coda|intro|vamp."""
+    """Map a structure label line to verse|chorus|bridge|pre-chorus|outro|…."""
     stripped = (line or "").strip()
     m = _STRUCTURE_HEADER_RE.match(stripped)
     if m:
-        kind = (m.group(1) or "").lower()
-        return "chorus" if kind == "refrain" else kind
+        return _normalize_structure_kind(m.group(1) or "")
     inline = _STRUCTURE_LABEL_INLINE_RE.match(stripped)
     if inline:
-        kind = (inline.group(1) or "").lower()
-        return "chorus" if kind == "refrain" else kind
+        return _normalize_structure_kind(inline.group(1) or "")
     return None
 
 
@@ -381,9 +403,10 @@ def parse_structured_lyric_sections(lyrics: str) -> list[str]:
 
 def clean_lyrics_for_projection(lyrics: str) -> str:
     """
-    Remove structure labels (refrain, verse, chorus, stanza, bridge, response)
-    as standalone lines; collapse extra blank lines. Web-scrape artifacts
-    (``Copy`` buttons, navigation, licensing text) are scrubbed first.
+    Remove structure labels (verse, chorus, pre-/post-chorus, outro, bridge,
+    interlude, instrumental, tag, …) as standalone lines; collapse extra blank
+    lines. Web-scrape artifacts (``Copy`` buttons, navigation, licensing text)
+    are scrubbed first.
     """
     raw = sanitize_web_lyrics(lyrics).splitlines()
     out: list[str] = []

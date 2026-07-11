@@ -133,8 +133,11 @@ _LYRIC_FIT_HEIGHT_SAFETY = 0.90
 # Em->inch width fudge for Poppins Bold ALL CAPS on the projector surface. The
 # previous 0.80 under-measured wide lines, so the auto-fit never shrank them and
 # the text wrapped/overflowed the box (covering the title on dense slides). 0.92
-# matches observed Poppins Bold cap widths so the size range actually engages.
-_LYRIC_WIDTH_CALIBRATION = 0.92
+# still under-measured a few long verse lines (e.g. Your Heart Today dual slide 2),
+# so PowerPoint soft-wrapped one more visual line than the model predicted; with
+# MIDDLE anchor on a top-flush dual box that spill reads as top overflow. 0.94
+# matches observed Poppins Bold cap widths (manual 72 pt fit on that slide).
+_LYRIC_WIDTH_CALIBRATION = 0.94
 # Rendered line pitch vs. nominal at the configured line spacing (Poppins runs a
 # little taller than the bare spacing factor implies).
 _LYRIC_LINE_PITCH_FACTOR = 1.20
@@ -3467,7 +3470,8 @@ def _auto_body_pt(line_count: int, longest: int, base_pt: float) -> float:
 
 
 def _is_chorus_block_kind(block_kind: str) -> bool:
-    return (block_kind or "").strip().lower() in ("chorus", "refrain")
+    kind = (block_kind or "").strip().lower().replace("_", "-")
+    return kind in ("chorus", "refrain", "post-chorus", "hook", "tag")
 
 
 def _dual_second_verse_italic(
