@@ -26911,8 +26911,7 @@
         if (!row) continue;
         const section = resolveMassSongSection(slot.key, row);
         const cacheKey = section + "|" + id;
-        // Prefer cached lyrics; otherwise send id/title and let the server fill from catalog
-        // (avoids sequential network fetches that make Generate feel slow).
+        // Prefer cached lyrics; server fills gaps and always applies parish lyric overrides.
         const lyrics = (massSongLyricsCache.get(cacheKey) || "").trim();
         songs.push({
           slot_key: slot.key,

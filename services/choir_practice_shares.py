@@ -220,8 +220,12 @@ def _normalize_songs(songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
-def _enrich_songs_from_catalog(songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Fill missing lyrics from the local catalog when the client only sent ids."""
+def _enrich_songs_from_catalog(
+    songs: list[dict[str, Any]],
+    *,
+    parish_id: Optional[str] = None,
+) -> list[dict[str, Any]]:
+    """Fill missing lyrics from the catalog, then prefer parish overrides when available."""
     from services.song_catalog import load_catalog
 
     catalog = load_catalog()
@@ -236,11 +240,39 @@ def _enrich_songs_from_catalog(songs: list[dict[str, Any]]) -> list[dict[str, An
             if hid and hid not in by_id:
                 by_id[hid] = (str(sec), row)
 
+    pid = (parish_id or "").strip()
+    overrides_by_key: dict[str, str] = {}
+    if pid:
+        try:
+            from services.parish_hymn_overrides import get_override
+
+            for raw in songs:
+                if not isinstance(raw, dict):
+                    continue
+                hid = str(raw.get("hymn_id") or raw.get("id") or "").strip()
+                if not hid:
+                    continue
+                sec = str(raw.get("section") or "").strip().lower()
+                cache_key = f"{hid}|{sec}"
+                if cache_key in overrides_by_key:
+                    continue
+                ov = get_override(pid, hymn_id=hid, section=sec or None)
+                if not ov:
+                    ov = get_override(pid, hymn_id=hid)
+                lyr = str((ov or {}).get("lyrics") or "").strip()
+                if lyr:
+                    overrides_by_key[cache_key] = lyr
+                    # Also key without section for later lookup fallback.
+                    overrides_by_key.setdefault(f"{hid}|", lyr)
+        except Exception as exc:
+            logger.warning("practice share parish override enrich failed: %s", exc)
+
     out: list[dict[str, Any]] = []
     for raw in songs:
         item = dict(raw)
         lyrics = str(item.get("lyrics") or "").strip()
         hymn_id = str(item.get("hymn_id") or "").strip()
+        section = str(item.get("section") or "").strip().lower()
         if not lyrics and hymn_id:
             hit = by_id.get(hymn_id)
             if hit:
@@ -254,6 +286,11 @@ def _enrich_songs_from_catalog(songs: list[dict[str, Any]]) -> list[dict[str, An
                     item["language"] = str(row.get("language") or "").strip()
                 if not item.get("section") and sec:
                     item["section"] = sec
+                    section = str(sec).strip().lower()
+        if hymn_id:
+            parish_lyrics = overrides_by_key.get(f"{hymn_id}|{section}") or overrides_by_key.get(f"{hymn_id}|")
+            if parish_lyrics:
+                lyrics = parish_lyrics
         if not lyrics:
             continue
         item["lyrics"] = polish_lyrics_text(lyrics)
@@ -351,7 +388,7 @@ def create_practice_share(
     except ValueError as exc:
         raise ValueError("mass_date must be YYYY-MM-DD.") from exc
 
-    normalized = _normalize_songs(_enrich_songs_from_catalog(songs))
+    normalized = _normalize_songs(_enrich_songs_from_catalog(songs, parish_id=parish_id))
     if not normalized:
         raise ValueError("At least one song with lyrics is required.")
 
