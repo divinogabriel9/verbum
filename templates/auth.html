@@ -421,6 +421,9 @@
         Already have an account? <a href="/sign-in">Sign in</a>
       {% endif %}
     </p>
+    {% if app_version %}
+    <p class="auth-footer" style="margin-top:8px;opacity:0.75;font-size:0.78rem;" title="Deployed build">v {{ app_version }}</p>
+    {% endif %}
   </div>
   </div>
 

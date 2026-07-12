@@ -115,8 +115,11 @@ def invite_contact_email() -> str:
 
 @lru_cache(maxsize=1)
 def public_auth_config() -> dict[str, str | bool]:
+    from services.app_version import get_version_info
+
     base = app_public_url()
     contact = invite_contact_email()
+    version = get_version_info()
     return {
         "auth_enabled": auth_enabled(),
         "supabase_enabled": supabase_enabled(),
@@ -131,4 +134,8 @@ def public_auth_config() -> dict[str, str | bool]:
         "after_sign_up_url": "/home",
         "invite_only_signup": invite_only_signup(),
         "invite_contact_email": contact,
+        "app_version": str(version.get("version") or "dev"),
+        "git_commit": str(version.get("git_commit") or ""),
+        "git_commit_short": str(version.get("git_commit_short") or ""),
+        "git_branch": str(version.get("git_branch") or ""),
     }

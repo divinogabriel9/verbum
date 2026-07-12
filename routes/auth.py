@@ -45,7 +45,10 @@ def _auth_page_context(
     invite_email: Optional[str] = None,
     invite_community_name: Optional[str] = None,
 ) -> dict[str, Any]:
+    from services.app_version import get_version_info
+
     contact = invite_contact_email()
+    version = get_version_info()
     return {
         "title": title,
         "subtitle": subtitle,
@@ -56,6 +59,10 @@ def _auth_page_context(
         "invite_email": invite_email or "",
         "invite_community_name": invite_community_name or "",
         "invite_contact_email": contact,
+        "app_version": str(version.get("version") or "dev"),
+        "git_commit": str(version.get("git_commit") or ""),
+        "git_commit_short": str(version.get("git_commit_short") or ""),
+        "git_branch": str(version.get("git_branch") or ""),
     }
 
 

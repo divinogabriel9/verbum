@@ -75,6 +75,7 @@ from services.song_catalog import (
     save_lyrics_song,
     update_catalog_song,
 )
+from services.app_version import get_app_version, get_version_info
 from services.auth_config import auth_enabled, invite_contact_email, supabase_enabled
 from services.api_security import (
     AuthSession,
@@ -686,12 +687,22 @@ def _spawn_daemon(target, *, name: str, kwargs: dict[str, Any]) -> None:
     threading.Thread(target=target, kwargs=kwargs, name=name, daemon=True).start()
 
 
-app = FastAPI(title="LiturgyFlow")
+app = FastAPI(title="LiturgyFlow", version=get_app_version())
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
 _STATIC_DIR = _PROJECT / "static"
 _STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+
+def _template_version_context() -> dict[str, str]:
+    info = get_version_info()
+    return {
+        "app_version": str(info.get("version") or "dev"),
+        "git_commit": str(info.get("git_commit") or ""),
+        "git_commit_short": str(info.get("git_commit_short") or ""),
+        "git_branch": str(info.get("git_branch") or ""),
+    }
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -1304,10 +1315,16 @@ def api_feature_flags(
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
+async def health() -> dict[str, str | None]:
     # Async so a wedged sync thread pool (e.g. hung Supabase/httpx) cannot
     # make the health check itself hang.
-    return {"status": "ok"}
+    info = get_version_info()
+    return {
+        "status": "ok",
+        "version": str(info.get("version") or "dev"),
+        "git_commit": info.get("git_commit_short") or info.get("git_commit"),
+        "git_branch": info.get("git_branch"),
+    }
 
 
 @app.get("/go/google-search", response_class=HTMLResponse)
@@ -1995,6 +2012,7 @@ def index(request: Request) -> Any:
             "title": "LiturgyFlow",
             "auth_enabled": auth_enabled(),
             "invite_contact_email": invite_contact_email(),
+            **_template_version_context(),
         },
     )
 
@@ -2023,7 +2041,7 @@ def dashboard(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "LiturgyFlow", "auth_enabled": auth_enabled()},
+        {"title": "LiturgyFlow", "auth_enabled": auth_enabled(), **_template_version_context()},
     )
 
 
@@ -2042,6 +2060,7 @@ def practice_page(request: Request, token: str) -> Any:
             "title": "Choir practice",
             "token": (token or "").strip(),
             "lead_token": lead,
+            **_template_version_context(),
         },
     )
 

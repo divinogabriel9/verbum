@@ -17,3 +17,4 @@ data/.content_submissions_migrated
 node_modules/
 npm-debug.log*
 loadtests/results/
+.build-version

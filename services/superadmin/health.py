@@ -6,9 +6,11 @@ import os
 import time
 from typing import Any, Callable, Optional
 
+from services.app_version import get_version_info
 from services.auth_config import auth_enabled, public_auth_config, supabase_enabled
 from services.redis_client import get_redis, redis_enabled
 from services.superadmin.dashboard import _readings_cache_stats
+
 
 if False:  # TYPE_CHECKING
     from services.api_security import AuthSession
@@ -38,6 +40,7 @@ def build_health_payload() -> dict[str, Any]:
         except Exception:
             redis_ok = False
 
+    version = get_version_info()
     return {
         "ok": True,
         "checks": {
@@ -58,7 +61,12 @@ def build_health_payload() -> dict[str, Any]:
             "IMAGE_GENERATION_DAILY_LIMIT": (os.environ.get("IMAGE_GENERATION_DAILY_LIMIT") or "1").strip(),
         },
         "readings_cache": _readings_cache_stats(),
-        "app_version": (os.environ.get("APP_VERSION") or "").strip() or None,
+        "version": version.get("version"),
+        "app_version": version.get("app_version"),
+        "git_commit": version.get("git_commit"),
+        "git_commit_short": version.get("git_commit_short"),
+        "git_branch": version.get("git_branch"),
+        "version_source": version.get("source"),
     }
 
 

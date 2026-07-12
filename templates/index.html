@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{{ title }}</title>
+  <meta name="lf-app-version" content="{{ app_version|default('dev') }}" />
+  {% if git_commit_short %}<meta name="lf-git-commit" content="{{ git_commit_short }}" />{% endif %}
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="32x32" />
   <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="192x192" />
@@ -1638,6 +1640,16 @@
       margin: 4px 10px;
       border: none;
       background: var(--line);
+    }
+    .account-menu-version {
+      margin: 0;
+      padding: 8px 14px 10px;
+      font-size: 0.72rem;
+      line-height: 1.3;
+      color: var(--muted, #6b7280);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.01em;
+      user-select: text;
     }
     .app-menu-panel--account .app-menu-item {
       display: grid;
@@ -15412,6 +15424,7 @@
                     <span class="vb-dropdown-item__label">Sign out</span>
                   </button>
                 </div>
+                <p class="account-menu-version" id="app-version-label" title="Deployed build version">v {{ app_version|default('…') }}</p>
               </div>
             </div>
           </div>
@@ -31192,11 +31205,12 @@
       const grid = $("sa-health-grid");
       const envList = $("sa-env-list");
       if (!grid) return;
-      grid.innerHTML = Array(4).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
+      grid.innerHTML = Array(5).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
       try {
         const data = await saFetchAdmin("/api/admin/health");
         const checks = data.checks || {};
         grid.innerHTML = [
+          saRenderStatCard("Version", data.version || data.git_commit_short || "—", data.git_branch || data.version_source || ""),
           saRenderStatCard("Supabase", checks.supabase && checks.supabase.ok ? "OK" : "Issue", checks.supabase && checks.supabase.configured ? "Configured" : "Off"),
           saRenderStatCard("Redis", checks.redis && checks.redis.ok ? "OK" : "Issue", checks.redis && checks.redis.configured ? "Configured" : "Off"),
           saRenderStatCard("Auth", checks.auth && checks.auth.enabled ? "On" : "Off"),

@@ -18,6 +18,10 @@ services:
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
+      # Deploy identity: Render sets RENDER_GIT_COMMIT / RENDER_GIT_BRANCH automatically.
+      # Optional human label (e.g. 2026.07.12) shown alongside the short SHA in the UI.
+      - key: APP_VERSION
+        sync: false
       # Render injects RENDER_EXTERNAL_URL; auth_config uses it when APP_PUBLIC_URL is unset.
       - key: REDIS_URL
         fromService:
