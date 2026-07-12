@@ -282,12 +282,21 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      opacity: 0;
       border: 0;
       padding: 0;
       margin: 0;
       z-index: 2;
+      /* Keep input "visible" for iOS keyboard — opacity:0 blocks soft keyboard */
+      opacity: 1;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
       caret-color: transparent;
+      background: transparent;
+      font-size: 16px;
+      letter-spacing: 2.5rem;
+      outline: none;
+      -webkit-user-select: text;
+      user-select: text;
     }
     .pin-otp__cells {
       display: flex;
@@ -666,7 +675,7 @@
         document.addEventListener("keydown", onDocKey, true);
 
         sync();
-        requestAnimationFrame(function () { trap.focus({ preventScroll: true }); });
+        openPinKeyboard(trap);
 
         return {
           getValue: function () { return (trap.value || "").replace(/\D/g, "").slice(0, limit); },
@@ -675,9 +684,9 @@
             revealIndex = -1;
             trap.value = "";
             sync();
-            trap.focus();
+            openPinKeyboard(trap);
           },
-          focus: function () { trap.focus(); },
+          focus: function () { openPinKeyboard(trap); },
           destroy: function () {
             clearRevealTimer();
             document.removeEventListener("keydown", onDocKey, true);
@@ -690,8 +699,29 @@
         const boxes = [1, 2, 3, 4, 5, 6].map(function () {
           return '<span class="pin-otp__box" data-pin-box aria-hidden="true"></span>';
         }).join("");
-        return '<input type="tel" class="pin-otp__trap" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" aria-labelledby="practice-pin-label" />' +
+        return '<input type="tel" class="pin-otp__trap" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" enterkeyhint="done" autofocus aria-labelledby="practice-pin-label" />' +
           '<div class="pin-otp__cells" aria-hidden="true">' + boxes + '</div>';
+      }
+
+      function openPinKeyboard(trap) {
+        if (!trap) return;
+        function focusNow() {
+          if (!trap.isConnected) return;
+          try {
+            // readonly flip helps some mobile browsers open the keyboard on programmatic focus
+            trap.readOnly = true;
+            trap.focus({ preventScroll: false });
+            trap.readOnly = false;
+            trap.focus({ preventScroll: false });
+          } catch (_err) {
+            try { trap.focus(); } catch (_e2) { /* ignore */ }
+          }
+        }
+        focusNow();
+        requestAnimationFrame(focusNow);
+        setTimeout(focusNow, 50);
+        setTimeout(focusNow, 250);
+        setTimeout(focusNow, 500);
       }
 
       function renderPinForm(errorMsg) {
@@ -704,7 +734,7 @@
         root.innerHTML =
           '<div class="practice-pin-wrap">' +
             '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
-              '<label id="practice-pin-label">Enter the 6-digit PIN from your choir leader</label>' +
+              '<label id="practice-pin-label" for="practice-pin-trap">Enter the 6-digit PIN from your choir leader</label>' +
               '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">The PIN is not included in the link — share it separately (e.g. in person or by text).</p>' +
               '<div class="practice-pin-entry">' +
                 '<div class="pin-otp__wrap" id="practice-pin-otp" role="group" aria-labelledby="practice-pin-label">' +
@@ -715,18 +745,19 @@
               (errorMsg ? '<p class="practice-pin-error" role="alert">' + esc(errorMsg) + '</p>' : '') +
             '</section>' +
           '</div>';
+        const trap = document.querySelector("#practice-pin-otp .pin-otp__trap");
+        if (trap) trap.id = "practice-pin-trap";
         const otp = mountPinOtp(document.getElementById("practice-pin-otp"));
         const btn = document.getElementById("practice-pin-submit");
         btn.addEventListener("click", function () {
           submitPin(otp.getValue());
         });
-        const trapEnter = document.querySelector("#practice-pin-otp .pin-otp__trap");
-        if (trapEnter) {
-          trapEnter.addEventListener("keydown", function (ev) {
+        if (trap) {
+          trap.addEventListener("keydown", function (ev) {
             if (ev.key === "Enter") btn.click();
           });
         }
-        otp.focus();
+        openPinKeyboard(trap);
       }
 
       async function submitPin(pin) {

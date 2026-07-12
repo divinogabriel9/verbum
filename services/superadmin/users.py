@@ -124,7 +124,7 @@ def list_users(
                     "membership_status": membership_status,
                     "parish_role": parish_role,
                     "can_delete": can_delete,
-                    "can_set_parish_role": platform_role != "superadmin",
+                    "can_set_parish_role": True,
                 }
             )
         )

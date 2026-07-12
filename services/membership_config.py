@@ -98,4 +98,5 @@ def membership_payload(
         "role": (role or "member").strip().lower(),
         "parish_role": parish_role,
         "parish_id": row.get("parish_id"),
+        "user_id": user.user_id if user else None,
     }

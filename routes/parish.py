@@ -34,6 +34,12 @@ class ParishInviteAcceptBody(BaseModel):
     token: str = Field(..., min_length=8, max_length=128)
 
 
+class ParishHymnOverrideBody(BaseModel):
+    lyrics: str = Field(..., min_length=1, max_length=50000)
+    title: Optional[str] = Field(None, max_length=240)
+    section: Optional[str] = Field(None, max_length=32)
+
+
 async def require_parish_president(
     session: AuthSession = Depends(require_approved_membership),
 ) -> AuthSession:
@@ -152,3 +158,58 @@ def register_parish_routes(app) -> None:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {"ok": True}
+
+    @app.get("/api/parish/hymn-overrides")
+    def api_parish_hymn_overrides(
+        session: AuthSession = Depends(require_approved_membership),
+    ) -> dict[str, Any]:
+        from services.parish_hymn_overrides import list_overrides_for_parish
+
+        ctx = get_user_parish_context(session.user.user_id) or {}
+        parish_id = str(ctx.get("parish_id") or "").strip()
+        if not parish_id:
+            raise HTTPException(status_code=404, detail="Join a parish to manage parish lyrics.")
+        return {"ok": True, "parish_id": parish_id, "items": list_overrides_for_parish(parish_id)}
+
+    @app.put("/api/parish/hymn-overrides/{section}/{hymn_id:path}")
+    def api_parish_save_hymn_override(
+        section: str,
+        hymn_id: str,
+        body: ParishHymnOverrideBody,
+        session: AuthSession = Depends(require_approved_membership),
+    ) -> dict[str, Any]:
+        from services.parish_hymn_overrides import save_override
+
+        ctx = get_user_parish_context(session.user.user_id) or {}
+        parish_id = str(ctx.get("parish_id") or "").strip()
+        if not parish_id:
+            raise HTTPException(status_code=404, detail="Join a parish to save parish lyrics.")
+        sec = (body.section or section or "").strip().lower()
+        result = save_override(
+            parish_id,
+            hymn_id=hymn_id,
+            section=sec,
+            lyrics=body.lyrics,
+            title=body.title or "",
+            updated_by=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Save failed.")
+        return result
+
+    @app.delete("/api/parish/hymn-overrides/{section}/{hymn_id:path}")
+    def api_parish_clear_hymn_override(
+        section: str,
+        hymn_id: str,
+        session: AuthSession = Depends(require_approved_membership),
+    ) -> dict[str, Any]:
+        from services.parish_hymn_overrides import clear_override
+
+        ctx = get_user_parish_context(session.user.user_id) or {}
+        parish_id = str(ctx.get("parish_id") or "").strip()
+        if not parish_id:
+            raise HTTPException(status_code=404, detail="Join a parish to sync lyrics.")
+        result = clear_override(parish_id, hymn_id=hymn_id, section=section)
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Sync failed.")
+        return result

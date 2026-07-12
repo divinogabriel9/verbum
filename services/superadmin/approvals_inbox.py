@@ -52,6 +52,10 @@ def build_approvals_inbox() -> dict[str, Any]:
         if not rid:
             continue
         payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+        matches = payload.get("possible_matches") if isinstance(payload.get("possible_matches"), list) else []
+        detail = "Song catalog submission"
+        if matches:
+            detail = f"Similar titles already in catalog ({len(matches)}) — review before approve"
         items.append(
             {
                 "id": f"song:{rid}",
@@ -59,7 +63,8 @@ def build_approvals_inbox() -> dict[str, Any]:
                 "entity_id": rid,
                 "title": (payload.get("title") or "Song submission").strip(),
                 "subtitle": (row.get("submitted_by_email") or row.get("submitted_by_user_id") or "").strip(),
-                "detail": "Song catalog submission",
+                "detail": detail,
+                "possible_matches": matches,
                 "created_at": row.get("created_at") or "",
                 "panel": "membership",
                 "kind_label": _kind_label("songs"),

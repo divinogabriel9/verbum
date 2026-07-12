@@ -16284,6 +16284,8 @@
                 <div class="lyrics-structured-actions actions" role="group" aria-label="Lyrics editor actions">
                   <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
                   <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
+                  <button type="button" class="secondary" id="btn-save-parish-lyrics" hidden title="Save a short version for your parish only">Save parish version</button>
+                  <button type="button" class="ghost" id="btn-sync-catalog-lyrics" hidden title="Discard parish edits and restore superadmin catalog lyrics">Sync to catalog</button>
                   <button type="button" class="ghost" id="btn-clear-lyrics">
                     <span class="song-composer-clear-icon" aria-hidden="true">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
@@ -16292,6 +16294,7 @@
                   </button>
                   <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Lowercase all text, then capitalize the first letter of each word; also trim spacing and section labels">Tidy</button>
                 </div>
+                <p class="muted" id="lyrics-parish-version-hint" hidden style="margin:6px 0 0;font-size:0.78rem;"></p>
               </div>
               <div class="lyrics-structured-body">
                 <div class="lyrics-structured-body-stack">
@@ -18845,6 +18848,21 @@
                 <input type="search" id="sa-parishes-search" placeholder="Search parish or email…" maxlength="120" autocomplete="off" />
                 <button type="button" class="secondary" id="sa-parishes-refresh">Refresh</button>
               </div>
+              <h4 class="settings-admin-subhead">Create parish</h4>
+              <p class="muted" style="font-size:0.86rem;">Manually add a parish and optionally assign yourself (or another user) so you can keep parish lyric versions separately from the global catalog.</p>
+              <div class="sa-toolbar" style="flex-wrap:wrap;gap:10px;">
+                <input type="text" id="sa-create-parish-name" placeholder="Parish name" maxlength="120" autocomplete="organization" style="min-width:200px;flex:1;" />
+                <select id="sa-create-parish-assign" class="sa-filter-select" style="max-width:260px;" aria-label="Assign user">
+                  <option value="">No user yet</option>
+                  <option value="__self__">Assign me (superadmin)</option>
+                </select>
+                <select id="sa-create-parish-role" class="sa-filter-select" style="max-width:140px;" aria-label="Role">
+                  <option value="president">President</option>
+                  <option value="media">Media</option>
+                </select>
+                <button type="button" class="primary" id="sa-btn-create-parish">Create parish</button>
+              </div>
+              <p class="status" id="sa-create-parish-status" aria-live="polite"></p>
               <div class="sa-table-wrap" id="sa-parishes-table-wrap"></div>
               <div id="sa-parishes-pager" hidden></div>
               <p class="status" id="sa-parishes-status" aria-live="polite"></p>
@@ -18867,7 +18885,7 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Users</h3>
-                  <p>Registered accounts and parish linkage.</p>
+                  <p>Accounts, parish linkage, presence, and location for language targeting.</p>
                 </div>
               </header>
               <div class="sa-toolbar">
@@ -23062,6 +23080,8 @@
     let lyricsRawSnapshot = "";
     let lyricsAnalyzeInFlight = false;
     let composerLoadedSong = null;
+    let composerCatalogLyrics = "";
+    let composerParishVersion = false;
     const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
     const LYRIC_BLOCK_DRAG_SVG =
       '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">' +
@@ -23948,6 +23968,14 @@
         if (result.pending) {
           msg = result.message || "Song submitted for superadmin approval.";
           heading = "Submitted for review";
+        } else if (result.parish_version) {
+          msg = result.message || ("Saved parish version of " + (result.title || title) + ".");
+          heading = "Parish version saved";
+          composerParishVersion = true;
+          if (result.id) {
+            composerLoadedSong = { section: savedSection, id: result.id, title: result.title || title };
+          }
+          updateParishLyricsControls();
         } else {
           msg = "Saved lyrics for " + result.title + " in " + songSectionLabel(savedSection) + ".";
           heading = "Song saved";
@@ -24091,6 +24119,12 @@
         return;
       }
       proceedToSongSaveMoodFlow(title);
+    });
+    $("btn-save-parish-lyrics") && $("btn-save-parish-lyrics").addEventListener("click", () => {
+      saveParishLyricsVersion();
+    });
+    $("btn-sync-catalog-lyrics") && $("btn-sync-catalog-lyrics").addEventListener("click", () => {
+      syncParishLyricsToCatalog();
     });
 
     $("lyrics-save-title") && $("lyrics-save-title").addEventListener("blur", () => {
@@ -28817,6 +28851,8 @@
         is_superadmin: !!data.is_superadmin,
         role: (data.role || "member").toLowerCase(),
         parish_role: (data.parish_role || "").toLowerCase(),
+        parish_id: data.parish_id || "",
+        user_id: data.user_id || churchMembershipState.user_id || "",
       };
 
       const teamNav = $("settings-nav-team");
@@ -29496,9 +29532,15 @@
           const title = escapeHtml(payload.title || "Untitled");
           const email = escapeHtml(row.submitted_by_email || row.submitted_by_user_id || "—");
           const sid = encodeURIComponent(row.id || "");
+          const matches = Array.isArray(payload.possible_matches) ? payload.possible_matches : [];
+          const matchNote = matches.length
+            ? "<br><span class=\"status error\" style=\"font-size:0.78rem;\">Similar in catalog: " +
+              escapeHtml(matches.slice(0, 3).map((m) => m.title || m.id).join(", ")) +
+              (matches.length > 3 ? "…" : "") + "</span>"
+            : "";
           return (
             "<li style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);\">" +
-              "<span><strong>" + title + "</strong><br><span class=\"muted\">" + email + "</span></span>" +
+              "<span><strong>" + title + "</strong><br><span class=\"muted\">" + email + "</span>" + matchNote + "</span>" +
               "<span style=\"display:flex;gap:8px;\">" +
                 "<button type=\"button\" class=\"secondary btn-admin-song-reject\" data-submission-id=\"" + sid + "\">Reject</button>" +
                 "<button type=\"button\" class=\"primary btn-admin-song-approve\" data-submission-id=\"" + sid + "\">Approve</button>" +
@@ -29667,6 +29709,47 @@
       return String(value);
     }
 
+    function saParseIsoDate(iso) {
+      if (!iso) return null;
+      let raw = String(iso).trim();
+      if (!raw || raw === "—") return null;
+      // Date-only values stay calendar-local (noon avoids DST edge flips).
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        const d = new Date(raw + "T12:00:00");
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+      // Supabase timestamps are UTC; if no offset/Z is present, treat as UTC.
+      if (!/[zZ]$|[+-]\d{2}:?\d{2}$/.test(raw)) {
+        raw = raw.replace(" ", "T");
+        if (!raw.endsWith("Z")) raw += "Z";
+      }
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function saFormatLocalDateTime(iso, fallback) {
+      const d = saParseIsoDate(iso);
+      if (!d) return fallback != null ? fallback : "—";
+      return d.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+
+    function saFormatLocalDate(iso, fallback) {
+      const d = saParseIsoDate(iso);
+      if (!d) return fallback != null ? fallback : "—";
+      return d.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    }
+
     function saRenderStatCard(label, value, sub) {
       return (
         "<div class=\"sa-stat\"><p class=\"sa-stat__label\">" + escapeHtml(label) + "</p>" +
@@ -29712,7 +29795,7 @@
               return (
                 "<li" + jump + "><span><strong>" + escapeHtml(String(row.label || "—")) + "</strong>" +
                 "<br><span class=\"muted\">" + escapeHtml(String(row.detail || row.type || "")) + "</span></span>" +
-                "<span class=\"muted\">" + escapeHtml(String(row.at || "").slice(0, 19)) + "</span></li>"
+                "<span class=\"muted\">" + escapeHtml(saFormatLocalDateTime(row.at)) + "</span></li>"
               );
             }).join("")
             : "<li class=\"muted\">No recent activity.</li>";
@@ -29762,6 +29845,51 @@
       return "<table class=\"sa-table\">" + head + body + "</table>";
     }
 
+    async function createSaParish() {
+      if (!guardSuperadminAction()) return;
+      const nameEl = $("sa-create-parish-name");
+      const assignEl = $("sa-create-parish-assign");
+      const roleEl = $("sa-create-parish-role");
+      const statusEl = $("sa-create-parish-status");
+      const name = nameEl ? nameEl.value.trim() : "";
+      if (name.length < 2) {
+        if (statusEl) { statusEl.textContent = "Enter a parish name."; statusEl.className = "status error"; }
+        return;
+      }
+      let assignUserId = assignEl ? assignEl.value : "";
+      if (assignUserId === "__self__") {
+        assignUserId = (churchMembershipState && churchMembershipState.user_id) || "";
+        if (!assignUserId && window.VerbumAuth && window.VerbumAuth.getUser) {
+          const u = window.VerbumAuth.getUser();
+          assignUserId = (u && (u.id || u.user_id)) || "";
+        }
+      }
+      if (statusEl) { statusEl.textContent = "Creating parish…"; statusEl.className = "status"; }
+      try {
+        const data = await saFetchAdmin("/api/admin/parishes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            community_name: name,
+            membership_status: "approved",
+            assign_user_id: assignUserId || null,
+            assign_role: (roleEl && roleEl.value) || "president",
+          }),
+        });
+        if (statusEl) {
+          statusEl.textContent = "Created " + ((data.parish && data.parish.community_name) || name) + ".";
+          statusEl.className = "status ok";
+        }
+        if (nameEl) nameEl.value = "";
+        saState.parishOptions = null;
+        loadSaParishes();
+        saPopulateMergeSelects();
+        notify("Parish created.", "ok");
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = err.message || "Create failed."; statusEl.className = "status error"; }
+      }
+    }
+
     async function loadSaParishes() {
       const wrap = $("sa-parishes-table-wrap");
       const statusEl = $("sa-parishes-status");
@@ -29788,7 +29916,7 @@
           "<td>" + escapeHtml(row.owner_email || "—") + "</td>" +
           "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
           "<td>" + escapeHtml(row.members_label || (String(row.members_count || 1) + "/5")) + "</td>" +
-          "<td class=\"muted\">" + escapeHtml(String(row.updated_at || "").slice(0, 10)) + "</td></tr>"
+          "<td class=\"muted\">" + escapeHtml(saFormatLocalDate(row.updated_at)) + "</td></tr>"
           );
         });
         wrap.innerHTML = saRenderTable(["Parish", "Owner", "Status", "Members", "Updated"], rows, "No parishes found.");
@@ -29830,14 +29958,15 @@
             : "<span class=\"muted\">—</span>";
           let roleCell = escapeHtml(row.parish_role || "—");
           if (row.can_set_parish_role) {
-            const parishSelect = !row.parish_id
-              ? "<select class=\"sa-user-parish-pick\" data-user-id=\"" + uid + "\" style=\"max-width:140px;margin-right:6px;\">" +
-                "<option value=\"\">Assign parish…</option>" +
-                parishOptions.map((p) => (
-                  "<option value=\"" + escapeHtml(p.id || "") + "\">" + escapeHtml(p.community_name || "Parish") + "</option>"
-                )).join("") +
-                "</select>"
-              : "";
+            const parishSelect =
+              "<select class=\"sa-user-parish-pick\" data-user-id=\"" + uid + "\" style=\"max-width:160px;margin-right:6px;\">" +
+              "<option value=\"\">" + (row.parish_id ? "Keep / change parish…" : "Assign parish…") + "</option>" +
+              parishOptions.map((p) => (
+                "<option value=\"" + escapeHtml(p.id || "") + "\"" +
+                (String(p.id || "") === String(row.parish_id || "") ? " selected" : "") +
+                ">" + escapeHtml(p.community_name || "Parish") + "</option>"
+              )).join("") +
+              "</select>";
             roleCell =
               parishSelect +
               "<select class=\"sa-user-parish-role\" data-user-id=\"" + uid + "\" data-parish-id=\"" + escapeHtml(row.parish_id || "") + "\" style=\"max-width:110px;\">" +
@@ -29854,11 +29983,26 @@
             "<td>" + roleCell + "</td>" +
             "<td>" + escapeHtml(row.role || "member") + "</td>" +
             "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
-            "<td class=\"muted\">" + escapeHtml(String(row.created_at || "").slice(0, 10)) + "</td>" +
+            "<td>" + (row.online
+              ? "<span class=\"status ok\">Online</span>"
+              : "<span class=\"muted\">Offline</span>") + "</td>" +
+            "<td class=\"muted\" title=\"" + escapeHtml(row.last_seen_at || "") + "\">" +
+              escapeHtml(saFormatLocalDateTime(row.last_seen_at)) +
+            "</td>" +
+            "<td>" + escapeHtml(row.location_label || "—") +
+              (row.language_hint
+                ? "<div class=\"muted\" style=\"font-size:0.78rem;\">Lang: " + escapeHtml(row.language_hint) + "</div>"
+                : "") +
+            "</td>" +
+            "<td class=\"muted\">" + escapeHtml(saFormatLocalDate(row.created_at)) + "</td>" +
             "<td>" + deleteBtn + "</td></tr>"
           );
         });
-        wrap.innerHTML = saRenderTable(["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Joined", "Actions"], rows, "No users found.");
+        wrap.innerHTML = saRenderTable(
+          ["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Presence", "Last seen", "Location", "Joined", "Actions"],
+          rows,
+          "No users found."
+        );
         wrap.querySelectorAll(".sa-btn-delete-user").forEach((btn) => {
           btn.addEventListener("click", () => deleteSaUser(btn));
         });
@@ -29956,7 +30100,7 @@
               const email = escapeHtml(row.email || "Any email");
               const parish = escapeHtml(row.community_name || "Your parish");
               const url = escapeHtml(row.invite_url || "");
-              const exp = escapeHtml(String(row.expires_at || "").slice(0, 10));
+              const exp = escapeHtml(saFormatLocalDate(row.expires_at));
               return "<li><strong>" + email + "</strong><br><span class=\"muted\">Parish: " + parish + "</span><br><span class=\"muted\">Expires " + exp + "</span>" +
                 (url ? "<br><input type=\"text\" readonly value=\"" + url + "\" style=\"width:100%;margin-top:6px;font-size:0.8rem;\" />" : "") +
                 "</li>";
@@ -30074,7 +30218,7 @@
           ? gens.map((g) => (
             "<tr><td>" + escapeHtml(String(g.mass_date || "—")) + "</td>" +
             "<td>" + escapeHtml(g.title || g.celebrant || "—") + "</td>" +
-            "<td class=\"muted\">" + escapeHtml(String(g.created_at || "").slice(0, 16)) + "</td></tr>"
+            "<td class=\"muted\">" + escapeHtml(saFormatLocalDateTime(g.created_at)) + "</td></tr>"
           )).join("")
           : "<tr><td colspan=\"3\" class=\"muted\">No generations yet.</td></tr>";
         body.innerHTML =
@@ -30082,8 +30226,8 @@
             "<h4>Overview</h4>" +
             "<dl class=\"sa-detail-kv\">" +
               "<dt>Status</dt><dd>" + escapeHtml(parish.membership_status || "—") + "</dd>" +
-              "<dt>Created</dt><dd>" + escapeHtml(String(parish.created_at || "—").slice(0, 10)) + "</dd>" +
-              "<dt>Updated</dt><dd>" + escapeHtml(String(parish.updated_at || "—").slice(0, 10)) + "</dd>" +
+              "<dt>Created</dt><dd>" + escapeHtml(saFormatLocalDateTime(parish.created_at)) + "</dd>" +
+              "<dt>Updated</dt><dd>" + escapeHtml(saFormatLocalDateTime(parish.updated_at)) + "</dd>" +
               "<dt>ID</dt><dd><code style=\"font-size:0.75rem;word-break:break-all;\">" + escapeHtml(parish.id || "—") + "</code></dd>" +
             "</dl>" +
           "</section>" +
@@ -30607,7 +30751,7 @@
         if ($("sa-announce-link-label")) $("sa-announce-link-label").value = ann.link_label || "";
         if ($("sa-announce-starts")) $("sa-announce-starts").value = saIsoToLocalInput(ann.starts_at);
         if ($("sa-announce-ends")) $("sa-announce-ends").value = saIsoToLocalInput(ann.ends_at);
-        if (statusEl) statusEl.textContent = ann.updated_at ? ("Last saved " + String(ann.updated_at).slice(0, 19)) : "";
+        if (statusEl) statusEl.textContent = ann.updated_at ? ("Last saved " + saFormatLocalDateTime(ann.updated_at)) : "";
       } catch (err) {
         if (statusEl) { statusEl.textContent = err.message || "Load failed."; statusEl.className = "status error"; }
       }
@@ -30703,13 +30847,13 @@
         const meta = saPagerMeta(data.total, data.page || st.page, data.per_page || perPage);
         st.page = meta.page;
         const rows = items.map((row) => (
-          "<tr><td class=\"muted\">" + escapeHtml(String(row.created_at || "").slice(0, 19).replace("T", " ")) + "</td>" +
+          "<tr><td class=\"muted\">" + escapeHtml(saFormatLocalDateTime(row.created_at)) + "</td>" +
           "<td><strong>" + escapeHtml(row.action || "—") + "</strong></td>" +
           "<td>" + escapeHtml(row.entity_type || "—") + "</td>" +
           "<td>" + escapeHtml(saAuditDetailLabel(row.detail)) + "</td>" +
           "<td>" + escapeHtml(row.actor_email || row.actor_name || "—") + "</td></tr>"
         ));
-        wrap.innerHTML = saRenderTable(["When", "Action", "Type", "Detail", "Actor"], rows, "No audit entries yet.");
+        wrap.innerHTML = saRenderTable(["When (local)", "Action", "Type", "Detail", "Actor"], rows, "No audit entries yet.");
         saRenderPager(pagerEl, "auditLog", meta);
         if (statusEl) statusEl.textContent = saPagerStatusText(meta);
       } catch (err) {
@@ -30740,9 +30884,9 @@
           "<td>" + escapeHtml(row.title || row.celebrant || "—") + "</td>" +
           "<td>" + escapeHtml(row.parish_name || row.user_email || "—") + "</td>" +
           "<td>" + escapeHtml(row.slide_count != null ? String(row.slide_count) : "—") + "</td>" +
-          "<td class=\"muted\">" + escapeHtml(String(row.created_at || "").slice(0, 19)) + "</td></tr>"
+          "<td class=\"muted\">" + escapeHtml(saFormatLocalDateTime(row.created_at)) + "</td></tr>"
         ));
-        wrap.innerHTML = saRenderTable(["Mass date", "Title", "Parish / user", "Slides", "When"], rows, "No generations yet.");
+        wrap.innerHTML = saRenderTable(["Mass date", "Title", "Parish / user", "Slides", "When (local)"], rows, "No generations yet.");
         saRenderPager(pagerEl, "generations", meta);
         if (statusEl) statusEl.textContent = saPagerStatusText(meta);
       } catch (err) {
@@ -30812,7 +30956,7 @@
           const parish = escapeHtml(row.community_name || "—");
           const role = escapeHtml(row.invite_role || "president");
           const url = escapeHtml(row.invite_url || "");
-          const exp = escapeHtml(String(row.expires_at || "").slice(0, 10));
+          const exp = escapeHtml(saFormatLocalDate(row.expires_at));
           const note = escapeHtml(row.note || "");
           return (
             "<li style=\"padding:10px 0;border-bottom:1px solid var(--line);\">" +
@@ -31273,6 +31417,7 @@
         loadSaStorageBrowser();
       });
       $("sa-parishes-refresh") && $("sa-parishes-refresh").addEventListener("click", () => { loadSaParishes(); saPopulateMergeSelects(); });
+      $("sa-btn-create-parish") && $("sa-btn-create-parish").addEventListener("click", () => createSaParish());
       $("sa-users-refresh") && $("sa-users-refresh").addEventListener("click", () => loadSaUsers());
 
       const saPageEl = $("superadmin-page");
@@ -36766,10 +36911,17 @@
       const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
       applySongMetaToForm(apiSec, merged);
       composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
+      composerCatalogLyrics = String(s.catalog_lyrics || s.lyrics || "");
+      composerParishVersion = !!s.parish_version;
       lyricBlocks = [];
       if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
       scheduleLyricsStructuredSync(true);
-      setLyricsStatus("Loaded \"" + (merged.title || s.title || "") + "\" from " + songSectionLabel(apiSec) + ".", "ok");
+      updateParishLyricsControls();
+      setLyricsStatus(
+        "Loaded \"" + (merged.title || s.title || "") + "\" from " + songSectionLabel(apiSec) +
+        (composerParishVersion ? " (parish version)." : "."),
+        "ok"
+      );
       if (clearSearch) clearSongCatalogSearch();
       setSongComposerDeflated(true);
     }
@@ -36777,6 +36929,109 @@
     function songSectionLabel(key) {
       const hit = SECTION_ORDER.find((s) => s.key === key);
       return hit ? hit.label : key;
+    }
+
+    function userHasParishForLyrics() {
+      return !!(churchMembershipState && churchMembershipState.parish_id);
+    }
+
+    function updateParishLyricsControls() {
+      const saveParishBtn = $("btn-save-parish-lyrics");
+      const syncBtn = $("btn-sync-catalog-lyrics");
+      const hint = $("lyrics-parish-version-hint");
+      const hasParish = userHasParishForLyrics();
+      const hasSong = !!(composerLoadedSong && composerLoadedSong.id);
+      if (saveParishBtn) {
+        saveParishBtn.hidden = !(hasParish && hasSong);
+      }
+      if (syncBtn) {
+        syncBtn.hidden = !(hasParish && hasSong && composerParishVersion);
+      }
+      if (hint) {
+        if (hasSong && composerParishVersion) {
+          hint.hidden = false;
+          hint.textContent = "Showing your parish short version. Sync to catalog restores the superadmin source of truth.";
+        } else if (hasParish && hasSong) {
+          hint.hidden = false;
+          hint.textContent = "Editing the global catalog lyrics. Use Save parish version to keep a short parish copy without changing the source of truth.";
+        } else {
+          hint.hidden = true;
+          hint.textContent = "";
+        }
+      }
+    }
+
+    async function saveParishLyricsVersion() {
+      if (!composerLoadedSong || !composerLoadedSong.id) {
+        setLyricsStatus("Open a catalog song first, then save a parish version.", "error");
+        return;
+      }
+      if (!userHasParishForLyrics()) {
+        setLyricsStatus("Join a parish first to save parish lyric versions.", "error");
+        return;
+      }
+      const title = normalizeSongTitleInput($("lyrics-save-title"));
+      const lyrics = applyLyricsFirstLettersToEditor();
+      const section = ($("lyrics-save-section") && $("lyrics-save-section").value) || composerLoadedSong.section || "meditation";
+      if (!lyrics.trim()) {
+        setLyricsStatus("Lyrics are required.", "error");
+        return;
+      }
+      const btn = $("btn-save-parish-lyrics");
+      if (btn) btn.disabled = true;
+      try {
+        const headers = await adminAuthHeaders();
+        headers["Content-Type"] = "application/json";
+        const res = await fetch(
+          "/api/parish/hymn-overrides/" + encodeURIComponent(section) + "/" + encodeURIComponent(composerLoadedSong.id),
+          {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({ lyrics: lyrics, title: title || composerLoadedSong.title || "", section: section }),
+          }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || data.error || "Could not save parish version.");
+        composerParishVersion = true;
+        updateParishLyricsControls();
+        setLyricsStatus(data.message || "Parish lyric version saved.", "ok");
+        notify(data.message || "Parish lyric version saved.", "ok");
+      } catch (err) {
+        setLyricsStatus(err.message || "Could not save parish version.", "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function syncParishLyricsToCatalog() {
+      if (!composerLoadedSong || !composerLoadedSong.id) return;
+      if (!confirm("Reset this song to the global catalog lyrics? Your parish short version will be removed.")) return;
+      const section = composerLoadedSong.section || "meditation";
+      const btn = $("btn-sync-catalog-lyrics");
+      if (btn) btn.disabled = true;
+      try {
+        const headers = await adminAuthHeaders();
+        const res = await fetch(
+          "/api/parish/hymn-overrides/" + encodeURIComponent(section) + "/" + encodeURIComponent(composerLoadedSong.id),
+          { method: "DELETE", headers }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || data.error || "Sync failed.");
+        composerParishVersion = false;
+        if ($("lyrics-input") && composerCatalogLyrics) {
+          $("lyrics-input").value = composerCatalogLyrics;
+          scheduleLyricsStructuredSync(true);
+        } else {
+          await loadSongIntoEditor(section, composerLoadedSong.id, { title: composerLoadedSong.title, clearSearch: false });
+        }
+        updateParishLyricsControls();
+        setLyricsStatus(data.message || "Synced to catalog lyrics.", "ok");
+        notify(data.message || "Synced to catalog lyrics.", "ok");
+      } catch (err) {
+        setLyricsStatus(err.message || "Sync failed.", "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     let songMetaEditCtx = null;

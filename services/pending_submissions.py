@@ -219,12 +219,55 @@ def submit_pending_song(
     language: str = "English",
     author: str = "",
 ) -> dict[str, Any]:
+    from services.song_catalog import find_catalog_matches_by_title, format_song_title_case
+
+    clean_title = format_song_title_case(str(title or "")).strip()
+    clean_lyrics = str(lyrics or "").strip()
+    if not clean_title or not clean_lyrics:
+        return {"ok": False, "error": "Song title and lyrics are required."}
+
+    catalog_matches = find_catalog_matches_by_title(clean_title)
+    exact_catalog = [m for m in catalog_matches if m.get("match") == "exact"]
+    pending_matches: list[dict[str, Any]] = []
+    title_key = clean_title.lower()
+    for row in list_pending_songs():
+        payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+        pending_title = str(payload.get("title") or "").strip()
+        if pending_title.lower() == title_key:
+            pending_matches.append(
+                {
+                    "id": row.get("id"),
+                    "title": pending_title,
+                    "match": "pending",
+                    "submitted_by_email": row.get("submitted_by_email") or "",
+                }
+            )
+
+    if exact_catalog or pending_matches:
+        names = [m.get("title") for m in (exact_catalog or pending_matches) if m.get("title")]
+        label = names[0] if names else clean_title
+        where = "the catalog" if exact_catalog else "pending submissions"
+        return {
+            "ok": False,
+            "duplicate": True,
+            "error": (
+                f"“{label}” already exists in {where}. "
+                "Open it from the Song Library and save a parish version, "
+                "or ask a superadmin if this is a true new entry."
+            ),
+            "matches": exact_catalog + pending_matches + [
+                m for m in catalog_matches if m.get("match") != "exact"
+            ],
+            "notify_superadmin": True,
+        }
+
     payload = {
-        "title": title.strip(),
-        "lyrics": lyrics.strip(),
+        "title": clean_title,
+        "lyrics": clean_lyrics,
         "sections": sections,
         "language": language,
         "author": author.strip(),
+        "possible_matches": catalog_matches,
     }
     if supabase_enabled():
         row = _insert_submission_db(session, kind="song", payload=payload)
@@ -232,7 +275,15 @@ def submit_pending_song(
             "ok": True,
             "pending": True,
             "submission_id": row.get("id"),
-            "message": "Song submitted for superadmin approval.",
+            "possible_matches": catalog_matches,
+            "message": (
+                "Song submitted for superadmin approval."
+                + (
+                    f" Note: {len(catalog_matches)} similar title(s) already in the catalog."
+                    if catalog_matches
+                    else ""
+                )
+            ),
         }
     rows = _read_rows(_SONGS_PATH)
     row = {
@@ -249,6 +300,7 @@ def submit_pending_song(
         "ok": True,
         "pending": True,
         "submission_id": row["id"],
+        "possible_matches": catalog_matches,
         "message": "Song submitted for superadmin approval.",
     }
 

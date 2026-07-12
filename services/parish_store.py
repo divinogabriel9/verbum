@@ -456,7 +456,23 @@ def assign_user_to_parish(user_id: str, parish_id: str, role: str) -> dict[str, 
     if role not in {"president", "media"}:
         raise ValueError("role must be president or media.")
 
-    if count_active_members(pid) >= PARISH_MEMBER_LIMIT:
+    is_platform_superadmin = False
+    try:
+        prof = (
+            _service_client()
+            .table("profiles")
+            .select("role")
+            .eq("id", uid)
+            .limit(1)
+            .execute()
+        )
+        is_platform_superadmin = (
+            ((prof.data or [{}])[0].get("role") or "").strip().lower() == "superadmin"
+        )
+    except Exception:
+        is_platform_superadmin = False
+
+    if not is_platform_superadmin and count_active_members(pid) >= PARISH_MEMBER_LIMIT:
         existing = get_member_for_user(uid)
         if not existing or str(existing.get("parish_id") or "") != pid:
             raise ValueError(f"Parish already has {PARISH_MEMBER_LIMIT} active members.")
@@ -596,3 +612,47 @@ def set_parish_membership_status(user_id: str, status: str) -> dict[str, Any]:
         if active_uid:
             _sync_legacy_church_profile(active_uid, parish)
     return parish
+
+
+def create_parish_manual(
+    *,
+    community_name: str,
+    membership_status: str = "approved",
+    assign_user_id: str | None = None,
+    assign_role: str = "president",
+) -> dict[str, Any]:
+    """Superadmin: create a parish and optionally assign a user (including superadmin)."""
+    if not supabase_enabled():
+        raise RuntimeError("Supabase is not configured.")
+    name = (community_name or "").strip()
+    if len(name) < 2:
+        raise ValueError("Parish name must be at least 2 characters.")
+    status = (membership_status or "approved").strip().lower()
+    if status not in {"draft", "pending", "approved", "rejected"}:
+        raise ValueError("Invalid membership_status.")
+    role = (assign_role or "president").strip().lower()
+    if role not in {"president", "media"}:
+        raise ValueError("assign_role must be president or media.")
+
+    client = _service_client()
+    now = datetime.now(timezone.utc).isoformat()
+    payload: dict[str, Any] = {
+        "community_name": name,
+        "membership_status": status,
+        "created_at": now,
+        "updated_at": now,
+    }
+    if status == "approved":
+        payload["community_name_locked_at"] = now
+
+    result = client.table("parishes").insert(payload).execute()
+    rows = result.data or []
+    if not rows:
+        raise RuntimeError("Parish create did not persist.")
+    parish = rows[0]
+    parish_id = str(parish.get("id") or "")
+    member = None
+    uid = (assign_user_id or "").strip()
+    if uid and parish_id:
+        member = assign_user_to_parish(uid, parish_id, role)
+    return {"ok": True, "parish": parish, "member": member}

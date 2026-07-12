@@ -21,7 +21,8 @@ from services.superadmin.dashboard import build_dashboard_payload
 from services.superadmin.audit_log import list_audit_log
 from services.superadmin.generations import list_generations
 from services.superadmin.health import build_api_probes, build_health_payload
-from services.superadmin.parishes import get_parish_detail, list_parishes
+from services.superadmin.parishes import get_parish_detail, list_parishes, list_parish_options
+from services.parish_store import create_parish_manual
 from services.superadmin.users import delete_user, list_users, set_user_parish_role
 from services.superadmin.readings_admin import (
     fetch_admin_calendar_month,
@@ -108,6 +109,13 @@ class PlatformAnnouncementBody(BaseModel):
 class MergeParishesBody(BaseModel):
     source_id: str = Field(..., min_length=8, max_length=64)
     target_id: str = Field(..., min_length=8, max_length=64)
+
+
+class CreateParishBody(BaseModel):
+    community_name: str = Field(..., min_length=2, max_length=120)
+    membership_status: Literal["draft", "pending", "approved", "rejected"] = "approved"
+    assign_user_id: Optional[str] = Field(None, max_length=64)
+    assign_role: Literal["president", "media"] = "president"
 
 
 class FeatureFlagBody(BaseModel):
@@ -272,6 +280,36 @@ def register_admin_routes(app) -> None:
         )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Merge failed.")
+        return result
+
+    @app.post("/api/admin/parishes")
+    def api_admin_create_parish(
+        body: CreateParishBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        try:
+            result = create_parish_manual(
+                community_name=body.community_name,
+                membership_status=body.membership_status,
+                assign_user_id=body.assign_user_id,
+                assign_role=body.assign_role,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        parish = result.get("parish") or {}
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="create",
+            entity_type="parish",
+            entity_id=str(parish.get("id") or ""),
+            detail={
+                "community_name": parish.get("community_name"),
+                "assign_user_id": body.assign_user_id,
+                "assign_role": body.assign_role,
+            },
+        )
         return result
 
     @app.get("/api/admin/parishes")

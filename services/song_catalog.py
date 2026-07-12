@@ -471,6 +471,51 @@ def find_catalog_row_by_id(hymn_id: str) -> tuple[Optional[str], Optional[dict[s
     return None, None
 
 
+def find_catalog_matches_by_title(title: str, *, limit: int = 8) -> list[dict[str, Any]]:
+    """Find global catalog songs whose title matches (exact, then fuzzy contains)."""
+    clean = format_song_title_case(str(title or "")).strip()
+    if not clean:
+        return []
+    key = clean.lower()
+    slug = make_song_id(clean)
+    data = load_catalog()
+    exact: list[dict[str, Any]] = []
+    fuzzy: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for sec in _SECTIONS:
+        for row in data.get(sec) or []:
+            if not isinstance(row, dict):
+                continue
+            hid = str(row.get("id") or "").strip()
+            row_title = str(row.get("title") or "").strip()
+            if not hid or not row_title:
+                continue
+            dedupe = f"{sec}:{hid}"
+            if dedupe in seen:
+                continue
+            row_key = row_title.lower()
+            match_type = None
+            if row_key == key or hid == slug:
+                match_type = "exact"
+            elif key in row_key or row_key in key:
+                match_type = "similar"
+            if not match_type:
+                continue
+            seen.add(dedupe)
+            item = {
+                "id": hid,
+                "title": row_title,
+                "section": sec,
+                "match": match_type,
+                "has_lyrics": bool(str(row.get("lyrics") or "").strip()),
+            }
+            if match_type == "exact":
+                exact.append(item)
+            else:
+                fuzzy.append(item)
+    return (exact + fuzzy)[: max(1, limit)]
+
+
 def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[dict[str, Any]]]:
     now = time.monotonic()
     cached = _catalog_api_cache.get(include_inferred_moods)

@@ -1878,6 +1878,26 @@ def api_get_catalog_song(
     if not row:
         raise HTTPException(status_code=404, detail="Song not found.")
     lyrics = fetch_lyrics_from_normalized(hid) or str(row.get("lyrics") or "")
+    catalog_lyrics = lyrics
+    parish_version = False
+    if session and session.user and session.user.user_id:
+        try:
+            from services.parish_hymn_overrides import get_override
+            from services.parish_store import get_user_parish_context
+
+            parish_ctx = get_user_parish_context(session.user.user_id) or {}
+            parish_id = str(parish_ctx.get("parish_id") or "").strip()
+            if parish_id:
+                ov = get_override(parish_id, hymn_id=hid, section=resolved_section)
+                if not ov:
+                    ov = get_override(parish_id, hymn_id=hid)
+                if ov and str(ov.get("lyrics") or "").strip():
+                    lyrics = str(ov.get("lyrics") or "")
+                    parish_version = True
+                    if ov.get("section"):
+                        resolved_section = str(ov.get("section") or resolved_section)
+        except Exception:
+            pass
     log_lyric_read(
         user_id=uid,
         hymn_id=hid,
@@ -1893,6 +1913,8 @@ def api_get_catalog_song(
             "author": str(row.get("author") or ""),
             "language": str(row.get("language") or "").strip(),
             "lyrics": lyrics,
+            "catalog_lyrics": catalog_lyrics,
+            "parish_version": parish_version,
             "gospel_moods": gospel_moods_for_song(row),
         },
     }
@@ -2713,6 +2735,32 @@ def api_save_lyrics(
     session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> dict[str, Any]:
     if auth_enabled() and session and not is_superadmin_user(session.user):
+        from services.parish_hymn_overrides import save_override
+        from services.parish_store import get_user_parish_context
+        from services.song_catalog import find_catalog_matches_by_title, format_song_title_case
+
+        clean_title = format_song_title_case(body.title or "")
+        exact = [
+            m
+            for m in find_catalog_matches_by_title(clean_title)
+            if m.get("match") == "exact"
+        ]
+        parish_ctx = get_user_parish_context(session.user.user_id) or {}
+        parish_id = str(parish_ctx.get("parish_id") or "").strip()
+        # Existing catalog song → parish short version (does not change global SoT).
+        if exact and parish_id:
+            hit = exact[0]
+            result = save_override(
+                parish_id,
+                hymn_id=str(hit.get("id") or ""),
+                section=str((body.sections or [hit.get("section") or "meditation"])[0]),
+                lyrics=body.lyrics,
+                title=clean_title,
+                updated_by=session.user.user_id,
+            )
+            if not result.get("ok"):
+                raise HTTPException(status_code=400, detail=result.get("error") or "Could not save parish lyrics.")
+            return result
         result = submit_pending_song(
             session,
             title=body.title,
@@ -2722,7 +2770,10 @@ def api_save_lyrics(
             author=body.author,
         )
         if not result.get("ok"):
-            raise HTTPException(status_code=400, detail=result.get("error") or "Could not submit song.")
+            raise HTTPException(
+                status_code=409 if result.get("duplicate") else 400,
+                detail=result.get("error") or "Could not submit song.",
+            )
         return result
     result = save_lyrics_song(
         title=body.title,
