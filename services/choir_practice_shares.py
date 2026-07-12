@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LOCAL_PATH = _PROJECT_ROOT / "data" / "choir_practice_shares.json"
-_DEFAULT_TTL_HOURS = 1
+_DEFAULT_TTL_HOURS = 24
 _MAX_SONGS = 24
 _MAX_LYRICS_LEN = 12000
 
@@ -358,7 +358,7 @@ def create_practice_share(
     pin = _normalize_pin(optional_pin)
     pin_stored = hash_pin(pin)
     token = secrets.token_urlsafe(24)
-    # ttl_days is ignored — practice links always expire 1 hour after generation.
+    # ttl_days is ignored — practice links always expire 24 hours after generation.
     _ = ttl_days
     expires_at = _compute_expires_at(ttl_hours=_DEFAULT_TTL_HOURS).isoformat()
     payload = {

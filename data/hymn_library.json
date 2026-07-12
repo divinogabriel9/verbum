@@ -250,12 +250,15 @@
       "id": "take_oh_lord_this_offering",
       "title": "Take Oh Lord This Offering",
       "author": "",
-      "lyrics": "Verse 1\nTake, Oh Lord, This Offering\nWith Hands Outstretch Imploring\nTake, Oh Lord, This Sacrifice\nAnd Lift It To The Skies\n\nVerse 2\nThis Humble Life We Offer\nIn Loving Care Protect\nWith Contrite Hearts We Pray To You\nYour Mercy Grant Us, Lord\n\nVerse 3\nListen, Lord, This Pray'r\nWe Send To You On High\nGrant, Oh Lord, To Those Who Seek\nThe Secret Of Your Love",
+      "lyrics": "Verse 1\nTake, Oh Lord, This Offering\nWith Hands Outstretch Imploring\nTake, Oh Lord, This Sacrifice\nAnd Lift It To The Skies\n\nVerse 2\nThis Humble Life We Offer\nIn Loving Care Protect\nWith Contrite Hearts\nWe Pray To You\nYour Mercy Grant Us, Lord\n\nVerse 3\nListen, Lord, This Pray'r\nWe Send To You On High\nGrant, Oh Lord, To Those Who Seek\nThe Secret Of Your Love",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "language": "English"
+      "language": "English",
+      "gospel_moods": [
+        "mercy"
+      ]
     },
     {
       "id": "one_more_gift",
@@ -501,7 +504,7 @@
       "id": "your_heart_today",
       "title": "Your Heart Today",
       "author": "",
-      "lyrics": "Verse 1\nWhere There Is Fear I Can Allay\nWhere There Is Pain I Can Heal\nWhere There Are Wounds I Can Bind\nAnd Hunger I Can Fill\n\nChorus\nLord, Grant Me Courage\nLord, Grant Me Strength\nGrant Me Compassion\nThat I May Be Your Heart Today\n\nVerse 2\nWhere There Is Hate I Can Confront\nWhere There Are Yokes I Can Release\nWhere There Are Captives I Can Free\nAnd Anger I Can Appease\n\nChorus\nLord, Grant Me Courage\nLord, Grant Me Strength\nGrant Me Compassion\nThat I May Be Your Heart Today\n\nBridge\nWhen Comes The Day I Dread\nTo See Our Broken World\nCompel Me From My Cell Grown Cold\nThat Your People I May Behold\n\nVerse 3\nWhere There Is Fear I Can Allay\nWhere There Is Pain I Can Heal\nWhere There Are Wounds I Can Bind\nAnd Hunger I Can Fill\n\nChorus\nLord, Grant Me Courage\nLord, Grant Me Strength\nGrant Me Compassion\nThat I May Be Your Heart Today\n\nVerse 4\nAnd When I've Done All That I Could\nYet There Are Hearts I Cannot Move\nLord, Give Me Hope\nThat I May Be Your Heart Today",
+      "lyrics": "Verse 1\nWhere There Is Fear I Can Allay\nWhere There Is Pain I Can Heal\nWhere There Are Wounds\nI Can Bind\nAnd Hunger I Can Fill\n\nChorus\nLord, Grant Me Courage\nLord, Grant Me Strength\nGrant Me Compassion\nThat I May Be\nYour Heart Today\n\nVerse 2\nWhere There Is Hate I Can Confront\nWhere There Are Yokes I Can Release\nWhere There Are Captives I Can Free\nAnd Anger I Can Appease\n\nChorus\nLord, Grant Me Courage\nLord, Grant Me Strength\nGrant Me Compassion\nThat I May Be\nYour Heart Today\n\nBridge\nWhen Comes The Day I Dread\nTo See Our Broken World\nCompel Me From\nMy Cell Grown Cold\nThat Your People I May Behold\n\nVerse 3\nWhere There Is Fear I Can Allay\nWhere There Is Pain I Can Heal\nWhere There Are Wounds\nI Can Bind\nAnd Hunger I Can Fill\n\nChorus\nLord, Grant Me Courage\nLord, Grant Me Strength\nGrant Me Compassion\nThat I May Be\nYour Heart Today\n\nVerse 4\nAnd When I've Done\nAll That I Could\nYet There Are Hearts\nI Cannot Move Lord,\nGive Me Hope\nThat I May Be Your Heart Today",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
