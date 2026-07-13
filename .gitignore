@@ -18,3 +18,4 @@ node_modules/
 npm-debug.log*
 loadtests/results/
 .build-version
+.build-time

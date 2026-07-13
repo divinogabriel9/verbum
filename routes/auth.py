@@ -63,6 +63,8 @@ def _auth_page_context(
         "git_commit": str(version.get("git_commit") or ""),
         "git_commit_short": str(version.get("git_commit_short") or ""),
         "git_branch": str(version.get("git_branch") or ""),
+        "built_at": str(version.get("built_at") or ""),
+        "built_at_display": str(version.get("built_at_display") or ""),
     }
 
 

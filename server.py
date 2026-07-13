@@ -702,6 +702,8 @@ def _template_version_context() -> dict[str, str]:
         "git_commit": str(info.get("git_commit") or ""),
         "git_commit_short": str(info.get("git_commit_short") or ""),
         "git_branch": str(info.get("git_branch") or ""),
+        "built_at": str(info.get("built_at") or ""),
+        "built_at_display": str(info.get("built_at_display") or ""),
     }
 
 
@@ -1324,6 +1326,7 @@ async def health() -> dict[str, str | None]:
         "version": str(info.get("version") or "dev"),
         "git_commit": info.get("git_commit_short") or info.get("git_commit"),
         "git_branch": info.get("git_branch"),
+        "built_at": info.get("built_at"),
     }
 
 

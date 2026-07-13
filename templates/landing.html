@@ -323,7 +323,7 @@
 </div>
 </div>
 <div class="px-margin-edge max-w-container-max mx-auto mt-20 pt-8 border-t border-outline-variant/10 text-on-surface-variant text-sm flex flex-col md:flex-row justify-between items-center gap-4">
-<p>© 2026 LiturgyFlow. All rights reserved. Made for parish teams.{% if app_version %} <span class="opacity-70" title="Deployed build">· v {{ app_version }}</span>{% endif %}</p>
+<p>© 2026 LiturgyFlow. All rights reserved. Made for parish teams.{% if app_version %} <span class="opacity-70" title="Deployed build">· v {{ app_version }}{% if built_at_display %} · {{ built_at_display }}{% endif %}</span>{% endif %}</p>
 <div class="flex gap-6">
 <a class="hover:text-primary transition-colors" href="#">Twitter</a>
 <a class="hover:text-primary transition-colors" href="#">Instagram</a>

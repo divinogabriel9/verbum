@@ -66,6 +66,8 @@ def build_health_payload() -> dict[str, Any]:
         "git_commit": version.get("git_commit"),
         "git_commit_short": version.get("git_commit_short"),
         "git_branch": version.get("git_branch"),
+        "built_at": version.get("built_at"),
+        "built_at_display": version.get("built_at_display"),
         "version_source": version.get("source"),
     }
 

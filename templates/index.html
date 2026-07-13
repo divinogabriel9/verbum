@@ -6,6 +6,7 @@
   <title>{{ title }}</title>
   <meta name="lf-app-version" content="{{ app_version|default('dev') }}" />
   {% if git_commit_short %}<meta name="lf-git-commit" content="{{ git_commit_short }}" />{% endif %}
+  {% if built_at %}<meta name="lf-built-at" content="{{ built_at }}" />{% endif %}
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="32x32" />
   <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="192x192" />
@@ -2152,6 +2153,22 @@
     }
     .side-nav { display: none !important; }
     .app-header__nav-row { display: none; }
+    @media (max-width: 768px) {
+      body.mobile-top-nav .app-header__nav-row,
+      body.mobile-chrome-tabs .app-header__nav-row {
+        display: block !important;
+      }
+      body.mobile-top-nav .app-header__nav-row .app-bottom-nav,
+      body.mobile-chrome-tabs .app-header__nav-row .app-bottom-nav {
+        display: flex !important;
+      }
+      .theme-toggle-btn,
+      .notif-btn,
+      .account-menu-btn,
+      .app-header__menu-btn {
+        border-radius: 50% !important;
+      }
+    }
     .header-chips-wrap {
       display: flex;
       align-items: center;
@@ -10714,7 +10731,114 @@
       max-width: var(--content-max);
       margin: 0 auto;
       width: 100%;
-      padding-bottom: 24px;
+      padding-bottom: calc(140px + var(--app-bottom-nav-offset, 0px) + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Viewport-fixed lyrics action bar — outside .page so scroll/transform never traps it */
+    .lyrics-editor-float {
+      position: fixed;
+      left: 50%;
+      bottom: calc(44px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      z-index: 80;
+      width: max-content;
+      max-width: calc(100vw - 24px);
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+    .lyrics-editor-float[hidden] {
+      display: none !important;
+    }
+    body.has-bottom-nav .lyrics-editor-float,
+    body.mobile-chrome-tabs .lyrics-editor-float,
+    body.mobile-top-nav .lyrics-editor-float {
+      bottom: calc(44px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
+    }
+    .lyrics-editor-float__inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--app-header-glass-border);
+      background: var(--app-header-glass-bg);
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 14px 36px rgba(15, 23, 42, 0.12);
+      backdrop-filter: blur(var(--app-header-glass-blur)) saturate(1.15);
+      -webkit-backdrop-filter: blur(var(--app-header-glass-blur)) saturate(1.15);
+      opacity: 0.38;
+      /* Soft settle — longer than micro UI snaps; ease-out so it decelerates into place */
+      transition:
+        opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .lyrics-editor-float.is-bright .lyrics-editor-float__inner {
+      opacity: 1;
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.05),
+        0 16px 40px rgba(15, 23, 42, 0.16);
+    }
+    /* Hover / first show: quick rise (not hard-cut) */
+    .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__inner {
+      transition-duration: 110ms;
+      transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lyrics-editor-float__inner,
+      .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__inner {
+        transition-duration: 1ms;
+      }
+    }
+    .lyrics-editor-float__inner .primary,
+    .lyrics-editor-float__inner .secondary,
+    .lyrics-editor-float__inner .ghost {
+      min-height: 42px;
+      padding: 9px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 12px;
+    }
+    .lyrics-editor-float__inner .primary:active,
+    .lyrics-editor-float__inner .secondary:active,
+    .lyrics-editor-float__inner .ghost:active {
+      transform: scale(0.97);
+    }
+    @media (max-width: 640px) {
+      .lyrics-editor-float {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+        transform: none;
+        bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+      }
+      body.has-bottom-nav .lyrics-editor-float,
+      body.mobile-chrome-tabs .lyrics-editor-float,
+      body.mobile-top-nav .lyrics-editor-float {
+        bottom: calc(52px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
+      }
+      .lyrics-editor-float__inner {
+        border-radius: 14px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 10px 12px;
+      }
+      .lyrics-editor-float__inner::-webkit-scrollbar {
+        display: none;
+      }
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .lyrics-editor-float__inner {
+        background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+      }
     }
     .lyrics-workspace-row {
       display: grid;
@@ -11184,16 +11308,6 @@
       align-items: center;
       gap: 6px;
       flex-shrink: 0;
-    }
-    .lyrics-structured-actions .primary,
-    .lyrics-structured-actions .secondary,
-    .lyrics-structured-actions .ghost {
-      min-height: 32px;
-      padding: 6px 12px;
-      font-size: 0.8125rem;
-    }
-    .lyrics-structured-actions .ghost.mini {
-      min-height: 32px;
     }
     /* Song Library — liturgical season accents (not brand orange) */
     .lyrics-workspace-mockup .primary {
@@ -15078,7 +15192,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260711k" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713g" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -15424,13 +15538,14 @@
                     <span class="vb-dropdown-item__label">Sign out</span>
                   </button>
                 </div>
-                <p class="account-menu-version" id="app-version-label" title="Deployed build version">v {{ app_version|default('…') }}</p>
+                <p class="account-menu-version" id="app-version-label" title="Deployed build version">{% if built_at %} data-built-at="{{ built_at }}"{% endif %}>v {{ app_version|default('…') }}{% if built_at_display %} · {{ built_at_display }}{% endif %}</p>
               </div>
             </div>
           </div>
           </div>
         </div>
         <div class="app-header__ticker-row" id="app-header-ticker-row" hidden aria-hidden="true"></div>
+        <div class="app-header__nav-row" id="app-header-nav-row" hidden aria-hidden="true"></div>
       </header>
     <div class="ui-overlay ui-overlay--mobile-menu" id="app-mobile-menu" aria-hidden="true" role="presentation">
       <div class="ui-overlay__backdrop" id="app-mobile-menu-backdrop"></div>
@@ -16242,50 +16357,92 @@
             </aside>
           </section>
 
-          <div class="lyrics-workspace-row">
+          <div class="lyrics-workspace-row" id="lyrics-workspace-row">
             <section class="panel lyrics-details-panel">
-              <div class="panel-head">
+              <div class="panel-head lyrics-details-panel__desktop-head">
                 <div>
                   <h3>Lyrics</h3>
                 </div>
                 <button type="button" class="ghost mini" id="btn-lyrics-focus-meta" title="Edit title, author, language, and mood">Edit Details</button>
               </div>
-              <div class="lyrics-details-meta-grid">
-                <div class="field">
-                  <label for="lyrics-save-title">Title</label>
-                  <input type="text" id="lyrics-save-title" value="" placeholder="Song title" maxlength="240" />
+
+              <details class="lyrics-composer-details" id="lyrics-composer-details" open>
+                <summary class="lyrics-composer-details__summary">
+                  <span class="lyrics-composer-details__title">Song details</span>
+                  <span class="lyrics-composer-details__preview" id="lyrics-composer-details-preview">Title, author, language, mood</span>
+                </summary>
+                <div class="lyrics-composer-details__body">
+                  <div class="lyrics-details-meta-grid">
+                    <div class="field">
+                      <label for="lyrics-save-title">Title</label>
+                      <input type="text" id="lyrics-save-title" value="" placeholder="Song title" maxlength="240" />
+                    </div>
+                    <div class="field">
+                      <label for="lyrics-save-author">Author</label>
+                      <input type="text" id="lyrics-save-author" placeholder="Optional" maxlength="240" />
+                    </div>
+                    <div class="field">
+                      <label for="lyrics-save-language">Language</label>
+                      <select id="lyrics-save-language">
+                        <option value="" disabled hidden>Select language</option>
+                        <option value="English">English</option>
+                        <option value="Tagalog">Tagalog</option>
+                        <option value="Latin">Latin</option>
+                        <option value="Mix">Mix</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field lyrics-details-save-row">
+                    <label for="lyrics-save-section">Save to Section</label>
+                    <select id="lyrics-save-section">
+                      <option value="" disabled hidden>Select section</option>
+                      <option value="entrance">Entrance</option>
+                      <option value="offertory">Offertory</option>
+                      <option value="communion">Communion</option>
+                      <option value="recessional">Recessional</option>
+                      <option value="meditation">Meditation / Other</option>
+                    </select>
+                  </div>
+                  <fieldset class="song-metadata-moods lyrics-composer-moods" id="lyrics-composer-moods">
+                    <legend>Gospel mood</legend>
+                    <div class="song-metadata-moods__grid">
+                      <label><input type="checkbox" value="triumphant" data-composer-mood-opt /> Triumphant</label>
+                      <label><input type="checkbox" value="solemn" data-composer-mood-opt /> Solemn</label>
+                      <label><input type="checkbox" value="mercy" data-composer-mood-opt /> Mercy</label>
+                      <label><input type="checkbox" value="journey" data-composer-mood-opt /> Journey</label>
+                      <label><input type="checkbox" value="reverent" data-composer-mood-opt /> Reverent</label>
+                    </div>
+                  </fieldset>
+                  <div class="lyrics-composer-details__save-row">
+                    <button type="button" class="primary" id="btn-lyrics-accordion-save">Save</button>
+                  </div>
                 </div>
-                <div class="field">
-                  <label for="lyrics-save-author">Author</label>
-                  <input type="text" id="lyrics-save-author" placeholder="Optional" maxlength="240" />
-                </div>
-                <div class="field">
-                  <label for="lyrics-save-language">Language</label>
-                  <select id="lyrics-save-language">
-                    <option value="" disabled hidden>Select language</option>
-                    <option value="English">English</option>
-                    <option value="Tagalog">Tagalog</option>
-                    <option value="Latin">Latin</option>
-                    <option value="Mix">Mix</option>
-                  </select>
+              </details>
+
+              <div class="lyrics-composer-focus" id="lyrics-composer-focus">
+                <div class="lyrics-composer-tabs" id="lyrics-composer-tabs" role="tablist" aria-label="Lyrics sections"></div>
+                <div class="lyrics-composer-swipe" id="lyrics-composer-swipe">
+                  <div class="lyrics-composer-pane lyrics-composer-pane--raw is-active" data-pane="raw" id="lyrics-composer-pane-raw">
+                    <div class="lyrics-editor-scroll">
+                      <textarea id="lyrics-input" class="lyrics-editor-main" spellcheck="true" aria-label="Song lyrics" maxlength="50000" data-max-length="50000" placeholder="Paste or type lyrics, or pick a song from the library…"></textarea>
+                    </div>
+                    <p class="lyrics-word-stats" id="lyrics-word-stats">0 words · 0 lines</p>
+                    <p class="lyrics-analyze-hint" id="lyrics-analyze-hint" aria-live="polite"></p>
+                  </div>
+                  <div class="lyrics-composer-pane lyrics-composer-pane--blocks" data-pane="blocks" id="lyrics-composer-pane-blocks">
+                    <div class="lyrics-composer-blocks-toolbar">
+                      <button type="button" class="ghost mini" id="btn-lyrics-mobile-analyze">Analyze</button>
+                      <div class="lyrics-quick-add lyrics-quick-add--mobile" id="lyrics-quick-add-mobile" aria-label="Add section">
+                        <button type="button" class="lyrics-add-btn" data-add-type="verse">+ Verse</button>
+                        <button type="button" class="lyrics-add-btn" data-add-type="chorus">+ Chorus</button>
+                        <button type="button" class="lyrics-add-btn" data-add-type="bridge">+ Bridge</button>
+                        <button type="button" class="lyrics-add-btn" data-add-type="response">+ Response</button>
+                      </div>
+                    </div>
+                    <div class="lyrics-composer-blocks-track" id="lyrics-composer-blocks-track"></div>
+                  </div>
                 </div>
               </div>
-              <div class="field lyrics-details-save-row">
-                <label for="lyrics-save-section">Save to Section</label>
-                <select id="lyrics-save-section">
-                  <option value="" disabled hidden>Select section</option>
-                  <option value="entrance">Entrance</option>
-                  <option value="offertory">Offertory</option>
-                  <option value="communion">Communion</option>
-                  <option value="recessional">Recessional</option>
-                  <option value="meditation">Meditation / Other</option>
-                </select>
-              </div>
-              <div class="lyrics-editor-scroll">
-                <textarea id="lyrics-input" class="lyrics-editor-main" spellcheck="true" aria-label="Song lyrics" maxlength="50000" data-max-length="50000" placeholder="Paste or type lyrics, or pick a song from the library…"></textarea>
-              </div>
-              <p class="lyrics-word-stats" id="lyrics-word-stats">0 words · 0 lines</p>
-              <p class="lyrics-analyze-hint" id="lyrics-analyze-hint" aria-live="polite"></p>
             </section>
 
             <section class="panel lyrics-structured-panel">
@@ -16294,20 +16451,6 @@
                   <h3>Structured Editor</h3>
                   <p class="lyrics-structured-meta" id="lyrics-structured-meta">0 blocks · ~0 slides</p>
                 </div>
-                <div class="lyrics-structured-actions actions" role="group" aria-label="Lyrics editor actions">
-                  <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
-                  <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
-                  <button type="button" class="secondary" id="btn-save-parish-lyrics" hidden title="Save a short version for your parish only">Save parish version</button>
-                  <button type="button" class="ghost" id="btn-sync-catalog-lyrics" hidden title="Discard parish edits and restore superadmin catalog lyrics">Sync to catalog</button>
-                  <button type="button" class="ghost" id="btn-clear-lyrics">
-                    <span class="song-composer-clear-icon" aria-hidden="true">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-                    </span>
-                    Clear
-                  </button>
-                  <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Lowercase all text, then capitalize the first letter of each word; also trim spacing and section labels">Tidy</button>
-                </div>
-                <p class="muted" id="lyrics-parish-version-hint" hidden style="margin:6px 0 0;font-size:0.78rem;"></p>
               </div>
               <div class="lyrics-structured-body">
                 <div class="lyrics-structured-body-stack">
@@ -19487,23 +19630,38 @@
         </div>
       </section>
     </main>
+    <div class="lyrics-editor-float" id="lyrics-editor-float" role="toolbar" aria-label="Lyrics editor actions" hidden>
+      <div class="lyrics-editor-float__inner lyrics-structured-actions actions">
+        <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
+        <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
+        <button type="button" class="secondary" id="btn-save-parish-lyrics" hidden title="Save a short version for your parish only">Save parish version</button>
+        <button type="button" class="ghost" id="btn-sync-catalog-lyrics" hidden title="Discard parish edits and restore superadmin catalog lyrics">Sync to catalog</button>
+        <button type="button" class="ghost" id="btn-clear-lyrics">
+          <span class="song-composer-clear-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+          </span>
+          Clear
+        </button>
+        <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Lowercase all text, then capitalize the first letter of each word; also trim spacing and section labels">Tidy</button>
+      </div>
+    </div>
     <nav class="app-bottom-nav app-nav--mobile" id="app-bottom-nav" aria-label="Main navigation">
       <a class="nav-link" data-nav-tab="home" data-route="/home" href="/home">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span class="nav-label">Home</span>
       </a>
-      <a class="nav-link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder">
+      <a class="nav-link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder" aria-label="Mass setup">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v6"/><path d="m9 9 3-3 3 3"/></svg>
-        <span class="nav-label">Mass setup</span>
+        <span class="nav-label">Mass</span>
       </a>
       <div class="app-bottom-nav__create-slot" id="bottom-nav-create-host" hidden aria-hidden="true"></div>
-      <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs">
+      <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs" aria-label="Lyrics Library">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
-        <span class="nav-label">Lyrics Library</span>
+        <span class="nav-label">Library</span>
       </a>
-      <a class="nav-link nav-link--mobile-only" data-nav-tab="notifications" data-route="/notifications" href="/notifications" id="app-bottom-nav-notifications">
+      <a class="nav-link nav-link--mobile-only" data-nav-tab="notifications" data-route="/notifications" href="/notifications" id="app-bottom-nav-notifications" aria-label="Notifications">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <span class="nav-label">Notifications</span>
+        <span class="nav-label">Alerts</span>
         <span class="notif-badge notif-badge--nav" id="notif-badge-nav" hidden>0</span>
       </a>
     </nav>
@@ -19688,7 +19846,7 @@
     }
     initAppHeaderOffset();
 
-    const mobileChromeRestore = { inited: false, litBefore: null, notifBefore: null, tickerNext: null, createParent: null };
+    const mobileChromeRestore = { inited: false, litBefore: null, notifBefore: null, tickerNext: null, createParent: null, navParent: null, navNext: null };
 
     function isMobileChromeLayout() {
       return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
@@ -19701,10 +19859,15 @@
       const themeBtn = $("theme-toggle-btn");
       const main = document.querySelector(".app-header__main");
       const createParent = document.querySelector(".app-sidebar__create");
+      const nav = $("app-bottom-nav");
       if (notif) mobileChromeRestore.litBefore = notif;
       if (themeBtn) mobileChromeRestore.notifBefore = themeBtn;
       if (main) mobileChromeRestore.tickerNext = main.querySelector(".app-header__utilities");
       if (createParent) mobileChromeRestore.createParent = createParent;
+      if (nav) {
+        mobileChromeRestore.navParent = nav.parentElement;
+        mobileChromeRestore.navNext = nav.nextElementSibling;
+      }
     }
 
     function restoreHeaderChipChild(wrap, beforeEl) {
@@ -19721,6 +19884,7 @@
       initMobileChromeRestore();
       const mobile = isMobileChromeLayout();
       document.body.classList.toggle("mobile-chrome-tabs", mobile);
+      document.body.classList.toggle("mobile-top-nav", mobile);
 
       const menuBtn = $("app-header-menu-btn");
       if (menuBtn) menuBtn.hidden = !mobile;
@@ -19732,24 +19896,29 @@
       const litHost = $("today-liturgical-host");
       const notifHost = $("today-notif-host");
       const accountHost = $("app-mobile-menu-account-host");
-      const createHost = $("bottom-nav-create-host");
+      const headerCreateHost = $("header-create-host");
+      const bottomCreateHost = $("bottom-nav-create-host");
       const litPanel = $("liturgical-indicator-panel");
       const notifPanel = $("notif-panel");
       const accountPanel = $("account-menu-panel");
       const ticker = $("app-header-ticker");
       const tickerRow = $("app-header-ticker-row");
+      const navRow = $("app-header-nav-row");
+      const nav = $("app-bottom-nav");
       const main = document.querySelector(".app-header__main");
 
       if (mobile) {
         if (litWrap && litHost) litHost.appendChild(litWrap);
         if (notifWrap && notifHost) notifHost.appendChild(notifWrap);
         if (accountWrap && accountHost) accountHost.appendChild(accountWrap);
-        if (createWrap && createHost) {
-          createWrap.classList.add("create-menu-wrap--bottom-nav");
-          createWrap.classList.remove("create-menu-wrap--header");
-          createHost.appendChild(createWrap);
-          createHost.hidden = false;
-          createHost.setAttribute("aria-hidden", "false");
+        if (createWrap && headerCreateHost) {
+          createWrap.classList.add("create-menu-wrap--header");
+          createWrap.classList.remove("create-menu-wrap--bottom-nav");
+          headerCreateHost.appendChild(createWrap);
+        }
+        if (bottomCreateHost) {
+          bottomCreateHost.hidden = true;
+          bottomCreateHost.setAttribute("aria-hidden", "true");
         }
         if (litPanel) {
           litPanel.hidden = false;
@@ -19768,6 +19937,16 @@
           tickerRow.hidden = false;
           tickerRow.setAttribute("aria-hidden", "false");
         }
+        if (nav && navRow) {
+          navRow.appendChild(nav);
+          navRow.hidden = false;
+          navRow.removeAttribute("hidden");
+          navRow.setAttribute("aria-hidden", "false");
+          navRow.style.display = "block";
+          nav.hidden = false;
+          nav.style.display = "flex";
+        }
+        if (typeof applyMobileNavOrder === "function") applyMobileNavOrder();
         if (typeof closeHeaderMenus === "function") closeHeaderMenus();
         if (typeof closeMobileMenu === "function") closeMobileMenu();
         if (normalizeRoute(currentRoute()) === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
@@ -19782,10 +19961,9 @@
           createWrap.classList.remove("create-menu-wrap--bottom-nav", "create-menu-wrap--header");
           mobileChromeRestore.createParent.appendChild(createWrap);
         }
-        const createHostEl = $("bottom-nav-create-host");
-        if (createHostEl) {
-          createHostEl.hidden = true;
-          createHostEl.setAttribute("aria-hidden", "true");
+        if (bottomCreateHost) {
+          bottomCreateHost.hidden = true;
+          bottomCreateHost.setAttribute("aria-hidden", "true");
         }
         if (litPanel) {
           litPanel.hidden = true;
@@ -19806,6 +19984,19 @@
           tickerRow.hidden = true;
           tickerRow.setAttribute("aria-hidden", "true");
         }
+        if (nav && mobileChromeRestore.navParent) {
+          if (mobileChromeRestore.navNext && mobileChromeRestore.navNext.parentElement === mobileChromeRestore.navParent) {
+            mobileChromeRestore.navParent.insertBefore(nav, mobileChromeRestore.navNext);
+          } else {
+            mobileChromeRestore.navParent.appendChild(nav);
+          }
+        }
+        if (navRow) {
+          navRow.hidden = true;
+          navRow.setAttribute("aria-hidden", "true");
+          navRow.style.display = "";
+        }
+        if (nav) nav.style.display = "";
         if (typeof closeMobileMenu === "function") closeMobileMenu();
       }
       syncAppHeaderOffset();
@@ -19839,6 +20030,341 @@
         syncMobileChromeLayout();
         if (typeof applyNavTabVisibility === "function") applyNavTabVisibility();
       }, { passive: true });
+    }
+
+    const MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
+    const MOBILE_NAV_DEFAULT_ORDER = ["/home", "/mass/builder", "/library/songs", "/notifications"];
+    const MOBILE_NAV_LOCKED = new Set(["/home", "/mass/builder", "/library/songs"]);
+    let mobileNavDragBound = false;
+    let mobileNavDragState = null;
+
+    function shortMobileNavLabel(text) {
+      const t = String(text || "").trim();
+      const map = {
+        "Mass setup": "Mass",
+        "Lyrics Library": "Library",
+        "Notifications": "Alerts",
+        "Liturgical Calendar": "Calendar",
+        "Theme Lab": "Design",
+        "Live Radio": "Media",
+      };
+      if (map[t]) return map[t];
+      if (t.length > 10) return t.split(/\s+/)[0];
+      return t || "Tab";
+    }
+
+    function getMobileNavOrder() {
+      try {
+        const raw = localStorage.getItem(MOBILE_NAV_ORDER_KEY);
+        if (!raw) return MOBILE_NAV_DEFAULT_ORDER.slice();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || !parsed.length) return MOBILE_NAV_DEFAULT_ORDER.slice();
+        const cleaned = parsed.map((r) => normalizeRoute(String(r || ""))).filter(Boolean);
+        const seen = new Set();
+        const out = [];
+        cleaned.forEach((r) => {
+          if (seen.has(r)) return;
+          seen.add(r);
+          out.push(r);
+        });
+        // Locked tabs always remain somewhere in the bar
+        [...MOBILE_NAV_LOCKED].reverse().forEach((r) => {
+          if (!seen.has(r)) {
+            out.unshift(r);
+            seen.add(r);
+          }
+        });
+        return out;
+      } catch (_e) {
+        return MOBILE_NAV_DEFAULT_ORDER.slice();
+      }
+    }
+
+    function saveMobileNavOrder(order) {
+      try {
+        localStorage.setItem(MOBILE_NAV_ORDER_KEY, JSON.stringify(order));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function findNavLinkSource(route) {
+      const nav = $("app-bottom-nav");
+      const r = normalizeRoute(route);
+      if (nav) {
+        const existing = Array.from(nav.querySelectorAll(".nav-link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+        if (existing) return existing;
+      }
+      const menu = $("app-mobile-menu-pages");
+      if (menu) {
+        const fromMenu = Array.from(menu.querySelectorAll(".app-mobile-menu__link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+        if (fromMenu) return fromMenu;
+      }
+      const side = document.querySelector(".app-sidebar__nav");
+      if (side) {
+        const fromSide = Array.from(side.querySelectorAll(".app-sidebar__link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+        if (fromSide) return fromSide;
+      }
+      return null;
+    }
+
+    function buildPinnedNavLink(sourceEl, route) {
+      const r = normalizeRoute(route || sourceEl.getAttribute("href") || sourceEl.dataset.route || "");
+      const a = document.createElement("a");
+      a.className = "nav-link nav-link--pinned nav-link--mobile-only";
+      a.href = r;
+      a.dataset.route = r;
+      const tab = sourceEl.dataset.navTab || (typeof routeToNavTabId === "function" ? routeToNavTabId(r) : "") || "";
+      if (tab) a.dataset.navTab = tab;
+      if (sourceEl.dataset.routePrefix) a.dataset.routePrefix = sourceEl.dataset.routePrefix;
+      if (sourceEl.dataset.routeExclude) a.dataset.routeExclude = sourceEl.dataset.routeExclude;
+      const icon = sourceEl.querySelector("svg");
+      if (icon) {
+        const svg = icon.cloneNode(true);
+        svg.removeAttribute("class");
+        svg.classList.add("nav-icon", "app-bottom-nav__svg-icon");
+        a.appendChild(svg);
+      }
+      const label = document.createElement("span");
+      label.className = "nav-label";
+      const rawLabel = (sourceEl.querySelector(".nav-label, span:not([class])") || sourceEl).textContent || "";
+      label.textContent = shortMobileNavLabel(rawLabel.replace(/\s+/g, " ").trim());
+      a.appendChild(label);
+      return a;
+    }
+
+    function ensureMobileNavLink(route) {
+      const nav = $("app-bottom-nav");
+      if (!nav) return null;
+      const r = normalizeRoute(route);
+      let link = Array.from(nav.querySelectorAll(".nav-link")).find((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "") === r);
+      if (link) return link;
+      const source = findNavLinkSource(r);
+      if (!source) return null;
+      link = buildPinnedNavLink(source, r);
+      nav.appendChild(link);
+      return link;
+    }
+
+    function applyMobileNavOrder() {
+      const nav = $("app-bottom-nav");
+      if (!nav || !isMobileChromeLayout()) return;
+      const createSlot = $("bottom-nav-create-host");
+      if (createSlot) {
+        createSlot.hidden = true;
+        createSlot.setAttribute("aria-hidden", "true");
+      }
+      let order = getMobileNavOrder().filter((route) => {
+        const tabId = typeof routeToNavTabId === "function" ? routeToNavTabId(route) : null;
+        if (tabId === "notifications") return true;
+        if (tabId && typeof isNavTabVisible === "function" && !isNavTabVisible(tabId) && !MOBILE_NAV_LOCKED.has(route)) {
+          return false;
+        }
+        return true;
+      });
+      if (!order.length) order = MOBILE_NAV_DEFAULT_ORDER.slice();
+      const links = [];
+      order.forEach((route) => {
+        const link = ensureMobileNavLink(route);
+        if (link) links.push(link);
+      });
+      const kept = new Set(links);
+      Array.from(nav.querySelectorAll(".nav-link")).forEach((el) => {
+        if (!kept.has(el)) {
+          if (el.classList.contains("nav-link--pinned")) el.remove();
+          else el.hidden = true;
+        }
+      });
+      links.forEach((link) => {
+        link.hidden = false;
+        nav.appendChild(link);
+      });
+      if (createSlot) nav.appendChild(createSlot);
+      saveMobileNavOrder(links.map((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "")).filter(Boolean));
+      syncAppHeaderOffset();
+    }
+
+    function insertMobileNavRoute(route, beforeRoute) {
+      const r = normalizeRoute(route);
+      if (!r) return;
+      let order = getMobileNavOrder().filter((x) => x !== r);
+      if (beforeRoute) {
+        const idx = order.indexOf(normalizeRoute(beforeRoute));
+        if (idx >= 0) order.splice(idx, 0, r);
+        else order.push(r);
+      } else {
+        order.push(r);
+      }
+      saveMobileNavOrder(order);
+      applyMobileNavOrder();
+    }
+
+    function reorderMobileNavRoute(route, beforeRoute) {
+      insertMobileNavRoute(route, beforeRoute);
+    }
+
+    function removeMobileNavRoute(route) {
+      const r = normalizeRoute(route);
+      if (MOBILE_NAV_LOCKED.has(r)) return false;
+      const order = getMobileNavOrder().filter((x) => x !== r);
+      saveMobileNavOrder(order);
+      applyMobileNavOrder();
+      return true;
+    }
+
+    function mobileNavDropBeforeRoute(clientX) {
+      const nav = $("app-bottom-nav");
+      if (!nav) return null;
+      const links = Array.from(nav.querySelectorAll(".nav-link:not([hidden])"));
+      for (const link of links) {
+        const rect = link.getBoundingClientRect();
+        const mid = rect.left + rect.width / 2;
+        if (clientX < mid) return normalizeRoute(link.getAttribute("href") || link.dataset.route || "");
+      }
+      return null;
+    }
+
+    function clearMobileNavDragUI() {
+      document.body.classList.remove("mobile-nav-dragging");
+      document.querySelectorAll(".nav-link.is-drag-source, .nav-link.is-drop-target, .app-mobile-menu__link.is-drag-source").forEach((el) => {
+        el.classList.remove("is-drag-source", "is-drop-target");
+      });
+      const ghost = $("mobile-nav-drag-ghost");
+      if (ghost) ghost.remove();
+      mobileNavDragState = null;
+    }
+
+    function initMobileNavDragDrop() {
+      if (mobileNavDragBound) return;
+      mobileNavDragBound = true;
+      const PRESS_MS = 240;
+      const MOVE_PX = 10;
+
+      function routeOf(el) {
+        return normalizeRoute(el.getAttribute("href") || el.dataset.route || "");
+      }
+
+      function startGhost(el, x, y) {
+        let ghost = $("mobile-nav-drag-ghost");
+        if (!ghost) {
+          ghost = document.createElement("div");
+          ghost.id = "mobile-nav-drag-ghost";
+          ghost.className = "mobile-nav-drag-ghost";
+          document.body.appendChild(ghost);
+        }
+        const label = (el.querySelector(".nav-label, span") || el).textContent.trim();
+        ghost.textContent = shortMobileNavLabel(label);
+        ghost.style.left = x + "px";
+        ghost.style.top = y + "px";
+        ghost.hidden = false;
+      }
+
+      function moveGhost(x, y) {
+        const ghost = $("mobile-nav-drag-ghost");
+        if (!ghost) return;
+        ghost.style.left = x + "px";
+        ghost.style.top = y + "px";
+      }
+
+      function beginDrag(el, fromMenu, pointerId, x, y) {
+        const route = routeOf(el);
+        if (!route) return;
+        mobileNavDragState = { el, fromMenu, route, pointerId, started: true, startX: x, startY: y, moved: false };
+        document.body.classList.add("mobile-nav-dragging");
+        el.classList.add("is-drag-source");
+        if (fromMenu && typeof closeMobileMenu === "function") closeMobileMenu();
+        startGhost(el, x, y);
+        try { el.setPointerCapture(pointerId); } catch (_e) { /* ignore */ }
+      }
+
+      function onPointerDown(e) {
+        if (!isMobileChromeLayout() || e.button != null && e.button !== 0) return;
+        const menuLink = e.target.closest("#app-mobile-menu-pages .app-mobile-menu__link");
+        const navLink = e.target.closest("#app-bottom-nav .nav-link");
+        const el = menuLink || navLink;
+        if (!el) return;
+        const fromMenu = !!menuLink;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const pointerId = e.pointerId;
+        let armed = false;
+        let cancelled = false;
+        const timer = setTimeout(() => {
+          if (cancelled) return;
+          armed = true;
+          beginDrag(el, fromMenu, pointerId, startX, startY);
+        }, PRESS_MS);
+
+        const onMove = (ev) => {
+          if (ev.pointerId !== pointerId) return;
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          if (!armed && (Math.abs(dx) > MOVE_PX || Math.abs(dy) > MOVE_PX)) {
+            cancelled = true;
+            clearTimeout(timer);
+            cleanup();
+            return;
+          }
+          if (!mobileNavDragState || !mobileNavDragState.started) return;
+          ev.preventDefault();
+          mobileNavDragState.moved = true;
+          moveGhost(ev.clientX, ev.clientY);
+          const before = mobileNavDropBeforeRoute(ev.clientX);
+          document.querySelectorAll("#app-bottom-nav .nav-link.is-drop-target").forEach((n) => n.classList.remove("is-drop-target"));
+          if (before) {
+            const target = Array.from(document.querySelectorAll("#app-bottom-nav .nav-link:not([hidden])")).find((n) => routeOf(n) === before);
+            if (target) target.classList.add("is-drop-target");
+          }
+          const nav = $("app-bottom-nav");
+          if (nav) {
+            const rect = nav.getBoundingClientRect();
+            const overNav = ev.clientY >= rect.top - 8 && ev.clientY <= rect.bottom + 24;
+            nav.classList.toggle("is-drop-hover", overNav);
+          }
+        };
+
+        const onUp = (ev) => {
+          if (ev.pointerId !== pointerId) return;
+          clearTimeout(timer);
+          if (mobileNavDragState && mobileNavDragState.started) {
+            ev.preventDefault();
+            const nav = $("app-bottom-nav");
+            const rect = nav ? nav.getBoundingClientRect() : null;
+            const overNav = !!(rect && ev.clientY >= rect.top - 12 && ev.clientY <= rect.bottom + 36);
+            const before = mobileNavDropBeforeRoute(ev.clientX);
+            const route = mobileNavDragState.route;
+            const fromMenu = mobileNavDragState.fromMenu;
+            const moved = !!mobileNavDragState.moved;
+            const dy = Math.abs(ev.clientY - (mobileNavDragState.startY || 0));
+            clearMobileNavDragUI();
+            if (nav) nav.classList.remove("is-drop-hover");
+            if (overNav && moved) {
+              reorderMobileNavRoute(route, before);
+            } else if (!fromMenu && moved && !overNav && dy > 56) {
+              removeMobileNavRoute(route);
+            }
+            if (moved) {
+              const blockClick = (clickEv) => {
+                clickEv.preventDefault();
+                clickEv.stopPropagation();
+                document.removeEventListener("click", blockClick, true);
+              };
+              document.addEventListener("click", blockClick, true);
+            }
+          }
+          cleanup();
+        };
+
+        const cleanup = () => {
+          window.removeEventListener("pointermove", onMove, true);
+          window.removeEventListener("pointerup", onUp, true);
+          window.removeEventListener("pointercancel", onUp, true);
+        };
+
+        window.addEventListener("pointermove", onMove, true);
+        window.addEventListener("pointerup", onUp, true);
+        window.addEventListener("pointercancel", onUp, true);
+      }
+
+      document.addEventListener("pointerdown", onPointerDown, true);
     }
     const escapeHtml = (value) => {
       const div = document.createElement("div");
@@ -20270,6 +20796,8 @@
 
     function applyNavTabVisibility() {
       document.querySelectorAll("[data-nav-tab]").forEach((el) => {
+        // Mobile top-nav order owns visibility for bar links
+        if (isMobileChromeLayout() && el.closest && el.closest("#app-bottom-nav")) return;
         el.hidden = !isNavTabVisible(el.dataset.navTab);
       });
       const sidebarNav = document.querySelector(".app-sidebar__nav");
@@ -20278,7 +20806,7 @@
         const visibleCount = sidebarNav.querySelectorAll(".app-sidebar__link:not([hidden])").length;
         sidebarNav.classList.toggle("is-tab-balanced", visibleCount > 0 && visibleCount < NAV_TAB_DEFS.length);
       }
-      if (bottomNav) {
+      if (bottomNav && !isMobileChromeLayout()) {
         const visibleCount = bottomNav.querySelectorAll(".nav-link:not([hidden])").length;
         bottomNav.classList.toggle("is-tab-balanced", visibleCount > 0);
       }
@@ -20290,6 +20818,7 @@
           opt.disabled = !visible;
         });
       }
+      if (typeof applyMobileNavOrder === "function") applyMobileNavOrder();
     }
 
     function redirectIfHiddenNavRoute() {
@@ -22895,6 +23424,17 @@
       closeAppMoreSheet();
       if (typeof closeMobileMenu === "function") closeMobileMenu();
       syncSettingsLayout(r);
+      const lyricsFloat = $("lyrics-editor-float");
+      if (lyricsFloat) {
+        const onLyrics = r === "/library/songs";
+        lyricsFloat.hidden = !onLyrics;
+        lyricsFloat.setAttribute("aria-hidden", onLyrics ? "false" : "true");
+        if (onLyrics && typeof syncLyricsEditorFloatPresence === "function") {
+          syncLyricsEditorFloatPresence(true);
+        } else if (!onLyrics && typeof syncLyricsEditorFloatPresence === "function") {
+          syncLyricsEditorFloatPresence(false);
+        }
+      }
       const rs = $("route-switcher");
       if (rs) rs.value = r;
       const rd = $("topbar-route-desc");
@@ -22914,6 +23454,7 @@
       }
       if (r === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
         updateLiturgicalCountdowns();
+        if (typeof markAppNotificationsSeen === "function") markAppNotificationsSeen();
         if (typeof renderNotificationFeed === "function") renderNotificationFeed();
         if (typeof syncNotificationsAccordionHeader === "function") syncNotificationsAccordionHeader();
       }
@@ -23567,6 +24108,7 @@
         setTimeout(() => syncAllLyricBlockCharCounts(list), 0);
       });
       initVerbumSelects(list);
+      if (typeof syncLyricsComposerMobileUi === "function") syncLyricsComposerMobileUi();
     }
 
     $("lyrics-block-list").addEventListener("input", (event) => {
@@ -23721,6 +24263,241 @@
     $("btn-lyrics-focus-meta") && $("btn-lyrics-focus-meta").addEventListener("click", () => {
       openComposerSongDetailsModal();
     });
+
+    let lyricsComposerMobileTab = "raw";
+
+    function updateLyricsComposerDetailsPreview() {
+      const preview = $("lyrics-composer-details-preview");
+      if (!preview) return;
+      const title = (($("lyrics-save-title") && $("lyrics-save-title").value) || "").trim();
+      const author = (($("lyrics-save-author") && $("lyrics-save-author").value) || "").trim();
+      const lang = (($("lyrics-save-language") && $("lyrics-save-language").value) || "").trim();
+      const parts = [title || "Untitled", author, lang].filter(Boolean);
+      preview.textContent = parts.join(" · ");
+    }
+
+    function placeLyricsBlockListForLayout() {
+      const list = $("lyrics-block-list");
+      const track = $("lyrics-composer-blocks-track");
+      const desktopHost = document.querySelector("#lyrics-structured-body-inner .lyrics-block-list-scroll");
+      if (!list) return;
+      if (isMobileChromeLayout() && track) {
+        if (list.parentElement !== track) track.appendChild(list);
+      } else if (desktopHost && list.parentElement !== desktopHost) {
+        desktopHost.appendChild(list);
+      }
+    }
+
+    function scrollLyricsComposerToTab(tabId) {
+      lyricsComposerMobileTab = (tabId === "blocks") ? "blocks" : "raw";
+      const swipe = $("lyrics-composer-swipe");
+      const rawPane = $("lyrics-composer-pane-raw");
+      const blocksPane = $("lyrics-composer-pane-blocks");
+      const tabs = $("lyrics-composer-tabs");
+      if (tabs) {
+        tabs.querySelectorAll("[data-lyrics-tab]").forEach((btn) => {
+          const on = btn.dataset.lyricsTab === lyricsComposerMobileTab;
+          btn.classList.toggle("is-active", on);
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+        });
+      }
+      if (!swipe || !isMobileChromeLayout()) return;
+      const target = lyricsComposerMobileTab === "blocks" ? blocksPane : rawPane;
+      if (target) target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+    }
+
+    function syncLyricsComposerMobileUi() {
+      const details = $("lyrics-composer-details");
+      if (details) {
+        if (isMobileChromeLayout()) {
+          if (details.dataset.mobileInit !== "1") {
+            details.dataset.mobileInit = "1";
+            details.open = false;
+          }
+        } else {
+          details.open = true;
+          details.dataset.mobileInit = "";
+        }
+      }
+      placeLyricsBlockListForLayout();
+      updateLyricsComposerDetailsPreview();
+      if (typeof syncComposerAccordionMoodsFromState === "function") syncComposerAccordionMoodsFromState();
+      const tabs = $("lyrics-composer-tabs");
+      if (!tabs) return;
+      if (!isMobileChromeLayout()) {
+        tabs.innerHTML = "";
+        lyricsComposerMobileTab = "raw";
+        return;
+      }
+      if (lyricsComposerMobileTab !== "raw" && lyricsComposerMobileTab !== "blocks") {
+        lyricsComposerMobileTab = "raw";
+      }
+      const items = [
+        { id: "raw", label: "Raw" },
+        { id: "blocks", label: "Blocks" },
+      ];
+      tabs.innerHTML = items.map((item) => (
+        '<button type="button" class="lyrics-composer-tab' + (item.id === lyricsComposerMobileTab ? " is-active" : "") + '" role="tab" data-lyrics-tab="' + item.id + '" aria-selected="' + (item.id === lyricsComposerMobileTab ? "true" : "false") + '">' + escapeHtml(item.label) + "</button>"
+      )).join("");
+      const blocksPane = $("lyrics-composer-pane-blocks");
+      if (blocksPane) blocksPane.hidden = false;
+    }
+
+    function initLyricsComposerMobileUi() {
+      const details = $("lyrics-composer-details");
+      if (details && details.dataset.bound !== "1") {
+        details.dataset.bound = "1";
+        details.addEventListener("toggle", updateLyricsComposerDetailsPreview);
+      }
+      ["lyrics-save-title", "lyrics-save-author", "lyrics-save-language", "lyrics-save-section"].forEach((id) => {
+        const el = $(id);
+        if (!el || el.dataset.composerPreviewBound === "1") return;
+        el.dataset.composerPreviewBound = "1";
+        el.addEventListener("input", updateLyricsComposerDetailsPreview);
+        el.addEventListener("change", updateLyricsComposerDetailsPreview);
+      });
+      const moods = $("lyrics-composer-moods");
+      if (moods && moods.dataset.bound !== "1") {
+        moods.dataset.bound = "1";
+        moods.addEventListener("change", () => {
+          composerGospelMoods = readComposerAccordionMoodChecks();
+          setSongMetadataMoodChecks(composerGospelMoods);
+        });
+      }
+      const saveBtn = $("btn-lyrics-accordion-save");
+      if (saveBtn && saveBtn.dataset.bound !== "1") {
+        saveBtn.dataset.bound = "1";
+        saveBtn.addEventListener("click", () => {
+          const mainSave = $("btn-save-lyrics");
+          if (mainSave) mainSave.click();
+        });
+      }
+      const analyzeBtn = $("btn-lyrics-mobile-analyze");
+      if (analyzeBtn && analyzeBtn.dataset.bound !== "1") {
+        analyzeBtn.dataset.bound = "1";
+        analyzeBtn.addEventListener("click", () => {
+          if (typeof analyzeLyrics === "function") analyzeLyrics();
+        });
+      }
+      const quickAdd = $("lyrics-quick-add-mobile");
+      if (quickAdd && quickAdd.dataset.bound !== "1") {
+        quickAdd.dataset.bound = "1";
+        quickAdd.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-add-type]");
+          if (!btn) return;
+          addLyricBlockOfType(btn.dataset.addType);
+          requestAnimationFrame(() => scrollLyricsComposerToTab("blocks"));
+        });
+      }
+      const tabs = $("lyrics-composer-tabs");
+      if (tabs && tabs.dataset.bound !== "1") {
+        tabs.dataset.bound = "1";
+        tabs.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-lyrics-tab]");
+          if (!btn) return;
+          scrollLyricsComposerToTab(btn.dataset.lyricsTab);
+        });
+      }
+      const swipe = $("lyrics-composer-swipe");
+      if (swipe && swipe.dataset.bound !== "1") {
+        swipe.dataset.bound = "1";
+        let scrollTimer = null;
+        swipe.addEventListener("scroll", () => {
+          if (!isMobileChromeLayout()) return;
+          clearTimeout(scrollTimer);
+          scrollTimer = setTimeout(() => {
+            const rawPane = $("lyrics-composer-pane-raw");
+            const blocksPane = $("lyrics-composer-pane-blocks");
+            if (!rawPane || !blocksPane) return;
+            const mid = swipe.scrollLeft + swipe.clientWidth / 2;
+            const rawCenter = rawPane.offsetLeft + rawPane.offsetWidth / 2;
+            const blocksCenter = blocksPane.offsetLeft + blocksPane.offsetWidth / 2;
+            lyricsComposerMobileTab = Math.abs(mid - rawCenter) <= Math.abs(mid - blocksCenter) ? "raw" : "blocks";
+            const tabRoot = $("lyrics-composer-tabs");
+            if (tabRoot) {
+              tabRoot.querySelectorAll("[data-lyrics-tab]").forEach((btn) => {
+                const on = btn.dataset.lyricsTab === lyricsComposerMobileTab;
+                btn.classList.toggle("is-active", on);
+                btn.setAttribute("aria-selected", on ? "true" : "false");
+              });
+            }
+          }, 80);
+        }, { passive: true });
+      }
+      syncLyricsComposerMobileUi();
+      window.addEventListener("resize", () => {
+        placeLyricsBlockListForLayout();
+        syncLyricsComposerMobileUi();
+      }, { passive: true });
+    }
+    const LYRICS_FLOAT_FADE_DELAY_MS = 2400;
+    const LYRICS_FLOAT_LEAVE_DELAY_MS = 1400;
+    let lyricsFloatFadeTimer = null;
+    let lyricsFloatBound = false;
+
+    function clearLyricsEditorFloatFadeTimer() {
+      if (lyricsFloatFadeTimer) {
+        clearTimeout(lyricsFloatFadeTimer);
+        lyricsFloatFadeTimer = null;
+      }
+    }
+
+    function snapLyricsEditorFloatBright() {
+      const el = $("lyrics-editor-float");
+      if (!el || el.hidden) return;
+      clearLyricsEditorFloatFadeTimer();
+      el.classList.add("is-bright", "lyrics-editor-float--snap");
+      // Keep the short rise transition, then restore soft fade timing.
+      if (el._lyricsFloatSnapClear) clearTimeout(el._lyricsFloatSnapClear);
+      el._lyricsFloatSnapClear = setTimeout(() => {
+        el._lyricsFloatSnapClear = null;
+        el.classList.remove("lyrics-editor-float--snap");
+      }, 140);
+    }
+
+    function scheduleLyricsEditorFloatFade(delayMs) {
+      const el = $("lyrics-editor-float");
+      if (!el || el.hidden) return;
+      clearLyricsEditorFloatFadeTimer();
+      lyricsFloatFadeTimer = setTimeout(() => {
+        lyricsFloatFadeTimer = null;
+        if (el.matches(":hover") || el.contains(document.activeElement)) return;
+        el.classList.remove("is-bright", "lyrics-editor-float--snap");
+      }, delayMs);
+    }
+
+    function syncLyricsEditorFloatPresence(visible) {
+      const el = $("lyrics-editor-float");
+      if (!el) return;
+      if (!visible) {
+        clearLyricsEditorFloatFadeTimer();
+        el.classList.remove("is-bright", "lyrics-editor-float--snap");
+        return;
+      }
+      // First show / route enter: fully visible, then countdown to fade.
+      snapLyricsEditorFloatBright();
+      scheduleLyricsEditorFloatFade(LYRICS_FLOAT_FADE_DELAY_MS);
+      if (lyricsFloatBound) return;
+      lyricsFloatBound = true;
+      el.addEventListener("pointerenter", () => {
+        snapLyricsEditorFloatBright();
+      });
+      el.addEventListener("pointerleave", () => {
+        scheduleLyricsEditorFloatFade(LYRICS_FLOAT_LEAVE_DELAY_MS);
+      });
+      el.addEventListener("focusin", () => {
+        snapLyricsEditorFloatBright();
+      });
+      el.addEventListener("focusout", () => {
+        // Wait a tick so focus moving between buttons doesn't flicker.
+        setTimeout(() => {
+          if (!el.contains(document.activeElement) && !el.matches(":hover")) {
+            scheduleLyricsEditorFloatFade(LYRICS_FLOAT_LEAVE_DELAY_MS);
+          }
+        }, 0);
+      });
+    }
+
     $("btn-analyze-lyrics").addEventListener("click", () => { analyzeLyrics(); });
     $("btn-analyze-lyrics-overlay") && $("btn-analyze-lyrics-overlay").addEventListener("click", () => { analyzeLyrics(); });
     $("lyrics-quick-add") && $("lyrics-quick-add").addEventListener("click", (event) => {
@@ -27701,6 +28478,17 @@
       document.querySelectorAll("[data-gospel-mood-opt]").forEach((el) => {
         el.checked = picked.has(el.value);
       });
+      document.querySelectorAll("[data-composer-mood-opt]").forEach((el) => {
+        el.checked = picked.has(el.value);
+      });
+    }
+
+    function readComposerAccordionMoodChecks() {
+      return Array.from(document.querySelectorAll("[data-composer-mood-opt]:checked")).map((el) => el.value);
+    }
+
+    function syncComposerAccordionMoodsFromState() {
+      setSongMetadataMoodChecks(Array.isArray(composerGospelMoods) ? composerGospelMoods : []);
     }
 
     function updateMassSummaryGospelTip() {
@@ -28243,6 +29031,10 @@
       try {
         appNotifications = JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY) || "[]");
         if (!Array.isArray(appNotifications)) appNotifications = [];
+        appNotifications = appNotifications.map((item) => ({
+          ...item,
+          seen: item && item.seen === true,
+        }));
       } catch (_e) {
         appNotifications = [];
       }
@@ -28254,14 +29046,38 @@
       } catch (_e) { /* ignore */ }
     }
 
+    function getUnreadAppNotificationCount() {
+      return appNotifications.filter((item) => item && !item.seen).length;
+    }
+
+    function markAppNotificationsSeen() {
+      let changed = false;
+      appNotifications = appNotifications.map((item) => {
+        if (item && !item.seen) {
+          changed = true;
+          return { ...item, seen: true };
+        }
+        return item;
+      });
+      if (changed) saveAppNotifications();
+      updateNotifBadge();
+    }
+
     function formatNotificationTime(iso) {
       const d = iso ? new Date(iso) : new Date();
       if (Number.isNaN(d.getTime())) return "";
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return "Just now";
+      if (mins < 60) return mins + "m";
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return hours + "h";
+      const days = Math.floor(hours / 24);
+      if (days < 7) return days + "d";
       return d.toLocaleString(undefined, {
-        weekday: "short",
         month: "short",
         day: "numeric",
-        year: "numeric",
         hour: "numeric",
         minute: "2-digit",
         hour12: true,
@@ -28273,12 +29089,13 @@
       const navBadge = $("notif-badge-nav");
       const accordionBadge = $("notif-badge-accordion");
       const saCount = typeof getSaApprovalBadgeCount === "function" ? getSaApprovalBadgeCount() : 0;
-      const n = appNotifications.length + saCount;
+      const n = getUnreadAppNotificationCount() + saCount;
       const label = n > 99 ? "99+" : String(n);
       [badge, navBadge, accordionBadge].forEach((el) => {
         if (!el) return;
         if (n > 0) {
           el.hidden = false;
+          el.removeAttribute("hidden");
           el.textContent = label;
         } else {
           el.hidden = true;
@@ -28301,15 +29118,23 @@
       if (empty) empty.style.display = appNotifications.length ? "none" : (hasSa ? "none" : "");
       appNotifications.forEach((item) => {
         const li = document.createElement("li");
-        li.className = "notification-item notification-item--" + (item.kind || "info");
+        li.className = "notification-item notification-item--" + (item.kind || "info") + (item.seen ? " is-seen" : " is-unread");
+        const row = document.createElement("div");
+        row.className = "notification-item__row";
+        const avatar = document.createElement("span");
+        avatar.className = "notification-item__avatar";
+        avatar.setAttribute("aria-hidden", "true");
+        avatar.textContent = (item.kind === "ok" ? "✓" : item.kind === "error" ? "!" : "•");
+        const body = document.createElement("div");
+        body.className = "notification-item__body";
         const msg = document.createElement("p");
         msg.className = "notification-item__msg";
         msg.textContent = item.message || "";
-        li.appendChild(msg);
+        body.appendChild(msg);
         const time = document.createElement("p");
         time.className = "notification-item__time";
         time.textContent = formatNotificationTime(item.at);
-        li.appendChild(time);
+        body.appendChild(time);
         if (item.downloads && item.downloads.length) {
           const links = document.createElement("div");
           links.className = "notification-item__links";
@@ -28321,8 +29146,11 @@
             if (dl.download) a.setAttribute("download", "");
             links.appendChild(a);
           });
-          if (links.childNodes.length) li.appendChild(links);
+          if (links.childNodes.length) body.appendChild(links);
         }
+        row.appendChild(avatar);
+        row.appendChild(body);
+        li.appendChild(row);
         feed.appendChild(li);
       });
       updateNotifBadge();
@@ -28334,6 +29162,7 @@
         message: message || "",
         kind: kind === "ok" || kind === "error" ? kind : "info",
         at: new Date().toISOString(),
+        seen: false,
         downloads: (meta && meta.downloads) ? meta.downloads : [],
       };
       appNotifications.unshift(item);
@@ -29750,6 +30579,19 @@
         minute: "2-digit",
         hour12: true,
       });
+    }
+
+    function applyAppVersionLabelLocalTime() {
+      const el = $("app-version-label");
+      if (!el) return;
+      const metaVer = document.querySelector('meta[name="lf-app-version"]');
+      const metaAt = document.querySelector('meta[name="lf-built-at"]');
+      const version = (metaVer && metaVer.getAttribute("content")) || "";
+      const iso = (el.getAttribute("data-built-at") || (metaAt && metaAt.getAttribute("content")) || "").trim();
+      if (!version) return;
+      const when = iso ? saFormatLocalDateTime(iso, "") : "";
+      el.textContent = when ? ("v " + version + " · " + when) : ("v " + version);
+      if (iso) el.setAttribute("title", "Deployed " + when + " (local time)");
     }
 
     function saFormatLocalDate(iso, fallback) {
@@ -31210,7 +32052,13 @@
         const data = await saFetchAdmin("/api/admin/health");
         const checks = data.checks || {};
         grid.innerHTML = [
-          saRenderStatCard("Version", data.version || data.git_commit_short || "—", data.git_branch || data.version_source || ""),
+          saRenderStatCard(
+            "Version",
+            data.version || data.git_commit_short || "—",
+            (data.built_at
+              ? saFormatLocalDateTime(data.built_at, data.built_at_display || "")
+              : (data.built_at_display || data.git_branch || data.version_source || ""))
+          ),
           saRenderStatCard("Supabase", checks.supabase && checks.supabase.ok ? "OK" : "Issue", checks.supabase && checks.supabase.configured ? "Configured" : "Off"),
           saRenderStatCard("Redis", checks.redis && checks.redis.ok ? "OK" : "Issue", checks.redis && checks.redis.configured ? "Configured" : "Off"),
           saRenderStatCard("Auth", checks.auth && checks.auth.enabled ? "On" : "Off"),
@@ -36951,7 +37799,6 @@
     function updateParishLyricsControls() {
       const saveParishBtn = $("btn-save-parish-lyrics");
       const syncBtn = $("btn-sync-catalog-lyrics");
-      const hint = $("lyrics-parish-version-hint");
       const hasParish = userHasParishForLyrics();
       const hasSong = !!(composerLoadedSong && composerLoadedSong.id);
       if (saveParishBtn) {
@@ -36959,18 +37806,6 @@
       }
       if (syncBtn) {
         syncBtn.hidden = !(hasParish && hasSong && composerParishVersion);
-      }
-      if (hint) {
-        if (hasSong && composerParishVersion) {
-          hint.hidden = false;
-          hint.textContent = "Showing your parish short version. Sync to catalog restores the superadmin source of truth.";
-        } else if (hasParish && hasSong) {
-          hint.hidden = false;
-          hint.textContent = "Editing the global catalog lyrics. Use Save parish version to keep a short parish copy without changing the source of truth.";
-        } else {
-          hint.hidden = true;
-          hint.textContent = "";
-        }
       }
     }
 
@@ -38445,6 +39280,7 @@
     bindNavTabSettings();
     applyNavTabVisibility();
     initMobileChromeLayout();
+    initMobileNavDragDrop();
     initNotificationsAccordions();
     redirectIfHiddenNavRoute();
     initLiveRadio();
@@ -38476,6 +39312,7 @@
       hide: "Hide songs",
     });
     initSongComposerCollapse();
+    initLyricsComposerMobileUi();
 
     refreshHomeMassCard();
     refreshHomeMission();
@@ -38508,6 +39345,7 @@
         }
         dashboardBooted = true;
         bootDashboardApp();
+        applyAppVersionLabelLocalTime();
         if (window.VerbumAuth && window.VerbumAuth.refreshUserProfile) {
           window.VerbumAuth.refreshUserProfile().then(() => {
             updateAccountMenuDisplay();

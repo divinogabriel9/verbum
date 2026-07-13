@@ -422,7 +422,7 @@
       {% endif %}
     </p>
     {% if app_version %}
-    <p class="auth-footer" style="margin-top:8px;opacity:0.75;font-size:0.78rem;" title="Deployed build">v {{ app_version }}</p>
+    <p class="auth-footer" style="margin-top:8px;opacity:0.75;font-size:0.78rem;" title="Deployed build">v {{ app_version }}{% if built_at_display %} · {{ built_at_display }}{% endif %}</p>
     {% endif %}
   </div>
   </div>
