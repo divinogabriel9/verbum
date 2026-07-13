@@ -71,17 +71,44 @@
 
   function ensureCounter(el) {
     if (!el || el.tagName !== "TEXTAREA") return null;
-    if (el.dataset.limitCounterBound === "1") return el.nextElementSibling;
-    const wrap = el.closest(".field") || el.parentElement;
-    if (!wrap) return null;
-    let counter = wrap.querySelector(".input-char-count[data-for=\"" + el.id + "\"]");
-    if (!counter) {
-      counter = document.createElement("p");
-      counter.className = "muted input-char-count";
-      counter.dataset.for = el.id || "";
-      counter.style.margin = "6px 0 0";
-      counter.style.fontSize = "0.75rem";
-      counter.style.textAlign = "right";
+    const id = el.id || "";
+    let counter = null;
+    if (id === "lyrics-input") {
+      counter = document.getElementById("lyrics-input-char-count");
+    }
+    if (!counter && id) {
+      counter = document.querySelector('.input-char-count[data-for="' + id.replace(/"/g, '\\"') + '"]');
+    }
+    if (!counter && el.dataset.limitCounterBound === "1") {
+      const sibling = el.nextElementSibling;
+      if (sibling && sibling.classList && sibling.classList.contains("input-char-count")) {
+        counter = sibling;
+      }
+    }
+    if (counter) {
+      // Drop stray duplicates left inside the scroll box from older binds.
+      if (id) {
+        document.querySelectorAll('.input-char-count[data-for="' + id.replace(/"/g, '\\"') + '"]').forEach(function (node) {
+          if (node !== counter) node.remove();
+        });
+      }
+      el.dataset.limitCounterBound = "1";
+      return counter;
+    }
+    counter = document.createElement("p");
+    counter.className = "muted input-char-count";
+    if (id) counter.dataset.for = id;
+    counter.style.margin = "6px 0 0";
+    counter.style.fontSize = "0.75rem";
+    counter.style.textAlign = "right";
+    if (id === "lyrics-input") {
+      const foot = document.getElementById("lyrics-word-stats");
+      if (foot && foot.parentElement) {
+        foot.insertAdjacentElement("afterend", counter);
+      } else {
+        el.insertAdjacentElement("afterend", counter);
+      }
+    } else {
       el.insertAdjacentElement("afterend", counter);
     }
     el.dataset.limitCounterBound = "1";

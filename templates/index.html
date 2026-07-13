@@ -6332,6 +6332,27 @@
       white-space: pre-wrap;
       user-select: text;
     }
+    .sa-song-lyrics-meta {
+      margin: 0 0 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .sa-song-lyrics-body {
+      margin: 0;
+      max-height: min(58vh, 520px);
+      overflow: auto;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: color-mix(in srgb, var(--surface) 88%, var(--ink) 4%);
+      font-size: var(--text-base);
+      line-height: 1.55;
+      color: var(--ink);
+      white-space: pre-wrap;
+      user-select: text;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
     .reading-preview-card {
       cursor: pointer;
     }
@@ -10740,7 +10761,8 @@
       left: 50%;
       bottom: calc(44px + env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%);
-      z-index: 80;
+      /* Below .ui-overlay (60) so Edit Details / mood modals cover the dock */
+      z-index: 50;
       width: max-content;
       max-width: calc(100vw - 24px);
       margin: 0;
@@ -10751,12 +10773,26 @@
     .lyrics-editor-float[hidden] {
       display: none !important;
     }
+    /* FAB toggle — mobile only (shown in verbum-responsive.css) */
+    .lyrics-editor-float__fab {
+      display: none;
+    }
     body.has-bottom-nav .lyrics-editor-float,
     body.mobile-chrome-tabs .lyrics-editor-float,
     body.mobile-top-nav .lyrics-editor-float {
       bottom: calc(44px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
     }
-    .lyrics-editor-float__inner {
+    .lyrics-editor-float__cluster {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      justify-content: center;
+      gap: 8px;
+      width: max-content;
+      max-width: 100%;
+    }
+    .lyrics-editor-float__inner,
+    .lyrics-editor-float__clear-card {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -10772,41 +10808,93 @@
       backdrop-filter: blur(var(--app-header-glass-blur)) saturate(1.15);
       -webkit-backdrop-filter: blur(var(--app-header-glass-blur)) saturate(1.15);
       opacity: 0.38;
-      /* Soft settle — longer than micro UI snaps; ease-out so it decelerates into place */
       transition:
         opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
         box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .lyrics-editor-float.is-bright .lyrics-editor-float__inner {
+    .lyrics-editor-float__clear-card {
+      padding: 10px 12px;
+    }
+    .lyrics-editor-float.is-bright .lyrics-editor-float__inner,
+    .lyrics-editor-float.is-bright .lyrics-editor-float__clear-card {
       opacity: 1;
       box-shadow:
         0 1px 2px rgba(15, 23, 42, 0.05),
         0 16px 40px rgba(15, 23, 42, 0.16);
     }
     /* Hover / first show: quick rise (not hard-cut) */
-    .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__inner {
+    .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__inner,
+    .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__clear-card {
       transition-duration: 110ms;
       transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     }
     @media (prefers-reduced-motion: reduce) {
       .lyrics-editor-float__inner,
-      .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__inner {
+      .lyrics-editor-float__clear-card,
+      .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__inner,
+      .lyrics-editor-float.is-bright.lyrics-editor-float--snap .lyrics-editor-float__clear-card {
         transition-duration: 1ms;
       }
     }
     .lyrics-editor-float__inner .primary,
     .lyrics-editor-float__inner .secondary,
-    .lyrics-editor-float__inner .ghost {
+    .lyrics-editor-float__inner .ghost,
+    .lyrics-editor-float__inner .lyrics-editor-float__analyze,
+    .lyrics-editor-float__inner .lyrics-editor-float__save,
+    .lyrics-editor-float__clear-card .lyrics-editor-float__clear {
+      box-sizing: border-box;
       min-height: 42px;
-      padding: 9px 16px;
+      height: 42px;
+      padding: 0 16px;
       font-size: 0.9rem;
       font-weight: 600;
+      line-height: 1;
       border-radius: 12px;
+      border-width: 1px;
     }
     .lyrics-editor-float__inner .primary:active,
     .lyrics-editor-float__inner .secondary:active,
-    .lyrics-editor-float__inner .ghost:active {
+    .lyrics-editor-float__inner .ghost:active,
+    .lyrics-editor-float__inner .lyrics-editor-float__analyze:active,
+    .lyrics-editor-float__inner .lyrics-editor-float__save:active,
+    .lyrics-editor-float__clear-card .lyrics-editor-float__clear:active {
       transform: scale(0.97);
+    }
+    .lyrics-editor-float__analyze {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+    .lyrics-editor-float__analyze:disabled {
+      opacity: 0.72;
+      cursor: wait;
+    }
+    .lyrics-editor-float__analyze.is-analyzing {
+      border-color: color-mix(in srgb, var(--ink) 28%, var(--line));
+    }
+    .lyrics-analyze-refresh-icon {
+      display: inline-flex;
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+    .lyrics-analyze-refresh-icon__svg {
+      display: block;
+      width: 15px;
+      height: 15px;
+      transform-origin: center;
+    }
+    .lyrics-editor-float__analyze.is-analyzing .lyrics-analyze-refresh-icon__svg {
+      animation: lyrics-analyze-refresh-spin 0.9s linear infinite;
+    }
+    @keyframes lyrics-analyze-refresh-spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lyrics-editor-float__analyze.is-analyzing .lyrics-analyze-refresh-icon__svg {
+        animation: none;
+      }
     }
     @media (max-width: 640px) {
       .lyrics-editor-float {
@@ -10822,21 +10910,17 @@
       body.mobile-top-nav .lyrics-editor-float {
         bottom: calc(52px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
       }
-      .lyrics-editor-float__inner {
-        border-radius: 14px;
-        justify-content: flex-start;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding: 10px 12px;
+      .lyrics-editor-float__cluster {
+        max-width: 100%;
       }
-      .lyrics-editor-float__inner::-webkit-scrollbar {
-        display: none;
+      .lyrics-editor-float__inner,
+      .lyrics-editor-float__clear-card {
+        border-radius: 14px;
       }
     }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      .lyrics-editor-float__inner {
+      .lyrics-editor-float__inner,
+      .lyrics-editor-float__clear-card {
         background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
       }
     }
@@ -10877,10 +10961,60 @@
       height: 12px;
       display: block;
     }
-    .lyrics-structured-actions .ghost#btn-clear-lyrics {
+    .lyrics-structured-actions .ghost#btn-clear-lyrics,
+    #btn-clear-lyrics.lyrics-editor-float__clear {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 5px;
+      color: #b42318;
+      border: 1px dotted color-mix(in srgb, #b42318 70%, transparent);
+      background: color-mix(in srgb, #b42318 6%, transparent);
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    #btn-clear-lyrics.lyrics-editor-float__clear:hover,
+    .lyrics-structured-actions .ghost#btn-clear-lyrics:hover {
+      color: #912018;
+      border-color: #b42318;
+      background: color-mix(in srgb, #b42318 12%, transparent);
+    }
+    .lyrics-editor-float__clear .song-composer-clear-icon,
+    .lyrics-structured-actions .ghost#btn-clear-lyrics .song-composer-clear-icon,
+    .lyrics-clear-confirm-btn .song-composer-clear-icon {
+      display: inline-flex;
+      opacity: 1;
+      color: inherit;
+    }
+    .lyrics-clear-trash {
+      display: block;
+      overflow: visible;
+    }
+    .lyrics-clear-trash__lid {
+      transform-origin: 8px 6px;
+      transform: rotate(0deg);
+      transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .lyrics-editor-float__clear.is-lid-open .lyrics-clear-trash__lid,
+    .lyrics-clear-confirm-btn.is-lid-open .lyrics-clear-trash__lid {
+      transform: rotate(-42deg) translate(-1px, -1px);
+    }
+    .lyrics-clear-confirm-btn,
+    .song-delete-confirm-btn {
+      background: #b42318;
+      border-color: #b42318;
+      color: #fff;
+    }
+    .lyrics-clear-confirm-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .lyrics-clear-confirm-btn:hover,
+    .song-delete-confirm-btn:hover {
+      background: #912018;
+      border-color: #912018;
     }
     .song-composer-clear-icon {
       display: inline-flex;
@@ -11203,9 +11337,9 @@
       flex-shrink: 0;
     }
     .detected-pill--verse .detected-dot { background: #6d5dfc; }
-    .detected-pill--chorus .detected-dot { background: #f472b6; }
+    .detected-pill--chorus .detected-dot { background: #d97706; }
     .detected-pill--bridge .detected-dot { background: #10b981; }
-    .detected-pill--response .detected-dot { background: #d97706; }
+    .detected-pill--response .detected-dot { background: #f472b6; }
     .lyrics-details-panel,
     .lyrics-structured-panel {
       display: flex;
@@ -11287,20 +11421,49 @@
       outline: none;
       box-shadow: inset 0 0 0 2px rgba(21, 115, 71, 0.25);
     }
-    .lyrics-word-stats {
-      flex-shrink: 0;
+    .lyrics-editor-foot {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
       margin-top: 8px;
+      min-width: 0;
+    }
+    .lyrics-word-stats {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin: 0;
       font-size: 0.74rem;
       color: var(--muted);
       font-weight: 600;
     }
+    #lyrics-input-char-count.input-char-count {
+      flex: 0 0 auto;
+      margin: 0;
+      font-size: 0.74rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      color: var(--muted);
+    }
     .lyrics-structured-panel .lyrics-structured-head {
       flex: 0 0 auto;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 10px 14px;
       flex-wrap: wrap;
+    }
+    .lyrics-structured-head__title {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .lyrics-structured-panel .lyrics-structured-head .lyrics-quick-add {
+      flex: 0 1 auto;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      justify-content: flex-end;
     }
     .lyrics-structured-actions {
       display: flex;
@@ -11377,9 +11540,145 @@
       align-items: center;
       gap: 6px;
       margin: 0;
+      padding: 6px 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
       font-size: 0.8125rem;
       color: var(--ink);
       cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .song-metadata-moods__grid label:hover {
+      border-color: color-mix(in srgb, var(--liturgical-accent, #ffb800) 35%, var(--line-soft));
+    }
+    .song-metadata-moods__hint {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+    .song-metadata-moods__error {
+      margin: 8px 0 0;
+      font-size: 0.8125rem;
+      color: var(--danger, #b42318);
+    }
+    .song-metadata-moods__grid label.is-detected,
+    .song-metadata-moods.is-attention {
+      border-color: color-mix(in srgb, var(--liturgical-accent, #ffb800) 55%, var(--line-soft));
+    }
+    .song-metadata-moods.is-attention {
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent, #ffb800) 45%, var(--line-soft));
+      border-radius: 10px;
+      padding: 8px;
+      animation: song-save-mood-pulse 1.8s ease-in-out infinite;
+    }
+    .song-metadata-moods__grid label.is-detected {
+      background: color-mix(in srgb, var(--liturgical-accent, #ffb800) 10%, var(--surface-solid));
+      animation: song-save-mood-pulse 1.8s ease-in-out infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .song-metadata-moods.is-attention,
+      .song-metadata-moods__grid label.is-detected {
+        animation: none;
+      }
+    }
+    #song-metadata-save:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.25);
+    }
+    .lyrics-meta-store {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .lyrics-details-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: 10px 18px;
+      align-items: start;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-2, var(--surface-solid)) 88%, transparent);
+    }
+    .lyrics-details-summary__meta,
+    .lyrics-details-summary__moods {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+    .lyrics-details-summary__title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .lyrics-details-summary__author,
+    .lyrics-details-summary__lang,
+    .lyrics-details-summary__mood-list {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+    .lyrics-details-summary__lang {
+      color: color-mix(in srgb, var(--ink) 55%, var(--muted));
+    }
+    .lyrics-details-summary__mood-label {
+      display: block;
+      margin: 0 0 2px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .lyrics-details-summary__mood-list {
+      color: var(--ink);
+      font-weight: 650;
+    }
+    .lyrics-details-summary.is-empty .lyrics-details-summary__title,
+    .lyrics-details-summary.is-empty .lyrics-details-summary__author,
+    .lyrics-details-summary.is-empty .lyrics-details-summary__lang,
+    .lyrics-details-summary.is-empty .lyrics-details-summary__mood-list {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    @media (max-width: 520px) {
+      .lyrics-details-summary {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+    }
+    #song-metadata-modal .song-save-mood-google {
+      margin: 8px 0 0;
+    }
+    .song-metadata-sync {
+      margin: 14px 0 0;
+      padding: 12px;
+      border: 1px dashed color-mix(in srgb, var(--ink) 18%, transparent);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--surface, #fff) 92%, var(--ink));
+      display: grid;
+      gap: 10px;
+    }
+    .song-metadata-sync[hidden] {
+      display: none !important;
+    }
+    .song-metadata-sync__hint {
+      margin: 0;
+      font-size: 0.8125rem;
+      line-height: 1.4;
+    }
+    .song-metadata-sync .secondary {
+      justify-self: start;
     }
     .song-save-mood-picker {
       margin: 0;
@@ -11866,6 +12165,11 @@
       padding-bottom: 10px;
       border-bottom: 1px solid var(--line-soft);
     }
+    .lyrics-quick-add--mobile {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line-soft);
+    }
     .lyrics-add-btn {
       padding: 5px 10px;
       border-radius: var(--radius-pill);
@@ -11882,9 +12186,9 @@
       border-color: rgba(167, 139, 250, 0.35);
     }
     .lyrics-add-btn[data-add-type="verse"] { border-color: rgba(109, 93, 252, 0.35); color: #5b21b6; }
-    .lyrics-add-btn[data-add-type="chorus"] { border-color: rgba(244, 114, 182, 0.35); color: #9d174d; }
+    .lyrics-add-btn[data-add-type="chorus"] { border-color: rgba(217, 119, 6, 0.35); color: #b45309; }
     .lyrics-add-btn[data-add-type="bridge"] { border-color: rgba(16, 185, 129, 0.35); color: #047857; }
-    .lyrics-add-btn[data-add-type="response"] { border-color: rgba(217, 119, 6, 0.35); color: #b45309; }
+    .lyrics-add-btn[data-add-type="response"] { border-color: rgba(244, 114, 182, 0.35); color: #9d174d; }
     .lyrics-block-list {
       display: flex;
       flex-direction: column;
@@ -11908,12 +12212,12 @@
     .lyric-block.dragging { opacity: 0.55; }
     .lyric-block.type-verse { border-color: #c4b5fd; }
     .lyric-block.type-verse:focus-within { border-color: #8b5cf6; }
-    .lyric-block.type-chorus { border-color: #d4a0b8; }
-    .lyric-block.type-chorus:focus-within { border-color: #c47a9a; }
+    .lyric-block.type-chorus { border-color: #d4b878; }
+    .lyric-block.type-chorus:focus-within { border-color: #c49a48; }
     .lyric-block.type-bridge { border-color: #8fb8a8; }
     .lyric-block.type-bridge:focus-within { border-color: #6fa892; }
-    .lyric-block.type-response { border-color: #d4b878; }
-    .lyric-block.type-response:focus-within { border-color: #c49a48; }
+    .lyric-block.type-response { border-color: #d4a0b8; }
+    .lyric-block.type-response:focus-within { border-color: #c47a9a; }
     .lyric-block__head {
       display: grid;
       grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr);
@@ -11921,6 +12225,7 @@
       gap: 8px;
       padding: 6px 8px;
       border-bottom: 1px solid rgba(109, 93, 252, 0.35);
+      border-radius: 10px 10px 0 0;
       background: #ede9fe;
       overflow: visible;
       position: relative;
@@ -11932,9 +12237,9 @@
       justify-self: start;
     }
     .lyric-block.type-verse .lyric-block__head { background: #ede9fe; border-bottom-color: rgba(109, 93, 252, 0.35); }
-    .lyric-block.type-chorus .lyric-block__head { background: #f5dce8; border-bottom-color: rgba(196, 122, 154, 0.35); }
+    .lyric-block.type-chorus .lyric-block__head { background: #f5ecd8; border-bottom-color: rgba(196, 154, 72, 0.35); }
     .lyric-block.type-bridge .lyric-block__head { background: #d4ebe3; border-bottom-color: rgba(111, 168, 146, 0.35); }
-    .lyric-block.type-response .lyric-block__head { background: #f5ecd8; border-bottom-color: rgba(196, 154, 72, 0.35); }
+    .lyric-block.type-response .lyric-block__head { background: #f5dce8; border-bottom-color: rgba(196, 122, 154, 0.35); }
     .lyric-block__drag {
       width: 22px;
       height: 22px;
@@ -12017,6 +12322,7 @@
     }
     .lyric-block.collapsed .lyric-block__body { display: none; }
     .lyric-block__ta-wrap {
+      position: relative;
       border: 1px solid var(--line-soft);
       border-radius: 4px;
       background: var(--surface-solid);
@@ -12024,8 +12330,9 @@
     }
     .lyric-block__ta {
       width: 100%;
-      min-height: 52px;
-      padding: 8px 10px;
+      min-height: 1.45em;
+      height: auto;
+      padding: 6px 4.75rem 6px 10px;
       border: 0;
       border-radius: 0;
       background: transparent;
@@ -12037,6 +12344,7 @@
       field-sizing: content;
       outline: none;
       display: block;
+      box-sizing: border-box;
     }
     .lyric-block__ta:focus {
       outline: none;
@@ -12046,20 +12354,26 @@
       box-shadow: none;
     }
     .lyric-block__ta-foot {
+      position: absolute;
+      right: 8px;
+      bottom: 6px;
       display: flex;
-      justify-content: flex-end;
       align-items: center;
-      min-height: 20px;
-      padding: 0 8px 5px;
+      justify-content: flex-end;
+      height: 1.45em;
+      margin: 0;
+      padding: 0;
+      min-height: 0;
       pointer-events: none;
+      line-height: 1.45;
     }
     .lyric-block__char-count {
       font-size: 0.72rem;
       font-weight: 500;
       color: var(--muted);
-      line-height: 1;
+      line-height: 1.45;
       font-variant-numeric: tabular-nums;
-      display: none;
+      white-space: nowrap;
     }
     .lyric-block__ta-foot > .lyric-block__char-count {
       display: inline;
@@ -12070,27 +12384,27 @@
     }
     html[data-theme="dark"] .lyric-block.type-verse { border-color: color-mix(in srgb, #8b5cf6 32%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-verse:focus-within { border-color: color-mix(in srgb, #8b5cf6 50%, var(--line)); }
-    html[data-theme="dark"] .lyric-block.type-chorus { border-color: color-mix(in srgb, #f472b6 28%, var(--line)); }
-    html[data-theme="dark"] .lyric-block.type-chorus:focus-within { border-color: color-mix(in srgb, #f472b6 45%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-chorus { border-color: color-mix(in srgb, #fbbf24 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-chorus:focus-within { border-color: color-mix(in srgb, #fbbf24 45%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-bridge { border-color: color-mix(in srgb, #34d399 28%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-bridge:focus-within { border-color: color-mix(in srgb, #34d399 45%, var(--line)); }
-    html[data-theme="dark"] .lyric-block.type-response { border-color: color-mix(in srgb, #fbbf24 28%, var(--line)); }
-    html[data-theme="dark"] .lyric-block.type-response:focus-within { border-color: color-mix(in srgb, #fbbf24 45%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-response { border-color: color-mix(in srgb, #f472b6 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-response:focus-within { border-color: color-mix(in srgb, #f472b6 45%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-verse .lyric-block__head {
       background: color-mix(in srgb, #6d5dfc 14%, var(--surface-2));
       border-bottom-color: color-mix(in srgb, #6d5dfc 22%, var(--line));
     }
     html[data-theme="dark"] .lyric-block.type-chorus .lyric-block__head {
-      background: color-mix(in srgb, #f472b6 12%, var(--surface-2));
-      border-bottom-color: color-mix(in srgb, #f472b6 20%, var(--line));
+      background: color-mix(in srgb, #fbbf24 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #fbbf24 20%, var(--line));
     }
     html[data-theme="dark"] .lyric-block.type-bridge .lyric-block__head {
       background: color-mix(in srgb, #34d399 12%, var(--surface-2));
       border-bottom-color: color-mix(in srgb, #34d399 20%, var(--line));
     }
     html[data-theme="dark"] .lyric-block.type-response .lyric-block__head {
-      background: color-mix(in srgb, #fbbf24 12%, var(--surface-2));
-      border-bottom-color: color-mix(in srgb, #fbbf24 20%, var(--line));
+      background: color-mix(in srgb, #f472b6 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #f472b6 20%, var(--line));
     }
     html[data-theme="dark"] .lyric-block__btn {
       color: var(--muted);
@@ -15192,7 +15506,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713g" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713o" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -15941,7 +16255,7 @@
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="song-metadata-title">Edit song details</h3>
-              <p class="ui-card__description" id="song-metadata-subtitle">Update title, author, and language.</p>
+              <p class="ui-card__description" id="song-metadata-subtitle">Update title, author, language, section, and mood.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="song-metadata-close" aria-label="Close">×</button>
           </header>
@@ -15957,23 +16271,46 @@
             <div class="field">
               <label for="song-metadata-edit-language">Language</label>
               <select id="song-metadata-edit-language">
+                <option value="" disabled hidden>Select language</option>
                 <option value="English">English</option>
                 <option value="Tagalog">Tagalog</option>
                 <option value="Latin">Latin</option>
                 <option value="Mix">Mix</option>
               </select>
             </div>
+            <div class="field">
+              <label for="song-metadata-edit-section">Section</label>
+              <select id="song-metadata-edit-section">
+                <option value="" disabled hidden>Select section</option>
+                <option value="entrance">Entrance</option>
+                <option value="offertory">Offertory</option>
+                <option value="communion">Communion</option>
+                <option value="recessional">Recessional</option>
+                <option value="meditation">Meditation / Other</option>
+              </select>
+            </div>
             <fieldset class="song-metadata-moods" id="song-metadata-moods">
               <legend>Gospel mood</legend>
+              <p class="song-metadata-moods__hint muted" id="song-metadata-mood-hint">Select the mood that best fits this song.</p>
               <div class="song-metadata-moods__grid">
-                <label><input type="checkbox" value="triumphant" data-gospel-mood-opt /> Triumphant</label>
-                <label><input type="checkbox" value="solemn" data-gospel-mood-opt /> Solemn</label>
-                <label><input type="checkbox" value="mercy" data-gospel-mood-opt /> Mercy</label>
-                <label><input type="checkbox" value="journey" data-gospel-mood-opt /> Journey</label>
-                <label><input type="checkbox" value="reverent" data-gospel-mood-opt /> Reverent</label>
+                <label data-gospel-mood-key="triumphant"><input type="checkbox" value="triumphant" data-gospel-mood-opt /> Triumphant</label>
+                <label data-gospel-mood-key="solemn"><input type="checkbox" value="solemn" data-gospel-mood-opt /> Solemn</label>
+                <label data-gospel-mood-key="mercy"><input type="checkbox" value="mercy" data-gospel-mood-opt /> Mercy</label>
+                <label data-gospel-mood-key="journey"><input type="checkbox" value="journey" data-gospel-mood-opt /> Journey</label>
+                <label data-gospel-mood-key="reverent"><input type="checkbox" value="reverent" data-gospel-mood-opt /> Reverent</label>
               </div>
+              <p class="song-metadata-moods__error" id="song-metadata-mood-error" hidden>Select at least one mood before saving.</p>
             </fieldset>
-            <p class="muted" style="margin:0;font-size:0.8125rem;" id="song-metadata-section-label">Section: —</p>
+            <p class="song-save-mood-google" id="song-metadata-mood-google-wrap">
+              Not sure?
+              <button type="button" class="song-save-mood-google-link" id="song-metadata-mood-google-link">Search Google for this song&apos;s mood</button>
+            </p>
+            <div class="song-metadata-sync" id="song-metadata-sync-wrap">
+              <p class="muted song-metadata-sync__hint" id="song-metadata-sync-hint">
+                Sync restores the global catalog lyrics and removes any parish short-version override for this song.
+              </p>
+              <button type="button" class="secondary" id="btn-sync-catalog-lyrics">Sync to catalog</button>
+            </div>
           </div>
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="song-metadata-cancel">Cancel</button>
@@ -16122,6 +16459,26 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="sa-song-lyrics-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="sa-song-lyrics-modal-backdrop"></div>
+        <article class="ui-card ui-card--reading" role="dialog" aria-labelledby="sa-song-lyrics-modal-title" aria-describedby="sa-song-lyrics-modal-desc" aria-modal="true" style="max-width:min(640px, 94vw);">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="sa-song-lyrics-modal-title">Submitted lyrics</h3>
+              <p class="ui-card__description" id="sa-song-lyrics-modal-desc">Review the full song before approving.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="sa-song-lyrics-modal-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content">
+            <p class="sa-song-lyrics-meta" id="sa-song-lyrics-modal-meta" hidden></p>
+            <pre class="sa-song-lyrics-body" id="sa-song-lyrics-modal-body"></pre>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="sa-song-lyrics-modal-done">Close</button>
+          </footer>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="logo-preview-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="logo-preview-backdrop"></div>
         <article class="ui-card" role="dialog" aria-labelledby="logo-preview-title" aria-modal="true">
@@ -16170,6 +16527,38 @@
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="song-delete-cancel">Cancel</button>
             <button type="button" class="primary song-delete-confirm-btn" id="song-delete-confirm">Delete</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="lyrics-clear-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="lyrics-clear-backdrop"></div>
+        <article class="ui-card" role="alertdialog" aria-labelledby="lyrics-clear-title" aria-describedby="lyrics-clear-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="lyrics-clear-title">Clear lyrics?</h3>
+              <p class="ui-card__description" id="lyrics-clear-desc">This clears the raw text and structured blocks in the editor. It does not delete songs from the library.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="lyrics-clear-close" aria-label="Close">×</button>
+          </header>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="lyrics-clear-cancel" data-ui-cancel>Cancel</button>
+            <button type="button" class="primary lyrics-clear-confirm-btn" id="lyrics-clear-confirm">
+              <span class="song-composer-clear-icon" aria-hidden="true">
+                <svg class="lyrics-clear-trash" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <g class="lyrics-clear-trash__lid">
+                    <path d="M3 6h18"/>
+                    <path d="M8 6V4h8v2"/>
+                  </g>
+                  <g class="lyrics-clear-trash__body">
+                    <path d="M19 6l-1 14H6L5 6"/>
+                    <path d="M10 11v6"/>
+                    <path d="M14 11v6"/>
+                  </g>
+                </svg>
+              </span>
+              Clear editor
+            </button>
           </footer>
         </article>
       </div>
@@ -16363,70 +16752,63 @@
                 <div>
                   <h3>Lyrics</h3>
                 </div>
-                <button type="button" class="ghost mini" id="btn-lyrics-focus-meta" title="Edit title, author, language, and mood">Edit Details</button>
+                <button type="button" class="ghost mini" id="btn-lyrics-focus-meta" title="Edit title, author, language, section, and mood">Edit Details</button>
+              </div>
+              <div class="lyrics-details-summary" id="lyrics-composer-details-preview" aria-live="polite">
+                <div class="lyrics-details-summary__meta">
+                  <p class="lyrics-details-summary__title" data-summary="title">No title yet</p>
+                  <p class="lyrics-details-summary__author" data-summary="author">Author not set</p>
+                  <p class="lyrics-details-summary__lang" data-summary="lang">Language not set</p>
+                </div>
+                <div class="lyrics-details-summary__moods">
+                  <span class="lyrics-details-summary__mood-label">Mood</span>
+                  <p class="lyrics-details-summary__mood-list" data-summary="moods">Not set</p>
+                </div>
               </div>
 
-              <details class="lyrics-composer-details" id="lyrics-composer-details" open>
-                <summary class="lyrics-composer-details__summary">
-                  <span class="lyrics-composer-details__title">Song details</span>
-                  <span class="lyrics-composer-details__preview" id="lyrics-composer-details-preview">Title, author, language, mood</span>
-                </summary>
-                <div class="lyrics-composer-details__body">
-                  <div class="lyrics-details-meta-grid">
-                    <div class="field">
-                      <label for="lyrics-save-title">Title</label>
-                      <input type="text" id="lyrics-save-title" value="" placeholder="Song title" maxlength="240" />
-                    </div>
-                    <div class="field">
-                      <label for="lyrics-save-author">Author</label>
-                      <input type="text" id="lyrics-save-author" placeholder="Optional" maxlength="240" />
-                    </div>
-                    <div class="field">
-                      <label for="lyrics-save-language">Language</label>
-                      <select id="lyrics-save-language">
-                        <option value="" disabled hidden>Select language</option>
-                        <option value="English">English</option>
-                        <option value="Tagalog">Tagalog</option>
-                        <option value="Latin">Latin</option>
-                        <option value="Mix">Mix</option>
-                      </select>
-                    </div>
+              <!-- Hidden store — keeps legacy ids for save/catalog JS; edited via Edit Details modal -->
+              <div class="lyrics-meta-store" id="lyrics-meta-store" hidden aria-hidden="true">
+                <input type="text" id="lyrics-save-title" value="" maxlength="240" tabindex="-1" />
+                <input type="text" id="lyrics-save-author" value="" maxlength="240" tabindex="-1" />
+                <select id="lyrics-save-language" tabindex="-1">
+                  <option value="" disabled hidden>Select language</option>
+                  <option value="English">English</option>
+                  <option value="Tagalog">Tagalog</option>
+                  <option value="Latin">Latin</option>
+                  <option value="Mix">Mix</option>
+                </select>
+                <select id="lyrics-save-section" tabindex="-1">
+                  <option value="" disabled hidden>Select section</option>
+                  <option value="entrance">Entrance</option>
+                  <option value="offertory">Offertory</option>
+                  <option value="communion">Communion</option>
+                  <option value="recessional">Recessional</option>
+                  <option value="meditation">Meditation / Other</option>
+                </select>
+                <fieldset class="song-metadata-moods lyrics-composer-moods" id="lyrics-composer-moods">
+                  <legend>Gospel mood</legend>
+                  <div class="song-metadata-moods__grid">
+                    <label><input type="checkbox" value="triumphant" data-composer-mood-opt /> Triumphant</label>
+                    <label><input type="checkbox" value="solemn" data-composer-mood-opt /> Solemn</label>
+                    <label><input type="checkbox" value="mercy" data-composer-mood-opt /> Mercy</label>
+                    <label><input type="checkbox" value="journey" data-composer-mood-opt /> Journey</label>
+                    <label><input type="checkbox" value="reverent" data-composer-mood-opt /> Reverent</label>
                   </div>
-                  <div class="field lyrics-details-save-row">
-                    <label for="lyrics-save-section">Save to Section</label>
-                    <select id="lyrics-save-section">
-                      <option value="" disabled hidden>Select section</option>
-                      <option value="entrance">Entrance</option>
-                      <option value="offertory">Offertory</option>
-                      <option value="communion">Communion</option>
-                      <option value="recessional">Recessional</option>
-                      <option value="meditation">Meditation / Other</option>
-                    </select>
-                  </div>
-                  <fieldset class="song-metadata-moods lyrics-composer-moods" id="lyrics-composer-moods">
-                    <legend>Gospel mood</legend>
-                    <div class="song-metadata-moods__grid">
-                      <label><input type="checkbox" value="triumphant" data-composer-mood-opt /> Triumphant</label>
-                      <label><input type="checkbox" value="solemn" data-composer-mood-opt /> Solemn</label>
-                      <label><input type="checkbox" value="mercy" data-composer-mood-opt /> Mercy</label>
-                      <label><input type="checkbox" value="journey" data-composer-mood-opt /> Journey</label>
-                      <label><input type="checkbox" value="reverent" data-composer-mood-opt /> Reverent</label>
-                    </div>
-                  </fieldset>
-                  <div class="lyrics-composer-details__save-row">
-                    <button type="button" class="primary" id="btn-lyrics-accordion-save">Save</button>
-                  </div>
-                </div>
-              </details>
+                </fieldset>
+                <button type="button" id="btn-lyrics-accordion-save" hidden tabindex="-1">Save</button>
+              </div>
 
               <div class="lyrics-composer-focus" id="lyrics-composer-focus">
                 <div class="lyrics-composer-tabs" id="lyrics-composer-tabs" role="tablist" aria-label="Lyrics sections"></div>
                 <div class="lyrics-composer-swipe" id="lyrics-composer-swipe">
                   <div class="lyrics-composer-pane lyrics-composer-pane--raw is-active" data-pane="raw" id="lyrics-composer-pane-raw">
                     <div class="lyrics-editor-scroll">
-                      <textarea id="lyrics-input" class="lyrics-editor-main" spellcheck="true" aria-label="Song lyrics" maxlength="50000" data-max-length="50000" placeholder="Paste or type lyrics, or pick a song from the library…"></textarea>
+                      <textarea id="lyrics-input" class="lyrics-editor-main" spellcheck="true" aria-label="Song lyrics" maxlength="50000" data-max-length="50000" data-limit-key="lyrics_full" placeholder="Paste or type lyrics, or pick a song from the library…"></textarea>
                     </div>
-                    <p class="lyrics-word-stats" id="lyrics-word-stats">0 words · 0 lines</p>
+                    <div class="lyrics-editor-foot">
+                      <p class="lyrics-word-stats" id="lyrics-word-stats">0 words · 0 lines</p>
+                      <p class="muted input-char-count" id="lyrics-input-char-count" data-for="lyrics-input" aria-live="polite">0 / 50000</p>
+                    </div>
                     <p class="lyrics-analyze-hint" id="lyrics-analyze-hint" aria-live="polite"></p>
                   </div>
                   <div class="lyrics-composer-pane lyrics-composer-pane--blocks" data-pane="blocks" id="lyrics-composer-pane-blocks">
@@ -16447,9 +16829,15 @@
 
             <section class="panel lyrics-structured-panel">
               <div class="panel-head lyrics-structured-head">
-                <div>
+                <div class="lyrics-structured-head__title">
                   <h3>Structured Editor</h3>
                   <p class="lyrics-structured-meta" id="lyrics-structured-meta">0 blocks · ~0 slides</p>
+                </div>
+                <div class="lyrics-quick-add" id="lyrics-quick-add" aria-label="Add section">
+                  <button type="button" class="lyrics-add-btn" data-add-type="verse">+ Verse</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="chorus">+ Chorus</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="bridge">+ Bridge</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="response">+ Response</button>
                 </div>
               </div>
               <div class="lyrics-structured-body">
@@ -16479,12 +16867,6 @@
                   </div>
                   <div class="lyrics-structured-scrim" id="lyrics-structured-scrim" hidden></div>
                   <div class="lyrics-structured-body-inner" id="lyrics-structured-body-inner">
-                    <div class="lyrics-quick-add" id="lyrics-quick-add">
-                      <button type="button" class="lyrics-add-btn" data-add-type="verse">+ Verse</button>
-                      <button type="button" class="lyrics-add-btn" data-add-type="chorus">+ Chorus</button>
-                      <button type="button" class="lyrics-add-btn" data-add-type="bridge">+ Bridge</button>
-                      <button type="button" class="lyrics-add-btn" data-add-type="response">+ Response</button>
-                    </div>
                     <div class="lyrics-block-list-scroll">
                       <div class="lyrics-block-list block-list" id="lyrics-block-list"></div>
                     </div>
@@ -19631,18 +20013,43 @@
       </section>
     </main>
     <div class="lyrics-editor-float" id="lyrics-editor-float" role="toolbar" aria-label="Lyrics editor actions" hidden>
-      <div class="lyrics-editor-float__inner lyrics-structured-actions actions">
-        <button type="button" class="primary" id="btn-analyze-lyrics">Analyze</button>
-        <button type="button" class="secondary" id="btn-save-lyrics">Save</button>
-        <button type="button" class="secondary" id="btn-save-parish-lyrics" hidden title="Save a short version for your parish only">Save parish version</button>
-        <button type="button" class="ghost" id="btn-sync-catalog-lyrics" hidden title="Discard parish edits and restore superadmin catalog lyrics">Sync to catalog</button>
-        <button type="button" class="ghost" id="btn-clear-lyrics">
-          <span class="song-composer-clear-icon" aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-          </span>
-          Clear
-        </button>
-        <button type="button" class="ghost mini" id="btn-normalize-lyrics" title="Lowercase all text, then capitalize the first letter of each word; also trim spacing and section labels">Tidy</button>
+      <button type="button" class="lyrics-editor-float__fab" id="lyrics-editor-float-fab" aria-expanded="false" aria-controls="lyrics-editor-float-actions" aria-label="Open lyrics actions">
+        <svg class="lyrics-editor-float__fab-glyph lyrics-editor-float__fab-glyph--open" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg>
+        <svg class="lyrics-editor-float__fab-glyph lyrics-editor-float__fab-glyph--close" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div class="lyrics-editor-float__cluster" id="lyrics-editor-float-actions">
+        <div class="lyrics-editor-float__inner lyrics-structured-actions actions">
+          <button type="button" class="primary lyrics-editor-float__save" id="btn-save-lyrics">Save</button>
+          <button type="button" class="secondary lyrics-editor-float__analyze" id="btn-analyze-lyrics">
+            <span class="lyrics-analyze-refresh-icon" aria-hidden="true">
+              <svg class="lyrics-analyze-refresh-icon__svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M8 16H3v5"/>
+              </svg>
+            </span>
+            <span class="lyrics-editor-float__analyze-label">Analyze</span>
+          </button>
+        </div>
+        <div class="lyrics-editor-float__clear-card">
+          <button type="button" class="ghost lyrics-editor-float__clear" id="btn-clear-lyrics">
+            <span class="song-composer-clear-icon" aria-hidden="true">
+              <svg class="lyrics-clear-trash" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <g class="lyrics-clear-trash__lid">
+                  <path d="M3 6h18"/>
+                  <path d="M8 6V4h8v2"/>
+                </g>
+                <g class="lyrics-clear-trash__body">
+                  <path d="M19 6l-1 14H6L5 6"/>
+                  <path d="M10 11v6"/>
+                  <path d="M14 11v6"/>
+                </g>
+              </svg>
+            </span>
+            Clear
+          </button>
+        </div>
       </div>
     </div>
     <nav class="app-bottom-nav app-nav--mobile" id="app-bottom-nav" aria-label="Main navigation">
@@ -23668,8 +24075,13 @@
 
     function autoResizeLyricTextarea(ta) {
       if (!ta) return;
-      ta.style.height = "auto";
-      ta.style.height = Math.max(52, ta.scrollHeight) + "px";
+      // Collapse first so scrollHeight reflects wrapped content width.
+      ta.style.height = "0px";
+      const cs = getComputedStyle(ta);
+      const line = Math.ceil(parseFloat(cs.lineHeight) || 22);
+      const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      const minH = line + padY;
+      ta.style.height = Math.max(minH, ta.scrollHeight) + "px";
     }
 
     function formatSongTitleCase(raw) {
@@ -23797,6 +24209,13 @@
       const words = (text.match(/\b[\w']+\b/g) || []).length;
       const lines = text.trim() ? text.split(/\n/).length : 0;
       el.textContent = words + " word" + (words === 1 ? "" : "s") + " · " + lines + " line" + (lines === 1 ? "" : "s");
+      const counter = $("lyrics-input-char-count");
+      if (counter) {
+        const max = parseInt(input.getAttribute("maxlength") || input.getAttribute("data-max-length") || "50000", 10) || 50000;
+        const len = text.length;
+        counter.textContent = len + " / " + max;
+        counter.style.color = len >= max ? "var(--warn)" : "";
+      }
     }
 
     function addLyricBlockOfType(type) {
@@ -23873,7 +24292,10 @@
       if (stickyIdle) stickyIdle.hidden = mode !== "idle";
       if (stickyLoading) stickyLoading.hidden = mode !== "analyzing";
       if (overlayBtn) overlayBtn.disabled = mode === "analyzing";
-      if (headerBtn) headerBtn.disabled = mode === "analyzing";
+      if (headerBtn) {
+        headerBtn.disabled = mode === "analyzing";
+        headerBtn.classList.toggle("is-analyzing", mode === "analyzing");
+      }
     }
 
     const LYRICS_ANALYZE_TOTAL_MS = 2000;
@@ -23939,11 +24361,13 @@
         await runLyricsAnalyzeProgress(deadline, () => {
           if (parsed) return;
           syncInputPanelToStructuredEditor({ quiet: false, writeBack: true });
+          tidyLyricsInEditor({ quiet: true });
           commitLyricsAnalyzedSnapshot(false);
           parsed = true;
         });
         if (!parsed) {
           syncInputPanelToStructuredEditor({ quiet: false, writeBack: true });
+          tidyLyricsInEditor({ quiet: true });
           commitLyricsAnalyzedSnapshot(false);
         }
         await setLyricsAnalyzeProgress("Done!");
@@ -24092,7 +24516,7 @@
             "</div>" +
             '<div class="lyric-block__body">' +
               '<div class="lyric-block__ta-wrap">' +
-                '<textarea class="lyric-block__ta" data-action="text" data-limit-key="lyric_block" maxlength="4000" rows="2" spellcheck="true">' + escapeHtml(block.text) + "</textarea>" +
+                '<textarea class="lyric-block__ta" data-action="text" data-limit-key="lyric_block" maxlength="4000" rows="1" spellcheck="true">' + escapeHtml(block.text) + "</textarea>" +
                 '<div class="lyric-block__ta-foot">' +
                   '<span class="lyric-block__char-count" aria-live="polite">' + charCount + "/4000</span>" +
                 "</div>" +
@@ -24261,7 +24685,7 @@
     })();
 
     $("btn-lyrics-focus-meta") && $("btn-lyrics-focus-meta").addEventListener("click", () => {
-      openComposerSongDetailsModal();
+      openComposerSongDetailsModal({ intent: "edit" });
     });
 
     let lyricsComposerMobileTab = "raw";
@@ -24272,8 +24696,21 @@
       const title = (($("lyrics-save-title") && $("lyrics-save-title").value) || "").trim();
       const author = (($("lyrics-save-author") && $("lyrics-save-author").value) || "").trim();
       const lang = (($("lyrics-save-language") && $("lyrics-save-language").value) || "").trim();
-      const parts = [title || "Untitled", author, lang].filter(Boolean);
-      preview.textContent = parts.join(" · ");
+      const section = (($("lyrics-save-section") && $("lyrics-save-section").value) || "").trim();
+      const sectionLabel = section && typeof songSectionLabel === "function" ? songSectionLabel(section) : "";
+      const moods = typeof getComposerSongMoods === "function" ? getComposerSongMoods() : [];
+      const moodLabel = typeof formatGospelMoodsLabel === "function" ? formatGospelMoodsLabel(moods) : "";
+      const titleEl = preview.querySelector('[data-summary="title"]');
+      const authorEl = preview.querySelector('[data-summary="author"]');
+      const langEl = preview.querySelector('[data-summary="lang"]');
+      const moodsEl = preview.querySelector('[data-summary="moods"]');
+      if (titleEl) titleEl.textContent = title || "No title yet";
+      if (authorEl) authorEl.textContent = author || "Author not set";
+      if (langEl) {
+        langEl.textContent = [lang || "Language not set", sectionLabel].filter(Boolean).join(" · ");
+      }
+      if (moodsEl) moodsEl.textContent = moodLabel || "Not set";
+      preview.classList.toggle("is-empty", !title && !author && !lang && !moodLabel);
     }
 
     function placeLyricsBlockListForLayout() {
@@ -24304,21 +24741,19 @@
       if (!swipe || !isMobileChromeLayout()) return;
       const target = lyricsComposerMobileTab === "blocks" ? blocksPane : rawPane;
       if (target) target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+      // Off-screen panes need a second pass so wrap height is measured at full width.
+      requestAnimationFrame(() => {
+        if (lyricsComposerMobileTab === "blocks") {
+          autoResizeAllLyricTextareas();
+          setTimeout(autoResizeAllLyricTextareas, 80);
+          setTimeout(autoResizeAllLyricTextareas, 220);
+        } else {
+          autoResizeLyricsMainInput();
+        }
+      });
     }
 
     function syncLyricsComposerMobileUi() {
-      const details = $("lyrics-composer-details");
-      if (details) {
-        if (isMobileChromeLayout()) {
-          if (details.dataset.mobileInit !== "1") {
-            details.dataset.mobileInit = "1";
-            details.open = false;
-          }
-        } else {
-          details.open = true;
-          details.dataset.mobileInit = "";
-        }
-      }
       placeLyricsBlockListForLayout();
       updateLyricsComposerDetailsPreview();
       if (typeof syncComposerAccordionMoodsFromState === "function") syncComposerAccordionMoodsFromState();
@@ -24344,11 +24779,6 @@
     }
 
     function initLyricsComposerMobileUi() {
-      const details = $("lyrics-composer-details");
-      if (details && details.dataset.bound !== "1") {
-        details.dataset.bound = "1";
-        details.addEventListener("toggle", updateLyricsComposerDetailsPreview);
-      }
       ["lyrics-save-title", "lyrics-save-author", "lyrics-save-language", "lyrics-save-section"].forEach((id) => {
         const el = $(id);
         if (!el || el.dataset.composerPreviewBound === "1") return;
@@ -24362,6 +24792,7 @@
         moods.addEventListener("change", () => {
           composerGospelMoods = readComposerAccordionMoodChecks();
           setSongMetadataMoodChecks(composerGospelMoods);
+          updateLyricsComposerDetailsPreview();
         });
       }
       const saveBtn = $("btn-lyrics-accordion-save");
@@ -24421,6 +24852,8 @@
                 btn.setAttribute("aria-selected", on ? "true" : "false");
               });
             }
+            if (lyricsComposerMobileTab === "blocks") autoResizeAllLyricTextareas();
+            else autoResizeLyricsMainInput();
           }, 80);
         }, { passive: true });
       }
@@ -24428,6 +24861,10 @@
       window.addEventListener("resize", () => {
         placeLyricsBlockListForLayout();
         syncLyricsComposerMobileUi();
+        if (isMobileChromeLayout()) {
+          autoResizeAllLyricTextareas();
+          autoResizeLyricsMainInput();
+        }
       }, { passive: true });
     }
     const LYRICS_FLOAT_FADE_DELAY_MS = 2400;
@@ -24471,7 +24908,12 @@
       if (!el) return;
       if (!visible) {
         clearLyricsEditorFloatFadeTimer();
-        el.classList.remove("is-bright", "lyrics-editor-float--snap");
+        el.classList.remove("is-bright", "lyrics-editor-float--snap", "is-expanded");
+        const fab = $("lyrics-editor-float-fab");
+        if (fab) {
+          fab.setAttribute("aria-expanded", "false");
+          fab.setAttribute("aria-label", "Open lyrics actions");
+        }
         return;
       }
       // First show / route enter: fully visible, then countdown to fade.
@@ -24483,6 +24925,7 @@
         snapLyricsEditorFloatBright();
       });
       el.addEventListener("pointerleave", () => {
+        if (el.classList.contains("is-expanded") && isMobileChromeLayout()) return;
         scheduleLyricsEditorFloatFade(LYRICS_FLOAT_LEAVE_DELAY_MS);
       });
       el.addEventListener("focusin", () => {
@@ -24492,13 +24935,59 @@
         // Wait a tick so focus moving between buttons doesn't flicker.
         setTimeout(() => {
           if (!el.contains(document.activeElement) && !el.matches(":hover")) {
+            if (el.classList.contains("is-expanded") && isMobileChromeLayout()) return;
             scheduleLyricsEditorFloatFade(LYRICS_FLOAT_LEAVE_DELAY_MS);
           }
         }, 0);
       });
+
+      const fab = $("lyrics-editor-float-fab");
+      if (fab && !fab.dataset.bound) {
+        fab.dataset.bound = "1";
+        fab.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isMobileChromeLayout()) return;
+          const open = !el.classList.contains("is-expanded");
+          setLyricsEditorFloatExpanded(open);
+          snapLyricsEditorFloatBright();
+          if (!open) scheduleLyricsEditorFloatFade(LYRICS_FLOAT_LEAVE_DELAY_MS);
+        });
+      }
+      if (!window.__lyricsFloatMenuDismissBound) {
+        window.__lyricsFloatMenuDismissBound = true;
+        document.addEventListener("pointerdown", (e) => {
+          if (!isMobileChromeLayout()) return;
+          const floatEl = $("lyrics-editor-float");
+          if (!floatEl || floatEl.hidden || !floatEl.classList.contains("is-expanded")) return;
+          if (floatEl.contains(e.target)) return;
+          setLyricsEditorFloatExpanded(false);
+          scheduleLyricsEditorFloatFade(LYRICS_FLOAT_LEAVE_DELAY_MS);
+        }, true);
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
+          const floatEl = $("lyrics-editor-float");
+          if (!floatEl || !floatEl.classList.contains("is-expanded")) return;
+          setLyricsEditorFloatExpanded(false);
+        });
+      }
     }
 
-    $("btn-analyze-lyrics").addEventListener("click", () => { analyzeLyrics(); });
+    function setLyricsEditorFloatExpanded(open) {
+      const el = $("lyrics-editor-float");
+      const fab = $("lyrics-editor-float-fab");
+      if (!el) return;
+      el.classList.toggle("is-expanded", !!open);
+      if (fab) {
+        fab.setAttribute("aria-expanded", open ? "true" : "false");
+        fab.setAttribute("aria-label", open ? "Close lyrics actions" : "Open lyrics actions");
+      }
+    }
+
+    $("btn-analyze-lyrics").addEventListener("click", () => {
+      analyzeLyrics();
+      if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
+    });
     $("btn-analyze-lyrics-overlay") && $("btn-analyze-lyrics-overlay").addEventListener("click", () => { analyzeLyrics(); });
     $("lyrics-quick-add") && $("lyrics-quick-add").addEventListener("click", (event) => {
       const btn = event.target.closest("[data-add-type]");
@@ -24506,11 +24995,24 @@
       addLyricBlockOfType(btn.dataset.addType);
     });
     $("btn-add-lyric-block") && $("btn-add-lyric-block").addEventListener("click", () => addLyricBlockOfType("verse"));
-    $("btn-clear-lyrics").addEventListener("click", () => {
-      resetComposerEditorEmpty();
-      setLyricsStatus("Editor cleared.", "");
-    });
-    $("btn-normalize-lyrics").addEventListener("click", () => {
+
+    /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Verse:). */
+    function tidyLyricBlockText(raw) {
+      const headerRe = /^[\[(]?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$/i;
+      let lines = String(raw || "").replace(/[ \t]+$/gm, "").split("\n");
+      while (lines.length && headerRe.test(String(lines[0] || "").trim())) {
+        lines = lines.slice(1);
+      }
+      lines = lines.filter((line) => {
+        const t = String(line || "").trim();
+        if (!t) return true;
+        return !headerRe.test(t);
+      });
+      return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    }
+
+    function tidyLyricsInEditor(opts) {
+      const quiet = !!(opts && opts.quiet);
       if (lyricBlocks.length) {
         flushLyricBlocksFromDom();
         lyricBlocks = lyricBlocks.map((block, index) => ({
@@ -24522,31 +25024,57 @@
       } else {
         const input = $("lyrics-input");
         if (!input || !String(input.value || "").trim()) {
-          setLyricsStatus("Add lyrics first, then click Tidy.", "error");
-          return;
+          if (!quiet) setLyricsStatus("Add lyrics first.", "error");
+          return false;
         }
         input.value = formatLyricsFirstLetters(tidyLyricBlockText(input.value));
         autoResizeLyricsMainInput();
         updateLyricsWordStats();
       }
-      setLyricsStatus("Tidied: lowercased all text, then capitalized the first letter of each word.", "ok");
-    });
-
-    /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Verse:). */
-    function tidyLyricBlockText(raw) {
-      const headerRe = /^[\[(]?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$/i;
-      let lines = String(raw || "").replace(/[ \t]+$/gm, "").split("\n");
-      while (lines.length && headerRe.test(String(lines[0] || "").trim())) {
-        lines = lines.slice(1);
+      if (!quiet) {
+        setLyricsStatus("Tidied casing and spacing.", "ok");
       }
-      // Also drop any remaining standalone marker lines mid-block (duplicate labels).
-      lines = lines.filter((line) => {
-        const t = String(line || "").trim();
-        if (!t) return true;
-        return !headerRe.test(t);
-      });
-      return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+      return true;
     }
+
+    function setLyricsClearLidOpen(open) {
+      const clearBtn = $("btn-clear-lyrics");
+      const confirmBtn = $("lyrics-clear-confirm");
+      if (clearBtn) clearBtn.classList.toggle("is-lid-open", !!open);
+      if (confirmBtn) confirmBtn.classList.toggle("is-lid-open", !!open);
+    }
+
+    function openLyricsClearModal() {
+      setLyricsClearLidOpen(true);
+      setUiOverlayOpen($("lyrics-clear-modal"), true);
+    }
+
+    function closeLyricsClearModal() {
+      setUiOverlayOpen($("lyrics-clear-modal"), false);
+      setLyricsClearLidOpen(false);
+    }
+
+    function confirmLyricsClear() {
+      closeLyricsClearModal();
+      resetComposerEditorEmpty();
+      setLyricsStatus("Editor cleared.", "");
+    }
+
+    $("btn-clear-lyrics") && $("btn-clear-lyrics").addEventListener("click", () => {
+      if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
+      const hasRaw = !!(($("lyrics-input") && $("lyrics-input").value.trim()) || "");
+      const hasBlocks = !!(lyricBlocks && lyricBlocks.length);
+      if (!hasRaw && !hasBlocks) {
+        setLyricsStatus("Nothing to clear.", "");
+        return;
+      }
+      openLyricsClearModal();
+    });
+    $("lyrics-clear-cancel") && $("lyrics-clear-cancel").addEventListener("click", closeLyricsClearModal);
+    $("lyrics-clear-close") && $("lyrics-clear-close").addEventListener("click", closeLyricsClearModal);
+    $("lyrics-clear-backdrop") && $("lyrics-clear-backdrop").addEventListener("click", closeLyricsClearModal);
+    $("lyrics-clear-confirm") && $("lyrics-clear-confirm").addEventListener("click", confirmLyricsClear);
+
     function flushLyricBlocksFromDom() {
       document.querySelectorAll("#lyrics-block-list .lyric-block").forEach((card) => {
         const block = lyricBlocks.find((b) => b.id === card.dataset.id);
@@ -24612,12 +25140,20 @@
     }
 
     function openSongMoodGoogleSearch() {
-      const lang = getComposerSongLanguage();
-      const title = songSaveMoodSearchTitle || normalizeSongTitleInput($("lyrics-save-title"));
+      const metaOpen = $("song-metadata-modal") && $("song-metadata-modal").classList.contains("is-open");
+      let title = "";
+      let lang = "";
+      if (metaOpen) {
+        title = normalizeSongTitleInput($("song-metadata-edit-title"));
+        lang = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "";
+      }
+      if (!title) title = songSaveMoodSearchTitle || normalizeSongTitleInput($("lyrics-save-title"));
+      if (!lang) lang = getComposerSongLanguage();
       if (!title) return;
       if (!lang) {
-        const hint = $("song-save-mood-hint");
+        const hint = metaOpen ? null : $("song-save-mood-hint");
         if (hint) hint.textContent = "Select a language on the lyrics card, then search again.";
+        else setLyricsStatus("Select a language before searching mood.", "error");
         return;
       }
       const query = buildSongMoodGoogleQuery(title, lang);
@@ -24702,29 +25238,20 @@
     }
 
     function openSongSaveMoodModal(title) {
-      songSaveMoodSearchTitle = String(title || "").trim();
-      const detected = inferComposerSongMoods();
-      const selected = composerGospelMoods.length ? composerGospelMoods : detected;
-      setSongSaveMoodChecks(selected);
-      highlightDetectedSaveMoods(detected);
-      const errEl = $("song-save-mood-error");
-      if (errEl) errEl.hidden = true;
-      const descEl = $("song-save-mood-desc");
-      const hintEl = $("song-save-mood-hint");
-      if (descEl) {
-        descEl.textContent = "Choose the Gospel mood for \"" + songSaveMoodSearchTitle + "\" before saving to your library.";
-      }
-      if (hintEl) {
-        const detectedLabel = formatGospelMoodsLabel(detected);
-        hintEl.textContent = detectedLabel
-          ? "Pulsing options match our keyword guess: " + detectedLabel + ". Adjust if needed."
-          : "Select the mood that best fits this song.";
-      }
-      setUiOverlayOpen($("song-save-mood-modal"), true);
+      // Mood confirm folded into Edit Details / Save card.
+      openComposerSongDetailsModal({ intent: "save", titleHint: title });
+    }
+
+    function willSaveAsParishVersion(title, matches) {
+      if (churchMembershipState && churchMembershipState.is_superadmin) return false;
+      if (!userHasParishForLyrics()) return false;
+      const list = matches || findExistingCatalogSongMatches(title);
+      return list.length > 0;
     }
 
     async function performSaveLyrics() {
       const title = normalizeSongTitleInput($("lyrics-save-title"));
+      tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {
         flushLyricBlocksFromDom();
         syncStructuredEditorToInputPanel();
@@ -24735,7 +25262,7 @@
       const saveSection = ($("lyrics-save-section") && $("lyrics-save-section").value) || "";
       const saveLanguage = ($("lyrics-save-language") && $("lyrics-save-language").value) || "";
       showSongSaveProgressModal(title);
-      $("btn-save-lyrics").disabled = true;
+      if ($("btn-save-lyrics")) $("btn-save-lyrics").disabled = true;
       try {
         const result = await postJSON("/api/lyrics/save", {
           title,
@@ -24798,7 +25325,7 @@
         closeSongSaveSuccessModal();
         setLyricsStatus(error.message || "Could not save lyrics.", "error");
       } finally {
-        $("btn-save-lyrics").disabled = false;
+        if ($("btn-save-lyrics")) $("btn-save-lyrics").disabled = false;
       }
     }
 
@@ -24874,47 +25401,33 @@
     function confirmSongSaveOverwrite() {
       const title = songSavePendingTitle || normalizeSongTitleInput($("lyrics-save-title"));
       closeSongSaveOverwriteModal();
-      if (title) proceedToSongSaveMoodFlow(title);
+      if (title) performSaveLyrics();
     }
 
-    $("btn-save-lyrics").addEventListener("click", async () => {
-      const title = normalizeSongTitleInput($("lyrics-save-title"));
-      if (!title) {
-        setLyricsStatus("Song title is required before saving.", "error");
-        return;
-      }
+    $("btn-save-lyrics") && $("btn-save-lyrics").addEventListener("click", async () => {
+      if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
+      tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {
         flushLyricBlocksFromDom();
         syncStructuredEditorToInputPanel();
-      } else if ($("lyrics-input").value.trim()) {
+      } else if ($("lyrics-input") && $("lyrics-input").value.trim()) {
         syncInputPanelToStructuredEditor({ quiet: true, writeBack: false });
       }
       const lyrics = serializedLyrics();
       if (!lyrics) {
-        setLyricsStatus("Song title and lyrics are required before saving.", "error");
-        return;
-      }
-      if (!getComposerSongLanguage()) {
-        setLyricsStatus("Select a language before saving.", "error");
-        if ($("lyrics-save-language")) $("lyrics-save-language").focus();
+        setLyricsStatus("Add lyrics before saving.", "error");
         return;
       }
       if (!songCatalogLoaded || !songCatalogData) {
         await loadSongCatalog(true);
       }
-      const saveSection = ($("lyrics-save-section") && $("lyrics-save-section").value) || "";
+      const title = normalizeSongTitleInput($("lyrics-save-title"));
       const matches = findExistingCatalogSongMatches(title);
-      if (shouldConfirmSongOverwrite(title, saveSection, matches)) {
-        openSongSaveOverwriteModal(title, matches, saveSection);
+      if (title && getComposerSongLanguage() && willSaveAsParishVersion(title, matches)) {
+        await performSaveLyrics();
         return;
       }
-      proceedToSongSaveMoodFlow(title);
-    });
-    $("btn-save-parish-lyrics") && $("btn-save-parish-lyrics").addEventListener("click", () => {
-      saveParishLyricsVersion();
-    });
-    $("btn-sync-catalog-lyrics") && $("btn-sync-catalog-lyrics").addEventListener("click", () => {
-      syncParishLyricsToCatalog();
+      openComposerSongDetailsModal({ intent: "save" });
     });
 
     $("lyrics-save-title") && $("lyrics-save-title").addEventListener("blur", () => {
@@ -24922,6 +25435,19 @@
     });
     $("song-metadata-edit-title") && $("song-metadata-edit-title").addEventListener("blur", () => {
       normalizeSongTitleInput($("song-metadata-edit-title"));
+    });
+
+    $("lyrics-input") && $("lyrics-input").addEventListener("paste", () => {
+      const ta = $("lyrics-input");
+      if (!ta) return;
+      const wasEmpty = !String(ta.value || "").trim();
+      if (!wasEmpty) return;
+      window.setTimeout(() => {
+        if (!String(($("lyrics-input") && $("lyrics-input").value) || "").trim()) return;
+        const modal = $("song-metadata-modal");
+        if (modal && modal.classList.contains("is-open")) return;
+        openComposerSongDetailsModal({ intent: "paste" });
+      }, 0);
     });
 
     // Theme 1 is the app's single built-in deck theme ("Liturgy Flow"). The old
@@ -27319,7 +27845,7 @@
       document.addEventListener("keydown", onDocKey, true);
 
       sync();
-      requestAnimationFrame(() => trap.focus({ preventScroll: true }));
+      requestAnimationFrame(() => focusPinTrap(trap));
 
       return {
         getValue,
@@ -27328,15 +27854,39 @@
           revealIndex = -1;
           trap.value = "";
           sync();
-          trap.focus();
+          focusPinTrap(trap);
         },
-        focus: () => trap.focus(),
+        focus: () => focusPinTrap(trap),
         destroy: () => {
           clearRevealTimer();
           document.removeEventListener("keydown", onDocKey, true);
         },
         cells: boxes,
       };
+    }
+
+    function focusPinTrap(trap) {
+      if (!trap || !trap.isConnected) return;
+      const run = () => {
+        if (!trap.isConnected) return;
+        try {
+          // readonly flip helps iOS open the soft keyboard on programmatic focus
+          trap.readOnly = true;
+          trap.focus({ preventScroll: false });
+          trap.readOnly = false;
+          trap.focus({ preventScroll: false });
+        } catch (_err) {
+          try { trap.focus(); } catch (_e2) { /* ignore */ }
+        }
+        try {
+          trap.scrollIntoView({ block: "start", inline: "nearest", behavior: "smooth" });
+        } catch (_e3) { /* ignore */ }
+      };
+      run();
+      requestAnimationFrame(run);
+      setTimeout(run, 50);
+      setTimeout(run, 200);
+      setTimeout(run, 450);
     }
 
     let practiceSharePinOtp = null;
@@ -27354,6 +27904,12 @@
       if (!footer) return;
       footer.classList.toggle("practice-share-footer--result", mode === "result");
       footer.classList.toggle("practice-share-footer--loading", mode === "loading");
+      // Keep PIN sheet top-aligned only while entering the PIN (keyboard room)
+      if (mode === "result" || mode === "loading") {
+        document.body.classList.remove("practice-share-pin-top");
+      } else if (isMobileChromeLayout() && $("practice-share-modal")?.classList.contains("is-open")) {
+        document.body.classList.add("practice-share-pin-top");
+      }
     }
 
     let practiceShareNavHideTimer = null;
@@ -27503,6 +28059,7 @@
 
     function closePracticeShareModal() {
       setUiOverlayOpen($("practice-share-modal"), false);
+      document.body.classList.remove("practice-share-pin-top");
       syncPracticeShareBottomNavChrome();
     }
 
@@ -27617,6 +28174,9 @@
       if (!opts.keepSlotFilter) practiceShareSlotFilter = null;
       resetPracticeShareModal();
       setUiOverlayOpen($("practice-share-modal"), true);
+      if (isMobileChromeLayout()) {
+        document.body.classList.add("practice-share-pin-top");
+      }
       const sub = $("practice-share-sub");
       if (sub) {
         const n = practiceShareSlotFilter ? practiceShareSlotFilter.size : 0;
@@ -27624,7 +28184,13 @@
           ? ("Share " + n + " section" + (n === 1 ? "" : "s") + " for " + date + ". Set a 6-digit PIN, then generate the link.")
           : ("Share lyrics for " + date + ". Set a 6-digit PIN, then generate the link.");
       }
-      requestAnimationFrame(() => practiceSharePinOtp?.focus());
+      requestAnimationFrame(() => {
+        practiceSharePinOtp?.focus();
+        const pinWrap = $("practice-share-pin-wrap");
+        if (pinWrap) {
+          try { pinWrap.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (_e) { /* ignore */ }
+        }
+      });
       syncPracticeShareBottomNavChrome();
     }
 
@@ -28467,6 +29033,32 @@
       document.querySelectorAll("#song-save-mood-grid [data-save-mood-key]").forEach((label) => {
         label.classList.toggle("is-detected", detectedSet.has(label.dataset.saveMoodKey));
       });
+      document.querySelectorAll("#song-metadata-moods [data-gospel-mood-key]").forEach((label) => {
+        label.classList.toggle("is-detected", detectedSet.has(label.dataset.gospelMoodKey));
+      });
+    }
+
+    function clearMetadataMoodAttention() {
+      const moods = $("song-metadata-moods");
+      if (moods) moods.classList.remove("is-attention");
+      const errEl = $("song-metadata-mood-error");
+      if (errEl) errEl.hidden = true;
+      document.querySelectorAll("#song-metadata-moods [data-gospel-mood-key]").forEach((label) => {
+        label.classList.remove("is-detected");
+      });
+    }
+
+    function pulseMetadataMoodAttention(detected) {
+      const moods = $("song-metadata-moods");
+      if (moods) moods.classList.add("is-attention");
+      highlightDetectedSaveMoods(detected || []);
+      const hintEl = $("song-metadata-mood-hint");
+      if (hintEl) {
+        const detectedLabel = formatGospelMoodsLabel(detected || []);
+        hintEl.textContent = detectedLabel
+          ? "Pulsing options match our keyword guess: " + detectedLabel + ". Adjust if needed."
+          : "Select at least one Gospel mood before saving.";
+      }
     }
 
     function readSongMetadataMoodChecks() {
@@ -30101,6 +30693,10 @@
         subtitle: item.subtitle,
         detail: item.detail,
         kind_label: item.kind_label,
+        lyrics: item.lyrics || "",
+        language: item.language || "",
+        author: item.author || "",
+        sections: Array.isArray(item.sections) ? item.sections : [],
         action: action || "resolved",
         at: new Date().toISOString(),
       };
@@ -30130,6 +30726,60 @@
       return "Resolved";
     }
 
+    function openSaSongLyricsModal(opts) {
+      const options = opts || {};
+      const modal = $("sa-song-lyrics-modal");
+      const titleEl = $("sa-song-lyrics-modal-title");
+      const descEl = $("sa-song-lyrics-modal-desc");
+      const metaEl = $("sa-song-lyrics-modal-meta");
+      const bodyEl = $("sa-song-lyrics-modal-body");
+      if (!modal || !bodyEl) return;
+      const title = String(options.title || "Submitted lyrics").trim() || "Submitted lyrics";
+      const subtitle = String(options.subtitle || "").trim();
+      const language = String(options.language || "").trim();
+      const author = String(options.author || "").trim();
+      const lyrics = String(options.lyrics || "").trim();
+      if (titleEl) titleEl.textContent = title;
+      if (descEl) {
+        descEl.textContent = subtitle
+          ? ("Submitted by " + subtitle)
+          : "Review the full song before approving.";
+      }
+      if (metaEl) {
+        const bits = [];
+        if (language) bits.push(language);
+        if (author) bits.push("Author: " + author);
+        if (Array.isArray(options.sections) && options.sections.length) {
+          bits.push("Sections: " + options.sections.filter(Boolean).join(", "));
+        }
+        if (bits.length) {
+          metaEl.hidden = false;
+          metaEl.textContent = bits.join(" · ");
+        } else {
+          metaEl.hidden = true;
+          metaEl.textContent = "";
+        }
+      }
+      bodyEl.textContent = lyrics || "No lyrics included with this submission.";
+      setUiOverlayOpen(modal, true);
+    }
+
+    function closeSaSongLyricsModal() {
+      setUiOverlayOpen($("sa-song-lyrics-modal"), false);
+    }
+
+    function openSaSongLyricsFromApprovalItem(item) {
+      if (!item) return;
+      openSaSongLyricsModal({
+        title: item.title || "Submitted lyrics",
+        subtitle: item.subtitle || "",
+        lyrics: item.lyrics || "",
+        language: item.language || "",
+        author: item.author || "",
+        sections: item.sections || [],
+      });
+    }
+
     function saApprovalCardHtml(item, opts) {
       const options = opts || {};
       const done = getSaApprovalDoneEntry(item.id);
@@ -30140,19 +30790,32 @@
       const detail = escapeHtml(item.detail || "");
       const cardClass = options.modal ? "sa-approvals-modal-card" : "sa-notif-item" + (isDone ? " sa-notif-item--done" : "");
       const tag = "li";
+      const isSong = item.kind === "songs" || item.kind === "song";
       let actions = "";
       if (!isDone) {
+        if (isSong) {
+          actions +=
+            "<button type=\"button\" class=\"secondary sa-approval-view-lyrics\" data-item-id=\"" +
+            escapeHtml(item.id || "") +
+            "\">View lyrics</button>";
+        }
         if (item.kind === "membership") {
-          actions =
+          actions +=
             "<button type=\"button\" class=\"secondary sa-approval-act\" data-kind=\"membership\" data-action=\"reject\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Reject</button>" +
             "<button type=\"button\" class=\"primary sa-approval-act\" data-kind=\"membership\" data-action=\"approve\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Approve</button>";
         } else {
-          actions =
+          actions +=
             "<button type=\"button\" class=\"secondary sa-approval-act\" data-kind=\"" + escapeHtml(item.kind || "") + "\" data-action=\"reject\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Reject</button>" +
             "<button type=\"button\" class=\"primary sa-approval-act\" data-kind=\"" + escapeHtml(item.kind || "") + "\" data-action=\"approve\" data-entity-id=\"" + escapeHtml(item.entity_id || "") + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">Approve</button>";
         }
       } else {
-        actions = "<p class=\"sa-notif-item__status\">" + escapeHtml(saApprovalActionLabel(done.action)) + " · " + escapeHtml(formatNotificationTime(done.at)) + "</p>";
+        if (isSong) {
+          actions +=
+            "<button type=\"button\" class=\"secondary sa-approval-view-lyrics\" data-item-id=\"" +
+            escapeHtml(item.id || "") +
+            "\">View lyrics</button>";
+        }
+        actions += "<p class=\"sa-notif-item__status\">" + escapeHtml(saApprovalActionLabel(done.action)) + " · " + escapeHtml(formatNotificationTime(done.at)) + "</p>";
       }
       return (
         "<" + tag + " class=\"" + cardClass + "\" data-item-id=\"" + escapeHtml(item.id || "") + "\">" +
@@ -30176,6 +30839,15 @@
             btn.getAttribute("data-item-id"),
             btn
           );
+        });
+      });
+      root.querySelectorAll(".sa-approval-view-lyrics").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const itemId = btn.getAttribute("data-item-id") || "";
+          const item =
+            (saApprovalInbox || []).find((row) => row.id === itemId) ||
+            (saApprovalDone || []).find((row) => row.id === itemId);
+          if (item) openSaSongLyricsFromApprovalItem(item);
         });
       });
     }
@@ -30314,6 +30986,20 @@
       if (closeBtn) closeBtn.addEventListener("click", () => closeSaApprovalsModal(true));
       if (backdrop) backdrop.addEventListener("click", () => closeSaApprovalsModal(true));
       if (laterBtn) laterBtn.addEventListener("click", () => closeSaApprovalsModal(true));
+      const lyricsClose = $("sa-song-lyrics-modal-close");
+      const lyricsBackdrop = $("sa-song-lyrics-modal-backdrop");
+      const lyricsDone = $("sa-song-lyrics-modal-done");
+      if (lyricsClose) lyricsClose.addEventListener("click", closeSaSongLyricsModal);
+      if (lyricsBackdrop) lyricsBackdrop.addEventListener("click", closeSaSongLyricsModal);
+      if (lyricsDone) lyricsDone.addEventListener("click", closeSaSongLyricsModal);
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        const lyricsModal = $("sa-song-lyrics-modal");
+        if (lyricsModal && lyricsModal.classList.contains("is-open")) {
+          closeSaSongLyricsModal();
+          e.preventDefault();
+        }
+      });
       window.addEventListener("verbum:signed-out", resetSaApprovalSession);
       window.addEventListener("verbum:auth-ready", (event) => {
         const user = event.detail && event.detail.user;
@@ -30372,7 +31058,7 @@
           const payload = row.payload || {};
           const title = escapeHtml(payload.title || "Untitled");
           const email = escapeHtml(row.submitted_by_email || row.submitted_by_user_id || "—");
-          const sid = encodeURIComponent(row.id || "");
+          const sid = escapeHtml(String(row.id || ""));
           const matches = Array.isArray(payload.possible_matches) ? payload.possible_matches : [];
           const matchNote = matches.length
             ? "<br><span class=\"status error\" style=\"font-size:0.78rem;\">Similar in catalog: " +
@@ -30382,13 +31068,32 @@
           return (
             "<li style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);\">" +
               "<span><strong>" + title + "</strong><br><span class=\"muted\">" + email + "</span>" + matchNote + "</span>" +
-              "<span style=\"display:flex;gap:8px;\">" +
+              "<span style=\"display:flex;gap:8px;flex-wrap:wrap;\">" +
+                "<button type=\"button\" class=\"secondary btn-admin-song-view-lyrics\" data-submission-id=\"" + sid + "\">View lyrics</button>" +
                 "<button type=\"button\" class=\"secondary btn-admin-song-reject\" data-submission-id=\"" + sid + "\">Reject</button>" +
                 "<button type=\"button\" class=\"primary btn-admin-song-approve\" data-submission-id=\"" + sid + "\">Approve</button>" +
               "</span>" +
             "</li>"
           );
         }).join("");
+        const byId = {};
+        pending.forEach((row) => {
+          if (row && row.id) byId[String(row.id)] = row;
+        });
+        listEl.querySelectorAll(".btn-admin-song-view-lyrics").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const row = byId[btn.getAttribute("data-submission-id") || ""];
+            const payload = (row && row.payload) || {};
+            openSaSongLyricsModal({
+              title: payload.title || "Submitted lyrics",
+              subtitle: (row && (row.submitted_by_email || row.submitted_by_user_id)) || "",
+              lyrics: payload.lyrics || "",
+              language: payload.language || "",
+              author: payload.author || "",
+              sections: payload.sections || [],
+            });
+          });
+        });
         listEl.querySelectorAll(".btn-admin-song-approve").forEach((btn) => {
           btn.addEventListener("click", () => {
             actOnSubmission("songs", btn.getAttribute("data-submission-id"), "approve").catch((err) => {
@@ -36982,6 +37687,8 @@
       const sec = String(section || s.section || "").trim().toLowerCase();
       if (sec) setComposerSongSection(sec);
       composerGospelMoods = Array.isArray(s.gospel_moods) ? s.gospel_moods.slice() : [];
+      if (typeof syncComposerAccordionMoodsFromState === "function") syncComposerAccordionMoodsFromState();
+      if (typeof updateLyricsComposerDetailsPreview === "function") updateLyricsComposerDetailsPreview();
     }
 
     function mergeSongEditorMeta(catalogRow, apiSong, section, hint) {
@@ -37797,62 +38504,35 @@
     }
 
     function updateParishLyricsControls() {
-      const saveParishBtn = $("btn-save-parish-lyrics");
-      const syncBtn = $("btn-sync-catalog-lyrics");
-      const hasParish = userHasParishForLyrics();
-      const hasSong = !!(composerLoadedSong && composerLoadedSong.id);
-      if (saveParishBtn) {
-        saveParishBtn.hidden = !(hasParish && hasSong);
-      }
-      if (syncBtn) {
-        syncBtn.hidden = !(hasParish && hasSong && composerParishVersion);
-      }
-    }
-
-    async function saveParishLyricsVersion() {
-      if (!composerLoadedSong || !composerLoadedSong.id) {
-        setLyricsStatus("Open a catalog song first, then save a parish version.", "error");
-        return;
-      }
-      if (!userHasParishForLyrics()) {
-        setLyricsStatus("Join a parish first to save parish lyric versions.", "error");
-        return;
-      }
-      const title = normalizeSongTitleInput($("lyrics-save-title"));
-      const lyrics = applyLyricsFirstLettersToEditor();
-      const section = ($("lyrics-save-section") && $("lyrics-save-section").value) || composerLoadedSong.section || "meditation";
-      if (!lyrics.trim()) {
-        setLyricsStatus("Lyrics are required.", "error");
-        return;
-      }
-      const btn = $("btn-save-parish-lyrics");
-      if (btn) btn.disabled = true;
-      try {
-        const headers = await adminAuthHeaders();
-        headers["Content-Type"] = "application/json";
-        const res = await fetch(
-          "/api/parish/hymn-overrides/" + encodeURIComponent(section) + "/" + encodeURIComponent(composerLoadedSong.id),
-          {
-            method: "PUT",
-            headers,
-            body: JSON.stringify({ lyrics: lyrics, title: title || composerLoadedSong.title || "", section: section }),
-          }
-        );
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.detail || data.error || "Could not save parish version.");
-        composerParishVersion = true;
-        updateParishLyricsControls();
-        setLyricsStatus(data.message || "Parish lyric version saved.", "ok");
-        notify(data.message || "Parish lyric version saved.", "ok");
-      } catch (err) {
-        setLyricsStatus(err.message || "Could not save parish version.", "error");
-      } finally {
-        if (btn) btn.disabled = false;
-      }
+      const wrap = $("song-metadata-sync-wrap");
+      const btn = $("btn-sync-catalog-lyrics");
+      if (wrap) wrap.hidden = false;
+      if (!btn) return;
+      const canSync = !!(
+        userHasParishForLyrics() &&
+        composerLoadedSong &&
+        composerLoadedSong.id &&
+        composerParishVersion
+      );
+      btn.disabled = !canSync;
+      btn.title = canSync
+        ? "Restore global catalog lyrics and remove the parish override"
+        : "Available when a parish short version of a catalog song is loaded";
     }
 
     async function syncParishLyricsToCatalog() {
-      if (!composerLoadedSong || !composerLoadedSong.id) return;
+      if (!composerLoadedSong || !composerLoadedSong.id) {
+        setLyricsStatus("Open a catalog song first, then sync.", "error");
+        return;
+      }
+      if (!userHasParishForLyrics()) {
+        setLyricsStatus("Join a parish first to manage parish lyric versions.", "error");
+        return;
+      }
+      if (!composerParishVersion) {
+        setLyricsStatus("This song is already using the catalog lyrics.", "");
+        return;
+      }
       if (!confirm("Reset this song to the global catalog lyrics? Your parish short version will be removed.")) return;
       const section = composerLoadedSong.section || "meditation";
       const btn = $("btn-sync-catalog-lyrics");
@@ -37878,11 +38558,12 @@
       } catch (err) {
         setLyricsStatus(err.message || "Sync failed.", "error");
       } finally {
-        if (btn) btn.disabled = false;
+        updateParishLyricsControls();
       }
     }
 
     let songMetaEditCtx = null;
+    let songMetaSnapshot = null;
     let songDeletePending = null;
 
     function setUiOverlayOpen(modal, open) {
@@ -37903,6 +38584,10 @@
     function closeSongMetadataModal() {
       setUiOverlayOpen($("song-metadata-modal"), false);
       songMetaEditCtx = null;
+      songMetaSnapshot = null;
+      clearMetadataMoodAttention();
+      const sectionSel = $("song-metadata-edit-section");
+      if (sectionSel) sectionSel.disabled = false;
     }
 
     function closeSongDeleteModal() {
@@ -37914,18 +38599,30 @@
       const data = await fetchSongDetail(section, id, { forceNetwork: true });
       const s = data.song || {};
       const resolvedSec = String(data.section || section || "").trim().toLowerCase() || section;
-      songMetaEditCtx = { section: resolvedSec, id };
+      songMetaEditCtx = { section: resolvedSec, id, intent: "catalog" };
+      if ($("song-metadata-title")) $("song-metadata-title").textContent = "Edit song details";
       if ($("song-metadata-edit-title")) $("song-metadata-edit-title").value = s.title || "";
       if ($("song-metadata-edit-author")) $("song-metadata-edit-author").value = s.author || "";
       if ($("song-metadata-edit-language")) $("song-metadata-edit-language").value = s.language || "English";
-      if ($("song-metadata-section-label")) {
-        $("song-metadata-section-label").textContent = "Section: " + songSectionLabel(resolvedSec);
+      if ($("song-metadata-edit-section")) {
+        $("song-metadata-edit-section").value = resolvedSec || "";
+        $("song-metadata-edit-section").disabled = true;
       }
       if ($("song-metadata-subtitle")) {
         $("song-metadata-subtitle").textContent = "Editing metadata for \"" + (s.title || "Song") + "\".";
       }
+      if ($("song-metadata-save")) {
+        $("song-metadata-save").textContent = "Save changes";
+        $("song-metadata-save").disabled = true;
+      }
+      clearMetadataMoodAttention();
       setSongMetadataMoodChecks(s.gospel_moods || []);
+      songMetaSnapshot = captureMetadataModalSnapshot();
+      bindMetadataModalDirtyTracking();
+      updateParishLyricsControls();
       setUiOverlayOpen($("song-metadata-modal"), true);
+      syncVerbumSelectTrigger($("song-metadata-edit-language"));
+      syncVerbumSelectTrigger($("song-metadata-edit-section"));
       const titleInput = $("song-metadata-edit-title");
       if (titleInput) {
         titleInput.focus();
@@ -37933,29 +38630,138 @@
       }
     }
 
-    function openComposerSongDetailsModal() {
+    function captureMetadataModalSnapshot() {
+      return {
+        title: String(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "").trim(),
+        author: String(($("song-metadata-edit-author") && $("song-metadata-edit-author").value) || "").trim(),
+        language: String(($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "").trim(),
+        section: String(($("song-metadata-edit-section") && $("song-metadata-edit-section").value) || "").trim(),
+        moods: readSongMetadataMoodChecks().slice().sort().join(","),
+      };
+    }
+
+    function metadataModalIsDirty() {
+      if (!songMetaSnapshot) return true;
+      const now = captureMetadataModalSnapshot();
+      return (
+        now.title !== songMetaSnapshot.title ||
+        now.author !== songMetaSnapshot.author ||
+        now.language !== songMetaSnapshot.language ||
+        now.section !== songMetaSnapshot.section ||
+        now.moods !== songMetaSnapshot.moods
+      );
+    }
+
+    function refreshMetadataModalPrimaryState() {
+      const btn = $("song-metadata-save");
+      if (!btn) return;
+      const intent = (songMetaEditCtx && songMetaEditCtx.intent) || "edit";
+      if (intent === "save") {
+        btn.disabled = false;
+        return;
+      }
+      btn.disabled = !metadataModalIsDirty();
+    }
+
+    function bindMetadataModalDirtyTracking() {
+      const modal = $("song-metadata-modal");
+      if (!modal || modal.dataset.dirtyBound === "1") return;
+      modal.dataset.dirtyBound = "1";
+      modal.addEventListener("input", () => refreshMetadataModalPrimaryState());
+      modal.addEventListener("change", () => {
+        refreshMetadataModalPrimaryState();
+        const intent = (songMetaEditCtx && songMetaEditCtx.intent) || "";
+        if (intent === "save" && readSongMetadataMoodChecks().length) {
+          const moods = $("song-metadata-moods");
+          if (moods) moods.classList.remove("is-attention");
+          const errEl = $("song-metadata-mood-error");
+          if (errEl) errEl.hidden = true;
+        }
+      });
+    }
+
+    function applyMetadataModalToComposerFields() {
+      let title = formatSongTitleCase(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "");
+      if ($("song-metadata-edit-title")) $("song-metadata-edit-title").value = title;
+      const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
+      const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "";
+      const section = ($("song-metadata-edit-section") && $("song-metadata-edit-section").value) || "";
+      const gospel_moods = readSongMetadataMoodChecks();
+      if ($("lyrics-save-title")) $("lyrics-save-title").value = title;
+      if ($("lyrics-save-author")) $("lyrics-save-author").value = author;
+      setComposerSongLanguage(language);
+      setComposerSongSection(section);
+      composerGospelMoods = gospel_moods.slice();
+      setSongMetadataMoodChecks(gospel_moods);
+      updateLyricsComposerDetailsPreview();
+      return { title, author, language, section, gospel_moods };
+    }
+
+    function openComposerSongDetailsModal(opts) {
+      const options = opts || {};
+      const intent = options.intent || "edit";
+      const titleHint = String(options.titleHint || "").trim();
+      if (titleHint && $("lyrics-save-title") && !$("lyrics-save-title").value.trim()) {
+        $("lyrics-save-title").value = titleHint;
+      }
       const title = ($("lyrics-save-title") && $("lyrics-save-title").value.trim()) || "";
       const author = ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "";
       const language = ($("lyrics-save-language") && $("lyrics-save-language").value) || "";
       const section = ($("lyrics-save-section") && $("lyrics-save-section").value) || "";
-      songMetaEditCtx = { mode: "composer" };
+      songMetaEditCtx = { mode: "composer", intent: intent };
       if ($("song-metadata-edit-title")) $("song-metadata-edit-title").value = title;
       if ($("song-metadata-edit-author")) $("song-metadata-edit-author").value = author;
       if ($("song-metadata-edit-language")) $("song-metadata-edit-language").value = language;
-      if ($("song-metadata-section-label")) {
-        $("song-metadata-section-label").textContent = section
-          ? "Save to section: " + songSectionLabel(section)
-          : "Section: —";
+      if ($("song-metadata-edit-section")) {
+        $("song-metadata-edit-section").disabled = false;
+        $("song-metadata-edit-section").value = section || "";
       }
-      if ($("song-metadata-subtitle")) {
-        $("song-metadata-subtitle").textContent = title
-          ? "Editing details for \"" + title + "\"."
-          : "Update title, author, language, and Gospel mood.";
+      const saveBtn = $("song-metadata-save");
+      const titleEl = $("song-metadata-title");
+      const subEl = $("song-metadata-subtitle");
+      if (intent === "save") {
+        if (titleEl) titleEl.textContent = "Save song";
+        if (subEl) {
+          subEl.textContent = title
+            ? "Review details for \"" + title + "\" before saving to your library."
+            : "Add title, language, section, and Gospel mood, then save.";
+        }
+        if (saveBtn) {
+          saveBtn.textContent = "Save";
+          saveBtn.disabled = false;
+        }
+      } else {
+        if (titleEl) titleEl.textContent = "Edit song details";
+        if (subEl) {
+          subEl.textContent = intent === "paste"
+            ? "You pasted lyrics — add a title, language, section, and mood."
+            : (title
+              ? "Editing details for \"" + title + "\"."
+              : "Update title, author, language, section, and Gospel mood.");
+        }
+        if (saveBtn) {
+          saveBtn.textContent = "Save changes";
+          saveBtn.disabled = true;
+        }
       }
-      setSongMetadataMoodChecks(
-        composerGospelMoods.length ? composerGospelMoods : inferComposerSongMoods()
-      );
+      const detected = inferComposerSongMoods();
+      const selected = composerGospelMoods.length ? composerGospelMoods : detected;
+      setSongMetadataMoodChecks(selected);
+      clearMetadataMoodAttention();
+      if (intent === "save" || intent === "paste") {
+        pulseMetadataMoodAttention(detected);
+      } else {
+        const hintEl = $("song-metadata-mood-hint");
+        if (hintEl) hintEl.textContent = "Select the mood that best fits this song.";
+      }
+      songMetaSnapshot = captureMetadataModalSnapshot();
+      bindMetadataModalDirtyTracking();
+      refreshMetadataModalPrimaryState();
+      updateParishLyricsControls();
+      songSaveMoodSearchTitle = title;
       setUiOverlayOpen($("song-metadata-modal"), true);
+      syncVerbumSelectTrigger($("song-metadata-edit-language"));
+      syncVerbumSelectTrigger($("song-metadata-edit-section"));
       const titleInput = $("song-metadata-edit-title");
       if (titleInput) {
         titleInput.focus();
@@ -37963,27 +38769,74 @@
       }
     }
 
+    async function finishComposerSaveFromModal() {
+      const applied = applyMetadataModalToComposerFields();
+      if (!applied.title) {
+        setLyricsStatus("Song title is required before saving.", "error");
+        if ($("song-metadata-edit-title")) $("song-metadata-edit-title").focus();
+        return;
+      }
+      if (!applied.language) {
+        setLyricsStatus("Select a language before saving.", "error");
+        if ($("song-metadata-edit-language")) $("song-metadata-edit-language").focus();
+        return;
+      }
+      if (!applied.section) {
+        setLyricsStatus("Select a section before saving.", "error");
+        if ($("song-metadata-edit-section")) $("song-metadata-edit-section").focus();
+        return;
+      }
+      if (!applied.gospel_moods.length) {
+        pulseMetadataMoodAttention(inferComposerSongMoods());
+        const errEl = $("song-metadata-mood-error");
+        if (errEl) errEl.hidden = false;
+        return;
+      }
+      if (!songCatalogLoaded || !songCatalogData) {
+        await loadSongCatalog(true);
+      }
+      const matches = findExistingCatalogSongMatches(applied.title);
+      closeSongMetadataModal();
+      if (willSaveAsParishVersion(applied.title, matches)) {
+        await performSaveLyrics();
+        return;
+      }
+      if (
+        churchMembershipState &&
+        churchMembershipState.is_superadmin &&
+        shouldConfirmSongOverwrite(applied.title, applied.section, matches)
+      ) {
+        openSongSaveOverwriteModal(applied.title, matches, applied.section);
+        return;
+      }
+      await performSaveLyrics();
+    }
+
     async function saveSongMetadataFromModal() {
+      const intent = (songMetaEditCtx && songMetaEditCtx.intent) || "edit";
+      if (intent === "save") {
+        await finishComposerSaveFromModal();
+        return;
+      }
       let title = formatSongTitleCase(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "");
       if ($("song-metadata-edit-title")) $("song-metadata-edit-title").value = title;
       if (!title) {
         setLyricsStatus("Song title is required.", "error");
         return;
       }
-      const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
-      const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
-      const gospel_moods = readSongMetadataMoodChecks();
       if (songMetaEditCtx && songMetaEditCtx.mode === "composer") {
-        if ($("lyrics-save-title")) $("lyrics-save-title").value = title;
-        if ($("lyrics-save-author")) $("lyrics-save-author").value = author;
-        setComposerSongLanguage(language);
-        composerGospelMoods = gospel_moods.slice();
+        if (intent !== "save" && !metadataModalIsDirty()) return;
+        applyMetadataModalToComposerFields();
         closeSongMetadataModal();
         setLyricsStatus("Song details updated.", "ok");
         return;
       }
       if (!guardSuperadminAction()) return;
       if (!songMetaEditCtx) return;
+      if (!metadataModalIsDirty()) return;
+      const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
+      const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
+      const gospel_moods = readSongMetadataMoodChecks();
       const { section, id } = songMetaEditCtx;
       const res = await fetch(
         "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
@@ -38002,6 +38855,7 @@
       if ($("lyrics-save-author")) $("lyrics-save-author").value = author;
       setComposerSongLanguage(language);
       composerGospelMoods = gospel_moods.slice();
+      updateLyricsComposerDetailsPreview();
       pushSongHistory({ title, section, id, kind: "edited" });
       setLyricsStatus("Updated \"" + title + "\".", "ok");
     }
@@ -38109,6 +38963,12 @@
       });
       $("song-save-mood-google-link") && $("song-save-mood-google-link").addEventListener("click", () => {
         openSongMoodGoogleSearch();
+      });
+      $("song-metadata-mood-google-link") && $("song-metadata-mood-google-link").addEventListener("click", () => {
+        openSongMoodGoogleSearch();
+      });
+      $("btn-sync-catalog-lyrics") && $("btn-sync-catalog-lyrics").addEventListener("click", () => {
+        syncParishLyricsToCatalog();
       });
       $("song-save-overwrite-confirm") && $("song-save-overwrite-confirm").addEventListener("click", () => {
         confirmSongSaveOverwrite();

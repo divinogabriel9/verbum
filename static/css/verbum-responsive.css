@@ -967,6 +967,28 @@ iframe {
     padding: 0;
   }
 
+  /* PIN entry: top sheet so the soft keyboard never covers the OTP field */
+  body.practice-share-pin-top #practice-share-modal.ui-overlay {
+    align-items: flex-start !important;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  body.practice-share-pin-top #practice-share-modal .ui-card.practice-share-card {
+    border-radius: 0 0 calc(var(--radius-lg) + 2px) calc(var(--radius-lg) + 2px) !important;
+    max-height: min(48dvh, 420px) !important;
+    box-shadow: 0 10px 40px color-mix(in srgb, var(--ink) 14%, transparent);
+    border-bottom: 1px solid var(--line-soft);
+    border-top: none;
+  }
+
+  body.practice-share-pin-top #practice-share-modal .ui-card__header::before {
+    display: none;
+  }
+
+  body.practice-share-pin-top #practice-share-modal .practice-share-pin-field {
+    scroll-margin-top: 8px;
+  }
+
   #practice-share-sections-modal .ui-card.practice-share-card,
   #practice-share-sections-modal .ui-card.practice-share-card.practice-share-card--plan,
   #practice-share-modal .ui-card.practice-share-card,
@@ -2740,7 +2762,8 @@ iframe {
   }
 
   body.mobile-chrome-tabs #create-menu-panel:not([hidden]) {
-    bottom: 0 !important;
+    bottom: auto !important;
+    top: calc(100% + 8px) !important;
   }
 
   .app-bottom-nav__create-slot {
@@ -2749,6 +2772,7 @@ iframe {
 
   .create-menu-wrap--header {
     position: relative;
+    z-index: 58;
   }
 
   .create-menu-wrap--header .btn-create {
@@ -2993,20 +3017,35 @@ iframe {
     flex-shrink: 0;
   }
 
+  /* Create menu drops below the + button (not a bottom sheet) */
+  body.mobile-chrome-tabs .create-menu-wrap--header #create-menu-panel:not([hidden]),
   body.mobile-chrome-tabs #create-menu-panel:not([hidden]) {
-    position: fixed;
-    left: 0;
+    position: absolute;
+    top: calc(100% + 8px);
+    bottom: auto;
     right: 0;
-    top: auto;
-    bottom: 0;
-    width: 100%;
-    max-width: 100%;
+    left: auto;
+    width: min(240px, calc(100vw - 24px));
+    max-width: min(240px, calc(100vw - 24px));
     margin: 0;
-    border-radius: calc(var(--radius-lg) + 2px) calc(var(--radius-lg) + 2px) 0 0;
-    border-bottom: none;
-    z-index: 57;
+    border-radius: 12px;
+    border: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    z-index: 58;
     transform: none !important;
-    box-shadow: 0 -10px 40px color-mix(in srgb, var(--ink) 14%, transparent);
+    transform-origin: top right;
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 16%, transparent);
+    max-height: min(70dvh, 420px);
+    overflow: auto;
+  }
+
+  /* Keep header utilities from clipping the dropdown */
+  body.mobile-chrome-tabs .app-header,
+  body.mobile-chrome-tabs .app-header__main,
+  body.mobile-chrome-tabs .app-header__utilities,
+  body.mobile-chrome-tabs .header-chips-wrap,
+  body.mobile-chrome-tabs .header-create-host {
+    overflow: visible;
   }
 
   /* Sheet lives inside header/nav stacking contexts — lift them above the dim */
@@ -3798,6 +3837,23 @@ iframe {
     opacity: 1;
   }
 
+  /* Override bottom-sheet rule for Create (+) — open downward under the button */
+  body.mobile-chrome-tabs .app-header .create-menu-wrap--header #create-menu-panel.app-menu-panel:not([hidden]),
+  body.mobile-chrome-tabs .app-header #create-menu-panel.app-menu-panel:not([hidden]) {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;
+    bottom: auto !important;
+    right: 0 !important;
+    left: auto !important;
+    width: min(240px, calc(100vw - 24px)) !important;
+    max-width: min(240px, calc(100vw - 24px)) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--line-soft) !important;
+    transform-origin: top right !important;
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 16%, transparent) !important;
+    z-index: 58 !important;
+  }
+
   .app-header .vb-dropdown-panel.live-radio-panel:not([hidden]) {
     width: 100%;
     max-width: 100%;
@@ -4262,24 +4318,43 @@ iframe {
     scroll-snap-align: start;
     scroll-snap-stop: always;
     box-sizing: border-box;
-    padding: 12px 16px 20px;
+    padding: 10px 8px 24px;
     min-width: 100%;
+  }
+
+  /* Edge-to-edge raw lyrics — use full phone width */
+  .lyrics-composer-pane--raw {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .dashboard:has(#lyrics-page.active) {
+    padding-left: max(8px, var(--safe-left));
+    padding-right: max(8px, var(--safe-right));
   }
 
   .lyrics-composer-pane--raw .lyrics-editor-scroll {
     min-height: 50dvh;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .lyrics-composer-pane--raw #lyrics-input,
   .lyrics-composer-pane--raw .lyrics-editor-main {
     min-height: 50dvh !important;
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
     font-size: 16px !important;
-    line-height: 1.45;
+    line-height: 1.5;
     border: 1px solid var(--line-soft);
     border-radius: 12px;
-    padding: 14px;
+    padding: 12px 10px;
     resize: vertical;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .lyrics-composer-blocks-toolbar {
@@ -4287,6 +4362,11 @@ iframe {
     flex-direction: column;
     gap: 8px;
     margin-bottom: 10px;
+  }
+
+  /* Analyze lives on the FAB — hide duplicate on Blocks toolbar */
+  #btn-lyrics-mobile-analyze {
+    display: none !important;
   }
 
   .lyrics-quick-add--mobile {
@@ -4299,6 +4379,8 @@ iframe {
   .lyrics-composer-blocks-track {
     display: block;
     overflow: visible;
+    min-width: 0;
+    width: 100%;
   }
 
   .lyrics-composer-blocks-track #lyrics-block-list,
@@ -4307,30 +4389,245 @@ iframe {
     flex-direction: column;
     gap: 10px;
     min-width: 0;
+    width: 100%;
   }
 
   .lyrics-composer-blocks-track .lyric-block {
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     margin: 0;
     border-radius: 12px;
     border: 1px solid var(--line-soft);
     box-sizing: border-box;
   }
 
+  .lyrics-composer-blocks-track .lyric-block__body,
+  .lyrics-composer-blocks-track .lyric-block__ta-wrap {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Wrap + grow with content (do not force a tall min-height) */
   .lyrics-composer-blocks-track .lyric-block__ta {
-    min-height: 28dvh !important;
+    min-height: calc(1.5em + 14px) !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
     font-size: 16px !important;
+    line-height: 1.5 !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    resize: none !important;
+    field-sizing: content;
   }
 
   .lyrics-composer-blocks-track .empty-state {
     padding: 24px 8px;
     text-align: center;
   }
+
+  /* Song Composer title: only when expanded (hide on deflated rail) */
+  .song-composer-panel--deflated .song-composer-head__copy {
+    display: none !important;
+  }
+
+  .song-composer-panel--deflated .song-composer-rail {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .song-composer-panel--deflated .song-composer-toolbar-row {
+    grid-column: 1;
+  }
+
+  .song-composer-panel--deflated .song-composer-collapse-btn {
+    grid-column: 2;
+  }
+
+  .song-composer-panel:not(.song-composer-panel--deflated) .song-composer-head__copy {
+    display: block;
+  }
+
+  .song-composer-panel:not(.song-composer-panel--deflated) .song-composer-head__copy h3 {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--ink);
+    white-space: normal;
+  }
+
+  /* Lyrics float → Apple AssistiveTouch-style FAB (mobile only) */
+  .lyrics-editor-float {
+    left: auto !important;
+    right: max(16px, var(--safe-right)) !important;
+    bottom: calc(20px + var(--app-bottom-nav-offset, 56px) + var(--safe-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+  }
+
+  body.mobile-top-nav .lyrics-editor-float,
+  body.mobile-chrome-tabs .lyrics-editor-float,
+  body.has-bottom-nav .lyrics-editor-float {
+    bottom: calc(20px + var(--safe-bottom)) !important;
+  }
+
+  .lyrics-editor-float__fab {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--liturgical-accent, #a10f0d);
+    color: #fff;
+    box-shadow:
+      0 4px 14px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 36%, transparent),
+      0 2px 6px color-mix(in srgb, var(--ink) 14%, transparent);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    opacity: 0.55;
+    transition:
+      opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms ease;
+  }
+
+  .lyrics-editor-float.is-bright .lyrics-editor-float__fab,
+  .lyrics-editor-float.is-expanded .lyrics-editor-float__fab {
+    opacity: 1;
+  }
+
+  .lyrics-editor-float__fab:active {
+    transform: scale(0.94);
+  }
+
+  .lyrics-editor-float__fab-glyph {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    transition: opacity 160ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .lyrics-editor-float__fab-glyph--close {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.7);
+  }
+
+  .lyrics-editor-float.is-expanded .lyrics-editor-float__fab-glyph--open {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.7);
+  }
+
+  .lyrics-editor-float.is-expanded .lyrics-editor-float__fab-glyph--close {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+
+  .lyrics-editor-float__cluster {
+    position: absolute !important;
+    right: 0 !important;
+    bottom: calc(100% + 12px) !important;
+    left: auto !important;
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    width: max-content !important;
+    min-width: 148px;
+    max-width: min(220px, calc(100vw - 32px));
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden;
+    transform: scale(0.86) translateY(10px) !important;
+    transform-origin: bottom right;
+    transition:
+      opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 220ms !important;
+  }
+
+  .lyrics-editor-float.is-expanded .lyrics-editor-float__cluster {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible;
+    transform: scale(1) translateY(0) !important;
+    transition:
+      opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s linear 0s !important;
+  }
+
+  .lyrics-editor-float__inner,
+  .lyrics-editor-float__clear-card {
+    position: static !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    min-width: 0;
+    max-width: none;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    transform: none !important;
+    padding: 10px !important;
+    border-radius: 18px !important;
+    overflow: visible !important;
+  }
+
+  .lyrics-editor-float__inner .primary,
+  .lyrics-editor-float__inner .secondary,
+  .lyrics-editor-float__inner .ghost,
+  .lyrics-editor-float__clear-card .lyrics-editor-float__clear {
+    box-sizing: border-box;
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+    height: 44px;
+    padding: 0 16px;
+    border-width: 1px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lyrics-editor-float__fab,
+    .lyrics-editor-float__fab-glyph,
+    .lyrics-editor-float__cluster {
+      transition-duration: 1ms !important;
+    }
+  }
 }
 
 /* Desktop: ignore mobile composer chrome — original 2-column editor only */
 @media (min-width: 769px) {
+  .lyrics-editor-float__fab {
+    display: none !important;
+  }
+
   .lyrics-composer-details {
     display: contents;
   }

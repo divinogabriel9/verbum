@@ -1794,8 +1794,8 @@ html[data-theme="dark"] .app-menu-item:hover {
 }
 
 .lyric-block.type-chorus .vb-select--pill .vb-select__trigger {
-  background: #e0a8c0;
-  color: #4a3038;
+  background: #d8bc78;
+  color: #4a3c20;
 }
 
 .lyric-block.type-bridge .vb-select--pill .vb-select__trigger {
@@ -1804,8 +1804,8 @@ html[data-theme="dark"] .app-menu-item:hover {
 }
 
 .lyric-block.type-response .vb-select--pill .vb-select__trigger {
-  background: #d8bc78;
-  color: #4a3c20;
+  background: #e0a8c0;
+  color: #4a3038;
 }
 
 .lyric-block .vb-select--pill .vb-select__chevron {
@@ -1819,8 +1819,8 @@ html[data-theme="dark"] .lyric-block.type-verse .vb-select--pill .vb-select__tri
 }
 
 html[data-theme="dark"] .lyric-block.type-chorus .vb-select--pill .vb-select__trigger {
-  background: color-mix(in srgb, #f472b6 22%, var(--surface-solid));
-  color: #fbcfe8;
+  background: color-mix(in srgb, #fbbf24 22%, var(--surface-solid));
+  color: #fde68a;
 }
 
 html[data-theme="dark"] .lyric-block.type-bridge .vb-select--pill .vb-select__trigger {
@@ -1829,8 +1829,8 @@ html[data-theme="dark"] .lyric-block.type-bridge .vb-select--pill .vb-select__tr
 }
 
 html[data-theme="dark"] .lyric-block.type-response .vb-select--pill .vb-select__trigger {
-  background: color-mix(in srgb, #fbbf24 22%, var(--surface-solid));
-  color: #fde68a;
+  background: color-mix(in srgb, #f472b6 22%, var(--surface-solid));
+  color: #fbcfe8;
 }
 
 .vb-select--pill .vb-select__panel {
@@ -1856,13 +1856,13 @@ html[data-theme="dark"] .lyric-block.type-response .vb-select--pill .vb-select__
 }
 
 .vb-select--pill .vb-dropdown-item--chorus {
-  color: #9d174d;
+  color: #b45309;
 }
 
 .vb-select--pill .vb-dropdown-item--chorus:hover,
 .vb-select--pill .vb-dropdown-item--chorus.is-active {
-  background: rgba(244, 114, 182, 0.14);
-  color: #9d174d;
+  background: rgba(217, 119, 6, 0.14);
+  color: #b45309;
 }
 
 .vb-select--pill .vb-dropdown-item--bridge {
@@ -1876,13 +1876,13 @@ html[data-theme="dark"] .lyric-block.type-response .vb-select--pill .vb-select__
 }
 
 .vb-select--pill .vb-dropdown-item--response {
-  color: #b45309;
+  color: #9d174d;
 }
 
 .vb-select--pill .vb-dropdown-item--response:hover,
 .vb-select--pill .vb-dropdown-item--response.is-active {
-  background: rgba(217, 119, 6, 0.14);
-  color: #b45309;
+  background: rgba(244, 114, 182, 0.14);
+  color: #9d174d;
 }
 
 .lyric-block:has(.vb-select__trigger[aria-expanded="true"]) {

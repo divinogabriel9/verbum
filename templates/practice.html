@@ -255,7 +255,33 @@
     .practice-lyric-block--coda,
     .practice-lyric-block--vamp { --block-accent: #475569; }
     .practice-pin-wrap {
-      padding: 24px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: calc(12px + var(--safe-top)) 16px 16px;
+      min-height: min(42dvh, 360px);
+      background: var(--bg);
+    }
+    @media (max-width: 768px) {
+      body.practice-pin-open {
+        align-items: flex-start;
+      }
+      body.practice-pin-open .practice-frame {
+        min-height: auto;
+      }
+      body.practice-pin-open .practice-pin-wrap {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        padding: calc(12px + var(--safe-top)) 16px 16px;
+        background: var(--bg);
+        box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 10%, transparent);
+      }
+      body.practice-pin-open .practice-main {
+        padding-top: min(48dvh, 400px);
+      }
     }
     .practice-pin {
       background: var(--card);
@@ -717,15 +743,21 @@
           } catch (_err) {
             try { trap.focus(); } catch (_e2) { /* ignore */ }
           }
+          try {
+            const wrap = trap.closest(".practice-pin-wrap") || trap;
+            wrap.scrollIntoView({ block: "start", inline: "nearest", behavior: "smooth" });
+          } catch (_e3) { /* ignore */ }
         }
         focusNow();
         requestAnimationFrame(focusNow);
         setTimeout(focusNow, 50);
         setTimeout(focusNow, 250);
         setTimeout(focusNow, 500);
+        setTimeout(focusNow, 800);
       }
 
       function renderPinForm(errorMsg) {
+        document.body.classList.add("practice-pin-open");
         top.hidden = true;
         tabs.hidden = true;
         footnote.hidden = true;
@@ -766,6 +798,7 @@
           renderPinForm("Enter the full 6-digit PIN.");
           return;
         }
+        document.body.classList.remove("practice-pin-open");
         root.innerHTML = '<p class="practice-status">Checking PIN…</p>';
         try {
           const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/unlock", {
@@ -836,6 +869,7 @@
       }
 
       function renderPractice(data, opts) {
+        document.body.classList.remove("practice-pin-open");
         applyPracticePayload(data, Object.assign({ resetDirty: true, exitEditing: true }, opts || {}));
         const songs = state.songs;
         if (!songs.length) {
