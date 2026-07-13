@@ -10798,8 +10798,8 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 10px 12px;
-      border-radius: 16px;
+      padding: 8px 10px;
+      border-radius: 14px;
       border: 1px solid var(--app-header-glass-border);
       background: var(--app-header-glass-bg);
       box-shadow:
@@ -10813,7 +10813,7 @@
         box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1);
     }
     .lyrics-editor-float__clear-card {
-      padding: 10px 12px;
+      padding: 8px 10px;
     }
     .lyrics-editor-float.is-bright .lyrics-editor-float__inner,
     .lyrics-editor-float.is-bright .lyrics-editor-float__clear-card {
@@ -10843,14 +10843,18 @@
     .lyrics-editor-float__inner .lyrics-editor-float__save,
     .lyrics-editor-float__clear-card .lyrics-editor-float__clear {
       box-sizing: border-box;
-      min-height: 42px;
-      height: 42px;
-      padding: 0 16px;
+      min-height: 34px;
+      height: 34px;
+      padding: 0 12px;
       font-size: 0.9rem;
       font-weight: 600;
       line-height: 1;
-      border-radius: 12px;
+      border-radius: 10px;
       border-width: 1px;
+    }
+    .lyrics-editor-float__inner .lyrics-editor-float__save {
+      min-height: calc(34px * 0.97);
+      height: calc(34px * 0.97);
     }
     .lyrics-editor-float__inner .primary:active,
     .lyrics-editor-float__inner .secondary:active,
@@ -11508,6 +11512,37 @@
     #song-metadata-modal .primary:hover {
       background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
       border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+    }
+    #song-metadata-modal .ui-card {
+      width: min(720px, calc(100vw - 2rem));
+      max-width: min(720px, calc(100vw - 2rem));
+    }
+    #song-metadata-modal .ui-card__content {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 14px;
+      align-content: start;
+    }
+    #song-metadata-modal .ui-card__content > .field {
+      margin-bottom: 0;
+    }
+    #song-metadata-modal .ui-card__content > .field:nth-child(1),
+    #song-metadata-modal .ui-card__content > .field:nth-child(2),
+    #song-metadata-modal .song-metadata-moods,
+    #song-metadata-modal .song-save-mood-google,
+    #song-metadata-modal .song-metadata-sync {
+      grid-column: 1 / -1;
+    }
+    #song-metadata-modal .song-metadata-moods__grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    @media (max-width: 640px) {
+      #song-metadata-modal .ui-card__content {
+        grid-template-columns: 1fr;
+      }
+      #song-metadata-modal .song-metadata-moods__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
     #home-mass-new-modal .primary {
       background: var(--liturgical-accent);
@@ -15506,7 +15541,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713o" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713s" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -24727,7 +24762,6 @@
 
     function scrollLyricsComposerToTab(tabId) {
       lyricsComposerMobileTab = (tabId === "blocks") ? "blocks" : "raw";
-      const swipe = $("lyrics-composer-swipe");
       const rawPane = $("lyrics-composer-pane-raw");
       const blocksPane = $("lyrics-composer-pane-blocks");
       const tabs = $("lyrics-composer-tabs");
@@ -24738,10 +24772,18 @@
           btn.setAttribute("aria-selected", on ? "true" : "false");
         });
       }
-      if (!swipe || !isMobileChromeLayout()) return;
-      const target = lyricsComposerMobileTab === "blocks" ? blocksPane : rawPane;
-      if (target) target.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-      // Off-screen panes need a second pass so wrap height is measured at full width.
+      if (!isMobileChromeLayout()) return;
+      // Click-only tab switch — no horizontal swipe between panes
+      if (rawPane) {
+        const on = lyricsComposerMobileTab === "raw";
+        rawPane.classList.toggle("is-active", on);
+        rawPane.hidden = !on;
+      }
+      if (blocksPane) {
+        const on = lyricsComposerMobileTab === "blocks";
+        blocksPane.classList.toggle("is-active", on);
+        blocksPane.hidden = !on;
+      }
       requestAnimationFrame(() => {
         if (lyricsComposerMobileTab === "blocks") {
           autoResizeAllLyricTextareas();
@@ -24762,6 +24804,16 @@
       if (!isMobileChromeLayout()) {
         tabs.innerHTML = "";
         lyricsComposerMobileTab = "raw";
+        const rawPane = $("lyrics-composer-pane-raw");
+        const blocksPane = $("lyrics-composer-pane-blocks");
+        if (rawPane) {
+          rawPane.classList.add("is-active");
+          rawPane.hidden = false;
+        }
+        if (blocksPane) {
+          blocksPane.classList.remove("is-active");
+          blocksPane.hidden = false;
+        }
         return;
       }
       if (lyricsComposerMobileTab !== "raw" && lyricsComposerMobileTab !== "blocks") {
@@ -24774,8 +24826,7 @@
       tabs.innerHTML = items.map((item) => (
         '<button type="button" class="lyrics-composer-tab' + (item.id === lyricsComposerMobileTab ? " is-active" : "") + '" role="tab" data-lyrics-tab="' + item.id + '" aria-selected="' + (item.id === lyricsComposerMobileTab ? "true" : "false") + '">' + escapeHtml(item.label) + "</button>"
       )).join("");
-      const blocksPane = $("lyrics-composer-pane-blocks");
-      if (blocksPane) blocksPane.hidden = false;
+      scrollLyricsComposerToTab(lyricsComposerMobileTab);
     }
 
     function initLyricsComposerMobileUi() {
@@ -24828,34 +24879,6 @@
           if (!btn) return;
           scrollLyricsComposerToTab(btn.dataset.lyricsTab);
         });
-      }
-      const swipe = $("lyrics-composer-swipe");
-      if (swipe && swipe.dataset.bound !== "1") {
-        swipe.dataset.bound = "1";
-        let scrollTimer = null;
-        swipe.addEventListener("scroll", () => {
-          if (!isMobileChromeLayout()) return;
-          clearTimeout(scrollTimer);
-          scrollTimer = setTimeout(() => {
-            const rawPane = $("lyrics-composer-pane-raw");
-            const blocksPane = $("lyrics-composer-pane-blocks");
-            if (!rawPane || !blocksPane) return;
-            const mid = swipe.scrollLeft + swipe.clientWidth / 2;
-            const rawCenter = rawPane.offsetLeft + rawPane.offsetWidth / 2;
-            const blocksCenter = blocksPane.offsetLeft + blocksPane.offsetWidth / 2;
-            lyricsComposerMobileTab = Math.abs(mid - rawCenter) <= Math.abs(mid - blocksCenter) ? "raw" : "blocks";
-            const tabRoot = $("lyrics-composer-tabs");
-            if (tabRoot) {
-              tabRoot.querySelectorAll("[data-lyrics-tab]").forEach((btn) => {
-                const on = btn.dataset.lyricsTab === lyricsComposerMobileTab;
-                btn.classList.toggle("is-active", on);
-                btn.setAttribute("aria-selected", on ? "true" : "false");
-              });
-            }
-            if (lyricsComposerMobileTab === "blocks") autoResizeAllLyricTextareas();
-            else autoResizeLyricsMainInput();
-          }, 80);
-        }, { passive: true });
       }
       syncLyricsComposerMobileUi();
       window.addEventListener("resize", () => {

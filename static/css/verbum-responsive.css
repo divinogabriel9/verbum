@@ -965,12 +965,24 @@ iframe {
     align-items: flex-end;
     justify-content: center;
     padding: 0;
+    /* Above fixed header/nav (22–70) so the sheet is never buried */
+    z-index: 80 !important;
   }
 
   /* PIN entry: top sheet so the soft keyboard never covers the OTP field */
   body.practice-share-pin-top #practice-share-modal.ui-overlay {
     align-items: flex-start !important;
-    padding-top: env(safe-area-inset-top, 0px);
+    /* Clear the whole mobile header (brand + ticker + tabs), not just safe-area */
+    padding-top: var(--app-header-offset, calc(var(--safe-top) + 96px)) !important;
+    z-index: 80 !important;
+  }
+
+  /* Keep chrome under the share overlay while the PIN sheet is open */
+  body.practice-share-pin-top .app-header,
+  body.practice-share-pin-top .app-bottom-nav,
+  body.bottom-nav-sheet-open.practice-share-pin-top .app-bottom-nav,
+  body.bottom-nav-sheet-open.practice-share-pin-top:not(.bottom-nav-collapsed) .app-bottom-nav {
+    z-index: 40 !important;
   }
 
   body.practice-share-pin-top #practice-share-modal .ui-card.practice-share-card {
@@ -979,6 +991,8 @@ iframe {
     box-shadow: 0 10px 40px color-mix(in srgb, var(--ink) 14%, transparent);
     border-bottom: 1px solid var(--line-soft);
     border-top: none;
+    position: relative;
+    z-index: 1;
   }
 
   body.practice-share-pin-top #practice-share-modal .ui-card__header::before {
@@ -2351,29 +2365,26 @@ iframe {
     line-height: var(--leading-body);
   }
 
-  /* Forms ≥16px — stops iOS Safari focus zoom */
+  /* Forms ≥16px — stops iOS Safari focus zoom (all editable fields, mobile only) */
   textarea,
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="search"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="number"],
-  input[type="date"],
-  input[type="time"],
-  input[type="file"],
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
   select,
   .vb-select__trigger,
   .celebrant-picker__trigger,
   .mass-song-search-input,
-  .flow-setup-card2 input[type="date"],
-  .flow-setup-card2 input[type="text"],
-  .flow-setup-card2 input[type="file"],
+  .flow-setup-card2 input,
   .flow-setup-card2 select,
   .flow-setup-card2 .celebrant-picker__trigger,
   .flow-psalm-textarea,
-  .song-composer-search-wrap input {
+  .song-composer-search-wrap input,
+  #lyrics-input,
+  .lyrics-editor-main,
+  .lyric-block__ta,
+  .pin-otp__trap,
+  .mw input,
+  .mw textarea,
+  .mw select,
+  [contenteditable="true"] {
     font-size: 16px !important;
   }
 
@@ -4252,7 +4263,7 @@ iframe {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
   }
 
   .lyrics-composer-tabs {
@@ -4297,14 +4308,13 @@ iframe {
   }
 
   .lyrics-composer-swipe {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    display: block;
+    overflow: visible;
+    scroll-snap-type: none;
+    -webkit-overflow-scrolling: auto;
+    touch-action: pan-y;
     flex: 1 1 auto;
-    min-height: 55dvh;
+    min-height: 0; /* was 55dvh — caused empty dead space + scroll trap */
   }
 
   .lyrics-composer-swipe::-webkit-scrollbar {
@@ -4312,14 +4322,19 @@ iframe {
   }
 
   .lyrics-composer-pane {
-    flex: 0 0 100%;
+    display: none;
     width: 100%;
     max-width: 100%;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
+    min-width: 0;
     box-sizing: border-box;
-    padding: 10px 8px 24px;
-    min-width: 100%;
+    padding: 10px 8px 16px;
+    scroll-snap-align: unset;
+    scroll-snap-stop: unset;
+    flex: unset;
+  }
+
+  .lyrics-composer-pane.is-active {
+    display: block;
   }
 
   /* Edge-to-edge raw lyrics — use full phone width */
@@ -4333,28 +4348,43 @@ iframe {
     padding-right: max(8px, var(--safe-right));
   }
 
+  /* Room for FAB only — avoid huge empty bottom gap */
+  #lyrics-page .lyrics-workspace-mockup {
+    padding-bottom: calc(88px + var(--safe-bottom)) !important;
+  }
+
   .lyrics-composer-pane--raw .lyrics-editor-scroll {
-    min-height: 50dvh;
+    min-height: 0;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    overflow: visible;
   }
 
   .lyrics-composer-pane--raw #lyrics-input,
   .lyrics-composer-pane--raw .lyrics-editor-main {
-    min-height: 50dvh !important;
+    /* Content-sized — no 50dvh empty trap that steals page scroll */
+    min-height: 10rem !important;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box;
-    font-size: 16px !important;
+    font-size: 16px !important; /* iOS focus zoom guard */
     line-height: 1.5;
     border: 1px solid var(--line-soft);
     border-radius: 12px;
     padding: 12px 10px;
-    resize: vertical;
+    resize: none !important;
+    overflow: hidden !important; /* grow with content; page scrolls */
     white-space: pre-wrap;
     overflow-wrap: break-word;
     word-break: break-word;
+    touch-action: pan-y;
+    field-sizing: content;
+  }
+
+  .lyrics-composer-pane--raw .lyrics-editor-foot {
+    margin-top: 8px;
+    margin-bottom: 0;
   }
 
   .lyrics-composer-blocks-toolbar {
@@ -4381,6 +4411,7 @@ iframe {
     overflow: visible;
     min-width: 0;
     width: 100%;
+    min-height: 0;
   }
 
   .lyrics-composer-blocks-track #lyrics-block-list,
@@ -4390,6 +4421,7 @@ iframe {
     gap: 10px;
     min-width: 0;
     width: 100%;
+    overflow: visible;
   }
 
   .lyrics-composer-blocks-track .lyric-block {
@@ -4408,6 +4440,7 @@ iframe {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    overflow: visible;
   }
 
   /* Wrap + grow with content (do not force a tall min-height) */
@@ -4417,20 +4450,24 @@ iframe {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box;
-    font-size: 16px !important;
+    font-size: 16px !important; /* iOS focus zoom guard */
     line-height: 1.5 !important;
     white-space: pre-wrap !important;
     overflow-wrap: anywhere;
     word-break: break-word;
-    overflow-x: hidden !important;
-    overflow-y: hidden !important;
+    overflow: hidden !important; /* no nested scroll — page scrolls */
     resize: none !important;
     field-sizing: content;
+    touch-action: pan-y;
   }
 
   .lyrics-composer-blocks-track .empty-state {
     padding: 24px 8px;
     text-align: center;
+  }
+
+  .lyrics-composer-pane--blocks {
+    padding-bottom: 16px;
   }
 
   /* Song Composer title: only when expanded (hide on deflated rail) */
@@ -4605,12 +4642,17 @@ iframe {
     box-sizing: border-box;
     width: 100%;
     justify-content: center;
-    min-height: 44px;
-    height: 44px;
-    padding: 0 16px;
+    min-height: 36px;
+    height: 36px;
+    padding: 0 12px;
     border-width: 1px;
-    border-radius: 12px;
+    border-radius: 10px;
     white-space: nowrap;
+  }
+
+  .lyrics-editor-float__inner .lyrics-editor-float__save {
+    min-height: calc(36px * 0.97);
+    height: calc(36px * 0.97);
   }
 
   @media (prefers-reduced-motion: reduce) {
