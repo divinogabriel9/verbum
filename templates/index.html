@@ -11341,9 +11341,12 @@
       flex-shrink: 0;
     }
     .detected-pill--verse .detected-dot { background: #6d5dfc; }
+    .detected-pill--pre-chorus .detected-dot { background: #0ea5e9; }
     .detected-pill--chorus .detected-dot { background: #d97706; }
+    .detected-pill--refrain .detected-dot { background: #ea580c; }
     .detected-pill--bridge .detected-dot { background: #10b981; }
     .detected-pill--response .detected-dot { background: #f472b6; }
+    .detected-pill--outro .detected-dot { background: #64748b; }
     .lyrics-details-panel,
     .lyrics-structured-panel {
       display: flex;
@@ -11453,21 +11456,23 @@
     .lyrics-structured-panel .lyrics-structured-head {
       flex: 0 0 auto;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px 14px;
-      flex-wrap: wrap;
-    }
-    .lyrics-structured-head__title {
-      min-width: 0;
-      flex: 1 1 auto;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: 4px;
     }
     .lyrics-structured-panel .lyrics-structured-head .lyrics-quick-add {
-      flex: 0 1 auto;
+      flex: 1 1 auto;
       margin: 0;
       padding: 0;
       border: 0;
-      justify-content: flex-end;
+      justify-content: flex-start;
+      min-width: 0;
+      width: 100%;
+    }
+    .lyrics-structured-panel .lyrics-structured-head .lyrics-structured-meta {
+      width: 100%;
+      margin: 2px 0 0;
     }
     .lyrics-structured-actions {
       display: flex;
@@ -12195,10 +12200,11 @@
     .lyrics-quick-add {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--line-soft);
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: 0;
     }
     .lyrics-quick-add--mobile {
       margin-bottom: 10px;
@@ -12206,6 +12212,9 @@
       border-bottom: 1px solid var(--line-soft);
     }
     .lyrics-add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       padding: 5px 10px;
       border-radius: var(--radius-pill);
       border: 1px solid var(--line-soft);
@@ -12221,9 +12230,12 @@
       border-color: rgba(167, 139, 250, 0.35);
     }
     .lyrics-add-btn[data-add-type="verse"] { border-color: rgba(109, 93, 252, 0.35); color: #5b21b6; }
+    .lyrics-add-btn[data-add-type="pre-chorus"] { border-color: rgba(14, 165, 233, 0.4); color: #0369a1; }
     .lyrics-add-btn[data-add-type="chorus"] { border-color: rgba(217, 119, 6, 0.35); color: #b45309; }
+    .lyrics-add-btn[data-add-type="refrain"] { border-color: rgba(234, 88, 12, 0.4); color: #c2410c; }
     .lyrics-add-btn[data-add-type="bridge"] { border-color: rgba(16, 185, 129, 0.35); color: #047857; }
     .lyrics-add-btn[data-add-type="response"] { border-color: rgba(244, 114, 182, 0.35); color: #9d174d; }
+    .lyrics-add-btn[data-add-type="outro"] { border-color: rgba(100, 116, 139, 0.45); color: #475569; }
     .lyrics-block-list {
       display: flex;
       flex-direction: column;
@@ -12245,14 +12257,52 @@
       border-color: #8b5cf6;
     }
     .lyric-block.dragging { opacity: 0.55; }
+    .lyric-block--drop-before::before,
+    .lyric-block--drop-after::after {
+      content: "";
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--liturgical-accent, #a10f0d);
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 22%, transparent),
+        0 2px 8px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 35%, transparent);
+      pointer-events: none;
+      z-index: 6;
+      animation: lyric-drop-hint-in 160ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+    .lyric-block--drop-before::before {
+      top: -7px;
+    }
+    .lyric-block--drop-after::after {
+      bottom: -7px;
+    }
+    @keyframes lyric-drop-hint-in {
+      from { opacity: 0; transform: scaleX(0.72); }
+      to { opacity: 1; transform: scaleX(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lyric-block--drop-before::before,
+      .lyric-block--drop-after::after {
+        animation: none;
+      }
+    }
     .lyric-block.type-verse { border-color: #c4b5fd; }
     .lyric-block.type-verse:focus-within { border-color: #8b5cf6; }
+    .lyric-block.type-pre-chorus { border-color: #7dd3fc; }
+    .lyric-block.type-pre-chorus:focus-within { border-color: #0ea5e9; }
     .lyric-block.type-chorus { border-color: #d4b878; }
     .lyric-block.type-chorus:focus-within { border-color: #c49a48; }
+    .lyric-block.type-refrain { border-color: #fdba74; }
+    .lyric-block.type-refrain:focus-within { border-color: #ea580c; }
     .lyric-block.type-bridge { border-color: #8fb8a8; }
     .lyric-block.type-bridge:focus-within { border-color: #6fa892; }
     .lyric-block.type-response { border-color: #d4a0b8; }
     .lyric-block.type-response:focus-within { border-color: #c47a9a; }
+    .lyric-block.type-outro { border-color: #94a3b8; }
+    .lyric-block.type-outro:focus-within { border-color: #64748b; }
     .lyric-block__head {
       display: grid;
       grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr);
@@ -12272,9 +12322,12 @@
       justify-self: start;
     }
     .lyric-block.type-verse .lyric-block__head { background: #ede9fe; border-bottom-color: rgba(109, 93, 252, 0.35); }
+    .lyric-block.type-pre-chorus .lyric-block__head { background: #e0f2fe; border-bottom-color: rgba(14, 165, 233, 0.35); }
     .lyric-block.type-chorus .lyric-block__head { background: #f5ecd8; border-bottom-color: rgba(196, 154, 72, 0.35); }
+    .lyric-block.type-refrain .lyric-block__head { background: #ffedd5; border-bottom-color: rgba(234, 88, 12, 0.35); }
     .lyric-block.type-bridge .lyric-block__head { background: #d4ebe3; border-bottom-color: rgba(111, 168, 146, 0.35); }
     .lyric-block.type-response .lyric-block__head { background: #f5dce8; border-bottom-color: rgba(196, 122, 154, 0.35); }
+    .lyric-block.type-outro .lyric-block__head { background: #e2e8f0; border-bottom-color: rgba(100, 116, 139, 0.35); }
     .lyric-block__drag {
       width: 22px;
       height: 22px;
@@ -12419,19 +12472,33 @@
     }
     html[data-theme="dark"] .lyric-block.type-verse { border-color: color-mix(in srgb, #8b5cf6 32%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-verse:focus-within { border-color: color-mix(in srgb, #8b5cf6 50%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-pre-chorus { border-color: color-mix(in srgb, #38bdf8 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-pre-chorus:focus-within { border-color: color-mix(in srgb, #38bdf8 45%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-chorus { border-color: color-mix(in srgb, #fbbf24 28%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-chorus:focus-within { border-color: color-mix(in srgb, #fbbf24 45%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-refrain { border-color: color-mix(in srgb, #fb923c 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-refrain:focus-within { border-color: color-mix(in srgb, #fb923c 45%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-bridge { border-color: color-mix(in srgb, #34d399 28%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-bridge:focus-within { border-color: color-mix(in srgb, #34d399 45%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-response { border-color: color-mix(in srgb, #f472b6 28%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-response:focus-within { border-color: color-mix(in srgb, #f472b6 45%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-outro { border-color: color-mix(in srgb, #94a3b8 28%, var(--line)); }
+    html[data-theme="dark"] .lyric-block.type-outro:focus-within { border-color: color-mix(in srgb, #94a3b8 45%, var(--line)); }
     html[data-theme="dark"] .lyric-block.type-verse .lyric-block__head {
       background: color-mix(in srgb, #6d5dfc 14%, var(--surface-2));
       border-bottom-color: color-mix(in srgb, #6d5dfc 22%, var(--line));
     }
+    html[data-theme="dark"] .lyric-block.type-pre-chorus .lyric-block__head {
+      background: color-mix(in srgb, #0ea5e9 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #0ea5e9 20%, var(--line));
+    }
     html[data-theme="dark"] .lyric-block.type-chorus .lyric-block__head {
       background: color-mix(in srgb, #fbbf24 12%, var(--surface-2));
       border-bottom-color: color-mix(in srgb, #fbbf24 20%, var(--line));
+    }
+    html[data-theme="dark"] .lyric-block.type-refrain .lyric-block__head {
+      background: color-mix(in srgb, #ea580c 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #ea580c 20%, var(--line));
     }
     html[data-theme="dark"] .lyric-block.type-bridge .lyric-block__head {
       background: color-mix(in srgb, #34d399 12%, var(--surface-2));
@@ -12440,6 +12507,10 @@
     html[data-theme="dark"] .lyric-block.type-response .lyric-block__head {
       background: color-mix(in srgb, #f472b6 12%, var(--surface-2));
       border-bottom-color: color-mix(in srgb, #f472b6 20%, var(--line));
+    }
+    html[data-theme="dark"] .lyric-block.type-outro .lyric-block__head {
+      background: color-mix(in srgb, #94a3b8 12%, var(--surface-2));
+      border-bottom-color: color-mix(in srgb, #94a3b8 20%, var(--line));
     }
     html[data-theme="dark"] .lyric-block__btn {
       color: var(--muted);
@@ -15541,7 +15612,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713t" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713v" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -15908,34 +15979,43 @@
         </header>
         <div class="app-mobile-menu__body">
           <nav class="app-mobile-menu__pages" id="app-mobile-menu-pages" aria-label="More pages">
-            <a class="app-mobile-menu__link nav-link" data-nav-tab="radio" data-route="/radio" href="/radio">
-              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
-              <span>Media</span>
-            </a>
-            <a class="app-mobile-menu__link nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
-              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-              <span>Liturgical Calendar</span>
-            </a>
-            <a class="app-mobile-menu__link nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
-              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-              <span>Posters</span>
-            </a>
-            <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
-              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-              <span>Theme Lab</span>
-            </a>
-            <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/templates" href="/design/templates">
-              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-              <span>Templates</span>
-            </a>
-            <a class="app-mobile-menu__link nav-link" data-nav-tab="library" data-route="/library/collections" href="/library/collections">
-              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              <span>Collections</span>
-            </a>
-            <a class="app-mobile-menu__link nav-link" data-nav-tab="media" data-route="/media/history" href="/media/history">
-              <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              <span>History</span>
-            </a>
+            <div class="app-mobile-menu__extras" id="app-mobile-menu-extras">
+              <button type="button" class="app-mobile-menu__extras-summary" id="app-mobile-menu-extras-toggle" aria-expanded="false" aria-controls="app-mobile-menu-extras-panel">
+                <span class="app-mobile-menu__extras-label">Extras</span>
+              </button>
+              <div class="app-mobile-menu__extras-panel" id="app-mobile-menu-extras-panel">
+                <div class="app-mobile-menu__extras-panel-inner">
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="radio" data-route="/radio" href="/radio">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+                    <span>Media</span>
+                  </a>
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="calendar" data-route="/mass/calendar" href="/mass/calendar">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    <span>Liturgical Calendar</span>
+                  </a>
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="media" data-route="/media/posters" data-route-prefix="/media" href="/media/posters">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span>Posters</span>
+                  </a>
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/theme-lab" data-route-prefix="/design" href="/design/theme-lab">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                    <span>Theme Lab</span>
+                  </a>
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="design" data-route="/design/templates" href="/design/templates">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    <span>Templates</span>
+                  </a>
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="library" data-route="/library/collections" href="/library/collections">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    <span>Collections</span>
+                  </a>
+                  <a class="app-mobile-menu__link nav-link" data-nav-tab="media" data-route="/media/history" href="/media/history">
+                    <svg class="app-mobile-menu__link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <span>History</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </nav>
           <div class="app-mobile-menu__divider" aria-hidden="true"></div>
           <div id="app-mobile-menu-account-host"></div>
@@ -16852,6 +16932,9 @@
                       <div class="lyrics-quick-add lyrics-quick-add--mobile" id="lyrics-quick-add-mobile" aria-label="Add section">
                         <button type="button" class="lyrics-add-btn" data-add-type="verse">+ Verse</button>
                         <button type="button" class="lyrics-add-btn" data-add-type="chorus">+ Chorus</button>
+                        <button type="button" class="lyrics-add-btn" data-add-type="pre-chorus">+ Pre-Chorus</button>
+                        <button type="button" class="lyrics-add-btn" data-add-type="refrain">+ Refrain</button>
+                        <button type="button" class="lyrics-add-btn" data-add-type="outro">+ Outro</button>
                         <button type="button" class="lyrics-add-btn" data-add-type="bridge">+ Bridge</button>
                         <button type="button" class="lyrics-add-btn" data-add-type="response">+ Response</button>
                       </div>
@@ -16862,18 +16945,18 @@
               </div>
             </section>
 
-            <section class="panel lyrics-structured-panel">
+            <section class="panel lyrics-structured-panel" aria-label="Structured editor">
               <div class="panel-head lyrics-structured-head">
-                <div class="lyrics-structured-head__title">
-                  <h3>Structured Editor</h3>
-                  <p class="lyrics-structured-meta" id="lyrics-structured-meta">0 blocks · ~0 slides</p>
-                </div>
                 <div class="lyrics-quick-add" id="lyrics-quick-add" aria-label="Add section">
                   <button type="button" class="lyrics-add-btn" data-add-type="verse">+ Verse</button>
                   <button type="button" class="lyrics-add-btn" data-add-type="chorus">+ Chorus</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="pre-chorus">+ Pre-Chorus</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="refrain">+ Refrain</button>
+                  <button type="button" class="lyrics-add-btn" data-add-type="outro">+ Outro</button>
                   <button type="button" class="lyrics-add-btn" data-add-type="bridge">+ Bridge</button>
                   <button type="button" class="lyrics-add-btn" data-add-type="response">+ Response</button>
                 </div>
+                <p class="lyrics-structured-meta" id="lyrics-structured-meta">0 blocks · ~0 slides</p>
               </div>
               <div class="lyrics-structured-body">
                 <div class="lyrics-structured-body-stack">
@@ -21195,7 +21278,6 @@
 
     function isNavTabVisible(tabId) {
       if (tabId === "notifications") return isMobileChromeLayout();
-      if (tabId === "radio" && isMobileChromeLayout()) return false;
       const def = NAV_TAB_DEFS.find((row) => row.id === tabId);
       if (!def) return false;
       if (def.required) return true;
@@ -23145,6 +23227,14 @@
       if (!anyOverlayOpen) document.body.style.overflow = "";
     }
 
+    function setMobileMenuExtrasExpanded(open) {
+      const extras = $("app-mobile-menu-extras");
+      const toggle = $("app-mobile-menu-extras-toggle");
+      if (!extras) return;
+      extras.classList.toggle("is-expanded", !!open);
+      if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
     function openMobileMenu() {
       const menu = $("app-mobile-menu");
       const btn = $("app-header-menu-btn");
@@ -23158,6 +23248,9 @@
         btn.classList.add("is-active");
       }
       document.body.style.overflow = "hidden";
+      const extras = $("app-mobile-menu-extras");
+      // Stay collapsed unless the current page is one of the Extras links
+      setMobileMenuExtrasExpanded(!!(extras && extras.querySelector(".app-mobile-menu__link.active")));
     }
 
     function initMobileMenu() {
@@ -23175,6 +23268,15 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && menu.classList.contains("is-open")) closeMobileMenu();
       });
+      const extrasToggle = $("app-mobile-menu-extras-toggle");
+      if (extrasToggle && !extrasToggle.dataset.bound) {
+        extrasToggle.dataset.bound = "1";
+        extrasToggle.addEventListener("click", () => {
+          const extras = $("app-mobile-menu-extras");
+          if (!extras) return;
+          setMobileMenuExtrasExpanded(!extras.classList.contains("is-expanded"));
+        });
+      }
       const panel = $("account-menu-panel");
       if (panel) {
         panel.querySelectorAll(".nav-link[data-route], #account-sign-in-link, #account-sign-up-link").forEach((link) => {
@@ -23187,6 +23289,7 @@
       const pagesNav = $("app-mobile-menu-pages");
       if (pagesNav) {
         pagesNav.querySelectorAll(".app-mobile-menu__link[data-route]").forEach((link) => {
+          bindSpaRouteLink(link);
           link.addEventListener("click", () => closeMobileMenu());
         });
       }
@@ -24078,7 +24181,15 @@
     let composerLoadedSong = null;
     let composerCatalogLyrics = "";
     let composerParishVersion = false;
-    const typeLabels = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", response: "Response" };
+    const typeLabels = {
+      verse: "Verse",
+      chorus: "Chorus",
+      "pre-chorus": "Pre-Chorus",
+      refrain: "Refrain",
+      outro: "Outro",
+      bridge: "Bridge",
+      response: "Response",
+    };
     const LYRIC_BLOCK_DRAG_SVG =
       '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">' +
       '<circle cx="2.5" cy="2" r="1.1"/><circle cx="7.5" cy="2" r="1.1"/>' +
@@ -24253,26 +24364,47 @@
       }
     }
 
+    function scrollToLyricBlock(blockId, opts) {
+      const id = String(blockId || "");
+      if (!id) return;
+      const focusEditor = !opts || opts.focus !== false;
+      requestAnimationFrame(() => {
+        const card = document.querySelector('#lyrics-block-list .lyric-block[data-id="' + id + '"]');
+        if (!card) return;
+        card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+        if (!focusEditor) return;
+        const ta = card.querySelector('[data-action="text"]');
+        if (ta) {
+          try { ta.focus({ preventScroll: true }); } catch (_e) { ta.focus(); }
+        }
+      });
+    }
+
     function addLyricBlockOfType(type) {
       const n = lyricBlocks.filter((b) => b.type === type).length + 1;
       const label = typeLabels[type] || "Section";
-      // Chorus stays "Chorus" (no Chorus 1/2/3). Verses and other types may number.
-      const title = type === "chorus" ? label : label + " " + n;
+      // Chorus / Refrain stay unnumbered. Verses and other types may number.
+      const title = (type === "chorus" || type === "refrain") ? label : label + " " + n;
+      const id = crypto.randomUUID();
       lyricBlocks.push({
-        id: crypto.randomUUID(),
+        id,
         type: type,
         title,
         text: "",
         collapsed: false,
       });
       renderLyrics();
+      scrollToLyricBlock(id);
     }
 
     function classifyLyricBlock(header, text, index) {
       const source = (header + " " + text).toLowerCase();
-      if (/chorus|refrain/.test(source)) return "chorus";
+      if (/pre[- ]?chorus/.test(source)) return "pre-chorus";
+      if (/refrain/.test(source)) return "refrain";
+      if (/chorus/.test(source)) return "chorus";
       if (/bridge|middle/.test(source)) return "bridge";
       if (/response|responsorial|lord, hear|amen/.test(source)) return "response";
+      if (/outro|ending|finale/.test(source)) return "outro";
       return "verse";
     }
 
@@ -24281,7 +24413,7 @@
       return chunks.map((chunk, index) => {
         const lines = chunk.split(/\n/).map((line) => line.trim()).filter(Boolean);
         const first = lines[0] || "";
-        const headerMatch = /^(verse|chorus|refrain|bridge|response)\s*([\w\d]*)/i.test(first);
+        const headerMatch = /^(verse|pre[- ]?chorus|chorus|refrain|bridge|response|outro|ending|finale)\s*([\w\d]*)/i.test(first);
         const title = headerMatch ? first : "Verse " + (index + 1);
         const text = headerMatch ? lines.slice(1).join("\n") : lines.join("\n");
         const type = classifyLyricBlock(title, text, index);
@@ -24479,8 +24611,8 @@
     function lyricBlockSectionTitle(block, index) {
       const type = block.type || "verse";
       const label = typeLabels[type] || "Section";
-      // Chorus is always "Chorus" — never Chorus 1 / 2 / 3.
-      if (type === "chorus") return label;
+      // Chorus / Refrain are always unnumbered.
+      if (type === "chorus" || type === "refrain") return label;
       const sameTypeIndex = lyricBlocks.slice(0, index + 1).filter((b) => b.type === type).length;
       if (type === "verse" || sameTypeIndex > 1) return label + " " + sameTypeIndex;
       return label;
@@ -24509,16 +24641,23 @@
       updateLyricsWordStats();
       const detected = $("lyrics-detected");
       if (!detected) return;
-      const pills = ["verse", "chorus", "bridge", "response"].map((type) => {
+      const pills = ["verse", "chorus", "pre-chorus", "refrain", "outro", "bridge", "response"].map((type) => {
         const count = lyricBlocks.filter((block) => block.type === type).length;
+        if (!count) return "";
         return (
           '<span class="detected-pill detected-pill--' + type + '">' +
             '<span class="detected-dot" aria-hidden="true"></span>' +
             typeLabels[type] + ": " + count +
           "</span>"
         );
-      });
-      detected.innerHTML = '<span class="muted">Detected sections:</span>' + pills.join("");
+      }).filter(Boolean);
+      if (!pills.length) {
+        detected.innerHTML = "";
+        detected.hidden = true;
+      } else {
+        detected.hidden = false;
+        detected.innerHTML = '<span class="muted">Detected sections:</span>' + pills.join("");
+      }
       updateLyricsStructuredMeta();
     }
 
@@ -24527,7 +24666,7 @@
       lyricStats();
       const list = $("lyrics-block-list");
       if (!lyricBlocks.length) {
-        list.innerHTML = '<div class="empty-state">Press Analyze to detect Verse, Chorus, Bridge, and Response blocks from your lyrics.</div>';
+        list.innerHTML = '<div class="empty-state">Press Analyze to detect Verse, Chorus, Pre-Chorus, Refrain, Outro, and more from your lyrics.</div>';
         if (writeBack) syncStructuredEditorToInputPanel();
         return;
       }
@@ -24607,12 +24746,16 @@
       const block = lyricBlocks[index];
       if (action === "delete") lyricBlocks.splice(index, 1);
       if (action === "duplicate") {
+        const dupId = crypto.randomUUID();
         lyricBlocks.splice(index + 1, 0, {
           ...block,
-          id: crypto.randomUUID(),
+          id: dupId,
           title: block.title + " copy",
           collapsed: false,
         });
+        renderLyrics();
+        scrollToLyricBlock(dupId);
+        return;
       }
       if (action === "move-up" && index > 0) {
         const tmp = lyricBlocks[index - 1];
@@ -24633,32 +24776,228 @@
     });
 
     $("lyrics-block-list").addEventListener("dragstart", (event) => {
+      if (isMobileChromeLayout()) {
+        event.preventDefault();
+        return;
+      }
       const card = event.target.closest(".lyric-block");
       if (!card) return;
       draggedLyricId = card.dataset.id;
       card.classList.add("dragging");
+      clearLyricDropHints();
+      try {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", draggedLyricId);
+      } catch (_err) { /* ignore */ }
     });
     $("lyrics-block-list").addEventListener("dragend", () => {
+      clearLyricDropHints();
       draggedLyricId = null;
       document.querySelectorAll(".lyric-block.dragging").forEach((el) => el.classList.remove("dragging"));
-      syncStructuredEditorToInputPanel();
     });
     $("lyrics-block-list").addEventListener("dragover", (event) => {
+      if (isMobileChromeLayout()) return;
       event.preventDefault();
-      const target = event.target.closest(".lyric-block");
-      if (!target || !draggedLyricId || target.dataset.id === draggedLyricId) return;
-      const from = lyricBlocks.findIndex((item) => item.id === draggedLyricId);
-      const to = lyricBlocks.findIndex((item) => item.id === target.dataset.id);
-      if (from < 0 || to < 0) return;
+      try { event.dataTransfer.dropEffect = "move"; } catch (_err) { /* ignore */ }
+      if (!draggedLyricId) return;
+      updateLyricDropHintAtPoint(event.clientX, event.clientY);
+    });
+    $("lyrics-block-list").addEventListener("dragleave", (event) => {
+      if (isMobileChromeLayout()) return;
+      const related = event.relatedTarget;
+      if (related && event.currentTarget.contains(related)) return;
+      clearLyricDropHints();
+    });
+    $("lyrics-block-list").addEventListener("drop", (event) => {
+      if (isMobileChromeLayout()) return;
+      event.preventDefault();
+      updateLyricDropHintAtPoint(event.clientX, event.clientY);
+      applyLyricDropFromHint();
+      document.querySelectorAll(".lyric-block.dragging").forEach((el) => el.classList.remove("dragging"));
+      draggedLyricId = null;
+    });
+
+    function clearLyricDropHints() {
+      document.querySelectorAll(".lyric-block--drop-before, .lyric-block--drop-after").forEach((el) => {
+        el.classList.remove("lyric-block--drop-before", "lyric-block--drop-after");
+      });
+    }
+
+    function setLyricDropHint(target, before) {
+      if (!target) {
+        clearLyricDropHints();
+        return;
+      }
+      const nextBefore = !!before;
+      const hasBefore = target.classList.contains("lyric-block--drop-before");
+      const hasAfter = target.classList.contains("lyric-block--drop-after");
+      if ((nextBefore && hasBefore) || (!nextBefore && hasAfter)) return;
+      clearLyricDropHints();
+      target.classList.add(nextBefore ? "lyric-block--drop-before" : "lyric-block--drop-after");
+    }
+
+    function resolveLyricDropTargetAtPoint(clientX, clientY) {
+      const list = $("lyrics-block-list");
+      if (!list || !draggedLyricId) return null;
+      const listRect = list.getBoundingClientRect();
+      if (
+        clientY < listRect.top - 8 ||
+        clientY > listRect.bottom + 8 ||
+        clientX < listRect.left - 24 ||
+        clientX > listRect.right + 24
+      ) {
+        return null;
+      }
+      const cards = Array.from(list.querySelectorAll(".lyric-block")).filter(
+        (el) => el.dataset.id !== draggedLyricId
+      );
+      if (!cards.length) return null;
+
+      const hit = document.elementFromPoint(clientX, clientY);
+      let target = hit && hit.closest ? hit.closest("#lyrics-block-list .lyric-block") : null;
+      if (target && target.dataset.id === draggedLyricId) target = null;
+
+      if (!target) {
+        let best = null;
+        let bestDist = Infinity;
+        cards.forEach((card) => {
+          const rect = card.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          const dist = Math.abs(clientY - midY);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = card;
+          }
+        });
+        target = best;
+      }
+      if (!target || target.dataset.id === draggedLyricId) return null;
+
+      const rect = target.getBoundingClientRect();
+      const before = clientY < rect.top + rect.height / 2;
+      return { target, before };
+    }
+
+    function updateLyricDropHintAtPoint(clientX, clientY) {
+      const resolved = resolveLyricDropTargetAtPoint(clientX, clientY);
+      if (!resolved) {
+        clearLyricDropHints();
+        return;
+      }
+      setLyricDropHint(resolved.target, resolved.before);
+    }
+
+    function applyLyricDropFromHint() {
+      const beforeEl = document.querySelector("#lyrics-block-list .lyric-block--drop-before");
+      const afterEl = document.querySelector("#lyrics-block-list .lyric-block--drop-after");
+      const dropId = draggedLyricId;
+      clearLyricDropHints();
+      if (!dropId) return;
+      const from = lyricBlocks.findIndex((item) => item.id === dropId);
+      if (from < 0) return;
+      let to = -1;
+      if (beforeEl) {
+        to = lyricBlocks.findIndex((item) => item.id === beforeEl.dataset.id);
+      } else if (afterEl) {
+        to = lyricBlocks.findIndex((item) => item.id === afterEl.dataset.id);
+        if (to >= 0) to += 1;
+      } else {
+        return;
+      }
+      if (to < 0 || to === from || to === from + 1) return;
       const [moved] = lyricBlocks.splice(from, 1);
+      if (to > from) to -= 1;
       lyricBlocks.splice(to, 0, moved);
       renderLyrics();
-    });
+      syncStructuredEditorToInputPanel();
+      updateLyricsStructuredMeta();
+    }
+
+    function setLyricsBlocksDragZoom(on) {
+      if (!isMobileChromeLayout()) return;
+      document.body.classList.toggle("lyrics-blocks-drag-zoom", !!on);
+    }
+
+    function syncLyricBlocksOrderFromDom() {
+      const list = $("lyrics-block-list");
+      if (!list) return;
+      const ids = Array.from(list.querySelectorAll(".lyric-block")).map((el) => el.dataset.id);
+      const next = [];
+      ids.forEach((id) => {
+        const block = lyricBlocks.find((item) => item.id === id);
+        if (block) next.push(block);
+      });
+      if (next.length !== lyricBlocks.length) return;
+      lyricBlocks.length = 0;
+      lyricBlocks.push(...next);
+      syncStructuredEditorToInputPanel();
+      updateLyricsStructuredMeta();
+    }
+
+    function initLyricBlockTouchDrag() {
+      const list = $("lyrics-block-list");
+      if (!list || list.dataset.touchDragBound === "1") return;
+      list.dataset.touchDragBound = "1";
+
+      let activeCard = null;
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+
+      function endTouchDrag() {
+        if (!dragging && !activeCard) return;
+        const wasDragging = dragging;
+        dragging = false;
+        if (activeCard) activeCard.classList.remove("dragging");
+        activeCard = null;
+        setLyricsBlocksDragZoom(false);
+        if (wasDragging) applyLyricDropFromHint();
+        else clearLyricDropHints();
+        draggedLyricId = null;
+      }
+
+      list.addEventListener("touchstart", (event) => {
+        if (!isMobileChromeLayout()) return;
+        const handle = event.target.closest(".lyric-block__drag");
+        const card = event.target.closest(".lyric-block");
+        if (!handle || !card) return;
+        const touch = event.touches[0];
+        if (!touch) return;
+        activeCard = card;
+        draggedLyricId = card.dataset.id;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        dragging = true;
+        card.classList.add("dragging");
+        clearLyricDropHints();
+        setLyricsBlocksDragZoom(true);
+        try {
+          if (navigator.vibrate) navigator.vibrate(10);
+        } catch (_err) { /* optional */ }
+      }, { passive: true });
+
+      list.addEventListener("touchmove", (event) => {
+        if (!isMobileChromeLayout() || !dragging || !activeCard) return;
+        const touch = event.touches[0];
+        if (!touch) return;
+        event.preventDefault();
+        const dx = Math.abs(touch.clientX - startX);
+        const dy = Math.abs(touch.clientY - startY);
+        if (dx < 2 && dy < 2) return;
+        updateLyricDropHintAtPoint(touch.clientX, touch.clientY);
+      }, { passive: false });
+
+      list.addEventListener("touchend", endTouchDrag, { passive: true });
+      list.addEventListener("touchcancel", endTouchDrag, { passive: true });
+    }
+
+    initLyricBlockTouchDrag();
 
     $("lyrics-input").addEventListener("input", () => {
       autoResizeLyricsMainInput();
       updateLyricsWordStats();
       markLyricsRawDirty();
+      updateParishLyricsControls();
     });
 
     async function loadLyricsFromFile(file) {
@@ -25021,7 +25360,7 @@
 
     /** Strip leftover section markers from block body (e.g. [Verse 1], (Chorus), Verse:). */
     function tidyLyricBlockText(raw) {
-      const headerRe = /^[\[(]?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$/i;
+      const headerRe = /^[\[(]?\s*(pre[- ]?chorus|post[- ]?chorus|refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|ending|finale)(\s*[\w\d.-]*)?\s*[\])]?\s*[:.)-]?\s*$/i;
       let lines = String(raw || "").replace(/[ \t]+$/gm, "").split("\n");
       while (lines.length && headerRe.test(String(lines[0] || "").trim())) {
         lines = lines.slice(1);
@@ -25316,6 +25655,7 @@
             composerLoadedSong = { section: savedSection, id: result.id, title: result.title || title };
           }
           updateParishLyricsControls();
+          void refreshComposerCatalogBaseline(savedSection, result.id || (composerLoadedSong && composerLoadedSong.id));
         } else {
           msg = "Saved lyrics for " + result.title + " in " + songSectionLabel(savedSection) + ".";
           heading = "Song saved";
@@ -26831,8 +27171,10 @@
       const lines = (chunk || "").split("\n").map((ln) => ln.trim()).filter(Boolean);
       if (!lines.length) return "verse";
       const head = lines[0];
-      if (/^\[?\s*(refrain|chorus)(\s|\]|$|:)/i.test(head)) return "chorus";
-      if (/^(refrain|chorus)\s*:/i.test(head)) return "chorus";
+      if (/^\[?\s*(pre[- ]?chorus)(\s|\]|$|:)/i.test(head)) return "pre-chorus";
+      if (/^\[?\s*refrain(\s|\]|$|:)/i.test(head) || /^refrain\s*:/i.test(head)) return "refrain";
+      if (/^\[?\s*chorus(\s|\]|$|:)/i.test(head) || /^chorus\s*:/i.test(head)) return "chorus";
+      if (/^\[?\s*(outro|ending|finale)(\s|\]|$|:)/i.test(head)) return "outro";
       return "verse";
     }
 
@@ -27176,7 +27518,7 @@
       );
     }
 
-    const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
+    const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(pre[- ]?chorus|post[- ]?chorus|refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|ending|finale)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
 
     /** Match backend ``ensure_lyric_section_breaks`` — blank line before Verse/Chorus labels. */
     function ensureLyricSectionBreaks(raw) {
@@ -27197,8 +27539,8 @@
     function parseLyricsSectionsForPreview(raw) {
       const parts = ensureLyricSectionBreaks(raw).split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean);
       if (!parts.length) return [];
-      const headerRe = /^\[?\s*(verse|chorus|refrain|stanza|bridge|response|coda|intro|vamp)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
-      const inlineRe = /^(refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp)\s*:\s*(.*)$/i;
+      const headerRe = /^\[?\s*(pre[- ]?chorus|post[- ]?chorus|verse|chorus|refrain|stanza|bridge|response|coda|intro|vamp|outro|ending|finale)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
+      const inlineRe = /^(pre[- ]?chorus|post[- ]?chorus|refrain|verse|chorus|bridge|response|stanza|coda|intro|vamp|outro|ending|finale)\s*:\s*(.*)$/i;
       const sections = [];
       parts.forEach((chunk) => {
         const lines = chunk.split(/\n/).map((ln) => ln.trim()).filter(Boolean);
@@ -38502,12 +38844,19 @@
       const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
       applySongMetaToForm(apiSec, merged);
       composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
-      composerCatalogLyrics = String(s.catalog_lyrics || s.lyrics || "");
+      composerCatalogLyrics = String(
+        s.catalog_lyrics != null && String(s.catalog_lyrics).length
+          ? s.catalog_lyrics
+          : (s.parish_version ? "" : (s.lyrics || ""))
+      );
       composerParishVersion = !!s.parish_version;
       lyricBlocks = [];
       if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
       scheduleLyricsStructuredSync(true);
       updateParishLyricsControls();
+      if (composerParishVersion && !normalizeLyricsForCompare(composerCatalogLyrics)) {
+        void refreshComposerCatalogBaseline(apiSec, sid);
+      }
       setLyricsStatus(
         "Loaded \"" + (merged.title || s.title || "") + "\" from " + songSectionLabel(apiSec) +
         (composerParishVersion ? " (parish version)." : "."),
@@ -38526,21 +38875,79 @@
       return !!(churchMembershipState && churchMembershipState.parish_id);
     }
 
+    function normalizeLyricsForCompare(text) {
+      return String(text || "").replace(/\r\n/g, "\n").replace(/\s+$/gm, "").trim();
+    }
+
+    function getComposerEditorLyricsText() {
+      try {
+        if (lyricBlocks.length) {
+          flushLyricBlocksFromDom();
+          syncStructuredEditorToInputPanel();
+        }
+      } catch (_e) { /* keep textarea value */ }
+      return String(($("lyrics-input") && $("lyrics-input").value) || "");
+    }
+
+    function editorDiffersFromCatalogLyrics() {
+      const baseline = normalizeLyricsForCompare(composerCatalogLyrics);
+      if (!baseline) return false;
+      return normalizeLyricsForCompare(getComposerEditorLyricsText()) !== baseline;
+    }
+
+    async function refreshComposerCatalogBaseline(section, id) {
+      const sec = String(section || (composerLoadedSong && composerLoadedSong.section) || "").trim().toLowerCase();
+      const sid = String(id || (composerLoadedSong && composerLoadedSong.id) || "").trim();
+      if (!sec || !sid) return;
+      try {
+        bustStoredSongDetail(sec, sid);
+        const data = await fetchSongDetail(sec, sid, { forceNetwork: true });
+        const s = data.song || {};
+        const catalog = String(
+          s.catalog_lyrics != null && String(s.catalog_lyrics).length
+            ? s.catalog_lyrics
+            : (s.parish_version ? "" : (s.lyrics || ""))
+        );
+        if (catalog) composerCatalogLyrics = catalog;
+        composerParishVersion = !!s.parish_version;
+      } catch (_e) { /* keep existing baseline */ }
+      updateParishLyricsControls();
+    }
+
     function updateParishLyricsControls() {
       const wrap = $("song-metadata-sync-wrap");
       const btn = $("btn-sync-catalog-lyrics");
+      const hint = $("song-metadata-sync-hint");
       if (wrap) wrap.hidden = false;
       if (!btn) return;
-      const canSync = !!(
-        userHasParishForLyrics() &&
-        composerLoadedSong &&
-        composerLoadedSong.id &&
-        composerParishVersion
-      );
+      const hasSong = !!(composerLoadedSong && composerLoadedSong.id);
+      const hasBaseline = !!normalizeLyricsForCompare(composerCatalogLyrics);
+      const differs = editorDiffersFromCatalogLyrics();
+      const canClearOverride = !!(hasSong && composerParishVersion && userHasParishForLyrics());
+      const canRestoreLocal = !!(hasSong && hasBaseline && differs);
+      const canSync = canClearOverride || canRestoreLocal;
       btn.disabled = !canSync;
-      btn.title = canSync
-        ? "Restore global catalog lyrics and remove the parish override"
-        : "Available when a parish short version of a catalog song is loaded";
+      if (canClearOverride) {
+        btn.title = "Restore global catalog lyrics and remove the parish override";
+        if (hint) {
+          hint.textContent = "This song has a parish short version. Sync restores the global catalog lyrics and removes that override.";
+        }
+      } else if (canRestoreLocal) {
+        btn.title = "Restore the global catalog lyrics in the editor";
+        if (hint) {
+          hint.textContent = "Editor lyrics differ from the global catalog. Sync restores the catalog text (unsaved local edits are discarded).";
+        }
+      } else if (composerParishVersion && !userHasParishForLyrics()) {
+        btn.title = "Join a parish to sync parish lyric versions";
+        if (hint) {
+          hint.textContent = "Sync restores the global catalog lyrics and removes any parish short-version override for this song.";
+        }
+      } else {
+        btn.title = "Available when lyrics differ from the catalog, or a parish short version is loaded";
+        if (hint) {
+          hint.textContent = "Sync restores the global catalog lyrics and removes any parish short-version override for this song.";
+        }
+      }
     }
 
     async function syncParishLyricsToCatalog() {
@@ -38548,38 +38955,63 @@
         setLyricsStatus("Open a catalog song first, then sync.", "error");
         return;
       }
-      if (!userHasParishForLyrics()) {
+      const hasOverride = !!composerParishVersion;
+      const differs = editorDiffersFromCatalogLyrics();
+      if (hasOverride && !userHasParishForLyrics()) {
         setLyricsStatus("Join a parish first to manage parish lyric versions.", "error");
         return;
       }
-      if (!composerParishVersion) {
+      if (!hasOverride && !differs) {
         setLyricsStatus("This song is already using the catalog lyrics.", "");
         return;
       }
-      if (!confirm("Reset this song to the global catalog lyrics? Your parish short version will be removed.")) return;
+      const confirmMsg = hasOverride
+        ? "Reset this song to the global catalog lyrics? Your parish short version will be removed."
+        : "Restore the global catalog lyrics in the editor? Unsaved local edits will be discarded.";
+      if (!confirm(confirmMsg)) return;
       const section = composerLoadedSong.section || "meditation";
       const btn = $("btn-sync-catalog-lyrics");
       if (btn) btn.disabled = true;
       try {
-        const headers = await adminAuthHeaders();
-        const res = await fetch(
-          "/api/parish/hymn-overrides/" + encodeURIComponent(section) + "/" + encodeURIComponent(composerLoadedSong.id),
-          { method: "DELETE", headers }
-        );
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.detail || data.error || "Sync failed.");
-        composerParishVersion = false;
-        if ($("lyrics-input") && composerCatalogLyrics) {
-          $("lyrics-input").value = composerCatalogLyrics;
+        if (hasOverride) {
+          const headers = await catalogAuthHeaders();
+          const res = await fetch(
+            "/api/parish/hymn-overrides/" + encodeURIComponent(section) + "/" + encodeURIComponent(composerLoadedSong.id),
+            { method: "DELETE", headers }
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.detail || data.error || "Sync failed.");
+          composerParishVersion = false;
+        }
+        let catalogText = composerCatalogLyrics;
+        if (!normalizeLyricsForCompare(catalogText)) {
+          bustStoredSongDetail(section, composerLoadedSong.id);
+          const detail = await fetchSongDetail(section, composerLoadedSong.id, { forceNetwork: true });
+          const s = (detail && detail.song) || {};
+          catalogText = String(s.catalog_lyrics || s.lyrics || "");
+          if (catalogText) composerCatalogLyrics = catalogText;
+        }
+        if ($("lyrics-input") && catalogText) {
+          $("lyrics-input").value = catalogText;
+          lyricBlocks = [];
           scheduleLyricsStructuredSync(true);
         } else {
-          await loadSongIntoEditor(section, composerLoadedSong.id, { title: composerLoadedSong.title, clearSearch: false });
+          await loadSongIntoEditor(section, composerLoadedSong.id, {
+            title: composerLoadedSong.title,
+            clearSearch: false,
+          });
         }
+        composerParishVersion = false;
         updateParishLyricsControls();
-        setLyricsStatus(data.message || "Synced to catalog lyrics.", "ok");
-        notify(data.message || "Synced to catalog lyrics.", "ok");
+        closeSongMetadataModal();
+        const okMsg = hasOverride
+          ? "Synced to catalog lyrics."
+          : "Restored catalog lyrics in the editor.";
+        setLyricsStatus(okMsg, "ok");
+        notify(okMsg, "ok");
       } catch (err) {
         setLyricsStatus(err.message || "Sync failed.", "error");
+        notify(err.message || "Sync failed.", "error");
       } finally {
         updateParishLyricsControls();
       }
@@ -38642,6 +39074,12 @@
       setSongMetadataMoodChecks(s.gospel_moods || []);
       songMetaSnapshot = captureMetadataModalSnapshot();
       bindMetadataModalDirtyTracking();
+      if (composerLoadedSong && String(composerLoadedSong.id) === String(id)) {
+        composerParishVersion = !!s.parish_version;
+        if (s.catalog_lyrics != null && String(s.catalog_lyrics).length) {
+          composerCatalogLyrics = String(s.catalog_lyrics);
+        }
+      }
       updateParishLyricsControls();
       setUiOverlayOpen($("song-metadata-modal"), true);
       syncVerbumSelectTrigger($("song-metadata-edit-language"));
@@ -38780,7 +39218,11 @@
       songMetaSnapshot = captureMetadataModalSnapshot();
       bindMetadataModalDirtyTracking();
       refreshMetadataModalPrimaryState();
-      updateParishLyricsControls();
+      if (composerLoadedSong && composerLoadedSong.id && !normalizeLyricsForCompare(composerCatalogLyrics)) {
+        void refreshComposerCatalogBaseline(composerLoadedSong.section, composerLoadedSong.id);
+      } else {
+        updateParishLyricsControls();
+      }
       songSaveMoodSearchTitle = title;
       setUiOverlayOpen($("song-metadata-modal"), true);
       syncVerbumSelectTrigger($("song-metadata-edit-language"));
