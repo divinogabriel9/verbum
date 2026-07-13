@@ -977,12 +977,13 @@ iframe {
     z-index: 80 !important;
   }
 
-  /* Keep chrome under the share overlay while the PIN sheet is open */
+  /* Keep chrome under the share overlay while the PIN sheet is open —
+     but never below the lyrics FAB (FAB parks at z-index 20 when sheets open). */
   body.practice-share-pin-top .app-header,
   body.practice-share-pin-top .app-bottom-nav,
   body.bottom-nav-sheet-open.practice-share-pin-top .app-bottom-nav,
   body.bottom-nav-sheet-open.practice-share-pin-top:not(.bottom-nav-collapsed) .app-bottom-nav {
-    z-index: 40 !important;
+    z-index: 50 !important;
   }
 
   body.practice-share-pin-top #practice-share-modal .ui-card.practice-share-card {
@@ -4509,6 +4510,17 @@ iframe {
     width: auto !important;
     max-width: none !important;
     transform: none !important;
+    /* Under ui-overlay (60+) and header sheets (54–58); above page content */
+    z-index: 45 !important;
+  }
+
+  /* Any modal / header sheet / share sheet must cover the FAB */
+  body:has(.ui-overlay.is-open) .lyrics-editor-float,
+  body.header-sheet-open .lyrics-editor-float,
+  body.bottom-nav-sheet-open .lyrics-editor-float,
+  body.practice-share-pin-top .lyrics-editor-float {
+    z-index: 20 !important;
+    pointer-events: none !important;
   }
 
   body.mobile-top-nav .lyrics-editor-float,

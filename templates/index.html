@@ -10761,8 +10761,8 @@
       left: 50%;
       bottom: calc(44px + env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%);
-      /* Below .ui-overlay (60) so Edit Details / mood modals cover the dock */
-      z-index: 50;
+      /* Below .ui-overlay (60) and header sheets so modals cover the dock */
+      z-index: 45;
       width: max-content;
       max-width: calc(100vw - 24px);
       margin: 0;
@@ -15541,7 +15541,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713s" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713t" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
