@@ -533,12 +533,110 @@ def _normalize_practice_blocks(blocks: Any) -> list[dict[str, Any]]:
     return out
 
 
+def resolve_practice_song(
+    *,
+    parish_id: Optional[str],
+    hymn_id: str,
+    section: str = "",
+) -> Optional[dict[str, Any]]:
+    """Resolve a catalog song with parish lyric override for practice-only use."""
+    from services.hymn_library import get_hymn
+    from services.hymn_normalized_store import fetch_lyrics_from_normalized, fetch_song_from_normalized
+    from services.song_catalog import find_catalog_row_by_id, format_song_title_case
+
+    hid = (hymn_id or "").strip()
+    if not hid:
+        return None
+    requested_sec = (section or "").strip().lower()
+    resolved_section = requested_sec
+    row: Optional[dict[str, Any]] = None
+    if requested_sec:
+        row = get_hymn(requested_sec, hid)
+    by_id_sec, by_id_row = find_catalog_row_by_id(hid)
+    if by_id_row is not None:
+        row = by_id_row
+        if by_id_sec:
+            resolved_section = by_id_sec
+    if not row:
+        normalized = fetch_song_from_normalized(hid)
+        if normalized:
+            row = normalized
+            resolved_section = str(normalized.get("section") or requested_sec).strip().lower() or requested_sec
+    if not row:
+        return None
+
+    lyrics = fetch_lyrics_from_normalized(hid) or str(row.get("lyrics") or "")
+    pid = (parish_id or "").strip()
+    if pid:
+        try:
+            from services.parish_hymn_overrides import get_override
+
+            ov = get_override(pid, hymn_id=hid, section=resolved_section or None)
+            if not ov:
+                ov = get_override(pid, hymn_id=hid)
+            if ov and str(ov.get("lyrics") or "").strip():
+                lyrics = str(ov.get("lyrics") or "")
+                if ov.get("section"):
+                    resolved_section = str(ov.get("section") or resolved_section).strip().lower()
+        except Exception as exc:
+            logger.warning("practice song parish resolve failed: %s", exc)
+
+    lyrics = polish_lyrics_text(lyrics)
+    if not lyrics.strip():
+        return None
+    title = format_song_title_case(str(row.get("title") or "").strip()) or "Song"
+    song = {
+        "hymn_id": hid,
+        "title": title,
+        "author": str(row.get("author") or "").strip(),
+        "language": str(row.get("language") or "").strip(),
+        "section": resolved_section,
+        "lyrics": lyrics,
+    }
+    return _ensure_song_blocks(song)
+
+
+def practice_catalog_index() -> list[dict[str, Any]]:
+    """Flat searchable catalog for practice leaders (no lyric bodies)."""
+    from services.song_catalog import catalog_for_api
+
+    catalog = catalog_for_api(include_inferred_moods=False)
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for sec, rows in (catalog or {}).items():
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            if not row.get("has_lyrics"):
+                continue
+            hid = str(row.get("id") or "").strip()
+            title = str(row.get("title") or "").strip()
+            if not hid or not title:
+                continue
+            dedupe = f"{sec}:{hid}"
+            if dedupe in seen:
+                continue
+            seen.add(dedupe)
+            out.append(
+                {
+                    "id": hid,
+                    "title": title,
+                    "author": str(row.get("author") or "").strip(),
+                    "language": str(row.get("language") or "").strip(),
+                    "section": str(sec),
+                }
+            )
+    return out
+
+
 def update_practice_share_lyrics(
     token: str,
     *,
     songs_update: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Update practice-only lyric blocks on a share. Does not touch the hymn catalog."""
+    """Update practice-only songs/lyrics on a share. Does not touch the hymn catalog."""
     row = get_practice_share_by_token(token)
     if not row:
         return {"ok": False, "error": "This practice link is invalid or has expired."}
@@ -546,22 +644,54 @@ def update_practice_share_lyrics(
     if not isinstance(snapshot, list):
         return {"ok": False, "error": "No songs on this practice link."}
 
-    by_key: dict[str, dict[str, Any]] = {}
+    parish_id = str(row.get("parish_id") or "").strip() or None
+    by_slot: dict[str, dict[str, Any]] = {}
     for raw in songs_update:
         if not isinstance(raw, dict):
             continue
-        key = str(raw.get("hymn_id") or "").strip()
         slot = str(raw.get("slot_key") or "").strip()
-        dedupe = key + "|" + slot
+        if not slot:
+            continue
+        hymn_id = str(raw.get("hymn_id") or "").strip()
         blocks = _normalize_practice_blocks(raw.get("blocks"))
+        title = str(raw.get("title") or "").strip()
+        author = str(raw.get("author") or "").strip()
+        language = str(raw.get("language") or "").strip()
+        section = str(raw.get("section") or "").strip().lower()
+
+        # If hymn changed but blocks/lyrics missing, resolve from catalog + parish.
+        if hymn_id and not blocks:
+            resolved = resolve_practice_song(
+                parish_id=parish_id,
+                hymn_id=hymn_id,
+                section=section,
+            )
+            if not resolved:
+                continue
+            by_slot[slot] = {
+                "hymn_id": resolved["hymn_id"],
+                "title": resolved["title"],
+                "author": resolved.get("author") or "",
+                "language": resolved.get("language") or "",
+                "section": resolved.get("section") or section,
+                "blocks": resolved.get("blocks") or [],
+                "lyrics": resolved.get("lyrics") or "",
+            }
+            continue
+
         if not blocks:
             continue
-        by_key[dedupe] = {
+        by_slot[slot] = {
+            "hymn_id": hymn_id,
+            "title": title,
+            "author": author,
+            "language": language,
+            "section": section,
             "blocks": blocks,
             "lyrics": _lyrics_from_blocks(blocks, include_disabled=True),
         }
 
-    if not by_key:
+    if not by_slot:
         return {"ok": False, "error": "No lyric blocks to save."}
 
     new_snapshot: list[dict[str, Any]] = []
@@ -569,9 +699,19 @@ def update_practice_share_lyrics(
         if not isinstance(song, dict):
             continue
         item = dict(song)
-        dedupe = str(item.get("hymn_id") or "").strip() + "|" + str(item.get("slot_key") or "").strip()
-        patch = by_key.get(dedupe)
+        slot = str(item.get("slot_key") or "").strip()
+        patch = by_slot.get(slot)
         if patch:
+            if patch.get("hymn_id"):
+                item["hymn_id"] = patch["hymn_id"]
+            if patch.get("title"):
+                item["title"] = format_song_title_case(patch["title"])
+            if "author" in patch:
+                item["author"] = patch.get("author") or ""
+            if "language" in patch:
+                item["language"] = patch.get("language") or ""
+            if patch.get("section"):
+                item["section"] = patch["section"]
             item["blocks"] = patch["blocks"]
             item["lyrics"] = patch["lyrics"]
         new_snapshot.append(item)

@@ -167,3 +167,46 @@ def clear_override(
     except Exception as exc:
         logger.warning("parish hymn override clear failed: %s", exc)
         return {"ok": False, "error": str(exc)[:200]}
+
+
+def merge_parish_lyric_overrides(
+    parish_id: str,
+    song_selections: Optional[dict[str, Any]] = None,
+    existing: Optional[dict[str, Any]] = None,
+) -> dict[str, dict[str, str]]:
+    """Fill hymn lyric overrides from parish short versions; client values win."""
+    out: dict[str, dict[str, str]] = {}
+    if isinstance(existing, dict):
+        for sec, block in existing.items():
+            if not isinstance(block, dict):
+                continue
+            sec_key = str(sec or "").strip().lower()
+            if not sec_key:
+                continue
+            cleaned: dict[str, str] = {}
+            for hid, lyrics in block.items():
+                text = str(lyrics or "").strip()
+                if hid and text:
+                    cleaned[str(hid)] = text
+            if cleaned:
+                out[sec_key] = cleaned
+
+    pid = (parish_id or "").strip()
+    if not pid or not isinstance(song_selections, dict):
+        return out
+
+    for sec, hymn_id in song_selections.items():
+        sec_key = str(sec or "").strip().lower()
+        hid = str(hymn_id or "").strip()
+        if not sec_key or not hid:
+            continue
+        block = out.setdefault(sec_key, {})
+        if block.get(hid):
+            continue
+        ov = get_override(pid, hymn_id=hid, section=sec_key) or get_override(pid, hymn_id=hid)
+        text = str((ov or {}).get("lyrics") or "").strip()
+        if text:
+            block[hid] = text
+        if not block:
+            out.pop(sec_key, None)
+    return out

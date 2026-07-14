@@ -2708,6 +2708,88 @@
       font-size: 0.8125rem;
       color: var(--muted);
     }
+    .radio-page-seek {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+    }
+    .radio-page-layout.is-library-mode .radio-page-seek:not([hidden]) {
+      display: flex;
+    }
+    .radio-page-seek__range {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 18px;
+      margin: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+    .radio-page-seek__range:focus-visible {
+      outline: none;
+    }
+    .radio-page-seek__range:focus-visible::-webkit-slider-thumb {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 28%, transparent);
+    }
+    .radio-page-seek__range:focus-visible::-moz-range-thumb {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent, #a10f0d) 28%, transparent);
+    }
+    .radio-page-seek__range::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(
+        to right,
+        var(--liturgical-accent, #a10f0d) 0%,
+        var(--liturgical-accent, #a10f0d) var(--seek-progress, 0%),
+        color-mix(in srgb, var(--ink) 12%, var(--surface-2)) var(--seek-progress, 0%),
+        color-mix(in srgb, var(--ink) 12%, var(--surface-2)) 100%
+      );
+    }
+    .radio-page-seek__range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      margin-top: -5px;
+      border: none;
+      border-radius: 50%;
+      background: var(--liturgical-accent, #a10f0d);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 22%, transparent);
+      transition: transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .radio-page-seek__range:active::-webkit-slider-thumb {
+      transform: scale(0.97);
+    }
+    .radio-page-seek__range::-moz-range-track {
+      height: 4px;
+      border: none;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--ink) 12%, var(--surface-2));
+    }
+    .radio-page-seek__range::-moz-range-progress {
+      height: 4px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 70%, transparent);
+    }
+    .radio-page-seek__range::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border: none;
+      border-radius: 50%;
+      background: var(--liturgical-accent, #a10f0d);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 22%, transparent);
+    }
+    .radio-page-seek__times {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.6875rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      line-height: 1;
+    }
     .radio-page-controls {
       display: flex;
       align-items: center;
@@ -2947,6 +3029,16 @@
     .media-hub-col--radio #radio-page-channel-pos {
       display: none !important;
     }
+    .media-hub-col--radio .radio-page-layout.is-library-mode #radio-page-channel-pos {
+      display: block !important;
+    }
+    .media-hub-col--radio .radio-page-seek {
+      gap: 4px;
+      padding: 0 2px;
+    }
+    .media-hub-col--radio .radio-page-seek__times {
+      font-size: 0.625rem;
+    }
     .media-hub-col--radio .radio-page-controls {
       justify-content: center;
       gap: 6px;
@@ -3107,11 +3199,118 @@
       align-content: start;
       justify-content: start;
     }
+    #media-library-music-list.media-library-list {
+      display: flex;
+      flex-direction: column;
+      grid-template-columns: none;
+      gap: 2px;
+      justify-content: stretch;
+    }
     .media-library-empty {
       grid-column: 1 / -1;
       margin: 0;
       padding: 8px 2px;
       font-size: 0.8125rem;
+    }
+    .media-track {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+      padding: 2px;
+      border-radius: var(--radius-sm, 8px);
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .media-track.is-active {
+      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 10%, transparent);
+    }
+    .media-track__hit {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: var(--radius-sm, 8px);
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .media-track__hit:hover {
+      background: color-mix(in srgb, var(--ink) 5%, transparent);
+    }
+    .media-track__hit:active {
+      transform: scale(0.99);
+    }
+    .media-track__hit:focus-visible {
+      outline: 2px solid var(--liturgical-accent, #a10f0d);
+      outline-offset: 1px;
+    }
+    .media-track__name {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .media-track.is-active .media-track__name {
+      color: var(--liturgical-accent, #a10f0d);
+    }
+    .media-track__actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      flex: 0 0 auto;
+      margin-right: 4px;
+    }
+    .media-track__download,
+    .media-track__remove {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      transition: color var(--motion-duration-fast) var(--motion-ease-hover),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        transform var(--motion-duration-micro) var(--motion-ease-out);
+    }
+    .media-track__download svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    .media-track__download:hover,
+    .media-track__remove:hover {
+      color: var(--ink);
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+    }
+    .media-track__download:active,
+    .media-track__remove:active {
+      transform: scale(0.97);
+    }
+    .media-track__download:focus-visible,
+    .media-track__remove:focus-visible {
+      outline: 2px solid var(--liturgical-accent, #a10f0d);
+      outline-offset: 1px;
     }
     .media-thumb {
       display: flex;
@@ -3260,14 +3459,43 @@
         transform var(--motion-duration-micro) var(--motion-ease-out),
         background var(--motion-duration-fast) var(--motion-ease-out);
     }
-    .media-thumb__remove:hover {
+    .media-thumb__download {
+      position: absolute;
+      bottom: 3px;
+      left: 3px;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.58);
+      color: #fff;
+      cursor: pointer;
+      opacity: 0.88;
+      transition: opacity var(--motion-duration-fast) var(--motion-ease-out),
+        transform var(--motion-duration-micro) var(--motion-ease-out),
+        background var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .media-thumb__download svg {
+      width: 11px;
+      height: 11px;
+      display: block;
+    }
+    .media-thumb__remove:hover,
+    .media-thumb__download:hover {
       opacity: 1;
       background: rgba(0, 0, 0, 0.72);
     }
-    .media-thumb__remove:active {
+    .media-thumb__remove:active,
+    .media-thumb__download:active {
       transform: scale(0.94);
     }
-    .media-thumb__remove:focus-visible {
+    .media-thumb__remove:focus-visible,
+    .media-thumb__download:focus-visible {
       outline: 2px solid #fff;
       outline-offset: 1px;
     }
@@ -10998,11 +11226,33 @@
     .lyrics-clear-trash__lid {
       transform-origin: 8px 6px;
       transform: rotate(0deg);
-      transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+      /* Default = quick close when hover ends */
+      transition: transform 150ms cubic-bezier(0.33, 1, 0.68, 1);
+      transition-delay: 0ms;
     }
-    .lyrics-editor-float__clear.is-lid-open .lyrics-clear-trash__lid,
+    /* Hold hover ~1.5s, then open lid */
+    #btn-clear-lyrics.lyrics-editor-float__clear:hover .lyrics-clear-trash__lid {
+      transform: rotate(-42deg) translate(-1px, -1px);
+      transition-duration: 280ms;
+      transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+      transition-delay: 0.5s;
+    }
+    /* Click / confirm: open immediately (overrides hover delay) */
+    #btn-clear-lyrics.lyrics-editor-float__clear.is-lid-open .lyrics-clear-trash__lid,
     .lyrics-clear-confirm-btn.is-lid-open .lyrics-clear-trash__lid {
       transform: rotate(-42deg) translate(-1px, -1px);
+      transition-duration: 280ms;
+      transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+      transition-delay: 0ms;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lyrics-clear-trash__lid,
+      #btn-clear-lyrics.lyrics-editor-float__clear:hover .lyrics-clear-trash__lid,
+      #btn-clear-lyrics.lyrics-editor-float__clear.is-lid-open .lyrics-clear-trash__lid,
+      .lyrics-clear-confirm-btn.is-lid-open .lyrics-clear-trash__lid {
+        transition-duration: 1ms;
+        transition-delay: 0ms;
+      }
     }
     .lyrics-clear-confirm-btn,
     .song-delete-confirm-btn {
@@ -17403,8 +17653,9 @@
         .mw-options { display: grid; gap: 5px; }
         .mw-option {
           display: flex;
-          align-items: center;
-          gap: 10px;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
           width: 100%;
           min-height: 0;
           text-align: left;
@@ -17419,6 +17670,7 @@
           cursor: pointer;
           transition: border-color .18s, background .18s, transform .12s;
         }
+        .mw-option__row { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; }
         .mw-option:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--line-soft)); background: color-mix(in srgb, var(--accent) 4%, var(--surface-solid)); }
         .mw-option:active { transform: scale(.995); }
         .mw-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -17428,6 +17680,85 @@
         .mw-option__play { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); cursor: pointer; font-size: var(--mw-type-micro, 0.625rem); transition: background .18s, transform .12s; }
         .mw-option__play:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
         .mw-option__play:active { transform: scale(.9); }
+        .mw-option__play.is-ready { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+        .mw-option__play.is-playing { animation: mw-play-pulse 1s ease infinite; }
+        .mw-option__text {
+          flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+          background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent);
+          border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); cursor: pointer;
+          font-size: 0.68rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+          transition: background .18s, transform .12s;
+        }
+        .mw-option__text:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+        .mw-option__text:active { transform: scale(.9); }
+        .mw-option__media { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; align-items: center; }
+        body:not(.is-superadmin) .mw-option__media { display: none !important; }
+        .mw-option--video .mw-option__row { flex-wrap: wrap; align-items: center; gap: 8px; }
+        .mw-video-lang-select {
+          flex: 0 1 9.5rem;
+          min-width: 6.5rem;
+          max-width: 11rem;
+          margin-left: auto;
+          height: 28px;
+          padding: 0 8px;
+          border-radius: 8px;
+          border: 1px solid var(--card-border);
+          background: var(--surface-2);
+          color: var(--text);
+          font: inherit;
+          font-size: var(--mw-type-caption, 0.875rem);
+          font-weight: 600;
+        }
+        .mw-option--video .mw-option__media {
+          margin: 0;
+          width: auto;
+          flex: none;
+        }
+        .mw-option--video .mw-option__label + .mw-option__media { margin-left: auto; }
+        .mw-option--video[aria-checked="false"] .mw-video-lang-select,
+        .mw-option--video[aria-checked="false"] .mw-option__media { opacity: .55; }
+        .mw-media-group { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; }
+        .mw-media-play {
+          flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+          background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent);
+          border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); cursor: pointer;
+          font-size: 0.58rem; padding: 0; line-height: 1;
+        }
+        .mw-media-play:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+        .mw-media-play:disabled { opacity: .35; cursor: not-allowed; }
+        .mw-media-play.is-ready { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+        .mw-media-play.is-playing { animation: mw-play-pulse 1s ease infinite; }
+        @keyframes mw-play-pulse { 50% { transform: scale(1.08); } }
+        .mw-media-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+        .mw-media-chip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--mw-type-micro, 0.625rem); font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--card-border); background: var(--surface-2); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+        body:not(.is-superadmin) .mw-media-chip--sa { display: none !important; }
+        .mw-media-chip.is-on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+        .mw-media-chip__name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; letter-spacing: 0; font-weight: 600; }
+        .mw-media-pick-list { list-style: none; margin: 0; padding: 0; max-height: min(48vh, 360px); overflow: auto; display: grid; gap: 6px; }
+        .mw-media-pick-list li { margin: 0; }
+        .mw-media-pick-list button { width: 100%; text-align: left; border: 1px solid var(--card-border); background: var(--surface); border-radius: 10px; padding: 10px 12px; cursor: pointer; font: inherit; color: var(--ink); }
+        .mw-media-pick-list button:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+        .mw-media-pick-list .muted { font-size: 0.78rem; }
+        .mw-modal__audio-hint { margin: 0 0 10px; font-size: var(--mw-type-caption, 0.875rem); color: var(--accent); font-weight: 600; }
+        .mw-modal__video { width: 100%; max-height: min(50vh, 360px); border-radius: 12px; background: #000; margin: 0 0 12px; }
+        .mw-modal__video[hidden] { display: none !important; }
+        .mw-modal__text { white-space: pre-wrap; max-height: min(55vh, 420px); overflow: auto; line-height: 1.45; }
+        .mass-song-media-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .mass-song-media-btn { font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); cursor: pointer; }
+        body:not(.is-superadmin) .mass-song-media-btn--sa { display: none !important; }
+        .mass-song-media-btn.is-on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+        .mass-song-media-btn__label { max-width: 160px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+        .mass-song-audio-btn {
+          flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+          background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent);
+          border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); cursor: pointer;
+          font-size: 0.65rem; padding: 0; line-height: 1;
+        }
+        .mass-song-audio-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+        .mass-song-audio-btn:disabled { opacity: .35; cursor: not-allowed; }
+        .mass-song-audio-btn.is-ready { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+        .mass-song-audio-btn.is-playing { animation: mw-play-pulse 1s ease infinite; }
+        .mass-song-plan-card__actions:not(:empty) { display: inline-flex; align-items: center; gap: 6px; }
         .mw-option[aria-checked="true"] { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
         .mw-option[aria-checked="true"] .mw-option__check { background: var(--accent); border-color: var(--accent); }
         .mw-option[aria-checked="true"] .mw-option__check::after { transform: scale(1); }
@@ -18326,33 +18657,33 @@
                     <article class="mw-rite" data-mw-rite>
                       <div class="mw-rite__head"><span class="mw-rite__title">Penitential Act</span></div>
                       <div class="mw-rite__body">
-                        <select id="flow-penitential-choice" data-mw-tunes data-vb-select="off" hidden>
+                        <select id="flow-penitential-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="penitential" hidden>
                           <option value="confiteor" selected>I Confess (Confiteor)</option>
                           <option value="form-b">Form B</option>
                           <option value="form-c">Form C (Invocations)</option>
                         </select>
-                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                        <p class="mw-rite__hint">Aa opens a one-page text preview from the slide(s).</p>
                       </div>
                     </article>
-                    <article class="mw-rite" data-mw-rite>
+                    <article class="mw-rite" data-mw-rite data-mw-media-slot="kyrie">
                       <div class="mw-rite__head"><span class="mw-rite__title">Kyrie</span></div>
                       <div class="mw-rite__body">
-                        <select id="flow-kyrie-choice" data-mw-tunes data-vb-select="off" hidden>
+                        <select id="flow-kyrie-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="kyrie" hidden>
                           <option value="english" selected>English</option>
                           <option value="greek">Greek (Kyrie eleison)</option>
                           <option value="latin">Latin</option>
                         </select>
-                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                        <p class="mw-rite__hint">Aa = slide text · Audio ▶ on each language · or pick Video and choose language</p>
                       </div>
                     </article>
-                    <article class="mw-rite" data-mw-rite>
+                    <article class="mw-rite" data-mw-rite data-mw-media-slot="gloria">
                       <div class="mw-rite__head"><span class="mw-rite__title">Gloria</span></div>
                       <div class="mw-rite__body">
-                        <select id="flow-gloria-choice" data-mw-tunes data-vb-select="off" hidden>
+                        <select id="flow-gloria-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="gloria" hidden>
                           <option value="english" selected>English</option>
                           <option value="latin">Latin</option>
                         </select>
-                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                        <p class="mw-rite__hint">Aa = slide text · Audio ▶ on each language · or pick Video and choose language</p>
                       </div>
                     </article>
                   </div>
@@ -18363,47 +18694,50 @@
                     <article class="mw-rite" data-mw-rite>
                       <div class="mw-rite__head"><span class="mw-rite__title">Creed</span></div>
                       <div class="mw-rite__body">
-                        <select id="flow-creed-choice" data-mw-tunes data-vb-select="off" hidden>
+                        <select id="flow-creed-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="creed" hidden>
                           <option value="nicene" selected>Nicene Creed</option>
                           <option value="apostles">Apostles' Creed</option>
                         </select>
-                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                        <p class="mw-rite__hint">Aa opens a one-page text preview from the slide(s).</p>
                       </div>
                     </article>
-                    <article class="mw-rite" data-mw-rite data-mw-placeholder>
+                    <article class="mw-rite" data-mw-rite data-mw-placeholder data-mw-media-slot="sanctus">
                       <div class="mw-rite__head"><span class="mw-rite__title">Sanctus</span></div>
                       <div class="mw-rite__body">
-                        <div class="mw-options" role="radiogroup" aria-label="Sanctus tune">
-                          <div class="mw-option" role="radio" aria-checked="false" tabindex="0">
-                            <span class="mw-option__check" aria-hidden="true"></span>
-                            <span class="mw-option__label">Holy, Holy, Holy (default)</span>
-                            <span class="mw-option__play" data-mw-play role="button" tabindex="0" aria-label="Preview tune — coming soon" title="Preview tune — coming soon">▶</span>
+                        <div class="mw-options" role="radiogroup" aria-label="Sanctus tune" data-mw-media-section="sanctus">
+                          <div class="mw-option" role="radio" aria-checked="false" tabindex="0" data-val="default" data-mw-media-key="sanctus::default">
+                            <div class="mw-option__row">
+                              <span class="mw-option__check" aria-hidden="true"></span>
+                              <span class="mw-option__label">Holy, Holy, Holy (default)</span>
+                              <span class="mw-option__text" data-mw-text-preview data-mw-media-key="sanctus::default" role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>
+                            </div>
+                            <div class="mw-option__media mw-media-row" data-mw-media-row="sanctus::default" data-mw-media-kind="audio"></div>
                           </div>
                         </div>
-                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                        <p class="mw-rite__hint">Aa = slide text · Audio ▶ on each language · or pick Video and choose language</p>
                       </div>
                     </article>
-                    <article class="mw-rite" data-mw-rite>
+                    <article class="mw-rite" data-mw-rite data-mw-media-slot="our_father">
                       <div class="mw-rite__head"><span class="mw-rite__title">Our Father</span></div>
                       <div class="mw-rite__body">
-                        <select id="flow-our-father-choice" data-mw-tunes data-vb-select="off" hidden>
+                        <select id="flow-our-father-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="our_father" hidden>
                           <option value="english" selected>English</option>
                           <option value="malay">Malay (Bapa Kami)</option>
                           <option value="tagalog">Tagalog (Ama Namin)</option>
                           <option value="visaya">Visaya (Amahan Namo)</option>
                           <option value="korean">Korean (주님의 기도)</option>
                         </select>
-                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                        <p class="mw-rite__hint">Aa = slide text · Audio ▶ on each language · or pick Video and choose language</p>
                       </div>
                     </article>
-                    <article class="mw-rite" data-mw-rite>
+                    <article class="mw-rite" data-mw-rite data-mw-media-slot="lamb_of_god">
                       <div class="mw-rite__head"><span class="mw-rite__title">Lamb of God</span></div>
                       <div class="mw-rite__body">
-                        <select id="flow-lamb-choice" data-mw-tunes data-vb-select="off" hidden>
+                        <select id="flow-lamb-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="lamb_of_god" hidden>
                           <option value="english" selected>English</option>
                           <option value="latin">Latin (Agnus Dei)</option>
                         </select>
-                        <p class="mw-rite__hint">Click play to preview each tune.</p>
+                        <p class="mw-rite__hint">Aa = slide text · Audio ▶ on each language · or pick Video and choose language</p>
                       </div>
                     </article>
                   </div>
@@ -18686,8 +19020,22 @@
         <div class="mw-modal" id="mw-preview-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-preview-title">
           <div class="mw-modal__card">
             <h3 class="mw-modal__title" id="mw-preview-title">Preview</h3>
+            <p class="mw-modal__audio-hint" id="mw-preview-audio-hint" hidden>Playing audio preview…</p>
+            <video class="mw-modal__video" id="mw-preview-video" controls playsinline hidden></video>
             <div class="mw-modal__text" id="mw-preview-text"></div>
             <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-preview-close">Close</button>
+          </div>
+        </div>
+        <div class="mw-modal" id="mw-media-pick-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-media-pick-title">
+          <div class="mw-modal__card" style="max-width:min(520px,94vw);">
+            <h3 class="mw-modal__title" id="mw-media-pick-title">Choose from Media library</h3>
+            <p class="mw-rite__hint" id="mw-media-pick-hint" style="margin:0 0 12px;">Search parish uploads.</p>
+            <input type="search" id="mw-media-pick-q" maxlength="120" placeholder="Search by name…" autocomplete="off" style="width:100%;margin-bottom:10px;" />
+            <ul class="mw-media-pick-list" id="mw-media-pick-list" aria-live="polite"></ul>
+            <div class="mw-modal__actions">
+              <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-clear">Clear link</button>
+              <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-media-pick-close">Close</button>
+            </div>
           </div>
         </div>
 
@@ -18698,6 +19046,17 @@
         function $(id) { return document.getElementById(id); }
         var flowPage = $('flow-page');
         if (!flowPage) return;
+        window.massRiteVideoMode = window.massRiteVideoMode || {};
+        window.massRiteVideoLang = window.massRiteVideoLang || {};
+        window.__riteVideoSyncFns = window.__riteVideoSyncFns || {};
+        window.registerRiteVideoSync = function (section, fn) {
+          if (section && typeof fn === 'function') window.__riteVideoSyncFns[section] = fn;
+        };
+        window.syncRiteVideoUi = function (section) {
+          var map = window.__riteVideoSyncFns || {};
+          if (section && map[section]) map[section]();
+          else Object.keys(map).forEach(function (k) { map[k](); });
+        };
         var STEP_META = {
           1: { title: 'Let’s Prepare Today’s Mass', sub: 'Pick a date and who’s celebrating.' },
           2: { title: 'Introductory Rites', sub: 'Set the Penitential Act, Kyrie, and Gloria.' },
@@ -18771,8 +19130,32 @@
           var o = s.options[s.selectedIndex];
           return (o && o.textContent) ? o.textContent.trim() : s.value;
         }
+        function riteVideoAsideLabel(section, selectId) {
+          var languageLabel = selText(selectId);
+          if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return languageLabel || '';
+          var lang = (window.massRiteVideoLang && window.massRiteVideoLang[section]) || '';
+          var label = '';
+          if (lang) {
+            var s = $(selectId);
+            if (s) {
+              Array.prototype.some.call(s.options, function (o) {
+                if (String(o.value).toLowerCase() === String(lang).toLowerCase()) {
+                  label = (o.textContent || '').trim();
+                  return true;
+                }
+                return false;
+              });
+            }
+            if (!label) label = lang;
+          }
+          if (!label) label = languageLabel || '';
+          return label ? ('Video · ' + label) : 'Video';
+        }
         function sanctusLabel() {
-          var c = flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"] .mw-option__label');
+          if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
+            return 'Video · Holy, Holy, Holy (default)';
+          }
+          var c = flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"]) .mw-option__label');
           return c ? c.textContent.trim() : '';
         }
         function asideRow(label, val) {
@@ -18807,13 +19190,13 @@
             if (gr && gr.textContent && gr.textContent.trim() !== '—') rows.push(asideRow('Gospel', gr.textContent.trim()));
           } else if (n === 2) {
             rows.push(asideRow('Penitential Act', selText('flow-penitential-choice')));
-            rows.push(asideRow('Kyrie', selText('flow-kyrie-choice')));
-            rows.push(asideRow('Gloria', selText('flow-gloria-choice')));
+            rows.push(asideRow('Kyrie', riteVideoAsideLabel('kyrie', 'flow-kyrie-choice')));
+            rows.push(asideRow('Gloria', riteVideoAsideLabel('gloria', 'flow-gloria-choice')));
           } else if (n === 4) {
             rows.push(asideRow('Creed', selText('flow-creed-choice')));
             rows.push(asideRow('Sanctus', sanctusLabel()));
-            rows.push(asideRow('Our Father', selText('flow-our-father-choice')));
-            rows.push(asideRow('Lamb of God', selText('flow-lamb-choice')));
+            rows.push(asideRow('Our Father', riteVideoAsideLabel('our_father', 'flow-our-father-choice')));
+            rows.push(asideRow('Lamb of God', riteVideoAsideLabel('lamb_of_god', 'flow-lamb-choice')));
           } else if (n === 6) {
             rows.push(asideRow('Mass date', fmtAsideDate($('mass-date') && $('mass-date').value)));
             var cdate = $('flow-collection-date');
@@ -18890,38 +19273,212 @@
           if (current < 7) showStep(current + 1);
         }
         function back() { if (current > 1) showStep(current - 1); }
-        function openPreview(title, text) {
+        function openPreview(title, text, opts) {
           var m = $('mw-preview-modal'); if (!m) return;
+          opts = opts || {};
           if ($('mw-preview-title')) $('mw-preview-title').textContent = title;
-          if ($('mw-preview-text')) $('mw-preview-text').textContent = text;
+          var vid = $('mw-preview-video');
+          if (vid) {
+            try { vid.pause(); } catch (e0) {}
+            if (opts.videoUrl) {
+              vid.hidden = false;
+              if (vid.getAttribute('src') !== opts.videoUrl) vid.setAttribute('src', opts.videoUrl);
+              var playVid = vid.play();
+              if (playVid && playVid.catch) playVid.catch(function () {});
+            } else {
+              vid.hidden = true;
+              vid.removeAttribute('src');
+              try { vid.load(); } catch (e1) {}
+            }
+          }
+          if ($('mw-preview-text')) {
+            $('mw-preview-text').textContent = text || '';
+            $('mw-preview-text').hidden = !!(opts.videoUrl && !text);
+          }
+          var hint = $('mw-preview-audio-hint');
+          if (hint) hint.hidden = !opts.audioPlaying;
           m.setAttribute('data-open', 'true'); m.setAttribute('aria-hidden', 'false');
         }
-        function closePreview() { var m = $('mw-preview-modal'); if (!m) return; m.setAttribute('data-open', 'false'); m.setAttribute('aria-hidden', 'true'); }
+        function closePreview() {
+          var m = $('mw-preview-modal'); if (!m) return;
+          m.setAttribute('data-open', 'false'); m.setAttribute('aria-hidden', 'true');
+          var hint = $('mw-preview-audio-hint');
+          if (hint) hint.hidden = true;
+          var vid = $('mw-preview-video');
+          if (vid) {
+            try { vid.pause(); } catch (e0) {}
+            vid.hidden = true;
+            vid.removeAttribute('src');
+            try { vid.load(); } catch (e1) {}
+          }
+        }
         function buildChoiceCards() {
           Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-tunes]'), function (sel) {
             if (sel.dataset.mwCards === '1') return; sel.dataset.mwCards = '1';
+            var section = sel.getAttribute('data-mw-media-section') || '';
+            var textOnly = section === 'penitential' || section === 'creed';
+            var mediaRite = section === 'kyrie' || section === 'gloria' || section === 'our_father' || section === 'lamb_of_god';
             var wrap = document.createElement('div'); wrap.className = 'mw-options'; wrap.setAttribute('role', 'radiogroup');
+            if (section) wrap.setAttribute('data-mw-media-section', section);
             var opts = Array.prototype.slice.call(sel.options).filter(function (o) { return o.value && !o.disabled; });
             sel.selectedIndex = -1;
-            function sync(val) { Array.prototype.forEach.call(wrap.children, function (c) { c.setAttribute('aria-checked', String(c.getAttribute('data-val') === val)); }); }
-            function pick(val) { sel.value = val; sel.dispatchEvent(new Event('change', { bubbles: true })); sync(val); mwAdvanceAfterPick(wrap); }
+            function escapeAttr(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+            function videoModeOn() {
+              return !!(window.massRiteVideoMode && window.massRiteVideoMode[section]);
+            }
+            function videoLang() {
+              var map = window.massRiteVideoLang || {};
+              return map[section] || (opts[0] && opts[0].value) || '';
+            }
+            function videoMediaKey(lang) {
+              return typeof window.massMediaKey === 'function'
+                ? window.massMediaKey(section, lang)
+                : (section + '::' + lang);
+            }
+            function syncVideoMediaRow() {
+              var videoCard = wrap.querySelector(':scope > .mw-option[data-val="__video"]');
+              if (!videoCard) return;
+              var langSel = videoCard.querySelector('[data-mw-video-lang-select]');
+              var lang = (langSel && langSel.value) || videoLang();
+              var row = videoCard.querySelector('[data-mw-media-row][data-mw-media-kind="video"]');
+              if (row && lang) row.setAttribute('data-mw-media-row', videoMediaKey(lang));
+            }
+            function sync() {
+              var onVideo = videoModeOn();
+              var lang = videoLang();
+              Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
+                var v = c.getAttribute('data-val');
+                if (v === '__video') {
+                  c.setAttribute('aria-checked', String(onVideo));
+                  var langSel = c.querySelector('[data-mw-video-lang-select]');
+                  if (langSel && lang && langSel.value !== lang) langSel.value = lang;
+                } else {
+                  c.setAttribute('aria-checked', String(!onVideo && sel.value === v));
+                }
+              });
+              syncVideoMediaRow();
+              if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+            }
+            function pickLang(val) {
+              if (window.massRiteVideoMode) window.massRiteVideoMode[section] = false;
+              sel.value = val;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              sync();
+              mwAdvanceAfterPick(wrap);
+              if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+            }
+            function pickVideo() {
+              if (!window.massRiteVideoMode) window.massRiteVideoMode = {};
+              if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
+              window.massRiteVideoMode[section] = true;
+              if (!window.massRiteVideoLang[section]) {
+                window.massRiteVideoLang[section] = (opts[0] && opts[0].value) || '';
+              }
+              if (!sel.value && opts[0]) sel.value = opts[0].value;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              sync();
+              mwAdvanceAfterPick(wrap);
+              if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+            }
+            function pickVideoLang(lang) {
+              if (!window.massRiteVideoMode) window.massRiteVideoMode = {};
+              if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
+              window.massRiteVideoMode[section] = true;
+              window.massRiteVideoLang[section] = lang;
+              if (!sel.value) sel.value = lang;
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              sync();
+              if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+            }
             opts.forEach(function (o) {
+              var mediaKey = section && typeof window.massMediaKey === 'function'
+                ? window.massMediaKey(section, o.value)
+                : (section ? (section + '::' + o.value) : '');
               var item = document.createElement('div'); item.className = 'mw-option';
               item.setAttribute('role', 'radio'); item.setAttribute('tabindex', '0'); item.setAttribute('data-val', o.value);
               item.setAttribute('aria-checked', 'false');
-              item.innerHTML = '<span class="mw-option__check" aria-hidden="true"></span><span class="mw-option__label"></span>' +
-                '<span class="mw-option__play" data-mw-play role="button" tabindex="0" aria-label="Preview tune — coming soon" title="Preview tune — coming soon">▶</span>';
+              if (mediaKey) item.setAttribute('data-mw-media-key', mediaKey);
+              var action = (textOnly || mediaRite || mediaKey)
+                ? ('<span class="mw-option__text" data-mw-text-preview role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>')
+                : '';
+              item.innerHTML =
+                '<div class="mw-option__row">' +
+                  '<span class="mw-option__check" aria-hidden="true"></span>' +
+                  '<span class="mw-option__label"></span>' +
+                  action +
+                '</div>' +
+                (mediaRite && mediaKey
+                  ? '<div class="mw-option__media mw-media-row" data-mw-media-row="' + escapeAttr(mediaKey) + '" data-mw-media-kind="audio"></div>'
+                  : '');
               item.querySelector('.mw-option__label').textContent = o.textContent;
-              var play = item.querySelector('.mw-option__play');
-              play.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); });
-              play.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); } });
-              item.addEventListener('click', function () { pick(o.value); });
-              item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(o.value); } });
+              var textBtn = item.querySelector('[data-mw-text-preview]');
+              if (textBtn && mediaKey) {
+                textBtn.setAttribute('data-mw-media-key', mediaKey);
+                textBtn.addEventListener('click', function (e) {
+                  e.stopPropagation(); e.preventDefault();
+                  if (typeof window.openMassRiteTextPreview === 'function') window.openMassRiteTextPreview(mediaKey);
+                });
+                textBtn.addEventListener('keydown', function (e) {
+                  if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); textBtn.click(); }
+                });
+              }
+              item.addEventListener('click', function (e) {
+                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media]')) return;
+                pickLang(o.value);
+              });
+              item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickLang(o.value); } });
               wrap.appendChild(item);
             });
+            if (mediaRite && opts.length) {
+              var videoCard = document.createElement('div');
+              videoCard.className = 'mw-option mw-option--video';
+              videoCard.setAttribute('role', 'radio');
+              videoCard.setAttribute('tabindex', '0');
+              videoCard.setAttribute('data-val', '__video');
+              videoCard.setAttribute('aria-checked', 'false');
+              var defaultLang = (opts[0] && opts[0].value) || '';
+              var optionHtml = opts.map(function (o) {
+                return '<option value="' + escapeAttr(o.value) + '">' + escapeAttr(o.textContent) + '</option>';
+              }).join('');
+              videoCard.innerHTML =
+                '<div class="mw-option__row">' +
+                  '<span class="mw-option__check" aria-hidden="true"></span>' +
+                  '<span class="mw-option__label">Video</span>' +
+                  '<select class="mw-video-lang-select" data-mw-video-lang-select data-vb-select="off" aria-label="Video language">' +
+                    optionHtml +
+                  '</select>' +
+                  '<div class="mw-option__media mw-media-row" data-mw-media-row="' + escapeAttr(videoMediaKey(defaultLang)) + '" data-mw-media-kind="video"></div>' +
+                '</div>';
+              var videoLangSel = videoCard.querySelector('[data-mw-video-lang-select]');
+              if (videoLangSel) {
+                videoLangSel.value = defaultLang;
+                videoLangSel.addEventListener('click', function (e) { e.stopPropagation(); });
+                videoLangSel.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+                videoLangSel.addEventListener('change', function (e) {
+                  e.stopPropagation();
+                  pickVideoLang(videoLangSel.value);
+                });
+              }
+              videoCard.addEventListener('click', function (e) {
+                if (e.target.closest('select, [data-mw-play-video], [data-mw-link-media]')) return;
+                pickVideo();
+              });
+              videoCard.addEventListener('keydown', function (e) {
+                if (e.target && e.target.tagName === 'SELECT') return;
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickVideo(); }
+              });
+              wrap.appendChild(videoCard);
+            }
             sel.style.display = 'none';
             sel.insertAdjacentElement('afterend', wrap);
-            sel.addEventListener('change', function () { sync(sel.value); });
+            sel.addEventListener('change', function () {
+              if (sel.value && sel.value !== '__video' && window.massRiteVideoMode && window.massRiteVideoMode[section]) {
+                /* language restore may clear video mode from draft restore separately */
+              }
+              sync();
+            });
+            if (typeof window.registerRiteVideoSync === 'function') window.registerRiteVideoSync(section, sync);
+            sync();
           });
         }
         function restartAnim(el) { if (!el) return; el.classList.remove('mw-step-anim'); void el.offsetWidth; el.classList.add('mw-step-anim'); }
@@ -18949,12 +19506,114 @@
           if (nb && !nb.hidden) mwReveal(nb);
         }
         function selVal(id) { var s = $(id); return !!(s && s.value); }
-        function sanctusPicked() { return !!flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]'); }
+        function sanctusPicked() {
+          if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) return true;
+          return !!flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"])');
+        }
+        function ensureSanctusVideoOption() {
+          var wrap = flowPage.querySelector('.mw-options[aria-label="Sanctus tune"]');
+          if (!wrap || wrap.querySelector('[data-val="__video"]')) return;
+          var section = 'sanctus';
+          function escapeAttr(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+          function syncVideoMediaRow() {
+            var videoCard = wrap.querySelector(':scope > .mw-option[data-val="__video"]');
+            if (!videoCard) return;
+            var langSel = videoCard.querySelector('[data-mw-video-lang-select]');
+            var lang = (langSel && langSel.value) || (window.massRiteVideoLang && window.massRiteVideoLang.sanctus) || 'default';
+            var row = videoCard.querySelector('[data-mw-media-row][data-mw-media-kind="video"]');
+            if (row) row.setAttribute('data-mw-media-row', 'sanctus::' + lang);
+          }
+          function sync() {
+            var onVideo = !!(window.massRiteVideoMode && window.massRiteVideoMode.sanctus);
+            Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
+              var v = c.getAttribute('data-val');
+              if (v === '__video') {
+                c.setAttribute('aria-checked', String(onVideo));
+                var langSel = c.querySelector('[data-mw-video-lang-select]');
+                var lang = (window.massRiteVideoLang && window.massRiteVideoLang.sanctus) || 'default';
+                if (langSel && langSel.value !== lang) langSel.value = lang;
+              } else if (onVideo) {
+                c.setAttribute('aria-checked', 'false');
+              }
+            });
+            syncVideoMediaRow();
+            if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+            refreshContinue();
+          }
+          function pickLang() {
+            if (window.massRiteVideoMode) window.massRiteVideoMode.sanctus = false;
+            Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
+              c.setAttribute('aria-checked', String(c.getAttribute('data-val') === 'default'));
+            });
+            sync();
+            mwAdvanceAfterPick(wrap);
+            if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+          }
+          function pickVideo() {
+            window.massRiteVideoMode = window.massRiteVideoMode || {};
+            window.massRiteVideoLang = window.massRiteVideoLang || {};
+            window.massRiteVideoMode.sanctus = true;
+            if (!window.massRiteVideoLang.sanctus) window.massRiteVideoLang.sanctus = 'default';
+            sync();
+            mwAdvanceAfterPick(wrap);
+            if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+          }
+          function pickVideoLang(lang) {
+            window.massRiteVideoMode = window.massRiteVideoMode || {};
+            window.massRiteVideoLang = window.massRiteVideoLang || {};
+            window.massRiteVideoMode.sanctus = true;
+            window.massRiteVideoLang.sanctus = lang || 'default';
+            sync();
+            if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+          }
+          var defaultOpt = wrap.querySelector(':scope > .mw-option[data-val="default"]');
+          if (defaultOpt && defaultOpt.dataset.mwSanctusLangBound !== '1') {
+            defaultOpt.dataset.mwSanctusLangBound = '1';
+            defaultOpt.addEventListener('click', function (e) {
+              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-link-media]')) return;
+              pickLang();
+            });
+          }
+          var videoCard = document.createElement('div');
+          videoCard.className = 'mw-option mw-option--video';
+          videoCard.setAttribute('role', 'radio');
+          videoCard.setAttribute('tabindex', '0');
+          videoCard.setAttribute('data-val', '__video');
+          videoCard.setAttribute('aria-checked', 'false');
+          videoCard.dataset.mwWired = '1';
+          var vKey = 'sanctus::default';
+          videoCard.innerHTML =
+            '<div class="mw-option__row">' +
+              '<span class="mw-option__check" aria-hidden="true"></span>' +
+              '<span class="mw-option__label">Video</span>' +
+              '<div class="mw-option__media mw-media-row" data-mw-media-row="' + escapeAttr(vKey) + '" data-mw-media-kind="video"></div>' +
+            '</div>';
+          videoCard.addEventListener('click', function (e) {
+            if (e.target.closest('[data-mw-play-video], [data-mw-link-media]')) return;
+            pickVideo();
+          });
+          videoCard.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickVideo(); }
+          });
+          wrap.appendChild(videoCard);
+          window.registerRiteVideoSync(section, sync);
+          sync();
+        }
         var STEP_DONE = {
           1: function () { var d = $('mass-date'); return !!(d && d.value); },
-          2: function () { return selVal('flow-penitential-choice') && selVal('flow-kyrie-choice') && selVal('flow-gloria-choice'); },
+          2: function () {
+            if (!selVal('flow-penitential-choice')) return false;
+            var kOk = selVal('flow-kyrie-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.kyrie);
+            var gOk = selVal('flow-gloria-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.gloria);
+            return kOk && gOk;
+          },
           3: function () { return readingsLoaded(); },
-          4: function () { return selVal('flow-creed-choice') && sanctusPicked() && selVal('flow-our-father-choice') && selVal('flow-lamb-choice'); }
+          4: function () {
+            if (!selVal('flow-creed-choice') || !sanctusPicked()) return false;
+            var oOk = selVal('flow-our-father-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.our_father);
+            var lOk = selVal('flow-lamb-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.lamb_of_god);
+            return oOk && lOk;
+          }
         };
         function stepReady(n) { return STEP_DONE[n] ? !!STEP_DONE[n]() : true; }
         function refreshContinue() {
@@ -18976,9 +19635,63 @@
           if ($('mw-back')) $('mw-back').addEventListener('click', back);
           if ($('mw-generate')) $('mw-generate').addEventListener('click', function () { var g = $('btn-generate-flow'); if (g) g.click(); });
           progItems.forEach(function (it) { it.addEventListener('click', function () { var s = parseInt(it.getAttribute('data-mw-go'), 10); if (s) showStep(s); }); });
-          Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-play]'), function (p) {
-            p.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); });
+          Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-text-preview]'), function (p) {
+            if (p.dataset.mwTextBound === '1') return;
+            p.dataset.mwTextBound = '1';
+            p.addEventListener('click', function (e) {
+              e.stopPropagation(); e.preventDefault();
+              var key = p.getAttribute('data-mw-media-key');
+              if (!key) {
+                var opt = p.closest('[data-mw-media-key]');
+                key = opt && opt.getAttribute('data-mw-media-key');
+              }
+              if (key && typeof window.openMassRiteTextPreview === 'function') window.openMassRiteTextPreview(key);
+            });
           });
+          if ($('mw-media-pick-close')) $('mw-media-pick-close').addEventListener('click', function () {
+            if (typeof window.closeMassMediaPickModal === 'function') window.closeMassMediaPickModal();
+          });
+          var mpm = $('mw-media-pick-modal');
+          if (mpm) mpm.addEventListener('click', function (e) {
+            if (e.target === mpm && typeof window.closeMassMediaPickModal === 'function') window.closeMassMediaPickModal();
+          });
+          if ($('mw-media-pick-clear')) $('mw-media-pick-clear').addEventListener('click', function () {
+            if (typeof window.clearMassMediaPickSelection === 'function') window.clearMassMediaPickSelection();
+          });
+          if ($('mw-media-pick-q')) $('mw-media-pick-q').addEventListener('input', function () {
+            if (typeof window.renderMassMediaPickList === 'function') window.renderMassMediaPickList();
+          });
+          flowPage.addEventListener('click', function (e) {
+            var chip = e.target.closest('[data-mw-link-media]');
+            if (chip && flowPage.contains(chip)) {
+              e.preventDefault();
+              e.stopPropagation();
+              var kind = chip.getAttribute('data-mw-link-media');
+              var slot = chip.getAttribute('data-mw-media-slot');
+              if (kind && slot && typeof window.openMassMediaPickModal === 'function') {
+                window.openMassMediaPickModal(kind, slot);
+              }
+              return;
+            }
+            var audioPlay = e.target.closest('[data-mw-play-audio]');
+            if (audioPlay && flowPage.contains(audioPlay)) {
+              e.preventDefault();
+              e.stopPropagation();
+              var aSlot = audioPlay.getAttribute('data-mw-media-slot');
+              if (aSlot && typeof window.playMassSectionAudio === 'function') window.playMassSectionAudio(aSlot, audioPlay);
+              return;
+            }
+            var videoPlay = e.target.closest('[data-mw-play-video]');
+            if (videoPlay && flowPage.contains(videoPlay)) {
+              e.preventDefault();
+              e.stopPropagation();
+              var vSlot = videoPlay.getAttribute('data-mw-media-slot');
+              if (vSlot && typeof window.playMassSectionVideo === 'function') window.playMassSectionVideo(vSlot, videoPlay);
+            }
+          });
+          if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+          window.openMwTextPreview = openPreview;
+          window.closeMwTextPreview = closePreview;
           Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-preview]'), function (b) {
             b.addEventListener('click', function () { openPreview(b.getAttribute('data-mw-preview-title') || 'Preview', b.getAttribute('data-mw-preview-text') || ''); });
           });
@@ -19002,17 +19715,23 @@
           document.addEventListener('mw:preview', function () { if (current === 7) fillReceipt(); refreshContinue(); });
           document.addEventListener('mw:aside-refresh', function () { if (current === 6) fillAside(6); });
           buildChoiceCards();
+          ensureSanctusVideoOption();
           Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-options[aria-label] .mw-option'), function (opt) {
-            if (opt.hasAttribute('data-val') || opt.dataset.mwWired === '1') return;
+            if (opt.getAttribute('data-val') === '__video' || opt.classList.contains('mw-option--video')) return;
+            if (opt.dataset.mwWired === '1' || opt.dataset.mwSanctusLangBound === '1') return;
+            if (opt.hasAttribute('data-val') && opt.closest('select[data-mw-tunes] + .mw-options')) return;
             opt.dataset.mwWired = '1';
             function pickStandalone() {
               var group = opt.closest('[role="radiogroup"]');
-              if (group) Array.prototype.forEach.call(group.querySelectorAll('.mw-option'), function (c) { c.setAttribute('aria-checked', 'false'); });
+              var section = group && group.getAttribute('data-mw-media-section');
+              if (section && window.massRiteVideoMode) window.massRiteVideoMode[section] = false;
+              if (group) Array.prototype.forEach.call(group.querySelectorAll(':scope > .mw-option'), function (c) { c.setAttribute('aria-checked', 'false'); });
               opt.setAttribute('aria-checked', 'true');
+              if (section && typeof window.syncRiteVideoUi === 'function') window.syncRiteVideoUi(section);
               refreshContinue();
               mwAdvanceAfterPick(opt);
             }
-            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-play]')) { e.preventDefault(); return; } pickStandalone(); });
+            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], select, .mw-video-lang-select')) { e.preventDefault(); return; } pickStandalone(); });
             opt.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickStandalone(); } });
           });
           flowPage.addEventListener('input', refreshContinue, true);
@@ -19066,6 +19785,22 @@
                             <strong id="radio-page-station-title">Live Radio</strong>
                             <span id="radio-page-channel-pos">—</span>
                           </div>
+                          <div class="radio-page-seek" id="radio-page-seek" hidden>
+                            <input
+                              type="range"
+                              class="radio-page-seek__range"
+                              id="radio-page-seek-range"
+                              min="0"
+                              max="1000"
+                              value="0"
+                              step="1"
+                              aria-label="Seek playback position"
+                            />
+                            <div class="radio-page-seek__times">
+                              <span id="radio-page-seek-current">0:00</span>
+                              <span id="radio-page-seek-duration">0:00</span>
+                            </div>
+                          </div>
                           <div class="radio-page-controls">
                             <button type="button" class="radio-page-controls__btn" id="radio-page-prev" aria-label="Previous station">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/></svg>
@@ -19092,7 +19827,7 @@
               <div class="media-hub-col media-hub-col--library" id="media-library-card">
                 <header class="media-hub-col__head">
                   <h3>Songs &amp; video library</h3>
-                  <p class="muted">Uploaded MP3 and MP4 files, grouped by type</p>
+                  <p class="muted">Shared with everyone in your parish — uploaded MP3 and MP4 files</p>
                 </header>
                 <div class="media-hub-col__body">
                   <div class="media-library" id="media-library">
@@ -20680,7 +21415,10 @@
       let order = getMobileNavOrder().filter((route) => {
         const tabId = typeof routeToNavTabId === "function" ? routeToNavTabId(route) : null;
         if (tabId === "notifications") return true;
-        if (tabId && typeof isNavTabVisible === "function" && !isNavTabVisible(tabId) && !MOBILE_NAV_LOCKED.has(route)) {
+        if (MOBILE_NAV_LOCKED.has(route)) return true;
+        // Pinned Extras routes stay in the bar even if optional desktop tabs are off
+        if (typeof isDrawerNavRoute === "function" && isDrawerNavRoute(route)) return true;
+        if (tabId && typeof isNavTabVisible === "function" && !isNavTabVisible(tabId)) {
           return false;
         }
         return true;
@@ -21322,6 +22060,11 @@
       document.querySelectorAll("[data-nav-tab]").forEach((el) => {
         // Mobile top-nav order owns visibility for bar links
         if (isMobileChromeLayout() && el.closest && el.closest("#app-bottom-nav")) return;
+        // Extras / drawer links stay reachable on mobile even when optional tabs are off
+        if (isMobileChromeLayout() && el.closest && el.closest("#app-mobile-menu-pages, #app-more-sheet")) {
+          el.hidden = false;
+          return;
+        }
         el.hidden = !isNavTabVisible(el.dataset.navTab);
       });
       const sidebarNav = document.querySelector(".app-sidebar__nav");
@@ -21345,10 +22088,20 @@
       if (typeof applyMobileNavOrder === "function") applyMobileNavOrder();
     }
 
+    function shouldBlockHiddenNavRoute(route) {
+      const r = normalizeRoute(route || "");
+      const tabId = routeToNavTabId(r);
+      if (!tabId || isNavTabVisible(tabId) || isSettingsRoute(r)) return false;
+      // On mobile, Extras is the access path for drawer pages — never bounce those to Home
+      if (isMobileChromeLayout() && typeof isDrawerNavRoute === "function" && isDrawerNavRoute(r)) {
+        return false;
+      }
+      return true;
+    }
+
     function redirectIfHiddenNavRoute() {
       const route = normalizeRoute(window.location.pathname);
-      const tabId = routeToNavTabId(route);
-      if (tabId && !isNavTabVisible(tabId)) {
+      if (shouldBlockHiddenNavRoute(route)) {
         showRoute("/home", true);
         return true;
       }
@@ -21394,10 +22147,659 @@
     let libraryTrackIndex = -1;
     let libraryActiveItem = null;
     let libraryPlayObjectUrl = null;
+    let librarySeekDragging = false;
+
+    const MASS_SECTION_VIDEO_SLOTS = [
+      "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god",
+      "entrance", "offertory", "communion_1", "communion_2", "recessional",
+    ];
+    const MASS_SECTION_VIDEO_SLOT_SET = new Set(MASS_SECTION_VIDEO_SLOTS);
+    const MASS_RITE_OPTION_SECTIONS = new Set([
+      "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god", "penitential", "creed",
+    ]);
+    const MASS_RITE_VIDEO_MODE_SECTIONS = new Set([
+      "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god",
+    ]);
+    window.massRiteVideoMode = window.massRiteVideoMode || {};
+    window.massRiteVideoLang = window.massRiteVideoLang || {};
+    window.__riteVideoSyncFns = window.__riteVideoSyncFns || {};
+    window.registerRiteVideoSync = function (section, fn) {
+      if (section && typeof fn === "function") window.__riteVideoSyncFns[section] = fn;
+    };
+    function syncRiteVideoUi(section) {
+      var map = window.__riteVideoSyncFns || {};
+      if (section && map[section]) map[section]();
+      else Object.keys(map).forEach((k) => map[k]());
+    }
+    window.syncRiteVideoUi = syncRiteVideoUi;
+    const MASS_SECTION_MEDIA_LABELS = {
+      kyrie: "Kyrie",
+      gloria: "Gloria",
+      sanctus: "Sanctus",
+      our_father: "Our Father",
+      lamb_of_god: "Lamb of God",
+      penitential: "Penitential Act",
+      creed: "Creed",
+      entrance: "Entrance",
+      offertory: "Offertory",
+      communion_1: "Communion 1",
+      communion_2: "Communion 2",
+      recessional: "Recessional",
+    };
+    const MASS_RITE_OPTION_LABELS = {
+      "kyrie::english": "Kyrie · English",
+      "kyrie::greek": "Kyrie · Greek",
+      "kyrie::latin": "Kyrie · Latin",
+      "gloria::english": "Gloria · English",
+      "gloria::latin": "Gloria · Latin",
+      "sanctus::default": "Sanctus · Holy, Holy, Holy",
+      "our_father::english": "Our Father · English",
+      "our_father::malay": "Our Father · Malay",
+      "our_father::tagalog": "Our Father · Tagalog",
+      "our_father::visaya": "Our Father · Visaya",
+      "our_father::korean": "Our Father · Korean",
+      "lamb_of_god::english": "Lamb of God · English",
+      "lamb_of_god::latin": "Lamb of God · Latin",
+      "penitential::confiteor": "Penitential Act · Confiteor",
+      "penitential::form-b": "Penitential Act · Form B",
+      "penitential::form-c": "Penitential Act · Form C",
+      "creed::nicene": "Creed · Nicene",
+      "creed::apostles": "Creed · Apostles'",
+    };
+    const MASS_RITE_OPTION_PREVIEW_TEXT = {
+      "kyrie::english": "Lord, have mercy.\nChrist, have mercy.\nLord, have mercy.",
+      "kyrie::greek": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
+      "kyrie::latin": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
+      "gloria::english": "Glory to God in the highest,\nand on earth peace to people of good will.\nWe praise you, we bless you, we adore you,\nwe glorify you, we give you thanks\nfor your great glory,\nLord God, heavenly King, O God, almighty Father.\n\nLord Jesus Christ, Only Begotten Son,\nLord God, Lamb of God, Son of the Father,\nyou take away the sins of the world, have mercy on us;\nyou take away the sins of the world, receive our prayer;\nyou are seated at the right hand of the Father, have mercy on us.\n\nFor you alone are the Holy One,\nyou alone are the Lord,\nyou alone are the Most High,\nJesus Christ,\nwith the Holy Spirit,\nin the glory of God the Father.\nAmen.",
+      "gloria::latin": "Gloria in excelsis Deo\net in terra pax hominibus bonae voluntatis.\nLaudamus te, benedicimus te, adoramus te,\nglorificamus te, gratias agimus tibi\npropter magnam gloriam tuam,\nDomine Deus, Rex caelestis, Deus Pater omnipotens.\n\nDomine Fili unigenite, Iesu Christe,\nDomine Deus, Agnus Dei, Filius Patris,\nqui tollis peccata mundi, miserere nobis;\nqui tollis peccata mundi, suscipe deprecationem nostram.\nQui sedes ad dexteram Patris, miserere nobis.\n\nQuoniam tu solus Sanctus, tu solus Dominus,\ntu solus Altissimus, Iesu Christe,\ncum Sancto Spiritu: in gloria Dei Patris.\nAmen.",
+      "sanctus::default": "Holy, Holy, Holy Lord God of hosts.\nHeaven and earth are full of your glory.\nHosanna in the highest.\nBlessed is he who comes in the name of the Lord.\nHosanna in the highest.",
+      "our_father::english": "Our Father, who art in heaven,\nhallowed be thy name;\nthy kingdom come,\nthy will be done,\non earth as it is in heaven.\nGive us this day our daily bread;\nand forgive us our trespasses,\nas we forgive those who trespass against us;\nand lead us not into temptation,\nbut deliver us from evil.",
+      "our_father::malay": "Bapa kami yang di syurga,\ndikuduskanlah nama-Mu,\ndatanglah kerajaan-Mu,\njadilah kehendak-Mu,\ndi atas bumi seperti di dalam syurga.\nBerilah kami rezeki pada hari ini,\ndan ampunilah kesalahan kami,\nseperti kami mengampuni orang yang bersalah kepada kami.\nDan janganlah masukkan kami ke dalam pencubaan,\ntetapi lepaskanlah kami daripada yang jahat.",
+      "our_father::tagalog": "Ama namin, sumasalangit ka,\nsambahin ang ngalan mo.\nMapasaamin ang kaharian mo.\nSundin ang loob mo,\ndito sa lupa para nang sa langit.\nBigyan mo kami ngayon ng aming kakanin sa araw-araw.\nAt patawarin mo kami sa aming mga sala,\npara nang pagpapatawad namin sa nagkakasala sa amin.\nAt huwag mo kaming ipahintulot sa tukso,\nat iadya mo kami sa lahat ng masama.",
+      "our_father::visaya": "Amahan namo nga anaa sa mga langit,\npagdaygon ang imong ngalan.\nUmabot kanamo ang imong gingharian.\nMatuman ang imong pagbuot,\ndinhi sa yuta maingon sa langit.\nAng kalan-on namo sa matag adlaw, ihatag kanamo karong adlawa.\nUg pasayloa kami sa among mga sala,\ningon nga nagapasaylo kami sa mga nakasala kanamo.\nUg dili mo kami itugyan sa mga panulay,\nhinonoa luwasa kami sa dautan.",
+      "our_father::korean": "하늘에 계신 우리 아버지,\n아버지의 이름이 거룩히 빛나시며\n아버지의 나라가 오시며\n아버지의 뜻이 하늘에서와 같이 땅에서도 이루어지소서.\n오늘 저희에게 일용할 양식을 주시고\n저희에게 잘못한 이를 저희가 용서하오니\n저희 죄를 용서하시고\n저희를 유혹에 빠지지 않게 하시고\n악에서 구하소서.",
+      "lamb_of_god::english": "Lamb of God,\nyou take away the sins of the world,\nhave mercy on us.\nLamb of God,\nyou take away the sins of the world,\nhave mercy on us.\nLamb of God,\nyou take away the sins of the world,\ngrant us peace.",
+      "lamb_of_god::latin": "Agnus Dei,\nqui tollis peccata mundi,\nmiserere nobis.\nAgnus Dei,\nqui tollis peccata mundi,\nmiserere nobis.\nAgnus Dei,\nqui tollis peccata mundi,\ndona nobis pacem.",
+      "penitential::confiteor": "I confess to almighty God\nand to you, my brothers and sisters,\nthat I have greatly sinned,\nin my thoughts and in my words,\nin what I have done and in what I have failed to do,\nthrough my fault, through my fault,\nthrough my most grievous fault;\ntherefore I ask blessed Mary ever-Virgin,\nall the Angels and Saints,\nand you, my brothers and sisters,\nto pray for me to the Lord our God.",
+      "penitential::form-b": "Have mercy on us, O Lord.\nFor we have sinned against you.\nShow us, O Lord, your mercy.\nAnd grant us your salvation.",
+      "penitential::form-c": "You were sent to heal the contrite of heart:\nLord, have mercy.\nYou came to call sinners:\nChrist, have mercy.\nYou are seated at the right hand of the Father to intercede for us:\nLord, have mercy.",
+      "creed::nicene": "I believe in one God,\nthe Father almighty,\nmaker of heaven and earth,\nof all things visible and invisible…\n\n(Full Nicene Creed appears on the Mass slides.)",
+      "creed::apostles": "I believe in God,\nthe Father almighty,\nCreator of heaven and earth,\nand in Jesus Christ, his only Son, our Lord…\n\n(Full Apostles' Creed appears on the Mass slides.)",
+    };
+    let massSectionMedia = { audio: {}, video: {} };
+    let massSectionAudioEl = null;
+    let massSectionAudioPlayingSlot = "";
+    let massSectionMediaObjectUrl = null;
+    let massMediaPickState = { kind: "", slot: "" };
+
+    function revokeMassSectionMediaObjectUrl() {
+      if (massSectionMediaObjectUrl) {
+        URL.revokeObjectURL(massSectionMediaObjectUrl);
+        massSectionMediaObjectUrl = null;
+      }
+    }
+
+    async function resolveMassSectionMediaUrl(url) {
+      if (!url) return "";
+      if (typeof isPrivateFileUrl === "function" && isPrivateFileUrl(url) && typeof authorizedFetch === "function") {
+        const res = await authorizedFetch(url);
+        if (!res.ok) throw new Error("Could not load media.");
+        const blob = await res.blob();
+        revokeMassSectionMediaObjectUrl();
+        massSectionMediaObjectUrl = URL.createObjectURL(blob);
+        return massSectionMediaObjectUrl;
+      }
+      return url;
+    }
+
+    function massMediaKey(section, option) {
+      const sec = String(section || "").trim().toLowerCase();
+      const opt = String(option || "").trim().toLowerCase();
+      if (!sec) return "";
+      return opt ? (sec + "::" + opt) : sec;
+    }
+
+    function parseMassMediaKey(key) {
+      const raw = String(key || "").trim();
+      const idx = raw.indexOf("::");
+      if (idx < 0) return { section: raw.toLowerCase(), option: "" };
+      return {
+        section: raw.slice(0, idx).toLowerCase(),
+        option: raw.slice(idx + 2).toLowerCase(),
+      };
+    }
+
+    function massMediaKeyAllowsVideo(key) {
+      const parsed = parseMassMediaKey(key);
+      if (!MASS_SECTION_VIDEO_SLOT_SET.has(parsed.section)) return false;
+      if (MASS_RITE_OPTION_SECTIONS.has(parsed.section) && !parsed.option) return false;
+      return true;
+    }
+
+    function selectedRiteMediaOption(section) {
+      if (section === "sanctus") {
+        if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
+          return (window.massRiteVideoLang && window.massRiteVideoLang.sanctus) || "default";
+        }
+        const opt = document.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"])');
+        return (opt && (opt.getAttribute("data-val") || "default")) || "default";
+      }
+      const idMap = {
+        kyrie: "flow-kyrie-choice",
+        gloria: "flow-gloria-choice",
+        our_father: "flow-our-father-choice",
+        lamb_of_god: "flow-lamb-choice",
+        penitential: "flow-penitential-choice",
+        creed: "flow-creed-choice",
+      };
+      const el = $(idMap[section]);
+      return el && el.value ? String(el.value).trim().toLowerCase() : "";
+    }
+
+    function resolveVideoMediaKey(section) {
+      if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+        if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return "";
+        const opt = (window.massRiteVideoLang && window.massRiteVideoLang[section]) || selectedRiteMediaOption(section);
+        return opt ? massMediaKey(section, opt) : "";
+      }
+      if (MASS_RITE_OPTION_SECTIONS.has(section)) {
+        return "";
+      }
+      return section;
+    }
+
+    function normalizeMassMediaItem(item) {
+      if (!item || typeof item !== "object") return null;
+      const basename = String(item.basename || "").trim();
+      if (!basename) return null;
+      return {
+        basename: basename,
+        display_name: String(item.display_name || basename).trim() || basename,
+        url: String(item.url || "").trim(),
+      };
+    }
+
+    function getMassSectionMedia(kind, slot) {
+      const bucket = massSectionMedia[kind === "video" ? "video" : "audio"];
+      return bucket && bucket[slot] ? bucket[slot] : null;
+    }
+
+    function setMassSectionMedia(kind, slot, item) {
+      const key = kind === "video" ? "video" : "audio";
+      if (key === "video" && !massMediaKeyAllowsVideo(slot)) return;
+      if (!massSectionMedia[key]) massSectionMedia[key] = {};
+      const norm = normalizeMassMediaItem(item);
+      if (norm) massSectionMedia[key][slot] = norm;
+      else delete massSectionMedia[key][slot];
+      refreshMassSectionMediaUi();
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+    }
+
+    function serializeMassSectionMedia() {
+      return JSON.parse(JSON.stringify(massSectionMedia || { audio: {}, video: {} }));
+    }
+
+    function applyMassSectionMedia(data) {
+      const next = { audio: {}, video: {} };
+      if (data && typeof data === "object") {
+        ["audio", "video"].forEach((kind) => {
+          const src = data[kind];
+          if (!src || typeof src !== "object") return;
+          Object.keys(src).forEach((slot) => {
+            const norm = normalizeMassMediaItem(src[slot]);
+            if (!norm) return;
+            if (kind === "video" && !massMediaKeyAllowsVideo(slot) && !MASS_SECTION_VIDEO_SLOT_SET.has(slot)) return;
+            // Keep legacy section-only rite keys for migrate-on-resolve.
+            next[kind][slot] = norm;
+          });
+        });
+      }
+      massSectionMedia = next;
+      refreshMassSectionMediaUi();
+    }
+
+    function resetMassSectionMedia() {
+      stopMassSectionAudio();
+      massSectionMedia = { audio: {}, video: {} };
+      window.massRiteVideoMode = {};
+      window.massRiteVideoLang = {};
+      if (typeof syncRiteVideoUi === "function") syncRiteVideoUi();
+      refreshMassSectionMediaUi();
+    }
+
+    function serializeRiteVideoState() {
+      return {
+        mode: JSON.parse(JSON.stringify(window.massRiteVideoMode || {})),
+        lang: JSON.parse(JSON.stringify(window.massRiteVideoLang || {})),
+      };
+    }
+
+    function applyRiteVideoState(data) {
+      window.massRiteVideoMode = {};
+      window.massRiteVideoLang = {};
+      if (data && typeof data === "object") {
+        const mode = data.mode || data.riteVideoMode || {};
+        const lang = data.lang || data.riteVideoLang || {};
+        if (mode && typeof mode === "object") {
+          Object.keys(mode).forEach((section) => {
+            if (mode[section] && MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+              window.massRiteVideoMode[section] = true;
+            }
+          });
+        }
+        if (lang && typeof lang === "object") {
+          Object.keys(lang).forEach((section) => {
+            const val = String(lang[section] || "").trim().toLowerCase();
+            if (val && MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+              window.massRiteVideoLang[section] = val;
+            }
+          });
+        }
+      }
+      if (typeof syncRiteVideoUi === "function") syncRiteVideoUi();
+    }
+
+    function buildVideoReplacementsPayload() {
+      const out = {};
+      MASS_SECTION_VIDEO_SLOTS.forEach((section) => {
+        if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section) && !(window.massRiteVideoMode && window.massRiteVideoMode[section])) {
+          return;
+        }
+        const key = resolveVideoMediaKey(section);
+        let item = key ? getMassSectionMedia("video", key) : null;
+        if (!item && !MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+          item = getMassSectionMedia("video", section);
+        }
+        if (item && item.basename && /\.mp4$/i.test(item.basename)) {
+          out[section] = item.basename;
+        }
+      });
+      return Object.keys(out).length ? out : null;
+    }
+
+    function massMediaDisplayLabel(key) {
+      if (MASS_RITE_OPTION_LABELS[key]) return MASS_RITE_OPTION_LABELS[key];
+      const parsed = parseMassMediaKey(key);
+      const base = MASS_SECTION_MEDIA_LABELS[parsed.section] || parsed.section;
+      return parsed.option ? (base + " · " + parsed.option) : base;
+    }
+
+    function stripMassPreviewMarkers(text) {
+      return String(text || "")
+        .replace(/<<[APD]>>/g, "")
+        .replace(/\r\n/g, "\n")
+        .replace(/[ \t]+\n/g, "\n")
+        .trim();
+    }
+
+    const riteSlidePreviewCache = {};
+
+    async function fetchRiteSlidePreview(section, option) {
+      const sec = String(section || "").trim().toLowerCase();
+      const opt = String(option || "").trim().toLowerCase() || "default";
+      const cacheKey = sec + "::" + opt;
+      if (riteSlidePreviewCache[cacheKey]) return riteSlidePreviewCache[cacheKey];
+      const qs = "section=" + encodeURIComponent(sec) + "&option=" + encodeURIComponent(opt);
+      const res = await fetch("/api/rite-preview-text?" + qs);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error((data && data.detail) || "Could not load slide text.");
+      }
+      riteSlidePreviewCache[cacheKey] = data;
+      return data;
+    }
+
+    function getMassMediaPreviewText(key) {
+      if (MASS_RITE_OPTION_PREVIEW_TEXT[key]) return MASS_RITE_OPTION_PREVIEW_TEXT[key];
+      const parsed = parseMassMediaKey(key);
+      if (MASS_SECTION_VIDEO_SLOT_SET.has(parsed.section) && !parsed.option) {
+        const id = selectedLyricsSongs && selectedLyricsSongs[parsed.section];
+        if (!id) return "";
+        let row = massPlanAllSongs && massPlanAllSongs.find((s) => String(s.id) === String(id));
+        if (!row && typeof rebuildMassPlanSongPool === "function") {
+          rebuildMassPlanSongPool();
+          row = massPlanAllSongs && massPlanAllSongs.find((s) => String(s.id) === String(id));
+        }
+        const lyrics = row && (row.lyrics || row.lyric_text || row.text || "");
+        return stripMassPreviewMarkers(lyrics);
+      }
+      return "";
+    }
+
+    function formatRiteSlidesForPreview(slides) {
+      const pages = Array.isArray(slides) ? slides.filter(Boolean) : [];
+      if (!pages.length) return "";
+      if (pages.length === 1) return pages[0];
+      return pages.map((page, i) => "— Slide " + (i + 1) + " —\n" + page).join("\n\n");
+    }
+
+    async function openMassRiteTextPreview(key) {
+      const parsed = parseMassMediaKey(key);
+      const title = massMediaDisplayLabel(key) || "Text preview";
+      try {
+        const data = await fetchRiteSlidePreview(parsed.section, parsed.option || "default");
+        const text = formatRiteSlidesForPreview(data.slides) || data.text || "";
+        const count = data.slide_count || (data.slides && data.slides.length) || 0;
+        const modalTitle = count > 1 ? (title + " · " + count + " slides") : title;
+        if (typeof window.openMwTextPreview === "function") {
+          window.openMwTextPreview(modalTitle, text, {});
+        }
+      } catch (_e) {
+        const fallback = getMassMediaPreviewText(key);
+        if (fallback && typeof window.openMwTextPreview === "function") {
+          window.openMwTextPreview(title, fallback, {});
+          return;
+        }
+        if (typeof notify === "function") notify("Could not load slide text for this option.", "error");
+      }
+    }
+
+    function massMediaChipHtml(kind, slot) {
+      const item = getMassSectionMedia(kind, slot);
+      const on = !!item;
+      const label = kind === "video" ? "Video" : "Audio";
+      const name = on ? (item.display_name || item.basename) : "Link…";
+      const playAttr = kind === "video" ? "data-mw-play-video" : "data-mw-play-audio";
+      return (
+        "<div class=\"mw-media-group\">" +
+          "<button type=\"button\" class=\"mw-media-chip mw-media-chip--sa" + (on ? " is-on" : "") + "\" " +
+            "data-mw-link-media=\"" + escapeHtml(kind) + "\" data-mw-media-slot=\"" + escapeHtml(slot) + "\" " +
+            "title=\"" + escapeHtml(on ? (label + ": " + name) : ("Link " + label.toLowerCase() + " from Media library")) + "\">" +
+            "<span>" + escapeHtml(label) + "</span>" +
+            (on ? "<span class=\"mw-media-chip__name\">" + escapeHtml(name) + "</span>" : "") +
+          "</button>" +
+          "<button type=\"button\" class=\"mw-media-play" + (on ? " is-ready" : "") + "\" " + playAttr + " " +
+            "data-mw-media-slot=\"" + escapeHtml(slot) + "\" " +
+            (on ? "" : "disabled ") +
+            "aria-label=\"" + escapeHtml(kind === "video" ? "Play video preview" : "Play audio preview") + "\" " +
+            "title=\"" + escapeHtml(on ? ("Play " + label.toLowerCase()) : ("Link " + label.toLowerCase() + " first")) + "\">▶</button>" +
+        "</div>"
+      );
+    }
+
+    function massSongMediaRowHtml(slotKey) {
+      if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) {
+        return (
+          "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
+            "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" +
+              (getMassSectionMedia("audio", slotKey) ? " is-on" : "") + "\" " +
+              "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\">" +
+              "Audio <span class=\"mass-song-media-btn__label\">" +
+                escapeHtml(getMassSectionMedia("audio", slotKey)
+                  ? (getMassSectionMedia("audio", slotKey).display_name || getMassSectionMedia("audio", slotKey).basename)
+                  : "Link…") +
+              "</span></button>" +
+          "</div>"
+        );
+      }
+      const audio = getMassSectionMedia("audio", slotKey);
+      const video = getMassSectionMedia("video", slotKey);
+      return (
+        "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
+          "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (audio ? " is-on" : "") + "\" " +
+            "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\">" +
+            "Audio <span class=\"mass-song-media-btn__label\">" +
+              escapeHtml(audio ? (audio.display_name || audio.basename) : "Link…") +
+            "</span></button>" +
+          "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (video ? " is-on" : "") + "\" " +
+            "data-mw-link-media=\"video\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+            "title=\"Replace lyric slides with one embedded video slide\">" +
+            "Video slide <span class=\"mass-song-media-btn__label\">" +
+              escapeHtml(video ? (video.display_name || video.basename) : "Link…") +
+            "</span></button>" +
+        "</div>"
+      );
+    }
+
+    function refreshMassSectionMediaUi() {
+      document.querySelectorAll("[data-mw-media-row]").forEach((row) => {
+        const slot = row.getAttribute("data-mw-media-row");
+        if (!slot) return;
+        const kindAttr = (row.getAttribute("data-mw-media-kind") || "").toLowerCase();
+        if (kindAttr === "audio") {
+          row.innerHTML = massMediaChipHtml("audio", slot);
+          return;
+        }
+        if (kindAttr === "video") {
+          row.innerHTML = massMediaKeyAllowsVideo(slot) ? massMediaChipHtml("video", slot) : "";
+          return;
+        }
+        const allowVideo = massMediaKeyAllowsVideo(slot);
+        row.innerHTML = massMediaChipHtml("audio", slot) + (allowVideo ? massMediaChipHtml("video", slot) : "");
+      });
+      document.querySelectorAll("[data-mass-media-row]").forEach((row) => {
+        const slot = row.getAttribute("data-mass-media-row");
+        if (!slot) return;
+        const parent = row.parentNode;
+        const html = massSongMediaRowHtml(slot);
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        const next = tmp.firstElementChild;
+        if (next && parent) parent.replaceChild(next, row);
+      });
+      document.querySelectorAll("[data-mw-play-audio]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot");
+        const has = !!(key && getMassSectionMedia("audio", key));
+        play.disabled = !has;
+        play.classList.toggle("is-ready", has);
+        play.classList.toggle("is-playing", !!(key && massSectionAudioPlayingSlot === key));
+      });
+      document.querySelectorAll("[data-mw-play-video]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot");
+        const has = !!(key && getMassSectionMedia("video", key));
+        play.disabled = !has;
+        play.classList.toggle("is-ready", has);
+      });
+      document.querySelectorAll(".mass-song-audio-btn[data-mass-song-audio]").forEach((btn) => {
+        const slot = btn.getAttribute("data-mass-song-audio");
+        const hasAudio = !!(slot && getMassSectionMedia("audio", slot));
+        const hasText = !!(slot && getMassMediaPreviewText(slot));
+        btn.disabled = !(hasAudio || hasText);
+        btn.classList.toggle("is-ready", hasAudio);
+        btn.classList.toggle("is-playing", !!(slot && massSectionAudioPlayingSlot === slot));
+        btn.title = hasAudio
+          ? "Play audio preview"
+          : (hasText ? "Open lyrics text preview" : "Link an MP3 from Media to preview");
+      });
+    }
+
+    function stopMassSectionAudio() {
+      if (massSectionAudioEl) {
+        try { massSectionAudioEl.pause(); } catch (_e) {}
+        try { massSectionAudioEl.removeAttribute("src"); massSectionAudioEl.load(); } catch (_e2) {}
+        massSectionAudioEl = null;
+      }
+      massSectionAudioPlayingSlot = "";
+      revokeMassSectionMediaObjectUrl();
+      document.querySelectorAll("[data-mw-play-audio].is-playing, .mass-song-audio-btn.is-playing").forEach((el) => {
+        el.classList.remove("is-playing");
+      });
+      const hint = $("mw-preview-audio-hint");
+      if (hint) hint.hidden = true;
+    }
+
+    async function playMassSectionAudio(slot, playEl) {
+      const item = getMassSectionMedia("audio", slot);
+      if (!item || !item.url) {
+        if (typeof notify === "function") {
+          notify(
+            document.body.classList.contains("is-superadmin")
+              ? "Link an MP3 from Media for this option first."
+              : "No audio preview is linked for this option yet.",
+            "warn"
+          );
+        }
+        return;
+      }
+      if (massSectionAudioPlayingSlot === slot && massSectionAudioEl && !massSectionAudioEl.paused) {
+        stopMassSectionAudio();
+        return;
+      }
+      stopMassSectionAudio();
+      try {
+        const playUrl = await resolveMassSectionMediaUrl(item.url);
+        massSectionAudioEl = new Audio(playUrl);
+        massSectionAudioEl.preload = "auto";
+        massSectionAudioPlayingSlot = slot;
+        if (playEl) playEl.classList.add("is-playing");
+        refreshMassSectionMediaUi();
+        const clearPlaying = () => {
+          if (massSectionAudioPlayingSlot === slot) {
+            massSectionAudioPlayingSlot = "";
+            refreshMassSectionMediaUi();
+          }
+        };
+        massSectionAudioEl.addEventListener("ended", clearPlaying);
+        massSectionAudioEl.addEventListener("pause", () => {
+          if (massSectionAudioEl && massSectionAudioEl.ended) clearPlaying();
+        });
+        massSectionAudioEl.addEventListener("error", () => {
+          clearPlaying();
+          if (typeof notify === "function") notify("Could not play that audio preview.", "error");
+        });
+        await massSectionAudioEl.play();
+      } catch (_e) {
+        stopMassSectionAudio();
+        if (typeof notify === "function") notify("Could not play that audio preview.", "error");
+      }
+    }
+
+    async function playMassSectionVideo(slot, playEl) {
+      const item = getMassSectionMedia("video", slot);
+      if (!item || !item.url) {
+        if (typeof notify === "function") {
+          notify(
+            document.body.classList.contains("is-superadmin")
+              ? "Link an MP4 from Media for this option first."
+              : "No video is linked for this option yet.",
+            "warn"
+          );
+        }
+        return;
+      }
+      stopMassSectionAudio();
+      const title = massMediaDisplayLabel(slot) || "Video preview";
+      try {
+        const playUrl = await resolveMassSectionMediaUrl(item.url);
+        if (typeof window.openMwTextPreview === "function") {
+          window.openMwTextPreview(title, "", { videoUrl: playUrl });
+        }
+      } catch (_e) {
+        if (typeof notify === "function") notify("Could not play that video preview.", "error");
+      }
+      void playEl;
+    }
+
+    function closeMassMediaPickModal() {
+      const m = $("mw-media-pick-modal");
+      if (!m) return;
+      m.setAttribute("data-open", "false");
+      m.setAttribute("aria-hidden", "true");
+      massMediaPickState = { kind: "", slot: "" };
+    }
+
+    function clearMassMediaPickSelection() {
+      if (!massMediaPickState.kind || !massMediaPickState.slot) return;
+      setMassSectionMedia(massMediaPickState.kind, massMediaPickState.slot, null);
+      closeMassMediaPickModal();
+      if (typeof notify === "function") notify("Cleared media link.", "ok");
+    }
+
+    function renderMassMediaPickList() {
+      const list = $("mw-media-pick-list");
+      if (!list) return;
+      const kind = massMediaPickState.kind === "video" ? "video" : "music";
+      const q = (($("mw-media-pick-q") && $("mw-media-pick-q").value) || "").trim().toLowerCase();
+      const rows = (kind === "video" ? savedMediaLibrary.video : savedMediaLibrary.music) || [];
+      const filtered = rows.filter((item) => {
+        if (!q) return true;
+        const hay = ((item.display_name || "") + " " + (item.basename || "")).toLowerCase();
+        return hay.indexOf(q) !== -1;
+      });
+      if (!filtered.length) {
+        list.innerHTML = "<li class=\"muted\">No " + (kind === "video" ? "videos" : "audio files") +
+          " found. Upload them in the Media tab first.</li>";
+        return;
+      }
+      list.innerHTML = filtered.map((item) => {
+        const title = item.display_name || item.basename || "Media";
+        return (
+          "<li><button type=\"button\" data-pick-basename=\"" + escapeHtml(item.basename) + "\">" +
+            "<strong>" + escapeHtml(title) + "</strong>" +
+            "<div class=\"muted\">" + escapeHtml(item.basename || "") + "</div>" +
+          "</button></li>"
+        );
+      }).join("");
+      list.querySelectorAll("[data-pick-basename]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const basename = btn.getAttribute("data-pick-basename");
+          const row = rows.find((r) => r.basename === basename);
+          if (!row) return;
+          const pickKind = massMediaPickState.kind;
+          const pickSlot = massMediaPickState.slot;
+          setMassSectionMedia(pickKind, pickSlot, row);
+          closeMassMediaPickModal();
+          if (typeof notify === "function") {
+            notify(
+              pickKind === "video"
+                ? "Video will replace lyric slides when this option is selected."
+                : "Audio preview linked to this option.",
+              "ok"
+            );
+          }
+        });
+      });
+    }
+
+    async function openMassMediaPickModal(kind, slot) {
+      if (!document.body.classList.contains("is-superadmin") &&
+          !(churchMembershipState && churchMembershipState.is_superadmin)) {
+        if (typeof notify === "function") notify("Only superadmins can link Media files here.", "warn");
+        return;
+      }
+      if (kind === "video" && !massMediaKeyAllowsVideo(slot)) return;
+      massMediaPickState = { kind: kind === "video" ? "video" : "audio", slot: String(slot || "") };
+      const title = $("mw-media-pick-title");
+      const hint = $("mw-media-pick-hint");
+      const label = massMediaDisplayLabel(slot);
+      if (title) {
+        title.textContent = kind === "video"
+          ? "Choose video for " + label
+          : "Choose audio for " + label;
+      }
+      if (hint) {
+        hint.textContent = kind === "video"
+          ? "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time."
+          : "This MP3 plays from the Audio ▶ on this option — it is not embedded in the deck.";
+      }
+      if ($("mw-media-pick-q")) $("mw-media-pick-q").value = "";
+      try {
+        await ensureSavedMediaLibrary(true);
+      } catch (_e) {
+        if (typeof notify === "function") notify("Could not load Media library.", "error");
+        return;
+      }
+      renderMassMediaPickList();
+      const m = $("mw-media-pick-modal");
+      if (!m) return;
+      m.setAttribute("data-open", "true");
+      m.setAttribute("aria-hidden", "false");
+      if ($("mw-media-pick-q")) $("mw-media-pick-q").focus();
+    }
+
+    window.massMediaKey = massMediaKey;
+    window.playMassSectionAudio = playMassSectionAudio;
+    window.playMassSectionVideo = playMassSectionVideo;
+    window.openMassRiteTextPreview = openMassRiteTextPreview;
+    window.refreshMassSectionMediaUi = refreshMassSectionMediaUi;
+    window.openMassMediaPickModal = openMassMediaPickModal;
+    window.closeMassMediaPickModal = closeMassMediaPickModal;
+    window.clearMassMediaPickSelection = clearMassMediaPickSelection;
+    window.renderMassMediaPickList = renderMassMediaPickList;
 
     const MEDIA_THUMB_PLAY_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><polygon points=\"8 5 19 12 8 19 8 5\"/></svg>";
-    const MEDIA_THUMB_MUSIC_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>";
     const MEDIA_THUMB_VIDEO_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\"/><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/></svg>";
+    const MEDIA_DOWNLOAD_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/></svg>";
 
     function getEwtRadioHlsUrl(station) {
       if (!station) return "";
@@ -21469,22 +22871,101 @@
     }
 
     function markActiveLibraryThumb(item) {
-      document.querySelectorAll(".media-thumb.is-active").forEach((el) => el.classList.remove("is-active"));
+      document.querySelectorAll(".media-thumb.is-active, .media-track.is-active").forEach((el) => el.classList.remove("is-active"));
       if (!item) return;
-      const sel = ".media-thumb[data-media-kind=\"" + item.kind + "\"][data-media-name=\"" + CSS.escape(item.basename) + "\"]";
-      const thumb = document.querySelector(sel);
+      const sel = "[data-media-kind=\"" + item.kind + "\"][data-media-name=\"" + CSS.escape(item.basename) + "\"]";
+      const thumb = document.querySelector(".media-thumb" + sel + ", .media-track" + sel);
       if (thumb) thumb.classList.add("is-active");
+    }
+
+    function formatMediaClock(seconds) {
+      const total = Math.max(0, Math.floor(Number(seconds) || 0));
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      if (h > 0) {
+        return h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+      }
+      return m + ":" + String(s).padStart(2, "0");
+    }
+
+    function getActiveLibraryMediaEl() {
+      if (mediaHubPlayerMode !== "library" || !libraryActiveItem) return null;
+      if (libraryActiveItem.kind === "video") {
+        const video = $("radio-page-video");
+        return video && video.dataset.libraryMode ? video : null;
+      }
+      const audio = $("live-radio-audio");
+      return audio && audio.dataset.libraryMode ? audio : null;
+    }
+
+    function setLibrarySeekVisible(show) {
+      const seek = $("radio-page-seek");
+      if (!seek) return;
+      seek.hidden = !show;
+    }
+
+    function syncLibrarySeekUi(force) {
+      const seek = $("radio-page-seek");
+      const range = $("radio-page-seek-range");
+      const curEl = $("radio-page-seek-current");
+      const durEl = $("radio-page-seek-duration");
+      if (!seek || !range) return;
+      const media = getActiveLibraryMediaEl();
+      if (!media) {
+        setLibrarySeekVisible(false);
+        range.value = "0";
+        range.style.setProperty("--seek-progress", "0%");
+        if (curEl) curEl.textContent = "0:00";
+        if (durEl) durEl.textContent = "0:00";
+        return;
+      }
+      setLibrarySeekVisible(true);
+      const duration = Number.isFinite(media.duration) && media.duration > 0 ? media.duration : 0;
+      const current = Number.isFinite(media.currentTime) ? media.currentTime : 0;
+      if (durEl) durEl.textContent = duration ? formatMediaClock(duration) : "0:00";
+      if (curEl) curEl.textContent = formatMediaClock(current);
+      if (!librarySeekDragging || force) {
+        const pct = duration > 0 ? Math.min(1, Math.max(0, current / duration)) : 0;
+        range.value = String(Math.round(pct * 1000));
+        range.style.setProperty("--seek-progress", (pct * 100).toFixed(2) + "%");
+      }
+      range.disabled = duration <= 0;
+    }
+
+    function seekLibraryMediaFromRange() {
+      const range = $("radio-page-seek-range");
+      const media = getActiveLibraryMediaEl();
+      if (!range || !media) return;
+      const duration = Number.isFinite(media.duration) && media.duration > 0 ? media.duration : 0;
+      if (duration <= 0) return;
+      const pct = Math.min(1, Math.max(0, (Number(range.value) || 0) / 1000));
+      try {
+        media.currentTime = pct * duration;
+      } catch (_e) { /* ignore */ }
+      range.style.setProperty("--seek-progress", (pct * 100).toFixed(2) + "%");
+      const curEl = $("radio-page-seek-current");
+      if (curEl) curEl.textContent = formatMediaClock(media.currentTime);
     }
 
     function syncLibraryControllerUi() {
       const item = libraryActiveItem;
       const pageTitle = $("radio-page-station-title");
       const pageArt = $("radio-page-art");
+      const pagePos = $("radio-page-channel-pos");
       const title = item ? (item.display_name || item.basename || "Media") : "Media";
       if (pageTitle) pageTitle.textContent = title;
       if (pageArt && item) {
         pageArt.alt = title + " artwork";
       }
+      if (pagePos) {
+        if (libraryPlaylist.length && libraryTrackIndex >= 0) {
+          pagePos.textContent = (libraryTrackIndex + 1) + " / " + libraryPlaylist.length;
+        } else {
+          pagePos.textContent = "—";
+        }
+      }
+      syncLibrarySeekUi();
     }
 
     function libraryVideoPipSupported(video) {
@@ -21561,6 +23042,9 @@
         pipBtn.setAttribute("aria-pressed", "false");
         pipBtn.setAttribute("aria-label", "Picture in picture");
       }
+      librarySeekDragging = false;
+      setLibrarySeekVisible(false);
+      syncLibrarySeekUi(true);
     }
 
     function stopLibraryPlayback() {
@@ -21630,6 +23114,7 @@
           video.dataset.libraryMode = "1";
           await video.play();
           setLiveRadioPlayingUi(true);
+          syncLibrarySeekUi(true);
         } else {
           const video = $("radio-page-video");
           if (video) {
@@ -21643,6 +23128,7 @@
           audio.dataset.libraryMode = "1";
           await audio.play();
           setLiveRadioPlayingUi(true);
+          syncLibrarySeekUi(true);
         }
       } catch (e) {
         console.error("Library playback failed:", e);
@@ -22054,10 +23540,48 @@
           stepLiveRadioChannel(1);
         });
       }
+      const seekRange = $("radio-page-seek-range");
+      if (seekRange) {
+        const beginSeekDrag = () => {
+          if (mediaHubPlayerMode !== "library") return;
+          librarySeekDragging = true;
+        };
+        const endSeekDrag = () => {
+          if (!librarySeekDragging) return;
+          seekLibraryMediaFromRange();
+          librarySeekDragging = false;
+          syncLibrarySeekUi(true);
+        };
+        seekRange.addEventListener("pointerdown", beginSeekDrag);
+        seekRange.addEventListener("mousedown", beginSeekDrag);
+        seekRange.addEventListener("touchstart", beginSeekDrag, { passive: true });
+        seekRange.addEventListener("input", () => {
+          if (mediaHubPlayerMode !== "library") return;
+          librarySeekDragging = true;
+          const pct = Math.min(1, Math.max(0, (Number(seekRange.value) || 0) / 1000));
+          seekRange.style.setProperty("--seek-progress", (pct * 100).toFixed(2) + "%");
+          const media = getActiveLibraryMediaEl();
+          const curEl = $("radio-page-seek-current");
+          if (curEl && media && Number.isFinite(media.duration) && media.duration > 0) {
+            curEl.textContent = formatMediaClock(pct * media.duration);
+          }
+        });
+        seekRange.addEventListener("change", endSeekDrag);
+        seekRange.addEventListener("pointerup", endSeekDrag);
+        seekRange.addEventListener("mouseup", endSeekDrag);
+        seekRange.addEventListener("touchend", endSeekDrag);
+        seekRange.addEventListener("keyup", (e) => {
+          if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Home" || e.key === "End") {
+            seekLibraryMediaFromRange();
+            syncLibrarySeekUi(true);
+          }
+        });
+      }
       if (audio) {
         audio.addEventListener("playing", () => {
           if (audio.dataset.libraryMode) mediaHubPlayerMode = "library";
           setLiveRadioPlayingUi(true);
+          if (audio.dataset.libraryMode) syncLibrarySeekUi();
         });
         audio.addEventListener("pause", () => {
           if (mediaHubPlayerMode === "library" && audio.dataset.libraryMode) setLiveRadioPlayingUi(false);
@@ -22066,6 +23590,16 @@
         audio.addEventListener("ended", () => {
           if (mediaHubPlayerMode === "library" && audio.dataset.libraryMode) setLiveRadioPlayingUi(false);
           else setLiveRadioPlayingUi(false);
+          if (audio.dataset.libraryMode) syncLibrarySeekUi(true);
+        });
+        audio.addEventListener("timeupdate", () => {
+          if (audio.dataset.libraryMode) syncLibrarySeekUi();
+        });
+        audio.addEventListener("loadedmetadata", () => {
+          if (audio.dataset.libraryMode) syncLibrarySeekUi(true);
+        });
+        audio.addEventListener("durationchange", () => {
+          if (audio.dataset.libraryMode) syncLibrarySeekUi(true);
         });
         audio.addEventListener("error", () => {
           setLiveRadioPlayingUi(false);
@@ -22089,6 +23623,7 @@
         pageVideo.addEventListener("playing", () => {
           mediaHubPlayerMode = "library";
           setLiveRadioPlayingUi(true);
+          syncLibrarySeekUi();
         });
         pageVideo.addEventListener("pause", () => {
           if (mediaHubPlayerMode === "library") setLiveRadioPlayingUi(false);
@@ -22098,7 +23633,17 @@
             exitLibraryVideoPiP(pageVideo);
             syncLibraryVideoPiPUi(pageVideo);
             setLiveRadioPlayingUi(false);
+            syncLibrarySeekUi(true);
           }
+        });
+        pageVideo.addEventListener("timeupdate", () => {
+          if (pageVideo.dataset.libraryMode) syncLibrarySeekUi();
+        });
+        pageVideo.addEventListener("loadedmetadata", () => {
+          if (pageVideo.dataset.libraryMode) syncLibrarySeekUi(true);
+        });
+        pageVideo.addEventListener("durationchange", () => {
+          if (pageVideo.dataset.libraryMode) syncLibrarySeekUi(true);
         });
         pageVideo.addEventListener("enterpictureinpicture", () => {
           syncLibraryVideoPiPUi(pageVideo);
@@ -23576,9 +25121,10 @@
     }
 
     function massBuilderSanctusPicked() {
+      if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) return true;
       const flowPage = $("flow-page");
       if (!flowPage) return false;
-      return !!flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]');
+      return !!flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"])');
     }
 
     function restoreMassBuilderPosterPicker(targetId, value) {
@@ -23681,6 +25227,8 @@
         hymnLayout: hymnLayout ? hymnLayout.value : "dual",
         readingsLoaded: !!(flowPreviewData && flowPreviewData.__previewDate),
         previewDate: flowPreviewData && flowPreviewData.__previewDate ? flowPreviewData.__previewDate : "",
+        sectionMedia: typeof serializeMassSectionMedia === "function" ? serializeMassSectionMedia() : { audio: {}, video: {} },
+        riteVideo: typeof serializeRiteVideoState === "function" ? serializeRiteVideoState() : { mode: {}, lang: {} },
       };
     }
 
@@ -23754,6 +25302,7 @@
     function runHomeMassStartNew() {
       massDraftSkipRestore = true;
       clearMassBuilderDraft();
+      if (typeof resetMassSectionMedia === "function") resetMassSectionMedia();
       closeHomeMassNewModal();
       showRoute("/mass/builder");
       requestAnimationFrame(() => {
@@ -23822,8 +25371,11 @@
             id === "flow-psalm-refrain" || id === "flow-gospel-sentence") return;
         if (Object.prototype.hasOwnProperty.call(f, id)) setMassBuilderFieldValue(id, f[id]);
       });
-      if (draft.sanctusPicked) {
-        const opt = document.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option');
+      if (typeof applyRiteVideoState === "function") {
+        applyRiteVideoState(draft.riteVideo || { mode: {}, lang: {} });
+      }
+      if (draft.sanctusPicked && !(window.massRiteVideoMode && window.massRiteVideoMode.sanctus)) {
+        const opt = document.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[data-val="default"]');
         if (opt) opt.click();
       }
       {
@@ -23869,6 +25421,14 @@
         if (typeof applyGospelMoodDefaultsToSongPlan === "function") applyGospelMoodDefaultsToSongPlan();
       }
       if (typeof renderMassSongPlan === "function") renderMassSongPlan();
+      if (draft.sectionMedia && typeof applyMassSectionMedia === "function") {
+        applyMassSectionMedia(draft.sectionMedia);
+      } else if (typeof refreshMassSectionMediaUi === "function") {
+        refreshMassSectionMediaUi();
+      }
+      if (typeof applyRiteVideoState === "function") {
+        applyRiteVideoState(draft.riteVideo || { mode: {}, lang: {} });
+      }
       if (window.MassWizard && window.MassWizard.setStep) {
         window.MassWizard.setStep(draft.step || 1);
       }
@@ -24104,8 +25664,7 @@
       if (from === "/mass/builder" && r !== "/mass/builder") {
         autoSaveMassBuilderDraftOnLeave();
       }
-      const tabId = routeToNavTabId(r);
-      if (tabId && !isNavTabVisible(tabId) && !isSettingsRoute(r)) {
+      if (shouldBlockHiddenNavRoute(r)) {
         notify("That section is hidden. Turn it back on in Settings → Appearance.", "info");
         r = "/home";
       }
@@ -24136,7 +25695,7 @@
       });
     }
 
-    document.querySelectorAll(".app-sidebar__link[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .settings-sidebar-link, .settings-modal-tab, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
+    document.querySelectorAll(".app-sidebar__link[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .app-mobile-menu__link[data-route], .settings-sidebar-link, .settings-modal-tab, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
 
     const appSidebar = document.getElementById("app-sidebar");
     if (appSidebar && appSidebar.dataset.spaBound !== "1") {
@@ -27433,6 +28992,9 @@
         hymn_typography: buildHymnTypographyPayload(),
         hymn_lyric_overrides: buildHymnLyricOverridesPayload(),
       });
+      const videoReplacements = buildVideoReplacementsPayload();
+      if (videoReplacements) body.video_replacements = videoReplacements;
+      else delete body.video_replacements;
       try {
         const data = await postJSON("/api/regenerate-pptx", body);
         if (statusEl) {
@@ -27468,8 +29030,10 @@
       "</svg>";
 
     function massSongPreviewButtonHtml(slotKey) {
-      void slotKey;
-      return "";
+      return (
+        "<button type=\"button\" class=\"mass-song-audio-btn\" data-mass-song-audio=\"" +
+          escapeHtml(slotKey) + "\" aria-label=\"Play audio preview\" title=\"Play audio preview\" disabled>▶</button>"
+      );
     }
 
     function massSongClearButtonHtml(slotKey) {
@@ -27630,19 +29194,17 @@
     }
 
     function updateMassSongPreviewButton(slotKey) {
-      const btn = document.querySelector(".mass-song-preview-btn[data-preview-slot=\"" + slotKey + "\"]");
+      const btn = document.querySelector(".mass-song-audio-btn[data-mass-song-audio=\"" + slotKey + "\"]");
       if (!btn) return;
-      const id = selectedLyricsSongs[slotKey] || "";
-      let row = id ? massPlanAllSongs.find((s) => String(s.id) === String(id)) : null;
-      if (id && !row) {
-        rebuildMassPlanSongPool();
-        row = massPlanAllSongs.find((s) => String(s.id) === String(id));
-      }
-      const ok = !!(id && row && row.has_lyrics);
-      btn.classList.toggle("is-disabled", !ok);
-      btn.disabled = !ok;
-      btn.setAttribute("aria-disabled", ok ? "false" : "true");
-      btn.title = ok ? "Preview hymn slides" : "Lyrics unavailable";
+      const hasAudio = !!getMassSectionMedia("audio", slotKey);
+      const hasText = !!getMassMediaPreviewText(slotKey);
+      btn.disabled = !(hasAudio || hasText);
+      btn.classList.toggle("is-ready", hasAudio);
+      btn.classList.toggle("is-playing", massSectionAudioPlayingSlot === slotKey);
+      btn.title = hasAudio
+        ? "Play audio + text preview"
+        : (hasText ? "Open lyrics text preview" : "Link an MP3 from Media to preview");
+      btn.setAttribute("aria-disabled", (hasAudio || hasText) ? "false" : "true");
     }
 
     function resolveMassSongSection(slotKey, row) {
@@ -27940,6 +29502,7 @@
                 "<div class=\"mass-song-alert-host\" id=\"" + prefix + "-alert-" + escapeHtml(slot.key) + "\"></div>" +
                 "<div class=\"vb-dropdown-panel mass-song-results\" id=\"" + prefix + "-res-" + escapeHtml(slot.key) + "\" data-slot-key=\"" + escapeHtml(slot.key) + "\" role=\"listbox\" hidden></div>" +
               "</div>" +
+              massSongMediaRowHtml(slot.key) +
             "</div>" +
           "</div>" +
         "</article>"
@@ -29793,6 +31356,21 @@
           if (slotKey) openMassSongPreview(slotKey);
           return;
         }
+        const audioBtn = e.target.closest(".mass-song-audio-btn[data-mass-song-audio]");
+        if (audioBtn && root.contains(audioBtn)) {
+          e.preventDefault();
+          const slotKey = audioBtn.getAttribute("data-mass-song-audio");
+          if (slotKey) playMassSectionAudio(slotKey, audioBtn);
+          return;
+        }
+        const mediaLink = e.target.closest("[data-mw-link-media]");
+        if (mediaLink && root.contains(mediaLink)) {
+          e.preventDefault();
+          const kind = mediaLink.getAttribute("data-mw-link-media");
+          const slot = mediaLink.getAttribute("data-mw-media-slot");
+          if (kind && slot) openMassMediaPickModal(kind, slot);
+          return;
+        }
         const del = e.target.closest("[data-mass-song-delete]");
         if (del && root.contains(del)) {
           const key = del.dataset.massSongDelete;
@@ -30752,6 +32330,7 @@
       const canFull = !!churchMembershipState.can_use_full_app;
       document.body.classList.toggle("is-superadmin", sa);
       document.body.classList.toggle("is-limited-member", !canFull);
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
 
       const flowPage = $("flow-page");
       if (flowPage) flowPage.classList.toggle("is-readonly", !canFull);
@@ -37199,6 +38778,8 @@
         body.hymn_lyrics_layout = readHymnLyricsLayout();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
         body.hymn_layout_overrides = buildHymnLayoutOverridesPayload();
+        const videoReplacements = buildVideoReplacementsPayload();
+        if (videoReplacements) body.video_replacements = videoReplacements;
         const logoCb = $("flow-include-church-logo");
         const nameCb = $("flow-include-church-name");
         body.include_church_logo = logoCb ? logoCb.checked : false;
@@ -37236,6 +38817,7 @@
           include_church_logo: body.include_church_logo,
           include_church_name: body.include_church_name,
           include_footer: body.include_footer,
+          video_replacements: body.video_replacements || null,
         });
         const prev = localStorage.getItem(dupKey);
         if (prev && prev === fp) {
@@ -38880,13 +40462,17 @@
     }
 
     function getComposerEditorLyricsText() {
+      const raw = String(($("lyrics-input") && $("lyrics-input").value) || "");
+      // Never write blocks back into #lyrics-input while reading — that runs on every
+      // raw keystroke via updateParishLyricsControls and made deletes appear to do nothing.
       try {
         if (lyricBlocks.length) {
+          if (raw !== lyricsRawSnapshot) return raw;
           flushLyricBlocksFromDom();
-          syncStructuredEditorToInputPanel();
+          return serializedLyrics() || raw;
         }
       } catch (_e) { /* keep textarea value */ }
-      return String(($("lyrics-input") && $("lyrics-input").value) || "");
+      return raw;
     }
 
     function editorDiffersFromCatalogLyrics() {
@@ -39940,22 +41526,45 @@
       }
     }
 
-    function mediaLibraryThumbHtml(kind, item) {
+    function mediaLibraryDownloadFilename(item, kind) {
+      const basename = String((item && item.basename) || "").trim();
+      const display = String((item && item.display_name) || "").trim();
+      const ext = kind === "video" ? ".mp4" : ".mp3";
+      if (display) {
+        const lower = display.toLowerCase();
+        if (lower.endsWith(".mp3") || lower.endsWith(".mp4")) return display;
+        return display + ext;
+      }
+      return basename || ("media" + ext);
+    }
+
+    function mediaLibraryItemHtml(kind, item) {
       const title = String(item.display_name || item.basename || "");
-      const icon = kind === "video" ? MEDIA_THUMB_VIDEO_SVG : MEDIA_THUMB_MUSIC_SVG;
-      const surfaceClass = kind === "video" ? "media-thumb__surface is-video" : "media-thumb__surface is-music";
-      const surfaceInner = kind === "video"
-        ? "<video class=\"media-thumb__art\" muted playsinline preload=\"metadata\" data-media-url=\"" + escapeHtml(item.url || "") + "\" aria-hidden=\"true\"></video>" +
-          "<span class=\"media-thumb__fallback\" aria-hidden=\"true\">" + icon + "</span>"
-        : icon;
+      if (kind === "music") {
+        return (
+          "<li class=\"media-track\" data-media-kind=\"music\" data-media-name=\"" + escapeHtml(item.basename) + "\">" +
+            "<button type=\"button\" class=\"media-track__hit\" data-play-media=\"music\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Play " + escapeHtml(title) + "\">" +
+              "<span class=\"media-track__name\" title=\"" + escapeHtml(title) + "\">" + escapeHtml(title) + "</span>" +
+            "</button>" +
+            "<div class=\"media-track__actions\">" +
+              "<button type=\"button\" class=\"media-track__download\" data-download-media=\"music\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Download " + escapeHtml(title) + "\" title=\"Download\">" + MEDIA_DOWNLOAD_SVG + "</button>" +
+              "<button type=\"button\" class=\"media-track__remove\" data-del-media=\"music\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Delete " + escapeHtml(title) + "\" title=\"Delete\">×</button>" +
+            "</div>" +
+          "</li>"
+        );
+      }
       return (
-        "<li class=\"media-thumb\" data-media-kind=\"" + escapeHtml(kind) + "\" data-media-name=\"" + escapeHtml(item.basename) + "\">" +
+        "<li class=\"media-thumb\" data-media-kind=\"video\" data-media-name=\"" + escapeHtml(item.basename) + "\">" +
           "<div class=\"media-thumb__frame\">" +
-            "<button type=\"button\" class=\"media-thumb__hit\" data-play-media=\"" + escapeHtml(kind) + "\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Play " + escapeHtml(title) + "\">" +
-              "<span class=\"" + surfaceClass + "\">" + surfaceInner + "</span>" +
+            "<button type=\"button\" class=\"media-thumb__hit\" data-play-media=\"video\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Play " + escapeHtml(title) + "\">" +
+              "<span class=\"media-thumb__surface is-video\">" +
+                "<video class=\"media-thumb__art\" muted playsinline preload=\"metadata\" data-media-url=\"" + escapeHtml(item.url || "") + "\" aria-hidden=\"true\"></video>" +
+                "<span class=\"media-thumb__fallback\" aria-hidden=\"true\">" + MEDIA_THUMB_VIDEO_SVG + "</span>" +
+              "</span>" +
               "<span class=\"media-thumb__play-overlay\">" + MEDIA_THUMB_PLAY_SVG + "</span>" +
             "</button>" +
-            "<button type=\"button\" class=\"media-thumb__remove\" data-del-media=\"" + escapeHtml(kind) + "\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Delete " + escapeHtml(title) + "\">×</button>" +
+            "<button type=\"button\" class=\"media-thumb__download\" data-download-media=\"video\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Download " + escapeHtml(title) + "\" title=\"Download\">" + MEDIA_DOWNLOAD_SVG + "</button>" +
+            "<button type=\"button\" class=\"media-thumb__remove\" data-del-media=\"video\" data-media-name=\"" + escapeHtml(item.basename) + "\" aria-label=\"Delete " + escapeHtml(title) + "\" title=\"Delete\">×</button>" +
           "</div>" +
           "<p class=\"media-thumb__title\" title=\"" + escapeHtml(title) + "\">" + escapeHtml(title) + "</p>" +
         "</li>"
@@ -40103,20 +41712,29 @@
       return null;
     }
 
+    async function ensureSavedMediaLibrary(force) {
+      if (!force && ((savedMediaLibrary.music && savedMediaLibrary.music.length) || (savedMediaLibrary.video && savedMediaLibrary.video.length))) {
+        return savedMediaLibrary;
+      }
+      const res = await fetchSavedMedia();
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.detail || "Could not load media.");
+      const musicRows = Array.isArray(data.music) ? data.music : [];
+      const videoRows = Array.isArray(data.video) ? data.video : [];
+      savedMediaLibrary = { music: musicRows, video: videoRows };
+      rebuildLibraryPlaylist();
+      return savedMediaLibrary;
+    }
+
     async function refreshSavedMedia() {
       const musicList = $("media-library-music-list");
       const videoList = $("media-library-video-list");
       const musicCount = $("media-library-music-count");
       const videoCount = $("media-library-video-count");
-      if (!musicList && !videoList) return;
       try {
-        const res = await fetchSavedMedia();
-        const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.detail || "Could not load media.");
-        const musicRows = Array.isArray(data.music) ? data.music : [];
-        const videoRows = Array.isArray(data.video) ? data.video : [];
-        savedMediaLibrary = { music: musicRows, video: videoRows };
-        rebuildLibraryPlaylist();
+        await ensureSavedMediaLibrary(true);
+        const musicRows = savedMediaLibrary.music || [];
+        const videoRows = savedMediaLibrary.video || [];
         if (libraryActiveItem) {
           const stillThere = libraryPlaylist.some(
             (row) => row.basename === libraryActiveItem.basename && row.kind === libraryActiveItem.kind
@@ -40130,18 +41748,17 @@
         if (videoCount) videoCount.textContent = String(videoRows.length);
         if (musicList) {
           musicList.innerHTML = musicRows.length
-            ? musicRows.map((item) => mediaLibraryThumbHtml("music", item)).join("")
+            ? musicRows.map((item) => mediaLibraryItemHtml("music", item)).join("")
             : "<li class=\"muted media-library-empty\">No songs uploaded yet.</li>";
         }
         if (videoList) {
           videoList.innerHTML = videoRows.length
-            ? videoRows.map((item) => mediaLibraryThumbHtml("video", item)).join("")
+            ? videoRows.map((item) => mediaLibraryItemHtml("video", item)).join("")
             : "<li class=\"muted media-library-empty\">No videos uploaded yet.</li>";
           if (videoRows.length) hydrateVideoMediaThumbs(videoList);
         }
         pruneMediaThumbObjectUrls(new Set(
-          musicRows.map((item) => mediaThumbCacheKey("music", item.basename))
-            .concat(videoRows.map((item) => mediaThumbCacheKey("video", item.basename)))
+          videoRows.map((item) => mediaThumbCacheKey("video", item.basename))
         ));
         if (libraryActiveItem) markActiveLibraryThumb(libraryActiveItem);
       } catch (_e) {
@@ -40376,7 +41993,32 @@
       if (confirmBtn) confirmBtn.addEventListener("click", () => { confirmMediaDeleteFromModal(); });
     }
 
+    async function downloadSavedMediaItem(kind, basename) {
+      if (!guardFullAppAction()) return;
+      const rows = kind === "music" ? savedMediaLibrary.music : savedMediaLibrary.video;
+      const item = rows.find((row) => row.basename === basename);
+      if (!item || !item.url) {
+        notify("Could not find that file.", "error");
+        return;
+      }
+      try {
+        await triggerBrowserDownload(item.url, mediaLibraryDownloadFilename(item, kind));
+      } catch (_e) {
+        notify("Could not download file. Sign in and try again.", "error");
+      }
+    }
+
     function handleSavedMediaListClick(e) {
+      const downloadBtn = e.target.closest("button[data-download-media]");
+      if (downloadBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const kind = downloadBtn.dataset.downloadMedia;
+        const name = downloadBtn.dataset.mediaName;
+        if (!kind || !name) return;
+        downloadSavedMediaItem(kind, name);
+        return;
+      }
       const delBtn = e.target.closest("button[data-del-media]");
       if (delBtn) {
         e.preventDefault();

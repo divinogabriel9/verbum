@@ -66,5 +66,61 @@
     ],
     "optional_pin": "v1:37b353391f83d355:e857323193cf67907e4733379611d456830cede55939bee1334c7d4c30d91b49",
     "expires_at": "2026-07-11T07:07:30.392754+00:00"
+  },
+  {
+    "id": "0caf071ce8474e05a52b471b8d02ff02",
+    "created_at": "2026-07-14T05:34:49.295973+00:00",
+    "revoked_at": null,
+    "token": "DgmQlP34TqSKGlkWik__PumTUFmfSdJY",
+    "parish_id": null,
+    "created_by": null,
+    "mass_date": "2026-07-19",
+    "mass_title": "T",
+    "parish_name": "",
+    "celebrant": "",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "all_creatures",
+        "title": "All Creatures Of Our God And King",
+        "author": "",
+        "language": "English",
+        "lyrics": "Verse 1\nAll Creatures Of Our God And King\nLift Up Your Voice And With Us Sing\nO Praise Him! Alleluia!\nThou, Burning Sun With Golden Beam\nThou, Silver Moon With Softer Gleam\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 2\nLet All Things Their Creator Bless\nAnd Worship Him In Humbleness\nO Praise Him! Alleluia!\nPraise, Praise The Father, Praise The Son\nAnd Praise The Spirit, Three-in-one\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 3\nAll The Redeemed Washed By His Blood\nCome And Rejoice In His Great Love\nO Praise Him! Alleluia!\nChrist Has Defeated Every Sin\nCast All Your Burdens Now On Him\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 4\nHe Shall Return In Pow’r To Reign\nHeaven And Earth Will Join To Say\nO Praise Him! Alleluia!\nThen Who Shall Fall On Bended Knee?\nAll Creatures Of Our God And King\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!",
+        "blocks": [
+          {
+            "id": "b0-11e5b628",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "All Creatures Of Our God And King\nLift Up Your Voice And With Us Sing\nO Praise Him! Alleluia!\nThou, Burning Sun With Golden Beam\nThou, Silver Moon With Softer Gleam\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!",
+            "enabled": true
+          },
+          {
+            "id": "b1-f89989c4",
+            "kind": "verse",
+            "label": "Verse 2",
+            "body": "Let All Things Their Creator Bless\nAnd Worship Him In Humbleness\nO Praise Him! Alleluia!\nPraise, Praise The Father, Praise The Son\nAnd Praise The Spirit, Three-in-one\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!",
+            "enabled": true
+          },
+          {
+            "id": "b2-de585d9b",
+            "kind": "verse",
+            "label": "Verse 3",
+            "body": "All The Redeemed Washed By His Blood\nCome And Rejoice In His Great Love\nO Praise Him! Alleluia!\nChrist Has Defeated Every Sin\nCast All Your Burdens Now On Him\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!",
+            "enabled": true
+          },
+          {
+            "id": "b3-9e24d10c",
+            "kind": "verse",
+            "label": "Verse 4",
+            "body": "He Shall Return In Pow’r To Reign\nHeaven And Earth Will Join To Say\nO Praise Him! Alleluia!\nThen Who Shall Fall On Bended Knee?\nAll Creatures Of Our God And King\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:aae7b9c240f142d1:68afc85378d2870e4e7e5642a471c12eaaba327258de4ed0fb69ae29f90fe99b",
+    "expires_at": "2026-07-15T05:34:49.295642+00:00"
   }
 ]

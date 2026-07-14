@@ -538,6 +538,79 @@ def _layout_blank(prs: Presentation):
     return prs.slide_layouts[-1]
 
 
+def _video_poster_png(title: str, theme: Optional[SlideTheme] = None) -> Path:
+    """Solid poster frame for embedded movies (python-pptx requires one)."""
+    import tempfile
+
+    from PIL import Image, ImageDraw, ImageFont
+
+    w, h = 1920, 1080
+    bg = (16, 18, 22)
+    if theme is not None:
+        try:
+            c = theme.bg
+            bg = (int(c[0]), int(c[1]), int(c[2]))
+        except Exception:
+            pass
+    img = Image.new("RGB", (w, h), bg)
+    draw = ImageDraw.Draw(img)
+    label = (title or "Video").strip() or "Video"
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 56)
+    except Exception:
+        font = ImageFont.load_default()
+    bbox = draw.textbbox((0, 0), label, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    draw.text(((w - tw) / 2, (h - th) / 2 - 40), label, fill=(240, 240, 240), font=font)
+    hint = "▶  Video for Mass"
+    try:
+        font2 = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
+    except Exception:
+        font2 = font
+    bbox2 = draw.textbbox((0, 0), hint, font=font2)
+    tw2, th2 = bbox2[2] - bbox2[0], bbox2[3] - bbox2[1]
+    draw.text(((w - tw2) / 2, (h - th2) / 2 + 40), hint, fill=(200, 200, 200), font=font2)
+    tmp = tempfile.NamedTemporaryFile(prefix="verbum_vid_poster_", suffix=".png", delete=False)
+    img.save(tmp.name, format="PNG")
+    tmp.close()
+    return Path(tmp.name)
+
+
+def _add_video_replacement_slide(
+    prs: Presentation,
+    video_path: Path | str,
+    *,
+    title: str,
+    theme: Optional[SlideTheme] = None,
+) -> bool:
+    """Full-bleed single slide with an embedded MP4 (replaces lyric/prayer slides)."""
+    p = Path(video_path)
+    if not p.is_file():
+        return False
+    poster: Optional[Path] = None
+    try:
+        poster = _video_poster_png(title, theme)
+        slide = prs.slides.add_slide(_layout_blank(prs))
+        slide.shapes.add_movie(
+            str(p.resolve()),
+            left=0,
+            top=0,
+            width=prs.slide_width,
+            height=prs.slide_height,
+            poster_frame_image=str(poster),
+            mime_type="video/mp4",
+        )
+        return True
+    except Exception:
+        return False
+    finally:
+        if poster is not None:
+            try:
+                poster.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+
 def _add_liturgical_poster_full_slide(prs: Presentation, png_path: Path) -> None:
     """
     Embed the 16×9 liturgical poster (PNG) as one full-bleed slide for projection.
@@ -4261,6 +4334,7 @@ def generate_mass_ppt(
     our_father_choice: str = "english",
     hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
+    video_replacements: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
     global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding
     _deck_branding = DeckBrandingOptions(
@@ -4307,6 +4381,22 @@ def generate_mass_ppt(
     )
 
     sel = song_selections or {}
+    videos: dict[str, Path] = {}
+    if isinstance(video_replacements, Mapping):
+        for key, val in video_replacements.items():
+            k = str(key or "").strip().lower()
+            if not k:
+                continue
+            if isinstance(val, Path):
+                path = val
+            else:
+                path = Path(str(val or "").strip())
+            if path.is_file():
+                videos[k] = path
+
+    def _use_video(slot: str, label: str) -> bool:
+        path = videos.get(slot)
+        return bool(path and _add_video_replacement_slide(prs, path, title=label, theme=theme))
 
     # --- Pre-Mass (reference deck slide) ---
     _add_pre_mass_slide(prs, theme)
@@ -4314,7 +4404,9 @@ def generate_mass_ppt(
     _add_divider_cover(prs, **ctx)
 
     ent_id = str(sel.get("entrance") or "").strip()
-    if not ent_id or not _try_library_hymn(
+    if _use_video("entrance", "Entrance"):
+        pass
+    elif not ent_id or not _try_library_hymn(
         prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         _add_marked_slide(
@@ -4329,8 +4421,10 @@ def generate_mass_ppt(
     if not _clone_master_section(prs, "introductory_rites", theme, "Introductory Rites"):
         _add_marked_slide(prs, "Introductory Rites", GFCC.SIGN_CROSS, theme)
     _add_penitential_act_slides(prs, theme)
-    _add_kyrie_slide(prs, theme)
-    _add_gloria_slides(prs, theme)
+    if not _use_video("kyrie", "Kyrie"):
+        _add_kyrie_slide(prs, theme)
+    if not _use_video("gloria", "Gloria"):
+        _add_gloria_slides(prs, theme)
     if not _clone_master_section(prs, "lotw_prayer", theme, "Liturgy of the Word"):
         _add_marked_slide(
             prs, "Liturgy of the Word", GFCC.OPENING_PRAYER, theme,
@@ -4440,7 +4534,9 @@ def generate_mass_ppt(
 
     # --- Liturgy of the Eucharist ---
     off_id = str(sel.get("offertory") or "").strip()
-    if not off_id or not _try_library_hymn(
+    if _use_video("offertory", "Offertory"):
+        pass
+    elif not off_id or not _try_library_hymn(
         prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         _add_marked_slide(
@@ -4457,8 +4553,9 @@ def generate_mass_ppt(
         _add_marked_slide(prs, "Liturgy of the Eucharist", GFCC.PREFACE_DIALOGUE, theme)
         _add_marked_slide(prs, "Liturgy of the Eucharist", GFCC.PREFACE_ACCLAIM, theme)
     _add_lote_poster_slide(prs, theme, lote_poster_path)
-    if not _clone_master_section(prs, "sanctus", theme, "Sanctus"):
-        _add_marked_chunked(prs, "Sanctus", get_prayer("holy_holy"), theme)
+    if not _use_video("sanctus", "Sanctus"):
+        if not _clone_master_section(prs, "sanctus", theme, "Sanctus"):
+            _add_marked_chunked(prs, "Sanctus", get_prayer("holy_holy"), theme)
     _add_lote_poster_slide(prs, theme, lote_poster_path)
     if not _clone_master_section(prs, "mystery_of_faith", theme, "The Eucharistic Prayer"):
         _add_marked_slide(
@@ -4469,28 +4566,34 @@ def generate_mass_ppt(
     if not _clone_master_section(prs, "great_amen", theme, "Great Amen"):
         _add_marked_slide(prs, "Great Amen", GFCC.GREAT_AMEN, theme)
     _of_choice = _normalize_our_father_choice(our_father_choice)
-    if not _add_our_father_from_deck(prs, theme, _of_choice):
-        _add_our_father_slide(
-            prs,
-            "Our Father",
-            get_our_father(_of_choice),
-            theme,
-            title=_OUR_FATHER_TITLES.get(_of_choice, "Our Father"),
-        )
+    if not _use_video("our_father", "Our Father"):
+        if not _add_our_father_from_deck(prs, theme, _of_choice):
+            _add_our_father_slide(
+                prs,
+                "Our Father",
+                get_our_father(_of_choice),
+                theme,
+                title=_OUR_FATHER_TITLES.get(_of_choice, "Our Father"),
+            )
     _add_divider_cover(prs, **ctx)
     _add_sign_of_peace_slide(prs, theme)
-    _add_lamb_of_god_slide(prs, theme)
+    if not _use_video("lamb_of_god", "Lamb of God"):
+        _add_lamb_of_god_slide(prs, theme)
     if not _clone_master_section(prs, "communion_rite", theme, "The Communion Rite"):
         _add_marked_slide(prs, "The Communion Rite", GFCC.COMMUNION_DIALOGUE, theme)
     _add_divider_cover(prs, **ctx)
     c1 = str(sel.get("communion_1") or "").strip()
     c2 = str(sel.get("communion_2") or "").strip()
     comm_ok = False
-    if c1 and _try_library_hymn(
+    if _use_video("communion_1", "Communion (1)"):
+        comm_ok = True
+    elif c1 and _try_library_hymn(
         prs, "communion", c1, "Communion (1)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         comm_ok = True
-    if c2 and _try_library_hymn(
+    if _use_video("communion_2", "Communion (2)"):
+        comm_ok = True
+    elif c2 and _try_library_hymn(
         prs, "communion", c2, "Communion (2)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         comm_ok = True
@@ -4583,7 +4686,9 @@ def generate_mass_ppt(
     if not _clone_master_section(prs, "final_blessing", theme, "Final Blessing"):
         _add_marked_slide(prs, "Final Blessing", GFCC.FINAL_BLESSING, theme)
     rec_id = str(sel.get("recessional") or "").strip()
-    if not rec_id or not _try_library_hymn(
+    if _use_video("recessional", "Recessional"):
+        pass
+    elif not rec_id or not _try_library_hymn(
         prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
     ):
         _add_marked_slide(

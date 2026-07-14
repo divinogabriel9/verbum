@@ -62,6 +62,7 @@ from services.community_config import (
 from services.gospel_mood import gospel_moods_for_song
 from services.hymn_library import get_hymn
 from services.hymn_slide_preview import build_hymn_slide_preview
+from services.rite_slide_preview import build_rite_slide_preview
 from services.lyrics_fetcher import fetch_and_store_for_selection
 from services.ppt_preview_render import render_ppt_preview_pngs
 from services.ppt_template_analyze import analyze_pptx_theme
@@ -96,6 +97,8 @@ from services.choir_practice_shares import (
     create_practice_share,
     fetch_practice_share,
     get_practice_share_by_token,
+    practice_catalog_index,
+    resolve_practice_song,
     update_practice_share_lyrics,
     verify_practice_share_pin,
 )
@@ -142,11 +145,16 @@ from services.private_files import (
     upload_file_url,
 )
 from services.storage_assets import (
+    delete_parish_asset,
     delete_user_asset,
+    download_service_asset,
     download_user_asset,
+    list_parish_assets,
     list_user_assets,
+    parish_storage_ready,
     signed_asset_url,
     storage_ready,
+    upload_parish_asset,
     upload_user_asset,
 )
 from routes.admin import register_admin_routes
@@ -243,20 +251,116 @@ def _safe_storage_leaf(basename: str, *, folder: str) -> str:
 def _materialize_storage_asset(
     session: Optional[AuthSession], storage_path: str, *, suffix: str = ".png"
 ) -> Optional[Path]:
-    if not session or not storage_ready(session.token):
-        return None
     key = (storage_path or "").strip()
     if not key:
         return None
-    try:
-        raw = download_user_asset(access_token=session.token, path=key)
-    except Exception:
+    raw: Optional[bytes] = None
+    if parish_storage_ready():
+        try:
+            raw = download_service_asset(path=key)
+        except Exception:
+            raw = None
+    if raw is None and session and storage_ready(session.token):
+        try:
+            raw = download_user_asset(access_token=session.token, path=key)
+        except Exception:
+            raw = None
+    if raw is None:
         return None
     tmp = tempfile.NamedTemporaryFile(prefix="verbum_asset_", suffix=suffix, delete=False)
     tmp.write(raw)
     tmp.flush()
     tmp.close()
     return Path(tmp.name)
+
+
+def _session_parish_id(session: Optional[AuthSession]) -> str:
+    if not session or not session.user or not session.user.user_id:
+        return ""
+    ctx = get_church_profile_context() or {}
+    pid = str(ctx.get("parish_id") or "").strip()
+    if pid:
+        return pid
+    try:
+        from services.parish_store import get_user_parish_context
+
+        parish_ctx = get_user_parish_context(
+            session.user.user_id, access_token=session.token
+        ) or {}
+        return str(parish_ctx.get("parish_id") or "").strip()
+    except Exception:
+        return ""
+
+
+def _resolve_mass_asset_path(
+    session: Optional[AuthSession],
+    basename: str,
+    *,
+    temp_assets: list[Path],
+) -> Optional[Path]:
+    bn = str(basename or "").strip()
+    if not bn:
+        return None
+    local = _resolve_child_file(_MASS_ASSET_DIR, bn)
+    if local:
+        return local
+    key = _safe_storage_leaf(bn, folder="mass_assets")
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        path = _materialize_storage_asset(session, f"parishes/{parish_id}/{key}")
+        if path:
+            temp_assets.append(path)
+            return path
+    if session and session.user:
+        path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
+        if path:
+            temp_assets.append(path)
+            return path
+    return None
+
+
+def _resolve_saved_video_path(
+    session: Optional[AuthSession],
+    basename: str,
+    *,
+    temp_assets: list[Path],
+) -> Optional[Path]:
+    """Resolve an MP4 from parish/user saved_media/video for PPTX embedding."""
+    bn = Path(str(basename or "").strip()).name
+    if not bn or not bn.lower().endswith(".mp4"):
+        return None
+    local = _resolve_child_file(_SAVED_MEDIA_VIDEO_DIR, bn)
+    if local:
+        return local
+    key = _safe_storage_leaf(bn, folder="saved_media/video")
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        path = _materialize_storage_asset(session, f"parishes/{parish_id}/{key}", suffix=".mp4")
+        if path:
+            temp_assets.append(path)
+            return path
+    if session and session.user:
+        path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}", suffix=".mp4")
+        if path:
+            temp_assets.append(path)
+            return path
+    return None
+
+
+def _materialize_video_replacements(
+    session: Optional[AuthSession],
+    replacements: Optional[dict[str, str]],
+    *,
+    temp_assets: list[Path],
+) -> dict[str, Path]:
+    out: dict[str, Path] = {}
+    if not isinstance(replacements, dict):
+        return out
+    for key, basename in replacements.items():
+        path = _resolve_saved_video_path(session, str(basename or ""), temp_assets=temp_assets)
+        if path:
+            out[str(key).strip().lower()] = path
+    return out
 
 
 async def _save_uploaded_image(file: UploadFile, dest_dir: Path, *, prefix: str) -> str:
@@ -310,21 +414,34 @@ def _manifest_user_key(session: Optional[AuthSession]) -> str:
     return "_local"
 
 
+def _manifest_scope_keys(session: Optional[AuthSession]) -> list[tuple[str, str]]:
+    """Prefer parish-scoped display names; fall back to the uploader's user key."""
+    keys: list[tuple[str, str]] = []
+    parish_id = _session_parish_id(session)
+    if parish_id:
+        keys.append(("parishes", parish_id))
+    keys.append(("users", _manifest_user_key(session)))
+    return keys
+
+
 def _load_saved_media_manifest() -> dict[str, Any]:
     if not _SAVED_MEDIA_MANIFEST_PATH.is_file():
-        return {"users": {}}
+        return {"users": {}, "parishes": {}}
     try:
         data = json.loads(_SAVED_MEDIA_MANIFEST_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return {"users": {}}
+        return {"users": {}, "parishes": {}}
     if not isinstance(data, dict):
-        return {"users": {}}
+        return {"users": {}, "parishes": {}}
     data.setdefault("users", {})
+    data.setdefault("parishes", {})
     return data
 
 
 def _save_saved_media_manifest(data: dict[str, Any]) -> None:
     _SAVED_MEDIA_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data.setdefault("users", {})
+    data.setdefault("parishes", {})
     _SAVED_MEDIA_MANIFEST_PATH.write_text(
         json.dumps(data, indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -338,24 +455,25 @@ def _register_saved_media_meta(
     kind: str,
 ) -> None:
     data = _load_saved_media_manifest()
-    users = data.setdefault("users", {})
-    user_key = _manifest_user_key(session)
-    users.setdefault(user_key, {})[basename] = {
-        "display_name": display_name,
-        "kind": kind,
-    }
+    parish_id = _session_parish_id(session)
+    payload = {"display_name": display_name, "kind": kind}
+    if parish_id:
+        data.setdefault("parishes", {}).setdefault(parish_id, {})[basename] = payload
+    else:
+        data.setdefault("users", {}).setdefault(_manifest_user_key(session), {})[basename] = payload
     _save_saved_media_manifest(data)
 
 
 def _unregister_saved_media_meta(session: Optional[AuthSession], basename: str) -> None:
     data = _load_saved_media_manifest()
-    users = data.get("users", {})
-    user_key = _manifest_user_key(session)
-    bucket = users.get(user_key)
-    if not bucket or basename not in bucket:
-        return
-    del bucket[basename]
-    _save_saved_media_manifest(data)
+    changed = False
+    for group, key in _manifest_scope_keys(session):
+        bucket = (data.get(group) or {}).get(key)
+        if bucket and basename in bucket:
+            del bucket[basename]
+            changed = True
+    if changed:
+        _save_saved_media_manifest(data)
 
 
 def _saved_media_display_name(
@@ -364,11 +482,12 @@ def _saved_media_display_name(
     *,
     kind: str,
 ) -> str:
-    user_key = _manifest_user_key(session)
-    entry = _load_saved_media_manifest().get("users", {}).get(user_key, {}).get(basename, {})
-    name = str(entry.get("display_name") or "").strip()
-    if name:
-        return name
+    data = _load_saved_media_manifest()
+    for group, key in _manifest_scope_keys(session):
+        entry = (data.get(group) or {}).get(key, {}).get(basename, {})
+        name = str(entry.get("display_name") or "").strip()
+        if name:
+            return name
     stem = Path(basename).stem
     if stem.startswith(f"{kind}_"):
         return stem[len(kind) + 1 :] + Path(basename).suffix
@@ -407,6 +526,8 @@ def _list_saved_media_rows(
             if p.is_file() and p.suffix.lower() == allowed_ext:
                 local_items.append({"basename": p.name, "url": upload_file_url(f"{folder}/{p.name}")})
 
+    remote_items: list[dict[str, str]] = []
+    parish_id = _session_parish_id(session)
     if session and storage_ready(session.token):
         try:
             rows = list_user_assets(
@@ -414,19 +535,31 @@ def _list_saved_media_rows(
                 access_token=session.token,
                 prefix=folder,
             )
-            remote_items = [
+            remote_items.extend(
                 {"basename": row["name"], "url": row["url"] or ""}
                 for row in rows
                 if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
-            ]
-            merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}
-            for item in remote_items:
-                merged[item["basename"]] = item
-            out = list(merged.values())
-            out.sort(key=lambda r: r["basename"], reverse=True)
-            return out
+            )
         except Exception:
             logger.warning("Could not list %s from storage; using local files.", folder, exc_info=True)
+    if parish_id and parish_storage_ready():
+        try:
+            rows = list_parish_assets(parish_id=parish_id, prefix=folder)
+            remote_items.extend(
+                {"basename": row["name"], "url": row["url"] or ""}
+                for row in rows
+                if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
+            )
+        except Exception:
+            logger.warning("Could not list parish %s from storage.", folder, exc_info=True)
+
+    if remote_items or (parish_id and parish_storage_ready()) or (session and storage_ready(session.token)):
+        merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}
+        for item in remote_items:
+            merged[item["basename"]] = item
+        out = list(merged.values())
+        out.sort(key=lambda r: r["basename"], reverse=True)
+        return out
     return local_items
 
 
@@ -443,9 +576,16 @@ def _delete_saved_media_item(
     if not base or base != basename.strip():
         raise HTTPException(status_code=400, detail="Invalid asset name.")
     removed = False
+    rel = _safe_storage_leaf(base, folder=storage_folder)
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        try:
+            delete_parish_asset(parish_id=parish_id, relative_path=rel)
+            removed = True
+        except Exception:
+            logger.warning("Parish storage delete failed for %s", base, exc_info=True)
     if session and storage_ready(session.token):
         try:
-            rel = _safe_storage_leaf(base, folder=storage_folder)
             delete_user_asset(
                 user_id=session.user.user_id,
                 access_token=session.token,
@@ -474,6 +614,23 @@ def _upload_saved_media_url(
     content_type: str,
     local_url: str,
 ) -> str:
+    parish_id = _session_parish_id(session)
+    if parish_id and parish_storage_ready():
+        try:
+            stored = upload_parish_asset(
+                parish_id=parish_id,
+                relative_path=relative_path,
+                raw=local_path.read_bytes(),
+                content_type=content_type,
+                upsert=True,
+            )
+            return stored.signed_url
+        except Exception:
+            logger.warning(
+                "Parish storage upload failed for %s; trying user storage.",
+                relative_path,
+                exc_info=True,
+            )
     if not session or not storage_ready(session.token):
         return local_url
     try:
@@ -493,6 +650,24 @@ def _upload_saved_media_url(
             exc_info=True,
         )
         return local_url
+
+
+def _upload_scoped_asset_url(
+    *,
+    session: Optional[AuthSession],
+    local_path: Path,
+    relative_path: str,
+    content_type: str,
+    local_url: str,
+) -> str:
+    """Upload image/media into the parish library when possible."""
+    return _upload_saved_media_url(
+        session=session,
+        local_path=local_path,
+        relative_path=relative_path,
+        content_type=content_type,
+        local_url=local_url,
+    )
 
 
 def _ai_poster_download_urls() -> dict[str, str]:
@@ -1030,6 +1205,14 @@ class GenerateBody(BaseModel):
         "dual",
         description="Hymn slide layout: single (1 block/slide) | dual (2 blocks/slide).",
     )
+    video_replacements: Optional[dict[str, str]] = Field(
+        None,
+        description=(
+            "Optional MP4 basenames from the parish media library that replace lyric/prayer "
+            "slides with a single video slide. Keys: kyrie, gloria, sanctus, our_father, "
+            "lamb_of_god, entrance, offertory, communion_1, communion_2, recessional."
+        ),
+    )
 
     @model_validator(mode="after")
     def _validate_generate_lists(self) -> GenerateBody:
@@ -1051,6 +1234,26 @@ class GenerateBody(BaseModel):
         self.lotw_poster = lotw if lotw in {"lotw1", "lotw2", "lotw3", "lotw4"} else "lotw1"
         lote = str(self.lote_poster or "").strip().lower()
         self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
+        if self.video_replacements:
+            allowed = {
+                "kyrie",
+                "gloria",
+                "sanctus",
+                "our_father",
+                "lamb_of_god",
+                "entrance",
+                "offertory",
+                "communion_1",
+                "communion_2",
+                "recessional",
+            }
+            cleaned: dict[str, str] = {}
+            for key, val in self.video_replacements.items():
+                k = str(key or "").strip().lower()
+                base = Path(str(val or "").strip()).name
+                if k in allowed and base and base.lower().endswith(".mp4"):
+                    cleaned[k] = base
+            self.video_replacements = cleaned or None
         return self
 
 
@@ -1183,6 +1386,10 @@ class PracticeLyricBlockBody(BaseModel):
 class PracticeLyricSongUpdateBody(BaseModel):
     hymn_id: str = Field(..., max_length=120)
     slot_key: str = Field("", max_length=64)
+    title: str = Field("", max_length=240)
+    author: str = Field("", max_length=240)
+    language: str = Field("", max_length=64)
+    section: str = Field("", max_length=64)
     blocks: list[PracticeLyricBlockBody] = Field(default_factory=list, max_length=48)
 
 
@@ -1604,21 +1811,36 @@ async def api_upload_logo(
     logo_url = upload_file_url("community_logo.png")
     if session and supabase_enabled():
         raw_png = out_path.read_bytes()
-        stored = upload_user_asset(
-            user_id=session.user.user_id,
-            access_token=session.token,
-            relative_path="logo/community_logo.png",
-            raw=raw_png,
-            content_type="image/png",
-            upsert=True,
-        )
-        _sync_church_profile_to_supabase(session, logo_path=stored.path)
-        logo_url = stored.signed_url
-        church_ctx = get_church_profile_context()
-        if parish_name_is_locked(church_ctx) and not (church_ctx or {}).get("logo_locked_at"):
-            from services.supabase_client import lock_church_logo
+        parish_id = _session_parish_id(session)
+        if parish_id and parish_storage_ready():
+            stored = upload_parish_asset(
+                parish_id=parish_id,
+                relative_path="logo/community_logo.png",
+                raw=raw_png,
+                content_type="image/png",
+                upsert=True,
+            )
+        elif storage_ready(session.token):
+            stored = upload_user_asset(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                relative_path="logo/community_logo.png",
+                raw=raw_png,
+                content_type="image/png",
+                upsert=True,
+            )
+        else:
+            stored = None
+        if stored:
+            _sync_church_profile_to_supabase(session, logo_path=stored.path)
+            logo_url = stored.signed_url
+            church_ctx = get_church_profile_context()
+            if parish_name_is_locked(church_ctx) and not (church_ctx or {}).get("logo_locked_at"):
+                from services.supabase_client import lock_church_logo
 
-            lock_church_logo(session.user.user_id, access_token=session.token)
+                lock_church_logo(session.user.user_id, access_token=session.token)
+        else:
+            update_community(logo_path=LOGO_RELATIVE)
     else:
         update_community(logo_path=LOGO_RELATIVE)
     out: dict[str, Any] = {
@@ -1638,17 +1860,13 @@ async def api_upload_mass_divider(
 ) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="divider")
     url = upload_file_url(f"mass_assets/{name}")
-    if session and storage_ready(session.token):
-        raw = (_MASS_ASSET_DIR / name).read_bytes()
-        stored = upload_user_asset(
-            user_id=session.user.user_id,
-            access_token=session.token,
-            relative_path=f"mass_assets/{name}",
-            raw=raw,
-            content_type=(file.content_type or "image/png"),
-            upsert=True,
-        )
-        url = stored.signed_url
+    url = _upload_scoped_asset_url(
+        session=session,
+        local_path=_MASS_ASSET_DIR / name,
+        relative_path=f"mass_assets/{name}",
+        content_type=(file.content_type or "image/png"),
+        local_url=url,
+    )
     return {"ok": True, "basename": name, "url": url}
 
 
@@ -1659,17 +1877,13 @@ async def api_upload_announcement_slide(
 ) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _MASS_ASSET_DIR, prefix="announce")
     url = upload_file_url(f"mass_assets/{name}")
-    if session and storage_ready(session.token):
-        raw = (_MASS_ASSET_DIR / name).read_bytes()
-        stored = upload_user_asset(
-            user_id=session.user.user_id,
-            access_token=session.token,
-            relative_path=f"mass_assets/{name}",
-            raw=raw,
-            content_type=(file.content_type or "image/png"),
-            upsert=True,
-        )
-        url = stored.signed_url
+    url = _upload_scoped_asset_url(
+        session=session,
+        local_path=_MASS_ASSET_DIR / name,
+        relative_path=f"mass_assets/{name}",
+        content_type=(file.content_type or "image/png"),
+        local_url=url,
+    )
     return {"ok": True, "basename": name, "url": url}
 
 
@@ -1680,17 +1894,13 @@ async def api_upload_saved_poster(
 ) -> dict[str, Any]:
     name = await _save_uploaded_image(file, _SAVED_POSTER_DIR, prefix="poster")
     url = upload_file_url(f"saved_posters/{name}")
-    if session and storage_ready(session.token):
-        raw = (_SAVED_POSTER_DIR / name).read_bytes()
-        stored = upload_user_asset(
-            user_id=session.user.user_id,
-            access_token=session.token,
-            relative_path=f"saved_posters/{name}",
-            raw=raw,
-            content_type=(file.content_type or "image/png"),
-            upsert=True,
-        )
-        url = stored.signed_url
+    url = _upload_scoped_asset_url(
+        session=session,
+        local_path=_SAVED_POSTER_DIR / name,
+        relative_path=f"saved_posters/{name}",
+        content_type=(file.content_type or "image/png"),
+        local_url=url,
+    )
     return {"ok": True, "basename": name, "url": url}
 
 
@@ -1698,26 +1908,38 @@ async def api_upload_saved_poster(
 def api_list_saved_posters(
     session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
+    allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+    local_items: list[dict[str, str]] = []
+    if _SAVED_POSTER_DIR.is_dir():
+        for p in sorted(_SAVED_POSTER_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
+            if p.is_file() and p.suffix.lower() in allowed:
+                local_items.append({"basename": p.name, "url": upload_file_url(f"saved_posters/{p.name}")})
+    remote_items: list[dict[str, str]] = []
+    parish_id = _session_parish_id(session)
     if session and storage_ready(session.token):
-        rows = list_user_assets(
-            user_id=session.user.user_id,
-            access_token=session.token,
-            prefix="saved_posters",
-        )
-        posters = [
-            {"basename": row["name"], "url": row["url"] or ""}
-            for row in rows
-            if Path(str(row.get("name") or "")).suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}
-        ]
-        posters.sort(key=lambda r: r["basename"], reverse=True)
-        return {"ok": True, "posters": posters}
-    if not _SAVED_POSTER_DIR.is_dir():
-        return {"ok": True, "posters": []}
-    rows = []
-    for p in sorted(_SAVED_POSTER_DIR.iterdir(), key=lambda x: x.stat().st_mtime, reverse=True):
-        if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
-            rows.append({"basename": p.name, "url": upload_file_url(f"saved_posters/{p.name}")})
-    return {"ok": True, "posters": rows}
+        try:
+            for row in list_user_assets(
+                user_id=session.user.user_id,
+                access_token=session.token,
+                prefix="saved_posters",
+            ):
+                if Path(str(row.get("name") or "")).suffix.lower() in allowed:
+                    remote_items.append({"basename": row["name"], "url": row["url"] or ""})
+        except Exception:
+            logger.warning("Could not list saved posters from user storage.", exc_info=True)
+    if parish_id and parish_storage_ready():
+        try:
+            for row in list_parish_assets(parish_id=parish_id, prefix="saved_posters"):
+                if Path(str(row.get("name") or "")).suffix.lower() in allowed:
+                    remote_items.append({"basename": row["name"], "url": row["url"] or ""})
+        except Exception:
+            logger.warning("Could not list saved posters from parish storage.", exc_info=True)
+    merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}
+    for item in remote_items:
+        merged[item["basename"]] = item
+    posters = list(merged.values())
+    posters.sort(key=lambda r: r["basename"], reverse=True)
+    return {"ok": True, "posters": posters}
 
 
 @app.delete("/api/saved-posters/{basename}")
@@ -1725,19 +1947,20 @@ def api_delete_saved_poster(
     basename: str,
     session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
-    if session and storage_ready(session.token):
-        rel = _safe_storage_leaf(basename, folder="saved_posters")
-        delete_user_asset(
-            user_id=session.user.user_id,
-            access_token=session.token,
-            relative_path=rel,
-        )
-        return {"ok": True}
-    p = _resolve_child_file(_SAVED_POSTER_DIR, basename)
-    if not p:
-        raise HTTPException(status_code=404, detail="Poster not found.")
-    p.unlink(missing_ok=True)
-    return {"ok": True}
+    base = Path(basename or "").name
+    if not base or base != basename.strip():
+        raise HTTPException(status_code=400, detail="Invalid asset name.")
+    ext = Path(base).suffix.lower()
+    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        raise HTTPException(status_code=400, detail="Invalid poster type.")
+    return _delete_saved_media_item(
+        session,
+        basename=base,
+        local_dir=_SAVED_POSTER_DIR,
+        storage_folder="saved_posters",
+        allowed_ext=ext,
+        not_found_detail="Poster not found.",
+    )
 
 
 @app.post("/api/upload/saved-media/music")
@@ -1813,6 +2036,31 @@ def api_list_saved_media(
         "music": _enrich_saved_media_rows(music, session=session, kind="music"),
         "video": _enrich_saved_media_rows(video, session=session, kind="video"),
     }
+
+
+@app.get("/api/rite-preview-text")
+def api_rite_preview_text(
+    section: str,
+    option: str = "",
+) -> dict[str, Any]:
+    """Return authored PPTX slide text for a Mass Builder rite option preview."""
+    sec = str(section or "").strip().lower()
+    opt = str(option or "").strip().lower()
+    allowed = {
+        "penitential",
+        "creed",
+        "kyrie",
+        "gloria",
+        "sanctus",
+        "our_father",
+        "lamb_of_god",
+    }
+    if sec not in allowed:
+        raise HTTPException(status_code=400, detail="Unknown rite section.")
+    payload = build_rite_slide_preview(sec, opt)
+    if not payload.get("ok"):
+        raise HTTPException(status_code=404, detail="No slide text found for that option.")
+    return payload
 
 
 @app.delete("/api/saved-media/music/{basename}")
@@ -2200,6 +2448,59 @@ def api_practice_lyrics_update(
     return JSONResponse(result, headers=practice_no_store_headers())
 
 
+@app.get("/api/practice/{token}/catalog")
+def api_practice_catalog(
+    token: str,
+    request: Request,
+) -> Any:
+    """Leader-only song directory for replacing practice songs (no lyric bodies)."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    allowed, retry_after = check_practice_fetch_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    lead = (request.query_params.get("lead") or "").strip()
+    if not verify_lead_token(tok, lead, row.get("expires_at")):
+        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    return JSONResponse(
+        {"ok": True, "songs": practice_catalog_index()},
+        headers=practice_no_store_headers(),
+    )
+
+
+@app.get("/api/practice/{token}/song")
+def api_practice_resolve_song(
+    token: str,
+    request: Request,
+) -> Any:
+    """Leader-only: resolve a catalog song with parish lyrics for this practice share."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    allowed, retry_after = check_practice_fetch_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    lead = (request.query_params.get("lead") or "").strip()
+    if not verify_lead_token(tok, lead, row.get("expires_at")):
+        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    hymn_id = (request.query_params.get("hymn_id") or "").strip()
+    section = (request.query_params.get("section") or "").strip().lower()
+    if not hymn_id:
+        raise HTTPException(status_code=400, detail="hymn_id is required.")
+    parish_id = str(row.get("parish_id") or "").strip() or None
+    song = resolve_practice_song(parish_id=parish_id, hymn_id=hymn_id, section=section)
+    if not song:
+        raise HTTPException(status_code=404, detail="Song not found or has no lyrics.")
+    return JSONResponse({"ok": True, "song": song}, headers=practice_no_store_headers())
+
+
 @app.post("/api/practice/share")
 def api_create_practice_share(
     body: PracticeShareBody,
@@ -2415,24 +2716,15 @@ def api_generate(
     temp_assets: list[Path] = []
     divider_path = None
     if body.divider_poster_basename and str(body.divider_poster_basename).strip():
-        raw_divider = str(body.divider_poster_basename).strip()
-        divider_path = _resolve_child_file(_MASS_ASSET_DIR, raw_divider)
-        if not divider_path and session and storage_ready(session.token):
-            key = _safe_storage_leaf(raw_divider, folder="mass_assets")
-            divider_path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
-            if divider_path:
-                temp_assets.append(divider_path)
+        divider_path = _resolve_mass_asset_path(
+            session, str(body.divider_poster_basename).strip(), temp_assets=temp_assets
+        )
     ann_paths: list[Path] = []
     for raw in body.announcement_basenames or []:
         bn = str(raw).strip()
         if not bn:
             continue
-        p = _resolve_child_file(_MASS_ASSET_DIR, bn)
-        if not p and session and storage_ready(session.token):
-            key = _safe_storage_leaf(bn, folder="mass_assets")
-            p = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
-            if p:
-                temp_assets.append(p)
+        p = _resolve_mass_asset_path(session, bn, temp_assets=temp_assets)
         if p:
             ann_paths.append(p)
         if len(ann_paths) >= 24:
@@ -2440,6 +2732,18 @@ def api_generate(
     sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
     psalm_override = (body.psalm_text_override or "").strip() or None
     gospel_override = (body.gospel_quote_override or "").strip() or None
+
+    from services.parish_hymn_overrides import merge_parish_lyric_overrides
+
+    hymn_overrides = merge_parish_lyric_overrides(
+        _session_parish_id(session),
+        song_selections=song_map,
+        existing=body.hymn_lyric_overrides,
+    ) or None
+
+    video_paths = _materialize_video_replacements(
+        session, body.video_replacements, temp_assets=temp_assets
+    )
 
     if body.include_ai_mass_poster:
         backend = (body.ai_poster_backend or "openai").strip().lower()
@@ -2486,11 +2790,12 @@ def api_generate(
             include_church_logo=body.include_church_logo,
             include_church_name=body.include_church_name,
             include_footer=body.include_footer,
-            hymn_lyric_overrides=body.hymn_lyric_overrides,
+            hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
             our_father_choice=body.our_father_choice,
             hymn_lyrics_layout=body.hymn_lyrics_layout,
             hymn_layout_overrides=body.hymn_layout_overrides,
+            video_replacements=video_paths or None,
         )
     finally:
         for p in temp_assets:
@@ -2582,24 +2887,15 @@ async def api_regenerate_pptx(
     temp_assets: list[Path] = []
     divider_path = None
     if body.divider_poster_basename and str(body.divider_poster_basename).strip():
-        raw_divider = str(body.divider_poster_basename).strip()
-        divider_path = _resolve_child_file(_MASS_ASSET_DIR, raw_divider)
-        if not divider_path and session and storage_ready(session.token):
-            key = _safe_storage_leaf(raw_divider, folder="mass_assets")
-            divider_path = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
-            if divider_path:
-                temp_assets.append(divider_path)
+        divider_path = _resolve_mass_asset_path(
+            session, str(body.divider_poster_basename).strip(), temp_assets=temp_assets
+        )
     ann_paths: list[Path] = []
     for raw in body.announcement_basenames or []:
         bn = str(raw).strip()
         if not bn:
             continue
-        p = _resolve_child_file(_MASS_ASSET_DIR, bn)
-        if not p and session and storage_ready(session.token):
-            key = _safe_storage_leaf(bn, folder="mass_assets")
-            p = _materialize_storage_asset(session, f"{session.user.user_id}/{key}")
-            if p:
-                temp_assets.append(p)
+        p = _resolve_mass_asset_path(session, bn, temp_assets=temp_assets)
         if p:
             ann_paths.append(p)
         if len(ann_paths) >= 24:
@@ -2607,6 +2903,16 @@ async def api_regenerate_pptx(
     sponsors = [str(s).strip() for s in (body.food_sponsors or []) if str(s).strip()][:24]
     psalm_override = (body.psalm_text_override or "").strip() or None
     gospel_override = (body.gospel_quote_override or "").strip() or None
+    from services.parish_hymn_overrides import merge_parish_lyric_overrides
+
+    hymn_overrides = merge_parish_lyric_overrides(
+        _session_parish_id(session),
+        song_selections=song_map,
+        existing=body.hymn_lyric_overrides,
+    ) or None
+    video_paths = _materialize_video_replacements(
+        session, body.video_replacements, temp_assets=temp_assets
+    )
     try:
         result = await run_in_threadpool(
             regenerate_mass_pptx,
@@ -2638,11 +2944,12 @@ async def api_regenerate_pptx(
             include_church_logo=body.include_church_logo,
             include_church_name=body.include_church_name,
             include_footer=body.include_footer,
-            hymn_lyric_overrides=body.hymn_lyric_overrides,
+            hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
             our_father_choice=body.our_father_choice,
             hymn_lyrics_layout=body.hymn_lyrics_layout,
             hymn_layout_overrides=body.hymn_layout_overrides,
+            video_replacements=video_paths or None,
         )
     finally:
         for p in temp_assets:

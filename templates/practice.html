@@ -210,6 +210,108 @@
       font-size: 0.8125rem;
       color: var(--muted);
     }
+    .practice-song-picker {
+      position: relative;
+      margin: 0 0 4px;
+    }
+    .practice-song-picker__title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+    }
+    .practice-song-picker__title h2 {
+      margin: 0;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: clamp(1.25rem, 5vw, 1.5rem);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      text-decoration: underline;
+      text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+      text-underline-offset: 3px;
+    }
+    .practice-song-picker__hint {
+      flex: 0 0 auto;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .practice-song-picker__panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 30;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(21, 51, 61, 0.14);
+      overflow: hidden;
+    }
+    .practice-song-picker__search {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+    .practice-song-picker__list {
+      max-height: min(42vh, 280px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 0;
+      padding: 6px;
+      list-style: none;
+    }
+    .practice-song-picker__item {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      text-align: left;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      color: var(--ink);
+    }
+    .practice-song-picker__item:hover,
+    .practice-song-picker__item.is-active {
+      background: color-mix(in srgb, var(--accent) 8%, white);
+    }
+    .practice-song-picker__item-title {
+      display: block;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .practice-song-picker__item-meta {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .practice-song-picker__empty {
+      margin: 0;
+      padding: 16px 12px;
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
     .practice-lyrics {
       margin: 0;
       padding: 0;
@@ -484,7 +586,7 @@
         </div>
         <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
       </div>
-      <p class="practice-lead-note" id="practice-lead-note" hidden>Turn blocks off or edit verses, then Save. Changes sync to unlocked choir members for this practice only — not your song library.</p>
+      <p class="practice-lead-note" id="practice-lead-note" hidden>Tap a song title to change it, turn blocks off or edit verses, then Save. Changes sync to unlocked choir members for this practice only — not your song library.</p>
     </header>
 
     <nav class="practice-tabs" id="practice-tabs" hidden aria-label="Songs"></nav>
@@ -523,6 +625,9 @@
       let pollTimer = null;
       let toastTimer = null;
       let tabAnimToken = 0;
+      let catalogSongs = null;
+      let catalogLoading = null;
+      let pickerCloseHandler = null;
       const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const TAB_EXIT_MS = 120;
       const TAB_ENTER_MS = 200;
@@ -588,9 +693,11 @@
         setDirty(false);
         renderCurrentSong();
         syncLeadChrome();
+        void ensurePracticeCatalog();
       }
 
       function exitEditMode() {
+        closeSongPicker();
         state.editing = false;
         setDirty(false);
         renderCurrentSong();
@@ -1107,24 +1214,208 @@
         });
       }
 
+      function syncSongTabs() {
+        const songs = state.songs || [];
+        document.querySelectorAll(".practice-tab").forEach(function (el, i) {
+          const song = songs[i];
+          if (song) el.textContent = song.slot_label || song.title || ("Song " + (i + 1));
+          el.classList.toggle("is-active", i === state.index);
+          if (i === state.index) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+        });
+      }
+
+      async function ensurePracticeCatalog() {
+        if (catalogSongs) return catalogSongs;
+        if (catalogLoading) return catalogLoading;
+        if (!leadToken) return [];
+        catalogLoading = fetch(
+          "/api/practice/" + encodeURIComponent(token) + "/catalog?lead=" + encodeURIComponent(leadToken),
+          fetchOpts
+        )
+          .then(function (res) { return res.json().catch(function () { return {}; }); })
+          .then(function (data) {
+            catalogSongs = Array.isArray(data.songs) ? data.songs : [];
+            return catalogSongs;
+          })
+          .catch(function () {
+            catalogSongs = [];
+            return catalogSongs;
+          })
+          .finally(function () {
+            catalogLoading = null;
+          });
+        return catalogLoading;
+      }
+
+      function filterCatalogSongs(query, section) {
+        const q = String(query || "").trim().toLowerCase();
+        const sec = String(section || "").trim().toLowerCase();
+        const list = catalogSongs || [];
+        let ranked = list;
+        if (sec) {
+          const preferred = list.filter(function (s) { return String(s.section || "").toLowerCase() === sec; });
+          const rest = list.filter(function (s) { return String(s.section || "").toLowerCase() !== sec; });
+          ranked = preferred.concat(rest);
+        }
+        if (!q) return ranked.slice(0, 40);
+        return ranked.filter(function (s) {
+          const hay = [s.title, s.author, s.language, s.section].join(" ").toLowerCase();
+          return hay.indexOf(q) !== -1;
+        }).slice(0, 40);
+      }
+
+      function closeSongPicker() {
+        const panel = document.getElementById("practice-song-picker-panel");
+        if (panel) panel.hidden = true;
+        if (pickerCloseHandler) {
+          document.removeEventListener("click", pickerCloseHandler, true);
+          pickerCloseHandler = null;
+        }
+      }
+
+      function renderSongPickerResults(query) {
+        const listEl = document.getElementById("practice-song-picker-list");
+        if (!listEl) return;
+        const song = state.songs[state.index];
+        const results = filterCatalogSongs(query, song && song.section);
+        if (!results.length) {
+          listEl.innerHTML = '<p class="practice-song-picker__empty">No songs match your search.</p>';
+          return;
+        }
+        listEl.innerHTML = results.map(function (s, i) {
+          const meta = [s.section, s.author, s.language].filter(Boolean).join(" · ");
+          return (
+            '<li>' +
+              '<button type="button" class="practice-song-picker__item' + (i === 0 ? " is-active" : "") + '" data-pick-id="' + esc(s.id) + '" data-pick-section="' + esc(s.section || "") + '">' +
+                '<span class="practice-song-picker__item-title">' + esc(s.title || "Song") + '</span>' +
+                (meta ? '<span class="practice-song-picker__item-meta">' + esc(meta) + '</span>' : '') +
+              '</button>' +
+            '</li>'
+          );
+        }).join("");
+        listEl.querySelectorAll("[data-pick-id]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            pickPracticeSong(btn.getAttribute("data-pick-id"), btn.getAttribute("data-pick-section"));
+          });
+        });
+      }
+
+      async function openSongPicker() {
+        if (!state.editing || !leadToken) return;
+        const panel = document.getElementById("practice-song-picker-panel");
+        const input = document.getElementById("practice-song-picker-search");
+        const listEl = document.getElementById("practice-song-picker-list");
+        if (!panel || !input || !listEl) return;
+        panel.hidden = false;
+        listEl.innerHTML = '<p class="practice-song-picker__empty">Loading songs…</p>';
+        input.value = "";
+        await ensurePracticeCatalog();
+        renderSongPickerResults("");
+        requestAnimationFrame(function () {
+          input.focus();
+          input.select();
+        });
+        if (pickerCloseHandler) document.removeEventListener("click", pickerCloseHandler, true);
+        pickerCloseHandler = function (ev) {
+          const wrap = document.getElementById("practice-song-picker");
+          if (wrap && wrap.contains(ev.target)) return;
+          closeSongPicker();
+        };
+        setTimeout(function () {
+          document.addEventListener("click", pickerCloseHandler, true);
+        }, 0);
+      }
+
+      async function pickPracticeSong(hymnId, section) {
+        if (!hymnId || !leadToken) return;
+        const current = state.songs[state.index];
+        if (!current) return;
+        closeSongPicker();
+        const listEl = document.getElementById("practice-song-picker-list");
+        if (listEl) listEl.innerHTML = '<p class="practice-song-picker__empty">Loading lyrics…</p>';
+        try {
+          const url =
+            "/api/practice/" + encodeURIComponent(token) +
+            "/song?lead=" + encodeURIComponent(leadToken) +
+            "&hymn_id=" + encodeURIComponent(hymnId) +
+            "&section=" + encodeURIComponent(section || current.section || "");
+          const res = await fetch(url, fetchOpts);
+          const data = await res.json().catch(function () { return {}; });
+          if (!res.ok || !data.ok || !data.song) {
+            throw new Error(data.detail || data.error || "Could not load song.");
+          }
+          const next = data.song;
+          current.hymn_id = next.hymn_id || hymnId;
+          current.title = next.title || current.title;
+          current.author = next.author || "";
+          current.language = next.language || "";
+          if (next.section) current.section = next.section;
+          current.lyrics = next.lyrics || "";
+          current.blocks = normalizeSongBlocks(next);
+          setDirty(true);
+          paintCurrentSong();
+          syncSongTabs();
+          showSyncToast("Song changed — tap Save to sync");
+        } catch (err) {
+          showSyncToast(err.message || "Could not change song");
+          paintCurrentSong();
+        }
+      }
+
       function paintCurrentSong() {
         const song = state.songs[state.index];
         if (!song) return;
         const meta = [song.author, song.language].filter(Boolean).join(" · ");
+        const titleBlock = state.editing
+          ? (
+              '<div class="practice-song-picker" id="practice-song-picker">' +
+                '<button type="button" class="practice-song-picker__title" id="practice-song-picker-toggle" aria-expanded="false" aria-controls="practice-song-picker-panel">' +
+                  '<h2>' + esc(song.title || "Untitled") + '</h2>' +
+                  '<span class="practice-song-picker__hint">Change</span>' +
+                '</button>' +
+                '<div class="practice-song-picker__panel" id="practice-song-picker-panel" hidden>' +
+                  '<input type="search" class="practice-song-picker__search" id="practice-song-picker-search" placeholder="Search songs…" autocomplete="off" enterkeyhint="search" />' +
+                  '<ul class="practice-song-picker__list" id="practice-song-picker-list"></ul>' +
+                '</div>' +
+              '</div>'
+            )
+          : ('<h2>' + esc(song.title || "Untitled") + '</h2>');
         root.innerHTML =
           '<div class="practice-song-head">' +
             '<p class="practice-song-head__slot">' + esc(song.slot_label || "Song") + '</p>' +
-            '<h2>' + esc(song.title || "Untitled") + '</h2>' +
+            titleBlock +
             (meta ? '<p class="practice-song-head__meta">' + esc(meta) + '</p>' : '') +
           '</div>' +
           renderPracticeLyrics(song);
 
         bindEditHandlers();
+        if (state.editing) {
+          const toggle = document.getElementById("practice-song-picker-toggle");
+          const search = document.getElementById("practice-song-picker-search");
+          if (toggle) {
+            toggle.addEventListener("click", function (ev) {
+              ev.preventDefault();
+              const panel = document.getElementById("practice-song-picker-panel");
+              if (panel && !panel.hidden) closeSongPicker();
+              else openSongPicker();
+            });
+          }
+          if (search) {
+            search.addEventListener("input", function () {
+              renderSongPickerResults(search.value);
+            });
+            search.addEventListener("keydown", function (ev) {
+              if (ev.key === "Escape") {
+                ev.preventDefault();
+                closeSongPicker();
+              }
+            });
+          }
+          // Warm catalog while editing so the first open feels instant.
+          void ensurePracticeCatalog();
+        }
 
-        document.querySelectorAll(".practice-tab").forEach(function (el, i) {
-          el.classList.toggle("is-active", i === state.index);
-          if (i === state.index) el.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-        });
+        syncSongTabs();
       }
 
       function clearTabMotionClasses() {
@@ -1134,11 +1425,13 @@
       function renderCurrentSong() {
         tabAnimToken += 1;
         clearTabMotionClasses();
+        closeSongPicker();
         paintCurrentSong();
       }
 
       function switchPracticeTab(nextIndex) {
         if (nextIndex === state.index) return;
+        closeSongPicker();
         if (prefersReducedMotion || !root.innerHTML.trim()) {
           state.index = nextIndex;
           renderCurrentSong();
@@ -1183,6 +1476,10 @@
           return {
             hymn_id: song.hymn_id || "",
             slot_key: song.slot_key || "",
+            title: song.title || "",
+            author: song.author || "",
+            language: song.language || "",
+            section: song.section || "",
             blocks: (song.blocks || []).map(function (b) {
               return {
                 id: b.id || "",
