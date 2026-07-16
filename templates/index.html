@@ -6439,6 +6439,147 @@
       opacity: 1;
       transition-duration: 0ms;
     }
+
+    /* Deck theme chooser (Mass Setup) */
+    .ui-overlay .ui-card.deck-theme-card {
+      width: min(1120px, calc(100vw - 2rem));
+      max-width: min(1120px, calc(100vw - 2rem));
+      max-height: min(92vh, 880px);
+    }
+    .deck-theme-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 780px) {
+      .deck-theme-grid { grid-template-columns: 1fr; }
+    }
+    .deck-theme-option {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      background: var(--surface);
+      color: inherit;
+      cursor: pointer;
+      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+    .deck-theme-option:hover {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--card-border));
+      transform: translateY(-1px);
+    }
+    .deck-theme-option.is-selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+    .deck-theme-option__slide {
+      aspect-ratio: 16 / 9;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #000;
+    }
+    .deck-theme-option__slide[data-theme-id="theme1"] {
+      background: #000;
+    }
+    .deck-theme-option__slide[data-theme-id="theme2"] {
+      background: #000;
+    }
+    .deck-theme-option__slide[data-theme-id="theme3"] {
+      background: #fff;
+      border-color: rgba(0,0,0,0.1);
+    }
+    .deck-theme-option__slide-inner {
+      height: 100%;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      justify-content: flex-start;
+    }
+    .deck-theme-option__kicker {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .deck-theme-option__title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-decoration: underline;
+      line-height: 1.15;
+    }
+    .deck-theme-option__body {
+      font-size: 0.78rem;
+      line-height: 1.35;
+      opacity: 0.92;
+    }
+    .deck-theme-option__divider {
+      margin-top: auto;
+      align-self: stretch;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 6px 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .deck-theme-option__slide[data-theme-id="theme1"] .deck-theme-option__kicker,
+    .deck-theme-option__slide[data-theme-id="theme1"] .deck-theme-option__body {
+      color: #f0fdf4;
+    }
+    .deck-theme-option__slide[data-theme-id="theme1"] .deck-theme-option__title {
+      color: #ffb800;
+    }
+    .deck-theme-option__slide[data-theme-id="theme1"] .deck-theme-option__divider {
+      color: #faf8f4;
+      background: linear-gradient(90deg, #5b2a86, #2f6b4f);
+    }
+    .deck-theme-option__slide[data-theme-id="theme2"] .deck-theme-option__kicker,
+    .deck-theme-option__slide[data-theme-id="theme2"] .deck-theme-option__title,
+    .deck-theme-option__slide[data-theme-id="theme2"] .deck-theme-option__body,
+    .deck-theme-option__slide[data-theme-id="theme2"] .deck-theme-option__divider {
+      color: #ffffff;
+    }
+    .deck-theme-option__slide[data-theme-id="theme2"] .deck-theme-option__divider {
+      background: #111;
+      border: 1px solid rgba(255,255,255,0.22);
+    }
+    .deck-theme-option__slide[data-theme-id="theme3"] .deck-theme-option__kicker,
+    .deck-theme-option__slide[data-theme-id="theme3"] .deck-theme-option__title,
+    .deck-theme-option__slide[data-theme-id="theme3"] .deck-theme-option__body,
+    .deck-theme-option__slide[data-theme-id="theme3"] .deck-theme-option__divider {
+      color: #000000;
+    }
+    .deck-theme-option__slide[data-theme-id="theme3"] .deck-theme-option__divider {
+      background: #f3f3f3;
+      border: 1px solid rgba(0,0,0,0.14);
+    }
+    .deck-theme-option__meta strong {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--ink);
+    }
+    .deck-theme-option__meta span {
+      display: block;
+      margin-top: 3px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .deck-theme-footer {
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .deck-theme-footer .secondary,
+    .deck-theme-footer .primary {
+      flex: 1 1 180px;
+    }
+
     .ui-card {
       position: relative;
       z-index: 1;
@@ -6464,7 +6605,7 @@
       transform: scale(1) translateY(0);
     }
     /* Default size for ordinary modals. Specialty cards override below. */
-    .ui-overlay .ui-card:not(.practice-share-card):not(.ui-card--reading):not(.ui-card--news-expand):not(.song-save-result-card) {
+    .ui-overlay .ui-card:not(.practice-share-card):not(.ui-card--reading):not(.ui-card--news-expand):not(.song-save-result-card):not(.deck-theme-card) {
       width: min(480px, calc(100vw - 2rem));
       max-width: min(480px, calc(100vw - 2rem));
     }
@@ -16581,6 +16722,69 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="deck-theme-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="deck-theme-modal-backdrop"></div>
+        <article class="ui-card deck-theme-card" role="dialog" aria-labelledby="deck-theme-modal-title" aria-describedby="deck-theme-modal-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="deck-theme-modal-title">Choose your slide theme</h3>
+              <p class="ui-card__description" id="deck-theme-modal-desc">Pick how Mass slides look. You can change this later on Review.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="deck-theme-modal-close" aria-label="Close" hidden>×</button>
+          </header>
+          <div class="ui-card__content">
+            <div class="deck-theme-grid" id="deck-theme-grid" role="radiogroup" aria-label="Slide themes">
+              <button type="button" class="deck-theme-option is-selected" role="radio" aria-checked="true" data-theme-id="theme1" id="deck-theme-opt-theme1">
+                <div class="deck-theme-option__slide" data-theme-id="theme1" aria-hidden="true">
+                  <div class="deck-theme-option__slide-inner">
+                    <span class="deck-theme-option__kicker">Liturgy of the Word</span>
+                    <strong class="deck-theme-option__title">First Reading</strong>
+                    <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
+                    <span class="deck-theme-option__divider">Mass divider · season color</span>
+                  </div>
+                </div>
+                <div class="deck-theme-option__meta">
+                  <strong>Theme 1 · Liturgy Flow</strong>
+                  <span>Black + amber accents. Dividers follow the season.</span>
+                </div>
+              </button>
+              <button type="button" class="deck-theme-option" role="radio" aria-checked="false" data-theme-id="theme2" id="deck-theme-opt-theme2">
+                <div class="deck-theme-option__slide" data-theme-id="theme2" aria-hidden="true">
+                  <div class="deck-theme-option__slide-inner">
+                    <span class="deck-theme-option__kicker">Liturgy of the Word</span>
+                    <strong class="deck-theme-option__title">First Reading</strong>
+                    <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
+                    <span class="deck-theme-option__divider">Mass divider · white on black</span>
+                  </div>
+                </div>
+                <div class="deck-theme-option__meta">
+                  <strong>Theme 2 · Midnight</strong>
+                  <span>Black background. All text white, including titles &amp; dividers.</span>
+                </div>
+              </button>
+              <button type="button" class="deck-theme-option" role="radio" aria-checked="false" data-theme-id="theme3" id="deck-theme-opt-theme3">
+                <div class="deck-theme-option__slide" data-theme-id="theme3" aria-hidden="true">
+                  <div class="deck-theme-option__slide-inner">
+                    <span class="deck-theme-option__kicker">Liturgy of the Word</span>
+                    <strong class="deck-theme-option__title">First Reading</strong>
+                    <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
+                    <span class="deck-theme-option__divider">Mass divider · black on white</span>
+                  </div>
+                </div>
+                <div class="deck-theme-option__meta">
+                  <strong>Theme 3 · Paper</strong>
+                  <span>White background. All text black, including titles &amp; dividers.</span>
+                </div>
+              </button>
+            </div>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row deck-theme-footer">
+            <button type="button" class="secondary" id="deck-theme-once">Use for this Mass only</button>
+            <button type="button" class="primary" id="deck-theme-default">Save as default</button>
+          </footer>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="home-news-expand-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="home-news-expand-backdrop"></div>
         <article class="ui-card ui-card--news-expand" role="dialog" aria-labelledby="home-news-expand-title" aria-modal="true">
@@ -17257,9 +17461,9 @@
             <div class="panel-head theme-one-head">
               <div>
                 <h3>Theme 1 · Liturgy Flow</h3>
-                <p>The app's built-in deck theme, applied to every generated PowerPoint by default. <strong>Every slide sits on a black background with amber #FFB800 highlights</strong> — only the Mass divider background follows the liturgical season color, and AI posters are untouched.</p>
+                <p>Default deck theme: <strong>black background with amber #FFB800 highlights</strong>. Mass dividers follow the liturgical season. Mass Setup also offers Theme 2 (Midnight — all white on black) and Theme 3 (Paper — all black on white).</p>
               </div>
-              <span class="theme-one-badge">Default · Active</span>
+              <span class="theme-one-badge">Built-in · Theme 1</span>
             </div>
 
             <div class="theme-one-palette" aria-label="Theme 1 colors">
@@ -18446,17 +18650,76 @@
         }
         body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt {
           grid-column: 2;
-          grid-row: 1;
+          grid-row: 1 / span 2;
           position: sticky;
           top: calc(var(--app-header-offset, 0px) + 12px);
           margin-top: 0;
           max-width: none;
         }
-        body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup {
+        body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-deck-theme {
           grid-column: 1;
           grid-row: 1;
           margin-top: 0;
           max-width: none;
+        }
+        body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup {
+          grid-column: 1;
+          grid-row: 2;
+          margin-top: 0;
+          max-width: none;
+        }
+        .mw-deck-theme-summary {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+        .mw-deck-theme-summary__preview {
+          width: 112px;
+          flex: 0 0 auto;
+          aspect-ratio: 16 / 9;
+          border-radius: 8px;
+          border: 1px solid var(--card-border);
+          overflow: hidden;
+          background: #000;
+          padding: 8px 10px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+        }
+        .mw-deck-theme-summary__preview[data-theme-id="theme3"] {
+          background: #fff;
+          box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+        }
+        .mw-deck-theme-summary__preview .mw-dt-kicker {
+          font-size: 0.45rem;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          opacity: 0.85;
+        }
+        .mw-deck-theme-summary__preview .mw-dt-title {
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-decoration: underline;
+          line-height: 1.15;
+        }
+        .mw-deck-theme-summary__preview .mw-dt-body {
+          font-size: 0.55rem;
+          line-height: 1.25;
+          opacity: 0.92;
+        }
+        .mw-deck-theme-summary__meta strong {
+          display: block;
+          font-size: var(--mw-type-section, 1.0625rem);
+          color: var(--ink);
+        }
+        .mw-deck-theme-summary__meta span {
+          display: block;
+          margin-top: 4px;
+          font-size: var(--mw-type-caption, 0.875rem);
+          color: var(--muted);
         }
         @media (max-width: 900px) {
           body.mw-on .mw-step-canvas.is-readings-step .flow-setup-layout,
@@ -18472,6 +18735,7 @@
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-main,
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-summary,
           body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt,
+          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-deck-theme,
           body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup {
             grid-column: 1;
             grid-row: auto;
@@ -18491,8 +18755,9 @@
           }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-main { order: 1; }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-summary { order: 2; }
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt { order: 2; }
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup { order: 1; }
+          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-deck-theme { order: 1; }
+          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup { order: 2; }
+          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt { order: 3; }
         }
       </style>
       <section class="page" id="flow-page" data-route="/mass/builder">
@@ -18876,6 +19141,24 @@
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2 mw-review" id="mw-review" data-mw-step="7" hidden>
+                  <div class="mw-card mw-deck-theme" id="mw-deck-theme-card">
+                    <div class="mw-card__head">
+                      <h3>Slide theme</h3>
+                      <button type="button" class="ghost mini" id="mw-deck-theme-change">Change</button>
+                    </div>
+                    <div class="mw-deck-theme-summary" id="mw-deck-theme-summary">
+                      <div class="mw-deck-theme-summary__preview" id="mw-deck-theme-preview" data-theme-id="theme1" aria-hidden="true">
+                        <div class="mw-dt-kicker" id="mw-deck-theme-preview-kicker">Liturgy of the Word</div>
+                        <div class="mw-dt-title" id="mw-deck-theme-preview-title">First Reading</div>
+                        <div class="mw-dt-body" id="mw-deck-theme-preview-body">A reading from the Book…</div>
+                      </div>
+                      <div class="mw-deck-theme-summary__meta">
+                        <strong id="mw-deck-theme-name">Theme 1 · Liturgy Flow</strong>
+                        <span id="mw-deck-theme-note">Black background with amber titles. Dividers follow the liturgical season.</span>
+                      </div>
+                    </div>
+                    <input type="hidden" id="flow-deck-theme" value="theme1" />
+                  </div>
                   <div class="mw-receipt">
                     <div class="mw-receipt__row"><span>Date</span><strong id="mw-sum-date">—</strong></div>
                     <div class="mw-receipt__row"><span>Celebrant</span><strong id="mw-sum-celebrant">—</strong></div>
@@ -19753,6 +20036,13 @@
               return false;
             }
           };
+          setTimeout(function () {
+            var fp = document.getElementById('flow-page');
+            if (!fp || !fp.classList.contains('active')) return;
+            if (typeof window.maybePromptDeckThemeOnStartup === 'function') {
+              window.maybePromptDeckThemeOnStartup();
+            }
+          }, 0);
         }
         init();
       })();
@@ -25116,7 +25406,7 @@
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-openai-poster", "flow-use-gemini-poster",
         "flow-include-church-logo", "flow-include-church-name", "flow-show-footer",
-        "flow-include-social-exports",
+        "flow-include-social-exports", "flow-deck-theme",
       ];
     }
 
@@ -25302,6 +25592,7 @@
     function runHomeMassStartNew() {
       massDraftSkipRestore = true;
       clearMassBuilderDraft();
+      try { sessionStorage.removeItem("verbumDeckThemePrompted"); } catch (_e) { /* ignore */ }
       if (typeof resetMassSectionMedia === "function") resetMassSectionMedia();
       closeHomeMassNewModal();
       showRoute("/mass/builder");
@@ -25311,6 +25602,11 @@
         }
         if (window.MassWizard && window.MassWizard.setStep) window.MassWizard.setStep(1);
         loadFlowData(true).catch(() => {});
+        setTimeout(() => {
+          if (typeof window.maybePromptDeckThemeOnStartup === "function") {
+            window.maybePromptDeckThemeOnStartup();
+          }
+        }, 0);
       });
     }
 
@@ -25373,6 +25669,9 @@
       });
       if (typeof applyRiteVideoState === "function") {
         applyRiteVideoState(draft.riteVideo || { mode: {}, lang: {} });
+      }
+      if (f["flow-deck-theme"] && typeof window.setActiveDeckTheme === "function") {
+        window.setActiveDeckTheme(f["flow-deck-theme"]);
       }
       if (draft.sanctusPicked && !(window.massRiteVideoMode && window.massRiteVideoMode.sanctus)) {
         const opt = document.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[data-val="default"]');
@@ -25587,6 +25886,13 @@
         refreshCommunity();
         refreshMassMusicSongPlan({ force: true }).catch(() => {});
         const draft = readMassBuilderDraft();
+        const afterBuilderReady = () => {
+          setTimeout(() => {
+            if (typeof window.maybePromptDeckThemeOnStartup === "function") {
+              window.maybePromptDeckThemeOnStartup();
+            }
+          }, 0);
+        };
         if (massDraftSkipRestore) {
           massDraftSkipRestore = false;
           ensureMassBuilderDefaultDate({ force: true });
@@ -25594,14 +25900,16 @@
           if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
             loadFlowData(true);
           }
+          afterBuilderReady();
         } else if (draft) {
-          restoreMassBuilderDraft(draft).catch(() => {});
+          restoreMassBuilderDraft(draft).catch(() => {}).finally(afterBuilderReady);
         } else {
           ensureMassBuilderDefaultDate();
           const massDate = $("mass-date") && $("mass-date").value;
           if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
             loadFlowData(true);
           }
+          afterBuilderReady();
         }
       }
       syncFlowDockVisibility(getActiveFlowTab());
@@ -27372,18 +27680,55 @@
       }, 0);
     });
 
-    // Theme 1 is the app's single built-in deck theme ("Liturgy Flow"). The old
-    // theme grid / custom color builder were retired; the generated deck always uses
-    // Theme 1 (fonts + palette live in generators/powerpoint.py). These constants
-    // remain only to keep the live slide preview and theme indicators working.
+    // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
+    // Theme 1 = Liturgy Flow (amber). Themes 2–3 are strict mono black/white.
+    const DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
+    const DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
     const presetThemes = [
-      { id: "theme1", name: "Theme 1", note: "Liturgy Flow — the built-in deck theme.", bg: "#000000", primary: "#f0fdf4", accent: "#ffb800", text: "#f0fdf4", font: "Arial, Helvetica, sans-serif" },
+      {
+        id: "theme1",
+        name: "Theme 1 · Liturgy Flow",
+        note: "Black background with amber titles. Dividers follow the liturgical season.",
+        bg: "#000000",
+        primary: "#f0fdf4",
+        accent: "#ffb800",
+        text: "#f0fdf4",
+        font: "Arial, Helvetica, sans-serif",
+      },
+      {
+        id: "theme2",
+        name: "Theme 2 · Midnight",
+        note: "Black background. All text white, including titles and Mass dividers.",
+        bg: "#000000",
+        primary: "#ffffff",
+        accent: "#ffffff",
+        text: "#ffffff",
+        font: "Arial, Helvetica, sans-serif",
+      },
+      {
+        id: "theme3",
+        name: "Theme 3 · Paper",
+        note: "White background. All text black, including titles and Mass dividers.",
+        bg: "#ffffff",
+        primary: "#000000",
+        accent: "#000000",
+        text: "#000000",
+        font: "Arial, Helvetica, sans-serif",
+      },
     ];
     let activeTheme = presetThemes[0];
     let customThemes = [];
+    let deckThemeModalMode = "startup"; // "startup" | "review"
+    let deckThemeModalPendingId = "theme1";
+
+    function findPresetTheme(id) {
+      const tid = String(id || "").trim().toLowerCase();
+      return presetThemes.find((t) => t.id === tid) || presetThemes[0];
+    }
 
     function pptThemePayload(theme) {
       return {
+        id: theme.id,
         name: theme.name,
         bg: theme.bg,
         primary: theme.primary,
@@ -27393,12 +27738,58 @@
       };
     }
 
+    function syncDeckThemeHiddenInput() {
+      const el = $("flow-deck-theme");
+      if (el) el.value = activeTheme.id;
+    }
+
+    function paintMiniDeckThemePreview(root, theme) {
+      if (!root || !theme) return;
+      root.setAttribute("data-theme-id", theme.id);
+      root.style.background = theme.bg;
+      const kicker = root.querySelector(".mw-dt-kicker") || $("mw-deck-theme-preview-kicker");
+      const title = root.querySelector(".mw-dt-title") || $("mw-deck-theme-preview-title");
+      const body = root.querySelector(".mw-dt-body") || $("mw-deck-theme-preview-body");
+      const ink = theme.text || theme.primary;
+      const accent = theme.accent || ink;
+      if (kicker) kicker.style.color = ink;
+      if (title) title.style.color = accent;
+      if (body) body.style.color = ink;
+    }
+
+    function updateReviewDeckThemeSummary() {
+      const nameEl = $("mw-deck-theme-name");
+      const noteEl = $("mw-deck-theme-note");
+      if (nameEl) nameEl.textContent = activeTheme.name;
+      if (noteEl) noteEl.textContent = activeTheme.note || "";
+      paintMiniDeckThemePreview($("mw-deck-theme-preview"), activeTheme);
+      syncDeckThemeHiddenInput();
+    }
+
     function updateThemeIndicators() {
       const activeName = $("active-theme-name");
       if (activeName) activeName.textContent = activeTheme.name;
       const pptTheme = $("ppt-theme-indicator");
       if (pptTheme) pptTheme.textContent = activeTheme.name;
-      localStorage.setItem("activePptTheme", JSON.stringify(activeTheme));
+      try {
+        localStorage.setItem("activePptTheme", JSON.stringify(activeTheme));
+      } catch (_e) { /* ignore */ }
+      updateReviewDeckThemeSummary();
+    }
+
+    function setActiveDeckTheme(themeOrId, options) {
+      const o = options || {};
+      const theme = typeof themeOrId === "string" ? findPresetTheme(themeOrId) : (themeOrId || presetThemes[0]);
+      activeTheme = theme;
+      updateThemeIndicators();
+      applyThemeToPreview($("theme-live-preview"), activeTheme);
+      if (o.saveDefault) {
+        try { localStorage.setItem(DECK_THEME_DEFAULT_KEY, activeTheme.id); } catch (_e) { /* ignore */ }
+      }
+      if (typeof window.scheduleMassBuilderDraftAutoSave === "function") {
+        window.scheduleMassBuilderDraftAutoSave();
+      }
+      return activeTheme;
     }
 
     function applyThemeToPreview(el, theme) {
@@ -27408,6 +27799,60 @@
       el.style.setProperty("--slide-accent", theme.accent);
       el.style.setProperty("--slide-text", theme.text);
       el.style.setProperty("--slide-font", theme.font);
+    }
+
+    function selectDeckThemeOption(themeId) {
+      deckThemeModalPendingId = findPresetTheme(themeId).id;
+      const grid = $("deck-theme-grid");
+      if (!grid) return;
+      grid.querySelectorAll(".deck-theme-option").forEach((btn) => {
+        const selected = btn.getAttribute("data-theme-id") === deckThemeModalPendingId;
+        btn.classList.toggle("is-selected", selected);
+        btn.setAttribute("aria-checked", selected ? "true" : "false");
+      });
+    }
+
+    function closeDeckThemeChooser() {
+      setUiOverlayOpen($("deck-theme-modal"), false);
+    }
+
+    function openDeckThemeChooser(options) {
+      const o = options || {};
+      deckThemeModalMode = o.mode === "review" ? "review" : "startup";
+      const preferred = o.themeId || activeTheme.id || localStorage.getItem(DECK_THEME_DEFAULT_KEY) || "theme1";
+      selectDeckThemeOption(preferred);
+      const title = $("deck-theme-modal-title");
+      const desc = $("deck-theme-modal-desc");
+      const closeBtn = $("deck-theme-modal-close");
+      if (title) title.textContent = deckThemeModalMode === "review" ? "Change slide theme" : "Choose your slide theme";
+      if (desc) {
+        desc.textContent = deckThemeModalMode === "review"
+          ? "Update how this Mass deck looks. Save as default if you want it next time too."
+          : "Pick how Mass slides look. You can change this later on Review.";
+      }
+      if (closeBtn) closeBtn.hidden = deckThemeModalMode !== "review";
+      setUiOverlayOpen($("deck-theme-modal"), true);
+    }
+
+    function confirmDeckThemeChoice(saveDefault) {
+      setActiveDeckTheme(deckThemeModalPendingId, { saveDefault: !!saveDefault });
+      try { sessionStorage.setItem(DECK_THEME_SESSION_KEY, "1"); } catch (_e) { /* ignore */ }
+      closeDeckThemeChooser();
+    }
+
+    function maybePromptDeckThemeOnStartup() {
+      try {
+        if (sessionStorage.getItem(DECK_THEME_SESSION_KEY) === "1") return;
+      } catch (_e) { /* ignore */ }
+      const preferred = (() => {
+        try {
+          return localStorage.getItem(DECK_THEME_DEFAULT_KEY) || activeTheme.id || "theme1";
+        } catch (_e2) {
+          return activeTheme.id || "theme1";
+        }
+      })();
+      setActiveDeckTheme(preferred);
+      openDeckThemeChooser({ mode: "startup", themeId: preferred });
     }
 
     function liturgicalPresetIdFromSeason(seasonStr) {
@@ -27420,10 +27865,56 @@
     }
 
     function renderThemeGrid() {
-      // Theme chooser retired — keep indicators and the live preview in sync with Theme 1.
       updateThemeIndicators();
       applyThemeToPreview($("theme-live-preview"), activeTheme);
     }
+
+    (function restoreActiveDeckThemeFromStorage() {
+      try {
+        const raw = localStorage.getItem("activePptTheme");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.id) {
+            activeTheme = findPresetTheme(parsed.id);
+            return;
+          }
+        }
+        const def = localStorage.getItem(DECK_THEME_DEFAULT_KEY);
+        if (def) activeTheme = findPresetTheme(def);
+      } catch (_e) { /* ignore */ }
+    })();
+
+    (function wireDeckThemeChooser() {
+      const grid = $("deck-theme-grid");
+      if (grid) {
+        grid.addEventListener("click", (e) => {
+          const btn = e.target.closest(".deck-theme-option");
+          if (!btn || !grid.contains(btn)) return;
+          selectDeckThemeOption(btn.getAttribute("data-theme-id"));
+        });
+      }
+      $("deck-theme-once") && $("deck-theme-once").addEventListener("click", () => confirmDeckThemeChoice(false));
+      $("deck-theme-default") && $("deck-theme-default").addEventListener("click", () => confirmDeckThemeChoice(true));
+      $("deck-theme-modal-close") && $("deck-theme-modal-close").addEventListener("click", closeDeckThemeChooser);
+      $("deck-theme-modal-backdrop") && $("deck-theme-modal-backdrop").addEventListener("click", () => {
+        if (deckThemeModalMode === "review") closeDeckThemeChooser();
+      });
+      $("mw-deck-theme-change") && $("mw-deck-theme-change").addEventListener("click", () => {
+        openDeckThemeChooser({ mode: "review", themeId: activeTheme.id });
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        const modal = $("deck-theme-modal");
+        if (modal && modal.classList.contains("is-open") && deckThemeModalMode === "review") {
+          closeDeckThemeChooser();
+        }
+      });
+      window.openDeckThemeChooser = openDeckThemeChooser;
+      window.maybePromptDeckThemeOnStartup = maybePromptDeckThemeOnStartup;
+      window.setActiveDeckTheme = setActiveDeckTheme;
+      syncDeckThemeHiddenInput();
+      updateReviewDeckThemeSummary();
+    })();
 
     $("btn-close-song-preview") && $("btn-close-song-preview").addEventListener("click", closeSongPreviewPanel);
     $("song-preview-backdrop") && $("song-preview-backdrop").addEventListener("click", closeSongPreviewPanel);

@@ -77,15 +77,26 @@ _BODY = RGBColor(245, 245, 245)
 _MUTED = RGBColor(155, 155, 165)
 
 # --- Theme 1 (the app's default deck theme — "LiturgyFlowTemplate1") -----------
-# Fixed liturgical-surface palette + typography for readings, prayers, dialogue and
-# collection slides. Every slide sits on a black background; the liturgical season
-# color no longer repaints these surfaces — it only tints the Mass divider gradient
-# (see ``SlideTheme.divider_*`` / ``_divider_palette``).
+# Built-in deck themes (selected via ``custom_theme.id`` from Mass Setup).
+# Theme 1 keeps amber accents; Themes 2–3 are strict mono (bg ↔ text swapped),
+# including titles, hymns, and Mass dividers (no liturgical-season tint).
 _THEME1_BG = RGBColor(0x00, 0x00, 0x00)        # black background (all non-divider slides)
 _THEME1_PRIMARY = RGBColor(0xF0, 0xFD, 0xF4)   # off-white body text
 _THEME1_MUTED = RGBColor(0xBC, 0xBA, 0xC6)     # muted secondary text
 _THEME1_EMPHASIS = RGBColor(0xFF, 0xB8, 0x00)  # amber/gold accent / highlighted text
 _THEME1_FONT = "Arial"                          # dialogue & reading body font
+
+_THEME2_BG = RGBColor(0x00, 0x00, 0x00)        # Midnight — black bg
+_THEME2_PRIMARY = RGBColor(0xFF, 0xFF, 0xFF)   # pure white text (titles + body)
+_THEME2_MUTED = RGBColor(0xC8, 0xC8, 0xC8)
+_THEME2_EMPHASIS = RGBColor(0xFF, 0xFF, 0xFF)
+
+_THEME3_BG = RGBColor(0xFF, 0xFF, 0xFF)        # Paper — white bg
+_THEME3_PRIMARY = RGBColor(0x00, 0x00, 0x00)   # pure black text (titles + body)
+_THEME3_MUTED = RGBColor(0x4A, 0x4A, 0x4A)
+_THEME3_EMPHASIS = RGBColor(0x00, 0x00, 0x00)
+
+_DECK_THEME_IDS = frozenset({"theme1", "theme2", "theme3"})
 
 _SLIDE_TEXT_PT = 55
 _FOOTER_PT = 13
@@ -277,12 +288,12 @@ class SlideTheme:
 
     Two surfaces share one theme:
     - The *liturgical surface* (readings, prayers, dialogue, collection) is filled
-      with ``bg`` (the season color); its text uses ``primary``/``muted``/``emphasis``.
-    - The *projector surface* (hymn, lyric, gospel-acclamation slides) is a dark
-      screen; its text uses the ``hymn_*``/``chorus_accent``/``paren_accent`` roles.
+      with ``bg``; its text uses ``primary``/``muted``/``emphasis``.
+    - The *projector surface* (hymn, lyric, gospel-acclamation slides) uses the
+      ``hymn_*``/``chorus_accent``/``paren_accent`` roles.
 
-    Every renderer reads from these roles so the deck stays internally consistent
-    and shifts with the liturgical season / custom theme without hand-editing.
+    Theme 1 tints only Mass dividers by liturgical season. Themes 2–3 set
+    ``mono_surfaces=True`` so dividers match the same black/white palette.
     """
 
     bg: RGBColor
@@ -290,7 +301,7 @@ class SlideTheme:
     muted: RGBColor
     emphasis: RGBColor
     font_name: str = "Calibri"
-    # Projector surface (hymn / lyric / gospel-acclamation slides, dark screen).
+    # Projector surface (hymn / lyric / gospel-acclamation slides).
     hymn_bg: RGBColor = _HYMN_BG
     hymn_title: RGBColor = _HYMN_GOLD_TITLE
     hymn_body: RGBColor = _HYMN_BODY_WHITE
@@ -298,13 +309,12 @@ class SlideTheme:
     paren_accent: RGBColor = _HYMN_PAREN_COLOR
     hymn_brand: RGBColor = _HYMN_BRAND_WHITE
     footer_muted: RGBColor = _HYMN_FOOTER_MUTED
-    # Mass-divider surface: the ONLY place the liturgical season color is applied.
-    # Derived from the season hue so dividers shift Advent→violet, Lent→purple, etc.
-    # while every other slide keeps the fixed Theme 1 palette above.
+    # Mass-divider surface (season-tinted for Theme 1; mono for Themes 2–3).
     divider_bg: RGBColor = _BG
     divider_primary: RGBColor = _BODY
     divider_muted: RGBColor = _MUTED
     divider_emphasis: RGBColor = _GOLD_FALLBACK
+    mono_surfaces: bool = False
 
 
 _ACTIVE_FONT = "Calibri"
@@ -379,6 +389,62 @@ def _theme_with_roles(
     )
 
 
+def _mono_slide_theme(*, dark: bool) -> SlideTheme:
+    """Strict black↔white palette for Themes 2–3 (all text roles match, incl. dividers)."""
+    if dark:
+        bg, primary, muted, emphasis = (
+            _THEME2_BG,
+            _THEME2_PRIMARY,
+            _THEME2_MUTED,
+            _THEME2_EMPHASIS,
+        )
+        footer = RGBColor(0xA0, 0xA0, 0xA0)
+    else:
+        bg, primary, muted, emphasis = (
+            _THEME3_BG,
+            _THEME3_PRIMARY,
+            _THEME3_MUTED,
+            _THEME3_EMPHASIS,
+        )
+        footer = RGBColor(0x6B, 0x6B, 0x6B)
+    return SlideTheme(
+        bg=bg,
+        primary=primary,
+        muted=muted,
+        emphasis=emphasis,
+        font_name=_THEME1_FONT,
+        hymn_bg=bg,
+        hymn_title=primary,
+        hymn_body=primary,
+        chorus_accent=primary,
+        paren_accent=muted,
+        hymn_brand=primary,
+        footer_muted=footer,
+        divider_bg=bg,
+        divider_primary=primary,
+        divider_muted=muted,
+        divider_emphasis=emphasis,
+        mono_surfaces=True,
+    )
+
+
+def _resolve_deck_theme_id(custom_theme: Optional[Mapping[str, Any]]) -> str:
+    """Map ``custom_theme`` payload to a built-in deck theme id."""
+    if not custom_theme:
+        return "theme1"
+    tid = str(custom_theme.get("id") or "").strip().lower()
+    if tid in _DECK_THEME_IDS:
+        return tid
+    name = str(custom_theme.get("name") or "").strip().lower()
+    if "midnight" in name or name in {"theme 2", "theme2", "black", "noir"}:
+        return "theme2"
+    if "paper" in name or name in {"theme 3", "theme3", "white", "daylight"}:
+        return "theme3"
+    if "liturgy" in name or name in {"theme 1", "theme1"}:
+        return "theme1"
+    return "theme1"
+
+
 def _season_surface_roles(
     liturgical_color: Optional[Mapping[str, Any]],
 ) -> Tuple[RGBColor, RGBColor, RGBColor, RGBColor]:
@@ -411,16 +477,19 @@ def _build_slide_theme(
     liturgical_color: Optional[Mapping[str, Any]],
     custom_theme: Optional[Mapping[str, Any]] = None,
 ) -> SlideTheme:
-    """Return the fixed Theme 1 deck palette, tinting only the divider by season.
+    """Build the deck palette for the selected built-in theme.
 
-    Theme 1 (the app's single built-in deck theme) owns every liturgical-surface and
-    projector color and typography. The liturgical season color is applied *exclusively*
-    to the Mass divider gradient via the ``divider_*`` roles; readings, prayers,
-    dialogue, hymns and the collection slide keep their fixed Theme 1 colors regardless
-    of the season. ``custom_theme`` is accepted for backward compatibility but ignored
-    now that the Theme chooser has been retired.
+    - ``theme1`` (Liturgy Flow): fixed black + amber; season color tints Mass dividers only.
+    - ``theme2`` (Midnight): black background, all-white text including titles & dividers.
+    - ``theme3`` (Paper): white background, all-black text including titles & dividers.
+
+    ``custom_theme.id`` (preferred) or ``custom_theme.name`` selects the theme.
     """
-    del custom_theme  # Theme chooser removed; the deck always uses Theme 1.
+    theme_id = _resolve_deck_theme_id(custom_theme)
+    if theme_id == "theme2":
+        return _mono_slide_theme(dark=True)
+    if theme_id == "theme3":
+        return _mono_slide_theme(dark=False)
     base = _theme_with_roles(
         _THEME1_BG, _THEME1_PRIMARY, _THEME1_MUTED, _THEME1_EMPHASIS, _THEME1_FONT
     )
@@ -2831,13 +2900,31 @@ def _mix_rgb(a: RGBColor, b: RGBColor, t: float) -> RGBColor:
 
 
 def _divider_palette(theme: SlideTheme) -> _DividerPalette:
-    """Season-aware divider colors.
+    """Divider colors for the Mass section cards.
 
-    The divider is the only surface that follows the liturgical season, so it reads
-    from the ``divider_*`` roles (season-derived) rather than the fixed Theme 1
-    liturgical-surface colors.
+    Theme 1 follows the liturgical season via ``divider_*``. Mono themes (2–3) keep a
+    solid black or white divider with matching text — no season tint.
     """
     bg = theme.divider_bg
+    if theme.mono_surfaces:
+        primary = theme.divider_primary
+        muted = theme.divider_muted
+        emphasis = theme.divider_emphasis
+        panel_fill = _mix_rgb(bg, primary, 0.06)
+        panel_border = _mix_rgb(bg, primary, 0.18)
+        bar_fill = _mix_rgb(bg, primary, 0.12)
+        return _DividerPalette(
+            grad_start=bg,
+            grad_end=bg,
+            panel_fill=panel_fill,
+            panel_border=panel_border,
+            bar_fill=bar_fill,
+            bar_border=bar_fill,
+            label=emphasis,
+            primary=primary,
+            quote=muted,
+            gospel_label=emphasis,
+        )
     black = RGBColor(8, 8, 10)
     white = RGBColor(255, 255, 255)
     grad_start = _mix_rgb(bg, black, 0.82)

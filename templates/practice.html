@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#a10f0d" />
+  <meta name="theme-color" content="#a10f0d" id="practice-theme-color" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>{{ title }} · LiturgyFlow</title>
   <meta name="lf-app-version" content="{{ app_version|default('dev') }}" />
@@ -11,15 +11,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    (function () {
+      try {
+        var key = "lf-practice-theme";
+        var saved = localStorage.getItem(key);
+        var dark = saved === "dark" || (saved !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.setAttribute("data-theme", "dark");
+        else document.documentElement.setAttribute("data-theme", "light");
+      } catch (_e) {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
+  </script>
   <style>
     :root {
       color-scheme: light;
       --bg: #f4f6f8;
+      --bg-deep: #eef2f6;
       --ink: #15333d;
       --muted: #5c6b75;
       --accent: #a10f0d;
       --card: #ffffff;
       --line: #e2e8f0;
+      --surface-soft: #f8fafc;
+      --surface-disabled: #f1f5f9;
+      --toast-bg: #15333d;
+      --toast-ink: #ffffff;
       --lyrics-size: clamp(1.0625rem, 4.2vw, 1.1875rem);
       --lyrics-leading: 1.7;
       --safe-top: env(safe-area-inset-top, 0px);
@@ -27,6 +45,22 @@
       --motion-duration-base: 200ms;
       --motion-duration-exit: 120ms;
       --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --theme-color: #a10f0d;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #12171c;
+      --bg-deep: #0d1116;
+      --ink: #e8eef2;
+      --muted: #9aa8b2;
+      --accent: #d9786f;
+      --card: #1a2229;
+      --line: #2a343d;
+      --surface-soft: #151c22;
+      --surface-disabled: #10161b;
+      --toast-bg: #e8eef2;
+      --toast-ink: #12171c;
+      --theme-color: #1a2229;
     }
     * { box-sizing: border-box; }
     html {
@@ -42,6 +76,7 @@
       color: var(--ink);
       font-family: Inter, system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
+      transition: background-color var(--motion-duration-base) var(--motion-ease-out), color var(--motion-duration-base) var(--motion-ease-out);
     }
     body {
       min-height: 100dvh;
@@ -73,6 +108,56 @@
     .practice-top__text {
       flex: 1 1 auto;
       min-width: 0;
+    }
+    .practice-top__actions {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .practice-theme-toggle {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition:
+        background-color var(--motion-duration-base) var(--motion-ease-out),
+        border-color var(--motion-duration-base) var(--motion-ease-out),
+        color var(--motion-duration-base) var(--motion-ease-out),
+        transform 100ms var(--motion-ease-out);
+    }
+    .practice-theme-toggle:active {
+      transform: scale(0.97);
+    }
+    .practice-theme-toggle svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .practice-theme-toggle .icon-sun { display: none; }
+    .practice-theme-toggle .icon-moon { display: block; }
+    html[data-theme="dark"] .practice-theme-toggle .icon-sun { display: block; }
+    html[data-theme="dark"] .practice-theme-toggle .icon-moon { display: none; }
+    .practice-theme-toggle--float {
+      position: fixed;
+      top: calc(10px + var(--safe-top));
+      right: 12px;
+      z-index: 50;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    }
+    html[data-theme="dark"] .practice-theme-toggle--float {
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+    body.practice-chrome-ready .practice-theme-toggle--float {
+      display: none;
     }
     .practice-top__action {
       flex: 0 0 auto;
@@ -156,7 +241,7 @@
       transform: scale(0.97);
     }
     .practice-tab.is-active {
-      background: color-mix(in srgb, var(--accent) 10%, white);
+      background: color-mix(in srgb, var(--accent) 14%, var(--card));
       border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
       color: var(--accent);
     }
@@ -267,7 +352,7 @@
       font-size: 1rem;
       font-family: inherit;
       color: var(--ink);
-      background: #fff;
+      background: var(--card);
       outline: none;
     }
     .practice-song-picker__list {
@@ -291,7 +376,7 @@
     }
     .practice-song-picker__item:hover,
     .practice-song-picker__item.is-active {
-      background: color-mix(in srgb, var(--accent) 8%, white);
+      background: color-mix(in srgb, var(--accent) 12%, var(--card));
     }
     .practice-song-picker__item-title {
       display: block;
@@ -493,7 +578,7 @@
     }
     .practice-lyric-block--edit.is-off {
       opacity: 0.55;
-      background: #f8fafc;
+      background: var(--surface-soft);
     }
     .practice-lyric-block__toolbar {
       display: flex;
@@ -533,10 +618,10 @@
       line-height: var(--lyrics-leading);
       font-weight: 600;
       color: var(--ink);
-      background: #fff;
+      background: var(--card);
     }
     .practice-lyric-block__edit:disabled {
-      background: #f1f5f9;
+      background: var(--surface-disabled);
       color: var(--muted);
     }
     .practice-sync-toast {
@@ -544,8 +629,8 @@
       left: 50%;
       bottom: calc(16px + var(--safe-bottom));
       transform: translateX(-50%) translateY(120%);
-      background: #15333d;
-      color: #fff;
+      background: var(--toast-bg);
+      color: var(--toast-ink);
       font-size: 0.8125rem;
       font-weight: 600;
       padding: 10px 16px;
@@ -563,11 +648,12 @@
     @media (min-width: 1024px) and (hover: hover) {
       body {
         align-items: center;
-        background: linear-gradient(180deg, #eef2f6 0%, var(--bg) 120px);
+        background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg) 120px);
       }
       .practice-frame {
         max-width: 480px;
         box-shadow: 0 0 0 1px var(--line);
+        background: var(--bg);
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -576,6 +662,10 @@
   </style>
 </head>
 <body>
+  <button type="button" class="practice-theme-toggle practice-theme-toggle--float" id="practice-theme-toggle-float" aria-label="Switch to dark mode" title="Theme">
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"/></svg>
+  </button>
   <div class="practice-frame">
     <header class="practice-top" id="practice-top" hidden>
       <div class="practice-top__row">
@@ -584,7 +674,13 @@
           <h1 id="practice-title">Upcoming Mass</h1>
           <p id="practice-sub"></p>
         </div>
-        <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
+        <div class="practice-top__actions">
+          <button type="button" class="practice-theme-toggle" id="practice-theme-toggle" aria-label="Switch to dark mode" title="Theme">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"/></svg>
+          </button>
+          <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
+        </div>
       </div>
       <p class="practice-lead-note" id="practice-lead-note" hidden>Tap a song title to change it, turn blocks off or edit verses, then Save. Changes sync to unlocked choir members for this practice only — not your song library.</p>
     </header>
@@ -613,6 +709,11 @@
       const leadAction = document.getElementById("practice-lead-action");
       const leadNote = document.getElementById("practice-lead-note");
       const syncToast = document.getElementById("practice-sync-toast");
+      const themeToggles = [
+        document.getElementById("practice-theme-toggle"),
+        document.getElementById("practice-theme-toggle-float"),
+      ].filter(Boolean);
+      const THEME_KEY = "lf-practice-theme";
       let state = {
         songs: [],
         index: 0,
@@ -661,6 +762,44 @@
           syncToast.classList.remove("is-on");
         }, 2200);
       }
+
+      function currentTheme() {
+        return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      }
+
+      function syncThemeToggleUi() {
+        const dark = currentTheme() === "dark";
+        const label = dark ? "Switch to light mode" : "Switch to dark mode";
+        themeToggles.forEach(function (btn) {
+          btn.setAttribute("aria-label", label);
+          btn.setAttribute("title", dark ? "Light mode" : "Dark mode");
+        });
+        const meta = document.getElementById("practice-theme-color");
+        if (meta) {
+          const styles = getComputedStyle(document.documentElement);
+          meta.setAttribute("content", (styles.getPropertyValue("--theme-color") || "").trim() || (dark ? "#1a2229" : "#a10f0d"));
+        }
+      }
+
+      function setTheme(theme) {
+        const next = theme === "dark" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        try { localStorage.setItem(THEME_KEY, next); } catch (_e) { /* ignore */ }
+        syncThemeToggleUi();
+      }
+
+      function toggleTheme() {
+        setTheme(currentTheme() === "dark" ? "light" : "dark");
+      }
+
+      function setPracticeChromeReady(on) {
+        document.body.classList.toggle("practice-chrome-ready", !!on);
+      }
+
+      syncThemeToggleUi();
+      themeToggles.forEach(function (btn) {
+        btn.addEventListener("click", function () { toggleTheme(); });
+      });
 
       function syncLeadChrome() {
         if (!leadAction) return;
@@ -870,6 +1009,7 @@
         footnote.hidden = true;
         if (leadAction) leadAction.hidden = true;
         if (leadNote) leadNote.hidden = true;
+        setPracticeChromeReady(false);
         stopPoll();
         root.innerHTML =
           '<div class="practice-pin-wrap">' +
@@ -985,6 +1125,7 @@
           footnote.hidden = true;
           if (leadAction) leadAction.hidden = true;
           if (leadNote) leadNote.hidden = true;
+          setPracticeChromeReady(false);
           root.innerHTML = '<p class="practice-status error">No songs in this practice link.</p>';
           return;
         }
@@ -997,6 +1138,7 @@
         document.getElementById("practice-title").textContent = state.meta.mass_title || "Upcoming Mass";
         document.getElementById("practice-sub").textContent = bits.join(" · ");
         top.hidden = false;
+        setPracticeChromeReady(true);
         footnote.hidden = false;
         footnote.textContent = "Live practice lyrics · updates when your leader saves";
         syncLeadChrome();
@@ -1571,6 +1713,7 @@
         footnote.hidden = true;
         if (leadAction) leadAction.hidden = true;
         if (leadNote) leadNote.hidden = true;
+        setPracticeChromeReady(false);
         try {
           if (leadToken) {
             const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lead", {

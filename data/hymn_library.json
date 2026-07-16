@@ -147,6 +147,22 @@
         "all"
       ],
       "language": "Tagalog"
+    },
+    {
+      "id": "table_of_plenty",
+      "title": "Table Of Plenty",
+      "author": "",
+      "lyrics": "Chorus\nCome To The Feast Of Heaven And Earth\nCome To The Table Of Plenty\nGod Will Provide For All That We Need\nHere At The Table Of Plenty\n\nVerse 1\nO Come And Sit At My Table\nWhere Saints And Sinners Are Friends\nI Wait To Welcome The Lost And Lonely\nTo Share The Cup Of My Love\n\nChorus\nCome To The Feast Of Heaven And Earth\nCome To The Table Of Plenty\nGod Will Provide For All That We Need\nHere At The Table Of Plenty\n\nVerse 2\nO Come And Eat Without Money\nCome To Drink Without Price\nMy Feast Of Gladness Will Feed Your Spirit\nWith Faith And Fullness Of Life\n\nChorus\nCome To The Feast Of Heaven And Earth\nCome To The Table Of Plenty\nGod Will Provide For All That We Need\nHere At The Table Of Plenty\n\nVerse 3\nMy Bread Will Ever Sustain You\nThrough Days Of Sorrow And War\nMy Wine Will Flow Like A Sea Of Gladness\nTo Flood The Depths Of Your Soul\n\nChorus\nCome To The Feast Of Heaven And Earth\nCome To The Table Of Plenty\nGod Will Provide For All That We Need\nHere At The Table Of Plenty",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "language": "English",
+      "gospel_moods": [
+        "solemn",
+        "mercy",
+        "reverent"
+      ]
     }
   ],
   "offertory": [
@@ -270,6 +286,20 @@
         "all"
       ],
       "language": "English"
+    },
+    {
+      "id": "take_and_receive",
+      "title": "Take And Receive",
+      "author": "Bukas Palad Ministry",
+      "lyrics": "Verse 1\nTake And Receive, O Lord, My Liberty\nTake All My Will, My Mind, My Memory\nAll Things I Hold And All I Own Are Thine\nThine Was The Gift, To Thee I All Resign\n\nVerse 2\nDo Thou Direct And Govern All And Sway\nDo What Thou Wilt, Command, And I Obey\nOnly Thy Grace, Thy Love On Me Bestow\nThese Make Me Rich, All Else Will I Forego\n\nVerse 3\nDo Thou Direct And Govern All And Sway\nDo What Thou Wilt, Command, And I Obey\nOnly Thy Grace, Thy Love On Me Bestow\nThese Make Me Rich, All Else Will I Forego",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "language": "English",
+      "gospel_moods": [
+        "reverent"
+      ]
     }
   ],
   "communion": [
@@ -320,19 +350,6 @@
       "gospel_moods": [
         "triumphant",
         "mercy"
-      ]
-    },
-    {
-      "id": "table_of_plenty",
-      "title": "Table of Plenty",
-      "lyrics": "Come To The Feast Of The Lord;\nCome To The Table Of Plenty.\nGod Will Provide For All That We Need,\nHere At The Table Of Plenty.\n\nO Come And Sit At My Table,\nFor Here You Will Comfort The Poor,\nAnd With The Hungry Share Humble Fare:\nCome And Know Life Forevermore.\n\nO How Abundant The Welcome\nThat God Has Prepared For The Least:\nLet All Who Are Lonely And Lost Be Restored\nAt This Table Of Love.\n\nCome To The Feast Of The Lord;\nCome To The Table Of Plenty.\nGod Will Provide For All That We Need,\nHere At The Table Of Plenty.\n\nThis Is The Bread Of Rememberance,\nThe Cup Of The Covenant Poured.\nTaste And See How The Father Adores:\nWe Are His Own.",
-      "seasons": [
-        "ordinary_time"
-      ],
-      "gospel_moods": [
-        "solemn",
-        "mercy",
-        "reverent"
       ]
     },
     {
@@ -445,7 +462,7 @@
       "id": "anima_christi",
       "title": "Anima Christi",
       "author": "",
-      "lyrics": "Verse 1\n[Verse 1]\nSoul Of Christ, Sanctify Me\nBody Of Christ, Save Me\nWater From The Side Of Christ, Wash Me\nPassion Of Christ, Give Me Strength\n\nChorus\n[Pre-chorus]\nHear Me Jesus, Hide Me In Thy Wounds\nThat I May Never Leave Thy Side\n\nChorus\n[Chorus]\nFrom All The Evil That Surrounds Me, Defend Me\nAnd When The Call Of Death Arrives, Bid Me Come To Thee\nThat I May Praise Thee With Thy Saints Forever\n\nChorus\n[Pre-chorus]\nHear Me Jesus, Hide Me In Thy Wounds\nThat I May Never Lеave Thy Side\n\nChorus\n[Chorus]\nFrom All The Еvil That Surrounds Me, Defend Me\nAnd When The Call Of Death Arrives, Bid Me Come To Thee\nThat I May Praise Thee With Thy Saints Forever",
+      "lyrics": "Verse 1\nSoul Of Christ, Sanctify Me\nBody Of Christ, Save Me\nWater From The Side Of Christ,\nWash Me Passion Of Christ,\nGive Me Strength\n\nChorus\nFrom All  He Evil That\nSurrounds Me, Defend Me\nAnd When The Call\nOf Death Arrives,\nBid Me Come To Thee\nThat I May Praise Thee With\nThy Saints Forever\n\nPre-chorus\nHear Me Jesus,\nHide Me In Thy Wounds\nThat I May Never Leave Thy Side\n\nChorus\nFrom All  He Evil That\nSurrounds Me, Defend Me\nAnd When The Call\nOf Death Arrives,\nBid Me Come To Thee\nThat I May Praise Thee With\nThy Saints Forever\n\nPre-chorus 2\nHear Me Jesus,\nHide Me In Thy Wounds\nThat I May Never Leave Thy Side",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
@@ -489,7 +506,7 @@
       "id": "tinapay_ng_buhay",
       "title": "Tinapay Ng Buhay",
       "author": "",
-      "lyrics": "Chorus\nIkaw, Hesus, Ang Tinapay Ng Buhay\nBinasbasan, Hinati't Inialay\nBuhay Na Ganap Ang Sa Ami'y Kaloob\nAt Pagsasalong Walang Hanggan\n\nVerse 1\nBasbasan Ang Buhay Naming Handog\nNawa'y Matulad Sa Pag-aalay Mo\nBuhay Na Laan Nang Lubos\nSa Mundong Sa Pag-ibig Ay Kapos\n\nChorus\nIkaw, Hesus, Ang Tinapay Ng Buhay\nBinasbasan, Hinati't Inialay\nBuhay Na Ganap Ang Sa Ami'y Kaloob\nAt Pagsasalong Walang Hanggan\n\nVerse 2\nMarapatin Sa Kapwa Maging Tinapay\nKagalakan Sa Nalulumbay\nKatarungan Sa Naaapi\nAt Kanlungan Ng Bayan Mong Sawi\n\nChorus\nIkaw, Hesus, Ang Tinapay Ng Buhay\nBinasbasan, Hinati't Inialay\nBuhay Na Ganap Ang Sa Ami'y Kaloob\nAt Pagsasalong Walang Hanggan\n\nVerse 3\n[Outro]\nAt Pagsasalong Walang Hanggan",
+      "lyrics": "Chorus\nIkaw, Hesus, Ang Tinapay Ng Buhay\nBinasbasan, Hinati't Inialay\nBuhay Na Ganap Ang Sa Ami'y Kaloob\nAt Pagsasalong Walang Hanggan\n\nVerse 1\nBasbasan Ang Buhay Naming Handog\nNawa'y Matulad Sa Pag-aalay Mo\nBuhay Na Laan Nang Lubos\nSa Mundong Sa Pag-ibig Ay Kapos\n\nChorus\nIkaw, Hesus, Ang Tinapay Ng Buhay\nBinasbasan, Hinati't Inialay\nBuhay Na Ganap Ang Sa Ami'y Kaloob\nAt Pagsasalong Walang Hanggan\n\nVerse 2\nMarapatin Sa Kapwa Maging Tinapay\nKagalakan Sa Nalulumbay\nKatarungan Sa Naaapi\nAt Kanlungan Ng Bayan Mong Sawi\n\nChorus\nIkaw, Hesus, Ang Tinapay Ng Buhay\nBinasbasan, Hinati't Inialay\nBuhay Na Ganap Ang Sa Ami'y Kaloob\nAt Pagsasalong Walang Hanggan\n\nOutro\nAt Pagsasalong Walang Hanggan",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
@@ -513,6 +530,20 @@
       "gospel_moods": [
         "solemn",
         "mercy"
+      ]
+    },
+    {
+      "id": "you_are_near",
+      "title": "You Are Near",
+      "author": "Dan Schutte",
+      "lyrics": "Chorus\nYahweh, I Know You Are Near\nStanding Always At My Side\nYou Guard Me From The Foe\nAnd You Lead Me In Ways Everlasting\n\nVerse 1\nLord, You Have Searched My Heart\nAnd You Know When I Sit And When I Stand\nYour Hand Is Upon Me\nProtecting Me From Death\nKeeping Me From Harm\n\nChorus\nYahweh, I Know You Are Near\nStanding Always At My Side\nYou Guard Me From The Foe\nAnd You Lead Me In Ways Everlasting\n\nVerse 2\nWhere Can I Run From Your Love?\nIf I Climb To The Heavens You Are There\nIf I Fly To The Sunrise\nOr Sail Beyond The Sea\nStill I’d Find You There\n\nChorus\nYahweh, I Know You Are Near\nStanding Always At My Side\nYou Guard Me From The Foe\nAnd You Lead Me In Ways Everlasting\n\nVerse 3\nMarvelous To Me Are Your Works\nHow Profound Are Your Thoughts, My Lord\nEven If I Could Count Them\nThey Number As The Stars\nYou Would Still Be There\n\nChorus\nYahweh, I Know You Are Near\nStanding Always At My Side\nYou Guard Me From The Foe\nAnd You Lead Me In Ways Everlasting",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "language": "English",
+      "gospel_moods": [
+        "journey"
       ]
     }
   ],
