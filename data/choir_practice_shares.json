@@ -122,5 +122,40 @@
     ],
     "optional_pin": "v1:aae7b9c240f142d1:68afc85378d2870e4e7e5642a471c12eaaba327258de4ed0fb69ae29f90fe99b",
     "expires_at": "2026-07-15T05:34:49.295642+00:00"
+  },
+  {
+    "id": "37e860d5fca74e8eac14a6dfd335bdca",
+    "created_at": "2026-07-16T06:08:20.209536+00:00",
+    "revoked_at": null,
+    "token": "h_QgI7xob6ssDar_axIwyvN401XducUQ",
+    "parish_id": null,
+    "created_by": null,
+    "mass_date": "2026-07-19",
+    "mass_title": "PIN test",
+    "parish_name": "",
+    "celebrant": "",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "",
+        "hymn_id": "h1",
+        "title": "Test",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse\nHello",
+        "blocks": [
+          {
+            "id": "b0-8388938f",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "Hello",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:5ec87acb7e3709da:e561d42a4e6d265a039a51d66eb237eafe0642ca7a73abb4499dd0ae5508f69f",
+    "expires_at": "2026-07-17T06:08:20.209263+00:00"
   }
 ]

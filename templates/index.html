@@ -16003,7 +16003,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260713v" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260716a" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -17211,6 +17211,46 @@
           <footer class="ui-card__footer ui-card__footer--row" id="song-save-success-footer" hidden>
             <button type="button" class="primary" id="song-save-success-ok">Done</button>
           </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="mobile-welcome-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="mobile-welcome-backdrop"></div>
+        <article class="ui-card mobile-welcome-card" role="dialog" aria-labelledby="mobile-welcome-title" aria-modal="true">
+          <header class="ui-card__header mobile-welcome-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="mobile-welcome-title">Hi! What do you want to do today?</h3>
+            </div>
+          </header>
+          <div class="ui-card__content mobile-welcome-actions">
+            <button type="button" class="mobile-welcome-action" data-mobile-welcome-action="mass-pptx">
+              <span class="mobile-welcome-action__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+              </span>
+              <span class="mobile-welcome-action__text">
+                <strong>Prepare Mass PPTX</strong>
+                <span class="muted">Build slides for Sunday</span>
+              </span>
+            </button>
+            <button type="button" class="mobile-welcome-action" data-mobile-welcome-action="choir-practice">
+              <span class="mobile-welcome-action__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+              </span>
+              <span class="mobile-welcome-action__text">
+                <strong>Practicing choir</strong>
+                <span class="muted">Share lyrics for rehearsal</span>
+              </span>
+            </button>
+            <button type="button" class="mobile-welcome-action" data-mobile-welcome-action="add-song">
+              <span class="mobile-welcome-action__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v6"/><path d="m9 9 3-3 3 3"/></svg>
+              </span>
+              <span class="mobile-welcome-action__text">
+                <strong>Add song to our song library</strong>
+                <span class="muted">Compose or import lyrics</span>
+              </span>
+            </button>
+          </div>
         </article>
       </div>
 
@@ -37031,6 +37071,77 @@
       if (signOutBtn) signOutBtn.addEventListener("click", () => closeHeaderMenus());
     }
 
+    const MOBILE_WELCOME_PENDING_KEY = "verbum:mobile-welcome-pending";
+
+    function getMobileWelcomeDisplayName() {
+      const auth = window.VerbumAuth;
+      const user = auth && auth.getUser ? auth.getUser() : null;
+      if (!user) return null;
+      return auth.getUserFirstName ? auth.getUserFirstName(user) : null;
+    }
+
+    function closeMobileWelcomeModal() {
+      setUiOverlayOpen($("mobile-welcome-modal"), false);
+    }
+
+    function openMobileWelcomeModal() {
+      const modal = $("mobile-welcome-modal");
+      const titleEl = $("mobile-welcome-title");
+      if (!modal || !titleEl) return;
+      const name = getMobileWelcomeDisplayName();
+      titleEl.textContent = name
+        ? "Hi " + name + ", what do you want to do today?"
+        : "Hi! What do you want to do today?";
+      setUiOverlayOpen(modal, true);
+    }
+
+    function consumeMobileWelcomePending() {
+      try {
+        const pending = sessionStorage.getItem(MOBILE_WELCOME_PENDING_KEY) === "1";
+        if (pending) sessionStorage.removeItem(MOBILE_WELCOME_PENDING_KEY);
+        return pending;
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function maybeShowMobileWelcomeModal() {
+      if (!isMobileChromeLayout()) return;
+      if (window.__VERBUM_AUTH_GATE__) {
+        const auth = window.VerbumAuth;
+        if (!auth || !auth.getUser || !auth.getUser()) return;
+      }
+      if (!consumeMobileWelcomePending()) return;
+      requestAnimationFrame(() => {
+        setTimeout(() => openMobileWelcomeModal(), 120);
+      });
+    }
+
+    function initMobileWelcomeModal() {
+      const modal = $("mobile-welcome-modal");
+      if (!modal || modal.dataset.bound === "1") return;
+      modal.dataset.bound = "1";
+      const backdrop = $("mobile-welcome-backdrop");
+      if (backdrop) backdrop.addEventListener("click", closeMobileWelcomeModal);
+      modal.querySelectorAll("[data-mobile-welcome-action]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const action = btn.getAttribute("data-mobile-welcome-action");
+          closeMobileWelcomeModal();
+          if (action === "mass-pptx") {
+            showRoute("/mass/builder");
+          } else if (action === "choir-practice") {
+            if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
+            else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
+          } else if (action === "add-song") {
+            showRoute("/library/songs");
+          }
+        });
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modal.classList.contains("is-open")) closeMobileWelcomeModal();
+      });
+    }
+
     function initCreateMenu() {
       const btn = $("create-menu-btn");
       const panel = $("create-menu-panel");
@@ -42746,6 +42857,7 @@
     initLiturgicalIndicatorPanel();
     initDashboardDropdownDismiss();
     initAccountMenu();
+    initMobileWelcomeModal();
     initCreateMenu();
     initVerbumSelects();
     initDividerPosterPickers();
@@ -42810,10 +42922,12 @@
             updateHomeMassWelcome();
             refreshCommunity();
             acceptParishInviteFromUrl();
+            maybeShowMobileWelcomeModal();
           });
         } else {
           refreshCommunity();
           acceptParishInviteFromUrl();
+          maybeShowMobileWelcomeModal();
         }
       };
       if (!window.__VERBUM_AUTH_GATE__) {

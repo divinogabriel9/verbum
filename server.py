@@ -29,7 +29,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, model_validator
 from starlette.concurrency import run_in_threadpool
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from services.env_config import load_project_dotenv
 
@@ -104,9 +104,7 @@ from services.choir_practice_shares import (
 )
 from services.practice_access import (
     check_pin_unlock_allowed,
-    check_practice_fetch_allowed,
     check_practice_share_create_allowed,
-    check_practice_token_allowed,
     ensure_practice_secret_configured,
     is_unlocked,
     issue_lead_token,
@@ -2349,12 +2347,6 @@ def api_practice_share(
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
-    allowed, retry_after = check_practice_fetch_allowed(request, tok)
-    if not allowed:
-        return _practice_rate_limit_response(retry_after)
-    allowed_token, retry_token = check_practice_token_allowed(tok)
-    if not allowed_token:
-        return _practice_rate_limit_response(retry_token)
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
@@ -2380,9 +2372,6 @@ def api_practice_unlock(
     allowed, retry_after = check_pin_unlock_allowed(request, tok)
     if not allowed:
         return _practice_rate_limit_response(retry_after)
-    allowed_token, retry_token = check_practice_token_allowed(tok)
-    if not allowed_token:
-        return _practice_rate_limit_response(retry_token)
     result = verify_practice_share_pin(tok, body.pin or "")
     if not result.get("ok"):
         status = 401 if result.get("requires_pin") else 404
@@ -2405,22 +2394,19 @@ def api_practice_lead(
     body: PracticeLeadBody,
     request: Request,
 ) -> Any:
-    """Leader entry — unlock + edit mode via signed lead token (no PIN)."""
+    """Leader entry — edit mode via signed lead token (no PIN, no guest unlock cookie)."""
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
-    allowed, retry_after = check_practice_fetch_allowed(request, tok)
-    if not allowed:
-        return _practice_rate_limit_response(retry_after)
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
     if not verify_lead_token(tok, body.lead_token, row.get("expires_at")):
         raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
     payload = fetch_practice_share(tok, unlocked=True, can_edit=True)
-    response = JSONResponse(payload, headers=practice_no_store_headers())
-    issue_unlock_cookie(request, response, tok, row.get("expires_at"))
-    return response
+    # Do not issue a guest unlock cookie here — that would let this device open the
+    # shared choir link without a PIN. Leader privilege stays lead-token-only.
+    return JSONResponse(payload, headers=practice_no_store_headers())
 
 
 @app.post("/api/practice/{token}/lyrics")
@@ -2433,9 +2419,6 @@ def api_practice_lyrics_update(
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
-    allowed, retry_after = check_practice_fetch_allowed(request, tok)
-    if not allowed:
-        return _practice_rate_limit_response(retry_after)
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
@@ -2457,9 +2440,6 @@ def api_practice_catalog(
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
-    allowed, retry_after = check_practice_fetch_allowed(request, tok)
-    if not allowed:
-        return _practice_rate_limit_response(retry_after)
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
@@ -2481,9 +2461,6 @@ def api_practice_resolve_song(
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
-    allowed, retry_after = check_practice_fetch_allowed(request, tok)
-    if not allowed:
-        return _practice_rate_limit_response(retry_after)
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
@@ -2563,7 +2540,7 @@ def api_create_practice_share(
         **result,
         "url": share_url,
         "lead_token": lead,
-        "lead_url": f"{share_url}?lead={lead}",
+        "lead_url": f"{share_url}?lead={quote(lead, safe='')}",
         "qr_url": f"/api/practice/qr/{token}",
         "qr_data_url": None,
     }
@@ -2688,8 +2665,9 @@ def api_gospel_image(date: str) -> JSONResponse:
 @app.post("/api/preview")
 async def api_preview(
     body: PreviewBody,
-    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+    _session: Optional[AuthSession] = Depends(optional_session),
 ) -> Any:
+    """Lectionary + hymn preview for Mass Builder and public landing try-flow."""
     p = await run_in_threadpool(
         fetch_preview,
         body.date.strip(),

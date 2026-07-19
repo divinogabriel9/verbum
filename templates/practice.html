@@ -700,7 +700,14 @@
   <script>
     (function () {
       const token = {{ token|tojson }};
-      const leadToken = {{ lead_token|tojson }};
+      const leadTokenFromQuery = {{ lead_token|tojson }};
+      const LEAD_STORE_KEY = "lf-practice-lead:" + String(token || "");
+      let leadToken = String(leadTokenFromQuery || "").trim();
+      if (leadToken) {
+        try { sessionStorage.setItem(LEAD_STORE_KEY, leadToken); } catch (_e) { /* ignore */ }
+      } else {
+        try { leadToken = String(sessionStorage.getItem(LEAD_STORE_KEY) || "").trim(); } catch (_e2) { leadToken = ""; }
+      }
       const root = document.getElementById("practice-root");
       const scroll = document.getElementById("practice-scroll");
       const top = document.getElementById("practice-top");

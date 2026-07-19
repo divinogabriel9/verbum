@@ -161,7 +161,14 @@
         auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
       });
 
+      function setMobileWelcomePending() {
+        try {
+          sessionStorage.setItem("verbum:mobile-welcome-pending", "1");
+        } catch (_e) { /* ignore */ }
+      }
+
       function redirectAfterAuth() {
+        setMobileWelcomePending();
         const params = new URLSearchParams(window.location.search);
         window.location.href = params.get("redirect_url") || cfg.after_sign_in_url;
       }
@@ -315,6 +322,7 @@
                 if (inviteToken) {
                   await consumeInvite(inviteToken, data.session.access_token);
                 }
+                setMobileWelcomePending();
                 window.location.href = cfg.after_sign_up_url;
                 return;
               }

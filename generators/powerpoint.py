@@ -931,6 +931,8 @@ def _source_text_role(font) -> str:
     """
     rgb = _font_rgb_or_none(font)
     if rgb is None:
+        # Theme/scheme colors (e.g. BACKGROUND_1) have no usable RGB — treat as body
+        # so Paper/Midnight themes don't leave white-on-white scheme text behind.
         return "primary"
     r, g, b = int(rgb[0]), int(rgb[1]), int(rgb[2])
     h, lightness, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
@@ -946,22 +948,23 @@ def _source_text_role(font) -> str:
 def _recolor_cloned_text_to_theme(slide, theme: SlideTheme) -> None:
     """Re-theme a cloned reference slide's text to the active liturgical surface.
 
-    Cloned rite slides sit on ``theme.bg`` (the season color) but keep colors *and*
-    fonts baked for the original deck, which can be illegible/off-theme over a
-    different season and clash with the theme font used on reading/prayer slides.
-    We remap each run's color to a theme role and its font to the deck theme font,
-    so rites read identically to the rest of the liturgical deck. Footer/branding
-    zone shapes are left to ``_add_community_footer``.
+    Cloned rite slides sit on ``theme.bg`` but keep colors baked for the original
+    (usually dark) deck. We remap each run to a theme role so rites stay legible
+    on Theme 1, Midnight, and Paper alike.
+
+    Only the true bottom footer band (``_CLONE_FOOTER_ZONE_TOP``, ~90%) is skipped —
+    the wider ``_REFERENCE_FOOTER_ZONE_TOP`` (~78%) still holds real dialogue such as
+    "All: Thanks be to God." that must be recolored (otherwise Paper keeps white text).
     """
     for shape in slide.shapes:
         if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
             continue
-        if int(shape.top) >= _REFERENCE_FOOTER_ZONE_TOP:
+        if shape.top is not None and int(shape.top) >= _CLONE_FOOTER_ZONE_TOP:
             continue
         for para in shape.text_frame.paragraphs:
             targets = list(para.runs) if para.runs else [para]
             for target in targets:
-                # Underlined titles always render in the amber emphasis tone.
+                # Underlined titles always render in the theme emphasis tone.
                 if target.font.underline:
                     target.font.color.rgb = theme.emphasis
                     continue
@@ -969,6 +972,43 @@ def _recolor_cloned_text_to_theme(slide, theme: SlideTheme) -> None:
                 target.font.color.rgb = theme.emphasis if role == "emphasis" else theme.primary
                 # Keep the template's own fonts (Georgia titles, Arial body, etc.);
                 # only the color is remapped to the active theme.
+
+
+def _ensure_slide_text_contrast(slide, theme: SlideTheme) -> None:
+    """Force any remaining low-contrast or scheme-colored text onto theme roles.
+
+    Catches leftovers after clone/mutate (theme-linked colors like BACKGROUND_1,
+    or late-injected runs that kept a baked white). Safe on every theme; critical
+    for Paper (white bg) where white/off-white text disappears.
+    """
+    bg_lum = _rel_lum(int(theme.bg[0]), int(theme.bg[1]), int(theme.bg[2]))
+    light_bg = bg_lum > 0.55
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if shape.top is not None and int(shape.top) >= _CLONE_FOOTER_ZONE_TOP:
+            continue
+        for para in shape.text_frame.paragraphs:
+            targets = list(para.runs) if para.runs else [para]
+            for target in targets:
+                if not (getattr(target, "text", None) or "").strip() and target is not para:
+                    # Keep empty runs; still fix paragraph-level defaults below.
+                    pass
+                rgb = _font_rgb_or_none(target.font)
+                needs_fix = rgb is None
+                if rgb is not None:
+                    lum = _rel_lum(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+                    # Light text on light bg, or dark text on dark bg → illegible.
+                    if light_bg and lum > 0.55:
+                        needs_fix = True
+                    elif (not light_bg) and lum < 0.28:
+                        needs_fix = True
+                if not needs_fix:
+                    continue
+                if target.font.underline:
+                    target.font.color.rgb = theme.emphasis
+                else:
+                    target.font.color.rgb = theme.primary
 
 
 def _style_shape_font(
@@ -1449,6 +1489,8 @@ def _clone_master_section(
         )
         if mutate is not None:
             mutate(prs.slides[-1], part_i)
+            # Mutate may leave scheme/baked colors on injected runs — re-check contrast.
+            _ensure_slide_text_contrast(prs.slides[-1], theme)
     return True
 
 
@@ -1836,6 +1878,7 @@ def _copy_slide_into_presentation(
     if strip_italic_rubrics:
         _strip_italic_rubric_paragraphs_on_slide(dest)
     _add_community_footer(dest, footer_section, theme)
+    _ensure_slide_text_contrast(dest, theme)
 
 
 def _lotw_title_image_path() -> Optional[Path]:
