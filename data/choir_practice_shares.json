@@ -157,5 +157,73 @@
     ],
     "optional_pin": "v1:5ec87acb7e3709da:e561d42a4e6d265a039a51d66eb237eafe0642ca7a73abb4499dd0ae5508f69f",
     "expires_at": "2026-07-17T06:08:20.209263+00:00"
+  },
+  {
+    "id": "2e47e049c2714640a5d47a90373d10ba",
+    "created_at": "2026-07-22T04:43:54.260917+00:00",
+    "revoked_at": null,
+    "token": "3YTdMqRx-SJeJHZ9NhHVgP9syaxbmlTe",
+    "parish_id": null,
+    "created_by": null,
+    "mass_date": "2026-07-26",
+    "mass_title": "Stress test Mass",
+    "parish_name": "Stress Parish",
+    "celebrant": "",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "stress_entrance",
+        "title": "Stress Entrance",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nPraise The Lord\n\nChorus\nSing Forever",
+        "blocks": [
+          {
+            "id": "b0-6c35730c",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Praise The Lord",
+            "enabled": true
+          },
+          {
+            "id": "b1-176c2dfa",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Sing Forever",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "slot_key": "communion_1",
+        "slot_label": "Communion",
+        "section": "communion",
+        "hymn_id": "stress_communion",
+        "title": "Stress Communion",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse\nBread Of Life\n\nChorus\nCome To The Table",
+        "blocks": [
+          {
+            "id": "b0-e75c777b",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "Bread Of Life",
+            "enabled": true
+          },
+          {
+            "id": "b1-cf58d75f",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Come To The Table",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:8ffd83c302134e8d:e2190bd5eed2843c27be5e0872b1da55a57b101ccc8c7539109e514959cc3bb8",
+    "expires_at": "2026-07-23T04:43:54.260853+00:00"
   }
 ]

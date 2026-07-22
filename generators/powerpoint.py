@@ -182,14 +182,18 @@ _APOSTLES_CREED_TITLE = "Apostles' Creed"
 _NICENE_CREED_TEMPLATE_FILENAME = "nicene_creed_slides.pptx"
 _NICENE_CREED_TITLE = "Nicene Creed"
 
-# --- Master template (single source of truth for fixed liturgical slides) -----
-# LiturgyFlowTemplate1.pptx: the user-authored deck whose layout/typography the
-# generated deck mirrors 1:1. Fixed (week-invariant) slides are cloned verbatim
-# from it by 0-based index; only color is remapped (template green -> #ffb800,
-# background -> black) and the parish footer/branding swapped in. Dynamic slides
-# (readings, collection, sponsors, gospel verse) clone the matching layout and
-# inject text. Dividers, posters, hymns and Our Father keep their own builders.
-_MASTER_TEMPLATE_FILENAME = "LFTemplate1.pptx"
+# --- Master template (per-theme source of truth for fixed liturgical slides) -----
+# Theme 1 (LFTemplate1.pptx) is the authored deck. Themes 2–3 are baked offline
+# from Theme 1 via ``scripts/bake_deck_theme_templates.py`` so generation can clone
+# them verbatim without a fragile live color-remapping pass.
+# Fixed (week-invariant) slides are cloned by 0-based index; parish footer/branding
+# is swapped in. Dynamic slides inject text into the matching layout.
+_MASTER_TEMPLATE_BY_THEME = {
+    "theme1": "LFTemplate1.pptx",
+    "theme2": "LFTemplate2-midnight.pptx",
+    "theme3": "LFTemplate3-paper.pptx",
+}
+_MASTER_TEMPLATE_FILENAME = _MASTER_TEMPLATE_BY_THEME["theme1"]
 _MASTER_SLIDE = {
     "pre_mass": 0,
     "introductory_rites": 6,
@@ -221,7 +225,8 @@ _MASTER_SLIDE = {
     "confession": 62,
     "final_blessing": 63,
 }
-_master_template: Optional[Presentation] = None
+_master_templates: dict[str, Presentation] = {}
+_ACTIVE_DECK_THEME_ID = "theme1"
 
 # The new master dropped the Food Sponsors slide; reuse the previous template's
 # layout (same Georgia-underline title + Arial Black name style) as the donor.
@@ -922,6 +927,7 @@ def _style_para(
     p.font.italic = italic
     p.font.underline = underline
     p.font.color.rgb = color
+    _set_def_rpr_rgb(p, color)
 
 
 def _font_rgb_or_none(font) -> Optional[RGBColor]:
@@ -933,6 +939,82 @@ def _font_rgb_or_none(font) -> Optional[RGBColor]:
     except (AttributeError, KeyError, TypeError, ValueError):
         return None
     return None
+
+
+def _rgb_hex(rgb: RGBColor) -> str:
+    return f"{int(rgb[0]):02X}{int(rgb[1]):02X}{int(rgb[2]):02X}"
+
+
+def _set_solid_srgb_on_rpr(r_pr, rgb: RGBColor) -> None:
+    """Replace any color fill on ``a:rPr`` / ``a:defRPr`` with a single sRGB solidFill."""
+    for child in list(r_pr):
+        tag = child.tag
+        if tag in (qn("a:solidFill"), qn("a:gradFill"), qn("a:noFill"), qn("a:pattFill")):
+            r_pr.remove(child)
+    solid = etree.SubElement(r_pr, qn("a:solidFill"))
+    srgb = etree.SubElement(solid, qn("a:srgbClr"))
+    srgb.set("val", _rgb_hex(rgb))
+
+
+def _set_run_rpr_rgb(run, rgb: RGBColor) -> None:
+    """Write RGB onto the run's ``a:rPr`` (creates rPr when missing)."""
+    try:
+        r_el = run._r
+    except (AttributeError, TypeError, ValueError):
+        return
+    r_pr = r_el.find(qn("a:rPr"))
+    if r_pr is None:
+        r_pr = etree.Element(qn("a:rPr"))
+        r_el.insert(0, r_pr)
+    _set_solid_srgb_on_rpr(r_pr, rgb)
+
+
+def _set_def_rpr_rgb(para, rgb: RGBColor) -> None:
+    """Write RGB onto paragraph ``a:defRPr`` and ``a:endParaRPr``.
+
+    Master-template slides bake body color into ``defRPr`` (often #F0FDF4) and
+    sometimes ``endParaRPr``. Recoloring only the run leaves those defaults intact;
+    empty or partial runs then inherit white and vanish on the Paper theme.
+    """
+    try:
+        p_el = para._p
+    except (AttributeError, TypeError, ValueError):
+        return
+    p_pr = p_el.find(qn("a:pPr"))
+    if p_pr is None:
+        p_pr = etree.Element(qn("a:pPr"))
+        p_el.insert(0, p_pr)
+    for tag in (qn("a:defRPr"),):
+        def_r_pr = p_pr.find(tag)
+        if def_r_pr is None:
+            def_r_pr = etree.SubElement(p_pr, tag)
+        _set_solid_srgb_on_rpr(def_r_pr, rgb)
+    # endParaRPr lives on the paragraph itself (sibling of pPr), not inside pPr.
+    end_r_pr = p_el.find(qn("a:endParaRPr"))
+    if end_r_pr is not None:
+        _set_solid_srgb_on_rpr(end_r_pr, rgb)
+
+
+def _apply_run_theme_color(run_or_para, rgb: RGBColor) -> None:
+    """Set API color + underlying rPr/defRPr solidFill so nothing inherits white."""
+    run_or_para.font.color.rgb = rgb
+    # Paragraph objects have no ``_r``; runs do.
+    if hasattr(run_or_para, "_r"):
+        _set_run_rpr_rgb(run_or_para, rgb)
+
+
+def _iter_slide_text_shapes(slide):
+    """Yield text-bearing shapes, including those nested in groups."""
+
+    def _walk(shapes):
+        for shape in shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                yield from _walk(shape.shapes)
+                continue
+            if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+                yield shape
+
+    yield from _walk(slide.shapes)
 
 
 def _source_text_role(font) -> str:
@@ -958,70 +1040,140 @@ def _source_text_role(font) -> str:
     return "primary"
 
 
+def _theme_color_for_font(font, theme: SlideTheme) -> RGBColor:
+    if getattr(font, "underline", False):
+        return theme.emphasis
+    role = _source_text_role(font)
+    return theme.emphasis if role == "emphasis" else theme.primary
+
+
 def _recolor_cloned_text_to_theme(slide, theme: SlideTheme) -> None:
     """Re-theme a cloned reference slide's text to the active liturgical surface.
 
     Cloned rite slides sit on ``theme.bg`` but keep colors baked for the original
-    (usually dark) deck. We remap each run to a theme role so rites stay legible
-    on Theme 1, Midnight, and Paper alike.
+    (usually dark) deck. We remap each run *and* paragraph ``defRPr`` so rites stay
+    legible on Theme 1, Midnight, and Paper alike.
 
     Only the true bottom footer band (``_CLONE_FOOTER_ZONE_TOP``, ~90%) is skipped —
     the wider ``_REFERENCE_FOOTER_ZONE_TOP`` (~78%) still holds real dialogue such as
     "All: Thanks be to God." that must be recolored (otherwise Paper keeps white text).
     """
-    for shape in slide.shapes:
-        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
-            continue
+    for shape in _iter_slide_text_shapes(slide):
         if shape.top is not None and int(shape.top) >= _CLONE_FOOTER_ZONE_TOP:
             continue
         for para in shape.text_frame.paragraphs:
-            targets = list(para.runs) if para.runs else [para]
-            for target in targets:
-                # Underlined titles always render in the theme emphasis tone.
-                if target.font.underline:
-                    target.font.color.rgb = theme.emphasis
-                    continue
-                role = _source_text_role(target.font)
-                target.font.color.rgb = theme.emphasis if role == "emphasis" else theme.primary
-                # Keep the template's own fonts (Georgia titles, Arial body, etc.);
-                # only the color is remapped to the active theme.
+            if para.runs:
+                for run in para.runs:
+                    color = _theme_color_for_font(run.font, theme)
+                    _apply_run_theme_color(run, color)
+                # Paragraph default must not stay template-white for empty/partial runs.
+                _set_def_rpr_rgb(para, theme.primary)
+            else:
+                color = _theme_color_for_font(para.font, theme)
+                _apply_run_theme_color(para, color)
+                _set_def_rpr_rgb(para, color)
 
 
 def _ensure_slide_text_contrast(slide, theme: SlideTheme) -> None:
-    """Force any remaining low-contrast or scheme-colored text onto theme roles.
+    """Force low-contrast / scheme / inherited text onto theme roles.
 
-    Catches leftovers after clone/mutate (theme-linked colors like BACKGROUND_1,
-    or late-injected runs that kept a baked white). Safe on every theme; critical
-    for Paper (white bg) where white/off-white text disappears.
+    Also rewrites paragraph ``defRPr`` fills. Master templates leave off-white
+    defaults there; runs without their own fill inherit them and disappear on Paper.
     """
     bg_lum = _rel_lum(int(theme.bg[0]), int(theme.bg[1]), int(theme.bg[2]))
     light_bg = bg_lum > 0.55
-    for shape in slide.shapes:
-        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
-            continue
+
+    def _illegible(rgb: Optional[RGBColor]) -> bool:
+        if rgb is None:
+            return True
+        lum = _rel_lum(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+        if light_bg and lum > 0.55:
+            return True
+        if (not light_bg) and lum < 0.28:
+            return True
+        return False
+
+    for shape in _iter_slide_text_shapes(slide):
         if shape.top is not None and int(shape.top) >= _CLONE_FOOTER_ZONE_TOP:
             continue
         for para in shape.text_frame.paragraphs:
-            targets = list(para.runs) if para.runs else [para]
-            for target in targets:
-                if not (getattr(target, "text", None) or "").strip() and target is not para:
-                    # Keep empty runs; still fix paragraph-level defaults below.
-                    pass
-                rgb = _font_rgb_or_none(target.font)
-                needs_fix = rgb is None
-                if rgb is not None:
-                    lum = _rel_lum(int(rgb[0]), int(rgb[1]), int(rgb[2]))
-                    # Light text on light bg, or dark text on dark bg → illegible.
-                    if light_bg and lum > 0.55:
-                        needs_fix = True
-                    elif (not light_bg) and lum < 0.28:
-                        needs_fix = True
-                if not needs_fix:
-                    continue
-                if target.font.underline:
-                    target.font.color.rgb = theme.emphasis
-                else:
-                    target.font.color.rgb = theme.primary
+            if para.runs:
+                for run in para.runs:
+                    rgb = _font_rgb_or_none(run.font)
+                    if theme.mono_surfaces:
+                        # Strict mono: every run is black or white (titles use emphasis,
+                        # which equals primary for Themes 2–3).
+                        color = theme.emphasis if run.font.underline else theme.primary
+                        _apply_run_theme_color(run, color)
+                    elif _illegible(rgb):
+                        color = _theme_color_for_font(run.font, theme)
+                        _apply_run_theme_color(run, color)
+                    elif rgb is not None:
+                        _set_run_rpr_rgb(run, rgb)
+                _set_def_rpr_rgb(para, theme.primary)
+            else:
+                rgb = _font_rgb_or_none(para.font)
+                if theme.mono_surfaces or _illegible(rgb):
+                    color = theme.emphasis if para.font.underline else theme.primary
+                    _apply_run_theme_color(para, color)
+                    _set_def_rpr_rgb(para, color)
+                elif rgb is not None:
+                    _set_def_rpr_rgb(para, rgb)
+
+
+def _finalize_deck_text_colors(prs: Presentation, theme: SlideTheme) -> None:
+    """Last pass over every slide so Paper/Midnight never keep template whites."""
+    for slide in prs.slides:
+        _ensure_slide_text_contrast(slide, theme)
+
+
+def _bake_slide_text_colors(slide, theme: SlideTheme) -> None:
+    """Bake every text run on ``slide`` to ``theme`` (no footer-zone skip).
+
+    Used offline by ``bake_master_theme_template`` so Theme 2/3 masters ship with
+    correct colors already in the PPTX XML.
+    """
+    for shape in _iter_slide_text_shapes(slide):
+        for para in shape.text_frame.paragraphs:
+            if para.runs:
+                for run in para.runs:
+                    color = _theme_color_for_font(run.font, theme)
+                    if theme.mono_surfaces:
+                        color = theme.emphasis if run.font.underline else theme.primary
+                    _apply_run_theme_color(run, color)
+                _set_def_rpr_rgb(para, theme.primary)
+            else:
+                color = _theme_color_for_font(para.font, theme)
+                if theme.mono_surfaces:
+                    color = theme.emphasis if para.font.underline else theme.primary
+                _apply_run_theme_color(para, color)
+                _set_def_rpr_rgb(para, color)
+
+
+def bake_master_theme_template(theme_id: str) -> Path:
+    """Create a baked master PPTX for ``theme2`` / ``theme3`` from Theme 1.
+
+    Writes ``data/reference/LFTemplate2-midnight.pptx`` or
+    ``LFTemplate3-paper.pptx``. Clears the in-memory cache for that file.
+    """
+    tid = (theme_id or "").strip().lower()
+    if tid not in ("theme2", "theme3"):
+        raise ValueError(f"Can only bake theme2/theme3, got {theme_id!r}")
+    src_name = _MASTER_TEMPLATE_BY_THEME["theme1"]
+    dest_name = _MASTER_TEMPLATE_BY_THEME[tid]
+    src = _PROJECT_ROOT / "data" / "reference" / src_name
+    dest = _PROJECT_ROOT / "data" / "reference" / dest_name
+    if not src.is_file():
+        raise FileNotFoundError(f"Theme 1 master missing: {src}")
+    theme = _mono_slide_theme(dark=(tid == "theme2"))
+    prs = Presentation(str(src.resolve()))
+    for slide in prs.slides:
+        _set_slide_bg(slide, theme.bg)
+        _bake_slide_text_colors(slide, theme)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    prs.save(str(dest))
+    _master_templates.pop(dest_name, None)
+    return dest.resolve()
 
 
 def _style_shape_font(
@@ -1444,20 +1596,53 @@ def _load_reference_mass_deck() -> Optional[Presentation]:
     return _reference_mass_deck
 
 
-def _master_template_path() -> Optional[Path]:
-    path = _PROJECT_ROOT / "data" / "reference" / _MASTER_TEMPLATE_FILENAME
+def _master_template_filename(theme_id: Optional[str] = None) -> str:
+    """Return the on-disk master PPTX filename for ``theme_id`` (falls back to Theme 1)."""
+    tid = (theme_id or _ACTIVE_DECK_THEME_ID or "theme1").strip().lower()
+    if tid not in _MASTER_TEMPLATE_BY_THEME:
+        tid = "theme1"
+    name = _MASTER_TEMPLATE_BY_THEME[tid]
+    path = _PROJECT_ROOT / "data" / "reference" / name
+    if tid != "theme1" and not path.is_file():
+        return _MASTER_TEMPLATE_BY_THEME["theme1"]
+    return name
+
+
+def _master_template_is_baked(theme_id: Optional[str] = None) -> bool:
+    """True when the active theme has its own baked master (skip live recolor on clone)."""
+    tid = (theme_id or _ACTIVE_DECK_THEME_ID or "theme1").strip().lower()
+    if tid not in ("theme2", "theme3"):
+        return False
+    name = _MASTER_TEMPLATE_BY_THEME.get(tid)
+    if not name:
+        return False
+    return (_PROJECT_ROOT / "data" / "reference" / name).is_file()
+
+
+def _master_template_path(theme_id: Optional[str] = None) -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / _master_template_filename(theme_id)
     return path.resolve() if path.is_file() else None
 
 
-def _load_master_template() -> Optional[Presentation]:
-    global _master_template
-    if _master_template is not None:
-        return _master_template
-    ref_path = _master_template_path()
-    if not ref_path:
+def _load_master_template(theme_id: Optional[str] = None) -> Optional[Presentation]:
+    """Load (and cache) the master deck for the given / active theme id."""
+    global _master_templates
+    tid = (theme_id or _ACTIVE_DECK_THEME_ID or "theme1").strip().lower()
+    if tid not in _MASTER_TEMPLATE_BY_THEME:
+        tid = "theme1"
+    # If the baked file is missing we actually load Theme 1 — cache under the
+    # resolved filename so we don't pretend Theme 2 is baked.
+    fname = _master_template_filename(tid)
+    cache_key = fname
+    cached = _master_templates.get(cache_key)
+    if cached is not None:
+        return cached
+    ref_path = _PROJECT_ROOT / "data" / "reference" / fname
+    if not ref_path.is_file():
         return None
-    _master_template = Presentation(str(ref_path))
-    return _master_template
+    tpl = Presentation(str(ref_path.resolve()))
+    _master_templates[cache_key] = tpl
+    return tpl
 
 
 def _master_slide_src(key: str, part: int = 0):
@@ -1482,15 +1667,16 @@ def _clone_master_section(
     *,
     mutate=None,
 ) -> bool:
-    """Clone every master slide for ``key`` (verbatim, recolored) into ``prs``.
+    """Clone every master slide for ``key`` into ``prs``.
 
-    ``mutate(slide, part_index)`` runs after each clone for dynamic text injection.
-    Italic rubric stripping is disabled because the template uses italics for real
-    dialogue body text. Returns ``False`` if the master template is unavailable.
+    Baked Theme 2/3 masters are cloned without a live color pass. Theme 1 (and
+    fallback) still recolors. ``mutate(slide, part_index)`` runs after each clone
+    for dynamic text injection. Returns ``False`` if the master is unavailable.
     """
     spec = _MASTER_SLIDE.get(key)
     if spec is None or _load_master_template() is None:
         return False
+    baked = _master_template_is_baked()
     parts = spec if isinstance(spec, tuple) else (spec,)
     total = len(parts)
     for part_i in range(total):
@@ -1499,12 +1685,19 @@ def _clone_master_section(
             return False
         foot = footer_section if total == 1 else f"{footer_section} ({part_i + 1}/{total})"
         _copy_slide_into_presentation(
-            prs, src, theme, foot, strip_italic_rubrics=False
+            prs,
+            src,
+            theme,
+            foot,
+            strip_italic_rubrics=False,
+            recolor=not baked,
         )
         if mutate is not None:
             mutate(prs.slides[-1], part_i)
-            # Mutate may leave scheme/baked colors on injected runs — re-check contrast.
-            _ensure_slide_text_contrast(prs.slides[-1], theme)
+            # Injected runs keep the baked template colors; only re-check when we
+            # still rely on live remapping (Theme 1 / missing bake).
+            if not baked:
+                _ensure_slide_text_contrast(prs.slides[-1], theme)
     return True
 
 
@@ -1547,8 +1740,13 @@ def _color_shapes(
             continue
         if (exact_set and full in exact_set) or (sub and sub in full):
             for para in shape.text_frame.paragraphs:
-                for run in para.runs:
-                    run.font.color.rgb = color
+                if para.runs:
+                    for run in para.runs:
+                        _apply_run_theme_color(run, color)
+                    _set_def_rpr_rgb(para, color)
+                else:
+                    _apply_run_theme_color(para, color)
+                    _set_def_rpr_rgb(para, color)
 
 
 def _amber_header_title(slide, band_in: float = 0.5) -> None:
@@ -1567,8 +1765,13 @@ def _amber_header_title(slide, band_in: float = 0.5) -> None:
         if not (shape.text_frame.text or "").strip():
             continue
         for para in shape.text_frame.paragraphs:
-            for run in para.runs:
-                run.font.color.rgb = _ACTIVE_THEME.emphasis
+            if para.runs:
+                for run in para.runs:
+                    _apply_run_theme_color(run, _ACTIVE_THEME.emphasis)
+                _set_def_rpr_rgb(para, _ACTIVE_THEME.emphasis)
+            else:
+                _apply_run_theme_color(para, _ACTIVE_THEME.emphasis)
+                _set_def_rpr_rgb(para, _ACTIVE_THEME.emphasis)
 
 
 def _extract_psalm_response(psalm_text: str) -> str:
@@ -1857,12 +2060,16 @@ def _copy_slide_into_presentation(
     *,
     copy_groups: bool = False,
     strip_italic_rubrics: bool = True,
+    recolor: bool = True,
 ) -> None:
     """
     Clone prayer/body shapes from a reference slide.
 
     Uses liturgical ``theme`` background plus current logo and parish name;
     does not copy reference background, logo group, or footer text.
+
+    When ``recolor`` is False (baked Theme 2/3 masters), text colors from the
+    source template are kept as-authored — only bg + branding/footer are applied.
     """
     layout = _layout_blank(prs)
     dest = prs.slides.add_slide(layout)
@@ -1888,11 +2095,13 @@ def _copy_slide_into_presentation(
         dest.shapes._spTree.insert_element_before(newel, "p:extLst")
     _set_slide_bg(dest, theme.bg)
     _apply_slide_branding(dest, theme)
-    _recolor_cloned_text_to_theme(dest, theme)
+    if recolor:
+        _recolor_cloned_text_to_theme(dest, theme)
     if strip_italic_rubrics:
         _strip_italic_rubric_paragraphs_on_slide(dest)
     _add_community_footer(dest, footer_section, theme)
-    _ensure_slide_text_contrast(dest, theme)
+    if recolor:
+        _ensure_slide_text_contrast(dest, theme)
 
 
 def _lotw_title_image_path() -> Optional[Path]:
@@ -4481,7 +4690,7 @@ def generate_mass_ppt(
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
     video_replacements: Optional[Mapping[str, Any]] = None,
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding
+    global _ACTIVE_FONT, _ACTIVE_THEME, _ACTIVE_DECK_THEME_ID, _deck_branding
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
@@ -4491,6 +4700,8 @@ def generate_mass_ppt(
     prs = Presentation()
     prs.slide_width = SLIDE_WIDTH
     prs.slide_height = SLIDE_HEIGHT
+    theme_id = _resolve_deck_theme_id(custom_theme)
+    _ACTIVE_DECK_THEME_ID = theme_id
     theme = _build_slide_theme(liturgical_color, custom_theme)
     _ACTIVE_FONT = theme.font_name
     _ACTIVE_THEME = theme
@@ -4844,6 +5055,11 @@ def generate_mass_ppt(
             theme,
         )
     _add_divider_cover(prs, **ctx)
+
+    # Secondary reference decks (Gloria, Kyrie, Our Father, …) still use live
+    # remapping. Baked Theme 2/3 masters skip recolor on clone; this pass only
+    # needs to scrub leftovers from those secondary clones.
+    _finalize_deck_text_colors(prs, theme)
 
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     stem = (output_stem or "mass_presentation").strip() or "mass_presentation"
