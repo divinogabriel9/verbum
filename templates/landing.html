@@ -12,13 +12,13 @@
   (function () {
     try {
       var params = new URLSearchParams(window.location.search);
-      var welcomePending = false;
-      try { welcomePending = sessionStorage.getItem("verbum:mobile-welcome-pending") === "1"; } catch (_s) {}
-      // Post-login welcome always enters the app — never bounce marketing visitors to /home
-      // just because a (possibly expired) auth token sits in localStorage.
-      if (params.get("welcome") === "1" || welcomePending) {
+      // Only honor an explicit post-login welcome query — never a sticky sessionStorage
+      // flag (that trapped Cancel/X from sign-in back into /home → /sign-in).
+      if (params.get("welcome") === "1") {
         window.location.replace("/home?welcome=1");
+        return;
       }
+      try { sessionStorage.removeItem("verbum:mobile-welcome-pending"); } catch (_s) {}
     } catch (_e) { /* ignore */ }
   })();
 </script>
@@ -338,14 +338,29 @@
         .lf-gen-status[hidden] { display: none; }
         .lf-gen-status--error { color: #ffb4ab; }
         .lf-gen-status--success { color: #a8f0c8; }
-        .lf-gen-signin {
-            display: inline-block;
-            margin-top: 10px;
-            color: #ffb4a9;
-            font-weight: 600;
+        .lf-gen-upgrade {
+            display: block;
+            margin-top: 16px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 180, 169, 0.22);
+            background: rgba(161, 15, 13, 0.12);
+            color: #e3beb9;
+            font-size: 13px;
+            line-height: 1.5;
             text-decoration: none;
         }
-        .lf-gen-signin:hover { text-decoration: underline; }
+        .lf-gen-upgrade strong {
+            display: block;
+            color: #ffb4a9;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .lf-gen-upgrade:hover {
+            border-color: rgba(255, 180, 169, 0.4);
+            background: rgba(161, 15, 13, 0.18);
+        }
+        .lf-gen-upgrade[hidden] { display: none !important; }
         .lf-gen-done { margin-top: 16px; }
         .lf-gen-download {
             display: inline-block;
@@ -492,7 +507,17 @@
                 <p class="lf-gen-status lf-gen-status--success">Your Mass deck is ready.</p>
                 <a class="lf-gen-download" id="lf-gen-download" href="#" download hidden>Download PowerPoint</a>
             </div>
-            <a class="lf-gen-signin" id="lf-gen-signin" href="/sign-in?redirect_url=%2Fhome" hidden>Sign in to generate →</a>
+            {% if invite_contact_email %}
+            <a class="lf-gen-upgrade" id="lf-gen-upgrade" href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request&amp;body=Hi%2C%20I%27d%20like%20to%20sign%20up%20for%20LiturgyFlow%20for%20unlimited%20Mass%20generation%20and%20custom%20PowerPoint%20decks.">
+                <strong>Want unlimited generations?</strong>
+                Contact our admin to sign up — get unlimited Mass decks and customize your own PowerPoint.
+            </a>
+            {% else %}
+            <p class="lf-gen-upgrade" id="lf-gen-upgrade">
+                <strong>Want unlimited generations?</strong>
+                Contact your LiturgyFlow administrator to sign up — get unlimited Mass decks and customize your own PowerPoint.
+            </p>
+            {% endif %}
         </div>
 
         <p class="lf-gen-status" id="lf-gen-status" hidden></p>
@@ -505,7 +530,7 @@
     </div>
 </div>
 
-<script src="/static/js/landing-generate.js?v=2"></script>
+<script src="/static/js/landing-generate.js?v=3"></script>
 <script>
   (function () {
     try {

@@ -66,9 +66,9 @@ def enforce_demo_rate_limits(request: Request) -> None:
                 status_code=429,
                 detail={
                     "message": (
-                        "Free daily generate used. Sign in for unlimited Mass decks."
+                        "Free daily generate used. Contact our admin to sign up for unlimited Mass decks."
                         if tier == "demo_generate"
-                        else "Too many free generates. Try again later or sign in."
+                        else "Too many free generates. Try again later, or contact our admin to sign up."
                     ),
                     "retry_after": retry_after,
                     "tier": tier,

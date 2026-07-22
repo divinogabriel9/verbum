@@ -172,8 +172,12 @@
         let target = params.get("redirect_url") || cfg.after_sign_in_url || "/home";
         try {
           const parsed = new URL(target, window.location.origin);
-          // Landing resume stays on marketing page — send signed-in users into the app.
-          if (parsed.pathname === "/" || parsed.pathname === "") {
+          // Marketing root (/) or stay flag — send signed-in users into the app.
+          if (
+            parsed.pathname === "/" ||
+            parsed.pathname === "" ||
+            parsed.searchParams.get("stay") === "1"
+          ) {
             target = "/home";
           } else {
             target = parsed.pathname + (parsed.search || "") + (parsed.hash || "");
@@ -183,6 +187,7 @@
         }
         try {
           const next = new URL(target, window.location.origin);
+          next.searchParams.delete("stay");
           next.searchParams.set("welcome", "1");
           return next.pathname + next.search + next.hash;
         } catch (_e2) {

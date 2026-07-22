@@ -288,7 +288,7 @@
   </style>
 </head>
 <body>
-  <a href="/" class="auth-close" id="auth-close" aria-label="Back to LiturgyFlow home" title="Back to home">
+  <a href="/?stay=1" class="auth-close" id="auth-close" aria-label="Back to LiturgyFlow home" title="Back to home">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M18 6 6 18M6 6l12 12" />
     </svg>
@@ -387,6 +387,19 @@
 
   <script src="/static/js/auth-theme.js"></script>
   <script>
+    (function () {
+      function clearMarketingTrap() {
+        try { sessionStorage.removeItem("verbum:mobile-welcome-pending"); } catch (_e) {}
+      }
+      var closeBtn = document.getElementById("auth-close");
+      if (closeBtn) {
+        closeBtn.addEventListener("click", clearMarketingTrap);
+      }
+      // Leaving auth for marketing should never keep the post-login bounce flag.
+      clearMarketingTrap();
+    })();
+  </script>
+  <script>
     window.__VERBUM_AUTH_MODE__ = {{ mode | tojson }};
     window.__VERBUM_INVITE_ONLY__ = {{ invite_only | tojson }};
     window.__VERBUM_INVITE_VALID__ = {{ invite_valid | tojson }};
@@ -394,6 +407,6 @@
     window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
     window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
   </script>
-  <script src="/static/js/auth-page.js?v=20260722a" defer></script>
+  <script src="/static/js/auth-page.js?v=20260722b" defer></script>
 </body>
 </html>

@@ -438,6 +438,28 @@
     }
   }
 
+  function scrollPrimaryActionIntoView() {
+    var panel = $("lf-gen-modal");
+    var actions = panel && panel.querySelector(".lf-gen-actions");
+    var target = null;
+    var genBtn = $("lf-gen-submit");
+    var nextBtn = $("lf-gen-next");
+    if (genBtn && !genBtn.hidden) target = genBtn;
+    else if (nextBtn && !nextBtn.hidden) target = nextBtn;
+    else target = actions;
+    if (!target) return;
+    var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try {
+      target.scrollIntoView({
+        behavior: reduced ? "auto" : "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    } catch (_err) {
+      try { target.scrollIntoView(); } catch (_err2) { /* ignore */ }
+    }
+  }
+
   function setStep(n) {
     state.step = n;
     var panels = document.querySelectorAll("[data-lf-step]");
@@ -454,6 +476,10 @@
     var progress = $("lf-gen-progress");
     if (progress) progress.textContent = "Step " + n + " of 5";
     syncFormFromState();
+    requestAnimationFrame(function () {
+      scrollPrimaryActionIntoView();
+      setTimeout(scrollPrimaryActionIntoView, 120);
+    });
   }
 
   function syncFormFromState() {
@@ -530,8 +556,6 @@
     document.body.classList.add("lf-gen-open");
     setStatus("");
     setGenerating(false);
-    var signIn = $("lf-gen-signin");
-    if (signIn) signIn.hidden = true;
     var done = $("lf-gen-done");
     if (done) done.hidden = true;
     var dl = $("lf-gen-download");
@@ -640,8 +664,6 @@
 
     setGenerating(true, "Building your PowerPoint…");
     setStatus("");
-    var signIn = $("lf-gen-signin");
-    if (signIn) signIn.hidden = true;
     try {
       var data = await postJSON("/api/demo-generate", body);
       setGenerating(false);
@@ -661,10 +683,7 @@
         $("lf-gen-submit") && ($("lf-gen-submit").hidden = true);
         $("lf-gen-next") && ($("lf-gen-next").hidden = true);
         window.open(data.pptx_url, "_blank", "noopener");
-        if (signIn) {
-          signIn.hidden = false;
-          signIn.textContent = "Want more? Sign in for unlimited →";
-        }
+        requestAnimationFrame(scrollPrimaryActionIntoView);
         return;
       }
       setStatus("Generation finished but no download link was returned.", "error");
@@ -672,19 +691,19 @@
       setGenerating(false);
       if (err.status === 429) {
         setStatus(
-          err.message || "Free daily generate used. Sign in for unlimited Mass decks.",
+          err.message ||
+            "Free daily generate used. Contact our admin to sign up for unlimited generations.",
           "error"
         );
-        if (signIn) {
-          signIn.hidden = false;
-          signIn.textContent = "Sign in for unlimited →";
-        }
+        requestAnimationFrame(scrollPrimaryActionIntoView);
         return;
       }
       if (err.status === 401 || err.status === 403) {
         saveDraft();
-        setStatus("Sign in with an approved parish account to generate.", "error");
-        if (signIn) signIn.hidden = false;
+        setStatus(
+          "Could not generate right now. Contact our admin to sign up for full access.",
+          "error"
+        );
         return;
       }
       setStatus(err.message || "Generation failed.", "error");
