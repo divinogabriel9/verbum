@@ -253,9 +253,46 @@
     .auth-theme-toggle .theme-icon-moon { display: none; }
     html[data-theme="dark"] .auth-theme-toggle .theme-icon-sun { display: none; }
     html[data-theme="dark"] .auth-theme-toggle .theme-icon-moon { display: block; }
+    .auth-close {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 100;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 90%, transparent);
+      color: var(--ink);
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(61, 44, 42, 0.08);
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+    .auth-close:hover {
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      border-color: color-mix(in srgb, var(--accent-soft) 40%, var(--line));
+      transform: scale(1.04);
+    }
+    .auth-close:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .auth-close svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
   </style>
 </head>
 <body>
+  <a href="/" class="auth-close" id="auth-close" aria-label="Back to LiturgyFlow home" title="Back to home">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  </a>
   <button type="button" class="auth-theme-toggle" id="auth-theme-toggle" aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
     <svg class="theme-icon theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="4" />

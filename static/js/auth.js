@@ -525,7 +525,7 @@
   }
 
   async function initMainAppAuth() {
-    const publicPaths = ["/sign-in", "/sign-up", "/health"];
+    const publicPaths = ["/", "/sign-in", "/sign-up", "/health"];
     const path = window.location.pathname || "/";
 
     revealAuthGateOptimistic();

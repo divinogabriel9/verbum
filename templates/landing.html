@@ -14,18 +14,10 @@
       var params = new URLSearchParams(window.location.search);
       var welcomePending = false;
       try { welcomePending = sessionStorage.getItem("verbum:mobile-welcome-pending") === "1"; } catch (_s) {}
-      // Fresh login / welcome intent always enters the app (not marketing resume).
+      // Post-login welcome always enters the app — never bounce marketing visitors to /home
+      // just because a (possibly expired) auth token sits in localStorage.
       if (params.get("welcome") === "1" || welcomePending) {
         window.location.replace("/home?welcome=1");
-        return;
-      }
-      if (params.get("resume") === "1") return;
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") === k.length - 11) {
-          var raw = localStorage.getItem(k);
-          if (raw && raw !== "null") { window.location.replace("/home"); break; }
-        }
       }
     } catch (_e) { /* ignore */ }
   })();
@@ -404,7 +396,7 @@
             <img src="/static/brand/app-icon.png?v=5" alt="" width="32" height="32"/>
             <span class="wordmark text-2xl"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
         </a>
-        <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin">Sign in</a>
+        <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin" id="lf-hero-signin">Sign in</a>
     </header>
 
     <main class="lf-hero__main">
@@ -514,4 +506,24 @@
 </div>
 
 <script src="/static/js/landing-generate.js?v=2"></script>
+<script>
+  (function () {
+    try {
+      var hasSession = false;
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") === k.length - 11) {
+          var raw = localStorage.getItem(k);
+          if (raw && raw !== "null") { hasSession = true; break; }
+        }
+      }
+      if (!hasSession) return;
+      var link = document.getElementById("lf-hero-signin");
+      if (link) {
+        link.href = "/home";
+        link.textContent = "Open app";
+      }
+    } catch (_e) { /* ignore */ }
+  })();
+</script>
 </body></html>
