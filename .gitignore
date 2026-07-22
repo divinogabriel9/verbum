@@ -9,6 +9,7 @@ data/web_hymn_cache.json
 data/pending_song_submissions.json
 data/choir_practice_shares.json
 data/media_ownership.json
+data/access_requests.json
 data/uploads/
 outputs/
 readings_cache.json

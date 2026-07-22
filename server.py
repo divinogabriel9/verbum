@@ -1059,6 +1059,13 @@ class DemoGenerateBody(BaseModel):
     songs: Optional[SongSelection] = None
 
 
+class AccessRequestBody(BaseModel):
+    name: str = Field("", max_length=120)
+    email: str = Field("", max_length=320)
+    parish: str = Field("", max_length=240)
+    message: str = Field("", max_length=1000)
+
+
 class CommunityNameBody(BaseModel):
     community_name: str = Field(..., min_length=1, max_length=L.CHURCH_NAME)
 
@@ -2863,6 +2870,26 @@ def api_generate(
         flush=True,
     )
     return out
+
+
+@app.post("/api/access-request")
+def api_access_request(body: AccessRequestBody, request: Request) -> Any:
+    """Public landing registration interest form — emailed to admin for review."""
+    from services.access_request import (
+        enforce_access_request_limits,
+        submit_access_request,
+        validate_access_request,
+    )
+
+    enforce_access_request_limits(request)
+    row = validate_access_request(
+        name=body.name,
+        email=body.email,
+        parish=body.parish,
+        message=body.message,
+        request=request,
+    )
+    return submit_access_request(row)
 
 
 @app.post("/api/demo-generate")

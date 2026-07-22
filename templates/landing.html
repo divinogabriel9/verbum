@@ -338,29 +338,89 @@
         .lf-gen-status[hidden] { display: none; }
         .lf-gen-status--error { color: #ffb4ab; }
         .lf-gen-status--success { color: #a8f0c8; }
-        .lf-gen-upgrade {
-            display: block;
-            margin-top: 16px;
+        .lf-gen-access {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 180, 169, 0.14);
+        }
+        .lf-gen-access__title {
+            margin: 0 0 4px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffb4a9;
+        }
+        .lf-gen-access__hint {
+            margin: 0 0 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #e3beb9;
+        }
+        .lf-gen-access__form {
+            display: grid;
+            gap: 10px;
+        }
+        .lf-gen-access__form label {
+            display: grid;
+            gap: 4px;
+            font-size: 12px;
+            color: #e3beb9;
+        }
+        .lf-gen-access__form input,
+        .lf-gen-access__form textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 180, 169, 0.22);
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff1ee;
+            padding: 10px 12px;
+            font: inherit;
+            font-size: 14px;
+        }
+        .lf-gen-access__form textarea {
+            min-height: 72px;
+            resize: vertical;
+        }
+        .lf-gen-access__form input:focus,
+        .lf-gen-access__form textarea:focus {
+            outline: 2px solid rgba(161, 15, 13, 0.55);
+            outline-offset: 1px;
+        }
+        .lf-gen-access__submit {
+            justify-self: start;
+            margin-top: 2px;
+            padding: 10px 18px;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(161, 15, 13, 0.85);
+            color: #ffada2;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .lf-gen-access__submit:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
+        .lf-gen-access__thanks {
+            margin: 0;
             padding: 14px 16px;
             border-radius: 12px;
-            border: 1px solid rgba(255, 180, 169, 0.22);
-            background: rgba(161, 15, 13, 0.12);
-            color: #e3beb9;
-            font-size: 13px;
-            line-height: 1.5;
-            text-decoration: none;
-        }
-        .lf-gen-upgrade strong {
-            display: block;
-            color: #ffb4a9;
+            border: 1px solid rgba(168, 240, 200, 0.22);
+            background: rgba(40, 90, 60, 0.22);
+            color: #a8f0c8;
             font-size: 14px;
-            margin-bottom: 4px;
+            line-height: 1.5;
         }
-        .lf-gen-upgrade:hover {
-            border-color: rgba(255, 180, 169, 0.4);
-            background: rgba(161, 15, 13, 0.18);
+        .lf-gen-access__thanks[hidden],
+        .lf-gen-access__form[hidden] { display: none !important; }
+        .lf-gen-access__err {
+            margin: 0;
+            font-size: 13px;
+            color: #ffb4ab;
         }
-        .lf-gen-upgrade[hidden] { display: none !important; }
+        .lf-gen-access__err[hidden] { display: none !important; }
         .lf-gen-done { margin-top: 16px; }
         .lf-gen-download {
             display: inline-block;
@@ -507,17 +567,29 @@
                 <p class="lf-gen-status lf-gen-status--success">Your Mass deck is ready.</p>
                 <a class="lf-gen-download" id="lf-gen-download" href="#" download hidden>Download PowerPoint</a>
             </div>
-            {% if invite_contact_email %}
-            <a class="lf-gen-upgrade" id="lf-gen-upgrade" href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request&amp;body=Hi%2C%20I%27d%20like%20to%20sign%20up%20for%20LiturgyFlow%20for%20unlimited%20Mass%20generation%20and%20custom%20PowerPoint%20decks.">
-                <strong>Want unlimited generations?</strong>
-                Contact our admin to sign up — get unlimited Mass decks and customize your own PowerPoint.
-            </a>
-            {% else %}
-            <p class="lf-gen-upgrade" id="lf-gen-upgrade">
-                <strong>Want unlimited generations?</strong>
-                Contact your LiturgyFlow administrator to sign up — get unlimited Mass decks and customize your own PowerPoint.
-            </p>
-            {% endif %}
+            <div class="lf-gen-access" id="lf-gen-access">
+                <p class="lf-gen-access__title">Want unlimited generations?</p>
+                <p class="lf-gen-access__hint">Request access for unlimited Mass decks and custom PowerPoint branding. We’ll review your request and follow up by email — this is not an instant signup.</p>
+                <form class="lf-gen-access__form" id="lf-gen-access-form" novalidate>
+                    <label>Name
+                        <input type="text" id="lf-gen-access-name" name="name" autocomplete="name" required maxlength="120" placeholder="Your name"/>
+                    </label>
+                    <label>Email
+                        <input type="email" id="lf-gen-access-email" name="email" autocomplete="email" required maxlength="320" placeholder="you@parish.org"/>
+                    </label>
+                    <label>Parish / church
+                        <input type="text" id="lf-gen-access-parish" name="parish" autocomplete="organization" required maxlength="240" placeholder="Parish or community name"/>
+                    </label>
+                    <label>Message <span style="opacity:.7">(optional)</span>
+                        <textarea id="lf-gen-access-message" name="message" maxlength="1000" placeholder="Anything we should know?"></textarea>
+                    </label>
+                    <p class="lf-gen-access__err" id="lf-gen-access-err" hidden></p>
+                    <button type="submit" class="lf-gen-access__submit" id="lf-gen-access-submit">Request access</button>
+                </form>
+                <p class="lf-gen-access__thanks" id="lf-gen-access-thanks" hidden>
+                    Thanks — we received your request. We’ll review it and email you if you’re approved.
+                </p>
+            </div>
         </div>
 
         <p class="lf-gen-status" id="lf-gen-status" hidden></p>
@@ -530,7 +602,7 @@
     </div>
 </div>
 
-<script src="/static/js/landing-generate.js?v=3"></script>
+<script src="/static/js/landing-generate.js?v=4"></script>
 <script>
   (function () {
     try {

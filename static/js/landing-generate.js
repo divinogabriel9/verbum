@@ -692,7 +692,7 @@
       if (err.status === 429) {
         setStatus(
           err.message ||
-            "Free daily generate used. Contact our admin to sign up for unlimited generations.",
+            "Free daily generate used. Request unlimited access with the form below.",
           "error"
         );
         requestAnimationFrame(scrollPrimaryActionIntoView);
@@ -701,12 +701,52 @@
       if (err.status === 401 || err.status === 403) {
         saveDraft();
         setStatus(
-          "Could not generate right now. Contact our admin to sign up for full access.",
+          "Could not generate right now. Request access with the form below for full use.",
           "error"
         );
         return;
       }
       setStatus(err.message || "Generation failed.", "error");
+    }
+  }
+
+  async function submitAccessRequest(e) {
+    if (e) e.preventDefault();
+    var form = $("lf-gen-access-form");
+    var thanks = $("lf-gen-access-thanks");
+    var errEl = $("lf-gen-access-err");
+    var btn = $("lf-gen-access-submit");
+    if (!form || !thanks) return;
+
+    var name = ($("lf-gen-access-name") || {}).value || "";
+    var email = ($("lf-gen-access-email") || {}).value || "";
+    var parish = ($("lf-gen-access-parish") || {}).value || "";
+    var message = ($("lf-gen-access-message") || {}).value || "";
+
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (btn) btn.disabled = true;
+
+    try {
+      await postJSON("/api/access-request", {
+        name: String(name).trim(),
+        email: String(email).trim(),
+        parish: String(parish).trim(),
+        message: String(message).trim(),
+      });
+      form.hidden = true;
+      thanks.hidden = false;
+      requestAnimationFrame(function () {
+        thanks.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    } catch (err) {
+      if (errEl) {
+        errEl.textContent = err.message || "Could not send your request. Please try again.";
+        errEl.hidden = false;
+      }
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -747,6 +787,9 @@
 
     var genBtn = $("lf-gen-submit");
     if (genBtn) genBtn.addEventListener("click", runGenerate);
+
+    var accessForm = $("lf-gen-access-form");
+    if (accessForm) accessForm.addEventListener("submit", submitAccessRequest);
 
     document.addEventListener("keydown", function (e) {
       var backdrop = $("lf-gen-backdrop");

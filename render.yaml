@@ -48,6 +48,12 @@ services:
         value: "1"
       - key: INVITE_CONTACT_EMAIL
         sync: false
+      - key: ACCESS_REQUEST_TO
+        value: divinogabriel76@gmail.com
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
       - key: APP_PUBLIC_URL
         sync: false
       - key: IMAGE_GENERATION_DAILY_LIMIT
