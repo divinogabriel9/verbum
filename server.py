@@ -1049,6 +1049,16 @@ class SongSelection(BaseModel):
     )
 
 
+class DemoGenerateBody(BaseModel):
+    """Narrow guest landing payload — server forces safe defaults."""
+
+    date: str = Field(..., min_length=8, max_length=16)
+    celebrant: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
+    our_father_choice: str = Field("english", max_length=16)
+    custom_theme: Optional[dict[str, Any]] = None
+    songs: Optional[SongSelection] = None
+
+
 class CommunityNameBody(BaseModel):
     community_name: str = Field(..., min_length=1, max_length=L.CHURCH_NAME)
 
@@ -2853,6 +2863,95 @@ def api_generate(
         flush=True,
     )
     return out
+
+
+@app.post("/api/demo-generate")
+def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
+    """Guest one-click Mass PPTX from the marketing landing page.
+
+    Rate-limited per IP (1/day + burst + global ceiling). PPTX only — no AI,
+    no uploads, no parish branding. Slides carry a Liturgyflow.com watermark.
+    """
+    from services.demo_access import (
+        DEMO_WATERMARK,
+        demo_download_url,
+        enforce_demo_rate_limits,
+        remaining_hint_after_consume,
+        validate_demo_date,
+        validate_our_father,
+        validate_theme_id,
+    )
+
+    enforce_demo_rate_limits(request)
+    mass_date = validate_demo_date(body.date)
+    celebrant = body.celebrant.strip()
+    if not celebrant:
+        raise HTTPException(status_code=400, detail="Enter the celebrant name.")
+    of_choice = validate_our_father(body.our_father_choice)
+    theme = validate_theme_id(body.custom_theme)
+    song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
+    if song_map:
+        song_map.pop("extra_sections", None)
+        song_map.pop("meditation", None)
+
+    print(f"[demo-generate] start date={mass_date!r}", flush=True)
+    result = generate_mass_media(
+        mass_date,
+        celebrant,
+        co_celebrant="",
+        poster_template="liturgical_color",
+        include_social_exports=False,
+        include_gospel_art=False,
+        include_ai_mass_poster=False,
+        song_selections=song_map,
+        custom_theme=theme,
+        include_church_logo=False,
+        include_church_name=False,
+        include_footer=True,
+        footer_brand=DEMO_WATERMARK,
+        creed_choice="nicene",
+        our_father_choice=of_choice,
+        hymn_lyrics_layout="dual",
+    )
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
+    if not result.pptx_path or not result.pptx_path.is_file():
+        raise HTTPException(status_code=500, detail="PowerPoint was not created.")
+
+    pptx_name = result.pptx_path.name
+    out = {
+        "ok": True,
+        "demo": True,
+        "title": result.title,
+        "gospel_reference": result.gospel_reference,
+        "slide_count": result.slide_count,
+        "export_stem": result.export_stem,
+        "selected_songs": result.selected_songs,
+        "watermark": DEMO_WATERMARK,
+        "pptx_url": demo_download_url(pptx_name),
+        **remaining_hint_after_consume(),
+    }
+    print(
+        f"[demo-generate] done stem={result.export_stem} slides={result.slide_count}",
+        flush=True,
+    )
+    return out
+
+
+@app.get("/api/demo-download/{token}")
+def api_demo_download(token: str) -> FileResponse:
+    """Short-lived signed download for guest demo PPTX files."""
+    from services.demo_access import resolve_demo_download_token
+
+    name = resolve_demo_download_token(token)
+    path = resolve_under_root(_OUTPUT_DIR, name)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="File not found or expired.")
+    return FileResponse(
+        path,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        filename=name,
+    )
 
 
 @app.post("/api/regenerate-pptx")

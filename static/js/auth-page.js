@@ -167,10 +167,32 @@
         } catch (_e) { /* ignore */ }
       }
 
+      function resolvePostAuthUrl() {
+        const params = new URLSearchParams(window.location.search);
+        let target = params.get("redirect_url") || cfg.after_sign_in_url || "/home";
+        try {
+          const parsed = new URL(target, window.location.origin);
+          // Landing resume stays on marketing page — send signed-in users into the app.
+          if (parsed.pathname === "/" || parsed.pathname === "") {
+            target = "/home";
+          } else {
+            target = parsed.pathname + (parsed.search || "") + (parsed.hash || "");
+          }
+        } catch (_e) {
+          target = "/home";
+        }
+        try {
+          const next = new URL(target, window.location.origin);
+          next.searchParams.set("welcome", "1");
+          return next.pathname + next.search + next.hash;
+        } catch (_e2) {
+          return "/home?welcome=1";
+        }
+      }
+
       function redirectAfterAuth() {
         setMobileWelcomePending();
-        const params = new URLSearchParams(window.location.search);
-        window.location.href = params.get("redirect_url") || cfg.after_sign_in_url;
+        window.location.href = resolvePostAuthUrl();
       }
 
       function showLoginForm() {
@@ -323,7 +345,13 @@
                   await consumeInvite(inviteToken, data.session.access_token);
                 }
                 setMobileWelcomePending();
-                window.location.href = cfg.after_sign_up_url;
+                try {
+                  const next = new URL(cfg.after_sign_up_url || "/home", window.location.origin);
+                  next.searchParams.set("welcome", "1");
+                  window.location.href = next.pathname + next.search + next.hash;
+                } catch (_e) {
+                  window.location.href = "/home?welcome=1";
+                }
                 return;
               }
               showError("Check your email to confirm your account, then sign in.");

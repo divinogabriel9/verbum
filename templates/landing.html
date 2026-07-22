@@ -11,7 +11,15 @@
 <script>
   (function () {
     try {
-      if (new URLSearchParams(window.location.search).get("resume") === "1") return;
+      var params = new URLSearchParams(window.location.search);
+      var welcomePending = false;
+      try { welcomePending = sessionStorage.getItem("verbum:mobile-welcome-pending") === "1"; } catch (_s) {}
+      // Fresh login / welcome intent always enters the app (not marketing resume).
+      if (params.get("welcome") === "1" || welcomePending) {
+        window.location.replace("/home?welcome=1");
+        return;
+      }
+      if (params.get("resume") === "1") return;
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
         if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") === k.length - 11) {
@@ -396,7 +404,7 @@
             <img src="/static/brand/app-icon.png?v=5" alt="" width="32" height="32"/>
             <span class="wordmark text-2xl"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
         </a>
-        <a href="/sign-in?redirect_url=%2F%3Fresume%3D1" class="lf-hero__signin">Sign in</a>
+        <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin">Sign in</a>
     </header>
 
     <main class="lf-hero__main">
@@ -486,13 +494,13 @@
 
         <div class="lf-gen-step" data-lf-step="5" hidden>
             <h3>Ready to generate</h3>
-            <p>We'll build a complete PowerPoint with readings, prayers, and hymn slides for <span id="lf-gen-date-label-2">this Sunday</span>.</p>
+            <p>We'll build a complete PowerPoint with readings, prayers, and hymn slides for <span id="lf-gen-date-label-2">this Sunday</span>. Free demo decks include a Liturgyflow.com watermark.</p>
             <ul class="lf-gen-songs" id="lf-gen-songs-review" aria-label="Selected songs"></ul>
             <div class="lf-gen-done" id="lf-gen-done" hidden>
                 <p class="lf-gen-status lf-gen-status--success">Your Mass deck is ready.</p>
                 <a class="lf-gen-download" id="lf-gen-download" href="#" download hidden>Download PowerPoint</a>
             </div>
-            <a class="lf-gen-signin" id="lf-gen-signin" href="/sign-in?redirect_url=%2F%3Fresume%3D1" hidden>Sign in to generate →</a>
+            <a class="lf-gen-signin" id="lf-gen-signin" href="/sign-in?redirect_url=%2Fhome" hidden>Sign in to generate →</a>
         </div>
 
         <p class="lf-gen-status" id="lf-gen-status" hidden></p>
@@ -505,5 +513,5 @@
     </div>
 </div>
 
-<script src="/static/js/landing-generate.js?v=1"></script>
+<script src="/static/js/landing-generate.js?v=2"></script>
 </body></html>

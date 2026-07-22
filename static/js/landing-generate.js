@@ -135,9 +135,14 @@
     });
     var data = await res.json().catch(function () { return {}; });
     if (!res.ok) {
-      var message = data.detail || data.error || res.statusText;
+      var detail = data.detail || data.error || res.statusText;
+      var message = detail;
+      if (detail && typeof detail === "object") {
+        message = detail.message || JSON.stringify(detail);
+      }
       var err = new Error(typeof message === "string" ? message : JSON.stringify(message));
       err.status = res.status;
+      err.detail = detail;
       throw err;
     }
     return data;
@@ -628,29 +633,24 @@
     var body = {
       date: state.massDate || upcomingSundayISO(),
       celebrant: state.celebrant,
-      co_celebrant: "",
       songs: songsToPayload(state.songs),
       custom_theme: pptThemePayload(theme),
       our_father_choice: cfg.our_father_choice,
-      creed_choice: cfg.creed_choice,
-      hymn_lyrics_layout: cfg.hymn_lyrics_layout,
-      poster_template: cfg.poster_template,
-      include_gospel_art: cfg.include_gospel_art,
-      include_ai_mass_poster: cfg.include_ai_mass_poster,
-      include_social_exports: cfg.include_social_exports,
-      include_church_logo: cfg.include_church_logo,
-      include_church_name: cfg.include_church_name,
-      lotw_poster: cfg.lotw_poster,
-      lote_poster: cfg.lote_poster,
     };
 
     setGenerating(true, "Building your PowerPoint…");
     setStatus("");
+    var signIn = $("lf-gen-signin");
+    if (signIn) signIn.hidden = true;
     try {
-      var data = await postJSON("/api/generate", body);
+      var data = await postJSON("/api/demo-generate", body);
       setGenerating(false);
       if (data.pptx_url) {
-        setStatus("Your Mass deck is ready.", "success");
+        var readyMsg = "Your Mass deck is ready.";
+        if (data.watermark) {
+          readyMsg += " Watermark: " + data.watermark;
+        }
+        setStatus(readyMsg, "success");
         var dl = $("lf-gen-download");
         if (dl) {
           dl.href = data.pptx_url;
@@ -661,15 +661,29 @@
         $("lf-gen-submit") && ($("lf-gen-submit").hidden = true);
         $("lf-gen-next") && ($("lf-gen-next").hidden = true);
         window.open(data.pptx_url, "_blank", "noopener");
+        if (signIn) {
+          signIn.hidden = false;
+          signIn.textContent = "Want more? Sign in for unlimited →";
+        }
         return;
       }
       setStatus("Generation finished but no download link was returned.", "error");
     } catch (err) {
       setGenerating(false);
+      if (err.status === 429) {
+        setStatus(
+          err.message || "Free daily generate used. Sign in for unlimited Mass decks.",
+          "error"
+        );
+        if (signIn) {
+          signIn.hidden = false;
+          signIn.textContent = "Sign in for unlimited →";
+        }
+        return;
+      }
       if (err.status === 401 || err.status === 403) {
         saveDraft();
         setStatus("Sign in with an approved parish account to generate.", "error");
-        var signIn = $("lf-gen-signin");
         if (signIn) signIn.hidden = false;
         return;
       }

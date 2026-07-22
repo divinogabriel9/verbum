@@ -276,10 +276,22 @@ class DeckBrandingOptions:
     # Developer option: when False, the bottom community/section footer tag (the
     # small ~12pt line) is omitted from every slide. Off by default.
     include_footer: bool = False
+    # When set (e.g. guest demo watermark), footer brand uses this instead of
+    # the parish community name — without enabling parish logo/name branding.
+    footer_brand: str = ""
 
 
 _deck_branding = DeckBrandingOptions()
 _OUTPUT_DIR = _PROJECT_ROOT / "outputs"
+
+
+def _footer_brand_line() -> str:
+    brand = (_deck_branding.footer_brand or "").strip()
+    if brand:
+        return brand
+    if _deck_branding.include_name:
+        return get_community_name()
+    return ""
 
 
 @dataclass(frozen=True)
@@ -591,8 +603,9 @@ def _add_hymn_footer(slide, footer_section: str) -> None:
     _prep_tf(tf)
     tf.clear()
     p0 = tf.paragraphs[0]
-    if _deck_branding.include_name:
-        p0.text = get_community_name()
+    brand = _footer_brand_line()
+    if brand:
+        p0.text = brand
         _style_para(p0, size_pt=_FOOTER_PT, color=_ACTIVE_THEME.footer_muted, bold=True)
     p1 = tf.add_paragraph()
     p1.text = footer_section
@@ -1170,9 +1183,10 @@ def _add_community_footer(slide, footer_section: str, theme: SlideTheme):
     tf = foot.text_frame
     _prep_tf(tf)
     tf.clear()
-    if _deck_branding.include_name:
+    brand = _footer_brand_line()
+    if brand:
         p0 = tf.paragraphs[0]
-        p0.text = get_community_name()
+        p0.text = brand
         _style_para(p0, size_pt=_FOOTER_PT, color=theme.muted, bold=True)
         p0.alignment = PP_ALIGN.LEFT
     p1 = tf.add_paragraph()
@@ -4458,6 +4472,7 @@ def generate_mass_ppt(
     include_church_logo: bool = False,
     include_church_name: bool = False,
     include_footer: bool = False,
+    footer_brand: str = "",
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
@@ -4470,7 +4485,8 @@ def generate_mass_ppt(
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
-        include_footer=bool(include_footer),
+        include_footer=bool(include_footer) or bool(str(footer_brand or "").strip()),
+        footer_brand=str(footer_brand or "").strip(),
     )
     prs = Presentation()
     prs.slide_width = SLIDE_WIDTH

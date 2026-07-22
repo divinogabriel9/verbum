@@ -16003,7 +16003,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260716a" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260716b" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -37072,6 +37072,7 @@
     }
 
     const MOBILE_WELCOME_PENDING_KEY = "verbum:mobile-welcome-pending";
+    let mobileWelcomeShownThisLoad = false;
 
     function getMobileWelcomeDisplayName() {
       const auth = window.VerbumAuth;
@@ -37095,25 +37096,61 @@
       setUiOverlayOpen(modal, true);
     }
 
-    function consumeMobileWelcomePending() {
+    function clearMobileWelcomeUrlFlag() {
       try {
-        const pending = sessionStorage.getItem(MOBILE_WELCOME_PENDING_KEY) === "1";
-        if (pending) sessionStorage.removeItem(MOBILE_WELCOME_PENDING_KEY);
-        return pending;
-      } catch (_e) {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has("welcome")) return;
+        url.searchParams.delete("welcome");
+        const next = url.pathname + (url.search || "") + (url.hash || "");
+        history.replaceState({}, "", next || url.pathname);
+      } catch (_e) { /* ignore */ }
+    }
+
+    function hasMobileWelcomePending() {
+      try {
+        if (sessionStorage.getItem(MOBILE_WELCOME_PENDING_KEY) === "1") return true;
+      } catch (_e) { /* ignore */ }
+      try {
+        return new URLSearchParams(window.location.search).get("welcome") === "1";
+      } catch (_e2) {
         return false;
       }
     }
 
+    function consumeMobileWelcomePending() {
+      let pending = false;
+      try {
+        if (sessionStorage.getItem(MOBILE_WELCOME_PENDING_KEY) === "1") {
+          sessionStorage.removeItem(MOBILE_WELCOME_PENDING_KEY);
+          pending = true;
+        }
+      } catch (_e) { /* ignore */ }
+      try {
+        if (new URLSearchParams(window.location.search).get("welcome") === "1") {
+          pending = true;
+          clearMobileWelcomeUrlFlag();
+        }
+      } catch (_e2) { /* ignore */ }
+      return pending;
+    }
+
     function maybeShowMobileWelcomeModal() {
+      if (mobileWelcomeShownThisLoad) return;
       if (!isMobileChromeLayout()) return;
       if (window.__VERBUM_AUTH_GATE__) {
         const auth = window.VerbumAuth;
-        if (!auth || !auth.getUser || !auth.getUser()) return;
+        if (!auth || !auth.getUser || !auth.getUser()) {
+          // Keep the pending flag; retry once auth/user is ready.
+          if (hasMobileWelcomePending()) {
+            setTimeout(maybeShowMobileWelcomeModal, 400);
+          }
+          return;
+        }
       }
       if (!consumeMobileWelcomePending()) return;
+      mobileWelcomeShownThisLoad = true;
       requestAnimationFrame(() => {
-        setTimeout(() => openMobileWelcomeModal(), 120);
+        setTimeout(() => openMobileWelcomeModal(), 160);
       });
     }
 
@@ -42935,9 +42972,13 @@
         return;
       }
       window.addEventListener("verbum:auth-ready", run, { once: true });
-      window.addEventListener("verbum:auth-ready", () => updateHomeMassWelcome());
+      window.addEventListener("verbum:auth-ready", () => {
+        updateHomeMassWelcome();
+        maybeShowMobileWelcomeModal();
+      });
       window.addEventListener("verbum:profile-ready", () => {
         updateHomeMassWelcome();
+        maybeShowMobileWelcomeModal();
         if (memberApiAvailable()) {
           loadSongCatalog();
           refreshAiImageQuotaHint();

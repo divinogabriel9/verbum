@@ -96,6 +96,19 @@ _TIERS: Dict[str, Tuple[int, int]] = {
         _int_env("CATALOG_LYRIC_FETCH_MAX", 60),
         _int_env("CATALOG_LYRIC_FETCH_WINDOW", 3600),
     ),
+    # Guest landing one-click generate (IP-scoped + global ceiling).
+    "demo_generate": (
+        _int_env("RATE_LIMIT_DEMO_MAX", 1),
+        _int_env("RATE_LIMIT_DEMO_WINDOW", 86400),
+    ),
+    "demo_burst": (
+        _int_env("RATE_LIMIT_DEMO_BURST_MAX", 1),
+        _int_env("RATE_LIMIT_DEMO_BURST_WINDOW", 600),
+    ),
+    "demo_global": (
+        _int_env("RATE_LIMIT_DEMO_GLOBAL_MAX", 50),
+        _int_env("RATE_LIMIT_DEMO_GLOBAL_WINDOW", 3600),
+    ),
 }
 
 # Hard ceiling on any single request body, in bytes (default 12 MB).
@@ -103,6 +116,7 @@ MAX_BODY_BYTES = _int_env("MAX_REQUEST_BODY_BYTES", 12 * 1024 * 1024)
 
 _EXPENSIVE_PREFIXES = (
     "/api/generate",
+    "/api/demo-generate",
     "/api/regenerate-pptx",
     "/api/preview",
     "/api/ppt-preview/refresh",
