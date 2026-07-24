@@ -19,7 +19,6 @@ from services.email_notifications import (
     notify_access_request_user,
     safe_send,
 )
-from services.rate_limit import check_rate_limit_key
 from services.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
@@ -60,21 +59,6 @@ def _client_ip(request: Request) -> str:
         return forwarded
     client = request.client
     return client.host if client else "unknown"
-
-
-def enforce_access_request_limits(request: Request) -> None:
-    ip = _client_ip(request)
-    for key, tier in (
-        (f"access:burst:{ip}", "demo_burst"),
-        (f"access:day:{ip}", "demo_generate"),
-    ):
-        allowed, retry_after = check_rate_limit_key(key, tier)
-        if not allowed:
-            raise HTTPException(
-                status_code=429,
-                detail="Too many requests. Please try again later.",
-                headers={"Retry-After": str(max(1, retry_after))},
-            )
 
 
 def _clean(value: str, *, max_len: int) -> str:

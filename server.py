@@ -3145,12 +3145,10 @@ def api_generate(
 def api_access_request(body: AccessRequestBody, request: Request) -> Any:
     """Public landing registration interest form — emailed to admin for review."""
     from services.access_request import (
-        enforce_access_request_limits,
         submit_access_request,
         validate_access_request,
     )
 
-    enforce_access_request_limits(request)
     row = validate_access_request(
         name=body.name,
         email=body.email,
