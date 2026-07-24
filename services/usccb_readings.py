@@ -775,19 +775,22 @@ def _resolve_reading_body(
     if ref and _prose_sufficient(ref, prose):
         return prose
 
+    # Prefer USCCB pericope (NABRE) over bible-api.com (WEB). WEB prose freezes
+    # into the cache and produces poor Gospel dropdown sentences.
+    peri = _fetch_pericope_text(pericope_href)
+    if peri and reading_body_is_usable(peri, ref):
+        return peri.strip()
+
     api_text: Optional[str] = None
     if ref:
         api_text = fetch_scripture_text(ref, full_psalm=False)
         if api_text and reading_body_is_usable(api_text, ref):
             return api_text.strip()
 
-    peri = _fetch_pericope_text(pericope_href)
-    if peri and reading_body_is_usable(peri, ref):
+    if peri:
         return peri.strip()
     if api_text:
         return api_text.strip()
-    if peri:
-        return peri.strip()
     if _prose_sufficient(ref, prose):
         return prose
     return ""
@@ -1080,6 +1083,23 @@ def fetch_readings_for_date(
     if cached_partial:
         for key in CACHE_KEYS:
             if not str(entry.get(key) or "").strip() and str(cached_partial.get(key) or "").strip():
+                entry[key] = cached_partial[key]
+
+    # When bible.usccb.org is down (503/bot-check), ``_resolve_reading_body`` falls
+    # back to bible-api.com WEB prose. That must not replace previously scraped
+    # NABRE bodies — WEB freezes into the Gospel dropdown as bad sentences.
+    if soup is None and cached_partial:
+        for key in (
+            "first_reading",
+            "second_reading",
+            "gospel",
+            "psalm_text",
+            "psalm_response",
+            "gospel_acclamation",
+            "mass_celebration",
+        ):
+            cached_val = str(cached_partial.get(key) or "").strip()
+            if cached_val:
                 entry[key] = cached_partial[key]
 
     # Always persist live/merged results. ``use_cache=False`` only skips *reading*

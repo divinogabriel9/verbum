@@ -14,10 +14,17 @@ import re
 from typing import List, Tuple
 
 # After _normalize_typography(), typographic double quotes become ASCII ".
-_PAIR_RE = re.compile(r'"([^"]{12,}?)"')
+# Kept for callers/tests; pairing itself uses a length-agnostic scan below.
+_PAIR_RE = re.compile(r'"([^"]*)"')
 
 # Sentence splitter for fallback (lightweight -- good enough for liturgical prose).
 _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+# Narration mistaken for dialogue when quote pairing goes wrong.
+_NARRATOR_CHUNK = re.compile(
+    r"^(?:he|she|they|jesus)\s+(?:said|answered|replied)\b",
+    re.IGNORECASE,
+)
 
 
 _JESUS_CUE = re.compile(
@@ -73,7 +80,10 @@ def _is_jesus_attributed(norm: str, q_open_index: int) -> bool:
 
 def _quoted_segments(norm: str) -> List[Tuple[int, int, str]]:
     out: List[Tuple[int, int, str]] = []
-    for m in _PAIR_RE.finditer(norm):
+    # Match every "..." pair (including short ones like "Yes, Lord.") so a
+    # closing quote is never reused as the next opener — that produced fake
+    # slide lines such as "He said to them," in the Gospel dropdown.
+    for m in re.finditer(r'"([^"]*)"', norm):
         inner = (m.group(1) or "").strip()
         if len(inner) < 12:
             continue
@@ -104,6 +114,8 @@ def extract_gospel_slide_quote(full_gospel_text: str, max_chars: int = 340) -> s
 
     jesus_chunks: List[str] = []
     for start, _, inner in spans:
+        if _NARRATOR_CHUNK.match(inner):
+            continue
         if _is_jesus_attributed(norm, start):
             jesus_chunks.append(inner)
 
@@ -113,8 +125,10 @@ def extract_gospel_slide_quote(full_gospel_text: str, max_chars: int = 340) -> s
         return _trim_to(max_chars, merged)
 
     if spans:
-        best = max(spans, key=lambda x: len(x[2]))
-        return _trim_to(max_chars, best[2])
+        dialogue = [inner for _, _, inner in spans if not _NARRATOR_CHUNK.match(inner)]
+        if dialogue:
+            best = max(dialogue, key=len)
+            return _trim_to(max_chars, best)
 
     parts = _SENT_SPLIT.split(norm)
     chunk = ""
@@ -138,8 +152,14 @@ def split_slide_sentences(text: str) -> List[str]:
     parts = []
     for part in _SENT_SPLIT.split(raw):
         part = part.strip()
-        if part:
-            parts.append(part)
+        if not part:
+            continue
+        # Drop narrator fragments and tiny clauses that are not slide-worthy.
+        if _NARRATOR_CHUNK.match(part) and len(part) < 48:
+            continue
+        if len(part) < 12:
+            continue
+        parts.append(part)
     return parts
 
 

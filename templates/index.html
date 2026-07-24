@@ -6612,9 +6612,15 @@
     .ui-overlay .ui-card.songs-whats-new-card {
       width: min(920px, calc(100vw - 2rem));
       max-width: min(920px, calc(100vw - 2rem));
-      max-height: min(88vh, 720px);
+      max-height: min(92vh, 820px);
       display: flex;
       flex-direction: column;
+    }
+    .songs-whats-new-card .ui-card__header {
+      padding: 14px 18px 0;
+    }
+    .songs-whats-new-card .ui-card__footer {
+      padding: 10px 18px 14px;
     }
     .songs-whats-new-card .ui-card__content {
       flex: 1;
@@ -6622,11 +6628,12 @@
       overflow: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      padding: 10px 18px 6px;
     }
     .songs-whats-new-tabs {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
     .songs-whats-new-tab {
@@ -6634,8 +6641,8 @@
       background: var(--surface, #fff);
       color: var(--ink);
       border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 0.86rem;
+      padding: 5px 11px;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
     }
@@ -6658,9 +6665,10 @@
     .songs-whats-new-item {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 4px 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--line);
+      gap: 0 10px;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
     }
     .songs-whats-new-item:last-child {
       border-bottom: 0;
@@ -6668,44 +6676,46 @@
     .songs-whats-new-item__title {
       margin: 0;
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 0.84rem;
+      line-height: 1.25;
     }
     .songs-whats-new-item__meta {
       margin: 0;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
+      line-height: 1.2;
       color: var(--muted, #666);
     }
     .songs-whats-new-item__badge {
-      align-self: start;
-      font-size: 0.72rem;
+      align-self: center;
+      font-size: 0.64rem;
       font-weight: 700;
       letter-spacing: 0.02em;
       text-transform: uppercase;
-      padding: 4px 8px;
+      padding: 2px 6px;
       border-radius: 999px;
       background: color-mix(in srgb, var(--ink) 8%, transparent);
       color: var(--ink);
       white-space: nowrap;
     }
     .songs-whats-new-day {
-      margin: 18px 0 0;
+      margin: 10px 0 0;
     }
     .songs-whats-new-day:first-child {
       margin-top: 0;
     }
     .songs-whats-new-day__label {
-      margin: 0 0 4px;
-      font-size: 0.8rem;
+      margin: 0 0 2px;
+      font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted, #666);
     }
     .songs-whats-new-empty {
-      margin: 24px 0;
+      margin: 16px 0;
       text-align: center;
       color: var(--muted, #666);
-      font-size: 0.92rem;
+      font-size: 0.86rem;
     }
     .songs-whats-new-skip {
       display: flex;

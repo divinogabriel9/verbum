@@ -5,7 +5,11 @@ from __future__ import annotations
 import time
 from typing import Any, Optional
 
-from services.gospel_quote_extractor import first_sentence_slide_quote, split_slide_sentences
+from services.gospel_quote_extractor import (
+    extract_gospel_slide_quote,
+    first_sentence_slide_quote,
+    split_slide_sentences,
+)
 from services.liturgical_calendar import get_liturgical_color
 from services.lectionary_service import get_liturgical_data, payload_complete
 from services.lectionary_store import get_cached
@@ -35,7 +39,11 @@ def _liturgical_json(lc: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
 def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
     liturgical_color = get_liturgical_color(d)
     gospel_text = (data.get("gospel_text") or "").strip()
-    gospel_slide_quote = (data.get("gospel_slide_quote") or "").strip()
+    # Always re-derive the slide quote from the gospel body so a stale/bad
+    # cached ``gospel_slide_quote`` cannot poison the Mass Builder dropdown.
+    gospel_slide_quote = (
+        extract_gospel_slide_quote(gospel_text, max_chars=300) if gospel_text else ""
+    ) or (data.get("gospel_slide_quote") or "").strip()
     base_quote = gospel_slide_quote or gospel_text or ""
     sentences = split_slide_sentences(base_quote)
     fr_txt = data.get("first_reading_text") or ""
@@ -73,6 +81,7 @@ def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
             psalm_response=psalm_resp,
         ),
         "gospel_text": gospel_text,
+        "gospel_slide_quote": gospel_slide_quote,
         "readings_complete": payload_complete(data),
     }
 
