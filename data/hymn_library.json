@@ -4,7 +4,7 @@
       "id": "sing_new_song",
       "title": "Sing a New Song",
       "author": "",
-      "lyrics": "Chorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\n\nVerse 1\nYahweh's People Dance For Joy\nO Come Before The Lord\nAnd Play For Him On Glad Tambourines\nAnd Let Your Trumpet Sound\n\nChorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\n\nVerse 2\nRise, O Children, From Your Sleep;\nYour Savior Now Has Come\nHe Has Turned Your Sorrow To Joy\nAnd Filled Your Soul With Song\n\nChorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\nSinging Alleluia",
+      "lyrics": "Chorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\n\nVerse 1\nLord’s People Dance For Joy\nO Come Before The Lord\nAnd Play For Him On Glad Tambourines\nAnd Let Your Trumpet Sound\n\nChorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\n\nVerse 2\nRise, O Children, From Your Sleep;\nYour Savior Now Has Come\nHe Has Turned Your Sorrow To Joy\nAnd Filled Your Soul With Song\n\nChorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\nSinging Alleluia",
       "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time",
@@ -139,14 +139,19 @@
     },
     {
       "id": "purihin_ang_panginoon",
-      "title": "Purihin ang Panginoon",
-      "author": "",
-      "lyrics": "Chorus\nPurihin Ang Panginoon Umawit Ng Kagalakan\nAt Tugtugin Ang Gitara At Ang Kaaya-ayang Lira\nHipan Ninyo Ang Trumpeta\n\nVerse 1\nSa Ating Pagkabagabag Sa Diyos Tayo'y Tumawag\nSa Ating Mga Kaaway Tayo Ay Kanyang Iniligtas\n\nChorus\nPurihin Ang Panginoon Umawit Ng Kagalakan\nAt Tugtugin Ang Gitara At Ang Kaaya-ayang Lira\nHipan Ninyo Ang Trumpeta\n\nVerse 2\nAng Pasaning Mabigat Sa 'Ting Mga Balikat\nPinagaan Nang Lubusan Ng Diyos Na Tagapagligtas\n\nChorus\nPurihin Ang Panginoon Umawit Ng Kagalakan\nAt Tugtugin Ang Gitara At Ang Kaaya-ayang Lira\nHipan Ninyo Ang Trumpeta",
-      "source": "lyrics_dashboard",
+      "title": "Purihin Ang Panginoon",
+      "author": "Fr. Leo Nilo",
+      "lyrics": "Chorus\nPurihin Ang Panginoon\nUmawit Ng Kagalakan\nAt Tugtugin Ang Gitara\nAt Ang Kaaya-ayang Lira\nHipan Ninyo Ang Trumpeta\nVerse 1\nSa Ating Pagkabagabag\nSa Diyos Tayo'y Tumawag\nSa Ating Mga Kaaway\nTayo Ay Kanyang Iniligtas\nChorus\nPurihin Ang Panginoon\nUmawit Ng Kagalakan\nAt Tugtugin Ang Gitara\nAt Ang Kaaya-ayang Lira\nHipan Ninyo Ang Trumpeta\nVerse 2\nAng Pasaning Mabigat\nSa 'Ting Mga Balikat\nPinagaan Ng Lubusan\nNg Diyos Na Tagapagligtas\nChorus\nPurihin Ang Panginoon\nUmawit Ng Kagalakan\nAt Tugtugin Ang Gitara\nAt Ang Kaaya-ayang Lira\nHipan Ninyo Ang Trumpeta\nVerse 3\nKaya Panginoo'y Dinggin\nAng Landas Niya'y Tahakin\nHabambuhay Ay Purihin\nKagandahang-loob Niya Sa 'Tin\nChorus\nPurihin Ang Panginoon\nUmawit Ng Kagalakan\nAt Tugtugin Ang Gitara\nAt Ang Kaaya-ayang Lira\nHipan Ninyo Ang Trumpeta",
+      "source": "verbum_txt_import",
       "seasons": [
         "all"
       ],
-      "language": "Tagalog"
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant"
+      ]
     },
     {
       "id": "table_of_plenty",
@@ -161,6 +166,240 @@
       "gospel_moods": [
         "solemn",
         "mercy",
+        "reverent"
+      ]
+    },
+    {
+      "id": "buksan_ang_aming_puso",
+      "title": "Buksan Ang Aming Puso",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nBuksan Ang Aming Puso\nTuruan Mong Mag-alab\nSa Bawat Pagkukuro\nLahat Ay Makayakap\nVerse 2\nBuksan Ang Aming Isip\nSikatan Ng Liwanag\nNang Kusang Matangkilik\nTungkuling Mabanaag\nChorus\nBuksan Ang Aming Palad\nSarili'y Maialay\nTulungan Mong Ihanap\nKami Ng Bagong Malay",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "journey",
+        "reverent"
+      ]
+    },
+    {
+      "id": "pag_aalaala",
+      "title": "Pag-aalaala",
+      "author": "Manoling Francisco",
+      "lyrics": "Chorus\nBayan, Muling Magtipon\nAwitan Ang Panginoon\nSa Piging Sariwain\nPagliligtas Niya Sa Atin\nVerse 1\nBayan, Ating Alalahanin\nPanahong Tayo'y Inalipin\nNang Ngalan Niya'y Ating Tawagin\nPaano Tayo Iniligtas\nChorus\nBayan, Muling Magtipon\nAwitan Ang Panginoon\nSa Piging Sariwain\nPagliligtas Niya Sa Atin\nVerse 2\nBayan, Isiping Kapiling\nAng Poon Nating Mahabagin\nDahil Pag-ibig Niya'y Walang Hanggan\nKahit Na Tayo'y Magkasala\nChorus\nBayan, Muling Magtipon\nAwitan Ang Panginoon\nSa Piging Sariwain\nPagliligtas Niya Sa Atin",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "journey"
+      ]
+    },
+    {
+      "id": "magsiawit_sa_panginoon",
+      "title": "Magsiawit Sa Panginoon",
+      "author": "Danny Isidro",
+      "lyrics": "Chorus\nMagsiawit Kayo Sa Panginoon\nAleluya, Magsiawit Sa Panginoon\nVerse 1\nPurihin, Purihin Ang Kanyang Pangalan\nIpahayag, Ipahayag Ang Kanyang Kaligtasan\nAwitin Ang Kanyang Mga Kadakilaan\nMagsiawit, Magsiawit Sa Panginoon\nChorus\nMagsiawit Kayo Sa Panginoon\nAleluya, Magsiawit Sa Panginoon\nVerse 2\nDakila Ang Ating Diyos At Panginoon\nDapat Na Purihin Siya Sa Bawat Panahon\nSa Kanya Nagmula Ang Ating Kaligtasan\nMagsiawit, Magsiawit Sa Panginoon\nChorus\nMagsiawit Kayo Sa Panginoon\nAleluya, Magsiawit Sa Panginoon",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant"
+      ]
+    },
+    {
+      "id": "bayan_umapaw_sa_pag_asa",
+      "title": "Bayan, Umapaw Sa Pag-asa",
+      "author": "Ricky Manalo",
+      "lyrics": "Chorus\nBayan, Umapaw Sa Pag-asa\nBayan, Umapaw Sa Selebrasyon\nPatuloy Na Nagliligtas\nAng Ating Panginoon\nVerse 1\nDahil Sa Kanyang Katapatan\nTayo'y Hindi Niya Iiwanan\nAng Kanyang Awa'y Walang Hanggan\nKahit Na Sa Ating Mga Kasalanan\nChorus\nBayan, Umapaw Sa Pag-asa\nBayan, Umapaw Sa Selebrasyon\nPatuloy Na Nagliligtas\nAng Ating Panginoon\nVerse 2\nHuwag Tayong Mag-alinlangan\nSa Kanyang Mga Pangako\nAng Diyos Natin Ay Tapat\nMula Pa Noon Hanggang Ngayon\nChorus\nBayan, Umapaw Sa Pag-asa\nBayan, Umapaw Sa Selebrasyon\nPatuloy Na Nagliligtas\nAng Ating Panginoon",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "journey"
+      ]
+    },
+    {
+      "id": "halina_hesus_halina",
+      "title": "Halina, Hesus, Halina",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Chorus\nHalina, Hesus, Halina\nHalina, Hesus, Halina\nVerse 1\nSa Simula Isinaloob Mo\nO Diyos, Kaligtasan Ng Tao\nSa Takdang Panahon Ay Tinawag Mo\nIsang Bayang Lingkod Sa Iyo\nChorus\nHalina, Hesus, Halina\nHalina, Hesus, Halina\nVerse 2\nGabay Ng Iyong Bayang Hinirang\nAng Pag-asa Sa Iyong Mesiya\nEmmanuel Ang Pangalang Bigay Sa Kanya\nNasa Atin Ang Diyos Tuwina\nChorus\nHalina, Hesus, Halina\nHalina, Hesus, Halina",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "advent"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "journey",
+        "solemn"
+      ]
+    },
+    {
+      "id": "balang_araw",
+      "title": "Balang Araw",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nBalang Araw Ang Liwanag\nMatatanaw Ng Bulag\nAng Kagandahan Ng Umaga\nPagmamasdan Sa Tuwina\nChorus\nAleluya, Aleluya\nNarito Na'ng Manunubos\nLuwalhatiin Ang Diyos\nVerse 2\nBalang Araw Mumutawi\nSa Bibig Ng Mga Pipi\nPasasalamat At Papuri\nAwit Ng Luwalhati\nChorus\nAleluya, Aleluya\nNarito Na'ng Manunubos\nLuwalhatiin Ang Diyos\nVerse 3\nBalang Araw Tatakbo\nAng Pilay At Ang Lumpo\nMagsasayaw Sa Kagalakan\nIindak Sa Katuwaan\nChorus\nAleluya, Aleluya\nNarito Na'ng Manunubos\nLuwalhatiin Ang Diyos",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "advent"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "journey",
+        "triumphant"
+      ]
+    },
+    {
+      "id": "sa_hapag_ng_panginoon",
+      "title": "Sa Hapag Ng Panginoon",
+      "author": "Manoling Francisco",
+      "lyrics": "Chorus\nSa Hapag Ng Panginoon\nBuong Bayan Ngayo'y Nagtitipon\nUpang Pagsaluhan Ang Kaligtasan\nHandog Ng Diyos Sa Tanan\nVerse 1\nSa Panahong Tayo'y Nalulumbay\nAt Ang Pag-asa'y Walang Saysay\nBiyaya Ng Diyos, S'yang Nagbibigay\nNg Lakas Na Taglay\nChorus\nSa Hapag Ng Panginoon\nBuong Bayan Ngayo'y Nagtitipon\nUpang Pagsaluhan Ang Kaligtasan\nHandog Ng Diyos Sa Tanan\nVerse 2\nMga Pusong Nagagalit\nMga Taong May Hinanakit\nLahat Ay Pinagkakasundo\nSa Hapag Ng Panginoon\nChorus\nSa Hapag Ng Panginoon\nBuong Bayan Ngayo'y Nagtitipon\nUpang Pagsaluhan Ang Kaligtasan\nHandog Ng Diyos Sa Tanan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "journey",
+        "reverent"
+      ]
+    },
+    {
+      "id": "tayo_y_magpuri",
+      "title": "Tayo'y Magpuri",
+      "author": "",
+      "lyrics": "Chorus\nTayo'y Magpuri Sa Panginoon\nTayo'y Umuawit Ng Kagalakan\nTayo'y Magpuri Sa Panginoon\nSa Kanyang Dakilang Kabutihan\nVerse 1\nPurihin Siya, Mga Nilikha\nPurihin Siya, Kalangitan\nAwitan Siya Ng Mga Awit\nNg Pasasalamat At Papuri\nChorus\nTayo'y Magpuri Sa Panginoon\nTayo'y Umuawit Ng Kagalakan\nTayo'y Magpuri Sa Panginoon\nSa Kanyang Dakilang Kabutihan\nVerse 2\nItaas Ang Mga Kamay\nSumamba Nang Buong Galak\nDahil Tayo'y Tinubos Niya\nMula Sa Ating Mga Kasalanan\nChorus\nTayo'y Magpuri Sa Panginoon\nTayo'y Umuawit Ng Kagalakan\nTayo'y Magpuri Sa Panginoon\nSa Kanyang Dakilang Kabutihan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant"
+      ]
+    },
+    {
+      "id": "bayan_magsiawit_na",
+      "title": "Bayan, Magsiawit Na!",
+      "author": "Arnel Aquino",
+      "lyrics": "Chorus\nBayan, Magsiawit Na!\nBayan, Pinagpala Ka!\nDakilang Biyayang Pangako Niya\nSumilay Na!\nVerse 1\nSinauna Mong Hangarin\nAng Tao Nga'y Tubusin\nUpang Siya Ay Makapiling\nMapag-irog Na Diyos Natin\nChorus\nBayan, Magsiawit Na!\nBayan, Pinagpala Ka!\nDakilang Biyayang Pangako Niya\nSumilay Na!\nVerse 2\nSa Aba Niyang Pagkatao\nSa Buhay Niya Sa Mundo\nInihayag Kanyang Puso\nTinig Ng Ama Nating Diyos\nChorus\nBayan, Magsiawit Na!\nBayan, Pinagpala Ka!\nDakilang Biyayang Pangako Niya\nSumilay Na!",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant"
+      ]
+    },
+    {
+      "id": "pumasok_kayo",
+      "title": "Pumasok Kayo",
+      "author": "",
+      "lyrics": "Chorus\nPumasok Kayo Sa Mga Pintuan Niya Nang May Pag-awit At Pagpupuri Pumasok Kayo Sa Mga Pintuan Niya Nang May Kagalakan Sa Puso\n\nVerse 1\nPurihin Ang Kanyang Pangalan Purihin Ang Kanyang Kabutihan Magpasalamat Kayo Sa Kanya Dahil Siya'y Mabuti At Tapat\n\nChorus\nPumasok Kayo Sa Mga Pintuan Niya Nang May Pag-awit At Pagpupuri Pumasok Kayo Sa Mga Pintuan Niya Nang May Kagalakan Sa Puso\n\nVerse 2\nSapagkat Ang Panginoon Ay Mabuti Ang Kanyang Awa Ay Walang Hanggan At Ang Kanyang Katapatan Ay Mananatili Magpakailanman\n\nChorus\nPumasok Kayo Sa Mga Pintuan Niya Nang May Pag-awit At Pagpupuri Pumasok Kayo Sa Mga Pintuan Niya Nang May Kagalakan Sa Puso",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "journey"
+      ]
+    },
+    {
+      "id": "halina_t_umawit",
+      "title": "Halina't Umawit",
+      "author": "",
+      "lyrics": "Chorus\nHalina't Umawit Sa Panginoon Ipahayag Ang Kanyang Kaligtasan Halina't Umawit Sa Panginoon Ipagdiwang Ang Kanyang Ngalan\n\nVerse 1\nSumamba Kayo Sa Kanya Nang May Kagalakan At Tuwa Sapagkat Siya'y Ating Diyos Tayo'y Kanyang Bayang Hinirang\n\nChorus\nHalina't Umawit Sa Panginoon Ipahayag Ang Kanyang Kaligtasan Halina't Umawit Sa Panginoon Ipagdiwang Ang Kanyang Ngalan\n\nVerse 2\nAng Kanyang Mga Nilikha Ay Nagpupuri Sa Kanya Kaya't Tayo Rin Ay Mag-alay Ng Pasasalamat At Pagsamba\n\nChorus\nHalina't Umawit Sa Panginoon Ipahayag Ang Kanyang Kaligtasan Halina't Umawit Sa Panginoon Ipagdiwang Ang Kanyang Ngalan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "triumphant"
+      ]
+    },
+    {
+      "id": "awit_ng_pagkakaisa",
+      "title": "Awit Ng Pagkakaisa",
+      "author": "",
+      "lyrics": "Verse 1\nTayo Ay Magkaisa Sa Pag-ibig At Pag-asa Sa Hapag Ng Ating Diyos Tayo'y Magtipon-tipon\n\nChorus\nIsang Bayan, Isang Puso Isang Diwa Sa Panginoon Tayo'y Kanyang Tinawag Upang Maging Kanyang Saksi\n\nVerse 2\nAng Aming Panalangin Ay Kapayapaan Sa Mundo Nawa'y Pag-ibig Mo Maghari Sa Aming Puso\n\nChorus\nIsang Bayan, Isang Puso Isang Diwa Sa Panginoon Tayo'y Kanyang Tinawag Upang Maging Kanyang Saksi",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "journey",
+        "reverent"
+      ]
+    },
+    {
+      "id": "isang_pananampalataya",
+      "title": "Isang Pananampalataya",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Chorus\nIsang Pananampalataya Isang Pagbiniyag, Isang Panginoon Angkinin Nating Lahat Isang Panginoon, Isang Bayan\n\nVerse 1\nHabilin Ni Hesus Noong Siya'y Lumisan Kayo Ay Magkatipon Sa Pagmamahalan Kayo Ay Magkatipon Sa Pagmamahalan\n\nChorus\nIsang Pananampalataya Isang Pagbiniyag, Isang Panginoon Angkinin Nating Lahat Isang Panginoon, Isang Bayan\n\nVerse 2\nAma Pakinggan Mo Ang Aming Panalangin Dalisay Na Pag-ibig Sa Ami'y Lumapit Dalisay Na Pag-ibig Sa Ami'y Lumapit\n\nChorus\nIsang Pananampalataya Isang Pagbiniyag, Isang Panginoon Angkinin Nating Lahat Isang Panginoon, Isang Bayan\n\nVerse 3\nMga Alagad Ko Pa'no Makikilala Tapat Nilang Pag-ibig Wala Nang Iba Pa Tapat Nilang Pag-ibig Wala Nang Iba Pa\n\nChorus\nIsang Pananampalataya Isang Pagbiniyag, Isang Panginoon Angkinin Nating Lahat Isang Panginoon, Isang Bayan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "triumphant"
+      ]
+    },
+    {
+      "id": "halina_at_lumapit",
+      "title": "Halina At Lumapit",
+      "author": "",
+      "lyrics": "Chorus\nHalina At Lumapit Sa Hapag Ng Panginoon Tanggapin Ang Kanyang Biyaya Buhay Na Walang Hanggan\n\nVerse 1\nLahat Ng Nagugutom Lahat Ng Nauuhaw Halina't Mabusog Sa Pag-ibig Ng Diyos\n\nChorus\nHalina At Lumapit Sa Hapag Ng Panginoon Tanggapin Ang Kanyang Biyaya Buhay Na Walang Hanggan\n\nVerse 2\nDalhin Ang Inyong Mga Pasanin Dalhin Ang Inyong Mga Alalahanin Ipaubaya Sa Panginoon Ang Inyong Mga Hinaing\n\nChorus\nHalina At Lumapit Sa Hapag Ng Panginoon Tanggapin Ang Kanyang Biyaya Buhay Na Walang Hanggan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "journey",
         "reverent"
       ]
     }
@@ -299,6 +538,175 @@
       "language": "English",
       "gospel_moods": [
         "reverent"
+      ]
+    },
+    {
+      "id": "unang_alay",
+      "title": "Unang Alay",
+      "author": "Rey Magnaye",
+      "lyrics": "Verse 1\nKunin At Tanggapin Ang Alay Na Ito\nMga Biyayang Nagmula Sa Pagpapala Mo\nTanda Ng Bawat Pusong 'Pagkat Inibig Mo\nNgayo'y Nananalig, Nagmamahal Sa 'Yo\n\nChorus\nTinapay Na Nagmula Sa Butil Ng Trigo\nPagkaing Nagbibigay Ng Buhay Mo\nAt Alak Na Nagmula Sa Isang Tangkay Ng Ubas\nInuming Nagbibigay Lakas\n\nVerse 2\nLahat Ng Mga Lungkot, Ligaya't Pagsubok\nLahat Ng Lakas At Kahinaan Ko\nInaalay Kong Lahat Buong Pagkatao\nIto Ay Isusunod Sa 'Yo\n\nChorus\nTinapay Na Nagmula Sa Butil Ng Trigo\nPagkaing Nagbibigay Ng Buhay Mo\nAt Alak Na Nagmula Sa Isang Tangkay Ng Ubas\nInuming Nagbibigay Lakas\n\nVerse 3\nAng Bayang Inibig Mo, Ngayo'y Umaawit\nSa Iyo Ay Sumasamba't Nananalig\nUmaasang Diringgin Ang Bawat Panalangin\nSa Alay Na Ito'y Nakalakip\n\nChorus\nTinapay Na Nagmula Sa Butil Ng Trigo\nPagkaing Nagbibigay Ng Buhay Mo\nAt Alak Na Nagmula Sa Isang Tangkay Ng Ubas\nInuming Nagbibigay Lakas",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "paghahandog_ng_sarili",
+      "title": "Paghahandog Ng Sarili",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nKunin Mo, O Diyos, At Tanggapin Mo\nAng Aking Kalayaan, Ang Aking Kalooban\nIsip At Gunita Ko, Lahat Ng Hawak Ko\nNg Loob Ko Ay Aking Alay Sa 'Yo\n\nVerse 2\nNagmula Sa 'Yo Ang Lahat Ng Ito\nMuli Kong Handog Sa 'Yo\nPatnubayan Mo't Paghariang Lahat\nAyon Sa Kalooban Mo\n\nChorus\nMag-utos Ka, Panginoon Ko\nDagling Tatalima Ako\nIpagkaloob Mo Lang Ang Pag-ibig Mo\nAt Lahat Ay Tatalikdan Ko\n\nChorus\nMag-utos Ka, Panginoon Ko\nDagling Tatalima Ako\nIpagkaloob Mo Lang Ang Pag-ibig Mo\nAt Lahat Ay Tatalikdan Ko",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "paghahandog",
+      "title": "Paghahandog",
+      "author": "Rene San Andres",
+      "lyrics": "Verse 1\nAng Himig Mo, Ang Awit Ko\nLahat Ng Ito'y Nagmula Sa Iyo\nMuling Ihahandog Sa Iyo\nBuong Puso Kong Iniaalay Sa 'Yo\n\nChorus\nO Diyos, O Panginoon\nLahat Ay Biyayang Aming Inampon\nAming Buhay At Kakayahan\nIto'y Para Lamang Sa 'Yong Kaluwalhatian\n\nVerse 2\nAng Tanging Ninanais Ko\nAy Matamo Lamang Ang Pag-ibig Mo\nLahat Ay Iiwanan Ko\nWala Nang Kailangan, Sapat Na Ito\n\nChorus\nO Diyos, O Panginoon\nLahat Ay Biyayang Aming Inampon\nAming Buhay At Kakayahan\nIto'y Para Lamang Sa 'Yong Kaluwalhatian",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "journey"
+      ]
+    },
+    {
+      "id": "tinapay_at_alak_naming_hatid",
+      "title": "Tinapay At Alak Naming Hatid",
+      "author": "",
+      "lyrics": "Verse 1\nAming Hatid, Alay Na Ito\nAng Tinapay Na Nagmula Sa Lupa\nAt Alak Na Nagmula Sa Ubas\nUpang Maging Katawan At Dugo Mo\n\nChorus\nTanggapin Mo, O Panginoon\nAng Aming Mga Alay Na Ito\nTanda Ng Aming Pagmamahal\nAt Pag-aalay Ng Aming Buhay\n\nVerse 2\nAng Aming Mga Paghihirap\nAng Aming Mga Tuwa At Galak\nIniaalay Namin Sa Iyo\nBilang Handog Ng Aming Pag-ibig\n\nChorus\nTanggapin Mo, O Panginoon\nAng Aming Mga Alay Na Ito\nTanda Ng Aming Pagmamahal\nAt Pag-aalay Ng Aming Buhay",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "tanging_yaman",
+      "title": "Tanging Yaman",
+      "author": "Manoling Francisco",
+      "lyrics": "Chorus\nIkaw Ang Aking Tanging Yaman\nNa 'Di Lubusan Masumpungan\nAng Nilikha Mong Kariktan\nSulyap Ng 'Yong Kagandahan\n\nVerse 1\nIka'y Hanap Sa T'wina\nNitong Pusong Ikaw Lamang Ang Saya\nSa Ganda Ng Umaga\nNangungulila Sa 'Yo Sinta\n\nChorus\nIkaw Ang Aking Tanging Yaman\nNa 'Di Lubusan Masumpungan\nAng Nilikha Mong Kariktan\nSulyap Ng 'Yong Kagandahan\n\nVerse 2\nIka'y Hanap Sa T'wina\nSa Kapwa Ko Kita Laging Nadarama\nSa Iyong Mga Likha\nHangad Pa Ring Masdan Ang 'Yong Mukha\n\nChorus\nIkaw Ang Aking Tanging Yaman\nNa 'Di Lubusan Masumpungan\nAng Nilikha Mong Kariktan\nSulyap Ng 'Yong Kagandahan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "mercy"
+      ]
+    },
+    {
+      "id": "isang_pagkain_isang_katawan_isang_bayan",
+      "title": "Isang Pagkain, Isang Katawan, Isang Bayan",
+      "author": "Lucio San Pedro",
+      "lyrics": "Chorus\nIsang Pagkain, Isang Katawan, Isang Bayan\nTayo'y Inanyayahan\nNg Ating Panginoon\nTayo'y Magkatipon-tipon\n\nVerse 1\nPagsaluhan Natin Ang Tinapay Ng Buhay\nAng Dugo Niya'y Inumin, Tanda Ng Kaligtasan\nSa Pag-ibig Ng Diyos, Tayo'y Magkaisa\nIsang Bayan Na Sumasamba Sa Kanya\n\nChorus\nIsang Pagkain, Isang Katawan, Isang Bayan\nTayo'y Inanyayahan\nNg Ating Panginoon\nTayo'y Magkatipon-tipon\n\nVerse 2\nIisang Panginoon, Iisang Katawan\nIsang Pag-ibig Ang Sa Ami'y Namagitan\nTayo'y Mga Sanga Ng Iisang Puno\nMagbunga Tayo Nang Sagana Sa Mundo\n\nChorus\nIsang Pagkain, Isang Katawan, Isang Bayan\nTayo'y Inanyayahan\nNg Ating Panginoon\nTayo'y Magkatipon-tipon",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "journey",
+        "reverent"
+      ]
+    },
+    {
+      "id": "narito_ako_panginoon",
+      "title": "Narito Ako, Panginoon",
+      "author": "Rene San Andres",
+      "lyrics": "Chorus\nPanginoon, Narito Ako\nGawin Mo Sa Akin Ang Maibigan Mo\nHanda Akong Tupdin Ang Loob Mo\nPanginoon, Narito Ako\n\nVerse 1\nSino Ang Aking Babalingan?\nPanginoon Ko, Tanging Ikaw\nSapagkat Taglay Mo Ang Salita Ng Buhay\nIkaw Ang Buhay Na Walang Hanggan\n\nChorus\nPanginoon, Narito Ako\nGawin Mo Sa Akin Ang Maibigan Mo\nHanda Akong Tupdin Ang Loob Mo\nPanginoon, Narito Ako\n\nVerse 2\nIto Ang Aking Tanging Hangad\nAng Manahan Sa Iyong Tahanan\nUpang Masdan Ang Iyong Kagandahan\nAt Umibig Sa Iyo Nang Lubusan\n\nChorus\nPanginoon, Narito Ako\nGawin Mo Sa Akin Ang Maibigan Mo\nHanda Akong Tupdin Ang Loob Mo\nPanginoon, Narito Ako",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "journey"
+      ]
+    },
+    {
+      "id": "alay_sa_diyos",
+      "title": "Alay Sa Diyos",
+      "author": "",
+      "lyrics": "Verse 1\nO Diyos, Awitin Ko'y Iniaalay\nPati Ang Aking Buhay Sa 'Yo Ibibigay\nAng Lahat Ng Ito Ay Biyayang Taglay\nMula Sa Iyong Kabutihang Walang Kapantay\n\nChorus\nTanggapin Mo, O Diyos, Ang Alay Na Ito\nPusong Nagpapasalamat, Nagmamahal Sa 'Yo\nIkaw Ang Aming Hari, Aming Panginoon\nSa Iyo Lamang Ang Aming Pag-asa Ngayon\n\nVerse 2\nTinapay At Alak Aming Ihahandog\nBunga Ng Aming Paggawa't Pagod\nGawin Mong Katawan At Dugo Ni Hesus\nUpang Maging Buhay Nami't Lakas\n\nChorus\nTanggapin Mo, O Diyos, Ang Alay Na Ito\nPusong Nagpapasalamat, Nagmamahal Sa 'Yo\nIkaw Ang Aming Hari, Aming Panginoon\nSa Iyo Lamang Ang Aming Pag-asa Ngayon",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent"
+      ]
+    },
+    {
+      "id": "sumasamo_kami_sa_yo",
+      "title": "Sumasamo Kami Sa'yo",
+      "author": "",
+      "lyrics": "Chorus\nSumasamo Kami Sa 'Yo\nTanggapin Ang Aming Alay\nTinapay At Alak Na Ito\nGawin Mong Katawan At Dugo\n\nVerse 1\nSa Iyong Altar Kami'y Lumalapit\nTaglay Ang Aming Mga Pasakit\nHinihiling Ang Iyong Awa\nPanginoon, Kami'y Tulungan Mo\n\nChorus\nSumasamo Kami Sa 'Yo\nTanggapin Ang Aming Alay\nTinapay At Alak Na Ito\nGawin Mong Katawan At Dugo\n\nVerse 2\nBuhay Namin Ay Iyong Pagpalain\nUpang Sa Iyo'y Maging Karapat-dapat Din\nAng Pag-ibig Mo'y Laging Madarama\nSa Aming Paglilingkod Sa Kapwa\n\nChorus\nSumasamo Kami Sa 'Yo\nTanggapin Ang Aming Alay\nTinapay At Alak Na Ito\nGawin Mong Katawan At Dugo",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "mercy"
+      ]
+    },
+    {
+      "id": "tanggapin_mo_panginoon",
+      "title": "Tanggapin Mo, Panginoon",
+      "author": "",
+      "lyrics": "Verse 1\nTanggapin Mo, Panginoon\nAng Aming Mga Alay\nMga Bunga Ng Aming Paggawa\nAt Ng Aming Pag-ibig\n\nChorus\nAlay Namin Sa Iyo\nAng Buo Naming Pagkatao\nGawin Mo Kaming Karapat-dapat\nNa Maging Iyong Mga Alagad\n\nVerse 2\nIto'y Aming Inihahandog\nNang May Kagalakan Sa Puso\nNawa'y Iyong Kalugdan\nAng Abang Alay Ng Iyong Bayan\n\nChorus\nAlay Namin Sa Iyo\nAng Buo Naming Pagkatao\nGawin Mo Kaming Karapat-dapat\nNa Maging Iyong Mga Alagad",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
       ]
     }
   ],
@@ -731,6 +1139,91 @@
       ],
       "language": "Tagalog",
       "gospel_moods": [
+        "reverent"
+      ]
+    },
+    {
+      "id": "panginoon_maawa_ka_hontiveros",
+      "title": "Panginoon, Maawa Ka (hontiveros)",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nPanginoon, Maawa Ka Panginoon, Maawa Ka\n\nVerse 2\nKristo, Maawa Ka Kristo, Maawa Ka Sa Amin\n\nVerse 3\nPanginoon, Maawa Ka Panginoon, Maawa Ka",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "panginoon_maawa_ka_francisco",
+      "title": "Panginoon, Maawa Ka (francisco)",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nPanginoon, Maawa Ka Panginoon, Maawa Ka\n\nVerse 2\nKristo, Maawa Ka Kristo, Maawa Ka\n\nVerse 3\nPanginoon, Maawa Ka Panginoon, Maawa Ka",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "panginoon_maawa_ka_bukas_palad",
+      "title": "Panginoon, Maawa Ka (bukas Palad)",
+      "author": "Bukas Palad",
+      "lyrics": "Verse 1\nPanginoon, Maawa Ka Panginoon, Maawa Ka\n\nVerse 2\nKristo, Maawa Ka Kristo, Maawa Ka\n\nVerse 3\nPanginoon, Maawa Ka Panginoon, Maawa Ka",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "kaawaan_mo_kami",
+      "title": "Kaawaan Mo Kami",
+      "author": "Arnel Aquino",
+      "lyrics": "Verse 1\nKaawaan Mo Kami O Panginoong Diyos Sapagkat Kami'y Nagkasala Sa Iyong Paningin\n\nVerse 2\nKristo, Kaawaan Mo Kami Kristo, Kaawaan Mo Kami\n\nVerse 3\nPanginoon, Kaawaan Mo Kami Panginoon, Kaawaan Mo Kami",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "isang_pagwiwisik_asperges_me",
+      "title": "Isang Pagwiwisik (asperges Me)",
+      "author": "",
+      "lyrics": "Chorus\nPanginoon, Kami'y Gawing Malinis Panginoon, Kami'y Iyong Tubusin Upang Kami'y Maging Karapat-dapat Na Humarap Sa Iyong Altar\n\nVerse 1\nIsang Pagwiwisik Ng Tubig Na Banal Tayo'y Nililinis Sa Ating Kasalanan\n\nChorus\nPanginoon, Kami'y Gawing Malinis Panginoon, Kami'y Iyong Tubusin Upang Kami'y Maging Karapat-dapat Na Humarap Sa Iyong Altar\n\nVerse 2\nKaawaan Mo Kami O Diyos Na Mabuti Hugasan Mo Kami Sa Aming Mga Pagkukulang\n\nChorus\nPanginoon, Kami'y Gawing Malinis Panginoon, Kami'y Iyong Tubusin Upang Kami'y Maging Karapat-dapat Na Humarap Sa Iyong Altar",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "easter"
+      ],
+      "added_at": "2026-07-22T23:58:53.711965+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "gospel_moods": [
+        "mercy",
         "reverent"
       ]
     }

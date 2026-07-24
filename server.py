@@ -69,10 +69,12 @@ from services.ppt_template_analyze import analyze_pptx_theme
 from services.song_catalog import (
     catalog_for_api,
     catalog_lite_response,
+    catalog_whats_new,
     delete_catalog_song,
     find_catalog_row_by_id,
     import_song_rows,
     import_titles,
+    import_verbum_songs_from_txt,
     save_lyrics_song,
     update_catalog_song,
 )
@@ -1322,6 +1324,21 @@ class SaveLyricsBody(BaseModel):
     )
 
 
+class ImportVerbumTxtBody(BaseModel):
+    """Verbum Song Catalog .txt — one or many ===SONG=== blocks."""
+
+    text: str = Field(..., min_length=1, max_length=2_000_000)
+    save: bool = Field(
+        False,
+        description="If true, upsert all parsed songs into the catalog (superadmin).",
+    )
+    on_duplicate: str = Field(
+        "overwrite",
+        description="When a title already exists: overwrite (update) or skip.",
+        max_length=16,
+    )
+
+
 class PriestSubmissionBody(BaseModel):
     name: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
 
@@ -2129,6 +2146,14 @@ def api_catalog_songs(
         "catalog": catalog_for_api(include_inferred_moods=True),
     }
     return JSONResponse(payload, headers={"Cache-Control": "private, max-age=120"})
+
+
+@app.get("/api/catalog/songs/whats-new")
+def api_catalog_songs_whats_new(
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Songs added this month + updates from the last 7 days (for post-login modal)."""
+    return catalog_whats_new()
 
 
 @app.get("/api/catalog/songs/{section}/{hymn_id:path}")
@@ -3160,6 +3185,33 @@ def api_fetch_lyrics(
     updated = sum(1 for r in results if r.get("ok") and r.get("reason") == "fetched")
     skipped = len(results) - updated
     return {"ok": True, "updated": updated, "skipped": skipped, "results": results}
+
+
+@app.post("/api/lyrics/import-txt")
+def api_import_verbum_lyrics_txt(
+    body: ImportVerbumTxtBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Parse Verbum .txt song format; optionally save all songs to the catalog."""
+    want_save = bool(body.save)
+    if want_save:
+        if auth_enabled() and (not session or not is_superadmin_user(session.user)):
+            raise HTTPException(
+                status_code=403,
+                detail="Only superadmins can bulk-import songs from a .txt file.",
+            )
+    result = import_verbum_songs_from_txt(
+        body.text,
+        save=want_save,
+        on_duplicate=str(body.on_duplicate or "overwrite"),
+        updated_by=session.user.user_id if session and want_save else None,
+    )
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("error") or "Could not parse Verbum song .txt.",
+        )
+    return result
 
 
 @app.post("/api/lyrics/save")

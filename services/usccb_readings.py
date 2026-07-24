@@ -338,23 +338,40 @@ def _cache_entry_has_psalm(entry: Mapping[str, str]) -> bool:
     return reading_body_is_usable(entry.get("psalm_verses") or "")
 
 
+def _cache_entry_has_core_refs(entry: Mapping[str, str]) -> bool:
+    """True when first reading, psalm, and gospel citations are present.
+
+    Older cache rows often stored prose before ``*_ref`` keys existed. Without
+    this gate those days stay "complete/healthy" forever and month scans skip
+    them — leaving the admin Psalm citation field empty.
+    """
+    return bool(
+        (entry.get("first_reading_ref") or "").strip()
+        and (entry.get("psalm_ref") or "").strip()
+        and (entry.get("gospel_ref") or "").strip()
+    )
+
+
 def _cache_entry_is_complete(entry: Mapping[str, str]) -> bool:
     """
     Strict gate for serving a cached row without re-fetching.
 
     A row is only "complete" if it carries the three things every Mass deck
-    needs: the first-reading body, the gospel body, and the responsorial psalm
-    (refrain or full verses). This prevents a partial row (e.g. a USCCB
-    bot-challenge that dropped the psalm while keeping the gospel) from being
-    treated as good and served forever — the exact failure that left the
-    upcoming psalm permanently empty. Incomplete rows fall through to a live
-    fetch and are repaired/merged in place.
+    needs: the first-reading body, the gospel body, and the responsorial-psalm
+    *refrain* (USCCB), plus the core scripture citations.
+
+    Bible-API psalm verses alone are not enough: they are a different translation
+    and must not freeze the cache so the real NABRE refrain never gets scraped
+    (e.g. July 26 showing WEB stanzas instead of ``Lord, I love your commands.``).
+    Incomplete rows fall through to a live fetch and are repaired/merged in place.
     """
     if not reading_body_is_usable(entry.get("first_reading") or ""):
         return False
     if not reading_body_is_usable(entry.get("gospel") or ""):
         return False
-    if not _cache_entry_has_psalm(entry):
+    if not _cache_entry_has_psalm_refrain(entry):
+        return False
+    if not _cache_entry_has_core_refs(entry):
         return False
     return True
 
@@ -374,6 +391,16 @@ def get_readings_cache_entry(date: str) -> Optional[dict[str, str]]:
     if not out or not _cache_entry_is_usable(out):
         return None
     return out
+
+
+def _raw_readings_cache_entry(date: str) -> Optional[dict[str, str]]:
+    """Return the raw cache row even when incomplete/unusable (for merge safety)."""
+    with _CACHE_LOCK:
+        blob = _load_cache_file()
+    entry = blob.get(date.strip())
+    if not isinstance(entry, dict):
+        return None
+    return {k: str(entry.get(k) or "") for k in CACHE_KEYS}
 
 
 def set_readings_cache_entry(date: str, entry: Mapping[str, str]) -> None:
@@ -954,9 +981,12 @@ def fetch_readings_for_date(
     """
     mass_date = date.strip()
     cached_partial: Optional[dict[str, str]] = None
-    if use_cache and not ignore_readings_cache():
+    # Always load any existing row for field-level merge, even on force-refresh.
+    # ``use_cache`` only controls the early-return of a complete row — a failed
+    # USCCB scrape must never blank out a previously good refrain/citation.
+    if not ignore_readings_cache():
         cached = get_readings_cache_entry(mass_date)
-        if cached and _cache_entry_is_complete(cached):
+        if use_cache and cached and _cache_entry_is_complete(cached):
             celebration = (cached.get("mass_celebration") or "").strip()
             if (not celebration or is_usccb_nav_chrome_title(celebration)) and usccb_url:
                 soup, _http = get_usccb_soup(usccb_url.strip())
@@ -966,10 +996,11 @@ def fetch_readings_for_date(
                         cached = {**cached, "mass_celebration": celebration}
                         set_readings_cache_entry(mass_date, cached)
             return cached
-        # Partial row (e.g. missing psalm): keep its good fields, but re-fetch
-        # so the gaps get filled instead of serving a permanently empty psalm.
-        if cached and any(cached.get(k) for k in CACHE_KEYS):
-            cached_partial = cached
+        # Prefer a usable row; fall back to the raw row so force-refresh merges
+        # cannot wipe fields when usability checks temporarily fail.
+        cached_partial = cached or _raw_readings_cache_entry(mass_date)
+        if cached_partial and not any(cached_partial.get(k) for k in CACHE_KEYS):
+            cached_partial = None
 
     soup, _http = get_usccb_soup(usccb_url.strip()) if usccb_url else (None, None)
     empty_refs = {
@@ -1051,8 +1082,17 @@ def fetch_readings_for_date(
             if not str(entry.get(key) or "").strip() and str(cached_partial.get(key) or "").strip():
                 entry[key] = cached_partial[key]
 
-    if use_cache:
-        set_readings_cache_entry(mass_date, entry)
+    # Always persist live/merged results. ``use_cache=False`` only skips *reading*
+    # a stale complete row (force-refresh / retries) — it must still write the
+    # repaired refrain/citations back to readings_cache.json.
+    # Never replace a non-empty row with a totally empty live failure.
+    if not ignore_readings_cache():
+        has_content = any(str(entry.get(k) or "").strip() for k in CACHE_KEYS)
+        prior_content = bool(
+            cached_partial and any(str(cached_partial.get(k) or "").strip() for k in CACHE_KEYS)
+        )
+        if has_content or not prior_content:
+            set_readings_cache_entry(mass_date, entry)
 
     return entry
 

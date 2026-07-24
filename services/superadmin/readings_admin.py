@@ -14,7 +14,9 @@ from services.readings_snapshot import invalidate_readings_memory
 from services.usccb_readings import (
     CACHE_KEYS,
     _CACHE_LOCK,
+    _cache_entry_has_core_refs,
     _cache_entry_has_psalm,
+    _cache_entry_has_psalm_refrain,
     _cache_entry_is_complete,
     _load_cache_file,
     reading_body_is_usable,
@@ -34,6 +36,36 @@ def _raw_cache_entry(date: str) -> dict[str, str] | None:
     if not isinstance(row, dict):
         return None
     return {k: str(row.get(k) or "") for k in CACHE_KEYS}
+
+
+def _heal_missing_refs_from_lectionary(date: str, entry: dict[str, str]) -> dict[str, str]:
+    """Copy scripture citations from the lectionary payload when the JSON cache lacks them.
+
+    Legacy rows often have full prose but empty ``*_ref`` fields. The lectionary
+    SQLite row usually already has the citations from the catholic-readings API.
+    """
+    cached = get_cached(date.strip())
+    if not cached:
+        return entry
+    mapping = (
+        ("psalm_ref", "psalm"),
+        ("first_reading_ref", "first_reading"),
+        ("second_reading_ref", "second_reading"),
+        ("gospel_ref", "gospel_reference"),
+    )
+    updates: dict[str, str] = {}
+    for cache_key, lec_key in mapping:
+        if (entry.get(cache_key) or "").strip():
+            continue
+        val = str(cached.get(lec_key) or "").strip().rstrip(".")
+        if val:
+            updates[cache_key] = val
+    if not updates:
+        return entry
+    merged = {**entry, **updates}
+    set_readings_cache_entry(date.strip(), merged)
+    invalidate_readings_memory(date.strip())
+    return merged
 
 
 def _field_body_ok(entry: Mapping[str, str] | None, key: str) -> bool:
@@ -66,14 +98,21 @@ def assess_readings_health(date: str) -> dict[str, Any]:
 
     is_sunday = on_date.weekday() == 6
     entry = _raw_cache_entry(iso)
+    if entry and not _cache_entry_has_core_refs(entry):
+        entry = _heal_missing_refs_from_lectionary(iso, entry)
 
-    psalm_ok = bool(entry and _cache_entry_has_psalm(entry))
+    psalm_body_ok = bool(entry and _cache_entry_has_psalm(entry))
+    psalm_refrain_ok = bool(entry and _cache_entry_has_psalm_refrain(entry))
+    psalm_ref_ok = _field_ref_ok(entry, "psalm_ref")
+    # Citation + USCCB refrain required — verses alone used to mark Sundays
+    # healthy while the slide showed the wrong (WEB) psalm text.
+    psalm_ok = psalm_refrain_ok and psalm_ref_ok
     fields: dict[str, Any] = {
         "first_reading": _field_snapshot(entry, "first_reading", "first_reading_ref"),
         "second_reading": _field_snapshot(entry, "second_reading", "second_reading_ref"),
         "psalm": {
             "ok": psalm_ok,
-            "has_ref": _field_ref_ok(entry, "psalm_ref"),
+            "has_ref": psalm_ref_ok,
             "ref": (entry.get("psalm_ref") or "").strip() if entry else "",
             "body": (entry.get("psalm_text") or entry.get("psalm_verses") or "").strip() if entry else "",
             "response": (entry.get("psalm_response") or "").strip() if entry else "",
@@ -81,22 +120,31 @@ def assess_readings_health(date: str) -> dict[str, Any]:
         },
         "gospel": _field_snapshot(entry, "gospel", "gospel_ref"),
     }
-    fields["first_reading"]["ok"] = _field_body_ok(entry, "first_reading")
-    fields["second_reading"]["ok"] = _field_body_ok(entry, "second_reading") if is_sunday else True
-    fields["gospel"]["ok"] = _field_body_ok(entry, "gospel")
+    fields["first_reading"]["ok"] = _field_body_ok(entry, "first_reading") and _field_ref_ok(
+        entry, "first_reading_ref"
+    )
+    fields["second_reading"]["ok"] = (
+        (_field_body_ok(entry, "second_reading") and _field_ref_ok(entry, "second_reading_ref"))
+        if is_sunday
+        else True
+    )
+    fields["gospel"]["ok"] = _field_body_ok(entry, "gospel") and _field_ref_ok(entry, "gospel_ref")
 
     if not entry or not any((entry.get(k) or "").strip() for k in CACHE_KEYS):
         status: HealthStatus = "critical"
     elif entry and _cache_entry_is_complete(entry):
-        if is_sunday and not _field_body_ok(entry, "second_reading"):
+        if is_sunday and not (
+            _field_body_ok(entry, "second_reading") and _field_ref_ok(entry, "second_reading_ref")
+        ):
             status = "warning"
         else:
             status = "healthy"
     elif (
         _field_body_ok(entry, "first_reading")
         or _field_body_ok(entry, "gospel")
-        or psalm_ok
+        or psalm_body_ok
         or any(_field_ref_ok(entry, k) for k in ("first_reading_ref", "gospel_ref", "psalm_ref", "second_reading_ref"))
+        or (entry and not _cache_entry_has_core_refs(entry))
     ):
         status = "warning"
     else:
@@ -113,6 +161,8 @@ def assess_readings_health(date: str) -> dict[str, Any]:
 
 def get_readings_admin_detail(date: str) -> dict[str, Any]:
     entry = _raw_cache_entry(date) or {}
+    if entry and not _cache_entry_has_core_refs(entry):
+        entry = _heal_missing_refs_from_lectionary(date.strip(), entry)
     health = assess_readings_health(date)
     cached_payload = get_cached(date.strip())
     return {

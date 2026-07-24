@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -35,6 +36,18 @@ _CATALOG_API_TTL_S = 120.0
 _catalog_lite_bytes: Optional[bytes] = None
 _catalog_lite_etag: str = ""
 _catalog_lite_mtime: float = 0.0
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _stamp_song_timestamps(row: dict[str, Any], *, is_new: bool) -> None:
+    """Set added_at (create) and updated_at (always) on a catalog song row."""
+    now = _now_iso()
+    if is_new or not str(row.get("added_at") or "").strip():
+        row["added_at"] = now
+    row["updated_at"] = now
 
 
 def _invalidate_catalog_api_cache() -> None:
@@ -150,8 +163,11 @@ def normalize_lyric_section_headers(lyrics: str) -> str:
 
 
 def polish_lyrics_text(lyrics: str) -> str:
-    """Section-header cleanup + first-letter capitalization for saved lyrics."""
-    return format_lyrics_first_letters(normalize_lyric_section_headers(lyrics))
+    """Section breaks + header cleanup + first-letter capitalization for saved lyrics."""
+    from services.mass_text_format import ensure_lyric_section_breaks
+
+    spaced = ensure_lyric_section_breaks(lyrics)
+    return format_lyrics_first_letters(normalize_lyric_section_headers(spaced))
 
 
 def reformat_all_catalog_lyrics(*, updated_by: str | None = None) -> dict[str, Any]:
@@ -342,6 +358,28 @@ def update_lyrics(section: str, hymn_id: str, lyrics: str, source_link: str = ""
     return changed
 
 
+def _normalize_catalog_seasons(raw: list[str] | None) -> list[str]:
+    allowed = {
+        "all",
+        "ordinary_time",
+        "advent",
+        "christmas",
+        "lent",
+        "easter",
+        "pentecost",
+    }
+    aliases = {"ordinary": "ordinary_time", "ot": "ordinary_time"}
+    out: list[str] = []
+    for item in raw or []:
+        key = re.sub(r"[\s-]+", "_", str(item or "").strip().lower())
+        key = aliases.get(key, key)
+        if key == "ordinary":
+            key = "ordinary_time"
+        if key in allowed and key not in out:
+            out.append(key)
+    return out or ["all"]
+
+
 def save_lyrics_song(
     *,
     title: str,
@@ -350,6 +388,7 @@ def save_lyrics_song(
     language: str = "English",
     author: str = "",
     gospel_moods: list[str] | None = None,
+    seasons: list[str] | None = None,
     updated_by: str | None = None,
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
@@ -365,6 +404,8 @@ def save_lyrics_song(
             wanted.append(sec)
     if not wanted:
         wanted = ["meditation"]
+
+    season_tags = _normalize_catalog_seasons(seasons) if seasons is not None else None
 
     data = load_catalog()
     hid_base = make_song_id(clean_title)
@@ -394,7 +435,7 @@ def save_lyrics_song(
                 "title": clean_title,
                 "author": "",
                 "language": str(language or "English").strip() or "English",
-                "seasons": ["all"],
+                "seasons": season_tags if season_tags is not None else ["all"],
             }
             rows.append(target)
             created.append(sec)
@@ -403,12 +444,15 @@ def save_lyrics_song(
 
         target["lyrics"] = clean_lyrics
         target["source"] = "lyrics_dashboard"
+        _stamp_song_timestamps(target, is_new=(sec in created))
         auth = str(author or "").strip()
         if auth:
             target["author"] = auth
         lang = str(language or "").strip()
         if lang:
             target["language"] = lang
+        if season_tags is not None:
+            target["seasons"] = season_tags
         if gospel_moods is not None:
             moods = normalize_gospel_moods(gospel_moods)
             if moods:
@@ -605,6 +649,7 @@ def update_catalog_song(
                 item["gospel_moods"] = moods
             elif "gospel_moods" in item:
                 del item["gospel_moods"]
+        _stamp_song_timestamps(item, is_new=False)
         save_catalog(data, updated_by=updated_by)
         return {"ok": True}
     return {"ok": False, "error": "Song not found."}
@@ -628,4 +673,388 @@ def delete_catalog_song(
     data[sec] = new_rows
     save_catalog(data, updated_by=updated_by)
     return {"ok": True}
+
+
+def import_verbum_songs_from_txt(
+    text: str,
+    *,
+    save: bool = False,
+    on_duplicate: str = "overwrite",
+    updated_by: str | None = None,
+) -> dict[str, Any]:
+    """Parse Verbum .txt song catalog; optionally upsert each song into the library.
+
+    ``on_duplicate``: ``overwrite`` (default) updates matching title/id;
+    ``skip`` leaves existing catalog rows unchanged.
+    """
+    from services.verbum_song_txt import parse_verbum_song_txt
+
+    dup_mode = str(on_duplicate or "overwrite").strip().lower()
+    if dup_mode not in {"overwrite", "skip"}:
+        dup_mode = "overwrite"
+
+    parsed = parse_verbum_song_txt(text)
+    if not parsed.get("ok"):
+        return {
+            "ok": False,
+            "error": (parsed.get("errors") or ["Could not parse Verbum song .txt."])[0],
+            "errors": parsed.get("errors") or [],
+            "songs": [],
+            "saved": 0,
+            "created": 0,
+            "updated": 0,
+            "skipped": 0,
+            "duplicates": 0,
+            "failed": [],
+        }
+
+    data = load_catalog()
+    songs = list(parsed.get("songs") or [])
+
+    def _find_existing(title: str, hid: str) -> tuple[str, dict[str, Any]] | None:
+        title_key = title.strip().lower()
+        for sec in _SECTIONS:
+            for row in data.get(sec) or []:
+                if not isinstance(row, dict):
+                    continue
+                row_title = str(row.get("title") or "").strip().lower()
+                row_id = str(row.get("id") or "").strip()
+                if (title_key and row_title == title_key) or (hid and row_id == hid):
+                    return sec, row
+        return None
+
+    annotated: list[dict[str, Any]] = []
+    duplicate_titles: list[str] = []
+    for song in songs:
+        clean_title = format_song_title_case(str(song.get("title") or ""))
+        hid_base = make_song_id(clean_title) if clean_title else ""
+        hit = _find_existing(clean_title, hid_base) if clean_title else None
+        row = dict(song)
+        row["title"] = clean_title or str(song.get("title") or "")
+        if hit:
+            exist_sec, exist_row = hit
+            row["exists"] = True
+            row["existing_section"] = exist_sec
+            row["existing_id"] = str(exist_row.get("id") or "")
+            duplicate_titles.append(row["title"])
+        else:
+            row["exists"] = False
+            row["existing_section"] = ""
+            row["existing_id"] = ""
+        annotated.append(row)
+
+    out: dict[str, Any] = {
+        "ok": True,
+        "format": "verbum",
+        "count": len(annotated),
+        "songs": annotated,
+        "errors": list(parsed.get("errors") or []),
+        "duplicates": len(duplicate_titles),
+        "duplicate_titles": duplicate_titles[:40],
+        "on_duplicate": dup_mode,
+        "saved": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "failed": [],
+        "results": [],
+    }
+    if not save:
+        return out
+
+    created = 0
+    updated = 0
+    skipped = 0
+    results: list[dict[str, Any]] = []
+    failed: list[dict[str, Any]] = []
+    sync_ids: set[str] = set()
+
+    for song in annotated:
+        clean_title = format_song_title_case(str(song.get("title") or ""))
+        clean_lyrics = polish_lyrics_text(str(song.get("lyrics") or ""))
+        if not clean_title or not clean_lyrics:
+            failed.append(
+                {
+                    "title": song.get("title"),
+                    "error": "Song title and lyrics are required.",
+                }
+            )
+            continue
+
+        section = str(song.get("section") or "meditation").strip().lower()
+        if section not in _SECTIONS:
+            section = "meditation"
+        language = str(song.get("language") or "Tagalog").strip() or "Tagalog"
+        author = str(song.get("author") or "").strip()
+        moods = normalize_gospel_moods(song.get("gospel_moods"))
+        season_tags = _normalize_catalog_seasons(list(song.get("seasons") or ["all"]))
+
+        hid_base = make_song_id(clean_title)
+        hit = _find_existing(clean_title, hid_base)
+
+        if hit and dup_mode == "skip":
+            exist_sec, exist_row = hit
+            skipped += 1
+            results.append(
+                {
+                    "title": clean_title,
+                    "id": str(exist_row.get("id") or ""),
+                    "section": exist_sec,
+                    "created": False,
+                    "updated": False,
+                    "skipped": True,
+                }
+            )
+            continue
+
+        rows = data[section]
+        target = None
+        if hit:
+            exist_sec, exist_row = hit
+            if exist_sec == section:
+                target = exist_row
+            else:
+                # Move: drop from old section, reuse id in new section.
+                old_id = str(exist_row.get("id") or "").strip()
+                data[exist_sec] = [
+                    r
+                    for r in (data.get(exist_sec) or [])
+                    if not isinstance(r, dict)
+                    or str(r.get("id") or "").strip() != old_id
+                ]
+                target = dict(exist_row)
+                rows.append(target)
+
+        is_new = target is None
+        if target is None:
+            existing_ids = {str(row.get("id") or "").strip() for row in rows}
+            hid = hid_base
+            n = 2
+            while hid in existing_ids:
+                hid = f"{hid_base}_{n}"
+                n += 1
+            target = {
+                "id": hid,
+                "title": clean_title,
+                "author": author,
+                "language": language,
+                "seasons": season_tags,
+            }
+            rows.append(target)
+            created += 1
+        else:
+            updated += 1
+
+        target["title"] = clean_title
+        target["lyrics"] = clean_lyrics
+        target["source"] = "verbum_txt_import"
+        _stamp_song_timestamps(target, is_new=is_new)
+        if author:
+            target["author"] = author
+        target["language"] = language
+        target["seasons"] = season_tags
+        if moods:
+            target["gospel_moods"] = moods
+        elif "gospel_moods" in target:
+            del target["gospel_moods"]
+
+        title_key = clean_title.lower()
+        row_id = str(target.get("id") or "").strip()
+        if row_id:
+            sync_ids.add(row_id)
+        for sec in _SECTIONS:
+            if sec == section:
+                continue
+            data[sec] = [
+                r
+                for r in (data.get(sec) or [])
+                if not isinstance(r, dict)
+                or (
+                    str(r.get("title") or "").strip().lower() != title_key
+                    and str(r.get("id") or "").strip() not in {row_id, hid_base}
+                )
+            ]
+
+        results.append(
+            {
+                "title": clean_title,
+                "id": row_id,
+                "section": section,
+                "created": is_new,
+                "updated": not is_new,
+                "skipped": False,
+            }
+        )
+
+    if sync_ids:
+        save_catalog(data, updated_by=updated_by, sync_song_ids=sync_ids)
+
+    out["saved"] = created + updated
+    out["created"] = created
+    out["updated"] = updated
+    out["skipped"] = skipped
+    out["failed"] = failed
+    out["results"] = results
+    if failed and not results and not skipped:
+        out["ok"] = False
+        out["error"] = "No songs could be saved."
+    return out
+
+
+def _parse_iso_dt(raw: Any) -> datetime | None:
+    text = str(raw or "").strip()
+    if not text:
+        return None
+    try:
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def _activity_row(sec: str, row: dict[str, Any], *, kind: str, when: datetime) -> dict[str, Any]:
+    return {
+        "id": str(row.get("id") or "").strip(),
+        "title": str(row.get("title") or "").strip(),
+        "author": str(row.get("author") or "").strip(),
+        "section": sec,
+        "language": str(row.get("language") or "").strip(),
+        "gospel_moods": gospel_moods_for_song(row),
+        "kind": kind,
+        "at": when.isoformat(),
+        "date": when.date().isoformat(),
+    }
+
+
+def _backfill_missing_activity_timestamps(data: dict[str, list[dict[str, Any]]]) -> bool:
+    """Stamp unstamped dashboard/import songs using catalog file mtime (once)."""
+    path = catalog_library_path()
+    try:
+        stamp = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+    except OSError:
+        stamp = _now_iso()
+    changed = False
+    for sec in _SECTIONS:
+        for row in data.get(sec) or []:
+            if not isinstance(row, dict):
+                continue
+            if str(row.get("added_at") or "").strip() or str(row.get("updated_at") or "").strip():
+                continue
+            src = str(row.get("source") or "").strip()
+            if src != "verbum_txt_import":
+                continue
+            row["added_at"] = stamp
+            row["updated_at"] = stamp
+            changed = True
+    return changed
+
+
+def catalog_whats_new(*, now: datetime | None = None) -> dict[str, Any]:
+    """
+    Songs added this calendar month + songs updated in the last 7 days (grouped by date).
+    """
+    data = load_catalog()
+    if _backfill_missing_activity_timestamps(data):
+        save_catalog(data)
+
+    clock = now or datetime.now(timezone.utc)
+    month_start = clock.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    week_start = (clock - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    month_added: list[dict[str, Any]] = []
+    week_updated: list[dict[str, Any]] = []
+    seen_month: set[str] = set()
+    seen_week: set[str] = set()
+
+    for sec in _SECTIONS:
+        for row in data.get(sec) or []:
+            if not isinstance(row, dict):
+                continue
+            hid = str(row.get("id") or "").strip()
+            title = str(row.get("title") or "").strip()
+            if not hid and not title:
+                continue
+            key = hid or title.lower()
+            added = _parse_iso_dt(row.get("added_at"))
+            updated = _parse_iso_dt(row.get("updated_at")) or added
+            if added and added >= month_start and key not in seen_month:
+                seen_month.add(key)
+                month_added.append(_activity_row(sec, row, kind="added", when=added))
+            if updated and updated >= week_start and key not in seen_week:
+                seen_week.add(key)
+                # Prefer "updated" unless it was added in the same window and never re-saved
+                kind = "updated"
+                if added and updated and abs((updated - added).total_seconds()) < 2:
+                    kind = "added"
+                week_updated.append(_activity_row(sec, row, kind=kind, when=updated))
+
+    # Enrich / override from Supabase hymn_songs.updated_at when available.
+    try:
+        from services.auth_config import supabase_enabled
+        from services.supabase_client import get_service_client
+
+        if supabase_enabled():
+            client = get_service_client()
+            res = (
+                client.table("hymn_songs")
+                .select("id, section, title, author, language, gospel_moods, updated_at")
+                .gte("updated_at", week_start.isoformat())
+                .order("updated_at", desc=True)
+                .limit(200)
+                .execute()
+            )
+            for remote in res.data or []:
+                if not isinstance(remote, dict):
+                    continue
+                when = _parse_iso_dt(remote.get("updated_at"))
+                if not when:
+                    continue
+                hid = str(remote.get("id") or "").strip()
+                sec = str(remote.get("section") or "meditation").strip().lower() or "meditation"
+                key = hid or str(remote.get("title") or "").strip().lower()
+                if not key:
+                    continue
+                row = {
+                    "id": hid,
+                    "title": remote.get("title") or "",
+                    "author": remote.get("author") or "",
+                    "language": remote.get("language") or "",
+                    "gospel_moods": remote.get("gospel_moods") or [],
+                }
+                if when >= month_start and key not in seen_month:
+                    seen_month.add(key)
+                    month_added.append(_activity_row(sec, row, kind="added", when=when))
+                if when >= week_start and key not in seen_week:
+                    seen_week.add(key)
+                    week_updated.append(_activity_row(sec, row, kind="updated", when=when))
+    except Exception:
+        pass
+
+    month_added.sort(key=lambda r: str(r.get("at") or ""), reverse=True)
+    week_updated.sort(key=lambda r: str(r.get("at") or ""), reverse=True)
+
+    by_date: dict[str, list[dict[str, Any]]] = {}
+    for row in week_updated:
+        day = str(row.get("date") or "")
+        by_date.setdefault(day, []).append(row)
+    week_by_date = [
+        {"date": day, "songs": by_date[day]}
+        for day in sorted(by_date.keys(), reverse=True)
+    ]
+
+    return {
+        "ok": True,
+        "month_label": clock.strftime("%B %Y"),
+        "month_added": month_added,
+        "week_updated": week_updated,
+        "week_by_date": week_by_date,
+        "counts": {
+            "month_added": len(month_added),
+            "week_updated": len(week_updated),
+        },
+    }
 

@@ -93,17 +93,17 @@ def _payload_complete(payload: dict) -> bool:
         payload.get("gospel_reference") or "",
     ):
         return False
+    psalm_ref = (payload.get("psalm") or "").strip()
+    if not psalm_ref:
+        return False
     refrains = collect_psalm_refrain_options(
         payload.get("psalm_text") or "",
-        payload.get("psalm") or "",
+        psalm_ref,
         psalm_response=payload.get("psalm_response") or "",
     )
-    # The refrain (antiphon) is USCCB-only; when USCCB blocks the server we may
-    # only have the full psalm verses from the Bible API. Either satisfies "the
-    # psalm is present" so the payload isn't re-fetched on every load.
-    if not refrains and not reading_body_is_usable(
-        payload.get("psalm_verses") or "", payload.get("psalm") or ""
-    ):
+    # Require the USCCB responsorial refrain — Bible-API verses are a fallback
+    # body only and must not freeze an incomplete payload (wrong slide text).
+    if not refrains:
         return False
     return True
 
