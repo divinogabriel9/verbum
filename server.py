@@ -99,18 +99,24 @@ from services.choir_practice_shares import (
     create_practice_share,
     fetch_practice_share,
     get_practice_share_by_token,
+    list_recent_practice_shares,
     practice_catalog_index,
+    reset_practice_share_pin,
     resolve_practice_song,
+    revoke_practice_share,
     update_practice_share_lyrics,
     verify_practice_share_pin,
 )
 from services.practice_access import (
     check_pin_unlock_allowed,
+    check_practice_lead_allowed,
+    check_practice_lead_song_allowed,
     check_practice_share_create_allowed,
     ensure_practice_secret_configured,
     is_unlocked,
     issue_lead_token,
     issue_unlock_cookie,
+    practice_device_id_from_request,
     practice_no_store_headers,
     verify_lead_token,
 )
@@ -153,12 +159,14 @@ from services.storage_assets import (
     list_user_assets,
     parish_storage_ready,
     signed_asset_url,
+    signed_service_asset_url,
     storage_ready,
     upload_parish_asset,
     upload_user_asset,
 )
 from routes.admin import register_admin_routes
 from routes.auth import register_auth_routes
+from routes.email_jobs import register_email_job_routes
 from routes.parish import register_parish_routes
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
@@ -892,6 +900,7 @@ def favicon() -> FileResponse:
 register_auth_routes(app, templates)
 register_admin_routes(app)
 register_parish_routes(app)
+register_email_job_routes(app)
 register_security_middleware(app)
 
 
@@ -1396,6 +1405,7 @@ class PracticeShareBody(BaseModel):
     celebrant: str = Field("", max_length=L.CELEBRANT_NAME)
     songs: list[PracticeShareSongBody] = Field(default_factory=list, max_length=24)
     ttl_days: int = Field(0, ge=0, le=7)
+    # Client-chosen 6-digit PIN (required).
     optional_pin: str = Field(..., min_length=6, max_length=6)
 
 
@@ -1686,9 +1696,14 @@ def _community_api_payload(session: Optional[AuthSession] = None) -> dict[str, A
     membership = membership_payload(church_ctx, user=user)
     logo_url: Optional[str] = None
     storage_logo = str((church_ctx or {}).get("logo_path") or "").strip()
-    if session and storage_ready(session.token) and storage_logo:
+    if session and storage_logo:
         try:
-            logo_url = signed_asset_url(access_token=session.token, path=storage_logo)
+            # Parish-scoped logos live under parishes/… and require the service role
+            # to sign (user RLS only covers {user_id}/… paths).
+            if storage_logo.startswith("parishes/"):
+                logo_url = signed_service_asset_url(path=storage_logo)
+            elif storage_ready(session.token):
+                logo_url = signed_asset_url(access_token=session.token, path=storage_logo)
         except Exception:
             logo_url = None
     if not logo_url and logo_exists:
@@ -1883,6 +1898,85 @@ async def api_upload_logo(
     if session:
         out.update(membership_payload(get_church_profile_context(), user=session.user))
     return out
+
+
+@app.post("/api/upload-avatar")
+async def api_upload_avatar(
+    file: UploadFile = File(...),
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Upload the signed-in user's personal profile photo (not the parish logo)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Profile photos require sign-in.")
+
+    ctype = (file.content_type or "").split(";")[0].strip().lower()
+    if ctype not in _ALLOWED_LOGO_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Use a PNG, JPEG, WebP, or GIF image.",
+        )
+    raw = await file.read()
+    if len(raw) > _MAX_LOGO_BYTES:
+        raise HTTPException(status_code=400, detail="Image must be at most about 2.5 MB.")
+
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="Pillow is required for image upload.") from exc
+
+    try:
+        im = Image.open(io.BytesIO(raw))
+        im.load()
+    except OSError as exc:
+        raise HTTPException(status_code=400, detail="Could not read image file.") from exc
+
+    # Square-crop to center for a clean circular avatar.
+    w, h = im.size
+    side = min(w, h)
+    left = (w - side) // 2
+    top = (h - side) // 2
+    im = im.crop((left, top, left + side, top + side))
+    if side > 512:
+        try:
+            resample = Image.Resampling.LANCZOS
+        except AttributeError:
+            resample = Image.LANCZOS
+        im = im.resize((512, 512), resample)
+
+    if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in getattr(im, "info", {})):
+        im = im.convert("RGBA")
+    else:
+        im = im.convert("RGB")
+
+    buf = io.BytesIO()
+    im.save(buf, format="PNG", optimize=True)
+    raw_png = buf.getvalue()
+
+    if not storage_ready(session.token):
+        raise HTTPException(status_code=503, detail="Storage is not available.")
+
+    stored = upload_user_asset(
+        user_id=session.user.user_id,
+        access_token=session.token,
+        relative_path="avatar/profile.png",
+        raw=raw_png,
+        content_type="image/png",
+        upsert=True,
+    )
+    from services.supabase_client import update_profile_avatar
+
+    update_profile_avatar(
+        session.user.user_id,
+        stored.path,
+        access_token=session.token,
+    )
+    return {
+        "ok": True,
+        "avatar_url": stored.signed_url,
+        "message": "Profile photo saved.",
+    }
 
 
 @app.post("/api/upload/mass-divider")
@@ -2380,20 +2474,133 @@ def _practice_rate_limit_response(retry_after: int) -> JSONResponse:
     )
 
 
+def _enrich_practice_share_urls(
+    request: Request,
+    share: dict[str, Any],
+    *,
+    device_id: Optional[str] = None,
+) -> dict[str, Any]:
+    token = str(share.get("token") or "").strip()
+    if not token:
+        return dict(share)
+    out = dict(share)
+    share_url = _practice_share_url(request, token)
+    out["url"] = share_url
+    out["qr_url"] = f"/api/practice/qr/{token}"
+    out["qr_data_url"] = None
+    if str(share.get("status") or "active") == "active":
+        device = (device_id or practice_device_id_from_request(request) or "").strip()
+        if device:
+            try:
+                lead = issue_lead_token(token, share.get("expires_at"), device_id=device)
+                out["lead_token"] = lead
+                out["lead_url"] = f"{share_url}?lead={quote(lead, safe='')}"
+            except ValueError:
+                out["lead_token"] = None
+                out["lead_url"] = None
+                out["lead_requires_device"] = True
+        else:
+            out["lead_token"] = None
+            out["lead_url"] = None
+            out["lead_requires_device"] = True
+    return out
+
+
+def _require_practice_lead(
+    request: Request,
+    token: str,
+    lead: str,
+    share_expires_at: Any,
+    *,
+    song_resolve: bool = False,
+) -> str:
+    """Validate device-bound lead token + rate limits. Returns device_id."""
+    device_id = practice_device_id_from_request(request)
+    if not device_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Open Let’s practice from LiturgyFlow on the device you used to create this share.",
+        )
+    if not verify_lead_token(token, lead, share_expires_at, device_id=device_id):
+        raise HTTPException(
+            status_code=401,
+            detail="Leader link is invalid, expired, or from another device. Open Let’s practice again from LiturgyFlow.",
+        )
+    allowed, retry_after = check_practice_lead_allowed(request, token, device_id)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many leader requests. Please slow down.",
+            headers={"Retry-After": str(max(1, retry_after))},
+        )
+    if song_resolve:
+        ok_song, retry_song = check_practice_lead_song_allowed(request, token, device_id)
+        if not ok_song:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many song lookups. Please slow down.",
+                headers={"Retry-After": str(max(1, retry_song))},
+            )
+    return device_id
+
+
+@app.get("/api/practice/shares/recent")
+def api_list_recent_practice_shares(
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Creator history: active + expired shares (titles only; no plaintext PIN)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    parish_id: Optional[str] = None
+    try:
+        from services.parish_store import get_user_parish_context
+
+        ctx = get_user_parish_context(session.user.user_id)
+        pid = (ctx or {}).get("parish_id")
+        parish_id = str(pid).strip() if pid else None
+    except Exception:
+        parish_id = None
+
+    device_id = practice_device_id_from_request(request)
+    shares = list_recent_practice_shares(
+        created_by_user_id=session.user.user_id,
+        parish_id=parish_id,
+    )
+    enriched = []
+    for share in shares:
+        item = (
+            _enrich_practice_share_urls(request, share, device_id=device_id)
+            if share.get("status") == "active"
+            else dict(share)
+        )
+        enriched.append(item)
+    return {"ok": True, "shares": enriched}
+
+
 @app.get("/api/practice/{token}")
 def api_practice_share(
     token: str,
     request: Request,
 ) -> Any:
     """Public read-only lyrics snapshot for choir rehearsal (token is the secret)."""
-    if token.strip().lower() == "qr":
+    if token.strip().lower() in {"qr", "shares"}:
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
     lead = (request.query_params.get("lead") or "").strip()
-    can_edit = bool(lead) and verify_lead_token(tok, lead, row.get("expires_at"))
+    can_edit = False
+    if lead:
+        device_id = practice_device_id_from_request(request)
+        can_edit = bool(device_id) and verify_lead_token(
+            tok, lead, row.get("expires_at"), device_id=device_id
+        )
+        if can_edit:
+            allowed, retry_after = check_practice_lead_allowed(request, tok, device_id)
+            if not allowed:
+                return _practice_rate_limit_response(retry_after)
     unlocked = is_unlocked(request, tok, row.get("expires_at")) or can_edit
     payload = fetch_practice_share(tok, unlocked=unlocked, can_edit=can_edit)
     if not payload.get("ok"):
@@ -2443,8 +2650,7 @@ def api_practice_lead(
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
-    if not verify_lead_token(tok, body.lead_token, row.get("expires_at")):
-        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    _require_practice_lead(request, tok, body.lead_token, row.get("expires_at"))
     payload = fetch_practice_share(tok, unlocked=True, can_edit=True)
     # Do not issue a guest unlock cookie here — that would let this device open the
     # shared choir link without a PIN. Leader privilege stays lead-token-only.
@@ -2464,8 +2670,7 @@ def api_practice_lyrics_update(
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
-    if not verify_lead_token(tok, body.lead_token, row.get("expires_at")):
-        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    _require_practice_lead(request, tok, body.lead_token, row.get("expires_at"))
     songs = [s.model_dump() for s in body.songs]
     result = update_practice_share_lyrics(tok, songs_update=songs)
     if not result.get("ok"):
@@ -2486,8 +2691,7 @@ def api_practice_catalog(
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
     lead = (request.query_params.get("lead") or "").strip()
-    if not verify_lead_token(tok, lead, row.get("expires_at")):
-        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    _require_practice_lead(request, tok, lead, row.get("expires_at"))
     return JSONResponse(
         {"ok": True, "songs": practice_catalog_index()},
         headers=practice_no_store_headers(),
@@ -2507,8 +2711,7 @@ def api_practice_resolve_song(
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
     lead = (request.query_params.get("lead") or "").strip()
-    if not verify_lead_token(tok, lead, row.get("expires_at")):
-        raise HTTPException(status_code=401, detail="Leader link is invalid or expired.")
+    _require_practice_lead(request, tok, lead, row.get("expires_at"), song_resolve=True)
     hymn_id = (request.query_params.get("hymn_id") or "").strip()
     section = (request.query_params.get("section") or "").strip().lower()
     if not hymn_id:
@@ -2567,25 +2770,66 @@ def api_create_practice_share(
             celebrant=body.celebrant,
             songs=songs,
             ttl_days=body.ttl_days,
-            optional_pin=body.optional_pin or None,
+            optional_pin=body.optional_pin,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    token = str(result.get("token") or "")
-    share_url = _practice_share_url(request, token)
-    lead = issue_lead_token(token, result.get("expires_at"))
-    # Return qr_url for async image load; skip embedding a data URL so create stays fast.
-    return {
-        **result,
-        "url": share_url,
-        "lead_token": lead,
-        "lead_url": f"{share_url}?lead={quote(lead, safe='')}",
-        "qr_url": f"/api/practice/qr/{token}",
-        "qr_data_url": None,
-    }
+    device_id = practice_device_id_from_request(request)
+    if not device_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing device id. Refresh LiturgyFlow and try again.",
+        )
+    return _enrich_practice_share_urls(request, result, device_id=device_id)
+
+
+@app.post("/api/practice/{token}/revoke")
+def api_revoke_practice_share(
+    token: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Owner-only: expire an active practice share immediately."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    result = revoke_practice_share(
+        token.strip(),
+        actor_user_id=session.user.user_id,
+    )
+    if not result.get("ok"):
+        detail = str(result.get("error") or "Could not expire share.")
+        status = 403 if "creator" in detail.lower() else 404
+        raise HTTPException(status_code=status, detail=detail)
+    return result
+
+
+@app.post("/api/practice/{token}/reset-pin")
+def api_reset_practice_share_pin(
+    token: str,
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Owner-only: issue a new PIN (returned once in plaintext)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    try:
+        result = reset_practice_share_pin(
+            token.strip(),
+            actor_user_id=session.user.user_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    if not result.get("ok"):
+        detail = str(result.get("error") or "Could not reset PIN.")
+        status = 403 if "creator" in detail.lower() else 404
+        raise HTTPException(status_code=status, detail=detail)
+    return _enrich_practice_share_urls(
+        request,
+        result,
+        device_id=practice_device_id_from_request(request),
+    )
 
 
 @app.get("/api/catholic-news")

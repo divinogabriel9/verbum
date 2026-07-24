@@ -1,4 +1,4 @@
-"""Landing access-request form — stores for review and emails the admin."""
+"""Landing access-request form — stores for review and emails admin + requester."""
 
 from __future__ import annotations
 
@@ -6,19 +6,19 @@ import json
 import logging
 import os
 import re
-import smtplib
-import ssl
 import time
-import urllib.error
-import urllib.request
 from dataclasses import asdict, dataclass
-from email.message import EmailMessage
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import HTTPException
 from starlette.requests import Request
 
+from services.email_notifications import (
+    notify_access_request_admin,
+    notify_access_request_user,
+    safe_send,
+)
 from services.rate_limit import check_rate_limit_key
 from services.redis_client import get_redis
 
@@ -135,94 +135,8 @@ def _persist_redis(row: AccessRequest) -> None:
         logger.warning("Redis access-request store failed: %s", exc)
 
 
-def _email_body(row: AccessRequest) -> str:
-    lines = [
-        "New LiturgyFlow access request (landing page)",
-        "",
-        f"Name: {row.name}",
-        f"Email: {row.email}",
-        f"Parish: {row.parish}",
-        f"Message: {row.message or '(none)'}",
-        f"IP: {row.client_ip or 'unknown'}",
-        f"Submitted (unix): {int(row.created_at)}",
-        "",
-        "Review and send an invite if approved.",
-    ]
-    return "\n".join(lines)
-
-
-def _send_via_resend(row: AccessRequest, to_addr: str) -> bool:
-    api_key = os.environ.get("RESEND_API_KEY", "").strip()
-    if not api_key:
-        return False
-    from_addr = (
-        os.environ.get("ACCESS_REQUEST_FROM", "").strip()
-        or os.environ.get("RESEND_FROM", "").strip()
-        or "LiturgyFlow <onboarding@resend.dev>"
-    )
-    payload = {
-        "from": from_addr,
-        "to": [to_addr],
-        "reply_to": row.email,
-        "subject": f"LiturgyFlow access request — {row.name}",
-        "text": _email_body(row),
-    }
-    req = urllib.request.Request(
-        "https://api.resend.com/emails",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return 200 <= getattr(resp, "status", 200) < 300
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:300]
-        logger.warning("Resend access-request email failed: %s %s", exc.code, detail)
-        return False
-    except Exception as exc:
-        logger.warning("Resend access-request email failed: %s", exc)
-        return False
-
-
-def _send_via_smtp(row: AccessRequest, to_addr: str) -> bool:
-    host = os.environ.get("SMTP_HOST", "").strip()
-    user = os.environ.get("SMTP_USER", "").strip()
-    password = os.environ.get("SMTP_PASSWORD", "").strip()
-    if not host or not user or not password:
-        return False
-    try:
-        port = int(os.environ.get("SMTP_PORT", "587").strip() or "587")
-    except ValueError:
-        port = 587
-    from_addr = (
-        os.environ.get("ACCESS_REQUEST_FROM", "").strip()
-        or os.environ.get("SMTP_FROM", "").strip()
-        or user
-    )
-    msg = EmailMessage()
-    msg["Subject"] = f"LiturgyFlow access request — {row.name}"
-    msg["From"] = from_addr
-    msg["To"] = to_addr
-    msg["Reply-To"] = row.email
-    msg.set_content(_email_body(row))
-    try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(host, port, timeout=20) as smtp:
-            smtp.starttls(context=context)
-            smtp.login(user, password)
-            smtp.send_message(msg)
-        return True
-    except Exception as exc:
-        logger.warning("SMTP access-request email failed: %s", exc)
-        return False
-
-
 def submit_access_request(row: AccessRequest) -> dict[str, Any]:
-    """Persist + notify. Always succeeds for the visitor if storage works."""
+    """Persist + notify admin and requester. Always succeeds for the visitor if storage works."""
     try:
         _persist_local(row)
     except Exception as exc:
@@ -230,17 +144,33 @@ def submit_access_request(row: AccessRequest) -> dict[str, Any]:
     _persist_redis(row)
 
     to_addr = review_inbox()
-    emailed = _send_via_resend(row, to_addr) or _send_via_smtp(row, to_addr)
+    admin = safe_send(
+        "access_request_admin",
+        notify_access_request_admin,
+        name=row.name,
+        email=row.email,
+        parish=row.parish,
+        message=row.message,
+        client_ip=row.client_ip,
+        to_addr=to_addr,
+    )
+    user = safe_send(
+        "access_request_user",
+        notify_access_request_user,
+        name=row.name,
+        email=row.email,
+        parish=row.parish,
+    )
+    emailed = bool(admin.ok or user.ok)
     if not emailed:
         logger.warning(
-            "Access request stored but email not sent (configure RESEND_API_KEY or SMTP_*). "
+            "Access request stored but email not sent (configure BREVO_API_KEY or SMTP_*). "
             "to=%s name=%s email=%s parish=%s",
             to_addr,
             row.name,
             row.email,
             row.parish,
         )
-        # Still print a clear console line so Render logs show the request.
         print(
             f"[access-request] {row.name} <{row.email}> parish={row.parish!r} "
             f"msg={row.message!r} emailed=0",
@@ -248,7 +178,13 @@ def submit_access_request(row: AccessRequest) -> dict[str, Any]:
         )
     else:
         print(
-            f"[access-request] {row.name} <{row.email}> parish={row.parish!r} emailed=1",
+            f"[access-request] {row.name} <{row.email}> parish={row.parish!r} "
+            f"emailed=1 admin={int(admin.ok)} user={int(user.ok)}",
             flush=True,
         )
-    return {"ok": True, "emailed": emailed}
+    return {
+        "ok": True,
+        "emailed": emailed,
+        "emailed_admin": admin.ok,
+        "emailed_user": user.ok,
+    }

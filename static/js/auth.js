@@ -10,6 +10,7 @@
     churchProfile: null,
     communityPayload: null,
     membership: null,
+    avatarUrl: null,
     cachedToken: null,
     ready: false,
     hydrated: false,
@@ -26,6 +27,7 @@
       state.churchProfile = null;
       state.communityPayload = null;
       state.membership = null;
+      state.avatarUrl = null;
     }
   }
 
@@ -379,7 +381,9 @@
           last_name: data.last_name || null,
           email: data.email || user.email || null,
           role: data.role || (data.profile && data.profile.role) || "member",
+          avatar_url: data.avatar_url || data.image_url || null,
         };
+        state.avatarUrl = data.avatar_url || data.image_url || null;
         if (data.membership) {
           state.membership = data.membership;
         }
@@ -450,6 +454,8 @@
 
   function updateAccountMenuDisplay() {
     const avatar = document.getElementById("account-menu-avatar");
+    const avatarImg = document.getElementById("account-menu-avatar-img");
+    const avatarInitial = document.getElementById("account-menu-avatar-initial");
     const nameEl = document.getElementById("account-menu-name");
     const emailEl = document.getElementById("account-menu-email");
     const headerEl = document.getElementById("account-menu-header");
@@ -461,6 +467,23 @@
     const user =
       state.user || (state.session && state.session.user ? state.session.user : null);
 
+    const setAvatarVisual = (initial, photoUrl) => {
+      const letter = ((initial || "A").charAt(0) || "A").toUpperCase();
+      if (avatarInitial) avatarInitial.textContent = letter;
+      else if (avatar && !avatarImg) avatar.textContent = letter;
+      if (avatarImg) {
+        if (photoUrl) {
+          avatarImg.src = photoUrl;
+          avatarImg.hidden = false;
+          if (avatarInitial) avatarInitial.hidden = true;
+        } else {
+          avatarImg.removeAttribute("src");
+          avatarImg.hidden = true;
+          if (avatarInitial) avatarInitial.hidden = false;
+        }
+      }
+    };
+
     if (!user) {
       if (!state.ready) {
         if (signInLink) signInLink.hidden = true;
@@ -471,7 +494,7 @@
         if (menuWrap) menuWrap.classList.remove("is-authenticated");
         return;
       }
-      if (avatar) avatar.textContent = "A";
+      setAvatarVisual("A", "");
       if (nameEl) nameEl.textContent = "Account";
       if (emailEl) emailEl.textContent = "";
       if (headerEl) headerEl.hidden = true;
@@ -493,8 +516,12 @@
     const email = (state.profile && state.profile.email) || user.email || "";
     const greeting = getGreetingLabel(user);
     const initial = ((firstName || email).charAt(0) || "A").toUpperCase();
+    const photo =
+      state.avatarUrl ||
+      (state.profile && state.profile.avatar_url) ||
+      "";
 
-    if (avatar) avatar.textContent = initial;
+    setAvatarVisual(initial, photo);
     if (nameEl) {
       nameEl.textContent = greeting.length > 24 ? greeting.slice(0, 22) + "…" : greeting;
     }
@@ -516,6 +543,8 @@
     state.session = null;
     state.user = null;
     state.profile = null;
+    state.churchProfile = null;
+    state.avatarUrl = null;
     state.churchProfile = null;
     state.communityPayload = null;
     state.cachedToken = null;
@@ -595,6 +624,13 @@
     getSupabase: () => state.supabase,
     getUser: () =>
       state.user || (state.session && state.session.user ? state.session.user : null),
+    getProfile: () => state.profile,
+    getAvatarUrl: () => state.avatarUrl || (state.profile && state.profile.avatar_url) || null,
+    setAvatarUrl: (url) => {
+      state.avatarUrl = url || null;
+      if (state.profile) state.profile.avatar_url = url || null;
+      updateAccountMenuDisplay();
+    },
     getChurchProfile: () => state.churchProfile,
     getCommunityPayload: () => state.communityPayload,
     getMembership: () => state.membership,

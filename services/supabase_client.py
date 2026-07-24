@@ -94,6 +94,52 @@ def get_profile(user_id: str, *, access_token: Optional[str] = None) -> Optional
     return rows[0] if rows else None
 
 
+def get_profile_by_id(user_id: str) -> Optional[dict[str, Any]]:
+    """Service-role profile lookup (for transactional emails)."""
+    uid = (user_id or "").strip()
+    if not uid or not supabase_enabled():
+        return None
+    try:
+        client = get_service_client()
+        result = (
+            client.table("profiles")
+            .select("id, email, first_name, last_name")
+            .eq("id", uid)
+            .limit(1)
+            .execute()
+        )
+        rows = result.data or []
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def update_profile_avatar(
+    user_id: str,
+    avatar_path: str,
+    *,
+    access_token: Optional[str] = None,
+) -> dict[str, Any]:
+    """Persist the user's profile photo storage path (or absolute URL)."""
+    uid = (user_id or "").strip()
+    path = (avatar_path or "").strip()
+    if not uid:
+        raise HTTPException(status_code=400, detail="User id is required.")
+    if not path:
+        raise HTTPException(status_code=400, detail="Avatar path is required.")
+    client = _client_for_user(access_token)
+    result = (
+        client.table("profiles")
+        .update({"avatar_url": path, "updated_at": datetime.now(timezone.utc).isoformat()})
+        .eq("id", uid)
+        .execute()
+    )
+    rows = result.data or []
+    if not rows:
+        raise HTTPException(status_code=404, detail="Profile not found.")
+    return rows[0]
+
+
 def get_church_profile(
     user_id: str, *, access_token: Optional[str] = None
 ) -> Optional[dict[str, Any]]:

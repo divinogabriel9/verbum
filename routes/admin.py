@@ -16,7 +16,12 @@ from services.pending_submissions import (
     reject_priest_submission,
     reject_song_submission,
 )
-from services.supabase_client import bootstrap_superadmin_roles_from_env, list_pending_memberships, set_membership_status
+from services.supabase_client import (
+    bootstrap_superadmin_roles_from_env,
+    get_profile_by_id,
+    list_pending_memberships,
+    set_membership_status,
+)
 from services.superadmin.dashboard import build_dashboard_payload
 from services.superadmin.audit_log import list_audit_log
 from services.superadmin.generations import list_generations
@@ -34,6 +39,13 @@ from services.superadmin.readings_admin import (
 from services.superadmin.readings_cache import cache_stats, clear_cache
 from services.superadmin.image_quota import list_parish_image_quota, list_parish_image_quota_paginated
 from services.auth_config import app_public_url
+from services.email_links import invite_signup_url
+from services.email_notifications import (
+    notify_membership_approved,
+    notify_membership_rejected,
+    notify_platform_invite,
+    safe_send,
+)
 from services.platform_invites import create_invite, list_invites
 from services.platform_announcements import get_admin_announcement, save_announcement
 from services.superadmin.merge_parishes import merge_parishes
@@ -584,8 +596,19 @@ def register_admin_routes(app) -> None:
         except RuntimeError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         tok = row.get("token") or ""
-        base = app_public_url() or ""
-        invite_url = (base + "/sign-up?invite=" + tok) if tok else ""
+        invite_url = invite_signup_url(tok) if tok else ""
+        emailed = False
+        invite_email = (row.get("email") or body.email or "").strip().lower()
+        if invite_email and invite_url:
+            emailed = safe_send(
+                "platform_invite",
+                notify_platform_invite,
+                email=invite_email,
+                invite_url=invite_url,
+                community_name=str(row.get("community_name") or ""),
+                invite_role=str(row.get("invite_role") or "president"),
+                note=str(row.get("note") or ""),
+            ).ok
         log_admin_action(
             actor_user_id=session.user.user_id,
             action="create",
@@ -596,9 +619,10 @@ def register_admin_routes(app) -> None:
                 "community_name": row.get("community_name"),
                 "parish_id": row.get("parish_id"),
                 "invite_role": row.get("invite_role"),
+                "emailed": emailed,
             },
         )
-        return {"ok": True, "invite": row, "invite_url": invite_url}
+        return {"ok": True, "invite": row, "invite_url": invite_url, "emailed": emailed}
 
     @app.get("/api/admin/approvals/inbox")
     def api_admin_approvals_inbox(
@@ -618,14 +642,29 @@ def register_admin_routes(app) -> None:
         session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         row = set_membership_status(user_id, "approved")
+        profile = get_profile_by_id(user_id) or {}
+        emailed = False
+        dest = (profile.get("email") or "").strip().lower()
+        if dest:
+            emailed = safe_send(
+                "membership_approved",
+                notify_membership_approved,
+                email=dest,
+                first_name=str(profile.get("first_name") or ""),
+                community_name=str(row.get("community_name") or ""),
+            ).ok
         log_admin_action(
             actor_user_id=session.user.user_id,
             action="approve",
             entity_type="parish_membership",
             entity_id=user_id,
-            detail={"community_name": row.get("community_name"), "status": "approved"},
+            detail={
+                "community_name": row.get("community_name"),
+                "status": "approved",
+                "emailed": emailed,
+            },
         )
-        return {"ok": True, "church_profile": row}
+        return {"ok": True, "church_profile": row, "emailed": emailed}
 
     @app.post("/api/admin/memberships/{user_id}/reject")
     def api_reject_membership(
@@ -633,14 +672,29 @@ def register_admin_routes(app) -> None:
         session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         row = set_membership_status(user_id, "rejected")
+        profile = get_profile_by_id(user_id) or {}
+        emailed = False
+        dest = (profile.get("email") or "").strip().lower()
+        if dest:
+            emailed = safe_send(
+                "membership_rejected",
+                notify_membership_rejected,
+                email=dest,
+                first_name=str(profile.get("first_name") or ""),
+                community_name=str(row.get("community_name") or ""),
+            ).ok
         log_admin_action(
             actor_user_id=session.user.user_id,
             action="reject",
             entity_type="parish_membership",
             entity_id=user_id,
-            detail={"community_name": row.get("community_name"), "status": "rejected"},
+            detail={
+                "community_name": row.get("community_name"),
+                "status": "rejected",
+                "emailed": emailed,
+            },
         )
-        return {"ok": True, "church_profile": row}
+        return {"ok": True, "church_profile": row, "emailed": emailed}
 
     @app.get("/api/admin/submissions/songs/pending")
     def api_pending_song_submissions(

@@ -92,6 +92,14 @@ _TIERS: Dict[str, Tuple[int, int]] = {
         _int_env("RATE_LIMIT_PRACTICE_CREATE_MAX", 12),
         _int_env("RATE_LIMIT_PRACTICE_CREATE_WINDOW", 3600),
     ),
+    "practice_lead": (
+        _int_env("RATE_LIMIT_PRACTICE_LEAD_MAX", 40),
+        _int_env("RATE_LIMIT_PRACTICE_LEAD_WINDOW", 3600),
+    ),
+    "practice_lead_song": (
+        _int_env("RATE_LIMIT_PRACTICE_LEAD_SONG_MAX", 30),
+        _int_env("RATE_LIMIT_PRACTICE_LEAD_SONG_WINDOW", 3600),
+    ),
     "catalog_lyrics": (
         _int_env("CATALOG_LYRIC_FETCH_MAX", 60),
         _int_env("CATALOG_LYRIC_FETCH_WINDOW", 3600),
@@ -139,6 +147,7 @@ _EXEMPT_PREFIXES = (
     "/health",
     "/static/",
     "/favicon",
+    "/api/internal/",
 )
 
 

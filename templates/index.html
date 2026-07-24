@@ -1602,6 +1602,22 @@
       background: color-mix(in srgb, var(--good) 16%, var(--surface-solid));
       color: var(--good);
       flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+    }
+    .account-menu-btn__avatar-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .account-menu-btn__avatar-img[hidden] {
+      display: none !important;
+    }
+    .account-menu-btn__avatar-initial {
+      line-height: 1;
     }
     .account-menu-btn__name {
       font-size: 0.8125rem;
@@ -2477,10 +2493,6 @@
       color: inherit;
       transition: border-color var(--motion-duration-fast) var(--motion-ease-hover),
         background var(--motion-duration-fast) var(--motion-ease-hover);
-    }
-    .settings-radio-option:hover {
-      border-color: color-mix(in srgb, var(--good) 30%, var(--line));
-      background: color-mix(in srgb, var(--good) 5%, var(--surface-solid));
     }
     .settings-radio-option.is-selected {
       border-color: color-mix(in srgb, var(--good) 45%, var(--line));
@@ -3978,10 +3990,6 @@
       box-shadow: var(--shadow-sm);
       transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .accent-swatch:hover {
-      transform: translateY(-2px);
-      border-color: color-mix(in srgb, var(--liturgical-glow) 60%, var(--line));
-    }
     .accent-swatch.active {
       border-color: var(--ink);
       box-shadow: 0 0 0 2px var(--surface-solid), 0 0 16px color-mix(in srgb, var(--liturgical-glow) 45%, transparent);
@@ -4010,110 +4018,296 @@
     }
     /* Superadmin tools */
     #superadmin-nav-link[hidden] { display: none !important; }
+    #superadmin-page {
+      --sa-rail: 232px;
+      --sa-ease: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    #superadmin-page.active {
+      overflow: visible;
+    }
     .sa-layout {
       width: 100%;
-      max-width: var(--content-max);
+      max-width: min(1280px, var(--content-max, 1100px));
       margin: 0 auto;
       display: grid;
-      grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
-      gap: var(--space-3);
+      grid-template-columns: var(--sa-rail) minmax(0, 1fr);
+      gap: 20px;
       align-items: start;
-    }
-    @media (max-width: 900px) {
-      .sa-layout { grid-template-columns: 1fr; }
+      padding-bottom: 32px;
+      overflow: visible;
     }
     .sa-nav-card {
       position: sticky;
-      top: var(--space-2);
+      top: 0;
+      z-index: 5;
       align-self: start;
+      overflow: visible;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
     }
-    .sa-nav-group { margin-bottom: 8px; }
+    .sa-nav-card.flow-bento-cell:hover,
+    .sa-panel.flow-bento-cell:hover {
+      transform: none;
+    }
+    .sa-nav-card > .flow-bento-cell__head {
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid var(--line);
+      margin: 0;
+    }
+    .sa-nav-card > .flow-bento-cell__head .home-card-head__text h3 {
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+    .sa-nav-card > .flow-bento-cell__head .home-card-head__text p {
+      font-size: 0.78rem;
+      margin: 2px 0 0;
+    }
+    .sa-nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 8px 12px;
+      margin: 0;
+    }
+    .sa-nav-group { margin: 0 0 6px; }
+    .sa-nav-group:last-child { margin-bottom: 0; }
+    .sa-nav-group__label,
     .sa-nav-group__toggle {
       width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 8px 10px;
+      padding: 8px 10px 4px;
       border: 0;
       background: transparent;
       font: inherit;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--muted);
-      cursor: pointer;
-      border-radius: var(--radius-sm);
+      cursor: default;
+      border-radius: 8px;
+      pointer-events: none;
     }
-    .sa-nav-group__toggle:hover { background: var(--surface-2); color: var(--ink); }
-    .sa-nav-group__chev { transition: transform 0.2s; font-size: 0.65rem; }
-    .sa-nav-group[data-open="false"] .sa-nav-group__chev { transform: rotate(-90deg); }
-    .sa-nav-group[data-open="false"] .sa-nav-group__links { display: none; }
+    .sa-nav-group__chev { display: none; }
+    .sa-nav-group__links {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
     .sa-nav-link {
       display: flex;
       align-items: center;
       gap: 8px;
       width: 100%;
-      padding: 9px 10px;
+      padding: 8px 10px;
       border: 0;
+      border-left: 2px solid transparent;
       background: transparent;
       font: inherit;
-      font-size: 0.9rem;
-      color: var(--ink);
+      font-size: 0.875rem;
+      color: color-mix(in srgb, var(--ink) 82%, var(--muted));
       text-align: left;
-      border-radius: var(--radius-sm);
+      border-radius: 8px;
       cursor: pointer;
+      transition: background 150ms var(--sa-ease), color 150ms var(--sa-ease), border-color 150ms var(--sa-ease);
     }
-    .sa-nav-link:hover { background: var(--surface-2); }
+    .sa-nav-link:hover {
+      background: var(--surface-2);
+      color: var(--ink);
+    }
+    .sa-nav-link:active { transform: scale(0.98); }
     .sa-nav-link.active {
       background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+      border-left-color: var(--accent);
       color: var(--accent);
       font-weight: 600;
     }
     .sa-nav-link__badge {
       margin-left: auto;
-      font-size: 0.62rem;
+      min-width: 1.35rem;
+      height: 1.35rem;
+      padding: 0 6px;
+      display: inline-grid;
+      place-items: center;
+      font-size: 0.68rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 2px 6px;
-      border-radius: var(--radius-pill);
-      background: color-mix(in srgb, var(--warn) 14%, var(--surface));
-      color: var(--warn);
+      letter-spacing: 0;
+      text-transform: none;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--warn, #c47a2c) 18%, var(--surface));
+      color: var(--warn, #c47a2c);
     }
-    .sa-panel[hidden] { display: none !important; }
-    .sa-stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 12px;
-      margin: 16px 0 20px;
-    }
-    .sa-stat {
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-md);
-      background: var(--surface);
-    }
-    .sa-stat__label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
+    .sa-nav-link__badge:empty,
+    .sa-nav-link__badge[hidden] { display: none !important; }
+    .sa-mobile-nav {
+      display: none;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 2px 2px 10px;
       margin: 0 0 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .sa-stat__value {
+    .sa-mobile-nav::-webkit-scrollbar { display: none; }
+    .sa-mobile-nav__btn {
+      flex: none;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 150ms var(--sa-ease), border-color 150ms var(--sa-ease), color 150ms var(--sa-ease);
+    }
+    .sa-mobile-nav__btn:active { transform: scale(0.97); }
+    .sa-mobile-nav__btn.active {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+      color: var(--accent);
+    }
+    .sa-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .sa-topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 4px 2px 2px;
+    }
+    .sa-topbar__title {
+      margin: 0;
       font-size: 1.35rem;
       font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--ink);
+    }
+    .sa-topbar__desc {
+      margin: 4px 0 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.4;
+      max-width: 42rem;
+    }
+    .sa-topbar__meta {
+      flex: none;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-top: 6px;
+    }
+    .sa-nav-card.flow-bento-cell {
+      padding: 0;
+      border-radius: 16px;
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
+    }
+    .sa-panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-solid);
+      padding: 18px 18px 20px;
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
+    }
+    .sa-panel[hidden] { display: none !important; }
+    .sa-panel > .flow-bento-cell__head { display: none; }
+    .sa-panel.flow-bento-cell {
+      padding: 18px 18px 20px;
+      border-radius: 16px;
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
+    }
+    .sa-panel .celebrant-settings-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .sa-panel .celebrant-settings-list > li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .sa-panel .celebrant-settings-list > li:last-child { border-bottom: 0; }
+    .sa-panel .field { margin-bottom: 12px; }
+    .sa-panel .field:last-child { margin-bottom: 0; }
+    .sa-panel .status { margin-top: 12px; }
+    .sa-section {
+      margin-top: 16px;
+      padding: 14px 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-2) 55%, var(--surface-solid));
+    }
+    .sa-section:first-child,
+    .sa-panel > .sa-stat-grid:first-of-type + .sa-section,
+    .sa-panel > .sa-toolbar + .sa-section { margin-top: 14px; }
+    .sa-section--flush {
+      padding: 0;
+      background: transparent;
+      border: 0;
+    }
+    .sa-section__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 10px;
+    }
+    .sa-section__head h4,
+    .sa-panel .settings-admin-subhead {
+      margin: 0 0 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sa-section__head h4 { margin: 0; }
+    .sa-section .muted { margin: 0 0 10px; }
+    .sa-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 10px;
+      margin: 0 0 4px;
+    }
+    .sa-stat {
+      padding: 14px 14px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-2) 40%, var(--surface));
+    }
+    .sa-stat__label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+    .sa-stat__value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
       color: var(--ink);
       margin: 0;
-      line-height: 1.2;
+      line-height: 1.15;
     }
     .sa-stat__sub {
       font-size: 0.75rem;
       color: var(--muted);
-      margin: 4px 0 0;
+      margin: 5px 0 0;
     }
     .sa-activity-list {
       list-style: none;
@@ -4125,22 +4319,54 @@
       flex-wrap: wrap;
       gap: 6px 12px;
       justify-content: space-between;
-      padding: 10px 0;
+      padding: 11px 0;
       border-bottom: 1px solid var(--line);
-      font-size: 0.88rem;
+      font-size: 0.875rem;
     }
+    .sa-activity-list li:last-child { border-bottom: 0; }
     .sa-quick-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 12px;
+      margin-top: 4px;
+    }
+    .sa-quick-actions .secondary,
+    .sa-quick-actions .primary {
+      font-size: 0.84rem;
     }
     .sa-chip-label {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 150ms var(--sa-ease), background 150ms var(--sa-ease);
+    }
+    .sa-chip-label:has(input:checked) {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+      color: var(--accent);
+    }
+    .sa-chip-label input { margin: 0; }
+    .sa-check-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       font-size: 0.88rem;
       cursor: pointer;
+    }
+    @media (max-width: 900px) {
+      .sa-layout { grid-template-columns: 1fr; gap: 12px; }
+      .sa-nav-card { display: none; }
+      .sa-mobile-nav { display: flex; }
+      .sa-topbar { padding-top: 0; }
+      .sa-topbar__title { font-size: 1.2rem; }
+      .sa-panel { padding: 14px; border-radius: 14px; }
     }
     .feature-flag-off {
       opacity: 0.52;
@@ -4181,10 +4407,19 @@
     }
     .sa-table-wrap {
       overflow-x: auto;
-      margin-top: 12px;
+      margin-top: 10px;
       border: 1px solid var(--line);
-      border-radius: var(--radius-md);
+      border-radius: 12px;
+      background: var(--surface);
     }
+    .sa-table-wrap:has(.sa-user-list) {
+      border: 0;
+      background: transparent;
+      overflow: visible;
+      margin-top: 10px;
+    }
+    .sa-section .sa-table-wrap { margin-top: 0; }
+    .sa-section--flush .sa-table-wrap { margin-top: 0; }
     .sa-table {
       width: 100%;
       border-collapse: collapse;
@@ -4192,18 +4427,18 @@
     }
     .sa-table th,
     .sa-table td {
-      padding: 10px 12px;
+      padding: 11px 13px;
       text-align: left;
       border-bottom: 1px solid var(--line);
       vertical-align: top;
     }
     .sa-table th {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       color: var(--muted);
-      background: var(--surface-2);
+      background: color-mix(in srgb, var(--surface-2) 80%, var(--surface));
     }
     .sa-table tr:last-child td { border-bottom: 0; }
     .sa-toolbar {
@@ -4211,12 +4446,24 @@
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
-      margin-top: 8px;
+      margin: 0 0 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
     }
-    .sa-toolbar input[type="search"] {
+    .sa-toolbar input[type="search"],
+    .sa-toolbar input[type="text"],
+    .sa-toolbar input[type="email"] {
       flex: 1;
       min-width: 180px;
-      max-width: 320px;
+      max-width: 340px;
+    }
+    .sa-section .sa-toolbar {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      margin: 0;
     }
     .sa-pagination {
       display: flex;
@@ -4337,6 +4584,125 @@
       color: var(--muted);
       font-size: 0.9rem;
     }
+    .sa-user-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .sa-user-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 12px;
+      align-items: start;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .sa-user-row:last-child { border-bottom: 0; }
+    .sa-user-row:hover { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+    .sa-user-row__main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .sa-user-row__title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 8px;
+      min-width: 0;
+    }
+    .sa-user-row__name {
+      font-size: 0.9rem;
+      font-weight: 650;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .sa-user-row__email {
+      font-size: 0.8rem;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .sa-user-row__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .sa-user-row__meta > span:not(:last-child)::after {
+      content: "·";
+      margin-left: 8px;
+      opacity: 0.55;
+    }
+    .sa-user-presence {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+    }
+    .sa-user-presence::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex: none;
+    }
+    .sa-user-presence.is-online { color: var(--ok, #2f7a4a); }
+    .sa-user-presence.is-online::before { background: var(--ok, #2f7a4a); }
+    .sa-user-row__side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex: none;
+    }
+    .sa-user-row__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      align-items: center;
+    }
+    .sa-user-row__actions .secondary,
+    .sa-user-row__actions .primary {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      min-height: 0;
+    }
+    .sa-user-row__actions select {
+      max-width: 140px;
+      height: 28px;
+      padding: 0 6px;
+      font-size: 0.75rem;
+      border-radius: 7px;
+    }
+    .sa-user-row__joined {
+      font-size: 0.7rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      .sa-user-row {
+        grid-template-columns: 1fr;
+      }
+      .sa-user-row__side {
+        align-items: stretch;
+      }
+      .sa-user-row__actions {
+        justify-content: flex-start;
+      }
+    }
     .sa-skeleton {
       height: 14px;
       border-radius: 4px;
@@ -4396,12 +4762,6 @@
       border-radius: 8px;
       background: transparent;
       cursor: pointer;
-      transition: color var(--motion-duration-fast) var(--motion-ease-hover),
-        background var(--motion-duration-fast) var(--motion-ease-hover);
-    }
-    .settings-sidebar-link:hover {
-      color: color-mix(in srgb, var(--good) 82%, #000);
-      text-decoration: underline;
     }
     .settings-sidebar-link.active {
       color: var(--ink);
@@ -4508,6 +4868,10 @@
       flex: 1 1 auto;
       min-height: 0;
     }
+    #settings-page .settings-layout .settings-panel.flow-bento-cell:hover {
+      box-shadow: none;
+      transform: none;
+    }
     #settings-page .settings-layout .settings-panel.flow-bento-cell[hidden] {
       display: none !important;
     }
@@ -4526,11 +4890,7 @@
       color: var(--muted);
       cursor: pointer;
       z-index: 10;
-      transition: background var(--motion-duration-fast, .12s) ease,
-        color var(--motion-duration-fast, .12s) ease,
-        transform var(--motion-duration-fast, .12s) ease;
     }
-    .settings-modal-close:hover { background: var(--surface-2); color: var(--ink); }
     .settings-modal-close:active { transform: scale(.93); }
     .settings-modal-close:focus-visible {
       outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
@@ -4578,11 +4938,6 @@
       text-decoration: none;
       background: transparent;
       cursor: pointer;
-      transition: background var(--motion-duration-fast) ease, color var(--motion-duration-fast) ease;
-    }
-    .settings-modal-tab:hover {
-      color: var(--ink);
-      background: color-mix(in srgb, var(--surface-2) 72%, transparent);
     }
     .settings-modal-tab.active {
       background: var(--surface-solid);
@@ -4769,15 +5124,16 @@
 
     @keyframes vb-page-in {
       from { opacity: 0; transform: translateY(6px) scale(0.985); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      /* transform: none (not identity) so fill-mode does not leave a fixed containing block */
+      to { opacity: 1; transform: none; }
     }
     @keyframes vb-page-out {
-      from { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 1; transform: none; }
       to { opacity: 0; transform: translateY(-4px) scale(0.985); }
     }
     @keyframes vb-panel-in {
       from { opacity: 0; transform: translateY(6px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 1; transform: none; }
     }
     @keyframes vb-dropdown-in {
       from { opacity: 0; transform: translateY(-4px) scale(0.96); }
@@ -6518,7 +6874,7 @@
       transform: scale(1) translateY(0);
     }
     /* Default size for ordinary modals. Specialty cards override below. */
-    .ui-overlay .ui-card:not(.practice-share-card):not(.ui-card--reading):not(.ui-card--news-expand):not(.song-save-result-card):not(.deck-theme-card):not(.songs-whats-new-card):not(.mobile-welcome-card) {
+    .ui-overlay .ui-card:not(.practice-share-card):not(.ui-card--reading):not(.ui-card--news-expand):not(.song-save-result-card):not(.deck-theme-card):not(.songs-whats-new-card):not(.mobile-welcome-card):not(.logo-preview-card) {
       width: min(480px, calc(100vw - 2rem));
       max-width: min(480px, calc(100vw - 2rem));
     }
@@ -7972,8 +8328,58 @@
       font: inherit;
     }
     .practice-share-card {
-      width: min(420px, calc(100vw - 2rem));
-      max-width: min(420px, calc(100vw - 2rem));
+      width: min(560px, calc(100vw - 2rem));
+      max-width: min(560px, calc(100vw - 2rem));
+    }
+    .practice-share-card__header {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .practice-share-card__header .ui-card__header-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .practice-share-back {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      margin: -4px 0 0 -4px;
+      padding: 0;
+      border-radius: 10px;
+      font-size: 1.25rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .practice-share-back[hidden] {
+      display: none !important;
+    }
+    .practice-share-history-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .practice-share-history-item__actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: -2px;
+      padding: 0 14px 12px;
+      border: 1px solid var(--line-soft);
+      border-top: 0;
+      border-radius: 0 0 12px 12px;
+      background: var(--surface-solid);
+    }
+    .practice-share-history-row:has(.practice-share-history-item__actions) .practice-share-history-item {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    .practice-share-history-item__expire {
+      font-size: 0.78rem;
+      padding: 6px 10px;
+      border-radius: 8px;
     }
     #practice-share-sections-modal .ui-card.practice-share-card.practice-share-card--plan,
     .ui-overlay .ui-card.practice-share-card.practice-share-card--plan {
@@ -8236,6 +8642,163 @@
       line-height: 1.45;
       color: var(--muted);
     }
+    .practice-share-pin-display {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 0 0 4px;
+    }
+    .practice-share-pin-display__label {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .practice-share-pin-display__row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .practice-share-pin-display__value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--good) 8%, var(--surface-solid));
+      border: 1px solid color-mix(in srgb, var(--good) 28%, var(--line-soft));
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+    .practice-share-pin-display__missing {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    .practice-share-result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .practice-share-history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: min(58vh, 420px);
+      overflow: auto;
+      padding-right: 2px;
+    }
+    .practice-share-history-section__title {
+      margin: 0 0 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .practice-share-history-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .practice-share-history-item {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+    }
+    .practice-share-history-item:hover,
+    .practice-share-history-item:focus-visible {
+      border-color: color-mix(in srgb, var(--good) 40%, var(--line-soft));
+      outline: none;
+    }
+    .practice-share-history-item.is-expired {
+      opacity: 0.78;
+    }
+    .practice-share-history-item__top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .practice-share-history-item__title {
+      margin: 0;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .practice-share-history-item__badge {
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--good);
+    }
+    .practice-share-history-item.is-expired .practice-share-history-item__badge {
+      color: var(--muted);
+    }
+    .practice-share-history-item__meta {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .practice-share-history-item__countdown {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+      color: color-mix(in srgb, var(--good) 70%, var(--ink));
+      font-weight: 600;
+    }
+    .practice-share-history-empty {
+      margin: 8px 0 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .practice-share-expired-songs {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .practice-share-expired-songs li {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-solid);
+    }
+    .practice-share-expired-songs__slot {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .practice-share-expired-songs__title {
+      font-weight: 600;
+    }
     .practice-share-pin-choice {
       margin: 0;
       padding: 0;
@@ -8327,6 +8890,80 @@
       padding: 12px 4px 4px;
       text-align: center;
       min-height: 200px;
+    }
+    #practice-share-history-footer[hidden],
+    #practice-share-history-footer.practice-share-history-footer--loading {
+      display: none !important;
+    }
+    .practice-share-history-loading {
+      min-height: 220px;
+    }
+    /* Dominos spinner — adapted from Uiverse.io by satyamchaudharydev */
+    .practice-share-history-loading .spinner {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      margin: 8px auto 4px;
+      margin-left: auto;
+      margin-right: auto;
+      transform: translateX(-30px);
+    }
+    .practice-share-history-loading .spinner span {
+      position: absolute;
+      top: 50%;
+      left: var(--left);
+      width: 35px;
+      height: 7px;
+      background: var(--ink, #1a1a1a);
+      animation: practice-share-dominos 1s ease infinite;
+      box-shadow: 2px 2px 3px 0px color-mix(in srgb, var(--ink, #000) 35%, transparent);
+      border-radius: 2px;
+    }
+    .practice-share-history-loading .spinner span:nth-child(1) {
+      --left: 80px;
+      animation-delay: 0.125s;
+    }
+    .practice-share-history-loading .spinner span:nth-child(2) {
+      --left: 70px;
+      animation-delay: 0.3s;
+    }
+    .practice-share-history-loading .spinner span:nth-child(3) {
+      left: 60px;
+      animation-delay: 0.425s;
+    }
+    .practice-share-history-loading .spinner span:nth-child(4) {
+      animation-delay: 0.54s;
+      left: 50px;
+    }
+    .practice-share-history-loading .spinner span:nth-child(5) {
+      animation-delay: 0.665s;
+      left: 40px;
+    }
+    .practice-share-history-loading .spinner span:nth-child(6) {
+      animation-delay: 0.79s;
+      left: 30px;
+    }
+    .practice-share-history-loading .spinner span:nth-child(7) {
+      animation-delay: 0.915s;
+      left: 20px;
+    }
+    .practice-share-history-loading .spinner span:nth-child(8) {
+      left: 10px;
+    }
+    @keyframes practice-share-dominos {
+      50% {
+        opacity: 0.7;
+      }
+      75% {
+        transform: rotate(90deg);
+      }
+      80% {
+        opacity: 1;
+      }
     }
     .practice-share-loading .loader-wrapper {
       font-size: 0.72em;
@@ -10723,7 +11360,7 @@
       flex-shrink: 0;
       width: 72px;
       height: 72px;
-      border-radius: 50%;
+      border-radius: 14px;
       border: 2px solid var(--line-soft);
       background: var(--surface-2);
       padding: 0;
@@ -10731,11 +11368,9 @@
       display: grid;
       place-items: center;
       cursor: pointer;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .church-logo-avatar:hover:not(:disabled) {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    .church-logo-avatar.profile-avatar {
+      border-radius: 50%;
     }
     .church-logo-avatar:disabled {
       cursor: default;
@@ -10744,8 +11379,14 @@
     .church-logo-avatar__img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       display: block;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+    .church-logo-avatar.profile-avatar .church-logo-avatar__img {
+      object-fit: cover;
+      padding: 0;
     }
     .church-logo-avatar__placeholder {
       font-size: 1.35rem;
@@ -10766,6 +11407,93 @@
     .church-logo-upload-row[hidden] {
       display: none !important;
     }
+    .profile-avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+    }
+    .profile-avatar-wrap .church-logo-avatar.profile-avatar {
+      width: 100%;
+      height: 100%;
+    }
+    .profile-avatar-wrap .church-logo-avatar.profile-avatar:disabled {
+      opacity: 1;
+      cursor: pointer;
+    }
+    .profile-avatar-add {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--surface-solid);
+      background: var(--ink);
+      color: var(--surface-solid);
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      cursor: pointer;
+      z-index: 2;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    }
+    .profile-avatar-add:active {
+      transform: scale(0.94);
+    }
+    .profile-avatar-add:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+      outline-offset: 2px;
+    }
+    .profile-avatar-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 200px;
+      z-index: 20;
+      padding: 6px;
+      margin: 0;
+      list-style: none;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
+      box-shadow: var(--vb-dropdown-shadow, 0 8px 24px rgba(0, 0, 0, 0.12));
+    }
+    .profile-avatar-menu[hidden] {
+      display: none !important;
+    }
+    .profile-avatar-menu__item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-size: 0.875rem;
+      font-weight: 550;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .profile-avatar-menu__item:active {
+      transform: scale(0.98);
+    }
+    .profile-avatar-menu__item:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+      outline-offset: -2px;
+    }
+    .settings-account-meta {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .settings-account-meta strong {
+      color: var(--text);
+      font-weight: 600;
+    }
     .logo-preview-modal__img {
       display: block;
       max-width: min(92vw, 520px);
@@ -10775,6 +11503,33 @@
       margin: 0 auto;
       border-radius: 12px;
       object-fit: contain;
+    }
+    /* Logo / avatar preview must sit above the settings modal (z-index 2000). */
+    #logo-preview-modal.ui-overlay,
+    #logo-lock-modal.ui-overlay,
+    #parish-submit-modal.ui-overlay {
+      z-index: 2100;
+    }
+    #logo-preview-modal .ui-card.logo-preview-card {
+      width: min(880px, calc(100vw - 2rem));
+      max-width: min(880px, calc(100vw - 2rem));
+      max-height: min(92vh, 900px);
+    }
+    #logo-preview-modal .logo-preview-card .ui-card__body {
+      padding: 0 !important;
+      background: var(--surface-2);
+      overflow: auto;
+    }
+    #logo-preview-modal .logo-preview-modal__img {
+      display: block;
+      width: 100%;
+      max-width: none;
+      max-height: min(78vh, 760px);
+      height: auto;
+      margin: 0;
+      border-radius: 0;
+      object-fit: contain;
+      background: var(--surface-2);
     }
     .app-membership-banner {
       margin: 0 0 14px;
@@ -16489,7 +17244,10 @@
             </button>
             <div class="account-menu-wrap">
               <button type="button" class="account-menu-btn" id="account-menu-btn" aria-expanded="false" aria-controls="account-menu-panel" aria-haspopup="menu">
-                <span class="account-menu-btn__avatar" id="account-menu-avatar" aria-hidden="true">A</span>
+                <span class="account-menu-btn__avatar" id="account-menu-avatar" aria-hidden="true">
+                  <img class="account-menu-btn__avatar-img" id="account-menu-avatar-img" alt="" hidden />
+                  <span class="account-menu-btn__avatar-initial" id="account-menu-avatar-initial">A</span>
+                </span>
                 <span class="account-menu-btn__name" id="account-menu-name">Account</span>
                 <svg class="account-menu-btn__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
               </button>
@@ -16516,7 +17274,7 @@
                     </span>
                     <span class="vb-dropdown-item__label" id="account-theme-toggle-label">Dark mode</span>
                   </button>
-                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/church" data-route="/settings/church" id="account-settings-link" role="menuitem">
+                  <a class="vb-dropdown-item app-menu-item nav-link" href="/settings/account" data-route="/settings/account" id="account-settings-link" role="menuitem">
                     <span class="app-menu-item__icon" aria-hidden="true">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
                     </span>
@@ -17096,6 +17854,58 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="practice-share-history-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="practice-share-history-backdrop"></div>
+        <article class="ui-card practice-share-card" role="dialog" aria-labelledby="practice-share-history-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="practice-share-history-title">Choir practice shares</h3>
+              <p class="ui-card__description" id="practice-share-history-sub">Reopen an active link, or review expired shares.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="practice-share-history-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content practice-share-body">
+            <div class="practice-share-loading practice-share-history-loading" id="practice-share-history-loading" hidden role="status" aria-live="polite">
+              <div class="practice-share-dominos spinner" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <p class="practice-share-loading__title">Loading practice shares</p>
+              <p class="practice-share-loading__msg" id="practice-share-history-loading-msg">Fetching your active and expired links…</p>
+            </div>
+            <div class="practice-share-history-list" id="practice-share-history-list" aria-live="polite"></div>
+            <p class="status error" id="practice-share-history-status" hidden aria-live="polite"></p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row" id="practice-share-history-footer" hidden>
+            <button type="button" class="secondary" id="practice-share-history-cancel">Close</button>
+            <button type="button" class="primary" id="practice-share-history-new">New share</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="practice-share-expired-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="practice-share-expired-backdrop"></div>
+        <article class="ui-card practice-share-card" role="dialog" aria-labelledby="practice-share-expired-title" aria-modal="true">
+          <header class="ui-card__header practice-share-card__header">
+            <button type="button" class="ghost practice-share-back" id="practice-share-expired-back" aria-label="Back">←</button>
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="practice-share-expired-title">Expired practice share</h3>
+              <p class="ui-card__description" id="practice-share-expired-sub"></p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="practice-share-expired-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content practice-share-body">
+            <ul class="practice-share-expired-songs" id="practice-share-expired-songs"></ul>
+          </div>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="practice-share-sections-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="practice-share-sections-backdrop"></div>
         <article class="ui-card practice-share-card practice-share-card--plan" role="dialog" aria-labelledby="practice-share-sections-title" aria-modal="true">
@@ -17123,7 +17933,8 @@
       <div class="ui-overlay" id="practice-share-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="practice-share-backdrop"></div>
         <article class="ui-card ui-card--popover-safe practice-share-card" role="dialog" aria-labelledby="practice-share-title" aria-modal="true">
-          <header class="ui-card__header">
+          <header class="ui-card__header practice-share-card__header">
+            <button type="button" class="ghost practice-share-back" id="practice-share-back" hidden aria-label="Back">←</button>
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="practice-share-title">Share choir practice</h3>
               <p class="ui-card__description" id="practice-share-sub">Anyone with the link can read these lyrics — no account needed.</p>
@@ -17258,14 +18069,14 @@
 
       <div class="ui-overlay" id="logo-preview-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="logo-preview-backdrop"></div>
-        <article class="ui-card" role="dialog" aria-labelledby="logo-preview-title" aria-modal="true">
+        <article class="ui-card logo-preview-card" role="dialog" aria-labelledby="logo-preview-title" aria-modal="true">
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="logo-preview-title">Church logo</h3>
             </div>
             <button type="button" class="ghost ui-card__close" id="logo-preview-close" aria-label="Close">×</button>
           </header>
-          <div class="ui-card__body" style="padding: 0 1.25rem 1.25rem;">
+          <div class="ui-card__body">
             <img class="logo-preview-modal__img" id="logo-preview-modal-img" src="" alt="Church logo preview" />
           </div>
         </article>
@@ -17556,6 +18367,29 @@
             <button type="button" class="primary song-delete-confirm-btn" id="media-delete-confirm">Delete</button>
           </footer>
         </article>
+      </div>
+
+      <!-- Mass Builder rite preview / media pick — outside .page so position:fixed covers the viewport -->
+      <div class="mw-modal" id="mw-preview-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-preview-title">
+        <div class="mw-modal__card">
+          <h3 class="mw-modal__title" id="mw-preview-title">Preview</h3>
+          <p class="mw-modal__audio-hint" id="mw-preview-audio-hint" hidden>Playing audio preview…</p>
+          <video class="mw-modal__video" id="mw-preview-video" controls playsinline hidden></video>
+          <div class="mw-modal__text" id="mw-preview-text"></div>
+          <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-preview-close">Close</button>
+        </div>
+      </div>
+      <div class="mw-modal" id="mw-media-pick-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-media-pick-title">
+        <div class="mw-modal__card" style="max-width:min(520px,94vw);">
+          <h3 class="mw-modal__title" id="mw-media-pick-title">Choose from Media library</h3>
+          <p class="mw-rite__hint" id="mw-media-pick-hint" style="margin:0 0 12px;">Search parish uploads.</p>
+          <input type="search" id="mw-media-pick-q" maxlength="120" placeholder="Search by name…" autocomplete="off" style="width:100%;margin-bottom:10px;" />
+          <ul class="mw-media-pick-list" id="mw-media-pick-list" aria-live="polite"></ul>
+          <div class="mw-modal__actions">
+            <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-clear">Clear link</button>
+            <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-media-pick-close">Close</button>
+          </div>
+        </div>
       </div>
 
       <section class="page" id="lyrics-page" data-route="/library/songs">
@@ -17945,6 +18779,8 @@
         .mw-bookmark__hint { font-size: var(--mw-type-fine, 0.75rem); color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; transition: color .2s; }
         .mw-modal { position: fixed; inset: 0; z-index: 120; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 12, 16, .5); }
         .mw-modal[data-open="true"] { display: flex; }
+        /* Escape .dashboard > * content-max width so the scrim covers the viewport */
+        .dashboard > .mw-modal { width: auto; max-width: none; margin-inline: 0; }
         .mw-modal__card { width: min(560px, 94vw); max-height: 80vh; overflow: auto; background: var(--surface); border: 1px solid var(--card-border); border-radius: 20px; box-shadow: var(--shadow-large); padding: 24px; }
         .mw-modal__title { margin: 0 0 12px; color: var(--accent); font-family: var(--brand-font-flow); }
         .mw-modal__text { white-space: pre-wrap; line-height: 1.6; color: var(--ink); font-size: var(--mw-type-section, 1.0625rem); }
@@ -19597,28 +20433,6 @@
           </aside>
         </div>
 
-        <div class="mw-modal" id="mw-preview-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-preview-title">
-          <div class="mw-modal__card">
-            <h3 class="mw-modal__title" id="mw-preview-title">Preview</h3>
-            <p class="mw-modal__audio-hint" id="mw-preview-audio-hint" hidden>Playing audio preview…</p>
-            <video class="mw-modal__video" id="mw-preview-video" controls playsinline hidden></video>
-            <div class="mw-modal__text" id="mw-preview-text"></div>
-            <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-preview-close">Close</button>
-          </div>
-        </div>
-        <div class="mw-modal" id="mw-media-pick-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-media-pick-title">
-          <div class="mw-modal__card" style="max-width:min(520px,94vw);">
-            <h3 class="mw-modal__title" id="mw-media-pick-title">Choose from Media library</h3>
-            <p class="mw-rite__hint" id="mw-media-pick-hint" style="margin:0 0 12px;">Search parish uploads.</p>
-            <input type="search" id="mw-media-pick-q" maxlength="120" placeholder="Search by name…" autocomplete="off" style="width:100%;margin-bottom:10px;" />
-            <ul class="mw-media-pick-list" id="mw-media-pick-list" aria-live="polite"></ul>
-            <div class="mw-modal__actions">
-              <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-clear">Clear link</button>
-              <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-media-pick-close">Close</button>
-            </div>
-          </div>
-        </div>
-
       </section>
 
       <script>
@@ -20734,38 +21548,43 @@
               </span>
               <div class="home-card-head__text">
                 <h3 id="sa-nav-heading">Superadmin</h3>
-                <p>Platform mission control</p>
+                <p>Platform controls</p>
               </div>
             </header>
             <nav class="sa-nav-list" id="sa-sidebar-nav" aria-label="Superadmin navigation">
-              <div class="sa-nav-group" data-open="true">
-                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>Overview</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+              <div class="sa-nav-group" data-sa-nav-group="overview">
+                <div class="sa-nav-group__label"><span>Overview</span></div>
                 <div class="sa-nav-group__links">
                   <button type="button" class="sa-nav-link active" data-sa-panel="dashboard">Dashboard</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="analytics">Analytics</button>
                 </div>
               </div>
-              <div class="sa-nav-group" data-open="true">
-                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>Operations</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+              <div class="sa-nav-group" data-sa-nav-group="people">
+                <div class="sa-nav-group__label"><span>People</span></div>
                 <div class="sa-nav-group__links">
                   <button type="button" class="sa-nav-link" data-sa-panel="parishes">Parishes</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="users">Users</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="membership">Membership <span class="sa-nav-link__badge" id="sa-nav-badge-membership" hidden></span></button>
+                  <button type="button" class="sa-nav-link" data-sa-panel="membership">Approvals <span class="sa-nav-link__badge" id="sa-nav-badge-membership" hidden></span></button>
                   <button type="button" class="sa-nav-link" data-sa-panel="invites">Invites</button>
+                </div>
+              </div>
+              <div class="sa-nav-group" data-sa-nav-group="activity">
+                <div class="sa-nav-group__label"><span>Activity</span></div>
+                <div class="sa-nav-group__links">
                   <button type="button" class="sa-nav-link" data-sa-panel="generations">Generations</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="audit-log">Audit log</button>
                 </div>
               </div>
-              <div class="sa-nav-group" data-open="true">
-                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>Content</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+              <div class="sa-nav-group" data-sa-nav-group="content">
+                <div class="sa-nav-group__label"><span>Content</span></div>
                 <div class="sa-nav-group__links">
                   <button type="button" class="sa-nav-link" data-sa-panel="content-songs">Songs</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="content-readings">Readings cache</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="content-templates">Templates</button>
                 </div>
               </div>
-              <div class="sa-nav-group" data-open="true">
-                <button type="button" class="sa-nav-group__toggle" aria-expanded="true"><span>System</span><span class="sa-nav-group__chev" aria-hidden="true">▼</span></button>
+              <div class="sa-nav-group" data-sa-nav-group="system">
+                <div class="sa-nav-group__label"><span>System</span></div>
                 <div class="sa-nav-group__links">
                   <button type="button" class="sa-nav-link" data-sa-panel="system-ai">AI &amp; Quota</button>
                   <button type="button" class="sa-nav-link" data-sa-panel="system-announcement">Announcement</button>
@@ -20777,6 +21596,14 @@
             </nav>
           </aside>
           <div class="sa-main">
+            <nav class="sa-mobile-nav" id="sa-mobile-nav" aria-label="Superadmin sections"></nav>
+            <header class="sa-topbar" id="sa-topbar">
+              <div>
+                <h2 class="sa-topbar__title" id="sa-topbar-title">Dashboard</h2>
+                <p class="sa-topbar__desc" id="sa-topbar-desc">Live platform stats and recent activity.</p>
+              </div>
+              <span class="sa-topbar__meta" id="sa-topbar-group">Overview</span>
+            </header>
             <article class="sa-panel flow-bento-cell" id="sa-panel-dashboard" data-sa-panel="dashboard">
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
@@ -20785,15 +21612,19 @@
                 </div>
               </header>
               <div class="sa-stat-grid" id="sa-dashboard-stats" aria-live="polite"></div>
-              <h4 class="settings-admin-subhead">Recent activity</h4>
-              <ul class="sa-activity-list" id="sa-dashboard-activity" aria-live="polite"></ul>
-              <h4 class="settings-admin-subhead">Quick actions</h4>
-              <div class="sa-quick-actions">
-                <button type="button" class="secondary" id="sa-btn-goto-membership">Open membership queue</button>
-                <button type="button" class="secondary" id="sa-btn-clear-readings-cache">Clear readings cache</button>
-                <button type="button" class="secondary" id="sa-btn-bootstrap-superadmins">Bootstrap superadmins</button>
-                <button type="button" class="secondary" data-sa-panel-jump="system-ai">Gemini settings</button>
-                <button type="button" class="secondary" id="sa-btn-goto-templates">PPTX templates</button>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Recent activity</h4></div>
+                <ul class="sa-activity-list" id="sa-dashboard-activity" aria-live="polite"></ul>
+              </div>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Quick actions</h4></div>
+                <div class="sa-quick-actions">
+                  <button type="button" class="secondary" id="sa-btn-goto-membership">Open approvals queue</button>
+                  <button type="button" class="secondary" id="sa-btn-clear-readings-cache">Clear readings cache</button>
+                  <button type="button" class="secondary" id="sa-btn-bootstrap-superadmins">Bootstrap superadmins</button>
+                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">Gemini settings</button>
+                  <button type="button" class="secondary" id="sa-btn-goto-templates">PPTX templates</button>
+                </div>
               </div>
               <p class="status" id="sa-dashboard-status" aria-live="polite"></p>
             </article>
@@ -20815,12 +21646,18 @@
                 <button type="button" class="secondary" id="sa-analytics-refresh">Refresh</button>
               </div>
               <div class="sa-stat-grid" id="sa-analytics-stats" aria-live="polite"></div>
-              <h4 class="settings-admin-subhead">Generations by day</h4>
-              <div class="sa-table-wrap" id="sa-analytics-gens-wrap"></div>
-              <h4 class="settings-admin-subhead">Signups by day</h4>
-              <div class="sa-table-wrap" id="sa-analytics-signups-wrap"></div>
-              <h4 class="settings-admin-subhead">Top parishes (period)</h4>
-              <div class="sa-table-wrap" id="sa-analytics-parishes-wrap"></div>
+              <div class="sa-section sa-section--flush">
+                <h4 class="settings-admin-subhead">Generations by day</h4>
+                <div class="sa-table-wrap" id="sa-analytics-gens-wrap"></div>
+              </div>
+              <div class="sa-section sa-section--flush">
+                <h4 class="settings-admin-subhead">Signups by day</h4>
+                <div class="sa-table-wrap" id="sa-analytics-signups-wrap"></div>
+              </div>
+              <div class="sa-section sa-section--flush">
+                <h4 class="settings-admin-subhead">Top parishes (period)</h4>
+                <div class="sa-table-wrap" id="sa-analytics-parishes-wrap"></div>
+              </div>
               <p class="status" id="sa-analytics-status" aria-live="polite"></p>
             </article>
 
@@ -20835,37 +21672,41 @@
                 <input type="search" id="sa-parishes-search" placeholder="Search parish or email…" maxlength="120" autocomplete="off" />
                 <button type="button" class="secondary" id="sa-parishes-refresh">Refresh</button>
               </div>
-              <h4 class="settings-admin-subhead">Create parish</h4>
-              <p class="muted" style="font-size:0.86rem;">Manually add a parish and optionally assign yourself (or another user) so you can keep parish lyric versions separately from the global catalog.</p>
-              <div class="sa-toolbar" style="flex-wrap:wrap;gap:10px;">
-                <input type="text" id="sa-create-parish-name" placeholder="Parish name" maxlength="120" autocomplete="organization" style="min-width:200px;flex:1;" />
-                <select id="sa-create-parish-assign" class="sa-filter-select" style="max-width:260px;" aria-label="Assign user">
-                  <option value="">No user yet</option>
-                  <option value="__self__">Assign me (superadmin)</option>
-                </select>
-                <select id="sa-create-parish-role" class="sa-filter-select" style="max-width:140px;" aria-label="Role">
-                  <option value="president">President</option>
-                  <option value="media">Media</option>
-                </select>
-                <button type="button" class="primary" id="sa-btn-create-parish">Create parish</button>
-              </div>
-              <p class="status" id="sa-create-parish-status" aria-live="polite"></p>
               <div class="sa-table-wrap" id="sa-parishes-table-wrap"></div>
               <div id="sa-parishes-pager" hidden></div>
               <p class="status" id="sa-parishes-status" aria-live="polite"></p>
-              <h4 class="settings-admin-subhead">Merge parishes</h4>
-              <p class="muted">Move members and references from a duplicate parish into the canonical record, then delete the source.</p>
-              <div class="sa-toolbar sa-merge-toolbar">
-                <select id="sa-merge-source" class="sa-filter-select" aria-label="Source parish to merge away" style="max-width:220px;">
-                  <option value="">Source parish…</option>
-                </select>
-                <span class="muted" aria-hidden="true">→</span>
-                <select id="sa-merge-target" class="sa-filter-select" aria-label="Target parish to keep" style="max-width:220px;">
-                  <option value="">Target parish…</option>
-                </select>
-                <button type="button" class="secondary danger" id="sa-btn-merge-parishes">Merge</button>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Create parish</h4></div>
+                <p class="muted" style="font-size:0.86rem;">Manually add a parish and optionally assign yourself (or another user) so you can keep parish lyric versions separately from the global catalog.</p>
+                <div class="sa-toolbar" style="flex-wrap:wrap;gap:10px;margin-top:0;">
+                  <input type="text" id="sa-create-parish-name" placeholder="Parish name" maxlength="120" autocomplete="organization" style="min-width:200px;flex:1;" />
+                  <select id="sa-create-parish-assign" class="sa-filter-select" style="max-width:260px;" aria-label="Assign user">
+                    <option value="">No user yet</option>
+                    <option value="__self__">Assign me (superadmin)</option>
+                  </select>
+                  <select id="sa-create-parish-role" class="sa-filter-select" style="max-width:140px;" aria-label="Role">
+                    <option value="president">President</option>
+                    <option value="media">Media</option>
+                  </select>
+                  <button type="button" class="primary" id="sa-btn-create-parish">Create parish</button>
+                </div>
+                <p class="status" id="sa-create-parish-status" aria-live="polite"></p>
               </div>
-              <p class="status" id="sa-merge-status" aria-live="polite"></p>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Merge parishes</h4></div>
+                <p class="muted">Move members and references from a duplicate parish into the canonical record, then delete the source.</p>
+                <div class="sa-toolbar sa-merge-toolbar" style="margin-top:0;">
+                  <select id="sa-merge-source" class="sa-filter-select" aria-label="Source parish to merge away" style="max-width:220px;">
+                    <option value="">Source parish…</option>
+                  </select>
+                  <span class="muted" aria-hidden="true">→</span>
+                  <select id="sa-merge-target" class="sa-filter-select" aria-label="Target parish to keep" style="max-width:220px;">
+                    <option value="">Target parish…</option>
+                  </select>
+                  <button type="button" class="secondary danger" id="sa-btn-merge-parishes">Merge</button>
+                </div>
+                <p class="status" id="sa-merge-status" aria-live="polite"></p>
+              </div>
             </article>
 
             <article class="sa-panel flow-bento-cell" id="sa-panel-users" data-sa-panel="users" hidden>
@@ -20887,16 +21728,22 @@
             <article class="sa-panel flow-bento-cell" id="sa-panel-membership" data-sa-panel="membership" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
-                  <h3>Membership requests</h3>
+                  <h3>Approvals</h3>
                   <p>Approve parish memberships, songs, and priest names.</p>
                 </div>
               </header>
-              <h4 class="settings-admin-subhead">Pending parish memberships</h4>
-              <ul class="celebrant-settings-list" id="sa-admin-pending-list" aria-live="polite"></ul>
-              <h4 class="settings-admin-subhead">Pending songs</h4>
-              <ul class="celebrant-settings-list" id="sa-admin-pending-songs" aria-live="polite"></ul>
-              <h4 class="settings-admin-subhead">Pending priests</h4>
-              <ul class="celebrant-settings-list" id="sa-admin-pending-priests" aria-live="polite"></ul>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Pending parish memberships</h4></div>
+                <ul class="celebrant-settings-list" id="sa-admin-pending-list" aria-live="polite"></ul>
+              </div>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Pending songs</h4></div>
+                <ul class="celebrant-settings-list" id="sa-admin-pending-songs" aria-live="polite"></ul>
+              </div>
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Pending priests</h4></div>
+                <ul class="celebrant-settings-list" id="sa-admin-pending-priests" aria-live="polite"></ul>
+              </div>
               <p class="status" id="sa-admin-status" aria-live="polite"></p>
             </article>
 
@@ -20907,55 +21754,60 @@
                   <p>Invite a new president (new parish) or add a president/media teammate to an approved parish.</p>
                 </div>
               </header>
-              <div class="field">
-                <span class="field-label">Invite type</span>
-                <div class="sa-quick-actions" role="radiogroup" aria-label="Invite type" style="margin-top:6px;">
-                  <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-existing" value="existing" checked /> Existing parish</label>
-                  <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-new" value="new" /> New parish</label>
-                </div>
-              </div>
-              <div id="sa-invite-existing-wrap">
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Create invite</h4></div>
                 <div class="field">
-                  <label for="sa-invite-parish-search">Parish</label>
-                  <input type="search" id="sa-invite-parish-search" maxlength="120" placeholder="Search approved parishes…" autocomplete="off" list="sa-invite-parish-datalist" />
-                  <datalist id="sa-invite-parish-datalist"></datalist>
-                  <input type="hidden" id="sa-invite-parish-id" value="" />
-                  <p class="muted" style="margin:6px 0 0;font-size:0.82rem;">Only approved parishes are listed.</p>
+                  <span class="field-label">Invite type</span>
+                  <div class="sa-quick-actions" role="radiogroup" aria-label="Invite type" style="margin-top:6px;">
+                    <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-existing" value="existing" checked /> Existing parish</label>
+                    <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-new" value="new" /> New parish</label>
+                  </div>
+                </div>
+                <div id="sa-invite-existing-wrap">
+                  <div class="field">
+                    <label for="sa-invite-parish-search">Parish</label>
+                    <input type="search" id="sa-invite-parish-search" maxlength="120" placeholder="Search approved parishes…" autocomplete="off" list="sa-invite-parish-datalist" />
+                    <datalist id="sa-invite-parish-datalist"></datalist>
+                    <input type="hidden" id="sa-invite-parish-id" value="" />
+                    <p class="muted" style="margin:6px 0 0;font-size:0.82rem;">Only approved parishes are listed.</p>
+                  </div>
+                  <div class="field">
+                    <label for="sa-invite-role">Role</label>
+                    <select id="sa-invite-role" class="sa-filter-select" style="max-width:220px;">
+                      <option value="media">Media team</option>
+                      <option value="president">Parish president</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="sa-invite-new-wrap" hidden>
+                  <div class="field">
+                    <label for="sa-invite-parish-name">New parish name</label>
+                    <input type="text" id="sa-invite-parish-name" maxlength="120" placeholder="e.g. St. Mary's Parish" autocomplete="organization" />
+                  </div>
                 </div>
                 <div class="field">
-                  <label for="sa-invite-role">Role</label>
-                  <select id="sa-invite-role" class="sa-filter-select" style="max-width:220px;">
-                    <option value="media">Media team</option>
-                    <option value="president">Parish president</option>
-                  </select>
+                  <label for="sa-invite-email">Email (optional lock)</label>
+                  <input type="email" id="sa-invite-email" autocomplete="off" placeholder="media@parish.org" maxlength="320" />
                 </div>
-              </div>
-              <div id="sa-invite-new-wrap" hidden>
                 <div class="field">
-                  <label for="sa-invite-parish-name">New parish name</label>
-                  <input type="text" id="sa-invite-parish-name" maxlength="120" placeholder="e.g. St. Mary's Parish" autocomplete="organization" />
+                  <label for="sa-invite-note">Note (optional)</label>
+                  <input type="text" id="sa-invite-note" maxlength="240" placeholder="Media team — St. Mary's" />
+                </div>
+                <div class="sa-quick-actions">
+                  <button type="button" class="primary" id="sa-btn-create-invite">Create invite link</button>
+                  <button type="button" class="secondary" id="sa-btn-refresh-invites">Refresh list</button>
+                </div>
+                <p class="status" id="sa-invite-create-status" aria-live="polite"></p>
+                <div class="field" id="sa-invite-url-wrap" hidden>
+                  <label for="sa-invite-url">Latest invite URL</label>
+                  <input type="text" id="sa-invite-url" readonly />
+                  <button type="button" class="secondary" id="sa-btn-copy-invite-url" style="margin-top:8px;">Copy link</button>
                 </div>
               </div>
-              <div class="field">
-                <label for="sa-invite-email">Email (optional lock)</label>
-                <input type="email" id="sa-invite-email" autocomplete="off" placeholder="media@parish.org" maxlength="320" />
+              <div class="sa-section">
+                <div class="sa-section__head"><h4>Pending invites</h4></div>
+                <ul class="celebrant-settings-list" id="sa-invites-list" aria-live="polite"></ul>
               </div>
-              <div class="field">
-                <label for="sa-invite-note">Note (optional)</label>
-                <input type="text" id="sa-invite-note" maxlength="240" placeholder="Media team — St. Mary's" />
-              </div>
-              <div class="sa-quick-actions">
-                <button type="button" class="primary" id="sa-btn-create-invite">Create invite link</button>
-                <button type="button" class="secondary" id="sa-btn-refresh-invites">Refresh list</button>
-              </div>
-              <p class="status" id="sa-invite-create-status" aria-live="polite"></p>
-              <div class="field" id="sa-invite-url-wrap" hidden>
-                <label for="sa-invite-url">Latest invite URL</label>
-                <input type="text" id="sa-invite-url" readonly />
-                <button type="button" class="secondary" id="sa-btn-copy-invite-url" style="margin-top:8px;">Copy link</button>
-              </div>
-              <h4 class="settings-admin-subhead">Pending invites</h4>
-              <ul class="celebrant-settings-list" id="sa-invites-list" aria-live="polite"></ul>
             </article>
 
             <article class="sa-panel flow-bento-cell" id="sa-panel-generations" data-sa-panel="generations" hidden>
@@ -21234,6 +22086,7 @@
           </button>
           <nav class="settings-modal-tabs" id="settings-modal-tabs" aria-label="Settings sections">
             <h2 class="settings-modal-tabs__title" id="settings-modal-tabs-title">Settings</h2>
+            <a class="settings-modal-tab" href="/settings/account" data-route="/settings/account">Account</a>
             <a class="settings-modal-tab" href="/settings/church" data-route="/settings/church">Church Profile</a>
             <a class="settings-modal-tab" href="/settings/team" data-route="/settings/team" id="settings-modal-tab-team" hidden>Parish Team</a>
             <a class="settings-modal-tab" href="/settings/app" data-route="/settings/app">Appearance</a>
@@ -21250,6 +22103,12 @@
                 </div>
               </header>
               <nav class="settings-nav-list" id="settings-sidebar-nav" aria-label="Settings navigation">
+                <a class="settings-sidebar-link" href="/settings/account" data-route="/settings/account">
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </span>
+                  Account
+                </a>
                 <a class="settings-sidebar-link" href="/settings/church" data-route="/settings/church">
                   <span class="settings-sidebar-link__icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
@@ -21273,7 +22132,41 @@
           </aside>
           <div class="settings-main">
             <div class="settings-mobile-account-host" id="settings-mobile-account-host"></div>
-            <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church">
+            <article class="settings-panel flow-bento-cell" id="settings-panel-account" data-settings-panel="account">
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Account</h3>
+                  <p>Your personal profile photo shown in the header menu.</p>
+                </div>
+              </header>
+              <div class="field">
+                <label>Profile picture</label>
+                <div class="church-identity-row">
+                  <div class="profile-avatar-wrap" id="profile-avatar-wrap">
+                    <button type="button" class="church-logo-avatar profile-avatar" id="profile-avatar-btn" aria-label="Preview profile picture">
+                      <img class="church-logo-avatar__img" id="profile-avatar-img" alt="" hidden />
+                      <span class="church-logo-avatar__placeholder" id="profile-avatar-placeholder" aria-hidden="true">+</span>
+                    </button>
+                    <button type="button" class="profile-avatar-add" id="profile-avatar-add" aria-label="Change profile picture" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-avatar-menu">+</button>
+                    <div class="profile-avatar-menu" id="profile-avatar-menu" role="menu" hidden>
+                      <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="upload">Upload photo</button>
+                      <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="generate">Use generated avatar</button>
+                    </div>
+                    <input type="file" id="profile-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+                  </div>
+                  <div class="church-identity-row__name">
+                    <p class="settings-account-meta" id="settings-account-name">—</p>
+                    <p class="settings-account-meta" id="settings-account-email" style="margin-top:4px;">—</p>
+                    <p class="muted" style="margin-top:8px;font-size:0.85rem;">This is your photo — separate from the parish logo on Church Profile.</p>
+                  </div>
+                </div>
+                <p class="status" id="avatar-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
+              </div>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <span class="home-card-head__icon" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
@@ -21296,6 +22189,7 @@
                       <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" autocomplete="organization" />
                       <p class="muted" id="settings-church-name-hint" style="margin-top:6px;font-size:0.85rem;" hidden>Parish name is locked after submission and cannot be changed.</p>
                       <p class="muted" id="settings-church-logo-hint" style="margin-top:4px;font-size:0.85rem;" hidden>Logo is locked after submission and cannot be changed.</p>
+                      <p class="muted" style="margin-top:6px;font-size:0.85rem;">Square tile = parish logo (not your profile picture).</p>
                     </div>
                   </div>
                   <div class="church-logo-upload-row" id="church-logo-upload-row">
@@ -21568,6 +22462,12 @@
             <img src="/static/icons/media.png" class="nav-icon" alt="" width="18" height="18" />
             <span>History</span>
           </a>
+          <a class="app-more-sheet__link nav-link" data-route="/settings/account" href="/settings/account">
+            <span class="app-more-sheet__link-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <span>Account</span>
+          </a>
           <a class="app-more-sheet__link nav-link" data-route="/settings/church" href="/settings/church">
             <span class="app-more-sheet__link-icon" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -21596,6 +22496,7 @@
         <option value="/mass/calendar" data-nav-tab="calendar">Liturgical Calendar</option>
         <option value="/design/theme-lab" data-nav-tab="design">Theme Lab</option>
         <option value="/design/templates" data-nav-tab="design">Templates</option>
+        <option value="/settings/account">Account</option>
         <option value="/settings/church">Church Profile</option>
         <option value="/settings/app">Appearance &amp; theme</option>
       </select>
@@ -22235,6 +23136,30 @@
       if (Number.isNaN(d.getTime())) return "";
       return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     };
+    const PRACTICE_DEVICE_STORE_KEY = "lf-practice-device-id";
+    function getPracticeDeviceId() {
+      try {
+        let id = String(localStorage.getItem(PRACTICE_DEVICE_STORE_KEY) || "").trim();
+        if (id.length >= 16) return id;
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          id = window.crypto.randomUUID().replace(/-/g, "") + window.crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+        } else {
+          id = "d" + String(Date.now()) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        }
+        id = id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
+        localStorage.setItem(PRACTICE_DEVICE_STORE_KEY, id);
+        return id;
+      } catch (_e) {
+        return "";
+      }
+    }
+    function practiceDeviceHeaders() {
+      const deviceId = getPracticeDeviceId();
+      return deviceId ? { "X-Practice-Device-Id": deviceId } : {};
+    }
+    window.getPracticeDeviceId = getPracticeDeviceId;
+    window.practiceDeviceHeaders = practiceDeviceHeaders;
+
     const postJSON = async (url, body, opts) => {
       const skipAuthWait = !!(opts && opts.skipAuthWait);
       if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
@@ -22244,6 +23169,13 @@
       if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
         Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
       }
+      if (String(url || "").indexOf("/api/practice/") === 0) {
+        const deviceHdrs = (typeof practiceDeviceHeaders === "function"
+          ? practiceDeviceHeaders
+          : window.practiceDeviceHeaders);
+        if (typeof deviceHdrs === "function") Object.assign(headers, deviceHdrs());
+      }
+      if (opts && opts.headers) Object.assign(headers, opts.headers);
       const res = await fetch(url, {
         method: "POST",
         headers,
@@ -25233,6 +26165,7 @@
       "/library/collections": "Song collections for seasons and events.",
       "/design/theme-lab": "Liturgical themes and custom slide styling.",
       "/design/templates": "Poster and slide template reference.",
+      "/settings/account": "Your profile picture and account details.",
       "/settings/church": "Community name and parish logo.",
       "/settings/team": "Invite and manage your parish media team.",
       "/settings/app": "Light/dark mode, accent colors, and visual style.",
@@ -25251,6 +26184,7 @@
       "/library/collections": ["Lyrics Library", "Collections"],
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
+      "/settings/account": ["Settings", "Account"],
       "/settings/church": ["Settings", "Church Profile"],
       "/settings/team": ["Settings", "Parish Team"],
       "/settings/app": ["Settings", "Appearance"],
@@ -25654,7 +26588,7 @@
     }
 
     function isSettingsRoute(route) {
-      return route === "/settings/church" || route === "/settings/team" || route === "/settings/app";
+      return route === "/settings/account" || route === "/settings/church" || route === "/settings/team" || route === "/settings/app";
     }
 
     let lastNonSettingsRoute = "/home";
@@ -26089,11 +27023,12 @@
     function syncSettingsLayout(route) {
       const inSettings = isSettingsRoute(route);
       const panelForRoute = {
+        "/settings/account": "account",
         "/settings/church": "church",
         "/settings/team": "team",
         "/settings/app": "appearance",
       };
-      const activeKey = panelForRoute[route] || "church";
+      const activeKey = panelForRoute[route] || "account";
       document.querySelectorAll(".settings-panel").forEach((panel) => {
         if (!inSettings) {
           panel.hidden = true;
@@ -26178,6 +27113,7 @@
         if (typeof renderSettingsRadioList === "function") renderSettingsRadioList();
         syncChurchFieldsToSettings();
         refreshCommunity();
+        if (typeof syncSettingsAccountPanel === "function") syncSettingsAccountPanel();
         if (r === "/settings/team" && typeof loadSettingsParishTeam === "function") loadSettingsParishTeam();
         if (window.__scrollToLiveRadio) {
           window.__scrollToLiveRadio = false;
@@ -26200,6 +27136,9 @@
           setTimeout(() => {
             if (typeof window.maybePromptDeckThemeOnStartup === "function") {
               window.maybePromptDeckThemeOnStartup();
+            }
+            if (typeof consumeEmailDeepLinkIntent === "function") {
+              consumeEmailDeepLinkIntent();
             }
           }, 0);
         };
@@ -30694,9 +31633,59 @@
 
     let practiceShareLastUrl = "";
     let practiceShareLastLeadUrl = "";
-    let practiceShareLastHadPin = false;
+    let practiceShareLastToken = "";
+    let practiceShareLastPin = "";
+    let practiceShareLastMassDate = "";
     let practiceShareSlotFilter = null;
     let practiceShareExcludedSlots = new Set();
+    let practiceShareHistoryCache = [];
+    let practiceShareHistoryCountdownTimer = null;
+    const PRACTICE_PIN_LS_PREFIX = "lf-practice-pin:";
+
+    function practicePinStorageKey(token) {
+      return PRACTICE_PIN_LS_PREFIX + String(token || "").trim();
+    }
+
+    function readStoredPracticePin(token) {
+      const tok = String(token || "").trim();
+      if (!tok) return "";
+      try {
+        const pin = String(localStorage.getItem(practicePinStorageKey(tok)) || "").replace(/\D/g, "");
+        return pin.length === 6 ? pin : "";
+      } catch (_e) {
+        return "";
+      }
+    }
+
+    function writeStoredPracticePin(token, pin) {
+      const tok = String(token || "").trim();
+      const clean = String(pin || "").replace(/\D/g, "");
+      if (!tok || clean.length !== 6) return;
+      try {
+        localStorage.setItem(practicePinStorageKey(tok), clean);
+      } catch (_e) { /* ignore quota */ }
+    }
+
+    function formatPracticeCountdown(seconds) {
+      const total = Math.max(0, Math.floor(Number(seconds) || 0));
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      if (h > 0) return h + "h " + String(m).padStart(2, "0") + "m " + String(s).padStart(2, "0") + "s left";
+      return String(m).padStart(2, "0") + "m " + String(s).padStart(2, "0") + "s left";
+    }
+
+    function formatPracticeMassDate(iso) {
+      const raw = String(iso || "").trim();
+      if (!raw) return "";
+      try {
+        const d = new Date(raw + "T12:00:00");
+        if (Number.isNaN(d.getTime())) return raw;
+        return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+      } catch (_e) {
+        return raw;
+      }
+    }
 
     function mountPinOtp(container, opts) {
       opts = opts || {};
@@ -30866,6 +31855,7 @@
     }
 
     let practiceSharePinOtp = null;
+    let practiceShareOpenedFromHistory = false;
 
     function getPracticeSharePin() {
       return practiceSharePinOtp ? practiceSharePinOtp.getValue() : "";
@@ -30873,6 +31863,7 @@
 
     function clearPracticeSharePin() {
       practiceSharePinOtp?.clear();
+      practiceShareLastPin = "";
     }
 
     function setPracticeShareFooterMode(mode) {
@@ -30895,9 +31886,13 @@
     function isPracticeShareSheetOpen() {
       const sections = $("practice-share-sections-modal");
       const pin = $("practice-share-modal");
+      const history = $("practice-share-history-modal");
+      const expired = $("practice-share-expired-modal");
       return !!(
         (sections && sections.classList.contains("is-open")) ||
-        (pin && pin.classList.contains("is-open"))
+        (pin && pin.classList.contains("is-open")) ||
+        (history && history.classList.contains("is-open")) ||
+        (expired && expired.classList.contains("is-open"))
       );
     }
 
@@ -31059,6 +32054,41 @@
       practiceSharePinOtp?.focus();
     }
 
+    function stopPracticeShareHistoryCountdown() {
+      if (practiceShareHistoryCountdownTimer) {
+        clearInterval(practiceShareHistoryCountdownTimer);
+        practiceShareHistoryCountdownTimer = null;
+      }
+    }
+
+    function tickPracticeShareHistoryCountdowns() {
+      const nodes = document.querySelectorAll("[data-practice-countdown]");
+      if (!nodes.length) {
+        stopPracticeShareHistoryCountdown();
+        return;
+      }
+      nodes.forEach((el) => {
+        const expiresAt = el.getAttribute("data-expires-at") || "";
+        const end = expiresAt ? new Date(expiresAt).getTime() : 0;
+        const remaining = end ? Math.max(0, Math.floor((end - Date.now()) / 1000)) : 0;
+        el.textContent = remaining > 0 ? formatPracticeCountdown(remaining) : "Expired";
+        if (remaining <= 0) {
+          const btn = el.closest(".practice-share-history-item");
+          if (btn && !btn.classList.contains("is-expired")) {
+            btn.classList.add("is-expired");
+            const badge = btn.querySelector(".practice-share-history-item__badge");
+            if (badge) badge.textContent = "Expired";
+          }
+        }
+      });
+    }
+
+    function startPracticeShareHistoryCountdown() {
+      stopPracticeShareHistoryCountdown();
+      tickPracticeShareHistoryCountdowns();
+      practiceShareHistoryCountdownTimer = setInterval(tickPracticeShareHistoryCountdowns, 1000);
+    }
+
     function resetPracticeShareModal() {
       stopPracticeShareLoadingAnim();
       const setup = $("practice-share-setup");
@@ -31067,12 +32097,15 @@
       const status = $("practice-share-status");
       const generateBtn = $("practice-share-generate");
       const cancelBtn = $("practice-share-cancel");
+      const backBtn = $("practice-share-back");
       if (setup) setup.hidden = false;
       if (loading) loading.hidden = true;
       if (result) result.hidden = true;
       if (status) { status.hidden = true; status.textContent = ""; status.className = "status error"; }
       if (generateBtn) { generateBtn.hidden = false; generateBtn.disabled = false; generateBtn.textContent = "Generate"; }
       if (cancelBtn) cancelBtn.textContent = "Cancel";
+      if (backBtn) backBtn.hidden = true;
+      practiceShareOpenedFromHistory = false;
       setPracticeShareFooterMode("");
       syncPracticeSharePinUi();
       clearPracticeSharePin();
@@ -31080,7 +32113,8 @@
       if (url) url.value = "";
       practiceShareLastUrl = "";
       practiceShareLastLeadUrl = "";
-      practiceShareLastHadPin = false;
+      practiceShareLastToken = "";
+      practiceShareLastMassDate = "";
       const leadBtn = $("practice-share-lets-practice");
       if (leadBtn) leadBtn.hidden = true;
       const qr = $("practice-share-qr");
@@ -31089,6 +32123,271 @@
       if (qrFallback) qrFallback.hidden = true;
       const sub = $("practice-share-sub");
       if (sub) sub.textContent = "Anyone with the link can read these lyrics — no account needed.";
+    }
+
+    function closePracticeShareHistoryModal() {
+      stopPracticeShareHistoryCountdown();
+      const loading = $("practice-share-history-loading");
+      const list = $("practice-share-history-list");
+      const footer = $("practice-share-history-footer");
+      if (loading) loading.hidden = true;
+      if (list) list.hidden = false;
+      if (footer) {
+        footer.hidden = false;
+        footer.classList.remove("practice-share-history-footer--loading");
+      }
+      const cancelBtn = $("practice-share-history-cancel");
+      const newBtn = $("practice-share-history-new");
+      if (cancelBtn) cancelBtn.hidden = false;
+      if (newBtn) newBtn.hidden = false;
+      setUiOverlayOpen($("practice-share-history-modal"), false);
+      syncPracticeShareBottomNavChrome();
+    }
+
+    function closePracticeShareExpiredModal(opts) {
+      opts = opts || {};
+      setUiOverlayOpen($("practice-share-expired-modal"), false);
+      if (!opts.skipNavSync) syncPracticeShareBottomNavChrome();
+      if (opts.reopenHistory) {
+        setUiOverlayOpen($("practice-share-history-modal"), true);
+        startPracticeShareHistoryCountdown();
+        syncPracticeShareBottomNavChrome();
+      }
+    }
+
+    function renderPracticeShareHistoryList(shares) {
+      const host = $("practice-share-history-list");
+      if (!host) return;
+      practiceShareHistoryCache = Array.isArray(shares) ? shares.slice() : [];
+      const active = practiceShareHistoryCache.filter((s) => s && s.status === "active");
+      const expired = practiceShareHistoryCache.filter((s) => s && s.status !== "active");
+
+      if (!active.length && !expired.length) {
+        host.innerHTML = '<p class="practice-share-history-empty">No practice shares yet. Create one to freeze lyrics for your choir.</p>';
+        stopPracticeShareHistoryCountdown();
+        return;
+      }
+
+      function itemHtml(share, isActive) {
+        const token = String(share.token || "");
+        const countdown = isActive
+          ? ('<p class="practice-share-history-item__countdown" data-practice-countdown data-expires-at="' +
+              String(share.expires_at || "").replace(/"/g, "&quot;") + '">' +
+              formatPracticeCountdown(share.seconds_remaining) + "</p>")
+          : "";
+        const expireBtn = isActive
+          ? '<button type="button" class="secondary practice-share-history-item__expire" data-practice-expire="' +
+            token.replace(/"/g, "&quot;") + '">Expire now</button>'
+          : "";
+        return (
+          '<li class="practice-share-history-row">' +
+          '<button type="button" class="practice-share-history-item' + (isActive ? "" : " is-expired") +
+          '" data-practice-token="' + token.replace(/"/g, "&quot;") + '" data-practice-status="' + (isActive ? "active" : "expired") + '">' +
+          '<div class="practice-share-history-item__top">' +
+          '<p class="practice-share-history-item__title"></p>' +
+          '<span class="practice-share-history-item__badge">' + (isActive ? "Active" : "Expired") + "</span>" +
+          "</div>" +
+          '<p class="practice-share-history-item__meta"></p>' +
+          countdown +
+          "</button>" +
+          (expireBtn ? ('<div class="practice-share-history-item__actions">' + expireBtn + "</div>") : "") +
+          "</li>"
+        );
+      }
+
+      let html = "";
+      if (active.length) {
+        html += '<section class="practice-share-history-section"><h4 class="practice-share-history-section__title">Active</h4><ul class="practice-share-history-items">';
+        active.forEach((s) => { html += itemHtml(s, true); });
+        html += "</ul></section>";
+      }
+      if (expired.length) {
+        html += '<section class="practice-share-history-section"><h4 class="practice-share-history-section__title">Expired</h4><ul class="practice-share-history-items">';
+        expired.forEach((s) => { html += itemHtml(s, false); });
+        html += "</ul></section>";
+      }
+      host.innerHTML = html;
+
+      // Set text via textContent to avoid HTML injection from titles
+      Array.from(host.querySelectorAll(".practice-share-history-item")).forEach((btn) => {
+        const token = btn.getAttribute("data-practice-token") || "";
+        const share = practiceShareHistoryCache.find((s) => String(s.token || "") === token);
+        if (!share) return;
+        const titleEl = btn.querySelector(".practice-share-history-item__title");
+        const metaEl = btn.querySelector(".practice-share-history-item__meta");
+        if (titleEl) titleEl.textContent = String(share.mass_title || "").trim() || ("Mass · " + formatPracticeMassDate(share.mass_date));
+        if (metaEl) {
+          const dateLabel = formatPracticeMassDate(share.mass_date);
+          const songCount = Number(share.song_count || 0);
+          metaEl.textContent = [dateLabel, songCount ? (songCount + " song" + (songCount === 1 ? "" : "s")) : ""].filter(Boolean).join(" · ");
+        }
+      });
+
+      if (active.length) startPracticeShareHistoryCountdown();
+      else stopPracticeShareHistoryCountdown();
+    }
+
+    async function fetchRecentPracticeShares() {
+      if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+        await window.VerbumAuth.waitUntilReady();
+      }
+      const headers = Object.assign({}, practiceDeviceHeaders());
+      if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+        Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+      }
+      const res = await fetch("/api/practice/shares/recent", { headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.detail || data.error || res.statusText || "Could not load shares.");
+      }
+      return Array.isArray(data.shares) ? data.shares : [];
+    }
+
+    async function openPracticeShareHistoryModal() {
+      if (!isFeatureEnabled("choir_practice_shares")) {
+        notify(FEATURE_OFF_HINT, "info");
+        return;
+      }
+      const status = $("practice-share-history-status");
+      const list = $("practice-share-history-list");
+      const loading = $("practice-share-history-loading");
+      const footer = $("practice-share-history-footer");
+      const cancelBtn = $("practice-share-history-cancel");
+      const newBtn = $("practice-share-history-new");
+      if (status) { status.hidden = true; status.textContent = ""; }
+      if (list) { list.hidden = true; list.innerHTML = ""; }
+      if (loading) loading.hidden = false;
+      if (footer) {
+        footer.hidden = true;
+        footer.classList.add("practice-share-history-footer--loading");
+      }
+      if (cancelBtn) cancelBtn.hidden = true;
+      if (newBtn) newBtn.hidden = true;
+      setUiOverlayOpen($("practice-share-history-modal"), true);
+      syncPracticeShareBottomNavChrome();
+      try {
+        const shares = await fetchRecentPracticeShares();
+        if (loading) loading.hidden = true;
+        if (list) list.hidden = false;
+        renderPracticeShareHistoryList(shares);
+        if (footer) {
+          footer.hidden = false;
+          footer.classList.remove("practice-share-history-footer--loading");
+        }
+        if (cancelBtn) cancelBtn.hidden = false;
+        if (newBtn) newBtn.hidden = false;
+      } catch (err) {
+        if (loading) loading.hidden = true;
+        if (list) { list.hidden = false; list.innerHTML = ""; }
+        if (status) {
+          status.textContent = err.message || "Could not load practice shares.";
+          status.hidden = false;
+        }
+        if (footer) {
+          footer.hidden = false;
+          footer.classList.remove("practice-share-history-footer--loading");
+        }
+        if (cancelBtn) cancelBtn.hidden = false;
+        if (newBtn) newBtn.hidden = false;
+      }
+    }
+
+    function openActivePracticeShareFromHistory(share) {
+      if (!share || !share.token) return;
+      closePracticeShareHistoryModal();
+      const pin = readStoredPracticePin(share.token);
+      resetPracticeShareModal();
+      practiceShareOpenedFromHistory = true;
+      setUiOverlayOpen($("practice-share-modal"), true);
+      syncPracticeShareBottomNavChrome();
+      showPracticeShareResult({
+        ...share,
+        pin: pin,
+        restored: true,
+        mass_date: share.mass_date || "",
+      });
+    }
+
+    async function expirePracticeShareFromHistory(token) {
+      const tok = String(token || "").trim();
+      if (!tok) return;
+      if (!window.confirm("Expire this practice link now? Choir members will no longer be able to open it.")) {
+        return;
+      }
+      const status = $("practice-share-history-status");
+      try {
+        await postJSON("/api/practice/" + encodeURIComponent(tok) + "/revoke", {});
+        const shares = await fetchRecentPracticeShares();
+        renderPracticeShareHistoryList(shares);
+        notify("Practice link expired.", "ok");
+      } catch (err) {
+        if (status) {
+          status.textContent = err.message || "Could not expire share.";
+          status.hidden = false;
+        }
+      }
+    }
+
+    function openExpiredPracticeShareDetail(share) {
+      if (!share) return;
+      stopPracticeShareHistoryCountdown();
+      setUiOverlayOpen($("practice-share-history-modal"), false);
+      const sub = $("practice-share-expired-sub");
+      const list = $("practice-share-expired-songs");
+      const dateLabel = formatPracticeMassDate(share.mass_date);
+      const title = String(share.mass_title || "").trim();
+      if (sub) {
+        sub.textContent = [title, dateLabel].filter(Boolean).join(" · ") || "This practice link has expired.";
+      }
+      if (list) {
+        list.innerHTML = "";
+        const songs = Array.isArray(share.songs) ? share.songs : [];
+        if (!songs.length) {
+          const li = document.createElement("li");
+          li.textContent = "No song titles saved for this share.";
+          list.appendChild(li);
+        } else {
+          songs.forEach((song) => {
+            const li = document.createElement("li");
+            const slot = document.createElement("span");
+            slot.className = "practice-share-expired-songs__slot";
+            slot.textContent = String(song.slot_label || song.section || "Song").trim() || "Song";
+            const titleEl = document.createElement("span");
+            titleEl.className = "practice-share-expired-songs__title";
+            titleEl.textContent = String(song.title || "Song").trim() || "Song";
+            li.appendChild(slot);
+            li.appendChild(titleEl);
+            list.appendChild(li);
+          });
+        }
+      }
+      setUiOverlayOpen($("practice-share-expired-modal"), true);
+      syncPracticeShareBottomNavChrome();
+    }
+
+    function onPracticeShareHistoryClick(e) {
+      const expireBtn = e.target && e.target.closest ? e.target.closest("[data-practice-expire]") : null;
+      if (expireBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        void expirePracticeShareFromHistory(expireBtn.getAttribute("data-practice-expire") || "");
+        return;
+      }
+      const btn = e.target && e.target.closest ? e.target.closest(".practice-share-history-item") : null;
+      if (!btn) return;
+      const token = btn.getAttribute("data-practice-token") || "";
+      const share = practiceShareHistoryCache.find((s) => String(s.token || "") === token);
+      if (!share) return;
+      const expiresMs = share.expires_at ? new Date(share.expires_at).getTime() : 0;
+      const stillActive = share.status === "active" && expiresMs > Date.now();
+      if (stillActive) openActivePracticeShareFromHistory(share);
+      else openExpiredPracticeShareDetail({ ...share, status: "expired" });
+    }
+
+    function backToPracticeShareHistory() {
+      closePracticeShareModal();
+      closePracticeShareExpiredModal({ skipNavSync: true });
+      void openPracticeShareHistoryModal();
     }
 
     function ensurePracticeShareMassDate(preferredDate) {
@@ -31149,6 +32448,7 @@
       }
       if (!opts.keepSlotFilter) practiceShareSlotFilter = null;
       resetPracticeShareModal();
+      practiceShareLastMassDate = date;
       setUiOverlayOpen($("practice-share-modal"), true);
       if (isMobileChromeLayout()) {
         document.body.classList.add("practice-share-pin-top");
@@ -31335,31 +32635,46 @@
       const status = $("practice-share-status");
       const generateBtn = $("practice-share-generate");
       const cancelBtn = $("practice-share-cancel");
+      const backBtn = $("practice-share-back");
       if (setup) setup.hidden = true;
       if (loading) loading.hidden = true;
       if (status) status.hidden = true;
       if (generateBtn) generateBtn.hidden = true;
       if (result) result.hidden = false;
       if (cancelBtn) cancelBtn.textContent = "Close";
+      if (backBtn) backBtn.hidden = !(data && (data.restored || practiceShareOpenedFromHistory));
+      practiceShareOpenedFromHistory = !!(data && (data.restored || practiceShareOpenedFromHistory));
       setPracticeShareFooterMode("result");
       const url = String(data.url || "");
       practiceShareLastUrl = url;
       practiceShareLastLeadUrl = String(data.lead_url || "").trim();
+      practiceShareLastToken = String(data.token || "").trim();
+      practiceShareLastMassDate = String(data.mass_date || practiceShareLastMassDate || "").trim();
+      const pin = String(data.pin || "").replace(/\D/g, "");
+      practiceShareLastPin = pin.length === 6 ? pin : (readStoredPracticePin(practiceShareLastToken) || "");
+      if (practiceShareLastToken && practiceShareLastPin) {
+        writeStoredPracticePin(practiceShareLastToken, practiceShareLastPin);
+      }
+
       const urlInput = $("practice-share-url");
       if (urlInput) urlInput.value = url;
       renderPracticeShareQr(data, url);
       const leadBtn = $("practice-share-lets-practice");
       if (leadBtn) leadBtn.hidden = !practiceShareLastLeadUrl;
+
       const meta = $("practice-share-meta");
       if (meta) {
         const exp = data.expires_at
           ? new Date(data.expires_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
           : "";
-        const pinNote = practiceShareLastHadPin ? " · PIN protected — share the PIN separately" : "";
-        meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + pinNote;
+        meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + " · PIN protected — share the PIN separately";
       }
       const sub = $("practice-share-sub");
-      if (sub) sub.textContent = "Share this link or QR code in your choir group chat. Links expire 24 hours after you generate them.";
+      if (sub) {
+        sub.textContent = data.restored
+          ? "Your active practice link. Share the link or QR in your choir group chat."
+          : "Share this link or QR code in your choir group chat. Links expire Sunday at 11:59 PM (UTC), or sooner if you expire them.";
+      }
     }
 
     function openPracticeShareLead() {
@@ -31396,7 +32711,6 @@
       setPracticeShareFooterMode("loading");
       if (status) status.hidden = true;
       startPracticeShareLoadingAnim();
-      practiceShareLastHadPin = true;
       try {
         const songs = await collectPracticeShareSongs();
         if (!songs.length) {
@@ -31415,7 +32729,7 @@
           optional_pin: pinRaw,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
-        showPracticeShareResult(data);
+        showPracticeShareResult({ ...data, pin: pinRaw, mass_date: date });
       } catch (err) {
         stopPracticeShareLoadingAnim();
         if (loading) loading.hidden = true;
@@ -31446,13 +32760,26 @@
       }
     }
 
+    function startNewPracticeShareFromHistory() {
+      closePracticeShareHistoryModal();
+      openPracticeShareSectionsModal();
+    }
+
     function initPracticeShareUi() {
       [
-        ["btn-practice-share", () => openPracticeShareModal()],
-        ["btn-practice-share-mobile", () => openPracticeShareModal()],
-        ["btn-practice-share-toolbar", () => openPracticeShareModal()],
-        ["btn-practice-share-wizard", () => openPracticeShareModal()],
-        ["btn-home-practice-share", () => { openPracticeShareSectionsModal(); }],
+        ["btn-practice-share", () => openPracticeShareHistoryModal()],
+        ["btn-practice-share-mobile", () => openPracticeShareHistoryModal()],
+        ["btn-practice-share-toolbar", () => openPracticeShareHistoryModal()],
+        ["btn-practice-share-wizard", () => openPracticeShareHistoryModal()],
+        ["btn-home-practice-share", () => openPracticeShareHistoryModal()],
+        ["practice-share-history-backdrop", closePracticeShareHistoryModal],
+        ["practice-share-history-close", closePracticeShareHistoryModal],
+        ["practice-share-history-cancel", closePracticeShareHistoryModal],
+        ["practice-share-history-new", startNewPracticeShareFromHistory],
+        ["practice-share-expired-backdrop", () => closePracticeShareExpiredModal({ reopenHistory: true })],
+        ["practice-share-expired-close", () => closePracticeShareExpiredModal({ reopenHistory: true })],
+        ["practice-share-expired-back", () => closePracticeShareExpiredModal({ reopenHistory: true })],
+        ["practice-share-back", backToPracticeShareHistory],
         ["practice-share-sections-backdrop", closePracticeShareSectionsModal],
         ["practice-share-sections-close", closePracticeShareSectionsModal],
         ["practice-share-sections-cancel", closePracticeShareSectionsModal],
@@ -31466,6 +32793,8 @@
         if (el) el.addEventListener("click", fn);
       });
       initPracticeShareBottomNavGestures();
+      const historyList = $("practice-share-history-list");
+      if (historyList) historyList.addEventListener("click", onPracticeShareHistoryClick);
       $("practice-share-generate") && $("practice-share-generate").addEventListener("click", () => {
         createPracticeShareLink();
       });
@@ -33107,6 +34436,46 @@
       return el.value || next;
     }
 
+    /** Email CTAs: /sign-in?redirect_url=/mass/builder?date=…&intent=generate|practice-share */
+    let emailDeepLinkConsumed = false;
+    function consumeEmailDeepLinkIntent() {
+      if (emailDeepLinkConsumed) return;
+      if (normalizeRoute(window.location.pathname) !== "/mass/builder") return;
+      const params = new URLSearchParams(window.location.search);
+      const intent = (params.get("intent") || "").trim().toLowerCase();
+      const dateParam = (params.get("date") || "").trim();
+      if (!intent && !dateParam) return;
+      emailDeepLinkConsumed = true;
+
+      if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+        const el = $("mass-date");
+        if (el && el.value !== dateParam) {
+          el.value = dateParam;
+          if ($("poster-mass-date")) $("poster-mass-date").value = dateParam;
+          if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+          try { loadFlowData(true); } catch (_e) { /* ignore */ }
+        }
+      }
+
+      params.delete("intent");
+      params.delete("date");
+      const qs = params.toString();
+      try {
+        history.replaceState({}, "", "/mass/builder" + (qs ? "?" + qs : ""));
+      } catch (_e2) { /* ignore */ }
+
+      if (intent === "generate") {
+        if (window.MassWizard && window.MassWizard.setStep) window.MassWizard.setStep(7);
+        notify("Generate your Mass PowerPoint when ready.", "info");
+      } else if (intent === "practice-share") {
+        if (window.MassWizard && window.MassWizard.setStep) window.MassWizard.setStep(5);
+        setTimeout(() => {
+          try { openPracticeShareModal({}); } catch (_e3) { /* ignore */ }
+        }, 350);
+      }
+    }
+
     let churchMembershipState = {
       membership_status: "draft",
       community_name_locked: false,
@@ -33139,15 +34508,32 @@
     }
     let pendingLogoUploadFile = null;
     let currentLogoPreviewUrl = "";
-
+    let currentAvatarPreviewUrl = "";
     let logoPreviewObjectUrl = "";
+    let avatarPreviewObjectUrl = "";
+    let imagePreviewKind = "logo"; // "logo" | "avatar"
 
-    async function resolvePrivateImageUrl(url) {
+    /** Safe src for <img> — never append query params to blob:/data:/signed URLs. */
+    function displayImageSrc(url) {
+      const src = String(url || "").trim();
+      if (!src) return "";
+      if (src.startsWith("blob:") || src.startsWith("data:")) return src;
+      if (src.includes("/storage/v1/object/sign/") || /[?&]token=/.test(src)) return src;
+      return src + (src.includes("?") ? "&" : "?") + "t=" + Date.now();
+    }
+
+    async function resolvePrivateImageUrl(url, kind) {
       if (!url) return "";
       if (!isPrivateFileUrl(url)) return url;
       const res = await authorizedFetch(url);
       if (!res.ok) return "";
       const blob = await res.blob();
+      const slot = kind === "avatar" ? "avatar" : "logo";
+      if (slot === "avatar") {
+        if (avatarPreviewObjectUrl) URL.revokeObjectURL(avatarPreviewObjectUrl);
+        avatarPreviewObjectUrl = URL.createObjectURL(blob);
+        return avatarPreviewObjectUrl;
+      }
       if (logoPreviewObjectUrl) URL.revokeObjectURL(logoPreviewObjectUrl);
       logoPreviewObjectUrl = URL.createObjectURL(blob);
       return logoPreviewObjectUrl;
@@ -33161,9 +34547,8 @@
       if (logoUrl) {
         currentLogoPreviewUrl = logoUrl;
         const applySrc = (src) => {
-          const bust = src + (src.includes("?") ? "&" : "?") + "t=" + Date.now();
           if (img) {
-            img.src = bust;
+            img.src = displayImageSrc(src);
             img.hidden = false;
           }
           if (ph) ph.hidden = true;
@@ -33171,7 +34556,7 @@
           btn.setAttribute("aria-label", "Preview church logo");
         };
         if (isPrivateFileUrl(logoUrl)) {
-          resolvePrivateImageUrl(logoUrl).then((src) => {
+          resolvePrivateImageUrl(logoUrl, "logo").then((src) => {
             if (src && currentLogoPreviewUrl === logoUrl) applySrc(src);
           });
         } else {
@@ -33193,17 +34578,93 @@
       }
     }
 
-    async function openLogoPreviewModal() {
-      if (!currentLogoPreviewUrl) return;
+    function updateProfileAvatar(avatarUrl) {
+      const btn = $("profile-avatar-btn");
+      const img = $("profile-avatar-img");
+      const ph = $("profile-avatar-placeholder");
+      if (avatarUrl) {
+        currentAvatarPreviewUrl = avatarUrl;
+        const applySrc = (src) => {
+          if (img) {
+            img.src = displayImageSrc(src);
+            img.hidden = false;
+          }
+          if (ph) ph.hidden = true;
+          if (btn) {
+            btn.disabled = false;
+            btn.setAttribute("aria-label", "Preview profile picture");
+          }
+        };
+        if (isPrivateFileUrl(avatarUrl)) {
+          resolvePrivateImageUrl(avatarUrl, "avatar").then((src) => {
+            if (src && currentAvatarPreviewUrl === avatarUrl) applySrc(src);
+          });
+        } else {
+          applySrc(avatarUrl);
+        }
+      } else {
+        currentAvatarPreviewUrl = "";
+        if (avatarPreviewObjectUrl) {
+          URL.revokeObjectURL(avatarPreviewObjectUrl);
+          avatarPreviewObjectUrl = "";
+        }
+        if (img) {
+          img.hidden = true;
+          img.removeAttribute("src");
+        }
+        if (ph) {
+          ph.hidden = false;
+          const auth = window.VerbumAuth;
+          const user = auth && auth.getUser ? auth.getUser() : null;
+          const initial = ((auth && auth.getUserFirstName && auth.getUserFirstName(user)) || (user && user.email) || "?").charAt(0).toUpperCase();
+          ph.textContent = initial || "?";
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.setAttribute("aria-label", "Change profile picture");
+        }
+      }
+      if (window.VerbumAuth && typeof window.VerbumAuth.setAvatarUrl === "function") {
+        window.VerbumAuth.setAvatarUrl(avatarUrl || "");
+      }
+      if (typeof updateAccountMenuDisplay === "function") updateAccountMenuDisplay();
+    }
+
+    function syncSettingsAccountPanel() {
+      const auth = window.VerbumAuth;
+      const user = auth && auth.getUser ? auth.getUser() : null;
+      const profile = auth && auth.getProfile ? auth.getProfile() : null;
+      const nameEl = $("settings-account-name");
+      const emailEl = $("settings-account-email");
+      const first = (auth && auth.getUserFirstName ? auth.getUserFirstName(user) : "") || "";
+      const last = (profile && profile.last_name) || "";
+      const full = [first, last].filter(Boolean).join(" ").trim();
+      const email = (profile && profile.email) || (user && user.email) || "";
+      if (nameEl) nameEl.innerHTML = full ? "<strong>" + escapeHtml(full) + "</strong>" : "<strong>Signed in</strong>";
+      if (emailEl) emailEl.textContent = email || "—";
+      const avatarUrl = (auth && auth.getAvatarUrl ? auth.getAvatarUrl() : "") || (profile && profile.avatar_url) || "";
+      if (avatarUrl && avatarUrl !== currentAvatarPreviewUrl) {
+        updateProfileAvatar(avatarUrl);
+      } else if (!avatarUrl && !currentAvatarPreviewUrl) {
+        updateProfileAvatar("");
+      }
+    }
+
+    async function openLogoPreviewModal(kind) {
+      const previewKind = kind === "avatar" ? "avatar" : "logo";
+      imagePreviewKind = previewKind;
+      const sourceUrl = previewKind === "avatar" ? currentAvatarPreviewUrl : currentLogoPreviewUrl;
+      if (!sourceUrl) return;
+      const titleEl = $("logo-preview-title");
       const img = $("logo-preview-modal-img");
+      if (titleEl) titleEl.textContent = previewKind === "avatar" ? "Profile picture" : "Church logo";
       if (img) {
-        let src = currentLogoPreviewUrl;
-        if (isPrivateFileUrl(currentLogoPreviewUrl)) {
-          src = await resolvePrivateImageUrl(currentLogoPreviewUrl);
+        img.alt = previewKind === "avatar" ? "Profile picture preview" : "Church logo preview";
+        let src = sourceUrl;
+        if (isPrivateFileUrl(sourceUrl)) {
+          src = await resolvePrivateImageUrl(sourceUrl, previewKind);
         }
-        if (src) {
-          img.src = src + (src.includes("?") ? "&" : "?") + "t=" + Date.now();
-        }
+        if (src) img.src = displayImageSrc(src);
       }
       setUiOverlayOpen($("logo-preview-modal"), true);
     }
@@ -33484,10 +34945,10 @@
         if (hasLogo) {
           let src = currentLogoPreviewUrl;
           if (isPrivateFileUrl(currentLogoPreviewUrl)) {
-            src = await resolvePrivateImageUrl(currentLogoPreviewUrl);
+            src = await resolvePrivateImageUrl(currentLogoPreviewUrl, "logo");
           }
           if (src) {
-            modalImg.src = src + (src.includes("?") ? "&" : "?") + "t=" + Date.now();
+            modalImg.src = displayImageSrc(src);
             modalImg.hidden = false;
             modalPh.hidden = true;
           } else {
@@ -34221,10 +35682,16 @@
       document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
         link.classList.toggle("active", link.getAttribute("data-sa-panel") === saState.panel);
       });
+      document.querySelectorAll(".sa-mobile-nav__btn[data-sa-panel]").forEach((btn) => {
+        btn.classList.toggle("active", btn.getAttribute("data-sa-panel") === saState.panel);
+      });
       document.querySelectorAll(".sa-panel[data-sa-panel]").forEach((panel) => {
         const on = panel.getAttribute("data-sa-panel") === saState.panel;
         panel.hidden = !on;
       });
+      syncSaTopbar(saState.panel);
+      scrollSaMobileNavToActive();
+      scrollSaPanelToTop();
       if (saState.panel === "dashboard") loadSaDashboard();
       else if (saState.panel === "analytics") loadSaAnalytics();
       else if (saState.panel === "parishes") { loadSaParishes(); saPopulateMergeSelects(); }
@@ -34240,6 +35707,69 @@
       else if (saState.panel === "system-storage") loadSaStorageBrowser();
       else if (saState.panel === "system-flags") loadSaFeatureFlags();
       else if (saState.panel === "system-maintenance") loadSaHealth();
+    }
+
+    function scrollSaPanelToTop() {
+      const dash = document.querySelector(".dashboard");
+      const target = $("sa-topbar") || $("superadmin-page");
+      if (!dash || !target) return;
+      const dashRect = dash.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const nextTop = dash.scrollTop + (targetRect.top - dashRect.top) - 4;
+      try {
+        dash.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+      } catch (_e) {
+        dash.scrollTop = Math.max(0, nextTop);
+      }
+    }
+
+    function syncSaTopbar(panelId) {
+      const panel = document.querySelector('.sa-panel[data-sa-panel="' + panelId + '"]');
+      const titleEl = $("sa-topbar-title");
+      const descEl = $("sa-topbar-desc");
+      const groupEl = $("sa-topbar-group");
+      if (!panel) return;
+      const head = panel.querySelector(".flow-bento-cell__head .home-card-head__text");
+      const h3 = head && head.querySelector("h3");
+      const p = head && head.querySelector("p");
+      if (titleEl) titleEl.textContent = (h3 && h3.textContent.trim()) || panelId;
+      if (descEl) descEl.textContent = (p && p.textContent.trim()) || "";
+      const link = document.querySelector('.sa-nav-link[data-sa-panel="' + panelId + '"]');
+      const group = link && link.closest(".sa-nav-group");
+      const label = group && group.querySelector(".sa-nav-group__label span");
+      if (groupEl) groupEl.textContent = (label && label.textContent.trim()) || "";
+    }
+
+    function buildSaMobileNav() {
+      const host = $("sa-mobile-nav");
+      if (!host || host.dataset.built === "1") return;
+      host.dataset.built = "1";
+      const frag = document.createDocumentFragment();
+      document.querySelectorAll("#sa-sidebar-nav .sa-nav-link[data-sa-panel]").forEach((link) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sa-mobile-nav__btn";
+        btn.setAttribute("data-sa-panel", link.getAttribute("data-sa-panel"));
+        const label = Array.from(link.childNodes)
+          .filter((n) => n.nodeType === 3)
+          .map((n) => n.textContent.trim())
+          .join(" ")
+          .trim() || link.textContent.trim();
+        btn.textContent = label.replace(/\s+/g, " ").trim();
+        btn.addEventListener("click", () => showSaPanel(btn.getAttribute("data-sa-panel")));
+        frag.appendChild(btn);
+      });
+      host.appendChild(frag);
+    }
+
+    function scrollSaMobileNavToActive() {
+      const host = $("sa-mobile-nav");
+      if (!host) return;
+      const active = host.querySelector(".sa-mobile-nav__btn.active");
+      if (active && active.scrollIntoView) {
+        try { active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }
+        catch (_e) { /* ignore */ }
+      }
     }
 
     function saFormatStat(value, fallback) {
@@ -34501,59 +36031,72 @@
         const meta = saPagerMeta(data.total, data.page || saState.users.page, data.per_page || perPage);
         saState.users.page = meta.page;
         const parishOptions = saState.parishOptions || [];
-        const rows = items.map((row) => {
-          const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || "—";
-          const uid = encodeURIComponent(row.id || "");
-          const deleteBtn = row.can_delete
-            ? "<button type=\"button\" class=\"secondary sa-btn-delete-user\" data-user-id=\"" + uid + "\" data-user-email=\"" + escapeHtml(row.email || "") + "\">Delete</button>"
-            : "<span class=\"muted\">—</span>";
-          let roleCell = escapeHtml(row.parish_role || "—");
-          if (row.can_set_parish_role) {
-            const parishSelect =
-              "<select class=\"sa-user-parish-pick\" data-user-id=\"" + uid + "\" style=\"max-width:160px;margin-right:6px;\">" +
-              "<option value=\"\">" + (row.parish_id ? "Keep / change parish…" : "Assign parish…") + "</option>" +
-              parishOptions.map((p) => (
-                "<option value=\"" + escapeHtml(p.id || "") + "\"" +
-                (String(p.id || "") === String(row.parish_id || "") ? " selected" : "") +
-                ">" + escapeHtml(p.community_name || "Parish") + "</option>"
-              )).join("") +
-              "</select>";
-            roleCell =
-              parishSelect +
-              "<select class=\"sa-user-parish-role\" data-user-id=\"" + uid + "\" data-parish-id=\"" + escapeHtml(row.parish_id || "") + "\" style=\"max-width:110px;\">" +
-              "<option value=\"president\"" + (row.parish_role === "president" ? " selected" : "") + ">President</option>" +
-              "<option value=\"media\"" + (row.parish_role === "media" ? " selected" : "") + ">Media</option>" +
-              "</select> " +
-              "<button type=\"button\" class=\"secondary sa-btn-save-parish-role\" data-user-id=\"" + uid + "\">Save</button>";
-          }
-          return (
-            "<tr><td>" + escapeHtml(name) + "</td>" +
-            "<td>" + escapeHtml(row.email || "—") + "</td>" +
-            "<td>" + escapeHtml(row.phone || "—") + "</td>" +
-            "<td>" + escapeHtml(row.parish_name || "—") + "</td>" +
-            "<td>" + roleCell + "</td>" +
-            "<td>" + escapeHtml(row.role || "member") + "</td>" +
-            "<td>" + escapeHtml(row.membership_status || "—") + "</td>" +
-            "<td>" + (row.online
-              ? "<span class=\"status ok\">Online</span>"
-              : "<span class=\"muted\">Offline</span>") + "</td>" +
-            "<td class=\"muted\" title=\"" + escapeHtml(row.last_seen_at || "") + "\">" +
-              escapeHtml(saFormatLocalDateTime(row.last_seen_at)) +
-            "</td>" +
-            "<td>" + escapeHtml(row.location_label || "—") +
-              (row.language_hint
-                ? "<div class=\"muted\" style=\"font-size:0.78rem;\">Lang: " + escapeHtml(row.language_hint) + "</div>"
-                : "") +
-            "</td>" +
-            "<td class=\"muted\">" + escapeHtml(saFormatLocalDate(row.created_at)) + "</td>" +
-            "<td>" + deleteBtn + "</td></tr>"
-          );
-        });
-        wrap.innerHTML = saRenderTable(
-          ["Name", "Email", "Phone", "Parish", "Parish role", "Platform role", "Status", "Presence", "Last seen", "Location", "Joined", "Actions"],
-          rows,
-          "No users found."
-        );
+        if (!items.length) {
+          wrap.innerHTML = "<p class=\"sa-empty\">No users found.</p>";
+        } else {
+          const rows = items.map((row) => {
+            const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || "—";
+            const uid = encodeURIComponent(row.id || "");
+            const metaBits = [];
+            if (row.parish_name) metaBits.push("<span>" + escapeHtml(row.parish_name) + "</span>");
+            if (row.parish_role) metaBits.push("<span>" + escapeHtml(row.parish_role) + "</span>");
+            if (row.role) metaBits.push("<span>" + escapeHtml(row.role) + "</span>");
+            if (row.membership_status) metaBits.push("<span>" + escapeHtml(row.membership_status) + "</span>");
+            if (row.location_label) metaBits.push("<span>" + escapeHtml(row.location_label) + "</span>");
+            if (row.language_hint) metaBits.push("<span>" + escapeHtml(row.language_hint) + "</span>");
+            if (row.phone) metaBits.push("<span>" + escapeHtml(row.phone) + "</span>");
+            if (row.last_seen_at) {
+              metaBits.push(
+                "<span title=\"" + escapeHtml(row.last_seen_at || "") + "\">Seen " +
+                escapeHtml(saFormatLocalDateTime(row.last_seen_at)) + "</span>"
+              );
+            }
+            let actions = "";
+            if (row.can_set_parish_role) {
+              actions +=
+                "<select class=\"sa-user-parish-pick\" data-user-id=\"" + uid + "\" aria-label=\"Assign parish\">" +
+                "<option value=\"\">" + (row.parish_id ? "Parish…" : "Assign…") + "</option>" +
+                parishOptions.map((p) => (
+                  "<option value=\"" + escapeHtml(p.id || "") + "\"" +
+                  (String(p.id || "") === String(row.parish_id || "") ? " selected" : "") +
+                  ">" + escapeHtml(p.community_name || "Parish") + "</option>"
+                )).join("") +
+                "</select>" +
+                "<select class=\"sa-user-parish-role\" data-user-id=\"" + uid + "\" data-parish-id=\"" +
+                  escapeHtml(row.parish_id || "") + "\" aria-label=\"Parish role\">" +
+                "<option value=\"president\"" + (row.parish_role === "president" ? " selected" : "") + ">President</option>" +
+                "<option value=\"media\"" + (row.parish_role === "media" ? " selected" : "") + ">Media</option>" +
+                "</select>" +
+                "<button type=\"button\" class=\"secondary sa-btn-save-parish-role\" data-user-id=\"" + uid + "\">Save</button>";
+            }
+            if (row.can_delete) {
+              actions +=
+                "<button type=\"button\" class=\"secondary sa-btn-delete-user\" data-user-id=\"" + uid +
+                "\" data-user-email=\"" + escapeHtml(row.email || "") + "\">Delete</button>";
+            }
+            return (
+              "<li class=\"sa-user-row\">" +
+                "<div class=\"sa-user-row__main\">" +
+                  "<div class=\"sa-user-row__title\">" +
+                    "<span class=\"sa-user-row__name\">" + escapeHtml(name) + "</span>" +
+                    "<span class=\"sa-user-row__email\">" + escapeHtml(row.email || "—") + "</span>" +
+                  "</div>" +
+                  (metaBits.length ? "<div class=\"sa-user-row__meta\">" + metaBits.join("") + "</div>" : "") +
+                "</div>" +
+                "<div class=\"sa-user-row__side\">" +
+                  "<span class=\"sa-user-presence" + (row.online ? " is-online" : "") + "\">" +
+                    (row.online ? "Online" : "Offline") +
+                  "</span>" +
+                  (row.created_at
+                    ? "<span class=\"sa-user-row__joined\">Joined " + escapeHtml(saFormatLocalDate(row.created_at)) + "</span>"
+                    : "") +
+                  (actions ? "<div class=\"sa-user-row__actions\">" + actions + "</div>" : "") +
+                "</div>" +
+              "</li>"
+            );
+          }).join("");
+          wrap.innerHTML = "<ul class=\"sa-user-list\" aria-label=\"Users\">" + rows + "</ul>";
+        }
         wrap.querySelectorAll(".sa-btn-delete-user").forEach((btn) => {
           btn.addEventListener("click", () => deleteSaUser(btn));
         });
@@ -34570,7 +36113,7 @@
     async function saveSaUserParishRole(btn) {
       const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
       if (!uid) return;
-      const row = btn.closest("tr");
+      const row = btn.closest(".sa-user-row") || btn.closest("tr");
       const roleEl = row && row.querySelector(".sa-user-parish-role");
       const parishEl = row && row.querySelector(".sa-user-parish-pick");
       const role = roleEl ? roleEl.value : "media";
@@ -35867,15 +37410,7 @@
     function initSaNav() {
       if (saState.initialized) return;
       saState.initialized = true;
-      document.querySelectorAll(".sa-nav-group__toggle").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const group = btn.closest(".sa-nav-group");
-          if (!group) return;
-          const open = group.getAttribute("data-open") !== "false";
-          group.setAttribute("data-open", open ? "false" : "true");
-          btn.setAttribute("aria-expanded", open ? "false" : "true");
-        });
-      });
+      buildSaMobileNav();
       document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
         link.addEventListener("click", () => showSaPanel(link.getAttribute("data-sa-panel")));
       });
@@ -38058,6 +39593,7 @@
       { id: "page-calendar", label: "Liturgical Calendar", hint: "Page", group: "Pages", route: "/mass/calendar", keywords: ["calendar", "liturgical", "readings"] },
       { id: "page-theme", label: "Theme Lab", hint: "Page", group: "Pages", route: "/design/theme-lab", keywords: ["design", "theme", "style", "color"] },
       { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
+      { id: "page-account", label: "Account", hint: "Page", group: "Pages", route: "/settings/account", keywords: ["account", "profile", "picture", "avatar", "photo"] },
       { id: "page-church", label: "Church Profile", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },
       { id: "page-appearance", label: "Appearance", hint: "Page", group: "Pages", route: "/settings/app", keywords: ["appearance", "dark", "light", "theme", "settings"] },
       { id: "act-event", label: "Create event", hint: "Action", group: "Actions", action: "create-event", keywords: ["event", "create", "schedule"] },
@@ -42723,7 +44259,171 @@
     })();
 
     $("church-logo-avatar") && $("church-logo-avatar").addEventListener("click", () => {
-      if (currentLogoPreviewUrl) openLogoPreviewModal();
+      if (currentLogoPreviewUrl) openLogoPreviewModal("logo");
+    });
+
+    function setProfileAvatarMenuOpen(open) {
+      const menu = $("profile-avatar-menu");
+      const addBtn = $("profile-avatar-add");
+      if (!menu || !addBtn) return;
+      if (open) {
+        menu.hidden = false;
+        addBtn.setAttribute("aria-expanded", "true");
+      } else {
+        menu.hidden = true;
+        addBtn.setAttribute("aria-expanded", "false");
+      }
+    }
+
+    function toggleProfileAvatarMenu() {
+      const menu = $("profile-avatar-menu");
+      setProfileAvatarMenuOpen(!!(menu && menu.hidden));
+    }
+
+    function hashStringToHue(str) {
+      let h = 0;
+      const s = String(str || "verbum");
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return h % 360;
+    }
+
+    function buildGeneratedAvatarFile() {
+      const auth = window.VerbumAuth;
+      const user = auth && auth.getUser ? auth.getUser() : null;
+      const profile = auth && auth.getProfile ? auth.getProfile() : null;
+      const first = (auth && auth.getUserFirstName ? auth.getUserFirstName(user) : "") || "";
+      const email = (profile && profile.email) || (user && user.email) || "";
+      const seed = email || first || (user && user.id) || "verbum";
+      const initial = (first || email || "?").charAt(0).toUpperCase();
+      const hue = hashStringToHue(seed + ":" + Date.now().toString(36).slice(-3));
+      const size = 256;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, "hsl(" + hue + " 42% 42%)");
+      grad.addColorStop(1, "hsl(" + ((hue + 28) % 360) + " 48% 28%)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = "rgba(255,255,255,0.12)";
+      ctx.beginPath();
+      ctx.arc(size * 0.78, size * 0.22, size * 0.34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 " + Math.round(size * 0.42) + "px Georgia, 'Times New Roman', serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(initial, size / 2, size / 2 + 4);
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Could not generate avatar."));
+            return;
+          }
+          resolve(new File([blob], "generated-avatar.png", { type: "image/png" }));
+        }, "image/png");
+      });
+    }
+
+    async function uploadProfileAvatar(file) {
+      const statusEl = $("avatar-status");
+      const addBtn = $("profile-avatar-add");
+      if (!file) {
+        if (statusEl) {
+          statusEl.textContent = "Please select a photo.";
+          statusEl.className = "status error";
+        }
+        return;
+      }
+      if (statusEl) {
+        statusEl.textContent = "Saving profile photo…";
+        statusEl.className = "status";
+      }
+      if (addBtn) addBtn.disabled = true;
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const headers = window.VerbumAuth && window.VerbumAuth.getAuthHeaders
+          ? await window.VerbumAuth.getAuthHeaders()
+          : {};
+        const res = await fetch("/api/upload-avatar", { method: "POST", headers, body: formData });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(
+            typeof data.detail === "string" ? data.detail : (data.message || "Upload failed")
+          );
+        }
+        const url = data && data.avatar_url ? String(data.avatar_url) : "";
+        updateProfileAvatar(url);
+        if (statusEl) {
+          statusEl.textContent = (data && data.message) || "Profile photo saved.";
+          statusEl.className = "status ok";
+        }
+        if ($("profile-avatar-file")) $("profile-avatar-file").value = "";
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || "Could not upload profile photo.";
+          statusEl.className = "status error";
+        }
+      } finally {
+        if (addBtn) addBtn.disabled = false;
+      }
+    }
+
+    $("profile-avatar-btn") && $("profile-avatar-btn").addEventListener("click", () => {
+      if (currentAvatarPreviewUrl) openLogoPreviewModal("avatar");
+      else toggleProfileAvatarMenu();
+    });
+
+    $("profile-avatar-add") && $("profile-avatar-add").addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleProfileAvatarMenu();
+    });
+
+    $("profile-avatar-menu") && $("profile-avatar-menu").addEventListener("click", async (e) => {
+      const item = e.target.closest("[data-avatar-action]");
+      if (!item) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const action = item.getAttribute("data-avatar-action");
+      setProfileAvatarMenuOpen(false);
+      if (action === "upload") {
+        const input = $("profile-avatar-file");
+        if (input) input.click();
+        return;
+      }
+      if (action === "generate") {
+        const statusEl = $("avatar-status");
+        try {
+          if (statusEl) {
+            statusEl.textContent = "Generating avatar…";
+            statusEl.className = "status";
+          }
+          const file = await buildGeneratedAvatarFile();
+          await uploadProfileAvatar(file);
+        } catch (err) {
+          if (statusEl) {
+            statusEl.textContent = (err && err.message) || "Could not generate avatar.";
+            statusEl.className = "status error";
+          }
+        }
+      }
+    });
+
+    $("profile-avatar-file") && $("profile-avatar-file").addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (file) uploadProfileAvatar(file);
+    });
+
+    document.addEventListener("click", (e) => {
+      const wrap = $("profile-avatar-wrap");
+      if (!wrap || wrap.contains(e.target)) return;
+      setProfileAvatarMenuOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setProfileAvatarMenuOpen(false);
     });
 
     $("btn-upload-logo").addEventListener("click", () => {
@@ -43751,6 +45451,7 @@
         updateHomeMassWelcome();
         maybeShowMobileWelcomeModal();
         maybeShowSongsWhatsNewModal();
+        if (typeof syncSettingsAccountPanel === "function") syncSettingsAccountPanel();
         if (memberApiAvailable()) {
           loadSongCatalog();
           refreshAiImageQuotaHint();

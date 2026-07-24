@@ -225,5 +225,145 @@
     ],
     "optional_pin": "v1:8ffd83c302134e8d:e2190bd5eed2843c27be5e0872b1da55a57b101ccc8c7539109e514959cc3bb8",
     "expires_at": "2026-07-23T04:43:54.260853+00:00"
+  },
+  {
+    "id": "fa0db49d61a142f2b8a3b10d256582c3",
+    "created_at": "2026-07-24T18:01:35.702009+00:00",
+    "revoked_at": null,
+    "token": "D9e3AfdrZ4Irjtvi8kl3FVYAH51C2hCT",
+    "parish_id": "parish-1",
+    "created_by": "user-test-1",
+    "mass_date": "2026-07-26",
+    "mass_title": "Test Mass",
+    "parish_name": "Test Parish",
+    "celebrant": "Fr. Test",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "h1",
+        "title": "Amazing Grace",
+        "author": "",
+        "language": "en",
+        "lyrics": "Verse\nAmazing Grace How Sweet The Sound",
+        "blocks": [
+          {
+            "id": "b0-dc6bdb58",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "Amazing Grace How Sweet The Sound",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:5b41cccabe5e8a1d:0562f7b74f52c71e7f77503c1b80a0c7a079bfe2420e28d67a419a3f9475ab08",
+    "expires_at": "2026-07-25T18:01:35.701863+00:00"
+  },
+  {
+    "id": "5a5994c74f46432b9086f137f246c86f",
+    "created_at": "2026-07-24T18:18:22.531821+00:00",
+    "revoked_at": null,
+    "token": "n10BQD1qMRvC_pbrKcN4oL7SbI3rcTXy",
+    "parish_id": "p1",
+    "created_by": "hist-user",
+    "mass_date": "2026-07-26",
+    "mass_title": "17th Sunday",
+    "parish_name": "Test",
+    "celebrant": "",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "h1",
+        "title": "Amazing Grace",
+        "author": "",
+        "language": "en",
+        "lyrics": "Verse\nAmazing Grace How Sweet The Sound",
+        "blocks": [
+          {
+            "id": "b0-6f8c021f",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "Amazing Grace How Sweet The Sound",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:036a5e46d10e1cc8:27ccb8f3c765c51cafd943eead8df7dec9a7d5cb60e02c5a2ac46b429742603f",
+    "expires_at": "2026-07-24T18:13:22.533981+00:00"
+  },
+  {
+    "id": "49052bcc681d4e1fa6308f45bd30e604",
+    "created_at": "2026-07-24T18:18:22.549651+00:00",
+    "revoked_at": null,
+    "token": "UP2U3-yBGcWWL6Mcw7brjUyNDfzq4Y2D",
+    "parish_id": "p1",
+    "created_by": "hist-user",
+    "mass_date": "2026-07-27",
+    "mass_title": "Test",
+    "parish_name": "T",
+    "celebrant": "",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "h2",
+        "title": "Song Two",
+        "author": "",
+        "language": "en",
+        "lyrics": "Verse\nLine",
+        "blocks": [
+          {
+            "id": "b0-e04ef90e",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "Line",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:1cbfdf5cfbc86921:48ac22c71a5cbf8232296a716b55460fb2f475a4f6442c230dd6e81c6bf279bd",
+    "expires_at": "2026-07-25T18:18:22.549598+00:00"
+  },
+  {
+    "id": "797ff8307200468da2a02ec40cd51fcd",
+    "created_at": "2026-07-24T18:28:37.764558+00:00",
+    "revoked_at": "2026-07-24T18:28:37.766191+00:00",
+    "token": "0nOufkKtlOLUWLRMwu7-jrXHaVwFg7VF",
+    "parish_id": "p1",
+    "created_by": "u1",
+    "mass_date": "2026-07-26",
+    "mass_title": "T",
+    "parish_name": "P",
+    "celebrant": "",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "h1",
+        "title": "Song",
+        "author": "",
+        "language": "en",
+        "lyrics": "Verse\nHi",
+        "blocks": [
+          {
+            "id": "b0-2d68981d",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "Hi",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:953c0b7f460883a1:f981bb48418b3717202d0cd2c484fb64bb45519c18c996d4a95adf37fd2f8398",
+    "expires_at": "2026-07-25T18:28:37.764369+00:00"
   }
 ]

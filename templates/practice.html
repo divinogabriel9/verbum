@@ -702,12 +702,40 @@
       const token = {{ token|tojson }};
       const leadTokenFromQuery = {{ lead_token|tojson }};
       const LEAD_STORE_KEY = "lf-practice-lead:" + String(token || "");
+      const DEVICE_STORE_KEY = "lf-practice-device-id";
       let leadToken = String(leadTokenFromQuery || "").trim();
       if (leadToken) {
         try { sessionStorage.setItem(LEAD_STORE_KEY, leadToken); } catch (_e) { /* ignore */ }
       } else {
         try { leadToken = String(sessionStorage.getItem(LEAD_STORE_KEY) || "").trim(); } catch (_e2) { leadToken = ""; }
       }
+
+      function getPracticeDeviceId() {
+        try {
+          let id = String(localStorage.getItem(DEVICE_STORE_KEY) || "").trim();
+          if (id.length >= 16) return id;
+          if (window.crypto && typeof window.crypto.randomUUID === "function") {
+            id = window.crypto.randomUUID().replace(/-/g, "") + window.crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+          } else {
+            id = "d" + String(Date.now()) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+          }
+          id = id.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
+          localStorage.setItem(DEVICE_STORE_KEY, id);
+          return id;
+        } catch (_e) {
+          return "";
+        }
+      }
+
+      function practiceFetchHeaders(extra) {
+        const headers = Object.assign({}, extra || {});
+        const deviceId = getPracticeDeviceId();
+        if (deviceId) headers["X-Practice-Device-Id"] = deviceId;
+        return headers;
+      }
+
+      const fetchOpts = { credentials: "same-origin", headers: practiceFetchHeaders() };
+
       const root = document.getElementById("practice-root");
       const scroll = document.getElementById("practice-scroll");
       const top = document.getElementById("practice-top");
@@ -739,8 +767,6 @@
       const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const TAB_EXIT_MS = 120;
       const TAB_ENTER_MS = 200;
-
-      const fetchOpts = { credentials: "same-origin" };
 
       function esc(s) {
         return String(s || "")
@@ -1644,7 +1670,7 @@
           const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lyrics", {
             method: "POST",
             credentials: "same-origin",
-            headers: { "Content-Type": "application/json" },
+            headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ lead_token: leadToken, songs: songs }),
           });
           const data = await res.json().catch(function () { return {}; });
@@ -1726,7 +1752,7 @@
             const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lead", {
               method: "POST",
               credentials: "same-origin",
-              headers: { "Content-Type": "application/json" },
+              headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify({ lead_token: leadToken }),
             });
             const data = await res.json().catch(function () { return {}; });
@@ -1735,15 +1761,19 @@
               return;
             }
             if (!res.ok) {
-              root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "Leader link is invalid or expired.") + '</p>';
+              // Wrong device / leaked lead URL: drop leader mode and fall through to guest PIN flow.
+              leadToken = "";
+              try { sessionStorage.removeItem(LEAD_STORE_KEY); } catch (_eClr) { /* ignore */ }
+              try {
+                window.history.replaceState({}, "", window.location.pathname);
+              } catch (_eHist) { /* ignore */ }
+            } else {
+              try {
+                window.history.replaceState({}, "", window.location.pathname);
+              } catch (_e) { /* ignore */ }
+              renderPractice(data);
               return;
             }
-            try {
-              const clean = window.location.pathname;
-              window.history.replaceState({}, "", clean);
-            } catch (_e) { /* ignore */ }
-            renderPractice(data);
-            return;
           }
 
           const res = await fetch("/api/practice/" + encodeURIComponent(token), fetchOpts);

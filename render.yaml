@@ -50,9 +50,30 @@ services:
         sync: false
       - key: ACCESS_REQUEST_TO
         value: divinogabriel76@gmail.com
+      # Email (Brevo API preferred; SMTP / Resend also work)
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_FROM
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: EMAIL_REMINDERS_ENABLED
+        value: "1"
+      - key: CRON_SECRET
         sync: false
       - key: APP_PUBLIC_URL
         sync: false

@@ -9,7 +9,7 @@ import os
 import secrets
 import time
 from datetime import datetime, timezone
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -108,6 +108,31 @@ def client_ip(request: Request) -> str:
     return client.host if client else "unknown"
 
 
+def normalize_device_id(raw: Optional[str]) -> str:
+    """Stable client device id (UUID-ish). Empty if missing/invalid."""
+    clean = "".join(ch for ch in str(raw or "").strip() if ch.isalnum() or ch in "-_")
+    if len(clean) < 16 or len(clean) > 80:
+        return ""
+    return clean
+
+
+def hash_device_id(raw: Optional[str]) -> str:
+    device = normalize_device_id(raw)
+    if not device:
+        return ""
+    return hashlib.sha256(device.encode("utf-8")).hexdigest()[:32]
+
+
+def practice_device_id_from_request(request: Request) -> str:
+    header = (
+        request.headers.get("x-practice-device-id")
+        or request.headers.get("x-device-id")
+        or ""
+    )
+    query = (request.query_params.get("device_id") or "").strip()
+    return normalize_device_id(header) or normalize_device_id(query)
+
+
 def is_unlocked(request: Request, token: str, share_expires_at: Any) -> bool:
     """Return True when this browser has a valid unlock cookie for the token."""
     tok = (token or "").strip()
@@ -154,29 +179,54 @@ def issue_unlock_cookie(request: Request, response: Response, token: str, share_
     )
 
 
-def issue_lead_token(token: str, share_expires_at: Any) -> str:
-    """Signed leader token — opens practice in edit mode without PIN."""
+def issue_lead_token(
+    token: str,
+    share_expires_at: Any,
+    *,
+    device_id: Optional[str] = None,
+) -> str:
+    """Signed leader token — opens practice in edit mode without PIN.
+
+    Bound to the creator device id so a leaked lead URL cannot be used on
+    another browser/device.
+    """
     tok = (token or "").strip()
+    device_hash = hash_device_id(device_id)
+    if not device_hash:
+        raise ValueError("A device id is required to issue a leader link.")
     share_exp = _parse_expires(share_expires_at)
     exp = int(share_exp.timestamp()) if share_exp else int(time.time()) + 3600
-    payload = f"lead|{tok}|{exp}"
+    payload = f"lead|{tok}|{exp}|{device_hash}"
     sig = hmac.new(_signing_secret(), payload.encode("utf-8"), "sha256").hexdigest()
     return f"{payload}|{sig}"
 
 
-def verify_lead_token(token: str, lead_token: str, share_expires_at: Any = None) -> bool:
+def verify_lead_token(
+    token: str,
+    lead_token: str,
+    share_expires_at: Any = None,
+    *,
+    device_id: Optional[str] = None,
+) -> bool:
     raw = (lead_token or "").strip()
     tok = (token or "").strip()
     if not raw or not tok:
         return False
+    parts = raw.split("|")
+    # New format: lead|token|exp|device_hash|sig
+    if len(parts) != 5:
+        return False
+    kind, cookie_token, exp_s, device_hash, sig = parts
     try:
-        kind, cookie_token, exp_s, sig = raw.split("|", 3)
         exp = int(exp_s)
     except ValueError:
         return False
     if kind != "lead" or cookie_token != tok:
         return False
-    payload = f"lead|{tok}|{exp}"
+    expected_device = hash_device_id(device_id)
+    if not expected_device or not hmac.compare_digest(device_hash, expected_device):
+        return False
+    payload = f"lead|{tok}|{exp}|{device_hash}"
     expected = hmac.new(_signing_secret(), payload.encode("utf-8"), "sha256").hexdigest()
     if not hmac.compare_digest(sig, expected):
         return False
@@ -228,6 +278,22 @@ def check_practice_share_create_allowed(request: Request, actor_key: str) -> Tup
     ip = client_ip(request)
     actor = (actor_key or "anon").strip()[:48]
     return check_rate_limit_key(f"practice:create:{actor}:{ip}", "practice_create")
+
+
+def check_practice_lead_allowed(request: Request, token: str, device_id: Optional[str] = None) -> Tuple[bool, int]:
+    """Leader API budget scoped to device + share token (leaked URL cannot burn unlimited quota anonymously)."""
+    tok = (token or "").strip()[:24]
+    device_hash = hash_device_id(device_id) or "nodevice"
+    ip = client_ip(request)
+    return check_rate_limit_key(f"practice:lead:{device_hash}:{tok}:{ip}", "practice_lead")
+
+
+def check_practice_lead_song_allowed(request: Request, token: str, device_id: Optional[str] = None) -> Tuple[bool, int]:
+    """Tighter budget for catalog lyric resolves (main theft vector)."""
+    tok = (token or "").strip()[:24]
+    device_hash = hash_device_id(device_id) or "nodevice"
+    ip = client_ip(request)
+    return check_rate_limit_key(f"practice:lead-song:{device_hash}:{tok}:{ip}", "practice_lead_song")
 
 
 def practice_no_store_headers() -> dict[str, str]:

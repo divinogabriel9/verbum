@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LOCAL_PATH = _PROJECT_ROOT / "data" / "choir_practice_shares.json"
-_DEFAULT_TTL_HOURS = 24
+_DEFAULT_TTL_HOURS = 24  # legacy fallback only
+_MAX_SHARE_TTL_DAYS = 7
 _MAX_SONGS = 24
 _MAX_LYRICS_LEN = 12000
 
@@ -75,6 +76,65 @@ def _normalize_pin(pin: Optional[str]) -> str:
     if len(digits) != 6:
         raise ValueError("A 6-digit PIN is required for practice shares.")
     return digits
+
+
+def generate_practice_pin() -> str:
+    """Cryptographically random 6-digit PIN (000000–999999)."""
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def _song_title_summaries(row: dict[str, Any]) -> list[dict[str, str]]:
+    snapshot = row.get("song_snapshot")
+    songs = snapshot if isinstance(snapshot, list) else []
+    out: list[dict[str, str]] = []
+    for song in songs:
+        if not isinstance(song, dict):
+            continue
+        title = str(song.get("title") or "").strip() or "Song"
+        out.append(
+            {
+                "title": title,
+                "slot_label": str(song.get("slot_label") or song.get("section") or "").strip(),
+                "section": str(song.get("section") or "").strip(),
+            }
+        )
+    return out
+
+
+def _share_status(row: dict[str, Any]) -> str:
+    if row.get("revoked_at"):
+        return "revoked"
+    if _row_live(row):
+        return "active"
+    return "expired"
+
+
+def _seconds_remaining(row: dict[str, Any]) -> int:
+    exp = _parse_expires(row.get("expires_at"))
+    if not exp:
+        return 0
+    return max(0, int((exp - _now()).total_seconds()))
+
+
+def _public_share_summary(row: dict[str, Any], *, include_songs: bool = True) -> dict[str, Any]:
+    songs = _song_title_summaries(row)
+    status = _share_status(row)
+    payload: dict[str, Any] = {
+        "ok": True,
+        "token": str(row.get("token") or "").strip(),
+        "status": status,
+        "mass_date": str(row.get("mass_date") or "").strip(),
+        "mass_title": str(row.get("mass_title") or "").strip(),
+        "parish_name": str(row.get("parish_name") or "").strip(),
+        "celebrant": str(row.get("celebrant") or "").strip(),
+        "expires_at": row.get("expires_at"),
+        "created_at": row.get("created_at"),
+        "song_count": len(songs),
+        "seconds_remaining": _seconds_remaining(row) if status == "active" else 0,
+    }
+    if include_songs:
+        payload["songs"] = songs
+    return payload
 
 
 _STRUCTURE_LABEL_RE = (
@@ -365,9 +425,34 @@ def _service_client():
 
 
 def _compute_expires_at(*, ttl_hours: int = _DEFAULT_TTL_HOURS) -> datetime:
-    """Expire a fixed number of hours after generation (not Mass date)."""
+    """Legacy helper — prefer _compute_expires_at_for_mass."""
     hours = max(1, min(int(ttl_hours), 24))
     return _now() + timedelta(hours=hours)
+
+
+def _sunday_on_or_after(day: date) -> date:
+    """Return the Sunday on or after ``day`` (Mon=0 … Sun=6)."""
+    return day + timedelta(days=(6 - day.weekday()) % 7)
+
+
+def _compute_expires_at_for_mass(mass_date: date) -> datetime:
+    """Expire at 23:59:59 UTC on the Mass week's Sunday, capped at 7 days from now.
+
+    If that Sunday is already past, use the following Sunday. Always at least 1 hour out.
+    """
+    now = _now()
+    sunday = _sunday_on_or_after(mass_date)
+    exp = datetime(sunday.year, sunday.month, sunday.day, 23, 59, 59, tzinfo=timezone.utc)
+    if exp <= now:
+        sunday = sunday + timedelta(days=7)
+        exp = datetime(sunday.year, sunday.month, sunday.day, 23, 59, 59, tzinfo=timezone.utc)
+    max_exp = now + timedelta(days=_MAX_SHARE_TTL_DAYS)
+    if exp > max_exp:
+        exp = max_exp
+    min_exp = now + timedelta(hours=1)
+    if exp < min_exp:
+        exp = min_exp
+    return exp
 
 
 def create_practice_share(
@@ -392,12 +477,13 @@ def create_practice_share(
     if not normalized:
         raise ValueError("At least one song with lyrics is required.")
 
+    # Client must supply a 6-digit PIN.
     pin = _normalize_pin(optional_pin)
     pin_stored = hash_pin(pin)
     token = secrets.token_urlsafe(24)
-    # ttl_days is ignored — practice links always expire 24 hours after generation.
+    # ttl_days ignored — expire Sunday 23:59 UTC of the Mass week (max 7 days).
     _ = ttl_days
-    expires_at = _compute_expires_at(ttl_hours=_DEFAULT_TTL_HOURS).isoformat()
+    expires_at = _compute_expires_at_for_mass(parsed_date).isoformat()
     payload = {
         "token": token,
         "parish_id": (parish_id or "").strip() or None,
@@ -450,6 +536,12 @@ def create_practice_share(
         "token": row.get("token") or token,
         "expires_at": row.get("expires_at") or expires_at,
         "song_count": len(normalized),
+        "pin": pin,
+        "mass_date": parsed_date.isoformat(),
+        "mass_title": (mass_title or "").strip(),
+        "status": "active",
+        "seconds_remaining": _seconds_remaining({**row, "expires_at": row.get("expires_at") or expires_at}),
+        "songs": _song_title_summaries({**row, "song_snapshot": normalized}),
     }
 
 
@@ -771,9 +863,31 @@ def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) ->
     row = get_practice_share_by_token(token)
     if not row:
         return {"ok": False, "error": "Share not found or already expired."}
+    actor = (actor_user_id or "").strip()
+    if actor and str(row.get("created_by") or "").strip() != actor:
+        return {"ok": False, "error": "Only the creator can expire this share."}
     now = _now_iso()
     if supabase_enabled():
-        _service_client().table("choir_practice_shares").update({"revoked_at": now}).eq("token", tok).execute()
+        try:
+            _service_client().table("choir_practice_shares").update({"revoked_at": now}).eq("token", tok).execute()
+        except Exception as exc:
+            if not _supabase_unavailable(exc):
+                raise
+            logger.warning("choir_practice_shares revoke failed; using local store (%s)", exc)
+            rows = _read_local_rows()
+            for item in rows:
+                if str(item.get("token") or "") == tok:
+                    item["revoked_at"] = now
+            _write_local_rows(rows)
+        else:
+            rows = _read_local_rows()
+            changed = False
+            for item in rows:
+                if str(item.get("token") or "") == tok:
+                    item["revoked_at"] = now
+                    changed = True
+            if changed:
+                _write_local_rows(rows)
     else:
         rows = _read_local_rows()
         for item in rows:
@@ -782,3 +896,109 @@ def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) ->
         _write_local_rows(rows)
     logger.info("Practice share revoked token=%s actor=%s", tok[:8], actor_user_id or "")
     return {"ok": True}
+
+
+def list_recent_practice_shares(
+    *,
+    created_by_user_id: str,
+    parish_id: Optional[str] = None,
+    limit: int = 40,
+) -> list[dict[str, Any]]:
+    """Recent shares for the creator — active and expired (song titles only, no PIN)."""
+    uid = (created_by_user_id or "").strip()
+    if not uid:
+        return []
+    pid = (parish_id or "").strip() or None
+    cap = max(1, min(int(limit or 40), 80))
+    rows: list[dict[str, Any]] = []
+
+    if supabase_enabled():
+        try:
+            query = (
+                _service_client()
+                .table("choir_practice_shares")
+                .select(
+                    "token,mass_date,mass_title,parish_name,celebrant,expires_at,created_at,"
+                    "song_snapshot,revoked_at,created_by,parish_id"
+                )
+                .eq("created_by", uid)
+                .order("created_at", desc=True)
+                .limit(cap)
+            )
+            if pid:
+                query = query.eq("parish_id", pid)
+            result = query.execute()
+            rows = [r for r in (result.data or []) if isinstance(r, dict)]
+        except Exception as exc:
+            if not _supabase_unavailable(exc):
+                raise
+            logger.warning("choir_practice_shares list failed; using local store (%s)", exc)
+            rows = []
+
+    if not rows:
+        for item in _read_local_rows():
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("created_by") or "").strip() != uid:
+                continue
+            if pid and str(item.get("parish_id") or "").strip() != pid:
+                continue
+            rows.append(item)
+        rows.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
+        rows = rows[:cap]
+
+    return [_public_share_summary(row) for row in rows if str(row.get("token") or "").strip()]
+
+
+def reset_practice_share_pin(
+    token: str,
+    *,
+    actor_user_id: str,
+) -> dict[str, Any]:
+    """Replace PIN for a live share owned by actor. Returns new plaintext PIN once."""
+    tok = (token or "").strip()
+    uid = (actor_user_id or "").strip()
+    if not tok or not uid:
+        return {"ok": False, "error": "token and user are required."}
+    row = get_practice_share_by_token(tok)
+    if not row:
+        return {"ok": False, "error": "This practice link is invalid or has expired."}
+    if str(row.get("created_by") or "").strip() != uid:
+        return {"ok": False, "error": "Only the creator can reset this PIN."}
+
+    pin = generate_practice_pin()
+    pin_stored = hash_pin(pin)
+    if supabase_enabled():
+        try:
+            _service_client().table("choir_practice_shares").update(
+                {"optional_pin": pin_stored}
+            ).eq("token", tok).execute()
+        except Exception as exc:
+            if not _supabase_unavailable(exc):
+                raise
+            logger.warning("choir_practice_shares pin reset failed; using local store (%s)", exc)
+            rows = _read_local_rows()
+            for item in rows:
+                if str(item.get("token") or "") == tok:
+                    item["optional_pin"] = pin_stored
+            _write_local_rows(rows)
+        else:
+            rows = _read_local_rows()
+            changed = False
+            for item in rows:
+                if str(item.get("token") or "") == tok:
+                    item["optional_pin"] = pin_stored
+                    changed = True
+            if changed:
+                _write_local_rows(rows)
+    else:
+        rows = _read_local_rows()
+        for item in rows:
+            if str(item.get("token") or "") == tok:
+                item["optional_pin"] = pin_stored
+        _write_local_rows(rows)
+
+    summary = _public_share_summary({**row, "optional_pin": pin_stored})
+    summary["ok"] = True
+    summary["pin"] = pin
+    return summary

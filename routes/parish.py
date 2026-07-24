@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 
 from services.api_security import AuthSession, require_approved_membership, require_session
 from services.auth_config import app_public_url
+from services.email_links import invite_signup_url
+from services.email_notifications import notify_platform_invite, safe_send
 from services.membership_config import is_superadmin_user
 from services.platform_invites import create_invite, list_invites_for_parish
 from services.parish_invites import (
@@ -109,9 +111,20 @@ def register_parish_routes(app) -> None:
         except RuntimeError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         tok = row.get("token") or ""
-        base = app_public_url() or ""
-        invite_url = (base + "/sign-up?invite=" + tok) if tok else ""
-        return {"ok": True, "invite": row, "invite_url": invite_url}
+        invite_url = invite_signup_url(tok) if tok else ""
+        emailed = False
+        invite_email = (row.get("email") or body.email or "").strip().lower()
+        if invite_email and invite_url:
+            emailed = safe_send(
+                "parish_invite",
+                notify_platform_invite,
+                email=invite_email,
+                invite_url=invite_url,
+                community_name=parish_name,
+                invite_role="media",
+                note="",
+            ).ok
+        return {"ok": True, "invite": row, "invite_url": invite_url, "emailed": emailed}
 
     @app.post("/api/parish/team/invites/accept")
     def api_parish_accept_invite(

@@ -124,6 +124,25 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 payload["membership"] = membership_payload(
                     church, user=user, profile_role=profile_role
                 )
+
+                # Prefer stored avatar path (signed) over OAuth metadata image.
+                avatar_raw = str((profile_row or {}).get("avatar_url") or "").strip()
+                avatar_url: Optional[str] = None
+                if avatar_raw.startswith("http://") or avatar_raw.startswith("https://"):
+                    avatar_url = avatar_raw
+                elif avatar_raw and not avatar_raw.startswith("/"):
+                    try:
+                        from services.storage_assets import signed_asset_url
+
+                        avatar_url = signed_asset_url(
+                            access_token=session.token, path=avatar_raw
+                        )
+                    except Exception:
+                        avatar_url = None
+                if not avatar_url:
+                    avatar_url = user.image_url
+                payload["avatar_url"] = avatar_url
+                payload["image_url"] = avatar_url or user.image_url
             except Exception as exc:
                 payload["supabase_error"] = str(exc)
 
