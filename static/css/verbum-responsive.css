@@ -448,7 +448,7 @@ iframe {
   }
 
   .home-bento-cell--gospel,
-  .home-bento-cell--events,
+  .home-bento-sidecol,
   .home-bento-cell--readings,
   .home-bento-cell--news {
     grid-column: 1 / -1;
@@ -1870,7 +1870,7 @@ iframe {
     grid-column: span 2 !important;
   }
 
-  .home-bento-cell--events {
+  .home-bento-sidecol {
     grid-column: span 1 !important;
   }
 
@@ -1970,7 +1970,7 @@ iframe {
   }
 
   .home-bento-cell--gospel,
-  .home-bento-cell--events {
+  .home-bento-sidecol {
     grid-column: span 12;
   }
 
@@ -4131,72 +4131,26 @@ iframe {
     cursor: pointer;
   }
 
-  /* Home side column — collapsible cards */
+  /* Home side column — single workspace card */
   .home-bento-sidecol {
-    grid-template-rows: auto auto;
+    grid-template-rows: auto;
     gap: var(--space-3);
+    height: auto;
+    min-height: 0;
+    max-height: none;
   }
 
-  .home-bento-cell--events.is-collapsible .home-events-scroll,
-  .home-bento-cell--songs.is-collapsible .home-songs-carousel {
-    display: none;
+  .home-bento-cell--workspace {
+    max-height: none;
+    overflow: visible;
   }
 
-  .home-bento-cell--events.is-collapsible.is-expanded .home-events-scroll,
-  .home-bento-cell--songs.is-collapsible.is-expanded .home-songs-carousel {
-    display: block;
-  }
-
-  .home-bento-cell--events.is-collapsible .btn-home-create-event,
-  .home-bento-cell--songs.is-collapsible .home-card-head__text p {
-    display: none;
-  }
-
-  .home-bento-cell--events.is-collapsible.is-expanded .btn-home-create-event {
-    display: inline-flex;
-  }
-
-  .home-bento-cell--songs.is-collapsible.is-expanded .home-card-head__text p {
-    display: block;
+  .home-qa-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .home-mobile-collapsible__toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    margin-left: auto;
-    padding: 0;
-    border: 1px solid var(--line-soft);
-    border-radius: 8px;
-    background: var(--surface-solid);
-    color: var(--muted);
-    cursor: pointer;
-  }
-
-  .home-mobile-collapsible__chevron {
-    width: 16px;
-    height: 16px;
-    transition: transform var(--motion-duration-fast) var(--motion-ease-out);
-  }
-
-  .home-bento-cell.is-collapsible.is-expanded .home-mobile-collapsible__chevron {
-    transform: rotate(180deg);
-  }
-
-  .home-bento-cell--events.is-collapsible .home-events-card__head,
-  .home-bento-cell--songs.is-collapsible .home-card-head {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    cursor: pointer;
-  }
-
-  .home-bento-grid .home-bento-cell--events.is-collapsible .home-events-card__head {
-    display: flex;
+    display: none;
   }
 }
 

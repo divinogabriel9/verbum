@@ -708,6 +708,91 @@
         "reverent",
         "solemn"
       ]
+    },
+    {
+      "id": "alay_namin",
+      "title": "Alay Namin",
+      "author": "Carlo Magno Marcelo",
+      "lyrics": "Verse 1\nAlay Namin Sa Iyong Palad\nAng Aming Buhay At Aming Lakas\nUpang Gawing Iyong Kasangkapan\nSa Pagpapalaganap Ng Iyong Aral\n\nChorus\nTanggapin Mo, O Panginoon\nAng Aming Abang Alay\nGawin Mong Banal Ang Aming Buhay\nTanda Ng Aming Pagmamahal\n\nVerse 2\nLahat Ng Aming Mga Pangarap\nMga Gawain At Mga Pagsisikap\nIniaalay Namin Sa Iyo\nUpang Maging Kalugod-lugod\n\nChorus\nTanggapin Mo, O Panginoon\nAng Aming Abang Alay\nGawin Mong Banal Ang Aming Buhay\nTanda Ng Aming Pagmamahal",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.791434+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.791434+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "mula_sa_yo",
+      "title": "Mula Sa 'yo",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nWala Akong Maihahandog Sa 'Yo\nNa 'Di Mula Sa Kabutihan Mo\nGayunpaman, 'Yong Tanggapin\nAking Alay, Pabanalin\n\nChorus\nMula Sa 'Yo, Lahat Ng Ito\nBuhay Ko'y Paghariang Totoo\nTanging Hiling, O Panginoon\nMaging Karapat-dapat Sa 'Yo\n\nVerse 2\nIka'y Minsan Pang Nag-alay\nNg Buhay Mo Upang Kami'y Mabuhay\nKaya't Sa Aming Pag-aalay\nSana'y Makapiling Ka Habambuhay\n\nChorus\nMula Sa 'Yo, Lahat Ng Ito\nBuhay Ko'y Paghariang Totoo\nTanging Hiling, O Panginoon\nMaging Karapat-dapat Sa 'Yo",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.791722+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.791722+00:00",
+      "gospel_moods": [
+        "reverent",
+        "journey"
+      ]
+    },
+    {
+      "id": "kapuri_puri_ka",
+      "title": "Kapuri-puri Ka",
+      "author": "",
+      "lyrics": "Verse 1\nKapuri-puri Ka, Diyos Amang Lumikha Ng Lahat\nSa Iyong Kagandahang-loob, Narito Ang Aming Maiaalay\nMula Sa Lupa At Bunga Ng Aming Paggawa\nAng Tinapay Na Ito Para Maging Pagkaing Nagbibigay-buhay\n\nChorus\nKapuri-puri Ang Poong Maykapal\nNgayon At Magpakailanman\nKapuri-puri Ang Poong Maykapal\nNgayon At Magpakailanman\n\nVerse 2\nKapuri-puri Ka, Diyos Amang Lumikha Ng Lahat\nSa Iyong Kagandahang-loob, Narito Ang Aming Maiaalay\nMula Sa Ubas At Bunga Ng Aming Paggawa\nAng Alak Na Ito Para Maging Inuming Nagbibigay-lakas\n\nChorus\nKapuri-puri Ang Poong Maykapal\nNgayon At Magpakailanman\nKapuri-puri Ang Poong Maykapal\nNgayon At Magpakailanman",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.792053+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.792053+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "ang_tanging_alay_ko",
+      "title": "Ang Tanging Alay Ko",
+      "author": "",
+      "lyrics": "Verse 1\nSalamat Sa Iyo, Aking Panginoong Hesus\nAko'y Inibig Mo At Inangking Lubos\nAng Tanging Alay Ko Sa 'Yo Aking Ama\nAy Buong Buhay Ko, Puso At Kaluluwa\n\nChorus\nHindi Makayanang Maipagkaloob\nMamahaling Hiyas, Ni Gintong Nilukob\nAng Aking Dalangin, O Diyos, Ay Tanggapin\nAng Tanging Alay Ko Nawa Ay Gamitin\n\nVerse 2\nIto Lamang Ama, Wala Nang Iba Pa\nAkong Hinihiling Sa Iyong Biyaya\nKundi Ang Maglingkod Sa Iyo Tuwina\nAt Maging Tapat Hanggang Sa Hininga\n\nChorus\nHindi Makayanang Maipagkaloob\nMamahaling Hiyas, Ni Gintong Nilukob\nAng Aking Dalangin, O Diyos, Ay Tanggapin\nAng Tanging Alay Ko Nawa Ay Gamitin",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.792344+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.792344+00:00",
+      "gospel_moods": [
+        "reverent",
+        "mercy"
+      ]
+    },
+    {
+      "id": "alay_ng_bayan",
+      "title": "Alay Ng Bayan",
+      "author": "",
+      "lyrics": "Chorus\nAlay Ng Bayan Sa Iyo, O Diyos\nPuso At Buhay, Alay Na Lubos\nDinggin Ang Aming Panalangin\nGawin Mong Banal Ang Aming Alay\n\nVerse 1\nKasama Ng Alak At Tinapay\nAng Aming Pag-ibig At Pag-asa\nNawa'y Maging Kalugod-lugod\nSa Iyong Mahal Na Paningin\n\nChorus\nAlay Ng Bayan Sa Iyo, O Diyos\nPuso At Buhay, Alay Na Lubos\nDinggin Ang Aming Panalangin\nGawin Mong Banal Ang Aming Alay\n\nVerse 2\nLahat Ng Aming Paghihirap\nLahat Ng Aming Mga Pangarap\nSa Iyo Namin Inuusal\nUpang Maging Iyong Kasangkapan\n\nChorus\nAlay Ng Bayan Sa Iyo, O Diyos\nPuso At Buhay, Alay Na Lubos\nDinggin Ang Aming Panalangin\nGawin Mong Banal Ang Aming Alay",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.792650+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.792650+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "journey"
+      ]
     }
   ],
   "communion": [
@@ -952,6 +1037,91 @@
       "language": "English",
       "gospel_moods": [
         "journey"
+      ]
+    },
+    {
+      "id": "santo_hontiveros",
+      "title": "Santo (hontiveros)",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.792847+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.792847+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "solemn"
+      ]
+    },
+    {
+      "id": "santo_francisco",
+      "title": "Santo (francisco)",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nDiyos Makapangyarihan\nPuspos Ng Luwalhati Ang Langit At Lupa\nOsana, Osana Sa Kaitaasan\n\nChorus\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana, Osana Sa Kaitaasan\nOsana, Osana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.793046+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.793046+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "solemn"
+      ]
+    },
+    {
+      "id": "santo_ramirez",
+      "title": "Santo (ramirez)",
+      "author": "",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana, Osana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana, Osana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.793240+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.793240+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "solemn"
+      ]
+    },
+    {
+      "id": "santo_santo_santo_aquino",
+      "title": "Santo, Santo, Santo (aquino)",
+      "author": "Arnel Aquino",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.793444+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.793444+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "reverent"
+      ]
+    },
+    {
+      "id": "si_kristo_ay_namatay",
+      "title": "Si Kristo Ay Namatay",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nSi Kristo Ay Namatay\nSi Kristo Ay Nabuhay\nSi Kristo Ay Babalik\nSa Wakas Ng Panahon",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.793610+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-24T17:02:49.793610+00:00",
+      "gospel_moods": [
+        "solemn",
+        "reverent"
       ]
     }
   ],

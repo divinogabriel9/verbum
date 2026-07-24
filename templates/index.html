@@ -4885,7 +4885,6 @@
       border-bottom: 1px solid var(--line-soft);
     }
     .home-bento-grid .home-bento-cell--readings .home-card-head,
-    .home-bento-grid .home-bento-cell--songs .home-card-head,
     .home-bento-grid #home-reflection-card .home-card-head {
       grid-template-columns: minmax(0, 1fr);
       align-items: start;
@@ -4926,14 +4925,14 @@
     .home-bento-sidecol {
       grid-column: span 1;
       display: grid;
-      grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
       gap: var(--layout-gap);
       height: var(--home-hero-height);
       min-height: 420px;
       max-height: 820px;
       min-width: 0;
     }
-    .home-bento-cell--events {
+    .home-bento-cell--workspace {
       grid-column: auto;
       display: flex;
       flex-direction: column;
@@ -4941,16 +4940,7 @@
       max-height: 100%;
       overflow: hidden;
       padding: var(--space-3);
-    }
-    .home-bento-cell--songs {
-      grid-column: auto;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      max-height: 100%;
-      overflow: hidden;
-      padding: var(--space-3);
-      gap: var(--space-1);
+      gap: var(--space-3);
     }
     .home-bento-cell--readings {
       grid-column: 1 / -1;
@@ -5089,7 +5079,7 @@
         min-height: 0;
       }
       .home-bento-sidecol {
-        grid-template-rows: minmax(240px, 38vh) minmax(240px, 38vh);
+        grid-template-rows: minmax(0, auto);
       }
       .home-bento-cell--gospel,
       .home-bento-cell--reflection,
@@ -5676,15 +5666,16 @@
     }
     .home-events-card__head {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: var(--space-2);
     }
     .home-bento-grid .home-events-card__head {
-      display: grid;
+      display: flex;
       align-items: center;
     }
-    .home-events-card__head h3 {
+    .home-events-card__head h3,
+    .home-events-card__head h4 {
       margin: 0;
     }
     .btn-home-create-event {
@@ -5714,7 +5705,7 @@
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0;
+      gap: var(--space-2);
       flex: 1;
       min-height: 0;
       overflow-y: auto;
@@ -5722,7 +5713,7 @@
     .home-events-board {
       display: flex;
       flex-direction: column;
-      gap: var(--space-3);
+      gap: var(--space-2);
     }
     .home-events-scroll {
       flex: 1 1 auto;
@@ -5731,40 +5722,15 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
-    .home-events-section__title {
-      margin: 0 0 var(--space-2);
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-    .home-events-section--ongoing .home-events-section__title {
-      color: #047857;
-    }
-    .home-events-section--upcoming .home-events-section__title {
-      color: var(--liturgical-accent);
-    }
-    .home-events-section__empty {
-      margin: 0;
-      font-size: var(--text-xs);
-      color: var(--muted);
-    }
-    .home-events-section__empty[hidden] {
-      display: none !important;
-    }
-    .home-events-list:empty {
-      display: none;
-    }
     .home-events-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
       padding: var(--space-2);
-      border: none;
+      border: 1px solid var(--line-soft);
       border-radius: var(--radius-md);
-      background: transparent;
-      border-bottom: 1px solid var(--line-soft);
+      background: color-mix(in srgb, var(--surface-solid) 94%, var(--ink) 2%);
       border-left: 3px solid transparent;
-    }
-    .home-events-item:last-child {
-      border-bottom: none;
     }
     .home-events-item--ongoing {
       border-left-color: #10b981;
@@ -5774,227 +5740,185 @@
       border-left-color: var(--liturgical-accent);
       background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
     }
+    .home-events-item__badge {
+      flex-shrink: 0;
+      width: 42px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 0;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--liturgical-accent) 12%, var(--surface-solid));
+      color: var(--liturgical-accent);
+      line-height: 1.1;
+    }
+    .home-events-item__badge-day {
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+    .home-events-item__badge-month {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .home-events-item__body {
+      min-width: 0;
+      flex: 1;
+    }
     .home-events-item__name {
-      margin: 0 0 4px;
+      margin: 0 0 2px;
       font-size: var(--text-sm);
-      font-weight: 600;
+      font-weight: 650;
       color: var(--ink);
+      line-height: 1.3;
     }
     .home-events-item__meta {
       margin: 0;
       font-size: var(--text-xs);
       color: var(--muted);
     }
-    .home-events-item__countdown {
-      margin: 6px 0 0;
-      font-size: var(--text-sm);
-      font-weight: 700;
-      color: var(--liturgical-accent);
-    }
-    .home-events-item--ongoing .home-events-item__countdown {
-      color: #047857;
-    }
-    .home-events-item--upcoming .home-events-item__countdown {
-      color: var(--liturgical-accent);
-    }
     .home-events-card__empty {
       margin: 0;
-      padding: var(--space-4) 0;
+      padding: var(--space-4) var(--space-2);
       text-align: center;
-      font-size: var(--text-sm);
-      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
     }
     .home-events-card__empty[hidden] {
       display: none !important;
     }
-    /* Home songs carousel */
-    .home-bento-cell--songs .flow-bento-cell__head {
-      flex-shrink: 0;
-      margin-bottom: var(--space-1);
-      padding-bottom: var(--space-1);
-      border-bottom: none;
-    }
-    .home-bento-cell--songs .home-card-head__text p {
-      display: none;
-    }
-    .home-songs-carousel {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 auto;
-      min-height: 0;
-      gap: var(--space-2);
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    .home-songs-carousel__viewport {
-      position: relative;
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow: hidden;
-      touch-action: pan-y;
-      cursor: grab;
-    }
-    .home-songs-carousel__viewport.is-dragging {
-      cursor: grabbing;
-    }
-    .home-songs-carousel__track {
-      display: flex;
-      height: 100%;
-      width: 100%;
-      will-change: transform;
-      transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
-    }
-    .home-songs-carousel__track.is-dragging {
-      transition: none;
-    }
-    .home-songs-slide {
-      flex: 0 0 100%;
-      width: 100%;
-      max-width: 100%;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      min-width: 0;
-      box-sizing: border-box;
-      padding-right: 2px;
-    }
-    .home-songs-slide__title {
-      margin: 0 0 var(--space-1);
-      font-size: 0.66rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--liturgical-accent);
-    }
-    .home-songs-list {
-      list-style: none;
+    .home-events-card__empty-emoji {
       margin: 0;
-      padding: 0;
-      flex: 0 1 auto;
-      min-height: 0;
-      overflow: hidden;
+      font-size: 1.35rem;
+      line-height: 1;
     }
-    .home-songs-item {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--line-soft);
-    }
-    .home-songs-item:last-child {
-      border-bottom: none;
-    }
-    .home-songs-item--empty .home-songs-item__song {
-      color: var(--muted);
-      font-weight: 500;
-    }
-    .home-songs-item__cat {
-      font-size: 0.64rem;
+    .home-events-card__empty-title {
+      margin: 0;
+      font-size: var(--text-sm);
       font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .home-songs-item__song {
-      font-size: 0.8rem;
-      font-weight: 600;
       color: var(--ink);
-      line-height: 1.3;
     }
-    .home-songs-mood-summary {
+    .home-events-card__empty-desc {
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--muted);
+      max-width: 220px;
+      line-height: 1.4;
+    }
+
+    /* Home Quick Actions workspace */
+    .home-qa__head {
+      flex-shrink: 0;
+    }
+    .home-qa__head h3 {
       margin: 0;
-      font-size: 0.82rem;
-      line-height: 1.45;
+      font-size: 0.92rem;
+      line-height: 1.25;
+      font-weight: 700;
       color: var(--ink);
     }
-    .home-songs-mood-summary__label {
-      display: block;
-      margin-bottom: 4px;
-      font-size: 0.64rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--liturgical-accent);
-    }
-    .home-songs-mood-summary--empty {
-      color: var(--muted);
-      font-weight: 500;
-    }
-    .home-songs-item__meta {
-      font-size: 0.72rem;
+    .home-qa__head p {
+      margin: 2px 0 0;
+      font-size: 0.74rem;
+      line-height: 1.35;
       color: var(--muted);
     }
-    .home-songs-slide--share {
-      justify-content: center;
-      gap: 10px;
+    .home-qa-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2);
+      flex-shrink: 0;
     }
-    .home-songs-share {
+    .home-qa-tile {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      align-items: flex-start;
+      gap: 3px;
       min-height: 0;
-    }
-    .home-songs-share__lead {
-      margin: 0;
-      font-size: 0.8rem;
-      line-height: 1.4;
-      color: var(--muted);
-    }
-    .home-songs-share__btn {
-      align-self: flex-start;
-      min-height: 34px;
-      padding: 6px 12px;
-      font-size: 0.78rem;
-      font-weight: 650;
-      border-radius: 9px;
-      border: none;
-      background: var(--liturgical-accent, #a10f0d);
-      color: #fff;
+      padding: 10px 11px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line-soft);
+      background: color-mix(in srgb, var(--surface-solid) 96%, var(--ink) 1.5%);
+      color: inherit;
+      text-decoration: none;
+      text-align: left;
       cursor: pointer;
-      transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
-        background var(--motion-duration-fast) var(--motion-ease-hover);
+      transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover),
+        box-shadow var(--motion-duration-fast) var(--motion-ease-hover);
     }
-    .home-songs-share__btn:hover {
-      background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 88%, #000);
+    .home-qa-tile:hover {
+      transform: translateY(-1px);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 28%, var(--line));
+      background: color-mix(in srgb, var(--liturgical-accent) 6%, var(--surface-solid));
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 6%, transparent);
     }
-    .home-songs-share__btn:active {
-      transform: scale(0.97);
+    .home-qa-tile:active {
+      transform: scale(0.98);
     }
-    .home-songs-carousel__dots {
-      display: flex;
+    .home-qa-tile:focus-visible {
+      outline: 2px solid var(--liturgical-accent);
+      outline-offset: 2px;
+    }
+    .home-qa-tile__icon {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      flex-shrink: 0;
-      pointer-events: none;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 2px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-solid));
+      color: var(--liturgical-accent);
     }
-    .home-songs-carousel__dot {
-      width: 7px;
-      height: 7px;
+    .home-qa-tile__icon svg {
+      width: 16px;
+      height: 16px;
+    }
+    .home-qa-tile__title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--ink);
+    }
+    .home-qa-tile__desc {
+      font-size: 0.66rem;
+      line-height: 1.3;
+      color: var(--muted);
+    }
+    .home-qa-events {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      flex: 1 1 auto;
+      min-height: 0;
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--line-soft);
+    }
+    .home-qa-events__head {
+      flex-shrink: 0;
+      margin: 0;
       padding: 0;
       border: none;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--ink) 18%, transparent);
-      pointer-events: none;
-      transition: transform var(--motion-duration-micro) var(--motion-ease-out),
-        background var(--motion-duration-fast) var(--motion-ease-hover),
-        width 180ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    .home-songs-carousel__dot[aria-current="true"] {
-      background: var(--liturgical-accent);
-      width: 16px;
-      border-radius: 999px;
-      transform: none;
+    .home-qa-events__head h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink);
     }
     @media (prefers-reduced-motion: reduce) {
-      .home-songs-carousel__track {
+      .home-qa-tile,
+      .btn-home-create-event {
         transition: none;
       }
-      .home-songs-share__btn {
-        transition: none;
-      }
-      .home-songs-share__btn:active {
+      .home-qa-tile:hover,
+      .home-qa-tile:active,
+      .btn-home-create-event:active {
         transform: none;
       }
     }
@@ -6005,12 +5929,6 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-    }
-    .home-bento-cell--events .flow-bento-cell__head {
-      flex-shrink: 0;
-      margin-bottom: var(--space-2);
-      padding-bottom: var(--space-2);
-      border-bottom: none;
     }
     .home-news-panel {
       min-width: 0;
@@ -6305,11 +6223,6 @@
       font-size: var(--text-xs);
       color: var(--muted);
       line-height: 1.4;
-    }
-    .home-bento-cell--events .flow-bento-cell__head {
-      border-bottom: 1px solid var(--line-soft);
-      margin-bottom: var(--space-3);
-      padding-bottom: var(--space-3);
     }
     .home-news-status {
       margin: 0;
@@ -6631,10 +6544,37 @@
       gap: 8px;
       padding: 10px 18px 6px;
     }
+    .songs-whats-new-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+    }
     .songs-whats-new-tabs {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
+    }
+    .songs-whats-new-sort {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--muted, #666);
+    }
+    .songs-whats-new-sort__label {
+      white-space: nowrap;
+    }
+    .songs-whats-new-sort select {
+      font-size: 0.78rem;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface, #fff);
+      color: var(--ink);
+      max-width: 11rem;
     }
     .songs-whats-new-tab {
       border: 1px solid var(--line);
@@ -16159,29 +16099,21 @@
       transition: color var(--motion-duration-fast) var(--motion-ease-hover);
     }
     .home-card-head__action:hover { color: var(--good); }
-    .home-bento-cell--events .home-card-head,
-    .home-bento-cell--songs .home-card-head,
     .home-bento-cell--readings .home-card-head,
     .home-bento-cell--news .home-card-head,
     .home-bento-cell--summary .home-card-head {
       grid-template-columns: minmax(0, 1fr);
     }
-    .home-bento-cell--events .home-events-card__head,
+    .home-qa-events__head,
     .home-bento-cell--news .home-news-panel__head,
     .home-bento-grid .home-bento-cell--gospel .home-card-head {
       grid-template-columns: minmax(0, 1fr) auto;
     }
-    .home-bento-cell--events .flow-bento-cell__head,
-    .home-bento-cell--songs .flow-bento-cell__head,
     .home-bento-cell--readings .flow-bento-cell__head,
     .home-bento-cell--news .flow-bento-cell__head {
       border-bottom: none;
       margin: 0;
       padding: 0;
-    }
-    .btn-home-create-event::after {
-      content: " +";
-      font-weight: 700;
     }
     .app-header__search-wrap {
       position: relative;
@@ -16766,64 +16698,73 @@
             </section>
 
             <div class="home-bento-sidecol">
-              <aside class="flow-bento-cell home-bento-cell--events is-collapsible" id="home-events-card" aria-labelledby="home-events-heading">
-                <header class="flow-bento-cell__head home-card-head home-events-card__head home-mobile-collapsible__head">
-                  <div class="home-card-head__text">
-                    <h3 id="home-events-heading">Events</h3>
-                  </div>
-                  <button type="button" class="btn-home-create-event" id="btn-home-create-event">Create event</button>
-                  <button type="button" class="home-mobile-collapsible__toggle" id="home-events-collapse-toggle" aria-expanded="false" aria-controls="home-events-panel" aria-label="Show events" title="Show events">
-                    <svg class="home-mobile-collapsible__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                  </button>
+              <aside class="flow-bento-cell home-bento-cell--workspace" id="home-events-card" aria-labelledby="home-qa-heading">
+                <header class="home-qa__head">
+                  <h3 id="home-qa-heading">Quick Actions</h3>
+                  <p>Frequently used tools for preparing your parish.</p>
                 </header>
-                <div class="home-events-scroll home-mobile-collapsible__panel" id="home-events-panel">
-                  <div class="home-events-board" id="home-events-board" aria-live="polite"></div>
-                  <p class="home-events-card__empty" id="home-events-empty">No events</p>
-                </div>
-              </aside>
 
-              <article class="flow-bento-cell home-bento-cell--songs is-collapsible" id="home-songs-card" aria-labelledby="home-songs-heading">
-                <header class="flow-bento-cell__head home-card-head home-mobile-collapsible__head">
-                  <div class="home-card-head__text">
-                    <h3 id="home-songs-heading">Songs</h3>
-                    <p>Share for choir · Last Sunday · What's new · Gospel mood</p>
-                  </div>
-                  <button type="button" class="home-mobile-collapsible__toggle" id="home-songs-collapse-toggle" aria-expanded="false" aria-controls="home-songs-carousel" aria-label="Show songs" title="Show songs">
-                    <svg class="home-mobile-collapsible__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                <div class="home-qa-grid" role="list">
+                  <button type="button" class="home-qa-tile" role="listitem" id="btn-home-practice-share">
+                    <span class="home-qa-tile__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+                    </span>
+                    <span class="home-qa-tile__title">Share Choir Lyrics</span>
+                    <span class="home-qa-tile__desc">PIN-protected link for choir practice</span>
                   </button>
-                </header>
-                <div class="home-songs-carousel home-mobile-collapsible__panel" id="home-songs-carousel" aria-roledescription="carousel">
-                  <div class="home-songs-carousel__viewport" id="home-songs-viewport">
-                    <div class="home-songs-carousel__track" id="home-songs-track">
-                      <section class="home-songs-slide home-songs-slide--share" data-home-songs-slide="share" aria-label="Share lyrics for choir">
-                        <h4 class="home-songs-slide__title">Share lyrics</h4>
-                        <div class="home-songs-share">
-                          <p class="home-songs-share__lead">Send this Sunday's song lyrics to your choir — PIN-protected link, no account needed.</p>
-                          <button type="button" class="home-songs-share__btn" id="btn-home-practice-share">Share for choir</button>
-                        </div>
-                      </section>
-                      <section class="home-songs-slide" data-home-songs-slide="last-week" aria-label="Last Sunday songs">
-                        <h4 class="home-songs-slide__title">Last Sunday</h4>
-                        <ul class="home-songs-list" id="home-songs-last-week"></ul>
-                      </section>
-                      <section class="home-songs-slide" data-home-songs-slide="new" aria-label="Newly added songs">
-                        <h4 class="home-songs-slide__title">Newly added</h4>
-                        <ul class="home-songs-list" id="home-songs-new"></ul>
-                      </section>
-                      <section class="home-songs-slide" data-home-songs-slide="mood" aria-label="Gospel mood summary">
-                        <h4 class="home-songs-slide__title">This Sunday's mood</h4>
-                        <p class="home-songs-mood-summary home-songs-mood-summary--empty" id="home-songs-mood-summary">Load Sunday readings for this week's Gospel mood.</p>
-                      </section>
+                  <a class="home-qa-tile" role="listitem" href="/mass/builder" data-route="/mass/builder">
+                    <span class="home-qa-tile__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                    </span>
+                    <span class="home-qa-tile__title">Prepare This Sunday's Mass</span>
+                    <span class="home-qa-tile__desc">Open Mass Builder for the upcoming Sunday</span>
+                  </a>
+                  <a class="home-qa-tile" role="listitem" href="/library/songs" data-route="/library/songs">
+                    <span class="home-qa-tile__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg>
+                    </span>
+                    <span class="home-qa-tile__title">Song Library</span>
+                    <span class="home-qa-tile__desc">Browse and edit your hymn catalog</span>
+                  </a>
+                  <button type="button" class="home-qa-tile" role="listitem" data-home-qa="add-song">
+                    <span class="home-qa-tile__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </span>
+                    <span class="home-qa-tile__title">Add New Song</span>
+                    <span class="home-qa-tile__desc">Compose or import lyrics</span>
+                  </button>
+                  <a class="home-qa-tile" role="listitem" href="/library/collections" data-route="/library/collections" data-home-qa="favorites">
+                    <span class="home-qa-tile__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
+                    </span>
+                    <span class="home-qa-tile__title">Favorites</span>
+                    <span class="home-qa-tile__desc">Your collections and saved sets</span>
+                  </a>
+                  <button type="button" class="home-qa-tile" role="listitem" data-home-qa="recent">
+                    <span class="home-qa-tile__icon" aria-hidden="true">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </span>
+                    <span class="home-qa-tile__title">Recent Songs</span>
+                    <span class="home-qa-tile__desc">Jump back to recently used hymns</span>
+                  </button>
+                </div>
+
+                <div class="home-qa-events">
+                  <header class="home-qa-events__head home-events-card__head">
+                    <h4 id="home-events-heading">Upcoming Events</h4>
+                    <button type="button" class="btn-home-create-event" id="btn-home-create-event">+ Create Event</button>
+                  </header>
+                  <div class="home-events-scroll" id="home-events-panel">
+                    <div class="home-events-board" id="home-events-board" aria-live="polite"></div>
+                    <div class="home-events-card__empty" id="home-events-empty">
+                      <p class="home-events-card__empty-emoji" aria-hidden="true">📅</p>
+                      <p class="home-events-card__empty-title">No upcoming events</p>
+                      <p class="home-events-card__empty-desc">Create an event to keep your parish organized.</p>
+                      <button type="button" class="btn-home-create-event" id="btn-home-create-event-empty">Create Event</button>
                     </div>
                   </div>
-                  <div class="home-songs-carousel__dots" role="group" aria-label="Song carousel position">
-                    <span class="home-songs-carousel__dot" data-home-songs-dot="0" aria-label="Share lyrics" aria-current="true"></span>
-                    <span class="home-songs-carousel__dot" data-home-songs-dot="1" aria-label="Last Sunday songs"></span>
-                    <span class="home-songs-carousel__dot" data-home-songs-dot="2" aria-label="Newly added songs"></span>
-                    <span class="home-songs-carousel__dot" data-home-songs-dot="3" aria-label="Gospel mood summary"></span>
-                  </div>
                 </div>
-              </article>
+              </aside>
             </div>
 
             <article class="flow-bento-cell home-bento-cell--gospel is-gospel-preview" id="home-gospel-card" tabindex="0" role="button" aria-label="Open full Gospel preview">
@@ -17492,9 +17433,23 @@
             <button type="button" class="ghost ui-card__close" id="songs-whats-new-close" aria-label="Close">×</button>
           </header>
           <div class="ui-card__content">
-            <div class="songs-whats-new-tabs" role="tablist" aria-label="Song activity pages">
-              <button type="button" class="songs-whats-new-tab is-active" role="tab" aria-selected="true" data-whats-new-page="0" id="songs-whats-new-tab-month">This month</button>
-              <button type="button" class="songs-whats-new-tab" role="tab" aria-selected="false" data-whats-new-page="1" id="songs-whats-new-tab-week">This week</button>
+            <div class="songs-whats-new-toolbar">
+              <div class="songs-whats-new-tabs" role="tablist" aria-label="Song activity pages">
+                <button type="button" class="songs-whats-new-tab is-active" role="tab" aria-selected="true" data-whats-new-page="0" id="songs-whats-new-tab-month">This month</button>
+                <button type="button" class="songs-whats-new-tab" role="tab" aria-selected="false" data-whats-new-page="1" id="songs-whats-new-tab-week">This week</button>
+              </div>
+              <label class="songs-whats-new-sort">
+                <span class="songs-whats-new-sort__label">Sort</span>
+                <select id="songs-whats-new-sort" aria-label="Sort songs">
+                  <option value="date_desc">Newest first</option>
+                  <option value="date_asc">Oldest first</option>
+                  <option value="title_asc">Title A–Z</option>
+                  <option value="title_desc">Title Z–A</option>
+                  <option value="language">Language</option>
+                  <option value="section">Section</option>
+                  <option value="author">Author</option>
+                </select>
+              </label>
             </div>
             <div class="songs-whats-new-pane" id="songs-whats-new-pane-month" data-whats-new-pane="0" role="tabpanel"></div>
             <div class="songs-whats-new-pane" id="songs-whats-new-pane-week" data-whats-new-pane="1" role="tabpanel" hidden></div>
@@ -22423,34 +22378,38 @@
       const d = String(date || "").trim();
       const forceRefresh = !!(opts && opts.forceRefresh);
       if (!d) throw new Error("Date required");
-      const cacheKey = previewCacheKey(d, true);
-      if (!forceRefresh && previewCache.has(cacheKey)) {
-        const cached = previewCache.get(cacheKey);
+      // Permanently use Mass Setup's POST /api/preview path so home, calendar,
+      // and setup share one payload (same psalm refrain / gospel sentences).
+      const fullKey = previewCacheKey(d, false);
+      const readKey = previewCacheKey(d, true);
+      if (!forceRefresh && previewCache.has(fullKey)) {
+        const cached = previewCache.get(fullKey);
+        if (readingsPayloadComplete(cached)) {
+          previewCache.set(readKey, cached);
+          return cached;
+        }
+      }
+      if (!forceRefresh && previewCache.has(readKey)) {
+        const cached = previewCache.get(readKey);
         if (readingsPayloadComplete(cached)) return cached;
       }
-      const stored = !forceRefresh ? readStoredReadings(d) : null;
-      if (stored && readingsPayloadComplete(stored)) {
-        previewCache.set(cacheKey, stored);
-        return stored;
+      if (!forceRefresh) {
+        const stored = readStoredReadings(d);
+        if (stored && readingsPayloadComplete(stored)) {
+          previewCache.set(readKey, stored);
+          previewCache.set(fullKey, stored);
+          return stored;
+        }
       }
       const inflightKey = forceRefresh ? d + ":refresh" : d;
       if (readingsInflight.has(inflightKey)) return readingsInflight.get(inflightKey);
-      const req = (async () => {
-        const headers = {};
-        if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
-          Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
-        }
-        const url = "/api/readings/" + encodeURIComponent(d) + (forceRefresh ? "?refresh=1" : "");
-        const res = await fetch(url, { headers, cache: forceRefresh ? "no-store" : "default" });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const message = data.detail || data.error || res.statusText;
-          throw new Error(typeof message === "string" ? message : "Could not load readings.");
-        }
-        previewCache.set(cacheKey, data);
-        if (readingsPayloadComplete(data)) writeStoredReadings(d, data);
-        return data;
-      })()
+      const req = fetchPreview(d, { readingsOnly: false, forceRefresh })
+        .then((data) => {
+          previewCache.set(readKey, data);
+          previewCache.set(fullKey, data);
+          if (readingsPayloadComplete(data)) writeStoredReadings(d, data);
+          return data;
+        })
         .finally(() => {
           readingsInflight.delete(inflightKey);
         });
@@ -27381,19 +27340,29 @@
             const key = String((s && s.title) || "").trim().toLowerCase();
             if (key) langByTitle[key] = String((s && s.language) || "Tagalog").trim() || "Tagalog";
           });
-          // Push oldest-first so the first song in the file lands at the top of Recent.
+          const historyEntries = [];
           for (let i = results.length - 1; i >= 0; i -= 1) {
             const row = results[i];
             if (!row || !row.title || row.skipped) continue;
             const titleKey = String(row.title || "").trim().toLowerCase();
-            pushSongHistory({
+            historyEntries.push({
               title: row.title,
               section: row.section || "",
               id: row.id || "",
               language: langByTitle[titleKey] || "Tagalog",
-              kind: row.created ? "new" : "lyrics_updated",
+              // Treat imported songs as newly added so Home "Newly added" + Recent both update.
+              kind: "new",
             });
           }
+          if (typeof pushSongHistoryBatch === "function") {
+            pushSongHistoryBatch(historyEntries);
+          } else {
+            historyEntries.forEach((entry) => pushSongHistory(entry));
+          }
+          if (typeof refreshHomeSongsCard === "function") {
+            void refreshHomeSongsCard();
+          }
+          if (typeof renderComposerRecent === "function") renderComposerRecent();
           await new Promise((resolve) => setTimeout(resolve, 200));
           setMassGenLoading(false);
           const failedN = Array.isArray(saved.failed) ? saved.failed.length : 0;
@@ -36709,12 +36678,32 @@
       return "Starts in " + formatCountdown(t);
     }
 
+    function eventDateBadgeParts(ev) {
+      const d = parseLocalDateISO(ev && ev.date);
+      if (!d) return { day: "—", month: "" };
+      return {
+        day: String(d.getDate()),
+        month: d.toLocaleDateString(undefined, { month: "short" }),
+      };
+    }
+
     function renderHomeEventItemMarkup(ev, kind) {
+      const badge = eventDateBadgeParts(ev);
+      const time = formatNiceTime(ev.time);
+      const metaParts = [];
+      if (time) metaParts.push(time);
+      if (kind === "ongoing") metaParts.push(formatEventStatusCountdown(ev, kind));
+      const meta = metaParts.join(" · ");
       return (
         "<li class=\"home-events-item home-events-item--" + kind + "\">" +
-        "<p class=\"home-events-item__name\">" + escapeHtml(ev.name) + "</p>" +
-        "<p class=\"home-events-item__meta\">" + escapeHtml(formatEventMeta(ev)) + "</p>" +
-        "<p class=\"home-events-item__countdown\">" + escapeHtml(formatEventStatusCountdown(ev, kind)) + "</p>" +
+        "<div class=\"home-events-item__badge\" aria-hidden=\"true\">" +
+          "<span class=\"home-events-item__badge-day\">" + escapeHtml(badge.day) + "</span>" +
+          "<span class=\"home-events-item__badge-month\">" + escapeHtml(badge.month) + "</span>" +
+        "</div>" +
+        "<div class=\"home-events-item__body\">" +
+          "<p class=\"home-events-item__name\">" + escapeHtml(ev.name) + "</p>" +
+          (meta ? "<p class=\"home-events-item__meta\">" + escapeHtml(meta) + "</p>" : "") +
+        "</div>" +
         "</li>"
       );
     }
@@ -36865,10 +36854,19 @@
       const events = eventsForDisplay(getActiveUserEvents());
       const ongoing = events.filter(isEventOngoing);
       const upcoming = events.filter(isEventUpcoming);
+      const combined = ongoing.map((ev) => ({ ev, kind: "ongoing" }))
+        .concat(upcoming.map((ev) => ({ ev, kind: "upcoming" })))
+        .slice(0, 3);
+      if (!combined.length) {
+        boardEl.innerHTML = "";
+        if (emptyEl) emptyEl.hidden = false;
+        return;
+      }
       boardEl.innerHTML =
-        renderEventsSectionHtml("Ongoing", ongoing, "ongoing", renderHomeEventItemMarkup) +
-        renderEventsSectionHtml("Upcoming event", upcoming, "upcoming", renderHomeEventItemMarkup);
-      if (emptyEl) emptyEl.hidden = ongoing.length > 0 || upcoming.length > 0;
+        "<ul class=\"home-events-list\">" +
+        combined.map(({ ev, kind }) => renderHomeEventItemMarkup(ev, kind)).join("") +
+        "</ul>";
+      if (emptyEl) emptyEl.hidden = true;
     }
 
     function renderLiturgicalPanelEvents() {
@@ -37289,6 +37287,7 @@
     function initHomeEventModal() {
       const modal = $("home-event-modal");
       const openBtn = $("btn-home-create-event");
+      const openBtnEmpty = $("btn-home-create-event-empty");
       const cancelBtn = $("home-event-modal-cancel");
       const closeBtn = $("home-event-modal-close");
       const saveBtn = $("home-event-modal-save");
@@ -37298,6 +37297,7 @@
       initEventDateRangePicker();
 
       if (openBtn) openBtn.addEventListener("click", openHomeEventModal);
+      if (openBtnEmpty) openBtnEmpty.addEventListener("click", openHomeEventModal);
       if (cancelBtn) cancelBtn.addEventListener("click", closeHomeEventModal);
       if (closeBtn) closeBtn.addEventListener("click", closeHomeEventModal);
       if (backdrop) backdrop.addEventListener("click", closeHomeEventModal);
@@ -37731,9 +37731,11 @@
     }
 
     const SONGS_WHATS_NEW_SKIP_KEY = "verbum:songs-whats-new-skip-day";
+    const SONGS_WHATS_NEW_SORT_KEY = "verbum:songs-whats-new-sort";
     let songsWhatsNewPage = 0;
     let songsWhatsNewData = null;
     let songsWhatsNewShownThisLoad = false;
+    let songsWhatsNewSort = "date_desc";
 
     function songsWhatsNewTodayKey() {
       const d = new Date();
@@ -37755,6 +37757,31 @@
       } catch (_e) { /* ignore */ }
     }
 
+    function readSongsWhatsNewSort() {
+      try {
+        const v = localStorage.getItem(SONGS_WHATS_NEW_SORT_KEY) || "date_desc";
+        const allowed = {
+          date_desc: 1,
+          date_asc: 1,
+          title_asc: 1,
+          title_desc: 1,
+          language: 1,
+          section: 1,
+          author: 1,
+        };
+        return allowed[v] ? v : "date_desc";
+      } catch (_e) {
+        return "date_desc";
+      }
+    }
+
+    function writeSongsWhatsNewSort(value) {
+      songsWhatsNewSort = value || "date_desc";
+      try {
+        localStorage.setItem(SONGS_WHATS_NEW_SORT_KEY, songsWhatsNewSort);
+      } catch (_e) { /* ignore */ }
+    }
+
     function formatWhatsNewDayLabel(isoDate) {
       const d = new Date(String(isoDate || "") + "T12:00:00");
       if (Number.isNaN(d.getTime())) return String(isoDate || "");
@@ -37764,6 +37791,46 @@
       if (d.toDateString() === today.toDateString()) return "Today";
       if (d.toDateString() === yday.toDateString()) return "Yesterday";
       return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    }
+
+    function sortWhatsNewSongs(songs, sortKey) {
+      const list = (songs || []).slice();
+      const key = sortKey || songsWhatsNewSort || "date_desc";
+      const text = (v) => String(v || "").trim().toLowerCase();
+      list.sort((a, b) => {
+        if (key === "date_asc") return String(a.at || "").localeCompare(String(b.at || ""));
+        if (key === "date_desc") return String(b.at || "").localeCompare(String(a.at || ""));
+        if (key === "title_asc") return text(a.title).localeCompare(text(b.title));
+        if (key === "title_desc") return text(b.title).localeCompare(text(a.title));
+        if (key === "language") {
+          const c = text(a.language).localeCompare(text(b.language));
+          return c || text(a.title).localeCompare(text(b.title));
+        }
+        if (key === "section") {
+          const c = text(a.section).localeCompare(text(b.section));
+          return c || text(a.title).localeCompare(text(b.title));
+        }
+        if (key === "author") {
+          const c = text(a.author).localeCompare(text(b.author));
+          return c || text(a.title).localeCompare(text(b.title));
+        }
+        return String(b.at || "").localeCompare(String(a.at || ""));
+      });
+      return list;
+    }
+
+    function groupWhatsNewByDate(songs) {
+      const byDate = {};
+      (songs || []).forEach((song) => {
+        const day = String(song.date || (song.at || "").slice(0, 10) || "");
+        if (!byDate[day]) byDate[day] = [];
+        byDate[day].push(song);
+      });
+      const days = Object.keys(byDate).sort((a, b) => {
+        if (songsWhatsNewSort === "date_asc") return a.localeCompare(b);
+        return b.localeCompare(a);
+      });
+      return days.map((day) => ({ date: day, songs: byDate[day] }));
     }
 
     function renderSongsWhatsNewSongItem(song) {
@@ -37791,21 +37858,19 @@
       const weekPane = $("songs-whats-new-pane-week");
       const desc = $("songs-whats-new-desc");
       if (!monthPane || !weekPane) return;
-      const monthSongs = Array.isArray(data.month_added) ? data.month_added : [];
-      const weekByDate = Array.isArray(data.week_by_date) ? data.week_by_date : [];
+      const monthSongs = sortWhatsNewSongs(Array.isArray(data.month_added) ? data.month_added : [], songsWhatsNewSort);
+      const weekSongs = sortWhatsNewSongs(Array.isArray(data.week_updated) ? data.week_updated : [], songsWhatsNewSort);
       const monthLabel = data.month_label || "This month";
       if (desc) {
         desc.textContent =
           (monthSongs.length ? monthSongs.length + " added in " + monthLabel : "No new songs this month") +
           " · " +
-          ((data.counts && data.counts.week_updated) || 0) + " updated this week";
+          (weekSongs.length || 0) + " updated this week";
       }
       const monthTab = $("songs-whats-new-tab-month");
       if (monthTab) monthTab.textContent = "This month (" + monthSongs.length + ")";
       const weekTab = $("songs-whats-new-tab-week");
-      if (weekTab) {
-        weekTab.textContent = "This week (" + ((data.counts && data.counts.week_updated) || 0) + ")";
-      }
+      if (weekTab) weekTab.textContent = "This week (" + weekSongs.length + ")";
       if (!monthSongs.length) {
         monthPane.innerHTML = "<p class=\"songs-whats-new-empty\">No songs were added this month yet.</p>";
       } else {
@@ -37814,9 +37879,10 @@
           monthSongs.map(renderSongsWhatsNewSongItem).join("") +
           "</ul>";
       }
-      if (!weekByDate.length) {
+      if (!weekSongs.length) {
         weekPane.innerHTML = "<p class=\"songs-whats-new-empty\">No song updates in the past 7 days.</p>";
-      } else {
+      } else if (songsWhatsNewSort === "date_desc" || songsWhatsNewSort === "date_asc") {
+        const weekByDate = groupWhatsNewByDate(weekSongs);
         weekPane.innerHTML = weekByDate.map((group) => {
           const songs = Array.isArray(group.songs) ? group.songs : [];
           return (
@@ -37828,6 +37894,11 @@
             "</section>"
           );
         }).join("");
+      } else {
+        weekPane.innerHTML =
+          "<ul class=\"songs-whats-new-list\">" +
+          weekSongs.map(renderSongsWhatsNewSongItem).join("") +
+          "</ul>";
       }
     }
 
@@ -37861,6 +37932,9 @@
     function openSongsWhatsNewModal(data) {
       songsWhatsNewData = data || songsWhatsNewData;
       if (!songsWhatsNewData) return;
+      songsWhatsNewSort = readSongsWhatsNewSort();
+      const sortEl = $("songs-whats-new-sort");
+      if (sortEl) sortEl.value = songsWhatsNewSort;
       renderSongsWhatsNewPanes(songsWhatsNewData);
       const skip = $("songs-whats-new-skip-today");
       if (skip) skip.checked = false;
@@ -37927,6 +38001,14 @@
           setSongsWhatsNewPage(Number(el.getAttribute("data-whats-new-page")) || 0);
         });
       });
+      const sortEl = $("songs-whats-new-sort");
+      if (sortEl) {
+        sortEl.value = readSongsWhatsNewSort();
+        sortEl.addEventListener("change", () => {
+          writeSongsWhatsNewSort(sortEl.value);
+          if (songsWhatsNewData) renderSongsWhatsNewPanes(songsWhatsNewData);
+        });
+      }
     }
 
     function initCreateMenu() {
@@ -38512,9 +38594,13 @@
     async function refreshHomeMission() {
       const sun = upcomingSundayISO();
       if ($("home-sunday-label")) $("home-sunday-label").textContent = "Sunday " + sun;
-      const cached = readStoredReadings(sun)
+      // Prefer Mass Setup's full preview cache so home never shows a divergent
+      // readings-only snapshot for the same Sunday.
+      const cached = (flowPreviewData && flowPreviewData.__previewDate === sun ? flowPreviewData : null)
         || (window.__homePreview && window.__homePreview.__previewDate === sun ? window.__homePreview : null)
-        || previewCache.get(previewCacheKey(sun, true));
+        || previewCache.get(previewCacheKey(sun, false))
+        || previewCache.get(previewCacheKey(sun, true))
+        || readStoredReadings(sun);
       if (cached && readingsPayloadComplete(cached)) {
         applyHomePreviewData(cached, sun);
       }
@@ -38550,7 +38636,9 @@
     async function populateHomeMassSnippet(kind, iso) {
       const dateEl = $("home-mass-" + kind + "-date");
       if (dateEl) dateEl.textContent = formatNiceDate(iso);
-      const cached = readStoredReadings(iso) || previewCache.get(previewCacheKey(iso, true));
+      const cached = readStoredReadings(iso)
+        || previewCache.get(previewCacheKey(iso, false))
+        || previewCache.get(previewCacheKey(iso, true));
       if (cached) setHomeMassSnippet(kind, cached, iso);
       try {
         const data = await fetchReadings(iso);
@@ -38569,10 +38657,6 @@
       populateHomeMassSnippet("last", lastSundayISO());
     }
 
-    let homeSongsCarouselTimer = null;
-    let homeSongsCarouselIdx = 0;
-
-    const HOME_SONGS_VISIBLE_COUNT = 4;
     const HOME_SONG_SLOTS = [
       { key: "entrance", label: "Entrance" },
       { key: "offertory", label: "Offertory" },
@@ -38593,214 +38677,48 @@
       return row ? (row.title || "").trim() : "";
     }
 
-    function renderHomeSongsSlideList(el, items, emptyText) {
-      if (!el) return;
-      if (!items.length) {
-        el.innerHTML = "<li class=\"home-songs-item home-songs-item--empty\"><span class=\"home-songs-item__song\">" + escapeHtml(emptyText) + "</span></li>";
-        return;
-      }
-      el.innerHTML = items.slice(0, HOME_SONGS_VISIBLE_COUNT).map((item) => (
-        "<li class=\"home-songs-item\">" +
-          "<span class=\"home-songs-item__cat\">" + escapeHtml(item.label || item.kind || "") + "</span>" +
-          "<span class=\"home-songs-item__song\">" + escapeHtml(item.title || "—") + "</span>" +
-          (item.meta ? "<span class=\"home-songs-item__meta\">" + escapeHtml(item.meta) + "</span>" : "") +
-        "</li>"
-      )).join("");
-    }
-
-    function entriesFromSongSelections(selections, catalogBySection) {
-      const entries = [];
-      HOME_SONG_SLOTS.forEach((slot) => {
-        const id = selections[slot.key];
-        if (!id) return;
-        const sec = catalogSectionForSlot(slot.key);
-        const rows = (catalogBySection && catalogBySection[sec]) || (songCatalogData && songCatalogData[sec]) || [];
-        const row = rows.find((r) => String(r.id) === String(id));
-        const title = (row && row.title) || catalogSongTitle(sec, id) || String(id);
-        entries.push({ label: slot.label, title });
-      });
-      return entries;
-    }
-
-    async function buildLastWeekSongEntries() {
-      const lastSun = lastSundayISO();
-      const draft = readMassBuilderDraft();
-      if (draft && draft.selectedLyricsSongs && draft.previewDate === lastSun) {
-        await loadSongCatalog();
-        const entries = entriesFromSongSelections(draft.selectedLyricsSongs);
-        if (entries.length) return entries;
-      }
-      try {
-        const data = await fetchPreview(lastSun, { readingsOnly: false });
-        if (data && data.default_song_selections) {
-          await loadSongCatalog();
-          return entriesFromSongSelections(data.default_song_selections, data.songs_by_section);
-        }
-      } catch (_e) { /* optional */ }
-      return [];
-    }
-
-    function buildNewSongEntries() {
-      return getSongHistoryRows(HOME_SONGS_VISIBLE_COUNT, new Set(["new"])).map((r) => ({
-        label: songSectionLabel(r.section),
-        title: r.title,
-        meta: formatSongHistoryWhen(r.t),
-      }));
-    }
-
-    function renderHomeSongsMoodSummary(preview) {
-      const el = $("home-songs-mood-summary");
-      if (!el) return;
-      const tip = preview ? inferGospelMoodTip(preview) : null;
-      const moodKey = preview ? inferGospelMoodKey(preview) : null;
-      if (!tip) {
-        el.className = "home-songs-mood-summary home-songs-mood-summary--empty";
-        el.textContent = "Load Sunday readings for this week's Gospel mood.";
-        return;
-      }
-      el.className = "home-songs-mood-summary";
-      const label = moodKey
-        ? moodKey.charAt(0).toUpperCase() + moodKey.slice(1)
-        : "Mood";
-      el.innerHTML =
-        '<span class="home-songs-mood-summary__label">' + escapeHtml(label) + "</span>" +
-        escapeHtml(tip);
-    }
-
     async function refreshHomeSongsCard() {
-      if (!$("home-songs-card")) return;
-      await loadSongCatalog();
-      const lastWeek = await buildLastWeekSongEntries();
-      renderHomeSongsSlideList($("home-songs-last-week"), lastWeek, "No songs from last Sunday yet.");
-      renderHomeSongsSlideList($("home-songs-new"), buildNewSongEntries(), "No new songs added recently.");
-      let preview = null;
-      const sun = upcomingSundayISO();
-      try {
-        preview = previewCache.get(previewCacheKey(sun, false)) ||
-          previewCache.get(previewCacheKey(sun, true)) ||
-          await fetchReadings(sun);
-      } catch (_e) { /* optional */ }
-      renderHomeSongsMoodSummary(preview);
+      /* Songs carousel removed — Quick Actions workspace replaced it. */
     }
 
-    function initHomeSongsCarousel() {
-      const root = $("home-songs-carousel");
-      const viewport = $("home-songs-viewport");
-      const track = $("home-songs-track");
-      if (!root || !viewport || !track || root.dataset.bound) return;
-      root.dataset.bound = "1";
-      const slides = [...track.querySelectorAll(".home-songs-slide")];
-      const dots = [...root.querySelectorAll("[data-home-songs-dot]")];
-      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const slideCount = slides.length;
-      let dragX = 0;
-      let startX = 0;
-      let startY = 0;
-      let dragging = false;
-      let axisLocked = "";
-      let pointerId = null;
+    function initHomeQuickActions() {
+      const root = $("home-events-card");
+      if (!root || root.dataset.qaBound === "1") return;
+      root.dataset.qaBound = "1";
 
-      function setTrackOffset(px, animate) {
-        track.classList.toggle("is-dragging", !animate);
-        track.style.transform = "translate3d(" + px + "px, 0, 0)";
-      }
-
-      function go(n, opts) {
-        opts = opts || {};
-        homeSongsCarouselIdx = Math.max(0, Math.min(slideCount - 1, n));
-        const width = viewport.clientWidth || 1;
-        setTrackOffset(-homeSongsCarouselIdx * width, opts.animate !== false);
-        slides.forEach((s, i) => {
-          s.setAttribute("aria-hidden", i === homeSongsCarouselIdx ? "false" : "true");
+      function openAddSong() {
+        showRoute("/library/songs");
+        requestAnimationFrame(() => {
+          if (typeof expandSongComposerPanel === "function") expandSongComposerPanel();
+          if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(false);
+          const title = $("lyrics-save-title");
+          if (title) title.focus();
         });
-        dots.forEach((d, i) => d.setAttribute("aria-current", i === homeSongsCarouselIdx ? "true" : "false"));
       }
 
-      function startAutoplay() {
-        if (homeSongsCarouselTimer) clearInterval(homeSongsCarouselTimer);
-        homeSongsCarouselTimer = null;
-        if (prefersReduced || slideCount < 2) return;
-        homeSongsCarouselTimer = setInterval(() => {
-          go(homeSongsCarouselIdx >= slideCount - 1 ? 0 : homeSongsCarouselIdx + 1);
-        }, 7000);
+      function openRecentSongs() {
+        showRoute("/library/songs");
+        requestAnimationFrame(() => {
+          if (typeof expandSongComposerPanel === "function") expandSongComposerPanel();
+          if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(false);
+          const recent = $("song-composer-recent-list");
+          if (recent) recent.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
       }
 
-      function stopAutoplay() {
-        if (homeSongsCarouselTimer) clearInterval(homeSongsCarouselTimer);
-        homeSongsCarouselTimer = null;
-      }
-
-      function onPointerDown(ev) {
-        if (ev.pointerType === "mouse" && ev.button !== 0) return;
-        if (ev.target && ev.target.closest("button, a, input, label")) return;
-        dragging = true;
-        axisLocked = "";
-        pointerId = ev.pointerId;
-        startX = ev.clientX;
-        startY = ev.clientY;
-        dragX = 0;
-        stopAutoplay();
-        viewport.classList.add("is-dragging");
-        track.classList.add("is-dragging");
-        try { viewport.setPointerCapture(ev.pointerId); } catch (_e) { /* optional */ }
-      }
-
-      function onPointerMove(ev) {
-        if (!dragging || ev.pointerId !== pointerId) return;
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-        if (!axisLocked) {
-          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-          axisLocked = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
-          if (axisLocked === "y") {
-            dragging = false;
-            viewport.classList.remove("is-dragging");
-            track.classList.remove("is-dragging");
-            go(homeSongsCarouselIdx, { animate: false });
-            startAutoplay();
-            return;
+      root.querySelectorAll("[data-home-qa]").forEach((el) => {
+        const action = el.getAttribute("data-home-qa");
+        if (action === "favorites") return; /* navigates via href */
+        el.addEventListener("click", (e) => {
+          if (action === "add-song") {
+            e.preventDefault();
+            openAddSong();
+          } else if (action === "recent") {
+            e.preventDefault();
+            openRecentSongs();
           }
-        }
-        if (axisLocked !== "x") return;
-        ev.preventDefault();
-        const width = viewport.clientWidth || 1;
-        const base = -homeSongsCarouselIdx * width;
-        const atStart = homeSongsCarouselIdx === 0 && dx > 0;
-        const atEnd = homeSongsCarouselIdx === slideCount - 1 && dx < 0;
-        dragX = (atStart || atEnd) ? dx * 0.35 : dx;
-        setTrackOffset(base + dragX, false);
-      }
-
-      function onPointerUp(ev) {
-        if (ev.pointerId !== pointerId) return;
-        const wasDragging = dragging;
-        dragging = false;
-        pointerId = null;
-        viewport.classList.remove("is-dragging");
-        track.classList.remove("is-dragging");
-        if (!wasDragging || axisLocked === "y") {
-          startAutoplay();
-          return;
-        }
-        const width = viewport.clientWidth || 1;
-        const threshold = Math.min(72, width * 0.18);
-        if (dragX <= -threshold) go(homeSongsCarouselIdx + 1);
-        else if (dragX >= threshold) go(homeSongsCarouselIdx - 1);
-        else go(homeSongsCarouselIdx);
-        dragX = 0;
-        startAutoplay();
-      }
-
-      viewport.addEventListener("pointerdown", onPointerDown);
-      viewport.addEventListener("pointermove", onPointerMove, { passive: false });
-      viewport.addEventListener("pointerup", onPointerUp);
-      viewport.addEventListener("pointercancel", onPointerUp);
-      root.addEventListener("mouseenter", stopAutoplay);
-      root.addEventListener("mouseleave", startAutoplay);
-      window.addEventListener("resize", () => go(homeSongsCarouselIdx, { animate: false }));
-
-      go(0, { animate: false });
-      startAutoplay();
+        });
+      });
     }
 
     function applyHomeReflectionData(data) {
@@ -39063,6 +38981,16 @@
         window.__mwPreviewData = flowPreviewData;
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
       }
+      try {
+        const homeSun = upcomingSundayISO();
+        if (activeDate && activeDate === homeSun) {
+          window.__homePreview = Object.assign({}, data, { __previewDate: activeDate });
+          previewCache.set(previewCacheKey(activeDate, false), Object.assign({}, (previewCache.get(previewCacheKey(activeDate, false)) || {}), data));
+          previewCache.set(previewCacheKey(activeDate, true), data);
+          if (readingsPayloadComplete(data)) writeStoredReadings(activeDate, data);
+          applyHomePreviewData(Object.assign({}, (window.__homePreview || {}), data, { __previewDate: activeDate }), activeDate);
+        }
+      } catch (_homeSyncErr) { /* home card optional */ }
     }
 
     async function loadFlowData(auto = false) {
@@ -39144,10 +39072,28 @@
         updatePosterLivePreview();
         window.__mwPreviewData = flowPreviewData;
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
+        // Keep the home Sunday readings card on the same preview payload.
+        try {
+          const homeSun = upcomingSundayISO();
+          if (date === homeSun) {
+            window.__homePreview = Object.assign({}, data, { __previewDate: date });
+            previewCache.set(previewCacheKey(date, false), data);
+            previewCache.set(previewCacheKey(date, true), data);
+            if (readingsPayloadComplete(data)) writeStoredReadings(date, data);
+            applyHomePreviewData(data, date);
+          }
+        } catch (_homeSyncErr) { /* home card optional */ }
         if (!readingsPayloadComplete(data)) {
           startReadingsPoll(date, (fresh) => {
             if ($("mass-date").value !== date) return;
             applyFlowReadingsData(fresh);
+            try {
+              const homeSun = upcomingSundayISO();
+              if (date === homeSun) {
+                window.__homePreview = Object.assign({}, fresh, { __previewDate: date });
+                applyHomePreviewData(fresh, date);
+              }
+            } catch (_e) { /* ignore */ }
           });
         }
         if (!auto) notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
@@ -41323,23 +41269,33 @@
 
     function pushSongHistory(entry) {
       if (!entry || !entry.title) return;
-      const kind = entry.kind || "lyrics_updated";
-      if (kind === "loaded" || kind === "opened") return;
+      pushSongHistoryBatch([entry]);
+    }
+
+    function pushSongHistoryBatch(entries) {
+      const list = Array.isArray(entries) ? entries.filter((e) => e && e.title) : [];
+      if (!list.length) return;
       let raw = readSongHistoryRaw();
-      const key = recentSongDedupeKey(entry);
-      raw = raw.filter((r) => {
-        const n = normalizeSongHistoryRow(r);
-        return recentSongDedupeKey(n || r) !== key;
+      const now = Date.now();
+      list.forEach((entry, idx) => {
+        const kind = entry.kind || "lyrics_updated";
+        if (kind === "loaded" || kind === "opened") return;
+        const key = recentSongDedupeKey(entry);
+        raw = raw.filter((r) => {
+          const n = normalizeSongHistoryRow(r);
+          return recentSongDedupeKey(n || r) !== key;
+        });
+        raw.unshift({
+          t: now - idx,
+          title: entry.title || "",
+          section: entry.section || "",
+          id: entry.id || "",
+          language: entry.language || "",
+          kind,
+        });
       });
-      raw.unshift({
-        t: Date.now(),
-        title: entry.title || "",
-        section: entry.section || "",
-        id: entry.id || "",
-        language: entry.language || "",
-        kind,
-      });
-      localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 32)));
+      // Keep enough room for bulk TXT imports (was 32).
+      localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 120)));
       renderCollectionsRecent();
       renderComposerRecent();
       if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
@@ -43723,21 +43679,13 @@
     initHeaderTicker();
     updateAccountMenuDisplay();
     initHomeEventModal();
-    initHomeSongsCarousel();
+    initHomeQuickActions();
     initReadingExpandModal();
     initWydCard();
     initAppMoreSheet();
     initMobileMenu();
     initSongPlanSummaryCollapse();
     initHomeTourBanner();
-    initHomeMobileCollapsible("home-events-card", "home-events-collapse-toggle", {
-      show: "Show events",
-      hide: "Hide events",
-    });
-    initHomeMobileCollapsible("home-songs-card", "home-songs-collapse-toggle", {
-      show: "Show songs",
-      hide: "Hide songs",
-    });
     initSongComposerCollapse();
     initLyricsComposerMobileUi();
 
