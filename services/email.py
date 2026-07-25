@@ -148,6 +148,26 @@ def _split_from(raw: str) -> tuple[str, str]:
     return name or "LiturgyFlow", addr
 
 
+def brand_logo_url() -> str:
+    """Public absolute URL for the logo shown inside HTML emails."""
+    custom = _env("EMAIL_LOGO_URL")
+    if custom:
+        return custom
+    try:
+        from services.auth_config import app_public_url
+
+        base = app_public_url()
+    except Exception:
+        base = ""
+    if not base:
+        return ""
+    # Brand mark for HTML emails (square LiturgyFlow crest).
+    path = _env("EMAIL_LOGO_PATH") or "/static/brand/email-logo.png"
+    if not path.startswith("/"):
+        path = "/" + path
+    return f"{base.rstrip('/')}{path}"
+
+
 def _cta_button(label: str, url: str) -> str:
     safe_label = (
         (label or "Open LiturgyFlow")
@@ -187,6 +207,22 @@ def wrap_html(
         .replace("<", "&lt;")
         .replace(">", "&gt;")
     )
+    logo = brand_logo_url()
+    if logo:
+        safe_logo = logo.replace('"', "%22")
+        brand_block = (
+            f'<div style="margin:0 0 16px;">'
+            f'<img src="{safe_logo}" alt="LiturgyFlow" width="56" height="56" '
+            f'style="display:block;width:56px;height:56px;border:0;border-radius:14px;" />'
+            f"</div>"
+            f'<p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;'
+            f'color:#c45c26;font-weight:700;">LiturgyFlow</p>'
+        )
+    else:
+        brand_block = (
+            '<p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;'
+            'color:#c45c26;font-weight:700;">LiturgyFlow</p>'
+        )
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -194,7 +230,7 @@ def wrap_html(
 <body style="margin:0;padding:0;background:#f3f1ee;font-family:Georgia,'Times New Roman',serif;color:#1c1917;">
   <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
     <div style="background:#ffffff;border-radius:12px;padding:28px 24px;border:1px solid #e8e4de;">
-      <p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c45c26;font-weight:700;">LiturgyFlow</p>
+      {brand_block}
       <h1 style="margin:0 0 16px;font-size:22px;line-height:1.25;font-weight:700;">{safe_title}</h1>
       <div style="font-size:15px;line-height:1.55;color:#3f3a36;">{body_html}</div>
       {cta}

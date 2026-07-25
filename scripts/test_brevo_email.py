@@ -25,9 +25,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 try:
-    from services.env_config import load_env_files
+    from services.env_config import load_project_dotenv
 
-    load_env_files()
+    load_project_dotenv()
 except Exception:
     pass
 
