@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from services.email import EmailResult, email_enabled, send_email, wrap_html
+from services.email import EmailResult, detail_rows, email_enabled, send_email, wrap_html
 from services.email_links import (
     home_cta_url,
     invite_signup_url,
@@ -23,6 +23,12 @@ def _esc(text: str) -> str:
         .replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace('"', "&quot;")
+    )
+
+
+def _p(html: str) -> str:
+    return (
+        f'<p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#15333D;">{html}</p>'
     )
 
 
@@ -49,19 +55,27 @@ def notify_access_request_admin(
         ]
     )
     body_html = (
-        f"<p>New access request from the landing page.</p>"
-        f"<p><strong>Name:</strong> {_esc(name)}<br>"
-        f"<strong>Email:</strong> {_esc(email)}<br>"
-        f"<strong>Parish:</strong> {_esc(parish)}<br>"
-        f"<strong>Message:</strong> {_esc(message or '(none)')}<br>"
-        f"<strong>IP:</strong> {_esc(client_ip or 'unknown')}</p>"
-        f"<p>Review in admin and send an invite if approved.</p>"
+        _p("Someone requested access from the landing page.")
+        + detail_rows(
+            [
+                ("Name", _esc(name)),
+                ("Email", f'<a href="mailto:{_esc(email)}" style="color:#a10f0d;text-decoration:none;">{_esc(email)}</a>'),
+                ("Parish", _esc(parish)),
+                ("Message", _esc(message or "—")),
+                ("IP", _esc(client_ip or "unknown")),
+            ]
+        )
+        + _p("Review in admin and send an invite if you approve them.")
     )
     return send_email(
         to=to_addr,
         subject=f"LiturgyFlow access request — {name}",
         text=body_text,
-        html=wrap_html(title="New access request", body_html=body_html),
+        html=wrap_html(
+            title="New access request",
+            body_html=body_html,
+            preheader=f"{name} · {parish}",
+        ),
         reply_to=email,
     )
 
@@ -78,14 +92,19 @@ def notify_access_request_user(*, name: str, email: str, parish: str) -> EmailRe
     html = wrap_html(
         title="We received your request",
         body_html=(
-            f"<p>Hi {_esc(first)},</p>"
-            f"<p>Thanks — we received your access request for "
-            f"<strong>{_esc(parish)}</strong>.</p>"
-            "<p>We'll review it and follow up by email if you're approved. "
-            "This is not an instant signup.</p>"
+            _p(f"Hi {_esc(first)},")
+            + _p(
+                f"Thanks — we received your access request for "
+                f"<strong>{_esc(parish)}</strong>."
+            )
+            + _p(
+                "We’ll review it and follow up by email if you’re approved. "
+                "This is not an instant signup."
+            )
         ),
         cta_label="Open LiturgyFlow",
         cta_url=cta,
+        preheader=f"Request received for {parish}",
     )
     return send_email(
         to=email,
@@ -111,14 +130,18 @@ def notify_membership_approved(
         f"{cta}\n"
     )
     html = wrap_html(
-        title="You're approved",
+        title="You’re approved",
         body_html=(
-            f"<p>Hi {_esc(first)},</p>"
-            f"<p><strong>{_esc(parish)}</strong> is approved. "
-            "You can generate Mass decks, posters, and choir practice links.</p>"
+            _p(f"Hi {_esc(first)},")
+            + _p(
+                f"<strong>{_esc(parish)}</strong> is approved. "
+                "You can generate Mass decks, posters, and choir practice links."
+            )
+            + _p("A good next step: create this Sunday’s Mass PowerPoint.")
         ),
         cta_label="Create Mass PPTX",
         cta_url=cta,
+        preheader=f"{parish} is ready on LiturgyFlow",
     )
     return send_email(
         to=email,
@@ -146,13 +169,16 @@ def notify_membership_rejected(
     html = wrap_html(
         title="Membership update",
         body_html=(
-            f"<p>Hi {_esc(first)},</p>"
-            f"<p>We couldn't approve <strong>{_esc(parish)}</strong> for full LiturgyFlow "
-            "access at this time.</p>"
-            "<p>If you believe this is a mistake, reply or contact your administrator.</p>"
+            _p(f"Hi {_esc(first)},")
+            + _p(
+                f"We couldn’t approve <strong>{_esc(parish)}</strong> for full "
+                "LiturgyFlow access at this time."
+            )
+            + _p("If you believe this is a mistake, reply to this email or contact your administrator.")
         ),
         cta_label="Open LiturgyFlow",
         cta_url=cta,
+        preheader="Update on your LiturgyFlow request",
     )
     return send_email(
         to=email,
@@ -181,18 +207,24 @@ def notify_platform_invite(
         f"Accept your invite:\n{url}\n"
     )
     note_html = (
-        f"<p><em>{_esc(note.strip())}</em></p>" if (note or "").strip() else ""
+        _p(f"<em style=\"color:#5C6B75;\">{_esc(note.strip())}</em>")
+        if (note or "").strip()
+        else ""
     )
     html = wrap_html(
-        title="You're invited",
+        title="You’re invited",
         body_html=(
-            f"<p>You've been invited to LiturgyFlow as a <strong>{_esc(role_label)}</strong> "
-            f"for <strong>{_esc(parish)}</strong>.</p>"
-            f"{note_html}"
-            "<p>Use the button below to create your account (invite link required).</p>"
+            _p(
+                f"You’ve been invited to LiturgyFlow as a "
+                f"<strong>{_esc(role_label)}</strong> for "
+                f"<strong>{_esc(parish)}</strong>."
+            )
+            + note_html
+            + _p("Use the button below to create your account. An invite link is required.")
         ),
         cta_label="Accept invite",
         cta_url=url,
+        preheader=f"Join {parish} on LiturgyFlow",
     )
     return send_email(
         to=email,
@@ -221,18 +253,21 @@ def notify_mass_pptx_reminder(
         "haven't been generated yet.\n\n"
         f"Create Mass PPTX:\n{cta}\n"
     )
+    when = _esc(mass_date) + (f" — {_esc(title)}" if title else "")
     html = wrap_html(
         title="Sunday Mass slides",
         body_html=(
-            f"<p>Hi {_esc(first)},</p>"
-            f"<p>Reminder for <strong>{_esc(parish)}</strong>: Mass slides for "
-            f"<strong>{_esc(mass_date)}</strong>"
-            f"{(' — ' + _esc(title)) if title else ''} "
-            "haven't been generated yet.</p>"
+            _p(f"Hi {_esc(first)},")
+            + _p(
+                f"Reminder for <strong>{_esc(parish)}</strong>: Mass slides for "
+                f"<strong>{when}</strong> haven’t been generated yet."
+            )
+            + detail_rows([("Mass date", when), ("Parish", _esc(parish))])
         ),
         cta_label="Create Mass PPTX",
         cta_url=cta,
         footer_note="You receive this because your parish is approved on LiturgyFlow.",
+        preheader=f"Still to generate · {mass_date}",
     )
     return send_email(
         to=email,
@@ -261,19 +296,24 @@ def notify_practice_share_reminder(
         "Create a PIN-protected link (links expire after 24 hours).\n\n"
         f"Share lyrics:\n{cta}\n"
     )
+    when = _esc(mass_date) + (f" — {_esc(title)}" if title else "")
     html = wrap_html(
         title="Share choir practice lyrics",
         body_html=(
-            f"<p>Hi {_esc(first)},</p>"
-            f"<p>Reminder for <strong>{_esc(parish)}</strong>: share this week's choir "
-            f"practice lyrics for <strong>{_esc(mass_date)}</strong>"
-            f"{(' — ' + _esc(title)) if title else ''}.</p>"
-            "<p>Create a PIN-protected link when the choir is ready to practice "
-            "(links expire after 24 hours).</p>"
+            _p(f"Hi {_esc(first)},")
+            + _p(
+                f"Reminder for <strong>{_esc(parish)}</strong>: share this week’s choir "
+                f"practice lyrics for <strong>{when}</strong>."
+            )
+            + _p(
+                "Create a PIN-protected link when the choir is ready to practice "
+                "(links expire after 24 hours)."
+            )
         ),
         cta_label="Share lyrics",
         cta_url=cta,
         footer_note="You receive this because your parish is approved on LiturgyFlow.",
+        preheader=f"Share lyrics · {mass_date}",
     )
     return send_email(
         to=email,

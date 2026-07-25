@@ -168,23 +168,66 @@ def brand_logo_url() -> str:
     return f"{base.rstrip('/')}{path}"
 
 
-def _cta_button(label: str, url: str) -> str:
-    safe_label = (
-        (label or "Open LiturgyFlow")
+def app_home_url() -> str:
+    try:
+        from services.auth_config import app_public_url
+
+        return app_public_url() or "https://liturgyflow.com"
+    except Exception:
+        return "https://liturgyflow.com"
+
+
+def _esc_attr(value: str) -> str:
+    return (
+        (value or "")
         .replace("&", "&amp;")
+        .replace('"', "&quot;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
     )
-    safe_url = (url or "").replace('"', "%22")
-    return (
-        f'<p style="margin:28px 0 8px;">'
-        f'<a href="{safe_url}" style="display:inline-block;padding:12px 22px;'
-        f"background:#c45c26;color:#ffffff;text-decoration:none;border-radius:8px;"
-        f'font-weight:600;font-family:Georgia,serif;font-size:15px;">'
-        f"{safe_label}</a></p>"
-        f'<p style="margin:0;font-size:12px;color:#6b6560;word-break:break-all;">'
-        f'Or open: <a href="{safe_url}" style="color:#6b6560;">{safe_url}</a></p>'
-    )
+
+
+def _cta_button(label: str, url: str) -> str:
+    safe_label = _esc_attr(label or "Open LiturgyFlow")
+    safe_url = _esc_attr(url or "")
+    return f"""
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 12px;">
+  <tr>
+    <td align="left" bgcolor="#a10f0d" style="border-radius:10px;background-color:#a10f0d;">
+      <a href="{safe_url}"
+         style="display:inline-block;padding:14px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                font-size:15px;font-weight:600;line-height:1.2;color:#ffffff;text-decoration:none;border-radius:10px;">
+        {safe_label}
+      </a>
+    </td>
+  </tr>
+</table>
+<p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+          font-size:12px;line-height:1.5;color:#5C6B75;word-break:break-all;">
+  Or open:<br>
+  <a href="{safe_url}" style="color:#5C6B75;text-decoration:underline;">{safe_url}</a>
+</p>"""
+
+
+def detail_rows(rows: list[tuple[str, str]]) -> str:
+    """Render a clean label/value card for admin-style emails."""
+    parts: list[str] = [
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+        'style="margin:8px 0 20px;border:1px solid #E4E9EF;border-radius:12px;overflow:hidden;">'
+    ]
+    for i, (label, value) in enumerate(rows):
+        border = "border-bottom:1px solid #E4E9EF;" if i < len(rows) - 1 else ""
+        parts.append(
+            f'<tr>'
+            f'<td style="padding:12px 14px;{border}background:#FFFFFF;'
+            f"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;\">"
+            f'<div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;'
+            f'color:#5C6B75;margin:0 0 4px;">{_esc_attr(label)}</div>'
+            f'<div style="font-size:15px;line-height:1.45;color:#15333D;">{value}</div>'
+            f"</td></tr>"
+        )
+    parts.append("</table>")
+    return "".join(parts)
 
 
 def wrap_html(
@@ -194,52 +237,107 @@ def wrap_html(
     cta_label: str = "",
     cta_url: str = "",
     footer_note: str = "",
+    preheader: str = "",
 ) -> str:
+    """Branded transactional shell — table layout for Gmail/Outlook."""
     cta = _cta_button(cta_label, cta_url) if cta_label and cta_url else ""
     foot = (
-        f'<p style="margin:24px 0 0;font-size:12px;color:#8a847c;">{footer_note}</p>'
+        f'<p style="margin:24px 0 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Helvetica,Arial,sans-serif;'
+        f'font-size:12px;line-height:1.5;color:#5C6B75;">{footer_note}</p>'
         if footer_note
         else ""
     )
-    safe_title = (
-        (title or "LiturgyFlow")
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    safe_title = _esc_attr(title or "LiturgyFlow")
+    safe_pre = _esc_attr(preheader or title or "")
     logo = brand_logo_url()
+    home = _esc_attr(app_home_url())
+
     if logo:
-        safe_logo = logo.replace('"', "%22")
-        brand_block = (
-            f'<div style="margin:0 0 16px;">'
-            f'<img src="{safe_logo}" alt="LiturgyFlow" width="56" height="56" '
-            f'style="display:block;width:56px;height:56px;border:0;border-radius:14px;" />'
-            f"</div>"
-            f'<p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;'
-            f'color:#c45c26;font-weight:700;">LiturgyFlow</p>'
+        safe_logo = _esc_attr(logo)
+        logo_cell = (
+            f'<a href="{home}" style="text-decoration:none;">'
+            f'<img src="{safe_logo}" alt="LiturgyFlow" width="64" height="64" '
+            f'style="display:block;width:64px;height:64px;border:0;border-radius:16px;" />'
+            f"</a>"
         )
     else:
-        brand_block = (
-            '<p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;'
-            'color:#c45c26;font-weight:700;">LiturgyFlow</p>'
+        logo_cell = (
+            f'<a href="{home}" style="font-family:Georgia,\'Times New Roman\',serif;font-size:22px;'
+            f'color:#a10f0d;text-decoration:none;font-weight:700;">LiturgyFlow</a>'
         )
+
     return f"""<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{safe_title}</title></head>
-<body style="margin:0;padding:0;background:#f3f1ee;font-family:Georgia,'Times New Roman',serif;color:#1c1917;">
-  <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
-    <div style="background:#ffffff;border-radius:12px;padding:28px 24px;border:1px solid #e8e4de;">
-      {brand_block}
-      <h1 style="margin:0 0 16px;font-size:22px;line-height:1.25;font-weight:700;">{safe_title}</h1>
-      <div style="font-size:15px;line-height:1.55;color:#3f3a36;">{body_html}</div>
-      {cta}
-      {foot}
-    </div>
-    <p style="margin:16px 8px 0;font-size:11px;color:#9a948c;text-align:center;">
-      Sent by LiturgyFlow · Catholic Mass media for parishes
-    </p>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>{safe_title}</title>
+<!--[if mso]><style>body,table,td{{font-family:Arial,sans-serif!important;}}</style><![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#EEF2F6;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+    {safe_pre}
   </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EEF2F6;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+          <tr>
+            <td align="left" style="padding:0 4px 18px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="middle" style="padding-right:12px;">{logo_cell}</td>
+                  <td valign="middle">
+                    <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.1;color:#15333D;font-weight:700;">
+                      LiturgyFlow
+                    </div>
+                    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                font-size:12px;line-height:1.3;color:#5C6B75;margin-top:3px;">
+                      Catholic Mass media for parishes
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#FFFFFF;border:1px solid #E4E9EF;border-radius:16px;padding:0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="height:4px;line-height:4px;font-size:0;background-color:#a10f0d;border-radius:16px 16px 0 0;">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 28px 8px;">
+                    <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;
+                               font-weight:700;color:#15333D;letter-spacing:-0.02em;">
+                      {safe_title}
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 28px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                             font-size:16px;line-height:1.55;color:#15333D;">
+                    {body_html}
+                    {cta}
+                    {foot}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:20px 8px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                                       font-size:11px;line-height:1.5;color:#5C6B75;">
+              Sent by <a href="{home}" style="color:#5C6B75;text-decoration:underline;">LiturgyFlow</a>
+              · Mass decks, posters &amp; choir practice
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>"""
 
