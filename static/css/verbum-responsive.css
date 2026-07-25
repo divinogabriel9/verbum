@@ -1048,7 +1048,7 @@ iframe {
     left: 0;
     right: 0;
     height: 2px;
-    background: color-mix(in srgb, var(--accent, #c45c4a) 85%, transparent);
+    background: color-mix(in srgb, var(--accent, #a10f0d) 85%, transparent);
     transform-origin: left center;
     animation: bottom-nav-autohide-progress 3.2s linear forwards;
     pointer-events: none;

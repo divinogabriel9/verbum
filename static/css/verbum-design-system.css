@@ -173,10 +173,13 @@ html[data-theme="dark"] {
   --shadow-light: none;
   --shadow-medium: none;
   --shadow-large: none;
-  --good: #d45250;
-  --color-primary: #d45250;
-  --color-primary-active: #a10f0d;
-  --on-primary: #1c1c1c;
+  --good: #a10f0d;
+  --color-primary: #a10f0d;
+  --color-primary-active: #8a0c0b;
+  --on-primary: #ffffff;
+  --accent: #a10f0d;
+  --liturgical-accent: #a10f0d;
+  --liturgical-glow: #b91c1c;
   --app-scrim: rgba(0, 0, 0, 0.72);
   --vb-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.48);
   --apple-card-shadow-rest: none;

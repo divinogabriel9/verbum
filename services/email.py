@@ -161,7 +161,6 @@ def brand_logo_url() -> str:
         base = ""
     if not base:
         return ""
-    # Brand mark for HTML emails (square LiturgyFlow crest).
     path = _env("EMAIL_LOGO_PATH") or "/static/brand/email-logo.png"
     if not path.startswith("/"):
         path = "/" + path
@@ -187,43 +186,160 @@ def _esc_attr(value: str) -> str:
     )
 
 
-def _cta_button(label: str, url: str) -> str:
-    safe_label = _esc_attr(label or "Open LiturgyFlow")
-    safe_url = _esc_attr(url or "")
+# Premium SaaS email tokens (LiturgyFlow / Winter Berry)
+_EMAIL_BG = "#F8F9FB"
+_EMAIL_CARD = "#FFFFFF"
+_EMAIL_PRIMARY = "#a10f0d"
+_EMAIL_PRIMARY_HOVER = "#8a0c0b"
+_EMAIL_INK = "#1F2937"
+_EMAIL_MUTED = "#6B7280"
+_EMAIL_BORDER = "#E5E7EB"
+_EMAIL_FONT = (
+    "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
+)
+
+
+def brand_header_html() -> str:
+    home = _esc_attr(app_home_url())
+    logo = brand_logo_url()
+    if logo:
+        safe_logo = _esc_attr(logo)
+        mark = (
+            f'<a href="{home}" style="text-decoration:none;display:inline-block;">'
+            f'<img src="{safe_logo}" alt="LiturgyFlow" width="48" height="48" '
+            f'style="display:block;width:48px;height:48px;border:0;border-radius:12px;" />'
+            f"</a>"
+        )
+    else:
+        mark = (
+            f'<a href="{home}" style="font-family:{_EMAIL_FONT};font-size:18px;'
+            f'font-weight:700;color:{_EMAIL_PRIMARY};text-decoration:none;">LiturgyFlow</a>'
+        )
     return f"""
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 12px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 28px;">
   <tr>
-    <td align="left" bgcolor="#a10f0d" style="border-radius:10px;background-color:#a10f0d;">
-      <a href="{safe_url}"
-         style="display:inline-block;padding:14px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-                font-size:15px;font-weight:600;line-height:1.2;color:#ffffff;text-decoration:none;border-radius:10px;">
-        {safe_label}
-      </a>
+    <td align="center" style="padding:0 0 12px;">{mark}</td>
+  </tr>
+  <tr>
+    <td align="center" style="font-family:{_EMAIL_FONT};font-size:17px;font-weight:650;
+                               letter-spacing:-0.02em;color:{_EMAIL_INK};padding:0 0 4px;">
+      LiturgyFlow
     </td>
   </tr>
-</table>
-<p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-          font-size:12px;line-height:1.5;color:#5C6B75;word-break:break-all;">
-  Or open:<br>
-  <a href="{safe_url}" style="color:#5C6B75;text-decoration:underline;">{safe_url}</a>
-</p>"""
+  <tr>
+    <td align="center" style="font-family:{_EMAIL_FONT};font-size:13px;line-height:1.4;
+                               color:{_EMAIL_MUTED};">
+      Catholic Mass media for parishes
+    </td>
+  </tr>
+</table>"""
+
+
+def event_card_html(*, date_label: str = "", title: str = "") -> str:
+    date_s = (date_label or "").strip()
+    title_s = (title or "").strip()
+    if not date_s and not title_s:
+        return ""
+    date_row = (
+        f'<div style="font-family:{_EMAIL_FONT};font-size:15px;font-weight:600;'
+        f'line-height:1.4;color:{_EMAIL_INK};margin:0 0 4px;">{_esc_attr(date_s)}</div>'
+        if date_s
+        else ""
+    )
+    title_row = (
+        f'<div style="font-family:{_EMAIL_FONT};font-size:15px;line-height:1.45;'
+        f'color:{_EMAIL_MUTED};margin:0;">{_esc_attr(title_s)}</div>'
+        if title_s
+        else ""
+    )
+    return f"""
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="margin:0 0 28px;border:1px solid {_EMAIL_BORDER};border-radius:14px;background:{_EMAIL_BG};">
+  <tr>
+    <td align="center" style="padding:18px 20px;">
+      {date_row}
+      {title_row}
+    </td>
+  </tr>
+</table>"""
+
+
+def primary_cta_html(label: str, url: str) -> str:
+    safe_label = _esc_attr(label or "Continue")
+    safe_url = _esc_attr(url or "")
+    return f"""
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 12px;">
+  <tr>
+    <td align="center" bgcolor="{_EMAIL_PRIMARY}"
+        style="border-radius:14px;background-color:{_EMAIL_PRIMARY};">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{safe_url}"
+        style="height:52px;v-text-anchor:middle;width:100%;" arcsize="20%" fillcolor="{_EMAIL_PRIMARY}" stroke="f">
+        <w:anchorlock/>
+        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:600;">
+          {safe_label}
+        </center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-- -->
+      <a href="{safe_url}"
+         style="display:block;padding:16px 24px;font-family:{_EMAIL_FONT};font-size:16px;font-weight:600;
+                line-height:1.25;color:#ffffff;text-decoration:none;border-radius:14px;text-align:center;">
+        {safe_label}
+      </a>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>"""
+
+
+def helper_text_html(text: str) -> str:
+    clean = (text or "").strip()
+    if not clean:
+        return ""
+    return (
+        f'<p style="margin:0 0 8px;font-family:{_EMAIL_FONT};font-size:13px;'
+        f'line-height:1.45;color:{_EMAIL_MUTED};text-align:center;">{_esc_attr(clean)}</p>'
+    )
+
+
+def email_footer_html() -> str:
+    home = _esc_attr(app_home_url())
+    return f"""
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;">
+  <tr>
+    <td align="center" style="padding:28px 12px 0;font-family:{_EMAIL_FONT};font-size:13px;
+                               line-height:1.55;color:{_EMAIL_MUTED};">
+      <div style="margin:0 0 6px;">Made with &#10084;&#65039; by LiturgyFlow</div>
+      <div style="margin:0 0 14px;">Helping Catholic parishes prepare Mass beautifully.</div>
+      <div>
+        <a href="{home}" style="color:{_EMAIL_MUTED};text-decoration:underline;">Support</a>
+        &nbsp;&middot;&nbsp;
+        <a href="{home}" style="color:{_EMAIL_MUTED};text-decoration:underline;">Privacy</a>
+        &nbsp;&middot;&nbsp;
+        <a href="{home}" style="color:{_EMAIL_MUTED};text-decoration:underline;">Unsubscribe</a>
+      </div>
+    </td>
+  </tr>
+</table>"""
 
 
 def detail_rows(rows: list[tuple[str, str]]) -> str:
-    """Render a clean label/value card for admin-style emails."""
+    """Compact label/value list for admin emails (kept minimal)."""
+    if not rows:
+        return ""
     parts: list[str] = [
-        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
-        'style="margin:8px 0 20px;border:1px solid #E4E9EF;border-radius:12px;overflow:hidden;">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+        f'style="margin:0 0 24px;border:1px solid {_EMAIL_BORDER};border-radius:14px;overflow:hidden;">'
     ]
     for i, (label, value) in enumerate(rows):
-        border = "border-bottom:1px solid #E4E9EF;" if i < len(rows) - 1 else ""
+        border = f"border-bottom:1px solid {_EMAIL_BORDER};" if i < len(rows) - 1 else ""
         parts.append(
-            f'<tr>'
-            f'<td style="padding:12px 14px;{border}background:#FFFFFF;'
-            f"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;\">"
-            f'<div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;'
-            f'color:#5C6B75;margin:0 0 4px;">{_esc_attr(label)}</div>'
-            f'<div style="font-size:15px;line-height:1.45;color:#15333D;">{value}</div>'
+            f"<tr><td style=\"padding:14px 16px;{border}background:{_EMAIL_CARD};"
+            f'font-family:{_EMAIL_FONT};text-align:left;">'
+            f'<div style="font-size:12px;font-weight:600;color:{_EMAIL_MUTED};margin:0 0 4px;">'
+            f"{_esc_attr(label)}</div>"
+            f'<div style="font-size:15px;line-height:1.45;color:{_EMAIL_INK};">{value}</div>'
             f"</td></tr>"
         )
     parts.append("</table>")
@@ -233,38 +349,41 @@ def detail_rows(rows: list[tuple[str, str]]) -> str:
 def wrap_html(
     *,
     title: str,
-    body_html: str,
+    body_html: str = "",
+    subtitle: str = "",
     cta_label: str = "",
     cta_url: str = "",
+    helper: str = "",
+    event_date: str = "",
+    event_title: str = "",
     footer_note: str = "",
     preheader: str = "",
 ) -> str:
-    """Branded transactional shell — table layout for Gmail/Outlook."""
-    cta = _cta_button(cta_label, cta_url) if cta_label and cta_url else ""
-    foot = (
-        f'<p style="margin:24px 0 0;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Helvetica,Arial,sans-serif;'
-        f'font-size:12px;line-height:1.5;color:#5C6B75;">{footer_note}</p>'
-        if footer_note
+    """Premium SaaS transactional shell — one action, lots of whitespace.
+
+    Prefer ``subtitle`` + ``cta_*`` + optional ``event_*``. ``body_html`` remains
+    for rare admin detail blocks. ``footer_note`` is ignored (kept for call-site compat).
+    """
+    del footer_note  # intentional: SaaS footer replaces per-email notes
+    safe_title = _esc_attr(title or "LiturgyFlow")
+    safe_sub = _esc_attr(subtitle or "")
+    safe_pre = _esc_attr(preheader or subtitle or title or "")
+    cta = primary_cta_html(cta_label, cta_url) if cta_label and cta_url else ""
+    event = event_card_html(date_label=event_date, title=event_title)
+    helper_block = helper_text_html(helper)
+    body = (body_html or "").strip()
+    body_block = (
+        f'<div style="font-family:{_EMAIL_FONT};font-size:16px;line-height:1.55;'
+        f'color:{_EMAIL_INK};text-align:center;margin:0 0 8px;">{body}</div>'
+        if body
         else ""
     )
-    safe_title = _esc_attr(title or "LiturgyFlow")
-    safe_pre = _esc_attr(preheader or title or "")
-    logo = brand_logo_url()
-    home = _esc_attr(app_home_url())
-
-    if logo:
-        safe_logo = _esc_attr(logo)
-        logo_cell = (
-            f'<a href="{home}" style="text-decoration:none;">'
-            f'<img src="{safe_logo}" alt="LiturgyFlow" width="64" height="64" '
-            f'style="display:block;width:64px;height:64px;border:0;border-radius:16px;" />'
-            f"</a>"
-        )
-    else:
-        logo_cell = (
-            f'<a href="{home}" style="font-family:Georgia,\'Times New Roman\',serif;font-size:22px;'
-            f'color:#a10f0d;text-decoration:none;font-weight:700;">LiturgyFlow</a>'
-        )
+    subtitle_block = (
+        f'<p style="margin:0 0 28px;font-family:{_EMAIL_FONT};font-size:17px;line-height:1.5;'
+        f'color:{_EMAIL_MUTED};text-align:center;">{safe_sub}</p>'
+        if safe_sub
+        else '<div style="height:12px;line-height:12px;font-size:0;">&nbsp;</div>'
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -276,63 +395,33 @@ def wrap_html(
 <title>{safe_title}</title>
 <!--[if mso]><style>body,table,td{{font-family:Arial,sans-serif!important;}}</style><![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#EEF2F6;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
-    {safe_pre}
-  </div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EEF2F6;">
+<body style="margin:0;padding:0;background-color:{_EMAIL_BG};">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{safe_pre}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:{_EMAIL_BG};">
     <tr>
-      <td align="center" style="padding:32px 16px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:600px;width:100%;">
           <tr>
-            <td align="left" style="padding:0 4px 18px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td valign="middle" style="padding-right:12px;">{logo_cell}</td>
-                  <td valign="middle">
-                    <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1.1;color:#15333D;font-weight:700;">
-                      LiturgyFlow
-                    </div>
-                    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-                                font-size:12px;line-height:1.3;color:#5C6B75;margin-top:3px;">
-                      Catholic Mass media for parishes
-                    </div>
-                  </td>
-                </tr>
-              </table>
+            <td align="center" style="padding:0 0 8px;">{brand_header_html()}</td>
+          </tr>
+          <tr>
+            <td style="background-color:{_EMAIL_CARD};border:1px solid {_EMAIL_BORDER};border-radius:20px;
+                       box-shadow:0 8px 30px rgba(0,0,0,.06);padding:40px 32px;">
+              <h1 style="margin:0 0 12px;font-family:{_EMAIL_FONT};font-size:32px;line-height:1.15;
+                         font-weight:700;letter-spacing:-0.03em;color:{_EMAIL_INK};text-align:center;">
+                {safe_title}
+              </h1>
+              {subtitle_block}
+              {event}
+              {body_block}
+              {cta}
+              {helper_block}
             </td>
           </tr>
           <tr>
-            <td style="background-color:#FFFFFF;border:1px solid #E4E9EF;border-radius:16px;padding:0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="height:4px;line-height:4px;font-size:0;background-color:#a10f0d;border-radius:16px 16px 0 0;">&nbsp;</td>
-                </tr>
-                <tr>
-                  <td style="padding:28px 28px 8px;">
-                    <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;
-                               font-weight:700;color:#15333D;letter-spacing:-0.02em;">
-                      {safe_title}
-                    </h1>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 28px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-                             font-size:16px;line-height:1.55;color:#15333D;">
-                    {body_html}
-                    {cta}
-                    {foot}
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding:20px 8px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-                                       font-size:11px;line-height:1.5;color:#5C6B75;">
-              Sent by <a href="{home}" style="color:#5C6B75;text-decoration:underline;">LiturgyFlow</a>
-              · Mass decks, posters &amp; choir practice
-            </td>
+            <td align="center">{email_footer_html()}</td>
           </tr>
         </table>
       </td>
@@ -340,6 +429,11 @@ def wrap_html(
   </table>
 </body>
 </html>"""
+
+
+# Back-compat alias used by older call sites
+def _cta_button(label: str, url: str) -> str:
+    return primary_cta_html(label, url)
 
 
 def _humanize_brevo_error(status: int, detail: str) -> str:

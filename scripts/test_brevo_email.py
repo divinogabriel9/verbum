@@ -32,6 +32,7 @@ except Exception:
     pass
 
 from services.email import (  # noqa: E402
+    app_home_url,
     default_from_address,
     email_config_status,
     email_enabled,
@@ -88,11 +89,10 @@ def send_test(to: str) -> int:
         text="If you received this, transactional email is working.",
         html=wrap_html(
             title="Brevo test OK",
-            body_html=(
-                "<p>If you received this, <strong>transactional</strong> email is working.</p>"
-                "<p>Access requests, invites, and reminders use this path — "
-                "not Email Campaigns.</p>"
-            ),
+            subtitle="Transactional email from LiturgyFlow is working.",
+            cta_label="Open LiturgyFlow",
+            cta_url=app_home_url(),
+            preheader="Brevo transactional test",
         ),
     )
     print(f"ok={result.ok} provider={result.provider!r} error={result.error!r}")

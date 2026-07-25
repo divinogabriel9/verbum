@@ -36,7 +36,7 @@
       --wb-petal: #C1A3A1;
       --wb-berry: #a10f0d;
       --wb-stone: #788898;
-      --wb-neon: #d45250;
+      --wb-neon: #b91c1c;
       --wb-neon-dim: #a10f0d;
       --bg: #EEF2F6;
       --bg-top: #FFFFFF;
@@ -52,7 +52,7 @@
       --accent-2: #788898;
       --accent-3: #C1A3A1;
       --liturgical-accent: #a10f0d;
-      --liturgical-glow: #d45250;
+      --liturgical-glow: #b91c1c;
       --liturgical-secondary: #788898;
       --liturgical-ordinary: #166534;
       --liturgical-ordinary-glow: #4ADE80;
@@ -175,13 +175,13 @@
       --line-soft: #2e2e2e;
       --accent: #a10f0d;
       --liturgical-accent: #a10f0d;
-      --liturgical-glow: #d45250;
+      --liturgical-glow: #b91c1c;
       --liturgical-secondary: #788898;
       --on-accent: #FFFFFF;
-      --good: #d45250;
-      --color-primary: #d45250;
-      --color-primary-active: #a10f0d;
-      --on-primary: #1c1c1c;
+      --good: #a10f0d;
+      --color-primary: #a10f0d;
+      --color-primary-active: #8a0c0b;
+      --on-primary: #FFFFFF;
       --toast-success: #4ade80;
       --toast-error: #f87171;
       --toast-warn: #fbbf24;
@@ -277,13 +277,13 @@
       border-color: var(--line);
     }
     html[data-theme="dark"] .primary {
-      color: var(--on-primary, #1c1c1c);
-      background: var(--color-primary, #d45250);
-      border-color: var(--color-primary, #d45250);
+      color: var(--on-primary, #ffffff);
+      background: var(--color-primary, #a10f0d);
+      border-color: var(--color-primary, #a10f0d);
     }
     html[data-theme="dark"] .primary:hover {
-      background: var(--color-primary-active, #a10f0d);
-      border-color: var(--color-primary-active, #a10f0d);
+      background: var(--color-primary-active, #8a0c0b);
+      border-color: var(--color-primary-active, #8a0c0b);
     }
     html[data-theme="dark"] .topbar,
     html[data-theme="dark"] .hero,
@@ -5481,12 +5481,12 @@
     }
     html[data-theme="dark"] .home-bento-cell--mass {
       --rmc-mesh-a: color-mix(in srgb, var(--liturgical-accent) 28%, #0a1420);
-      --rmc-mesh-b: color-mix(in srgb, var(--liturgical-accent) 18%, #141008);
-      --rmc-mesh-c: color-mix(in srgb, var(--liturgical-glow) 38%, #3a2010);
+      --rmc-mesh-b: color-mix(in srgb, var(--liturgical-accent) 16%, #12161c);
+      --rmc-mesh-c: color-mix(in srgb, var(--liturgical-glow) 36%, #1a0c10);
       --rmc-mesh-d: color-mix(in srgb, var(--liturgical-glow) 58%, var(--liturgical-accent) 42%);
-      --rmc-ink-strong: #faf3e6;
-      --rmc-ink-body: color-mix(in srgb, var(--liturgical-glow) 22%, #e8d8bc);
-      --rmc-ink-muted: color-mix(in srgb, var(--liturgical-glow) 14%, #b8a888);
+      --rmc-ink-strong: #f5f5f5;
+      --rmc-ink-body: color-mix(in srgb, var(--liturgical-accent) 18%, #e8e8e8);
+      --rmc-ink-muted: color-mix(in srgb, var(--liturgical-accent) 12%, #b0b0b0);
       background:
         radial-gradient(ellipse 88% 82% at 96% 94%, var(--rmc-mesh-d), transparent 72%),
         radial-gradient(ellipse 62% 58% at 88% 78%, var(--rmc-mesh-c), transparent 64%),
@@ -5495,12 +5495,12 @@
         linear-gradient(
           152deg,
           color-mix(in srgb, var(--liturgical-accent) 18%, #0c1018) 0%,
-          color-mix(in srgb, var(--liturgical-accent) 12%, #120c06) 38%,
-          color-mix(in srgb, var(--liturgical-glow) 42%, #3a1808) 100%
+          color-mix(in srgb, var(--liturgical-accent) 12%, #101418) 38%,
+          color-mix(in srgb, var(--liturgical-glow) 40%, #1a0a0c) 100%
         );
-      border-color: color-mix(in srgb, var(--liturgical-glow) 22%, rgba(255, 220, 160, 0.18));
+      border-color: color-mix(in srgb, var(--liturgical-glow) 28%, rgba(255, 255, 255, 0.12));
       box-shadow:
-        inset 0 1px 0 rgba(255, 220, 160, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
         0 14px 44px rgba(0, 0, 0, 0.42);
     }
     .redesign-mass-card::after {
@@ -11794,14 +11794,14 @@
     }
     .uiverse-btn--sm .button-inner { padding: 0.55em 1em; }
     .uiverse-btn--orange .button-outer {
-      box-shadow: 0 10px 32px rgba(167, 139, 250, 0.38), 0 4px 12px rgba(244, 114, 182, 0.2);
+      box-shadow: 0 10px 32px color-mix(in srgb, #a10f0d 38%, transparent), 0 4px 12px rgba(21, 51, 61, 0.14);
     }
     .uiverse-btn--orange:hover:not(.is-disabled) .button-outer {
-      box-shadow: 0 14px 40px rgba(167, 139, 250, 0.45), 0 6px 16px rgba(244, 114, 182, 0.28);
+      box-shadow: 0 14px 40px color-mix(in srgb, #a10f0d 45%, transparent), 0 6px 16px rgba(21, 51, 61, 0.18);
     }
     .uiverse-btn--orange .button-inner {
-      background-image: linear-gradient(135deg, #a78bfa, #f472b6);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      background-image: linear-gradient(135deg, #a10f0d, #b91c1c);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
     }
     .uiverse-btn .button-inner span {
       position: relative;
@@ -11821,7 +11821,7 @@
       background-image: none;
       -webkit-background-clip: border-box;
       background-clip: border-box;
-      text-shadow: 0 1px 2px rgba(91, 33, 182, 0.2);
+      text-shadow: 0 1px 2px rgba(90, 10, 8, 0.25);
     }
     .uiverse-btn--accent .button-outer {
       box-shadow:
@@ -16766,7 +16766,7 @@
       color: var(--ink);
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260705" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <style id="verbum-layout-overrides">
     /* Loaded after design-system — desktop layout wins over external sheets */
@@ -22301,7 +22301,7 @@
                 <h3>Accent color</h3>
                 <p class="muted">App chrome follows the Verbum icon color by default. Liturgical green appears only on the Ordinary Time season pill in the header.</p>
                 <div class="accent-preset-row" role="group" aria-label="Accent presets">
-                  <button type="button" class="accent-swatch" data-accent="#a10f0d" data-accent-glow="#d45250" data-accent-default="1" title="Verbum app icon" style="background: linear-gradient(135deg, #a10f0d, #d45250);"></button>
+                  <button type="button" class="accent-swatch" data-accent="#a10f0d" data-accent-glow="#b91c1c" data-accent-default="1" title="Verbum app icon" style="background: linear-gradient(135deg, #a10f0d, #b91c1c);"></button>
                   <button type="button" class="accent-swatch" data-accent="#166534" data-accent-glow="#4ADE80" title="Ordinary Time — liturgical green" style="background: linear-gradient(135deg, #166534, #4ADE80);"></button>
                 </div>
                 <div class="field accent-custom-row">
@@ -25948,8 +25948,8 @@
 
     /** App icon accent — default app chrome, not season-driven. */
     const APP_ICON_ACCENT_PALETTE = {
-      light: { accent: "#a10f0d", glow: "#d45250", secondary: "#788898" },
-      dark: { accent: "#a10f0d", glow: "#d45250", secondary: "#788898" },
+      light: { accent: "#a10f0d", glow: "#b91c1c", secondary: "#788898" },
+      dark: { accent: "#a10f0d", glow: "#b91c1c", secondary: "#788898" },
     };
 
     function resolveAppIconAccentPalette() {
@@ -33460,7 +33460,7 @@
       const ids = [];
       const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const BASE = { r: 161, g: 15, b: 13 };   // app red (--accent #a10f0d)
-      const GLOW = { r: 212, g: 82, b: 80 };   // brighter red (--liturgical-glow #d45250)
+      const GLOW = { r: 185, g: 28, b: 28 };   // berry glow (--liturgical-glow #b91c1c)
       const DOT_SIZE = 2;
       const GAP = 12;
       const PROXIMITY = 110;

@@ -9,7 +9,14 @@ from typing import Any, Literal, Optional
 from fastapi import Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from services.email import email_config_status, email_enabled, reminders_enabled, send_email, wrap_html
+from services.email import (
+    app_home_url,
+    email_config_status,
+    email_enabled,
+    reminders_enabled,
+    send_email,
+    wrap_html,
+)
 from services.email_reminders import list_reminder_recipients, run_weekly_reminders
 
 
@@ -97,7 +104,10 @@ def register_email_job_routes(app) -> None:
             text="If you received this, transactional email is working.",
             html=wrap_html(
                 title="Brevo test OK",
-                body_html="<p>Transactional email from LiturgyFlow is working.</p>",
+                subtitle="Transactional email from LiturgyFlow is working.",
+                cta_label="Open LiturgyFlow",
+                cta_url=app_home_url(),
+                preheader="Brevo transactional test",
             ),
         )
         return {
