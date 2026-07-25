@@ -1,4 +1,16 @@
-"""Transactional email via Brevo API, Resend, or SMTP (Brevo SMTP compatible)."""
+"""Transactional email via Brevo API (recommended), Resend, or SMTP.
+
+Brevo setup order (dashboard → env → test):
+  1. Generate API key          → BREVO_API_KEY=xkeysib-…
+  2. Create / verify sender    → EMAIL_FROM / BREVO_FROM
+  3. Authenticate domain       → DNS in Brevo (best deliverability)
+  4. Connect in this project   → env vars below (+ authorised IPs if enabled)
+  5. Send a test email         → python scripts/test_brevo_email.py you@…
+  6. Later: contacts / campaigns (not required for LiturgyFlow notifications)
+
+Do not use Brevo Email Campaigns for access requests, invites, or reminders.
+Those use the transactional endpoint POST /v3/smtp/email.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +24,7 @@ import urllib.request
 from dataclasses import dataclass
 from email.message import EmailMessage
 from email.utils import formataddr, parseaddr
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -24,27 +36,107 @@ class EmailResult:
     error: str = ""
 
 
+def _env(name: str) -> str:
+    return (os.environ.get(name) or "").strip()
+
+
+def email_transport() -> str:
+    """auto | brevo_api | smtp | resend — default auto (API first, then SMTP)."""
+    raw = (_env("EMAIL_TRANSPORT") or "auto").lower()
+    if raw in {"auto", "brevo_api", "api", "smtp", "resend"}:
+        return "brevo_api" if raw == "api" else raw
+    return "auto"
+
+
+def brevo_api_configured() -> bool:
+    return bool(_env("BREVO_API_KEY"))
+
+
+def smtp_configured() -> bool:
+    return bool(_env("SMTP_HOST") and _env("SMTP_USER") and _env("SMTP_PASSWORD"))
+
+
+def resend_configured() -> bool:
+    return bool(_env("RESEND_API_KEY"))
+
+
 def email_enabled() -> bool:
-    return bool(
-        os.environ.get("BREVO_API_KEY", "").strip()
-        or os.environ.get("RESEND_API_KEY", "").strip()
-        or (
-            os.environ.get("SMTP_HOST", "").strip()
-            and os.environ.get("SMTP_USER", "").strip()
-            and os.environ.get("SMTP_PASSWORD", "").strip()
-        )
-    )
+    transport = email_transport()
+    if transport == "brevo_api":
+        return brevo_api_configured()
+    if transport == "smtp":
+        return smtp_configured()
+    if transport == "resend":
+        return resend_configured()
+    return brevo_api_configured() or resend_configured() or smtp_configured()
 
 
 def default_from_address() -> str:
+    """Resolved From header. Empty if none configured (do not invent a domain)."""
     return (
-        os.environ.get("EMAIL_FROM", "").strip()
-        or os.environ.get("BREVO_FROM", "").strip()
-        or os.environ.get("RESEND_FROM", "").strip()
-        or os.environ.get("SMTP_FROM", "").strip()
-        or os.environ.get("ACCESS_REQUEST_FROM", "").strip()
-        or "LiturgyFlow <noreply@liturgyflow.com>"
+        _env("EMAIL_FROM")
+        or _env("BREVO_FROM")
+        or _env("RESEND_FROM")
+        or _env("SMTP_FROM")
+        or _env("ACCESS_REQUEST_FROM")
     )
+
+
+def sender_email_only() -> str:
+    _, addr = _split_from(default_from_address())
+    return addr
+
+
+def email_config_status() -> dict[str, Any]:
+    """Safe diagnostic (no secrets) for setup check / admin status."""
+    from_raw = default_from_address()
+    name, addr = _split_from(from_raw)
+    transport = email_transport()
+    steps = [
+        {
+            "id": 1,
+            "title": "Generate API key",
+            "done": brevo_api_configured(),
+            "hint": "Brevo → SMTP & API → API keys → create key (xkeysib-…). Set BREVO_API_KEY.",
+        },
+        {
+            "id": 2,
+            "title": "Create sender",
+            "done": bool(addr and "@" in addr),
+            "hint": "Brevo → Senders → add/verify. Set EMAIL_FROM=LiturgyFlow <that@address>.",
+        },
+        {
+            "id": 3,
+            "title": "Authenticate domain (recommended)",
+            "done": None,  # cannot verify DNS from here
+            "hint": "Brevo → Domains → add domain → copy DNS records. Improves inbox delivery.",
+        },
+        {
+            "id": 4,
+            "title": "Connect API in project",
+            "done": email_enabled() and bool(addr),
+            "hint": "Set BREVO_API_KEY + EMAIL_FROM on Render and local .env. Authorise Render IP if Brevo IP lock is on.",
+        },
+        {
+            "id": 5,
+            "title": "Send a test email",
+            "done": None,
+            "hint": "python scripts/test_brevo_email.py you@example.com",
+        },
+    ]
+    return {
+        "email_enabled": email_enabled(),
+        "transport": transport,
+        "brevo_api_configured": brevo_api_configured(),
+        "smtp_configured": smtp_configured(),
+        "resend_configured": resend_configured(),
+        "from_configured": bool(addr),
+        "from_name": name if addr else "",
+        "from_email": addr,
+        "smtp_host": _env("SMTP_HOST") or None,
+        "setup_steps": steps,
+        "reminders_enabled": reminders_enabled(),
+    }
 
 
 def _split_from(raw: str) -> tuple[str, str]:
@@ -52,7 +144,7 @@ def _split_from(raw: str) -> tuple[str, str]:
     addr = (addr or "").strip()
     name = (name or "").strip()
     if not addr and "@" in (raw or ""):
-        addr = raw.strip()
+        addr = (raw or "").strip()
     return name or "LiturgyFlow", addr
 
 
@@ -116,6 +208,23 @@ def wrap_html(
 </html>"""
 
 
+def _humanize_brevo_error(status: int, detail: str) -> str:
+    low = (detail or "").lower()
+    if status == 401 and (
+        "authorised_ips" in low or "authorized_ips" in low or "unrecognised ip" in low
+    ):
+        return (
+            f"{status} {detail} → Add Render's IP in Brevo Security → Authorised IPs, "
+            "or disable IP restriction for the API key."
+        )
+    if "valid sender" in low or "invalid_parameter" in low:
+        return (
+            f"{status} {detail} → EMAIL_FROM must be a verified Brevo sender "
+            "(Senders page). Example: LiturgyFlow <you@yourdomain.com>"
+        )
+    return f"{status} {detail}"
+
+
 def send_email(
     *,
     to: str,
@@ -134,27 +243,61 @@ def send_email(
     sender = (from_addr or "").strip() or default_from_address()
     reply = (reply_to or "").strip()
 
-    brevo = _send_via_brevo(
-        to=dest, subject=subj, text=body_text, html=body_html, reply_to=reply, from_addr=sender
-    )
-    if brevo.ok or brevo.provider == "brevo":
-        return brevo
+    if not sender or "@" not in _split_from(sender)[1]:
+        return EmailResult(
+            ok=False,
+            error=(
+                "EMAIL_FROM / BREVO_FROM not set. Create a verified sender in Brevo, "
+                "then set EMAIL_FROM=LiturgyFlow <verified@address>"
+            ),
+        )
 
-    resend = _send_via_resend(
-        to=dest, subject=subj, text=body_text, html=body_html, reply_to=reply, from_addr=sender
-    )
-    if resend.ok or resend.provider == "resend":
-        return resend
+    transport = email_transport()
+    attempts: list[EmailResult] = []
 
-    smtp = _send_via_smtp(
-        to=dest, subject=subj, text=body_text, html=body_html, reply_to=reply, from_addr=sender
-    )
-    if smtp.ok:
-        return smtp
+    use_brevo = transport in {"auto", "brevo_api"}
+    use_resend = transport in {"auto", "resend"}
+    use_smtp = transport in {"auto", "smtp"}
+
+    if use_brevo:
+        brevo = _send_via_brevo(
+            to=dest, subject=subj, text=body_text, html=body_html, reply_to=reply, from_addr=sender
+        )
+        attempts.append(brevo)
+        if brevo.ok:
+            return brevo
+        if transport == "brevo_api":
+            return brevo
+
+    if use_resend:
+        resend = _send_via_resend(
+            to=dest, subject=subj, text=body_text, html=body_html, reply_to=reply, from_addr=sender
+        )
+        attempts.append(resend)
+        if resend.ok:
+            return resend
+        if transport == "resend":
+            return resend
+
+    if use_smtp:
+        smtp = _send_via_smtp(
+            to=dest, subject=subj, text=body_text, html=body_html, reply_to=reply, from_addr=sender
+        )
+        attempts.append(smtp)
+        if smtp.ok:
+            return smtp
+        if transport == "smtp":
+            return smtp
 
     if not email_enabled():
         return EmailResult(ok=False, error="email not configured")
-    return smtp if smtp.error else resend if resend.error else brevo
+    for result in attempts:
+        if result.provider and result.error and "unset" not in result.error.lower():
+            return result
+    for result in reversed(attempts):
+        if result.error:
+            return result
+    return EmailResult(ok=False, error="all providers failed")
 
 
 def _send_via_brevo(
@@ -166,7 +309,7 @@ def _send_via_brevo(
     reply_to: str,
     from_addr: str,
 ) -> EmailResult:
-    api_key = os.environ.get("BREVO_API_KEY", "").strip()
+    api_key = _env("BREVO_API_KEY")
     if not api_key:
         return EmailResult(ok=False, error="BREVO_API_KEY unset")
     name, email = _split_from(from_addr)
@@ -198,8 +341,9 @@ def _send_via_brevo(
             return EmailResult(ok=ok, provider="brevo", error="" if ok else f"status {resp.status}")
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")[:400]
-        logger.warning("Brevo email failed: %s %s", exc.code, detail)
-        return EmailResult(ok=False, provider="brevo", error=f"{exc.code} {detail}")
+        human = _humanize_brevo_error(exc.code, detail)
+        logger.warning("Brevo email failed: %s", human)
+        return EmailResult(ok=False, provider="brevo", error=human)
     except Exception as exc:
         logger.warning("Brevo email failed: %s", exc)
         return EmailResult(ok=False, provider="brevo", error=str(exc))
@@ -214,7 +358,7 @@ def _send_via_resend(
     reply_to: str,
     from_addr: str,
 ) -> EmailResult:
-    api_key = os.environ.get("RESEND_API_KEY", "").strip()
+    api_key = _env("RESEND_API_KEY")
     if not api_key:
         return EmailResult(ok=False, error="RESEND_API_KEY unset")
     payload: dict[str, Any] = {
@@ -258,13 +402,13 @@ def _send_via_smtp(
     reply_to: str,
     from_addr: str,
 ) -> EmailResult:
-    host = os.environ.get("SMTP_HOST", "").strip()
-    user = os.environ.get("SMTP_USER", "").strip()
-    password = os.environ.get("SMTP_PASSWORD", "").strip()
+    host = _env("SMTP_HOST")
+    user = _env("SMTP_USER")
+    password = _env("SMTP_PASSWORD")
     if not host or not user or not password:
         return EmailResult(ok=False, error="SMTP_* unset")
     try:
-        port = int(os.environ.get("SMTP_PORT", "587").strip() or "587")
+        port = int(_env("SMTP_PORT") or "587")
     except ValueError:
         port = 587
     msg = EmailMessage()
@@ -290,5 +434,5 @@ def _send_via_smtp(
 
 
 def reminders_enabled() -> bool:
-    raw = (os.environ.get("EMAIL_REMINDERS_ENABLED", "1") or "1").strip().lower()
+    raw = (_env("EMAIL_REMINDERS_ENABLED") or "1").lower()
     return raw not in {"0", "false", "no", "off"}

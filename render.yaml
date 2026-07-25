@@ -50,7 +50,9 @@ services:
         sync: false
       - key: ACCESS_REQUEST_TO
         value: divinogabriel76@gmail.com
-      # Email (Brevo API preferred; SMTP / Resend also work)
+      # Brevo transactional (API recommended — see .env.example setup order)
+      - key: EMAIL_TRANSPORT
+        value: "brevo_api"
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_FROM

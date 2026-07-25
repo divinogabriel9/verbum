@@ -1123,6 +1123,175 @@
         "solemn",
         "reverent"
       ]
+    },
+    {
+      "id": "sa_krus_mo_at_pagkabuhay",
+      "title": "Sa Krus Mo At Pagkabuhay",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nSa Krus Mo At Pagkabuhay\nKami'y Natubos Mong Tunay\nPoong Hesus Naming Mahal\nIligtas Mo Kaming Tanan\nNgayon At Magpakailanman",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550105+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550105+00:00",
+      "gospel_moods": [
+        "solemn",
+        "journey"
+      ]
+    },
+    {
+      "id": "aming_ipinahahayag",
+      "title": "Aming Ipinahahayag",
+      "author": "",
+      "lyrics": "Verse 1\nAming Ipinahahayag\nNa Namatay Ang 'Yong Anak\nNabuhay Bilang Mesiyas\nAt Magbabalik Sa Wakas\nUpang Makapiling Ang Lahat",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550252+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550252+00:00",
+      "gospel_moods": [
+        "solemn",
+        "reverent"
+      ]
+    },
+    {
+      "id": "dakilang_amen_francisco",
+      "title": "Dakilang Amen (francisco)",
+      "author": "Manoling Francisco",
+      "lyrics": "Chorus\nAmen, Amen, Amen\nAmen, Aleluya\nPurihin Ang Diyos, Purihin Ang Diyos\nAmen, Aleluya\n\nChorus\nAmen, Amen, Amen\nAmen, Aleluya\nPurihin Ang Diyos, Purihin Ang Diyos\nAmen, Aleluya",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550364+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550364+00:00",
+      "gospel_moods": [
+        "triumphant"
+      ]
+    },
+    {
+      "id": "amen_wybat",
+      "title": "Amen (wybat)",
+      "author": "",
+      "lyrics": "Chorus\nAmen, Amen\nAmen, Amen, Amen\nAmen, Amen\nAmen, Amen, Amen",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550448+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550448+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "solemn"
+      ]
+    },
+    {
+      "id": "amen_world_youth_day",
+      "title": "Amen (world Youth Day)",
+      "author": "",
+      "lyrics": "Chorus\nAmen, Amen\nAmen, Amen\nAmen, Amen, Amen\nAmen, Amen",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550528+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550528+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "reverent"
+      ]
+    },
+    {
+      "id": "ama_namin_hontiveros",
+      "title": "Ama Namin (hontiveros)",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550651+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550651+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "ama_namin_francisco",
+      "title": "Ama Namin (francisco)",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Po Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550767+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550767+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "ama_namin_bukas_palad",
+      "title": "Ama Namin (bukas Palad)",
+      "author": "Bukas Palad",
+      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550886+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550886+00:00",
+      "gospel_moods": [
+        "reverent",
+        "mercy"
+      ]
+    },
+    {
+      "id": "sapagkat_sa_yo_ang_kaharian",
+      "title": "Sapagkat Sa'yo Ang Kaharian",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Chorus\nSapagkat Sa'yo Ang Kaharian\nAt Ang Kapangyarihan\nAt Ang Kapurihan\nMagpakailanman, Amen",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550971+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.550971+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "reverent"
+      ]
+    },
+    {
+      "id": "kordero_ng_diyos_hontiveros",
+      "title": "Kordero Ng Diyos (hontiveros)",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 2\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 3\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nIpagkaloob Mo Sa Amin Ang Kapayapaan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.551086+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-25T03:26:49.551086+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
     }
   ],
   "recessional": [
