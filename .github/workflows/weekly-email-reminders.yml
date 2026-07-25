@@ -1,0 +1,62 @@
+# Weekly LiturgyFlow reminder emails (always send — no “already generated” skip).
+#
+# Secrets (repo → Settings → Secrets → Actions):
+#   APP_URL      e.g. https://verbum-zu1l.onrender.com
+#   CRON_SECRET  same value as Render CRON_SECRET
+#
+# Schedule is UTC. Wed 05:00 UTC ≈ Wed afternoon Korea / morning US-ish.
+# Fri 05:00 UTC for choir practice share reminder.
+
+name: Weekly email reminders
+
+on:
+  schedule:
+    # Wednesday — Create Mass PPTX
+    - cron: "0 5 * * 3"
+    # Friday — Share choir practice lyrics
+    - cron: "0 5 * * 5"
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "mass_pptx | practice_share | both"
+        required: true
+        default: both
+        type: choice
+        options:
+          - mass_pptx
+          - practice_share
+          - both
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve reminder kind
+        id: kind
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.kind }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 5 * * 3" ]; then
+            echo "value=mass_pptx" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=practice_share" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send reminders via production API
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          KIND: ${{ steps.kind.outputs.value }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APP_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "Missing APP_URL or CRON_SECRET secrets."
+            exit 1
+          fi
+          BASE="${APP_URL%/}"
+          echo "POST ${BASE}/api/internal/email-reminders/run/${KIND}"
+          curl -fsS -X POST \
+            "${BASE}/api/internal/email-reminders/run/${KIND}?force=true&audience=all_members" \
+            -H "X-Cron-Secret: ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"

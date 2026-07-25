@@ -46,6 +46,7 @@ from services.email_notifications import (
     notify_platform_invite,
     safe_send,
 )
+from services.email_reminders import list_reminder_recipients, run_weekly_reminders
 from services.platform_invites import create_invite, list_invites
 from services.platform_announcements import get_admin_announcement, save_announcement
 from services.superadmin.merge_parishes import merge_parishes
@@ -140,6 +141,14 @@ class ParishFeatureFlagBody(BaseModel):
 
 class HymnCatalogSyncBody(BaseModel):
     prefer: Literal["active", "local"] = "active"
+
+
+class ReminderPushBody(BaseModel):
+    kind: Literal["auto", "mass_pptx", "practice_share", "both"] = "both"
+    mass_date: Optional[str] = Field(None, max_length=16)
+    dry_run: bool = False
+    force: bool = True
+    audience: Literal["presidents", "all_members"] = "all_members"
 
 
 def register_admin_routes(app) -> None:
@@ -754,4 +763,44 @@ def register_admin_routes(app) -> None:
         )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Reject failed.")
+        return result
+
+    @app.get("/api/admin/email-reminders/recipients")
+    def api_admin_email_reminder_recipients(
+        audience: Literal["presidents", "all_members"] = Query("all_members"),
+        mass_date: Optional[str] = Query(None, max_length=16),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        """List emails for Mass PPTX / choir practice reminders (approved parishes)."""
+        return list_reminder_recipients(audience=audience, mass_date=mass_date)
+
+    @app.post("/api/admin/email-reminders/run")
+    def api_admin_email_reminders_run(
+        body: ReminderPushBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        """Push Mass PPTX and/or practice-share reminders to approved parish users."""
+        result = run_weekly_reminders(
+            kind=body.kind,
+            mass_date=body.mass_date,
+            dry_run=body.dry_run,
+            force=body.force,
+            audience=body.audience,
+        )
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="run",
+            entity_type="email_reminders",
+            entity_id=body.kind,
+            detail={
+                "kind": body.kind,
+                "mass_date": result.get("mass_date"),
+                "audience": body.audience,
+                "dry_run": body.dry_run,
+                "force": body.force,
+                "sent": result.get("sent"),
+                "skipped": result.get("skipped"),
+                "failed": result.get("failed"),
+            },
+        )
         return result

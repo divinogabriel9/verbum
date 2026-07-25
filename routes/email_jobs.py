@@ -10,13 +10,15 @@ from fastapi import Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from services.email import email_config_status, email_enabled, reminders_enabled, send_email, wrap_html
-from services.email_reminders import run_weekly_reminders
+from services.email_reminders import list_reminder_recipients, run_weekly_reminders
 
 
 class ReminderRunBody(BaseModel):
-    kind: Literal["auto", "mass_pptx", "practice_share"] = "auto"
+    kind: Literal["auto", "mass_pptx", "practice_share", "both"] = "both"
     mass_date: Optional[str] = Field(None, max_length=16)
     dry_run: bool = False
+    force: bool = True
+    audience: Literal["presidents", "all_members"] = "all_members"
 
 
 class EmailTestBody(BaseModel):
@@ -67,6 +69,17 @@ def register_email_job_routes(app) -> None:
             **status,
         }
 
+    @app.get("/api/internal/email-reminders/recipients")
+    def api_email_reminders_recipients(
+        audience: Literal["presidents", "all_members"] = Query("all_members"),
+        mass_date: Optional[str] = Query(None, max_length=16),
+        authorization: Optional[str] = Header(None),
+        x_cron_secret: Optional[str] = Header(None, alias="X-Cron-Secret"),
+    ) -> dict[str, Any]:
+        """List approved-parish user emails for Mass PPTX / practice-share reminders."""
+        _require_cron_auth(authorization, x_cron_secret)
+        return list_reminder_recipients(audience=audience, mass_date=mass_date)
+
     @app.post("/api/internal/email/test")
     def api_email_test(
         body: EmailTestBody,
@@ -106,15 +119,25 @@ def register_email_job_routes(app) -> None:
             kind=body.kind,
             mass_date=body.mass_date,
             dry_run=body.dry_run,
+            force=body.force,
+            audience=body.audience,
         )
 
     @app.post("/api/internal/email-reminders/run/{kind}")
     def api_email_reminders_run_kind(
-        kind: Literal["auto", "mass_pptx", "practice_share"],
+        kind: Literal["auto", "mass_pptx", "practice_share", "both"],
         dry_run: bool = Query(False),
+        force: bool = Query(True),
         mass_date: Optional[str] = Query(None, max_length=16),
+        audience: Literal["presidents", "all_members"] = Query("all_members"),
         authorization: Optional[str] = Header(None),
         x_cron_secret: Optional[str] = Header(None, alias="X-Cron-Secret"),
     ) -> dict[str, Any]:
         _require_cron_auth(authorization, x_cron_secret)
-        return run_weekly_reminders(kind=kind, mass_date=mass_date, dry_run=dry_run)
+        return run_weekly_reminders(
+            kind=kind,
+            mass_date=mass_date,
+            dry_run=dry_run,
+            force=force,
+            audience=audience,
+        )

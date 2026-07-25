@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 from typing import Any, Literal, Optional
 
 from services.auth_config import supabase_enabled
@@ -17,7 +17,8 @@ from services.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
 
-ReminderKind = Literal["mass_pptx", "practice_share", "auto"]
+ReminderKind = Literal["mass_pptx", "practice_share", "auto", "both"]
+Audience = Literal["presidents", "all_members"]
 
 
 def upcoming_sunday(today: Optional[date] = None) -> date:
@@ -27,42 +28,47 @@ def upcoming_sunday(today: Optional[date] = None) -> date:
     return base + timedelta(days=days)
 
 
-def _resolve_kind(kind: ReminderKind, *, today: Optional[date] = None) -> Optional[str]:
+def _resolve_kinds(kind: ReminderKind, *, today: Optional[date] = None) -> list[str]:
     k = (kind or "auto").strip().lower()
+    if k == "both":
+        return ["mass_pptx", "practice_share"]
     if k in {"mass_pptx", "practice_share"}:
-        return k
+        return [k]
     if k != "auto":
-        return None
+        return []
     # UTC weekday: Wed=2 → mass PPTX; Fri=4 → practice share
     wd = (today or date.today()).weekday()
     if wd == 2:
-        return "mass_pptx"
+        return ["mass_pptx"]
     if wd == 4:
-        return "practice_share"
-    return None
+        return ["practice_share"]
+    return []
 
 
-def _dedupe_key(kind: str, parish_id: str, mass_date: str) -> str:
+def _dedupe_key(kind: str, parish_id: str, mass_date: str, email: str = "") -> str:
+    addr = (email or "").strip().lower()
+    if addr:
+        return f"verbum:email_reminder:{kind}:{parish_id}:{mass_date}:{addr}"
     return f"verbum:email_reminder:{kind}:{parish_id}:{mass_date}"
 
 
-def _already_sent(kind: str, parish_id: str, mass_date: str) -> bool:
+def _already_sent(kind: str, parish_id: str, mass_date: str, email: str = "") -> bool:
     client = get_redis()
     if client is None:
         return False
     try:
-        return bool(client.get(_dedupe_key(kind, parish_id, mass_date)))
+        return bool(client.get(_dedupe_key(kind, parish_id, mass_date, email)))
     except Exception:
         return False
 
 
-def _mark_sent(kind: str, parish_id: str, mass_date: str) -> None:
+def _mark_sent(kind: str, parish_id: str, mass_date: str, email: str = "") -> None:
     client = get_redis()
     if client is None:
         return
     try:
         # Keep ~10 days so we don't re-send for the same Sunday.
-        client.setex(_dedupe_key(kind, parish_id, mass_date), 10 * 86400, "1")
+        client.setex(_dedupe_key(kind, parish_id, mass_date, email), 10 * 86400, "1")
     except Exception as exc:
         logger.warning("Reminder dedupe store failed: %s", exc)
 
@@ -86,35 +92,28 @@ def _list_approved_parishes() -> list[dict[str, Any]]:
         return []
 
 
-def _president_profile(parish_id: str) -> Optional[dict[str, Any]]:
-    from services.parish_store import get_president_user_id
+def _profiles_by_ids(user_ids: list[str]) -> dict[str, dict[str, Any]]:
+    ids = [u for u in user_ids if u]
+    if not ids:
+        return {}
     from services.supabase_client import get_service_client
 
-    uid = get_president_user_id(parish_id)
-    if not uid:
-        # Fall back to any active member.
-        from services.parish_store import list_active_members
-
-        members = list_active_members(parish_id)
-        if not members:
-            return None
-        uid = str(members[0].get("user_id") or "")
-    if not uid:
-        return None
     try:
         client = get_service_client()
         result = (
             client.table("profiles")
             .select("id, email, first_name, last_name")
-            .eq("id", uid)
-            .limit(1)
+            .in_("id", ids)
             .execute()
         )
-        rows = result.data or []
-        return rows[0] if rows else None
+        out: dict[str, dict[str, Any]] = {}
+        for row in result.data or []:
+            if isinstance(row, dict) and row.get("id"):
+                out[str(row["id"])] = row
+        return out
     except Exception as exc:
-        logger.warning("president profile lookup failed: %s", exc)
-        return None
+        logger.warning("profiles batch lookup failed: %s", exc)
+        return {}
 
 
 def _parish_member_ids(parish_id: str) -> list[str]:
@@ -127,49 +126,20 @@ def _parish_member_ids(parish_id: str) -> list[str]:
     ]
 
 
-def _has_generation_for_date(parish_id: str, mass_date: str) -> bool:
-    from services.supabase_client import get_service_client
+def _recipient_user_ids(parish_id: str, audience: Audience) -> list[str]:
+    from services.parish_store import get_president_user_id, list_active_members
 
-    uids = _parish_member_ids(parish_id)
-    if not uids:
-        return False
-    try:
-        client = get_service_client()
-        result = (
-            client.table("generation_history")
-            .select("id")
-            .eq("mass_date", mass_date)
-            .in_("user_id", uids)
-            .limit(1)
-            .execute()
-        )
-        return bool(result.data)
-    except Exception as exc:
-        logger.warning("generation_history check failed: %s", exc)
-        return False
+    if audience == "all_members":
+        return _parish_member_ids(parish_id)
 
-
-def _has_active_practice_share(parish_id: str, mass_date: str) -> bool:
-    from services.supabase_client import get_service_client
-
-    now = datetime.now(timezone.utc).isoformat()
-    try:
-        client = get_service_client()
-        result = (
-            client.table("choir_practice_shares")
-            .select("token, expires_at, revoked_at")
-            .eq("parish_id", parish_id)
-            .eq("mass_date", mass_date)
-            .is_("revoked_at", "null")
-            .gt("expires_at", now)
-            .limit(1)
-            .execute()
-        )
-        return bool(result.data)
-    except Exception as exc:
-        # Table may be missing locally — treat as no share.
-        logger.warning("practice share check failed: %s", exc)
-        return False
+    uid = get_president_user_id(parish_id)
+    if uid:
+        return [uid]
+    members = list_active_members(parish_id)
+    if not members:
+        return []
+    fallback = str(members[0].get("user_id") or "").strip()
+    return [fallback] if fallback else []
 
 
 def _mass_title_hint(mass_date: str) -> str:
@@ -190,33 +160,98 @@ def _mass_title_hint(mass_date: str) -> str:
     return ""
 
 
+def list_reminder_recipients(
+    *,
+    audience: Audience = "all_members",
+    mass_date: Optional[str] = None,
+) -> dict[str, Any]:
+    """List emails that would receive Mass/practice reminders (approved parishes)."""
+    sunday = date.fromisoformat(mass_date) if mass_date else upcoming_sunday()
+    sunday_iso = sunday.isoformat()
+    if not supabase_enabled():
+        return {
+            "ok": False,
+            "message": "Supabase required.",
+            "mass_date": sunday_iso,
+            "audience": audience,
+            "recipients": [],
+            "count": 0,
+        }
+
+    parishes = _list_approved_parishes()
+    recipients: list[dict[str, Any]] = []
+    seen_emails: set[str] = set()
+
+    for parish in parishes:
+        pid = str(parish.get("id") or "")
+        community = str(parish.get("community_name") or "").strip()
+        uids = _recipient_user_ids(pid, audience)
+        profiles = _profiles_by_ids(uids)
+        for uid in uids:
+            prof = profiles.get(uid) or {}
+            email = str(prof.get("email") or "").strip().lower()
+            if not email or email in seen_emails:
+                continue
+            seen_emails.add(email)
+            recipients.append(
+                {
+                    "email": email,
+                    "user_id": uid,
+                    "first_name": str(prof.get("first_name") or "").strip(),
+                    "last_name": str(prof.get("last_name") or "").strip(),
+                    "parish_id": pid,
+                    "community_name": community,
+                }
+            )
+
+    recipients.sort(key=lambda r: (r.get("community_name") or "", r.get("email") or ""))
+    return {
+        "ok": True,
+        "mass_date": sunday_iso,
+        "audience": audience,
+        "parishes": len(parishes),
+        "count": len(recipients),
+        "emails": [r["email"] for r in recipients],
+        "recipients": recipients,
+    }
+
+
 def run_weekly_reminders(
     *,
     kind: ReminderKind = "auto",
     mass_date: Optional[str] = None,
     dry_run: bool = False,
+    force: bool = True,
+    audience: Audience = "all_members",
 ) -> dict[str, Any]:
-    """Send weekly reminders to approved parish presidents (one email per parish)."""
-    resolved = _resolve_kind(kind)
+    """Send reminders to approved parish members.
+
+    Always emails eligible users — does **not** skip if they already generated a
+    Mass deck or created a practice share. ``force=False`` only re-enables
+    same-week Redis dedupe (to avoid double-sends if a job is retried).
+    """
+    kinds = _resolve_kinds(kind)
     sunday = date.fromisoformat(mass_date) if mass_date else upcoming_sunday()
     sunday_iso = sunday.isoformat()
 
     summary: dict[str, Any] = {
         "ok": True,
-        "kind": resolved,
+        "kinds": kinds,
         "requested_kind": kind,
         "mass_date": sunday_iso,
+        "audience": audience,
         "email_configured": email_enabled(),
         "reminders_enabled": reminders_enabled(),
         "dry_run": dry_run,
-        "skipped_weekday": resolved is None,
+        "force": force,
+        "skipped_weekday": not kinds,
         "sent": 0,
         "skipped": 0,
         "failed": 0,
         "details": [],
     }
 
-    if resolved is None:
+    if not kinds:
         summary["ok"] = True
         summary["message"] = "No reminder scheduled for this weekday (auto mode)."
         return summary
@@ -240,80 +275,86 @@ def run_weekly_reminders(
     parishes = _list_approved_parishes()
     summary["parishes"] = len(parishes)
 
-    for parish in parishes:
-        pid = str(parish.get("id") or "")
-        community = str(parish.get("community_name") or "").strip()
-        detail: dict[str, Any] = {
-            "parish_id": pid,
-            "community_name": community,
-            "kind": resolved,
-        }
+    for resolved in kinds:
+        for parish in parishes:
+            pid = str(parish.get("id") or "")
+            community = str(parish.get("community_name") or "").strip()
 
-        if _already_sent(resolved, pid, sunday_iso):
-            detail["status"] = "deduped"
-            summary["skipped"] += 1
-            summary["details"].append(detail)
-            continue
+            uids = _recipient_user_ids(pid, audience)
+            profiles = _profiles_by_ids(uids)
+            if not uids:
+                summary["skipped"] += 1
+                summary["details"].append(
+                    {
+                        "parish_id": pid,
+                        "community_name": community,
+                        "kind": resolved,
+                        "status": "no_members",
+                    }
+                )
+                continue
 
-        if resolved == "mass_pptx" and _has_generation_for_date(pid, sunday_iso):
-            detail["status"] = "already_generated"
-            summary["skipped"] += 1
-            summary["details"].append(detail)
-            continue
+            for uid in uids:
+                prof = profiles.get(uid) or {}
+                email = str(prof.get("email") or "").strip().lower()
+                detail: dict[str, Any] = {
+                    "parish_id": pid,
+                    "community_name": community,
+                    "kind": resolved,
+                    "user_id": uid,
+                    "email": email or None,
+                }
+                if not email:
+                    detail["status"] = "no_email"
+                    summary["skipped"] += 1
+                    summary["details"].append(detail)
+                    continue
 
-        if resolved == "practice_share" and _has_active_practice_share(pid, sunday_iso):
-            detail["status"] = "already_shared"
-            summary["skipped"] += 1
-            summary["details"].append(detail)
-            continue
+                # Optional same-week dedupe only when force=False (manual cautious runs).
+                if not force and _already_sent(resolved, pid, sunday_iso, email):
+                    detail["status"] = "deduped"
+                    summary["skipped"] += 1
+                    summary["details"].append(detail)
+                    continue
 
-        profile = _president_profile(pid)
-        email = ((profile or {}).get("email") or "").strip().lower()
-        if not email:
-            detail["status"] = "no_email"
-            summary["skipped"] += 1
-            summary["details"].append(detail)
-            continue
+                first_name = str(prof.get("first_name") or "").strip()
 
-        first_name = str((profile or {}).get("first_name") or "").strip()
-        detail["email"] = email
+                if dry_run:
+                    detail["status"] = "dry_run"
+                    summary["sent"] += 1
+                    summary["details"].append(detail)
+                    continue
 
-        if dry_run:
-            detail["status"] = "dry_run"
-            summary["sent"] += 1
-            summary["details"].append(detail)
-            continue
+                if resolved == "mass_pptx":
+                    result = safe_send(
+                        "mass_pptx_reminder",
+                        notify_mass_pptx_reminder,
+                        email=email,
+                        first_name=first_name,
+                        community_name=community,
+                        mass_date=sunday_iso,
+                        mass_title=title,
+                    )
+                else:
+                    result = safe_send(
+                        "practice_share_reminder",
+                        notify_practice_share_reminder,
+                        email=email,
+                        first_name=first_name,
+                        community_name=community,
+                        mass_date=sunday_iso,
+                        mass_title=title,
+                    )
 
-        if resolved == "mass_pptx":
-            result = safe_send(
-                "mass_pptx_reminder",
-                notify_mass_pptx_reminder,
-                email=email,
-                first_name=first_name,
-                community_name=community,
-                mass_date=sunday_iso,
-                mass_title=title,
-            )
-        else:
-            result = safe_send(
-                "practice_share_reminder",
-                notify_practice_share_reminder,
-                email=email,
-                first_name=first_name,
-                community_name=community,
-                mass_date=sunday_iso,
-                mass_title=title,
-            )
-
-        if result.ok:
-            _mark_sent(resolved, pid, sunday_iso)
-            detail["status"] = "sent"
-            detail["provider"] = result.provider
-            summary["sent"] += 1
-        else:
-            detail["status"] = "failed"
-            detail["error"] = result.error
-            summary["failed"] += 1
-        summary["details"].append(detail)
+                if result.ok:
+                    _mark_sent(resolved, pid, sunday_iso, email)
+                    detail["status"] = "sent"
+                    detail["provider"] = result.provider
+                    summary["sent"] += 1
+                else:
+                    detail["status"] = "failed"
+                    detail["error"] = result.error
+                    summary["failed"] += 1
+                summary["details"].append(detail)
 
     return summary

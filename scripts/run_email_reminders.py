@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Run weekly LiturgyFlow email reminders (for Render Cron / local).
+"""List reminder recipients and/or send Mass PPTX + choir practice emails.
 
 Examples:
-  python scripts/run_email_reminders.py --kind auto
-  python scripts/run_email_reminders.py --kind mass_pptx --dry-run
-  python scripts/run_email_reminders.py --kind practice_share --date 2026-07-26
+  # Who would get mail?
+  python scripts/run_email_reminders.py --list
+
+  # Dry-run both reminders to all approved members
+  python scripts/run_email_reminders.py --kind both --dry-run
+
+  # Actually send both (Mass PPTX + share lyrics)
+  python scripts/run_email_reminders.py --kind both --force
+
+  # Presidents only
+  python scripts/run_email_reminders.py --kind both --audience presidents --force
 """
 
 from __future__ import annotations
@@ -25,28 +33,61 @@ try:
 except Exception:
     pass
 
-from services.email_reminders import run_weekly_reminders  # noqa: E402
+from services.email_reminders import list_reminder_recipients, run_weekly_reminders  # noqa: E402
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Send weekly LiturgyFlow email reminders")
+    parser = argparse.ArgumentParser(
+        description="List or send LiturgyFlow Mass / practice-share reminders"
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="Print recipient emails (approved parishes) and exit",
+    )
     parser.add_argument(
         "--kind",
-        choices=("auto", "mass_pptx", "practice_share"),
-        default="auto",
-        help="auto = Wed mass_pptx / Fri practice_share (local weekday)",
+        choices=("auto", "mass_pptx", "practice_share", "both"),
+        default="both",
+        help="both = Mass PPTX + share lyrics (default)",
+    )
+    parser.add_argument(
+        "--audience",
+        choices=("all_members", "presidents"),
+        default="all_members",
+        help="Who gets mail in each approved parish",
     )
     parser.add_argument("--date", dest="mass_date", default=None, help="YYYY-MM-DD Mass date")
-    parser.add_argument("--dry-run", action="store_true", help="List recipients without sending")
+    parser.add_argument("--dry-run", action="store_true", help="List actions without sending")
+    parser.add_argument(
+        "--force",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Send even if already emailed this week (default: true). Use --no-force to dedupe.",
+    )
     args = parser.parse_args()
+
+    if args.list:
+        result = list_reminder_recipients(
+            audience=args.audience,
+            mass_date=args.mass_date,
+        )
+        print(json.dumps(result, indent=2, default=str))
+        if result.get("emails"):
+            print("\n--- emails ---")
+            for email in result["emails"]:
+                print(email)
+        return 0 if result.get("ok") else 1
+
     result = run_weekly_reminders(
         kind=args.kind,
         mass_date=args.mass_date,
         dry_run=args.dry_run,
+        force=args.force,
+        audience=args.audience,
     )
     print(json.dumps(result, indent=2, default=str))
     if not result.get("ok") and result.get("failed", 0) == 0 and not result.get("sent"):
-        # Config / weekday skip — exit 0 for cron noise reduction when skipped_weekday
         if result.get("skipped_weekday"):
             return 0
         return 1
