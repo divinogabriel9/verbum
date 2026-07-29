@@ -5,10 +5,12 @@ from __future__ import annotations
 import json
 import logging
 import secrets
+import threading
+import time
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from services.auth_config import supabase_enabled
 from services.practice_access import hash_pin, pin_required, verify_pin
@@ -22,6 +24,71 @@ _DEFAULT_TTL_HOURS = 24  # legacy fallback only
 _MAX_SHARE_TTL_DAYS = 7
 _MAX_SONGS = 24
 _MAX_LYRICS_LEN = 12000
+
+# Hot-path caches: many choir phones hit the same token during rehearsal.
+_ROW_CACHE_TTL_S = 45.0
+_SHAPE_CACHE_TTL_S = 45.0
+_row_cache: Dict[str, Tuple[Optional[dict[str, Any]], float]] = {}
+_shape_cache: Dict[str, Tuple[dict[str, Any], float]] = {}
+_cache_lock = threading.Lock()
+
+
+def invalidate_practice_cache(token: Optional[str] = None) -> None:
+    """Drop row/shape caches for one token, or all practice caches."""
+    tok = (token or "").strip()
+    with _cache_lock:
+        if not tok:
+            _row_cache.clear()
+            _shape_cache.clear()
+            return
+        _row_cache.pop(tok, None)
+        dead = [k for k in _shape_cache if k.startswith(f"{tok}|")]
+        for k in dead:
+            _shape_cache.pop(k, None)
+
+
+def _cache_get_row(tok: str) -> Tuple[bool, Optional[dict[str, Any]]]:
+    now = time.time()
+    with _cache_lock:
+        hit = _row_cache.get(tok)
+        if not hit:
+            return False, None
+        row, exp = hit
+        if exp <= now:
+            _row_cache.pop(tok, None)
+            return False, None
+        return True, row
+
+
+def _cache_set_row(tok: str, row: Optional[dict[str, Any]]) -> None:
+    with _cache_lock:
+        if len(_row_cache) > 2048:
+            _row_cache.clear()
+        _row_cache[tok] = (row, time.time() + _ROW_CACHE_TTL_S)
+
+
+def _shape_cache_key(tok: str, *, unlocked: bool, can_edit: bool) -> str:
+    return f"{tok}|{'1' if unlocked else '0'}|{'1' if can_edit else '0'}"
+
+
+def _cache_get_shape(key: str) -> Optional[dict[str, Any]]:
+    now = time.time()
+    with _cache_lock:
+        hit = _shape_cache.get(key)
+        if not hit:
+            return None
+        payload, exp = hit
+        if exp <= now:
+            _shape_cache.pop(key, None)
+            return None
+        return dict(payload)
+
+
+def _cache_set_shape(key: str, payload: dict[str, Any]) -> None:
+    with _cache_lock:
+        if len(_shape_cache) > 4096:
+            _shape_cache.clear()
+        _shape_cache[key] = (dict(payload), time.time() + _SHAPE_CACHE_TTL_S)
 
 
 def _now() -> datetime:
@@ -531,9 +598,11 @@ def create_practice_share(
         rows.append(row)
         _write_local_rows(rows)
 
+    out_token = str(row.get("token") or token)
+    invalidate_practice_cache(out_token)
     return {
         "ok": True,
-        "token": row.get("token") or token,
+        "token": out_token,
         "expires_at": row.get("expires_at") or expires_at,
         "song_count": len(normalized),
         "pin": pin,
@@ -558,6 +627,10 @@ def get_practice_share_by_token(token: str) -> Optional[dict[str, Any]]:
     tok = (token or "").strip()
     if not tok:
         return None
+    hit, cached = _cache_get_row(tok)
+    if hit:
+        return dict(cached) if cached else None
+
     row: Optional[dict[str, Any]] = None
     if supabase_enabled():
         try:
@@ -578,8 +651,10 @@ def get_practice_share_by_token(token: str) -> Optional[dict[str, Any]]:
     if not row:
         row = _local_row_by_token(tok)
     if not _row_live(row):
+        _cache_set_row(tok, None)
         return None
-    return row
+    _cache_set_row(tok, row)
+    return dict(row)
 
 
 def fetch_practice_share(
@@ -588,7 +663,13 @@ def fetch_practice_share(
     unlocked: bool = False,
     can_edit: bool = False,
 ) -> dict[str, Any]:
-    row = get_practice_share_by_token(token)
+    tok = (token or "").strip()
+    shape_key = _shape_cache_key(tok, unlocked=unlocked, can_edit=can_edit)
+    cached = _cache_get_shape(shape_key)
+    if cached is not None:
+        return cached
+
+    row = get_practice_share_by_token(tok)
     if not row:
         return {"ok": False, "error": "This practice link is invalid or has expired."}
     stored_pin = row.get("optional_pin")
@@ -596,6 +677,7 @@ def fetch_practice_share(
     shaped = _shape_public(row, access_granted=access_granted, can_edit=can_edit)
     if shaped.get("requires_pin"):
         shaped["error"] = "PIN required."
+    _cache_set_shape(shape_key, shaped)
     return shaped
 
 
@@ -841,6 +923,7 @@ def update_practice_share_lyrics(
 
     row = dict(row)
     row["song_snapshot"] = new_snapshot
+    invalidate_practice_cache(tok)
     return _shape_public(row, access_granted=True, can_edit=True)
 
 
@@ -853,7 +936,10 @@ def verify_practice_share_pin(token: str, pin: str) -> dict[str, Any]:
         return fetch_practice_share(token, unlocked=True)
     if not verify_pin(stored_pin, pin):
         return {"ok": False, "error": "Incorrect PIN.", "requires_pin": True}
-    return fetch_practice_share(token, unlocked=True)
+    # Prefer shaping from the row we already have (cache-friendly).
+    shaped = _shape_public(row, access_granted=True, can_edit=False)
+    _cache_set_shape(_shape_cache_key((token or "").strip(), unlocked=True, can_edit=False), shaped)
+    return shaped
 
 
 def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) -> dict[str, Any]:
@@ -895,6 +981,7 @@ def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) ->
                 item["revoked_at"] = now
         _write_local_rows(rows)
     logger.info("Practice share revoked token=%s actor=%s", tok[:8], actor_user_id or "")
+    invalidate_practice_cache(tok)
     return {"ok": True}
 
 
@@ -1001,4 +1088,5 @@ def reset_practice_share_pin(
     summary = _public_share_summary({**row, "optional_pin": pin_stored})
     summary["ok"] = True
     summary["pin"] = pin
+    invalidate_practice_cache(tok)
     return summary

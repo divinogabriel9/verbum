@@ -422,3 +422,102 @@ def clean_lyrics_for_projection(lyrics: str) -> str:
     text = "\n".join(out)
     text = re.sub(r"\n{3,}", "\n\n", text).strip()
     return text
+
+
+# Short projector markers (Music Ministry “show section labels” toggle).
+_ROMAN_NUMERALS = (
+    "I",
+    "II",
+    "III",
+    "IV",
+    "V",
+    "VI",
+    "VII",
+    "VIII",
+    "IX",
+    "X",
+    "XI",
+    "XII",
+    "XIII",
+    "XIV",
+    "XV",
+    "XVI",
+    "XVII",
+    "XVIII",
+    "XIX",
+    "XX",
+    "XXI",
+    "XXII",
+    "XXIII",
+    "XXIV",
+    "XXV",
+    "XXVI",
+    "XXVII",
+    "XXVIII",
+    "XXIX",
+    "XXX",
+)
+
+_SHORT_SECTION_LABELS: dict[str, str] = {
+    "chorus": "Chor.",
+    "refrain": "Chor.",
+    "bridge": "Br.",
+    "pre-chorus": "Pre-C",
+    "post-chorus": "Post-C",
+    "outro": "Out.",
+    "response": "Resp.",
+    "intro": "Intro",
+    "coda": "Coda",
+    "vamp": "Vamp",
+    "interlude": "Intl.",
+    "instrumental": "Inst.",
+    "ending": "End.",
+    "finale": "Fin.",
+    "hook": "Hook",
+    "breakdown": "Bd.",
+    "spoken": "Sp.",
+    "solo": "Solo",
+    "ad-lib": "Ad-lib",
+    "tag": "Tag",
+    "turnaround": "Turn.",
+    "chant": "Chant",
+    "pre-verse": "Pre-V",
+    "post-verse": "Post-V",
+}
+
+
+def int_to_roman(n: int) -> str:
+    """Convert a 1-based index to a Roman numeral (I, II, …)."""
+    if n < 1:
+        return "I"
+    if n <= len(_ROMAN_NUMERALS):
+        return _ROMAN_NUMERALS[n - 1]
+    # Rare hymns with >30 verses: fall back to Arabic.
+    return str(n)
+
+
+def short_hymn_section_label(block_kind: str, *, verse_index: int = 0) -> str:
+    """
+    Projector short-form for a structure kind.
+
+    Verse/stanza → Roman (I, II, III…). Everything else → compact marker
+    (Chor., Br., Pre-C, Out., …).
+    """
+    kind = _normalize_structure_kind(block_kind)
+    if kind in ("verse", "stanza") or not kind:
+        return int_to_roman(verse_index if verse_index > 0 else 1)
+    return _SHORT_SECTION_LABELS.get(kind, kind.replace("-", " ").title()[:8])
+
+
+def labels_for_block_kinds(block_kinds: list[str]) -> list[str]:
+    """Assign short labels to an ordered sequence of block kinds."""
+    verse_n = 0
+    out: list[str] = []
+    for raw in block_kinds:
+        kind = _normalize_structure_kind(raw) or "verse"
+        if kind in ("verse", "stanza"):
+            verse_n += 1
+            out.append(short_hymn_section_label(kind, verse_index=verse_n))
+        else:
+            out.append(short_hymn_section_label(kind))
+    return out

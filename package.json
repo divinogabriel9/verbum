@@ -10,7 +10,15 @@
     "loadtest:load": "k6 run loadtests/load-readings.js",
     "loadtest:stress": "k6 run --summary-trend-stats=avg,p(95),p(99),max loadtests/stress.js",
     "loadtest:spike": "k6 run loadtests/spike.js",
-    "loadtest:preview": "k6 run loadtests/preview-auth.js"
+    "loadtest:preview": "k6 run loadtests/preview-auth.js",
+    "stress:smoke": "k6 run performance/scenarios/smoke.js",
+    "stress:sunday": "k6 run performance/scenarios/sunday.js",
+    "stress:peak": "k6 run performance/scenarios/peak.js",
+    "stress:launch": "k6 run performance/scenarios/launch.js",
+    "stress:soak": "k6 run performance/scenarios/soak.js",
+    "stress:chaos": "k6 run performance/scenarios/chaos.js",
+    "stress:practice": "k6 run performance/scenarios/practice.js",
+    "stress:practice-chaos": "bash performance/scripts/run_practice_chaos.sh"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.0"

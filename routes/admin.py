@@ -518,10 +518,11 @@ def register_admin_routes(app) -> None:
     def api_admin_calendar_month(
         year: int = Query(..., ge=2000, le=2100),
         month: int = Query(..., ge=1, le=12),
+        lang: str = Query("english"),
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         try:
-            return fetch_admin_calendar_month(year, month)
+            return fetch_admin_calendar_month(year, month, language=lang)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

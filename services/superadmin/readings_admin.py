@@ -185,16 +185,26 @@ def patch_readings_admin_entry(date: str, updates: Mapping[str, str]) -> dict[st
         raise ValueError("no valid reading fields to update")
 
     existing = _raw_cache_entry(iso) or {k: "" for k in CACHE_KEYS}
+    changed = False
+    for key, value in filtered.items():
+        if str(existing.get(key) or "") != value:
+            changed = True
+            break
+
+    if not changed:
+        detail = get_readings_admin_detail(iso)
+        detail["unchanged"] = True
+        return detail
+
     merged = {**existing, **filtered}
     set_readings_cache_entry(iso, merged)
     invalidate_readings_memory(iso)
+    # Do not force a live USCCB refresh here — that belongs to "Fetch from USCCB".
+    # Writing the cache + reassessing health is enough for Save.
 
-    try:
-        get_liturgical_data(iso, force_refresh=True)
-    except Exception:
-        pass
-
-    return get_readings_admin_detail(iso)
+    detail = get_readings_admin_detail(iso)
+    detail["unchanged"] = False
+    return detail
 
 
 def fetch_readings_admin_date(date: str) -> dict[str, Any]:
@@ -227,8 +237,13 @@ def fetch_readings_admin_date(date: str) -> dict[str, Any]:
     return detail
 
 
-def fetch_admin_calendar_month(year: int, month: int) -> dict[str, Any]:
-    base = fetch_calendar_month(year, month)
+def fetch_admin_calendar_month(
+    year: int,
+    month: int,
+    *,
+    language: str = "english",
+) -> dict[str, Any]:
+    base = fetch_calendar_month(year, month, language=language)
     for iso, day in base.get("days", {}).items():
         health = assess_readings_health(iso)
         day["readings_health"] = health["status"]

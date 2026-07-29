@@ -1,0 +1,1832 @@
+{
+  "calendar": "philippines",
+  "year": 2026,
+  "source": "Philippines Proper, aligned with the Universalis Philippines calendar (universalis.com/philippines). Feast names are liturgical public titles; curated locally — do not live-scrape.",
+  "days": {
+    "2026-01-01": {
+      "title": "Mary, the Holy Mother of God",
+      "rank": "solemnity",
+      "source_title": "Mary, the Holy Mother of God Solemnity"
+    },
+    "2026-01-02": {
+      "title": "Saints Basil the Great and Gregory Nazianzen, Bishops, Doctors",
+      "rank": "memorial",
+      "source_title": "Saints Basil the Great and Gregory Nazianzen, Bishops, Doctors"
+    },
+    "2026-01-03": {
+      "title": "3 January or The Most Holy Name of Jesus",
+      "rank": "memorial",
+      "source_title": "3 January or The Most Holy Name of Jesus"
+    },
+    "2026-01-04": {
+      "title": "The Epiphany of the Lord",
+      "rank": "solemnity",
+      "source_title": "The Epiphany of the Lord Solemnity"
+    },
+    "2026-01-05": {
+      "title": "Monday after Epiphany Sunday",
+      "rank": "memorial",
+      "source_title": "Monday after Epiphany Sunday"
+    },
+    "2026-01-06": {
+      "title": "Tuesday after Epiphany Sunday",
+      "rank": "memorial",
+      "source_title": "Tuesday after Epiphany Sunday"
+    },
+    "2026-01-07": {
+      "title": "Wednesday after Epiphany Sunday or Saint Raymond of Penyafort, Priest",
+      "rank": "memorial",
+      "source_title": "Wednesday after Epiphany Sunday or Saint Raymond of Penyafort, Priest"
+    },
+    "2026-01-08": {
+      "title": "Thursday after Epiphany Sunday",
+      "rank": "memorial",
+      "source_title": "Thursday after Epiphany Sunday"
+    },
+    "2026-01-09": {
+      "title": "The Translation of the Black Nazarene",
+      "rank": "feast",
+      "source_title": "The Translation of the Black Nazarene Feast"
+    },
+    "2026-01-10": {
+      "title": "Saturday after Epiphany Sunday",
+      "rank": "memorial",
+      "source_title": "Saturday after Epiphany Sunday"
+    },
+    "2026-01-11": {
+      "title": "The Baptism of the Lord",
+      "rank": "feast",
+      "source_title": "The Baptism of the Lord Feast"
+    },
+    "2026-01-12": {
+      "title": "Monday of week 1 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 1 in Ordinary Time"
+    },
+    "2026-01-13": {
+      "title": "Tuesday of week 1 in Ordinary Time or Saint Hilary, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 1 in Ordinary Time or Saint Hilary, Bishop, Doctor"
+    },
+    "2026-01-14": {
+      "title": "Wednesday of week 1 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 1 in Ordinary Time"
+    },
+    "2026-01-15": {
+      "title": "Thursday of week 1 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 1 in Ordinary Time"
+    },
+    "2026-01-16": {
+      "title": "Friday of week 1 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 1 in Ordinary Time"
+    },
+    "2026-01-17": {
+      "title": "Saint Antony, Abbot",
+      "rank": "memorial",
+      "source_title": "Saint Antony, Abbot"
+    },
+    "2026-01-18": {
+      "title": "Santo Niño (The Holy Child)",
+      "rank": "feast",
+      "source_title": "Santo Niño (The Holy Child) Feast"
+    },
+    "2026-01-19": {
+      "title": "Monday of week 2 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 2 in Ordinary Time"
+    },
+    "2026-01-20": {
+      "title": "Tuesday of week 2 in Ordinary Time or Saint Fabian, Pope, Martyr or Saint Sebastian, Martyr",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 2 in Ordinary Time or Saint Fabian, Pope, Martyr or Saint Sebastian, Martyr"
+    },
+    "2026-01-21": {
+      "title": "Saint Agnes, Virgin, Martyr",
+      "rank": "memorial",
+      "source_title": "Saint Agnes, Virgin, Martyr"
+    },
+    "2026-01-22": {
+      "title": "Thursday of week 2 in Ordinary Time or Saint Vincent, Deacon, Martyr",
+      "rank": "memorial",
+      "source_title": "Thursday of week 2 in Ordinary Time or Saint Vincent, Deacon, Martyr"
+    },
+    "2026-01-23": {
+      "title": "Friday of week 2 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 2 in Ordinary Time"
+    },
+    "2026-01-24": {
+      "title": "Saint Francis de Sales, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Francis de Sales, Bishop, Doctor"
+    },
+    "2026-01-25": {
+      "title": "3rd Sunday in Ordinary Time (Sunday of the Word of God)",
+      "rank": "sunday",
+      "source_title": "3rd Sunday in Ordinary Time (Sunday of the Word of God)"
+    },
+    "2026-01-26": {
+      "title": "Saints Timothy and Titus, Bishops",
+      "rank": "memorial",
+      "source_title": "Saints Timothy and Titus, Bishops"
+    },
+    "2026-01-27": {
+      "title": "Tuesday of week 3 in Ordinary Time or Saint Angela Merici, Virgin",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 3 in Ordinary Time or Saint Angela Merici, Virgin"
+    },
+    "2026-01-28": {
+      "title": "Saint Thomas Aquinas, Priest, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Thomas Aquinas, Priest, Doctor"
+    },
+    "2026-01-29": {
+      "title": "Thursday of week 3 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 3 in Ordinary Time"
+    },
+    "2026-01-30": {
+      "title": "Friday of week 3 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 3 in Ordinary Time"
+    },
+    "2026-01-31": {
+      "title": "Saint John Bosco, Priest",
+      "rank": "memorial",
+      "source_title": "Saint John Bosco, Priest"
+    },
+    "2026-02-01": {
+      "title": "4th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "4th Sunday in Ordinary Time"
+    },
+    "2026-02-02": {
+      "title": "The Presentation of the Lord",
+      "rank": "feast",
+      "source_title": "The Presentation of the Lord Feast"
+    },
+    "2026-02-03": {
+      "title": "Tuesday of week 4 in Ordinary Time or Saint Ansgar (Oscar), Bishop or Saint Blaise, Bishop, Martyr",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 4 in Ordinary Time or Saint Ansgar (Oscar), Bishop or Saint Blaise, Bishop, Martyr"
+    },
+    "2026-02-04": {
+      "title": "Wednesday of week 4 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 4 in Ordinary Time"
+    },
+    "2026-02-05": {
+      "title": "Saint Agatha, Virgin, Martyr",
+      "rank": "memorial",
+      "source_title": "Saint Agatha, Virgin, Martyr"
+    },
+    "2026-02-06": {
+      "title": "Saints Pedro Bautista, Paul Miki and their Companions, Martyrs",
+      "rank": "memorial",
+      "source_title": "Saints Pedro Bautista, Paul Miki and their Companions, Martyrs"
+    },
+    "2026-02-07": {
+      "title": "Saturday of week 4 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 4 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-02-08": {
+      "title": "5th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "5th Sunday in Ordinary Time"
+    },
+    "2026-02-09": {
+      "title": "Monday of week 5 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 5 in Ordinary Time"
+    },
+    "2026-02-10": {
+      "title": "Saint Scholastica, Virgin",
+      "rank": "memorial",
+      "source_title": "Saint Scholastica, Virgin"
+    },
+    "2026-02-11": {
+      "title": "Wednesday of week 5 in Ordinary Time or Our Lady of Lourdes",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 5 in Ordinary Time or Our Lady of Lourdes"
+    },
+    "2026-02-12": {
+      "title": "Thursday of week 5 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 5 in Ordinary Time"
+    },
+    "2026-02-13": {
+      "title": "Friday of week 5 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 5 in Ordinary Time"
+    },
+    "2026-02-14": {
+      "title": "Saints Cyril, monk, and Methodius, Bishop",
+      "rank": "memorial",
+      "source_title": "Saints Cyril, monk, and Methodius, Bishop"
+    },
+    "2026-02-15": {
+      "title": "6th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "6th Sunday in Ordinary Time"
+    },
+    "2026-02-16": {
+      "title": "Monday of week 6 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 6 in Ordinary Time"
+    },
+    "2026-02-17": {
+      "title": "Tuesday of week 6 in Ordinary Time or The Seven Holy Founders of the Servite Order",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 6 in Ordinary Time or The Seven Holy Founders of the Servite Order"
+    },
+    "2026-02-18": {
+      "title": "Ash Wednesday",
+      "rank": "season",
+      "source_title": "Ash Wednesday"
+    },
+    "2026-02-19": {
+      "title": "Thursday after Ash Wednesday",
+      "rank": "memorial",
+      "source_title": "Thursday after Ash Wednesday"
+    },
+    "2026-02-20": {
+      "title": "Friday after Ash Wednesday",
+      "rank": "memorial",
+      "source_title": "Friday after Ash Wednesday"
+    },
+    "2026-02-21": {
+      "title": "Saturday after Ash Wednesday (commemoration of Saint Peter Damian, Bishop, Doctor)",
+      "rank": "memorial",
+      "source_title": "Saturday after Ash Wednesday (commemoration of Saint Peter Damian, Bishop, Doctor)"
+    },
+    "2026-02-22": {
+      "title": "1st Sunday of Lent",
+      "rank": "sunday",
+      "source_title": "1st Sunday of Lent"
+    },
+    "2026-02-23": {
+      "title": "Monday of the 1st week of Lent (commemoration of Saint Polycarp, Bishop, Martyr)",
+      "rank": "memorial",
+      "source_title": "Monday of the 1st week of Lent (commemoration of Saint Polycarp, Bishop, Martyr)"
+    },
+    "2026-02-24": {
+      "title": "Tuesday of the 1st week of Lent",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 1st week of Lent"
+    },
+    "2026-02-25": {
+      "title": "Wednesday of the 1st week of Lent",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 1st week of Lent"
+    },
+    "2026-02-26": {
+      "title": "Thursday of the 1st week of Lent",
+      "rank": "memorial",
+      "source_title": "Thursday of the 1st week of Lent"
+    },
+    "2026-02-27": {
+      "title": "Friday of the 1st week of Lent (commemoration of Saint Gregory of Narek, Abbot and Doctor of the Church)",
+      "rank": "memorial",
+      "source_title": "Friday of the 1st week of Lent (commemoration of Saint Gregory of Narek, Abbot and Doctor of the Church)"
+    },
+    "2026-02-28": {
+      "title": "Saturday of the 1st week of Lent",
+      "rank": "memorial",
+      "source_title": "Saturday of the 1st week of Lent"
+    },
+    "2026-03-01": {
+      "title": "2nd Sunday of Lent",
+      "rank": "sunday",
+      "source_title": "2nd Sunday of Lent"
+    },
+    "2026-03-02": {
+      "title": "Monday of the 2nd week of Lent",
+      "rank": "memorial",
+      "source_title": "Monday of the 2nd week of Lent"
+    },
+    "2026-03-03": {
+      "title": "Tuesday of the 2nd week of Lent",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 2nd week of Lent"
+    },
+    "2026-03-04": {
+      "title": "Wednesday of the 2nd week of Lent (commemoration of Saint Casimir)",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 2nd week of Lent (commemoration of Saint Casimir)"
+    },
+    "2026-03-05": {
+      "title": "Thursday of the 2nd week of Lent",
+      "rank": "memorial",
+      "source_title": "Thursday of the 2nd week of Lent"
+    },
+    "2026-03-06": {
+      "title": "Friday of the 2nd week of Lent",
+      "rank": "memorial",
+      "source_title": "Friday of the 2nd week of Lent"
+    },
+    "2026-03-07": {
+      "title": "Saturday of the 2nd week of Lent (commemoration of Saints Perpetua and Felicity, Martyrs)",
+      "rank": "memorial",
+      "source_title": "Saturday of the 2nd week of Lent (commemoration of Saints Perpetua and Felicity, Martyrs)"
+    },
+    "2026-03-08": {
+      "title": "3rd Sunday of Lent",
+      "rank": "sunday",
+      "source_title": "3rd Sunday of Lent"
+    },
+    "2026-03-09": {
+      "title": "Monday of the 3rd week of Lent (commemoration of Saint Frances of Rome, Religious)",
+      "rank": "memorial",
+      "source_title": "Monday of the 3rd week of Lent (commemoration of Saint Frances of Rome, Religious)"
+    },
+    "2026-03-10": {
+      "title": "Tuesday of the 3rd week of Lent",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 3rd week of Lent"
+    },
+    "2026-03-11": {
+      "title": "Wednesday of the 3rd week of Lent",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 3rd week of Lent"
+    },
+    "2026-03-12": {
+      "title": "Thursday of the 3rd week of Lent",
+      "rank": "memorial",
+      "source_title": "Thursday of the 3rd week of Lent"
+    },
+    "2026-03-13": {
+      "title": "Friday of the 3rd week of Lent",
+      "rank": "memorial",
+      "source_title": "Friday of the 3rd week of Lent"
+    },
+    "2026-03-14": {
+      "title": "Saturday of the 3rd week of Lent",
+      "rank": "memorial",
+      "source_title": "Saturday of the 3rd week of Lent"
+    },
+    "2026-03-15": {
+      "title": "4th Sunday of Lent (Laetare Sunday)",
+      "rank": "sunday",
+      "source_title": "4th Sunday of Lent (Laetare Sunday)"
+    },
+    "2026-03-16": {
+      "title": "Monday of the 4th week of Lent",
+      "rank": "memorial",
+      "source_title": "Monday of the 4th week of Lent"
+    },
+    "2026-03-17": {
+      "title": "Tuesday of the 4th week of Lent (commemoration of Saint Patrick, Bishop, Missionary)",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 4th week of Lent (commemoration of Saint Patrick, Bishop, Missionary)"
+    },
+    "2026-03-18": {
+      "title": "Wednesday of the 4th week of Lent (commemoration of Saint Cyril of Jerusalem, Bishop, Doctor)",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 4th week of Lent (commemoration of Saint Cyril of Jerusalem, Bishop, Doctor)"
+    },
+    "2026-03-19": {
+      "title": "Saint Joseph, husband of the Blessed Virgin Mary",
+      "rank": "solemnity",
+      "source_title": "Saint Joseph, husband of the Blessed Virgin Mary Solemnity"
+    },
+    "2026-03-20": {
+      "title": "Friday of the 4th week of Lent",
+      "rank": "memorial",
+      "source_title": "Friday of the 4th week of Lent"
+    },
+    "2026-03-21": {
+      "title": "Saturday of the 4th week of Lent",
+      "rank": "memorial",
+      "source_title": "Saturday of the 4th week of Lent"
+    },
+    "2026-03-22": {
+      "title": "5th Sunday of Lent",
+      "rank": "sunday",
+      "source_title": "5th Sunday of Lent"
+    },
+    "2026-03-23": {
+      "title": "Monday of the 5th week of Lent (commemoration of Saint Turibius of Mongrovejo, Bishop)",
+      "rank": "memorial",
+      "source_title": "Monday of the 5th week of Lent (commemoration of Saint Turibius of Mongrovejo, Bishop)"
+    },
+    "2026-03-24": {
+      "title": "Tuesday of the 5th week of Lent",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 5th week of Lent"
+    },
+    "2026-03-25": {
+      "title": "The Annunciation of the Lord",
+      "rank": "solemnity",
+      "source_title": "The Annunciation of the Lord Solemnity"
+    },
+    "2026-03-26": {
+      "title": "Thursday of the 5th week of Lent",
+      "rank": "memorial",
+      "source_title": "Thursday of the 5th week of Lent"
+    },
+    "2026-03-27": {
+      "title": "Friday of the 5th week of Lent",
+      "rank": "memorial",
+      "source_title": "Friday of the 5th week of Lent"
+    },
+    "2026-03-28": {
+      "title": "Saturday of the 5th week of Lent",
+      "rank": "memorial",
+      "source_title": "Saturday of the 5th week of Lent"
+    },
+    "2026-03-29": {
+      "title": "Palm Sunday",
+      "rank": "solemnity",
+      "source_title": "Palm Sunday"
+    },
+    "2026-03-30": {
+      "title": "Monday of Holy Week",
+      "rank": "memorial",
+      "source_title": "Monday of Holy Week"
+    },
+    "2026-03-31": {
+      "title": "Tuesday of Holy Week",
+      "rank": "memorial",
+      "source_title": "Tuesday of Holy Week"
+    },
+    "2026-04-01": {
+      "title": "Wednesday of Holy Week",
+      "rank": "memorial",
+      "source_title": "Wednesday of Holy Week"
+    },
+    "2026-04-02": {
+      "title": "Maundy Thursday",
+      "rank": "triduum",
+      "source_title": "Maundy Thursday"
+    },
+    "2026-04-03": {
+      "title": "Good Friday",
+      "rank": "triduum",
+      "source_title": "Good Friday"
+    },
+    "2026-04-04": {
+      "title": "Holy Saturday",
+      "rank": "triduum",
+      "source_title": "Holy Saturday"
+    },
+    "2026-04-05": {
+      "title": "Easter Sunday",
+      "rank": "solemnity",
+      "source_title": "Easter Sunday"
+    },
+    "2026-04-06": {
+      "title": "Easter Monday",
+      "rank": "memorial",
+      "source_title": "Easter Monday"
+    },
+    "2026-04-07": {
+      "title": "Easter Tuesday",
+      "rank": "memorial",
+      "source_title": "Easter Tuesday"
+    },
+    "2026-04-08": {
+      "title": "Easter Wednesday",
+      "rank": "memorial",
+      "source_title": "Easter Wednesday"
+    },
+    "2026-04-09": {
+      "title": "Easter Thursday",
+      "rank": "memorial",
+      "source_title": "Easter Thursday"
+    },
+    "2026-04-10": {
+      "title": "Easter Friday",
+      "rank": "memorial",
+      "source_title": "Easter Friday"
+    },
+    "2026-04-11": {
+      "title": "Easter Saturday",
+      "rank": "memorial",
+      "source_title": "Easter Saturday"
+    },
+    "2026-04-12": {
+      "title": "Divine Mercy Sunday (2nd Sunday of Easter)",
+      "rank": "solemnity",
+      "source_title": "Divine Mercy Sunday (2nd Sunday of Easter)"
+    },
+    "2026-04-13": {
+      "title": "Monday of the 2nd week of Eastertide or Saint Martin I, Pope, Martyr",
+      "rank": "memorial",
+      "source_title": "Monday of the 2nd week of Eastertide or Saint Martin I, Pope, Martyr"
+    },
+    "2026-04-14": {
+      "title": "Tuesday of the 2nd week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 2nd week of Eastertide"
+    },
+    "2026-04-15": {
+      "title": "Wednesday of the 2nd week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 2nd week of Eastertide"
+    },
+    "2026-04-16": {
+      "title": "Thursday of the 2nd week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Thursday of the 2nd week of Eastertide"
+    },
+    "2026-04-17": {
+      "title": "Friday of the 2nd week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Friday of the 2nd week of Eastertide"
+    },
+    "2026-04-18": {
+      "title": "Saturday of the 2nd week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Saturday of the 2nd week of Eastertide"
+    },
+    "2026-04-19": {
+      "title": "3rd Sunday of Easter",
+      "rank": "sunday",
+      "source_title": "3rd Sunday of Easter"
+    },
+    "2026-04-20": {
+      "title": "Monday of the 3rd week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Monday of the 3rd week of Eastertide"
+    },
+    "2026-04-21": {
+      "title": "Tuesday of the 3rd week of Eastertide or Saint Anselm of Canterbury, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 3rd week of Eastertide or Saint Anselm of Canterbury, Bishop, Doctor"
+    },
+    "2026-04-22": {
+      "title": "Wednesday of the 3rd week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 3rd week of Eastertide"
+    },
+    "2026-04-23": {
+      "title": "Thursday of the 3rd week of Eastertide or Saint George, Martyr or Saint Adalbert of Prague, Bishop, Martyr",
+      "rank": "memorial",
+      "source_title": "Thursday of the 3rd week of Eastertide or Saint George, Martyr or Saint Adalbert of Prague, Bishop, Martyr"
+    },
+    "2026-04-24": {
+      "title": "Friday of the 3rd week of Eastertide or Saint Fidelis of Sigmaringen, Priest, Martyr",
+      "rank": "memorial",
+      "source_title": "Friday of the 3rd week of Eastertide or Saint Fidelis of Sigmaringen, Priest, Martyr"
+    },
+    "2026-04-25": {
+      "title": "Saint Mark, Evangelist",
+      "rank": "feast",
+      "source_title": "Saint Mark, Evangelist Feast"
+    },
+    "2026-04-26": {
+      "title": "4th Sunday of Easter",
+      "rank": "sunday",
+      "source_title": "4th Sunday of Easter"
+    },
+    "2026-04-27": {
+      "title": "Monday of the 4th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Monday of the 4th week of Eastertide"
+    },
+    "2026-04-28": {
+      "title": "Tuesday of the 4th week of Eastertide or Saint Peter Chanel, Priest, Martyr or Saint Louis Marie Grignion de Montfort, Priest",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 4th week of Eastertide or Saint Peter Chanel, Priest, Martyr or Saint Louis Marie Grignion de Montfort, Priest"
+    },
+    "2026-04-29": {
+      "title": "Saint Catherine of Siena, Virgin, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Catherine of Siena, Virgin, Doctor"
+    },
+    "2026-04-30": {
+      "title": "Thursday of the 4th week of Eastertide or Saint Pius V, Pope",
+      "rank": "memorial",
+      "source_title": "Thursday of the 4th week of Eastertide or Saint Pius V, Pope"
+    },
+    "2026-05-01": {
+      "title": "Friday of the 4th week of Eastertide or Saint Joseph the Worker",
+      "rank": "memorial",
+      "source_title": "Friday of the 4th week of Eastertide or Saint Joseph the Worker"
+    },
+    "2026-05-02": {
+      "title": "Saint Athanasius, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Athanasius, Bishop, Doctor"
+    },
+    "2026-05-03": {
+      "title": "5th Sunday of Easter",
+      "rank": "sunday",
+      "source_title": "5th Sunday of Easter"
+    },
+    "2026-05-04": {
+      "title": "Monday of the 5th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Monday of the 5th week of Eastertide"
+    },
+    "2026-05-05": {
+      "title": "Tuesday of the 5th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 5th week of Eastertide"
+    },
+    "2026-05-06": {
+      "title": "Wednesday of the 5th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 5th week of Eastertide"
+    },
+    "2026-05-07": {
+      "title": "Thursday of the 5th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Thursday of the 5th week of Eastertide"
+    },
+    "2026-05-08": {
+      "title": "Friday of the 5th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Friday of the 5th week of Eastertide"
+    },
+    "2026-05-09": {
+      "title": "Saturday of the 5th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Saturday of the 5th week of Eastertide"
+    },
+    "2026-05-10": {
+      "title": "6th Sunday of Easter",
+      "rank": "sunday",
+      "source_title": "6th Sunday of Easter"
+    },
+    "2026-05-11": {
+      "title": "Monday of the 6th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Monday of the 6th week of Eastertide"
+    },
+    "2026-05-12": {
+      "title": "Tuesday of the 6th week of Eastertide or Saints Nereus and Achilleus, Martyrs or Saint Pancras, Martyr",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 6th week of Eastertide or Saints Nereus and Achilleus, Martyrs or Saint Pancras, Martyr"
+    },
+    "2026-05-13": {
+      "title": "Wednesday of the 6th week of Eastertide or Our Lady of Fátima",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 6th week of Eastertide or Our Lady of Fátima"
+    },
+    "2026-05-14": {
+      "title": "Saint Matthias, Apostle",
+      "rank": "feast",
+      "source_title": "Saint Matthias, Apostle Feast"
+    },
+    "2026-05-15": {
+      "title": "Saint Isidore the Farmer",
+      "rank": "memorial",
+      "source_title": "Saint Isidore the Farmer"
+    },
+    "2026-05-16": {
+      "title": "Saturday before Ascension Sunday",
+      "rank": "memorial",
+      "source_title": "Saturday before Ascension Sunday"
+    },
+    "2026-05-17": {
+      "title": "The Ascension of the Lord",
+      "rank": "solemnity",
+      "source_title": "The Ascension of the Lord Solemnity"
+    },
+    "2026-05-18": {
+      "title": "Monday of the 7th week of Eastertide or Saint John I, Pope, Martyr",
+      "rank": "memorial",
+      "source_title": "Monday of the 7th week of Eastertide or Saint John I, Pope, Martyr"
+    },
+    "2026-05-19": {
+      "title": "Tuesday of the 7th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 7th week of Eastertide"
+    },
+    "2026-05-20": {
+      "title": "Wednesday of the 7th week of Eastertide or Saint Bernardine of Siena, Priest",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 7th week of Eastertide or Saint Bernardine of Siena, Priest"
+    },
+    "2026-05-21": {
+      "title": "Thursday of the 7th week of Eastertide or Saint Christopher Magallanes and his Companions, Martyrs",
+      "rank": "memorial",
+      "source_title": "Thursday of the 7th week of Eastertide or Saint Christopher Magallanes and his Companions, Martyrs"
+    },
+    "2026-05-22": {
+      "title": "Friday of the 7th week of Eastertide or Saint Rita of Cascia",
+      "rank": "memorial",
+      "source_title": "Friday of the 7th week of Eastertide or Saint Rita of Cascia"
+    },
+    "2026-05-23": {
+      "title": "Saturday of the 7th week of Eastertide",
+      "rank": "memorial",
+      "source_title": "Saturday of the 7th week of Eastertide"
+    },
+    "2026-05-24": {
+      "title": "Pentecost",
+      "rank": "solemnity",
+      "source_title": "Pentecost"
+    },
+    "2026-05-25": {
+      "title": "Mary, Mother of the Church",
+      "rank": "memorial",
+      "source_title": "Mary, Mother of the Church"
+    },
+    "2026-05-26": {
+      "title": "Saint Philip Neri, Priest",
+      "rank": "memorial",
+      "source_title": "Saint Philip Neri, Priest"
+    },
+    "2026-05-27": {
+      "title": "Wednesday of week 8 in Ordinary Time or Saint Augustine of Canterbury, Bishop",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 8 in Ordinary Time or Saint Augustine of Canterbury, Bishop"
+    },
+    "2026-05-28": {
+      "title": "Our Lord Jesus Christ the Eternal High Priest",
+      "rank": "feast",
+      "source_title": "Our Lord Jesus Christ the Eternal High Priest Feast"
+    },
+    "2026-05-29": {
+      "title": "Friday of week 8 in Ordinary Time or Saint Paul VI, Pope",
+      "rank": "memorial",
+      "source_title": "Friday of week 8 in Ordinary Time or Saint Paul VI, Pope"
+    },
+    "2026-05-30": {
+      "title": "Saturday of week 8 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 8 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-05-31": {
+      "title": "The Most Holy Trinity",
+      "rank": "solemnity",
+      "source_title": "The Most Holy Trinity Solemnity"
+    },
+    "2026-06-01": {
+      "title": "Saint Justin, Martyr",
+      "rank": "memorial",
+      "source_title": "Saint Justin, Martyr"
+    },
+    "2026-06-02": {
+      "title": "Tuesday of week 9 in Ordinary Time or Saints Marcellinus and Peter, Martyrs",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 9 in Ordinary Time or Saints Marcellinus and Peter, Martyrs"
+    },
+    "2026-06-03": {
+      "title": "Saints Charles Lwanga and his Companions, Martyrs",
+      "rank": "memorial",
+      "source_title": "Saints Charles Lwanga and his Companions, Martyrs"
+    },
+    "2026-06-04": {
+      "title": "Thursday of week 9 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 9 in Ordinary Time"
+    },
+    "2026-06-05": {
+      "title": "Saint Boniface, Bishop, Martyr",
+      "rank": "memorial",
+      "source_title": "Saint Boniface, Bishop, Martyr"
+    },
+    "2026-06-06": {
+      "title": "Saturday of week 9 in Ordinary Time or Saint Norbert, Bishop or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 9 in Ordinary Time or Saint Norbert, Bishop or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-06-07": {
+      "title": "The Most Holy Body and Blood of Christ",
+      "rank": "solemnity",
+      "source_title": "The Most Holy Body and Blood of Christ Solemnity"
+    },
+    "2026-06-08": {
+      "title": "Monday of week 10 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 10 in Ordinary Time"
+    },
+    "2026-06-09": {
+      "title": "Tuesday of week 10 in Ordinary Time or Saint Ephraem, Deacon, Doctor",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 10 in Ordinary Time or Saint Ephraem, Deacon, Doctor"
+    },
+    "2026-06-10": {
+      "title": "Wednesday of week 10 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 10 in Ordinary Time"
+    },
+    "2026-06-11": {
+      "title": "Saint Barnabas, Apostle",
+      "rank": "memorial",
+      "source_title": "Saint Barnabas, Apostle"
+    },
+    "2026-06-12": {
+      "title": "The Most Sacred Heart of Jesus",
+      "rank": "solemnity",
+      "source_title": "The Most Sacred Heart of Jesus Solemnity"
+    },
+    "2026-06-13": {
+      "title": "The Immaculate Heart of Mary",
+      "rank": "memorial",
+      "source_title": "The Immaculate Heart of Mary"
+    },
+    "2026-06-14": {
+      "title": "11th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "11th Sunday in Ordinary Time"
+    },
+    "2026-06-15": {
+      "title": "Monday of week 11 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 11 in Ordinary Time"
+    },
+    "2026-06-16": {
+      "title": "Tuesday of week 11 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 11 in Ordinary Time"
+    },
+    "2026-06-17": {
+      "title": "Wednesday of week 11 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 11 in Ordinary Time"
+    },
+    "2026-06-18": {
+      "title": "Thursday of week 11 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 11 in Ordinary Time"
+    },
+    "2026-06-19": {
+      "title": "Friday of week 11 in Ordinary Time or Saint Romuald, Abbot",
+      "rank": "memorial",
+      "source_title": "Friday of week 11 in Ordinary Time or Saint Romuald, Abbot"
+    },
+    "2026-06-20": {
+      "title": "Saturday of week 11 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 11 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-06-21": {
+      "title": "12th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "12th Sunday in Ordinary Time"
+    },
+    "2026-06-22": {
+      "title": "Monday of week 12 in Ordinary Time or Saints John Fisher, Bishop, and Thomas More, Martyrs or Saint Paulinus of Nola, Bishop",
+      "rank": "memorial",
+      "source_title": "Monday of week 12 in Ordinary Time or Saints John Fisher, Bishop, and Thomas More, Martyrs or Saint Paulinus of Nola, Bishop"
+    },
+    "2026-06-23": {
+      "title": "Tuesday of week 12 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 12 in Ordinary Time"
+    },
+    "2026-06-24": {
+      "title": "The Nativity of Saint John the Baptist",
+      "rank": "solemnity",
+      "source_title": "The Nativity of Saint John the Baptist Solemnity"
+    },
+    "2026-06-25": {
+      "title": "Thursday of week 12 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 12 in Ordinary Time"
+    },
+    "2026-06-26": {
+      "title": "Friday of week 12 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 12 in Ordinary Time"
+    },
+    "2026-06-27": {
+      "title": "Saturday of week 12 in Ordinary Time or Saint Cyril of Alexandria, Bishop, Doctor or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 12 in Ordinary Time or Saint Cyril of Alexandria, Bishop, Doctor or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-06-28": {
+      "title": "13th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "13th Sunday in Ordinary Time"
+    },
+    "2026-06-29": {
+      "title": "Saints Peter and Paul, Apostles",
+      "rank": "solemnity",
+      "source_title": "Saints Peter and Paul, Apostles Solemnity"
+    },
+    "2026-06-30": {
+      "title": "Tuesday of week 13 in Ordinary Time or The First Martyrs of the See of Rome",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 13 in Ordinary Time or The First Martyrs of the See of Rome"
+    },
+    "2026-07-01": {
+      "title": "Wednesday of week 13 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 13 in Ordinary Time"
+    },
+    "2026-07-02": {
+      "title": "Thursday of week 13 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 13 in Ordinary Time"
+    },
+    "2026-07-03": {
+      "title": "Saint Thomas, Apostle",
+      "rank": "feast",
+      "source_title": "Saint Thomas, Apostle Feast"
+    },
+    "2026-07-04": {
+      "title": "Saturday of week 13 in Ordinary Time or Saint Elizabeth of Portugal or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 13 in Ordinary Time or Saint Elizabeth of Portugal or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-07-05": {
+      "title": "14th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "14th Sunday in Ordinary Time"
+    },
+    "2026-07-06": {
+      "title": "Monday of week 14 in Ordinary Time or Saint Maria Goretti, Virgin, Martyr",
+      "rank": "memorial",
+      "source_title": "Monday of week 14 in Ordinary Time or Saint Maria Goretti, Virgin, Martyr"
+    },
+    "2026-07-07": {
+      "title": "Tuesday of week 14 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 14 in Ordinary Time"
+    },
+    "2026-07-08": {
+      "title": "Wednesday of week 14 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 14 in Ordinary Time"
+    },
+    "2026-07-09": {
+      "title": "Thursday of week 14 in Ordinary Time or Saint Augustine Zhao Rong and his Companions, Martyrs",
+      "rank": "memorial",
+      "source_title": "Thursday of week 14 in Ordinary Time or Saint Augustine Zhao Rong and his Companions, Martyrs"
+    },
+    "2026-07-10": {
+      "title": "Friday of week 14 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 14 in Ordinary Time"
+    },
+    "2026-07-11": {
+      "title": "Saint Benedict, Abbot",
+      "rank": "memorial",
+      "source_title": "Saint Benedict, Abbot"
+    },
+    "2026-07-12": {
+      "title": "15th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "15th Sunday in Ordinary Time"
+    },
+    "2026-07-13": {
+      "title": "Monday of week 15 in Ordinary Time or Saint Henry",
+      "rank": "memorial",
+      "source_title": "Monday of week 15 in Ordinary Time or Saint Henry"
+    },
+    "2026-07-14": {
+      "title": "Tuesday of week 15 in Ordinary Time or Saint Camillus of Lellis, Priest",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 15 in Ordinary Time or Saint Camillus of Lellis, Priest"
+    },
+    "2026-07-15": {
+      "title": "Saint Bonaventure, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Bonaventure, Bishop, Doctor"
+    },
+    "2026-07-16": {
+      "title": "Thursday of week 15 in Ordinary Time or Our Lady of Mount Carmel",
+      "rank": "memorial",
+      "source_title": "Thursday of week 15 in Ordinary Time or Our Lady of Mount Carmel"
+    },
+    "2026-07-17": {
+      "title": "Friday of week 15 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 15 in Ordinary Time"
+    },
+    "2026-07-18": {
+      "title": "Saturday of week 15 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 15 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-07-19": {
+      "title": "16th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "16th Sunday in Ordinary Time"
+    },
+    "2026-07-20": {
+      "title": "Monday of week 16 in Ordinary Time or Saint Apollinaris, Bishop, Martyr",
+      "rank": "memorial",
+      "source_title": "Monday of week 16 in Ordinary Time or Saint Apollinaris, Bishop, Martyr"
+    },
+    "2026-07-21": {
+      "title": "Tuesday of week 16 in Ordinary Time or Saint Laurence of Brindisi, Priest, Doctor",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 16 in Ordinary Time or Saint Laurence of Brindisi, Priest, Doctor"
+    },
+    "2026-07-22": {
+      "title": "Saint Mary Magdalen",
+      "rank": "feast",
+      "source_title": "Saint Mary Magdalen Feast"
+    },
+    "2026-07-23": {
+      "title": "Thursday of week 16 in Ordinary Time or Saint Bridget of Sweden, Religious",
+      "rank": "memorial",
+      "source_title": "Thursday of week 16 in Ordinary Time or Saint Bridget of Sweden, Religious"
+    },
+    "2026-07-24": {
+      "title": "Friday of week 16 in Ordinary Time or Saint Charbel Makhlouf, Priest",
+      "rank": "memorial",
+      "source_title": "Friday of week 16 in Ordinary Time or Saint Charbel Makhlouf, Priest"
+    },
+    "2026-07-25": {
+      "title": "Saint James, Apostle",
+      "rank": "feast",
+      "source_title": "Saint James, Apostle Feast"
+    },
+    "2026-07-26": {
+      "title": "17th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "17th Sunday in Ordinary Time"
+    },
+    "2026-07-27": {
+      "title": "Monday of week 17 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 17 in Ordinary Time"
+    },
+    "2026-07-28": {
+      "title": "Tuesday of week 17 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 17 in Ordinary Time"
+    },
+    "2026-07-29": {
+      "title": "Saints Martha, Mary and Lazarus",
+      "rank": "memorial",
+      "source_title": "Saints Martha, Mary and Lazarus"
+    },
+    "2026-07-30": {
+      "title": "Thursday of week 17 in Ordinary Time or Saint Peter Chrysologus, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Thursday of week 17 in Ordinary Time or Saint Peter Chrysologus, Bishop, Doctor"
+    },
+    "2026-07-31": {
+      "title": "Saint Ignatius Loyola, Priest",
+      "rank": "memorial",
+      "source_title": "Saint Ignatius Loyola, Priest"
+    },
+    "2026-08-01": {
+      "title": "Saint Alphonsus Mary de' Liguori, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Alphonsus Mary de' Liguori, Bishop, Doctor"
+    },
+    "2026-08-02": {
+      "title": "18th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "18th Sunday in Ordinary Time"
+    },
+    "2026-08-03": {
+      "title": "Monday of week 18 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 18 in Ordinary Time"
+    },
+    "2026-08-04": {
+      "title": "Saint John Mary Vianney, Priest",
+      "rank": "memorial",
+      "source_title": "Saint John Mary Vianney, Priest"
+    },
+    "2026-08-05": {
+      "title": "Wednesday of week 18 in Ordinary Time or Dedication of the Basilica of Saint Mary Major",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 18 in Ordinary Time or Dedication of the Basilica of Saint Mary Major"
+    },
+    "2026-08-06": {
+      "title": "The Transfiguration of the Lord",
+      "rank": "feast",
+      "source_title": "The Transfiguration of the Lord Feast"
+    },
+    "2026-08-07": {
+      "title": "Friday of week 18 in Ordinary Time or Saints Sixtus II, Pope, and his Companions, Martyrs or Saint Cajetan, Priest",
+      "rank": "memorial",
+      "source_title": "Friday of week 18 in Ordinary Time or Saints Sixtus II, Pope, and his Companions, Martyrs or Saint Cajetan, Priest"
+    },
+    "2026-08-08": {
+      "title": "Saint Dominic, Priest",
+      "rank": "memorial",
+      "source_title": "Saint Dominic, Priest"
+    },
+    "2026-08-09": {
+      "title": "19th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "19th Sunday in Ordinary Time"
+    },
+    "2026-08-10": {
+      "title": "Saint Laurence, Deacon, Martyr",
+      "rank": "feast",
+      "source_title": "Saint Laurence, Deacon, Martyr Feast"
+    },
+    "2026-08-11": {
+      "title": "Saint Clare, Virgin",
+      "rank": "memorial",
+      "source_title": "Saint Clare, Virgin"
+    },
+    "2026-08-12": {
+      "title": "Wednesday of week 19 in Ordinary Time or Saint Jane Frances de Chantal, Religious",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 19 in Ordinary Time or Saint Jane Frances de Chantal, Religious"
+    },
+    "2026-08-13": {
+      "title": "Thursday of week 19 in Ordinary Time or Saints Pontian, Pope, and Hippolytus, Priest, Martyrs",
+      "rank": "memorial",
+      "source_title": "Thursday of week 19 in Ordinary Time or Saints Pontian, Pope, and Hippolytus, Priest, Martyrs"
+    },
+    "2026-08-14": {
+      "title": "Saint Maximilian Kolbe, Priest, Martyr",
+      "rank": "memorial",
+      "source_title": "Saint Maximilian Kolbe, Priest, Martyr"
+    },
+    "2026-08-15": {
+      "title": "The Assumption of the Blessed Virgin Mary",
+      "rank": "solemnity",
+      "source_title": "The Assumption of the Blessed Virgin Mary Solemnity"
+    },
+    "2026-08-16": {
+      "title": "20th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "20th Sunday in Ordinary Time"
+    },
+    "2026-08-17": {
+      "title": "Monday of week 20 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 20 in Ordinary Time"
+    },
+    "2026-08-18": {
+      "title": "Tuesday of week 20 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 20 in Ordinary Time"
+    },
+    "2026-08-19": {
+      "title": "Wednesday of week 20 in Ordinary Time or Saint John Eudes, Priest or Saint Ezechiel Moreno, Bishop, Missionary",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 20 in Ordinary Time or Saint John Eudes, Priest or Saint Ezechiel Moreno, Bishop, Missionary"
+    },
+    "2026-08-20": {
+      "title": "Saint Bernard, Abbot, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Bernard, Abbot, Doctor"
+    },
+    "2026-08-21": {
+      "title": "Saint Pius X, Pope",
+      "rank": "memorial",
+      "source_title": "Saint Pius X, Pope"
+    },
+    "2026-08-22": {
+      "title": "Our Lady, Mother and Queen",
+      "rank": "memorial",
+      "source_title": "Our Lady, Mother and Queen"
+    },
+    "2026-08-23": {
+      "title": "21st Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "21st Sunday in Ordinary Time"
+    },
+    "2026-08-24": {
+      "title": "Saint Bartholomew, Apostle",
+      "rank": "feast",
+      "source_title": "Saint Bartholomew, Apostle Feast"
+    },
+    "2026-08-25": {
+      "title": "Tuesday of week 21 in Ordinary Time or Saint Louis or Saint Joseph of Calasanz, Priest",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 21 in Ordinary Time or Saint Louis or Saint Joseph of Calasanz, Priest"
+    },
+    "2026-08-26": {
+      "title": "Wednesday of week 21 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 21 in Ordinary Time"
+    },
+    "2026-08-27": {
+      "title": "Saint Monica",
+      "rank": "memorial",
+      "source_title": "Saint Monica"
+    },
+    "2026-08-28": {
+      "title": "Saint Augustine, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Augustine, Bishop, Doctor"
+    },
+    "2026-08-29": {
+      "title": "The Beheading of Saint John the Baptist",
+      "rank": "memorial",
+      "source_title": "The Beheading of Saint John the Baptist"
+    },
+    "2026-08-30": {
+      "title": "22nd Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "22nd Sunday in Ordinary Time"
+    },
+    "2026-08-31": {
+      "title": "Monday of week 22 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 22 in Ordinary Time"
+    },
+    "2026-09-01": {
+      "title": "Tuesday of week 22 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 22 in Ordinary Time"
+    },
+    "2026-09-02": {
+      "title": "Wednesday of week 22 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 22 in Ordinary Time"
+    },
+    "2026-09-03": {
+      "title": "Saint Gregory the Great, Pope, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Gregory the Great, Pope, Doctor"
+    },
+    "2026-09-04": {
+      "title": "Friday of week 22 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 22 in Ordinary Time"
+    },
+    "2026-09-05": {
+      "title": "Saturday of week 22 in Ordinary Time or Saint Teresa of Calcutta (Mother Teresa) or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 22 in Ordinary Time or Saint Teresa of Calcutta (Mother Teresa) or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-09-06": {
+      "title": "23rd Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "23rd Sunday in Ordinary Time"
+    },
+    "2026-09-07": {
+      "title": "Monday of week 23 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 23 in Ordinary Time"
+    },
+    "2026-09-08": {
+      "title": "The Birthday of the Blessed Virgin Mary",
+      "rank": "feast",
+      "source_title": "The Birthday of the Blessed Virgin Mary Feast"
+    },
+    "2026-09-09": {
+      "title": "Wednesday of week 23 in Ordinary Time or Saint Peter Claver",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 23 in Ordinary Time or Saint Peter Claver"
+    },
+    "2026-09-10": {
+      "title": "Thursday of week 23 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 23 in Ordinary Time"
+    },
+    "2026-09-11": {
+      "title": "Friday of week 23 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 23 in Ordinary Time"
+    },
+    "2026-09-12": {
+      "title": "Saturday of week 23 in Ordinary Time or The Most Holy Name of Mary or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 23 in Ordinary Time or The Most Holy Name of Mary or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-09-13": {
+      "title": "24th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "24th Sunday in Ordinary Time"
+    },
+    "2026-09-14": {
+      "title": "The Exaltation of the Holy Cross",
+      "rank": "feast",
+      "source_title": "The Exaltation of the Holy Cross Feast"
+    },
+    "2026-09-15": {
+      "title": "Our Lady of Sorrows",
+      "rank": "memorial",
+      "source_title": "Our Lady of Sorrows"
+    },
+    "2026-09-16": {
+      "title": "Saints Cornelius, Pope, and Cyprian, Bishop, Martyrs",
+      "rank": "memorial",
+      "source_title": "Saints Cornelius, Pope, and Cyprian, Bishop, Martyrs"
+    },
+    "2026-09-17": {
+      "title": "Thursday of week 24 in Ordinary Time or Saint Robert Bellarmine, Bishop, Doctor or Saint Hildegard of Bingen, Virgin, Doctor",
+      "rank": "memorial",
+      "source_title": "Thursday of week 24 in Ordinary Time or Saint Robert Bellarmine, Bishop, Doctor or Saint Hildegard of Bingen, Virgin, Doctor"
+    },
+    "2026-09-18": {
+      "title": "Friday of week 24 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 24 in Ordinary Time"
+    },
+    "2026-09-19": {
+      "title": "Saturday of week 24 in Ordinary Time or Saint Januarius, Bishop, Martyr or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 24 in Ordinary Time or Saint Januarius, Bishop, Martyr or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-09-20": {
+      "title": "25th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "25th Sunday in Ordinary Time"
+    },
+    "2026-09-21": {
+      "title": "Saint Matthew, Apostle, Evangelist",
+      "rank": "feast",
+      "source_title": "Saint Matthew, Apostle, Evangelist Feast"
+    },
+    "2026-09-22": {
+      "title": "Tuesday of week 25 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 25 in Ordinary Time"
+    },
+    "2026-09-23": {
+      "title": "Saint Pius of Pietrelcina (Padre Pio), Priest",
+      "rank": "memorial",
+      "source_title": "Saint Pius of Pietrelcina (Padre Pio), Priest"
+    },
+    "2026-09-24": {
+      "title": "Thursday of week 25 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 25 in Ordinary Time"
+    },
+    "2026-09-25": {
+      "title": "Friday of week 25 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 25 in Ordinary Time"
+    },
+    "2026-09-26": {
+      "title": "Saturday of week 25 in Ordinary Time or Saints Cosmas and Damian, Martyrs or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 25 in Ordinary Time or Saints Cosmas and Damian, Martyrs or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-09-27": {
+      "title": "26th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "26th Sunday in Ordinary Time"
+    },
+    "2026-09-28": {
+      "title": "Saints Laurence Ruiz and his Companions, Martyrs",
+      "rank": "feast",
+      "source_title": "Saints Laurence Ruiz and his Companions, Martyrs Feast"
+    },
+    "2026-09-29": {
+      "title": "Saints Michael, Gabriel and Raphael, Archangels",
+      "rank": "feast",
+      "source_title": "Saints Michael, Gabriel and Raphael, Archangels Feast"
+    },
+    "2026-09-30": {
+      "title": "Saint Jerome, Priest, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Jerome, Priest, Doctor"
+    },
+    "2026-10-01": {
+      "title": "Saint Thérèse of the Child Jesus, Virgin, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Thérèse of the Child Jesus, Virgin, Doctor"
+    },
+    "2026-10-02": {
+      "title": "The Holy Guardian Angels",
+      "rank": "memorial",
+      "source_title": "The Holy Guardian Angels"
+    },
+    "2026-10-03": {
+      "title": "Saturday of week 26 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 26 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-10-04": {
+      "title": "27th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "27th Sunday in Ordinary Time"
+    },
+    "2026-10-05": {
+      "title": "Monday of week 27 in Ordinary Time or Saint Faustina Kowalska, Religious",
+      "rank": "memorial",
+      "source_title": "Monday of week 27 in Ordinary Time or Saint Faustina Kowalska, Religious"
+    },
+    "2026-10-06": {
+      "title": "Tuesday of week 27 in Ordinary Time or Saint Bruno, Priest",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 27 in Ordinary Time or Saint Bruno, Priest"
+    },
+    "2026-10-07": {
+      "title": "Our Lady of the Rosary",
+      "rank": "memorial",
+      "source_title": "Our Lady of the Rosary"
+    },
+    "2026-10-08": {
+      "title": "Thursday of week 27 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 27 in Ordinary Time"
+    },
+    "2026-10-09": {
+      "title": "Friday of week 27 in Ordinary Time or Saints Denis, Bishop, and their Companions, Martyrs or Saint John Leonardi, Priest",
+      "rank": "memorial",
+      "source_title": "Friday of week 27 in Ordinary Time or Saints Denis, Bishop, and their Companions, Martyrs or Saint John Leonardi, Priest"
+    },
+    "2026-10-10": {
+      "title": "Saturday of week 27 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 27 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-10-11": {
+      "title": "28th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "28th Sunday in Ordinary Time"
+    },
+    "2026-10-12": {
+      "title": "Monday of week 28 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 28 in Ordinary Time"
+    },
+    "2026-10-13": {
+      "title": "Tuesday of week 28 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 28 in Ordinary Time"
+    },
+    "2026-10-14": {
+      "title": "Wednesday of week 28 in Ordinary Time or Saint Callistus, Pope, Martyr",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 28 in Ordinary Time or Saint Callistus, Pope, Martyr"
+    },
+    "2026-10-15": {
+      "title": "Saint Teresa of Ávila, Virgin, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Teresa of Ávila, Virgin, Doctor"
+    },
+    "2026-10-16": {
+      "title": "Friday of week 28 in Ordinary Time or Saint Hedwig, Religious or Saint Margaret Mary Alacoque, Virgin",
+      "rank": "memorial",
+      "source_title": "Friday of week 28 in Ordinary Time or Saint Hedwig, Religious or Saint Margaret Mary Alacoque, Virgin"
+    },
+    "2026-10-17": {
+      "title": "Saint Ignatius of Antioch, Bishop, Martyr",
+      "rank": "memorial",
+      "source_title": "Saint Ignatius of Antioch, Bishop, Martyr"
+    },
+    "2026-10-18": {
+      "title": "29th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "29th Sunday in Ordinary Time"
+    },
+    "2026-10-19": {
+      "title": "Monday of week 29 in Ordinary Time or Saints John de Brébeuf and Isaac Jogues, priests, and their Companions, Martyrs or Saint Paul of the Cross, Priest",
+      "rank": "memorial",
+      "source_title": "Monday of week 29 in Ordinary Time or Saints John de Brébeuf and Isaac Jogues, priests, and their Companions, Martyrs or Saint Paul of the Cross, Priest"
+    },
+    "2026-10-20": {
+      "title": "Tuesday of week 29 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 29 in Ordinary Time"
+    },
+    "2026-10-21": {
+      "title": "Saint Pedro Calungsod, Catechist and Martyr",
+      "rank": "feast",
+      "source_title": "Saint Pedro Calungsod, Catechist and Martyr Feast"
+    },
+    "2026-10-22": {
+      "title": "Thursday of week 29 in Ordinary Time or Saint John Paul II, Pope",
+      "rank": "memorial",
+      "source_title": "Thursday of week 29 in Ordinary Time or Saint John Paul II, Pope"
+    },
+    "2026-10-23": {
+      "title": "Friday of week 29 in Ordinary Time or Saint John of Capistrano, Priest",
+      "rank": "memorial",
+      "source_title": "Friday of week 29 in Ordinary Time or Saint John of Capistrano, Priest"
+    },
+    "2026-10-24": {
+      "title": "Saturday of week 29 in Ordinary Time or Saint Antony Mary Claret, Bishop or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 29 in Ordinary Time or Saint Antony Mary Claret, Bishop or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-10-25": {
+      "title": "30th Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "30th Sunday in Ordinary Time"
+    },
+    "2026-10-26": {
+      "title": "Monday of week 30 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Monday of week 30 in Ordinary Time"
+    },
+    "2026-10-27": {
+      "title": "Tuesday of week 30 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 30 in Ordinary Time"
+    },
+    "2026-10-28": {
+      "title": "Saints Simon and Jude, Apostles",
+      "rank": "feast",
+      "source_title": "Saints Simon and Jude, Apostles Feast"
+    },
+    "2026-10-29": {
+      "title": "Thursday of week 30 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 30 in Ordinary Time"
+    },
+    "2026-10-30": {
+      "title": "Friday of week 30 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 30 in Ordinary Time"
+    },
+    "2026-10-31": {
+      "title": "Saturday of week 30 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 30 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-11-01": {
+      "title": "All Saints",
+      "rank": "solemnity",
+      "source_title": "All Saints Solemnity"
+    },
+    "2026-11-02": {
+      "title": "All Souls",
+      "rank": "commemoration",
+      "source_title": "All Souls"
+    },
+    "2026-11-03": {
+      "title": "Tuesday of week 31 in Ordinary Time or Saint Martin de Porres, Religious",
+      "rank": "memorial",
+      "source_title": "Tuesday of week 31 in Ordinary Time or Saint Martin de Porres, Religious"
+    },
+    "2026-11-04": {
+      "title": "Saint Charles Borromeo, Bishop",
+      "rank": "memorial",
+      "source_title": "Saint Charles Borromeo, Bishop"
+    },
+    "2026-11-05": {
+      "title": "Thursday of week 31 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 31 in Ordinary Time"
+    },
+    "2026-11-06": {
+      "title": "Friday of week 31 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 31 in Ordinary Time"
+    },
+    "2026-11-07": {
+      "title": "Saturday of week 31 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 31 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-11-08": {
+      "title": "32nd Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "32nd Sunday in Ordinary Time"
+    },
+    "2026-11-09": {
+      "title": "Dedication of the Lateran Basilica",
+      "rank": "feast",
+      "source_title": "Dedication of the Lateran Basilica Feast"
+    },
+    "2026-11-10": {
+      "title": "Saint Leo the Great, Pope, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Leo the Great, Pope, Doctor"
+    },
+    "2026-11-11": {
+      "title": "Saint Martin of Tours, Bishop",
+      "rank": "memorial",
+      "source_title": "Saint Martin of Tours, Bishop"
+    },
+    "2026-11-12": {
+      "title": "Saint Josaphat, Bishop, Martyr",
+      "rank": "memorial",
+      "source_title": "Saint Josaphat, Bishop, Martyr"
+    },
+    "2026-11-13": {
+      "title": "Friday of week 32 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 32 in Ordinary Time"
+    },
+    "2026-11-14": {
+      "title": "Saturday of week 32 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 32 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-11-15": {
+      "title": "33rd Sunday in Ordinary Time",
+      "rank": "sunday",
+      "source_title": "33rd Sunday in Ordinary Time"
+    },
+    "2026-11-16": {
+      "title": "Monday of week 33 in Ordinary Time or Saint Margaret of Scotland or Saint Gertrude, Virgin",
+      "rank": "memorial",
+      "source_title": "Monday of week 33 in Ordinary Time or Saint Margaret of Scotland or Saint Gertrude, Virgin"
+    },
+    "2026-11-17": {
+      "title": "Saint Elizabeth of Hungary, Religious",
+      "rank": "memorial",
+      "source_title": "Saint Elizabeth of Hungary, Religious"
+    },
+    "2026-11-18": {
+      "title": "Wednesday of week 33 in Ordinary Time or Dedication of the Basilicas of Saints Peter and Paul, Apostles",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 33 in Ordinary Time or Dedication of the Basilicas of Saints Peter and Paul, Apostles"
+    },
+    "2026-11-19": {
+      "title": "Thursday of week 33 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 33 in Ordinary Time"
+    },
+    "2026-11-20": {
+      "title": "Friday of week 33 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 33 in Ordinary Time"
+    },
+    "2026-11-21": {
+      "title": "The Presentation of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "The Presentation of the Blessed Virgin Mary"
+    },
+    "2026-11-22": {
+      "title": "Christ the King",
+      "rank": "solemnity",
+      "source_title": "Christ the King Solemnity"
+    },
+    "2026-11-23": {
+      "title": "Monday of week 34 in Ordinary Time or Saint Clement I, Pope, Martyr or Saint Columbanus, Abbot and Missionary",
+      "rank": "memorial",
+      "source_title": "Monday of week 34 in Ordinary Time or Saint Clement I, Pope, Martyr or Saint Columbanus, Abbot and Missionary"
+    },
+    "2026-11-24": {
+      "title": "Saints Andrew Dũng-Lạc and his Companions, Martyrs",
+      "rank": "memorial",
+      "source_title": "Saints Andrew Dũng-Lạc and his Companions, Martyrs"
+    },
+    "2026-11-25": {
+      "title": "Wednesday of week 34 in Ordinary Time or Saint Catherine of Alexandria, Virgin, Martyr",
+      "rank": "memorial",
+      "source_title": "Wednesday of week 34 in Ordinary Time or Saint Catherine of Alexandria, Virgin, Martyr"
+    },
+    "2026-11-26": {
+      "title": "Thursday of week 34 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Thursday of week 34 in Ordinary Time"
+    },
+    "2026-11-27": {
+      "title": "Friday of week 34 in Ordinary Time",
+      "rank": "memorial",
+      "source_title": "Friday of week 34 in Ordinary Time"
+    },
+    "2026-11-28": {
+      "title": "Saturday of week 34 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary",
+      "rank": "memorial",
+      "source_title": "Saturday of week 34 in Ordinary Time or Saturday memorial of the Blessed Virgin Mary"
+    },
+    "2026-11-29": {
+      "title": "1st Sunday of Advent",
+      "rank": "sunday",
+      "source_title": "1st Sunday of Advent"
+    },
+    "2026-11-30": {
+      "title": "Saint Andrew, Apostle",
+      "rank": "feast",
+      "source_title": "Saint Andrew, Apostle Feast"
+    },
+    "2026-12-01": {
+      "title": "Tuesday of the 1st week of Advent",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 1st week of Advent"
+    },
+    "2026-12-02": {
+      "title": "Wednesday of the 1st week of Advent",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 1st week of Advent"
+    },
+    "2026-12-03": {
+      "title": "Saint Francis Xavier, Priest",
+      "rank": "memorial",
+      "source_title": "Saint Francis Xavier, Priest"
+    },
+    "2026-12-04": {
+      "title": "Friday of the 1st week of Advent or Saint John Damascene, Priest, Doctor",
+      "rank": "memorial",
+      "source_title": "Friday of the 1st week of Advent or Saint John Damascene, Priest, Doctor"
+    },
+    "2026-12-05": {
+      "title": "Saturday of the 1st week of Advent",
+      "rank": "memorial",
+      "source_title": "Saturday of the 1st week of Advent"
+    },
+    "2026-12-06": {
+      "title": "2nd Sunday of Advent",
+      "rank": "sunday",
+      "source_title": "2nd Sunday of Advent"
+    },
+    "2026-12-07": {
+      "title": "Saint Ambrose, Bishop, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint Ambrose, Bishop, Doctor"
+    },
+    "2026-12-08": {
+      "title": "The Immaculate Conception of the Blessed Virgin Mary, Principal Patroness of the Philippines",
+      "rank": "solemnity",
+      "source_title": "The Immaculate Conception of the Blessed Virgin Mary, Principal Patroness of the Philippines Solemnity"
+    },
+    "2026-12-09": {
+      "title": "Wednesday of the 2nd week of Advent or Saint Juan Diego Cuauhtlatoatzin",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 2nd week of Advent or Saint Juan Diego Cuauhtlatoatzin"
+    },
+    "2026-12-10": {
+      "title": "Thursday of the 2nd week of Advent or Our Lady of Loreto",
+      "rank": "memorial",
+      "source_title": "Thursday of the 2nd week of Advent or Our Lady of Loreto"
+    },
+    "2026-12-11": {
+      "title": "Friday of the 2nd week of Advent or Saint Damasus I, Pope",
+      "rank": "memorial",
+      "source_title": "Friday of the 2nd week of Advent or Saint Damasus I, Pope"
+    },
+    "2026-12-12": {
+      "title": "Our Lady of Guadalupe",
+      "rank": "memorial",
+      "source_title": "Our Lady of Guadalupe"
+    },
+    "2026-12-13": {
+      "title": "3rd Sunday of Advent",
+      "rank": "sunday",
+      "source_title": "3rd Sunday of Advent"
+    },
+    "2026-12-14": {
+      "title": "Saint John of the Cross, Priest, Doctor",
+      "rank": "memorial",
+      "source_title": "Saint John of the Cross, Priest, Doctor"
+    },
+    "2026-12-15": {
+      "title": "Tuesday of the 3rd week of Advent",
+      "rank": "memorial",
+      "source_title": "Tuesday of the 3rd week of Advent"
+    },
+    "2026-12-16": {
+      "title": "Wednesday of the 3rd week of Advent",
+      "rank": "memorial",
+      "source_title": "Wednesday of the 3rd week of Advent"
+    },
+    "2026-12-17": {
+      "title": "17 December",
+      "rank": "memorial",
+      "source_title": "17 December"
+    },
+    "2026-12-18": {
+      "title": "18 December",
+      "rank": "memorial",
+      "source_title": "18 December"
+    },
+    "2026-12-19": {
+      "title": "19 December",
+      "rank": "memorial",
+      "source_title": "19 December"
+    },
+    "2026-12-20": {
+      "title": "4th Sunday of Advent",
+      "rank": "sunday",
+      "source_title": "4th Sunday of Advent"
+    },
+    "2026-12-21": {
+      "title": "21 December (commemoration of Saint Peter Canisius, Priest, Doctor)",
+      "rank": "memorial",
+      "source_title": "21 December (commemoration of Saint Peter Canisius, Priest, Doctor)"
+    },
+    "2026-12-22": {
+      "title": "22 December",
+      "rank": "memorial",
+      "source_title": "22 December"
+    },
+    "2026-12-23": {
+      "title": "23 December (commemoration of Saint John of Kęty, Priest)",
+      "rank": "memorial",
+      "source_title": "23 December (commemoration of Saint John of Kęty, Priest)"
+    },
+    "2026-12-24": {
+      "title": "24 December",
+      "rank": "memorial",
+      "source_title": "24 December"
+    },
+    "2026-12-25": {
+      "title": "Christmas Day",
+      "rank": "solemnity",
+      "source_title": "Christmas Day Solemnity"
+    },
+    "2026-12-26": {
+      "title": "Saint Stephen, the first Martyr",
+      "rank": "feast",
+      "source_title": "Saint Stephen, the first Martyr Feast"
+    },
+    "2026-12-27": {
+      "title": "The Holy Family",
+      "rank": "feast",
+      "source_title": "The Holy Family"
+    },
+    "2026-12-28": {
+      "title": "The Holy Innocents, Martyrs",
+      "rank": "feast",
+      "source_title": "The Holy Innocents, Martyrs Feast"
+    },
+    "2026-12-29": {
+      "title": "5th day within the octave of Christmas (commemoration of Saint Thomas Becket, Bishop, Martyr)",
+      "rank": "memorial",
+      "source_title": "5th day within the octave of Christmas (commemoration of Saint Thomas Becket, Bishop, Martyr)"
+    },
+    "2026-12-30": {
+      "title": "6th day within the octave of Christmas",
+      "rank": "memorial",
+      "source_title": "6th day within the octave of Christmas"
+    },
+    "2026-12-31": {
+      "title": "7th day within the octave of Christmas (commemoration of Saint Silvester I, Pope)",
+      "rank": "memorial",
+      "source_title": "7th day within the octave of Christmas (commemoration of Saint Silvester I, Pope)"
+    }
+  }
+}

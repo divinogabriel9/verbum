@@ -11,6 +11,7 @@ from services.lectionary_store import db_path, get_cached, ignore_cache, upsert
 from services.usccb_client import USCCB_HTTP_CHALLENGE, get_usccb_soup
 from services.mass_language import normalize_mass_language
 from services.mass_text_format import reading_body_is_usable
+from services.ph_calendar import apply_philippines_title
 from services.usccb_readings import (
     collect_psalm_refrain_options,
     fetch_readings_for_date,
@@ -333,7 +334,7 @@ def fetch_tagalog_liturgical_data(
     gospel_reference = (blocks.get("gospel_ref") or "").strip()
     gospel_slide_quote = extract_gospel_slide_quote(gospel_text, max_chars=300) if gospel_text else ""
 
-    return {
+    payload = {
         "title": title,
         "celebration": celebration,
         "season": season,
@@ -354,6 +355,8 @@ def fetch_tagalog_liturgical_data(
         "quote_attribution": "Mga pagbasa: Awit at Papuri (Tagalog).",
         "readings_language": "tagalog",
     }
+    # Keep Awit celebration titles in Tagalog mode — do not overlay English PH Proper names.
+    return payload
 
 
 def get_liturgical_data(
@@ -402,7 +405,7 @@ def get_liturgical_data(
             print(f"Lectionary cache incomplete (missing first reading or psalm refrain): {normalized}")
         elif cached is not None:
             print(f"Lectionary cache hit: {normalized}")
-            return cached
+            return apply_philippines_title(cached, normalized)
 
     best: dict | None = cached
     for attempt in range(_MAX_FETCH_ATTEMPTS):
@@ -426,11 +429,12 @@ def get_liturgical_data(
     if best is None:
         if cached is not None:
             print(f"Lectionary live fetch failed; serving cached data: {normalized}")
-        return cached
+            return apply_philippines_title(cached, normalized)
+        return None
 
     should_write = os.environ.get("LECTIONARY_NO_WRITE_CACHE", "").strip() not in ("1", "true")
     if use_cache and should_write and (cached is None or best != cached):
         upsert(normalized, best)
         print(f"Lectionary saved to database: {db_path()}")
 
-    return best
+    return apply_philippines_title(best, normalized)

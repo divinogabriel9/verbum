@@ -33,6 +33,7 @@ from services.mass_text_format import (
     ensure_lyric_section_breaks,
     parse_structured_lyric_sections_typed,
     pick_hymn_lyrics_for_slides,
+    short_hymn_section_label,
     strip_reading_verse_markers,
 )
 from services.prayer_service import get_our_father, get_prayer
@@ -154,6 +155,12 @@ _LYRIC_WIDTH_CALIBRATION = 0.94
 # Rendered line pitch vs. nominal at the configured line spacing (Poppins runs a
 # little taller than the bare spacing factor implies).
 _LYRIC_LINE_PITCH_FACTOR = 1.20
+# Compact section markers (i / chor. / br.) when Music Ministry toggle is on.
+_HYMN_SECTION_LABEL_PT = 28.0
+# Reserve room for the marker row + breathing space before lyrics.
+_HYMN_SECTION_LABEL_RESERVE_IN = 0.72
+_HYMN_SECTION_LABEL_SPACE_AFTER_PT = 14.0
+_SHOW_HYMN_SECTION_LABELS = False
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _REFERENCE_DECK_FILENAME = "GCCC24May2026_Eastertide.pptx"
@@ -3006,6 +3013,19 @@ _DIVIDER_CORNER_ADJ = 0.1667  # matches reference freeform corner radius (~16.67
 _DIVIDER_PANEL_ALPHA = 44706  # ~44.7% opaque (reference right panel)
 _DIVIDER_BAR_ALPHA = 60784  # ~60.8% opaque (reference bottom bar)
 _DIVIDER_LINE_W = 14299  # reference outline weight (EMU)
+_DIVIDER_STYLE_IDS = frozenset({"divider1", "divider2"})
+_DIVIDER_STYLE_DEFAULT = "divider1"
+_DIVIDER2_PLATE_FILENAME = "divider2_plate.png"
+
+
+def _resolve_divider_style(selection: Optional[str]) -> str:
+    key = str(selection or "").strip().lower() or _DIVIDER_STYLE_DEFAULT
+    return key if key in _DIVIDER_STYLE_IDS else _DIVIDER_STYLE_DEFAULT
+
+
+def _divider2_plate_path() -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / "dividers" / _DIVIDER2_PLATE_FILENAME
+    return path.resolve() if path.is_file() else None
 
 
 @dataclass(frozen=True)
@@ -3172,10 +3192,40 @@ def _divider_year_date_line(lectionary_cycle: str, date: str) -> str:
     return f"YEAR {cycle}"
 
 
+def _divider2_date_display(date: str) -> str:
+    """Compact date for Divider 2: ``AUG 2, 2026``."""
+    raw = (date or "").strip()
+    if not raw:
+        return ""
+    for fmt in ("%Y-%m-%d", "%B %d, %Y", "%b %d, %Y", "%d %B %Y"):
+        try:
+            d = _dt.datetime.strptime(raw, fmt).date()
+            return f"{d.strftime('%b').upper()} {d.day}, {d.year}"
+        except ValueError:
+            continue
+    return raw.upper()
+
+
+def _divider2_year_date_line(lectionary_cycle: str, date: str) -> str:
+    cycle = (lectionary_cycle or "—").strip().upper()
+    date_line = _divider2_date_display(date)
+    if date_line:
+        return f"YEAR {cycle} | {date_line}"
+    return f"YEAR {cycle}"
+
+
 def _divider_gospel_heading(gospel_reference: str) -> str:
     ref = (gospel_reference or "").strip() or "—"
     ref = ref.replace("–", "–").replace("-", "–")
     return f"GOSPEL ({ref.upper()})"
+
+
+def _divider2_gospel_citation(gospel_reference: str) -> str:
+    """Verse citation for Divider 2 (inside the quote panel), e.g. ``JOHN 8:12``."""
+    ref = (gospel_reference or "").strip() or "—"
+    ref = re.sub(r"(?i)^gospel\s*[:(]?\s*", "", ref).strip().rstrip(")")
+    ref = ref.replace("–", "–").replace("-", "–")
+    return (ref or "—").upper()
 
 
 def _divider_quote_lines(quote: str) -> List[str]:
@@ -3458,6 +3508,230 @@ def _render_default_divider_cover(
     )
 
 
+# Divider 2 text geometry — truth source: polished 13.333×7.5 plate layout
+# scaled ×1.5 onto the Verbum 20×11.25 canvas (divider2 repolish.pptx).
+_D2_QUOTE_L, _D2_QUOTE_T = 1.924, 1.936
+_D2_QUOTE_W, _D2_QUOTE_H = 8.714, 4.05
+_D2_CITE_T, _D2_CITE_H = 6.10, 0.72
+_D2_LABEL_L, _D2_LABEL_T = 13.0725, 1.6547
+_D2_LABEL_W, _D2_LABEL_H = 5.575, 0.653
+_D2_NAME_L, _D2_NAME_T = 12.252, 2.093
+_D2_NAME_W, _D2_NAME_H = 7.216, 1.868
+_D2_YEAR_L, _D2_YEAR_T = 11.6262, 4.558
+_D2_YEAR_W, _D2_YEAR_H = 8.4677, 0.984
+_D2_CO_LABEL_L, _D2_CO_LABEL_T = 13.227, 6.10
+_D2_CO_LABEL_W, _D2_CO_LABEL_H = 5.575, 0.45
+_D2_CO_NAME_L, _D2_CO_NAME_T = 12.252, 6.55
+_D2_CO_NAME_W, _D2_CO_NAME_H = 7.216, 0.90
+_D2_TITLE_L, _D2_TITLE_T = 0.136, 9.248
+_D2_TITLE_W, _D2_TITLE_H = 19.728, 1.713
+# Plate ink from the polished PPTX (srgbClr on defRPr).
+_D2_INK_QUOTE = RGBColor(0xEF, 0xED, 0xEC)
+_D2_INK_LABEL = RGBColor(0xFF, 0xEA, 0xBF)
+_D2_INK_PRIMARY = RGBColor(0xFA, 0xF8, 0xF4)
+_D2_INK_CO_LABEL = RGBColor(0xEB, 0xCE, 0x9F)
+_D2_INK_CO_NAME = RGBColor(0xF5, 0xF5, 0xF5)
+
+
+def _render_divider2_cover(
+    slide,
+    *,
+    celebrant: str,
+    co_celebrant: str = "",
+    date: str,
+    mass_title: str,
+    season: str,
+    lectionary_cycle: str,
+    gospel_reference: str,
+    gospel_quote: str,
+    quote_max_chars: int,
+    theme: SlideTheme,
+    prs: Presentation,
+) -> None:
+    """Quote-forward Mass divider.
+
+    Theme 1 uses the Stone & Light photographic plate. Themes 2–3 (mono)
+    use a solid Midnight/Paper divider background with the same text layout.
+    """
+    pal = _divider_palette(theme)
+    plate = _divider2_plate_path()
+    use_plate = (not theme.mono_surfaces) and plate is not None
+
+    if use_plate:
+        slide.shapes.add_picture(
+            str(plate),
+            left=0,
+            top=0,
+            width=prs.slide_width,
+            height=prs.slide_height,
+        )
+        quote_color = _D2_INK_QUOTE
+        label_color = _D2_INK_LABEL
+        primary_color = _D2_INK_PRIMARY
+        gospel_color = _D2_INK_LABEL
+        co_label_color = _D2_INK_CO_LABEL
+        co_name_color = _D2_INK_CO_NAME
+    else:
+        # Theme 2 Midnight / Theme 3 Paper — solid theme surface, no stone plate.
+        _set_slide_bg(slide, theme.divider_bg)
+        quote_color = pal.quote
+        label_color = pal.label
+        primary_color = pal.primary
+        gospel_color = pal.gospel_label
+        co_label_color = label_color
+        co_name_color = primary_color
+
+    g_line = (gospel_quote or "").strip()
+    if quote_max_chars and len(g_line) > quote_max_chars:
+        g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
+    quote_parts = _divider_quote_lines(g_line)
+    quote_pt = _divider_fit_font_pt(
+        quote_parts or [g_line],
+        width_in=_D2_QUOTE_W,
+        height_in=_D2_QUOTE_H,
+        max_pt=62,
+        min_pt=28,
+    )
+    quote_style = {
+        "size_pt": quote_pt,
+        "color": quote_color,
+        "bold": True,
+        "italic": True,
+        "align": PP_ALIGN.CENTER,
+    }
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D2_QUOTE_L),
+        top=Inches(_D2_QUOTE_T),
+        width=Inches(_D2_QUOTE_W),
+        height=Inches(_D2_QUOTE_H),
+        lines=[(part, quote_style) for part in (quote_parts or ([g_line] if g_line else []))],
+        anchor_middle=True,
+    )
+
+    g_citation = _divider2_gospel_citation(gospel_reference)
+    g_cite_pt = _divider_fit_font_pt(
+        [g_citation],
+        width_in=_D2_QUOTE_W,
+        height_in=_D2_CITE_H,
+        max_pt=28,
+        min_pt=18,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D2_QUOTE_L),
+        top=Inches(_D2_CITE_T),
+        width=Inches(_D2_QUOTE_W),
+        height=Inches(_D2_CITE_H),
+        lines=[
+            (
+                g_citation,
+                {
+                    "size_pt": g_cite_pt,
+                    "color": gospel_color,
+                    "bold": True,
+                    "align": PP_ALIGN.CENTER,
+                },
+            )
+        ],
+        anchor_middle=True,
+    )
+
+    celebrant_name = (celebrant or "").strip() or "—"
+    co_name = (co_celebrant or "").strip()
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D2_LABEL_L),
+        top=Inches(_D2_LABEL_T),
+        width=Inches(_D2_LABEL_W),
+        height=Inches(_D2_LABEL_H),
+        lines=[("MASS CELEBRANT:", {"size_pt": 35, "color": label_color, "bold": True})],
+        anchor_middle=True,
+    )
+    # Primary celebrant box keeps the polished solo-slide geometry whether or not
+    # a co-celebrant is present (truth slide 2 still uses the full name box).
+    celeb_pt = _divider_fit_single_line_pt(
+        celebrant_name, width_in=_D2_NAME_W, max_pt=71, min_pt=28
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D2_NAME_L),
+        top=Inches(_D2_NAME_T),
+        width=Inches(_D2_NAME_W),
+        height=Inches(_D2_NAME_H),
+        lines=[(celebrant_name, {"size_pt": celeb_pt, "color": primary_color, "bold": True})],
+        anchor_middle=True,
+        no_wrap=True,
+    )
+
+    year_date_line = _divider2_year_date_line(lectionary_cycle, date)
+    year_pt = _divider_fit_font_pt(
+        [year_date_line],
+        width_in=_D2_YEAR_W,
+        height_in=_D2_YEAR_H,
+        max_pt=51,
+        min_pt=26,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D2_YEAR_L),
+        top=Inches(_D2_YEAR_T),
+        width=Inches(_D2_YEAR_W),
+        height=Inches(_D2_YEAR_H),
+        lines=[
+            (
+                year_date_line,
+                {"size_pt": year_pt, "color": primary_color, "bold": True},
+            )
+        ],
+        anchor_middle=True,
+    )
+
+    if co_name:
+        # Truth slide 2: co-celebrant sits below the year/date line.
+        _divider_add_textbox(
+            slide,
+            left=Inches(_D2_CO_LABEL_L),
+            top=Inches(_D2_CO_LABEL_T),
+            width=Inches(_D2_CO_LABEL_W),
+            height=Inches(_D2_CO_LABEL_H),
+            lines=[("CO-CELEBRANT:", {"size_pt": 28, "color": co_label_color, "bold": True})],
+            anchor_middle=True,
+        )
+        co_pt = _divider_fit_single_line_pt(
+            co_name, width_in=_D2_CO_NAME_W, max_pt=52, min_pt=18
+        )
+        _divider_add_textbox(
+            slide,
+            left=Inches(_D2_CO_NAME_L),
+            top=Inches(_D2_CO_NAME_T),
+            width=Inches(_D2_CO_NAME_W),
+            height=Inches(_D2_CO_NAME_H),
+            lines=[(co_name, {"size_pt": co_pt, "color": co_name_color, "bold": True})],
+            anchor_middle=True,
+            no_wrap=True,
+        )
+
+    bottom_title = (mass_title or season or "Sunday Mass").strip()
+    bottom_title = bottom_title.replace(" Celebration", "").strip() or "Sunday Mass"
+    bottom_pt = _divider_fit_font_pt(
+        [bottom_title],
+        width_in=_D2_TITLE_W,
+        height_in=_D2_TITLE_H,
+        max_pt=70,
+        min_pt=36,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D2_TITLE_L),
+        top=Inches(_D2_TITLE_T),
+        width=Inches(_D2_TITLE_W),
+        height=Inches(_D2_TITLE_H),
+        lines=[(bottom_title, {"size_pt": bottom_pt, "color": primary_color, "bold": True})],
+        anchor_middle=True,
+    )
+
+
 def _add_divider_cover(
     prs: Presentation,
     *,
@@ -3473,6 +3747,7 @@ def _add_divider_cover(
     mass_title: str = "",
     background_image_path: Optional[Path] = None,
     divider_poster_path: Optional[Path] = None,
+    divider_style: str = _DIVIDER_STYLE_DEFAULT,
 ) -> None:
     del background_image_path  # GFCC divider uses season theme; poster is not overlaid here
     slide = prs.slides.add_slide(_layout_blank(prs))
@@ -3488,6 +3763,24 @@ def _add_divider_cover(
             top=0,
             width=prs.slide_width,
             height=prs.slide_height,
+        )
+        return
+
+    style = _resolve_divider_style(divider_style)
+    if style == "divider2":
+        _render_divider2_cover(
+            slide,
+            celebrant=celebrant,
+            co_celebrant=co_celebrant,
+            date=date,
+            mass_title=mass_title,
+            season=season,
+            lectionary_cycle=lectionary_cycle,
+            gospel_reference=gospel_reference,
+            gospel_quote=gospel_quote,
+            quote_max_chars=quote_max_chars,
+            theme=theme,
+            prs=prs,
         )
         return
 
@@ -3793,10 +4086,14 @@ def _fill_hymn_body_caps(
     box_height_inches: Optional[float] = None,
     block_kind: str = "verse",
     italic_body: bool = False,
+    section_label: Optional[str] = None,
 ) -> None:
     """ALL CAPS Poppins on black; reference deck uses 75 pt and 0.7 line spacing."""
     box_h = float(box_height_inches or 0.0) or float(SLIDE_HEIGHT.inches * 0.72)
     fit_h = _lyric_fit_height_inches(box_h)
+    label = (section_label or "").strip() if _SHOW_HYMN_SECTION_LABELS else ""
+    if label:
+        fit_h = max(0.5, fit_h - _HYMN_SECTION_LABEL_RESERVE_IN)
     lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, fit_h)
     size_pt = int(max(_HYMN_REF_BODY_PT_MIN, min(_LYRIC_MAX_PT, auto_fit_pt)))
     if typography:
@@ -3809,6 +4106,8 @@ def _fill_hymn_body_caps(
     is_chorus = _is_chorus_block_kind(block_kind)
     body_color = _ACTIVE_THEME.chorus_accent if is_chorus else _ACTIVE_THEME.hymn_body
     use_italic = is_chorus or italic_body
+    label_pt = int(min(_HYMN_SECTION_LABEL_PT, max(22, size_pt * 0.42)))
+    label_color = _ACTIVE_THEME.hymn_title if not is_chorus else _ACTIVE_THEME.chorus_accent
 
     def _style_hymn_body_run(run, *, is_paren: bool) -> None:
         font = run.font
@@ -3818,9 +4117,25 @@ def _fill_hymn_body_caps(
         font.italic = use_italic or is_paren
         font.color.rgb = _ACTIVE_THEME.paren_accent if is_paren else body_color
 
+    def _apply_label_para(p, text: str) -> None:
+        p.alignment = align
+        p.line_spacing = 1.0
+        p.space_after = Pt(_HYMN_SECTION_LABEL_SPACE_AFTER_PT)
+        p.space_before = Pt(0)
+        p.text = text
+        if p.runs:
+            font = p.runs[0].font
+            font.name = _HYMN_TITLE_FONT
+            font.size = Pt(label_pt)
+            font.bold = True
+            font.italic = False
+            font.underline = True
+            font.color.rgb = label_color
+
     def _apply_body_para(p, text: str) -> None:
         p.alignment = align
         p.line_spacing = _HYMN_REF_LINE_SPACING
+        p.space_before = Pt(0)
         segments: List[Tuple[str, bool]] = []
         last = 0
         for match in _PAREN_IN_LYRICS_RE.finditer(text):
@@ -3844,6 +4159,10 @@ def _fill_hymn_body_caps(
 
     tf.clear()
     first = True
+    if label:
+        p = tf.paragraphs[0]
+        first = False
+        _apply_label_para(p, label.lower())
     for raw in lines:
         p = tf.paragraphs[0] if first else tf.add_paragraph()
         first = False
@@ -3861,14 +4180,26 @@ def _normalize_hymn_lyrics_layout(layout: str) -> str:
 
 def _lyric_blocks_for_slides(text: str) -> List[Tuple[str, str]]:
     """Structured lyric blocks (verse, chorus, …) for slide pairing."""
+    return [(chunk, kind) for chunk, kind, _label in _lyric_blocks_labeled(text)]
+
+
+def _lyric_blocks_labeled(text: str) -> List[Tuple[str, str, str]]:
+    """Structured blocks with short projector labels (I / Chor. / Br. …)."""
     t = ensure_lyric_section_breaks((text or "").strip())
     if not t:
         return []
-    blocks: List[Tuple[str, str]] = []
+    blocks: List[Tuple[str, str, str]] = []
+    verse_n = 0
     for block_kind, section in parse_structured_lyric_sections_typed(t):
+        kind = (block_kind or "verse").strip().lower().replace("_", "-")
+        if kind in ("verse", "stanza"):
+            verse_n += 1
+            label = short_hymn_section_label(kind, verse_index=verse_n)
+        else:
+            label = short_hymn_section_label(kind)
         for chunk in _chunk_section_for_slides(section):
-            blocks.append((chunk, block_kind))
-    return blocks if blocks else [(t, "verse")]
+            blocks.append((chunk, block_kind, label))
+    return blocks if blocks else [(t, "verse", short_hymn_section_label("verse", verse_index=1))]
 
 
 def _pair_blocks_for_dual_slides(
@@ -3893,6 +4224,25 @@ def _pair_blocks_for_dual_slides(
             slides.append([blocks[i]])
             i += 1
     return slides
+
+
+def _pair_labeled_blocks_for_dual_slides(
+    blocks: List[Tuple[str, str, str]],
+) -> List[List[Tuple[str, str, str]]]:
+    """Dual pairing that preserves section labels alongside chunk/kind."""
+    plain = [(c, k) for c, k, _lab in blocks]
+    paired = _pair_blocks_for_dual_slides(plain)
+    out: List[List[Tuple[str, str, str]]] = []
+    cursor = 0
+    for group in paired:
+        row: List[Tuple[str, str, str]] = []
+        for _ in group:
+            if cursor < len(blocks):
+                row.append(blocks[cursor])
+                cursor += 1
+        if row:
+            out.append(row)
+    return out
 
 
 def _apply_hymn_song_title(
@@ -3925,6 +4275,7 @@ def _add_hymn_lyric_box(
     *,
     typography: Optional[HymnTypographySettings] = None,
     italic_body: bool = False,
+    section_label: Optional[str] = None,
 ) -> None:
     box = slide.shapes.add_textbox(left, top, width, height)
     tf = box.text_frame
@@ -3938,6 +4289,7 @@ def _add_hymn_lyric_box(
         box_height_inches=_length_to_inches(height),
         block_kind=block_kind,
         italic_body=italic_body,
+        section_label=section_label,
     )
 
 
@@ -3953,11 +4305,11 @@ def _add_hymn_lyric_slides_single(
     """One structured block per slide."""
     title = (hymn_title or "Hymn").strip()
     raw_lyrics = (lyrics or "").strip() or "(No lyrics in library for this hymn.)"
-    chunks = _chunk_lyrics_display(raw_lyrics)
+    chunks = _lyric_blocks_labeled(raw_lyrics)
     if not chunks:
-        chunks = [(raw_lyrics, "verse")]
+        chunks = [(raw_lyrics, "verse", short_hymn_section_label("verse", verse_index=1))]
 
-    first_chunk, first_kind = chunks[0]
+    first_chunk, first_kind, first_label = chunks[0]
     rest_chunks = chunks[1:]
 
     slide0 = prs.slides.add_slide(_layout_blank(prs))
@@ -3991,10 +4343,11 @@ def _add_hymn_lyric_slides_single(
         first_chunk,
         first_kind,
         typography=typo0,
+        section_label=first_label,
     )
     _add_hymn_footer(slide0, footer_section)
 
-    for slide_idx, (chunk, block_kind) in enumerate(rest_chunks, start=1):
+    for slide_idx, (chunk, block_kind, label) in enumerate(rest_chunks, start=1):
         typo_n = typography_for_hymn_slide(hymn_typography, section, slide_idx)
         slide = prs.slides.add_slide(_layout_blank(prs))
         _set_slide_bg(slide, _ACTIVE_THEME.hymn_bg)
@@ -4011,6 +4364,7 @@ def _add_hymn_lyric_slides_single(
             chunk,
             block_kind,
             typography=typo_n,
+            section_label=label,
         )
         _add_hymn_footer(slide, footer_section)
 
@@ -4027,8 +4381,8 @@ def _add_hymn_lyric_slides_dual(
     """Two blocks per slide (reference slides 3–5); odd remainder is full-bleed."""
     title = (hymn_title or "Hymn").strip()
     raw_lyrics = (lyrics or "").strip() or "(No lyrics in library for this hymn.)"
-    blocks = _lyric_blocks_for_slides(raw_lyrics)
-    slide_groups = _pair_blocks_for_dual_slides(blocks)
+    blocks = _lyric_blocks_labeled(raw_lyrics)
+    slide_groups = _pair_labeled_blocks_for_dual_slides(blocks)
     full_w = int(prs.slide_width)
 
     for group_i, group in enumerate(slide_groups):
@@ -4036,6 +4390,7 @@ def _add_hymn_lyric_slides_dual(
         slide = prs.slides.add_slide(_layout_blank(prs))
         _set_slide_bg(slide, _ACTIVE_THEME.hymn_bg)
         _apply_hymn_branding(slide)
+        italic_kinds = [(text, kind) for text, kind, _label in group]
 
         if len(group) == 1 and group_i == 0:
             title_top = _HYMN_TITLE_TOP
@@ -4063,6 +4418,7 @@ def _add_hymn_lyric_slides_dual(
                 group[0][0],
                 group[0][1],
                 typography=typo,
+                section_label=group[0][2],
             )
         elif len(group) == 1:
             _add_hymn_lyric_box(
@@ -4074,6 +4430,7 @@ def _add_hymn_lyric_slides_dual(
                 group[0][0],
                 group[0][1],
                 typography=typo,
+                section_label=group[0][2],
             )
         elif group_i == 0:
             w = SLIDE_WIDTH - 2 * MARGIN_SIDE
@@ -4097,6 +4454,7 @@ def _add_hymn_lyric_slides_dual(
                 group[0][0],
                 group[0][1],
                 typography=typo,
+                section_label=group[0][2],
             )
             _add_hymn_lyric_box(
                 slide,
@@ -4107,7 +4465,8 @@ def _add_hymn_lyric_slides_dual(
                 group[1][0],
                 group[1][1],
                 typography=typo,
-                italic_body=_dual_second_verse_italic(group, 1),
+                italic_body=_dual_second_verse_italic(italic_kinds, 1),
+                section_label=group[1][2],
             )
         else:
             _add_hymn_lyric_box(
@@ -4119,6 +4478,7 @@ def _add_hymn_lyric_slides_dual(
                 group[0][0],
                 group[0][1],
                 typography=typo,
+                section_label=group[0][2],
             )
             _add_hymn_lyric_box(
                 slide,
@@ -4129,7 +4489,8 @@ def _add_hymn_lyric_slides_dual(
                 group[1][0],
                 group[1][1],
                 typography=typo,
-                italic_body=_dual_second_verse_italic(group, 1),
+                italic_body=_dual_second_verse_italic(italic_kinds, 1),
+                section_label=group[1][2],
             )
 
         _add_hymn_footer(slide, footer_section)
@@ -4546,6 +4907,7 @@ def generate_mass_ppt(
     output_stem: str = "mass_presentation",
     liturgical_poster_png: Optional[Path] = None,
     divider_poster_png: Optional[Path] = None,
+    divider_style: str = _DIVIDER_STYLE_DEFAULT,
     lotw_poster: str = _LOTW_POSTER_DEFAULT,
     lote_poster: str = _LOTE_POSTER_DEFAULT,
     announcement_image_paths: Optional[List[Path]] = None,
@@ -4566,9 +4928,11 @@ def generate_mass_ppt(
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
     video_replacements: Optional[Mapping[str, Any]] = None,
     mass_language: str = "english",
+    show_hymn_section_labels: bool = False,
 ) -> tuple[int, Path]:
-    global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding, _ACTIVE_MASS_LANG
+    global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding, _ACTIVE_MASS_LANG, _SHOW_HYMN_SECTION_LABELS
     _ACTIVE_MASS_LANG = normalize_mass_language(mass_language)
+    _SHOW_HYMN_SECTION_LABELS = bool(show_hymn_section_labels)
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),
         include_name=bool(include_church_name),
@@ -4612,6 +4976,7 @@ def generate_mass_ppt(
         mass_title=title,
         background_image_path=liturgical_poster_png,
         divider_poster_path=divider_poster_png,
+        divider_style=_resolve_divider_style(divider_style),
     )
 
     sel = song_selections or {}
@@ -4996,4 +5361,5 @@ def generate_mass_ppt(
     n_slides = len(prs.slides)
     prs.save(out)
     print(f"✅ PowerPoint created: {out} ({n_slides} slides)")
+    _SHOW_HYMN_SECTION_LABELS = False
     return n_slides, out

@@ -463,6 +463,7 @@ def generate_mass_media(
     song_selections: Optional[Mapping[str, str]] = None,
     custom_theme: Optional[Mapping[str, Any]] = None,
     divider_poster_path: Optional[Path] = None,
+    divider_style: str = "divider1",
     lotw_poster: str = "lotw1",
     lote_poster: str = "lote1",
     announcement_image_paths: Optional[list[Path]] = None,
@@ -486,6 +487,7 @@ def generate_mass_media(
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
     video_replacements: Optional[Mapping[str, Any]] = None,
     mass_language: str = "english",
+    show_hymn_section_labels: bool = False,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -677,6 +679,7 @@ def generate_mass_media(
         output_stem=stem,
         liturgical_poster_png=None,
         divider_poster_png=divider_for_ppt,
+        divider_style=divider_style,
         lotw_poster=lotw_poster,
         lote_poster=lote_poster,
         announcement_image_paths=announcement_image_paths,
@@ -696,6 +699,7 @@ def generate_mass_media(
         hymn_layout_overrides=hymn_layout_overrides,
         video_replacements=video_replacements,
         mass_language=mass_language,
+        show_hymn_section_labels=show_hymn_section_labels,
     )
 
     if include_social_exports and poster_path and poster_path.is_file():
@@ -742,6 +746,7 @@ def regenerate_mass_pptx(
     custom_theme: Optional[Mapping[str, Any]] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     divider_poster_path: Optional[Path] = None,
+    divider_style: str = "divider1",
     lotw_poster: str = "lotw1",
     lote_poster: str = "lote1",
     announcement_image_paths: Optional[list[Path]] = None,
@@ -764,6 +769,7 @@ def regenerate_mass_pptx(
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
     video_replacements: Optional[Mapping[str, Any]] = None,
     mass_language: str = "english",
+    show_hymn_section_labels: bool = False,
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
     data = get_liturgical_data(date, language=mass_language)
@@ -855,6 +861,7 @@ def regenerate_mass_pptx(
         output_stem=stem,
         liturgical_poster_png=None,
         divider_poster_png=divider_for_ppt,
+        divider_style=divider_style,
         lotw_poster=lotw_poster,
         lote_poster=lote_poster,
         announcement_image_paths=announcement_image_paths,
@@ -874,6 +881,7 @@ def regenerate_mass_pptx(
         hymn_layout_overrides=hymn_layout_overrides,
         video_replacements=video_replacements,
         mass_language=mass_language,
+        show_hymn_section_labels=show_hymn_section_labels,
     )
 
     return GenerationResult(

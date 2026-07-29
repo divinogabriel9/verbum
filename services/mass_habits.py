@@ -40,6 +40,7 @@ ENUM_FIELDS = (
     "hymn_lyrics_layout",
     "lotw_poster",
     "lote_poster",
+    "divider_style",
     "poster_template",
     "include_church_logo",
     "include_church_name",
@@ -53,6 +54,7 @@ _ALLOWED: dict[str, frozenset[Any]] = {
     "hymn_lyrics_layout": frozenset({"single", "dual"}),
     "lotw_poster": frozenset({"lotw1", "lotw2", "lotw3", "lotw4"}),
     "lote_poster": frozenset({"lote1", "lote2", "lote3", "lote4"}),
+    "divider_style": frozenset({"divider1", "divider2"}),
     "poster_template": frozenset({"liturgical_color", "classic_white"}),
     "include_church_logo": frozenset({True, False}),
     "include_church_name": frozenset({True, False}),
@@ -80,6 +82,7 @@ def snapshot_from_generate(
     include_footer: bool = False,
     lotw_poster: str = "lotw1",
     lote_poster: str = "lote1",
+    divider_style: str = "divider1",
     poster_template: str = "liturgical_color",
     celebrant: str = "",
     season: str = "",
@@ -111,6 +114,9 @@ def snapshot_from_generate(
     lote = str(lote_poster or "lote1").strip().lower()
     if lote not in _ALLOWED["lote_poster"]:
         lote = "lote1"
+    div_style = str(divider_style or "divider1").strip().lower()
+    if div_style not in _ALLOWED["divider_style"]:
+        div_style = "divider1"
     poster = str(poster_template or "liturgical_color").strip().lower()
     if poster not in _ALLOWED["poster_template"]:
         poster = "liturgical_color"
@@ -126,6 +132,7 @@ def snapshot_from_generate(
         "include_footer": bool(include_footer),
         "lotw_poster": lotw,
         "lote_poster": lote,
+        "divider_style": div_style,
         "poster_template": poster,
         "celebrant": str(celebrant or "").strip()[:120],
         "season": str(season or "").strip().lower().replace(" ", "_")[:64],

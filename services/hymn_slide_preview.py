@@ -17,9 +17,12 @@ from generators.powerpoint import (
     _HYMN_REF_BODY_PT_MIN,
     _HYMN_REF_LINE_SPACING,
     _HYMN_REF_TITLE_PT,
+    _HYMN_SECTION_LABEL_PT,
+    _HYMN_SECTION_LABEL_RESERVE_IN,
     _LYRIC_MAX_PT,
     _LYRIC_MIN_PT,
     _dual_second_verse_italic,
+    _is_chorus_block_kind,
     _length_to_inches,
     _lyric_fit_height_inches,
     _normalize_hymn_lyrics_layout,
@@ -28,6 +31,7 @@ from generators.powerpoint import (
     fitLyricsToFullWidthTextbox,
 )
 from services.hymn_typography import HymnTypographySettings, typography_for_hymn_slide
+from services.mass_text_format import labels_for_block_kinds
 
 _SLIDE_WIDTH_PT = float(SLIDE_WIDTH.inches) * 72.0
 
@@ -37,9 +41,13 @@ def _resolve_body_lines_and_pt(
     *,
     typography: HymnTypographySettings,
     box_height_inches: float,
-) -> tuple[list[str], int]:
+    section_label: str = "",
+) -> tuple[list[str], int, int]:
     """Mirror ``powerpoint._fill_hymn_body_caps`` sizing without building a text frame."""
     fit_h = _lyric_fit_height_inches(box_height_inches)
+    label = (section_label or "").strip()
+    if label:
+        fit_h = max(0.5, fit_h - _HYMN_SECTION_LABEL_RESERVE_IN)
     lines, auto_fit_pt = fitLyricsToFullWidthTextbox(chunk, fit_h)
     size_pt = int(max(_HYMN_REF_BODY_PT_MIN, min(_LYRIC_MAX_PT, auto_fit_pt)))
     requested = int(round(typography.body_pt))
@@ -47,7 +55,8 @@ def _resolve_body_lines_and_pt(
         size_pt = min(size_pt, requested)
     while size_pt > _LYRIC_MIN_PT and detectOverflow(lines, float(size_pt), fit_h):
         size_pt -= 2
-    return [ln.upper() for ln in lines], size_pt
+    label_pt = int(min(_HYMN_SECTION_LABEL_PT, max(22, size_pt * 0.42))) if label else 0
+    return [ln.upper() for ln in lines], size_pt, label_pt
 
 
 def _title_pt_for_slide(typography: HymnTypographySettings) -> float:
@@ -73,11 +82,13 @@ def _block_payload(
     typography: HymnTypographySettings,
     box_height_inches: float,
     italic: bool = False,
+    section_label: str = "",
 ) -> dict[str, Any]:
-    lines, body_pt = _resolve_body_lines_and_pt(
+    lines, body_pt, label_pt = _resolve_body_lines_and_pt(
         chunk,
         typography=typography,
         box_height_inches=box_height_inches,
+        section_label=section_label,
     )
     return {
         "lines": lines,
@@ -85,6 +96,9 @@ def _block_payload(
         "body_align": typography.body_align,
         "block_kind": block_kind,
         "italic": bool(italic),
+        "section_label": (section_label or "").strip(),
+        "label_pt": label_pt,
+        "is_chorus": _is_chorus_block_kind(block_kind),
     }
 
 
@@ -154,6 +168,7 @@ def build_hymn_slide_preview(
     hymn_typography: Optional[Mapping[str, Any]],
     chunks: Sequence[Mapping[str, Any]],
     plan: Optional[Mapping[str, Any]] = None,
+    show_section_labels: bool = False,
 ) -> dict[str, Any]:
     """
     Build per-slide typography/layout specs using the same pipeline as PPTX hymn slides.
@@ -163,6 +178,23 @@ def build_hymn_slide_preview(
     items = _ordered_plan_items(chunks, plan)
     mode = _normalize_hymn_lyrics_layout(layout)
     slides: list[dict[str, Any]] = []
+    enabled_kinds = [
+        str(it.get("block_kind") or "verse")
+        for it in items
+        if not it.get("disabled")
+    ]
+    enabled_labels = (
+        labels_for_block_kinds(enabled_kinds) if show_section_labels else [""] * len(enabled_kinds)
+    )
+    label_by_chunk: dict[int, str] = {}
+    ei = 0
+    for it in items:
+        if it.get("disabled"):
+            continue
+        label_by_chunk[int(it.get("chunk_idx", -1))] = (
+            enabled_labels[ei] if ei < len(enabled_labels) else ""
+        )
+        ei += 1
 
     if mode == "dual":
         groups = _pair_plan_items_for_dual(items)
@@ -185,6 +217,7 @@ def build_hymn_slide_preview(
                     [(str(item.get("text") or ""), str(item.get("block_kind") or "verse")) for item in group],
                     bi,
                 )
+                chunk_idx = int(item.get("chunk_idx", -1))
                 blocks.append(
                     _block_payload(
                         str(item.get("text") or ""),
@@ -192,6 +225,7 @@ def build_hymn_slide_preview(
                         typography=typo,
                         box_height_inches=box_h,
                         italic=italic,
+                        section_label=label_by_chunk.get(chunk_idx, ""),
                     )
                 )
 
@@ -216,6 +250,8 @@ def build_hymn_slide_preview(
             if show_title:
                 title_assigned = True
             typo = typography_for_hymn_slide(hymn_typography, section, slide_idx)
+            chunk_idx = int(item.get("chunk_idx", -1))
+            section_label = label_by_chunk.get(chunk_idx, "")
             if disabled:
                 blocks = [
                     {
@@ -228,6 +264,13 @@ def build_hymn_slide_preview(
                         "body_align": typo.body_align,
                         "block_kind": str(item.get("block_kind") or "verse"),
                         "italic": False,
+                        "section_label": section_label if show_section_labels else "",
+                        "label_pt": int(_HYMN_SECTION_LABEL_PT)
+                        if (show_section_labels and section_label)
+                        else 0,
+                        "is_chorus": _is_chorus_block_kind(
+                            str(item.get("block_kind") or "verse")
+                        ),
                     }
                 ]
             else:
@@ -238,6 +281,7 @@ def build_hymn_slide_preview(
                         str(item.get("block_kind") or "verse"),
                         typography=typo,
                         box_height_inches=box_h,
+                        section_label=section_label,
                     )
                 ]
                 slide_idx += 1
@@ -250,7 +294,7 @@ def build_hymn_slide_preview(
                     "layout": "single",
                     "dual_single": False,
                     "disabled": disabled,
-                    "chunk_indices": [int(item.get("chunk_idx", -1))],
+                    "chunk_indices": [chunk_idx],
                     "blocks": blocks,
                 }
             )

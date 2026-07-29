@@ -101,6 +101,14 @@ services:
         value: "300"
       - key: RATE_LIMIT_DEFAULT_WINDOW
         value: "60"
+      - key: RATE_LIMIT_PRACTICE_TOKEN_MAX
+        value: "2400"
+      - key: RATE_LIMIT_PRACTICE_TOKEN_WINDOW
+        value: "3600"
+      - key: PRACTICE_PIN_PBKDF2_ROUNDS
+        value: "8000"
+      - key: PRACTICE_UNLOCK_MAX_CONCURRENT
+        value: "16"
       - key: MAX_REQUEST_BODY_BYTES
         value: "12582912"
       - key: PRACTICE_UNLOCK_SECRET

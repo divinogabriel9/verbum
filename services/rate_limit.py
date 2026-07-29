@@ -85,7 +85,7 @@ _TIERS: Dict[str, Tuple[int, int]] = {
         _int_env("RATE_LIMIT_PRACTICE_PIN_WINDOW", 900),
     ),
     "practice_token": (
-        _int_env("RATE_LIMIT_PRACTICE_TOKEN_MAX", 240),
+        _int_env("RATE_LIMIT_PRACTICE_TOKEN_MAX", 2400),
         _int_env("RATE_LIMIT_PRACTICE_TOKEN_WINDOW", 3600),
     ),
     "practice_create": (

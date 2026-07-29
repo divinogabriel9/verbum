@@ -7,9 +7,10 @@ import hmac
 import logging
 import os
 import secrets
+import threading
 import time
 from datetime import datetime, timezone
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -21,8 +22,27 @@ from services.runtime_config import practice_unlock_secret_required
 logger = logging.getLogger(__name__)
 
 _PIN_PREFIX = "v1:"
+_PIN_PREFIX_V2 = "v2:"
 _COOKIE_PREFIX = "vf_pu_"
-_PIN_PBKDF2_ROUNDS = 40_000
+# Legacy shares — keep verifying at original cost.
+_PIN_PBKDF2_ROUNDS_V1 = 40_000
+# New shares: 6-digit PIN + rate limits are the real defense; lower CPU so
+# a choir of phones unlocking together does not stall the whole process.
+_PIN_PBKDF2_ROUNDS_V2 = max(
+    1_000,
+    int(os.environ.get("PRACTICE_PIN_PBKDF2_ROUNDS", "8000").strip() or "8000"),
+)
+# Cap concurrent PBKDF2 unlocks; excess get a fast 429 instead of multi-second waits.
+_UNLOCK_MAX_CONCURRENT = max(
+    1,
+    int(os.environ.get("PRACTICE_UNLOCK_MAX_CONCURRENT", "16").strip() or "16"),
+)
+
+_unlock_sema = threading.BoundedSemaphore(_UNLOCK_MAX_CONCURRENT)
+_verify_cache: Dict[str, Tuple[bool, float]] = {}
+_verify_cache_lock = threading.Lock()
+_VERIFY_CACHE_TTL_S = 90.0
+_VERIFY_CACHE_MAX = 4096
 
 
 def ensure_practice_secret_configured() -> None:
@@ -49,14 +69,55 @@ def _signing_secret() -> bytes:
 
 
 def hash_pin(pin: str) -> str:
+    """Hash a 6-digit PIN (v2 — cheaper PBKDF2; rate limits remain the abuse brake)."""
     salt = secrets.token_hex(8)
     digest = hashlib.pbkdf2_hmac(
         "sha256",
         pin.encode("utf-8"),
         salt.encode("utf-8"),
-        _PIN_PBKDF2_ROUNDS,
+        _PIN_PBKDF2_ROUNDS_V2,
     )
-    return f"{_PIN_PREFIX}{salt}:{digest.hex()}"
+    return f"{_PIN_PREFIX_V2}{salt}:{digest.hex()}"
+
+
+def _verify_cache_key(stored: str, digits: str) -> str:
+    return hashlib.sha256(f"{stored}|{digits}".encode("utf-8")).hexdigest()
+
+
+def _verify_cache_get(key: str) -> Optional[bool]:
+    now = time.time()
+    with _verify_cache_lock:
+        hit = _verify_cache.get(key)
+        if not hit:
+            return None
+        ok, exp = hit
+        if exp <= now:
+            _verify_cache.pop(key, None)
+            return None
+        return ok
+
+
+def _verify_cache_set(key: str, ok: bool) -> None:
+    now = time.time()
+    with _verify_cache_lock:
+        if len(_verify_cache) >= _VERIFY_CACHE_MAX:
+            # Drop expired / arbitrary oldest batch
+            stale = [k for k, (_, exp) in _verify_cache.items() if exp <= now]
+            for k in stale[:512] or list(_verify_cache.keys())[:256]:
+                _verify_cache.pop(k, None)
+        _verify_cache[key] = (ok, now + _VERIFY_CACHE_TTL_S)
+
+
+def try_acquire_unlock_slot() -> bool:
+    """Non-blocking gate so overload returns 429 instead of stacking PBKDF2 work."""
+    return _unlock_sema.acquire(blocking=False)
+
+
+def release_unlock_slot() -> None:
+    try:
+        _unlock_sema.release()
+    except ValueError:
+        pass
 
 
 def verify_pin(stored: Optional[str], supplied: str) -> bool:
@@ -66,7 +127,26 @@ def verify_pin(stored: Optional[str], supplied: str) -> bool:
     if len(digits) != 6:
         return False
     stored_s = str(stored)
-    if stored_s.startswith(_PIN_PREFIX):
+    cache_key = _verify_cache_key(stored_s, digits)
+    cached = _verify_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    ok = False
+    if stored_s.startswith(_PIN_PREFIX_V2):
+        try:
+            _, rest = stored_s.split(_PIN_PREFIX_V2, 1)
+            salt, expected = rest.split(":", 1)
+        except ValueError:
+            return False
+        digest = hashlib.pbkdf2_hmac(
+            "sha256",
+            digits.encode("utf-8"),
+            salt.encode("utf-8"),
+            _PIN_PBKDF2_ROUNDS_V2,
+        )
+        ok = hmac.compare_digest(digest.hex(), expected)
+    elif stored_s.startswith(_PIN_PREFIX):
         try:
             _, rest = stored_s.split(_PIN_PREFIX, 1)
             salt, expected = rest.split(":", 1)
@@ -76,10 +156,15 @@ def verify_pin(stored: Optional[str], supplied: str) -> bool:
             "sha256",
             digits.encode("utf-8"),
             salt.encode("utf-8"),
-            _PIN_PBKDF2_ROUNDS,
+            _PIN_PBKDF2_ROUNDS_V1,
         )
-        return hmac.compare_digest(digest.hex(), expected)
-    return hmac.compare_digest(digits, stored_s)
+        ok = hmac.compare_digest(digest.hex(), expected)
+    else:
+        ok = hmac.compare_digest(digits, stored_s)
+
+    # Cache successes (and short-lived failures) to blunt unlock stampedes.
+    _verify_cache_set(cache_key, ok)
+    return ok
 
 
 def pin_required(stored: Optional[str]) -> bool:

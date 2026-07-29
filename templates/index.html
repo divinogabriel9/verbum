@@ -6937,6 +6937,84 @@
     .deck-theme-footer .primary {
       flex: 1 1 180px;
     }
+    .deck-divider-picker {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid color-mix(in srgb, var(--muted) 28%, transparent);
+    }
+    .deck-divider-picker__label {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+    }
+    .deck-divider-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 560px) {
+      .deck-divider-grid { grid-template-columns: 1fr; }
+    }
+    .deck-divider-option {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 1.5px solid color-mix(in srgb, var(--muted) 35%, transparent);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface) 92%, white);
+      cursor: pointer;
+      text-align: left;
+      overflow: hidden;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .deck-divider-option:hover {
+      border-color: color-mix(in srgb, var(--accent, #c9a227) 55%, var(--muted));
+    }
+    .deck-divider-option.is-selected {
+      border-color: var(--accent, #c9a227);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, #c9a227) 40%, transparent);
+    }
+    .deck-divider-option__preview {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #1a110d;
+    }
+    .deck-divider-option__preview--classic {
+      background:
+        linear-gradient(90deg, #1a3a28 0%, #2d6a4f 45%, #52b788 100%);
+      position: relative;
+    }
+    .deck-divider-option__preview--classic::after {
+      content: "Classic panels";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.88);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .deck-divider-option__meta {
+      padding: 8px 10px 10px;
+    }
+    .deck-divider-option__meta strong {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--ink);
+    }
+    .deck-divider-option__meta span {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.3;
+    }
 
     .ui-card {
       position: relative;
@@ -14792,6 +14870,43 @@
       -webkit-text-fill-color: #87ceeb;
       font-style: italic;
     }
+    .hymn-slide .hymn-section-label {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: var(--hymn-label-size, 0.42em);
+      font-weight: 700;
+      font-style: normal !important;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      margin: 0 0 0.55em;
+      padding-bottom: 0.12em;
+      color: #ffcc4d !important;
+      -webkit-text-fill-color: #ffcc4d;
+      text-transform: lowercase;
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+    .hymn-slide .hymn-lines--chorus .hymn-section-label {
+      color: #ffb800 !important;
+      -webkit-text-fill-color: #ffb800;
+      font-style: normal !important;
+    }
+    .mass-summary-section-labels-field {
+      margin: 0.35rem 0 0.55rem;
+    }
+    .mass-summary-section-labels-field .flow-option-inline {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45rem;
+      font-size: 0.8125rem;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+    .mass-summary-section-labels-hint {
+      margin: 0.2rem 0 0 1.35rem;
+      font-size: 0.72rem;
+      line-height: 1.3;
+    }
     .hymn-slide .hymn-title-text,
     .hymn-slide .hymn-title-editable {
       font-family: Georgia, "Times New Roman", serif;
@@ -15420,13 +15535,15 @@
     .cal-fetch-btn[hidden],
     #cal-admin-fetch-missing-btn[hidden],
     #cal-admin-fetch-month-btn[hidden],
-    #cal-readings-admin-fetch[hidden] {
+    #cal-readings-admin-fetch[hidden],
+    #btn-cal-edit-readings[hidden] {
       display: none !important;
     }
     body:not(.is-superadmin) #cal-admin-fetch-missing-btn,
     body:not(.is-superadmin) #cal-admin-fetch-month-btn,
     body:not(.is-superadmin) #cal-readings-admin-fetch,
     body:not(.is-superadmin) #cal-readings-admin-save,
+    body:not(.is-superadmin) #btn-cal-edit-readings,
     body:not(.is-superadmin) #cal-admin-banner {
       display: none !important;
     }
@@ -15481,25 +15598,40 @@
       max-width: min(160px, 28vw);
     }
     .cal-admin-reading-block {
-      border: 1px solid var(--line);
-      border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      background: var(--surface);
+      border: 0;
+      border-radius: 0;
+      padding: 0 0 12px;
+      margin: 0;
+      background: transparent;
+      box-shadow: none;
+      min-width: 0;
+    }
+    .cal-admin-reading-block + .cal-admin-reading-block {
+      padding-top: 12px;
+      border-top: 1px solid var(--line-soft, var(--line));
     }
     .cal-admin-reading-block.is-editing {
-      border-color: color-mix(in srgb, var(--liturgical-accent) 40%, var(--line));
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--liturgical-accent) 12%, transparent);
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .cal-admin-reading-block.is-editing .cal-admin-reading-block__head strong {
+      color: var(--liturgical-accent, var(--ink));
     }
     .cal-admin-reading-block__head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
     }
     .cal-admin-reading-block__head strong {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--ink);
     }
     .cal-admin-reading-status {
       font-size: 0.68rem;
@@ -15510,6 +15642,71 @@
     .cal-admin-reading-status.ok { color: #15803d; }
     .cal-admin-reading-status.warn { color: #a16207; }
     .cal-admin-reading-status.bad { color: #b91c1c; }
+    #cal-readings-admin-modal .ui-card.ui-card--cal-admin {
+      width: min(1120px, calc(100vw - 1.5rem));
+      max-width: min(1120px, calc(100vw - 1.5rem));
+      max-height: min(92vh, 880px);
+      position: relative;
+      overflow: hidden;
+    }
+    #cal-readings-admin-modal .ui-card--cal-admin .ui-card__content {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: var(--space-4);
+      max-height: none;
+      overflow: auto;
+    }
+    #cal-readings-admin-modal .ui-card--cal-admin .ui-card__content .field {
+      margin-bottom: 8px;
+    }
+    #cal-readings-admin-modal .ui-card--cal-admin .ui-card__content .field:last-child {
+      margin-bottom: 0;
+    }
+    #cal-readings-admin-modal .ui-card--cal-admin textarea {
+      min-height: 5.5rem;
+      resize: vertical;
+    }
+    #cal-readings-admin-modal .ui-card--cal-admin textarea[data-admin-field="gospel"],
+    #cal-readings-admin-modal .ui-card--cal-admin textarea[data-admin-field="first_reading"],
+    #cal-readings-admin-modal .ui-card--cal-admin textarea[data-admin-field="second_reading"] {
+      min-height: 7.5rem;
+    }
+    .cal-admin-readings-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0 1.5rem;
+      align-items: start;
+      min-width: 0;
+    }
+    .cal-admin-readings-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 0;
+      padding: 0 0.15rem;
+    }
+    .cal-admin-readings-col + .cal-admin-readings-col {
+      border-left: 1px solid var(--line-soft, var(--line));
+      padding-left: 1.5rem;
+    }
+    @media (max-width: 860px) {
+      .cal-admin-readings-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      .cal-admin-readings-col + .cal-admin-readings-col {
+        border-left: 0;
+        border-top: 1px solid var(--line-soft, var(--line));
+        padding-left: 0.15rem;
+        padding-top: 12px;
+        margin-top: 4px;
+      }
+      #cal-readings-admin-modal .ui-card.ui-card--cal-admin {
+        width: min(100vw - 1rem, 1120px);
+        max-height: 92vh;
+      }
+    }
     #cal-readings-admin-status.is-saved {
       color: #15803d;
       font-weight: 600;
@@ -15595,6 +15792,121 @@
         0 12px 28px color-mix(in srgb, #22c55e 12%, transparent);
       transition: box-shadow var(--motion-duration-modal, 260ms) var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1));
     }
+    #cal-readings-admin-modal .ui-card--cal-admin .ui-card__header,
+    #cal-readings-admin-modal .ui-card--cal-admin .ui-card__content,
+    #cal-readings-admin-modal .ui-card--cal-admin .ui-card__footer {
+      transition: filter 0.28s ease, opacity 0.28s ease;
+    }
+    #cal-readings-admin-modal .ui-card--cal-admin.is-saving .ui-card__header,
+    #cal-readings-admin-modal .ui-card--cal-admin.is-saving .ui-card__content,
+    #cal-readings-admin-modal .ui-card--cal-admin.is-saving .ui-card__footer,
+    #cal-readings-admin-modal .ui-card--cal-admin.is-save-success .ui-card__header,
+    #cal-readings-admin-modal .ui-card--cal-admin.is-save-success .ui-card__content,
+    #cal-readings-admin-modal .ui-card--cal-admin.is-save-success .ui-card__footer {
+      filter: blur(2.5px);
+      opacity: 0.72;
+      pointer-events: none;
+      user-select: none;
+    }
+    .cal-admin-save-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: color-mix(in srgb, var(--surface-solid, #fff) 28%, transparent);
+      backdrop-filter: blur(8px) saturate(1.1);
+      -webkit-backdrop-filter: blur(8px) saturate(1.1);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+    }
+    .cal-admin-save-overlay.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .cal-admin-save-overlay[hidden] {
+      display: none !important;
+    }
+    .cal-admin-save-overlay__panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+      min-width: min(280px, 100%);
+      padding: 1.35rem 1.5rem;
+      border-radius: var(--radius-md, 14px);
+      background: color-mix(in srgb, var(--surface-solid, #fff) 92%, transparent);
+      border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+      box-shadow: 0 16px 40px color-mix(in srgb, #000 14%, transparent);
+    }
+    .cal-admin-save-overlay__panel[hidden] {
+      display: none !important;
+    }
+    .cal-admin-save-overlay__title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .cal-admin-save-overlay__desc {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      max-width: 28ch;
+    }
+    .cal-admin-save-overlay__spinner {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      border: 2.5px solid color-mix(in srgb, var(--liturgical-accent, #c4a35a) 22%, var(--line-soft, #ddd));
+      border-top-color: var(--liturgical-accent, #c4a35a);
+      animation: cal-admin-save-spin 0.75s linear infinite;
+    }
+    @keyframes cal-admin-save-spin {
+      to { transform: rotate(360deg); }
+    }
+    .cal-admin-save-overlay__check {
+      width: 3.25rem;
+      height: 3.25rem;
+    }
+    .cal-admin-save-overlay__check svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .cal-admin-save-overlay__check-circle {
+      fill: none;
+      stroke: #15803d;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-dasharray: 150;
+      stroke-dashoffset: 150;
+    }
+    .cal-admin-save-overlay__check-mark {
+      fill: none;
+      stroke: #15803d;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+    }
+    .cal-admin-save-overlay.is-success .cal-admin-save-overlay__check-circle {
+      animation: cal-admin-overlay-check-circle 0.55s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .cal-admin-save-overlay.is-success .cal-admin-save-overlay__check-mark {
+      animation: cal-admin-overlay-check-mark 0.35s 0.45s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    @keyframes cal-admin-overlay-check-circle {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes cal-admin-overlay-check-mark {
+      to { stroke-dashoffset: 0; }
+    }
     .cal-cell.is-just-saved {
       animation: cal-cell-saved-pulse 0.7s var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1));
       z-index: 2;
@@ -15616,13 +15928,33 @@
     @media (prefers-reduced-motion: reduce) {
       #cal-readings-admin-status.is-saved,
       #cal-readings-admin-save.cal-admin-save.is-saved .cal-admin-save__done,
-      .cal-cell.is-just-saved {
+      .cal-cell.is-just-saved,
+      #cal-readings-admin-modal .ui-card--cal-admin .ui-card__header,
+      #cal-readings-admin-modal .ui-card--cal-admin .ui-card__content,
+      #cal-readings-admin-modal .ui-card--cal-admin .ui-card__footer,
+      .cal-admin-save-overlay {
+        transition: none;
         animation: none;
       }
       #cal-readings-admin-save.cal-admin-save.is-saved .cal-admin-save__check-circle,
-      #cal-readings-admin-save.cal-admin-save.is-saved .cal-admin-save__check-mark {
+      #cal-readings-admin-save.cal-admin-save.is-saved .cal-admin-save__check-mark,
+      .cal-admin-save-overlay.is-success .cal-admin-save-overlay__check-circle,
+      .cal-admin-save-overlay.is-success .cal-admin-save-overlay__check-mark {
         animation: none;
         stroke-dashoffset: 0;
+      }
+      .cal-admin-save-overlay__spinner {
+        animation: none;
+        opacity: 0.7;
+      }
+      #cal-readings-admin-modal .ui-card--cal-admin.is-saving .ui-card__header,
+      #cal-readings-admin-modal .ui-card--cal-admin.is-saving .ui-card__content,
+      #cal-readings-admin-modal .ui-card--cal-admin.is-saving .ui-card__footer,
+      #cal-readings-admin-modal .ui-card--cal-admin.is-save-success .ui-card__header,
+      #cal-readings-admin-modal .ui-card--cal-admin.is-save-success .ui-card__content,
+      #cal-readings-admin-modal .ui-card--cal-admin.is-save-success .ui-card__footer {
+        filter: none;
+        opacity: 0.85;
       }
     }
     html[data-theme="dark"] .cal-cell--healthy .cal-cell-day { color: #86efac; }
@@ -17831,6 +18163,25 @@
                   <span>White background. All text black, including titles &amp; dividers.</span>
                 </div>
               </button>
+            </div>
+            <div class="deck-divider-picker" id="deck-divider-picker">
+              <p class="deck-divider-picker__label" id="deck-divider-picker-label">Mass divider style</p>
+              <div class="deck-divider-grid" id="deck-divider-grid" role="radiogroup" aria-labelledby="deck-divider-picker-label">
+                <button type="button" class="deck-divider-option is-selected" role="radio" aria-checked="true" data-divider-style="divider1" id="deck-divider-opt-divider1">
+                  <span class="deck-divider-option__preview deck-divider-option__preview--classic" aria-hidden="true"></span>
+                  <span class="deck-divider-option__meta">
+                    <strong>Divider 1 · Classic</strong>
+                    <span>Celebrant left, gospel quote card, bottom title bar.</span>
+                  </span>
+                </button>
+                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="divider2" id="deck-divider-opt-divider2">
+                  <img class="deck-divider-option__preview" src="/static/images/dividers/divider2_preview.jpg" alt="" loading="lazy" width="320" height="180" />
+                  <span class="deck-divider-option__meta">
+                    <strong>Divider 2 · Stone &amp; Light</strong>
+                    <span>Gospel quote with citation, celebrant on the right, bold title.</span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
           <footer class="ui-card__footer ui-card__footer--row deck-theme-footer">
@@ -20430,9 +20781,11 @@
                       <div class="mw-deck-theme-summary__meta">
                         <strong id="mw-deck-theme-name">Theme 1 · Liturgy Flow</strong>
                         <span id="mw-deck-theme-note">Black background with amber titles. Dividers follow the liturgical season.</span>
+                        <span id="mw-deck-divider-note" style="display:block;margin-top:6px;">Divider 1 · Classic</span>
                       </div>
                     </div>
                     <input type="hidden" id="flow-deck-theme" value="theme1" />
+                    <input type="hidden" id="flow-divider-style" value="divider1" />
                   </div>
                   <div class="mw-receipt">
                     <div class="mw-receipt__row"><span>Date</span><strong id="mw-sum-date">—</strong></div>
@@ -20488,6 +20841,15 @@
                     <label><input type="radio" name="flow-hymn-layout" value="single" /> 1 verse / slide</label>
                     <label><input type="radio" name="flow-hymn-layout" value="dual" checked /> 2 verses / slide</label>
                   </div>
+                </div>
+                <div class="mass-summary-lang-field mass-summary-section-labels-field">
+                  <label class="flow-option-inline" for="flow-hymn-section-labels">
+                    <input type="checkbox" id="flow-hymn-section-labels" />
+                    Show verse / chorus labels on slides
+                  </label>
+                  <p class="muted mass-summary-section-labels-hint" id="mass-summary-section-labels-hint">
+                    Verse → i, ii, iii · Chorus → chor. · Bridge → br.
+                  </p>
                 </div>
                 <dl class="mass-summary-stats">
                   <div class="mass-summary-stat">
@@ -21457,7 +21819,12 @@
           <div class="admin-card calendar-month-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
               <h3 style="margin:0;">Month view</h3>
-              <div class="actions" style="margin:0;">
+              <div class="actions" style="margin:0;align-items:center;">
+                <label for="cal-language" class="sr-only">Calendar language</label>
+                <select id="cal-language" data-vb-select="off" title="Calendar language" aria-label="Calendar language" style="min-width:7.5rem;">
+                  <option value="english">English</option>
+                  <option value="tagalog">Tagalog</option>
+                </select>
                 <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-missing-btn" hidden data-default-title="Live-fetch dates in this month that are missing or incomplete" title="Live-fetch dates in this month that are missing or incomplete">
                   <span class="cal-fetch-btn__idle">Fetch missing</span>
                   <span class="cal-fetch-btn__running" hidden>
@@ -21517,6 +21884,7 @@
             <div class="actions" style="margin-top:14px;">
               <button type="button" class="primary" id="btn-cal-use-date">Use for Mass Builder</button>
               <button type="button" class="secondary" id="btn-cal-generate">Generate media</button>
+              <button type="button" class="secondary" id="btn-cal-edit-readings" hidden title="Edit global readings cache for this date">Edit readings</button>
             </div>
           </div>
         </div>
@@ -21524,7 +21892,7 @@
 
       <div class="ui-overlay" id="cal-readings-admin-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="cal-readings-admin-backdrop"></div>
-        <article class="ui-card ui-card--reading" role="dialog" aria-labelledby="cal-readings-admin-title" aria-modal="true">
+        <article class="ui-card ui-card--reading ui-card--cal-admin" role="dialog" aria-labelledby="cal-readings-admin-title" aria-modal="true">
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="cal-readings-admin-title">Readings cache</h3>
@@ -21534,39 +21902,62 @@
           </header>
           <div class="ui-card__content" id="cal-readings-admin-body">
             <p class="muted" id="cal-readings-admin-status">Loading…</p>
-            <div class="cal-admin-reading-block" data-admin-reading="first">
-              <div class="cal-admin-reading-block__head">
-                <strong>First reading</strong>
-                <span class="cal-admin-reading-status" data-admin-status="first">—</span>
+            <div class="cal-admin-readings-grid">
+              <div class="cal-admin-readings-col">
+                <div class="cal-admin-reading-block" data-admin-reading="first">
+                  <div class="cal-admin-reading-block__head">
+                    <strong>First reading</strong>
+                    <span class="cal-admin-reading-status" data-admin-status="first">—</span>
+                  </div>
+                  <div class="field"><label for="cal-admin-first-ref">Citation (book &amp; verses)</label><input type="text" id="cal-admin-first-ref" data-admin-field="first_reading_ref" placeholder="e.g. Acts 2:14, 22–33" /></div>
+                  <div class="field"><label for="cal-admin-first-text">Reading text</label><textarea rows="6" id="cal-admin-first-text" data-admin-field="first_reading" placeholder="Full text of the first reading"></textarea></div>
+                </div>
+                <div class="cal-admin-reading-block" data-admin-reading="second">
+                  <div class="cal-admin-reading-block__head">
+                    <strong>Second reading</strong>
+                    <span class="cal-admin-reading-status" data-admin-status="second">—</span>
+                  </div>
+                  <div class="field"><label for="cal-admin-second-ref">Citation (book &amp; verses)</label><input type="text" id="cal-admin-second-ref" data-admin-field="second_reading_ref" placeholder="e.g. 1 Cor 15:1-8" /></div>
+                  <div class="field"><label for="cal-admin-second-text">Reading text</label><textarea rows="6" id="cal-admin-second-text" data-admin-field="second_reading" placeholder="Full text (Sundays)"></textarea></div>
+                </div>
               </div>
-              <div class="field"><label for="cal-admin-first-ref">Citation (book &amp; verses)</label><input type="text" id="cal-admin-first-ref" data-admin-field="first_reading_ref" placeholder="e.g. Acts 2:14, 22–33" /></div>
-              <div class="field"><label for="cal-admin-first-text">Reading text</label><textarea rows="4" id="cal-admin-first-text" data-admin-field="first_reading" placeholder="Full text of the first reading"></textarea></div>
+              <div class="cal-admin-readings-col">
+                <div class="cal-admin-reading-block" data-admin-reading="psalm">
+                  <div class="cal-admin-reading-block__head">
+                    <strong>Psalm</strong>
+                    <span class="cal-admin-reading-status" data-admin-status="psalm">—</span>
+                  </div>
+                  <div class="field"><label for="cal-admin-psalm-ref">Psalm citation</label><input type="text" id="cal-admin-psalm-ref" data-admin-field="psalm_ref" placeholder="e.g. Psalm 23" /></div>
+                  <div class="field"><label for="cal-admin-psalm-response">Response (refrain)</label><input type="text" id="cal-admin-psalm-response" data-admin-field="psalm_response" placeholder="e.g. The Lord is my shepherd" /></div>
+                  <div class="field"><label for="cal-admin-psalm-verses">Verse numbers &amp; strophe text</label><textarea rows="3" id="cal-admin-psalm-verses" data-admin-field="psalm_verses" placeholder="e.g. R. (25) 4–5, 8–9, 10, 14"></textarea></div>
+                  <div class="field"><label for="cal-admin-psalm-text">Full psalm text</label><textarea rows="4" id="cal-admin-psalm-text" data-admin-field="psalm_text" placeholder="Optional full responsorial psalm"></textarea></div>
+                </div>
+                <div class="cal-admin-reading-block" data-admin-reading="gospel">
+                  <div class="cal-admin-reading-block__head">
+                    <strong>Gospel</strong>
+                    <span class="cal-admin-reading-status" data-admin-status="gospel">—</span>
+                  </div>
+                  <div class="field"><label for="cal-admin-gospel-ref">Gospel citation (book &amp; verses)</label><input type="text" id="cal-admin-gospel-ref" data-admin-field="gospel_ref" placeholder="e.g. John 3:16-17" /></div>
+                  <div class="field"><label for="cal-admin-gospel-text">Gospel text</label><textarea rows="7" id="cal-admin-gospel-text" data-admin-field="gospel" placeholder="Full Gospel reading"></textarea></div>
+                </div>
+              </div>
             </div>
-            <div class="cal-admin-reading-block" data-admin-reading="second">
-              <div class="cal-admin-reading-block__head">
-                <strong>Second reading</strong>
-                <span class="cal-admin-reading-status" data-admin-status="second">—</span>
-              </div>
-              <div class="field"><label for="cal-admin-second-ref">Citation (book &amp; verses)</label><input type="text" id="cal-admin-second-ref" data-admin-field="second_reading_ref" placeholder="e.g. 1 Cor 15:1-8" /></div>
-              <div class="field"><label for="cal-admin-second-text">Reading text</label><textarea rows="4" id="cal-admin-second-text" data-admin-field="second_reading" placeholder="Full text (Sundays)"></textarea></div>
+          </div>
+          <div class="cal-admin-save-overlay" id="cal-admin-save-overlay" hidden aria-live="polite">
+            <div class="cal-admin-save-overlay__panel" id="cal-admin-save-overlay-loading">
+              <div class="cal-admin-save-overlay__spinner" aria-hidden="true"></div>
+              <h3 class="cal-admin-save-overlay__title">Saving readings…</h3>
+              <p class="cal-admin-save-overlay__desc">Updating the global cache for all parishes.</p>
             </div>
-            <div class="cal-admin-reading-block" data-admin-reading="psalm">
-              <div class="cal-admin-reading-block__head">
-                <strong>Psalm</strong>
-                <span class="cal-admin-reading-status" data-admin-status="psalm">—</span>
+            <div class="cal-admin-save-overlay__panel" id="cal-admin-save-overlay-success" hidden>
+              <div class="cal-admin-save-overlay__check" aria-hidden="true">
+                <svg viewBox="0 0 52 52" focusable="false">
+                  <circle class="cal-admin-save-overlay__check-circle" cx="26" cy="26" r="24"></circle>
+                  <polyline class="cal-admin-save-overlay__check-mark" points="14,27 22,35 38,17"></polyline>
+                </svg>
               </div>
-              <div class="field"><label for="cal-admin-psalm-ref">Psalm citation</label><input type="text" id="cal-admin-psalm-ref" data-admin-field="psalm_ref" placeholder="e.g. Psalm 23" /></div>
-              <div class="field"><label for="cal-admin-psalm-response">Response (refrain)</label><input type="text" id="cal-admin-psalm-response" data-admin-field="psalm_response" placeholder="e.g. The Lord is my shepherd" /></div>
-              <div class="field"><label for="cal-admin-psalm-verses">Verse numbers &amp; strophe text</label><textarea rows="3" id="cal-admin-psalm-verses" data-admin-field="psalm_verses" placeholder="e.g. R. (25) 4–5, 8–9, 10, 14"></textarea></div>
-              <div class="field"><label for="cal-admin-psalm-text">Full psalm text</label><textarea rows="3" id="cal-admin-psalm-text" data-admin-field="psalm_text" placeholder="Optional full responsorial psalm"></textarea></div>
-            </div>
-            <div class="cal-admin-reading-block" data-admin-reading="gospel">
-              <div class="cal-admin-reading-block__head">
-                <strong>Gospel</strong>
-                <span class="cal-admin-reading-status" data-admin-status="gospel">—</span>
-              </div>
-              <div class="field"><label for="cal-admin-gospel-ref">Gospel citation (book &amp; verses)</label><input type="text" id="cal-admin-gospel-ref" data-admin-field="gospel_ref" placeholder="e.g. John 3:16-17" /></div>
-              <div class="field"><label for="cal-admin-gospel-text">Gospel text</label><textarea rows="5" id="cal-admin-gospel-text" data-admin-field="gospel" placeholder="Full Gospel reading"></textarea></div>
+              <h3 class="cal-admin-save-overlay__title">Readings saved</h3>
+              <p class="cal-admin-save-overlay__desc">Changes apply to every parish.</p>
             </div>
           </div>
           <footer class="ui-card__footer ui-card__footer--row">
@@ -23407,11 +23798,24 @@
       return sel && sel.value === "tagalog" ? "tagalog" : "english";
     }
 
-    function previewCacheKey(date, readingsOnly) {
+    function currentCalendarLanguage() {
+      const sel = $("cal-language");
+      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+    }
+
+    function resolveReadingsLanguage(opts) {
+      if (opts && (opts.language === "tagalog" || opts.language === "english")) {
+        return opts.language;
+      }
+      return currentMassLanguage();
+    }
+
+    function previewCacheKey(date, readingsOnly, language) {
+      const lang = language || currentMassLanguage();
       return (
         String(date || "").trim() +
         "|" +
-        currentMassLanguage() +
+        lang +
         "|" +
         (readingsOnly ? "readings" : "full")
       );
@@ -23431,25 +23835,44 @@
       return !!(frRef && frBody && gospel && (psalmRefrains.length || psalm));
     }
 
-    function stopReadingsPoll(date) {
-      const d = String(date || "").trim();
-      const state = readingsPollers.get(d);
-      if (!state) return;
-      if (state.timer) clearTimeout(state.timer);
-      readingsPollers.delete(d);
-    }
-
-    function startReadingsPoll(date, onUpdate) {
+    function stopReadingsPoll(date, language) {
       const d = String(date || "").trim();
       if (!d) return;
-      const existing = readingsPollers.get(d);
+      if (language) {
+        const state = readingsPollers.get(language + ":" + d);
+        if (!state) return;
+        if (state.timer) clearTimeout(state.timer);
+        readingsPollers.delete(language + ":" + d);
+        return;
+      }
+      // Stop both language pollers for this date when language not specified.
+      ["english", "tagalog"].forEach((lang) => {
+        const state = readingsPollers.get(lang + ":" + d);
+        if (!state) return;
+        if (state.timer) clearTimeout(state.timer);
+        readingsPollers.delete(lang + ":" + d);
+      });
+      // Legacy key (pre-language) if any.
+      const legacy = readingsPollers.get(d);
+      if (legacy) {
+        if (legacy.timer) clearTimeout(legacy.timer);
+        readingsPollers.delete(d);
+      }
+    }
+
+    function startReadingsPoll(date, onUpdate, language) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      const lang = language || currentMassLanguage();
+      const pollKey = lang + ":" + d;
+      const existing = readingsPollers.get(pollKey);
       if (existing) {
         if (typeof onUpdate === "function") existing.listeners.add(onUpdate);
         return;
       }
-      const state = { timer: null, attempts: 0, listeners: new Set() };
+      const state = { timer: null, attempts: 0, listeners: new Set(), language: lang };
       if (typeof onUpdate === "function") state.listeners.add(onUpdate);
-      readingsPollers.set(d, state);
+      readingsPollers.set(pollKey, state);
 
       const notify = (data) => {
         state.listeners.forEach((fn) => {
@@ -23458,21 +23881,21 @@
       };
 
       const tick = async () => {
-        const active = readingsPollers.get(d);
+        const active = readingsPollers.get(pollKey);
         if (!active || active !== state) return;
         state.attempts += 1;
         try {
-          const data = await fetchReadings(d, { forceRefresh: true });
-          previewCache.set(previewCacheKey(d, true), data);
-          if (readingsPayloadComplete(data)) writeStoredReadings(d, data);
+          const data = await fetchReadings(d, { forceRefresh: true, language: lang });
+          previewCache.set(previewCacheKey(d, true, lang), data);
+          if (readingsPayloadComplete(data)) writeStoredReadings(d, data, lang);
           notify(data);
           if (readingsPayloadComplete(data)) {
-            stopReadingsPoll(d);
+            stopReadingsPoll(d, lang);
             return;
           }
         } catch (_e) { /* keep polling */ }
         if (state.attempts >= READINGS_POLL_MAX_ATTEMPTS) {
-          stopReadingsPoll(d);
+          stopReadingsPoll(d, lang);
           return;
         }
         state.timer = setTimeout(tick, READINGS_POLL_INTERVAL_MS);
@@ -23484,17 +23907,19 @@
     async function ensureReadingsComplete(date, opts) {
       const d = String(date || "").trim();
       const onUpdate = opts && opts.onUpdate;
-      const data = await fetchReadings(d, opts || {});
+      const lang = resolveReadingsLanguage(opts);
+      const data = await fetchReadings(d, Object.assign({}, opts || {}, { language: lang }));
       if (typeof onUpdate === "function") onUpdate(data);
       if (readingsPayloadComplete(data)) return data;
-      startReadingsPoll(d, onUpdate);
+      startReadingsPoll(d, onUpdate, lang);
       return data;
     }
 
-    function readStoredReadings(date) {
+    function readStoredReadings(date, language) {
       try {
+        const lang = language || currentMassLanguage();
         const raw = localStorage.getItem(
-          READINGS_LS_PREFIX + currentMassLanguage() + ":" + String(date || "").trim()
+          READINGS_LS_PREFIX + lang + ":" + String(date || "").trim()
         );
         if (!raw) return null;
         const parsed = JSON.parse(raw);
@@ -23506,10 +23931,11 @@
       }
     }
 
-    function writeStoredReadings(date, data) {
+    function writeStoredReadings(date, data, language) {
       try {
+        const lang = language || currentMassLanguage();
         localStorage.setItem(
-          READINGS_LS_PREFIX + currentMassLanguage() + ":" + String(date || "").trim(),
+          READINGS_LS_PREFIX + lang + ":" + String(date || "").trim(),
           JSON.stringify({ ts: Date.now(), data })
         );
       } catch (_e) { /* quota */ }
@@ -23518,11 +23944,12 @@
     async function fetchReadings(date, opts) {
       const d = String(date || "").trim();
       const forceRefresh = !!(opts && opts.forceRefresh);
+      const lang = resolveReadingsLanguage(opts);
       if (!d) throw new Error("Date required");
       // Permanently use Mass Setup's POST /api/preview path so home, calendar,
       // and setup share one payload (same psalm refrain / gospel sentences).
-      const fullKey = previewCacheKey(d, false);
-      const readKey = previewCacheKey(d, true);
+      const fullKey = previewCacheKey(d, false, lang);
+      const readKey = previewCacheKey(d, true, lang);
       if (!forceRefresh && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
         if (readingsPayloadComplete(cached)) {
@@ -23535,20 +23962,20 @@
         if (readingsPayloadComplete(cached)) return cached;
       }
       if (!forceRefresh) {
-        const stored = readStoredReadings(d);
+        const stored = readStoredReadings(d, lang);
         if (stored && readingsPayloadComplete(stored)) {
           previewCache.set(readKey, stored);
           previewCache.set(fullKey, stored);
           return stored;
         }
       }
-      const inflightKey = forceRefresh ? d + ":refresh" : d;
+      const inflightKey = (forceRefresh ? "refresh:" : "") + lang + ":" + d;
       if (readingsInflight.has(inflightKey)) return readingsInflight.get(inflightKey);
-      const req = fetchPreview(d, { readingsOnly: false, forceRefresh })
+      const req = fetchPreview(d, { readingsOnly: false, forceRefresh, language: lang })
         .then((data) => {
           previewCache.set(readKey, data);
           previewCache.set(fullKey, data);
-          if (readingsPayloadComplete(data)) writeStoredReadings(d, data);
+          if (readingsPayloadComplete(data)) writeStoredReadings(d, data, lang);
           return data;
         })
         .finally(() => {
@@ -23561,10 +23988,11 @@
     async function fetchPreview(date, opts) {
       const readingsOnly = !!(opts && opts.readingsOnly);
       const forceRefresh = !!(opts && opts.forceRefresh);
+      const lang = resolveReadingsLanguage(opts);
       const d = String(date || "").trim();
       if (!d) throw new Error("Date required");
-      const fullKey = previewCacheKey(d, false);
-      const readKey = previewCacheKey(d, true);
+      const fullKey = previewCacheKey(d, false, lang);
+      const readKey = previewCacheKey(d, true, lang);
       if (!forceRefresh && !readingsOnly && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
         if (readingsPayloadComplete(cached)) return previewCache.get(fullKey);
@@ -23583,7 +24011,7 @@
         date: d,
         readings_only: readingsOnly,
         refresh: forceRefresh,
-        mass_language: currentMassLanguage(),
+        mass_language: lang,
       })
         .then((data) => {
           previewCache.set(readingsOnly ? readKey : fullKey, data);
@@ -26732,6 +27160,7 @@
       const banner = $("cal-admin-banner");
       const modalFetchBtn = $("cal-readings-admin-fetch");
       const modalSaveBtn = $("cal-readings-admin-save");
+      const editReadingsBtn = $("btn-cal-edit-readings");
       if (fetchMissingBtn) {
         fetchMissingBtn.hidden = !on;
         fetchMissingBtn.style.display = on ? "" : "none";
@@ -26746,6 +27175,10 @@
         modalFetchBtn.style.display = on ? "" : "none";
       }
       if (modalSaveBtn) modalSaveBtn.hidden = !on;
+      if (editReadingsBtn) {
+        editReadingsBtn.hidden = !on;
+        editReadingsBtn.style.display = on ? "" : "none";
+      }
       updateCalAdminFetchButtons();
     }
 
@@ -26865,7 +27298,7 @@
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-openai-poster", "flow-use-gemini-poster",
         "flow-include-church-logo", "flow-include-church-name", "flow-show-footer",
-        "flow-include-social-exports", "flow-deck-theme",
+        "flow-include-social-exports", "flow-deck-theme", "flow-divider-style",
       ];
     }
 
@@ -26974,6 +27407,7 @@
         massCustomSlotSeq: massCustomSlotSeq,
         massSongPlanLanguage: massSongPlanLanguage,
         hymnLayout: hymnLayout ? hymnLayout.value : "dual",
+        hymnSectionLabels: readHymnSectionLabels(),
         readingsLoaded: !!(flowPreviewData && flowPreviewData.__previewDate),
         previewDate: flowPreviewData && flowPreviewData.__previewDate ? flowPreviewData.__previewDate : "",
         sectionMedia: typeof serializeMassSectionMedia === "function" ? serializeMassSectionMedia() : { audio: {}, video: {} },
@@ -27134,6 +27568,9 @@
       if (f["flow-deck-theme"] && typeof window.setActiveDeckTheme === "function") {
         window.setActiveDeckTheme(f["flow-deck-theme"]);
       }
+      if (f["flow-divider-style"] && typeof window.setActiveDividerStyle === "function") {
+        window.setActiveDividerStyle(f["flow-divider-style"]);
+      }
       if (draft.sanctusPicked && !(window.massRiteVideoMode && window.massRiteVideoMode.sanctus)) {
         const opt = document.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[data-val="default"]');
         if (opt) opt.click();
@@ -27166,6 +27603,9 @@
       document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
         el.checked = el.value === layoutVal;
       });
+      if (typeof applyHymnSectionLabels === "function") {
+        applyHymnSectionLabels(!!draft.hymnSectionLabels);
+      }
       const date = ($("mass-date") && $("mass-date").value) || f["mass-date"] || "";
       if (date && typeof loadFlowData === "function") {
         await loadFlowData(true);
@@ -29427,8 +29867,14 @@
 
     // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
     // Theme 1 = Liturgy Flow (amber). Themes 2–3 are strict mono black/white.
+    // Divider style is independent: divider1 (classic panels) | divider2 (Stone & Light).
     const DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
     const DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
+    const DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
+    const DIVIDER_STYLES = {
+      divider1: { id: "divider1", name: "Divider 1 · Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
+      divider2: { id: "divider2", name: "Divider 2 · Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
+    };
     const presetThemes = [
       {
         id: "theme1",
@@ -29462,13 +29908,20 @@
       },
     ];
     let activeTheme = presetThemes[0];
+    let activeDividerStyle = "divider1";
     let customThemes = [];
     let deckThemeModalMode = "startup"; // "startup" | "review"
     let deckThemeModalPendingId = "theme1";
+    let deckDividerModalPendingId = "divider1";
 
     function findPresetTheme(id) {
       const tid = String(id || "").trim().toLowerCase();
       return presetThemes.find((t) => t.id === tid) || presetThemes[0];
+    }
+
+    function findDividerStyle(id) {
+      const key = String(id || "").trim().toLowerCase();
+      return DIVIDER_STYLES[key] || DIVIDER_STYLES.divider1;
     }
 
     function pptThemePayload(theme) {
@@ -29486,6 +29939,8 @@
     function syncDeckThemeHiddenInput() {
       const el = $("flow-deck-theme");
       if (el) el.value = activeTheme.id;
+      const divEl = $("flow-divider-style");
+      if (divEl) divEl.value = activeDividerStyle;
     }
 
     function paintMiniDeckThemePreview(root, theme) {
@@ -29505,8 +29960,13 @@
     function updateReviewDeckThemeSummary() {
       const nameEl = $("mw-deck-theme-name");
       const noteEl = $("mw-deck-theme-note");
+      const divNote = $("mw-deck-divider-note");
       if (nameEl) nameEl.textContent = activeTheme.name;
       if (noteEl) noteEl.textContent = activeTheme.note || "";
+      if (divNote) {
+        const d = findDividerStyle(activeDividerStyle);
+        divNote.textContent = d.name;
+      }
       paintMiniDeckThemePreview($("mw-deck-theme-preview"), activeTheme);
       syncDeckThemeHiddenInput();
     }
@@ -29518,8 +29978,23 @@
       if (pptTheme) pptTheme.textContent = activeTheme.name;
       try {
         localStorage.setItem("activePptTheme", JSON.stringify(activeTheme));
+        localStorage.setItem("activeDividerStyle", activeDividerStyle);
       } catch (_e) { /* ignore */ }
       updateReviewDeckThemeSummary();
+    }
+
+    function setActiveDividerStyle(styleOrId, options) {
+      const o = options || {};
+      const style = findDividerStyle(styleOrId);
+      activeDividerStyle = style.id;
+      updateThemeIndicators();
+      if (o.saveDefault) {
+        try { localStorage.setItem(DIVIDER_STYLE_DEFAULT_KEY, activeDividerStyle); } catch (_e) { /* ignore */ }
+      }
+      if (typeof window.scheduleMassBuilderDraftAutoSave === "function") {
+        window.scheduleMassBuilderDraftAutoSave();
+      }
+      return activeDividerStyle;
     }
 
     function setActiveDeckTheme(themeOrId, options) {
@@ -29557,6 +30032,17 @@
       });
     }
 
+    function selectDividerStyleOption(styleId) {
+      deckDividerModalPendingId = findDividerStyle(styleId).id;
+      const grid = $("deck-divider-grid");
+      if (!grid) return;
+      grid.querySelectorAll(".deck-divider-option").forEach((btn) => {
+        const selected = btn.getAttribute("data-divider-style") === deckDividerModalPendingId;
+        btn.classList.toggle("is-selected", selected);
+        btn.setAttribute("aria-checked", selected ? "true" : "false");
+      });
+    }
+
     function closeDeckThemeChooser() {
       setUiOverlayOpen($("deck-theme-modal"), false);
     }
@@ -29566,6 +30052,8 @@
       deckThemeModalMode = o.mode === "review" ? "review" : "startup";
       const preferred = o.themeId || activeTheme.id || localStorage.getItem(DECK_THEME_DEFAULT_KEY) || "theme1";
       selectDeckThemeOption(preferred);
+      const preferredDiv = o.dividerStyle || activeDividerStyle || localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || "divider1";
+      selectDividerStyleOption(preferredDiv);
       const title = $("deck-theme-modal-title");
       const desc = $("deck-theme-modal-desc");
       const closeBtn = $("deck-theme-modal-close");
@@ -29581,6 +30069,7 @@
 
     function confirmDeckThemeChoice(saveDefault) {
       setActiveDeckTheme(deckThemeModalPendingId, { saveDefault: !!saveDefault });
+      setActiveDividerStyle(deckDividerModalPendingId, { saveDefault: !!saveDefault });
       try { sessionStorage.setItem(DECK_THEME_SESSION_KEY, "1"); } catch (_e) { /* ignore */ }
       closeDeckThemeChooser();
     }
@@ -29596,8 +30085,16 @@
           return activeTheme.id || "theme1";
         }
       })();
+      const preferredDiv = (() => {
+        try {
+          return localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || activeDividerStyle || "divider1";
+        } catch (_e3) {
+          return activeDividerStyle || "divider1";
+        }
+      })();
       setActiveDeckTheme(preferred);
-      openDeckThemeChooser({ mode: "startup", themeId: preferred });
+      setActiveDividerStyle(preferredDiv);
+      openDeckThemeChooser({ mode: "startup", themeId: preferred, dividerStyle: preferredDiv });
     }
 
     function liturgicalPresetIdFromSeason(seasonStr) {
@@ -29621,11 +30118,13 @@
           const parsed = JSON.parse(raw);
           if (parsed && parsed.id) {
             activeTheme = findPresetTheme(parsed.id);
-            return;
           }
+        } else {
+          const def = localStorage.getItem(DECK_THEME_DEFAULT_KEY);
+          if (def) activeTheme = findPresetTheme(def);
         }
-        const def = localStorage.getItem(DECK_THEME_DEFAULT_KEY);
-        if (def) activeTheme = findPresetTheme(def);
+        const divStored = localStorage.getItem("activeDividerStyle") || localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY);
+        if (divStored) activeDividerStyle = findDividerStyle(divStored).id;
       } catch (_e) { /* ignore */ }
     })();
 
@@ -29638,6 +30137,14 @@
           selectDeckThemeOption(btn.getAttribute("data-theme-id"));
         });
       }
+      const divGrid = $("deck-divider-grid");
+      if (divGrid) {
+        divGrid.addEventListener("click", (e) => {
+          const btn = e.target.closest(".deck-divider-option");
+          if (!btn || !divGrid.contains(btn)) return;
+          selectDividerStyleOption(btn.getAttribute("data-divider-style"));
+        });
+      }
       $("deck-theme-once") && $("deck-theme-once").addEventListener("click", () => confirmDeckThemeChoice(false));
       $("deck-theme-default") && $("deck-theme-default").addEventListener("click", () => confirmDeckThemeChoice(true));
       $("deck-theme-modal-close") && $("deck-theme-modal-close").addEventListener("click", closeDeckThemeChooser);
@@ -29645,7 +30152,7 @@
         if (deckThemeModalMode === "review") closeDeckThemeChooser();
       });
       $("mw-deck-theme-change") && $("mw-deck-theme-change").addEventListener("click", () => {
-        openDeckThemeChooser({ mode: "review", themeId: activeTheme.id });
+        openDeckThemeChooser({ mode: "review", themeId: activeTheme.id, dividerStyle: activeDividerStyle });
       });
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
@@ -29657,6 +30164,9 @@
       window.openDeckThemeChooser = openDeckThemeChooser;
       window.maybePromptDeckThemeOnStartup = maybePromptDeckThemeOnStartup;
       window.setActiveDeckTheme = setActiveDeckTheme;
+      window.setActiveDividerStyle = setActiveDividerStyle;
+      window.getActiveDeckTheme = () => activeTheme;
+      window.getActiveDividerStyle = () => activeDividerStyle;
       syncDeckThemeHiddenInput();
       updateReviewDeckThemeSummary();
     })();
@@ -30273,6 +30783,7 @@
     const massSongLyricsCache = new Map();
     const HYMN_TYPO_STORAGE_KEY = "churchMediaHymnTypography";
     const HYMN_LAYOUT_STORAGE_KEY = "churchMediaHymnLyricsLayout";
+    const HYMN_SECTION_LABELS_STORAGE_KEY = "churchMediaHymnSectionLabels";
     const COLLECTION_CURRENCY_STORAGE_KEY = "churchMediaCollectionCurrency";
 
     const COLLECTION_CURRENCIES = {
@@ -30352,6 +30863,42 @@
       const saved = localStorage.getItem(HYMN_LAYOUT_STORAGE_KEY);
       if (saved === "single" || saved === "dual") return saved;
       return "dual";
+    }
+
+    function readHymnSectionLabels() {
+      const el = $("flow-hymn-section-labels");
+      if (el) return !!el.checked;
+      try {
+        return localStorage.getItem(HYMN_SECTION_LABELS_STORAGE_KEY) === "1";
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function applyHymnSectionLabels(on) {
+      const enabled = !!on;
+      try {
+        localStorage.setItem(HYMN_SECTION_LABELS_STORAGE_KEY, enabled ? "1" : "0");
+      } catch (_e) { /* ignore */ }
+      const el = $("flow-hymn-section-labels");
+      if (el) el.checked = enabled;
+    }
+
+    function initHymnSectionLabelsToggle() {
+      const el = $("flow-hymn-section-labels");
+      if (!el || el.dataset.bound) return;
+      el.dataset.bound = "1";
+      try {
+        el.checked = localStorage.getItem(HYMN_SECTION_LABELS_STORAGE_KEY) === "1";
+      } catch (_e) {
+        el.checked = false;
+      }
+      el.addEventListener("change", () => {
+        applyHymnSectionLabels(el.checked);
+        if (songPreviewState && typeof refreshSongPreviewPanel === "function") {
+          refreshSongPreviewPanel();
+        }
+      });
     }
 
     function loadHymnSongLayoutDefaults() {
@@ -30891,6 +31438,7 @@
         section: section || "default",
         layout: layout || "single",
         hymn_typography: buildHymnTypographyPayload(),
+        show_section_labels: readHymnSectionLabels(),
         chunks: chunks.map((text) => ({
           text: text || "",
           block_kind: inferHymnChunkBlockKind(text),
@@ -30927,6 +31475,13 @@
           "--hymn-body-size",
           hymnPreviewPxFromPt(slide, bodyPt, slideWidthPt) + "px"
         );
+        const labelPt = parseFloat(linesEl.dataset.labelPt);
+        if (labelPt) {
+          linesEl.style.setProperty(
+            "--hymn-label-size",
+            hymnPreviewPxFromPt(slide, labelPt, slideWidthPt) + "px"
+          );
+        }
       });
     }
 
@@ -31463,15 +32018,21 @@
         ? "<h4 class=\"hymn-title-text\">" + escapeHtml((meta && meta.title) || spec.hymn_title || "Hymn") + "</h4>"
         : "";
       const blocksHtml = (slideSpec.blocks || []).map((block, bi) => {
-        const chorusCls = block.block_kind === "chorus" ? " hymn-lines--chorus" : "";
+        const chorusCls = (block.block_kind === "chorus" || block.is_chorus) ? " hymn-lines--chorus" : "";
         const secondCls = block.italic && bi === 1 ? " hymn-lines--dual-second" : "";
         const posCls = layout === "dual" ? (bi === 0 ? " hymn-body-dual-top" : " hymn-body-dual-bottom") : "";
         const bodyCls = layout === "dual" ? "hymn-body hymn-body-dual-block" + posCls : "hymn-body";
         const align = (block.body_align || "center").toLowerCase();
+        const label = (block.section_label || "").trim();
+        const labelHtml = label
+          ? "<span class=\"hymn-section-label\">" + escapeHtml(label.toLowerCase()) + "</span>"
+          : "";
+        const labelPtAttr = block.label_pt ? " data-label-pt=\"" + block.label_pt + "\"" : "";
         return (
           "<div class=\"" + bodyCls + "\">" +
-            "<div class=\"hymn-lines" + chorusCls + secondCls + "\" data-body-pt=\"" + block.body_pt + "\" " +
+            "<div class=\"hymn-lines" + chorusCls + secondCls + "\" data-body-pt=\"" + block.body_pt + "\"" + labelPtAttr + " " +
               "style=\"--hymn-body-align:" + escapeHtml(align) + ";\">" +
+              labelHtml +
               formatHymnLinesHtml(block.lines) +
             "</div>" +
           "</div>"
@@ -41004,8 +41565,11 @@
         applied = true;
       }
       if (suggestions.mass_language === "english" || suggestions.mass_language === "tagalog") {
-        setMassBuilderFieldValue("flow-mass-language", suggestions.mass_language);
-        applied = true;
+        // Never auto-switch Mass language on date/load — only Quick Mass (force) may apply it.
+        if (force) {
+          setMassBuilderFieldValue("flow-mass-language", suggestions.mass_language);
+          applied = true;
+        }
       }
       if (suggestions.hymn_lyrics_layout === "single" || suggestions.hymn_lyrics_layout === "dual") {
         document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
@@ -41039,6 +41603,10 @@
         }
         applied = true;
       }
+      if (suggestions.divider_style && typeof window.setActiveDividerStyle === "function") {
+        window.setActiveDividerStyle(suggestions.divider_style);
+        applied = true;
+      }
       if (suggestions.celebrant && (force || !(($("celebrant") && $("celebrant").value) || "").trim())) {
         if (typeof setCelebrantPickerValue === "function") {
           setCelebrantPickerValue(String(suggestions.celebrant));
@@ -41055,12 +41623,24 @@
           if (!id) return;
           const meta = songMeta[slot] || {};
           const fromHabit = meta.source === "user" || meta.source === "parish";
-          if (force || fromHabit) habitSongs[slot] = id;
+          if (!(force || fromHabit)) return;
+          // Permanent sticky-song fix: on normal loads only fill empty slots.
+          // Overwrite existing picks only for Quick Mass (force).
+          if (!force && String(selectedLyricsSongs[slot] || "").trim()) return;
+          habitSongs[slot] = id;
         });
         if (Object.keys(habitSongs).length) {
           const picks = selectionsFromSongIds(habitSongs, (flowPreviewData && inferGospelMoodKey(flowPreviewData)) || "reverent");
           if (picks.length) {
-            applySongSelectionsToPlan(picks);
+            if (force) {
+              applySongSelectionsToPlan(picks);
+            } else {
+              picks.forEach((pick) => {
+                if (!pick.slotKey || !pick.id) return;
+                if (String(selectedLyricsSongs[pick.slotKey] || "").trim()) return;
+                selectedLyricsSongs[pick.slotKey] = pick.id;
+              });
+            }
             applied = true;
           }
         }
@@ -41206,8 +41786,17 @@
         if (seasonEl) seasonEl.textContent = season;
         songOptionsBySection = data.songs_by_section || songOptionsBySection;
         if (!massDraftRestoring) {
-          // Always preload from gospel mood — never keep first-in-section leftovers.
-          applyGospelMoodDefaultsToSongPlan();
+          // Permanent sticky-song fix: do NOT rebuild the 5 hymn picks on every
+          // date change. Only seed when the plan is empty or clearly stuck on
+          // legacy/catalog-head defaults. Habits fill empty slots only (see
+          // applyMassHabitSuggestions) unless Quick Mass is used.
+          const hasSongPlan = typeof HOME_SONG_SLOTS !== "undefined" && HOME_SONG_SLOTS.some(function (slot) {
+            return !!(selectedLyricsSongs[slot.key] || "").trim();
+          });
+          const stuckDefaults = typeof songPlanNeedsMoodReload === "function" && songPlanNeedsMoodReload();
+          if (!hasSongPlan || stuckDefaults) {
+            applyGospelMoodDefaultsToSongPlan();
+          }
           window.__massSongPlanPreviewDate = date;
           maybeApplyMassHabits(date).catch(function () { /* habits optional */ });
         }
@@ -42265,6 +42854,20 @@
         const loteSel = $("flow-lote-poster");
         body.lotw_poster = (lotwSel && lotwSel.value) || "lotw1";
         body.lote_poster = (loteSel && loteSel.value) || "lote1";
+        // Prefer live JS state over hidden inputs (draft restore can leave stale values).
+        syncDeckThemeHiddenInput();
+        const themeFromInput = ($("flow-deck-theme") && $("flow-deck-theme").value) || "";
+        const resolvedTheme = findPresetTheme(themeFromInput || activeTheme.id);
+        activeTheme = resolvedTheme;
+        body.custom_theme = pptThemePayload(resolvedTheme);
+        const divStyleEl = $("flow-divider-style");
+        const divAllowed = ["divider1", "divider2"];
+        const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
+        const divHidden = (divStyleEl && divStyleEl.value) || "";
+        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider1");
+        activeDividerStyle = divVal;
+        if (divStyleEl) divStyleEl.value = divVal;
+        body.divider_style = divVal;
         if (collFormatted) {
           body.mass_collection_amount = collFormatted;
           body.mass_collection_currency = readCollectionCurrencyCode();
@@ -42279,6 +42882,7 @@
         const massLangSel = $("flow-mass-language");
         body.mass_language = massLangSel && massLangSel.value === "tagalog" ? "tagalog" : "english";
         body.hymn_lyrics_layout = readHymnLyricsLayout();
+        body.show_hymn_section_labels = readHymnSectionLabels();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
         body.hymn_layout_overrides = buildHymnLayoutOverridesPayload();
         const videoReplacements = buildVideoReplacementsPayload();
@@ -42299,6 +42903,7 @@
           divider_poster_basename: body.divider_poster_basename || null,
           lotw_poster: body.lotw_poster || "lotw1",
           lote_poster: body.lote_poster || "lote1",
+          divider_style: body.divider_style || "divider1",
           announcement_basenames: body.announcement_basenames || [],
           mass_collection_amount: body.mass_collection_amount || null,
           mass_collection_currency: body.mass_collection_currency || null,
@@ -42312,6 +42917,7 @@
           our_father_choice: body.our_father_choice || "english",
           mass_language: body.mass_language || "english",
           hymn_lyrics_layout: body.hymn_lyrics_layout || "dual",
+          show_hymn_section_labels: !!body.show_hymn_section_labels,
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
           ai_poster_backend: body.ai_poster_backend,
@@ -42567,22 +43173,28 @@
     async function loadCalendarMonth() {
       const y = calendarCursor.getFullYear();
       const m = calendarCursor.getMonth() + 1;
-      const key = y + "-" + m;
+      const lang = currentCalendarLanguage();
+      const key = y + "-" + m + "-" + lang;
       calendarMonthLoading = true;
       syncCalendarAdminVisibility();
       renderCalendarGrid();
       const status = $("cal-month-status");
-      if (status) status.textContent = "Loading liturgical calendar…";
+      if (status) {
+        status.textContent = lang === "tagalog"
+          ? "Loading Tagalog liturgical calendar…"
+          : "Loading liturgical calendar…";
+      }
       try {
+        const qs = "year=" + y + "&month=" + m + "&lang=" + encodeURIComponent(lang);
         const endpoint = canUseCalendarReadingsAdmin()
-          ? "/api/admin/calendar/month?year=" + y + "&month=" + m
-          : "/api/calendar/month?year=" + y + "&month=" + m;
+          ? "/api/admin/calendar/month?" + qs
+          : "/api/calendar/month?" + qs;
         const res = await fetch(endpoint);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.detail || data.error || "Could not load month");
         calendarMonthData = data.days || {};
         calendarMonthKey = key;
-        if (status) status.textContent = "";
+        if (status) status.textContent = lang === "tagalog" ? "Tagalog · Awit at Papuri" : "English · Philippines Proper";
       } catch (err) {
         calendarMonthData = {};
         calendarMonthKey = "";
@@ -42645,6 +43257,7 @@
 
     function openCalReadingsAdminModal(iso) {
       if (!canUseCalendarReadingsAdmin()) return;
+      clearCalReadingsAdminSaveAnimation();
       calReadingsAdminDate = iso;
       const modal = $("cal-readings-admin-modal");
       const statusEl = $("cal-readings-admin-status");
@@ -42687,7 +43300,53 @@
       return payload;
     }
 
+    function calReadingsAdminPayloadUnchanged(payload) {
+      const entry = (calReadingsAdminDetail && calReadingsAdminDetail.entry) || {};
+      return CAL_ADMIN_FIELD_KEYS.every((key) => {
+        return String(payload[key] || "") === String(entry[key] || "");
+      });
+    }
+
     let calAdminSaveAnimTimer = 0;
+
+    function setCalAdminSaveOverlay(mode) {
+      // mode: "" | "saving" | "success"
+      const modalCard = document.querySelector("#cal-readings-admin-modal .ui-card--cal-admin");
+      const overlay = $("cal-admin-save-overlay");
+      const loading = $("cal-admin-save-overlay-loading");
+      const success = $("cal-admin-save-overlay-success");
+      if (!modalCard || !overlay) return;
+      modalCard.classList.remove("is-saving", "is-save-success", "is-just-saved");
+      overlay.classList.remove("is-visible", "is-success");
+      if (!mode) {
+        overlay.hidden = true;
+        if (loading) loading.hidden = false;
+        if (success) success.hidden = true;
+        return;
+      }
+      overlay.hidden = false;
+      void overlay.offsetWidth;
+      overlay.classList.add("is-visible");
+      if (mode === "saving") {
+        modalCard.classList.add("is-saving");
+        if (loading) loading.hidden = false;
+        if (success) success.hidden = true;
+        return;
+      }
+      modalCard.classList.add("is-save-success", "is-just-saved");
+      overlay.classList.add("is-success");
+      if (loading) loading.hidden = true;
+      if (success) {
+        success.hidden = false;
+        success.querySelectorAll(
+          ".cal-admin-save-overlay__check-circle, .cal-admin-save-overlay__check-mark"
+        ).forEach((el) => {
+          el.style.animation = "none";
+          el.getBoundingClientRect();
+          el.style.animation = "";
+        });
+      }
+    }
 
     function clearCalReadingsAdminSaveAnimation() {
       if (calAdminSaveAnimTimer) {
@@ -42696,7 +43355,6 @@
       }
       const saveBtn = $("cal-readings-admin-save");
       const statusEl = $("cal-readings-admin-status");
-      const modalCard = document.querySelector("#cal-readings-admin-modal .ui-card--reading");
       const done = saveBtn && saveBtn.querySelector(".cal-admin-save__done");
       if (saveBtn) {
         saveBtn.classList.remove("is-saved");
@@ -42704,13 +43362,16 @@
       }
       if (done) done.hidden = true;
       if (statusEl) statusEl.classList.remove("is-saved");
-      if (modalCard) modalCard.classList.remove("is-just-saved");
+      setCalAdminSaveOverlay("");
     }
 
-    function playCalReadingsAdminSaveAnimation(iso) {
+    function playCalReadingsAdminSaveAnimation(iso, opts) {
+      const options = opts || {};
+      const holdMs = typeof options.holdMs === "number" ? options.holdMs : 700;
+      const message = options.message || "Saved — applies to all parishes.";
+      const showOverlay = options.overlay !== false;
       const saveBtn = $("cal-readings-admin-save");
       const statusEl = $("cal-readings-admin-status");
-      const modalCard = document.querySelector("#cal-readings-admin-modal .ui-card--reading");
       const done = saveBtn && saveBtn.querySelector(".cal-admin-save__done");
       if (calAdminSaveAnimTimer) {
         window.clearTimeout(calAdminSaveAnimTimer);
@@ -42718,7 +43379,6 @@
       }
       if (saveBtn) {
         saveBtn.classList.remove("is-saved");
-        // Restart CSS animations if saving twice quickly.
         void saveBtn.offsetWidth;
         saveBtn.classList.add("is-saved");
         saveBtn.disabled = true;
@@ -42728,17 +43388,13 @@
         statusEl.classList.remove("is-saved");
         void statusEl.offsetWidth;
         statusEl.classList.add("is-saved");
-        statusEl.textContent = "Saved — applies to all parishes.";
+        statusEl.textContent = message;
       }
-      if (modalCard) {
-        modalCard.classList.remove("is-just-saved");
-        void modalCard.offsetWidth;
-        modalCard.classList.add("is-just-saved");
-      }
+      if (showOverlay) setCalAdminSaveOverlay("success");
       const cell = iso
         ? document.querySelector(".cal-cell[data-cal=\"" + iso + "\"]")
         : null;
-      if (cell) {
+      if (cell && showOverlay) {
         cell.classList.remove("is-just-saved");
         void cell.offsetWidth;
         cell.classList.add("is-just-saved");
@@ -42747,7 +43403,7 @@
       calAdminSaveAnimTimer = window.setTimeout(() => {
         clearCalReadingsAdminSaveAnimation();
         calAdminSaveAnimTimer = 0;
-      }, 1600);
+      }, holdMs);
     }
 
     async function saveCalReadingsAdminAll() {
@@ -42756,11 +43412,22 @@
       const statusEl = $("cal-readings-admin-status");
       const payload = collectCalReadingsAdminPayload();
       clearCalReadingsAdminSaveAnimation();
+
+      if (calReadingsAdminPayloadUnchanged(payload)) {
+        playCalReadingsAdminSaveAnimation(calReadingsAdminDate, {
+          message: "No changes to save.",
+          holdMs: 650,
+          overlay: false,
+        });
+        return;
+      }
+
       if (saveBtn) saveBtn.disabled = true;
       if (statusEl) {
         statusEl.classList.remove("is-saved");
         statusEl.textContent = "Saving global readings cache…";
       }
+      setCalAdminSaveOverlay("saving");
       try {
         const res = await fetch("/api/admin/readings-cache/" + encodeURIComponent(calReadingsAdminDate), {
           method: "PATCH",
@@ -42771,7 +43438,7 @@
         if (!res.ok) throw new Error(data.detail || "Save failed");
         const savedIso = calReadingsAdminDate;
         fillCalReadingsAdminModal(data);
-        const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1);
+        const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1) + "-" + currentCalendarLanguage();
         if (calendarMonthKey === monthKey && data.health) {
           calendarMonthData[savedIso] = Object.assign(
             {},
@@ -42781,7 +43448,19 @@
           renderCalendarGrid();
         }
         if (calSelected === savedIso) setCalDetail(calSelected);
-        playCalReadingsAdminSaveAnimation(savedIso);
+        if (data.unchanged) {
+          playCalReadingsAdminSaveAnimation(savedIso, {
+            message: "No changes to save.",
+            holdMs: 650,
+            overlay: false,
+          });
+        } else {
+          playCalReadingsAdminSaveAnimation(savedIso, {
+            message: "Saved — applies to all parishes.",
+            holdMs: 700,
+            overlay: true,
+          });
+        }
       } catch (err) {
         clearCalReadingsAdminSaveAnimation();
         if (statusEl) statusEl.textContent = err.message || "Could not save readings.";
@@ -42944,7 +43623,7 @@
 
     function calAdminApplyFetchResult(iso, data) {
       if (!data || !data.health) return;
-      const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1);
+      const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1) + "-" + currentCalendarLanguage();
       if (calendarMonthKey === monthKey) {
         calendarMonthData[iso] = Object.assign({}, calendarMonthData[iso] || {}, { readings_health: data.health.status });
         renderCalendarGrid();
@@ -43095,6 +43774,7 @@
 
     function setCalDetail(iso) {
       const prev = calSelected;
+      const lang = currentCalendarLanguage();
       if (prev && prev !== iso) stopReadingsPoll(prev);
       calSelected = iso;
       if ($("cal-detail-date")) $("cal-detail-date").textContent = iso;
@@ -43113,18 +43793,25 @@
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), snap.second_reading_reference, "");
 
       ensureReadingsComplete(iso, {
+        language: lang,
         onUpdate: (data) => {
-          if (calSelected !== iso) return;
-          applyCalDetailReadings(data, snap);
+          if (calSelected !== iso || currentCalendarLanguage() !== lang) return;
+          applyCalDetailReadings(data, snap, lang);
         },
       }).catch(() => {
-        if (calSelected !== iso) return;
+        if (calSelected !== iso || currentCalendarLanguage() !== lang) return;
         if ($("cal-detail-title")) $("cal-detail-title").textContent = "Preview unavailable";
       });
     }
 
-    function applyCalDetailReadings(data, snap) {
-      if ($("cal-detail-title")) $("cal-detail-title").textContent = data.title || "Mass";
+    function applyCalDetailReadings(data, snap, language) {
+      const lang = language || currentCalendarLanguage();
+      const phTitle = (lang === "english" && snap && snap.calendar_region === "philippines" && snap.title)
+        ? snap.title
+        : "";
+      if ($("cal-detail-title")) {
+        $("cal-detail-title").textContent = phTitle || data.title || snap.title || "Mass";
+      }
       if ($("cal-detail-season")) $("cal-detail-season").textContent = data.season || "—";
       if ($("cal-detail-color")) {
         $("cal-detail-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
@@ -44999,6 +45686,7 @@
     initFlowInputGroups();
     initMassDatePickers();
     initHymnLyricsLayoutUi();
+    initHymnSectionLabelsToggle();
     initCollectionCurrencyUi();
     $("mass-date").addEventListener("change", () => {
       loadFlowData(true);
@@ -46009,6 +46697,23 @@
       calendarMonthKey = "";
       loadCalendarMonth();
     });
+    const calLanguageSel = $("cal-language");
+    if (calLanguageSel) {
+      try {
+        const savedCalLang = localStorage.getItem("verbumCalLanguage");
+        if (savedCalLang === "tagalog" || savedCalLang === "english") {
+          calLanguageSel.value = savedCalLang;
+        }
+      } catch (_e) { /* ignore */ }
+      calLanguageSel.addEventListener("change", () => {
+        try {
+          localStorage.setItem("verbumCalLanguage", currentCalendarLanguage());
+        } catch (_e) { /* ignore */ }
+        stopReadingsPoll(calSelected);
+        calendarMonthKey = "";
+        loadCalendarMonth().then(() => setCalDetail(calSelected));
+      });
+    }
     const calReadingStack = $("cal-reading-stack");
     if (calReadingStack) {
       calReadingStack.addEventListener("click", (e) => {
@@ -46024,10 +46729,23 @@
     $("cal-grid").addEventListener("click", (e) => {
       const cell = e.target.closest(".cal-cell[data-cal]");
       if (!cell) return;
+      setCalDetail(cell.dataset.cal);
+    });
+    $("cal-grid").addEventListener("dblclick", (e) => {
+      const cell = e.target.closest(".cal-cell[data-cal]");
+      if (!cell || !canUseCalendarReadingsAdmin()) return;
+      e.preventDefault();
       const iso = cell.dataset.cal;
       setCalDetail(iso);
-      if (canUseCalendarReadingsAdmin()) openCalReadingsAdminModal(iso);
+      openCalReadingsAdminModal(iso);
     });
+    const btnCalEditReadings = $("btn-cal-edit-readings");
+    if (btnCalEditReadings) {
+      btnCalEditReadings.addEventListener("click", () => {
+        if (!canUseCalendarReadingsAdmin() || !calSelected) return;
+        openCalReadingsAdminModal(calSelected);
+      });
+    }
     function bindCalFetchToggleButton(btn, startFn) {
       if (!btn) return;
       btn.addEventListener("click", () => {
@@ -46067,6 +46785,7 @@
         $("mass-date").value = calSelected;
         syncMassDatePickerByInputId("mass-date");
       }
+      // Keep Mass language independent of calendar language toggle.
       showRoute("/mass/builder");
       loadFlowData(true);
     });
@@ -46075,6 +46794,7 @@
         $("mass-date").value = calSelected;
         syncMassDatePickerByInputId("mass-date");
       }
+      // Keep Mass language independent of calendar language toggle.
       showRoute("/mass/builder");
       loadFlowData(false).then(() => $("btn-generate-flow").click());
     });

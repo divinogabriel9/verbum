@@ -365,5 +365,326 @@
     ],
     "optional_pin": "v1:953c0b7f460883a1:f981bb48418b3717202d0cd2c484fb64bb45519c18c996d4a95adf37fd2f8398",
     "expires_at": "2026-07-25T18:28:37.764369+00:00"
+  },
+  {
+    "id": "9c6b6419e0634b3ca7dd4625c0b9d6fe",
+    "created_at": "2026-07-29T21:37:26.436098+00:00",
+    "revoked_at": null,
+    "token": "oHczuK_V5pZRrjf0vaN3FC-QDKNkqfGK",
+    "parish_id": null,
+    "created_by": "k6-stress",
+    "mass_date": "2026-08-02",
+    "mass_title": "k6 Guest Choir Stress",
+    "parish_name": "Stress Parish",
+    "celebrant": "Fr. Stress",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Entrance",
+        "section": "entrance",
+        "hymn_id": "sing_new_song",
+        "title": "Sing A New Song",
+        "author": "Stress",
+        "language": "English",
+        "lyrics": "Verse 1\nSing A New Song Unto The Lord.\n\nChorus\nAlleluia, Alleluia.\n\nVerse 2\nLet The Assembly Rejoice.",
+        "blocks": [
+          {
+            "id": "b0-1cf59535",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Sing A New Song Unto The Lord.",
+            "enabled": true
+          },
+          {
+            "id": "b1-7415ab07",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Alleluia, Alleluia.",
+            "enabled": true
+          },
+          {
+            "id": "b2-1509e85c",
+            "kind": "verse",
+            "label": "Verse 2",
+            "body": "Let The Assembly Rejoice.",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "slot_key": "communion",
+        "slot_label": "Communion",
+        "section": "communion",
+        "hymn_id": "one_bread",
+        "title": "One Bread One Body",
+        "author": "Stress",
+        "language": "English",
+        "lyrics": "Verse 1\nOne Bread, One Body.\n\nChorus\nAnd We, Though Many.",
+        "blocks": [
+          {
+            "id": "b0-f14e224b",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "One Bread, One Body.",
+            "enabled": true
+          },
+          {
+            "id": "b1-68f19dc0",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "And We, Though Many.",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:1ec08b34d666e29d:f769c2268d82f708a66ef002a0c1f1e62e82890e0b3ca9736e0cf5afed32e50a",
+    "expires_at": "2026-08-02T23:59:59+00:00"
+  },
+  {
+    "id": "430dc58d42d44188882e0fd649db3fe7",
+    "created_at": "2026-07-29T21:40:14.916004+00:00",
+    "revoked_at": null,
+    "token": "M8J83BRaJLIj4nakQJAh8x68eFvigDpn",
+    "parish_id": null,
+    "created_by": "k6",
+    "mass_date": "2026-08-02",
+    "mass_title": "k6",
+    "parish_name": "P",
+    "celebrant": "Fr",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "x",
+        "title": "T",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse\nV1\nHello Chorus\n\nChorus\nHi",
+        "blocks": [
+          {
+            "id": "b0-7651f16a",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "V1\nHello Chorus",
+            "enabled": true
+          },
+          {
+            "id": "b1-ed94439d",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Hi",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:29cdd78b48906442:3e5e0e34a7ca7ec88ccc0b0a716494d15d948e7de39bf7f5e49d862031fd7d4f",
+    "expires_at": "2026-08-02T23:59:59+00:00"
+  },
+  {
+    "id": "3a121062a5884f2192baf4554369d0b1",
+    "created_at": "2026-07-29T21:49:57.298476+00:00",
+    "revoked_at": null,
+    "token": "byyO8CN9FGjCzc8vDMntGN0aqgk6nnVY",
+    "parish_id": null,
+    "created_by": "k6-chaos",
+    "mass_date": "2026-08-02",
+    "mass_title": "1000 Guest Choir Chaos",
+    "parish_name": "Chaos Parish",
+    "celebrant": "Fr. Chaos",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "sing_new_song",
+        "title": "Sing A New Song",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nSing A New Song.\n\nChorus\nAlleluia.",
+        "blocks": [
+          {
+            "id": "b0-b19763f0",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Sing A New Song.",
+            "enabled": true
+          },
+          {
+            "id": "b1-cbadb2e9",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Alleluia.",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "slot_key": "offertory",
+        "slot_label": "Song",
+        "section": "offertory",
+        "hymn_id": "offer",
+        "title": "We Offer",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nWe Offer Our Gifts.\n\nChorus\nTake Them Lord.",
+        "blocks": [
+          {
+            "id": "b0-01d2b622",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "We Offer Our Gifts.",
+            "enabled": true
+          },
+          {
+            "id": "b1-e7e83f86",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Take Them Lord.",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "slot_key": "communion",
+        "slot_label": "Song",
+        "section": "communion",
+        "hymn_id": "one_bread",
+        "title": "One Bread",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nOne Bread One Body.\n\nChorus\nThough Many.",
+        "blocks": [
+          {
+            "id": "b0-31b0dea9",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "One Bread One Body.",
+            "enabled": true
+          },
+          {
+            "id": "b1-b793616d",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Though Many.",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "slot_key": "recessional",
+        "slot_label": "Song",
+        "section": "recessional",
+        "hymn_id": "go",
+        "title": "Go Now",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nGo Now In Peace.\n\nChorus\nAmen.",
+        "blocks": [
+          {
+            "id": "b0-e543b300",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Go Now In Peace.",
+            "enabled": true
+          },
+          {
+            "id": "b1-18cb2d89",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Amen.",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v1:013e51512af0f839:41394a9ec52e6a288f564954b6d75a88bc1ac7683087f1255045b666f050734c",
+    "expires_at": "2026-08-02T23:59:59+00:00"
+  },
+  {
+    "id": "8d9ff89f68c64124ad02ca7677264b5b",
+    "created_at": "2026-07-29T22:09:38.335407+00:00",
+    "revoked_at": null,
+    "token": "K0r9ZDP2ekeL_K7i3Z3YNszW4bCtqMWc",
+    "parish_id": null,
+    "created_by": "test-cache",
+    "mass_date": "2026-08-02",
+    "mass_title": "Cache Test",
+    "parish_name": "Test",
+    "celebrant": "Fr Test",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "t1",
+        "title": "Test Song",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nHello\n\nChorus\nHi",
+        "blocks": [
+          {
+            "id": "b0-baa27a8c",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Hello",
+            "enabled": true
+          },
+          {
+            "id": "b1-8486983c",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Hi",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v2:31ba6ee8d022bc28:ced825c64663f836fed7eea959644a670f256618d775eba4782efa5bfedb3405",
+    "expires_at": "2026-08-02T23:59:59+00:00"
+  },
+  {
+    "id": "b2d1697567d54c7da0705f36f3bb34e4",
+    "created_at": "2026-07-29T22:09:55.563259+00:00",
+    "revoked_at": null,
+    "token": "0Sx2XIIC8fcA58QFTc1dsn9V-ZPehPik",
+    "parish_id": null,
+    "created_by": "bench",
+    "mass_date": "2026-08-02",
+    "mass_title": "Perf Fix",
+    "parish_name": "P",
+    "celebrant": "Fr",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "x",
+        "title": "T",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse\nV1\nHi\n\nChorus\nYo",
+        "blocks": [
+          {
+            "id": "b0-2fef4f96",
+            "kind": "verse",
+            "label": "Verse",
+            "body": "V1\nHi",
+            "enabled": true
+          },
+          {
+            "id": "b1-2ad504ef",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "Yo",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v2:7bfb19358de5be38:b731c2c2eb4e8252dc50d74c4e16d2e72c1af61688ac1dc11bd3c6ba3a7fbf31",
+    "expires_at": "2026-08-02T23:59:59+00:00"
   }
 ]

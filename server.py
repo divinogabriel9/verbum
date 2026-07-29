@@ -114,15 +114,20 @@ from services.choir_practice_shares import (
 )
 from services.practice_access import (
     check_pin_unlock_allowed,
+    check_practice_fetch_allowed,
     check_practice_lead_allowed,
     check_practice_lead_song_allowed,
+    check_practice_page_allowed,
     check_practice_share_create_allowed,
+    check_practice_token_allowed,
     ensure_practice_secret_configured,
     is_unlocked,
     issue_lead_token,
     issue_unlock_cookie,
     practice_device_id_from_request,
     practice_no_store_headers,
+    release_unlock_slot,
+    try_acquire_unlock_slot,
     verify_lead_token,
 )
 from services.catalog_rate_limit import check_catalog_lyric_fetch_allowed
@@ -1190,6 +1195,11 @@ class GenerateBody(BaseModel):
         max_length=16,
         description="Liturgy of the Eucharist divider poster design: lote1 | lote2 | lote3 | lote4.",
     )
+    divider_style: str = Field(
+        "divider1",
+        max_length=16,
+        description="Mass divider layout: divider1 (classic) | divider2 (Stone & Light).",
+    )
     announcement_basenames: list[str] = Field(default_factory=list)
     mass_collection_amount: Optional[str] = Field(None, max_length=L.COLLECTION_AMOUNT)
     mass_collection_currency: Optional[str] = Field(
@@ -1252,6 +1262,13 @@ class GenerateBody(BaseModel):
         "dual",
         description="Hymn slide layout: single (1 block/slide) | dual (2 blocks/slide).",
     )
+    show_hymn_section_labels: bool = Field(
+        False,
+        description=(
+            "When true, hymn slides show short section markers "
+            "(Verse as Roman I/II/III, Chor., Br., Pre-C, Out., …)."
+        ),
+    )
     video_replacements: Optional[dict[str, str]] = Field(
         None,
         description=(
@@ -1281,6 +1298,8 @@ class GenerateBody(BaseModel):
         self.lotw_poster = lotw if lotw in {"lotw1", "lotw2", "lotw3", "lotw4"} else "lotw1"
         lote = str(self.lote_poster or "").strip().lower()
         self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
+        div_style = str(self.divider_style or "").strip().lower()
+        self.divider_style = div_style if div_style in {"divider1", "divider2"} else "divider1"
         if self.video_replacements:
             allowed = {
                 "kyrie",
@@ -1412,6 +1431,7 @@ class HymnSlidePreviewBody(BaseModel):
     hymn_typography: Optional[dict[str, Any]] = None
     chunks: list[HymnSlidePreviewChunkBody] = Field(default_factory=list, max_length=128)
     plan: Optional[HymnSlidePreviewPlanBody] = None
+    show_section_labels: bool = False
 
 
 class PracticeShareSongBody(BaseModel):
@@ -1515,6 +1535,7 @@ def api_hymn_slide_preview(
         hymn_typography=body.hymn_typography,
         chunks=chunks,
         plan=plan,
+        show_section_labels=bool(body.show_section_labels),
     )
 
 
@@ -2464,6 +2485,9 @@ def _practice_share_url(request: Request, token: str) -> str:
 
 @app.get("/practice/{token}", response_class=HTMLResponse)
 def practice_page(request: Request, token: str) -> Any:
+    allowed, retry_after = check_practice_page_allowed(request)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
     lead = (request.query_params.get("lead") or "").strip()
     return templates.TemplateResponse(
         request,
@@ -2614,6 +2638,13 @@ def api_practice_share(
     if token.strip().lower() in {"qr", "shares"}:
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
+    allowed, retry_after = check_practice_fetch_allowed(request, tok)
+    if not allowed:
+        return _practice_rate_limit_response(retry_after)
+    allowed_tok, retry_tok = check_practice_token_allowed(tok)
+    if not allowed_tok:
+        return _practice_rate_limit_response(retry_tok)
+
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
@@ -2648,7 +2679,12 @@ def api_practice_unlock(
     allowed, retry_after = check_pin_unlock_allowed(request, tok)
     if not allowed:
         return _practice_rate_limit_response(retry_after)
-    result = verify_practice_share_pin(tok, body.pin or "")
+    if not try_acquire_unlock_slot():
+        return _practice_rate_limit_response(2)
+    try:
+        result = verify_practice_share_pin(tok, body.pin or "")
+    finally:
+        release_unlock_slot()
     if not result.get("ok"):
         status = 401 if result.get("requires_pin") else 404
         return JSONResponse(
@@ -2932,10 +2968,18 @@ def api_ewtn_radio() -> Any:
 
 
 @app.get("/api/calendar/month")
-def api_calendar_month(year: int, month: int) -> Any:
-    """Lightweight per-day summaries for the liturgical calendar grid."""
+def api_calendar_month(
+    year: int,
+    month: int,
+    lang: str = "english",
+) -> Any:
+    """Lightweight per-day summaries for the liturgical calendar grid.
+
+    ``lang=tagalog`` uses Awit at Papuri titles/snippets; ``english`` uses
+    USCCB/lectionary cache plus Philippines Proper day titles.
+    """
     try:
-        return fetch_calendar_month(year, month)
+        return fetch_calendar_month(year, month, language=lang)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -3137,6 +3181,7 @@ def api_generate(
             song_selections=song_map,
             custom_theme=body.custom_theme,
             divider_poster_path=divider_path,
+            divider_style=body.divider_style,
             lotw_poster=body.lotw_poster,
             lote_poster=body.lote_poster,
             announcement_image_paths=ann_paths or None,
@@ -3163,6 +3208,7 @@ def api_generate(
             hymn_layout_overrides=body.hymn_layout_overrides,
             video_replacements=video_paths or None,
             mass_language=body.mass_language,
+            show_hymn_section_labels=bool(body.show_hymn_section_labels),
         )
     finally:
         for p in temp_assets:
@@ -3237,6 +3283,7 @@ def api_generate(
             include_footer=body.include_footer,
             lotw_poster=body.lotw_poster,
             lote_poster=body.lote_poster,
+            divider_style=body.divider_style,
             poster_template=body.poster_template,
             celebrant=body.celebrant.strip(),
             season=season_key,
@@ -3441,6 +3488,7 @@ async def api_regenerate_pptx(
             custom_theme=body.custom_theme,
             hymn_typography=body.hymn_typography,
             divider_poster_path=divider_path,
+            divider_style=body.divider_style,
             lotw_poster=body.lotw_poster,
             lote_poster=body.lote_poster,
             announcement_image_paths=ann_paths or None,
@@ -3468,6 +3516,7 @@ async def api_regenerate_pptx(
             hymn_layout_overrides=body.hymn_layout_overrides,
             video_replacements=video_paths or None,
             mass_language=body.mass_language,
+            show_hymn_section_labels=bool(body.show_hymn_section_labels),
         )
     finally:
         for p in temp_assets:
