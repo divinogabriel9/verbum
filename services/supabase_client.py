@@ -399,19 +399,22 @@ def record_generation(
     celebrant: Optional[str] = None,
     output_summary: Optional[dict[str, Any]] = None,
     access_token: Optional[str] = None,
+    parish_id: Optional[str] = None,
 ) -> None:
     uid = (user_id or "").strip()
     if not uid:
         return
     client = _client_for_user(access_token)
-    client.table("generation_history").insert(
-        {
-            "user_id": uid,
-            "mass_date": mass_date,
-            "celebrant": celebrant,
-            "output_summary": output_summary or {},
-        }
-    ).execute()
+    row: dict[str, Any] = {
+        "user_id": uid,
+        "mass_date": mass_date,
+        "celebrant": celebrant,
+        "output_summary": output_summary or {},
+    }
+    pid = (parish_id or "").strip()
+    if pid:
+        row["parish_id"] = pid
+    client.table("generation_history").insert(row).execute()
 
 
 def bootstrap_superadmin_roles_from_env() -> int:

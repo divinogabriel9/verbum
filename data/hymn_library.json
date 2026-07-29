@@ -114,19 +114,6 @@
       ]
     },
     {
-      "id": "awit_ng_paghahangad",
-      "title": "Awit ng Paghahangad",
-      "lyrics": "Verse 1\nOh Diyos, Ikaw Ang Laging Hanap\nLoob Ko'y Ikaw Ang Tanging Hangad\nNauuhaw Akong Parang Tigang Na Lupa\nSa Tubig Ng 'Yong Pag-aaruga\n\nVerse 2\nIka'y Pagmamasdan Sa Dakong Banal\nNang Makita Ko Ang 'Yong Pagkarangal\nDadalangin Akong Nakataas Aking Kamay\nMagagalak Na Aawit Ng Papuring Iaalay\n\nChorus\nGunita Ko'y Ikaw Habang Nahihimlay\nPagkat Ang Tulong Mo Sa Tuwina'y Taglay\nSa Lilim Ng Iyong Mga Pakpak\nUmaawit Akong Buong Galak\n\nVerse 3\nAking Kaluluwa'y Kumakapit Sa 'Yo\nKaligtasa'y T'yak Kong Hawak Mo Ako\nMagdiriwang Ang Hari Ang Diyos S'yang Dahilan\nAng Sa Iyo Ay Nangakong Galak Yaong Makakamtan\n\nChorus\nGunita Ko'y Ikaw Habang Nahihimlay\nPagkat Ang Tulong Mo Sa Tuwina'y Taglay\nSa Lilim Ng Iyong Mga Pakpak\nUmaawit Akong Buong Galak\n\nVerse 4\nUmaawit, Umaawit\nUmaawit Akong Buong Galak",
-      "source": "lyrics_dashboard",
-      "seasons": [
-        "all"
-      ],
-      "language": "Tagalog",
-      "gospel_moods": [
-        "reverent"
-      ]
-    },
-    {
       "id": "here_we_are",
       "title": "Here We Are",
       "author": "Don Moen",
@@ -1288,6 +1275,175 @@
       "added_at": "2026-07-25T03:26:49.551086+00:00",
       "language": "Tagalog",
       "updated_at": "2026-07-25T03:26:49.551086+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "hesus_na_aking_kapatid",
+      "title": "Hesus Na Aking Kapatid",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nHesus Na Aking Kapatid\nSa Lupa Nami'y Bumalik\nIyong Mukha'y Ibang-iba\nHindi Kita Nakikilala\n\nChorus\nTulungan Mo'ng Aking Mata\nMamulat Sa Katotohanan\nNayayakap Kita, Nasisilayan\nSa Aking Kapwa Nilalang",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.111715+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.111715+00:00",
+      "gospel_moods": [
+        "reverent"
+      ]
+    },
+    {
+      "id": "bawat_sandali",
+      "title": "Bawat Sandali",
+      "author": "Arturo Perez",
+      "lyrics": "Verse 1\nBawat Sandali, Dalangin Ko'y Binibigkas\nNang Masilayan Kang Maaliwalas\nNang Ibigin Ka, Panginoon, Buong Wagas\nNang Aking Masundan Ang 'Yong Bakas\n\nChorus\nBawat Sandali, Hangad Kita\nAng Maging Kapiling Ka\nPalagi Kong Inaasam\nMaging Sa Aking Pag-iisa",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.111515+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.111515+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "awit_ng_paghahangad",
+      "title": "Awit Ng Paghahangad",
+      "author": "Charlie Cenzon",
+      "lyrics": "Verse 1\nO Diyos, Ikaw Ang Laging Hanap\nLoob Ko'y Ikaw Ang Tanging Hangad\nNauuhaw Akong Parang Tigang Na Lupa\nSa Tubig Ng 'Yong Pag-aaruga\n\nVerse 2\nIka'y Pagmamasdan Sa Dakong Banal\nNang Makita Ko Ang 'Yong Pagkarangal\nDadalangin Akong Nakataas Aking Kamay\nMagagalak Na Aawit Ng Papuring Iaalay\n\nChorus\nGunita Ko'y Ikaw Habang Nahihimlay\nPagkat Ang Tulong Mo Sa Tuwina'y Taglay\nSa Lilim Ng Iyong Mga Pakpak\nUmaawit Akong Buong Galak\n\nVerse 3\nAking Kaluluwa'y Kumakapit Sa 'Yo\nKaligtasa'y Tiyak Kung Hawak Mo Ako\nMagdiriwang Ang Hari, Ang Diyos, S'yang Dahilan\nAng Sa Iyo Ay Nangako, Galak Yaong Makamtan\n\nChorus\nGunita Ko'y Ikaw Habang Nahihimlay\nPagkat Ang Tulong Mo Sa Tuwina'y Taglay\nSa Lilim Ng Iyong Mga Pakpak\n\nOutro\nUmaawit, Umaawit\nUmaawit Akong Buong Galak",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.111304+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T07:20:37.963003+00:00",
+      "gospel_moods": [
+        "journey",
+        "reverent"
+      ]
+    },
+    {
+      "id": "hesus_ng_aking_buhay",
+      "title": "Hesus Ng Aking Buhay",
+      "author": "Arnel Aquino",
+      "lyrics": "Verse 1\nSikat Ng Umaga, Buhos Ng Ulan\nSimoy Ng Dapit-hapon, Sinag Ng Buwan\nBatis Na Malinaw, Dagat Na Bughaw\nGayon Ang Panginoon Kong Hesus Ng Aking Buhay\n\nChorus\nSaan Man Ako Bumaling, Ika'y Naroon\nTumalikod Man Sa 'Yo, Dakilang Pag-ibig Mo\nSa Akin Tatawag At Magpapaalalang\nAko'y 'Yong Ginigiliw At Siyang Itatapat Sa Puso",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.111135+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.111135+00:00",
+      "gospel_moods": [
+        "reverent",
+        "journey"
+      ]
+    },
+    {
+      "id": "hindi_kita_malilimutan",
+      "title": "Hindi Kita Malilimutan",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nHindi Kita Malilimutan\nHindi Kita Pababayaan\nNakaukit Magpakailanman\nSa 'King Palad Ang 'Yong Pangalan\n\nVerse 2\nMalilimutan Ba Ng Ina\nAng Anak Na Galing Sa Kanya\nSanggol Sa Kanyang Sinapupunan\nPaano Niya Matatalikdan\n\nChorus\nHindi Kita Malilimutan\nKailanma'y 'Di Pababayaan\nHindi Kita Malilimutan\nKailanma'y 'Di Pababayaan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.110909+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.110909+00:00",
+      "gospel_moods": [
+        "mercy",
+        "reverent"
+      ]
+    },
+    {
+      "id": "kordero_ng_diyos_marcelo",
+      "title": "Kordero Ng Diyos (marcelo)",
+      "author": "Carlo Magno Marcelo",
+      "lyrics": "Verse 1\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 2\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 3\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nIpagkaloob Mo Sa Amin\nAng Kapayapaan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.110680+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.110680+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "kordero_ng_diyos_arboleda",
+      "title": "Kordero Ng Diyos (arboleda)",
+      "author": "",
+      "lyrics": "Verse 1\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 2\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 3\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nIpagkaloob Mo Sa Amin\nAng Kapayapaan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.110454+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.110454+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "kordero_ng_diyos_bukas_palad",
+      "title": "Kordero Ng Diyos (bukas Palad)",
+      "author": "Bukas Palad",
+      "lyrics": "Verse 1\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 2\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin\n\nVerse 3\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Sanlibutan\nIpagkaloob Mo Sa Amin\nAng Kapayapaan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.110230+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.110230+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "kordero_ng_diyos_aquino",
+      "title": "Kordero Ng Diyos (aquino)",
+      "author": "Arnel Aquino",
+      "lyrics": "Verse 1\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Mundo\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin, Maawa Ka\n\nVerse 2\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Mundo\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin, Maawa Ka\n\nVerse 3\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Mundo\nIpagkaloob Mo Sa Amin\nAng Kapayapaan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.109998+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.109998+00:00",
+      "gospel_moods": [
+        "mercy",
+        "solemn"
+      ]
+    },
+    {
+      "id": "kordero_ng_diyos_francisco",
+      "title": "Kordero Ng Diyos (francisco)",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Mundo\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin, Maawa Ka\n\nVerse 2\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Mundo\nMaawa Ka Sa Amin\nMaawa Ka Sa Amin, Maawa Ka\n\nVerse 3\nKordero Ng Diyos Na Nag-aalis\nNg Mga Kasalanan Ng Mundo\nIpagkaloob Mo Sa Amin\nAng Kapayapaan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-29T06:48:55.109728+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-07-29T06:48:55.109728+00:00",
       "gospel_moods": [
         "mercy",
         "solemn"

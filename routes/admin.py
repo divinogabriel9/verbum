@@ -9,10 +9,13 @@ from pydantic import BaseModel, Field
 
 from services.api_security import AuthSession, require_superadmin
 from services.pending_submissions import (
+    approve_parish_rename_submission,
     approve_priest_submission,
     approve_song_submission,
+    list_pending_parish_renames,
     list_pending_priests,
     list_pending_songs,
+    reject_parish_rename_submission,
     reject_priest_submission,
     reject_song_submission,
 )
@@ -27,7 +30,7 @@ from services.superadmin.audit_log import list_audit_log
 from services.superadmin.generations import list_generations
 from services.superadmin.health import build_api_probes, build_health_payload
 from services.superadmin.parishes import get_parish_detail, list_parishes, list_parish_options
-from services.parish_store import create_parish_manual
+from services.parish_store import admin_rename_parish, create_parish_manual
 from services.superadmin.users import delete_user, list_users, set_user_parish_role
 from services.superadmin.readings_admin import (
     fetch_admin_calendar_month,
@@ -129,6 +132,10 @@ class CreateParishBody(BaseModel):
     membership_status: Literal["draft", "pending", "approved", "rejected"] = "approved"
     assign_user_id: Optional[str] = Field(None, max_length=64)
     assign_role: Literal["president", "media"] = "president"
+
+
+class RenameParishBody(BaseModel):
+    community_name: str = Field(..., min_length=2, max_length=120)
 
 
 class FeatureFlagBody(BaseModel):
@@ -764,6 +771,57 @@ def register_admin_routes(app) -> None:
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Reject failed.")
         return result
+
+    @app.get("/api/admin/submissions/parish-names/pending")
+    def api_pending_parish_rename_submissions(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return {"ok": True, "pending": list_pending_parish_renames()}
+
+    @app.post("/api/admin/submissions/parish-names/{submission_id}/approve")
+    def api_approve_parish_rename_submission(
+        submission_id: str,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = approve_parish_rename_submission(
+            submission_id, acting_user_id=session.user.user_id
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Approve failed.")
+        return result
+
+    @app.post("/api/admin/submissions/parish-names/{submission_id}/reject")
+    def api_reject_parish_rename_submission(
+        submission_id: str,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = reject_parish_rename_submission(
+            submission_id, acting_user_id=session.user.user_id
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Reject failed.")
+        return result
+
+    @app.patch("/api/admin/parishes/{parish_id}/name")
+    def api_admin_rename_parish(
+        parish_id: str,
+        body: RenameParishBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        try:
+            parish = admin_rename_parish(parish_id, body.community_name.strip())
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc) or "Rename failed.") from exc
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="update",
+            entity_type="parish",
+            entity_id=parish_id,
+            detail={"community_name": body.community_name.strip()},
+        )
+        return {"ok": True, "parish": parish}
 
     @app.get("/api/admin/email-reminders/recipients")
     def api_admin_email_reminder_recipients(

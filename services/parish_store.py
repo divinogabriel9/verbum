@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any, Optional
 
 from fastapi import HTTPException
 
 from services.auth_config import supabase_enabled
+
+logger = logging.getLogger(__name__)
 
 
 def _client_for_user(access_token: Optional[str]):
@@ -656,3 +659,77 @@ def create_parish_manual(
     if uid and parish_id:
         member = assign_user_to_parish(uid, parish_id, role)
     return {"ok": True, "parish": parish, "member": member}
+
+
+def admin_rename_parish(parish_id: str, community_name: str) -> dict[str, Any]:
+    """Superadmin / service-role: rename a parish even when the name is locked."""
+    if not supabase_enabled():
+        raise RuntimeError("Supabase is not configured.")
+    pid = (parish_id or "").strip()
+    name = (community_name or "").strip()
+    if not pid:
+        raise ValueError("parish_id is required.")
+    if len(name) < 2:
+        raise ValueError("Parish name must be at least 2 characters.")
+    client = _service_client()
+
+    # Prefer RPC (bypasses lock triggers via local GUC). Fall back to direct update
+    # that never mutates community_name_locked_at (that column is client-guarded).
+    parish: dict[str, Any] | None = None
+    try:
+        result = client.rpc(
+            "admin_rename_parish",
+            {"p_parish_id": pid, "p_name": name},
+        ).execute()
+        data = result.data
+        if isinstance(data, list) and data:
+            parish = data[0] if isinstance(data[0], dict) else None
+        elif isinstance(data, dict):
+            parish = data
+    except Exception as rpc_exc:
+        logger.warning("admin_rename_parish RPC unavailable, falling back: %s", rpc_exc)
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            result = (
+                client.table("parishes")
+                .update(
+                    {
+                        "community_name": name,
+                        "updated_at": now,
+                    }
+                )
+                .eq("id", pid)
+                .execute()
+            )
+            rows = result.data or []
+            parish = rows[0] if rows else None
+        except Exception as update_exc:
+            detail = getattr(update_exc, "message", None) or str(update_exc)
+            raise RuntimeError(
+                "Parish rename failed. Apply migration 202507250001_parish_name_rename.sql, "
+                f"then retry. ({detail})"
+            ) from update_exc
+
+    if not parish:
+        existing = get_parish_by_id(pid)
+        if not existing:
+            raise ValueError("Parish not found.")
+        raise RuntimeError(
+            "Parish rename did not persist. Apply migration 202507250001_parish_name_rename.sql."
+        )
+
+    try:
+        members = (
+            client.table("parish_members")
+            .select("user_id")
+            .eq("parish_id", pid)
+            .eq("status", "active")
+            .execute()
+        )
+        for row in members.data or []:
+            uid = str(row.get("user_id") or "").strip()
+            if uid:
+                _sync_legacy_church_profile(uid, parish)
+    except Exception:
+        pass
+    return parish

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import copy
 import json
+import logging
 import re
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -19,6 +22,14 @@ from services.hymn_catalog_store import (
     save_catalog_dict,
 )
 from services.hymn_library import invalidate_library_cache
+from services.platform_cache import cache_delete, cache_get_json, cache_set_json
+
+logger = logging.getLogger(__name__)
+
+# Undo window for bulk TXT/RTF imports (overwrite + newly created songs).
+_IMPORT_UNDO_TTL_S = 30 * 60
+_IMPORT_UNDO_KEY_PREFIX = "verbum:song_import_undo:"
+_IMPORT_UNDO_LATEST_PREFIX = "verbum:song_import_undo_latest:"
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _LIBRARY_PATH = catalog_library_path()
@@ -768,6 +779,7 @@ def import_verbum_songs_from_txt(
     results: list[dict[str, Any]] = []
     failed: list[dict[str, Any]] = []
     sync_ids: set[str] = set()
+    undo_items: list[dict[str, Any]] = []
 
     for song in annotated:
         clean_title = format_song_title_case(str(song.get("title") or ""))
@@ -806,6 +818,14 @@ def import_verbum_songs_from_txt(
                 }
             )
             continue
+
+        # Snapshot existing row before overwrite/move so Undo can restore it.
+        prior_snapshot: dict[str, Any] | None = None
+        prior_section = ""
+        if hit:
+            exist_sec, exist_row = hit
+            prior_section = exist_sec
+            prior_snapshot = copy.deepcopy(exist_row)
 
         rows = data[section]
         target = None
@@ -875,6 +895,26 @@ def import_verbum_songs_from_txt(
                 )
             ]
 
+        if is_new and row_id:
+            undo_items.append(
+                {
+                    "op": "delete",
+                    "section": section,
+                    "id": row_id,
+                    "title": clean_title,
+                }
+            )
+        elif prior_snapshot is not None and row_id:
+            undo_items.append(
+                {
+                    "op": "restore",
+                    "section": prior_section or section,
+                    "id": row_id,
+                    "title": clean_title,
+                    "song": prior_snapshot,
+                }
+            )
+
         results.append(
             {
                 "title": clean_title,
@@ -895,10 +935,164 @@ def import_verbum_songs_from_txt(
     out["skipped"] = skipped
     out["failed"] = failed
     out["results"] = results
+    if undo_items and (created or updated):
+        undo_meta = _store_import_undo_packet(
+            items=undo_items,
+            updated_by=updated_by,
+            created=created,
+            updated=updated,
+        )
+        out["undo_token"] = undo_meta["token"]
+        out["undo_expires_at"] = undo_meta["expires_at"]
+        out["undo_ttl_s"] = _IMPORT_UNDO_TTL_S
+        out["undo_counts"] = {
+            "created": created,
+            "updated": updated,
+            "items": len(undo_items),
+        }
     if failed and not results and not skipped:
         out["ok"] = False
         out["error"] = "No songs could be saved."
     return out
+
+
+def _import_undo_cache_key(token: str) -> str:
+    return f"{_IMPORT_UNDO_KEY_PREFIX}{token}"
+
+
+def _import_undo_latest_key(user_id: str | None) -> str:
+    uid = (user_id or "anon").strip() or "anon"
+    return f"{_IMPORT_UNDO_LATEST_PREFIX}{uid}"
+
+
+def _store_import_undo_packet(
+    *,
+    items: list[dict[str, Any]],
+    updated_by: str | None,
+    created: int,
+    updated: int,
+) -> dict[str, str]:
+    """Persist one-shot undo snapshot (Redis or in-process). New import replaces prior."""
+    token = uuid.uuid4().hex
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(seconds=_IMPORT_UNDO_TTL_S)
+    packet = {
+        "token": token,
+        "created_at": now.isoformat(),
+        "expires_at": expires.isoformat(),
+        "updated_by": updated_by or "",
+        "created": int(created),
+        "updated": int(updated),
+        "items": items,
+    }
+    latest_key = _import_undo_latest_key(updated_by)
+    prev = cache_get_json(latest_key)
+    if isinstance(prev, dict):
+        old_token = str(prev.get("token") or "").strip()
+        if old_token and old_token != token:
+            cache_delete(_import_undo_cache_key(old_token))
+    cache_set_json(_import_undo_cache_key(token), packet, ttl_s=_IMPORT_UNDO_TTL_S)
+    cache_set_json(latest_key, {"token": token, "expires_at": expires.isoformat()}, ttl_s=_IMPORT_UNDO_TTL_S)
+    return {"token": token, "expires_at": expires.isoformat()}
+
+
+def undo_verbum_song_import(
+    token: str,
+    *,
+    updated_by: str | None = None,
+) -> dict[str, Any]:
+    """Reverse the last TXT/RTF import identified by ``undo_token`` (30-minute window)."""
+    tid = str(token or "").strip()
+    if not tid or len(tid) > 80:
+        return {"ok": False, "error": "Invalid undo token."}
+
+    key = _import_undo_cache_key(tid)
+    packet = cache_get_json(key)
+    if not isinstance(packet, dict) or not packet.get("items"):
+        return {"ok": False, "error": "Undo expired or already used."}
+
+    # One-shot: consume before mutating so a double-click can't apply twice.
+    cache_delete(key)
+    latest_key = _import_undo_latest_key(updated_by or str(packet.get("updated_by") or "") or None)
+    latest = cache_get_json(latest_key)
+    if isinstance(latest, dict) and str(latest.get("token") or "").strip() == tid:
+        cache_delete(latest_key)
+
+    data = load_catalog()
+    restored = 0
+    removed = 0
+    sync_ids: set[str] = set()
+    details: list[dict[str, Any]] = []
+
+    for item in reversed(list(packet.get("items") or [])):
+        if not isinstance(item, dict):
+            continue
+        op = str(item.get("op") or "").strip().lower()
+        if op == "delete":
+            sec = str(item.get("section") or "").strip().lower()
+            hid = str(item.get("id") or "").strip()
+            if sec not in _SECTIONS or not hid:
+                continue
+            rows = data.get(sec) or []
+            new_rows = [r for r in rows if not isinstance(r, dict) or str(r.get("id") or "").strip() != hid]
+            if len(new_rows) != len(rows):
+                data[sec] = new_rows
+                removed += 1
+                sync_ids.add(hid)
+                details.append(
+                    {
+                        "op": "delete",
+                        "section": sec,
+                        "id": hid,
+                        "title": str(item.get("title") or ""),
+                    }
+                )
+        elif op == "restore":
+            song = item.get("song")
+            if not isinstance(song, dict):
+                continue
+            hid = str(song.get("id") or item.get("id") or "").strip()
+            target_sec = str(item.get("section") or song.get("section") or "meditation").strip().lower()
+            if target_sec not in _SECTIONS:
+                target_sec = "meditation"
+            if not hid:
+                continue
+            # Remove current id from every section, then put the pre-import row back.
+            for sec in _SECTIONS:
+                data[sec] = [
+                    r
+                    for r in (data.get(sec) or [])
+                    if not isinstance(r, dict) or str(r.get("id") or "").strip() != hid
+                ]
+            restored_row = copy.deepcopy(song)
+            restored_row["id"] = hid
+            data.setdefault(target_sec, []).append(restored_row)
+            restored += 1
+            sync_ids.add(hid)
+            details.append(
+                {
+                    "op": "restore",
+                    "section": target_sec,
+                    "id": hid,
+                    "title": str(restored_row.get("title") or item.get("title") or ""),
+                }
+            )
+
+    if sync_ids:
+        save_catalog(data, updated_by=updated_by, sync_song_ids=sync_ids)
+
+    return {
+        "ok": True,
+        "restored": restored,
+        "removed": removed,
+        "total": restored + removed,
+        "results": details,
+        "message": (
+            f"Undid last import · restored {restored}, removed {removed} newly added."
+            if restored or removed
+            else "Nothing to undo."
+        ),
+    }
 
 
 def _parse_iso_dt(raw: Any) -> datetime | None:

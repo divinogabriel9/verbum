@@ -84,11 +84,20 @@ def membership_payload(
     full_access = membership_allows_full_access(row, user=user, profile_role=profile_role)
     can_use_full_app = full_access or not auth_on
     can_submit = signed_in and auth_on and not superadmin and not full_access
+    can_request_parish_rename = (
+        signed_in
+        and auth_on
+        and not superadmin
+        and parish_role == "president"
+        and status == "approved"
+        and locked
+    )
     return {
         "membership_status": status,
         "community_name_locked": locked,
         "logo_locked": logo_locked,
         "can_edit_parish_name": not locked and status in {"draft", ""} and signed_in,
+        "can_request_parish_rename": can_request_parish_rename,
         "can_edit_logo": signed_in and can_edit_logo(row),
         "can_edit_church_profile": can_use_full_app,
         "can_use_full_app": can_use_full_app,

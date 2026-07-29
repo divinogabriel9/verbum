@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _SONGS_PATH = _PROJECT_ROOT / "data" / "pending_song_submissions.json"
 _PRIESTS_PATH = _PROJECT_ROOT / "data" / "pending_priest_submissions.json"
+_PARISH_RENAME_PATH = _PROJECT_ROOT / "data" / "pending_parish_rename_submissions.json"
 _JSON_MIGRATED_FLAG = _PROJECT_ROOT / "data" / ".content_submissions_migrated"
 
 
@@ -71,6 +72,7 @@ def _format_db_row(row: dict[str, Any]) -> dict[str, Any]:
         "resolved_at": row.get("resolved_at"),
         "submitted_by_user_id": row.get("submitted_by_user_id"),
         "submitted_by_email": row.get("submitted_by_email") or "",
+        "parish_id": str(row.get("parish_id") or "") if row.get("parish_id") else "",
         "payload": row.get("payload") if isinstance(row.get("payload"), dict) else {},
     }
 
@@ -357,6 +359,151 @@ def list_pending_priests() -> list[dict[str, Any]]:
     if supabase_enabled():
         return _list_pending_db("priest")
     return _pending(_read_rows(_PRIESTS_PATH))
+
+
+def list_pending_parish_renames() -> list[dict[str, Any]]:
+    if supabase_enabled():
+        return _list_pending_db("parish_name")
+    return _pending(_read_rows(_PARISH_RENAME_PATH))
+
+
+def submit_pending_parish_rename(session: AuthSession, *, community_name: str) -> dict[str, Any]:
+    clean = (community_name or "").strip()
+    if len(clean) < 2:
+        return {"ok": False, "error": "Parish name must be at least 2 characters."}
+
+    from services.membership_config import is_superadmin_user
+    from services.parish_store import get_parish_by_id, get_user_parish_context
+
+    if is_superadmin_user(session.user):
+        return {"ok": False, "error": "Superadmins can rename parishes directly in Superadmin → Parishes."}
+
+    ctx = get_user_parish_context(session.user.user_id, access_token=session.token)
+    if not ctx:
+        return {"ok": False, "error": "Parish membership not found."}
+    if (ctx.get("parish_role") or "").strip().lower() != "president":
+        return {"ok": False, "error": "Only the parish president can request a name change."}
+    if (ctx.get("membership_status") or "").strip().lower() != "approved":
+        return {"ok": False, "error": "Parish membership must be approved before requesting a rename."}
+
+    parish_id = str(ctx.get("parish_id") or "").strip()
+    current = (ctx.get("community_name") or "").strip()
+    if not parish_id:
+        return {"ok": False, "error": "Parish not found."}
+    if clean.lower() == current.lower():
+        return {"ok": False, "error": "That is already the current parish name."}
+
+    for row in list_pending_parish_renames():
+        payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+        pending_pid = str(row.get("parish_id") or payload.get("parish_id") or "").strip()
+        if pending_pid == parish_id:
+            return {"ok": False, "error": "A parish name change is already awaiting approval."}
+
+    parish = get_parish_by_id(parish_id) or {}
+    payload = {
+        "parish_id": parish_id,
+        "previous_name": current or (parish.get("community_name") or ""),
+        "community_name": clean,
+    }
+    if supabase_enabled():
+        # Ensure parish_id is on the submission row for inbox filtering.
+        inserted = _insert_submission_db(session, kind="parish_name", payload=payload)
+        try:
+            _service_client().table("content_submissions").update(
+                {"parish_id": parish_id}
+            ).eq("id", inserted.get("id")).execute()
+        except Exception:
+            pass
+        return {
+            "ok": True,
+            "pending": True,
+            "submission_id": inserted.get("id"),
+            "message": "Parish name change submitted for superadmin approval.",
+        }
+
+    rows = _read_rows(_PARISH_RENAME_PATH)
+    row = {
+        "id": uuid.uuid4().hex,
+        "status": "pending",
+        "created_at": _now_iso(),
+        "submitted_by_user_id": session.user.user_id,
+        "submitted_by_email": session.user.email or "",
+        "parish_id": parish_id,
+        "payload": payload,
+    }
+    rows.append(row)
+    _write_rows(_PARISH_RENAME_PATH, rows)
+    return {
+        "ok": True,
+        "pending": True,
+        "submission_id": row["id"],
+        "message": "Parish name change submitted for superadmin approval.",
+    }
+
+
+def approve_parish_rename_submission(
+    submission_id: str,
+    *,
+    acting_user_id: str | None = None,
+) -> dict[str, Any]:
+    from services.parish_store import admin_rename_parish
+
+    if supabase_enabled():
+        row = _resolve_submission_db(
+            submission_id, "approved", acting_user_id=acting_user_id
+        )
+    else:
+        row = _set_submission_status_json(_PARISH_RENAME_PATH, submission_id, "approved")
+    if not row:
+        return {"ok": False, "error": "Submission not found."}
+    payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+    parish_id = str(payload.get("parish_id") or row.get("parish_id") or "").strip()
+    new_name = str(payload.get("community_name") or "").strip()
+    if not parish_id or not new_name:
+        return {"ok": False, "error": "Submission is missing parish id or name."}
+    try:
+        parish = admin_rename_parish(parish_id, new_name)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc) or "Rename failed."}
+    _log_admin_action(
+        actor_user_id=acting_user_id,
+        action="approve",
+        entity_type="parish_name_submission",
+        entity_id=str(row.get("id") or submission_id),
+        detail={
+            "parish_id": parish_id,
+            "previous_name": payload.get("previous_name"),
+            "community_name": new_name,
+        },
+    )
+    return {"ok": True, "parish": parish, "submission": row}
+
+
+def reject_parish_rename_submission(
+    submission_id: str,
+    *,
+    acting_user_id: str | None = None,
+) -> dict[str, Any]:
+    if supabase_enabled():
+        row = _resolve_submission_db(
+            submission_id, "rejected", acting_user_id=acting_user_id
+        )
+    else:
+        row = _set_submission_status_json(_PARISH_RENAME_PATH, submission_id, "rejected")
+    if not row:
+        return {"ok": False, "error": "Submission not found."}
+    payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+    _log_admin_action(
+        actor_user_id=acting_user_id,
+        action="reject",
+        entity_type="parish_name_submission",
+        entity_id=str(row.get("id") or submission_id),
+        detail={
+            "parish_id": payload.get("parish_id"),
+            "community_name": payload.get("community_name"),
+        },
+    )
+    return {"ok": True, "submission": row}
 
 
 def _set_submission_status_json(

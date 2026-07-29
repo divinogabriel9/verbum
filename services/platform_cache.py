@@ -54,6 +54,17 @@ def cache_set_json(key: str, value: Any, *, ttl_s: int) -> None:
         _mem_cache[key] = (time.monotonic() + max(1, int(ttl_s)), payload)
 
 
+def cache_delete(key: str) -> None:
+    client = get_redis()
+    if client is not None:
+        try:
+            client.delete(key)
+        except Exception as exc:
+            logger.debug("platform_cache redis delete %s: %s", key, exc)
+    with _mem_lock:
+        _mem_cache.pop(key, None)
+
+
 def cached_call(
     key: str,
     ttl_s: int,

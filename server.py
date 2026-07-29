@@ -76,6 +76,7 @@ from services.song_catalog import (
     import_titles,
     import_verbum_songs_from_txt,
     save_lyrics_song,
+    undo_verbum_song_import,
     update_catalog_song,
 )
 from services.app_version import get_app_version, get_version_info
@@ -94,7 +95,11 @@ from services.membership_config import (
     membership_payload,
     parish_name_is_locked,
 )
-from services.pending_submissions import submit_pending_priest, submit_pending_song
+from services.pending_submissions import (
+    submit_pending_parish_rename,
+    submit_pending_priest,
+    submit_pending_song,
+)
 from services.choir_practice_shares import (
     create_practice_share,
     fetch_practice_share,
@@ -750,6 +755,8 @@ def _finish_generation_side_effects(
     mass_date: str,
     celebrant: str,
     skip_ownership: bool = False,
+    parish_id: str = "",
+    habit_snapshot: Optional[dict[str, Any]] = None,
 ) -> None:
     """Zip + storage + analytics — never on the HTTP request path."""
     try:
@@ -812,16 +819,20 @@ def _finish_generation_side_effects(
         try:
             from services.supabase_client import record_generation
 
+            summary: dict[str, Any] = {
+                "title": result.title,
+                "slide_count": result.slide_count,
+                "export_stem": result.export_stem,
+            }
+            if habit_snapshot:
+                summary["habits"] = habit_snapshot
             record_generation(
                 user_id,
                 mass_date=mass_date,
                 celebrant=celebrant,
-                output_summary={
-                    "title": result.title,
-                    "slide_count": result.slide_count,
-                    "export_stem": result.export_stem,
-                },
+                output_summary=summary,
                 access_token=access_token,
+                parish_id=(parish_id or "").strip() or None,
             )
         except Exception:
             pass
@@ -1346,6 +1357,12 @@ class ImportVerbumTxtBody(BaseModel):
         description="When a title already exists: overwrite (update) or skip.",
         max_length=16,
     )
+
+
+class ImportVerbumTxtUndoBody(BaseModel):
+    """Undo the last Verbum TXT/RTF catalog import (30-minute window)."""
+
+    token: str = Field(..., min_length=8, max_length=80)
 
 
 class PriestSubmissionBody(BaseModel):
@@ -2963,6 +2980,76 @@ async def api_preview(
     return _preview_to_json(p)
 
 
+@app.get("/api/mass/smart-defaults")
+def api_mass_smart_defaults(
+    date: str = "",
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> Any:
+    """Return habit-based Mass Builder defaults for the signed-in parish user."""
+    from services.feature_flags import resolve_flags
+    from services.gospel_mood import infer_gospel_mood_key_from_preview
+    from services.liturgical_calendar import get_liturgical_color
+    from services.mass_habits import smart_defaults_for_session
+    from services.song_selection import default_song_selections_for_preview
+
+    mass_date = (date or "").strip()
+    if len(mass_date) < 8:
+        raise HTTPException(status_code=400, detail="Provide date as YYYY-MM-DD.")
+
+    parish_id = _session_parish_id(session)
+    flags = resolve_flags(parish_id=parish_id or None)
+    if flags.get("mass_habits") is False:
+        return {
+            "ok": True,
+            "has_habits": False,
+            "disabled": True,
+            "suggestions": {},
+            "confidence": {},
+            "hint": "Mass habit smart defaults are turned off.",
+        }
+
+    if not session or not session.user or not session.user.user_id:
+        return {
+            "ok": True,
+            "has_habits": False,
+            "suggestions": {},
+            "confidence": {},
+            "hint": "Sign in to unlock habit-based Mass defaults.",
+        }
+
+    season_key = "ordinary_time"
+    gospel_mood = "reverent"
+    seasonal_songs: dict[str, str] = {}
+    try:
+        color = get_liturgical_color(mass_date)
+        season_key = str((color or {}).get("season") or "ordinary_time")
+    except Exception:
+        season_key = "ordinary_time"
+    try:
+        preview = fetch_preview(mass_date, readings_only=True)
+        preview_dict = {
+            "season": season_key or preview.season or "",
+            "title": preview.title or "",
+            "gospel_reference": preview.gospel_reference or "",
+            "gospel_text": preview.gospel_text or "",
+            "gospel_quote": preview.gospel_quote or "",
+        }
+        gospel_mood = infer_gospel_mood_key_from_preview(preview_dict)
+        seasonal_songs = default_song_selections_for_preview(season_key, preview_dict)
+    except Exception:
+        logger.debug("smart-defaults preview/mood failed", exc_info=True)
+
+    return smart_defaults_for_session(
+        user_id=session.user.user_id,
+        parish_id=parish_id,
+        access_token=session.token,
+        mass_date=mass_date,
+        season=season_key,
+        gospel_mood=gospel_mood,
+        seasonal_songs=seasonal_songs or None,
+    )
+
+
 @app.post("/api/generate")
 def api_generate(
     body: GenerateBody,
@@ -3101,6 +3188,46 @@ def api_generate(
 
     uid = session.user.user_id if session else None
     token = session.token if session else None
+    parish_id = _session_parish_id(session)
+    habit_snapshot: Optional[dict[str, Any]] = None
+    try:
+        from services.gospel_mood import infer_gospel_mood_key_from_preview
+        from services.mass_habits import snapshot_from_generate
+
+        season_key = ""
+        if liturgical_payload:
+            season_key = str(liturgical_payload.get("season") or "").strip()
+        mood_key = ""
+        try:
+            mood_key = infer_gospel_mood_key_from_preview(
+                {
+                    "gospel_text": result.gospel_quote or "",
+                    "gospel_quote": result.gospel_quote or "",
+                    "gospel_reference": result.gospel_reference or "",
+                    "title": result.title or "",
+                    "season": season_key,
+                }
+            )
+        except Exception:
+            mood_key = ""
+        habit_snapshot = snapshot_from_generate(
+            songs=song_map or result.selected_songs,
+            creed_choice=body.creed_choice,
+            our_father_choice=body.our_father_choice,
+            hymn_lyrics_layout=body.hymn_lyrics_layout,
+            include_church_logo=body.include_church_logo,
+            include_church_name=body.include_church_name,
+            include_footer=body.include_footer,
+            lotw_poster=body.lotw_poster,
+            lote_poster=body.lote_poster,
+            poster_template=body.poster_template,
+            celebrant=body.celebrant.strip(),
+            season=season_key,
+            gospel_mood=mood_key,
+        )
+    except Exception:
+        habit_snapshot = None
+
     _spawn_daemon(
         _finish_generation_side_effects,
         name="mass-gen-finish",
@@ -3111,6 +3238,8 @@ def api_generate(
             "mass_date": body.date.strip(),
             "celebrant": body.celebrant.strip(),
             "skip_ownership": True,
+            "parish_id": parish_id,
+            "habit_snapshot": habit_snapshot,
         },
     )
 
@@ -3456,6 +3585,29 @@ def api_import_verbum_lyrics_txt(
     return result
 
 
+@app.post("/api/lyrics/import-txt/undo")
+def api_undo_verbum_lyrics_import(
+    body: ImportVerbumTxtUndoBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Undo the last TXT/RTF import (restores overwrites, removes newly created songs)."""
+    if auth_enabled() and (not session or not is_superadmin_user(session.user)):
+        raise HTTPException(
+            status_code=403,
+            detail="Only superadmins can undo a bulk song import.",
+        )
+    result = undo_verbum_song_import(
+        body.token,
+        updated_by=session.user.user_id if session else None,
+    )
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail=result.get("error") or "Could not undo import.",
+        )
+    return result
+
+
 @app.post("/api/lyrics/save")
 def api_save_lyrics(
     body: SaveLyricsBody,
@@ -3538,4 +3690,17 @@ def api_submit_priest(
     result = submit_pending_priest(session, name=body.name)
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error") or "Could not submit priest.")
+    return result
+
+
+@app.post("/api/community/request-rename")
+def api_request_parish_rename(
+    body: CommunityNameBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    result = submit_pending_parish_rename(session, community_name=body.community_name)
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Could not submit rename request.")
     return result
