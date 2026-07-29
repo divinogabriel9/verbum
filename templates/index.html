@@ -20135,6 +20135,16 @@
                       <input type="text" id="co-celebrant" placeholder="Optional" maxlength="200" autocomplete="name" />
                     </div>
                   </div>
+                  <div class="flow-setup-row flow-setup-row--2" style="margin-top:14px;">
+                    <div class="field">
+                      <label for="flow-mass-language">Mass language</label>
+                      <select id="flow-mass-language" data-vb-select="off">
+                        <option value="english" selected>English</option>
+                        <option value="tagalog">Tagalog (Filipino Ordo)</option>
+                      </select>
+                      <p class="muted flow-setup-field-hint">Order of Mass slide texts + Tagalog readings from Awit at Papuri. Tagalog defaults Creed to Apostles’ and Our Father to Ama Namin.</p>
+                    </div>
+                  </div>
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2 mw-extras-block" id="mass-step-target-stewardship" data-mw-step="6" hidden>
@@ -20711,6 +20721,7 @@
             rows.push(asideRow('Celebrant', cname));
             var co = $('co-celebrant');
             if (co && co.value.trim()) rows.push(asideRow('Co-celebrant', co.value.trim()));
+            rows.push(asideRow('Mass language', selText('flow-mass-language')));
             if (pd && pd.season) rows.push(asideRow('Season', pd.season));
             var gr = $('flow-gospel-ref');
             if (gr && gr.textContent && gr.textContent.trim() !== '—') rows.push(asideRow('Gospel', gr.textContent.trim()));
@@ -21163,6 +21174,32 @@
           if ($('mw-next')) $('mw-next').addEventListener('click', next);
           if ($('mw-back')) $('mw-back').addEventListener('click', back);
           if ($('mw-generate')) $('mw-generate').addEventListener('click', function () { var g = $('btn-generate-flow'); if (g) g.click(); });
+          var massLang = $('flow-mass-language');
+          if (massLang && massLang.dataset.mwLangBound !== '1') {
+            massLang.dataset.mwLangBound = '1';
+            massLang.addEventListener('change', function () {
+              var lang = massLang.value === 'tagalog' ? 'tagalog' : 'english';
+              if (lang === 'tagalog') {
+                if ($('flow-creed-choice')) $('flow-creed-choice').value = 'apostles';
+                if ($('flow-our-father-choice')) $('flow-our-father-choice').value = 'tagalog';
+              } else {
+                if ($('flow-creed-choice')) $('flow-creed-choice').value = 'nicene';
+                if ($('flow-our-father-choice')) $('flow-our-father-choice').value = 'english';
+              }
+              /* re-render mw option radios driven by hidden selects */
+              if (typeof window.syncMassRiteOptionRadios === 'function') window.syncMassRiteOptionRadios();
+              else {
+                Array.prototype.forEach.call(document.querySelectorAll('[data-mw-tunes]'), function (sel) {
+                  sel.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+              }
+              fillAside(1);
+              var md = $('mass-date');
+              if (md && md.value && typeof window.reloadFlowReadingsForLanguage === 'function') {
+                window.reloadFlowReadingsForLanguage(md.value);
+              }
+            });
+          }
           progItems.forEach(function (it) { it.addEventListener('click', function () { var s = parseInt(it.getAttribute('data-mw-go'), 10); if (s) showStep(s); }); });
           Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-text-preview]'), function (p) {
             if (p.dataset.mwTextBound === '1') return;
@@ -23365,8 +23402,19 @@
     const READINGS_POLL_MAX_ATTEMPTS = 18;
     const readingsPollers = new Map();
 
+    function currentMassLanguage() {
+      const sel = $("flow-mass-language");
+      return sel && sel.value === "tagalog" ? "tagalog" : "english";
+    }
+
     function previewCacheKey(date, readingsOnly) {
-      return String(date || "").trim() + "|" + (readingsOnly ? "readings" : "full");
+      return (
+        String(date || "").trim() +
+        "|" +
+        currentMassLanguage() +
+        "|" +
+        (readingsOnly ? "readings" : "full")
+      );
     }
 
     /* Don't trust or persist a readings payload that is missing the first reading
@@ -23445,7 +23493,9 @@
 
     function readStoredReadings(date) {
       try {
-        const raw = localStorage.getItem(READINGS_LS_PREFIX + String(date || "").trim());
+        const raw = localStorage.getItem(
+          READINGS_LS_PREFIX + currentMassLanguage() + ":" + String(date || "").trim()
+        );
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (!parsed || !parsed.data || !parsed.ts) return null;
@@ -23459,7 +23509,7 @@
     function writeStoredReadings(date, data) {
       try {
         localStorage.setItem(
-          READINGS_LS_PREFIX + String(date || "").trim(),
+          READINGS_LS_PREFIX + currentMassLanguage() + ":" + String(date || "").trim(),
           JSON.stringify({ ts: Date.now(), data })
         );
       } catch (_e) { /* quota */ }
@@ -23529,7 +23579,12 @@
       }
       const key = (forceRefresh ? "refresh:" : "") + (readingsOnly ? readKey : fullKey);
       if (previewInflight.has(key)) return previewInflight.get(key);
-      const req = postJSON("/api/preview", { date: d, readings_only: readingsOnly, refresh: forceRefresh })
+      const req = postJSON("/api/preview", {
+        date: d,
+        readings_only: readingsOnly,
+        refresh: forceRefresh,
+        mass_language: currentMassLanguage(),
+      })
         .then((data) => {
           previewCache.set(readingsOnly ? readKey : fullKey, data);
           if (!readingsOnly) previewCache.set(fullKey, data);
@@ -26804,6 +26859,7 @@
         "mass-date", "co-celebrant",
         "flow-penitential-choice", "flow-kyrie-choice", "flow-gloria-choice",
         "flow-creed-choice", "flow-our-father-choice", "flow-lamb-choice",
+        "flow-mass-language",
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
@@ -40828,6 +40884,25 @@
       if (gospelEl && $("home-mass-stat-gospel")) $("home-mass-stat-gospel").textContent = gospelEl.textContent || "—";
     }
 
+    async function reloadFlowReadingsForLanguage(date) {
+      const d = String(date || ($("mass-date") && $("mass-date").value) || "").trim();
+      if (!d) return;
+      try {
+        const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: true });
+        if (data && data.ok !== false) {
+          applyFlowReadingsData(data);
+          flowPreviewData = Object.assign({}, flowPreviewData || {}, data, { __previewDate: d });
+          window.__mwPreviewData = flowPreviewData;
+          if (typeof fillAside === "function") {
+            /* no-op if wizard aside unavailable outside mw scope */
+          }
+        }
+      } catch (_err) {
+        notify("Could not load " + currentMassLanguage() + " readings for this date.", "error");
+      }
+    }
+    window.reloadFlowReadingsForLanguage = reloadFlowReadingsForLanguage;
+
     function applyFlowReadingsData(data) {
       if ($("flow-reading1-ref")) $("flow-reading1-ref").textContent = data.first_reading_reference || "—";
       if ($("flow-reading1-body")) $("flow-reading1-body").textContent = data.first_reading_excerpt || "—";
@@ -40926,6 +41001,10 @@
       }
       if (suggestions.our_father_choice) {
         setMassBuilderFieldValue("flow-our-father-choice", suggestions.our_father_choice);
+        applied = true;
+      }
+      if (suggestions.mass_language === "english" || suggestions.mass_language === "tagalog") {
+        setMassBuilderFieldValue("flow-mass-language", suggestions.mass_language);
         applied = true;
       }
       if (suggestions.hymn_lyrics_layout === "single" || suggestions.hymn_lyrics_layout === "dual") {
@@ -42197,6 +42276,8 @@
         const ofSel = $("flow-our-father-choice");
         const ofAllowed = ["english", "malay", "tagalog", "visaya", "korean"];
         body.our_father_choice = ofSel && ofAllowed.includes(ofSel.value) ? ofSel.value : "english";
+        const massLangSel = $("flow-mass-language");
+        body.mass_language = massLangSel && massLangSel.value === "tagalog" ? "tagalog" : "english";
         body.hymn_lyrics_layout = readHymnLyricsLayout();
         body.hymn_lyric_overrides = buildHymnLyricOverridesPayload();
         body.hymn_layout_overrides = buildHymnLayoutOverridesPayload();
@@ -42229,6 +42310,7 @@
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
           our_father_choice: body.our_father_choice || "english",
+          mass_language: body.mass_language || "english",
           hymn_lyrics_layout: body.hymn_lyrics_layout || "dual",
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,

@@ -1126,6 +1126,11 @@ class PreviewBody(BaseModel):
         False,
         description="Bypass in-memory cache and retry live lectionary fetch.",
     )
+    mass_language: str = Field(
+        "english",
+        description="Readings language: english (USCCB) | tagalog (Awit at Papuri).",
+        max_length=16,
+    )
 
 
 class GenerateBody(BaseModel):
@@ -1237,6 +1242,11 @@ class GenerateBody(BaseModel):
     our_father_choice: str = Field(
         "english",
         description="Our Father language: english | malay | tagalog | visaya | korean.",
+    )
+    mass_language: str = Field(
+        "english",
+        description="Order of Mass surface language: english | tagalog.",
+        max_length=16,
     )
     hymn_lyrics_layout: str = Field(
         "dual",
@@ -2934,14 +2944,18 @@ def api_calendar_month(year: int, month: int) -> Any:
 def api_readings(
     date: str,
     refresh: bool = False,
+    lang: str = "english",
     _session: Optional[AuthSession] = Depends(optional_session),
 ) -> JSONResponse:
     """Fast lectionary readings for dashboard cards (no song discovery).
 
     Public liturgical data — anonymous-friendly, mirroring ``POST /api/preview``
     so the home dashboard loads readings before/without sign-in.
+    ``lang=tagalog`` pulls Awit at Papuri Tagalog reading texts.
     """
-    payload, from_cache = readings_snapshot(date.strip(), force_refresh=refresh)
+    payload, from_cache = readings_snapshot(
+        date.strip(), force_refresh=refresh, language=lang
+    )
     if not payload.get("ok"):
         raise HTTPException(
             status_code=400,
@@ -2976,6 +2990,7 @@ async def api_preview(
         body.date.strip(),
         readings_only=body.readings_only,
         force_refresh=body.refresh,
+        language=body.mass_language,
     )
     return _preview_to_json(p)
 
@@ -3147,6 +3162,7 @@ def api_generate(
             hymn_lyrics_layout=body.hymn_lyrics_layout,
             hymn_layout_overrides=body.hymn_layout_overrides,
             video_replacements=video_paths or None,
+            mass_language=body.mass_language,
         )
     finally:
         for p in temp_assets:
@@ -3214,6 +3230,7 @@ def api_generate(
             songs=song_map or result.selected_songs,
             creed_choice=body.creed_choice,
             our_father_choice=body.our_father_choice,
+            mass_language=body.mass_language,
             hymn_lyrics_layout=body.hymn_lyrics_layout,
             include_church_logo=body.include_church_logo,
             include_church_name=body.include_church_name,
@@ -3450,6 +3467,7 @@ async def api_regenerate_pptx(
             hymn_lyrics_layout=body.hymn_lyrics_layout,
             hymn_layout_overrides=body.hymn_layout_overrides,
             video_replacements=video_paths or None,
+            mass_language=body.mass_language,
         )
     finally:
         for p in temp_assets:

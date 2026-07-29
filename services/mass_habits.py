@@ -36,6 +36,7 @@ SONG_SLOTS = (
 ENUM_FIELDS = (
     "creed_choice",
     "our_father_choice",
+    "mass_language",
     "hymn_lyrics_layout",
     "lotw_poster",
     "lote_poster",
@@ -48,6 +49,7 @@ ENUM_FIELDS = (
 _ALLOWED: dict[str, frozenset[Any]] = {
     "creed_choice": frozenset({"nicene", "apostles"}),
     "our_father_choice": frozenset({"english", "malay", "tagalog", "visaya", "korean"}),
+    "mass_language": frozenset({"english", "tagalog"}),
     "hymn_lyrics_layout": frozenset({"single", "dual"}),
     "lotw_poster": frozenset({"lotw1", "lotw2", "lotw3", "lotw4"}),
     "lote_poster": frozenset({"lote1", "lote2", "lote3", "lote4"}),
@@ -71,6 +73,7 @@ def snapshot_from_generate(
     songs: Optional[Mapping[str, Any]] = None,
     creed_choice: str = "nicene",
     our_father_choice: str = "english",
+    mass_language: str = "english",
     hymn_lyrics_layout: str = "dual",
     include_church_logo: bool = False,
     include_church_name: bool = False,
@@ -96,6 +99,9 @@ def snapshot_from_generate(
     of_choice = str(our_father_choice or "english").strip().lower()
     if of_choice not in _ALLOWED["our_father_choice"]:
         of_choice = "english"
+    mass_lang = str(mass_language or "english").strip().lower()
+    if mass_lang not in _ALLOWED["mass_language"]:
+        mass_lang = "english"
     layout = str(hymn_lyrics_layout or "dual").strip().lower()
     if layout not in _ALLOWED["hymn_lyrics_layout"]:
         layout = "dual"
@@ -113,6 +119,7 @@ def snapshot_from_generate(
         "songs": song_map,
         "creed_choice": creed,
         "our_father_choice": of_choice,
+        "mass_language": mass_lang,
         "hymn_lyrics_layout": layout,
         "include_church_logo": bool(include_church_logo),
         "include_church_name": bool(include_church_name),

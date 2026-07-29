@@ -9,6 +9,7 @@ from services.gospel_fallback import fetch_world_english_gospel, gospel_referenc
 from services.gospel_quote_extractor import extract_gospel_slide_quote
 from services.lectionary_store import db_path, get_cached, ignore_cache, upsert
 from services.usccb_client import USCCB_HTTP_CHALLENGE, get_usccb_soup
+from services.mass_language import normalize_mass_language
 from services.mass_text_format import reading_body_is_usable
 from services.usccb_readings import (
     collect_psalm_refrain_options,
@@ -295,17 +296,89 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
         return None
 
 
+def fetch_tagalog_liturgical_data(
+    date: str,
+    *,
+    use_readings_cache: bool = True,
+    force_refresh: bool = False,
+) -> dict | None:
+    """Liturgical payload with Tagalog reading texts from Awit at Papuri."""
+    from services.awit_at_papuri_readings import fetch_tagalog_readings_for_date
+    from services.liturgical_calendar import get_liturgical_color
+
+    try:
+        on_date = _dt.datetime.strptime(date.strip(), "%Y-%m-%d").date()
+    except ValueError:
+        print("❌ Invalid date. Use YYYY-MM-DD.")
+        return None
+
+    blocks = fetch_tagalog_readings_for_date(
+        date.strip(),
+        use_cache=use_readings_cache and not force_refresh,
+        force_refresh=force_refresh,
+    )
+    gospel_text = (blocks.get("gospel") or "").strip()
+    if not gospel_text and not (blocks.get("first_reading") or "").strip():
+        print(f"⚠️ Tagalog readings unavailable for {date.strip()}")
+        return None
+
+    liturgical_color = get_liturgical_color(date.strip())
+    season = str(liturgical_color.get("season_label") or liturgical_color.get("season") or "Ordinary Time")
+    # Prefer human season label when present; fall back to key with spaces.
+    if "_" in season and " " not in season:
+        season = season.replace("_", " ").title()
+
+    celebration = (blocks.get("mass_celebration") or "").strip()
+    title = celebration or f"{season} Celebration"
+    gospel_reference = (blocks.get("gospel_ref") or "").strip()
+    gospel_slide_quote = extract_gospel_slide_quote(gospel_text, max_chars=300) if gospel_text else ""
+
+    return {
+        "title": title,
+        "celebration": celebration,
+        "season": season,
+        "lectionary_cycle": sunday_lectionary_cycle(on_date),
+        "first_reading": (blocks.get("first_reading_ref") or "").strip(),
+        "psalm": (blocks.get("psalm_ref") or "").strip(),
+        "second_reading": (blocks.get("second_reading_ref") or "").strip(),
+        "first_reading_text": (blocks.get("first_reading") or "").strip(),
+        "psalm_text": (blocks.get("psalm_text") or "").strip(),
+        "psalm_response": (blocks.get("psalm_response") or "").strip(),
+        "psalm_verses": (blocks.get("psalm_verses") or "").strip(),
+        "second_reading_text": (blocks.get("second_reading") or "").strip(),
+        "gospel_reference": gospel_reference,
+        "gospel_text": gospel_text,
+        "gospel_acclamation": (blocks.get("gospel_acclamation") or "").strip(),
+        "gospel_slide_quote": gospel_slide_quote,
+        "source": (blocks.get("source_url") or "").strip(),
+        "quote_attribution": "Mga pagbasa: Awit at Papuri (Tagalog).",
+        "readings_language": "tagalog",
+    }
+
+
 def get_liturgical_data(
     date: str,
     *,
     use_cache: bool = True,
     force_refresh: bool = False,
+    language: str = "english",
 ) -> dict | None:
     """
     Liturgical data for Mass date YYYY-MM-DD.
     Uses SQLite cache (see data/lectionary.sqlite) unless LECTIONARY_IGNORE_CACHE=1.
     Retries live fetches when readings are incomplete (USCCB/Bible API hiccups).
+
+    When ``language`` is ``tagalog``, reads Awit at Papuri (separate JSON cache;
+    does not write English SQLite rows).
     """
+    lang = normalize_mass_language(language)
+    if lang == "tagalog":
+        return fetch_tagalog_liturgical_data(
+            date,
+            use_readings_cache=use_cache,
+            force_refresh=force_refresh,
+        )
+
     try:
         normalized = _normalize_mass_date(date)
     except ValueError:

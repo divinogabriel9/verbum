@@ -291,7 +291,7 @@ def _resolve_divider_poster_path(
 _PREVIEW_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
 # Bump when default_song_selections semantics change (e.g. mood-only, no first-song).
 _PREVIEW_CACHE_VERSION = 2
-_PREVIEW_CACHE: dict[tuple[str, bool, int], tuple[float, PreviewPayload]] = {}
+_PREVIEW_CACHE: dict[tuple, tuple[float, PreviewPayload]] = {}
 _PREVIEW_CACHE_TTL_S = 600.0
 _PREVIEW_INCOMPLETE_TTL_S = 15.0
 
@@ -310,9 +310,18 @@ def _empty_songs_by_section() -> dict[str, list[dict[str, Any]]]:
     return {sec: [] for sec in _PREVIEW_SECTIONS}
 
 
-def fetch_preview(date: str, *, readings_only: bool = False, force_refresh: bool = False) -> PreviewPayload:
+def fetch_preview(
+    date: str,
+    *,
+    readings_only: bool = False,
+    force_refresh: bool = False,
+    language: str = "english",
+) -> PreviewPayload:
     d = (date or "").strip()
-    cache_key = (d, readings_only, _PREVIEW_CACHE_VERSION)
+    from services.mass_language import normalize_mass_language
+
+    lang = normalize_mass_language(language)
+    cache_key = (d, readings_only, lang, _PREVIEW_CACHE_VERSION)
     now = time.monotonic()
     if force_refresh:
         invalidate_preview_cache(d)
@@ -325,7 +334,7 @@ def fetch_preview(date: str, *, readings_only: bool = False, force_refresh: bool
             if age < ttl:
                 return cached[1]
 
-    data = get_liturgical_data(d, force_refresh=force_refresh)
+    data = get_liturgical_data(d, force_refresh=force_refresh, language=lang)
     if not data:
         return PreviewPayload(
             ok=False,
@@ -476,6 +485,7 @@ def generate_mass_media(
     hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
     video_replacements: Optional[Mapping[str, Any]] = None,
+    mass_language: str = "english",
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -485,7 +495,7 @@ def generate_mass_media(
     co_celebrant = (co_celebrant or "").strip()
     poster_celebrant = f"{celebrant} · {co_celebrant}" if co_celebrant else celebrant
 
-    data = get_liturgical_data(date)
+    data = get_liturgical_data(date, language=mass_language)
     if not data:
         return GenerationResult(
             ok=False,
@@ -685,6 +695,7 @@ def generate_mass_media(
         hymn_lyrics_layout=hymn_lyrics_layout,
         hymn_layout_overrides=hymn_layout_overrides,
         video_replacements=video_replacements,
+        mass_language=mass_language,
     )
 
     if include_social_exports and poster_path and poster_path.is_file():
@@ -752,9 +763,10 @@ def regenerate_mass_pptx(
     hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
     video_replacements: Optional[Mapping[str, Any]] = None,
+    mass_language: str = "english",
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
-    data = get_liturgical_data(date)
+    data = get_liturgical_data(date, language=mass_language)
     if not data:
         return GenerationResult(ok=False, error="Unable to fetch liturgical data.")
 
@@ -861,6 +873,7 @@ def regenerate_mass_pptx(
         hymn_lyrics_layout=hymn_lyrics_layout,
         hymn_layout_overrides=hymn_layout_overrides,
         video_replacements=video_replacements,
+        mass_language=mass_language,
     )
 
     return GenerationResult(

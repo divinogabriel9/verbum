@@ -13,16 +13,21 @@ from services.gospel_quote_extractor import (
 from services.liturgical_calendar import get_liturgical_color
 from services.lectionary_service import get_liturgical_data, payload_complete
 from services.lectionary_store import get_cached
+from services.mass_language import normalize_mass_language
 from services.mass_text_format import synopsis_from_reading
 from services.usccb_readings import collect_psalm_refrain_options
 
-_MEMORY: dict[str, tuple[float, dict[str, Any]]] = {}
+# Memory keys are (date, language) tuples.
+_MEMORY: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
 _MEMORY_TTL_S = 600.0
 _MEMORY_INCOMPLETE_TTL_S = 15.0
 
 
 def invalidate_readings_memory(date: str) -> None:
-    _MEMORY.pop((date or "").strip(), None)
+    d = (date or "").strip()
+    for key in list(_MEMORY.keys()):
+        if key[0] == d:
+            _MEMORY.pop(key, None)
 
 
 def _liturgical_json(lc: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
@@ -83,10 +88,16 @@ def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
         "gospel_text": gospel_text,
         "gospel_slide_quote": gospel_slide_quote,
         "readings_complete": payload_complete(data),
+        "readings_language": str(data.get("readings_language") or "english"),
     }
 
 
-def readings_snapshot(date: str, *, force_refresh: bool = False) -> tuple[dict[str, Any], bool]:
+def readings_snapshot(
+    date: str,
+    *,
+    force_refresh: bool = False,
+    language: str = "english",
+) -> tuple[dict[str, Any], bool]:
     """
     Return (payload, served_from_persistent_cache).
 
@@ -97,11 +108,14 @@ def readings_snapshot(date: str, *, force_refresh: bool = False) -> tuple[dict[s
     if not d:
         return {"ok": False, "error": "Date required (YYYY-MM-DD)."}, False
 
+    lang = normalize_mass_language(language)
+    mem_key = (d, lang)
+
     now = time.monotonic()
     if force_refresh:
         invalidate_readings_memory(d)
     else:
-        mem = _MEMORY.get(d)
+        mem = _MEMORY.get(mem_key)
         if mem:
             age = now - mem[0]
             complete = bool(mem[1].get("readings_complete"))
@@ -109,8 +123,8 @@ def readings_snapshot(date: str, *, force_refresh: bool = False) -> tuple[dict[s
             if age < ttl:
                 return mem[1], True
 
-    had_persistent = get_cached(d) is not None
-    data = get_liturgical_data(d, force_refresh=force_refresh)
+    had_persistent = False if lang == "tagalog" else get_cached(d) is not None
+    data = get_liturgical_data(d, force_refresh=force_refresh, language=lang)
     if not data:
         payload = {
             "ok": False,
@@ -120,8 +134,8 @@ def readings_snapshot(date: str, *, force_refresh: bool = False) -> tuple[dict[s
         return payload, had_persistent
 
     payload = _build_payload(d, data)
-    _MEMORY[d] = (now, payload)
-    return payload, had_persistent or get_cached(d) is not None
+    _MEMORY[mem_key] = (now, payload)
+    return payload, had_persistent or (lang != "tagalog" and get_cached(d) is not None)
 
 
 def warm_readings_for_date(date: str) -> None:
