@@ -57,7 +57,7 @@
     "psalm_ref": "Psalm 85:9, 10, 11-12, 13-14",
     "second_reading_ref": "Romans 9:1-5",
     "gospel_ref": "Matthew 14:22-33",
-    "updated_at": "2026-08-09T02:48:59.456031+00:00"
+    "updated_at": "2026-08-09T13:33:07.657293+00:00"
   },
   "2026-08-16": {
     "first_reading": "Thus says the LORD: Observe what is right, do what is just; for my salvation is about to come, my justice, about to be revealed. The foreigners who join themselves to the LORD, ministering to him, loving the name of the LORD, and becoming his servants— all who keep the sabbath free from profanation and hold to my covenant, them I will bring to my holy mountain and make joyful in my house of prayer; their burnt offerings and sacrifices will be acceptable on my altar, for my house shall be called a house of prayer for all peoples.",
@@ -72,7 +72,7 @@
     "psalm_ref": "Psalm 67:2-3, 5, 6, 8",
     "second_reading_ref": "Romans 11:13-15, 29-32",
     "gospel_ref": "Matthew 15:21-28",
-    "updated_at": "2026-07-29T19:50:14.537957+00:00"
+    "updated_at": "2026-08-09T15:08:06.601210+00:00"
   },
   "2026-08-23": {
     "first_reading": "I will thrust you from your office. You will be pulled down from your station.\nIt will happen in that day that I will call my servant Eliakim the son of Hilkiah,\nand I will clothe him with your robe, and strengthen him with your belt. I will commit your government into his hand; and he will be a father to the inhabitants of Jerusalem, and to the house of Judah.\nI will lay the key of David’s house on his shoulder. He will open, and no one will shut. He will shut, and no one will open.\nI will fasten him like a nail in a sure place. He will be for a throne of glory to his father’s house.",
@@ -3973,5 +3973,20 @@
     "second_reading_ref": "1 John 3:1-3",
     "gospel_ref": "Matthew 5:1-12a",
     "updated_at": "2026-07-30T00:18:07.829606+00:00"
+  },
+  "2026-08-10": {
+    "first_reading": "Remember this: he who sows sparingly will also reap sparingly. He who sows bountifully will also reap bountifully.\nLet each man give according as he has determined in his heart; not grudgingly, or under compulsion; for God loves a cheerful giver.\nAnd God is able to make all grace abound to you, that you, always having all sufficiency in everything, may abound to every good work.\nAs it is written,\n“He has scattered abroad, he has given to the poor.\nHis righteousness remains forever.”\nNow may he who supplies seed to the sower and bread for food, supply and multiply your seed for sowing, and increase the fruits of your righteousness;",
+    "psalm_text": "",
+    "psalm_response": "",
+    "psalm_verses": "Praise Yah!\nBlessed is the man who fears Yahweh,\nwho delights greatly in his commandments.\nHis offspring will be mighty in the land.\nThe generation of the upright will be blessed.\nIt is well with the man who deals graciously and lends.\nHe will maintain his cause in judgment.\nFor he will never be shaken.\nThe righteous will be remembered forever.\nHe will not be afraid of evil news.\nHis heart is steadfast, trusting in Yahweh.\nHis heart is established.\nHe will not be afraid in the end when he sees his adversaries.\nHe has dispersed, he has given to the poor.\nHis righteousness endures forever.\nHis horn will be exalted with honor.",
+    "second_reading": "",
+    "gospel": "Most certainly I tell you, unless a grain of wheat falls into the earth and dies, it remains by itself alone. But if it dies, it bears much fruit.\n\n\nHe who loves his life will lose it. He who hates his life in this world will keep it to eternal life.\n\n\nIf anyone serves me, let him follow me. Where I am, there will my servant also be. If anyone serves me, the Father will honor him.",
+    "gospel_acclamation": "",
+    "mass_celebration": "",
+    "first_reading_ref": "2 Corinthians 9:6-10",
+    "psalm_ref": "Psalm 112:1-2, 5-6, 7-8, 9",
+    "second_reading_ref": "",
+    "gospel_ref": "John 12:24-26",
+    "updated_at": "2026-08-09T15:17:08.730235+00:00"
   }
 }
