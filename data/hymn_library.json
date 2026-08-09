@@ -389,6 +389,19 @@
         "journey",
         "reverent"
       ]
+    },
+    {
+      "id": "sing_to_the_mountains",
+      "title": "Sing To The Mountains",
+      "author": "",
+      "lyrics": "Verse 1\nSing To The Mountains,\nSing To The Sea.\nRaise Your Voices,\nLift Your Hearts.\nThis Is The Day\nThe Lord Has Made.\nLet All The Earth Rejoice.\n\nVerse 2\nI Will Give Thanks To You, My Lord.\nYou Have Answered My Plea.\nYou Have Saved My Soul From Death.\nYou Are My Strength And Song.\n\nVerse 3\nHoly, Holy,\nHoly Lord.\nHeaven And Earth\nAre Full Of Your Glory.\n\nVerse 4\nThis Is The Day That The Lord Has Made.\nLet Us Be Glad And Rejoice.\nHe Has Turned All Death To Life.\nSing Of The Glory Of God.",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-08-09T02:13:47.040438+00:00",
+      "language": "English",
+      "updated_at": "2026-08-09T02:13:47.040438+00:00"
     }
   ],
   "offertory": [
@@ -1569,15 +1582,22 @@
     },
     {
       "id": "halina_t_humayag",
-      "title": "Halina't Humayag",
+      "title": "Humayo't Ihayag",
       "author": "",
       "lyrics": "Verse 1\nHumayo't Ihayag (Purihin Siya!)\nAt Ating Ibunyag (Awitan Siya!)\nPagliligtas Ng Diyos Na Sa Krus Ni Hesus\nAng Siyang Sa Mundo'y Tumubos\n\nVerse 2\nLangit At Lupa, Siya'y Papurihan\nAraw At Tala, Siya'y Parangalan\nAting 'Pagdiwang Pag-ibig Ng Diyos Sa Tanan\nAleluya\n\nVerse 3\nHalina't Sumayaw (Buong Bayan!)\nLukso Sabay Sigaw (Sanlibutan!)\nAng Ngalan Niyang Angkin Singningning Ng Bituin\nLiwanag Ng Diyos Sumaatin (Koro)\n\nVerse 2\nLangit At Lupa, Siya'y Papurihan\nAraw At Tala, Siya'y Parangalan\nAting 'Pagdiwang Pag-ibig Ng Diyos Sa Tanan\nAleluya\n\nVerse 4\nAt Isigaw Sa Lahat\nKalinga Niya'y Wagas\nKayong Dukha't Salat\nPag-ibig Niya Sa Inyo At Tapat",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-09T02:33:47.203815+00:00",
       "language": "Tagalog",
+      "updated_at": "2026-08-09T02:43:39.467055+00:00",
+      "video_media": {
+        "basename": "video_183d2e0dbe3043b796dfe366f3be1f41.mp4",
+        "display_name": "Humayo't Ihayag Instrumental.mp4"
+      },
       "gospel_moods": [
+        "triumphant",
         "reverent"
       ]
     },

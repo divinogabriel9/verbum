@@ -177,6 +177,7 @@ from services.storage_assets import (
 from routes.admin import register_admin_routes
 from routes.auth import register_auth_routes
 from routes.email_jobs import register_email_job_routes
+from routes.readings_jobs import register_readings_job_routes
 from routes.parish import register_parish_routes
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
@@ -499,8 +500,9 @@ def _saved_media_display_name(
     basename: str,
     *,
     kind: str,
+    manifest: Optional[dict[str, Any]] = None,
 ) -> str:
-    data = _load_saved_media_manifest()
+    data = manifest if isinstance(manifest, dict) else _load_saved_media_manifest()
     for group, key in _manifest_scope_keys(session):
         entry = (data.get(group) or {}).get(key, {}).get(basename, {})
         name = str(entry.get("display_name") or "").strip()
@@ -518,6 +520,8 @@ def _enrich_saved_media_rows(
     session: Optional[AuthSession],
     kind: str,
 ) -> list[dict[str, str]]:
+    # Load once — previously re-read manifest.json for every row (slow on large libraries).
+    manifest = _load_saved_media_manifest()
     out: list[dict[str, str]] = []
     for row in rows:
         item = dict(row)
@@ -525,6 +529,7 @@ def _enrich_saved_media_rows(
             session,
             item.get("basename", ""),
             kind=kind,
+            manifest=manifest,
         )
         item["kind"] = kind
         out.append(item)
@@ -917,6 +922,7 @@ register_auth_routes(app, templates)
 register_admin_routes(app)
 register_parish_routes(app)
 register_email_job_routes(app)
+register_readings_job_routes(app)
 register_security_middleware(app)
 
 
@@ -1360,6 +1366,11 @@ class FetchLyricsBody(BaseModel):
     selections: list[LyricsSelectionBody] = Field(default_factory=list)
 
 
+class SongMediaRefBody(BaseModel):
+    basename: str = Field(..., min_length=1, max_length=180)
+    display_name: str = Field("", max_length=240)
+
+
 class SaveLyricsBody(BaseModel):
     title: str = Field(..., min_length=1, max_length=L.SONG_TITLE)
     lyrics: str = Field(..., min_length=1, max_length=L.LYRICS_FULL)
@@ -1371,6 +1382,8 @@ class SaveLyricsBody(BaseModel):
         max_length=L.MAX_GOSPEL_MOODS,
         description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
     )
+    audio_media: Optional[SongMediaRefBody] = None
+    video_media: Optional[SongMediaRefBody] = None
 
 
 class ImportVerbumTxtBody(BaseModel):
@@ -1408,6 +1421,10 @@ class CatalogSongPatchBody(BaseModel):
         max_length=L.MAX_GOSPEL_MOODS,
         description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
     )
+    audio_media: Optional[SongMediaRefBody] = None
+    video_media: Optional[SongMediaRefBody] = None
+    clear_audio_media: bool = False
+    clear_video_media: bool = False
 
 
 class GenerateImageBody(BaseModel):
@@ -2366,6 +2383,8 @@ def api_get_catalog_song(
             "catalog_lyrics": catalog_lyrics,
             "parish_version": parish_version,
             "gospel_moods": gospel_moods_for_song(row),
+            "audio_media": row.get("audio_media") if isinstance(row.get("audio_media"), dict) else None,
+            "video_media": row.get("video_media") if isinstance(row.get("video_media"), dict) else None,
         },
     }
     return JSONResponse(payload, headers={"Cache-Control": "private, no-store"})
@@ -2378,6 +2397,16 @@ def api_patch_catalog_song(
     body: CatalogSongPatchBody,
     session: Optional[AuthSession] = Depends(require_superadmin),
 ) -> dict[str, Any]:
+    audio_media: Any = ...
+    video_media: Any = ...
+    if body.clear_audio_media:
+        audio_media = None
+    elif body.audio_media is not None:
+        audio_media = body.audio_media.model_dump()
+    if body.clear_video_media:
+        video_media = None
+    elif body.video_media is not None:
+        video_media = body.video_media.model_dump()
     res = update_catalog_song(
         section=section,
         hymn_id=hymn_id,
@@ -2386,6 +2415,8 @@ def api_patch_catalog_song(
         lyrics=body.lyrics,
         language=body.language,
         gospel_moods=body.gospel_moods,
+        audio_media=audio_media,
+        video_media=video_media,
         updated_by=session.user.user_id if session else None,
     )
     if not res.get("ok"):
@@ -3728,6 +3759,16 @@ def api_save_lyrics(
         language=body.language,
         author=body.author,
         gospel_moods=body.gospel_moods,
+        audio_media=(
+            body.audio_media.model_dump()
+            if body.audio_media is not None
+            else (None if "audio_media" in body.model_fields_set else ...)
+        ),
+        video_media=(
+            body.video_media.model_dump()
+            if body.video_media is not None
+            else (None if "video_media" in body.model_fields_set else ...)
+        ),
         updated_by=session.user.user_id if session else None,
     )
     if not result.get("ok"):

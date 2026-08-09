@@ -12926,12 +12926,19 @@
     #song-metadata-modal .ui-card {
       width: min(720px, calc(100vw - 2rem));
       max-width: min(720px, calc(100vw - 2rem));
+      max-height: min(92vh, 900px);
+      /* popover-safe sets overflow:visible which clips tall content off-screen with no scroll */
+      overflow: hidden;
     }
     #song-metadata-modal .ui-card__content {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px 14px;
       align-content: start;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
     }
     #song-metadata-modal .ui-card__content > .field {
       margin-bottom: 0;
@@ -12940,11 +12947,67 @@
     #song-metadata-modal .ui-card__content > .field:nth-child(2),
     #song-metadata-modal .song-metadata-moods,
     #song-metadata-modal .song-save-mood-google,
-    #song-metadata-modal .song-metadata-sync {
+    #song-metadata-modal .song-metadata-sync,
+    #song-metadata-modal .song-metadata-media {
       grid-column: 1 / -1;
     }
     #song-metadata-modal .song-metadata-moods__grid {
       grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .song-metadata-media {
+      margin-top: 2px;
+      margin-bottom: 2px;
+      padding: 12px 0;
+      border-top: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    }
+    .song-metadata-media__heading {
+      margin: 0 0 4px;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+    .song-metadata-media__hint {
+      margin: 0 0 12px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    .song-metadata-media__row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .song-metadata-media__slot {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: color-mix(in srgb, var(--surface-solid) 94%, var(--ink));
+    }
+    .song-metadata-media__label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted, #64748b);
+      margin-bottom: 4px;
+    }
+    .song-metadata-media__value {
+      margin: 0 0 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.35;
+      word-break: break-word;
+      min-height: 2.4em;
+    }
+    .song-metadata-media__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .song-metadata-media__actions .secondary,
+    .song-metadata-media__actions .ghost {
+      font-size: 0.8rem;
+      padding: 6px 10px;
     }
     @media (max-width: 640px) {
       #song-metadata-modal .ui-card__content {
@@ -12952,6 +13015,9 @@
       }
       #song-metadata-modal .song-metadata-moods__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .song-metadata-media__row {
+        grid-template-columns: 1fr;
       }
     }
     #home-mass-new-modal .primary {
@@ -13026,10 +13092,110 @@
         animation: none;
       }
     }
+    #song-metadata-cancel.is-dismiss-close {
+      border-color: color-mix(in srgb, #15803d 35%, var(--line));
+      color: #15803d;
+    }
+    #song-metadata-save {
+      position: relative;
+      min-width: 9.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition:
+        background 0.22s ease,
+        border-color 0.22s ease,
+        transform 0.22s cubic-bezier(0.23, 1, 0.32, 1),
+        box-shadow 0.22s ease;
+    }
+    #song-metadata-save .song-metadata-save__spinner,
+    #song-metadata-save .song-metadata-save__check {
+      display: none;
+      flex-shrink: 0;
+    }
+    #song-metadata-save .song-metadata-save__spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid color-mix(in srgb, #fff 35%, transparent);
+      border-top-color: #fff;
+      animation: song-metadata-save-spin 0.65s linear infinite;
+    }
+    #song-metadata-save .song-metadata-save__check {
+      width: 18px;
+      height: 18px;
+      line-height: 0;
+    }
+    #song-metadata-save .song-metadata-save__check svg {
+      display: block;
+    }
+    #song-metadata-save.is-saving {
+      pointer-events: none;
+      cursor: wait;
+      opacity: 1;
+      filter: none;
+    }
+    #song-metadata-save.is-saving .song-metadata-save__spinner {
+      display: inline-block;
+    }
+    #song-metadata-save.is-saved {
+      pointer-events: none;
+      background: #15803d !important;
+      border-color: #15803d !important;
+      color: #fff !important;
+      transform: scale(1.03);
+      box-shadow: 0 0 0 4px color-mix(in srgb, #22c55e 28%, transparent);
+      animation: song-metadata-save-pop 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    #song-metadata-save.is-saved .song-metadata-save__check {
+      display: inline-flex;
+      animation: song-metadata-save-check-in 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    #song-metadata-save.is-error {
+      background: #b91c1c !important;
+      border-color: #b91c1c !important;
+      animation: song-metadata-save-shake 0.4s ease;
+    }
     #song-metadata-save:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       filter: grayscale(0.25);
+    }
+    #song-metadata-save.is-saving:disabled,
+    #song-metadata-save.is-saved:disabled {
+      opacity: 1;
+      filter: none;
+      cursor: wait;
+    }
+    @keyframes song-metadata-save-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes song-metadata-save-pop {
+      0% { transform: scale(0.96); }
+      55% { transform: scale(1.05); }
+      100% { transform: scale(1.03); }
+    }
+    @keyframes song-metadata-save-check-in {
+      0% { opacity: 0; transform: scale(0.4); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes song-metadata-save-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(2px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #song-metadata-save,
+      #song-metadata-save.is-saved,
+      #song-metadata-save.is-error,
+      #song-metadata-save .song-metadata-save__spinner,
+      #song-metadata-save .song-metadata-save__check {
+        animation: none !important;
+        transition: none;
+      }
     }
     .lyrics-meta-store {
       position: absolute;
@@ -18230,7 +18396,7 @@
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="song-metadata-title">Edit song details</h3>
-              <p class="ui-card__description" id="song-metadata-subtitle">Update title, author, language, section, and mood.</p>
+              <p class="ui-card__description" id="song-metadata-subtitle">Update title, author, language, section, media, and mood.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="song-metadata-close" aria-label="Close">×</button>
           </header>
@@ -18264,6 +18430,28 @@
                 <option value="meditation">Meditation / Other</option>
               </select>
             </div>
+            <div class="song-metadata-media" id="song-metadata-media">
+              <h4 class="song-metadata-media__heading">Audio &amp; video</h4>
+              <p class="muted song-metadata-media__hint">Link files from your Media library, or upload new ones. Linked media can be reused in Mass Builder.</p>
+              <div class="song-metadata-media__row">
+                <div class="song-metadata-media__slot">
+                  <span class="song-metadata-media__label">Audio</span>
+                  <p class="song-metadata-media__value" id="song-metadata-audio-label">None linked</p>
+                  <div class="song-metadata-media__actions">
+                    <button type="button" class="secondary" id="song-metadata-audio-pick">Browse / upload</button>
+                    <button type="button" class="ghost" id="song-metadata-audio-clear" hidden>Clear</button>
+                  </div>
+                </div>
+                <div class="song-metadata-media__slot">
+                  <span class="song-metadata-media__label">Video</span>
+                  <p class="song-metadata-media__value" id="song-metadata-video-label">None linked</p>
+                  <div class="song-metadata-media__actions">
+                    <button type="button" class="secondary" id="song-metadata-video-pick">Browse / upload</button>
+                    <button type="button" class="ghost" id="song-metadata-video-clear" hidden>Clear</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <fieldset class="song-metadata-moods" id="song-metadata-moods">
               <legend>Gospel mood</legend>
               <p class="song-metadata-moods__hint muted" id="song-metadata-mood-hint">Select the mood that best fits this song.</p>
@@ -18289,7 +18477,13 @@
           </div>
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="song-metadata-cancel">Cancel</button>
-            <button type="button" class="primary" id="song-metadata-save">Save changes</button>
+            <button type="button" class="primary" id="song-metadata-save">
+              <span class="song-metadata-save__label" id="song-metadata-save-label">Save changes</span>
+              <span class="song-metadata-save__spinner" aria-hidden="true"></span>
+              <span class="song-metadata-save__check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </button>
           </footer>
         </article>
       </div>
@@ -18821,11 +19015,29 @@
         </div>
       </div>
       <div class="mw-modal" id="mw-media-pick-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-media-pick-title">
-        <div class="mw-modal__card" style="max-width:min(520px,94vw);">
+        <div class="mw-modal__card mw-media-pick-card" style="max-width:min(560px,94vw);">
           <h3 class="mw-modal__title" id="mw-media-pick-title">Choose from Media library</h3>
-          <p class="mw-rite__hint" id="mw-media-pick-hint" style="margin:0 0 12px;">Search parish uploads.</p>
-          <input type="search" id="mw-media-pick-q" maxlength="120" placeholder="Search by name…" autocomplete="off" style="width:100%;margin-bottom:10px;" />
-          <ul class="mw-media-pick-list" id="mw-media-pick-list" aria-live="polite"></ul>
+          <p class="mw-rite__hint" id="mw-media-pick-hint" style="margin:0 0 12px;">Search parish uploads or upload a new file.</p>
+          <div class="mw-media-pick-tabs" role="tablist" aria-label="Media source">
+            <button type="button" class="mw-media-pick-tab is-active" role="tab" aria-selected="true" id="mw-media-pick-tab-library" data-mw-media-tab="library">Media library</button>
+            <button type="button" class="mw-media-pick-tab" role="tab" aria-selected="false" id="mw-media-pick-tab-upload" data-mw-media-tab="upload">Upload</button>
+          </div>
+          <div class="mw-media-pick-pane" id="mw-media-pick-pane-library" data-mw-media-pane="library">
+            <input type="search" id="mw-media-pick-q" maxlength="120" placeholder="Search by name…" autocomplete="off" style="width:100%;margin-bottom:10px;" />
+            <div class="mw-media-pick-loading" id="mw-media-pick-loading" hidden role="status" aria-live="polite">
+              <div class="mw-media-pick-spinner" aria-hidden="true"></div>
+              <p class="mw-media-pick-loading__text" id="mw-media-pick-loading-text">Loading media library…</p>
+            </div>
+            <ul class="mw-media-pick-list" id="mw-media-pick-list" aria-live="polite"></ul>
+          </div>
+          <div class="mw-media-pick-pane" id="mw-media-pick-pane-upload" data-mw-media-pane="upload" hidden>
+            <label class="mw-media-pick-upload" id="mw-media-pick-drop" for="mw-media-pick-file">
+              <strong id="mw-media-pick-upload-title">Upload file</strong>
+              <span class="muted" id="mw-media-pick-upload-hint">MP3 or MP4 from your device</span>
+            </label>
+            <input type="file" id="mw-media-pick-file" accept=".mp3,.mp4,audio/mpeg,video/mp4" hidden />
+            <p class="status mw-media-pick-upload-status" id="mw-media-pick-upload-status" aria-live="polite"></p>
+          </div>
           <div class="mw-modal__actions">
             <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-clear">Clear link</button>
             <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-media-pick-close">Close</button>
@@ -19544,20 +19756,125 @@
         body:not(.is-superadmin) .mw-media-chip--sa { display: none !important; }
         .mw-media-chip.is-on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
         .mw-media-chip__name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; letter-spacing: 0; font-weight: 600; }
-        .mw-media-pick-list { list-style: none; margin: 0; padding: 0; max-height: min(48vh, 360px); overflow: auto; display: grid; gap: 6px; }
+        .mw-media-pick-list { list-style: none; margin: 0; padding: 0; max-height: min(42vh, 320px); overflow: auto; display: grid; gap: 6px; }
         .mw-media-pick-list li { margin: 0; }
         .mw-media-pick-list button { width: 100%; text-align: left; border: 1px solid var(--card-border); background: var(--surface); border-radius: 10px; padding: 10px 12px; cursor: pointer; font: inherit; color: var(--ink); }
         .mw-media-pick-list button:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
         .mw-media-pick-list .muted { font-size: 0.78rem; }
+        .mw-media-pick-tabs {
+          display: flex;
+          gap: 6px;
+          margin: 0 0 12px;
+          padding: 4px;
+          border-radius: 12px;
+          background: color-mix(in srgb, var(--ink) 5%, transparent);
+        }
+        .mw-media-pick-tab {
+          flex: 1;
+          border: none;
+          border-radius: 9px;
+          padding: 8px 10px;
+          font: inherit;
+          font-size: 0.86rem;
+          font-weight: 650;
+          cursor: pointer;
+          color: var(--muted, #64748b);
+          background: transparent;
+        }
+        .mw-media-pick-tab.is-active {
+          color: var(--ink);
+          background: var(--surface-solid, #fff);
+          box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 12%, transparent);
+        }
+        .mw-media-pick-loading {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          min-height: 140px;
+          padding: 18px 12px;
+          border: 1px dashed color-mix(in srgb, var(--card-border) 80%, transparent);
+          border-radius: 12px;
+          margin-bottom: 8px;
+        }
+        .mw-media-pick-loading[hidden] { display: none !important; }
+        .mw-media-pick-spinner {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 2.5px solid color-mix(in srgb, var(--accent) 25%, transparent);
+          border-top-color: var(--accent);
+          animation: mw-media-spin 0.7s linear infinite;
+        }
+        @keyframes mw-media-spin { to { transform: rotate(360deg); } }
+        .mw-media-pick-loading__text {
+          margin: 0;
+          font-size: 0.86rem;
+          color: var(--muted, #64748b);
+        }
+        .mw-media-pick-upload {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          min-height: 150px;
+          padding: 20px 14px;
+          border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, var(--card-border));
+          border-radius: 14px;
+          background: color-mix(in srgb, var(--accent) 5%, transparent);
+          cursor: pointer;
+          text-align: center;
+        }
+        .mw-media-pick-upload.is-dragover {
+          border-color: var(--accent);
+          background: color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+        .mw-media-pick-upload-status { margin: 10px 0 0; min-height: 1.2em; }
         .mw-modal__audio-hint { margin: 0 0 10px; font-size: var(--mw-type-caption, 0.875rem); color: var(--accent); font-weight: 600; }
         .mw-modal__video { width: 100%; max-height: min(50vh, 360px); border-radius: 12px; background: #000; margin: 0 0 12px; }
         .mw-modal__video[hidden] { display: none !important; }
         .mw-modal__text { white-space: pre-wrap; max-height: min(55vh, 420px); overflow: auto; line-height: 1.45; }
-        .mass-song-media-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .mass-song-media-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
         .mass-song-media-btn { font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); cursor: pointer; }
         body:not(.is-superadmin) .mass-song-media-btn--sa { display: none !important; }
         .mass-song-media-btn.is-on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
         .mass-song-media-btn__label { max-width: 160px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+        .mass-song-slide-mode {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          padding: 2px;
+          border-radius: 999px;
+          border: 1px solid var(--line);
+          background: color-mix(in srgb, var(--ink) 4%, var(--surface-solid, #fff));
+        }
+        .mass-song-slide-mode[hidden] { display: none !important; }
+        .mass-song-slide-mode__btn {
+          border: none;
+          background: transparent;
+          color: var(--muted);
+          font: inherit;
+          font-size: 0.72rem;
+          font-weight: 700;
+          padding: 4px 10px;
+          border-radius: 999px;
+          cursor: pointer;
+          line-height: 1.2;
+        }
+        .mass-song-slide-mode__btn.is-active {
+          background: var(--surface-solid, #fff);
+          color: var(--ink);
+          box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 12%, transparent);
+        }
+        .mass-song-slide-mode__hint {
+          flex: 1 1 100%;
+          margin: 0;
+          font-size: 0.68rem;
+          color: var(--muted);
+          line-height: 1.35;
+        }
         .mass-song-audio-btn {
           flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
           background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent);
@@ -24336,6 +24653,7 @@
     ]);
     window.massRiteVideoMode = window.massRiteVideoMode || {};
     window.massRiteVideoLang = window.massRiteVideoLang || {};
+    window.massSongVideoMode = window.massSongVideoMode || {};
     window.__riteVideoSyncFns = window.__riteVideoSyncFns || {};
     window.registerRiteVideoSync = function (section, fn) {
       if (section && typeof fn === "function") window.__riteVideoSyncFns[section] = fn;
@@ -24404,7 +24722,7 @@
     let massSectionAudioEl = null;
     let massSectionAudioPlayingSlot = "";
     let massSectionMediaObjectUrl = null;
-    let massMediaPickState = { kind: "", slot: "" };
+    // massMediaPickState / composerSongMedia declared with media-pick helpers below.
 
     function revokeMassSectionMediaObjectUrl() {
       if (massSectionMediaObjectUrl) {
@@ -24504,7 +24822,12 @@
       if (!massSectionMedia[key]) massSectionMedia[key] = {};
       const norm = normalizeMassMediaItem(item);
       if (norm) massSectionMedia[key][slot] = norm;
-      else delete massSectionMedia[key][slot];
+      else {
+        delete massSectionMedia[key][slot];
+        if (key === "video" && typeof setMassSongVideoMode === "function") {
+          setMassSongVideoMode(slot, false, { quiet: true });
+        }
+      }
       refreshMassSectionMediaUi();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
     }
@@ -24537,6 +24860,7 @@
       massSectionMedia = { audio: {}, video: {} };
       window.massRiteVideoMode = {};
       window.massRiteVideoLang = {};
+      window.massSongVideoMode = {};
       if (typeof syncRiteVideoUi === "function") syncRiteVideoUi();
       refreshMassSectionMediaUi();
     }
@@ -24546,6 +24870,93 @@
         mode: JSON.parse(JSON.stringify(window.massRiteVideoMode || {})),
         lang: JSON.parse(JSON.stringify(window.massRiteVideoLang || {})),
       };
+    }
+
+    function getMassSongVideoMode(slot) {
+      const key = String(slot || "").trim();
+      return !!(key && window.massSongVideoMode && window.massSongVideoMode[key]);
+    }
+
+    function setMassSongVideoMode(slot, on, opts) {
+      const key = String(slot || "").trim();
+      if (!key || !MASS_SECTION_VIDEO_SLOT_SET.has(key)) return;
+      if (!window.massSongVideoMode) window.massSongVideoMode = {};
+      if (on) window.massSongVideoMode[key] = true;
+      else delete window.massSongVideoMode[key];
+      if (!(opts && opts.quiet)) {
+        refreshMassSectionMediaUi();
+        if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+      }
+    }
+
+    function serializeSongVideoState() {
+      return {
+        mode: JSON.parse(JSON.stringify(window.massSongVideoMode || {})),
+      };
+    }
+
+    function applySongVideoState(data) {
+      window.massSongVideoMode = {};
+      const mode = data && typeof data === "object" ? (data.mode || data.songVideoMode || data) : null;
+      if (mode && typeof mode === "object") {
+        Object.keys(mode).forEach((slot) => {
+          if (mode[slot] && MASS_SECTION_VIDEO_SLOT_SET.has(slot)) {
+            window.massSongVideoMode[slot] = true;
+          }
+        });
+      }
+      refreshMassSectionMediaUi();
+    }
+
+    function slotHasSongVideoAvailable(slotKey) {
+      if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) return false;
+      if (getMassSectionMedia("video", slotKey)) return true;
+      const songId = (selectedLyricsSongs && selectedLyricsSongs[slotKey]) || "";
+      if (!songId) return false;
+      const row = typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      return !!(row && row.video_media && (row.video_media.basename || row.video_media));
+    }
+
+    let massSongVideoPickPendingSlot = "";
+
+    function ensureSongSlotVideoFromCatalog(slotKey) {
+      if (getMassSectionMedia("video", slotKey)) return true;
+      const songId = (selectedLyricsSongs && selectedLyricsSongs[slotKey]) || "";
+      if (!songId) return false;
+      const row = typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      const videoRef = row ? normalizeComposerMediaRef(row.video_media) : null;
+      if (!videoRef) return false;
+      setMassSectionMedia("video", slotKey, resolveLibraryMediaRow("video", videoRef));
+      return !!getMassSectionMedia("video", slotKey);
+    }
+
+    async function chooseMassSongSlideMode(slotKey, mode) {
+      const slot = String(slotKey || "").trim();
+      if (!slot || !MASS_SECTION_VIDEO_SLOT_SET.has(slot)) return;
+      if (mode !== "video") {
+        massSongVideoPickPendingSlot = "";
+        setMassSongVideoMode(slot, false);
+        if (typeof notify === "function") {
+          notify("Using lyric slides for " + massMediaDisplayLabel(slot) + ".", "ok");
+        }
+        return;
+      }
+      if (!getMassSectionMedia("video", slot)) {
+        ensureSongSlotVideoFromCatalog(slot);
+      }
+      if (!getMassSectionMedia("video", slot)) {
+        massSongVideoPickPendingSlot = slot;
+        if (typeof notify === "function") {
+          notify("Choose or upload a video for this song, then Video mode will apply.", "info");
+        }
+        await openMassMediaPickModal("video", slot);
+        return;
+      }
+      massSongVideoPickPendingSlot = "";
+      setMassSongVideoMode(slot, true);
+      if (typeof notify === "function") {
+        notify("PowerPoint will use the video slide for " + massMediaDisplayLabel(slot) + ".", "ok");
+      }
     }
 
     function applyRiteVideoState(data) {
@@ -24576,7 +24987,10 @@
     function buildVideoReplacementsPayload() {
       const out = {};
       MASS_SECTION_VIDEO_SLOTS.forEach((section) => {
-        if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section) && !(window.massRiteVideoMode && window.massRiteVideoMode[section])) {
+        if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+          if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return;
+        } else if (!getMassSongVideoMode(section)) {
+          // Song slots default to lyrics slides unless user chooses Video.
           return;
         }
         const key = resolveVideoMediaKey(section);
@@ -24692,35 +25106,53 @@
     }
 
     function massSongMediaRowHtml(slotKey) {
+      const audio = getMassSectionMedia("audio", slotKey);
       if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) {
         return (
           "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
             "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" +
-              (getMassSectionMedia("audio", slotKey) ? " is-on" : "") + "\" " +
-              "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\">" +
+              (audio ? " is-on" : "") + "\" " +
+              "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+              "title=\"Audio snippet for the ministry to learn the tune (not added to the PowerPoint)\">" +
               "Audio <span class=\"mass-song-media-btn__label\">" +
-                escapeHtml(getMassSectionMedia("audio", slotKey)
-                  ? (getMassSectionMedia("audio", slotKey).display_name || getMassSectionMedia("audio", slotKey).basename)
-                  : "Link…") +
+                escapeHtml(audio ? (audio.display_name || audio.basename) : "Link…") +
               "</span></button>" +
           "</div>"
         );
       }
-      const audio = getMassSectionMedia("audio", slotKey);
       const video = getMassSectionMedia("video", slotKey);
+      const useVideo = getMassSongVideoMode(slotKey);
+      const videoAvailable = !!(video || slotHasSongVideoAvailable(slotKey));
       return (
         "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
+          "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this song\" " +
+            "data-mass-song-slide-mode=\"" + escapeHtml(slotKey) + "\">" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
+              "data-mass-song-slide-mode-val=\"lyrics\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+              "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
+              "data-mass-song-slide-mode-val=\"video\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+              "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+          "</div>" +
           "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (audio ? " is-on" : "") + "\" " +
-            "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\">" +
+            "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+            "title=\"Audio snippet for the ministry to learn the tune (not added to the PowerPoint)\">" +
             "Audio <span class=\"mass-song-media-btn__label\">" +
               escapeHtml(audio ? (audio.display_name || audio.basename) : "Link…") +
             "</span></button>" +
           "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (video ? " is-on" : "") + "\" " +
             "data-mw-link-media=\"video\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
-            "title=\"Replace lyric slides with one embedded video slide\">" +
-            "Video slide <span class=\"mass-song-media-btn__label\">" +
-              escapeHtml(video ? (video.display_name || video.basename) : "Link…") +
+            "title=\"Link an MP4. Choose Video above to use it instead of lyric slides.\">" +
+            "Video file <span class=\"mass-song-media-btn__label\">" +
+              escapeHtml(video ? (video.display_name || video.basename) : (videoAvailable ? "From song…" : "Link…")) +
             "</span></button>" +
+          "<p class=\"mass-song-slide-mode__hint\">" +
+            (useVideo
+              ? "PowerPoint: video slide replaces lyrics."
+              : "PowerPoint: lyric slides. Audio is preview only.") +
+          "</p>" +
         "</div>"
       );
     }
@@ -24864,15 +25296,145 @@
       void playEl;
     }
 
+    let massMediaPickState = {
+      kind: "",
+      slot: "",
+      purpose: "mass", // mass | song
+      songField: "", // audio | video when purpose=song
+      loading: false,
+    };
+
+    function normalizeComposerMediaRef(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const basename = String(raw.basename || "").trim();
+      if (!basename) return null;
+      const display_name = String(raw.display_name || "").trim() || basename;
+      return { basename: basename, display_name: display_name, url: raw.url || "" };
+    }
+
+    let composerSongMedia = { audio: null, video: null };
+
+    function setComposerSongMediaField(field, item) {
+      const key = field === "video" ? "video" : "audio";
+      composerSongMedia[key] = item ? normalizeComposerMediaRef(item) : null;
+      renderComposerSongMediaFields();
+      refreshMetadataModalPrimaryState();
+    }
+
+    function renderComposerSongMediaFields() {
+      const audioLabel = $("song-metadata-audio-label");
+      const videoLabel = $("song-metadata-video-label");
+      const audioClear = $("song-metadata-audio-clear");
+      const videoClear = $("song-metadata-video-clear");
+      const audio = composerSongMedia.audio;
+      const video = composerSongMedia.video;
+      if (audioLabel) {
+        audioLabel.textContent = audio
+          ? (audio.display_name || audio.basename)
+          : "None linked";
+      }
+      if (videoLabel) {
+        videoLabel.textContent = video
+          ? (video.display_name || video.basename)
+          : "None linked";
+      }
+      if (audioClear) audioClear.hidden = !audio;
+      if (videoClear) videoClear.hidden = !video;
+    }
+
+    function setMassMediaPickLoading(active, message) {
+      const loading = $("mw-media-pick-loading");
+      const list = $("mw-media-pick-list");
+      const text = $("mw-media-pick-loading-text");
+      massMediaPickState.loading = !!active;
+      if (text && message) text.textContent = message;
+      if (loading) loading.hidden = !active;
+      if (list) list.hidden = !!active;
+    }
+
+    function setMassMediaPickTab(tab) {
+      const next = tab === "upload" ? "upload" : "library";
+      const libTab = $("mw-media-pick-tab-library");
+      const upTab = $("mw-media-pick-tab-upload");
+      const libPane = $("mw-media-pick-pane-library");
+      const upPane = $("mw-media-pick-pane-upload");
+      if (libTab) {
+        libTab.classList.toggle("is-active", next === "library");
+        libTab.setAttribute("aria-selected", next === "library" ? "true" : "false");
+      }
+      if (upTab) {
+        upTab.classList.toggle("is-active", next === "upload");
+        upTab.setAttribute("aria-selected", next === "upload" ? "true" : "false");
+      }
+      if (libPane) libPane.hidden = next !== "library";
+      if (upPane) upPane.hidden = next !== "upload";
+    }
+
+    function applyMassMediaPickSelection(row) {
+      if (!row || !row.basename) return;
+      if (massMediaPickState.purpose === "song") {
+        setComposerSongMediaField(massMediaPickState.songField || "audio", row);
+        closeMassMediaPickModal();
+        if (typeof notify === "function") {
+          notify(
+            (massMediaPickState.songField === "video" ? "Video" : "Audio") + " linked to this song.",
+            "ok"
+          );
+        }
+        return;
+      }
+      const pickKind = massMediaPickState.kind;
+      const pickSlot = massMediaPickState.slot;
+      if (!pickKind || !pickSlot) return;
+      setMassSectionMedia(pickKind, pickSlot, row);
+      const pendingVideoMode = pickKind === "video" && massSongVideoPickPendingSlot === pickSlot;
+      if (pendingVideoMode) {
+        massSongVideoPickPendingSlot = "";
+        setMassSongVideoMode(pickSlot, true);
+      }
+      closeMassMediaPickModal();
+      if (typeof notify === "function") {
+        if (pickKind === "video") {
+          notify(
+            pendingVideoMode || getMassSongVideoMode(pickSlot)
+              ? "PowerPoint will use this video instead of lyric slides."
+              : "Video file linked. Choose Video in Lyrics|Video to use it in the PowerPoint.",
+            "ok"
+          );
+        } else {
+          notify("Audio preview linked — for ministry practice only (not added to the PowerPoint).", "ok");
+        }
+      }
+    }
+
     function closeMassMediaPickModal() {
       const m = $("mw-media-pick-modal");
       if (!m) return;
       m.setAttribute("data-open", "false");
       m.setAttribute("aria-hidden", "true");
-      massMediaPickState = { kind: "", slot: "" };
+      massMediaPickState = {
+        kind: "",
+        slot: "",
+        purpose: "mass",
+        songField: "",
+        loading: false,
+      };
+      setMassMediaPickLoading(false);
+      const status = $("mw-media-pick-upload-status");
+      if (status) {
+        status.textContent = "";
+        status.className = "status mw-media-pick-upload-status";
+      }
+      if ($("mw-media-pick-file")) $("mw-media-pick-file").value = "";
     }
 
     function clearMassMediaPickSelection() {
+      if (massMediaPickState.purpose === "song") {
+        setComposerSongMediaField(massMediaPickState.songField || "audio", null);
+        closeMassMediaPickModal();
+        if (typeof notify === "function") notify("Cleared media link.", "ok");
+        return;
+      }
       if (!massMediaPickState.kind || !massMediaPickState.slot) return;
       setMassSectionMedia(massMediaPickState.kind, massMediaPickState.slot, null);
       closeMassMediaPickModal();
@@ -24892,7 +25454,7 @@
       });
       if (!filtered.length) {
         list.innerHTML = "<li class=\"muted\">No " + (kind === "video" ? "videos" : "audio files") +
-          " found. Upload them in the Media tab first.</li>";
+          " found. Switch to Upload to add one.</li>";
         return;
       }
       list.innerHTML = filtered.map((item) => {
@@ -24909,57 +25471,182 @@
           const basename = btn.getAttribute("data-pick-basename");
           const row = rows.find((r) => r.basename === basename);
           if (!row) return;
-          const pickKind = massMediaPickState.kind;
-          const pickSlot = massMediaPickState.slot;
-          setMassSectionMedia(pickKind, pickSlot, row);
-          closeMassMediaPickModal();
-          if (typeof notify === "function") {
-            notify(
-              pickKind === "video"
-                ? "Video will replace lyric slides when this option is selected."
-                : "Audio preview linked to this option.",
-              "ok"
-            );
-          }
+          applyMassMediaPickSelection(row);
         });
       });
     }
 
-    async function openMassMediaPickModal(kind, slot) {
-      if (!document.body.classList.contains("is-superadmin") &&
-          !(churchMembershipState && churchMembershipState.is_superadmin)) {
-        if (typeof notify === "function") notify("Only superadmins can link Media files here.", "warn");
-        return;
+    async function openMassMediaPickModal(kind, slot, opts) {
+      const options = opts || {};
+      const purpose = options.purpose === "song" ? "song" : "mass";
+      if (purpose === "mass") {
+        if (!document.body.classList.contains("is-superadmin") &&
+            !(churchMembershipState && churchMembershipState.is_superadmin)) {
+          if (typeof notify === "function") notify("Only superadmins can link Media files here.", "warn");
+          return;
+        }
+        if (kind === "video" && !massMediaKeyAllowsVideo(slot)) return;
       }
-      if (kind === "video" && !massMediaKeyAllowsVideo(slot)) return;
-      massMediaPickState = { kind: kind === "video" ? "video" : "audio", slot: String(slot || "") };
+      massMediaPickState = {
+        kind: kind === "video" ? "video" : "audio",
+        slot: String(slot || ""),
+        purpose: purpose,
+        songField: options.songField === "video" ? "video" : "audio",
+        loading: false,
+      };
       const title = $("mw-media-pick-title");
       const hint = $("mw-media-pick-hint");
-      const label = massMediaDisplayLabel(slot);
-      if (title) {
-        title.textContent = kind === "video"
-          ? "Choose video for " + label
-          : "Choose audio for " + label;
-      }
-      if (hint) {
-        hint.textContent = kind === "video"
-          ? "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time."
-          : "This MP3 plays from the Audio ▶ on this option — it is not embedded in the deck.";
+      const isVideo = kind === "video";
+      if (purpose === "song") {
+        if (title) title.textContent = isVideo ? "Choose video for this song" : "Choose audio for this song";
+        if (hint) {
+          hint.textContent = isVideo
+            ? "Pick an MP4 from your Media library or upload a new one. It stays linked on this song."
+            : "Pick an MP3 from your Media library or upload a new one. It stays linked on this song.";
+        }
+      } else {
+        const label = massMediaDisplayLabel(slot);
+        if (title) {
+          title.textContent = isVideo
+            ? "Choose video for " + label
+            : "Choose audio for " + label;
+        }
+        if (hint) {
+          hint.textContent = isVideo
+            ? "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time."
+            : "This MP3 plays from the Audio ▶ on this option — it is not embedded in the deck.";
+        }
       }
       if ($("mw-media-pick-q")) $("mw-media-pick-q").value = "";
-      try {
-        await ensureSavedMediaLibrary(true);
-      } catch (_e) {
-        if (typeof notify === "function") notify("Could not load Media library.", "error");
-        return;
+      const uploadTitle = $("mw-media-pick-upload-title");
+      const uploadHint = $("mw-media-pick-upload-hint");
+      if (uploadTitle) uploadTitle.textContent = isVideo ? "Upload MP4" : "Upload MP3";
+      if (uploadHint) {
+        uploadHint.textContent = isVideo
+          ? "Drop a video here or click to browse (.mp4)"
+          : "Drop an audio file here or click to browse (.mp3)";
       }
-      renderMassMediaPickList();
+      if ($("mw-media-pick-file")) {
+        $("mw-media-pick-file").accept = isVideo
+          ? ".mp4,video/mp4"
+          : ".mp3,audio/mpeg,audio/mp3";
+      }
+      const status = $("mw-media-pick-upload-status");
+      if (status) {
+        status.textContent = "";
+        status.className = "status mw-media-pick-upload-status";
+      }
+      setMassMediaPickTab("library");
       const m = $("mw-media-pick-modal");
       if (!m) return;
+      // Open immediately so the click feels instant, then load with spinner.
       m.setAttribute("data-open", "true");
       m.setAttribute("aria-hidden", "false");
+      setMassMediaPickLoading(true, "Loading media library…");
+      try {
+        // Prefer cache; only force-refresh when empty.
+        await ensureSavedMediaLibrary(false);
+        if (massMediaPickState.loading) {
+          setMassMediaPickLoading(false);
+          renderMassMediaPickList();
+        }
+      } catch (_e) {
+        setMassMediaPickLoading(false);
+        const list = $("mw-media-pick-list");
+        if (list) {
+          list.hidden = false;
+          list.innerHTML = "<li class=\"muted\">Could not load Media library. Try Upload, or open the Media tab.</li>";
+        }
+        if (typeof notify === "function") notify("Could not load Media library.", "error");
+      }
       if ($("mw-media-pick-q")) $("mw-media-pick-q").focus();
     }
+
+    async function handleMassMediaPickUpload(file) {
+      if (!file) return;
+      const wantVideo = massMediaPickState.kind === "video";
+      const kind = detectSavedMediaKind(file);
+      const status = $("mw-media-pick-upload-status");
+      if (!kind || (wantVideo && kind !== "video") || (!wantVideo && kind !== "music")) {
+        if (status) {
+          status.textContent = wantVideo ? "Please choose an MP4 video." : "Please choose an MP3 audio file.";
+          status.className = "status error mw-media-pick-upload-status";
+        }
+        return;
+      }
+      if (status) {
+        status.textContent = "Uploading…";
+        status.className = "status mw-media-pick-upload-status";
+      }
+      setMassMediaPickLoading(true, "Uploading and refreshing library…");
+      setMassMediaPickTab("library");
+      try {
+        await uploadSavedMedia(kind, file, status, $("mw-media-pick-file"), { quiet: true });
+        await ensureSavedMediaLibrary(true);
+        if (typeof refreshSavedMedia === "function") void refreshSavedMedia();
+        setMassMediaPickLoading(false);
+        renderMassMediaPickList();
+        const rows = (kind === "video" ? savedMediaLibrary.video : savedMediaLibrary.music) || [];
+        const uploadedName = String(file.name || "").trim().toLowerCase();
+        let match = rows.find((r) => String(r.display_name || "").trim().toLowerCase() === uploadedName);
+        if (!match) {
+          match = rows.find((r) => String(r.basename || "").toLowerCase().indexOf(uploadedName.replace(/\.(mp3|mp4)$/i, "")) !== -1);
+        }
+        if (!match && rows.length) match = rows[0];
+        if (match) {
+          applyMassMediaPickSelection(match);
+          if (status) {
+            status.textContent = "Uploaded and linked.";
+            status.className = "status ok mw-media-pick-upload-status";
+          }
+        } else {
+          if (status) {
+            status.textContent = "Uploaded. Pick it from the library list.";
+            status.className = "status ok mw-media-pick-upload-status";
+          }
+        }
+      } catch (err) {
+        setMassMediaPickLoading(false);
+        renderMassMediaPickList();
+        if (status) {
+          status.textContent = (err && err.message) || "Upload failed.";
+          status.className = "status error mw-media-pick-upload-status";
+        }
+      }
+    }
+
+    function wireMassMediaPickUploadUi() {
+      const drop = $("mw-media-pick-drop");
+      const input = $("mw-media-pick-file");
+      if (!drop || !input || drop.dataset.wired === "1") return;
+      drop.dataset.wired = "1";
+      ["dragenter", "dragover"].forEach((evt) => {
+        drop.addEventListener(evt, (e) => {
+          e.preventDefault();
+          drop.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach((evt) => {
+        drop.addEventListener(evt, (e) => {
+          e.preventDefault();
+          drop.classList.remove("is-dragover");
+        });
+      });
+      drop.addEventListener("drop", (e) => {
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (!files || !files.length) return;
+        void handleMassMediaPickUpload(files[0]);
+      });
+      input.addEventListener("change", () => {
+        const file = input.files && input.files[0];
+        void handleMassMediaPickUpload(file);
+      });
+      const libTab = $("mw-media-pick-tab-library");
+      const upTab = $("mw-media-pick-tab-upload");
+      if (libTab) libTab.addEventListener("click", () => setMassMediaPickTab("library"));
+      if (upTab) upTab.addEventListener("click", () => setMassMediaPickTab("upload"));
+    }
+    wireMassMediaPickUploadUi();
 
     window.massMediaKey = massMediaKey;
     window.playMassSectionAudio = playMassSectionAudio;
@@ -27412,6 +28099,7 @@
         previewDate: flowPreviewData && flowPreviewData.__previewDate ? flowPreviewData.__previewDate : "",
         sectionMedia: typeof serializeMassSectionMedia === "function" ? serializeMassSectionMedia() : { audio: {}, video: {} },
         riteVideo: typeof serializeRiteVideoState === "function" ? serializeRiteVideoState() : { mode: {}, lang: {} },
+        songVideo: typeof serializeSongVideoState === "function" ? serializeSongVideoState() : { mode: {} },
       };
     }
 
@@ -27625,6 +28313,9 @@
         applyMassSectionMedia(draft.sectionMedia);
       } else if (typeof refreshMassSectionMediaUi === "function") {
         refreshMassSectionMediaUi();
+      }
+      if (typeof applySongVideoState === "function") {
+        applySongVideoState(draft.songVideo || { mode: {} });
       }
       if (typeof applyRiteVideoState === "function") {
         applyRiteVideoState(draft.riteVideo || { mode: {}, lang: {} });
@@ -28402,6 +29093,7 @@
       if ($("lyrics-save-title")) $("lyrics-save-title").value = "";
       if ($("lyrics-save-author")) $("lyrics-save-author").value = "";
       composerLoadedSong = null;
+      composerSongMedia = { audio: null, video: null };
       setComposerSongLanguage("");
       setComposerSongSection("");
       composerGospelMoods = [];
@@ -29685,6 +30377,12 @@
           language: saveLanguage,
           author: ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "",
           gospel_moods: getComposerSongMoods(),
+          audio_media: composerSongMedia.audio
+            ? { basename: composerSongMedia.audio.basename, display_name: composerSongMedia.audio.display_name || composerSongMedia.audio.basename }
+            : null,
+          video_media: composerSongMedia.video
+            ? { basename: composerSongMedia.video.basename, display_name: composerSongMedia.video.display_name || composerSongMedia.video.basename }
+            : null,
         });
         const created = result.created || [];
         const updated = result.updated || [];
@@ -30338,6 +31036,8 @@
           language: String(row.language || "").trim(),
           has_lyrics: !!row.has_lyrics,
           gospel_moods: Array.isArray(row.gospel_moods) ? row.gospel_moods : [],
+          audio_media: row.audio_media && typeof row.audio_media === "object" ? row.audio_media : null,
+          video_media: row.video_media && typeof row.video_media === "object" ? row.video_media : null,
           section: section || "",
           source: String(source || ""),
         });
@@ -30399,6 +31099,12 @@
         language: ($("lyrics-save-language") && $("lyrics-save-language").value) || "",
         has_lyrics: true,
         gospel_moods: getComposerSongMoods(),
+        audio_media: normalizeComposerMediaRef(
+          (result && result.audio_media) || (composerSongMedia && composerSongMedia.audio)
+        ),
+        video_media: normalizeComposerMediaRef(
+          (result && result.video_media) || (composerSongMedia && composerSongMedia.video)
+        ),
       };
       const idx = songCatalogData[sec].findIndex((r) => String(r.id) === id);
       if (idx >= 0) songCatalogData[sec][idx] = Object.assign({}, songCatalogData[sec][idx], row);
@@ -34488,6 +35194,9 @@
         updateMassSlotChip(key);
         updateMassSongPreviewButton(key);
         renderFlowSongCount();
+        if (pickId && typeof maybeApplySongCatalogMediaToMassSlot === "function") {
+          maybeApplySongCatalogMediaToMassSlot(key, pickId);
+        }
         if (root.id === "practice-share-song-plan") {
           window.requestAnimationFrame(() => focusNextPracticeShareSection(key));
         }
@@ -34550,6 +35259,14 @@
           if (slotKey) playMassSectionAudio(slotKey, audioBtn);
           return;
         }
+        const slideModeBtn = e.target.closest("[data-mass-song-slide-mode-val]");
+        if (slideModeBtn && root.contains(slideModeBtn)) {
+          e.preventDefault();
+          const slot = slideModeBtn.getAttribute("data-mass-song-slide-mode-slot");
+          const mode = slideModeBtn.getAttribute("data-mass-song-slide-mode-val");
+          if (slot && mode) void chooseMassSongSlideMode(slot, mode);
+          return;
+        }
         const mediaLink = e.target.closest("[data-mw-link-media]");
         if (mediaLink && root.contains(mediaLink)) {
           e.preventDefault();
@@ -34589,10 +35306,12 @@
         const key = clr.dataset.massSongClear;
         if (!key) return;
         selectedLyricsSongs[key] = "";
+        if (typeof setMassSongVideoMode === "function") setMassSongVideoMode(key, false, { quiet: true });
         clearSongPlanSearchUi(key);
         updateMassSlotChip(key);
         updateMassSongPreviewButton(key);
         renderFlowSongCount();
+        if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
       });
 
       root.addEventListener("keydown", (e) => {
@@ -42432,6 +43151,44 @@
       return massPlanAllSongs.find((s) => String(s.id) === String(id)) || null;
     }
 
+    function resolveLibraryMediaRow(kind, ref) {
+      const norm = normalizeComposerMediaRef(ref);
+      if (!norm) return null;
+      const rows = ((kind === "video" ? savedMediaLibrary.video : savedMediaLibrary.music) || []);
+      const hit = rows.find((r) => r && r.basename === norm.basename);
+      if (hit) return hit;
+      return {
+        basename: norm.basename,
+        display_name: norm.display_name || norm.basename,
+        url: norm.url || "",
+        kind: kind === "video" ? "video" : "music",
+      };
+    }
+
+    function maybeApplySongCatalogMediaToMassSlot(slotKey, songId) {
+      const row = lookupMassPlanSong(songId);
+      if (!row || !slotKey) return;
+      const audioRef = normalizeComposerMediaRef(row.audio_media);
+      const videoRef = normalizeComposerMediaRef(row.video_media);
+      if (!audioRef && !videoRef) return;
+      const apply = () => {
+        if (audioRef && !getMassSectionMedia("audio", slotKey)) {
+          setMassSectionMedia("audio", slotKey, resolveLibraryMediaRow("music", audioRef));
+        }
+        if (videoRef && massMediaKeyAllowsVideo(slotKey) && !getMassSectionMedia("video", slotKey)) {
+          setMassSectionMedia("video", slotKey, resolveLibraryMediaRow("video", videoRef));
+        }
+      };
+      if (
+        (savedMediaLibrary.music && savedMediaLibrary.music.length) ||
+        (savedMediaLibrary.video && savedMediaLibrary.video.length)
+      ) {
+        apply();
+        return;
+      }
+      ensureSavedMediaLibrary(false).then(apply).catch(() => apply());
+    }
+
     function songSlotHasLyrics(slotKey, id) {
       if (!id) return true;
       const row = lookupMassPlanSong(id);
@@ -43848,6 +44605,7 @@
     let composerEditorLoadSeq = 0;
     let songCatalogLoaded = false;
     let songCatalogLoadPromise = null;
+    let songCatalogLoadSeq = 0;
     const SONG_CATALOG_SEARCH_DEBOUNCE_MS = 320;
     const SONG_CATALOG_SEARCH_MIN_LEN = 2;
     const SONG_CATALOG_SEARCH_MAX_LEN = 200;
@@ -44358,29 +45116,41 @@
         if (typeof updateMassSummaryMoodPicks === "function") updateMassSummaryMoodPicks();
         return;
       }
-      if (songCatalogLoadPromise) return songCatalogLoadPromise;
-      songCatalogLoadPromise = (async () => {
+      // Non-force callers may share an in-flight load. Force refresh must not
+      // join a stuck/stale promise (that left Edit Details Save spinning forever).
+      if (songCatalogLoadPromise && !force) return songCatalogLoadPromise;
+      const seq = ++songCatalogLoadSeq;
+      const pending = (async () => {
         try {
           const headers = await catalogAuthHeaders();
           const res = await fetch("/api/catalog/songs?lite=1", { headers });
           const data = await res.json();
+          if (seq !== songCatalogLoadSeq) return;
           if (data.ok) {
             songCatalogData = data.catalog;
             songCatalogLoaded = true;
           }
         } catch (_e) {
+          if (seq !== songCatalogLoadSeq) return;
           if (!songCatalogData) songCatalogData = null;
         }
+        if (seq !== songCatalogLoadSeq) return;
         renderSongCatalog();
         rebuildMassPlanSongPool();
         lyricSongSlots.forEach((s) => updateMassSlotChip(s.key));
         if (typeof updateMassSummaryMoodPicks === "function") updateMassSummaryMoodPicks();
       })();
+      songCatalogLoadPromise = pending;
       try {
-        await songCatalogLoadPromise;
+        await pending;
       } finally {
-        songCatalogLoadPromise = null;
+        if (songCatalogLoadPromise === pending) songCatalogLoadPromise = null;
       }
+    }
+
+    function refreshSongCatalogInBackground() {
+      invalidateSongCatalogCaches();
+      void loadSongCatalog(true).catch(function () { /* catalog refresh is best-effort */ });
     }
 
     function filterSongCatalogRows(rows, secKey, query) {
@@ -44822,6 +45592,10 @@
       const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
       applySongMetaToForm(apiSec, merged);
       composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
+      composerSongMedia = {
+        audio: normalizeComposerMediaRef(s.audio_media || (catalogRow && catalogRow.audio_media)),
+        video: normalizeComposerMediaRef(s.video_media || (catalogRow && catalogRow.video_media)),
+      };
       composerCatalogLyrics = String(
         s.catalog_lyrics != null && String(s.catalog_lyrics).length
           ? s.catalog_lyrics
@@ -45018,6 +45792,15 @@
       }
     }
 
+    function setSongMetadataDismissLabel(mode) {
+      const btn = $("song-metadata-cancel");
+      if (!btn) return;
+      const isClose = mode === "close";
+      btn.textContent = isClose ? "Close" : "Cancel";
+      btn.setAttribute("aria-label", isClose ? "Close" : "Cancel");
+      btn.classList.toggle("is-dismiss-close", isClose);
+    }
+
     function closeSongMetadataModal() {
       setUiOverlayOpen($("song-metadata-modal"), false);
       songMetaEditCtx = null;
@@ -45025,6 +45808,8 @@
       clearMetadataMoodAttention();
       const sectionSel = $("song-metadata-edit-section");
       if (sectionSel) sectionSel.disabled = false;
+      setSongMetadataSaveButtonState("idle", "Save changes");
+      setSongMetadataDismissLabel("cancel");
     }
 
     function closeSongDeleteModal() {
@@ -45048,12 +45833,16 @@
       if ($("song-metadata-subtitle")) {
         $("song-metadata-subtitle").textContent = "Editing metadata for \"" + (s.title || "Song") + "\".";
       }
-      if ($("song-metadata-save")) {
-        $("song-metadata-save").textContent = "Save changes";
-        $("song-metadata-save").disabled = true;
-      }
+      setSongMetadataSaveButtonState("idle", "Save changes");
+      if ($("song-metadata-save")) $("song-metadata-save").disabled = true;
+      setSongMetadataDismissLabel("cancel");
       clearMetadataMoodAttention();
       setSongMetadataMoodChecks(s.gospel_moods || []);
+      composerSongMedia = {
+        audio: normalizeComposerMediaRef(s.audio_media),
+        video: normalizeComposerMediaRef(s.video_media),
+      };
+      renderComposerSongMediaFields();
       songMetaSnapshot = captureMetadataModalSnapshot();
       bindMetadataModalDirtyTracking();
       if (composerLoadedSong && String(composerLoadedSong.id) === String(id)) {
@@ -45074,12 +45863,16 @@
     }
 
     function captureMetadataModalSnapshot() {
+      const audio = composerSongMedia && composerSongMedia.audio;
+      const video = composerSongMedia && composerSongMedia.video;
       return {
         title: String(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "").trim(),
         author: String(($("song-metadata-edit-author") && $("song-metadata-edit-author").value) || "").trim(),
         language: String(($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "").trim(),
         section: String(($("song-metadata-edit-section") && $("song-metadata-edit-section").value) || "").trim(),
         moods: readSongMetadataMoodChecks().slice().sort().join(","),
+        audio: audio ? String(audio.basename || "") : "",
+        video: video ? String(video.basename || "") : "",
       };
     }
 
@@ -45091,17 +45884,25 @@
         now.author !== songMetaSnapshot.author ||
         now.language !== songMetaSnapshot.language ||
         now.section !== songMetaSnapshot.section ||
-        now.moods !== songMetaSnapshot.moods
+        now.moods !== songMetaSnapshot.moods ||
+        now.audio !== songMetaSnapshot.audio ||
+        now.video !== songMetaSnapshot.video
       );
     }
 
     function refreshMetadataModalPrimaryState() {
       const btn = $("song-metadata-save");
       if (!btn) return;
+      if (btn.classList.contains("is-saving")) return;
       const intent = (songMetaEditCtx && songMetaEditCtx.intent) || "edit";
       if (intent === "save") {
         btn.disabled = false;
         return;
+      }
+      const dirty = metadataModalIsDirty();
+      if (btn.classList.contains("is-saved") && dirty) {
+        setSongMetadataSaveButtonState("idle", "Save changes");
+        setSongMetadataDismissLabel("cancel");
       }
       btn.disabled = !metadataModalIsDirty();
     }
@@ -45169,10 +45970,9 @@
             ? "Review details for \"" + title + "\" before saving to your library."
             : "Add title, language, section, and Gospel mood, then save.";
         }
-        if (saveBtn) {
-          saveBtn.textContent = "Save";
-          saveBtn.disabled = false;
-        }
+        setSongMetadataSaveButtonState("idle", "Save");
+        if (saveBtn) saveBtn.disabled = false;
+        setSongMetadataDismissLabel("cancel");
       } else {
         if (titleEl) titleEl.textContent = "Edit song details";
         if (subEl) {
@@ -45180,12 +45980,11 @@
             ? "You pasted lyrics — add a title, language, section, and mood."
             : (title
               ? "Editing details for \"" + title + "\"."
-              : "Update title, author, language, section, and Gospel mood.");
+              : "Update title, author, language, section, media, and Gospel mood.");
         }
-        if (saveBtn) {
-          saveBtn.textContent = "Save changes";
-          saveBtn.disabled = true;
-        }
+        setSongMetadataSaveButtonState("idle", "Save changes");
+        if (saveBtn) saveBtn.disabled = true;
+        setSongMetadataDismissLabel("cancel");
       }
       const detected = inferComposerSongMoods();
       const selected = composerGospelMoods.length ? composerGospelMoods : detected;
@@ -45206,6 +46005,7 @@
         updateParishLyricsControls();
       }
       songSaveMoodSearchTitle = title;
+      renderComposerSongMediaFields();
       setUiOverlayOpen($("song-metadata-modal"), true);
       syncVerbumSelectTrigger($("song-metadata-edit-language"));
       syncVerbumSelectTrigger($("song-metadata-edit-section"));
@@ -45221,23 +46021,23 @@
       if (!applied.title) {
         setLyricsStatus("Song title is required before saving.", "error");
         if ($("song-metadata-edit-title")) $("song-metadata-edit-title").focus();
-        return;
+        return false;
       }
       if (!applied.language) {
         setLyricsStatus("Select a language before saving.", "error");
         if ($("song-metadata-edit-language")) $("song-metadata-edit-language").focus();
-        return;
+        return false;
       }
       if (!applied.section) {
         setLyricsStatus("Select a section before saving.", "error");
         if ($("song-metadata-edit-section")) $("song-metadata-edit-section").focus();
-        return;
+        return false;
       }
       if (!applied.gospel_moods.length) {
         pulseMetadataMoodAttention(inferComposerSongMoods());
         const errEl = $("song-metadata-mood-error");
         if (errEl) errEl.hidden = false;
-        return;
+        return false;
       }
       if (!songCatalogLoaded || !songCatalogData) {
         await loadSongCatalog(true);
@@ -45246,7 +46046,7 @@
       closeSongMetadataModal();
       if (willSaveAsParishVersion(applied.title, matches)) {
         await performSaveLyrics();
-        return;
+        return true;
       }
       if (
         churchMembershipState &&
@@ -45254,57 +46054,162 @@
         shouldConfirmSongOverwrite(applied.title, applied.section, matches)
       ) {
         openSongSaveOverwriteModal(applied.title, matches, applied.section);
-        return;
+        return true;
       }
       await performSaveLyrics();
+      return true;
+    }
+
+    function setSongMetadataSaveButtonState(state, labelText) {
+      const btn = $("song-metadata-save");
+      const label = $("song-metadata-save-label");
+      if (!btn) return;
+      const next = state === "saving" || state === "saved" || state === "error" ? state : "idle";
+      btn.classList.remove("is-saving", "is-saved", "is-error");
+      if (next === "saving") btn.classList.add("is-saving");
+      if (next === "saved") btn.classList.add("is-saved");
+      if (next === "error") btn.classList.add("is-error");
+      if (label) {
+        if (labelText != null) label.textContent = labelText;
+        else if (next === "saving") label.textContent = "Saving…";
+        else if (next === "saved") label.textContent = "Saved";
+        else if (next === "error") label.textContent = "Failed";
+      }
+      if (next === "saving" || next === "saved") {
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", next === "saving" ? "true" : "false");
+      } else if (next === "error") {
+        btn.disabled = false;
+        btn.removeAttribute("aria-busy");
+      } else {
+        btn.removeAttribute("aria-busy");
+        refreshMetadataModalPrimaryState();
+        const intent = (songMetaEditCtx && songMetaEditCtx.intent) || "edit";
+        if (label && !labelText) {
+          label.textContent = intent === "save" ? "Save" : "Save changes";
+        }
+      }
+    }
+
+    async function playSongMetadataSaveSuccess(message) {
+      setSongMetadataSaveButtonState("saved");
+      setSongMetadataDismissLabel("close");
+      songMetaSnapshot = captureMetadataModalSnapshot();
+      refreshMetadataModalPrimaryState();
+      if (typeof showToast === "function") showToast(message || "Song details saved.", "ok");
+      await new Promise((resolve) => setTimeout(resolve, 420));
+    }
+
+    async function patchCatalogSongFromMetadataModal(section, id, title) {
+      const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
+      const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
+      const gospel_moods = readSongMetadataMoodChecks();
+      const patchBody = { title, author, language, gospel_moods };
+      const audio = composerSongMedia && composerSongMedia.audio;
+      const video = composerSongMedia && composerSongMedia.video;
+      if (audio) patchBody.audio_media = { basename: audio.basename, display_name: audio.display_name || audio.basename };
+      else patchBody.clear_audio_media = true;
+      if (video) patchBody.video_media = { basename: video.basename, display_name: video.display_name || video.basename };
+      else patchBody.clear_video_media = true;
+      const res = await fetch(
+        "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patchBody),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = data.detail || data.error || "Update failed";
+        throw new Error(typeof detail === "string" ? detail : "Update failed");
+      }
+      return { title, author, language, gospel_moods, data };
     }
 
     async function saveSongMetadataFromModal() {
       const intent = (songMetaEditCtx && songMetaEditCtx.intent) || "edit";
       if (intent === "save") {
-        await finishComposerSaveFromModal();
+        setSongMetadataSaveButtonState("saving", "Saving…");
+        try {
+          const ok = await finishComposerSaveFromModal();
+          if (!ok) setSongMetadataSaveButtonState("idle");
+        } catch (err) {
+          setSongMetadataSaveButtonState("error", "Failed");
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          setSongMetadataSaveButtonState("idle");
+          throw err;
+        }
         return;
       }
       let title = formatSongTitleCase(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "");
       if ($("song-metadata-edit-title")) $("song-metadata-edit-title").value = title;
       if (!title) {
         setLyricsStatus("Song title is required.", "error");
+        setSongMetadataSaveButtonState("error", "Title required");
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        setSongMetadataSaveButtonState("idle");
         return;
       }
       if (songMetaEditCtx && songMetaEditCtx.mode === "composer") {
-        if (intent !== "save" && !metadataModalIsDirty()) return;
-        applyMetadataModalToComposerFields();
-        closeSongMetadataModal();
-        setLyricsStatus("Song details updated.", "ok");
+        if (intent !== "save" && !metadataModalIsDirty()) {
+          setSongMetadataSaveButtonState("error", "No changes");
+          await new Promise((resolve) => setTimeout(resolve, 550));
+          setSongMetadataSaveButtonState("idle");
+          return;
+        }
+        setSongMetadataSaveButtonState("saving");
+        try {
+          applyMetadataModalToComposerFields();
+          if (
+            intent !== "save" &&
+            composerLoadedSong &&
+            composerLoadedSong.id &&
+            churchMembershipState &&
+            churchMembershipState.is_superadmin
+          ) {
+            const section = composerLoadedSong.section || (($("lyrics-save-section") && $("lyrics-save-section").value) || "meditation");
+            const id = composerLoadedSong.id;
+            await patchCatalogSongFromMetadataModal(section, id, title);
+            refreshSongCatalogInBackground();
+          }
+          await playSongMetadataSaveSuccess("Song details saved.");
+          setLyricsStatus("Song details updated.", "ok");
+        } catch (err) {
+          setSongMetadataSaveButtonState("error", "Failed");
+          await new Promise((resolve) => setTimeout(resolve, 650));
+          setSongMetadataSaveButtonState("idle");
+          throw err;
+        }
         return;
       }
       if (!guardSuperadminAction()) return;
       if (!songMetaEditCtx) return;
-      if (!metadataModalIsDirty()) return;
-      const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
-      const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
-      const gospel_moods = readSongMetadataMoodChecks();
+      if (!metadataModalIsDirty()) {
+        setSongMetadataSaveButtonState("error", "No changes");
+        await new Promise((resolve) => setTimeout(resolve, 550));
+        setSongMetadataSaveButtonState("idle");
+        return;
+      }
       const { section, id } = songMetaEditCtx;
-      const res = await fetch(
-        "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, author, language, gospel_moods }),
-        }
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || data.error || "Update failed");
-      closeSongMetadataModal();
-      invalidateSongCatalogCaches();
-      await loadSongCatalog(true);
-      if ($("lyrics-save-title")) $("lyrics-save-title").value = title;
-      if ($("lyrics-save-author")) $("lyrics-save-author").value = author;
-      setComposerSongLanguage(language);
-      composerGospelMoods = gospel_moods.slice();
-      updateLyricsComposerDetailsPreview();
-      pushSongHistory({ title, section, id, kind: "edited" });
-      setLyricsStatus("Updated \"" + title + "\".", "ok");
+      setSongMetadataSaveButtonState("saving");
+      try {
+        const patched = await patchCatalogSongFromMetadataModal(section, id, title);
+        refreshSongCatalogInBackground();
+        if ($("lyrics-save-title")) $("lyrics-save-title").value = patched.title;
+        if ($("lyrics-save-author")) $("lyrics-save-author").value = patched.author;
+        setComposerSongLanguage(patched.language);
+        composerGospelMoods = patched.gospel_moods.slice();
+        updateLyricsComposerDetailsPreview();
+        pushSongHistory({ title: patched.title, section, id, kind: "edited" });
+        await playSongMetadataSaveSuccess("Updated \"" + patched.title + "\".");
+        setLyricsStatus("Updated \"" + patched.title + "\".", "ok");
+      } catch (err) {
+        setSongMetadataSaveButtonState("error", "Failed");
+        await new Promise((resolve) => setTimeout(resolve, 650));
+        setSongMetadataSaveButtonState("idle");
+        throw err;
+      }
     }
 
     function openSongDeleteConfirmModal(section, id, title) {
@@ -45370,9 +46275,24 @@
         if (el) el.addEventListener("click", fn);
       });
       $("song-metadata-save") && $("song-metadata-save").addEventListener("click", () => {
+        const btn = $("song-metadata-save");
+        if (btn && (btn.disabled || btn.classList.contains("is-saving") || btn.classList.contains("is-saved"))) return;
         saveSongMetadataFromModal().catch((err) => {
           setLyricsStatus(err.message || "Could not save song details.", "error");
+          if (typeof showToast === "function") showToast(err.message || "Could not save song details.", "error");
         });
+      });
+      $("song-metadata-audio-pick") && $("song-metadata-audio-pick").addEventListener("click", () => {
+        openMassMediaPickModal("audio", "song-composer", { purpose: "song", songField: "audio" });
+      });
+      $("song-metadata-video-pick") && $("song-metadata-video-pick").addEventListener("click", () => {
+        openMassMediaPickModal("video", "song-composer", { purpose: "song", songField: "video" });
+      });
+      $("song-metadata-audio-clear") && $("song-metadata-audio-clear").addEventListener("click", () => {
+        setComposerSongMediaField("audio", null);
+      });
+      $("song-metadata-video-clear") && $("song-metadata-video-clear").addEventListener("click", () => {
+        setComposerSongMediaField("video", null);
       });
       $("song-delete-confirm") && $("song-delete-confirm").addEventListener("click", () => {
         confirmSongDeleteFromModal().catch((err) => {

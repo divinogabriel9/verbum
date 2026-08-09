@@ -223,6 +223,90 @@ def notify_practice_share_reminder(
     )
 
 
+def notify_readings_critical_sundays(
+    *,
+    critical_sundays: list[str],
+    warning_sundays: list[str] | None = None,
+    attempts: int = 3,
+    scope: str = "missing",
+) -> dict[str, Any]:
+    """Email every SUPERADMIN_EMAILS address about Sundays still critical after autofetch."""
+    from services.email import app_home_url
+    from services.email_links import sign_in_redirect_url
+    from services.membership_config import superadmin_emails
+
+    critical = [str(d).strip() for d in (critical_sundays or []) if str(d).strip()]
+    warnings = [str(d).strip() for d in (warning_sundays or []) if str(d).strip()]
+    recipients = sorted(superadmin_emails())
+    if not critical:
+        return {"ok": True, "sent": 0, "skipped": "no critical Sundays", "recipients": recipients}
+    if not recipients:
+        return {"ok": False, "sent": 0, "error": "SUPERADMIN_EMAILS is empty", "recipients": []}
+    if not email_enabled():
+        return {
+            "ok": False,
+            "sent": 0,
+            "error": "email not configured",
+            "recipients": recipients,
+            "critical_sundays": critical,
+        }
+
+    crit_lines = "\n".join(f"  • {d}" for d in critical)
+    warn_block = ""
+    if warnings:
+        warn_block = "\nAlso warning (incomplete):\n" + "\n".join(f"  • {d}" for d in warnings)
+
+    cta = sign_in_redirect_url("/calendar")
+    subject = f"Critical readings missing — {len(critical)} Sunday(s)"
+    text = (
+        "LiturgyFlow readings autofetch finished with critical Sundays still missing.\n\n"
+        f"Attempts: {attempts}\n"
+        f"Scope: {scope}\n\n"
+        f"Critical Sundays:\n{crit_lines}\n"
+        f"{warn_block}\n\n"
+        f"Open calendar (superadmin): {cta}\n"
+        f"App: {app_home_url()}\n"
+    )
+    rows = [
+        ("Critical Sundays", _esc(", ".join(critical))),
+        ("Attempts", _esc(str(attempts))),
+        ("Scope", _esc(scope)),
+    ]
+    if warnings:
+        rows.append(("Warning Sundays", _esc(", ".join(warnings))))
+
+    sent = 0
+    errors: list[str] = []
+    for to_addr in recipients:
+        result = send_email(
+            to=to_addr,
+            subject=subject,
+            text=text,
+            html=wrap_html(
+                title="Critical Sunday readings missing",
+                subtitle="Autofetch could not complete these Mass dates. Review the calendar and fetch or paste manually.",
+                body_html=detail_rows(rows),
+                cta_label="Open calendar",
+                cta_url=cta,
+                preheader=f"{len(critical)} critical Sunday(s)",
+            ),
+        )
+        if result.ok:
+            sent += 1
+        else:
+            errors.append(f"{to_addr}: {result.error or result.provider}")
+            logger.warning("readings critical alert failed for %s: %s", to_addr, result.error)
+
+    return {
+        "ok": sent > 0,
+        "sent": sent,
+        "recipients": recipients,
+        "critical_sundays": critical,
+        "warning_sundays": warnings,
+        "errors": errors,
+    }
+
+
 def safe_send(label: str, fn, **kwargs: Any) -> EmailResult:
     """Call a notify_* helper; never raise to callers."""
     if not email_enabled():

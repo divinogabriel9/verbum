@@ -119,3 +119,27 @@ services:
         value: "60"
       - key: CATALOG_LYRIC_FETCH_WINDOW
         value: "3600"
+
+  # Twice daily (06:00 & 18:00 Asia/Seoul = 21:00 & 09:00 UTC). Hits the web
+  # service so readings land on the live cache — not the cron ephemeral disk.
+  # Starter plan required for cron on Render (free web dyno is fine to target).
+  - type: cron
+    name: verbum-readings-autofetch
+    runtime: docker
+    plan: starter
+    region: oregon
+    schedule: "0 9,21 * * *"
+    dockerCommand: python scripts/cron_curl_readings_autofetch.py
+    envVars:
+      - key: APP_PUBLIC_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: READINGS_AUTOFETCH_ATTEMPTS
+        value: "3"
+      - key: READINGS_AUTOFETCH_SUNDAYS
+        value: "8"
+      - key: READINGS_AUTOFETCH_SCOPE
+        value: "missing"
+      - key: READINGS_AUTOFETCH_ALERT
+        value: "1"

@@ -53,6 +53,44 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def normalize_song_media_ref(raw: Any) -> Optional[dict[str, str]]:
+    """Normalize {basename, display_name} media link stored on a catalog song."""
+    if raw is None:
+        return None
+    if isinstance(raw, str):
+        basename = raw.strip()
+        if not basename:
+            return None
+        return {"basename": basename, "display_name": basename}
+    if not isinstance(raw, dict):
+        return None
+    basename = str(raw.get("basename") or "").strip()
+    if not basename:
+        return None
+    display = str(raw.get("display_name") or "").strip() or basename
+    return {"basename": basename[:180], "display_name": display[:240]}
+
+
+def _apply_song_media_fields(
+    target: dict[str, Any],
+    *,
+    audio_media: Any = ...,
+    video_media: Any = ...,
+) -> None:
+    if audio_media is not ...:
+        ref = normalize_song_media_ref(audio_media)
+        if ref:
+            target["audio_media"] = ref
+        elif "audio_media" in target:
+            del target["audio_media"]
+    if video_media is not ...:
+        ref = normalize_song_media_ref(video_media)
+        if ref:
+            target["video_media"] = ref
+        elif "video_media" in target:
+            del target["video_media"]
+
+
 def _stamp_song_timestamps(row: dict[str, Any], *, is_new: bool) -> None:
     """Set added_at (create) and updated_at (always) on a catalog song row."""
     now = _now_iso()
@@ -400,6 +438,8 @@ def save_lyrics_song(
     author: str = "",
     gospel_moods: list[str] | None = None,
     seasons: list[str] | None = None,
+    audio_media: Any = ...,
+    video_media: Any = ...,
     updated_by: str | None = None,
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
@@ -423,6 +463,7 @@ def save_lyrics_song(
     updated: list[str] = []
     created: list[str] = []
     canonical_ids: set[str] = set()
+    primary_row: dict[str, Any] | None = None
 
     for sec in wanted:
         rows = data[sec]
@@ -470,9 +511,12 @@ def save_lyrics_song(
                 target["gospel_moods"] = moods
             elif "gospel_moods" in target:
                 del target["gospel_moods"]
+        _apply_song_media_fields(target, audio_media=audio_media, video_media=video_media)
         row_id = str(target.get("id") or "").strip()
         if row_id:
             canonical_ids.add(row_id)
+        if primary_row is None:
+            primary_row = target
 
     title_key = clean_title.lower()
     for sec in _SECTIONS:
@@ -492,11 +536,13 @@ def save_lyrics_song(
     save_catalog(data, updated_by=updated_by, sync_song_ids=canonical_ids)
     first_id = ""
     primary_section = wanted[0] if wanted else ""
+    primary: dict[str, Any] | None = primary_row
     for sec in wanted:
         for row in data.get(sec) or []:
             if str(row.get("title") or "").strip().lower() == clean_title.lower():
                 first_id = str(row.get("id") or "")
                 primary_section = sec
+                primary = row
                 break
         if first_id:
             break
@@ -508,6 +554,8 @@ def save_lyrics_song(
         "sections": wanted,
         "created": created,
         "updated": updated,
+        "audio_media": normalize_song_media_ref((primary or {}).get("audio_media")),
+        "video_media": normalize_song_media_ref((primary or {}).get("video_media")),
     }
 
 
@@ -601,6 +649,8 @@ def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[d
                     "language": str(item.get("language") or "").strip(),
                     "has_lyrics": bool(str(item.get("lyrics") or "").strip()),
                     "gospel_moods": moods,
+                    "audio_media": normalize_song_media_ref(item.get("audio_media")),
+                    "video_media": normalize_song_media_ref(item.get("video_media")),
                 }
             )
         out[sec] = rows
@@ -634,6 +684,8 @@ def update_catalog_song(
     lyrics: Optional[str] = None,
     language: Optional[str] = None,
     gospel_moods: Optional[list[str]] = None,
+    audio_media: Any = ...,
+    video_media: Any = ...,
     updated_by: str | None = None,
 ) -> dict[str, Any]:
     sec = (section or "").strip().lower()
@@ -660,9 +712,14 @@ def update_catalog_song(
                 item["gospel_moods"] = moods
             elif "gospel_moods" in item:
                 del item["gospel_moods"]
+        _apply_song_media_fields(item, audio_media=audio_media, video_media=video_media)
         _stamp_song_timestamps(item, is_new=False)
         save_catalog(data, updated_by=updated_by)
-        return {"ok": True}
+        return {
+            "ok": True,
+            "audio_media": normalize_song_media_ref(item.get("audio_media")),
+            "video_media": normalize_song_media_ref(item.get("video_media")),
+        }
     return {"ok": False, "error": "Song not found."}
 
 
