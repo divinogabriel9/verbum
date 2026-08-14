@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import colorsys
 import datetime as _dt
+import json
+import logging
 import math
 import re
+import shutil
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -73,6 +76,8 @@ from .deck_template import (
     _LYRIC_TEXTBOX_WIDTH_RATIO,
     _LYRIC_TF_SIDE_MARGIN,
 )
+
+logger = logging.getLogger(__name__)
 
 _BG = RGBColor(18, 18, 22)
 _GOLD_FALLBACK = RGBColor(220, 170, 90)
@@ -689,6 +694,37 @@ def _video_poster_png(title: str, theme: Optional[SlideTheme] = None) -> Path:
     return Path(tmp.name)
 
 
+def _enable_embedded_movie_playback(movie, *, autoplay: bool = True) -> None:
+    """Make python-pptx movies actually start in PowerPoint.
+
+    ``add_movie`` writes ``<a:hlinkClick r:id="" action="ppaction://media"/>``.
+    Desktop PowerPoint treats the empty relationship as a broken media action, so
+    click-to-play and slideshow never start the file (the in-app HTML player is
+    unaffected because it uses a separate MP4 copy).
+    """
+    pic = getattr(movie, "_element", None)
+    if pic is None:
+        return
+    video_rid = ""
+    for vf in pic.findall(".//" + qn("a:videoFile")):
+        video_rid = (vf.get(qn("r:link")) or "").strip()
+        if video_rid:
+            break
+    r_id_attr = qn("r:id")
+    for hlink in pic.findall(".//" + qn("a:hlinkClick")):
+        if video_rid:
+            hlink.set(r_id_attr, video_rid)
+        elif hlink.get(r_id_attr) == "":
+            del hlink.attrib[r_id_attr]
+    if not autoplay:
+        return
+    sld = pic.getroottree().getroot()
+    for video in sld.findall(".//" + qn("p:video")):
+        for cond in video.findall(".//" + qn("p:cond")):
+            if cond.get("delay") == "indefinite":
+                cond.set("delay", "0")
+
+
 def _add_video_replacement_slide(
     prs: Presentation,
     video_path: Path | str,
@@ -704,7 +740,7 @@ def _add_video_replacement_slide(
     try:
         poster = _video_poster_png(title, theme)
         slide = prs.slides.add_slide(_layout_blank(prs))
-        slide.shapes.add_movie(
+        movie = slide.shapes.add_movie(
             str(p.resolve()),
             left=0,
             top=0,
@@ -713,8 +749,13 @@ def _add_video_replacement_slide(
             poster_frame_image=str(poster),
             mime_type="video/mp4",
         )
+        try:
+            _enable_embedded_movie_playback(movie, autoplay=True)
+        except Exception:
+            logger.exception("Could not patch PowerPoint playback XML for %s", p)
         return True
     except Exception:
+        logger.exception("Could not embed video slide from %s", p)
         return False
     finally:
         if poster is not None:
@@ -3013,7 +3054,7 @@ _DIVIDER_CORNER_ADJ = 0.1667  # matches reference freeform corner radius (~16.67
 _DIVIDER_PANEL_ALPHA = 44706  # ~44.7% opaque (reference right panel)
 _DIVIDER_BAR_ALPHA = 60784  # ~60.8% opaque (reference bottom bar)
 _DIVIDER_LINE_W = 14299  # reference outline weight (EMU)
-_DIVIDER_STYLE_IDS = frozenset({"divider1", "divider2"})
+_DIVIDER_STYLE_IDS = frozenset({"divider1", "divider2", "divider3"})
 _DIVIDER_STYLE_DEFAULT = "divider1"
 _DIVIDER2_PLATE_FILENAME = "divider2_plate.png"
 
@@ -3226,6 +3267,43 @@ def _divider2_gospel_citation(gospel_reference: str) -> str:
     ref = re.sub(r"(?i)^gospel\s*[:(]?\s*", "", ref).strip().rstrip(")")
     ref = ref.replace("–", "–").replace("-", "–")
     return (ref or "—").upper()
+
+
+def _divider3_date_display(date: str) -> str:
+    """Full-month date for Divider 3: ``AUGUST 16, 2026``."""
+    raw = (date or "").strip()
+    if not raw:
+        return ""
+    for fmt in ("%Y-%m-%d", "%B %d, %Y", "%b %d, %Y", "%d %B %Y"):
+        try:
+            d = _dt.datetime.strptime(raw, fmt).date()
+            return f"{d.strftime('%B').upper()} {d.day}, {d.year}"
+        except ValueError:
+            continue
+    return raw.upper()
+
+
+def _divider3_year_date_line(lectionary_cycle: str, date: str) -> str:
+    cycle = (lectionary_cycle or "—").strip().upper()
+    date_line = _divider3_date_display(date)
+    if date_line:
+        return f"YEAR {cycle} | {date_line}"
+    return f"YEAR {cycle}"
+
+
+def _divider3_title_lines(mass_title: str, season: str) -> List[str]:
+    """Split ``20th Sunday in Ordinary Time`` into two centered lines."""
+    title = (mass_title or season or "Sunday Mass").strip()
+    title = title.replace(" Celebration", "").strip() or "Sunday Mass"
+    m = re.match(r"^(.*?)\s+(in\s+.+)$", title, flags=re.IGNORECASE)
+    if m and m.group(1).strip() and m.group(2).strip():
+        return [m.group(1).strip(), m.group(2).strip()]
+    return [title]
+
+
+def _divider3_gospel_lines(gospel_reference: str) -> List[str]:
+    cite = _divider2_gospel_citation(gospel_reference)
+    return ["GOSPEL", f"({cite})"]
 
 
 def _divider_quote_lines(quote: str) -> List[str]:
@@ -3732,6 +3810,249 @@ def _render_divider2_cover(
     )
 
 
+# Divider 3 geometry — truth source: 13.333×7.5 massDividerAug15.pptx scaled ×1.5
+# onto the Verbum 20×11.25 canvas. Title + year + celebrant on the left; gospel
+# quote on the right rounded panel; kicker pill top-left.
+_D3_PANEL_L, _D3_PANEL_T = 10.6545, 2.2365
+_D3_PANEL_W, _D3_PANEL_H = 8.5455, 7.4175
+_D3_KICKER_L, _D3_KICKER_T = 0.564, 0.765
+_D3_KICKER_W, _D3_KICKER_H = 10.1895, 1.2165
+_D3_TITLE_L, _D3_TITLE_T = 0.306, 2.6145
+_D3_TITLE_W, _D3_TITLE_H = 10.7055, 3.2565
+_D3_YEAR_L, _D3_YEAR_T = 1.1235, 5.7345
+_D3_YEAR_W, _D3_YEAR_H = 8.454, 0.9495
+_D3_LABEL_L, _D3_LABEL_T = 1.4445, 7.515
+_D3_LABEL_W, _D3_LABEL_H = 7.206, 0.6975
+_D3_NAME_L, _D3_NAME_T = 0.564, 8.2125
+_D3_NAME_W, _D3_NAME_H = 9.1635, 1.1565
+_D3_QUOTE_L, _D3_QUOTE_T = 9.0735, 2.6145
+_D3_QUOTE_W, _D3_QUOTE_H = 11.784, 2.808
+_D3_GOSPEL_L, _D3_GOSPEL_T = 11.784, 6.345
+_D3_GOSPEL_W, _D3_GOSPEL_H = 6.3645, 0.8175
+_D3_CO_LABEL_L, _D3_CO_LABEL_T = 1.4445, 9.45
+_D3_CO_LABEL_W, _D3_CO_LABEL_H = 7.206, 0.42
+_D3_CO_NAME_L, _D3_CO_NAME_T = 0.564, 9.85
+_D3_CO_NAME_W, _D3_CO_NAME_H = 9.1635, 1.05
+_D3_KICKER_TEXT = "HOLY EUCHARISTIC CELEBRATION"
+_D3_INK_GOSPEL = RGBColor(0xFF, 0xDE, 0x9E)
+
+
+def _render_divider3_cover(
+    slide,
+    *,
+    celebrant: str,
+    co_celebrant: str = "",
+    date: str,
+    mass_title: str,
+    season: str,
+    lectionary_cycle: str,
+    gospel_reference: str,
+    gospel_quote: str,
+    quote_max_chars: int,
+    theme: SlideTheme,
+) -> None:
+    """Title-left Mass divider (kicker pill, right quote panel).
+
+    Theme 1 uses a season-tinted gradient and cream/gold ink from the source
+    plate. Themes 2–3 keep a solid Midnight/Paper surface with palette text.
+    """
+    pal = _divider_palette(theme)
+    if theme.mono_surfaces:
+        _set_slide_bg(slide, theme.divider_bg)
+        quote_color = pal.quote
+        label_color = pal.label
+        primary_color = pal.primary
+        gospel_color = pal.gospel_label
+        kicker_color = pal.primary
+        co_label_color = label_color
+        co_name_color = primary_color
+    else:
+        _set_divider_gradient_bg(slide, pal.grad_start, pal.grad_end)
+        quote_color = _D2_INK_QUOTE
+        label_color = _D2_INK_LABEL
+        primary_color = _D2_INK_PRIMARY
+        gospel_color = _D3_INK_GOSPEL
+        kicker_color = _D2_INK_PRIMARY
+        co_label_color = _D2_INK_CO_LABEL
+        co_name_color = _D2_INK_CO_NAME
+
+    _divider_add_rounded_panel(
+        slide,
+        Inches(_D3_PANEL_L),
+        Inches(_D3_PANEL_T),
+        Inches(_D3_PANEL_W),
+        Inches(_D3_PANEL_H),
+        fill_rgb=pal.panel_fill,
+        border_rgb=pal.panel_border,
+        alpha_val=_DIVIDER_PANEL_ALPHA,
+    )
+    _divider_add_rounded_panel(
+        slide,
+        Inches(_D3_KICKER_L),
+        Inches(_D3_KICKER_T),
+        Inches(_D3_KICKER_W),
+        Inches(_D3_KICKER_H),
+        fill_rgb=pal.bar_fill,
+        border_rgb=pal.bar_border,
+        alpha_val=_DIVIDER_BAR_ALPHA,
+    )
+    kicker_pt = _divider_fit_single_line_pt(
+        _D3_KICKER_TEXT, width_in=_D3_KICKER_W - 0.4, max_pt=40, min_pt=22
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D3_KICKER_L),
+        top=Inches(_D3_KICKER_T),
+        width=Inches(_D3_KICKER_W),
+        height=Inches(_D3_KICKER_H),
+        lines=[(_D3_KICKER_TEXT, {"size_pt": kicker_pt, "color": kicker_color, "bold": True})],
+        anchor_middle=True,
+        no_wrap=True,
+    )
+
+    title_lines = _divider3_title_lines(mass_title, season)
+    title_pt = _divider_fit_font_pt(
+        title_lines,
+        width_in=_D3_TITLE_W,
+        height_in=_D3_TITLE_H,
+        max_pt=88,
+        min_pt=40,
+    )
+    title_style = {
+        "size_pt": title_pt,
+        "color": primary_color,
+        "bold": True,
+        "space_after": 6,
+    }
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D3_TITLE_L),
+        top=Inches(_D3_TITLE_T),
+        width=Inches(_D3_TITLE_W),
+        height=Inches(_D3_TITLE_H),
+        lines=[(line, title_style) for line in title_lines],
+        anchor_middle=True,
+    )
+
+    year_date_line = _divider3_year_date_line(lectionary_cycle, date)
+    year_pt = _divider_fit_font_pt(
+        [year_date_line],
+        width_in=_D3_YEAR_W,
+        height_in=_D3_YEAR_H,
+        max_pt=43,
+        min_pt=24,
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D3_YEAR_L),
+        top=Inches(_D3_YEAR_T),
+        width=Inches(_D3_YEAR_W),
+        height=Inches(_D3_YEAR_H),
+        lines=[
+            (
+                year_date_line,
+                {
+                    "size_pt": year_pt,
+                    "color": primary_color,
+                    "bold": True,
+                    "italic": True,
+                },
+            )
+        ],
+        anchor_middle=True,
+    )
+
+    celebrant_name = (celebrant or "").strip() or "—"
+    co_name = (co_celebrant or "").strip()
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D3_LABEL_L),
+        top=Inches(_D3_LABEL_T),
+        width=Inches(_D3_LABEL_W),
+        height=Inches(_D3_LABEL_H),
+        lines=[("HOLY MASS CELEBRANT:", {"size_pt": 32, "color": label_color, "bold": True})],
+        anchor_middle=True,
+    )
+    celeb_pt = _divider_fit_single_line_pt(
+        celebrant_name, width_in=_D3_NAME_W, max_pt=61, min_pt=22
+    )
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D3_NAME_L),
+        top=Inches(_D3_NAME_T),
+        width=Inches(_D3_NAME_W),
+        height=Inches(_D3_NAME_H),
+        lines=[(celebrant_name, {"size_pt": celeb_pt, "color": primary_color, "bold": True})],
+        anchor_middle=True,
+        no_wrap=True,
+    )
+
+    if co_name:
+        _divider_add_textbox(
+            slide,
+            left=Inches(_D3_CO_LABEL_L),
+            top=Inches(_D3_CO_LABEL_T),
+            width=Inches(_D3_CO_LABEL_W),
+            height=Inches(_D3_CO_LABEL_H),
+            lines=[("CO-CELEBRANT:", {"size_pt": 26, "color": co_label_color, "bold": True})],
+            anchor_middle=True,
+        )
+        co_pt = _divider_fit_single_line_pt(
+            co_name, width_in=_D3_CO_NAME_W, max_pt=44, min_pt=18
+        )
+        _divider_add_textbox(
+            slide,
+            left=Inches(_D3_CO_NAME_L),
+            top=Inches(_D3_CO_NAME_T),
+            width=Inches(_D3_CO_NAME_W),
+            height=Inches(_D3_CO_NAME_H),
+            lines=[(co_name, {"size_pt": co_pt, "color": co_name_color, "bold": True})],
+            anchor_middle=True,
+            no_wrap=True,
+        )
+
+    g_line = (gospel_quote or "").strip()
+    if quote_max_chars and len(g_line) > quote_max_chars:
+        g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
+    quote_parts = _divider_quote_lines(g_line)
+    quote_pt = _divider_fit_font_pt(
+        quote_parts or [g_line],
+        width_in=_D3_QUOTE_W,
+        height_in=_D3_QUOTE_H,
+        max_pt=39,
+        min_pt=22,
+    )
+    quote_style = {"size_pt": quote_pt, "color": quote_color, "bold": False}
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D3_QUOTE_L),
+        top=Inches(_D3_QUOTE_T),
+        width=Inches(_D3_QUOTE_W),
+        height=Inches(_D3_QUOTE_H),
+        lines=[(part, quote_style) for part in (quote_parts or ([g_line] if g_line else []))],
+        anchor_middle=True,
+    )
+
+    gospel_lines = _divider3_gospel_lines(gospel_reference)
+    g_head_pt = _divider_fit_font_pt(
+        gospel_lines,
+        width_in=_D3_GOSPEL_W,
+        height_in=_D3_GOSPEL_H,
+        max_pt=35,
+        min_pt=18,
+    )
+    gospel_style = {"size_pt": g_head_pt, "color": gospel_color, "bold": True}
+    _divider_add_textbox(
+        slide,
+        left=Inches(_D3_GOSPEL_L),
+        top=Inches(_D3_GOSPEL_T),
+        width=Inches(_D3_GOSPEL_W),
+        height=Inches(_D3_GOSPEL_H),
+        lines=[(line, gospel_style) for line in gospel_lines],
+        anchor_middle=True,
+    )
+
+
 def _add_divider_cover(
     prs: Presentation,
     *,
@@ -3781,6 +4102,21 @@ def _add_divider_cover(
             quote_max_chars=quote_max_chars,
             theme=theme,
             prs=prs,
+        )
+        return
+    if style == "divider3":
+        _render_divider3_cover(
+            slide,
+            celebrant=celebrant,
+            co_celebrant=co_celebrant,
+            date=date,
+            mass_title=mass_title,
+            season=season,
+            lectionary_cycle=lectionary_cycle,
+            gospel_reference=gospel_reference,
+            gospel_quote=gospel_quote,
+            quote_max_chars=quote_max_chars,
+            theme=theme,
         )
         return
 
@@ -4929,7 +5265,7 @@ def generate_mass_ppt(
     video_replacements: Optional[Mapping[str, Any]] = None,
     mass_language: str = "english",
     show_hymn_section_labels: bool = False,
-) -> tuple[int, Path]:
+) -> tuple[int, Path, list[dict[str, Any]]]:
     global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding, _ACTIVE_MASS_LANG, _SHOW_HYMN_SECTION_LABELS
     _ACTIVE_MASS_LANG = normalize_mass_language(mass_language)
     _SHOW_HYMN_SECTION_LABELS = bool(show_hymn_section_labels)
@@ -4981,21 +5317,46 @@ def generate_mass_ppt(
 
     sel = song_selections or {}
     videos: dict[str, Path] = {}
+    video_basenames: dict[str, str] = {}
     if isinstance(video_replacements, Mapping):
         for key, val in video_replacements.items():
             k = str(key or "").strip().lower()
             if not k:
                 continue
+            basename = ""
             if isinstance(val, Path):
                 path = val
+                basename = path.name
+            elif isinstance(val, Mapping):
+                path = Path(str(val.get("path") or val.get("file") or "").strip())
+                basename = Path(str(val.get("basename") or path.name)).name
             else:
                 path = Path(str(val or "").strip())
+                basename = path.name
             if path.is_file():
                 videos[k] = path
+                video_basenames[k] = basename or path.name
+
+    video_cues: list[dict[str, Any]] = []
 
     def _use_video(slot: str, label: str) -> bool:
         path = videos.get(slot)
-        return bool(path and _add_video_replacement_slide(prs, path, title=label, theme=theme))
+        if not path:
+            return False
+        before = len(prs.slides)
+        if not _add_video_replacement_slide(prs, path, title=label, theme=theme):
+            return False
+        video_cues.append(
+            {
+                "index": before + 1,  # 1-based, matches preview / slideshow
+                "slot": slot,
+                "title": label,
+                "basename": video_basenames.get(slot) or path.name,
+                "source_path": str(path.resolve()),
+                "kind": "video",
+            }
+        )
+        return True
 
     # --- Pre-Mass (reference deck slide) ---
     _add_pre_mass_slide(prs, theme)
@@ -5360,6 +5721,47 @@ def generate_mass_ppt(
     out = _OUTPUT_DIR / f"{stem}.pptx"
     n_slides = len(prs.slides)
     prs.save(out)
+
+    # Stage embedded videos for the in-app slideshow (PDF rasterization cannot play movies).
+    staged_cues: list[dict[str, Any]] = []
+    if video_cues:
+        media_dir = _OUTPUT_DIR / "slideshow_media" / stem
+        media_dir.mkdir(parents=True, exist_ok=True)
+        for cue in video_cues:
+            src = Path(str(cue.get("source_path") or ""))
+            idx = int(cue.get("index") or 0)
+            if not src.is_file() or idx < 1:
+                continue
+            dest_name = f"slide_{idx:04d}.mp4"
+            dest = media_dir / dest_name
+            try:
+                if dest.exists():
+                    dest.unlink(missing_ok=True)
+                try:
+                    dest.hardlink_to(src)
+                except OSError:
+                    shutil.copy2(src, dest)
+            except OSError:
+                continue
+            staged_cues.append(
+                {
+                    "index": idx,
+                    "slot": cue.get("slot") or "",
+                    "title": cue.get("title") or "",
+                    "basename": cue.get("basename") or src.name,
+                    "kind": "video",
+                    "rel_path": f"slideshow_media/{stem}/{dest_name}",
+                }
+            )
+        cues_path = _OUTPUT_DIR / f"{stem}_slideshow_cues.json"
+        try:
+            cues_path.write_text(
+                json.dumps({"videos": staged_cues, "slide_count": n_slides}, indent=2),
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
+
     print(f"✅ PowerPoint created: {out} ({n_slides} slides)")
     _SHOW_HYMN_SECTION_LABELS = False
-    return n_slides, out
+    return n_slides, out, staged_cues

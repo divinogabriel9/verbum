@@ -64,7 +64,12 @@ from services.hymn_library import get_hymn
 from services.hymn_slide_preview import build_hymn_slide_preview
 from services.rite_slide_preview import build_rite_slide_preview
 from services.lyrics_fetcher import fetch_and_store_for_selection
-from services.ppt_preview_render import render_ppt_preview_pngs
+from services.ppt_preview_render import (
+    begin_progressive_ppt_preview,
+    list_slide_images,
+    render_pdf_page_range,
+    render_ppt_preview_pngs,
+)
 from services.ppt_template_analyze import analyze_pptx_theme
 from services.song_catalog import (
     catalog_for_api,
@@ -245,7 +250,54 @@ def _collect_generation_owned_paths(result: GenerationResult) -> list[str]:
         gospel = _OUTPUT_DIR / f"{result.export_stem}_gospel_moment.png"
         if gospel.is_file():
             owned.append(gospel.name)
+        cues = _OUTPUT_DIR / f"{result.export_stem}_slideshow_cues.json"
+        if cues.is_file():
+            owned.append(cues.name)
+        media_dir = _OUTPUT_DIR / "slideshow_media" / result.export_stem
+        if media_dir.is_dir():
+            for child in media_dir.glob("*.mp4"):
+                if child.is_file():
+                    owned.append(f"slideshow_media/{result.export_stem}/{child.name}")
+    for cue in getattr(result, "slideshow_cues", None) or []:
+        rel = str((cue or {}).get("rel_path") or "").strip().lstrip("/")
+        if rel and rel not in owned:
+            owned.append(rel)
     return owned
+
+
+def _slideshow_cues_payload(cues: Optional[list[dict[str, Any]]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for cue in cues or []:
+        if not isinstance(cue, dict):
+            continue
+        rel = str(cue.get("rel_path") or "").strip().lstrip("/")
+        if not rel:
+            continue
+        item = {
+            "index": int(cue.get("index") or 0),
+            "slot": str(cue.get("slot") or ""),
+            "title": str(cue.get("title") or ""),
+            "kind": "video",
+            "basename": str(cue.get("basename") or ""),
+            "video_url": media_file_url(rel),
+        }
+        if item["index"] > 0 and item["video_url"]:
+            out.append(item)
+    return out
+
+
+def _load_slideshow_cues_for_ppt(ppt: Path) -> list[dict[str, Any]]:
+    cues_path = ppt.with_name(f"{ppt.stem}_slideshow_cues.json")
+    if not cues_path.is_file():
+        return []
+    try:
+        raw = json.loads(cues_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    videos = raw.get("videos") if isinstance(raw, dict) else None
+    if not isinstance(videos, list):
+        return []
+    return _slideshow_cues_payload(videos)
 
 
 def _resolve_child_file(parent: Path, basename: str) -> Optional[Path]:
@@ -1204,7 +1256,7 @@ class GenerateBody(BaseModel):
     divider_style: str = Field(
         "divider1",
         max_length=16,
-        description="Mass divider layout: divider1 (classic) | divider2 (Stone & Light).",
+        description="Mass divider layout: divider1 (classic) | divider2 (Stone & Light) | divider3 (Title Left).",
     )
     announcement_basenames: list[str] = Field(default_factory=list)
     mass_collection_amount: Optional[str] = Field(None, max_length=L.COLLECTION_AMOUNT)
@@ -1305,7 +1357,7 @@ class GenerateBody(BaseModel):
         lote = str(self.lote_poster or "").strip().lower()
         self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
         div_style = str(self.divider_style or "").strip().lower()
-        self.divider_style = div_style if div_style in {"divider1", "divider2"} else "divider1"
+        self.divider_style = div_style if div_style in {"divider1", "divider2", "divider3"} else "divider1"
         if self.video_replacements:
             allowed = {
                 "kyrie",
@@ -1556,11 +1608,127 @@ def api_hymn_slide_preview(
     )
 
 
+class PptPreviewRefreshBody(BaseModel):
+    """Optional knobs for deck rasterization."""
+
+    quality: str = "preview"  # "preview" | "presentation"
+
+
+_slideshow_job_lock = threading.Lock()
+_slideshow_job: dict[str, Any] = {
+    "generation": 0,
+    "status": "idle",  # idle | converting | rendering | done | error
+    "total": 0,
+    "ready": 0,
+    "complete": True,
+    "mode": "image",
+    "message": "",
+    "error": "",
+    "scale": 1.25,
+    "image_format": "jpeg",
+}
+
+
+def _preview_slide_payload(paths: list[Path]) -> list[dict[str, Any]]:
+    slides: list[dict[str, Any]] = []
+    for i, f in enumerate(paths):
+        try:
+            ts = int(f.stat().st_mtime)
+        except OSError:
+            ts = 0
+        slides.append(
+            {
+                "index": i + 1,
+                "image_url": preview_file_url(f.name) + f"?t={ts}&v={i}",
+            }
+        )
+    return slides
+
+
+def _slideshow_job_snapshot() -> dict[str, Any]:
+    with _slideshow_job_lock:
+        job = dict(_slideshow_job)
+    paths = list_slide_images(_PREVIEW_DIR)
+    ready = len(paths)
+    total = int(job.get("total") or ready)
+    status = str(job.get("status") or "idle")
+    complete = status in {"done", "error", "idle"} and (
+        status != "rendering" and status != "converting"
+    )
+    if status == "done":
+        complete = True
+    elif status in {"converting", "rendering"}:
+        complete = False
+    elif ready >= total > 0 and status != "error":
+        complete = True
+    ppt = _latest_pptx_path()
+    cues = _load_slideshow_cues_for_ppt(ppt) if ppt else []
+    return {
+        "ok": True,
+        "mode": job.get("mode") or "image",
+        "status": status,
+        "complete": complete,
+        "ready": ready,
+        "total": total,
+        "slides": _preview_slide_payload(paths),
+        "cues": cues,
+        "message": job.get("message") or "",
+        "error": job.get("error") or "",
+        "generation": job.get("generation") or 0,
+    }
+
+
+def _continue_slideshow_render(
+    *,
+    generation: int,
+    pdf_path: Path,
+    start: int,
+    total: int,
+    scale: float,
+    image_format: str,
+) -> None:
+    try:
+        def _on_page(index_1based: int, _dest: Path) -> None:
+            with _slideshow_job_lock:
+                if _slideshow_job.get("generation") != generation:
+                    return
+                _slideshow_job["ready"] = max(int(_slideshow_job.get("ready") or 0), index_1based)
+
+        render_pdf_page_range(
+            pdf_path,
+            _PREVIEW_DIR,
+            start=start,
+            end=None,
+            scale=scale,
+            image_format=image_format,
+            on_page=_on_page,
+        )
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") != generation:
+                return
+            ready = len(list_slide_images(_PREVIEW_DIR))
+            _slideshow_job["ready"] = ready
+            _slideshow_job["total"] = max(int(_slideshow_job.get("total") or 0), ready, total)
+            _slideshow_job["status"] = "done"
+            _slideshow_job["complete"] = True
+            if not (_slideshow_job.get("message") or "").strip():
+                _slideshow_job["message"] = "Slideshow ready."
+    except Exception as exc:
+        logger.warning("slideshow background render failed", exc_info=True)
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") != generation:
+                return
+            _slideshow_job["status"] = "error"
+            _slideshow_job["complete"] = True
+            _slideshow_job["error"] = str(exc) or "Slideshow render failed."
+
+
 @app.post("/api/ppt-preview/refresh")
 def api_ppt_preview_refresh(
+    body: Optional[PptPreviewRefreshBody] = None,
     _session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
-    """Render PPT slides to PNG images for in-app visual preview."""
+    """Render PPT slides to images for in-app visual preview (full deck, blocking)."""
     ppt = _latest_pptx_path()
     if not ppt or not ppt.is_file():
         return {"ok": True, "mode": "text", "slides": [], "message": "Generate deck first."}
@@ -1577,7 +1745,12 @@ def api_ppt_preview_refresh(
         if p.is_file():
             p.unlink(missing_ok=True)
 
-    png_paths, pdf_msg = render_ppt_preview_pngs(ppt, _PREVIEW_DIR, soffice_bin=soffice)
+    quality = ((body.quality if body else None) or "preview").strip().lower()
+    # 1.25 ≈ projector-friendly 1080p-class; faster than 2.0 for Theme Lab too.
+    scale = 1.25
+    png_paths, pdf_msg = render_ppt_preview_pngs(
+        ppt, _PREVIEW_DIR, soffice_bin=soffice, scale=scale, image_format="png"
+    )
     if not png_paths:
         return {
             "ok": True,
@@ -1586,18 +1759,170 @@ def api_ppt_preview_refresh(
             "message": (pdf_msg or "Could not render slide images.") + " Showing text fallback.",
         }
 
-    ts = int(png_paths[0].stat().st_mtime) if png_paths else 0
-    slides = [
-        {
-            "index": i + 1,
-            "image_url": preview_file_url(f.name) + f"?t={ts}&v={i}",
+    slides = _preview_slide_payload(png_paths)
+    msg = pdf_msg or "Full-deck preview (PDF rasterization)."
+    return {"ok": True, "mode": "image", "slides": slides, "message": msg, "quality": quality}
+
+
+@app.post("/api/ppt-preview/slideshow/start")
+def api_ppt_preview_slideshow_start(
+    body: Optional[PptPreviewRefreshBody] = None,
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """
+    Start a progressive slideshow render: convert PPTX→PDF, return the first slides
+    immediately, and keep rasterizing the rest in the background.
+    """
+    ppt = _latest_pptx_path()
+    if not ppt or not ppt.is_file():
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": [],
+            "ready": 0,
+            "total": 0,
+            "complete": True,
+            "status": "error",
+            "message": "Generate deck first.",
         }
-        for i, f in enumerate(png_paths)
-    ]
-    msg = pdf_msg or ""
-    if not msg.strip():
-        msg = "Full-deck preview (PDF rasterization)."
-    return {"ok": True, "mode": "image", "slides": slides, "message": msg}
+
+    soffice = _resolve_soffice_bin()
+    if not soffice:
+        text_slides = _extract_ppt_text_slides(ppt)
+        with _slideshow_job_lock:
+            _slideshow_job.update(
+                {
+                    "generation": int(_slideshow_job.get("generation") or 0) + 1,
+                    "status": "done",
+                    "total": len(text_slides),
+                    "ready": len(text_slides),
+                    "complete": True,
+                    "mode": "text",
+                    "message": "Install LibreOffice for exact image slideshow. Showing text fallback.",
+                    "error": "",
+                }
+            )
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": text_slides,
+            "ready": len(text_slides),
+            "total": len(text_slides),
+            "complete": True,
+            "status": "done",
+            "message": "Install LibreOffice for exact image slideshow. Showing text fallback.",
+        }
+
+    quality = ((body.quality if body else None) or "presentation").strip().lower()
+    scale = 1.25
+    image_format = "jpeg"
+    first_batch = 2
+
+    with _slideshow_job_lock:
+        generation = int(_slideshow_job.get("generation") or 0) + 1
+        _slideshow_job.update(
+            {
+                "generation": generation,
+                "status": "converting",
+                "total": 0,
+                "ready": 0,
+                "complete": False,
+                "mode": "image",
+                "message": "Converting deck for projection…",
+                "error": "",
+                "scale": scale,
+                "image_format": image_format,
+            }
+        )
+
+    first_paths, pdf_path, total, pdf_msg = begin_progressive_ppt_preview(
+        ppt,
+        _PREVIEW_DIR,
+        soffice_bin=soffice,
+        scale=scale,
+        image_format=image_format,
+        first_batch=first_batch,
+    )
+
+    if not first_paths or pdf_path is None:
+        text_slides = _extract_ppt_text_slides(ppt)
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") == generation:
+                _slideshow_job.update(
+                    {
+                        "status": "done",
+                        "mode": "text",
+                        "total": len(text_slides),
+                        "ready": len(text_slides),
+                        "complete": True,
+                        "message": (pdf_msg or "Could not render slide images.")
+                        + " Showing text fallback.",
+                    }
+                )
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": text_slides,
+            "ready": len(text_slides),
+            "total": len(text_slides),
+            "complete": True,
+            "status": "done",
+            "message": (pdf_msg or "Could not render slide images.") + " Showing text fallback.",
+            "quality": quality,
+        }
+
+    ready = len(first_paths)
+    complete = ready >= total
+    with _slideshow_job_lock:
+        if _slideshow_job.get("generation") == generation:
+            _slideshow_job.update(
+                {
+                    "status": "done" if complete else "rendering",
+                    "total": total,
+                    "ready": ready,
+                    "complete": complete,
+                    "mode": "image",
+                    "message": pdf_msg or ("Slideshow ready." if complete else "Loading remaining slides…"),
+                    "error": "",
+                }
+            )
+
+    if not complete:
+        threading.Thread(
+            target=_continue_slideshow_render,
+            kwargs={
+                "generation": generation,
+                "pdf_path": pdf_path,
+                "start": ready,
+                "total": total,
+                "scale": scale,
+                "image_format": image_format,
+            },
+            daemon=True,
+            name="ppt-slideshow-render",
+        ).start()
+
+    return {
+        "ok": True,
+        "mode": "image",
+        "slides": _preview_slide_payload(first_paths),
+        "ready": ready,
+        "total": total,
+        "complete": complete,
+        "status": "done" if complete else "rendering",
+        "message": pdf_msg or ("Slideshow ready." if complete else "Opening slideshow…"),
+        "quality": quality,
+        "generation": generation,
+        "cues": _load_slideshow_cues_for_ppt(ppt),
+    }
+
+
+@app.get("/api/ppt-preview/slideshow/status")
+def api_ppt_preview_slideshow_status(
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Poll progressive slideshow render progress."""
+    return _slideshow_job_snapshot()
 
 
 @app.get("/api/input-limits")
@@ -3358,6 +3683,9 @@ def api_generate(
         out["poster_ppt_url"] = poster_ppt_url
     if zip_url:
         out["zip_url"] = zip_url
+    cues = _slideshow_cues_payload(getattr(result, "slideshow_cues", None))
+    if cues:
+        out["slideshow_cues"] = cues
     print(
         f"[generate] done stem={result.export_stem} slides={result.slide_count} pptx={bool(ppt_url)}",
         flush=True,
@@ -3585,6 +3913,7 @@ async def api_regenerate_pptx(
         "export_stem": result.export_stem,
         "pptx_url": ppt_url,
         "title": result.title,
+        "slideshow_cues": _slideshow_cues_payload(getattr(result, "slideshow_cues", None)),
     }
 
 

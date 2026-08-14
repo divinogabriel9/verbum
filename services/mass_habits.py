@@ -54,7 +54,7 @@ _ALLOWED: dict[str, frozenset[Any]] = {
     "hymn_lyrics_layout": frozenset({"single", "dual"}),
     "lotw_poster": frozenset({"lotw1", "lotw2", "lotw3", "lotw4"}),
     "lote_poster": frozenset({"lote1", "lote2", "lote3", "lote4"}),
-    "divider_style": frozenset({"divider1", "divider2"}),
+    "divider_style": frozenset({"divider1", "divider2", "divider3"}),
     "poster_template": frozenset({"liturgical_color", "classic_white"}),
     "include_church_logo": frozenset({True, False}),
     "include_church_name": frozenset({True, False}),

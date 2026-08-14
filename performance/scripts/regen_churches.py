@@ -101,7 +101,7 @@ def main() -> None:
         "Bacolod",
     ]
     themes = ["liturgical_color", "classic_white"]
-    divider_styles = ["divider1", "divider2"]
+    divider_styles = ["divider1", "divider2", "divider3"]
     lotw = ["lotw1", "lotw2", "lotw3", "lotw4"]
     lote = ["lote1", "lote2", "lote3", "lote4"]
     ai_styles = ["cinematic", "stained_glass", "oil_painting", "watercolor", "iconographic"]

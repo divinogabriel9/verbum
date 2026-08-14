@@ -436,6 +436,7 @@ class GenerationResult:
     liturgical_color: Optional[Mapping[str, Any]] = None
     export_stem: str = ""
     include_social_exports: bool = False
+    slideshow_cues: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _poster_template_arg(name: str) -> PosterTemplate:
@@ -654,7 +655,7 @@ def generate_mass_media(
         use_poster_as_divider=include_ai_mass_poster,
     )
 
-    slide_count, pptx_path = generate_mass_ppt(
+    slide_count, pptx_path, slideshow_cues = generate_mass_ppt(
         title=title,
         gospel_reference=gospel_ref,
         gospel_quote=slide_line or gospel_text,
@@ -733,6 +734,7 @@ def generate_mass_media(
         liturgical_color=liturgical_color,
         export_stem=stem,
         include_social_exports=include_social_exports,
+        slideshow_cues=list(slideshow_cues or []),
     )
 
 
@@ -836,7 +838,7 @@ def regenerate_mass_pptx(
         refrain_index=psalm_refrain_index,
     )
 
-    slide_count, pptx_path = generate_mass_ppt(
+    slide_count, pptx_path, slideshow_cues = generate_mass_ppt(
         title=title,
         gospel_reference=gospel_ref,
         gospel_quote=slide_line or gospel_text,
@@ -892,4 +894,5 @@ def regenerate_mass_pptx(
         slide_line_preview=slide_line[:180] + ("…" if len(slide_line) > 180 else ""),
         slide_count=slide_count,
         export_stem=stem,
+        slideshow_cues=list(slideshow_cues or []),
     )

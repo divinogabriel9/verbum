@@ -793,6 +793,23 @@
         "triumphant",
         "journey"
       ]
+    },
+    {
+      "id": "enter_rejoice_and_come_in",
+      "title": "Enter, Rejoice And Come In",
+      "author": "",
+      "lyrics": "Verse 1\nEnter, Rejoice, And Come In.\nEnter, Rejoice, And Come In.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 2\nOpen Your Ears To The Song.\nOpen Your Ears To The Song.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 3\nOpen Your Hearts Ev'ryone.\nOpen Your Hearts Ev'ryone.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 4\nDon't Be Afraid Of Some Change.\nDon't Be Afraid Of Some Change.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 5\nEnter, Rejoice, And Come In.\nEnter, Rejoice, And Come In.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-08-14T16:03:56.986914+00:00",
+      "language": "English",
+      "updated_at": "2026-08-14T16:05:02.034424+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "mercy"
+      ]
     }
   ],
   "communion": [
@@ -929,7 +946,7 @@
       "id": "you_are_mine",
       "title": "You are Mine",
       "author": "David Haas",
-      "lyrics": "Verse 1\n[Verse 1]\nI Will Come To You In The Silence\nI Will Lift You From All Your Fear\nYou Will Hear My Voice\nI Claim You As My Choice\nBe Still, And Know I Am Near\n\nVerse 2\n[Verse 2]\nI Am Hope For All Who Are Hopeless\nI Am Eyes For All Who Long To See\nIn The Shadows Of The Night\nI Will Be Your Light\nCome And Rest In Me\n\nVerse 3\n[Chorus]\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine\n\nVerse 4\n[Verse 3]\nI Am Strength For All The Despairing\nHealing For The Ones Who Dwell In Shame\nAll The Blind Will See, The Lame Will All Run Free\nAnd All Will Know My Name\n\nVerse 5\n[Chorus]\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine\n\nVerse 5\n[Verse 4]\nI Am The Word That Leads All To Freedom\nI Am The Peace The World Cannot Give\nI Will Call Your Name, Embracing All Your Pain\nStand Up, Now, Walk, And Live\n\nVerse 6\n[Chorus]\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine",
+      "lyrics": "Verse 1\nI Will Come To You In The Silence\nI Will Lift You From All Your Fear\nYou Will Hear My Voice\nI Claim You As My Choice\nBe Still, And Know I Am Near\n\nVerse 2\nI Am Hope For All Who Are Hopeless\nI Am Eyes For All Who Long To See\nIn The Shadows Of The Night\nI Will Be Your Light\nCome And Rest In Me\n\nChorus\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine\n\nVerse 3\nI Am Strength For All The Despairing\nHealing For The Ones Who Dwell In Shame\nAll The Blind Will See,\nThe Lame Will All Run Free\nAnd All Will Know My Name\n\nChorus\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine\n\nVerse 4\nI Am The Word That Leads All To Freedom\nI Am The Peace The World Cannot Give\nI Will Call Your Name,\nEmbracing All Your Pain\nStand Up, Now, Walk, And Live\n\nChorus\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
@@ -938,7 +955,9 @@
       "gospel_moods": [
         "mercy",
         "journey"
-      ]
+      ],
+      "added_at": "2026-08-14T16:12:56.716524+00:00",
+      "updated_at": "2026-08-14T16:12:56.716524+00:00"
     },
     {
       "id": "isang_bansa",
@@ -1478,16 +1497,36 @@
         "triumphant",
         "mercy"
       ]
+    },
+    {
+      "id": "amare_wt_servire",
+      "title": "Amare Et Servire",
+      "author": "",
+      "lyrics": "Verse 1\nIn Omnibus Amare In Omnibus Servire\nIn Omnibus Amare Et Servire Domino\nIn Ev’rything\nLove  And Serve The Lord.\n\nVerse 2\nIn Omnibus Amare In Omnibus Servire\nIn Omnibus Amare Et Servire Domino\nIn Ev’rything\nLove And Serve The Lord.\n\nVerse 3\nIn Omnibus Amare In Omnibus Servire\nIn Omnibus Amare Et Servire Domino\nIn Ev’rything, In Ev’rything\nLove And Serve The Lord.\n\nVerse 4\nIn Omnibus Amare In Omnibus Servire\nIn Omnibus Amare Et Servire Domino\nIn Ev’rything, Love And Serve The Lord.\n\nVerse 5\nIn Omnibus Amare Et Servire\nDomino In Ev’rything\nLove And Serve The Lord.",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-08-13T12:30:33.274873+00:00",
+      "language": "English",
+      "updated_at": "2026-08-14T15:59:34.638337+00:00",
+      "gospel_moods": [
+        "reverent"
+      ]
     }
   ],
   "recessional": [
     {
       "id": "we_are_called",
       "title": "We Are Called",
-      "lyrics": "We Are Called To Act With Justice,\nWe Are Called To Love Tenderly;\nWe Are Called To Serve One Another,\nTo Walk Humbly With God.\n\nCome! Live In The Light!\nShine With The Joy And The Love Of The Lord!\n\nGod Of Daybreak, God Of Shadow,\nCome Into Our Restless Lives;\nLift From Us The Fear Of Shadows,\nThat We May Arise With Light.\n\nWe Are Called To Act With Justice...\n\nCome! Live In The Light!...\n\nGod Of Newness, God Of Freshness,\nCome Into Our Morning Song:\nGive To Us A New Beginning,\nSend Us Forth With Hearts Made Strong.\n\nWe Are Called To Act With Justice...\n\nCome! Live In The Light!...",
+      "lyrics": "Verse 1\nWe Are Called To Act With Justice,\nWe Are Called To Love Tenderly;\nWe Are Called To Serve One Another,\nTo Walk Humbly With God.\n\nVerse 2\nCome! Live In The Light!\nShine With The Joy And The Love Of The Lord!\n\nVerse 3\nGod Of Daybreak, God Of Shadow,\nCome Into Our Restless Lives;\nLift From Us The Fear Of Shadows,\nThat We May Arise With Light.\n\nVerse 4\nWe Are Called To Act With Justice...\n\nVerse 5\nCome! Live In The Light!...\n\nVerse 6\nGod Of Newness, God Of Freshness,\nCome Into Our Morning Song:\nGive To Us A New Beginning,\nSend Us Forth With Hearts Made Strong.\n\nVerse 7\nWe Are Called To Act With Justice...\n\nVerse 8\nCome! Live In The Light!...",
+      "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time"
       ],
+      "added_at": "2026-08-13T08:57:10.678308+00:00",
+      "language": "English",
+      "updated_at": "2026-08-13T08:57:10.678308+00:00",
       "gospel_moods": [
         "mercy"
       ]

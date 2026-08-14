@@ -24,6 +24,7 @@ def _upsert_normalized_song_row(
     section: str,
     row: dict[str, Any],
     now: str,
+    include_lyrics: bool = True,
 ) -> None:
     hid = str(row.get("id") or "").strip()
     if not hid:
@@ -37,17 +38,19 @@ def _upsert_normalized_song_row(
         "gospel_moods": normalize_gospel_moods(row.get("gospel_moods")),
         "updated_at": now,
     }
-    lyrics = str(row.get("lyrics") or "")
     client.table("hymn_songs").upsert(meta, on_conflict="id").execute()
-    client.table("hymn_song_lyrics").upsert(
-        {"hymn_id": hid, "lyrics": lyrics, "updated_at": now},
-        on_conflict="hymn_id",
-    ).execute()
+    if include_lyrics:
+        client.table("hymn_song_lyrics").upsert(
+            {"hymn_id": hid, "lyrics": str(row.get("lyrics") or ""), "updated_at": now},
+            on_conflict="hymn_id",
+        ).execute()
 
 
 def sync_songs_to_normalized_tables(
     catalog: dict[str, list[dict[str, Any]]],
     song_ids: set[str] | frozenset[str],
+    *,
+    include_lyrics: bool = True,
 ) -> None:
     """Upsert only the given hymn ids into hymn_songs + hymn_song_lyrics."""
     if not supabase_enabled() or not song_ids:
@@ -68,7 +71,13 @@ def sync_songs_to_normalized_tables(
             if hid not in wanted:
                 continue
             try:
-                _upsert_normalized_song_row(client, section=sec, row=row, now=now)
+                _upsert_normalized_song_row(
+                    client,
+                    section=sec,
+                    row=row,
+                    now=now,
+                    include_lyrics=include_lyrics,
+                )
             except Exception as exc:
                 logger.warning("hymn normalized sync failed for %s: %s", hid, exc)
 

@@ -9,7 +9,6 @@ from typing import Any, Optional
 from services.gospel_mood import gospel_moods_for_song
 from services.hymn_catalog_store import (
     catalog_library_path,
-    invalidate_catalog_cache,
     load_catalog_dict,
 )
 
@@ -30,12 +29,15 @@ def _blank_library() -> dict[str, list[dict[str, Any]]]:
 
 
 def invalidate_library_cache() -> None:
-    """Drop in-memory hymn library cache after catalog writes."""
+    """Drop derived hymn-library indexes after catalog writes.
+
+    Does not clear the hymn catalog cache — ``save_catalog_dict`` already
+    stores the just-written catalog in memory.
+    """
     global _library_cache, _library_mtime, _id_index
     _library_cache = None
     _library_mtime = 0.0
     _id_index = None
-    invalidate_catalog_cache()
 
 
 def load_library() -> dict[str, Any]:

@@ -123,7 +123,7 @@ def main() -> int:
         print("No library hymn with lyrics found; hymn sections will use marked-slide fallback.")
 
     stem = "deck_preview_baseline" if args.baseline else "deck_preview_sample"
-    n_slides, pptx_path = generate_mass_ppt(
+    n_slides, pptx_path, _cues = generate_mass_ppt(
         title="Twelfth Sunday in Ordinary Time",
         gospel_reference="Lk 9:18-24",
         gospel_quote="Who do you say that I am?",

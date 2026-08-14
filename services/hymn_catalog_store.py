@@ -226,6 +226,7 @@ def save_catalog_dict(
     *,
     updated_by: str | None = None,
     sync_song_ids: set[str] | frozenset[str] | None = None,
+    sync_lyrics: bool = True,
 ) -> None:
     """Persist catalog — Supabase when configured, always mirror to local JSON."""
     global _catalog_cache, _catalog_revision
@@ -241,7 +242,9 @@ def save_catalog_dict(
         _write_file_catalog(normalized)
     try:
         if sync_song_ids:
-            sync_songs_to_normalized_tables(normalized, sync_song_ids)
+            sync_songs_to_normalized_tables(
+                normalized, sync_song_ids, include_lyrics=sync_lyrics
+            )
         else:
             sync_catalog_to_normalized_tables(normalized)
     except Exception as exc:

@@ -1862,6 +1862,56 @@
     .flow-dock-float .uiverse-btn {
       flex-shrink: 0;
     }
+    .mass-present-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px 10px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-card);
+      max-width: min(420px, calc(100vw - 24px));
+    }
+    .mass-present-bar[hidden] {
+      display: none !important;
+    }
+    .mass-present-bar__text {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.84rem;
+      line-height: 1.35;
+      color: var(--ink);
+    }
+    .mass-present-bar__text strong {
+      display: block;
+      font-size: 0.9rem;
+    }
+    .mass-present-bar__text span {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    .mass-present-bar__btn {
+      flex-shrink: 0;
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.84rem;
+      font-weight: 650;
+      cursor: pointer;
+      background: var(--accent, #1f4b3a);
+      color: #fff;
+    }
+    .mass-present-bar__btn:hover,
+    .mass-present-bar__btn:focus-visible {
+      filter: brightness(1.05);
+      outline: none;
+    }
+    .mass-present-bar__btn:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
     .toast-stack {
       display: flex;
       flex-direction: column-reverse;
@@ -6968,8 +7018,11 @@
     }
     .deck-divider-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
+    }
+    @media (max-width: 720px) {
+      .deck-divider-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 560px) {
       .deck-divider-grid { grid-template-columns: 1fr; }
@@ -13164,13 +13217,13 @@
       background: #15803d !important;
       border-color: #15803d !important;
       color: #fff !important;
-      transform: scale(1.03);
-      box-shadow: 0 0 0 4px color-mix(in srgb, #22c55e 28%, transparent);
-      animation: song-metadata-save-pop 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+      transform: scale(1.02);
+      box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 22%, transparent);
+      animation: song-metadata-save-pop 0.22s cubic-bezier(0.23, 1, 0.32, 1);
     }
     #song-metadata-save.is-saved .song-metadata-save__check {
       display: inline-flex;
-      animation: song-metadata-save-check-in 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+      animation: song-metadata-save-check-in 0.18s cubic-bezier(0.23, 1, 0.32, 1);
     }
     #song-metadata-save.is-error {
       background: #b91c1c !important;
@@ -13192,9 +13245,9 @@
       to { transform: rotate(360deg); }
     }
     @keyframes song-metadata-save-pop {
-      0% { transform: scale(0.96); }
-      55% { transform: scale(1.05); }
-      100% { transform: scale(1.03); }
+      0% { transform: scale(0.98); }
+      55% { transform: scale(1.03); }
+      100% { transform: scale(1.02); }
     }
     @keyframes song-metadata-save-check-in {
       0% { opacity: 0; transform: scale(0.4); }
@@ -13489,12 +13542,12 @@
     .song-save-result.is-hiding {
       opacity: 0;
       transform: scale(0.98);
-      transition: opacity 0.22s ease, transform 0.22s ease;
+      transition: opacity 0.12s ease, transform 0.12s ease;
     }
     .song-save-result--success {
       opacity: 0;
       transform: scale(0.96);
-      transition: opacity 0.28s ease, transform 0.28s ease;
+      transition: opacity 0.16s ease, transform 0.16s ease;
     }
     .song-save-result--success.is-visible {
       opacity: 1;
@@ -13552,10 +13605,10 @@
       stroke-dashoffset: 48;
     }
     .song-save-result--success.is-visible .song-save-result__check-circle {
-      animation: song-save-check-circle 0.55s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+      animation: song-save-check-circle 0.28s cubic-bezier(0.65, 0, 0.45, 1) forwards;
     }
     .song-save-result--success.is-visible .song-save-result__check-mark {
-      animation: song-save-check-mark 0.35s 0.45s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+      animation: song-save-check-mark 0.2s 0.16s cubic-bezier(0.65, 0, 0.45, 1) forwards;
     }
     @keyframes song-save-check-circle {
       to { stroke-dashoffset: 0; }
@@ -17241,6 +17294,183 @@
     .ui-card--gen-receipt {
       width: var(--ui-card-width-receipt);
     }
+    /* In-app PowerPoint-style projection slideshow */
+    .mass-slideshow {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      color: #fff;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity 180ms ease-out,
+        visibility 0s linear 180ms;
+    }
+    .mass-slideshow.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: opacity 180ms ease-out, visibility 0s;
+    }
+    .mass-slideshow.is-blank .mass-slideshow__stage,
+    .mass-slideshow.is-blank .mass-slideshow__chrome {
+      opacity: 0;
+    }
+    .mass-slideshow.is-cursor-hidden,
+    .mass-slideshow.is-cursor-hidden * {
+      cursor: none !important;
+    }
+    .mass-slideshow__stage {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 0;
+      user-select: none;
+      transition: opacity 120ms ease;
+    }
+    .mass-slideshow__frame {
+      width: min(100vw, calc(100vh * 16 / 9));
+      height: min(100vh, calc(100vw * 9 / 16));
+      max-width: 100%;
+      max-height: 100%;
+      position: relative;
+      background: #000;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+    .mass-slideshow__img,
+    .mass-slideshow__video,
+    .mass-slideshow__text {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .mass-slideshow__img {
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+    .mass-slideshow__video {
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+    /* Author `display:block` must not override the HTML hidden attribute,
+       or an empty <video> paints a black layer over every image slide. */
+    .mass-slideshow__img[hidden],
+    .mass-slideshow__video[hidden],
+    .mass-slideshow__text[hidden] {
+      display: none !important;
+    }
+    .mass-slideshow__text {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(24px, 5vw, 72px);
+      box-sizing: border-box;
+      text-align: center;
+      white-space: pre-wrap;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.1rem, 2.4vw, 2rem);
+      line-height: 1.45;
+      color: #f5f5f5;
+      overflow: auto;
+    }
+    .mass-slideshow__hit {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 28%;
+      z-index: 2;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+    }
+    .mass-slideshow__hit--prev { left: 0; }
+    .mass-slideshow__hit--next { right: 0; }
+    .mass-slideshow__chrome {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 160ms ease, transform 160ms ease;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .mass-slideshow.is-chrome-visible .mass-slideshow__chrome,
+    .mass-slideshow:focus-within .mass-slideshow__chrome {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .mass-slideshow__counter {
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      opacity: 0.85;
+      font-variant-numeric: tabular-nums;
+    }
+    .mass-slideshow__actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .mass-slideshow__btn {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(20, 20, 20, 0.72);
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    .mass-slideshow__btn:hover,
+    .mass-slideshow__btn:focus-visible {
+      background: rgba(40, 40, 40, 0.9);
+      outline: none;
+    }
+    .mass-slideshow__hint {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.78rem;
+      letter-spacing: 0.02em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+    .mass-slideshow.is-hint-visible .mass-slideshow__hint {
+      opacity: 1;
+    }
+    @media (max-width: 720px) {
+      .mass-slideshow__hit { width: 22%; }
+      .mass-slideshow__chrome { padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+    }
+
     .mass-gen-receipt {
       display: flex;
       flex-direction: column;
@@ -18422,6 +18652,13 @@
                   <span class="deck-divider-option__meta">
                     <strong>Divider 2 · Stone &amp; Light</strong>
                     <span>Gospel quote with citation, celebrant on the right, bold title.</span>
+                  </span>
+                </button>
+                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="divider3" id="deck-divider-opt-divider3">
+                  <img class="deck-divider-option__preview" src="/static/images/dividers/divider3_preview.jpg" alt="" loading="lazy" width="320" height="180" />
+                  <span class="deck-divider-option__meta">
+                    <strong>Divider 3 · Title Left</strong>
+                    <span>Sunday title on the left, gospel quote on the right panel.</span>
                   </span>
                 </button>
               </div>
@@ -21353,6 +21590,7 @@
               <button type="button" class="mw-btn mw-btn--ghost" id="mw-back" data-mw-back hidden>Back</button>
               <button type="button" class="mw-btn mw-btn--ghost" id="btn-practice-share-wizard" hidden>Share lyrics</button>
               <button type="button" class="mw-btn mw-btn--primary" id="mw-next" data-mw-next>Continue →</button>
+              <button type="button" class="mw-btn mw-btn--ghost" id="mw-present" hidden>Present</button>
               <button type="button" class="mw-btn mw-btn--generate" id="mw-generate" data-mw-generate hidden>Generate Presentation</button>
             </footer>
           </div>
@@ -21564,6 +21802,8 @@
           if ($('mw-back')) $('mw-back').hidden = n === 1;
           if ($('mw-next')) $('mw-next').hidden = n === 7;
           if ($('mw-generate')) $('mw-generate').hidden = n !== 7;
+          if ($('mw-present')) $('mw-present').hidden = n !== 7 || !window.__massPresentAvailable;
+          if (typeof window.syncMassPresentAgainUi === 'function') window.syncMassPresentAgainUi();
           var practiceShareNav = $('btn-practice-share-wizard');
           if (practiceShareNav) practiceShareNav.hidden = n !== 5;
           if (n === 3) { ensureReadings(); }
@@ -21856,6 +22096,9 @@
           if ($('mw-next')) $('mw-next').addEventListener('click', next);
           if ($('mw-back')) $('mw-back').addEventListener('click', back);
           if ($('mw-generate')) $('mw-generate').addEventListener('click', function () { var g = $('btn-generate-flow'); if (g) g.click(); });
+          if ($('mw-present')) $('mw-present').addEventListener('click', function () {
+            if (typeof window.reopenLastMassSlideshow === 'function') window.reopenLastMassSlideshow();
+          });
           var massLang = $('flow-mass-language');
           if (massLang && massLang.dataset.mwLangBound !== '1') {
             massLang.dataset.mwLangBound = '1';
@@ -23418,6 +23661,13 @@
     </div>
     <div class="app-bottom-right" id="app-bottom-right">
       <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
+      <div class="mass-present-bar" id="mass-present-bar" hidden>
+        <div class="mass-present-bar__text">
+          <strong>Deck ready</strong>
+          <span id="mass-present-bar-sub">Open slideshow without regenerating.</span>
+        </div>
+        <button type="button" class="mass-present-bar__btn" id="btn-present-slideshow">Present</button>
+      </div>
       <div class="flow-dock-float" id="flow-dock-actions" hidden>
         <button type="button" class="uiverse-btn" id="btn-load-flow"><div class="button-outer"><div class="button-inner"><span>Load readings</span></div></div></button>
         <button type="button" class="uiverse-btn uiverse-btn--generate" id="btn-generate-flow"><div class="button-outer"><div class="button-inner"><span>Generate package</span></div></div></button>
@@ -23462,17 +23712,37 @@
       <header class="ui-card__header">
         <div class="ui-card__header-text">
           <h3 class="ui-card__title" id="mass-gen-receipt-title">Package summary</h3>
-          <p class="ui-card__description" id="mass-gen-receipt-desc">Review before generating. Use Quick edit to change anything.</p>
+          <p class="ui-card__description" id="mass-gen-receipt-desc">Review before continuing. Choose Generate for a PowerPoint download, or Slideshow to present in the browser.</p>
         </div>
         <button type="button" class="ghost ui-card__close" id="mass-gen-receipt-close" aria-label="Close">×</button>
       </header>
       <div class="ui-card__content" id="mass-gen-receipt-body"></div>
       <footer class="ui-card__footer ui-card__footer--row">
-        <button type="button" class="secondary" id="mass-gen-receipt-cancel">Cancel</button>
         <button type="button" class="secondary" id="mass-gen-receipt-edit">Quick edit</button>
+        <button type="button" class="secondary" id="mass-gen-receipt-slideshow">Slideshow</button>
         <button type="button" class="primary" id="mass-gen-receipt-confirm">Generate</button>
       </footer>
     </article>
+  </div>
+
+  <div class="mass-slideshow" id="mass-slideshow" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Mass slideshow">
+    <p class="mass-slideshow__hint" id="mass-slideshow-hint">Arrow keys or click to advance · B blank · Esc exit</p>
+    <div class="mass-slideshow__stage" id="mass-slideshow-stage">
+      <div class="mass-slideshow__frame" id="mass-slideshow-frame">
+        <img class="mass-slideshow__img" id="mass-slideshow-img" alt="" hidden />
+        <video class="mass-slideshow__video" id="mass-slideshow-video" playsinline preload="auto" hidden></video>
+        <div class="mass-slideshow__text" id="mass-slideshow-text" hidden></div>
+      </div>
+      <button type="button" class="mass-slideshow__hit mass-slideshow__hit--prev" id="mass-slideshow-hit-prev" aria-label="Previous slide"></button>
+      <button type="button" class="mass-slideshow__hit mass-slideshow__hit--next" id="mass-slideshow-hit-next" aria-label="Next slide"></button>
+    </div>
+    <div class="mass-slideshow__chrome" id="mass-slideshow-chrome">
+      <span class="mass-slideshow__counter" id="mass-slideshow-counter">1 / 1</span>
+      <div class="mass-slideshow__actions">
+        <button type="button" class="mass-slideshow__btn" id="mass-slideshow-download">Download PPTX</button>
+        <button type="button" class="mass-slideshow__btn" id="mass-slideshow-exit">Exit</button>
+      </div>
+    </div>
   </div>
 
   <div class="song-preview-panel" id="song-preview-panel" aria-hidden="true" hidden>
@@ -30857,7 +31127,7 @@
       };
       if (loading && !loading.hidden) {
         loading.classList.add("is-hiding");
-        window.setTimeout(reveal, 120);
+        window.setTimeout(reveal, 40);
       } else {
         reveal();
       }
@@ -31090,13 +31360,14 @@
 
     // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
     // Theme 1 = Liturgy Flow (amber). Themes 2–3 are strict mono black/white.
-    // Divider style is independent: divider1 (classic panels) | divider2 (Stone & Light).
+    // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (title left).
     const DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
     const DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
     const DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
     const DIVIDER_STYLES = {
       divider1: { id: "divider1", name: "Divider 1 · Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
       divider2: { id: "divider2", name: "Divider 2 · Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
+      divider3: { id: "divider3", name: "Divider 3 · Title Left", note: "Sunday title on the left, gospel quote on the right panel." },
     };
     const presetThemes = [
       {
@@ -35171,7 +35442,8 @@
       if (!massMoodPickSelections.length) return;
       massMoodPickSelections.forEach((pick) => {
         if (!pick.slotKey || !pick.id) return;
-        selectedLyricsSongs[pick.slotKey] = pick.id;
+        if (typeof assignMassSlotSong === "function") assignMassSlotSong(pick.slotKey, pick.id);
+        else selectedLyricsSongs[pick.slotKey] = pick.id;
         updateMassSlotChip(pick.slotKey);
         updateMassSongPreviewButton(pick.slotKey);
       });
@@ -35266,7 +35538,8 @@
       massMoodPickExcludeIds = new Set();
       selections.forEach((pick) => {
         if (!pick.slotKey || !pick.id) return;
-        selectedLyricsSongs[pick.slotKey] = pick.id;
+        if (typeof assignMassSlotSong === "function") assignMassSlotSong(pick.slotKey, pick.id);
+        else selectedLyricsSongs[pick.slotKey] = pick.id;
         massMoodPickExcludeIds.add(String(pick.id));
       });
       return true;
@@ -35714,14 +35987,12 @@
         const key = btn.dataset.pickSlot;
         const pickId = btn.dataset.pickId;
         if (!key) return;
-        selectedLyricsSongs[key] = pickId || "";
+        if (typeof assignMassSlotSong === "function") assignMassSlotSong(key, pickId || "");
+        else selectedLyricsSongs[key] = pickId || "";
         clearSongPlanSearchUi(key);
         updateMassSlotChip(key);
         updateMassSongPreviewButton(key);
         renderFlowSongCount();
-        if (pickId && typeof maybeApplySongCatalogMediaToMassSlot === "function") {
-          maybeApplySongCatalogMediaToMassSlot(key, pickId);
-        }
         if (root.id === "practice-share-song-plan") {
           window.requestAnimationFrame(() => focusNextPracticeShareSection(key));
         }
@@ -35824,6 +36095,7 @@
             if (!window.confirm("Remove \"" + name + "\" from this share?")) return;
             if (slot.custom) {
               lyricSongSlots = lyricSongSlots.filter((s) => s.key !== key);
+              if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(key, "");
               delete selectedLyricsSongs[key];
             } else {
               practiceShareExcludedSlots.add(key);
@@ -35836,6 +36108,7 @@
           if (!slot.custom) return;
           if (!window.confirm("Delete \"" + name + "\"? Any selected song for this section will be removed.")) return;
           lyricSongSlots = lyricSongSlots.filter((s) => s.key !== key);
+          if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(key, "");
           delete selectedLyricsSongs[key];
           renderMassSongPlan();
           return;
@@ -35844,8 +36117,11 @@
         if (!clr || !root.contains(clr)) return;
         const key = clr.dataset.massSongClear;
         if (!key) return;
-        selectedLyricsSongs[key] = "";
-        if (typeof setMassSongVideoMode === "function") setMassSongVideoMode(key, false, { quiet: true });
+        if (typeof assignMassSlotSong === "function") assignMassSlotSong(key, "");
+        else {
+          selectedLyricsSongs[key] = "";
+          if (typeof setMassSongVideoMode === "function") setMassSongVideoMode(key, false, { quiet: true });
+        }
         clearSongPlanSearchUi(key);
         updateMassSlotChip(key);
         updateMassSongPreviewButton(key);
@@ -42927,7 +43203,8 @@
               picks.forEach((pick) => {
                 if (!pick.slotKey || !pick.id) return;
                 if (String(selectedLyricsSongs[pick.slotKey] || "").trim()) return;
-                selectedLyricsSongs[pick.slotKey] = pick.id;
+                if (typeof assignMassSlotSong === "function") assignMassSlotSong(pick.slotKey, pick.id);
+                else selectedLyricsSongs[pick.slotKey] = pick.id;
               });
             }
             applied = true;
@@ -43737,28 +44014,49 @@
       };
     }
 
-    function maybeApplySongCatalogMediaToMassSlot(slotKey, songId) {
-      const row = lookupMassPlanSong(songId);
-      if (!row || !slotKey) return;
-      const audioRef = normalizeComposerMediaRef(row.audio_media);
-      const videoRef = normalizeComposerMediaRef(row.video_media);
-      if (!audioRef && !videoRef) return;
+    function syncMassSlotMediaToSong(slotKey, songId) {
+      const slot = String(slotKey || "").trim();
+      if (!slot) return;
+      const row = songId && typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      const audioRef = row ? normalizeComposerMediaRef(row.audio_media) : null;
+      const videoRef = row ? normalizeComposerMediaRef(row.video_media) : null;
       const apply = () => {
-        if (audioRef && !getMassSectionMedia("audio", slotKey)) {
-          setMassSectionMedia("audio", slotKey, resolveLibraryMediaRow("music", audioRef));
-        }
-        if (videoRef && massMediaKeyAllowsVideo(slotKey) && !getMassSectionMedia("video", slotKey)) {
-          setMassSectionMedia("video", slotKey, resolveLibraryMediaRow("video", videoRef));
+        setMassSectionMedia(
+          "audio",
+          slot,
+          audioRef ? resolveLibraryMediaRow("music", audioRef) : null
+        );
+        if (massMediaKeyAllowsVideo(slot) || getMassSectionMedia("video", slot)) {
+          setMassSectionMedia(
+            "video",
+            slot,
+            videoRef && massMediaKeyAllowsVideo(slot)
+              ? resolveLibraryMediaRow("video", videoRef)
+              : null
+          );
         }
       };
+      apply();
       if (
-        (savedMediaLibrary.music && savedMediaLibrary.music.length) ||
-        (savedMediaLibrary.video && savedMediaLibrary.video.length)
+        (audioRef || videoRef) &&
+        !((savedMediaLibrary.music && savedMediaLibrary.music.length) ||
+          (savedMediaLibrary.video && savedMediaLibrary.video.length))
       ) {
-        apply();
-        return;
+        ensureSavedMediaLibrary(false).then(apply).catch(() => {});
       }
-      ensureSavedMediaLibrary(false).then(apply).catch(() => apply());
+    }
+
+    function assignMassSlotSong(slotKey, songId) {
+      const key = String(slotKey || "").trim();
+      if (!key) return;
+      const nextId = String(songId || "").trim();
+      const prevId = String((selectedLyricsSongs && selectedLyricsSongs[key]) || "").trim();
+      selectedLyricsSongs[key] = nextId;
+      if (prevId !== nextId) syncMassSlotMediaToSong(key, nextId);
+    }
+
+    function maybeApplySongCatalogMediaToMassSlot(slotKey, songId) {
+      syncMassSlotMediaToSong(slotKey, songId);
     }
 
     function songSlotHasLyrics(slotKey, id) {
@@ -43967,7 +44265,8 @@
       const slotKey = inp.dataset.receiptSongInput;
       const val = (inp.value || "").trim();
       if (!val) {
-        selectedLyricsSongs[slotKey] = "";
+        if (typeof assignMassSlotSong === "function") assignMassSlotSong(slotKey, "");
+        else selectedLyricsSongs[slotKey] = "";
         inp.dataset.songId = "";
         updateMassSlotChip(slotKey);
         updateMassSongPreviewButton(slotKey);
@@ -43986,7 +44285,8 @@
         });
       }
       if (match) {
-        selectedLyricsSongs[slotKey] = match.id;
+        if (typeof assignMassSlotSong === "function") assignMassSlotSong(slotKey, match.id);
+        else selectedLyricsSongs[slotKey] = match.id;
         inp.value = match.title;
         inp.dataset.songId = match.id;
       }
@@ -44050,6 +44350,10 @@
         massGenReceiptResolve = resolve;
         massGenReceiptEditMode = false;
         massGenReceiptOptionsCache = options || {};
+        const desc = $("mass-gen-receipt-desc");
+        if (desc) {
+          desc.textContent = "Review before continuing. Choose Generate for a PowerPoint download, or Slideshow to present in the browser.";
+        }
         renderMassGenerateReceipt(model);
         setUiOverlayOpen($("mass-gen-receipt-modal"), true);
       });
@@ -44064,6 +44368,715 @@
         massGenReceiptResolve = null;
       }
     }
+
+    const massSlideshowState = {
+      open: false,
+      index: 0,
+      mode: "image",
+      slides: [],
+      objectUrls: [],
+      pptxUrl: "",
+      pptxName: "mass_presentation.pptx",
+      blank: false,
+      chromeTimer: null,
+      hintTimer: null,
+      cursorTimer: null,
+      bound: false,
+      expectedTotal: 0,
+      pollTimer: null,
+      generation: 0,
+      complete: true,
+    };
+
+    let lastMassGenerateResult = null;
+    let lastMassSlideshowSession = null;
+    window.__massPresentAvailable = false;
+
+    function syncMassPresentAgainUi() {
+      const available = !!(
+        (lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length)
+        || (lastMassGenerateResult && lastMassGenerateResult.pptx_url)
+      );
+      window.__massPresentAvailable = available;
+      const bar = $("mass-present-bar");
+      const sub = $("mass-present-bar-sub");
+      if (bar) {
+        // Hide while actively presenting.
+        bar.hidden = !available || massSlideshowState.open;
+      }
+      if (sub) {
+        sub.textContent = lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length
+          ? "Resume without regenerating."
+          : "Open slideshow from the latest deck.";
+      }
+      const mwPresent = $("mw-present");
+      if (mwPresent) {
+        const onReview = document.body.classList.contains("mw-on")
+          && $("mw-generate")
+          && !$("mw-generate").hidden;
+        mwPresent.hidden = !available || !onReview || massSlideshowState.open;
+      }
+    }
+    window.syncMassPresentAgainUi = syncMassPresentAgainUi;
+
+    function rememberMassSlideshowSessionFromState() {
+      if (!massSlideshowState.slides || !massSlideshowState.slides.length) return;
+      lastMassSlideshowSession = {
+        mode: massSlideshowState.mode,
+        pptxUrl: massSlideshowState.pptxUrl || (lastMassGenerateResult && lastMassGenerateResult.pptx_url) || "",
+        pptxName: massSlideshowState.pptxName || (((lastMassGenerateResult && lastMassGenerateResult.export_stem) || "mass_presentation") + ".pptx"),
+        expectedTotal: Math.max(massSlideshowState.expectedTotal || 0, massSlideshowState.slides.length),
+        complete: !!massSlideshowState.complete,
+        resumeIndex: massSlideshowState.index || 0,
+        slides: massSlideshowState.slides.map((s) => ({
+          index: s.index,
+          image_url: s.image_url || "",
+          text: s.text || "",
+          kind: s.kind || "",
+          video_url: s.video_url || "",
+          title: s.title || "",
+          slot: s.slot || "",
+        })),
+      };
+      syncMassPresentAgainUi();
+    }
+
+    function rememberMassGenerateResult(data) {
+      if (!data) return;
+      lastMassGenerateResult = data;
+      syncMassPresentAgainUi();
+    }
+
+    function stopMassSlideshowPoll() {
+      if (massSlideshowState.pollTimer) {
+        clearTimeout(massSlideshowState.pollTimer);
+        massSlideshowState.pollTimer = null;
+      }
+    }
+
+    function revokeMassSlideshowObjectUrls() {
+      massSlideshowState.objectUrls.forEach((u) => {
+        try { URL.revokeObjectURL(u); } catch (_e) { /* ignore */ }
+      });
+      massSlideshowState.objectUrls = [];
+    }
+
+    async function loadMassSlideshowAuthedImage(url) {
+      const res = await authorizedFetch(url);
+      if (!res.ok) throw new Error("Slide image failed (" + res.status + ")");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      massSlideshowState.objectUrls.push(objectUrl);
+      return objectUrl;
+    }
+
+    async function loadMassSlideshowAuthedVideo(url) {
+      const res = await authorizedFetch(url);
+      if (!res.ok) throw new Error("Slide video failed (" + res.status + ")");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      massSlideshowState.objectUrls.push(objectUrl);
+      return objectUrl;
+    }
+
+    function pauseMassSlideshowVideo() {
+      const video = $("mass-slideshow-video");
+      if (!video) return;
+      try { video.pause(); } catch (_e) { /* ignore */ }
+      video.removeAttribute("src");
+      try { video.load(); } catch (_e2) { /* ignore */ }
+      video.hidden = true;
+    }
+
+    function applyMassSlideshowCues(cues) {
+      if (!Array.isArray(cues) || !cues.length) return;
+      cues.forEach((cue) => {
+        if (!cue || cue.kind !== "video") return;
+        const index = parseInt(cue.index, 10);
+        if (!index) return;
+        let slide = massSlideshowState.slides.find((s) => s.index === index);
+        if (!slide) {
+          slide = { index: index, image_url: "", text: "", objectUrl: "" };
+          massSlideshowState.slides.push(slide);
+        }
+        slide.kind = "video";
+        slide.video_url = cue.video_url || slide.video_url || "";
+        slide.title = cue.title || slide.title || "";
+        slide.slot = cue.slot || slide.slot || "";
+      });
+      massSlideshowState.slides.sort((a, b) => a.index - b.index);
+      // Ensure image placeholders exist for gaps before video-only indices from cues.
+      const maxIdx = Math.max(
+        massSlideshowState.expectedTotal || 0,
+        ...massSlideshowState.slides.map((s) => s.index)
+      );
+      massSlideshowState.expectedTotal = Math.max(massSlideshowState.expectedTotal || 0, maxIdx);
+    }
+
+    function setMassSlideshowChromeVisible(visible) {
+      const root = $("mass-slideshow");
+      if (!root) return;
+      root.classList.toggle("is-chrome-visible", !!visible);
+      if (massSlideshowState.chromeTimer) {
+        clearTimeout(massSlideshowState.chromeTimer);
+        massSlideshowState.chromeTimer = null;
+      }
+      if (visible) {
+        massSlideshowState.chromeTimer = setTimeout(() => {
+          if (massSlideshowState.open && !massSlideshowState.blank) {
+            root.classList.remove("is-chrome-visible");
+          }
+        }, 2200);
+      }
+    }
+
+    function bumpMassSlideshowCursor() {
+      const root = $("mass-slideshow");
+      if (!root || !massSlideshowState.open) return;
+      root.classList.remove("is-cursor-hidden");
+      if (massSlideshowState.cursorTimer) clearTimeout(massSlideshowState.cursorTimer);
+      massSlideshowState.cursorTimer = setTimeout(() => {
+        if (massSlideshowState.open && !massSlideshowState.blank) {
+          root.classList.add("is-cursor-hidden");
+        }
+      }, 1800);
+    }
+
+    function updateMassSlideshowCounter() {
+      const counter = $("mass-slideshow-counter");
+      if (!counter) return;
+      const ready = massSlideshowState.slides.length;
+      const total = Math.max(ready, massSlideshowState.expectedTotal || 0);
+      const idx = massSlideshowState.index;
+      if (!ready) {
+        counter.textContent = "0 / 0";
+        return;
+      }
+      const label = (idx + 1) + " / " + total;
+      counter.textContent = (!massSlideshowState.complete && ready < total)
+        ? (label + " · loading")
+        : label;
+    }
+
+    function renderMassSlideshowSlide() {
+      const img = $("mass-slideshow-img");
+      const video = $("mass-slideshow-video");
+      const text = $("mass-slideshow-text");
+      const slides = massSlideshowState.slides;
+      const total = slides.length;
+      const idx = Math.max(0, Math.min(massSlideshowState.index, Math.max(0, total - 1)));
+      massSlideshowState.index = idx;
+      updateMassSlideshowCounter();
+      const slide = slides[idx];
+      pauseMassSlideshowVideo();
+      if (!slide) {
+        if (img) { img.hidden = true; img.removeAttribute("src"); }
+        if (text) {
+          text.hidden = false;
+          text.textContent = "No slides to present.";
+        }
+        return;
+      }
+
+      const showVideo = async (objectUrl) => {
+        if (img) { img.hidden = true; img.removeAttribute("src"); }
+        if (text) { text.hidden = true; text.textContent = ""; }
+        if (!video) return;
+        video.hidden = false;
+        video.src = objectUrl;
+        video.currentTime = 0;
+        try {
+          await video.play();
+        } catch (_playErr) {
+          // Autoplay may be blocked until a user gesture; click/arrow still advances.
+        }
+      };
+
+      if (slide.kind === "video" && (slide.videoObjectUrl || slide.video_url)) {
+        if (slide.videoObjectUrl) {
+          showVideo(slide.videoObjectUrl);
+          return;
+        }
+        if (text) {
+          text.hidden = false;
+          text.textContent = "Loading video…";
+        }
+        if (img) { img.hidden = true; img.removeAttribute("src"); }
+        loadMassSlideshowAuthedVideo(slide.video_url).then((objectUrl) => {
+          if (!massSlideshowState.open) return;
+          slide.videoObjectUrl = objectUrl;
+          if (massSlideshowState.index === idx) showVideo(objectUrl);
+        }).catch(() => {
+          if (!massSlideshowState.open || massSlideshowState.index !== idx) return;
+          if (text) text.textContent = slide.title ? (slide.title + " (video unavailable)") : "Video unavailable";
+        });
+        return;
+      }
+
+      if (massSlideshowState.mode === "image" && slide.objectUrl) {
+        if (text) { text.hidden = true; text.textContent = ""; }
+        if (img) {
+          img.hidden = false;
+          img.alt = "Slide " + (slide.index || (idx + 1));
+          img.src = slide.objectUrl;
+        }
+      } else if (massSlideshowState.mode === "image" && slide.image_url && !slide.objectUrl) {
+        if (text) {
+          text.hidden = false;
+          text.textContent = "Loading slide…";
+        }
+        if (img) { img.hidden = true; img.removeAttribute("src"); }
+        loadMassSlideshowAuthedImage(slide.image_url).then((objectUrl) => {
+          if (!massSlideshowState.open) return;
+          slide.objectUrl = objectUrl;
+          if (massSlideshowState.index === idx) renderMassSlideshowSlide();
+        }).catch(() => {
+          if (!massSlideshowState.open || massSlideshowState.index !== idx) return;
+          if (text) text.textContent = slide.text || ("Slide " + (slide.index || (idx + 1)));
+        });
+      } else {
+        if (img) { img.hidden = true; img.removeAttribute("src"); }
+        if (text) {
+          text.hidden = false;
+          text.textContent = slide.text || ("Slide " + (slide.index || (idx + 1)));
+        }
+      }
+    }
+
+    function mergeMassSlideshowRemoteSlides(remoteSlides) {
+      if (!Array.isArray(remoteSlides) || !remoteSlides.length) return 0;
+      let added = 0;
+      remoteSlides.forEach((s, i) => {
+        const index = (s && s.index) || (i + 1);
+        const existing = massSlideshowState.slides.find((row) => row.index === index);
+        if (existing) {
+          if (!existing.image_url && s.image_url) existing.image_url = s.image_url;
+          if (!existing.text && s.text) existing.text = s.text;
+          if (!existing.kind && s.kind) existing.kind = s.kind;
+          if (!existing.video_url && s.video_url) existing.video_url = s.video_url;
+          if (!existing.title && s.title) existing.title = s.title;
+          return;
+        }
+        massSlideshowState.slides.push({
+          index: index,
+          image_url: (s && s.image_url) || "",
+          text: (s && s.text) || "",
+          kind: (s && s.kind) || "",
+          video_url: (s && s.video_url) || "",
+          title: (s && s.title) || "",
+          slot: (s && s.slot) || "",
+          objectUrl: "",
+        });
+        added += 1;
+      });
+      massSlideshowState.slides.sort((a, b) => a.index - b.index);
+      if (added) updateMassSlideshowCounter();
+      return added;
+    }
+
+    async function fetchMassSlideshowStatus() {
+      if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+        await window.VerbumAuth.waitUntilReady();
+      }
+      const headers = {};
+      if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+        Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+      }
+      const res = await fetch("/api/ppt-preview/slideshow/status", { headers });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.detail || data.error || res.statusText;
+        throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+      }
+      return data;
+    }
+
+    function scheduleMassSlideshowPoll() {
+      stopMassSlideshowPoll();
+      if (!massSlideshowState.open || massSlideshowState.complete) return;
+      massSlideshowState.pollTimer = setTimeout(async () => {
+        if (!massSlideshowState.open || massSlideshowState.complete) return;
+        try {
+          const st = await fetchMassSlideshowStatus();
+          if (!massSlideshowState.open) return;
+          if (st.total) massSlideshowState.expectedTotal = Math.max(massSlideshowState.expectedTotal, st.total);
+          if (st.mode === "text" && massSlideshowState.mode !== "text") {
+            massSlideshowState.mode = "text";
+          }
+          mergeMassSlideshowRemoteSlides(st.slides || []);
+          applyMassSlideshowCues(st.cues || []);
+          rememberMassSlideshowSessionFromState();
+          updateMassSlideshowCounter();
+          // Prefetch any newly arrived slides while presenting.
+          (async () => {
+            for (let i = 0; i < massSlideshowState.slides.length; i++) {
+              if (!massSlideshowState.open) return;
+              const slot = massSlideshowState.slides[i];
+              if (!slot || slot.objectUrl || !slot.image_url) continue;
+              try {
+                slot.objectUrl = await loadMassSlideshowAuthedImage(slot.image_url);
+              } catch (_e) { /* skip */ }
+            }
+          })();
+          if (st.complete) {
+            massSlideshowState.complete = true;
+            updateMassSlideshowCounter();
+            return;
+          }
+        } catch (_e) {
+          /* keep polling briefly; generation may still be running */
+        }
+        scheduleMassSlideshowPoll();
+      }, 450);
+    }
+
+    function massSlideshowGo(delta) {
+      if (!massSlideshowState.open || !massSlideshowState.slides.length) return;
+      if (massSlideshowState.blank) {
+        setMassSlideshowBlank(false);
+        return;
+      }
+      const next = massSlideshowState.index + delta;
+      if (next < 0 || next >= massSlideshowState.slides.length) return;
+      massSlideshowState.index = next;
+      renderMassSlideshowSlide();
+      setMassSlideshowChromeVisible(true);
+    }
+
+    function massSlideshowJump(index) {
+      if (!massSlideshowState.open || !massSlideshowState.slides.length) return;
+      massSlideshowState.index = index;
+      setMassSlideshowBlank(false);
+      renderMassSlideshowSlide();
+      setMassSlideshowChromeVisible(true);
+    }
+
+    function setMassSlideshowBlank(on) {
+      massSlideshowState.blank = !!on;
+      const root = $("mass-slideshow");
+      if (root) root.classList.toggle("is-blank", massSlideshowState.blank);
+      if (!massSlideshowState.blank) setMassSlideshowChromeVisible(true);
+    }
+
+    function closeMassSlideshow() {
+      const root = $("mass-slideshow");
+      if (!root) return;
+      rememberMassSlideshowSessionFromState();
+      massSlideshowState.open = false;
+      massSlideshowState.blank = false;
+      massSlideshowState.complete = true;
+      stopMassSlideshowPoll();
+      pauseMassSlideshowVideo();
+      root.classList.remove("is-open", "is-blank", "is-chrome-visible", "is-hint-visible", "is-cursor-hidden");
+      root.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      if (massSlideshowState.chromeTimer) clearTimeout(massSlideshowState.chromeTimer);
+      if (massSlideshowState.hintTimer) clearTimeout(massSlideshowState.hintTimer);
+      if (massSlideshowState.cursorTimer) clearTimeout(massSlideshowState.cursorTimer);
+      massSlideshowState.chromeTimer = null;
+      massSlideshowState.hintTimer = null;
+      massSlideshowState.cursorTimer = null;
+      revokeMassSlideshowObjectUrls();
+      massSlideshowState.slides = [];
+      massSlideshowState.expectedTotal = 0;
+      const img = $("mass-slideshow-img");
+      if (img) { img.hidden = true; img.removeAttribute("src"); }
+      const text = $("mass-slideshow-text");
+      if (text) { text.hidden = true; text.textContent = ""; }
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      syncMassPresentAgainUi();
+      setFlowStatus("Slideshow closed. Tap Present to open it again.", "ok");
+    }
+
+    async function openMassSlideshow(payload) {
+      const root = $("mass-slideshow");
+      if (!root) return;
+      const opts = payload || {};
+      const slidesIn = Array.isArray(opts.slides) ? opts.slides : [];
+      stopMassSlideshowPoll();
+      revokeMassSlideshowObjectUrls();
+      massSlideshowState.mode = opts.mode === "text" ? "text" : "image";
+      massSlideshowState.pptxUrl = opts.pptxUrl || "";
+      massSlideshowState.pptxName = opts.pptxName || "mass_presentation.pptx";
+      massSlideshowState.index = 0;
+      massSlideshowState.blank = false;
+      massSlideshowState.expectedTotal = Math.max(0, parseInt(opts.expectedTotal, 10) || slidesIn.length || 0);
+      massSlideshowState.complete = opts.complete !== false;
+      massSlideshowState.generation = opts.generation || 0;
+      massSlideshowState.slides = [];
+
+      const dlBtn = $("mass-slideshow-download");
+      if (dlBtn) dlBtn.hidden = !massSlideshowState.pptxUrl;
+
+      if (massSlideshowState.mode === "image") {
+        mergeMassSlideshowRemoteSlides(slidesIn);
+        applyMassSlideshowCues(opts.cues || []);
+        // Load the first available slide before opening so projection isn't blank.
+        for (let i = 0; i < massSlideshowState.slides.length; i++) {
+          const slot = massSlideshowState.slides[i];
+          if (slot.kind === "video") {
+            if (!slot.video_url && !slot.videoObjectUrl) continue;
+            massSlideshowState.index = i;
+            break;
+          }
+          if (!slot.image_url) continue;
+          try {
+            slot.objectUrl = await loadMassSlideshowAuthedImage(slot.image_url);
+            massSlideshowState.index = i;
+            break;
+          } catch (_e) {
+            /* try next */
+          }
+        }
+        const anyMedia = massSlideshowState.slides.some((s) => !!s.objectUrl || s.kind === "video");
+        if (!anyMedia && slidesIn.length && slidesIn.some((s) => s && s.text)) {
+          massSlideshowState.mode = "text";
+          massSlideshowState.slides = slidesIn.map((s, i) => ({
+            index: (s && s.index) || (i + 1),
+            text: (s && s.text) || "",
+          }));
+        } else if (anyMedia) {
+          // Prefetch nearby image slides in the background.
+          (async () => {
+            for (let i = 0; i < massSlideshowState.slides.length; i++) {
+              if (!massSlideshowState.open) return;
+              const slot = massSlideshowState.slides[i];
+              if (!slot || slot.kind === "video" || slot.objectUrl || !slot.image_url) continue;
+              try {
+                slot.objectUrl = await loadMassSlideshowAuthedImage(slot.image_url);
+              } catch (_e) { /* skip */ }
+            }
+          })();
+        }
+      } else {
+        massSlideshowState.slides = slidesIn.map((s, i) => ({
+          index: (s && s.index) || (i + 1),
+          text: (s && s.text) || "",
+        }));
+      }
+
+      massSlideshowState.open = true;
+      root.classList.add("is-open", "is-hint-visible", "is-chrome-visible");
+      root.classList.remove("is-blank", "is-cursor-hidden");
+      root.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      syncMassPresentAgainUi();
+      const resumeAt = Math.max(0, parseInt(opts.resumeIndex, 10) || 0);
+      if (resumeAt > 0 && resumeAt < massSlideshowState.slides.length) {
+        massSlideshowState.index = resumeAt;
+      }
+      renderMassSlideshowSlide();
+      bumpMassSlideshowCursor();
+      if (massSlideshowState.hintTimer) clearTimeout(massSlideshowState.hintTimer);
+      massSlideshowState.hintTimer = setTimeout(() => {
+        root.classList.remove("is-hint-visible");
+      }, 3200);
+      setMassSlideshowChromeVisible(true);
+      try {
+        if (root.requestFullscreen) await root.requestFullscreen();
+      } catch (_e) { /* ignore — still present windowed */ }
+      if (root.focus) root.focus();
+      if (!massSlideshowState.complete) scheduleMassSlideshowPoll();
+      rememberMassSlideshowSessionFromState();
+    }
+
+    function bindMassSlideshowControls() {
+      if (massSlideshowState.bound) return;
+      massSlideshowState.bound = true;
+      const root = $("mass-slideshow");
+      if (!root) return;
+      if (!root.hasAttribute("tabindex")) root.setAttribute("tabindex", "-1");
+
+      $("mass-slideshow-exit") && $("mass-slideshow-exit").addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeMassSlideshow();
+      });
+      $("mass-slideshow-download") && $("mass-slideshow-download").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (!massSlideshowState.pptxUrl) return;
+        try {
+          await triggerBrowserDownload(massSlideshowState.pptxUrl, massSlideshowState.pptxName);
+        } catch (_err) { /* ignore */ }
+      });
+      $("mass-slideshow-hit-prev") && $("mass-slideshow-hit-prev").addEventListener("click", (e) => {
+        e.stopPropagation();
+        massSlideshowGo(-1);
+      });
+      $("mass-slideshow-hit-next") && $("mass-slideshow-hit-next").addEventListener("click", (e) => {
+        e.stopPropagation();
+        massSlideshowGo(1);
+      });
+      $("mass-slideshow-stage") && $("mass-slideshow-stage").addEventListener("click", (e) => {
+        if (e.target.closest(".mass-slideshow__hit") || e.target.closest(".mass-slideshow__chrome")) return;
+        massSlideshowGo(1);
+      });
+      root.addEventListener("mousemove", () => {
+        bumpMassSlideshowCursor();
+        setMassSlideshowChromeVisible(true);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (!massSlideshowState.open) return;
+        const key = e.key;
+        if (key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          closeMassSlideshow();
+          return;
+        }
+        if (key === "b" || key === "B" || key === ".") {
+          e.preventDefault();
+          setMassSlideshowBlank(!massSlideshowState.blank);
+          return;
+        }
+        if (massSlideshowState.blank && (key === "ArrowRight" || key === "ArrowLeft" || key === " " || key === "PageDown" || key === "PageUp")) {
+          e.preventDefault();
+          setMassSlideshowBlank(false);
+          return;
+        }
+        if (key === "ArrowRight" || key === "PageDown" || key === " " || key === "Enter") {
+          e.preventDefault();
+          massSlideshowGo(1);
+        } else if (key === "ArrowLeft" || key === "PageUp" || key === "Backspace") {
+          e.preventDefault();
+          massSlideshowGo(-1);
+        } else if (key === "Home") {
+          e.preventDefault();
+          massSlideshowJump(0);
+        } else if (key === "End") {
+          e.preventDefault();
+          massSlideshowJump(massSlideshowState.slides.length - 1);
+        }
+      }, true);
+    }
+
+    async function prepareAndOpenMassSlideshow(data, statusFn) {
+      bindMassSlideshowControls();
+      const setStatus = statusFn || setFlowStatus;
+      if (data) rememberMassGenerateResult(data);
+      setMassGenLoading(true, {
+        title: "Preparing slideshow",
+        message: "Opening first slides…",
+        percent: 100,
+      });
+      try {
+        const preview = await postJSON("/api/ppt-preview/slideshow/start", { quality: "presentation" });
+        const slides = (preview && preview.slides) || [];
+        if (!slides.length) {
+          throw new Error((preview && preview.message) || "No slides were rendered for slideshow.");
+        }
+        setMassGenLoading(false);
+        await openMassSlideshow({
+          mode: (preview && preview.mode) === "text" ? "text" : "image",
+          slides: slides,
+          pptxUrl: data && data.pptx_url,
+          pptxName: ((data && data.export_stem) || "mass_presentation") + ".pptx",
+          expectedTotal: (preview && preview.total) || slides.length,
+          complete: !!(preview && preview.complete),
+          generation: (preview && preview.generation) || 0,
+          cues: (preview && preview.cues) || (data && data.slideshow_cues) || [],
+        });
+        const modeNote = (preview && preview.mode) === "image"
+          ? (preview.complete ? "Slideshow ready." : "Slideshow open — remaining slides loading…")
+          : ((preview && preview.message) || "Slideshow ready (text fallback).");
+        setStatus(modeNote, "ok", { downloads: massGenerateDownloadLinks(data || {}) });
+      } catch (err) {
+        setMassGenLoading(false);
+        setStatus((err && err.message) || "Could not open slideshow.", "error");
+        throw err;
+      }
+    }
+
+    async function reopenLastMassSlideshow() {
+      if (massSlideshowState.open) return;
+      bindMassSlideshowControls();
+      const btn = $("btn-present-slideshow");
+      const mwBtn = $("mw-present");
+      if (btn) btn.disabled = true;
+      if (mwBtn) mwBtn.disabled = true;
+      const quietCloseFailedOpen = () => {
+        const root = $("mass-slideshow");
+        massSlideshowState.open = false;
+        stopMassSlideshowPoll();
+        if (root) {
+          root.classList.remove("is-open", "is-blank", "is-chrome-visible", "is-hint-visible", "is-cursor-hidden");
+          root.setAttribute("aria-hidden", "true");
+        }
+        document.body.style.overflow = "";
+        revokeMassSlideshowObjectUrls();
+        massSlideshowState.slides = [];
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      };
+      try {
+        // 1) Instant resume from cached slide URLs (no regenerate, no LibreOffice).
+        if (lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length) {
+          try {
+            await openMassSlideshow({
+              mode: lastMassSlideshowSession.mode || "image",
+              slides: lastMassSlideshowSession.slides,
+              pptxUrl: lastMassSlideshowSession.pptxUrl,
+              pptxName: lastMassSlideshowSession.pptxName,
+              expectedTotal: lastMassSlideshowSession.expectedTotal || lastMassSlideshowSession.slides.length,
+              complete: lastMassSlideshowSession.complete !== false,
+              resumeIndex: lastMassSlideshowSession.resumeIndex || 0,
+            });
+            // If first media failed to load, fall through to server resume.
+            const hasMedia = massSlideshowState.slides.some((s) => s.objectUrl || s.videoObjectUrl || (s.kind === "video" && s.video_url));
+            if (massSlideshowState.mode === "image" && !hasMedia) {
+              quietCloseFailedOpen();
+              throw new Error("Cached slides expired.");
+            }
+            setFlowStatus("Slideshow resumed.", "ok");
+            return;
+          } catch (_cacheErr) {
+            quietCloseFailedOpen();
+            /* fall through */
+          }
+        }
+
+        // 2) Reuse already-rendered preview images on the server.
+        try {
+          const st = await fetchMassSlideshowStatus();
+          if (st && st.mode === "image" && st.slides && st.slides.length) {
+            await openMassSlideshow({
+              mode: "image",
+              slides: st.slides,
+              pptxUrl: (lastMassGenerateResult && lastMassGenerateResult.pptx_url) || (lastMassSlideshowSession && lastMassSlideshowSession.pptxUrl) || "",
+              pptxName: ((lastMassGenerateResult && lastMassGenerateResult.export_stem) || "mass_presentation") + ".pptx",
+              expectedTotal: st.total || st.slides.length,
+              complete: !!st.complete,
+              resumeIndex: (lastMassSlideshowSession && lastMassSlideshowSession.resumeIndex) || 0,
+              cues: st.cues || (lastMassGenerateResult && lastMassGenerateResult.slideshow_cues) || [],
+            });
+            if (massSlideshowState.mode === "image" && !massSlideshowState.slides.some((s) => s.objectUrl || s.videoObjectUrl || (s.kind === "video" && s.video_url))) {
+              quietCloseFailedOpen();
+              throw new Error("Preview slides expired.");
+            }
+            setFlowStatus(st.complete ? "Slideshow resumed." : "Slideshow resumed — remaining slides loading…", "ok");
+            return;
+          }
+        } catch (_stErr) {
+          quietCloseFailedOpen();
+          /* fall through */
+        }
+
+        // 3) Re-rasterize latest PPTX only (still no Mass regenerate).
+        if (!lastMassGenerateResult || !lastMassGenerateResult.pptx_url) {
+          throw new Error("No generated deck yet. Use Generate or Slideshow first.");
+        }
+        await prepareAndOpenMassSlideshow(lastMassGenerateResult, setFlowStatus);
+      } catch (err) {
+        setFlowStatus((err && err.message) || "Could not reopen slideshow.", "error");
+      } finally {
+        if (btn) btn.disabled = false;
+        if (mwBtn) mwBtn.disabled = false;
+        syncMassPresentAgainUi();
+      }
+    }
+    window.reopenLastMassSlideshow = reopenLastMassSlideshow;
 
     async function runFullMassGenerate(options) {
       const o = options || {};
@@ -44102,6 +45115,12 @@
         const receiptResult = await openMassGenerateReceiptModal(buildMassGenerateReceiptModel(o), o);
         if (!receiptResult || !receiptResult.confirmed) {
           return null;
+        }
+        o.openSlideshow = !!receiptResult.openSlideshow;
+        if (o.openSlideshow) {
+          o.autoDownloadPptx = false;
+        } else if (o.autoDownloadPptx == null) {
+          o.autoDownloadPptx = true;
         }
         applyMassGenerateReceiptEdits();
         date = ($("mass-date") && $("mass-date").value) || o.date || date;
@@ -44190,7 +45209,7 @@
         activeTheme = resolvedTheme;
         body.custom_theme = pptThemePayload(resolvedTheme);
         const divStyleEl = $("flow-divider-style");
-        const divAllowed = ["divider1", "divider2"];
+        const divAllowed = ["divider1", "divider2", "divider3"];
         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
         const divHidden = (divStyleEl && divStyleEl.value) || "";
         const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider1");
@@ -44356,6 +45375,7 @@
           $("download-row").classList.add("visible");
         }
         windowLastMassGenerateBody = JSON.parse(JSON.stringify(body));
+        rememberMassGenerateResult(data);
         commitHymnPreviewBaseline();
         pushRecent({
           title: data.title || "Mass media",
@@ -44365,12 +45385,13 @@
           poster_url: data.poster_url,
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
+        const wantSlideshow = !!o.openSlideshow;
         // Show success immediately; don't keep the overlay waiting on a multi‑MB blob download.
         const successUi = showMassGenSuccess(
-          "Presentation successfully generated.",
-          "Your PowerPoint is ready."
+          wantSlideshow ? "Presentation ready." : "Presentation successfully generated.",
+          wantSlideshow ? "Opening slideshow…" : "Your PowerPoint is ready."
         );
-        if (o.autoDownloadPptx && data.pptx_url) {
+        if (!wantSlideshow && o.autoDownloadPptx && data.pptx_url) {
           const stemName = data.export_stem || "mass_presentation";
           triggerBrowserDownload(data.pptx_url, stemName + ".pptx")
             .then(() => {
@@ -44383,12 +45404,25 @@
                 dlMeta
               );
             });
-        } else {
+        } else if (!wantSlideshow) {
           statusFn("Presentation ready.", "ok", dlMeta);
         }
         refreshAiImageQuotaHint();
         clearMassBuilderDraft();
         await successUi;
+        if (wantSlideshow) {
+          try {
+            await prepareAndOpenMassSlideshow(data, statusFn);
+          } catch (_slideErr) {
+            if (data.pptx_url) {
+              statusFn(
+                "Presentation ready, but slideshow could not open. Use the PowerPoint download link.",
+                "error",
+                dlMeta
+              );
+            }
+          }
+        }
         return data;
       } catch (error) {
         clearMassGenProgressTimers();
@@ -46674,13 +47708,12 @@
       }
     }
 
-    async function playSongMetadataSaveSuccess(message) {
+    function playSongMetadataSaveSuccess(message) {
       setSongMetadataSaveButtonState("saved");
       setSongMetadataDismissLabel("close");
       songMetaSnapshot = captureMetadataModalSnapshot();
       refreshMetadataModalPrimaryState();
       if (typeof showToast === "function") showToast(message || "Song details saved.", "ok");
-      await new Promise((resolve) => setTimeout(resolve, 420));
     }
 
     async function patchCatalogSongFromMetadataModal(section, id, title) {
@@ -46754,9 +47787,18 @@
             const section = composerLoadedSong.section || (($("lyrics-save-section") && $("lyrics-save-section").value) || "meditation");
             const id = composerLoadedSong.id;
             await patchCatalogSongFromMetadataModal(section, id, title);
+            composerLoadedSong = { section, id, title };
+            mergeSavedSongIntoLocalCatalog({
+              id,
+              title,
+              section,
+              audio_media: composerSongMedia && composerSongMedia.audio,
+              video_media: composerSongMedia && composerSongMedia.video,
+            });
+            renderSongCatalog();
             refreshSongCatalogInBackground();
           }
-          await playSongMetadataSaveSuccess("Song details saved.");
+          playSongMetadataSaveSuccess("Song details saved.");
           setLyricsStatus("Song details updated.", "ok");
         } catch (err) {
           setSongMetadataSaveButtonState("error", "Failed");
@@ -46778,6 +47820,14 @@
       setSongMetadataSaveButtonState("saving");
       try {
         const patched = await patchCatalogSongFromMetadataModal(section, id, title);
+        mergeSavedSongIntoLocalCatalog({
+          id,
+          title: patched.title,
+          section,
+          audio_media: composerSongMedia && composerSongMedia.audio,
+          video_media: composerSongMedia && composerSongMedia.video,
+        });
+        renderSongCatalog();
         refreshSongCatalogInBackground();
         if ($("lyrics-save-title")) $("lyrics-save-title").value = patched.title;
         if ($("lyrics-save-author")) $("lyrics-save-author").value = patched.author;
@@ -46785,7 +47835,7 @@
         composerGospelMoods = patched.gospel_moods.slice();
         updateLyricsComposerDetailsPreview();
         pushSongHistory({ title: patched.title, section, id, kind: "edited" });
-        await playSongMetadataSaveSuccess("Updated \"" + patched.title + "\".");
+        playSongMetadataSaveSuccess("Updated \"" + patched.title + "\".");
         setLyricsStatus("Updated \"" + patched.title + "\".", "ok");
       } catch (err) {
         setSongMetadataSaveButtonState("error", "Failed");
@@ -46989,6 +48039,7 @@
         else if (logoPreviewModal && logoPreviewModal.classList.contains("is-open")) closeLogoPreviewModal();
         else if (parishModal && parishModal.classList.contains("is-open")) closeParishSubmitModal();
         else if (delModal && delModal.classList.contains("is-open")) closeSongDeleteModal();
+        else if ($("mass-slideshow") && $("mass-slideshow").classList.contains("is-open")) closeMassSlideshow();
         else if ($("mass-gen-receipt-modal") && $("mass-gen-receipt-modal").classList.contains("is-open")) closeMassGenerateReceiptModal({ confirmed: false });
       });
     }
@@ -47222,16 +48273,21 @@
       $("btn-generate-flow").disabled = false;
     });
 
+    $("btn-present-slideshow") && $("btn-present-slideshow").addEventListener("click", () => {
+      reopenLastMassSlideshow();
+    });
+
     (function bindMassGenReceiptModal() {
       const cancelReceipt = () => closeMassGenerateReceiptModal({ confirmed: false });
-      $("mass-gen-receipt-cancel") && $("mass-gen-receipt-cancel").addEventListener("click", cancelReceipt);
       $("mass-gen-receipt-close") && $("mass-gen-receipt-close").addEventListener("click", cancelReceipt);
       $("mass-gen-receipt-backdrop") && $("mass-gen-receipt-backdrop").addEventListener("click", cancelReceipt);
       $("mass-gen-receipt-edit") && $("mass-gen-receipt-edit").addEventListener("click", () => toggleMassGenerateReceiptEditMode());
-      $("mass-gen-receipt-confirm") && $("mass-gen-receipt-confirm").addEventListener("click", () => {
+      const confirmReceipt = (openSlideshow) => {
         if (massGenReceiptEditMode) applyMassGenerateReceiptEdits();
-        closeMassGenerateReceiptModal({ confirmed: true });
-      });
+        closeMassGenerateReceiptModal({ confirmed: true, openSlideshow: !!openSlideshow });
+      };
+      $("mass-gen-receipt-slideshow") && $("mass-gen-receipt-slideshow").addEventListener("click", () => confirmReceipt(true));
+      $("mass-gen-receipt-confirm") && $("mass-gen-receipt-confirm").addEventListener("click", () => confirmReceipt(false));
     })();
 
     $("church-logo-avatar") && $("church-logo-avatar").addEventListener("click", () => {

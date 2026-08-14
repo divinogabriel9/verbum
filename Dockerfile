@@ -2,9 +2,10 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Poster text rendering (DejaVu; paths match generators/poster_generator.py fallback)
+# Poster fonts + LibreOffice for 1:1 in-app slideshow (PPTX → PDF → PNG)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
+    libreoffice-impress \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

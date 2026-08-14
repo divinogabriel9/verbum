@@ -17,7 +17,6 @@ from services.hymn_catalog_store import (
     catalog_library_path,
     catalog_revision,
     catalog_sections,
-    invalidate_catalog_cache,
     load_catalog_dict,
     save_catalog_dict,
 )
@@ -124,10 +123,15 @@ def save_catalog(
     *,
     updated_by: str | None = None,
     sync_song_ids: set[str] | frozenset[str] | None = None,
+    sync_lyrics: bool = True,
 ) -> None:
-    save_catalog_dict(data, updated_by=updated_by, sync_song_ids=sync_song_ids)
+    save_catalog_dict(
+        data,
+        updated_by=updated_by,
+        sync_song_ids=sync_song_ids,
+        sync_lyrics=sync_lyrics,
+    )
     invalidate_library_cache()
-    invalidate_catalog_cache()
     _invalidate_catalog_api_cache()
 
 
@@ -714,7 +718,12 @@ def update_catalog_song(
                 del item["gospel_moods"]
         _apply_song_media_fields(item, audio_media=audio_media, video_media=video_media)
         _stamp_song_timestamps(item, is_new=False)
-        save_catalog(data, updated_by=updated_by)
+        save_catalog(
+            data,
+            updated_by=updated_by,
+            sync_song_ids={hid},
+            sync_lyrics=lyrics is not None,
+        )
         return {
             "ok": True,
             "audio_media": normalize_song_media_ref(item.get("audio_media")),
