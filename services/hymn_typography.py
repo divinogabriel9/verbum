@@ -50,8 +50,8 @@ def _float(value: Any, default: float) -> float:
 
 def _align(value: Any, default: str) -> str:
     s = str(value or default).strip().lower()
-    if s in ("left", "center", "right"):
-        return s
+    if s in {"left", "center", "right", "justify", "middle"}:
+        return "center" if s == "middle" else s
     return default
 
 

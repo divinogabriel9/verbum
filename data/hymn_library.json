@@ -951,13 +951,13 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-14T16:12:56.716524+00:00",
       "language": "English",
+      "updated_at": "2026-08-14T16:12:56.716524+00:00",
       "gospel_moods": [
         "mercy",
         "journey"
-      ],
-      "added_at": "2026-08-14T16:12:56.716524+00:00",
-      "updated_at": "2026-08-14T16:12:56.716524+00:00"
+      ]
     },
     {
       "id": "isang_bansa",
@@ -1519,14 +1519,14 @@
     {
       "id": "we_are_called",
       "title": "We Are Called",
-      "lyrics": "Verse 1\nWe Are Called To Act With Justice,\nWe Are Called To Love Tenderly;\nWe Are Called To Serve One Another,\nTo Walk Humbly With God.\n\nVerse 2\nCome! Live In The Light!\nShine With The Joy And The Love Of The Lord!\n\nVerse 3\nGod Of Daybreak, God Of Shadow,\nCome Into Our Restless Lives;\nLift From Us The Fear Of Shadows,\nThat We May Arise With Light.\n\nVerse 4\nWe Are Called To Act With Justice...\n\nVerse 5\nCome! Live In The Light!...\n\nVerse 6\nGod Of Newness, God Of Freshness,\nCome Into Our Morning Song:\nGive To Us A New Beginning,\nSend Us Forth With Hearts Made Strong.\n\nVerse 7\nWe Are Called To Act With Justice...\n\nVerse 8\nCome! Live In The Light!...",
+      "lyrics": "Verse 1\nWe Are Called To Act With Justice,\nWe Are Called To Love Tenderly;\nWe Are Called To Serve One Another,\nTo Walk Humbly With God.\n\nVerse 2\nCome! Live In The Light!\nShine With The Joy And The Love Of The Lord!\n\nVerse 3\nGod Of Daybreak, God Of Shadow,\nCome Into Our Restless Lives;\nLift From Us The Fear Of Shadows,\nThat We May Arise With Light.\n\nVerse 4\nWe Are Called To Act With Justice...\nCome! Live In The Light!...\n\nVerse 5\nGod Of Newness, God Of Freshness,\nCome Into Our Morning Song:\nGive To Us A New Beginning,\nSend Us Forth With Hearts Made Strong.\n\nVerse 6\nWe Are Called To Act With Justice...\nCome! Live In The Light!...",
       "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time"
       ],
       "added_at": "2026-08-13T08:57:10.678308+00:00",
       "language": "English",
-      "updated_at": "2026-08-13T08:57:10.678308+00:00",
+      "updated_at": "2026-08-14T16:36:45.518981+00:00",
       "gospel_moods": [
         "mercy"
       ]

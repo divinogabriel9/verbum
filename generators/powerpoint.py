@@ -163,8 +163,8 @@ _LYRIC_LINE_PITCH_FACTOR = 1.20
 # Compact section markers (i / chor. / br.) when Music Ministry toggle is on.
 _HYMN_SECTION_LABEL_PT = 28.0
 # Reserve room for the marker row + breathing space before lyrics.
-_HYMN_SECTION_LABEL_RESERVE_IN = 0.72
-_HYMN_SECTION_LABEL_SPACE_AFTER_PT = 14.0
+_HYMN_SECTION_LABEL_RESERVE_IN = 0.95
+_HYMN_SECTION_LABEL_SPACE_AFTER_PT = 28.0
 _SHOW_HYMN_SECTION_LABELS = False
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -4379,10 +4379,13 @@ def _chunk_lyrics_display(text: str, max_lines: int = _LYRIC_MAX_LINES_PER_SLIDE
 
 def _pp_align(name: str) -> PP_ALIGN:
     key = (name or "center").strip().lower()
+    if key == "middle":
+        key = "center"
     return {
         "left": PP_ALIGN.LEFT,
         "center": PP_ALIGN.CENTER,
         "right": PP_ALIGN.RIGHT,
+        "justify": PP_ALIGN.JUSTIFY,
     }.get(key, PP_ALIGN.CENTER)
 
 
@@ -4454,7 +4457,7 @@ def _fill_hymn_body_caps(
         font.color.rgb = _ACTIVE_THEME.paren_accent if is_paren else body_color
 
     def _apply_label_para(p, text: str) -> None:
-        p.alignment = align
+        p.alignment = PP_ALIGN.CENTER
         p.line_spacing = 1.0
         p.space_after = Pt(_HYMN_SECTION_LABEL_SPACE_AFTER_PT)
         p.space_before = Pt(0)

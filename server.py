@@ -2618,7 +2618,7 @@ def api_catalog_songs(
     if lite:
         body, etag = catalog_lite_response()
         headers = {
-            "Cache-Control": "private, max-age=300",
+            "Cache-Control": "private, no-cache",
             "ETag": etag,
             "Vary": "Authorization",
         }

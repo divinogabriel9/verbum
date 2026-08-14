@@ -106,6 +106,22 @@ def sync_catalog_to_normalized_tables(
                 logger.warning("hymn normalized sync failed for %s: %s", hid, exc)
 
 
+def delete_songs_from_normalized_tables(song_ids: set[str] | frozenset[str]) -> None:
+    """Remove hymn_songs + hymn_song_lyrics rows for the given ids."""
+    if not supabase_enabled() or not song_ids:
+        return
+    wanted = {str(sid or "").strip() for sid in song_ids if str(sid or "").strip()}
+    if not wanted:
+        return
+    client = _service_client()
+    for hid in wanted:
+        try:
+            client.table("hymn_song_lyrics").delete().eq("hymn_id", hid).execute()
+            client.table("hymn_songs").delete().eq("id", hid).execute()
+        except Exception as exc:
+            logger.warning("hymn normalized delete failed for %s: %s", hid, exc)
+
+
 def fetch_lyrics_from_normalized(hymn_id: str) -> Optional[str]:
     hid = (hymn_id or "").strip()
     if not hid or not supabase_enabled():

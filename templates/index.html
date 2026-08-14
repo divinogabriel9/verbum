@@ -12294,7 +12294,8 @@
     .lyrics-editor-float__inner .ghost,
     .lyrics-editor-float__inner .lyrics-editor-float__analyze,
     .lyrics-editor-float__inner .lyrics-editor-float__save,
-    .lyrics-editor-float__clear-card .lyrics-editor-float__clear {
+    .lyrics-editor-float__clear-card .lyrics-editor-float__clear,
+    .lyrics-editor-float__clear-card .lyrics-editor-float__undo {
       box-sizing: border-box;
       min-height: 34px;
       height: 34px;
@@ -12314,7 +12315,8 @@
     .lyrics-editor-float__inner .ghost:active,
     .lyrics-editor-float__inner .lyrics-editor-float__analyze:active,
     .lyrics-editor-float__inner .lyrics-editor-float__save:active,
-    .lyrics-editor-float__clear-card .lyrics-editor-float__clear:active {
+    .lyrics-editor-float__clear-card .lyrics-editor-float__clear:active,
+    .lyrics-editor-float__clear-card .lyrics-editor-float__undo.is-visible:active:not(:disabled) {
       transform: scale(0.97);
     }
     .lyrics-editor-float__analyze {
@@ -12417,6 +12419,102 @@
       width: 12px;
       height: 12px;
       display: block;
+    }
+    .lyrics-editor-float__undo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      min-width: 34px;
+      padding: 0 9px !important;
+      color: var(--ink);
+      border: 1px dotted color-mix(in srgb, var(--ink) 28%, transparent);
+      background: color-mix(in srgb, var(--ink) 4%, transparent);
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      opacity: 0;
+      transform: scale(0.95);
+      transform-origin: center center;
+      pointer-events: none;
+      transition:
+        opacity var(--motion-duration-exit) var(--motion-ease-out),
+        transform var(--motion-duration-exit) var(--motion-ease-out),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    .lyrics-editor-float__undo[hidden] {
+      display: none !important;
+    }
+    #btn-undo-lyrics.is-visible {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+      transition:
+        opacity var(--motion-duration-base) var(--motion-ease-out),
+        transform var(--motion-duration-base) var(--motion-ease-out),
+        background var(--motion-duration-fast) var(--motion-ease-hover),
+        border-color var(--motion-duration-fast) var(--motion-ease-hover);
+    }
+    #btn-undo-lyrics.is-hiding {
+      opacity: 0;
+      transform: scale(0.95);
+      pointer-events: none;
+      transition:
+        opacity var(--motion-duration-exit) var(--motion-ease-out),
+        transform var(--motion-duration-exit) var(--motion-ease-out);
+    }
+    #btn-undo-lyrics.is-visible:hover:not(:disabled):not(:active) {
+      transform: translateY(-1px) scale(1);
+      border-color: color-mix(in srgb, var(--ink) 45%, transparent);
+      background: color-mix(in srgb, var(--ink) 8%, transparent);
+    }
+    #btn-undo-lyrics.is-visible:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .lyrics-editor-float__undo:disabled {
+      cursor: not-allowed;
+    }
+    #btn-undo-lyrics.is-visible:disabled {
+      opacity: 0.38;
+    }
+    .lyrics-editor-float__undo svg {
+      display: block;
+      flex-shrink: 0;
+    }
+    .lyrics-editor-float__undo-text {
+      display: grid;
+      grid-template-columns: 0fr;
+      min-width: 0;
+      transition: grid-template-columns var(--motion-duration-base) var(--motion-ease-out);
+    }
+    .lyrics-editor-float__undo.is-labeled .lyrics-editor-float__undo-text {
+      grid-template-columns: 1fr;
+    }
+    .lyrics-editor-float__undo-label {
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      padding-left: 5px;
+      opacity: 0;
+      transform: translateX(6px);
+      transition:
+        opacity var(--motion-duration-fast) var(--motion-ease-out),
+        transform var(--motion-duration-fast) var(--motion-ease-out);
+    }
+    .lyrics-editor-float__undo.is-labeled .lyrics-editor-float__undo-label {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lyrics-editor-float__undo,
+      #btn-undo-lyrics.is-visible,
+      #btn-undo-lyrics.is-hiding,
+      .lyrics-editor-float__undo-text,
+      .lyrics-editor-float__undo-label {
+        transition-duration: 1ms !important;
+      }
     }
     .lyrics-structured-actions .ghost#btn-clear-lyrics,
     #btn-clear-lyrics.lyrics-editor-float__clear {
@@ -13617,6 +13715,9 @@
       to { stroke-dashoffset: 0; }
     }
     #song-save-success-footer[hidden] {
+      display: none !important;
+    }
+    #song-save-success-undo[hidden] {
       display: none !important;
     }
     #song-save-success-close[hidden] {
@@ -15153,14 +15254,16 @@
     }
     .hymn-slide .hymn-section-label {
       display: block;
+      width: 100%;
+      text-align: center;
       font-family: Georgia, "Times New Roman", serif;
       font-size: var(--hymn-label-size, 0.42em);
       font-weight: 700;
       font-style: normal !important;
       letter-spacing: 0.04em;
       line-height: 1.2;
-      margin: 0 0 0.55em;
-      padding-bottom: 0.12em;
+      margin: 0 0 1.35em;
+      padding-bottom: 0.28em;
       color: #ffcc4d !important;
       -webkit-text-fill-color: #ffcc4d;
       text-transform: lowercase;
@@ -18492,21 +18595,6 @@
               </div>
             </article>
 
-            <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-panel" aria-labelledby="home-news-heading">
-              <header class="flow-bento-cell__head home-card-head home-news-panel__head home-news-panel__expand-zone" id="home-news-panel-head">
-                <div class="home-card-head__text">
-                  <h3 id="home-news-heading">Catholic News</h3>
-                  <p>Vatican News · CNA · tap to browse all</p>
-                </div>
-                <button type="button" class="btn-home-news-refresh" id="btn-home-news-refresh" aria-label="Refresh news feed" title="Refresh news">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-                  <span class="sr-only">Refresh</span>
-                </button>
-              </header>
-              <ul class="home-news-list" id="home-news-list" aria-live="polite"></ul>
-              <p class="muted home-news-status home-news-panel__expand-zone" id="home-news-status">Loading news…</p>
-            </aside>
-
             <aside class="flow-bento-cell home-bento-cell--wyd" id="home-wyd-card" tabindex="0" aria-label="Visit the official World Youth Day Seoul 2027 website" aria-labelledby="home-wyd-heading">
               <div class="home-wyd-bg" aria-hidden="true"></div>
               <div class="home-wyd-inner">
@@ -18523,6 +18611,21 @@
                   <p class="muted home-wyd-status" id="home-wyd-status">Loading WYD news…</p>
                 </div>
               </div>
+            </aside>
+
+            <aside class="flow-bento-cell home-bento-cell--news home-news-panel" id="home-news-panel" aria-labelledby="home-news-heading">
+              <header class="flow-bento-cell__head home-card-head home-news-panel__head home-news-panel__expand-zone" id="home-news-panel-head">
+                <div class="home-card-head__text">
+                  <h3 id="home-news-heading">Catholic News</h3>
+                  <p>Vatican News · CNA · tap to browse all</p>
+                </div>
+                <button type="button" class="btn-home-news-refresh" id="btn-home-news-refresh" aria-label="Refresh news feed" title="Refresh news">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                  <span class="sr-only">Refresh</span>
+                </button>
+              </header>
+              <ul class="home-news-list" id="home-news-list" aria-live="polite"></ul>
+              <p class="muted home-news-status home-news-panel__expand-zone" id="home-news-status">Loading news…</p>
             </aside>
         </div>
       </section>
@@ -20890,8 +20993,13 @@
         body.mw-on .mw-step-canvas.is-music-step .song-plan-summary__head .home-card-head__text h3 {
           font-size: 0.9375rem;
         }
-        body.mw-on .mw-step-canvas.is-music-step .mass-summary-layout-field {
+        body.mw-on .mw-step-canvas.is-music-step .mass-summary-layout-field,
+        body.mw-on .mw-step-canvas.is-music-step .mass-summary-align-field {
           margin-bottom: 6px;
+        }
+        body.mw-on .mw-step-canvas.is-music-step .flow-segment--align label {
+          padding: 4px 4px;
+          font-size: 0.625rem;
         }
         body.mw-on .mw-step-canvas.is-music-step .mass-summary-stats {
           margin-bottom: 8px;
@@ -21510,6 +21618,15 @@
                   <div class="flow-segment flow-segment--full" role="radiogroup" aria-labelledby="mass-summary-hymn-layout-label">
                     <label><input type="radio" name="flow-hymn-layout" value="single" /> 1 verse / slide</label>
                     <label><input type="radio" name="flow-hymn-layout" value="dual" checked /> 2 verses / slide</label>
+                  </div>
+                </div>
+                <div class="mass-summary-lang-field mass-summary-align-field">
+                  <label id="mass-summary-hymn-align-label">Lyric alignment</label>
+                  <div class="flow-segment flow-segment--full flow-segment--align" role="radiogroup" aria-labelledby="mass-summary-hymn-align-label">
+                    <label><input type="radio" name="flow-hymn-body-align" value="left" /> Left</label>
+                    <label><input type="radio" name="flow-hymn-body-align" value="center" checked /> Center</label>
+                    <label><input type="radio" name="flow-hymn-body-align" value="right" /> Right</label>
+                    <label><input type="radio" name="flow-hymn-body-align" value="justify" /> Justify</label>
                   </div>
                 </div>
                 <div class="mass-summary-lang-field mass-summary-section-labels-field">
@@ -23549,6 +23666,13 @@
               </svg>
             </span>
             Clear
+          </button>
+          <button type="button" class="ghost lyrics-editor-float__undo" id="btn-undo-lyrics" aria-label="Undo last edit" title="Undo last edit" hidden>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 7v6h6"/>
+              <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.7 2.9L3 13"/>
+            </svg>
+            <span class="lyrics-editor-float__undo-text"><span class="lyrics-editor-float__undo-label">Undo</span></span>
           </button>
         </div>
       </div>
@@ -28887,6 +29011,7 @@
         massCustomSlotSeq: massCustomSlotSeq,
         massSongPlanLanguage: massSongPlanLanguage,
         hymnLayout: hymnLayout ? hymnLayout.value : "dual",
+        hymnBodyAlign: readHymnBodyAlign(),
         hymnSectionLabels: readHymnSectionLabels(),
         readingsLoaded: !!(flowPreviewData && flowPreviewData.__previewDate),
         previewDate: flowPreviewData && flowPreviewData.__previewDate ? flowPreviewData.__previewDate : "",
@@ -29084,6 +29209,9 @@
       document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
         el.checked = el.value === layoutVal;
       });
+      if (typeof applyHymnBodyAlign === "function") {
+        applyHymnBodyAlign(draft.hymnBodyAlign || "center");
+      }
       if (typeof applyHymnSectionLabels === "function") {
         applyHymnSectionLabels(!!draft.hymnSectionLabels);
       }
@@ -29440,6 +29568,15 @@
     let composerLoadedSong = null;
     let composerCatalogLyrics = "";
     let composerParishVersion = false;
+    let composerUndoStack = [];
+    let composerUndoApplying = false;
+    let composerUndoBurstTimer = 0;
+    let composerUndoLabelTimer = 0;
+    let composerUndoHideTimer = 0;
+    const COMPOSER_UNDO_MAX = 40;
+    const COMPOSER_UNDO_BURST_MS = 700;
+    const COMPOSER_UNDO_LABEL_MS = 2600;
+    const COMPOSER_UNDO_EXIT_MS = 120;
     const typeLabels = {
       verse: "Verse",
       chorus: "Chorus",
@@ -29466,6 +29603,188 @@
       '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>';
     const LINES_PER_SLIDE = 6;
     const HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD = 6;
+
+    function cloneComposerLyricBlocks(blocks) {
+      return (blocks || []).map((block) => Object.assign({}, block));
+    }
+
+    function captureComposerEditorSnapshot() {
+      return {
+        lyrics: String(($("lyrics-input") && $("lyrics-input").value) || ""),
+        blocks: cloneComposerLyricBlocks(lyricBlocks),
+        rawSnapshot: String(lyricsRawSnapshot || ""),
+        title: String(($("lyrics-save-title") && $("lyrics-save-title").value) || ""),
+        author: String(($("lyrics-save-author") && $("lyrics-save-author").value) || ""),
+        language: String(($("lyrics-save-language") && $("lyrics-save-language").value) || ""),
+        section: String(($("lyrics-save-section") && $("lyrics-save-section").value) || ""),
+        moods: Array.isArray(composerGospelMoods) ? composerGospelMoods.slice() : [],
+      };
+    }
+
+    function composerEditorSnapshotsEqual(a, b) {
+      if (!a || !b) return false;
+      return (
+        a.lyrics === b.lyrics &&
+        a.title === b.title &&
+        a.author === b.author &&
+        a.language === b.language &&
+        a.section === b.section &&
+        JSON.stringify(a.blocks) === JSON.stringify(b.blocks) &&
+        JSON.stringify(a.moods) === JSON.stringify(b.moods)
+      );
+    }
+
+    function composerUndoPrefersReducedMotion() {
+      return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    function finishComposerUndoHide(btn) {
+      composerUndoHideTimer = 0;
+      if (!btn) return;
+      btn.hidden = true;
+      btn.disabled = true;
+      btn.classList.remove("is-visible", "is-hiding", "is-labeled");
+    }
+
+    function startComposerUndoLabel(btn) {
+      btn.classList.add("is-labeled");
+      if (composerUndoLabelTimer) window.clearTimeout(composerUndoLabelTimer);
+      composerUndoLabelTimer = window.setTimeout(() => {
+        composerUndoLabelTimer = 0;
+        btn.classList.remove("is-labeled");
+      }, COMPOSER_UNDO_LABEL_MS);
+    }
+
+    function refreshComposerUndoButton() {
+      const btn = $("btn-undo-lyrics");
+      if (!btn) return;
+      const canUndo = composerUndoStack.length > 0;
+      btn.setAttribute("aria-disabled", canUndo ? "false" : "true");
+
+      if (canUndo) {
+        if (composerUndoHideTimer) {
+          window.clearTimeout(composerUndoHideTimer);
+          composerUndoHideTimer = 0;
+        }
+        const wasHidden = !!btn.hidden;
+        const wasHiding = btn.classList.contains("is-hiding");
+        btn.disabled = false;
+        btn.hidden = false;
+        btn.classList.remove("is-hiding");
+        if (wasHiding) {
+          btn.classList.add("is-visible");
+          return;
+        }
+        if (!wasHidden && btn.classList.contains("is-visible")) return;
+        btn.classList.remove("is-visible");
+        if (composerUndoPrefersReducedMotion()) {
+          btn.classList.add("is-visible");
+          startComposerUndoLabel(btn);
+          return;
+        }
+        void btn.offsetWidth;
+        window.requestAnimationFrame(() => {
+          if ($("btn-undo-lyrics") !== btn || btn.hidden || btn.classList.contains("is-hiding")) return;
+          btn.classList.add("is-visible");
+        });
+        startComposerUndoLabel(btn);
+        return;
+      }
+
+      if (composerUndoLabelTimer) {
+        window.clearTimeout(composerUndoLabelTimer);
+        composerUndoLabelTimer = 0;
+      }
+      btn.classList.remove("is-labeled");
+      if (btn.hidden) {
+        btn.disabled = true;
+        btn.classList.remove("is-visible", "is-hiding");
+        return;
+      }
+      if (btn.classList.contains("is-hiding")) return;
+      btn.disabled = true;
+      if (composerUndoPrefersReducedMotion() || !btn.classList.contains("is-visible")) {
+        finishComposerUndoHide(btn);
+        return;
+      }
+      btn.classList.remove("is-visible");
+      btn.classList.add("is-hiding");
+      composerUndoHideTimer = window.setTimeout(() => finishComposerUndoHide(btn), COMPOSER_UNDO_EXIT_MS);
+    }
+
+    function clearComposerUndoStack() {
+      composerUndoStack = [];
+      if (composerUndoBurstTimer) {
+        window.clearTimeout(composerUndoBurstTimer);
+        composerUndoBurstTimer = 0;
+      }
+      refreshComposerUndoButton();
+    }
+
+    function pushComposerUndoCheckpoint() {
+      if (composerUndoApplying) return;
+      const snap = captureComposerEditorSnapshot();
+      const last = composerUndoStack[composerUndoStack.length - 1];
+      if (last && composerEditorSnapshotsEqual(last, snap)) return;
+      composerUndoStack.push(snap);
+      if (composerUndoStack.length > COMPOSER_UNDO_MAX) composerUndoStack.shift();
+      refreshComposerUndoButton();
+    }
+
+    function beginComposerUndoBurst() {
+      if (composerUndoApplying) return;
+      if (composerUndoBurstTimer) {
+        window.clearTimeout(composerUndoBurstTimer);
+        composerUndoBurstTimer = window.setTimeout(() => {
+          composerUndoBurstTimer = 0;
+        }, COMPOSER_UNDO_BURST_MS);
+        return;
+      }
+      pushComposerUndoCheckpoint();
+      composerUndoBurstTimer = window.setTimeout(() => {
+        composerUndoBurstTimer = 0;
+      }, COMPOSER_UNDO_BURST_MS);
+    }
+
+    function applyComposerEditorSnapshot(snap) {
+      if (!snap) return;
+      composerUndoApplying = true;
+      try {
+        lyricBlocks = cloneComposerLyricBlocks(snap.blocks);
+        lyricsRawSnapshot = String(snap.rawSnapshot || "");
+        if ($("lyrics-input")) $("lyrics-input").value = snap.lyrics || "";
+        if ($("lyrics-save-title")) $("lyrics-save-title").value = snap.title || "";
+        if ($("lyrics-save-author")) $("lyrics-save-author").value = snap.author || "";
+        if (typeof setComposerSongLanguage === "function") setComposerSongLanguage(snap.language || "");
+        else if ($("lyrics-save-language")) $("lyrics-save-language").value = snap.language || "";
+        if (typeof setComposerSongSection === "function") setComposerSongSection(snap.section || "");
+        else if ($("lyrics-save-section")) $("lyrics-save-section").value = snap.section || "";
+        composerGospelMoods = Array.isArray(snap.moods) ? snap.moods.slice() : [];
+        if (typeof autoResizeLyricsMainInput === "function") autoResizeLyricsMainInput();
+        renderLyrics({ writeBack: false });
+        if (typeof updateLyricsWordStats === "function") updateLyricsWordStats();
+        if (typeof markLyricsRawDirty === "function") markLyricsRawDirty();
+        if (typeof updateParishLyricsControls === "function") updateParishLyricsControls();
+        if (typeof updateLyricsComposerDetailsPreview === "function") updateLyricsComposerDetailsPreview();
+      } finally {
+        composerUndoApplying = false;
+      }
+    }
+
+    function undoComposerLastEdit() {
+      if (!composerUndoStack.length) {
+        setLyricsStatus("Nothing to undo.", "");
+        return;
+      }
+      if (composerUndoBurstTimer) {
+        window.clearTimeout(composerUndoBurstTimer);
+        composerUndoBurstTimer = 0;
+      }
+      const snap = composerUndoStack.pop();
+      applyComposerEditorSnapshot(snap);
+      refreshComposerUndoButton();
+      setLyricsStatus("Last edit undone.", "ok");
+    }
 
     function countBlockLines(text) {
       return (text || "").trim().split(/\n/).filter((ln) => ln.trim()).length;
@@ -29640,6 +29959,7 @@
     }
 
     function addLyricBlockOfType(type) {
+      pushComposerUndoCheckpoint();
       const n = lyricBlocks.filter((b) => b.type === type).length + 1;
       const label = typeLabels[type] || "Section";
       // Chorus / Refrain stay unnumbered. Verses and other types may number.
@@ -29830,6 +30150,7 @@
         setLyricsAnalyzeOverlay("idle");
         return;
       }
+      pushComposerUndoCheckpoint();
       lyricsAnalyzeInFlight = true;
       setLyricsAnalyzeOverlay("analyzing");
       setLyricsAnalyzeHint("", "");
@@ -29879,7 +30200,8 @@
       if (updateOverlay !== false) setLyricsAnalyzeOverlay("ready");
     }
 
-    function resetComposerEditorEmpty() {
+    function resetComposerEditorEmpty(opts) {
+      const preserveUndo = !!(opts && opts.preserveUndo);
       lyricBlocks = [];
       lyricsRawSnapshot = "";
       if ($("lyrics-input")) $("lyrics-input").value = "";
@@ -29897,6 +30219,7 @@
       setLyricsAnalyzeHint("", "");
       setLyricsAnalyzeOverlay("idle");
       updateLyricsWordStats();
+      if (!preserveUndo) clearComposerUndoStack();
     }
 
     function autoAnalyzeLyricsOnLibraryTab() {
@@ -30024,6 +30347,11 @@
       if (typeof syncLyricsComposerMobileUi === "function") syncLyricsComposerMobileUi();
     }
 
+    $("lyrics-block-list").addEventListener("beforeinput", (event) => {
+      if (event.target && event.target.dataset && event.target.dataset.action === "text") {
+        beginComposerUndoBurst();
+      }
+    });
     $("lyrics-block-list").addEventListener("input", (event) => {
       const card = event.target.closest(".lyric-block");
       if (!card) return;
@@ -30043,6 +30371,7 @@
       if (!card || event.target.dataset.action !== "type") return;
       const block = lyricBlocks.find((item) => item.id === card.dataset.id);
       if (!block) return;
+      pushComposerUndoCheckpoint();
       const index = lyricBlocks.findIndex((item) => item.id === card.dataset.id);
       block.type = event.target.value;
       block.title = lyricBlockSectionTitle(block, index);
@@ -30059,6 +30388,9 @@
       const index = lyricBlocks.findIndex((item) => item.id === card.dataset.id);
       if (index < 0) return;
       const block = lyricBlocks[index];
+      if (action === "delete" || action === "duplicate" || action === "move-up" || action === "move-down") {
+        pushComposerUndoCheckpoint();
+      }
       if (action === "delete") lyricBlocks.splice(index, 1);
       if (action === "duplicate") {
         const dupId = crypto.randomUUID();
@@ -30097,6 +30429,7 @@
       }
       const card = event.target.closest(".lyric-block");
       if (!card) return;
+      pushComposerUndoCheckpoint();
       draggedLyricId = card.dataset.id;
       card.classList.add("dragging");
       clearLyricDropHints();
@@ -30308,6 +30641,9 @@
 
     initLyricBlockTouchDrag();
 
+    $("lyrics-input").addEventListener("beforeinput", () => {
+      beginComposerUndoBurst();
+    });
     $("lyrics-input").addEventListener("input", () => {
       autoResizeLyricsMainInput();
       updateLyricsWordStats();
@@ -30480,6 +30816,9 @@
           return;
         }
 
+        if (($("lyrics-input") && $("lyrics-input").value.trim()) || (lyricBlocks && lyricBlocks.length)) {
+          pushComposerUndoCheckpoint();
+        }
         $("lyrics-input").value = text;
         autoResizeLyricsMainInput();
         updateLyricsWordStats();
@@ -30524,6 +30863,9 @@
     }
 
     function applyVerbumParsedSongToEditor(song) {
+      if (($("lyrics-input") && $("lyrics-input").value.trim()) || (lyricBlocks && lyricBlocks.length)) {
+        pushComposerUndoCheckpoint();
+      }
       const row = song || {};
       const title = String(row.title || "").trim();
       const author = String(row.author || "").trim();
@@ -30943,10 +31285,14 @@
 
     function confirmLyricsClear() {
       closeLyricsClearModal();
-      resetComposerEditorEmpty();
+      pushComposerUndoCheckpoint();
+      resetComposerEditorEmpty({ preserveUndo: true });
       setLyricsStatus("Editor cleared.", "");
     }
 
+    $("btn-undo-lyrics") && $("btn-undo-lyrics").addEventListener("click", () => {
+      undoComposerLastEdit();
+    });
     $("btn-clear-lyrics") && $("btn-clear-lyrics").addEventListener("click", () => {
       if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
       const hasRaw = !!(($("lyrics-input") && $("lyrics-input").value.trim()) || "");
@@ -31112,6 +31458,8 @@
         undoBtn.hidden = !token;
         undoBtn.disabled = false;
         undoBtn.dataset.undoToken = token;
+        if (token) undoBtn.textContent = "Undo import";
+        undoBtn.setAttribute("aria-hidden", token ? "false" : "true");
       }
       const reveal = () => {
         if (loading) {
@@ -32285,6 +32633,7 @@
     const massSongLyricsCache = new Map();
     const HYMN_TYPO_STORAGE_KEY = "churchMediaHymnTypography";
     const HYMN_LAYOUT_STORAGE_KEY = "churchMediaHymnLyricsLayout";
+    const HYMN_BODY_ALIGN_STORAGE_KEY = "churchMediaHymnBodyAlign";
     const HYMN_SECTION_LABELS_STORAGE_KEY = "churchMediaHymnSectionLabels";
     const COLLECTION_CURRENCY_STORAGE_KEY = "churchMediaCollectionCurrency";
 
@@ -32365,6 +32714,73 @@
       const saved = localStorage.getItem(HYMN_LAYOUT_STORAGE_KEY);
       if (saved === "single" || saved === "dual") return saved;
       return "dual";
+    }
+
+    function normalizeHymnBodyAlign(value) {
+      const v = String(value || "").trim().toLowerCase();
+      if (v === "middle") return "center";
+      if (v === "left" || v === "center" || v === "right" || v === "justify") return v;
+      return "center";
+    }
+
+    function readHymnBodyAlign() {
+      const picked = document.querySelector('input[name="flow-hymn-body-align"]:checked');
+      if (picked) return normalizeHymnBodyAlign(picked.value);
+      try {
+        return normalizeHymnBodyAlign(localStorage.getItem(HYMN_BODY_ALIGN_STORAGE_KEY));
+      } catch (_e) {
+        return "center";
+      }
+    }
+
+    function applyHymnBodyAlignToTypography(align) {
+      const bodyAlign = normalizeHymnBodyAlign(align);
+      Object.keys(hymnTypographyBySection).forEach((sec) => {
+        const block = hymnTypographyBySection[sec];
+        if (!block || typeof block !== "object") return;
+        block.body_align = bodyAlign;
+        if (block.slides && typeof block.slides === "object") {
+          Object.keys(block.slides).forEach((key) => {
+            if (block.slides[key] && typeof block.slides[key] === "object") {
+              block.slides[key].body_align = bodyAlign;
+            }
+          });
+        }
+      });
+      if (typeof saveHymnTypographyStore === "function") saveHymnTypographyStore();
+    }
+
+    function applyHymnBodyAlign(value) {
+      const align = normalizeHymnBodyAlign(value);
+      try {
+        localStorage.setItem(HYMN_BODY_ALIGN_STORAGE_KEY, align);
+      } catch (_e) { /* ignore */ }
+      document.querySelectorAll('input[name="flow-hymn-body-align"]').forEach((el) => {
+        el.checked = el.value === align;
+      });
+      applyHymnBodyAlignToTypography(align);
+      if (songPreviewState && typeof refreshSongPreviewPanel === "function") {
+        refreshSongPreviewPanel();
+      }
+      if (typeof window.scheduleMassBuilderDraftAutoSave === "function") {
+        window.scheduleMassBuilderDraftAutoSave();
+      }
+    }
+
+    function initHymnBodyAlignUi() {
+      let saved = "center";
+      try {
+        saved = normalizeHymnBodyAlign(localStorage.getItem(HYMN_BODY_ALIGN_STORAGE_KEY));
+      } catch (_e) {
+        saved = "center";
+      }
+      applyHymnBodyAlign(saved);
+      document.querySelectorAll('input[name="flow-hymn-body-align"]').forEach((el) => {
+        el.addEventListener("change", () => {
+          const v = document.querySelector('input[name="flow-hymn-body-align"]:checked');
+          if (v) applyHymnBodyAlign(v.value);
+        });
+      });
     }
 
     function readHymnSectionLabels() {
@@ -32852,7 +33268,7 @@
         body_pt: 75,
         title_pt: 38.5,
         title_align: "center",
-        body_align: "center",
+        body_align: readHymnBodyAlign(),
       };
     }
 
@@ -32873,7 +33289,7 @@
         body_pt: normalizeHymnBodyPt(block.body_pt || base.body_pt),
         title_pt: Number(block.title_pt) || base.title_pt,
         title_align: block.title_align || base.title_align,
-        body_align: block.body_align || base.body_align,
+        body_align: normalizeHymnBodyAlign(block.body_align || base.body_align),
       };
     }
 
@@ -32887,7 +33303,7 @@
         body_pt: normalizeHymnBodyPt(raw.body_pt || base.body_pt),
         title_pt: Number(raw.title_pt) || base.title_pt,
         title_align: raw.title_align || base.title_align,
-        body_align: raw.body_align || base.body_align,
+        body_align: normalizeHymnBodyAlign(raw.body_align || base.body_align),
       };
     }
 
@@ -32897,17 +33313,18 @@
         body_pt: typo.body_pt,
         title_pt: typo.title_pt,
         title_align: typo.title_align,
-        body_align: typo.body_align,
+        body_align: normalizeHymnBodyAlign(typo.body_align),
       };
       if (slideIndex === 0) {
         block.title_pt = typo.title_pt;
         block.title_align = typo.title_align;
         block.body_pt = typo.body_pt;
-        block.body_align = typo.body_align;
+        block.body_align = normalizeHymnBodyAlign(typo.body_align);
       }
     }
 
     function buildHymnTypographyPayload() {
+      const globalAlign = readHymnBodyAlign();
       const out = {};
       Object.keys(hymnTypographyBySection).forEach((k) => {
         const block = hymnTypographyBySection[k];
@@ -32916,12 +33333,23 @@
           body_pt: normalizeHymnBodyPt(block.body_pt),
           title_pt: block.title_pt,
           title_align: block.title_align,
-          body_align: block.body_align,
-          slides: block.slides || {},
+          body_align: globalAlign,
+          slides: overlayAlignOnSlides(block.slides || {}),
         };
       });
-      if (!out.default) out.default = Object.assign(defaultHymnTypo(), { slides: {} });
+      if (!out.default) out.default = Object.assign(defaultHymnTypo(), { slides: {}, body_align: globalAlign });
       return out;
+    }
+
+    function overlayAlignOnSlides(slides) {
+      const globalAlign = readHymnBodyAlign();
+      const next = {};
+      Object.keys(slides || {}).forEach((key) => {
+        const raw = slides[key];
+        if (!raw || typeof raw !== "object") return;
+        next[key] = Object.assign({}, raw, { body_align: globalAlign });
+      });
+      return next;
     }
 
     const HYMN_PPT_SLIDE_W_PT = 1440;
@@ -45265,6 +45693,7 @@
           our_father_choice: body.our_father_choice || "english",
           mass_language: body.mass_language || "english",
           hymn_lyrics_layout: body.hymn_lyrics_layout || "dual",
+          hymn_body_align: (body.hymn_typography && body.hymn_typography.default && body.hymn_typography.default.body_align) || "center",
           show_hymn_section_labels: !!body.show_hymn_section_labels,
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
@@ -46729,7 +47158,10 @@
       const pending = (async () => {
         try {
           const headers = await catalogAuthHeaders();
-          const res = await fetch("/api/catalog/songs?lite=1", { headers });
+          const res = await fetch("/api/catalog/songs?lite=1", {
+            headers,
+            cache: force ? "no-store" : "default",
+          });
           const data = await res.json();
           if (seq !== songCatalogLoadSeq) return;
           if (data.ok) {
@@ -47219,6 +47651,9 @@
           : (s.parish_version ? "" : (s.lyrics || ""))
       );
       composerParishVersion = !!s.parish_version;
+      if (($("lyrics-input") && $("lyrics-input").value.trim()) || (lyricBlocks && lyricBlocks.length)) {
+        pushComposerUndoCheckpoint();
+      }
       lyricBlocks = [];
       if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
       scheduleLyricsStructuredSync(true);
@@ -47859,17 +48294,46 @@
       if (!guardSuperadminAction()) return;
       if (!songDeletePending) return;
       const { section, id, title } = songDeletePending;
-      const res = await fetch(
-        "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
-        { method: "DELETE" }
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || data.error || "Delete failed");
-      closeSongDeleteModal();
-      pushSongHistory({ title: title || "Song", section, id, kind: "deleted" });
-      invalidateSongCatalogCaches();
-      await loadSongCatalog(true);
-      setLyricsStatus("Song removed from catalog.", "ok");
+      const confirmBtn = $("song-delete-confirm");
+      if (confirmBtn) {
+        if (confirmBtn.disabled) return;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Deleting…";
+      }
+      try {
+        const headers = await catalogAuthHeaders();
+        const res = await fetch(
+          "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
+          { method: "DELETE", headers }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = data.detail || data.error || "Delete failed";
+          throw new Error(typeof detail === "string" ? detail : "Delete failed");
+        }
+        if (songCatalogData) {
+          Object.keys(songCatalogData).forEach((sec) => {
+            if (!Array.isArray(songCatalogData[sec])) return;
+            songCatalogData[sec] = songCatalogData[sec].filter(
+              (row) => String(row.id || "").trim() !== String(id || "").trim()
+            );
+          });
+        }
+        if (composerLoadedSong && String(composerLoadedSong.id || "").trim() === String(id || "").trim()) {
+          composerLoadedSong = null;
+        }
+        renderSongCatalog();
+        closeSongDeleteModal();
+        pushSongHistory({ title: title || "Song", section, id, kind: "deleted" });
+        refreshSongCatalogInBackground();
+        setLyricsStatus("Song removed from catalog.", "ok");
+        if (typeof showToast === "function") showToast("Removed \"" + (title || "song") + "\".", "ok");
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Delete";
+        }
+      }
     }
 
     function clearSongCatalogSearch() {
@@ -47951,6 +48415,7 @@
       $("song-delete-confirm") && $("song-delete-confirm").addEventListener("click", () => {
         confirmSongDeleteFromModal().catch((err) => {
           setLyricsStatus(err.message || "Delete failed.", "error");
+          if (typeof showToast === "function") showToast(err.message || "Delete failed.", "error");
         });
       });
       [
@@ -48261,6 +48726,7 @@
     initFlowInputGroups();
     initMassDatePickers();
     initHymnLyricsLayoutUi();
+    initHymnBodyAlignUi();
     initHymnSectionLabelsToggle();
     initCollectionCurrencyUi();
     $("mass-date").addEventListener("change", () => {

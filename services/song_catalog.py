@@ -124,12 +124,14 @@ def save_catalog(
     updated_by: str | None = None,
     sync_song_ids: set[str] | frozenset[str] | None = None,
     sync_lyrics: bool = True,
+    delete_song_ids: set[str] | frozenset[str] | None = None,
 ) -> None:
     save_catalog_dict(
         data,
         updated_by=updated_by,
         sync_song_ids=sync_song_ids,
         sync_lyrics=sync_lyrics,
+        delete_song_ids=delete_song_ids,
     )
     invalidate_library_cache()
     _invalidate_catalog_api_cache()
@@ -740,16 +742,29 @@ def delete_catalog_song(
 ) -> dict[str, Any]:
     sec = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
-    if sec not in _SECTIONS or not hid:
+    if not hid:
         return {"ok": False, "error": "Invalid section or id."}
     data = load_catalog()
-    rows = data.get(sec) or []
-    new_rows = [r for r in rows if str(r.get("id") or "").strip() != hid]
-    if len(new_rows) == len(rows):
+    removed_from: list[str] = []
+    sections = [sec] if sec in _SECTIONS else []
+    for other in _SECTIONS:
+        if other not in sections:
+            sections.append(other)
+    for s in sections:
+        rows = data.get(s) or []
+        new_rows = [r for r in rows if str(r.get("id") or "").strip() != hid]
+        if len(new_rows) != len(rows):
+            data[s] = new_rows
+            removed_from.append(s)
+    if not removed_from:
         return {"ok": False, "error": "Song not found."}
-    data[sec] = new_rows
-    save_catalog(data, updated_by=updated_by)
-    return {"ok": True}
+    save_catalog(
+        data,
+        updated_by=updated_by,
+        sync_song_ids=set(),
+        delete_song_ids={hid},
+    )
+    return {"ok": True, "removed_from": removed_from}
 
 
 def import_verbum_songs_from_txt(

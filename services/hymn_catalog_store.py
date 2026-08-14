@@ -10,6 +10,7 @@ from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
 from services.hymn_normalized_store import (
+    delete_songs_from_normalized_tables,
     sync_catalog_to_normalized_tables,
     sync_songs_to_normalized_tables,
 )
@@ -227,6 +228,7 @@ def save_catalog_dict(
     updated_by: str | None = None,
     sync_song_ids: set[str] | frozenset[str] | None = None,
     sync_lyrics: bool = True,
+    delete_song_ids: set[str] | frozenset[str] | None = None,
 ) -> None:
     """Persist catalog — Supabase when configured, always mirror to local JSON."""
     global _catalog_cache, _catalog_revision
@@ -241,7 +243,9 @@ def save_catalog_dict(
     if mirror_catalog_to_local_disk():
         _write_file_catalog(normalized)
     try:
-        if sync_song_ids:
+        if delete_song_ids:
+            delete_songs_from_normalized_tables(delete_song_ids)
+        if sync_song_ids is not None:
             sync_songs_to_normalized_tables(
                 normalized, sync_song_ids, include_lyrics=sync_lyrics
             )
