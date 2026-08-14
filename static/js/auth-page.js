@@ -36,6 +36,10 @@
     return new URLSearchParams(window.location.search).get("switch") === "1";
   }
 
+  function clearSuperadminUnlockCache() {
+    try { sessionStorage.removeItem("verbum:sa-unlocked"); } catch (_e) { /* ignore */ }
+  }
+
   function applyInviteChurchName(name) {
     const churchInput = $("auth-church-name");
     const clean = (name || "").trim();
@@ -188,7 +192,11 @@
         try {
           const next = new URL(target, window.location.origin);
           next.searchParams.delete("stay");
-          next.searchParams.set("welcome", "1");
+          const intent = (next.searchParams.get("intent") || "").trim().toLowerCase();
+          // Email CTAs already have a destination — skip the mobile welcome popup.
+          if (intent !== "practice-share" && intent !== "generate") {
+            next.searchParams.set("welcome", "1");
+          }
           return next.pathname + next.search + next.hash;
         } catch (_e2) {
           return "/home?welcome=1";
@@ -196,8 +204,15 @@
       }
 
       function redirectAfterAuth() {
-        setMobileWelcomePending();
-        window.location.href = resolvePostAuthUrl();
+        const dest = resolvePostAuthUrl();
+        try {
+          const next = new URL(dest, window.location.origin);
+          const intent = (next.searchParams.get("intent") || "").trim().toLowerCase();
+          if (intent !== "practice-share" && intent !== "generate") setMobileWelcomePending();
+        } catch (_e) {
+          setMobileWelcomePending();
+        }
+        window.location.href = dest;
       }
 
       function showLoginForm() {
@@ -242,6 +257,7 @@
           switchBtn.dataset.bound = "1";
           switchBtn.addEventListener("click", async () => {
             switchBtn.disabled = true;
+            clearSuperadminUnlockCache();
             await client.auth.signOut();
             const params = new URLSearchParams(window.location.search);
             params.delete("switch");
@@ -252,6 +268,7 @@
       }
 
       if (wantsSwitchAccount()) {
+        clearSuperadminUnlockCache();
         await client.auth.signOut();
       }
 

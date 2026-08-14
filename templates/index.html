@@ -9272,8 +9272,106 @@
     }
     .song-plan-toolbar {
       display: flex;
+      align-items: center;
       justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
       margin-bottom: 10px;
+    }
+    .mass-summary-communion-field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0.35rem 0 0.7rem;
+      min-width: 0;
+    }
+    .mass-summary-communion-field .mass-communion-count__label {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin: 0;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--ink);
+    }
+    .mass-communion-count__toggle {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      gap: 1px;
+      padding: 2px;
+      border-radius: 8px;
+      background: var(--surface-2, color-mix(in srgb, var(--ink) 4%, var(--surface-solid, #fff)));
+    }
+    .mass-communion-count__btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      min-width: 24px;
+      min-height: 22px;
+      padding: 1px 7px;
+      border-radius: 6px;
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .mass-communion-count__btn:active {
+      transform: scale(0.97);
+    }
+    .mass-communion-count__btn.is-active {
+      background: var(--surface-solid, #fff);
+      color: var(--ink);
+      box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 12%, transparent);
+    }
+    .mass-communion-count__custom {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      margin: 0;
+    }
+    .mass-communion-count__custom input {
+      width: 2.35rem;
+      min-height: 26px;
+      padding: 1px 4px;
+      border: 1px solid var(--line, var(--card-border));
+      border-radius: 6px;
+      background: var(--surface-solid, #fff);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .mass-communion-count__custom input:focus {
+      outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+      outline-offset: 1px;
+    }
+    .mass-communion-count__custom.is-active input {
+      border-color: color-mix(in srgb, var(--ink) 28%, var(--line, var(--card-border)));
+      box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 12%, transparent);
+    }
+    .mass-song-plan-card.is-communion-enter {
+      animation: mass-communion-card-enter var(--motion-duration-base, 200ms) var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+    }
+    .mass-song-plan-card.is-communion-leave {
+      animation: mass-communion-card-leave var(--motion-duration-exit, 120ms) var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+      pointer-events: none;
+    }
+    @keyframes mass-communion-card-enter {
+      from { opacity: 0; transform: scale(0.95) translateY(-8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes mass-communion-card-leave {
+      from { opacity: 1; transform: scale(1) translateY(0); }
+      to { opacity: 0; transform: scale(0.95) translateY(-8px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mass-song-plan-card.is-communion-enter,
+      .mass-song-plan-card.is-communion-leave {
+        animation: none;
+      }
     }
     .song-plan-toolbar__share {
       display: inline-flex;
@@ -13179,6 +13277,42 @@
     }
     .song-metadata-media__actions .composer-media-play.is-playing {
       animation: mw-play-pulse 1s ease infinite;
+    }
+    .song-metadata-media__youtube {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .song-metadata-media__youtube > span {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .song-metadata-media__youtube-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .song-metadata-media__youtube-row input {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 32px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-solid, #fff);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.8rem;
+    }
+    .song-metadata-media__youtube-row .secondary {
+      flex: 0 0 auto;
+      font-size: 0.78rem;
+      padding: 6px 10px;
     }
     @media (max-width: 640px) {
       #song-metadata-modal .ui-card__content {
@@ -18849,7 +18983,7 @@
             </div>
             <div class="song-metadata-media" id="song-metadata-media">
               <h4 class="song-metadata-media__heading">Audio &amp; video</h4>
-              <p class="muted song-metadata-media__hint">Link files from your Media library, or upload new ones. Linked media can be reused in Mass Builder.</p>
+              <p class="muted song-metadata-media__hint">Link an MP3 from Media, or paste a YouTube URL for practice playback. Linked media can be reused in Mass Builder.</p>
               <div class="song-metadata-media__row">
                 <div class="song-metadata-media__slot">
                   <span class="song-metadata-media__label">Audio</span>
@@ -18859,6 +18993,13 @@
                     <button type="button" class="ghost composer-media-play" id="song-metadata-audio-play" hidden>Play</button>
                     <button type="button" class="ghost" id="song-metadata-audio-clear" hidden>Clear</button>
                   </div>
+                  <label class="song-metadata-media__youtube">
+                    <span>YouTube URL</span>
+                    <span class="song-metadata-media__youtube-row">
+                      <input type="url" id="song-metadata-audio-youtube" placeholder="https://youtu.be/…" inputmode="url" autocomplete="off" maxlength="320" />
+                      <button type="button" class="secondary" id="song-metadata-audio-youtube-link">Link</button>
+                    </span>
+                  </label>
                 </div>
                 <div class="song-metadata-media__slot">
                   <span class="song-metadata-media__label">Video</span>
@@ -19437,6 +19578,9 @@
         <div class="mw-modal__card song-media-preview-modal__card">
           <h3 class="mw-modal__title" id="song-media-preview-title">Video preview</h3>
           <video class="mw-modal__video song-media-preview-modal__video" id="song-media-preview-video" controls playsinline preload="auto"></video>
+          <div class="song-media-preview-modal__yt" id="song-media-preview-youtube-wrap" hidden>
+            <iframe id="song-media-preview-youtube" title="YouTube preview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          </div>
           <p class="status song-media-preview-modal__status" id="song-media-preview-status" aria-live="polite" hidden></p>
           <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="song-media-preview-close">Close</button>
         </div>
@@ -19448,6 +19592,7 @@
           <div class="mw-media-pick-tabs" role="tablist" aria-label="Media source">
             <button type="button" class="mw-media-pick-tab is-active" role="tab" aria-selected="true" id="mw-media-pick-tab-library" data-mw-media-tab="library">Media library</button>
             <button type="button" class="mw-media-pick-tab" role="tab" aria-selected="false" id="mw-media-pick-tab-upload" data-mw-media-tab="upload">Upload</button>
+            <button type="button" class="mw-media-pick-tab" role="tab" aria-selected="false" id="mw-media-pick-tab-youtube" data-mw-media-tab="youtube" hidden title="Search YouTube for this song">YouTube</button>
           </div>
           <div class="mw-media-pick-pane" id="mw-media-pick-pane-library" data-mw-media-pane="library">
             <input type="search" id="mw-media-pick-q" maxlength="120" placeholder="Search by name…" autocomplete="off" style="width:100%;margin-bottom:10px;" />
@@ -19465,9 +19610,17 @@
             <input type="file" id="mw-media-pick-file" accept=".mp3,.mp4,audio/mpeg,video/mp4" hidden />
             <p class="status mw-media-pick-upload-status" id="mw-media-pick-upload-status" aria-live="polite"></p>
           </div>
-          <div class="mw-modal__actions">
-            <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-clear">Clear link</button>
-            <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="mw-media-pick-close">Close</button>
+          <div class="mw-media-pick-pane" id="mw-media-pick-pane-youtube" data-mw-media-pane="youtube" hidden>
+            <label class="mw-media-pick-youtube" for="mw-media-pick-youtube-url">YouTube URL</label>
+            <div class="mw-media-pick-youtube-row">
+              <input type="url" id="mw-media-pick-youtube-url" placeholder="https://youtu.be/…" inputmode="url" autocomplete="off" maxlength="320" />
+              <button type="button" class="mw-btn mw-btn--primary" id="mw-media-pick-youtube-apply">Link</button>
+            </div>
+            <p class="muted mw-rite__hint" id="mw-media-pick-youtube-hint" style="margin:8px 0 0;">Click the YouTube tab to search this song in a new tab, then paste the URL here. Play is for practice only — it is not added to the PowerPoint.</p>
+          </div>
+          <div class="mw-modal__actions mw-media-pick-actions">
+            <button type="button" class="mw-btn mw-media-pick-clear" id="mw-media-pick-clear">Clear link</button>
+            <button type="button" class="mw-btn mw-btn--ghost mw-media-pick-close" id="mw-media-pick-close">Close</button>
           </div>
         </div>
       </div>
@@ -19907,7 +20060,46 @@
           border-radius: 12px;
           margin: 0 0 12px;
         }
+        #song-media-preview-modal .song-media-preview-modal__yt {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          background: #000;
+          border-radius: 12px;
+          margin: 0 0 12px;
+          overflow: hidden;
+        }
+        #song-media-preview-modal .song-media-preview-modal__yt iframe {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          border: 0;
+        }
         #song-media-preview-modal .song-media-preview-modal__status { margin: 0 0 10px; }
+        .mw-media-pick-youtube {
+          display: block;
+          margin: 0 0 6px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: var(--muted);
+        }
+        .mw-media-pick-youtube-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .mw-media-pick-youtube-row input {
+          flex: 1 1 auto;
+          min-width: 0;
+          min-height: 36px;
+          padding: 6px 10px;
+          border: 1px solid var(--card-border);
+          border-radius: 10px;
+          background: var(--surface-2);
+          color: var(--ink);
+          font: inherit;
+        }
         /* Escape .dashboard > * content-max width so the scrim covers the viewport */
         .dashboard > .mw-modal { width: auto; max-width: none; margin-inline: 0; }
         .mw-modal__card { width: min(560px, 94vw); max-height: 80vh; overflow: auto; background: var(--surface); border: 1px solid var(--card-border); border-radius: 20px; box-shadow: var(--shadow-large); padding: 24px; }
@@ -20208,11 +20400,89 @@
         body:not(.is-superadmin) .mw-media-chip--sa { display: none !important; }
         .mw-media-chip.is-on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
         .mw-media-chip__name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; letter-spacing: 0; font-weight: 600; }
-        .mw-media-pick-list { list-style: none; margin: 0; padding: 0; max-height: min(42vh, 320px); overflow: auto; display: grid; gap: 6px; }
+        .mw-media-pick-list { list-style: none; margin: 0; padding: 0; max-height: min(42vh, 320px); overflow: auto; display: grid; gap: 3px; }
         .mw-media-pick-list li { margin: 0; }
-        .mw-media-pick-list button { width: 100%; text-align: left; border: 1px solid var(--card-border); background: var(--surface); border-radius: 10px; padding: 10px 12px; cursor: pointer; font: inherit; color: var(--ink); }
-        .mw-media-pick-list button:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
-        .mw-media-pick-list .muted { font-size: 0.78rem; }
+        .mw-media-pick-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          width: 100%;
+          min-height: 32px;
+          text-align: left;
+          border: 1px solid color-mix(in srgb, var(--card-border) 80%, transparent);
+          background: var(--surface);
+          border-radius: 7px;
+          padding: 5px 9px;
+          cursor: pointer;
+          font: inherit;
+          color: var(--ink);
+        }
+        .mw-media-pick-item:hover:not(:disabled):not(.is-taken) {
+          border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+          background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+        }
+        .mw-media-pick-item.is-current {
+          border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+          background: color-mix(in srgb, var(--accent) 8%, transparent);
+        }
+        .mw-media-pick-item.is-taken,
+        .mw-media-pick-item:disabled {
+          cursor: not-allowed;
+          opacity: 0.72;
+          background: color-mix(in srgb, var(--ink) 3%, var(--surface));
+        }
+        .mw-media-pick-item__text { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 1px; }
+        .mw-media-pick-item__title {
+          display: block;
+          font-size: 0.8rem;
+          font-weight: 650;
+          line-height: 1.25;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .mw-media-pick-item__used {
+          display: block;
+          font-size: 0.65rem;
+          font-weight: 600;
+          line-height: 1.25;
+          color: var(--muted, #64748b);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .mw-media-pick-item.is-taken .mw-media-pick-item__used { color: #b42318; }
+        .mw-media-pick-actions {
+          display: flex;
+          flex-wrap: nowrap;
+          align-items: stretch;
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .mw-media-pick-actions .mw-btn {
+          flex: 1 1 0;
+          min-width: 0;
+          min-height: 42px;
+          margin-top: 0;
+          padding: 0 16px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-sizing: border-box;
+        }
+        .mw-media-pick-clear {
+          color: #b42318;
+          border: 1px dotted color-mix(in srgb, #b42318 70%, transparent);
+          background: color-mix(in srgb, #b42318 6%, transparent);
+          box-shadow: none;
+        }
+        .mw-media-pick-clear:hover {
+          color: #912018;
+          border-color: #b42318;
+          background: color-mix(in srgb, #b42318 12%, transparent);
+        }
+        .mw-media-pick-close { margin-top: 0; }
         .mw-media-pick-tabs {
           display: flex;
           gap: 6px;
@@ -20997,6 +21267,9 @@
         body.mw-on .mw-step-canvas.is-music-step .mass-summary-align-field {
           margin-bottom: 6px;
         }
+        body.mw-on .mw-step-canvas.is-music-step .mass-summary-communion-field {
+          margin: 0.25rem 0 0.55rem;
+        }
         body.mw-on .mw-step-canvas.is-music-step .flow-segment--align label {
           padding: 4px 4px;
           font-size: 0.625rem;
@@ -21638,6 +21911,17 @@
                     Verse → i, ii, iii · Chorus → chor. · Bridge → br.
                   </p>
                 </div>
+                <div class="mass-summary-communion-field" id="mass-communion-count">
+                  <span class="mass-communion-count__label" id="mass-summary-communion-label">Communion</span>
+                  <div class="mass-communion-count__toggle" role="radiogroup" aria-labelledby="mass-summary-communion-label">
+                    <button type="button" class="mass-communion-count__btn" data-communion-count="1" aria-pressed="false">1</button>
+                    <button type="button" class="mass-communion-count__btn is-active" data-communion-count="2" aria-pressed="true">2</button>
+                  </div>
+                  <label class="mass-communion-count__custom">
+                    <span class="sr-only">Custom count, 1 to 5</span>
+                    <input type="number" id="mass-communion-custom" min="1" max="5" step="1" inputmode="numeric" value="2" aria-label="Custom communion song count, 1 to 5" />
+                  </label>
+                </div>
                 <dl class="mass-summary-stats">
                   <div class="mass-summary-stat">
                     <dt>Songs</dt>
@@ -22083,7 +22367,7 @@
                 });
               }
               item.addEventListener('click', function (e) {
-                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mass-rite-slide-mode-val]')) return;
+                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mass-rite-slide-mode-val]')) return;
                 pickLang(o.value);
               });
               item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickLang(o.value); } });
@@ -22162,7 +22446,7 @@
           if (defaultOpt && defaultOpt.dataset.mwSanctusLangBound !== '1') {
             defaultOpt.dataset.mwSanctusLangBound = '1';
             defaultOpt.addEventListener('click', function (e) {
-              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mass-rite-slide-mode-val]')) return;
+              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mass-rite-slide-mode-val]')) return;
               Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
                 c.setAttribute('aria-checked', String(c.getAttribute('data-val') === 'default'));
               });
@@ -22282,6 +22566,16 @@
               }
               return;
             }
+            var ytLink = e.target.closest('[data-mw-link-youtube]');
+            if (ytLink && flowPage.contains(ytLink)) {
+              e.preventDefault();
+              e.stopPropagation();
+              var ytSlot = ytLink.getAttribute('data-mw-media-slot');
+              if (ytSlot && typeof window.openMassMediaPickModal === 'function') {
+                window.openMassMediaPickModal('audio', ytSlot, { youtubeOnly: true });
+              }
+              return;
+            }
             var chip = e.target.closest('[data-mw-link-media]');
             if (chip && flowPage.contains(chip)) {
               e.preventDefault();
@@ -22357,7 +22651,7 @@
               refreshContinue();
               mwAdvanceAfterPick(opt);
             }
-            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select')) { e.preventDefault(); return; } pickStandalone(); });
+            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select')) { e.preventDefault(); return; } pickStandalone(); });
             opt.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickStandalone(); } });
           });
           flowPage.addEventListener('input', refreshContinue, true);
@@ -25066,7 +25360,9 @@
 
     const MASS_SECTION_VIDEO_SLOTS = [
       "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god",
-      "entrance", "offertory", "communion_1", "communion_2", "recessional",
+      "entrance", "offertory",
+      "communion_1", "communion_2", "communion_3", "communion_4", "communion_5",
+      "recessional",
     ];
     const MASS_SECTION_VIDEO_SLOT_SET = new Set(MASS_SECTION_VIDEO_SLOTS);
     const MASS_RITE_OPTION_SECTIONS = new Set([
@@ -25100,6 +25396,9 @@
       offertory: "Offertory",
       communion_1: "Communion 1",
       communion_2: "Communion 2",
+      communion_3: "Communion 3",
+      communion_4: "Communion 4",
+      communion_5: "Communion 5",
       recessional: "Recessional",
     };
     const MASS_RITE_OPTION_LABELS = {
@@ -25227,15 +25526,90 @@
       return section;
     }
 
-    function normalizeMassMediaItem(item) {
-      if (!item || typeof item !== "object") return null;
-      const basename = String(item.basename || "").trim();
-      if (!basename) return null;
+    function parseYouTubeVideoId(value) {
+      let raw = String(value || "").trim();
+      if (!raw) return "";
+      if (raw.toLowerCase().indexOf("yt:") === 0) raw = raw.slice(3).trim();
+      if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+      const lowered = raw.toLowerCase();
+      if (raw.indexOf("://") < 0 && (
+        lowered.indexOf("youtube.com") === 0 ||
+        lowered.indexOf("youtu.be") === 0 ||
+        lowered.indexOf("m.youtube.com") === 0 ||
+        lowered.indexOf("music.youtube.com") === 0 ||
+        lowered.indexOf("www.youtube.com") === 0
+      )) {
+        raw = "https://" + raw;
+      }
+      let parsed;
+      try { parsed = new URL(raw); } catch (_e) { return ""; }
+      const host = String(parsed.hostname || "").toLowerCase();
+      if (!/(^|\.)youtube\.com$/.test(host) && !/(^|\.)youtu\.be$/.test(host) && !/(^|\.)youtube-nocookie\.com$/.test(host)) {
+        return "";
+      }
+      if (/(^|\.)youtu\.be$/.test(host)) {
+        const cand = parsed.pathname.replace(/^\/+/, "").split("/")[0] || "";
+        return /^[A-Za-z0-9_-]{11}$/.test(cand) ? cand : "";
+      }
+      const vid = parsed.searchParams.get("v") || "";
+      if (/^[A-Za-z0-9_-]{11}$/.test(vid)) return vid;
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      if (parts.length >= 2 && (parts[0] === "embed" || parts[0] === "shorts" || parts[0] === "live" || parts[0] === "v")) {
+        const cand = parts[1];
+        return /^[A-Za-z0-9_-]{11}$/.test(cand) ? cand : "";
+      }
+      return "";
+    }
+
+    function youtubeWatchUrl(id) {
+      return id ? ("https://www.youtube.com/watch?v=" + id) : "";
+    }
+
+    function youtubeEmbedUrl(id) {
+      return id ? ("https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0") : "";
+    }
+
+    function isYouTubeMediaRef(item) {
+      if (!item || typeof item !== "object") return false;
+      return !!(item.source === "youtube" || item.youtube_id || parseYouTubeVideoId(item.youtube_url || item.url || item.basename || ""));
+    }
+
+    function youtubeIdFromMediaRef(item) {
+      if (!item || typeof item !== "object") return "";
+      return parseYouTubeVideoId(item.youtube_id || item.youtube_url || item.url || item.basename || "");
+    }
+
+    function youtubeMediaRefFromInput(value, displayName) {
+      const id = parseYouTubeVideoId(value);
+      if (!id) return null;
+      const name = String(displayName || "").trim() || "YouTube";
       return {
-        basename: basename,
-        display_name: String(item.display_name || basename).trim() || basename,
-        url: String(item.url || "").trim(),
+        basename: "yt:" + id,
+        display_name: name,
+        url: youtubeWatchUrl(id),
+        source: "youtube",
+        youtube_id: id,
+        youtube_url: youtubeWatchUrl(id),
       };
+    }
+
+    function serializeSongMediaRef(item) {
+      const norm = normalizeComposerMediaRef(item);
+      if (!norm) return null;
+      const out = {
+        basename: norm.basename,
+        display_name: norm.display_name || norm.basename,
+      };
+      if (isYouTubeMediaRef(norm)) {
+        out.source = "youtube";
+        out.youtube_id = youtubeIdFromMediaRef(norm);
+        out.youtube_url = youtubeWatchUrl(out.youtube_id);
+      }
+      return out;
+    }
+
+    function normalizeMassMediaItem(item) {
+      return normalizeComposerMediaRef(item);
     }
 
     function getMassSectionMedia(kind, slot) {
@@ -25691,12 +26065,20 @@
     function massSongMediaRowHtml(slotKey) {
       const audio = getMassSectionMedia("audio", slotKey);
       const audioOn = !!audio;
+      const audioYoutube = isYouTubeMediaRef(audio);
+      const audioLabel = audio
+        ? (audioYoutube ? (audio.display_name || "YouTube") : (audio.display_name || audio.basename))
+        : "Link…";
       const audioPlayBtn =
         "<button type=\"button\" class=\"mw-media-play" + (audioOn ? " is-ready" : "") + "\" " +
           "data-mw-play-audio data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           (audioOn ? "" : "disabled ") +
-          "aria-label=\"Play audio preview\" " +
-          "title=\"" + escapeHtml(audioOn ? ("Play " + (audio.display_name || audio.basename)) : "Link audio first") + "\">▶</button>";
+          "aria-label=\"" + (audioYoutube ? "Play YouTube preview" : "Play audio preview") + "\" " +
+          "title=\"" + escapeHtml(audioOn ? ("Play " + audioLabel) : "Link audio or YouTube first") + "\">▶</button>";
+      const audioYoutubeBtn =
+        "<button type=\"button\" class=\"mass-song-media-btn" + (audioYoutube ? " is-on" : "") + "\" " +
+          "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+          "title=\"Paste a YouTube URL for practice playback (not added to the PowerPoint)\">YouTube</button>";
       if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) {
         return (
           "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
@@ -25706,8 +26088,9 @@
                 "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
                 "title=\"Audio snippet for the ministry to learn the tune (not added to the PowerPoint)\">" +
                 "Audio <span class=\"mass-song-media-btn__label\">" +
-                  escapeHtml(audioOn ? (audio.display_name || audio.basename) : "Link…") +
+                  escapeHtml(audioOn && !audioYoutube ? (audio.display_name || audio.basename) : (audioOn ? audioLabel : "Link…")) +
                 "</span></button>" +
+              audioYoutubeBtn +
               audioPlayBtn +
             "</div>" +
           "</div>"
@@ -25737,12 +26120,13 @@
               "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
           "</div>" +
           "<div class=\"mw-media-group\">" +
-            "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (audioOn ? " is-on" : "") + "\" " +
+            "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (audioOn && !audioYoutube ? " is-on" : "") + "\" " +
               "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
               "title=\"Audio snippet for the ministry to learn the tune (not added to the PowerPoint)\">" +
               "Audio <span class=\"mass-song-media-btn__label\">" +
-                escapeHtml(audioOn ? (audio.display_name || audio.basename) : "Link…") +
+                escapeHtml(audioOn && !audioYoutube ? (audio.display_name || audio.basename) : "Link…") +
               "</span></button>" +
+            audioYoutubeBtn +
             audioPlayBtn +
           "</div>" +
           "<div class=\"mw-media-group\">" +
@@ -25851,7 +26235,7 @@
 
     function fallbackSavedMediaUrl(kind, basename) {
       const name = String(basename || "").trim();
-      if (!name) return "";
+      if (!name || name.indexOf("yt:") === 0) return "";
       const folder = kind === "video" ? "saved_media/video" : "saved_media/music";
       return "/api/files/uploads/" + folder + "/" + encodeURIComponent(name);
     }
@@ -25876,11 +26260,18 @@
       const m = $("song-media-preview-modal");
       const vid = $("song-media-preview-video");
       const status = $("song-media-preview-status");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
       if (vid) {
         try { vid.pause(); } catch (_e0) {}
         vid.removeAttribute("src");
         try { vid.load(); } catch (_e1) {}
+        vid.hidden = false;
       }
+      if (frame) {
+        frame.removeAttribute("src");
+      }
+      if (wrap) wrap.hidden = true;
       if (status) {
         status.hidden = true;
         status.textContent = "";
@@ -25890,6 +26281,58 @@
         m.setAttribute("aria-hidden", "true");
       }
       revokeSongMediaPreviewObjectUrl();
+      if (massSectionAudioPlayingSlot) {
+        const slot = massSectionAudioPlayingSlot;
+        const item = slot === COMPOSER_SONG_MEDIA_SLOT
+          ? (typeof composerSongMedia !== "undefined" ? composerSongMedia.audio : null)
+          : getMassSectionMedia("audio", slot);
+        if (isYouTubeMediaRef(item)) {
+          massSectionAudioPlayingSlot = "";
+          if (slot === COMPOSER_SONG_MEDIA_SLOT && typeof renderComposerSongMediaFields === "function") {
+            renderComposerSongMediaFields();
+          } else if (typeof refreshMassSectionMediaUi === "function") {
+            refreshMassSectionMediaUi();
+          }
+        }
+      }
+    }
+
+    function isYouTubePreviewOpen() {
+      const m = $("song-media-preview-modal");
+      const frame = $("song-media-preview-youtube");
+      return !!(m && m.getAttribute("data-open") === "true" && frame && frame.getAttribute("src"));
+    }
+
+    function openYouTubePreviewModal(videoId, title) {
+      const id = parseYouTubeVideoId(videoId);
+      const m = $("song-media-preview-modal");
+      const vid = $("song-media-preview-video");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      const titleEl = $("song-media-preview-title");
+      const status = $("song-media-preview-status");
+      if (!id || !m || !frame || !wrap) return false;
+      if (massSectionAudioEl) {
+        try { massSectionAudioEl.pause(); } catch (_eA) {}
+        try { massSectionAudioEl.removeAttribute("src"); massSectionAudioEl.load(); } catch (_eB) {}
+        massSectionAudioEl = null;
+      }
+      if (vid) {
+        try { vid.pause(); } catch (_e0) {}
+        vid.removeAttribute("src");
+        try { vid.load(); } catch (_e1) {}
+        vid.hidden = true;
+      }
+      if (titleEl) titleEl.textContent = title || "YouTube preview";
+      if (status) {
+        status.hidden = true;
+        status.textContent = "";
+      }
+      wrap.hidden = false;
+      frame.src = youtubeEmbedUrl(id);
+      m.setAttribute("data-open", "true");
+      m.setAttribute("aria-hidden", "false");
+      return true;
     }
 
     async function openSongMediaVideoPreview(title, sourceUrl) {
@@ -25898,6 +26341,11 @@
       const titleEl = $("song-media-preview-title");
       const status = $("song-media-preview-status");
       if (!m || !vid || !sourceUrl) return false;
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      if (frame) frame.removeAttribute("src");
+      if (wrap) wrap.hidden = true;
+      vid.hidden = false;
       if (titleEl) titleEl.textContent = title || "Video preview";
       if (status) {
         status.hidden = false;
@@ -25996,6 +26444,17 @@
 
     async function playComposerSongMedia(kind, playEl) {
       const key = kind === "video" ? "video" : "audio";
+      if (key === "audio" && isYouTubeMediaRef(composerSongMedia && composerSongMedia.audio)) {
+        if (isYouTubePreviewOpen() && massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) {
+          closeSongMediaPreviewModal();
+          return;
+        }
+        const ref = composerSongMedia.audio;
+        massSectionAudioPlayingSlot = COMPOSER_SONG_MEDIA_SLOT;
+        openYouTubePreviewModal(youtubeIdFromMediaRef(ref), ref.display_name || "YouTube");
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+        return;
+      }
       const item = await resolveComposerPlayableMedia(key);
       if (!item || !item.url) {
         if (typeof notify === "function") {
@@ -26071,6 +26530,17 @@
 
     async function playMassSectionAudio(slot, playEl) {
       let item = getMassSectionMedia("audio", slot);
+      if (item && isYouTubeMediaRef(item)) {
+        if (isYouTubePreviewOpen() && massSectionAudioPlayingSlot === slot) {
+          closeSongMediaPreviewModal();
+          return;
+        }
+        massSectionAudioPlayingSlot = slot;
+        openYouTubePreviewModal(youtubeIdFromMediaRef(item), item.display_name || "YouTube");
+        if (playEl) playEl.classList.add("is-playing");
+        refreshMassSectionMediaUi();
+        return;
+      }
       if (item && item.basename && !item.url) {
         item = Object.assign({}, item, {
           url: fallbackSavedMediaUrl("music", item.basename),
@@ -26167,11 +26637,26 @@
     };
 
     function normalizeComposerMediaRef(raw) {
-      if (!raw || typeof raw !== "object") return null;
+      if (!raw || typeof raw !== "object") {
+        if (typeof raw === "string") return youtubeMediaRefFromInput(raw) || (
+          String(raw).trim() ? { basename: String(raw).trim(), display_name: String(raw).trim(), url: "" } : null
+        );
+        return null;
+      }
+      const yt = youtubeMediaRefFromInput(
+        raw.youtube_id || raw.youtube_url || raw.url || (raw.source === "youtube" ? raw.basename : "") || "",
+        raw.display_name
+      );
+      if (yt) return yt;
       const basename = String(raw.basename || "").trim();
       if (!basename) return null;
-      const display_name = String(raw.display_name || "").trim() || basename;
-      return { basename: basename, display_name: display_name, url: raw.url || "" };
+      const fromBase = youtubeMediaRefFromInput(basename, raw.display_name);
+      if (fromBase) return fromBase;
+      return {
+        basename: basename,
+        display_name: String(raw.display_name || "").trim() || basename,
+        url: String(raw.url || "").trim(),
+      };
     }
 
     let composerSongMedia = { audio: null, video: null };
@@ -26200,8 +26685,12 @@
       const audioPlaying = massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT;
       if (audioLabel) {
         audioLabel.textContent = audio
-          ? (audio.display_name || audio.basename)
+          ? (isYouTubeMediaRef(audio) ? (audio.display_name || "YouTube") : (audio.display_name || audio.basename))
           : "None linked";
+      }
+      const ytInp = $("song-metadata-audio-youtube");
+      if (ytInp && document.activeElement !== ytInp) {
+        ytInp.value = isYouTubeMediaRef(audio) ? (audio.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(audio))) : "";
       }
       if (videoLabel) {
         videoLabel.textContent = video
@@ -26227,10 +26716,12 @@
         audioPlaySummary.disabled = !audioOn;
         audioPlaySummary.classList.toggle("is-ready", audioOn);
         audioPlaySummary.classList.toggle("is-playing", audioOn && audioPlaying);
-        audioPlaySummary.textContent = audioOn && audioPlaying ? "❚❚ Pause audio" : "▶ Play audio";
+        audioPlaySummary.textContent = audioOn && audioPlaying
+          ? (isYouTubeMediaRef(audio) ? "❚❚ Close YouTube" : "❚❚ Pause audio")
+          : (isYouTubeMediaRef(audio) ? "▶ Play YouTube" : "▶ Play audio");
         audioPlaySummary.title = audioOn
           ? (audio.display_name || audio.basename)
-          : "Link audio in Edit Details first";
+          : "Link audio or a YouTube URL in Edit Details first";
       }
       if (videoPlaySummary) {
         videoPlaySummary.disabled = !videoOn;
@@ -26251,12 +26742,82 @@
       if (list) list.hidden = !!active;
     }
 
+    function currentMediaPickSongQuery() {
+      const state = massMediaPickState || {};
+      let title = "";
+      let author = "";
+      let lang = "";
+      if (state.purpose === "song") {
+        const metaOpen = $("song-metadata-modal") && $("song-metadata-modal").classList.contains("is-open");
+        if (metaOpen) {
+          title = String(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "").trim();
+          author = String(($("song-metadata-edit-author") && $("song-metadata-edit-author").value) || "").trim();
+          lang = String(($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "").trim();
+        }
+        if (!title) title = String(($("lyrics-save-title") && $("lyrics-save-title").value) || "").trim();
+        if (!author) author = String(($("lyrics-save-author") && $("lyrics-save-author").value) || "").trim();
+        if (!lang && typeof getComposerSongLanguage === "function") lang = getComposerSongLanguage() || "";
+      } else {
+        const slot = String(state.slot || "").trim();
+        const songId = (typeof selectedLyricsSongs !== "undefined" && selectedLyricsSongs && selectedLyricsSongs[slot]) || "";
+        const row = songId && typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+        if (row) {
+          title = String(row.title || "").trim();
+          author = String(row.author || "").trim();
+          lang = String(row.language || "").trim();
+        }
+        if (!title && songId && typeof catalogSongTitle === "function") {
+          const section = typeof catalogSectionForSlot === "function" ? catalogSectionForSlot(slot) : slot;
+          title = catalogSongTitle(section, songId) || "";
+        }
+      }
+      title = title.replace(/\s+/g, " ").trim();
+      if (!title) return "";
+      let query = title;
+      if (typeof songTitleWithLanguageForSearch === "function") {
+        query = songTitleWithLanguageForSearch(title, lang) || title;
+      } else if (lang && query.toLowerCase().indexOf(lang.toLowerCase()) === -1) {
+        query = query + " " + lang;
+      }
+      if (author && query.toLowerCase().indexOf(author.toLowerCase()) === -1) {
+        query = query + " " + author;
+      }
+      return query.replace(/\s+/g, " ").trim();
+    }
+
+    function youtubeSearchUrlForQuery(query) {
+      const q = String(query || "").trim();
+      if (!q) return "https://www.youtube.com/";
+      return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
+    }
+
+    function openYouTubeSearchForCurrentSong() {
+      const query = currentMediaPickSongQuery();
+      const url = youtubeSearchUrlForQuery(query);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened && typeof notify === "function") {
+        notify(query ? "Allow pop-ups to search YouTube for this song." : "Allow pop-ups to open YouTube.", "warn");
+      }
+    }
+
+    function refreshMassMediaPickYoutubeTabLabel() {
+      const ytTab = $("mw-media-pick-tab-youtube");
+      const query = currentMediaPickSongQuery();
+      if (ytTab) {
+        ytTab.title = query
+          ? ("Search YouTube for “" + query + "”")
+          : "Search YouTube for this song";
+      }
+    }
+
     function setMassMediaPickTab(tab) {
-      const next = tab === "upload" ? "upload" : "library";
+      const next = (tab === "upload" || tab === "youtube") ? tab : "library";
       const libTab = $("mw-media-pick-tab-library");
       const upTab = $("mw-media-pick-tab-upload");
+      const ytTab = $("mw-media-pick-tab-youtube");
       const libPane = $("mw-media-pick-pane-library");
       const upPane = $("mw-media-pick-pane-upload");
+      const ytPane = $("mw-media-pick-pane-youtube");
       if (libTab) {
         libTab.classList.toggle("is-active", next === "library");
         libTab.setAttribute("aria-selected", next === "library" ? "true" : "false");
@@ -26265,12 +26826,36 @@
         upTab.classList.toggle("is-active", next === "upload");
         upTab.setAttribute("aria-selected", next === "upload" ? "true" : "false");
       }
+      if (ytTab) {
+        ytTab.classList.toggle("is-active", next === "youtube");
+        ytTab.setAttribute("aria-selected", next === "youtube" ? "true" : "false");
+      }
       if (libPane) libPane.hidden = next !== "library";
       if (upPane) upPane.hidden = next !== "upload";
+      if (ytPane) ytPane.hidden = next !== "youtube";
+      if (next === "youtube") {
+        const inp = $("mw-media-pick-youtube-url");
+        if (inp) window.requestAnimationFrame(() => inp.focus());
+      }
     }
 
     function applyMassMediaPickSelection(row) {
       if (!row || !row.basename) return;
+      if (massMediaPickState.kind === "video") {
+        if (videoAssignedToOtherDomain(row.basename)) {
+          if (typeof notify === "function") {
+            notify("That video is already used in another part of Mass. Pick a different file.", "warn");
+          }
+          return;
+        }
+        const taken = videoAssignmentElsewhere(row.basename);
+        if (taken) {
+          if (typeof notify === "function") {
+            notify("Already assigned to " + taken + ". Pick a different video.", "warn");
+          }
+          return;
+        }
+      }
       if (massMediaPickState.purpose === "song") {
         setComposerSongMediaField(massMediaPickState.songField || "audio", row);
         closeMassMediaPickModal();
@@ -26354,6 +26939,97 @@
       if (typeof notify === "function") notify("Cleared media link.", "ok");
     }
 
+    function massVideoAssignmentDomain(slot) {
+      const parsed = parseMassMediaKey(slot);
+      const sec = String((parsed && parsed.section) || slot || "").trim().toLowerCase();
+      if (MASS_RITE_VIDEO_MODE_SECTIONS.has(sec) || MASS_RITE_OPTION_SECTIONS.has(sec)) return "rite";
+      return "music";
+    }
+
+    function mediaPickVideoDomain() {
+      if (massMediaPickState && massMediaPickState.purpose === "song") return "music";
+      return massVideoAssignmentDomain((massMediaPickState && massMediaPickState.slot) || "");
+    }
+
+    function massVideoAssignmentMap() {
+      const map = {};
+      const add = (basename, slot, label, domain) => {
+        const base = String(basename || "").trim();
+        if (!base) return;
+        if (!map[base]) map[base] = [];
+        map[base].push({
+          slot: String(slot || ""),
+          label: String(label || slot || "Mass"),
+          domain: domain || "music",
+        });
+      };
+      const bucket = (massSectionMedia && massSectionMedia.video) || {};
+      Object.keys(bucket).forEach((slot) => {
+        const item = bucket[slot];
+        add(
+          item && item.basename,
+          slot,
+          massMediaDisplayLabel(slot),
+          massVideoAssignmentDomain(slot)
+        );
+      });
+      const catalog = (typeof songCatalogData !== "undefined" && songCatalogData) ? songCatalogData : null;
+      if (catalog && typeof catalog === "object") {
+        Object.keys(catalog).forEach((sec) => {
+          (catalog[sec] || []).forEach((row) => {
+            if (!row || !row.video_media) return;
+            const ref = typeof normalizeComposerMediaRef === "function"
+              ? normalizeComposerMediaRef(row.video_media)
+              : row.video_media;
+            const base = ref && (ref.basename || ref);
+            if (!base) return;
+            const title = String(row.title || row.id || "Song").trim() || "Song";
+            add(base, "song:" + sec + ":" + String(row.id || ""), "Song · " + title, "music");
+          });
+        });
+      }
+      return map;
+    }
+
+    function videoAssignmentElsewhere(basename) {
+      const base = String(basename || "").trim();
+      if (!base) return "";
+      if (isCurrentMediaPickBasename(base)) return "";
+      const currentSlot = String((massMediaPickState && massMediaPickState.slot) || "");
+      const purpose = massMediaPickState && massMediaPickState.purpose;
+      const pickDomain = mediaPickVideoDomain();
+      const entries = (massVideoAssignmentMap()[base] || []).filter((entry) => {
+        if (entry.domain !== pickDomain) return false;
+        if (purpose === "song") return true;
+        return entry.slot !== currentSlot;
+      });
+      if (!entries.length) return "";
+      const labels = [];
+      entries.forEach((entry) => {
+        if (labels.indexOf(entry.label) < 0) labels.push(entry.label);
+      });
+      return labels.join(", ");
+    }
+
+    function videoAssignedToOtherDomain(basename) {
+      const base = String(basename || "").trim();
+      if (!base || isCurrentMediaPickBasename(base)) return false;
+      const pickDomain = mediaPickVideoDomain();
+      return (massVideoAssignmentMap()[base] || []).some((entry) => entry.domain !== pickDomain);
+    }
+
+    function isCurrentMediaPickBasename(basename) {
+      const base = String(basename || "").trim();
+      if (!base) return false;
+      if (massMediaPickState.purpose === "song") {
+        const field = massMediaPickState.songField === "video" ? "video" : "audio";
+        const cur = composerSongMedia && composerSongMedia[field];
+        return !!(cur && cur.basename === base);
+      }
+      const cur = getMassSectionMedia(massMediaPickState.kind, massMediaPickState.slot);
+      return !!(cur && cur.basename === base);
+    }
+
     function renderMassMediaPickList() {
       const list = $("mw-media-pick-list");
       if (!list) return;
@@ -26370,17 +27046,43 @@
           " found. Switch to Upload to add one.</li>";
         return;
       }
-      list.innerHTML = filtered.map((item) => {
+      const lockAssigned = kind === "video";
+      const visible = filtered.filter((item) => {
+        if (!lockAssigned) return true;
+        if (isCurrentMediaPickBasename(item.basename)) return true;
+        return !videoAssignedToOtherDomain(item.basename);
+      });
+      if (!visible.length) {
+        list.innerHTML = "<li class=\"muted\">No " + (kind === "video" ? "videos" : "audio files") +
+          " found. Switch to Upload to add one.</li>";
+        return;
+      }
+      list.innerHTML = visible.map((item) => {
         const title = item.display_name || item.basename || "Media";
+        const current = isCurrentMediaPickBasename(item.basename);
+        const usedWhere = lockAssigned && !current ? videoAssignmentElsewhere(item.basename) : "";
+        const taken = !!usedWhere;
+        const meta = taken
+          ? ("Assigned to " + usedWhere)
+          : (current ? "Linked here" : "");
         return (
-          "<li><button type=\"button\" data-pick-basename=\"" + escapeHtml(item.basename) + "\">" +
-            "<strong>" + escapeHtml(title) + "</strong>" +
-            "<div class=\"muted\">" + escapeHtml(item.basename || "") + "</div>" +
+          "<li><button type=\"button\" class=\"mw-media-pick-item" +
+            (taken ? " is-taken" : "") +
+            (current ? " is-current" : "") +
+            "\" data-pick-basename=\"" + escapeHtml(item.basename) + "\"" +
+            (taken ? " disabled aria-disabled=\"true\"" : "") +
+            (taken ? " title=\"" + escapeHtml("Already assigned to " + usedWhere) + "\"" : "") +
+            ">" +
+            "<span class=\"mw-media-pick-item__text\">" +
+              "<span class=\"mw-media-pick-item__title\">" + escapeHtml(title) + "</span>" +
+              (meta ? "<span class=\"mw-media-pick-item__used\">" + escapeHtml(meta) + "</span>" : "") +
+            "</span>" +
           "</button></li>"
         );
       }).join("");
       list.querySelectorAll("[data-pick-basename]").forEach((btn) => {
         btn.addEventListener("click", () => {
+          if (btn.disabled || btn.classList.contains("is-taken")) return;
           const basename = btn.getAttribute("data-pick-basename");
           const row = rows.find((r) => r.basename === basename);
           if (!row) return;
@@ -26389,45 +27091,77 @@
       });
     }
 
+    function applyYouTubeAudioLink(value) {
+      const ref = youtubeMediaRefFromInput(value);
+      if (!ref) {
+        if (typeof notify === "function") notify("Enter a valid YouTube URL.", "warn");
+        return false;
+      }
+      if (massMediaPickState.purpose === "song" || massMediaPickState.slot === COMPOSER_SONG_MEDIA_SLOT) {
+        setComposerSongMediaField("audio", ref);
+      } else {
+        const slot = massMediaPickState.slot;
+        if (!slot) return false;
+        setMassSectionMedia("audio", slot, ref);
+      }
+      closeMassMediaPickModal();
+      if (typeof notify === "function") {
+        notify("YouTube linked for practice playback. It is not added to the PowerPoint.", "ok");
+      }
+      return true;
+    }
+
     async function openMassMediaPickModal(kind, slot, opts) {
       const options = opts || {};
       const purpose = options.purpose === "song" ? "song" : "mass";
-      if (purpose === "mass") {
-        if (!document.body.classList.contains("is-superadmin") &&
-            !(churchMembershipState && churchMembershipState.is_superadmin)) {
+      const isVideo = kind === "video";
+      const youtubeOnly = !isVideo && !!options.youtubeOnly;
+      const isSa = !!(document.body.classList.contains("is-superadmin") ||
+        (churchMembershipState && churchMembershipState.is_superadmin));
+      if (purpose === "mass" && !youtubeOnly) {
+        if (!isSa) {
           if (typeof notify === "function") notify("Only superadmins can link Media files here.", "warn");
           return;
         }
-        if (kind === "video" && !massMediaKeyAllowsVideo(slot)) return;
+        if (isVideo && !massMediaKeyAllowsVideo(slot)) return;
       }
       massMediaPickState = {
-        kind: kind === "video" ? "video" : "audio",
+        kind: isVideo ? "video" : "audio",
         slot: String(slot || ""),
         purpose: purpose,
         songField: options.songField === "video" ? "video" : "audio",
         loading: false,
+        youtubeOnly: youtubeOnly,
       };
       const title = $("mw-media-pick-title");
       const hint = $("mw-media-pick-hint");
-      const isVideo = kind === "video";
+      const ytTab = $("mw-media-pick-tab-youtube");
+      const libTab = $("mw-media-pick-tab-library");
+      const upTab = $("mw-media-pick-tab-upload");
+      const showYoutube = !isVideo;
+      if (ytTab) ytTab.hidden = !showYoutube;
+      if (libTab) libTab.hidden = youtubeOnly;
+      if (upTab) upTab.hidden = youtubeOnly;
       if (purpose === "song") {
-        if (title) title.textContent = isVideo ? "Choose video for this song" : "Choose audio for this song";
+        if (title) title.textContent = isVideo ? "Choose video for this song" : (youtubeOnly ? "YouTube for this song" : "Choose audio for this song");
         if (hint) {
           hint.textContent = isVideo
             ? "Pick an MP4 from your Media library or upload a new one. It stays linked on this song."
-            : "Pick an MP3 from your Media library or upload a new one. It stays linked on this song.";
+            : (youtubeOnly
+              ? "Paste a YouTube URL. Play opens a preview card — it is not added to the PowerPoint."
+              : "Pick an MP3 from Media, or paste a YouTube URL for practice playback.");
         }
       } else {
         const label = massMediaDisplayLabel(slot);
         if (title) {
           title.textContent = isVideo
             ? "Choose video for " + label
-            : "Choose audio for " + label;
+            : (youtubeOnly ? "YouTube for " + label : "Choose audio for " + label);
         }
         if (hint) {
           hint.textContent = isVideo
             ? "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time."
-            : "This MP3 plays from the Audio ▶ on this option — it is not embedded in the deck.";
+            : "This plays from Audio ▶ for practice — it is not embedded in the deck.";
         }
       }
       if ($("mw-media-pick-q")) $("mw-media-pick-q").value = "";
@@ -26449,15 +27183,25 @@
         status.textContent = "";
         status.className = "status mw-media-pick-upload-status";
       }
-      setMassMediaPickTab("library");
+      const ytInp = $("mw-media-pick-youtube-url");
+      if (ytInp) {
+        const current = purpose === "song"
+          ? (composerSongMedia && composerSongMedia.audio)
+          : getMassSectionMedia("audio", slot);
+        ytInp.value = isYouTubeMediaRef(current) ? (current.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(current))) : "";
+      }
+      refreshMassMediaPickYoutubeTabLabel();
+      setMassMediaPickTab(youtubeOnly ? "youtube" : "library");
       const m = $("mw-media-pick-modal");
       if (!m) return;
-      // Open immediately so the click feels instant, then load with spinner.
       m.setAttribute("data-open", "true");
       m.setAttribute("aria-hidden", "false");
+      if (youtubeOnly) {
+        setMassMediaPickLoading(false);
+        return;
+      }
       setMassMediaPickLoading(true, "Loading media library…");
       try {
-        // Prefer cache; only force-refresh when empty.
         await ensureSavedMediaLibrary(false);
         if (massMediaPickState.loading) {
           setMassMediaPickLoading(false);
@@ -26472,7 +27216,7 @@
         }
         if (typeof notify === "function") notify("Could not load Media library.", "error");
       }
-      if ($("mw-media-pick-q")) $("mw-media-pick-q").focus();
+      if ($("mw-media-pick-q") && !youtubeOnly) $("mw-media-pick-q").focus();
     }
 
     async function handleMassMediaPickUpload(file) {
@@ -26556,8 +27300,30 @@
       });
       const libTab = $("mw-media-pick-tab-library");
       const upTab = $("mw-media-pick-tab-upload");
+      const ytTab = $("mw-media-pick-tab-youtube");
       if (libTab) libTab.addEventListener("click", () => setMassMediaPickTab("library"));
       if (upTab) upTab.addEventListener("click", () => setMassMediaPickTab("upload"));
+      if (ytTab) {
+        ytTab.addEventListener("click", () => {
+          setMassMediaPickTab("youtube");
+          openYouTubeSearchForCurrentSong();
+        });
+      }
+      const ytApply = $("mw-media-pick-youtube-apply");
+      const ytInp = $("mw-media-pick-youtube-url");
+      if (ytApply) {
+        ytApply.addEventListener("click", () => {
+          applyYouTubeAudioLink(ytInp && ytInp.value);
+        });
+      }
+      if (ytInp) {
+        ytInp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            applyYouTubeAudioLink(ytInp.value);
+          }
+        });
+      }
     }
     wireMassMediaPickUploadUi();
 
@@ -28745,11 +29511,52 @@
       return route === "/superadmin";
     }
 
+    const SA_UNLOCK_KEY = "verbum:sa-unlocked";
+
+    function currentSaUnlockUserId() {
+      try {
+        const auth = window.VerbumAuth;
+        const user = auth && auth.getUser ? auth.getUser() : null;
+        return (user && user.id) || "";
+      } catch (_e) {
+        return "";
+      }
+    }
+
     function superadminToolsUnlocked() {
       try {
-        return sessionStorage.getItem("verbum:sa-unlocked") === "1";
+        const raw = sessionStorage.getItem(SA_UNLOCK_KEY) || "";
+        if (!raw || raw === "1") return false;
+        const uid = currentSaUnlockUserId();
+        if (raw === "pending") return true;
+        return !!uid && raw === uid;
       } catch (_e) {
         return false;
+      }
+    }
+
+    function persistSuperadminUnlock() {
+      try {
+        const uid = currentSaUnlockUserId();
+        sessionStorage.setItem(SA_UNLOCK_KEY, uid || "pending");
+      } catch (_e) { /* ignore */ }
+    }
+
+    function bindPendingSuperadminUnlock() {
+      try {
+        if (sessionStorage.getItem(SA_UNLOCK_KEY) !== "pending") return;
+        const uid = currentSaUnlockUserId();
+        if (uid) sessionStorage.setItem(SA_UNLOCK_KEY, uid);
+      } catch (_e) { /* ignore */ }
+    }
+
+    function lockSuperadminTools() {
+      try { sessionStorage.removeItem(SA_UNLOCK_KEY); } catch (_e) { /* ignore */ }
+      saUnlockPendingNotify = false;
+      if (typeof syncPrivilegedUi === "function") syncPrivilegedUi();
+      else syncSuperadminNavVisibility();
+      if (typeof isSuperadminRoute === "function" && isSuperadminRoute(normalizeRoute(currentRoute()))) {
+        showRoute("/home", true);
       }
     }
 
@@ -28789,12 +29596,13 @@
     let saUnlockPendingNotify = false;
 
     function completeSuperadminUnlock() {
-      try { sessionStorage.setItem("verbum:sa-unlocked", "1"); } catch (_e) { /* ignore */ }
+      persistSuperadminUnlock();
       syncSuperadminNavVisibility();
       if (typeof syncPrivilegedUi === "function") syncPrivilegedUi();
       if (churchMembershipState.is_superadmin) {
         notify("Superadmin tools unlocked.", "ok");
         saUnlockPendingNotify = false;
+        if (typeof refreshSaApprovalInbox === "function") refreshSaApprovalInbox(true);
       } else {
         saUnlockPendingNotify = true;
       }
@@ -28835,7 +29643,7 @@
     }
 
     function canAccessSuperadminRoute() {
-      return !!churchMembershipState.is_superadmin;
+      return !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
     }
 
     function isSettingsRoute(route) {
@@ -29008,6 +29816,7 @@
         foodSponsors: typeof getFlowFoodSponsorsLines === "function" ? getFlowFoodSponsorsLines() : [],
         lyricSongSlots: JSON.parse(JSON.stringify(lyricSongSlots)),
         selectedLyricsSongs: Object.assign({}, selectedLyricsSongs),
+        massCommunionCount: massCommunionCount,
         massCustomSlotSeq: massCustomSlotSeq,
         massSongPlanLanguage: massSongPlanLanguage,
         hymnLayout: hymnLayout ? hymnLayout.value : "dual",
@@ -29221,6 +30030,9 @@
       }
       if (savedSongs) selectedLyricsSongs = savedSongs;
       if (savedSlots) lyricSongSlots = savedSlots;
+      if (typeof applyCommunionCountFromSlotsOrDraft === "function") {
+        applyCommunionCountFromSlotsOrDraft(draft);
+      }
       if (savedPsalmCustom) setMassBuilderFieldValue("flow-psalm-custom", savedPsalmCustom);
       else if (savedPsalmRefrain !== "" && savedPsalmRefrain != null) setMassBuilderFieldValue("flow-psalm-refrain", savedPsalmRefrain);
       if (savedGospelCustom) setMassBuilderFieldValue("flow-gospel-custom", savedGospelCustom);
@@ -29369,6 +30181,9 @@
         refreshCatholicNews();
         refreshWydNews();
         updateMassBuilderDraftHomeUI();
+        if (typeof consumeEmailDeepLinkIntent === "function") {
+          consumeEmailDeepLinkIntent();
+        }
       }
       if (r === "/notifications" && typeof updateLiturgicalCountdowns === "function") {
         updateLiturgicalCountdowns();
@@ -29485,7 +30300,9 @@
       let r = normalizeRoute(route);
       if (r === "/notifications" && !isMobileChromeLayout()) r = "/home";
       if (isSuperadminRoute(r) && !canAccessSuperadminRoute()) {
-        notify("Superadmin access required.", "error");
+        if (!churchMembershipState.is_superadmin) {
+          notify("Superadmin access required.", "error");
+        }
         r = "/home";
       }
       const from = normalizeRoute(currentRoute());
@@ -31520,9 +32337,7 @@
           language: saveLanguage,
           author: ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "",
           gospel_moods: getComposerSongMoods(),
-          audio_media: composerSongMedia.audio
-            ? { basename: composerSongMedia.audio.basename, display_name: composerSongMedia.audio.display_name || composerSongMedia.audio.basename }
-            : null,
+          audio_media: serializeSongMediaRef(composerSongMedia.audio),
           video_media: composerSongMedia.video
             ? { basename: composerSongMedia.video.basename, display_name: composerSongMedia.video.display_name || composerSongMedia.video.basename }
             : null,
@@ -31917,6 +32732,7 @@
     }
 
     function maybePromptDeckThemeOnStartup() {
+      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
       try {
         if (sessionStorage.getItem(DECK_THEME_SESSION_KEY) === "1") return;
       } catch (_e) { /* ignore */ }
@@ -32150,6 +32966,8 @@
       if ([...sel.options].some((o) => o.value === v)) sel.value = v;
       massSongPlanLanguage = sel.value;
     }
+    const MASS_COMMUNION_MAX = 5;
+    let massCommunionCount = 2;
     let lyricSongSlots = [
       { key: "entrance", label: "Entrance song", section: "entrance" },
       { key: "offertory", label: "Offertory song", section: "offertory" },
@@ -32164,6 +32982,93 @@
     let flowPreviewData = null;
     let massPlanAllSongs = [];
     let massPlanSearchDebounce = null;
+    let massCommunionCountTimer = null;
+
+    function clampMassCommunionCount(n) {
+      const v = parseInt(n, 10);
+      if (!Number.isFinite(v)) return massCommunionCount || 2;
+      return Math.max(1, Math.min(MASS_COMMUNION_MAX, v));
+    }
+
+    function communionSlotKey(n) {
+      return "communion_" + n;
+    }
+
+    function communionSlotKeys(count) {
+      const n = clampMassCommunionCount(count);
+      const keys = [];
+      for (let i = 1; i <= n; i += 1) keys.push(communionSlotKey(i));
+      return keys;
+    }
+
+    function isCommunionSlotKey(key) {
+      return /^communion_\d+$/.test(String(key || ""));
+    }
+
+    function inferCommunionCountFromSlots(slots) {
+      let max = 0;
+      (slots || lyricSongSlots || []).forEach((slot) => {
+        const m = String((slot && slot.key) || "").match(/^communion_(\d+)$/);
+        if (m) max = Math.max(max, parseInt(m[1], 10) || 0);
+      });
+      return max ? clampMassCommunionCount(max) : 2;
+    }
+
+    function communionSlotDef(n) {
+      return {
+        key: communionSlotKey(n),
+        label: "Communion song " + n,
+        section: "communion",
+      };
+    }
+
+    function applyCommunionCountToSlots(count) {
+      const n = clampMassCommunionCount(count);
+      massCommunionCount = n;
+      const existing = lyricSongSlots.slice();
+      const customs = existing.filter((s) => s.custom);
+      const nonComm = existing.filter((s) => !s.custom && !isCommunionSlotKey(s.key));
+      const communion = [];
+      for (let i = 1; i <= n; i += 1) {
+        const key = communionSlotKey(i);
+        communion.push(existing.find((s) => s.key === key) || communionSlotDef(i));
+      }
+      const offIdx = nonComm.findIndex((s) => s.key === "offertory");
+      const before = offIdx >= 0 ? nonComm.slice(0, offIdx + 1) : nonComm.filter((s) => s.key === "entrance");
+      const after = offIdx >= 0 ? nonComm.slice(offIdx + 1) : nonComm.filter((s) => s.key !== "entrance");
+      lyricSongSlots = before.concat(communion, after, customs);
+      if (typeof MOOD_PICK_SECTIONS !== "undefined") {
+        const spec = MOOD_PICK_SECTIONS.find((s) => s.key === "communion");
+        if (spec) {
+          spec.slotKeys = communionSlotKeys(n);
+          spec.count = n;
+        }
+      }
+    }
+
+    function syncCommunionCountUi() {
+      const n = clampMassCommunionCount(massCommunionCount);
+      document.querySelectorAll("[data-communion-count]").forEach((btn) => {
+        const val = parseInt(btn.getAttribute("data-communion-count"), 10);
+        const on = val === n && (n === 1 || n === 2);
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      const input = $("mass-communion-custom");
+      if (input && document.activeElement !== input) input.value = String(n);
+      const custom = input && input.closest(".mass-communion-count__custom");
+      if (custom) custom.classList.toggle("is-active", n >= 3);
+    }
+
+    function applyCommunionCountFromSlotsOrDraft(draft) {
+      const fromDraft = draft && draft.massCommunionCount != null
+        ? clampMassCommunionCount(draft.massCommunionCount)
+        : 0;
+      const fromSlots = inferCommunionCountFromSlots((draft && draft.lyricSongSlots) || lyricSongSlots);
+      massCommunionCount = fromDraft || fromSlots || 2;
+      applyCommunionCountToSlots(massCommunionCount);
+      syncCommunionCountUi();
+    }
 
     function rebuildMassPlanSongPool() {
       const byId = new Map();
@@ -32904,6 +33809,9 @@
       offertory: "offertory",
       communion_1: "communion",
       communion_2: "communion",
+      communion_3: "communion",
+      communion_4: "communion",
+      communion_5: "communion",
       recessional: "recessional",
     };
     let hymnTypographyBySection = {};
@@ -34191,6 +35099,9 @@
         offertory: "Offertory",
         communion_1: "Communion 1",
         communion_2: "Communion 2",
+        communion_3: "Communion 3",
+        communion_4: "Communion 4",
+        communion_5: "Communion 5",
         recessional: "Recessional",
         meditation: "Meditation",
       };
@@ -34238,6 +35149,106 @@
 
     function practiceShareVisibleSlots() {
       return lyricSongSlots.filter((slot) => !practiceShareExcludedSlots.has(slot.key));
+    }
+
+    function setMassCommunionCount(next, opts) {
+      const options = opts || {};
+      const n = clampMassCommunionCount(next);
+      const prev = clampMassCommunionCount(massCommunionCount);
+      if (n === prev && !options.force) {
+        syncCommunionCountUi();
+        return;
+      }
+      const plan = $("mass-song-plan");
+      const reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      const animate = !options.quiet && !reduced && plan;
+      const finish = (enterFrom) => {
+        applyCommunionCountToSlots(n);
+        if (typeof renderMassSongPlan === "function") renderMassSongPlan();
+        syncCommunionCountUi();
+        if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+        if (animate && n > enterFrom) {
+          window.requestAnimationFrame(() => {
+            const root = $("mass-song-plan");
+            if (!root) return;
+            for (let i = enterFrom + 1; i <= n; i += 1) {
+              const el = root.querySelector(".mass-song-plan-card[data-slot-key=\"" + communionSlotKey(i) + "\"]");
+              if (!el) continue;
+              el.classList.add("is-communion-enter");
+              el.style.animationDelay = ((i - enterFrom - 1) * 45) + "ms";
+              el.addEventListener("animationend", () => {
+                el.classList.remove("is-communion-enter");
+                el.style.animationDelay = "";
+              }, { once: true });
+            }
+          });
+        }
+      };
+      if (animate && n < prev) {
+        const leaving = [];
+        for (let i = n + 1; i <= prev; i += 1) {
+          const el = plan.querySelector(".mass-song-plan-card[data-slot-key=\"" + communionSlotKey(i) + "\"]");
+          if (el) leaving.push(el);
+        }
+        if (leaving.length) {
+          leaving.forEach((el, i) => {
+            el.classList.add("is-communion-leave");
+            el.style.animationDelay = (i * 40) + "ms";
+          });
+          window.setTimeout(() => finish(n), 160 + leaving.length * 40);
+          return;
+        }
+      }
+      finish(prev);
+    }
+
+    function bindMassCommunionCountUi() {
+      const wrap = $("mass-communion-count");
+      if (!wrap || wrap.dataset.bound === "1") return;
+      wrap.dataset.bound = "1";
+      wrap.querySelectorAll("[data-communion-count]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const n = parseInt(btn.getAttribute("data-communion-count"), 10);
+          if (n === 1 || n === 2) setMassCommunionCount(n);
+        });
+      });
+      const input = $("mass-communion-custom");
+      if (!input) return;
+      const commit = () => {
+        const raw = String(input.value || "").trim();
+        if (!raw) {
+          input.value = String(massCommunionCount);
+          return;
+        }
+        setMassCommunionCount(raw);
+        input.value = String(massCommunionCount);
+      };
+      input.addEventListener("input", () => {
+        const raw = String(input.value || "").trim();
+        if (!raw) return;
+        const n = parseInt(raw, 10);
+        if (!Number.isFinite(n)) return;
+        if (n > MASS_COMMUNION_MAX) input.value = String(MASS_COMMUNION_MAX);
+        window.clearTimeout(massCommunionCountTimer);
+        massCommunionCountTimer = window.setTimeout(() => {
+          const next = clampMassCommunionCount(input.value);
+          setMassCommunionCount(next);
+          input.value = String(massCommunionCount);
+        }, 280);
+      });
+      input.addEventListener("change", commit);
+      input.addEventListener("blur", commit);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+          input.blur();
+        }
+        if (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-") {
+          e.preventDefault();
+        }
+      });
+      syncCommunionCountUi();
     }
 
     function renderMassSongPlan() {
@@ -35214,17 +36225,21 @@
       return renderPracticeShareSongPlan();
     }
 
-    async function openPracticeShareSectionsModal() {
+    async function openPracticeShareSectionsModal(opts) {
       if (!isFeatureEnabled("choir_practice_shares")) {
         notify(FEATURE_OFF_HINT, "info");
         return;
       }
+      opts = opts || {};
       const status = $("practice-share-sections-status");
       const continueBtn = $("practice-share-sections-continue");
       if (status) { status.hidden = true; status.textContent = ""; }
       if (continueBtn) continueBtn.disabled = true;
       practiceShareExcludedSlots = new Set();
-      const date = await hydratePracticeShareSelections(upcomingSundayISO());
+      const targetDate = (opts.date && /^\d{4}-\d{2}-\d{2}$/.test(String(opts.date).trim()))
+        ? String(opts.date).trim()
+        : upcomingSundayISO();
+      const date = await hydratePracticeShareSelections(targetDate);
       const available = renderPracticeShareSongPlan();
       const sub = $("practice-share-sections-sub");
       if (sub) {
@@ -35574,7 +36589,7 @@
     const MOOD_PICK_SECTIONS = [
       { key: "entrance", label: "Entrance", slotKey: "entrance", count: 1 },
       { key: "offertory", label: "Offertory", slotKey: "offertory", count: 1 },
-      { key: "communion", label: "Communion", slotKeys: ["communion_1", "communion_2"], count: 2 },
+      { key: "communion", label: "Communion", slotKeys: communionSlotKeys(massCommunionCount), count: clampMassCommunionCount(massCommunionCount) },
       { key: "recessional", label: "Recessional", slotKey: "recessional", count: 1 },
     ];
     let massMoodPickSelections = [];
@@ -36505,6 +37520,13 @@
           if (slot && mode) void chooseMassSongSlideMode(slot, mode);
           return;
         }
+        const ytLink = e.target.closest("[data-mw-link-youtube]");
+        if (ytLink && root.contains(ytLink)) {
+          e.preventDefault();
+          const slot = ytLink.getAttribute("data-mw-media-slot");
+          if (slot) openMassMediaPickModal("audio", slot, { youtubeOnly: true });
+          return;
+        }
         const mediaLink = e.target.closest("[data-mw-link-media]");
         if (mediaLink && root.contains(mediaLink)) {
           e.preventDefault();
@@ -36613,6 +37635,7 @@
 
     $("mass-song-add-custom") && $("mass-song-add-custom").addEventListener("click", () => addCustomMassSongSection(false));
     $("practice-share-add-section") && $("practice-share-add-section").addEventListener("click", () => addCustomMassSongSection(true));
+    bindMassCommunionCountUi();
 
     function selectedLyricsSongCount() {
       return lyricSongSlots.filter((slot) => !!(selectedLyricsSongs[slot.key] || "")).length;
@@ -37255,15 +38278,59 @@
     }
     window.ensureCollectionDefaultDate = ensureCollectionDefaultDate;
 
-    /** Email CTAs: /sign-in?redirect_url=/mass/builder?date=…&intent=generate|practice-share */
+    /** Email CTAs: /sign-in?redirect_url=/home?date=…&intent=practice-share (or /mass/builder?intent=generate) */
     let emailDeepLinkConsumed = false;
+    function pendingEmailDeepLinkIntent() {
+      try {
+        return (new URLSearchParams(window.location.search).get("intent") || "").trim().toLowerCase();
+      } catch (_e) {
+        return "";
+      }
+    }
+    function shouldSkipStartupPopups() {
+      if (emailDeepLinkConsumed) return true;
+      const intent = pendingEmailDeepLinkIntent();
+      return intent === "practice-share" || intent === "generate";
+    }
     function consumeEmailDeepLinkIntent() {
       if (emailDeepLinkConsumed) return;
-      if (normalizeRoute(window.location.pathname) !== "/mass/builder") return;
       const params = new URLSearchParams(window.location.search);
       const intent = (params.get("intent") || "").trim().toLowerCase();
       const dateParam = (params.get("date") || "").trim();
       if (!intent && !dateParam) return;
+      const route = normalizeRoute(window.location.pathname);
+
+      if (intent === "practice-share") {
+        emailDeepLinkConsumed = true;
+        if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+          const el = $("mass-date");
+          if (el && el.value !== dateParam) {
+            el.value = dateParam;
+            if ($("poster-mass-date")) $("poster-mass-date").value = dateParam;
+            if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
+            el.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+        params.delete("intent");
+        params.delete("date");
+        const qs = params.toString();
+        try {
+          history.replaceState({}, "", "/home" + (qs ? "?" + qs : ""));
+        } catch (_e2) { /* ignore */ }
+        if (route !== "/home" && typeof showRoute === "function") {
+          showRoute("/home", true);
+        }
+        setTimeout(() => {
+          try {
+            if (typeof openPracticeShareSectionsModal === "function") {
+              openPracticeShareSectionsModal({ date: dateParam });
+            }
+          } catch (_e3) { /* ignore */ }
+        }, 80);
+        return;
+      }
+
+      if (route !== "/mass/builder") return;
       emailDeepLinkConsumed = true;
 
       if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
@@ -37287,11 +38354,6 @@
       if (intent === "generate") {
         if (window.MassWizard && window.MassWizard.setStep) window.MassWizard.setStep(7);
         notify("Generate your Mass PowerPoint when ready.", "info");
-      } else if (intent === "practice-share") {
-        if (window.MassWizard && window.MassWizard.setStep) window.MassWizard.setStep(5);
-        setTimeout(() => {
-          try { openPracticeShareModal({}); } catch (_e3) { /* ignore */ }
-        }, 350);
       }
     }
 
@@ -37641,14 +38703,18 @@
 
       syncGlobalMembershipBanner(data);
 
+      bindPendingSuperadminUnlock();
       syncSuperadminNavVisibility();
       if (saUnlockPendingNotify && churchMembershipState.is_superadmin && superadminToolsUnlocked()) {
         notify("Superadmin tools unlocked.", "ok");
         saUnlockPendingNotify = false;
       }
+      if (isSuperadminRoute(normalizeRoute(currentRoute())) && !superadminToolsUnlocked()) {
+        showRoute("/home", true);
+      }
       if (typeof refreshSuperadminMembershipBadge === "function") refreshSuperadminMembershipBadge();
 
-      if (churchMembershipState.is_superadmin) {
+      if (churchMembershipState.is_superadmin && superadminToolsUnlocked()) {
         refreshSaApprovalInbox(true);
       } else if (typeof renderSaApprovalNotifSection === "function") {
         renderSaApprovalNotifSection();
@@ -37661,7 +38727,7 @@
     }
 
     function syncPrivilegedUi() {
-      const sa = !!churchMembershipState.is_superadmin;
+      const sa = !!churchMembershipState.is_superadmin && superadminToolsUnlocked();
       const canFull = !!churchMembershipState.can_use_full_app;
       document.body.classList.toggle("is-superadmin", sa);
       document.body.classList.toggle("is-limited-member", !canFull);
@@ -38279,7 +39345,10 @@
           e.preventDefault();
         }
       });
-      window.addEventListener("verbum:signed-out", resetSaApprovalSession);
+      window.addEventListener("verbum:signed-out", () => {
+        resetSaApprovalSession();
+        lockSuperadminTools();
+      });
       window.addEventListener("verbum:auth-ready", (event) => {
         const user = event.detail && event.detail.user;
         if (!user) return;
@@ -42153,6 +43222,7 @@
     }
 
     function maybeShowMobileWelcomeModal() {
+      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
       if (mobileWelcomeShownThisLoad) return;
       if (!isMobileChromeLayout()) return;
       if (window.__VERBUM_AUTH_GATE__) {
@@ -42435,6 +43505,7 @@
     }
 
     async function maybeShowSongsWhatsNewModal() {
+      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
       if (!isSongsWhatsNewPopupEnabled()) return;
       if (songsWhatsNewShownThisLoad) return;
       if (hasSkippedSongsWhatsNewToday()) return;
@@ -43164,7 +44235,7 @@
     ];
 
     function catalogSectionForSlot(slotKey) {
-      if (slotKey === "communion_1" || slotKey === "communion_2") return "communion";
+      if (/^communion_\d+$/.test(String(slotKey || ""))) return "communion";
       return slotKey;
     }
 
@@ -43877,13 +44948,13 @@
       const songs = {};
       const entrance = selectedLyricsSongs.entrance;
       const offertory = selectedLyricsSongs.offertory;
-      const communion1 = selectedLyricsSongs.communion_1;
-      const communion2 = selectedLyricsSongs.communion_2;
       const recessional = selectedLyricsSongs.recessional;
       if (entrance) songs.entrance = entrance;
       if (offertory) songs.offertory = offertory;
-      if (communion1) songs.communion_1 = communion1;
-      if (communion2) songs.communion_2 = communion2;
+      communionSlotKeys(massCommunionCount).forEach((key) => {
+        const id = selectedLyricsSongs[key];
+        if (id) songs[key] = id;
+      });
       if (recessional) songs.recessional = recessional;
       const extra = [];
       lyricSongSlots.forEach((slot) => {
@@ -44360,6 +45431,9 @@
         offertory: "Offertory",
         communion_1: "Communion I",
         communion_2: "Communion II",
+        communion_3: "Communion III",
+        communion_4: "Communion IV",
+        communion_5: "Communion V",
         recessional: "Recessional",
       };
       return map[song.slotKey] || song.label;
@@ -44429,6 +45503,7 @@
     function resolveLibraryMediaRow(kind, ref) {
       const norm = normalizeComposerMediaRef(ref);
       if (!norm) return null;
+      if (isYouTubeMediaRef(norm)) return norm;
       const libKind = kind === "video" ? "video" : "music";
       const rows = ((libKind === "video" ? savedMediaLibrary.video : savedMediaLibrary.music) || []);
       const hit = rows.find((r) => r && r.basename === norm.basename);
@@ -48158,7 +49233,7 @@
       const patchBody = { title, author, language, gospel_moods };
       const audio = composerSongMedia && composerSongMedia.audio;
       const video = composerSongMedia && composerSongMedia.video;
-      if (audio) patchBody.audio_media = { basename: audio.basename, display_name: audio.display_name || audio.basename };
+      if (audio) patchBody.audio_media = serializeSongMediaRef(audio);
       else patchBody.clear_audio_media = true;
       if (video) patchBody.video_media = { basename: video.basename, display_name: video.display_name || video.basename };
       else patchBody.clear_video_media = true;
@@ -48388,6 +49463,26 @@
       $("song-metadata-audio-play") && $("song-metadata-audio-play").addEventListener("click", () => {
         playComposerSongMedia("audio", $("song-metadata-audio-play")).catch(() => {});
       });
+      const ytLinkBtn = $("song-metadata-audio-youtube-link");
+      const ytField = $("song-metadata-audio-youtube");
+      function commitComposerYouTubeLink() {
+        const ref = youtubeMediaRefFromInput(ytField && ytField.value);
+        if (!ref) {
+          if (typeof notify === "function") notify("Enter a valid YouTube URL.", "warn");
+          return;
+        }
+        setComposerSongMediaField("audio", ref);
+        if (typeof notify === "function") notify("YouTube linked for practice playback.", "ok");
+      }
+      if (ytLinkBtn) ytLinkBtn.addEventListener("click", commitComposerYouTubeLink);
+      if (ytField) {
+        ytField.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commitComposerYouTubeLink();
+          }
+        });
+      }
       $("song-metadata-video-play") && $("song-metadata-video-play").addEventListener("click", () => {
         playComposerSongMedia("video", $("song-metadata-video-play")).catch(() => {});
       });

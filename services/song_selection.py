@@ -7,6 +7,7 @@ Uses the local ``hymn_library.json`` catalog via ``section_candidates`` (no web 
 from __future__ import annotations
 
 import random
+import re
 from typing import Any, Optional
 
 from services.gospel_mood import GOSPEL_MOOD_KEYS, gospel_moods_for_song
@@ -65,6 +66,29 @@ def _filter_en_tl(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+def _norm_title(title: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", (title or "").lower()).strip()
+
+
+def _mark_used(used: set[str], row: dict[str, Any]) -> None:
+    hid = str(row.get("id") or "").strip().lower()
+    title = _norm_title(str(row.get("title") or ""))
+    if hid:
+        used.add("id:" + hid)
+    if title:
+        used.add("title:" + title)
+
+
+def _is_used(used: set[str], row: dict[str, Any]) -> bool:
+    hid = str(row.get("id") or "").strip().lower()
+    title = _norm_title(str(row.get("title") or row.get("id") or ""))
+    if hid and ("id:" + hid) in used:
+        return True
+    if title and ("title:" + title) in used:
+        return True
+    return False
+
+
 def _mood_match_score(song_moods: list[str], mood_key: str) -> int:
     if mood_key in song_moods:
         return 3
@@ -85,8 +109,7 @@ def _pick_mood_songs_for_section(
     rows = _filter_en_tl(section_candidates(season_key=season_key, section=section, limit=80))
     scored: list[tuple[int, float, dict[str, Any]]] = []
     for row in rows:
-        hid = str(row.get("id") or "").strip()
-        if not hid or hid in used:
+        if _is_used(used, row):
             continue
         moods = gospel_moods_for_song(row)
         match = _mood_match_score(moods, mood_key)
@@ -113,11 +136,10 @@ def _pick_mood_songs_for_section(
 
     picked: list[dict[str, Any]] = []
     for _match, _score, row in ordered:
-        hid = str(row.get("id") or "").strip()
-        if not hid or hid in used:
+        if _is_used(used, row):
             continue
         picked.append(row)
-        used.add(hid)
+        _mark_used(used, row)
         if len(picked) >= count:
             break
     return picked

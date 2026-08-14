@@ -98,6 +98,66 @@ def notify_access_request_user(*, name: str, email: str, parish: str) -> EmailRe
     )
 
 
+def notify_contact_admin(
+    *,
+    name: str,
+    email: str,
+    topic_label: str,
+    message: str,
+    client_ip: str,
+    to_addr: str,
+) -> EmailResult:
+    body_text = "\n".join(
+        [
+            "New LiturgyFlow contact message",
+            f"Name: {name}",
+            f"Email: {email}",
+            f"Topic: {topic_label}",
+            f"Message: {message}",
+        ]
+    )
+    rows = [
+        ("Name", _esc(name)),
+        (
+            "Email",
+            f'<a href="mailto:{_esc(email)}" style="color:#a10f0d;text-decoration:none;">{_esc(email)}</a>',
+        ),
+        ("Topic", _esc(topic_label)),
+        ("Message", _esc(message)),
+    ]
+    return send_email(
+        to=to_addr,
+        subject=f"Contact — {topic_label} — {name}",
+        text=body_text,
+        html=wrap_html(
+            title="New contact message",
+            subtitle="Reply to this email to reach the sender.",
+            body_html=detail_rows(rows),
+            preheader=f"{name} · {topic_label}",
+        ),
+        reply_to=email,
+    )
+
+
+def notify_contact_user(*, name: str, email: str, topic_label: str) -> EmailResult:
+    text = (
+        f"We received your message about “{topic_label}”.\n"
+        "We’ll reply by email.\n"
+    )
+    return send_email(
+        to=email,
+        subject="We received your message",
+        text=text,
+        html=wrap_html(
+            title="Message received",
+            subtitle="We’ll reply by email.",
+            cta_label="Open LiturgyFlow",
+            cta_url=home_cta_url(),
+            preheader="Contact message received",
+        ),
+    )
+
+
 def notify_membership_approved(
     *,
     email: str,
@@ -217,7 +277,7 @@ def notify_practice_share_reminder(
             event_title=title,
             cta_label="Share Lyrics",
             cta_url=cta,
-            helper="Secure link · Expires in 24 hours",
+            helper="Secure link · Expires Sunday at 11:59 PM (UTC)",
             preheader=f"Share lyrics · {mass_date}",
         ),
     )

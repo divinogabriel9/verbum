@@ -29,6 +29,16 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+def _ssl_context() -> ssl.SSLContext:
+    """Use certifi's CA bundle so macOS/Python.org builds can verify HTTPS."""
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
 @dataclass(frozen=True)
 class EmailResult:
     ok: bool
@@ -564,7 +574,7 @@ def _send_via_brevo(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=20, context=_ssl_context()) as resp:
             ok = 200 <= getattr(resp, "status", 200) < 300
             return EmailResult(ok=ok, provider="brevo", error="" if ok else f"status {resp.status}")
     except urllib.error.HTTPError as exc:
@@ -609,7 +619,7 @@ def _send_via_resend(
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=20, context=_ssl_context()) as resp:
             ok = 200 <= getattr(resp, "status", 200) < 300
             return EmailResult(ok=ok, provider="resend", error="" if ok else f"status {resp.status}")
     except urllib.error.HTTPError as exc:
@@ -650,7 +660,7 @@ def _send_via_smtp(
     if html:
         msg.add_alternative(html, subtype="html")
     try:
-        context = ssl.create_default_context()
+        context = _ssl_context()
         with smtplib.SMTP(host, port, timeout=20) as smtp:
             smtp.starttls(context=context)
             smtp.login(user, password)

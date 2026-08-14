@@ -5,6 +5,7 @@ python-multipart
 python-pptx
 requests
 python-dotenv
+certifi
 beautifulsoup4
 Pillow
 pypdfium2

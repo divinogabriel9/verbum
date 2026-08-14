@@ -535,6 +535,7 @@
       await state.supabase.auth.signOut({ scope: "global" });
     }
     try {
+      sessionStorage.removeItem("verbum:sa-unlocked");
       sessionStorage.removeItem("verbum:sa-session-started");
       sessionStorage.removeItem("verbum:sa-approval-done");
       sessionStorage.removeItem("verbum:sa-approval-modal-dismissed");

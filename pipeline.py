@@ -238,31 +238,54 @@ def resolve_slide_line(
     return first_sentence_slide_quote(base_quote)
 
 
-def _dedupe_song_ids_across_sections(sel: Mapping[str, str]) -> dict[str, str]:
-    order = ["entrance", "offertory", "communion_1", "communion_2", "recessional", "meditation"]
+def _dedupe_song_ids_across_sections(sel: Mapping[str, Any]) -> dict[str, Any]:
+    order = [
+        "entrance",
+        "offertory",
+        "communion_1",
+        "communion_2",
+        "communion_3",
+        "communion_4",
+        "communion_5",
+        "recessional",
+        "meditation",
+    ]
     used: set[str] = set()
-    out: dict[str, str] = {}
+    out: dict[str, Any] = {}
     for key in order:
         hid = str(sel.get(key) or "").strip()
         if not hid or hid in used:
             continue
         used.add(hid)
         out[key] = hid
+    extras = sel.get("extra_sections")
+    if isinstance(extras, list):
+        out["extra_sections"] = extras
     return out
 
 
 def _merge_default_and_user_songs(
     season_key: str,
-    user: Optional[Mapping[str, str]],
-) -> dict[str, str]:
+    user: Optional[Mapping[str, Any]],
+) -> dict[str, Any]:
     defaults = default_song_selections_for_date(season_key)
-    merged: dict[str, str] = {**defaults}
+    merged: dict[str, Any] = {**defaults}
     if user:
+        extras = user.get("extra_sections")
         for k, v in user.items():
             kk = str(k).strip()
+            if kk == "extra_sections":
+                continue
             vv = str(v or "").strip()
             if vv:
                 merged[kk] = vv
+        if isinstance(extras, list):
+            merged["extra_sections"] = extras
+        user_keys = {str(k).strip() for k in user.keys()}
+        for i in range(1, 6):
+            ck = f"communion_{i}"
+            if ck not in user_keys:
+                merged.pop(ck, None)
     return _dedupe_song_ids_across_sections(merged)
 
 
@@ -541,6 +564,9 @@ def generate_mass_media(
         "offertory": "offertory",
         "communion_1": "communion",
         "communion_2": "communion",
+        "communion_3": "communion",
+        "communion_4": "communion",
+        "communion_5": "communion",
         "recessional": "recessional",
         "meditation": "meditation",
     }
@@ -556,8 +582,8 @@ def generate_mass_media(
     logo = get_logo_path()
     entrance_title = _hymn_title_for_poster("entrance", picks.get("entrance", ""))
     comm_titles: list[str] = []
-    for ck in ("communion_1", "communion_2"):
-        t = _hymn_title_for_poster("communion", picks.get(ck, ""))
+    for i in range(1, 6):
+        t = _hymn_title_for_poster("communion", picks.get(f"communion_{i}", ""))
         if t:
             comm_titles.append(t)
     communion_line = " · ".join(comm_titles)
@@ -808,6 +834,9 @@ def regenerate_mass_pptx(
         "offertory": "offertory",
         "communion_1": "communion",
         "communion_2": "communion",
+        "communion_3": "communion",
+        "communion_4": "communion",
+        "communion_5": "communion",
         "recessional": "recessional",
         "meditation": "meditation",
     }

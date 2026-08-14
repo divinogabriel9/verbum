@@ -34,12 +34,25 @@ def mass_builder_path(*, date: str = "", intent: str = "") -> str:
     return f"/mass/builder?{qs}" if qs else "/mass/builder"
 
 
+def home_path(*, date: str = "", intent: str = "") -> str:
+    """Home SPA path with optional date + intent (choir share lyrics)."""
+    params: dict[str, str] = {}
+    d = (date or "").strip()
+    if d:
+        params["date"] = d
+    intent_clean = (intent or "").strip().lower()
+    if intent_clean == "practice-share":
+        params["intent"] = intent_clean
+    qs = urlencode(params)
+    return f"/home?{qs}" if qs else "/home"
+
+
 def mass_pptx_cta_url(*, mass_date: str = "") -> str:
     return sign_in_redirect_url(mass_builder_path(date=mass_date, intent="generate"))
 
 
 def practice_share_cta_url(*, mass_date: str = "") -> str:
-    return sign_in_redirect_url(mass_builder_path(date=mass_date, intent="practice-share"))
+    return sign_in_redirect_url(home_path(date=mass_date, intent="practice-share"))
 
 
 def home_cta_url() -> str:

@@ -53,6 +53,26 @@
         }
         .lf-hero__brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .lf-hero__brand img { width: 32px; height: 32px; border-radius: 8px; }
+        .lf-hero__actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .lf-hero__contact {
+            appearance: none;
+            background: transparent;
+            border: 0;
+            color: #e3beb9;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 150ms cubic-bezier(0.25, 0.1, 0.25, 1), color 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .lf-hero__contact:hover { background: rgba(255, 255, 255, 0.05); color: #f9dcd8; }
+        .lf-hero__contact:active { transform: scale(0.97); }
         .lf-hero__signin {
             color: #f9dcd8;
             text-decoration: none;
@@ -117,13 +137,35 @@
         }
         .lf-hero__cta:active { transform: scale(0.98); }
         .lf-hero__foot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px 18px;
             padding: 24px;
             text-align: center;
             font-size: 13px;
             color: rgba(227, 190, 185, 0.6);
         }
+        .lf-hero__foot-link {
+            appearance: none;
+            background: none;
+            border: 0;
+            padding: 0;
+            font: inherit;
+            font-size: 13px;
+            color: #ffb4a9;
+            cursor: pointer;
+        }
+        .lf-hero__foot-link:hover {
+            color: #f9dcd8;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        .lf-hero__foot-link:active { transform: scale(0.97); }
 
-        body.lf-gen-open { overflow: hidden; }
+        body.lf-gen-open,
+        body.lf-contact-open { overflow: hidden; }
         .lf-gen-backdrop {
             position: fixed;
             inset: 0;
@@ -301,6 +343,12 @@
             text-align: right;
         }
         .lf-gen-songs__empty { color: #e3beb9; font-size: 14px; padding: 12px 0; }
+        .lf-gen-songs-note {
+            margin: 14px 0 0;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: rgba(227, 190, 185, 0.78);
+        }
         .lf-gen-actions {
             display: flex;
             gap: 10px;
@@ -458,9 +506,150 @@
         .lf-gen-busy p { margin: 0; color: #f9dcd8; font-size: 14px; }
         .lf-gen-panel { position: relative; }
 
+        .lf-contact-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 210;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(14, 8, 7, 0.72);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            animation: lf-contact-fade 260ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .lf-contact-backdrop[hidden] { display: none !important; }
+        .lf-contact-panel {
+            width: min(100%, 440px);
+            max-height: min(90vh, 680px);
+            overflow: auto;
+            background: rgba(30, 16, 14, 0.92);
+            border: 1px solid rgba(255, 180, 169, 0.14);
+            border-radius: 20px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+            padding: 28px 28px 24px;
+            transform-origin: center;
+            animation: lf-contact-in 260ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        @keyframes lf-contact-fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes lf-contact-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .lf-contact-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .lf-contact-head h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            color: #f9dcd8;
+        }
+        .lf-contact-hint {
+            margin: 0 0 18px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #e3beb9;
+        }
+        .lf-contact-form {
+            display: grid;
+            gap: 10px;
+            position: relative;
+        }
+        .lf-contact-hp {
+            position: absolute;
+            left: -10000px;
+            top: auto;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+        .lf-contact-form label {
+            display: grid;
+            gap: 4px;
+            font-size: 12px;
+            color: #e3beb9;
+        }
+        .lf-contact-form input,
+        .lf-contact-form select,
+        .lf-contact-form textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 180, 169, 0.22);
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff1ee;
+            padding: 10px 12px;
+            font: inherit;
+            font-size: 14px;
+        }
+        .lf-contact-form select {
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, #e3beb9 50%), linear-gradient(135deg, #e3beb9 50%, transparent 50%);
+            background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            padding-right: 32px;
+        }
+        .lf-contact-form select option { background: #1e100e; color: #fff1ee; }
+        .lf-contact-form textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+        .lf-contact-form input:focus,
+        .lf-contact-form select:focus,
+        .lf-contact-form textarea:focus {
+            outline: 2px solid rgba(161, 15, 13, 0.55);
+            outline-offset: 1px;
+        }
+        .lf-contact-submit {
+            justify-self: start;
+            margin-top: 6px;
+            padding: 12px 22px;
+            border: 0;
+            border-radius: 999px;
+            background: #a10f0d;
+            color: #ffada2;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 100ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .lf-contact-submit:hover { box-shadow: 0 0 24px rgba(161, 15, 13, 0.4); }
+        .lf-contact-submit:active { transform: scale(0.97); }
+        .lf-contact-submit:disabled { opacity: 0.55; cursor: wait; transform: none; box-shadow: none; }
+        .lf-contact-thanks {
+            margin: 0;
+            padding: 16px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(168, 240, 200, 0.22);
+            background: rgba(40, 90, 60, 0.22);
+            color: #a8f0c8;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .lf-contact-thanks[hidden],
+        .lf-contact-form[hidden] { display: none !important; }
+        .lf-contact-err {
+            margin: 0;
+            font-size: 13px;
+            color: #ffb4ab;
+        }
+        .lf-contact-err[hidden] { display: none !important; }
+
         @media (prefers-reduced-motion: reduce) {
-            .lf-hero__cta, .lf-gen-chip, .lf-gen-theme { transition: none; }
-            .lf-gen-busy__spinner { animation: none; }
+            .lf-hero__cta, .lf-gen-chip, .lf-gen-theme, .lf-hero__contact, .lf-contact-submit { transition: none; }
+            .lf-gen-busy__spinner, .lf-contact-backdrop, .lf-contact-panel { animation: none; }
         }
     </style>
 </head>
@@ -471,7 +660,10 @@
             <img src="/static/brand/app-icon.png?v=5" alt="" width="32" height="32"/>
             <span class="wordmark text-2xl"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
         </a>
-        <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin" id="lf-hero-signin">Sign in</a>
+        <div class="lf-hero__actions">
+            <button type="button" class="lf-hero__contact" id="lf-hero-contact">Contact</button>
+            <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin" id="lf-hero-signin">Sign in</a>
+        </div>
     </header>
 
     <main class="lf-hero__main">
@@ -482,7 +674,8 @@
     </main>
 
     <footer class="lf-hero__foot">
-        © 2026 LiturgyFlow{% if app_version %} · v {{ app_version }}{% endif %}
+        <span>© 2026 LiturgyFlow{% if app_version %} · v {{ app_version }}{% endif %}</span>
+        <button type="button" class="lf-hero__foot-link" id="lf-foot-contact">Contact us</button>
     </footer>
 </div>
 
@@ -557,12 +750,14 @@
             <ul class="lf-gen-songs" id="lf-gen-songs" aria-live="polite">
                 <li class="lf-gen-songs__empty">Loading…</li>
             </ul>
+            <p class="lf-gen-songs-note">These are Gospel-based suggestions for this Sunday. After you register, you can pick your own songs from a vast library ready to use.</p>
         </div>
 
         <div class="lf-gen-step" data-lf-step="5" hidden>
             <h3>Ready to generate</h3>
             <p>We'll build a complete PowerPoint with readings, prayers, and hymn slides for <span id="lf-gen-date-label-2">this Sunday</span>. Free demo decks include a Liturgyflow.com watermark.</p>
             <ul class="lf-gen-songs" id="lf-gen-songs-review" aria-label="Selected songs"></ul>
+            <p class="lf-gen-songs-note">Demo decks use these suggested songs. After you register, choose your own from a vast library ready to pick.</p>
             <div class="lf-gen-done" id="lf-gen-done" hidden>
                 <p class="lf-gen-status lf-gen-status--success">Your Mass deck is ready.</p>
                 <a class="lf-gen-download" id="lf-gen-download" href="#" download hidden>Download PowerPoint</a>
@@ -602,7 +797,49 @@
     </div>
 </div>
 
-<script src="/static/js/landing-generate.js?v=4"></script>
+<div class="lf-contact-backdrop" id="lf-contact-backdrop" hidden>
+    <div class="lf-contact-panel" id="lf-contact-modal" role="dialog" aria-modal="true" aria-labelledby="lf-contact-title">
+        <header class="lf-contact-head">
+            <h2 id="lf-contact-title">Contact us</h2>
+            <button type="button" class="lf-gen-close" id="lf-contact-close" aria-label="Close">×</button>
+        </header>
+        <p class="lf-contact-hint">We’ll reply by email. You don’t need to open a mail app.</p>
+        <form class="lf-contact-form" id="lf-contact-form" novalidate>
+            <div class="lf-contact-hp" aria-hidden="true">
+                <label>Website
+                    <input type="text" id="lf-contact-website" name="website" tabindex="-1" autocomplete="off"/>
+                </label>
+            </div>
+            <input type="hidden" id="lf-contact-started" name="started_at" value=""/>
+            <label>Name
+                <input type="text" id="lf-contact-name" name="name" autocomplete="name" required maxlength="120" placeholder="Your name"/>
+            </label>
+            <label>Email
+                <input type="email" id="lf-contact-email" name="email" autocomplete="email" required maxlength="320" placeholder="you@parish.org"/>
+            </label>
+            <label>What is this about?
+                <select id="lf-contact-topic" name="topic" required>
+                    <option value="" selected disabled>Choose one</option>
+                    <option value="question">Question about LiturgyFlow</option>
+                    <option value="access">I want access / an invite</option>
+                    <option value="demo">Something went wrong with the demo</option>
+                    <option value="parish">Parish or partnership</option>
+                    <option value="other">Something else</option>
+                </select>
+            </label>
+            <label>Message
+                <textarea id="lf-contact-message" name="message" required maxlength="2000" placeholder="How can we help?"></textarea>
+            </label>
+            <p class="lf-contact-err" id="lf-contact-err" hidden></p>
+            <button type="submit" class="lf-contact-submit" id="lf-contact-submit">Send message</button>
+        </form>
+        <p class="lf-contact-thanks" id="lf-contact-thanks" hidden>
+            Thanks — we received your message. We’ll reply by email.
+        </p>
+    </div>
+</div>
+
+<script src="/static/js/landing-generate.js?v=7"></script>
 <script>
   (function () {
     try {

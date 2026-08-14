@@ -117,6 +117,22 @@ _TIERS: Dict[str, Tuple[int, int]] = {
         _int_env("RATE_LIMIT_DEMO_GLOBAL_MAX", 50),
         _int_env("RATE_LIMIT_DEMO_GLOBAL_WINDOW", 3600),
     ),
+    "contact_burst": (
+        _int_env("RATE_LIMIT_CONTACT_BURST_MAX", 3),
+        _int_env("RATE_LIMIT_CONTACT_BURST_WINDOW", 900),
+    ),
+    "contact_day": (
+        _int_env("RATE_LIMIT_CONTACT_DAY_MAX", 8),
+        _int_env("RATE_LIMIT_CONTACT_DAY_WINDOW", 86400),
+    ),
+    "contact_email": (
+        _int_env("RATE_LIMIT_CONTACT_EMAIL_MAX", 4),
+        _int_env("RATE_LIMIT_CONTACT_EMAIL_WINDOW", 86400),
+    ),
+    "contact_global": (
+        _int_env("RATE_LIMIT_CONTACT_GLOBAL_MAX", 40),
+        _int_env("RATE_LIMIT_CONTACT_GLOBAL_WINDOW", 3600),
+    ),
 }
 
 # Hard ceiling on any single request body, in bytes (default 12 MB).

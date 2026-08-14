@@ -80,6 +80,7 @@ from services.song_catalog import (
     import_song_rows,
     import_titles,
     import_verbum_songs_from_txt,
+    normalize_song_media_ref,
     save_lyrics_song,
     undo_verbum_song_import,
     update_catalog_song,
@@ -1125,6 +1126,9 @@ class SongSelection(BaseModel):
     offertory: Optional[str] = None
     communion_1: Optional[str] = None
     communion_2: Optional[str] = None
+    communion_3: Optional[str] = None
+    communion_4: Optional[str] = None
+    communion_5: Optional[str] = None
     recessional: Optional[str] = None
     meditation: Optional[str] = None
     extra_sections: Optional[list[ExtraSongSection]] = Field(
@@ -1149,6 +1153,15 @@ class AccessRequestBody(BaseModel):
     email: str = Field("", max_length=320)
     parish: str = Field("", max_length=240)
     message: str = Field("", max_length=1000)
+
+
+class ContactBody(BaseModel):
+    name: str = Field("", max_length=120)
+    email: str = Field("", max_length=320)
+    topic: str = Field("", max_length=40)
+    message: str = Field("", max_length=2000)
+    website: str = Field("", max_length=200)
+    started_at: float = 0
 
 
 class CommunityNameBody(BaseModel):
@@ -1332,7 +1345,7 @@ class GenerateBody(BaseModel):
         description=(
             "Optional MP4 basenames from the parish media library that replace lyric/prayer "
             "slides with a single video slide. Keys: kyrie, gloria, sanctus, our_father, "
-            "lamb_of_god, entrance, offertory, communion_1, communion_2, recessional."
+            "lamb_of_god, entrance, offertory, communion_1–communion_5, recessional."
         ),
     )
 
@@ -1369,6 +1382,9 @@ class GenerateBody(BaseModel):
                 "offertory",
                 "communion_1",
                 "communion_2",
+                "communion_3",
+                "communion_4",
+                "communion_5",
                 "recessional",
             }
             cleaned: dict[str, str] = {}
@@ -1419,8 +1435,23 @@ class FetchLyricsBody(BaseModel):
 
 
 class SongMediaRefBody(BaseModel):
-    basename: str = Field(..., min_length=1, max_length=180)
+    basename: str = Field("", max_length=180)
     display_name: str = Field("", max_length=240)
+    source: str = Field("", max_length=16)
+    youtube_id: str = Field("", max_length=16)
+    youtube_url: str = Field("", max_length=320)
+
+    @model_validator(mode="after")
+    def _normalize_media_ref(self) -> "SongMediaRefBody":
+        ref = normalize_song_media_ref(self.model_dump())
+        if not ref:
+            raise ValueError("Link a media file or a YouTube URL.")
+        self.basename = str(ref.get("basename") or "")
+        self.display_name = str(ref.get("display_name") or "")
+        self.source = str(ref.get("source") or "")
+        self.youtube_id = str(ref.get("youtube_id") or "")
+        self.youtube_url = str(ref.get("youtube_url") or "")
+        return self
 
 
 class SaveLyricsBody(BaseModel):
@@ -3709,6 +3740,30 @@ def api_access_request(body: AccessRequestBody, request: Request) -> Any:
         request=request,
     )
     return submit_access_request(row)
+
+
+@app.post("/api/contact")
+def api_contact(body: ContactBody, request: Request) -> Any:
+    """Public landing contact form — emailed to SUPERADMIN_EMAILS."""
+    from services.contact import (
+        enforce_contact_limits,
+        is_honeypot,
+        submit_contact,
+        validate_contact,
+    )
+
+    if is_honeypot(body.website):
+        return {"ok": True, "emailed": True}
+    row = validate_contact(
+        name=body.name,
+        email=body.email,
+        topic=body.topic,
+        message=body.message,
+        request=request,
+        started_at=body.started_at,
+    )
+    enforce_contact_limits(request=request, email=row.email)
+    return submit_contact(row)
 
 
 @app.post("/api/demo-generate")

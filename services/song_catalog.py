@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
+from urllib.parse import parse_qs, urlparse
 
 from services.gospel_mood import gospel_moods_for_song, normalize_gospel_moods
 from services.hymn_catalog_store import (
@@ -52,17 +53,98 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+_YT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+_YT_HOSTS = frozenset({
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "music.youtube.com",
+    "youtu.be",
+    "www.youtu.be",
+    "youtube-nocookie.com",
+    "www.youtube-nocookie.com",
+})
+
+
+def parse_youtube_video_id(value: str) -> Optional[str]:
+    """Extract an 11-character YouTube video id from a URL, yt: prefix, or bare id."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.lower().startswith("yt:"):
+        raw = raw[3:].strip()
+    if _YT_ID_RE.fullmatch(raw):
+        return raw
+    lowered = raw.lower()
+    if "://" not in raw and (
+        lowered.startswith("youtube.com")
+        or lowered.startswith("youtu.be")
+        or lowered.startswith("m.youtube.com")
+        or lowered.startswith("music.youtube.com")
+        or lowered.startswith("www.youtube.com")
+    ):
+        raw = "https://" + raw
+    parsed = urlparse(raw)
+    host = str(parsed.hostname or "").lower()
+    if host not in _YT_HOSTS:
+        return None
+    if host.endswith("youtu.be"):
+        cand = parsed.path.strip("/").split("/", 1)[0]
+        return cand if _YT_ID_RE.fullmatch(cand) else None
+    qs = parse_qs(parsed.query)
+    vid = (qs.get("v") or [""])[0].strip()
+    if _YT_ID_RE.fullmatch(vid):
+        return vid
+    parts = [p for p in parsed.path.split("/") if p]
+    if len(parts) >= 2 and parts[0] in {"embed", "shorts", "live", "v"}:
+        cand = parts[1]
+        return cand if _YT_ID_RE.fullmatch(cand) else None
+    return None
+
+
 def normalize_song_media_ref(raw: Any) -> Optional[dict[str, str]]:
-    """Normalize {basename, display_name} media link stored on a catalog song."""
+    """Normalize a catalog media link (library file or YouTube URL)."""
     if raw is None:
         return None
     if isinstance(raw, str):
+        yt = parse_youtube_video_id(raw)
+        if yt:
+            return {
+                "basename": "yt:" + yt,
+                "display_name": "YouTube",
+                "source": "youtube",
+                "youtube_id": yt,
+                "youtube_url": "https://www.youtube.com/watch?v=" + yt,
+            }
         basename = raw.strip()
         if not basename:
             return None
-        return {"basename": basename, "display_name": basename}
+        return {"basename": basename[:180], "display_name": basename[:240]}
     if not isinstance(raw, dict):
         return None
+    yt = parse_youtube_video_id(
+        str(raw.get("youtube_id") or "")
+        or str(raw.get("youtube_url") or "")
+        or str(raw.get("url") or "")
+        or (
+            str(raw.get("basename") or "")
+            if str(raw.get("source") or "").strip().lower() == "youtube"
+            else ""
+        )
+    )
+    if not yt:
+        base = str(raw.get("basename") or "").strip()
+        if base.lower().startswith("yt:"):
+            yt = parse_youtube_video_id(base[3:])
+    if yt:
+        display = str(raw.get("display_name") or "").strip() or "YouTube"
+        return {
+            "basename": "yt:" + yt,
+            "display_name": display[:240],
+            "source": "youtube",
+            "youtube_id": yt,
+            "youtube_url": "https://www.youtube.com/watch?v=" + yt,
+        }
     basename = str(raw.get("basename") or "").strip()
     if not basename:
         return None

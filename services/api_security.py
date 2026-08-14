@@ -348,6 +348,8 @@ def _build_csp() -> str:
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
             "worker-src 'self' blob:",
+            # YouTube practice-audio preview in the song media modal.
+            "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com",
             "connect-src " + " ".join(dict.fromkeys(connect)),
             "media-src " + " ".join(dict.fromkeys(media)),
         ]

@@ -5593,26 +5593,30 @@ def generate_mass_ppt(
     else:
         _add_marked_slide(prs, communion_rite_title, flow.COMMUNION_DIALOGUE, theme)
     _add_divider_cover(prs, **ctx)
-    c1 = str(sel.get("communion_1") or "").strip()
-    c2 = str(sel.get("communion_2") or "").strip()
     comm_ok = False
-    if _use_video("communion_1", "Communion (1)"):
-        comm_ok = True
-    elif c1 and _try_library_hymn(
-        prs, "communion", c1, "Communion (1)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
-    ):
-        comm_ok = True
-    if _use_video("communion_2", "Communion (2)"):
-        comm_ok = True
-    elif c2 and _try_library_hymn(
-        prs, "communion", c2, "Communion (2)", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
-    ):
-        comm_ok = True
+    for i in range(1, 6):
+        key = f"communion_{i}"
+        cid = str(sel.get(key) or "").strip()
+        label = f"Communion ({i})"
+        if _use_video(key, label):
+            comm_ok = True
+        elif cid and _try_library_hymn(
+            prs,
+            "communion",
+            cid,
+            label,
+            theme,
+            hymn_typography=hymn_typography,
+            hymn_lyric_overrides=hymn_lyric_overrides,
+            hymn_lyrics_layout=hymn_lyrics_layout,
+            hymn_layout_overrides=hymn_layout_overrides,
+        ):
+            comm_ok = True
     if not comm_ok:
         _add_marked_slide(
             prs,
             "Communion",
-            "No Communion hymn lyrics were selected. Choose up to two Communion songs in Mass Flow or save lyrics in Lyrics Studio before generating.",
+            "No Communion hymn lyrics were selected. Choose Communion songs in Mass Flow or save lyrics in Lyrics Studio before generating.",
             theme,
         )
     med_id = str(sel.get("meditation") or "").strip()

@@ -28,6 +28,9 @@ SONG_SLOTS = (
     "offertory",
     "communion_1",
     "communion_2",
+    "communion_3",
+    "communion_4",
+    "communion_5",
     "recessional",
     "meditation",
 )

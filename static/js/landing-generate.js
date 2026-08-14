@@ -241,22 +241,73 @@
     return arr;
   }
 
+  function normSongTitle(title) {
+    return String(title || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/^\s+|\s+$/g, "");
+  }
+
+  function markSongUsed(exclude, row) {
+    var id = String((row && row.id) || "").trim().toLowerCase();
+    var title = normSongTitle(row && row.title);
+    if (id) exclude.add("id:" + id);
+    if (title) exclude.add("title:" + title);
+  }
+
+  function songIsUsed(exclude, row) {
+    var id = String((row && row.id) || "").trim().toLowerCase();
+    var title = normSongTitle(row && (row.title || row.id));
+    if (id && exclude.has("id:" + id)) return true;
+    if (title && exclude.has("title:" + title)) return true;
+    return false;
+  }
+
+  function catalogSectionRows(catalog, section) {
+    return (catalog && catalog[section]) || [];
+  }
+
+  function allCatalogRows(catalog) {
+    var out = [];
+    var seen = new Set();
+    Object.keys(catalog || {}).forEach(function (sec) {
+      catalogSectionRows(catalog, sec).forEach(function (row) {
+        var id = String((row && row.id) || "");
+        var key = id || normSongTitle(row && row.title) + "@" + sec;
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        out.push(row);
+      });
+    });
+    return out;
+  }
+
   function pickMoodSongsForSection(catalog, section, moodKey, count, excludeIds, langFilter) {
-    var rows = (catalog && catalog[section]) || [];
-    if (!rows.length) return [];
     var exclude = excludeIds || new Set();
+    var wanted = Math.max(1, count || 1);
+    var primary = catalogSectionRows(catalog, section);
+    var extra = allCatalogRows(catalog).filter(function (row) {
+      return primary.indexOf(row) < 0;
+    });
+    var rows = primary.concat(extra);
+    if (!rows.length) return [];
+
     var scored = rows
       .map(function (row) {
         var moods = songGospelMoods(row);
         var match = moodMatchScore(moods, moodKey);
         var lyrics = row.has_lyrics ? 1 : 0;
         var lang = songMatchesLangFilter(row, langFilter) ? 1 : 0;
+        var sameSection = primary.indexOf(row) >= 0 ? 1 : 0;
         var jitter = Math.random() * 0.5;
-        return { row: row, match: match, score: match * 100 + lyrics * 10 + lang * 5 + jitter };
+        return {
+          row: row,
+          match: match,
+          score: sameSection * 40 + match * 100 + lyrics * 10 + lang * 5 + jitter,
+        };
       })
       .filter(function (item) {
-        var id = String(item.row.id || "");
-        return id && !exclude.has(id);
+        return item.row && !songIsUsed(exclude, item.row);
       });
     if (!scored.length) return [];
     scored.sort(function (a, b) { return b.score - a.score; });
@@ -265,32 +316,19 @@
     var preferred = scored.filter(function (item) { return item.match >= minMatch; });
     var topMatch = preferred[0].match;
     var tier = preferred.filter(function (item) { return item.match === topMatch; });
+    var rest = preferred.filter(function (item) { return item.match !== topMatch; });
+    var ordered = shuffleArray(tier.slice()).concat(rest).concat(
+      scored.filter(function (item) { return item.match < minMatch; })
+    );
     var picked = [];
-    shuffleArray(tier).forEach(function (item) {
-      var id = String(item.row.id || "");
-      if (!id || exclude.has(id)) return;
-      picked.push(item.row);
-      exclude.add(id);
+    ordered.forEach(function (item) {
+      if (picked.length >= wanted) return;
+      var row = item.row;
+      if (!row || songIsUsed(exclude, row)) return;
+      picked.push(row);
+      markSongUsed(exclude, row);
     });
-    if (picked.length < count) {
-      preferred.forEach(function (item) {
-        if (picked.length >= count) return;
-        var id = String(item.row.id || "");
-        if (!id || exclude.has(id)) return;
-        picked.push(item.row);
-        exclude.add(id);
-      });
-    }
-    if (picked.length < count) {
-      scored.forEach(function (item) {
-        if (picked.length >= count) return;
-        var id = String(item.row.id || "");
-        if (!id || exclude.has(id)) return;
-        picked.push(item.row);
-        exclude.add(id);
-      });
-    }
-    return picked.slice(0, count);
+    return picked;
   }
 
   function previewCatalog(preview) {
@@ -315,7 +353,7 @@
       );
       if (sec.slotKeys) {
         songs.forEach(function (row, i) {
-          if (!row) return;
+          if (!row || !sec.slotKeys[i]) return;
           selections.push({
             slotKey: sec.slotKeys[i],
             id: row.id,
@@ -335,8 +373,10 @@
       });
     });
 
-    if (selections.length < 4 && preview && preview.default_song_selections) {
+    if (preview && preview.default_song_selections) {
       var defaults = preview.default_song_selections;
+      var haveSlots = {};
+      selections.forEach(function (item) { haveSlots[item.slotKey] = true; });
       var fallback = [
         { slotKey: "entrance", label: "Entrance", id: defaults.entrance, section: "entrance" },
         { slotKey: "offertory", label: "Offertory", id: defaults.offertory, section: "offertory" },
@@ -344,17 +384,25 @@
         { slotKey: "communion_2", label: "Communion 2", id: defaults.communion_2, section: "communion" },
         { slotKey: "recessional", label: "Recessional", id: defaults.recessional, section: "recessional" },
       ];
-      selections = fallback
-        .filter(function (item) { return !!item.id; })
-        .map(function (item) {
-          return {
-            slotKey: item.slotKey,
-            id: item.id,
-            title: titleFromPreview(catalog, item.section, item.id) || item.id,
-            label: item.label,
-          };
+      fallback.forEach(function (item) {
+        if (haveSlots[item.slotKey] || !item.id) return;
+        var title = titleFromPreview(catalog, item.section, item.id) || item.id;
+        var row = { id: item.id, title: title };
+        if (songIsUsed(exclude, row)) return;
+        markSongUsed(exclude, row);
+        haveSlots[item.slotKey] = true;
+        selections.push({
+          slotKey: item.slotKey,
+          id: item.id,
+          title: title,
+          label: item.label,
         });
+      });
     }
+    var slotOrder = ["entrance", "offertory", "communion_1", "communion_2", "recessional"];
+    selections.sort(function (a, b) {
+      return slotOrder.indexOf(a.slotKey) - slotOrder.indexOf(b.slotKey);
+    });
     return selections;
   }
 
@@ -750,6 +798,85 @@
     }
   }
 
+  var contactLastTrigger = null;
+
+  function openContact(trigger) {
+    var backdrop = $("lf-contact-backdrop");
+    if (!backdrop) return;
+    contactLastTrigger = trigger || document.activeElement;
+    var form = $("lf-contact-form");
+    var thanks = $("lf-contact-thanks");
+    var errEl = $("lf-contact-err");
+    var btn = $("lf-contact-submit");
+    if (form) {
+      form.hidden = false;
+      form.reset();
+    }
+    var started = $("lf-contact-started");
+    if (started) started.value = String(Date.now() / 1000);
+    if (thanks) thanks.hidden = true;
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (btn) btn.disabled = false;
+    backdrop.hidden = false;
+    document.body.classList.add("lf-contact-open");
+    var name = $("lf-contact-name");
+    if (name) name.focus();
+  }
+
+  function closeContact() {
+    var backdrop = $("lf-contact-backdrop");
+    if (!backdrop) return;
+    backdrop.hidden = true;
+    document.body.classList.remove("lf-contact-open");
+    if (contactLastTrigger && typeof contactLastTrigger.focus === "function") {
+      contactLastTrigger.focus();
+    }
+  }
+
+  async function submitContact(e) {
+    if (e) e.preventDefault();
+    var form = $("lf-contact-form");
+    var thanks = $("lf-contact-thanks");
+    var errEl = $("lf-contact-err");
+    var btn = $("lf-contact-submit");
+    if (!form || !thanks) return;
+
+    var name = ($("lf-contact-name") || {}).value || "";
+    var email = ($("lf-contact-email") || {}).value || "";
+    var topic = ($("lf-contact-topic") || {}).value || "";
+    var message = ($("lf-contact-message") || {}).value || "";
+    var website = ($("lf-contact-website") || {}).value || "";
+    var startedAt = Number(($("lf-contact-started") || {}).value || 0);
+
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (btn) btn.disabled = true;
+
+    try {
+      await postJSON("/api/contact", {
+        name: String(name).trim(),
+        email: String(email).trim(),
+        topic: String(topic).trim(),
+        message: String(message).trim(),
+        website: String(website),
+        started_at: startedAt,
+      });
+      form.hidden = true;
+      thanks.hidden = false;
+    } catch (err) {
+      if (errEl) {
+        errEl.textContent = err.message || "Could not send your message. Please try again.";
+        errEl.hidden = false;
+      }
+      if (btn) btn.disabled = false;
+    }
+  }
+
   function bindEvents() {
     var openBtn = $("lf-hero-generate");
     if (openBtn) openBtn.addEventListener("click", openModal);
@@ -791,9 +918,38 @@
     var accessForm = $("lf-gen-access-form");
     if (accessForm) accessForm.addEventListener("submit", submitAccessRequest);
 
+    var contactHero = $("lf-hero-contact");
+    if (contactHero) {
+      contactHero.addEventListener("click", function () {
+        openContact(contactHero);
+      });
+    }
+    var contactFoot = $("lf-foot-contact");
+    if (contactFoot) {
+      contactFoot.addEventListener("click", function () {
+        openContact(contactFoot);
+      });
+    }
+    var contactClose = $("lf-contact-close");
+    if (contactClose) contactClose.addEventListener("click", closeContact);
+    var contactBackdrop = $("lf-contact-backdrop");
+    if (contactBackdrop) {
+      contactBackdrop.addEventListener("click", function (e) {
+        if (e.target === contactBackdrop) closeContact();
+      });
+    }
+    var contactForm = $("lf-contact-form");
+    if (contactForm) contactForm.addEventListener("submit", submitContact);
+
     document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      var contact = $("lf-contact-backdrop");
+      if (contact && !contact.hidden) {
+        closeContact();
+        return;
+      }
       var backdrop = $("lf-gen-backdrop");
-      if (e.key === "Escape" && backdrop && !backdrop.hidden) {
+      if (backdrop && !backdrop.hidden) {
         closeModal();
       }
     });
