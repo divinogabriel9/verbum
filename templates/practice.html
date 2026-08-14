@@ -290,6 +290,59 @@
       line-height: 1.2;
       letter-spacing: -0.02em;
     }
+    .practice-song-head__title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .practice-song-head__title-row h2,
+    .practice-song-head__title-row .practice-song-picker {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin: 0;
+    }
+    .practice-yt-play {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 2px 0 0;
+      padding: 6px 12px;
+      border-radius: 999px;
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+      background: color-mix(in srgb, var(--accent) 16%, var(--card));
+      color: var(--accent);
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .practice-yt-play:hover,
+    .practice-yt-play.is-on {
+      background: color-mix(in srgb, var(--accent) 24%, var(--card));
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+      color: var(--accent);
+    }
+    .practice-yt-play svg {
+      width: 12px;
+      height: 12px;
+    }
+    .practice-yt-embed {
+      margin: 12px 0 0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    .practice-yt-embed iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
     .practice-song-head__meta {
       margin: 0;
       font-size: 0.8125rem;
@@ -764,6 +817,7 @@
       let catalogSongs = null;
       let catalogLoading = null;
       let pickerCloseHandler = null;
+      let playingYoutubeId = "";
       const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const TAB_EXIT_MS = 120;
       const TAB_ENTER_MS = 200;
@@ -774,6 +828,29 @@
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;");
+      }
+
+      function practiceYoutubeId(song) {
+        if (!song) return "";
+        const raw = String(song.youtube_id || song.youtube_url || "").trim();
+        if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+        try {
+          const parsed = new URL(raw.indexOf("://") >= 0 ? raw : ("https://" + raw));
+          const host = String(parsed.hostname || "").toLowerCase();
+          if (/(^|\.)youtu\.be$/.test(host)) {
+            const cand = parsed.pathname.replace(/^\/+/, "").split("/")[0] || "";
+            return /^[A-Za-z0-9_-]{11}$/.test(cand) ? cand : "";
+          }
+          const vid = parsed.searchParams.get("v") || "";
+          if (/^[A-Za-z0-9_-]{11}$/.test(vid)) return vid;
+        } catch (_e) { /* ignore */ }
+        return "";
+      }
+
+      function stopPracticeYoutube() {
+        playingYoutubeId = "";
+        const frame = document.getElementById("practice-yt-frame");
+        if (frame) frame.removeAttribute("src");
       }
 
       function formatDate(iso) {
@@ -1527,6 +1604,9 @@
           if (next.section) current.section = next.section;
           current.lyrics = next.lyrics || "";
           current.blocks = normalizeSongBlocks(next);
+          current.youtube_id = next.youtube_id || "";
+          current.youtube_url = next.youtube_url || "";
+          stopPracticeYoutube();
           setDirty(true);
           paintCurrentSong();
           syncSongTabs();
@@ -1541,6 +1621,18 @@
         const song = state.songs[state.index];
         if (!song) return;
         const meta = [song.author, song.language].filter(Boolean).join(" · ");
+        const ytId = practiceYoutubeId(song);
+        const ytPlaying = !!(ytId && playingYoutubeId === ytId);
+        const playBtn = ytId
+          ? (
+              '<button type="button" class="practice-yt-play' + (ytPlaying ? " is-on" : "") + '" id="practice-yt-play" ' +
+                'aria-pressed="' + (ytPlaying ? "true" : "false") + '" ' +
+                'aria-label="' + (ytPlaying ? "Close YouTube" : "Play YouTube") + '">' +
+                '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 19 12 8 19 8 5"/></svg>' +
+                (ytPlaying ? "Close" : "Play") +
+              "</button>"
+            )
+          : "";
         const titleBlock = state.editing
           ? (
               '<div class="practice-song-picker" id="practice-song-picker">' +
@@ -1555,15 +1647,39 @@
               '</div>'
             )
           : ('<h2>' + esc(song.title || "Untitled") + '</h2>');
+        const embed = ytPlaying
+          ? (
+              '<div class="practice-yt-embed">' +
+                '<iframe id="practice-yt-frame" title="YouTube practice audio" ' +
+                  'src="https://www.youtube-nocookie.com/embed/' + esc(ytId) + '?autoplay=1&rel=0&playsinline=1" ' +
+                  'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" ' +
+                  'allowfullscreen referrerpolicy="origin"></iframe>' +
+              "</div>"
+            )
+          : "";
         root.innerHTML =
           '<div class="practice-song-head">' +
             '<p class="practice-song-head__slot">' + esc(song.slot_label || "Song") + '</p>' +
-            titleBlock +
+            '<div class="practice-song-head__title-row">' +
+              titleBlock +
+              playBtn +
+            "</div>" +
             (meta ? '<p class="practice-song-head__meta">' + esc(meta) + '</p>' : '') +
+            embed +
           '</div>' +
           renderPracticeLyrics(song);
 
         bindEditHandlers();
+        const ytPlay = document.getElementById("practice-yt-play");
+        if (ytPlay && ytId) {
+          ytPlay.addEventListener("click", function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (playingYoutubeId === ytId) stopPracticeYoutube();
+            else playingYoutubeId = ytId;
+            paintCurrentSong();
+          });
+        }
         if (state.editing) {
           const toggle = document.getElementById("practice-song-picker-toggle");
           const search = document.getElementById("practice-song-picker-search");
@@ -1601,12 +1717,14 @@
         tabAnimToken += 1;
         clearTabMotionClasses();
         closeSongPicker();
+        stopPracticeYoutube();
         paintCurrentSong();
       }
 
       function switchPracticeTab(nextIndex) {
         if (nextIndex === state.index) return;
         closeSongPicker();
+        stopPracticeYoutube();
         if (prefersReducedMotion || !root.innerHTML.trim()) {
           state.index = nextIndex;
           renderCurrentSong();
@@ -1648,7 +1766,8 @@
           leadAction.textContent = "Saving…";
         }
         const songs = state.songs.map(function (song) {
-          return {
+          const ytId = practiceYoutubeId(song);
+          const payload = {
             hymn_id: song.hymn_id || "",
             slot_key: song.slot_key || "",
             title: song.title || "",
@@ -1665,6 +1784,11 @@
               };
             }),
           };
+          if (ytId) {
+            payload.youtube_id = ytId;
+            payload.youtube_url = "https://www.youtube.com/watch?v=" + ytId;
+          }
+          return payload;
         });
         try {
           const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lyrics", {

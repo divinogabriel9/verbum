@@ -5445,6 +5445,8 @@
       display: flex;
       flex-direction: column;
       cursor: pointer;
+      width: 100%;
+      min-width: 0;
       min-height: 0;
       max-height: 300px;
       overflow: hidden;
@@ -5539,6 +5541,8 @@
       position: relative;
       display: flex;
       flex-direction: column;
+      width: 100%;
+      min-width: 0;
       min-height: 0;
       max-height: 300px;
       overflow: hidden;
@@ -13284,18 +13288,45 @@
       gap: 6px;
       margin-top: 10px;
     }
-    .song-metadata-media__youtube > span {
+    .song-metadata-media__youtube-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .song-metadata-media__youtube-head > span {
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.03em;
       text-transform: uppercase;
       color: var(--muted);
     }
+    .song-metadata-media__youtube-search {
+      flex: 0 0 auto;
+      font-size: 0.72rem;
+      font-weight: 650;
+      padding: 4px 8px;
+      min-height: 28px;
+    }
     .song-metadata-media__youtube-row {
       display: flex;
       align-items: center;
       gap: 6px;
       min-width: 0;
+    }
+    .song-metadata-media__youtube-clear {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      line-height: 1;
+      color: var(--muted);
+    }
+    .song-metadata-media__youtube-clear:hover {
+      color: #912018;
     }
     .song-metadata-media__youtube-row input {
       flex: 1 1 auto;
@@ -18099,7 +18130,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260716b" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260815a" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <style id="verbum-lyric-toolbar-fix">
@@ -18993,13 +19024,17 @@
                     <button type="button" class="ghost composer-media-play" id="song-metadata-audio-play" hidden>Play</button>
                     <button type="button" class="ghost" id="song-metadata-audio-clear" hidden>Clear</button>
                   </div>
-                  <label class="song-metadata-media__youtube">
-                    <span>YouTube URL</span>
+                  <div class="song-metadata-media__youtube">
+                    <div class="song-metadata-media__youtube-head">
+                      <span>YouTube URL</span>
+                      <button type="button" class="ghost song-metadata-media__youtube-search" id="song-metadata-audio-youtube-search">Search YouTube</button>
+                    </div>
                     <span class="song-metadata-media__youtube-row">
                       <input type="url" id="song-metadata-audio-youtube" placeholder="https://youtu.be/…" inputmode="url" autocomplete="off" maxlength="320" />
                       <button type="button" class="secondary" id="song-metadata-audio-youtube-link">Link</button>
+                      <button type="button" class="ghost song-metadata-media__youtube-clear" id="song-metadata-audio-youtube-clear" hidden aria-label="Clear YouTube link" title="Clear YouTube link">×</button>
                     </span>
-                  </label>
+                  </div>
                 </div>
                 <div class="song-metadata-media__slot">
                   <span class="song-metadata-media__label">Video</span>
@@ -20567,6 +20602,24 @@
         }
         .mass-song-media-btn.is-on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
         .mass-song-media-btn__label { max-width: 160px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+        .mass-song-media-clear {
+          flex: 0 0 auto;
+          width: 22px;
+          height: 22px;
+          padding: 0;
+          border-radius: 999px;
+          border: 1px solid var(--line);
+          background: var(--surface-2);
+          color: var(--muted);
+          font-size: 0.85rem;
+          line-height: 1;
+          cursor: pointer;
+        }
+        .mass-song-media-clear:hover {
+          color: #912018;
+          border-color: #b42318;
+          background: color-mix(in srgb, #b42318 10%, transparent);
+        }
         .mass-song-slide-mode {
           display: inline-flex;
           align-items: center;
@@ -22367,7 +22420,7 @@
                 });
               }
               item.addEventListener('click', function (e) {
-                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mass-rite-slide-mode-val]')) return;
+                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val]')) return;
                 pickLang(o.value);
               });
               item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickLang(o.value); } });
@@ -22446,7 +22499,7 @@
           if (defaultOpt && defaultOpt.dataset.mwSanctusLangBound !== '1') {
             defaultOpt.dataset.mwSanctusLangBound = '1';
             defaultOpt.addEventListener('click', function (e) {
-              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mass-rite-slide-mode-val]')) return;
+              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val]')) return;
               Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
                 c.setAttribute('aria-checked', String(c.getAttribute('data-val') === 'default'));
               });
@@ -22566,6 +22619,16 @@
               }
               return;
             }
+            var ytClear = e.target.closest('[data-mw-clear-youtube]');
+            if (ytClear && flowPage.contains(ytClear)) {
+              e.preventDefault();
+              e.stopPropagation();
+              var ytClearSlot = ytClear.getAttribute('data-mw-media-slot');
+              if (ytClearSlot && typeof window.clearMassYouTubeLink === 'function') {
+                window.clearMassYouTubeLink(ytClearSlot);
+              }
+              return;
+            }
             var ytLink = e.target.closest('[data-mw-link-youtube]');
             if (ytLink && flowPage.contains(ytLink)) {
               e.preventDefault();
@@ -22651,7 +22714,7 @@
               refreshContinue();
               mwAdvanceAfterPick(opt);
             }
-            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select')) { e.preventDefault(); return; } pickStandalone(); });
+            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select')) { e.preventDefault(); return; } pickStandalone(); });
             opt.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickStandalone(); } });
           });
           flowPage.addEventListener('input', refreshContinue, true);
@@ -26079,6 +26142,11 @@
         "<button type=\"button\" class=\"mass-song-media-btn" + (audioYoutube ? " is-on" : "") + "\" " +
           "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           "title=\"Paste a YouTube URL for practice playback (not added to the PowerPoint)\">YouTube</button>";
+      const audioYoutubeClear = audioYoutube
+        ? ("<button type=\"button\" class=\"mass-song-media-clear\" " +
+            "data-mw-clear-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
+            "aria-label=\"Clear YouTube link\" title=\"Clear YouTube link\">×</button>")
+        : "";
       if (!MASS_SECTION_VIDEO_SLOT_SET.has(slotKey)) {
         return (
           "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
@@ -26091,6 +26159,7 @@
                   escapeHtml(audioOn && !audioYoutube ? (audio.display_name || audio.basename) : (audioOn ? audioLabel : "Link…")) +
                 "</span></button>" +
               audioYoutubeBtn +
+              audioYoutubeClear +
               audioPlayBtn +
             "</div>" +
           "</div>"
@@ -26127,6 +26196,7 @@
                 escapeHtml(audioOn && !audioYoutube ? (audio.display_name || audio.basename) : "Link…") +
               "</span></button>" +
             audioYoutubeBtn +
+            audioYoutubeClear +
             audioPlayBtn +
           "</div>" +
           "<div class=\"mw-media-group\">" +
@@ -26689,9 +26759,14 @@
           : "None linked";
       }
       const ytInp = $("song-metadata-audio-youtube");
+      const ytSearch = $("song-metadata-audio-youtube-search");
+      const ytClear = $("song-metadata-audio-youtube-clear");
+      const audioIsYoutube = isYouTubeMediaRef(audio);
       if (ytInp && document.activeElement !== ytInp) {
-        ytInp.value = isYouTubeMediaRef(audio) ? (audio.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(audio))) : "";
+        ytInp.value = audioIsYoutube ? (audio.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(audio))) : "";
       }
+      if (ytSearch) ytSearch.hidden = audioIsYoutube;
+      if (ytClear) ytClear.hidden = !audioIsYoutube;
       if (videoLabel) {
         videoLabel.textContent = video
           ? (video.display_name || video.basename)
@@ -26742,34 +26817,53 @@
       if (list) list.hidden = !!active;
     }
 
-    function currentMediaPickSongQuery() {
-      const state = massMediaPickState || {};
+    function currentComposerSongQuery() {
       let title = "";
       let author = "";
       let lang = "";
-      if (state.purpose === "song") {
-        const metaOpen = $("song-metadata-modal") && $("song-metadata-modal").classList.contains("is-open");
-        if (metaOpen) {
-          title = String(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "").trim();
-          author = String(($("song-metadata-edit-author") && $("song-metadata-edit-author").value) || "").trim();
-          lang = String(($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "").trim();
-        }
-        if (!title) title = String(($("lyrics-save-title") && $("lyrics-save-title").value) || "").trim();
-        if (!author) author = String(($("lyrics-save-author") && $("lyrics-save-author").value) || "").trim();
-        if (!lang && typeof getComposerSongLanguage === "function") lang = getComposerSongLanguage() || "";
-      } else {
-        const slot = String(state.slot || "").trim();
-        const songId = (typeof selectedLyricsSongs !== "undefined" && selectedLyricsSongs && selectedLyricsSongs[slot]) || "";
-        const row = songId && typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
-        if (row) {
-          title = String(row.title || "").trim();
-          author = String(row.author || "").trim();
-          lang = String(row.language || "").trim();
-        }
-        if (!title && songId && typeof catalogSongTitle === "function") {
-          const section = typeof catalogSectionForSlot === "function" ? catalogSectionForSlot(slot) : slot;
-          title = catalogSongTitle(section, songId) || "";
-        }
+      const metaOpen = $("song-metadata-modal") && $("song-metadata-modal").classList.contains("is-open");
+      if (metaOpen) {
+        title = String(($("song-metadata-edit-title") && $("song-metadata-edit-title").value) || "").trim();
+        author = String(($("song-metadata-edit-author") && $("song-metadata-edit-author").value) || "").trim();
+        lang = String(($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "").trim();
+      }
+      if (!title) title = String(($("lyrics-save-title") && $("lyrics-save-title").value) || "").trim();
+      if (!author) author = String(($("lyrics-save-author") && $("lyrics-save-author").value) || "").trim();
+      if (!lang && typeof getComposerSongLanguage === "function") lang = getComposerSongLanguage() || "";
+      title = title.replace(/\s+/g, " ").trim();
+      if (!title) return "";
+      let query = title;
+      if (typeof songTitleWithLanguageForSearch === "function") {
+        query = songTitleWithLanguageForSearch(title, lang) || title;
+      } else if (lang && query.toLowerCase().indexOf(lang.toLowerCase()) === -1) {
+        query = query + " " + lang;
+      }
+      if (author && query.toLowerCase().indexOf(author.toLowerCase()) === -1) {
+        query = query + " " + author;
+      }
+      return query.replace(/\s+/g, " ").trim();
+    }
+
+    function currentMediaPickSongQuery() {
+      const state = massMediaPickState || {};
+      const metaOpen = $("song-metadata-modal") && $("song-metadata-modal").classList.contains("is-open");
+      if (state.purpose === "song" || metaOpen) {
+        return currentComposerSongQuery();
+      }
+      let title = "";
+      let author = "";
+      let lang = "";
+      const slot = String(state.slot || "").trim();
+      const songId = (typeof selectedLyricsSongs !== "undefined" && selectedLyricsSongs && selectedLyricsSongs[slot]) || "";
+      const row = songId && typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      if (row) {
+        title = String(row.title || "").trim();
+        author = String(row.author || "").trim();
+        lang = String(row.language || "").trim();
+      }
+      if (!title && songId && typeof catalogSongTitle === "function") {
+        const section = typeof catalogSectionForSlot === "function" ? catalogSectionForSlot(slot) : slot;
+        title = catalogSongTitle(section, songId) || "";
       }
       title = title.replace(/\s+/g, " ").trim();
       if (!title) return "";
@@ -26798,6 +26892,38 @@
       if (!opened && typeof notify === "function") {
         notify(query ? "Allow pop-ups to search YouTube for this song." : "Allow pop-ups to open YouTube.", "warn");
       }
+    }
+
+    function openYouTubeSearchForComposerSong() {
+      const query = currentComposerSongQuery();
+      const url = youtubeSearchUrlForQuery(query);
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened && typeof notify === "function") {
+        notify(query ? "Allow pop-ups to search YouTube for this song." : "Allow pop-ups to open YouTube.", "warn");
+      }
+    }
+
+    function clearMassYouTubeLink(slot) {
+      const key = String(slot || "").trim();
+      if (!key) return;
+      const item = getMassSectionMedia("audio", key);
+      if (!isYouTubeMediaRef(item)) return;
+      if (massSectionAudioPlayingSlot === key) {
+        closeSongMediaPreviewModal();
+        stopMassSectionAudio();
+      }
+      setMassSectionMedia("audio", key, null);
+      void persistMassSlotAudioToCatalogSong(key, null);
+      if (typeof notify === "function") notify("Cleared YouTube link.", "ok");
+    }
+
+    function clearComposerYouTubeLink() {
+      if (!isYouTubeMediaRef(composerSongMedia && composerSongMedia.audio)) return;
+      if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) {
+        closeSongMediaPreviewModal();
+        stopMassSectionAudio();
+      }
+      setComposerSongMediaField("audio", null);
     }
 
     function refreshMassMediaPickYoutubeTabLabel() {
@@ -27091,6 +27217,93 @@
       });
     }
 
+    function massSlotAssignedSong(slot) {
+      const key = String(slot || "").trim();
+      const songId = String((typeof selectedLyricsSongs !== "undefined" && selectedLyricsSongs && selectedLyricsSongs[key]) || "").trim();
+      if (!songId) return null;
+      const row = typeof lookupMassPlanSong === "function" ? lookupMassPlanSong(songId) : null;
+      const section = String(
+        (row && row.section) ||
+        (typeof catalogSectionForSlot === "function" ? catalogSectionForSlot(key) : key) ||
+        ""
+      ).trim().toLowerCase();
+      return { id: songId, section: section, row: row };
+    }
+
+    function updateLocalCatalogSongAudio(section, songId, audioRef) {
+      const id = String(songId || "").trim();
+      if (!id) return;
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      const prefer = String(section || "").trim().toLowerCase();
+      const ordered = prefer && secs.indexOf(prefer) >= 0
+        ? [prefer].concat(secs.filter((s) => s !== prefer))
+        : secs;
+      const ref = audioRef ? normalizeComposerMediaRef(audioRef) : null;
+      if (typeof songCatalogData !== "undefined" && songCatalogData) {
+        ordered.forEach((sec) => {
+          if (!Array.isArray(songCatalogData[sec])) return;
+          const idx = songCatalogData[sec].findIndex((r) => String(r.id) === id);
+          if (idx < 0) return;
+          const next = Object.assign({}, songCatalogData[sec][idx]);
+          next.audio_media = ref ? (serializeSongMediaRef(ref) || ref) : null;
+          songCatalogData[sec][idx] = next;
+        });
+      }
+      if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+      if (typeof songDetailCache !== "undefined" && typeof songDetailCacheKey === "function") {
+        ordered.forEach((sec) => {
+          const key = songDetailCacheKey(sec, id);
+          if (!songDetailCache.has(key)) return;
+          const data = songDetailCache.get(key);
+          if (!data || !data.song) return;
+          data.song.audio_media = ref ? (serializeSongMediaRef(ref) || ref) : null;
+          songDetailCache.set(key, data);
+        });
+      }
+      if (typeof composerLoadedSong !== "undefined" && composerLoadedSong && String(composerLoadedSong.id) === id) {
+        composerSongMedia.audio = ref;
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+        if (typeof songMetaSnapshot !== "undefined" && songMetaSnapshot) {
+          songMetaSnapshot.audio = ref ? String(ref.basename || "") : "";
+        }
+        if (typeof refreshMetadataModalPrimaryState === "function") refreshMetadataModalPrimaryState();
+      }
+    }
+
+    async function persistMassSlotAudioToCatalogSong(slot, audioRef) {
+      const assigned = massSlotAssignedSong(slot);
+      if (!assigned) return;
+      const ref = audioRef ? normalizeComposerMediaRef(audioRef) : null;
+      if (ref && assigned.row && assigned.row.title && (!ref.display_name || ref.display_name === "YouTube")) {
+        ref.display_name = assigned.row.title;
+      }
+      updateLocalCatalogSongAudio(assigned.section, assigned.id, ref);
+      if (typeof selectedLyricsSongs !== "undefined" && selectedLyricsSongs) {
+        Object.keys(selectedLyricsSongs).forEach((other) => {
+          if (other === slot) return;
+          if (String(selectedLyricsSongs[other] || "") !== assigned.id) return;
+          setMassSectionMedia("audio", other, ref);
+        });
+      }
+      if (!assigned.section || !assigned.id) return;
+      const body = ref
+        ? { audio_media: serializeSongMediaRef(ref) }
+        : { clear_audio_media: true };
+      try {
+        const headers = typeof catalogAuthHeaders === "function"
+          ? Object.assign({ "Content-Type": "application/json" }, await catalogAuthHeaders())
+          : { "Content-Type": "application/json" };
+        if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
+        const res = await fetch(
+          "/api/catalog/songs/" + encodeURIComponent(assigned.section) + "/" + encodeURIComponent(assigned.id),
+          { method: "PATCH", headers: headers, body: JSON.stringify(body) }
+        );
+        if (res.ok && typeof bustStoredSongDetail === "function") {
+          bustStoredSongDetail(assigned.section, assigned.id);
+        }
+      } catch (_e) { /* local catalog already updated for this session */ }
+    }
+
     function applyYouTubeAudioLink(value) {
       const ref = youtubeMediaRefFromInput(value);
       if (!ref) {
@@ -27102,7 +27315,10 @@
       } else {
         const slot = massMediaPickState.slot;
         if (!slot) return false;
+        const assigned = massSlotAssignedSong(slot);
+        if (assigned && assigned.row && assigned.row.title) ref.display_name = assigned.row.title;
         setMassSectionMedia("audio", slot, ref);
+        void persistMassSlotAudioToCatalogSong(slot, ref);
       }
       closeMassMediaPickModal();
       if (typeof notify === "function") {
@@ -27336,6 +27552,7 @@
     window.openMassMediaPickModal = openMassMediaPickModal;
     window.closeMassMediaPickModal = closeMassMediaPickModal;
     window.clearMassMediaPickSelection = clearMassMediaPickSelection;
+    window.clearMassYouTubeLink = clearMassYouTubeLink;
     window.renderMassMediaPickList = renderMassMediaPickList;
 
     const MEDIA_THUMB_PLAY_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><polygon points=\"8 5 19 12 8 19 8 5\"/></svg>";
@@ -29246,6 +29463,18 @@
       "/media/presentation": "/mass/builder",
     };
 
+    const EMAIL_DEEPLINK_STORE_KEY = "verbum:email-deeplink";
+    (function captureEmailDeepLinkEarly() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const intent = (params.get("intent") || "").trim().toLowerCase();
+        const date = (params.get("date") || "").trim();
+        if (intent === "practice-share" || intent === "generate") {
+          sessionStorage.setItem(EMAIL_DEEPLINK_STORE_KEY, JSON.stringify({ intent: intent, date: date }));
+        }
+      } catch (_e) { /* ignore */ }
+    })();
+
     const rawPathInit = window.location.pathname;
     if (legacyRoutes[rawPathInit]) {
       history.replaceState({}, "", legacyRoutes[rawPathInit]);
@@ -30315,7 +30544,8 @@
       }
       const leaving = document.querySelector(".page.active");
       const next = Array.from(document.querySelectorAll(".page")).find((p) => pageIsActiveForRoute(p, r));
-      const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const skipMotion = typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups();
+      const motionOk = !skipMotion && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (motionOk && leaving && next && leaving !== next) {
         leaving.classList.add("page--leaving");
         leaving.classList.remove("active");
@@ -36292,6 +36522,7 @@
               author: catalogRow.author || "",
               language: catalogRow.language || "",
               section: sec,
+              audio_media: catalogRow.audio_media || null,
             };
           }
         }
@@ -36300,7 +36531,7 @@
         const cacheKey = section + "|" + id;
         // Prefer cached lyrics; server fills gaps and always applies parish lyric overrides.
         const lyrics = (massSongLyricsCache.get(cacheKey) || "").trim();
-        songs.push({
+        const payload = {
           slot_key: slot.key,
           slot_label: massSongSlotShortLabel(slot.key, slot.label),
           section: section,
@@ -36309,7 +36540,19 @@
           author: row.author || "",
           language: row.language || "",
           lyrics: lyrics,
-        });
+        };
+        const slotAudio = typeof getMassSectionMedia === "function" ? getMassSectionMedia("audio", slot.key) : null;
+        const ytRef = (typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(slotAudio))
+          ? slotAudio
+          : ((typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(row.audio_media)) ? row.audio_media : null);
+        const ytId = ytRef && typeof youtubeIdFromMediaRef === "function" ? youtubeIdFromMediaRef(ytRef) : "";
+        if (ytId) {
+          payload.youtube_id = ytId;
+          payload.youtube_url = (typeof youtubeWatchUrl === "function")
+            ? youtubeWatchUrl(ytId)
+            : ("https://www.youtube.com/watch?v=" + ytId);
+        }
+        songs.push(payload);
       }
       return songs;
     }
@@ -37520,6 +37763,13 @@
           if (slot && mode) void chooseMassSongSlideMode(slot, mode);
           return;
         }
+        const ytClear = e.target.closest("[data-mw-clear-youtube]");
+        if (ytClear && root.contains(ytClear)) {
+          e.preventDefault();
+          const slot = ytClear.getAttribute("data-mw-media-slot");
+          if (slot) clearMassYouTubeLink(slot);
+          return;
+        }
         const ytLink = e.target.closest("[data-mw-link-youtube]");
         if (ytLink && root.contains(ytLink)) {
           e.preventDefault();
@@ -38278,14 +38528,30 @@
     }
     window.ensureCollectionDefaultDate = ensureCollectionDefaultDate;
 
-    /** Email CTAs: /sign-in?redirect_url=/home?date=…&intent=practice-share (or /mass/builder?intent=generate) */
+    /** Email CTAs: /sign-in?redirect_url=/home&intent=practice-share&date=… */
     let emailDeepLinkConsumed = false;
-    function pendingEmailDeepLinkIntent() {
+    function readEmailDeepLink() {
+      let intent = "";
+      let dateParam = "";
       try {
-        return (new URLSearchParams(window.location.search).get("intent") || "").trim().toLowerCase();
-      } catch (_e) {
-        return "";
+        const params = new URLSearchParams(window.location.search);
+        intent = (params.get("intent") || "").trim().toLowerCase();
+        dateParam = (params.get("date") || "").trim();
+      } catch (_e) { /* ignore */ }
+      if (!intent || !dateParam) {
+        try {
+          const raw = sessionStorage.getItem(EMAIL_DEEPLINK_STORE_KEY);
+          if (raw) {
+            const stored = JSON.parse(raw) || {};
+            if (!intent) intent = String(stored.intent || "").trim().toLowerCase();
+            if (!dateParam) dateParam = String(stored.date || "").trim();
+          }
+        } catch (_e2) { /* ignore */ }
       }
+      return { intent: intent, dateParam: dateParam };
+    }
+    function pendingEmailDeepLinkIntent() {
+      return readEmailDeepLink().intent;
     }
     function shouldSkipStartupPopups() {
       if (emailDeepLinkConsumed) return true;
@@ -38294,14 +38560,15 @@
     }
     function consumeEmailDeepLinkIntent() {
       if (emailDeepLinkConsumed) return;
-      const params = new URLSearchParams(window.location.search);
-      const intent = (params.get("intent") || "").trim().toLowerCase();
-      const dateParam = (params.get("date") || "").trim();
+      const link = readEmailDeepLink();
+      const intent = link.intent;
+      const dateParam = link.dateParam;
       if (!intent && !dateParam) return;
       const route = normalizeRoute(window.location.pathname);
 
       if (intent === "practice-share") {
         emailDeepLinkConsumed = true;
+        try { sessionStorage.removeItem(EMAIL_DEEPLINK_STORE_KEY); } catch (_eClr) { /* ignore */ }
         if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
           const el = $("mass-date");
           if (el && el.value !== dateParam) {
@@ -38311,11 +38578,8 @@
             el.dispatchEvent(new Event("change", { bubbles: true }));
           }
         }
-        params.delete("intent");
-        params.delete("date");
-        const qs = params.toString();
         try {
-          history.replaceState({}, "", "/home" + (qs ? "?" + qs : ""));
+          history.replaceState({}, "", "/home");
         } catch (_e2) { /* ignore */ }
         if (route !== "/home" && typeof showRoute === "function") {
           showRoute("/home", true);
@@ -38330,8 +38594,10 @@
         return;
       }
 
-      if (route !== "/mass/builder") return;
+      if (route !== "/mass/builder" && intent !== "generate") return;
+      if (intent !== "generate" && !dateParam) return;
       emailDeepLinkConsumed = true;
+      try { sessionStorage.removeItem(EMAIL_DEEPLINK_STORE_KEY); } catch (_eClr2) { /* ignore */ }
 
       if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
         const el = $("mass-date");
@@ -38344,11 +38610,8 @@
         }
       }
 
-      params.delete("intent");
-      params.delete("date");
-      const qs = params.toString();
       try {
-        history.replaceState({}, "", "/mass/builder" + (qs ? "?" + qs : ""));
+        history.replaceState({}, "", "/mass/builder");
       } catch (_e2) { /* ignore */ }
 
       if (intent === "generate") {
@@ -38356,6 +38619,8 @@
         notify("Generate your Mass PowerPoint when ready.", "info");
       }
     }
+    window.consumeEmailDeepLinkIntent = consumeEmailDeepLinkIntent;
+    window.shouldSkipStartupPopups = shouldSkipStartupPopups;
 
     let churchMembershipState = {
       membership_status: "draft",
@@ -49465,6 +49730,8 @@
       });
       const ytLinkBtn = $("song-metadata-audio-youtube-link");
       const ytField = $("song-metadata-audio-youtube");
+      const ytSearchBtn = $("song-metadata-audio-youtube-search");
+      const ytClearBtn = $("song-metadata-audio-youtube-clear");
       function commitComposerYouTubeLink() {
         const ref = youtubeMediaRefFromInput(ytField && ytField.value);
         if (!ref) {
@@ -49473,6 +49740,16 @@
         }
         setComposerSongMediaField("audio", ref);
         if (typeof notify === "function") notify("YouTube linked for practice playback.", "ok");
+      }
+      if (ytSearchBtn) {
+        ytSearchBtn.addEventListener("click", () => {
+          openYouTubeSearchForComposerSong();
+        });
+      }
+      if (ytClearBtn) {
+        ytClearBtn.addEventListener("click", () => {
+          clearComposerYouTubeLink();
+        });
       }
       if (ytLinkBtn) ytLinkBtn.addEventListener("click", commitComposerYouTubeLink);
       if (ytField) {
@@ -51005,6 +51282,7 @@
     renderCollectionsRecent();
     bindSocialExportControls();
     bindOpenAiPosterControls();
+    if (typeof consumeEmailDeepLinkIntent === "function") consumeEmailDeepLinkIntent();
     showRoute(currentRoute(), true);
     renderLyrics({ writeBack: false });
     setLyricsAnalyzeOverlay("idle");

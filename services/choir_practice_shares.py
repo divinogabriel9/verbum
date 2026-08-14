@@ -14,7 +14,12 @@ from typing import Any, Dict, Optional, Tuple
 
 from services.auth_config import supabase_enabled
 from services.practice_access import hash_pin, pin_required, verify_pin
-from services.song_catalog import format_song_title_case, polish_lyrics_text
+from services.song_catalog import (
+    format_song_title_case,
+    normalize_song_media_ref,
+    parse_youtube_video_id,
+    polish_lyrics_text,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -314,6 +319,31 @@ def _ensure_song_blocks(song: dict[str, Any]) -> dict[str, Any]:
     return item
 
 
+def _youtube_public_fields(*values: Any) -> dict[str, str]:
+    """Return youtube_id + youtube_url from a URL, id, or audio_media ref."""
+    for value in values:
+        if value is None or value == "":
+            continue
+        yt = ""
+        if isinstance(value, dict):
+            ref = normalize_song_media_ref(value) or {}
+            yt = str(ref.get("youtube_id") or "").strip()
+            if not yt:
+                yt = parse_youtube_video_id(
+                    str(value.get("youtube_id") or "")
+                    or str(value.get("youtube_url") or "")
+                    or str(value.get("url") or "")
+                ) or ""
+        else:
+            yt = parse_youtube_video_id(str(value)) or ""
+        if yt:
+            return {
+                "youtube_id": yt,
+                "youtube_url": "https://www.youtube.com/watch?v=" + yt,
+            }
+    return {}
+
+
 def _normalize_songs(songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -341,6 +371,13 @@ def _normalize_songs(songs: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "language": str(raw.get("language") or "").strip(),
             "lyrics": lyrics,
         }
+        yt = _youtube_public_fields(
+            raw.get("youtube_id"),
+            raw.get("youtube_url"),
+            raw.get("audio_media"),
+        )
+        if yt:
+            song.update(yt)
         if isinstance(raw.get("blocks"), list) and raw.get("blocks"):
             song["blocks"] = raw["blocks"]
         out.append(_ensure_song_blocks(song))
@@ -418,6 +455,20 @@ def _enrich_songs_from_catalog(
             parish_lyrics = overrides_by_key.get(f"{hymn_id}|{section}") or overrides_by_key.get(f"{hymn_id}|")
             if parish_lyrics:
                 lyrics = parish_lyrics
+            if not item.get("youtube_id"):
+                hit = by_id.get(hymn_id)
+                if hit:
+                    _sec, row = hit
+                    yt = _youtube_public_fields(
+                        item.get("youtube_id"),
+                        item.get("youtube_url"),
+                        item.get("audio_media"),
+                        row.get("audio_media"),
+                        row.get("youtube_id"),
+                        row.get("youtube_url"),
+                    )
+                    if yt:
+                        item.update(yt)
         if not lyrics:
             continue
         item["lyrics"] = polish_lyrics_text(lyrics)
@@ -767,6 +818,13 @@ def resolve_practice_song(
         "section": resolved_section,
         "lyrics": lyrics,
     }
+    yt = _youtube_public_fields(
+        row.get("audio_media"),
+        row.get("youtube_id"),
+        row.get("youtube_url"),
+    )
+    if yt:
+        song.update(yt)
     return _ensure_song_blocks(song)
 
 
@@ -851,6 +909,13 @@ def update_practice_share_lyrics(
                 "blocks": resolved.get("blocks") or [],
                 "lyrics": resolved.get("lyrics") or "",
             }
+            yt = _youtube_public_fields(
+                resolved.get("youtube_id"),
+                resolved.get("youtube_url"),
+                resolved.get("audio_media"),
+            )
+            if yt:
+                by_slot[slot].update(yt)
             continue
 
         if not blocks:
@@ -864,6 +929,13 @@ def update_practice_share_lyrics(
             "blocks": blocks,
             "lyrics": _lyrics_from_blocks(blocks, include_disabled=True),
         }
+        yt = _youtube_public_fields(
+            raw.get("youtube_id"),
+            raw.get("youtube_url"),
+            raw.get("audio_media"),
+        )
+        if yt:
+            by_slot[slot].update(yt)
 
     if not by_slot:
         return {"ok": False, "error": "No lyric blocks to save."}
@@ -876,6 +948,7 @@ def update_practice_share_lyrics(
         slot = str(item.get("slot_key") or "").strip()
         patch = by_slot.get(slot)
         if patch:
+            old_hymn = str(item.get("hymn_id") or "")
             if patch.get("hymn_id"):
                 item["hymn_id"] = patch["hymn_id"]
             if patch.get("title"):
@@ -888,6 +961,16 @@ def update_practice_share_lyrics(
                 item["section"] = patch["section"]
             item["blocks"] = patch["blocks"]
             item["lyrics"] = patch["lyrics"]
+            new_hymn = str(patch.get("hymn_id") or item.get("hymn_id") or old_hymn)
+            yt = _youtube_public_fields(
+                patch.get("youtube_id"),
+                patch.get("youtube_url"),
+            )
+            if yt:
+                item.update(yt)
+            elif new_hymn != old_hymn:
+                item.pop("youtube_id", None)
+                item.pop("youtube_url", None)
         new_snapshot.append(item)
 
     tok = (token or "").strip()

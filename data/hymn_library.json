@@ -953,11 +953,18 @@
       ],
       "added_at": "2026-08-14T16:12:56.716524+00:00",
       "language": "English",
-      "updated_at": "2026-08-14T16:12:56.716524+00:00",
+      "updated_at": "2026-08-14T19:43:04.067189+00:00",
       "gospel_moods": [
         "mercy",
         "journey"
-      ]
+      ],
+      "audio_media": {
+        "basename": "yt:Sgm9lkTNQmc",
+        "display_name": "You are Mine",
+        "source": "youtube",
+        "youtube_id": "Sgm9lkTNQmc",
+        "youtube_url": "https://www.youtube.com/watch?v=Sgm9lkTNQmc"
+      }
     },
     {
       "id": "isang_bansa",
@@ -1509,10 +1516,17 @@
       ],
       "added_at": "2026-08-13T12:30:33.274873+00:00",
       "language": "English",
-      "updated_at": "2026-08-14T15:59:34.638337+00:00",
+      "updated_at": "2026-08-14T19:43:20.225084+00:00",
       "gospel_moods": [
         "reverent"
-      ]
+      ],
+      "audio_media": {
+        "basename": "yt:jTDIrEqA5L0",
+        "display_name": "Amare Et Servire",
+        "source": "youtube",
+        "youtube_id": "jTDIrEqA5L0",
+        "youtube_url": "https://www.youtube.com/watch?v=jTDIrEqA5L0"
+      }
     }
   ],
   "recessional": [
@@ -1647,7 +1661,7 @@
       ],
       "added_at": "2026-08-09T02:33:47.203815+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-09T02:43:39.467055+00:00",
+      "updated_at": "2026-08-14T19:43:40.388205+00:00",
       "video_media": {
         "basename": "video_183d2e0dbe3043b796dfe366f3be1f41.mp4",
         "display_name": "Humayo't Ihayag Instrumental.mp4"
@@ -1655,7 +1669,14 @@
       "gospel_moods": [
         "triumphant",
         "reverent"
-      ]
+      ],
+      "audio_media": {
+        "basename": "yt:zBSkpl8U0xk",
+        "display_name": "Humayo't Ihayag",
+        "source": "youtube",
+        "youtube_id": "zBSkpl8U0xk",
+        "youtube_url": "https://www.youtube.com/watch?v=zBSkpl8U0xk"
+      }
     },
     {
       "id": "covenant_journey",

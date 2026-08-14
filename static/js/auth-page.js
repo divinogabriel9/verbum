@@ -174,6 +174,8 @@
       function resolvePostAuthUrl() {
         const params = new URLSearchParams(window.location.search);
         let target = params.get("redirect_url") || cfg.after_sign_in_url || "/home";
+        const siblingIntent = (params.get("intent") || "").trim().toLowerCase();
+        const siblingDate = (params.get("date") || "").trim();
         try {
           const parsed = new URL(target, window.location.origin);
           // Marketing root (/) or stay flag — send signed-in users into the app.
@@ -192,7 +194,16 @@
         try {
           const next = new URL(target, window.location.origin);
           next.searchParams.delete("stay");
+          if (siblingIntent && !next.searchParams.get("intent")) {
+            next.searchParams.set("intent", siblingIntent);
+          }
+          if (siblingDate && /^\d{4}-\d{2}-\d{2}$/.test(siblingDate) && !next.searchParams.get("date")) {
+            next.searchParams.set("date", siblingDate);
+          }
           const intent = (next.searchParams.get("intent") || "").trim().toLowerCase();
+          if (intent === "practice-share") {
+            next.pathname = "/home";
+          }
           // Email CTAs already have a destination — skip the mobile welcome popup.
           if (intent !== "practice-share" && intent !== "generate") {
             next.searchParams.set("welcome", "1");

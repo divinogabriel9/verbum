@@ -11,14 +11,23 @@ def _base() -> str:
     return (app_public_url() or "").rstrip("/")
 
 
-def sign_in_redirect_url(destination_path: str) -> str:
-    """Build /sign-in?redirect_url=… so post-auth lands on destination."""
+def sign_in_redirect_url(destination_path: str, extra: dict[str, str] | None = None) -> str:
+    """Build /sign-in?redirect_url=… so post-auth lands on destination.
+
+    Optional ``extra`` query params are siblings of redirect_url (not nested
+    inside it) so mobile mail apps that split ``?`` / ``&`` still keep them.
+    """
     base = _base()
     dest = destination_path if destination_path.startswith("/") else f"/{destination_path}"
-    encoded = quote(dest, safe="")
+    params: dict[str, str] = {"redirect_url": dest}
+    for key, value in (extra or {}).items():
+        clean = str(value or "").strip()
+        if clean:
+            params[key] = clean
+    qs = urlencode(params)
     if not base:
-        return f"/sign-in?redirect_url={encoded}"
-    return f"{base}/sign-in?redirect_url={encoded}"
+        return f"/sign-in?{qs}"
+    return f"{base}/sign-in?{qs}"
 
 
 def mass_builder_path(*, date: str = "", intent: str = "") -> str:
@@ -52,7 +61,13 @@ def mass_pptx_cta_url(*, mass_date: str = "") -> str:
 
 
 def practice_share_cta_url(*, mass_date: str = "") -> str:
-    return sign_in_redirect_url(home_path(date=mass_date, intent="practice-share"))
+    extra: dict[str, str] = {"intent": "practice-share"}
+    d = (mass_date or "").strip()
+    if d:
+        extra["date"] = d
+    # Keep redirect_url as a bare /home path. Intent + date travel as sibling
+    # query params so iOS/Android mail clients cannot strip them from a nested URL.
+    return sign_in_redirect_url("/home", extra)
 
 
 def home_cta_url() -> str:

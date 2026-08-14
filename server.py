@@ -1543,6 +1543,8 @@ class PracticeShareSongBody(BaseModel):
     author: str = Field("", max_length=240)
     language: str = Field("", max_length=32)
     lyrics: str = Field("", max_length=L.LYRICS_FULL)
+    youtube_id: str = Field("", max_length=16)
+    youtube_url: str = Field("", max_length=320)
 
 
 class PracticeShareBody(BaseModel):
@@ -1580,6 +1582,8 @@ class PracticeLyricSongUpdateBody(BaseModel):
     language: str = Field("", max_length=64)
     section: str = Field("", max_length=64)
     blocks: list[PracticeLyricBlockBody] = Field(default_factory=list, max_length=48)
+    youtube_id: str = Field("", max_length=16)
+    youtube_url: str = Field("", max_length=320)
 
 
 class PracticeLyricsUpdateBody(BaseModel):
