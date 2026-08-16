@@ -176,6 +176,7 @@
         let target = params.get("redirect_url") || cfg.after_sign_in_url || "/home";
         const siblingIntent = (params.get("intent") || "").trim().toLowerCase();
         const siblingDate = (params.get("date") || "").trim();
+        const siblingHandoff = (params.get("handoff") || "").trim();
         try {
           const parsed = new URL(target, window.location.origin);
           // Marketing root (/) or stay flag — send signed-in users into the app.
@@ -200,12 +201,18 @@
           if (siblingDate && /^\d{4}-\d{2}-\d{2}$/.test(siblingDate) && !next.searchParams.get("date")) {
             next.searchParams.set("date", siblingDate);
           }
+          if (siblingHandoff && !next.searchParams.get("handoff")) {
+            next.searchParams.set("handoff", siblingHandoff);
+          }
           const intent = (next.searchParams.get("intent") || "").trim().toLowerCase();
           if (intent === "practice-share") {
             next.pathname = "/home";
           }
+          if (intent === "practice-lyrics") {
+            next.pathname = "/mass/builder";
+          }
           // Email CTAs already have a destination — skip the mobile welcome popup.
-          if (intent !== "practice-share" && intent !== "generate") {
+          if (intent !== "practice-share" && intent !== "generate" && intent !== "practice-lyrics") {
             next.searchParams.set("welcome", "1");
           }
           return next.pathname + next.search + next.hash;
@@ -219,7 +226,9 @@
         try {
           const next = new URL(dest, window.location.origin);
           const intent = (next.searchParams.get("intent") || "").trim().toLowerCase();
-          if (intent !== "practice-share" && intent !== "generate") setMobileWelcomePending();
+          if (intent !== "practice-share" && intent !== "generate" && intent !== "practice-lyrics") {
+            setMobileWelcomePending();
+          }
         } catch (_e) {
           setMobileWelcomePending();
         }

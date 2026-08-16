@@ -119,6 +119,11 @@ from services.choir_practice_shares import (
     update_practice_share_lyrics,
     verify_practice_share_pin,
 )
+from services.practice_lyrics_handoff import (
+    create_lyrics_handoff,
+    get_lyrics_handoff,
+    public_handoff_payload,
+)
 from services.practice_access import (
     check_pin_unlock_allowed,
     check_practice_fetch_allowed,
@@ -1595,6 +1600,11 @@ class PracticeLyricSongUpdateBody(BaseModel):
 class PracticeLyricsUpdateBody(BaseModel):
     lead_token: str = Field(..., min_length=16, max_length=512)
     songs: list[PracticeLyricSongUpdateBody] = Field(default_factory=list, max_length=24)
+
+
+class PracticeSendToMemberBody(BaseModel):
+    lead_token: str = Field(..., min_length=16, max_length=512)
+    user_id: str = Field(..., min_length=8, max_length=128)
 
 
 class GenerateImageResponse(BaseModel):
@@ -3076,7 +3086,11 @@ def api_practice_unlock(
     body: PracticeUnlockBody,
     request: Request,
 ) -> Any:
-    """Verify PIN and issue a device-bound unlock cookie (PIN never goes in the URL)."""
+    """Verify choir or leader PIN.
+
+    Choir PIN → guest unlock cookie (read lyrics).
+    Leader PIN → device-bound lead token (edit mode) without guest cookie.
+    """
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
@@ -3099,6 +3113,33 @@ def api_practice_unlock(
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+
+    if result.get("is_leader"):
+        device = practice_device_id_from_request(request)
+        if not device:
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "error": "This browser could not start leader mode. Refresh and try again.",
+                    "requires_pin": True,
+                },
+                status_code=400,
+                headers=practice_no_store_headers(),
+            )
+        try:
+            lead = issue_lead_token(tok, row.get("expires_at"), device_id=device)
+        except ValueError as exc:
+            return JSONResponse(
+                {"ok": False, "error": str(exc), "requires_pin": True},
+                status_code=400,
+                headers=practice_no_store_headers(),
+            )
+        out = dict(result)
+        out["lead_token"] = lead
+        out["can_edit"] = True
+        # No guest unlock cookie — leader privilege is lead-token + device only.
+        return JSONResponse(out, headers=practice_no_store_headers())
+
     response = JSONResponse(result, headers=practice_no_store_headers())
     issue_unlock_cookie(request, response, tok, row.get("expires_at"))
     return response
@@ -3143,6 +3184,142 @@ def api_practice_lyrics_update(
     if not result.get("ok"):
         raise HTTPException(status_code=400, detail=result.get("error") or "Could not save.")
     return JSONResponse(result, headers=practice_no_store_headers())
+
+
+@app.get("/api/practice/{token}/parish-members")
+def api_practice_parish_members(
+    token: str,
+    request: Request,
+) -> Any:
+    """Leader-only: parish media team members who can receive a lyrics handoff email."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    lead = (request.query_params.get("lead") or "").strip()
+    _require_practice_lead(request, tok, lead, row.get("expires_at"))
+    parish_id = str(row.get("parish_id") or "").strip()
+    if not parish_id:
+        raise HTTPException(
+            status_code=400,
+            detail="This practice share is not linked to a parish team.",
+        )
+    from services.parish_store import list_team_members
+
+    members = []
+    for m in list_team_members(parish_id):
+        email = str(m.get("email") or "").strip()
+        if not email:
+            continue
+        members.append(
+            {
+                "user_id": str(m.get("user_id") or ""),
+                "email": email,
+                "first_name": str(m.get("first_name") or "").strip(),
+                "last_name": str(m.get("last_name") or "").strip(),
+                "role": str(m.get("role") or "").strip(),
+            }
+        )
+    return JSONResponse(
+        {"ok": True, "parish_id": parish_id, "members": members},
+        headers=practice_no_store_headers(),
+    )
+
+
+@app.post("/api/practice/{token}/send-to-member")
+def api_practice_send_to_member(
+    token: str,
+    body: PracticeSendToMemberBody,
+    request: Request,
+) -> Any:
+    """Email the current practice lyric configuration to a parish team member."""
+    if token.strip().lower() == "qr":
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    _require_practice_lead(request, tok, body.lead_token, row.get("expires_at"))
+    parish_id = str(row.get("parish_id") or "").strip()
+    if not parish_id:
+        raise HTTPException(
+            status_code=400,
+            detail="This practice share is not linked to a parish team.",
+        )
+    from services.email_notifications import notify_practice_lyrics_handoff, safe_send
+    from services.parish_store import list_team_members
+
+    uid = (body.user_id or "").strip()
+    target = None
+    for m in list_team_members(parish_id):
+        if str(m.get("user_id") or "") == uid:
+            target = m
+            break
+    if not target:
+        raise HTTPException(status_code=404, detail="Member not found on this parish team.")
+    email = str(target.get("email") or "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="That member has no email on file.")
+
+    first = str(target.get("first_name") or "").strip()
+    last = str(target.get("last_name") or "").strip()
+    name = (first + " " + last).strip() or email
+    handoff = create_lyrics_handoff(
+        practice_token=tok,
+        recipient_user_id=uid,
+        recipient_email=email,
+        recipient_name=name,
+        sender_label="Choir leader",
+    )
+    if not handoff.get("ok"):
+        raise HTTPException(status_code=400, detail=handoff.get("error") or "Could not prepare lyrics.")
+
+    result = safe_send(
+        "practice_lyrics_handoff",
+        notify_practice_lyrics_handoff,
+        email=email,
+        first_name=first,
+        mass_date=str(handoff.get("mass_date") or ""),
+        mass_title=str(handoff.get("mass_title") or ""),
+        parish_name=str(handoff.get("parish_name") or ""),
+        sender_label=str(handoff.get("sender_label") or "Choir leader"),
+        song_count=int(handoff.get("song_count") or 0),
+        handoff=str(handoff.get("id") or ""),
+    )
+    if not result.ok:
+        raise HTTPException(
+            status_code=503,
+            detail=result.error or "Email could not be sent. Check email configuration.",
+        )
+    return JSONResponse(
+        {
+            "ok": True,
+            "sent_to": email,
+            "member_name": name,
+            "handoff_id": handoff.get("id"),
+            "song_count": handoff.get("song_count"),
+        },
+        headers=practice_no_store_headers(),
+    )
+
+
+@app.get("/api/practice/lyrics-handoff/{handoff_id}")
+def api_practice_lyrics_handoff_get(
+    handoff_id: str,
+    session: AuthSession = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Fetch a practice→Mass lyrics handoff for the signed-in parish member."""
+    row = get_lyrics_handoff(handoff_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="This lyrics link is invalid or has expired.")
+    ctx = get_church_profile_context() or {}
+    parish_id = str(ctx.get("parish_id") or "").strip()
+    handoff_parish = str(row.get("parish_id") or "").strip()
+    if not parish_id or parish_id != handoff_parish:
+        raise HTTPException(status_code=403, detail="This lyrics handoff belongs to another parish.")
+    return public_handoff_payload(row)
 
 
 @app.get("/api/practice/{token}/catalog")
@@ -3250,7 +3427,33 @@ def api_create_practice_share(
             status_code=400,
             detail="Missing device id. Refresh LiturgyFlow and try again.",
         )
-    return _enrich_practice_share_urls(request, result, device_id=device_id)
+    enriched = _enrich_practice_share_urls(request, result, device_id=device_id)
+
+    # Email the auto-generated leader password to the creator (never to the choir).
+    leader_plain = str(result.get("leader_pin") or "").strip()
+    creator_email = str(getattr(session.user, "email", "") or "").strip() if session else ""
+    if leader_plain and creator_email:
+        from services.email_notifications import notify_practice_leader_password, safe_send
+
+        first_name = str(getattr(session.user, "first_name", "") or "").strip() if session else ""
+        mail = safe_send(
+            "practice_leader_password",
+            notify_practice_leader_password,
+            email=creator_email,
+            first_name=first_name,
+            mass_date=str(result.get("mass_date") or body.mass_date or ""),
+            mass_title=str(result.get("mass_title") or body.mass_title or ""),
+            parish_name=parish_name,
+            leader_pin=leader_plain,
+            practice_url=str(enriched.get("url") or ""),
+        )
+        enriched["leader_pin_emailed"] = bool(mail.ok)
+        if not mail.ok:
+            enriched["leader_pin_email_error"] = mail.error or "email not sent"
+    else:
+        enriched["leader_pin_emailed"] = False
+
+    return enriched
 
 
 @app.post("/api/practice/{token}/revoke")

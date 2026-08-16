@@ -8991,17 +8991,24 @@
     }
     .practice-share-pin-display__value {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 1.5rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.2em;
       margin: 0;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 10px;
       background: color-mix(in srgb, var(--good) 8%, var(--surface-solid));
       border: 1px solid color-mix(in srgb, var(--good) 28%, var(--line-soft));
       flex: 1;
       min-width: 0;
       text-align: center;
+    }
+    #practice-share-leader-pin-display .practice-share-pin-display__value {
+      font-size: 1.05rem;
+      letter-spacing: 0.2em;
+      padding: 6px 10px;
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface-solid));
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--line-soft));
     }
     .practice-share-pin-display__missing {
       margin: 0;
@@ -19257,6 +19264,29 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="practice-lyrics-handoff-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="practice-lyrics-handoff-backdrop"></div>
+        <article class="ui-card ui-card--popover-safe" role="dialog" aria-labelledby="practice-lyrics-handoff-title" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="practice-lyrics-handoff-title">Use practice lyrics?</h3>
+              <p class="ui-card__description" id="practice-lyrics-handoff-sub">Your choir leader sent an updated lyric order from practice. Apply it for this Mass only — it will not change your song library.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="practice-lyrics-handoff-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content">
+            <p class="status" id="practice-lyrics-handoff-meta" style="margin:0 0 8px;"></p>
+            <ul id="practice-lyrics-handoff-songs" style="margin:0;padding-left:1.1rem;font-size:0.9rem;line-height:1.45;"></ul>
+            <p class="status error" id="practice-lyrics-handoff-status" hidden aria-live="polite"></p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="practice-lyrics-handoff-dismiss">Not now</button>
+            <button type="button" class="primary" id="practice-lyrics-handoff-apply">Use for this Mass</button>
+            <button type="button" class="primary" id="practice-lyrics-handoff-generate" hidden>Generate PowerPoint</button>
+          </footer>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="practice-share-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="practice-share-backdrop"></div>
         <article class="ui-card ui-card--popover-safe practice-share-card" role="dialog" aria-labelledby="practice-share-title" aria-modal="true">
@@ -19270,7 +19300,7 @@
           </header>
           <div class="ui-card__content practice-share-body">
             <div class="practice-share-setup" id="practice-share-setup">
-              <p class="practice-share-setup__lead">Create a 6-digit PIN for your choir. Share the PIN separately from the link.</p>
+              <p class="practice-share-setup__lead">Create a 6-digit choir PIN. We’ll also generate a private leader password so you can open the same link later to edit.</p>
               <div class="field practice-share-pin-field" id="practice-share-pin-wrap">
                 <label>Create PIN</label>
                 <div class="pin-otp pin-otp__wrap" id="practice-share-pin-otp">
@@ -19311,6 +19341,15 @@
                 <input type="text" id="practice-share-url" readonly />
                 <button type="button" class="secondary" id="practice-share-copy">Copy</button>
               </div>
+              <div class="practice-share-pin-display" id="practice-share-leader-pin-display">
+                <p class="practice-share-pin-display__label">Leader password</p>
+                <div class="practice-share-pin-display__row">
+                  <p class="practice-share-pin-display__value" id="practice-share-leader-pin-value">————</p>
+                  <button type="button" class="secondary" id="practice-share-copy-leader-pin">Copy</button>
+                </div>
+                <p class="muted" style="margin:0;font-size:0.78rem;line-height:1.4;">Also emailed to you. Keep private — use it if you open the choir link later to edit.</p>
+              </div>
+              <p class="practice-share-pin-display__missing" id="practice-share-leader-pin-missing" hidden>Leader password was emailed when this link was created. Check your inbox, or create a new share if you need it again.</p>
               <button type="button" class="primary practice-share-lead-btn" id="practice-share-lets-practice" hidden>Let’s practice</button>
               <p class="muted practice-share-meta" id="practice-share-meta"></p>
             </div>
@@ -30315,8 +30354,12 @@
         const params = new URLSearchParams(window.location.search);
         const intent = (params.get("intent") || "").trim().toLowerCase();
         const date = (params.get("date") || "").trim();
-        if (intent === "practice-share" || intent === "generate") {
-          sessionStorage.setItem(EMAIL_DEEPLINK_STORE_KEY, JSON.stringify({ intent: intent, date: date }));
+        const handoff = (params.get("handoff") || "").trim();
+        if (intent === "practice-share" || intent === "generate" || intent === "practice-lyrics") {
+          sessionStorage.setItem(
+            EMAIL_DEEPLINK_STORE_KEY,
+            JSON.stringify({ intent: intent, date: date, handoff: handoff })
+          );
         }
       } catch (_e) { /* ignore */ }
     })();
@@ -36501,15 +36544,21 @@
     let practiceShareLastLeadUrl = "";
     let practiceShareLastToken = "";
     let practiceShareLastPin = "";
+    let practiceShareLastLeaderPin = "";
     let practiceShareLastMassDate = "";
     let practiceShareSlotFilter = null;
     let practiceShareExcludedSlots = new Set();
     let practiceShareHistoryCache = [];
     let practiceShareHistoryCountdownTimer = null;
     const PRACTICE_PIN_LS_PREFIX = "lf-practice-pin:";
+    const PRACTICE_LEADER_PIN_LS_PREFIX = "lf-practice-leader-pin:";
 
     function practicePinStorageKey(token) {
       return PRACTICE_PIN_LS_PREFIX + String(token || "").trim();
+    }
+
+    function practiceLeaderPinStorageKey(token) {
+      return PRACTICE_LEADER_PIN_LS_PREFIX + String(token || "").trim();
     }
 
     function readStoredPracticePin(token) {
@@ -36529,6 +36578,26 @@
       if (!tok || clean.length !== 6) return;
       try {
         localStorage.setItem(practicePinStorageKey(tok), clean);
+      } catch (_e) { /* ignore quota */ }
+    }
+
+    function readStoredPracticeLeaderPin(token) {
+      const tok = String(token || "").trim();
+      if (!tok) return "";
+      try {
+        const pin = String(localStorage.getItem(practiceLeaderPinStorageKey(tok)) || "").replace(/\D/g, "");
+        return pin.length === 6 ? pin : "";
+      } catch (_e) {
+        return "";
+      }
+    }
+
+    function writeStoredPracticeLeaderPin(token, pin) {
+      const tok = String(token || "").trim();
+      const clean = String(pin || "").replace(/\D/g, "");
+      if (!tok || clean.length !== 6) return;
+      try {
+        localStorage.setItem(practiceLeaderPinStorageKey(tok), clean);
       } catch (_e) { /* ignore quota */ }
     }
 
@@ -36730,6 +36799,7 @@
     function clearPracticeSharePin() {
       practiceSharePinOtp?.clear();
       practiceShareLastPin = "";
+      practiceShareLastLeaderPin = "";
     }
 
     function setPracticeShareFooterMode(mode) {
@@ -37162,6 +37232,7 @@
       if (!share || !share.token) return;
       closePracticeShareHistoryModal();
       const pin = readStoredPracticePin(share.token);
+      const leaderPin = readStoredPracticeLeaderPin(share.token);
       resetPracticeShareModal();
       practiceShareOpenedFromHistory = true;
       setUiOverlayOpen($("practice-share-modal"), true);
@@ -37169,6 +37240,7 @@
       showPracticeShareResult({
         ...share,
         pin: pin,
+        leader_pin: leaderPin,
         restored: true,
         mass_date: share.mass_date || "",
       });
@@ -37538,6 +37610,13 @@
       if (practiceShareLastToken && practiceShareLastPin) {
         writeStoredPracticePin(practiceShareLastToken, practiceShareLastPin);
       }
+      const leaderPin = String(data.leader_pin || "").replace(/\D/g, "");
+      practiceShareLastLeaderPin = leaderPin.length === 6
+        ? leaderPin
+        : (readStoredPracticeLeaderPin(practiceShareLastToken) || "");
+      if (practiceShareLastToken && practiceShareLastLeaderPin) {
+        writeStoredPracticeLeaderPin(practiceShareLastToken, practiceShareLastLeaderPin);
+      }
 
       const urlInput = $("practice-share-url");
       if (urlInput) urlInput.value = url;
@@ -37545,18 +37624,44 @@
       const leadBtn = $("practice-share-lets-practice");
       if (leadBtn) leadBtn.hidden = !practiceShareLastLeadUrl;
 
+      const choirPinEl = $("practice-share-choir-pin-value");
+      if (choirPinEl) {
+        choirPinEl.textContent = practiceShareLastPin
+          ? practiceShareLastPin.split("").join(" ")
+          : "————";
+      }
+      const leaderPinEl = $("practice-share-leader-pin-value");
+      const leaderPinBlock = $("practice-share-leader-pin-display");
+      const leaderPinMissing = $("practice-share-leader-pin-missing");
+      if (practiceShareLastLeaderPin) {
+        if (leaderPinEl) leaderPinEl.textContent = practiceShareLastLeaderPin.split("").join(" ");
+        if (leaderPinBlock) leaderPinBlock.hidden = false;
+        if (leaderPinMissing) leaderPinMissing.hidden = true;
+      } else {
+        if (leaderPinBlock) leaderPinBlock.hidden = true;
+        if (leaderPinMissing) leaderPinMissing.hidden = false;
+      }
+
       const meta = $("practice-share-meta");
       if (meta) {
         const exp = data.expires_at
           ? new Date(data.expires_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
           : "";
-        meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + " · PIN protected — share the PIN separately";
+        const mailNote = data.leader_pin_emailed
+          ? " · leader password emailed to you"
+          : (practiceShareLastLeaderPin ? " · leader password below" : "");
+        meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + mailNote;
       }
       const sub = $("practice-share-sub");
       if (sub) {
         sub.textContent = data.restored
-          ? "Your active practice link. Share the link or QR in your choir group chat."
-          : "Share this link or QR code in your choir group chat. Links expire Sunday at 11:59 PM (UTC), or sooner if you expire them.";
+          ? "Your active practice link. Share the link/QR and choir PIN in group chat; keep the leader password for yourself."
+          : "Share the link or QR with your choir PIN. The leader password is for you only — also sent to your email.";
+      }
+      if (data.leader_pin_emailed) {
+        notify("Leader password emailed to your account.", "ok");
+      } else if (practiceShareLastLeaderPin && data.leader_pin_email_error && !data.restored) {
+        notify("Could not email leader password — copy it from this card.", "warn");
       }
     }
 
@@ -37612,7 +37717,7 @@
           optional_pin: pinRaw,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
-        showPracticeShareResult({ ...data, pin: pinRaw, mass_date: date });
+        showPracticeShareResult({ ...data, pin: pinRaw, leader_pin: data.leader_pin, mass_date: date });
       } catch (err) {
         stopPracticeShareLoadingAnim();
         if (loading) loading.hidden = true;
@@ -37689,6 +37794,18 @@
       }
       $("practice-share-copy") && $("practice-share-copy").addEventListener("click", () => {
         copyPracticeShareLink();
+      });
+      $("practice-share-copy-leader-pin") && $("practice-share-copy-leader-pin").addEventListener("click", async () => {
+        if (!practiceShareLastLeaderPin) {
+          notify("Leader password is not available on this device.", "warn");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(practiceShareLastLeaderPin);
+          notify("Leader password copied.", "ok");
+        } catch (_e) {
+          notify("Could not copy leader password.", "error");
+        }
       });
       $("practice-share-lets-practice") && $("practice-share-lets-practice").addEventListener("click", () => {
         openPracticeShareLead();
@@ -39424,25 +39541,29 @@
 
     /** Email CTAs: /sign-in?redirect_url=/home&intent=practice-share&date=… */
     let emailDeepLinkConsumed = false;
+    let pendingPracticeLyricsHandoff = null;
     function readEmailDeepLink() {
       let intent = "";
       let dateParam = "";
+      let handoff = "";
       try {
         const params = new URLSearchParams(window.location.search);
         intent = (params.get("intent") || "").trim().toLowerCase();
         dateParam = (params.get("date") || "").trim();
+        handoff = (params.get("handoff") || "").trim();
       } catch (_e) { /* ignore */ }
-      if (!intent || !dateParam) {
+      if (!intent || !dateParam || (intent === "practice-lyrics" && !handoff)) {
         try {
           const raw = sessionStorage.getItem(EMAIL_DEEPLINK_STORE_KEY);
           if (raw) {
             const stored = JSON.parse(raw) || {};
             if (!intent) intent = String(stored.intent || "").trim().toLowerCase();
             if (!dateParam) dateParam = String(stored.date || "").trim();
+            if (!handoff) handoff = String(stored.handoff || "").trim();
           }
         } catch (_e2) { /* ignore */ }
       }
-      return { intent: intent, dateParam: dateParam };
+      return { intent: intent, dateParam: dateParam, handoff: handoff };
     }
     function pendingEmailDeepLinkIntent() {
       return readEmailDeepLink().intent;
@@ -39450,13 +39571,126 @@
     function shouldSkipStartupPopups() {
       if (emailDeepLinkConsumed) return true;
       const intent = pendingEmailDeepLinkIntent();
-      return intent === "practice-share" || intent === "generate";
+      return intent === "practice-share" || intent === "generate" || intent === "practice-lyrics";
+    }
+    function closePracticeLyricsHandoffModal() {
+      const modal = $("practice-lyrics-handoff-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+    function openPracticeLyricsHandoffModal(payload) {
+      const modal = $("practice-lyrics-handoff-modal");
+      if (!modal || !payload) return;
+      pendingPracticeLyricsHandoff = payload;
+      const meta = $("practice-lyrics-handoff-meta");
+      const list = $("practice-lyrics-handoff-songs");
+      const status = $("practice-lyrics-handoff-status");
+      const applyBtn = $("practice-lyrics-handoff-apply");
+      const genBtn = $("practice-lyrics-handoff-generate");
+      const songs = Array.isArray(payload.songs) ? payload.songs : [];
+      if (meta) {
+        const bits = [];
+        if (payload.mass_date) bits.push(payload.mass_date);
+        if (payload.mass_title) bits.push(payload.mass_title);
+        bits.push(songs.length + " song" + (songs.length === 1 ? "" : "s"));
+        if (payload.sender_label) bits.push("from " + payload.sender_label);
+        meta.textContent = bits.join(" · ");
+      }
+      if (list) {
+        list.innerHTML = songs.map(function (s) {
+          const label = (s.slot_label || s.section || "Song").trim();
+          return "<li><strong>" + escapeHtml(label) + "</strong> — " + escapeHtml(s.title || "Untitled") + "</li>";
+        }).join("");
+      }
+      if (status) {
+        status.hidden = true;
+        status.textContent = "";
+      }
+      if (applyBtn) {
+        applyBtn.hidden = false;
+        applyBtn.disabled = false;
+        applyBtn.textContent = "Use for this Mass";
+      }
+      if (genBtn) genBtn.hidden = true;
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+    function applyPracticeLyricsHandoff(payload) {
+      if (!payload || !Array.isArray(payload.songs)) return false;
+      const dateParam = String(payload.mass_date || "").trim();
+      if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+        const el = $("mass-date");
+        if (el && el.value !== dateParam) {
+          el.value = dateParam;
+          if ($("poster-mass-date")) $("poster-mass-date").value = dateParam;
+          if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+          try { loadFlowData(true); } catch (_e) { /* ignore */ }
+        }
+      }
+      payload.songs.forEach(function (song) {
+        const id = String(song.hymn_id || "").trim();
+        if (!id) return;
+        const slotKey = String(song.slot_key || "").trim();
+        let section = String(song.section || "").trim().toLowerCase();
+        if (!section && slotKey) {
+          section = (SLOT_TO_HYMN_SECTION[slotKey] || slotKey).toLowerCase();
+        }
+        if (slotKey) {
+          if (typeof assignMassSlotSong === "function") assignMassSlotSong(slotKey, id);
+          else selectedLyricsSongs[slotKey] = id;
+        }
+        const lyrics = String(song.lyrics || "").trim();
+        if (section && lyrics) {
+          setHymnLyricOverride(section, id, lyrics);
+          try { massSongLyricsCache.set(section + "|" + id, lyrics); } catch (_e2) { /* ignore */ }
+        }
+      });
+      try {
+        if (typeof renderMassSongPlan === "function") renderMassSongPlan();
+        if (typeof syncMassWizardFromLegacy === "function") syncMassWizardFromLegacy();
+      } catch (_e3) { /* ignore */ }
+      markHymnSlidePreviewDirty();
+      return true;
+    }
+    async function beginPracticeLyricsHandoffFlow(handoffId, dateParam) {
+      const hid = String(handoffId || "").trim();
+      if (!hid) return;
+      if (typeof showRoute === "function") showRoute("/mass/builder", true);
+      try {
+        history.replaceState({}, "", "/mass/builder");
+      } catch (_e) { /* ignore */ }
+      if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+        const el = $("mass-date");
+        if (el && el.value !== dateParam) {
+          el.value = dateParam;
+          if ($("poster-mass-date")) $("poster-mass-date").value = dateParam;
+          if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+          try { await loadFlowData(true); } catch (_e2) { /* ignore */ }
+        }
+      }
+      try {
+        const res = await fetch("/api/practice/lyrics-handoff/" + encodeURIComponent(hid), {
+          credentials: "same-origin",
+        });
+        const data = await res.json().catch(function () { return {}; });
+        if (!res.ok || !data.ok) {
+          notify(data.detail || "This practice lyrics link is invalid or expired.", "error");
+          return;
+        }
+        openPracticeLyricsHandoffModal(data);
+      } catch (_err) {
+        notify("Could not load practice lyrics for Mass Builder.", "error");
+      }
     }
     function consumeEmailDeepLinkIntent() {
       if (emailDeepLinkConsumed) return;
       const link = readEmailDeepLink();
       const intent = link.intent;
       const dateParam = link.dateParam;
+      const handoff = link.handoff;
       if (!intent && !dateParam) return;
       const route = normalizeRoute(window.location.pathname);
 
@@ -39488,6 +39722,13 @@
         return;
       }
 
+      if (intent === "practice-lyrics") {
+        emailDeepLinkConsumed = true;
+        try { sessionStorage.removeItem(EMAIL_DEEPLINK_STORE_KEY); } catch (_eClrPl) { /* ignore */ }
+        void beginPracticeLyricsHandoffFlow(handoff, dateParam);
+        return;
+      }
+
       if (route !== "/mass/builder" && intent !== "generate") return;
       if (intent !== "generate" && !dateParam) return;
       emailDeepLinkConsumed = true;
@@ -39515,6 +39756,51 @@
     }
     window.consumeEmailDeepLinkIntent = consumeEmailDeepLinkIntent;
     window.shouldSkipStartupPopups = shouldSkipStartupPopups;
+
+    (function bindPracticeLyricsHandoffModal() {
+      const modal = $("practice-lyrics-handoff-modal");
+      if (!modal) return;
+      const closeIds = ["practice-lyrics-handoff-close", "practice-lyrics-handoff-dismiss", "practice-lyrics-handoff-backdrop"];
+      closeIds.forEach(function (id) {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("click", function () {
+          closePracticeLyricsHandoffModal();
+        });
+      });
+      const applyBtn = $("practice-lyrics-handoff-apply");
+      if (applyBtn) {
+        applyBtn.addEventListener("click", function () {
+          if (!pendingPracticeLyricsHandoff) return;
+          const ok = applyPracticeLyricsHandoff(pendingPracticeLyricsHandoff);
+          if (!ok) {
+            const status = $("practice-lyrics-handoff-status");
+            if (status) {
+              status.hidden = false;
+              status.textContent = "Could not apply lyrics.";
+            }
+            return;
+          }
+          applyBtn.hidden = true;
+          const genBtn = $("practice-lyrics-handoff-generate");
+          if (genBtn) genBtn.hidden = false;
+          if (window.MassWizard && window.MassWizard.setStep) window.MassWizard.setStep(7);
+          notify("Practice lyric order applied for this Mass only.", "ok");
+          const sub = $("practice-lyrics-handoff-sub");
+          if (sub) {
+            sub.textContent = "Lyric sequence updated. Next: generate the PowerPoint with this configuration.";
+          }
+        });
+      }
+      const genBtn = $("practice-lyrics-handoff-generate");
+      if (genBtn) {
+        genBtn.addEventListener("click", function () {
+          closePracticeLyricsHandoffModal();
+          const trigger = $("btn-generate-flow") || $("btn-generate-flow-inline") || $("mw-generate");
+          if (trigger) trigger.click();
+        });
+      }
+    })();
 
     let churchMembershipState = {
       membership_status: "draft",

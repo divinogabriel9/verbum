@@ -686,5 +686,54 @@
     ],
     "optional_pin": "v2:7bfb19358de5be38:b731c2c2eb4e8252dc50d74c4e16d2e72c1af61688ac1dc11bd3c6ba3a7fbf31",
     "expires_at": "2026-08-02T23:59:59+00:00"
+  },
+  {
+    "id": "7cc1d05f0a0f4999b460cb6c7c6fccd2",
+    "created_at": "2026-08-16T19:55:21.499990+00:00",
+    "revoked_at": null,
+    "token": "QQ3DDPGMo0TE-zB1LCTIUflKWKomRyWq",
+    "parish_id": null,
+    "created_by": "u1",
+    "mass_date": "2026-08-16",
+    "mass_title": "",
+    "parish_name": "",
+    "celebrant": "",
+    "song_snapshot": [
+      {
+        "slot_key": "entrance",
+        "slot_label": "Song",
+        "section": "entrance",
+        "hymn_id": "t1",
+        "title": "Test",
+        "author": "",
+        "language": "",
+        "lyrics": "Verse 1\nHello\n\nChorus\nLa",
+        "blocks": [
+          {
+            "id": "b0-a99f91ca",
+            "kind": "verse",
+            "label": "Verse 1",
+            "body": "Hello",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          },
+          {
+            "id": "b1-173f9f39",
+            "kind": "chorus",
+            "label": "Chorus",
+            "body": "La",
+            "enabled": true,
+            "voices": [
+              ""
+            ]
+          }
+        ]
+      }
+    ],
+    "optional_pin": "v2:fac42760628bedce:ad7e376fbd4344b50e0763087caf5bc41747923af1eaae6d38da4bb222917d7b",
+    "leader_pin": "v2:c042064dabd9387a:8607439e3d2daee8a867ee044700085abdab82ba420ae23c9a31f61d597d93b3",
+    "expires_at": "2026-08-16T23:59:59+00:00"
   }
 ]

@@ -155,6 +155,21 @@ def generate_practice_pin() -> str:
     return f"{secrets.randbelow(1_000_000):06d}"
 
 
+def generate_leader_pin(*, exclude: Optional[str] = None) -> str:
+    """Random 6-digit leader password, never equal to the choir PIN."""
+    banned = "".join(ch for ch in str(exclude or "") if ch.isdigit())
+    for _ in range(32):
+        pin = generate_practice_pin()
+        if not banned or pin != banned:
+            return pin
+    # Extremely unlikely; flip last digit.
+    alt = generate_practice_pin()
+    if banned and alt == banned:
+        last = (int(alt[-1]) + 1) % 10
+        alt = alt[:-1] + str(last)
+    return alt
+
+
 def _song_title_summaries(row: dict[str, Any]) -> list[dict[str, str]]:
     snapshot = row.get("song_snapshot")
     songs = snapshot if isinstance(snapshot, list) else []
@@ -599,9 +614,11 @@ def create_practice_share(
     if not normalized:
         raise ValueError("At least one song with lyrics is required.")
 
-    # Client must supply a 6-digit PIN.
+    # Client must supply a 6-digit choir PIN; leader PIN is auto-generated.
     pin = _normalize_pin(optional_pin)
     pin_stored = hash_pin(pin)
+    leader_plain = generate_leader_pin(exclude=pin)
+    leader_stored = hash_pin(leader_plain)
     token = secrets.token_urlsafe(24)
     # ttl_days ignored — expire Sunday 23:59 UTC of the Mass week (max 7 days).
     _ = ttl_days
@@ -616,6 +633,7 @@ def create_practice_share(
         "celebrant": (celebrant or "").strip(),
         "song_snapshot": normalized,
         "optional_pin": pin_stored,
+        "leader_pin": leader_stored,
         "expires_at": expires_at,
     }
 
@@ -628,10 +646,27 @@ def create_practice_share(
             else:
                 raise RuntimeError("Practice share create did not persist.")
         except Exception as exc:
-            if not _supabase_unavailable(exc):
+            # Older DBs without leader_pin: insert choir fields only, keep leader hash locally.
+            if "leader_pin" in str(exc) and _supabase_unavailable(exc) is False:
+                try:
+                    slim = {k: v for k, v in payload.items() if k != "leader_pin"}
+                    result = _service_client().table("choir_practice_shares").insert(slim).execute()
+                    rows = result.data or []
+                    if not rows:
+                        raise RuntimeError("Practice share create did not persist.") from exc
+                    row = dict(rows[0])
+                    row["leader_pin"] = leader_stored
+                    logger.warning("choir_practice_shares missing leader_pin column; stored hash locally only")
+                except Exception as inner:
+                    if not _supabase_unavailable(inner):
+                        raise
+                    logger.warning("choir_practice_shares insert failed; using local store (%s)", inner)
+                    row = None
+            elif not _supabase_unavailable(exc):
                 raise
-            logger.warning("choir_practice_shares insert failed; using local store (%s)", exc)
-            row = None
+            else:
+                logger.warning("choir_practice_shares insert failed; using local store (%s)", exc)
+                row = None
         if row is None:
             row = {
                 "id": uuid.uuid4().hex,
@@ -642,6 +677,28 @@ def create_practice_share(
             rows = _read_local_rows()
             rows.append(row)
             _write_local_rows(rows)
+        else:
+            row = dict(row)
+            if not pin_required(row.get("leader_pin")):
+                row["leader_pin"] = leader_stored
+                local_rows = _read_local_rows()
+                tok_out = str(row.get("token") or token)
+                found = False
+                for item in local_rows:
+                    if str(item.get("token") or "") == tok_out:
+                        item["leader_pin"] = leader_stored
+                        item["optional_pin"] = pin_stored
+                        found = True
+                if not found:
+                    local_rows.append(
+                        {
+                            "id": str(row.get("id") or uuid.uuid4().hex),
+                            "created_at": str(row.get("created_at") or _now_iso()),
+                            "revoked_at": row.get("revoked_at"),
+                            **payload,
+                        }
+                    )
+                _write_local_rows(local_rows)
     else:
         row = {
             "id": uuid.uuid4().hex,
@@ -661,6 +718,7 @@ def create_practice_share(
         "expires_at": row.get("expires_at") or expires_at,
         "song_count": len(normalized),
         "pin": pin,
+        "leader_pin": leader_plain,
         "mass_date": parsed_date.isoformat(),
         "mass_title": (mass_title or "").strip(),
         "status": "active",
@@ -705,6 +763,10 @@ def get_practice_share_by_token(token: str) -> Optional[dict[str, Any]]:
             logger.warning("choir_practice_shares table unavailable; using local store (%s)", exc)
     if not row:
         row = _local_row_by_token(tok)
+    elif not pin_required(row.get("leader_pin")):
+        local = _local_row_by_token(tok)
+        if local and pin_required(local.get("leader_pin")):
+            row = {**row, "leader_pin": local.get("leader_pin")}
     if not _row_live(row):
         _cache_set_row(tok, None)
         return None
@@ -1041,14 +1103,31 @@ def verify_practice_share_pin(token: str, pin: str) -> dict[str, Any]:
     if not row:
         return {"ok": False, "error": "This practice link is invalid or has expired."}
     stored_pin = row.get("optional_pin")
-    if not pin_required(stored_pin):
+    stored_leader = row.get("leader_pin")
+    # Prefer local mirror when remote row predates leader_pin column.
+    if not pin_required(stored_leader):
+        local = _local_row_by_token((token or "").strip())
+        if local and pin_required(local.get("leader_pin")):
+            stored_leader = local.get("leader_pin")
+            row = {**row, "leader_pin": stored_leader}
+
+    if not pin_required(stored_pin) and not pin_required(stored_leader):
         return fetch_practice_share(token, unlocked=True)
-    if not verify_pin(stored_pin, pin):
-        return {"ok": False, "error": "Incorrect PIN.", "requires_pin": True}
-    # Prefer shaping from the row we already have (cache-friendly).
-    shaped = _shape_public(row, access_granted=True, can_edit=False)
-    _cache_set_shape(_shape_cache_key((token or "").strip(), unlocked=True, can_edit=False), shaped)
-    return shaped
+
+    # Leader password unlocks edit mode from the shared choir URL.
+    if pin_required(stored_leader) and verify_pin(stored_leader, pin):
+        shaped = _shape_public(row, access_granted=True, can_edit=True)
+        shaped["is_leader"] = True
+        _cache_set_shape(_shape_cache_key((token or "").strip(), unlocked=True, can_edit=True), shaped)
+        return shaped
+
+    if pin_required(stored_pin) and verify_pin(stored_pin, pin):
+        shaped = _shape_public(row, access_granted=True, can_edit=False)
+        shaped["is_leader"] = False
+        _cache_set_shape(_shape_cache_key((token or "").strip(), unlocked=True, can_edit=False), shaped)
+        return shaped
+
+    return {"ok": False, "error": "Incorrect PIN.", "requires_pin": True}
 
 
 def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) -> dict[str, Any]:
@@ -1151,7 +1230,7 @@ def reset_practice_share_pin(
     *,
     actor_user_id: str,
 ) -> dict[str, Any]:
-    """Replace PIN for a live share owned by actor. Returns new plaintext PIN once."""
+    """Replace choir + leader PINs for a live share owned by actor. Returns plaintext once."""
     tok = (token or "").strip()
     uid = (actor_user_id or "").strip()
     if not tok or not uid:
@@ -1164,38 +1243,45 @@ def reset_practice_share_pin(
 
     pin = generate_practice_pin()
     pin_stored = hash_pin(pin)
-    if supabase_enabled():
-        try:
-            _service_client().table("choir_practice_shares").update(
-                {"optional_pin": pin_stored}
-            ).eq("token", tok).execute()
-        except Exception as exc:
-            if not _supabase_unavailable(exc):
-                raise
-            logger.warning("choir_practice_shares pin reset failed; using local store (%s)", exc)
-            rows = _read_local_rows()
-            for item in rows:
-                if str(item.get("token") or "") == tok:
-                    item["optional_pin"] = pin_stored
-            _write_local_rows(rows)
-        else:
-            rows = _read_local_rows()
-            changed = False
-            for item in rows:
-                if str(item.get("token") or "") == tok:
-                    item["optional_pin"] = pin_stored
-                    changed = True
-            if changed:
-                _write_local_rows(rows)
-    else:
+    leader_plain = generate_leader_pin(exclude=pin)
+    leader_stored = hash_pin(leader_plain)
+    update_payload = {"optional_pin": pin_stored, "leader_pin": leader_stored}
+
+    def _write_local_pins() -> None:
         rows = _read_local_rows()
         for item in rows:
             if str(item.get("token") or "") == tok:
                 item["optional_pin"] = pin_stored
+                item["leader_pin"] = leader_stored
         _write_local_rows(rows)
 
-    summary = _public_share_summary({**row, "optional_pin": pin_stored})
+    if supabase_enabled():
+        try:
+            _service_client().table("choir_practice_shares").update(update_payload).eq("token", tok).execute()
+        except Exception as exc:
+            if "leader_pin" in str(exc):
+                try:
+                    _service_client().table("choir_practice_shares").update(
+                        {"optional_pin": pin_stored}
+                    ).eq("token", tok).execute()
+                except Exception as inner:
+                    if not _supabase_unavailable(inner):
+                        raise
+                    logger.warning("choir_practice_shares pin reset failed; using local store (%s)", inner)
+                _write_local_pins()
+            elif not _supabase_unavailable(exc):
+                raise
+            else:
+                logger.warning("choir_practice_shares pin reset failed; using local store (%s)", exc)
+                _write_local_pins()
+        else:
+            _write_local_pins()
+    else:
+        _write_local_pins()
+
+    summary = _public_share_summary({**row, "optional_pin": pin_stored, "leader_pin": leader_stored})
     summary["ok"] = True
     summary["pin"] = pin
+    summary["leader_pin"] = leader_plain
     invalidate_practice_cache(tok)
     return summary

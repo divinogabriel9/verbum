@@ -121,8 +121,10 @@
     .practice-top__actions {
       flex: 0 0 auto;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      justify-content: flex-end;
+      gap: 6px;
     }
     .practice-theme-toggle {
       flex: 0 0 auto;
@@ -195,6 +197,92 @@
       font-size: 0.75rem;
       line-height: 1.4;
       color: var(--muted);
+    }
+    .practice-member-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 16px;
+      padding-bottom: calc(16px + var(--safe-bottom));
+      background: rgba(15, 23, 42, 0.45);
+    }
+    .practice-member-overlay[hidden] { display: none; }
+    .practice-member-sheet {
+      width: min(100%, 420px);
+      max-height: min(72vh, 520px);
+      overflow: auto;
+      background: var(--card);
+      color: var(--ink);
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+      padding: 16px;
+    }
+    .practice-member-sheet h2 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+    .practice-member-sheet p {
+      margin: 0 0 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .practice-member-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .practice-member-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 12px 14px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .practice-member-item:disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+    .practice-member-item__name {
+      font-weight: 650;
+      font-size: 0.9rem;
+    }
+    .practice-member-item__email {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .practice-member-status {
+      margin: 10px 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .practice-member-status.is-error { color: #b91c1c; }
+    .practice-member-close {
+      margin-top: 12px;
+      width: 100%;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--ink);
+      font-weight: 600;
+      cursor: pointer;
     }
     .practice-top__eyebrow {
       margin: 0 0 4px;
@@ -889,11 +977,22 @@
             <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
             <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"/></svg>
           </button>
+          <button type="button" class="practice-top__action practice-top__action--secondary" id="practice-send-member" hidden>Send to Mass</button>
           <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
         </div>
       </div>
-      <p class="practice-lead-note" id="practice-lead-note" hidden>Tap a song title to change it. Turn blocks off, color Man/Woman lines, duplicate or reorder sections, then Save. Changes sync to unlocked choir members for this practice only — not your song library.</p>
+      <p class="practice-lead-note" id="practice-lead-note" hidden>Tap a song title to change it. Turn blocks off, color Man/Woman lines, duplicate or reorder sections, then Save. Use Send to Mass to email the lyric order to a parish teammate for this Mass PPTX only.</p>
     </header>
+
+    <div class="practice-member-overlay" id="practice-member-overlay" hidden>
+      <div class="practice-member-sheet" role="dialog" aria-modal="true" aria-labelledby="practice-member-title">
+        <h2 id="practice-member-title">Send lyric order</h2>
+        <p>Choose a parish teammate. They’ll get an email to apply this practice lyric sequence for this Mass only, then generate the PowerPoint.</p>
+        <ul class="practice-member-list" id="practice-member-list"></ul>
+        <p class="practice-member-status" id="practice-member-status" hidden></p>
+        <button type="button" class="practice-member-close" id="practice-member-close">Close</button>
+      </div>
+    </div>
 
     <nav class="practice-tabs" id="practice-tabs" hidden aria-label="Songs"></nav>
 
@@ -953,6 +1052,11 @@
       const footnote = document.getElementById("practice-footnote");
       const leadAction = document.getElementById("practice-lead-action");
       const leadNote = document.getElementById("practice-lead-note");
+      const sendMemberBtn = document.getElementById("practice-send-member");
+      const memberOverlay = document.getElementById("practice-member-overlay");
+      const memberList = document.getElementById("practice-member-list");
+      const memberStatus = document.getElementById("practice-member-status");
+      const memberClose = document.getElementById("practice-member-close");
       const syncToast = document.getElementById("practice-sync-toast");
       const themeToggles = [
         document.getElementById("practice-theme-toggle"),
@@ -1072,11 +1176,16 @@
         if (!leadAction) return;
         if (!state.isLeader) {
           leadAction.hidden = true;
+          if (sendMemberBtn) sendMemberBtn.hidden = true;
           if (leadNote) leadNote.hidden = true;
           return;
         }
         leadAction.hidden = false;
         leadAction.disabled = false;
+        if (sendMemberBtn) {
+          sendMemberBtn.hidden = false;
+          sendMemberBtn.disabled = false;
+        }
         if (state.editing) {
           leadAction.textContent = "Save";
           leadAction.classList.remove("practice-top__action--secondary");
@@ -1085,6 +1194,103 @@
           leadAction.textContent = "Edit";
           leadAction.classList.add("practice-top__action--secondary");
           if (leadNote) leadNote.hidden = true;
+        }
+      }
+
+      function closeMemberPicker() {
+        if (memberOverlay) memberOverlay.hidden = true;
+        if (memberStatus) {
+          memberStatus.hidden = true;
+          memberStatus.textContent = "";
+          memberStatus.classList.remove("is-error");
+        }
+      }
+
+      function setMemberStatus(msg, isError) {
+        if (!memberStatus) return;
+        memberStatus.hidden = !msg;
+        memberStatus.textContent = msg || "";
+        memberStatus.classList.toggle("is-error", !!isError);
+      }
+
+      async function openMemberPicker() {
+        if (!state.isLeader || !leadToken) return;
+        if (state.editing && state.dirty) {
+          setMemberStatus("Save your lyric edits first, then send.", true);
+          // Still open so they see the hint after save — but require save.
+        }
+        if (memberOverlay) memberOverlay.hidden = false;
+        if (memberList) memberList.innerHTML = '<li class="practice-status">Loading parish team…</li>';
+        setMemberStatus("");
+        try {
+          if (state.editing && state.dirty) {
+            await savePracticeEdits({ keepEditing: true });
+          }
+          const res = await fetch(
+            "/api/practice/" + encodeURIComponent(token) + "/parish-members?lead=" + encodeURIComponent(leadToken),
+            { credentials: "same-origin", headers: practiceFetchHeaders() }
+          );
+          const data = await res.json().catch(function () { return {}; });
+          if (!res.ok || !data.ok) {
+            if (memberList) memberList.innerHTML = "";
+            setMemberStatus(data.detail || "Could not load parish members.", true);
+            return;
+          }
+          const members = Array.isArray(data.members) ? data.members : [];
+          if (!members.length) {
+            if (memberList) memberList.innerHTML = "";
+            setMemberStatus("No parish teammates with email found.", true);
+            return;
+          }
+          if (memberList) {
+            memberList.innerHTML = members.map(function (m) {
+              const name = ((m.first_name || "") + " " + (m.last_name || "")).trim() || m.email;
+              const role = m.role ? (" · " + m.role) : "";
+              return (
+                '<li><button type="button" class="practice-member-item" data-user-id="' + esc(m.user_id) + '">' +
+                  '<span class="practice-member-item__name">' + esc(name) + esc(role) + '</span>' +
+                  '<span class="practice-member-item__email">' + esc(m.email || "") + '</span>' +
+                '</button></li>'
+              );
+            }).join("");
+            memberList.querySelectorAll("[data-user-id]").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                void sendLyricsToMember(btn.getAttribute("data-user-id"), btn);
+              });
+            });
+          }
+        } catch (_err) {
+          if (memberList) memberList.innerHTML = "";
+          setMemberStatus("Could not load parish members.", true);
+        }
+      }
+
+      async function sendLyricsToMember(userId, btn) {
+        if (!userId || !leadToken) return;
+        if (btn) btn.disabled = true;
+        setMemberStatus("Sending email…");
+        try {
+          if (state.editing && state.dirty) {
+            await savePracticeEdits({ keepEditing: true });
+          }
+          const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/send-to-member", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ lead_token: leadToken, user_id: userId }),
+          });
+          const data = await res.json().catch(function () { return {}; });
+          if (!res.ok || !data.ok) {
+            setMemberStatus(data.detail || "Could not send email.", true);
+            if (btn) btn.disabled = false;
+            return;
+          }
+          setMemberStatus("Sent to " + (data.sent_to || "teammate") + ".");
+          showSyncToast("Sent to parish teammate");
+          setTimeout(closeMemberPicker, 1200);
+        } catch (_err) {
+          setMemberStatus("Could not send email.", true);
+          if (btn) btn.disabled = false;
         }
       }
 
@@ -1275,14 +1481,15 @@
         tabs.hidden = true;
         footnote.hidden = true;
         if (leadAction) leadAction.hidden = true;
+        if (sendMemberBtn) sendMemberBtn.hidden = true;
         if (leadNote) leadNote.hidden = true;
         setPracticeChromeReady(false);
         stopPoll();
         root.innerHTML =
           '<div class="practice-pin-wrap">' +
             '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
-              '<label id="practice-pin-label" for="practice-pin-trap">Enter the 6-digit PIN from your choir leader</label>' +
-              '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">The PIN is not included in the link — share it separately (e.g. in person or by text).</p>' +
+              '<label id="practice-pin-label" for="practice-pin-trap">Enter the 6-digit password</label>' +
+              '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">Choir members use the choir PIN. Leaders use the separate leader password to edit from this same link.</p>' +
               '<div class="practice-pin-entry">' +
                 '<div class="pin-otp__wrap" id="practice-pin-otp" role="group" aria-labelledby="practice-pin-label">' +
                   pinOtpMarkup() +
@@ -1309,16 +1516,16 @@
 
       async function submitPin(pin) {
         if (pin.length !== 6) {
-          renderPinForm("Enter the full 6-digit PIN.");
+          renderPinForm("Enter the full 6-digit password.");
           return;
         }
         document.body.classList.remove("practice-pin-open");
-        root.innerHTML = '<p class="practice-status">Checking PIN…</p>';
+        root.innerHTML = '<p class="practice-status">Checking password…</p>';
         try {
           const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/unlock", {
             method: "POST",
             credentials: "same-origin",
-            headers: { "Content-Type": "application/json" },
+            headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ pin: pin }),
           });
           const data = await res.json().catch(function () { return {}; });
@@ -1327,12 +1534,16 @@
             return;
           }
           if (!res.ok) {
-            renderPinForm(data.error || data.detail || "Incorrect PIN.");
+            renderPinForm(data.error || data.detail || "Incorrect password.");
             return;
+          }
+          if (data.lead_token) {
+            leadToken = String(data.lead_token || "").trim();
+            try { sessionStorage.setItem(LEAD_STORE_KEY, leadToken); } catch (_e) { /* ignore */ }
           }
           renderPractice(data);
         } catch (_err) {
-          renderPinForm("Could not verify PIN. Check your connection.");
+          renderPinForm("Could not verify password. Check your connection.");
         }
       }
 
@@ -2136,12 +2347,14 @@
         }, TAB_EXIT_MS);
       }
 
-      async function savePracticeEdits() {
-        if (!state.isLeader || !state.editing || !leadToken) return;
+      async function savePracticeEdits(opts) {
+        opts = opts || {};
+        const keepEditing = !!opts.keepEditing;
+        if (!state.isLeader || !state.editing || !leadToken) return false;
         flushCurrentSongEdits();
         if (!state.dirty) {
-          exitEditMode();
-          return;
+          if (!keepEditing) exitEditMode();
+          return true;
         }
         if (leadAction) {
           leadAction.disabled = true;
@@ -2184,14 +2397,17 @@
           if (!res.ok || !data.ok) {
             throw new Error(data.detail || data.error || "Could not save.");
           }
-          applyPracticePayload(data, { resetDirty: true, exitEditing: true });
+          applyPracticePayload(data, { resetDirty: true, exitEditing: !keepEditing });
+          if (keepEditing) state.editing = true;
           showSyncToast("Synced to choir");
           renderCurrentSong();
           syncLeadChrome();
+          return true;
         } catch (err) {
           setDirty(true);
           if (leadAction) leadAction.textContent = "Save";
           showSyncToast(err.message || "Save failed");
+          return false;
         }
       }
 
@@ -2308,6 +2524,19 @@
           if (!state.isLeader) return;
           if (state.editing) savePracticeEdits();
           else enterEditMode();
+        });
+      }
+      if (sendMemberBtn) {
+        sendMemberBtn.addEventListener("click", function () {
+          void openMemberPicker();
+        });
+      }
+      if (memberClose) {
+        memberClose.addEventListener("click", closeMemberPicker);
+      }
+      if (memberOverlay) {
+        memberOverlay.addEventListener("click", function (ev) {
+          if (ev.target === memberOverlay) closeMemberPicker();
         });
       }
 

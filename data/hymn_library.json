@@ -2,7 +2,7 @@
   "entrance": [
     {
       "id": "sing_new_song",
-      "title": "Sing a New Song",
+      "title": "Sing A New Song",
       "author": "",
       "lyrics": "Chorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\n\nVerse 1\nLord’s People Dance For Joy\nO Come Before The Lord\nAnd Play For Him On Glad Tambourines\nAnd Let Your Trumpet Sound\n\nChorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\n\nVerse 2\nRise, O Children, From Your Sleep;\nYour Savior Now Has Come\nHe Has Turned Your Sorrow To Joy\nAnd Filled Your Soul With Song\n\nChorus\nSing A New Song Unto The Lord;\nLet Your Song Be Sung\nFrom Mountains High\nSing A New Song Unto The Lord\nSinging Alleluia\nSinging Alleluia",
       "source": "lyrics_dashboard",
@@ -10,10 +10,29 @@
         "ordinary_time",
         "easter"
       ],
+      "added_at": "2026-08-16T19:45:58.527515+00:00",
       "language": "English",
+      "updated_at": "2026-08-16T19:46:25.696372+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:uPLaBJqUUDc",
+        "youtube_id": "uPLaBJqUUDc",
+        "youtube_url": "https://www.youtube.com/watch?v=uPLaBJqUUDc",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_entrance_sing_new_song_10.mp3",
+        "start_sec": 7.88,
+        "youtube_id": "uPLaBJqUUDc",
+        "youtube_url": "https://www.youtube.com/watch?v=uPLaBJqUUDc",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "all_creatures",
@@ -1596,7 +1615,7 @@
       ],
       "added_at": "2026-08-13T08:57:10.678308+00:00",
       "language": "English",
-      "updated_at": "2026-08-16T19:20:40.084600+00:00",
+      "updated_at": "2026-08-16T19:46:10.618985+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:ITJYbi6b0e8",
@@ -1610,12 +1629,12 @@
         "journey"
       ],
       "audio_preview": {
-        "method": "chorus",
+        "method": "words",
         "source": "preview",
         "basename": "preview_recessional_we_are_called_10.mp3",
-        "start_sec": 37.04,
-        "youtube_id": "ITJYbi6b0e8",
-        "youtube_url": "https://www.youtube.com/watch?v=ITJYbi6b0e8",
+        "start_sec": 7.94,
+        "youtube_id": "uPLaBJqUUDc",
+        "youtube_url": "https://www.youtube.com/watch?v=uPLaBJqUUDc",
         "display_name": "10s preview",
         "duration_sec": 10
       }

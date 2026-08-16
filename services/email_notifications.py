@@ -11,6 +11,7 @@ from services.email_links import (
     home_cta_url,
     invite_signup_url,
     mass_pptx_cta_url,
+    practice_lyrics_handoff_cta_url,
     practice_share_cta_url,
 )
 
@@ -279,6 +280,110 @@ def notify_practice_share_reminder(
             cta_url=cta,
             helper="Secure link · Expires Sunday at 11:59 PM (UTC)",
             preheader=f"Share lyrics · {mass_date}",
+        ),
+    )
+
+
+def notify_practice_leader_password(
+    *,
+    email: str,
+    first_name: str = "",
+    mass_date: str,
+    mass_title: str = "",
+    parish_name: str = "",
+    leader_pin: str,
+    practice_url: str = "",
+) -> EmailResult:
+    """Email the auto-generated leader password to the share creator only."""
+    title = (mass_title or "").strip()
+    date_label = _format_mass_date(mass_date)
+    pin = "".join(ch for ch in str(leader_pin or "") if ch.isdigit())
+    greeting = (first_name or "").strip()
+    url = (practice_url or "").strip()
+    rows = [
+        ("Leader password", f'<span style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.18em;font-weight:700;">{_esc(pin)}</span>'),
+    ]
+    if (parish_name or "").strip():
+        rows.insert(0, ("Parish", _esc(parish_name.strip())))
+    text_bits = [
+        f"Hi {greeting}," if greeting else "Hello,",
+        "",
+        f"Your choir practice leader password for {date_label}:",
+        pin,
+        "",
+        "Keep this private. Use it when you open the choir practice link to edit lyrics.",
+        "Share only the choir PIN with choir members — not this leader password.",
+        "",
+    ]
+    if url:
+        text_bits.extend([f"Practice link: {url}", ""])
+    return send_email(
+        to=email,
+        subject=f"Your practice leader password ({mass_date})",
+        text="\n".join(text_bits),
+        html=wrap_html(
+            title="Your leader password",
+            subtitle="Keep this private. Use it to edit lyrics from the shared choir practice link.",
+            event_date=date_label,
+            event_title=title,
+            body_html=detail_rows(rows),
+            cta_label="Open practice link" if url else "",
+            cta_url=url if url else "",
+            helper="Do not share this password with the choir. They use the choir PIN you created.",
+            preheader=f"Leader password · {mass_date}",
+        ),
+    )
+
+
+def notify_practice_lyrics_handoff(
+    *,
+    email: str,
+    first_name: str = "",
+    mass_date: str,
+    mass_title: str = "",
+    parish_name: str = "",
+    sender_label: str = "",
+    song_count: int = 0,
+    handoff: str,
+) -> EmailResult:
+    """Choir leader → parish member: apply practice lyric order to this Mass PPTX."""
+    title = (mass_title or "").strip()
+    cta = practice_lyrics_handoff_cta_url(mass_date=mass_date, handoff=handoff)
+    date_label = _format_mass_date(mass_date)
+    who = (sender_label or "Your choir leader").strip() or "Your choir leader"
+    count = max(0, int(song_count or 0))
+    count_label = f"{count} song{'s' if count != 1 else ''}"
+    parish = (parish_name or "").strip()
+    rows = [
+        ("From", _esc(who)),
+        ("Songs", _esc(count_label)),
+    ]
+    if parish:
+        rows.insert(0, ("Parish", _esc(parish)))
+    greeting = (first_name or "").strip()
+    text_bits = [
+        f"Hi {greeting}," if greeting else "Hello,",
+        "",
+        f"{who} sent the choir practice lyric order for {date_label}.",
+        "Open LiturgyFlow to use it for this Mass only, then generate the PowerPoint.",
+        "",
+        cta,
+        "",
+    ]
+    return send_email(
+        to=email,
+        subject=f"Practice lyrics for Mass PPTX ({mass_date})",
+        text="\n".join(text_bits),
+        html=wrap_html(
+            title="Practice lyrics for Mass",
+            subtitle="Use the choir’s lyric order for this Mass only, then generate the PowerPoint.",
+            event_date=date_label,
+            event_title=title,
+            body_html=detail_rows(rows),
+            cta_label="Open Mass Builder",
+            cta_url=cta,
+            helper="Applies to this Mass only — does not change your song library.",
+            preheader=f"Practice lyrics · {mass_date}",
         ),
     )
 
