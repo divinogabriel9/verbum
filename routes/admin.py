@@ -58,6 +58,12 @@ from services.superadmin.analytics import build_analytics_payload
 from services.superadmin.approvals_inbox import build_approvals_inbox
 from services.superadmin.hymn_catalog_admin import (
     build_hymn_catalog_status,
+    clear_song_audio_preview,
+    enqueue_song_audio_preview,
+    generate_song_audio_preview,
+    get_song_preview_job,
+    list_song_preview_jobs,
+    list_song_preview_rows,
     sync_hymn_catalog_to_supabase,
 )
 from services.feature_flags import (
@@ -148,6 +154,12 @@ class ParishFeatureFlagBody(BaseModel):
 
 class HymnCatalogSyncBody(BaseModel):
     prefer: Literal["active", "local"] = "active"
+
+
+class SongAudioPreviewBody(BaseModel):
+    youtube_url: str = Field("", max_length=400)
+    duration_sec: int = Field(10, ge=5, le=10)
+    start_sec: Optional[float] = Field(None, ge=0, le=7200)
 
 
 class ReminderPushBody(BaseModel):
@@ -479,6 +491,111 @@ def register_admin_routes(app) -> None:
                 "total": (result.get("counts") or {}).get("total"),
                 "with_lyrics": (result.get("counts") or {}).get("with_lyrics"),
             },
+        )
+        return result
+
+    @app.get("/api/admin/songs/previews")
+    def api_admin_list_song_previews(
+        q: str = Query("", max_length=120),
+        section: str = Query("", max_length=40),
+        status: str = Query("all", max_length=20),
+        limit: int = Query(40, ge=1, le=200),
+        offset: int = Query(0, ge=0),
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return list_song_preview_rows(
+            query=q,
+            section=section,
+            status=status,
+            limit=limit,
+            offset=offset,
+        )
+
+    @app.post("/api/admin/songs/{section}/{hymn_id:path}/preview-job")
+    def api_admin_enqueue_song_preview(
+        section: str,
+        hymn_id: str,
+        body: SongAudioPreviewBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = enqueue_song_audio_preview(
+            section=section,
+            hymn_id=hymn_id,
+            youtube_url=body.youtube_url,
+            duration_sec=body.duration_sec,
+            start_sec=body.start_sec,
+            updated_by=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Could not start preview fetch.")
+        return result
+
+    @app.get("/api/admin/songs/preview-jobs")
+    def api_admin_list_song_preview_jobs(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        return list_song_preview_jobs()
+
+    @app.get("/api/admin/songs/preview-jobs/{job_id}")
+    def api_admin_get_song_preview_job(
+        job_id: str,
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = get_song_preview_job(job_id)
+        if not result.get("ok"):
+            raise HTTPException(status_code=404, detail=result.get("error") or "Job not found.")
+        return result
+
+    @app.post("/api/admin/songs/{section}/{hymn_id:path}/preview")
+    def api_admin_generate_song_preview(
+        section: str,
+        hymn_id: str,
+        body: SongAudioPreviewBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = generate_song_audio_preview(
+            section=section,
+            hymn_id=hymn_id,
+            youtube_url=body.youtube_url,
+            duration_sec=body.duration_sec,
+            start_sec=body.start_sec,
+            updated_by=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Preview fetch failed.")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="song_preview_fetch",
+            entity_type="hymn",
+            entity_id=hymn_id,
+            detail={
+                "section": section,
+                "duration_sec": result.get("duration_sec"),
+                "start_sec": result.get("start_sec"),
+                "method": result.get("method"),
+            },
+        )
+        return result
+
+    @app.delete("/api/admin/songs/{section}/{hymn_id:path}/preview")
+    def api_admin_clear_song_preview(
+        section: str,
+        hymn_id: str,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = clear_song_audio_preview(
+            section=section,
+            hymn_id=hymn_id,
+            updated_by=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(status_code=400, detail=result.get("error") or "Could not clear preview.")
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="song_preview_clear",
+            entity_type="hymn",
+            entity_id=hymn_id,
+            detail={"section": section},
         )
         return result
 

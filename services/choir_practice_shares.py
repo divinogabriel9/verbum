@@ -283,23 +283,27 @@ def _blocks_from_lyrics(lyrics: str) -> list[dict[str, Any]]:
         body = "\n".join(body_lines).strip()
         if not body:
             continue
+        clipped = body[:_MAX_LYRICS_LEN]
         blocks.append(
             {
                 "id": f"b{i}-{uuid.uuid4().hex[:8]}",
                 "kind": kind[:32],
                 "label": label[:80],
-                "body": body[:_MAX_LYRICS_LEN],
+                "body": clipped,
                 "enabled": True,
+                "voices": [""] * (len(clipped.split("\n")) if clipped else 0),
             }
         )
     if not blocks and text:
+        clipped = text[:_MAX_LYRICS_LEN]
         blocks.append(
             {
                 "id": f"b0-{uuid.uuid4().hex[:8]}",
                 "kind": "verse",
                 "label": "Lyrics",
-                "body": text[:_MAX_LYRICS_LEN],
+                "body": clipped,
                 "enabled": True,
+                "voices": [""] * (len(clipped.split("\n")) if clipped else 0),
             }
         )
     return blocks[:48]
@@ -732,6 +736,26 @@ def fetch_practice_share(
     return shaped
 
 
+def _normalize_voice_token(raw: Any) -> str:
+    v = str(raw or "").strip().lower()
+    if v in {"man", "m", "male", "men", "him"}:
+        return "man"
+    if v in {"woman", "w", "female", "women", "her", "lady"}:
+        return "woman"
+    return ""
+
+
+def _normalize_block_voices(raw: Any, *, line_count: int) -> list[str]:
+    """Align man/woman voice tags to lyric lines (practice leader color codes)."""
+    count = max(0, min(int(line_count or 0), 400))
+    src = raw if isinstance(raw, list) else []
+    out: list[str] = []
+    for i in range(count):
+        token = _normalize_voice_token(src[i] if i < len(src) else "")
+        out.append(token)
+    return out
+
+
 def _normalize_practice_blocks(blocks: Any) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     if not isinstance(blocks, list):
@@ -746,6 +770,7 @@ def _normalize_practice_blocks(blocks: Any) -> list[dict[str, Any]]:
         if kind == "refrain":
             kind = "chorus"
         label = str(raw.get("label") or kind.title()).strip()[:80] or kind.title()
+        line_count = len(body.split("\n")) if body else 0
         out.append(
             {
                 "id": str(raw.get("id") or f"b{i}"),
@@ -753,6 +778,7 @@ def _normalize_practice_blocks(blocks: Any) -> list[dict[str, Any]]:
                 "label": label,
                 "body": body,
                 "enabled": bool(raw.get("enabled", True)),
+                "voices": _normalize_block_voices(raw.get("voices"), line_count=line_count),
             }
         )
     return out

@@ -3,9 +3,13 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Poster fonts + LibreOffice for 1:1 in-app slideshow (PPTX → PDF → PNG)
+# ffmpeg cuts 5–10s chorus preview clips from YouTube audio (superadmin tool)
+# node is required by yt-dlp for YouTube JS challenges (avoids HTTP 403 on audio fetch)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-dejavu-core \
     libreoffice-impress \
+    ffmpeg \
+    nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

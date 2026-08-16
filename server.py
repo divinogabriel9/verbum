@@ -80,6 +80,7 @@ from services.song_catalog import (
     import_song_rows,
     import_titles,
     import_verbum_songs_from_txt,
+    normalize_audio_preview_ref,
     normalize_song_media_ref,
     save_lyrics_song,
     undo_verbum_song_import,
@@ -1467,6 +1468,7 @@ class SaveLyricsBody(BaseModel):
     )
     audio_media: Optional[SongMediaRefBody] = None
     video_media: Optional[SongMediaRefBody] = None
+    audio_preview: Optional[dict[str, Any]] = None
 
 
 class ImportVerbumTxtBody(BaseModel):
@@ -1506,8 +1508,10 @@ class CatalogSongPatchBody(BaseModel):
     )
     audio_media: Optional[SongMediaRefBody] = None
     video_media: Optional[SongMediaRefBody] = None
+    audio_preview: Optional[dict[str, Any]] = None
     clear_audio_media: bool = False
     clear_video_media: bool = False
+    clear_audio_preview: bool = False
 
 
 class GenerateImageBody(BaseModel):
@@ -1572,6 +1576,8 @@ class PracticeLyricBlockBody(BaseModel):
     label: str = Field("", max_length=80)
     body: str = Field("", max_length=L.LYRICS_FULL)
     enabled: bool = True
+    # Per-line voice color codes for choir practice: "man" | "woman" | "".
+    voices: list[str] = Field(default_factory=list, max_length=400)
 
 
 class PracticeLyricSongUpdateBody(BaseModel):
@@ -2745,6 +2751,7 @@ def api_get_catalog_song(
             "gospel_moods": gospel_moods_for_song(row),
             "audio_media": row.get("audio_media") if isinstance(row.get("audio_media"), dict) else None,
             "video_media": row.get("video_media") if isinstance(row.get("video_media"), dict) else None,
+            "audio_preview": normalize_audio_preview_ref(row.get("audio_preview")),
         },
     }
     return JSONResponse(payload, headers={"Cache-Control": "private, no-store"})
@@ -2759,6 +2766,7 @@ def api_patch_catalog_song(
 ) -> dict[str, Any]:
     audio_media: Any = ...
     video_media: Any = ...
+    audio_preview: Any = ...
     if body.clear_audio_media:
         audio_media = None
     elif body.audio_media is not None:
@@ -2767,6 +2775,10 @@ def api_patch_catalog_song(
         video_media = None
     elif body.video_media is not None:
         video_media = body.video_media.model_dump()
+    if body.clear_audio_preview:
+        audio_preview = None
+    elif body.audio_preview is not None:
+        audio_preview = body.audio_preview
     res = update_catalog_song(
         section=section,
         hymn_id=hymn_id,
@@ -2777,6 +2789,7 @@ def api_patch_catalog_song(
         gospel_moods=body.gospel_moods,
         audio_media=audio_media,
         video_media=video_media,
+        audio_preview=audio_preview,
         updated_by=session.user.user_id if session else None,
     )
     if not res.get("ok"):
@@ -4156,6 +4169,11 @@ def api_save_lyrics(
             body.video_media.model_dump()
             if body.video_media is not None
             else (None if "video_media" in body.model_fields_set else ...)
+        ),
+        audio_preview=(
+            body.audio_preview
+            if body.audio_preview is not None
+            else (None if "audio_preview" in body.model_fields_set else ...)
         ),
         updated_by=session.user.user_id if session else None,
     )

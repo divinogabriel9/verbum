@@ -38,6 +38,11 @@
       --surface-disabled: #f1f5f9;
       --toast-bg: #15333d;
       --toast-ink: #ffffff;
+      /* Man/woman line colors — readable on light cards */
+      --voice-man: #0e7490;
+      --voice-woman: #a21caf;
+      --voice-man-bg: color-mix(in srgb, #0e7490 14%, transparent);
+      --voice-woman-bg: color-mix(in srgb, #a21caf 14%, transparent);
       --lyrics-size: clamp(1.0625rem, 4.2vw, 1.1875rem);
       --lyrics-leading: 1.7;
       --safe-top: env(safe-area-inset-top, 0px);
@@ -60,6 +65,10 @@
       --surface-disabled: #10161b;
       --toast-bg: #e8eef2;
       --toast-ink: #12171c;
+      --voice-man: #5eead4;
+      --voice-woman: #f0abfc;
+      --voice-man-bg: color-mix(in srgb, #5eead4 18%, transparent);
+      --voice-woman-bg: color-mix(in srgb, #f0abfc 18%, transparent);
       --theme-color: #1a2229;
     }
     * { box-sizing: border-box; }
@@ -485,6 +494,58 @@
       color: var(--ink);
       text-transform: none;
     }
+    .practice-lyric-lines {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15em;
+    }
+    .practice-lyric-line {
+      margin: 0;
+      padding: 0.08em 0.35em;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      font-size: var(--lyrics-size);
+      line-height: var(--lyrics-leading);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--ink);
+    }
+    .practice-lyric-line--man {
+      color: var(--voice-man);
+      background: var(--voice-man-bg);
+    }
+    .practice-lyric-line--woman {
+      color: var(--voice-woman);
+      background: var(--voice-woman-bg);
+    }
+    .practice-voice-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      margin: 0 0 4px;
+      padding: 0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .practice-voice-legend__item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .practice-voice-legend__swatch {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 999px;
+    }
+    .practice-voice-legend__swatch--man { background: var(--voice-man); }
+    .practice-voice-legend__swatch--woman { background: var(--voice-woman); }
     .practice-lyric-block--verse { --block-accent: #a10f0d; }
     .practice-lyric-block--chorus,
     .practice-lyric-block--refrain { --block-accent: #c9a227; }
@@ -636,12 +697,41 @@
     .practice-lyric-block__toolbar {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 8px;
+      flex-wrap: wrap;
     }
     .practice-lyric-block__toolbar .practice-lyric-block__label {
       margin: 0;
       flex: 1 1 auto;
+      min-width: 4rem;
+    }
+    .practice-block-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+    .practice-block-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .practice-block-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .practice-block-btn svg {
+      width: 1rem;
+      height: 1rem;
     }
     .practice-block-toggle {
       flex: 0 0 auto;
@@ -676,6 +766,73 @@
     .practice-lyric-block__edit:disabled {
       background: var(--surface-disabled);
       color: var(--muted);
+    }
+    .practice-line-editor {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .practice-line-row {
+      display: grid;
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      gap: 6px;
+      align-items: start;
+    }
+    .practice-voice-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      padding: 0;
+    }
+    .practice-voice-btn.is-man {
+      color: var(--voice-man);
+      background: var(--voice-man-bg);
+      border-color: color-mix(in srgb, var(--voice-man) 40%, var(--line));
+    }
+    .practice-voice-btn.is-woman {
+      color: var(--voice-woman);
+      background: var(--voice-woman-bg);
+      border-color: color-mix(in srgb, var(--voice-woman) 40%, var(--line));
+    }
+    .practice-line-input {
+      width: 100%;
+      min-height: 2.25rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      font-size: calc(var(--lyrics-size) * 0.95);
+      line-height: 1.45;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--card);
+      resize: none;
+      overflow: hidden;
+    }
+    .practice-line-input:disabled {
+      background: var(--surface-disabled);
+      color: var(--muted);
+    }
+    .practice-line-input.is-man { color: var(--voice-man); }
+    .practice-line-input.is-woman { color: var(--voice-woman); }
+    .practice-line-add {
+      align-self: flex-start;
+      margin-top: 2px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      cursor: pointer;
     }
     .practice-sync-toast {
       position: fixed;
@@ -735,7 +892,7 @@
           <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
         </div>
       </div>
-      <p class="practice-lead-note" id="practice-lead-note" hidden>Tap a song title to change it, turn blocks off or edit verses, then Save. Changes sync to unlocked choir members for this practice only — not your song library.</p>
+      <p class="practice-lead-note" id="practice-lead-note" hidden>Tap a song title to change it. Turn blocks off, color Man/Woman lines, duplicate or reorder sections, then Save. Changes sync to unlocked choir members for this practice only — not your song library.</p>
     </header>
 
     <nav class="practice-tabs" id="practice-tabs" hidden aria-label="Songs"></nav>
@@ -1179,27 +1336,327 @@
         }
       }
 
+      function normalizeVoiceToken(raw) {
+        const v = String(raw || "").trim().toLowerCase();
+        if (v === "man" || v === "m" || v === "male" || v === "men") return "man";
+        if (v === "woman" || v === "w" || v === "female" || v === "women") return "woman";
+        return "";
+      }
+
+      function splitLyricLines(body) {
+        return String(body || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+      }
+
+      function syncVoicesToLines(body, voices) {
+        const lines = splitLyricLines(body);
+        const src = Array.isArray(voices) ? voices : [];
+        return lines.map(function (_ln, i) {
+          return normalizeVoiceToken(src[i]);
+        });
+      }
+
+      function nextVoice(current) {
+        const v = normalizeVoiceToken(current);
+        if (!v) return "man";
+        if (v === "man") return "woman";
+        return "";
+      }
+
+      function voiceButtonLabel(voice) {
+        const v = normalizeVoiceToken(voice);
+        if (v === "man") return "M";
+        if (v === "woman") return "W";
+        return "·";
+      }
+
       function normalizeSongBlocks(song) {
         const blocks = Array.isArray(song.blocks) ? song.blocks : [];
         if (blocks.length) {
           return blocks.map(function (b, i) {
+            const body = String(b.body || "");
             return {
               id: String(b.id || ("b" + i)),
               kind: String(b.kind || "verse"),
               label: String(b.label || b.kind || "Verse"),
-              body: String(b.body || ""),
+              body: body,
               enabled: b.enabled !== false,
+              voices: syncVoicesToLines(body, b.voices),
             };
           });
         }
         return parseLyricSections(song.lyrics || "").map(function (sec, i) {
+          const body = sec.body || "";
           return {
             id: "b" + i,
             kind: sec.kind || "verse",
             label: sec.label || "Verse",
-            body: sec.body || "",
+            body: body,
             enabled: true,
+            voices: syncVoicesToLines(body, []),
           };
+        });
+      }
+
+      function songHasVoiceColors(song) {
+        const blocks = Array.isArray(song.blocks) ? song.blocks : [];
+        return blocks.some(function (b) {
+          if (b.enabled === false) return false;
+          return (b.voices || []).some(function (v) { return !!normalizeVoiceToken(v); });
+        });
+      }
+
+      function renderVoiceLegend() {
+        return (
+          '<p class="practice-voice-legend" aria-label="Voice colors">' +
+            '<span class="practice-voice-legend__item"><span class="practice-voice-legend__swatch practice-voice-legend__swatch--man" aria-hidden="true"></span>Man</span>' +
+            '<span class="practice-voice-legend__item"><span class="practice-voice-legend__swatch practice-voice-legend__swatch--woman" aria-hidden="true"></span>Woman</span>' +
+          '</p>'
+        );
+      }
+
+      function renderViewLyricLines(body, voices) {
+        const lines = splitLyricLines(body);
+        const tagged = syncVoicesToLines(body, voices);
+        if (!lines.length) return '<pre class="practice-lyric-block__body"></pre>';
+        const hasVoice = tagged.some(Boolean);
+        if (!hasVoice) {
+          return '<pre class="practice-lyric-block__body">' + esc(formatLyricsFirstLetters(body || "")) + '</pre>';
+        }
+        const formatted = formatLyricsFirstLetters(body || "").split("\n");
+        return (
+          '<ul class="practice-lyric-lines">' +
+          lines.map(function (_ln, i) {
+            const voice = tagged[i] || "";
+            const cls = voice ? (" practice-lyric-line--" + voice) : "";
+            const text = formatted[i] != null ? formatted[i] : "";
+            return '<li class="practice-lyric-line' + cls + '">' + esc(text) + '</li>';
+          }).join("") +
+          '</ul>'
+        );
+      }
+
+      function renderEditLineRows(sec, enabled) {
+        const lines = splitLyricLines(sec.body || "");
+        const voices = syncVoicesToLines(sec.body || "", sec.voices);
+        const rows = (lines.length ? lines : [""]).map(function (line, li) {
+          const voice = voices[li] || "";
+          const voiceCls = voice ? (" is-" + voice) : "";
+          return (
+            '<div class="practice-line-row" data-line-index="' + li + '">' +
+              '<button type="button" class="practice-voice-btn' + voiceCls + '" data-line-voice' +
+                ' aria-label="Voice: ' + (voice || "all") + '" title="Tap to set Man / Woman / All"' +
+                (enabled ? "" : " disabled") + '>' + voiceButtonLabel(voice) + '</button>' +
+              '<textarea class="practice-line-input' + voiceCls + '" data-line-text rows="1"' +
+                (enabled ? "" : " disabled") + '>' + esc(line) + '</textarea>' +
+            '</div>'
+          );
+        }).join("");
+        return (
+          '<div class="practice-line-editor" data-line-editor>' +
+            rows +
+            '<button type="button" class="practice-line-add" data-line-add' + (enabled ? "" : " disabled") + '>+ Line</button>' +
+          '</div>'
+        );
+      }
+
+      function renderPracticeLyrics(song) {
+        const blocks = Array.isArray(song.blocks) ? song.blocks : normalizeSongBlocks(song);
+        if (!blocks.length) {
+          return '<p class="practice-status">No lyrics for this song.</p>';
+        }
+        if (state.editing) {
+          const total = blocks.length;
+          return '<div class="practice-lyrics">' +
+            renderVoiceLegend() +
+            blocks.map(function (sec, i) {
+            const kind = esc(sec.kind || "verse");
+            const label = esc(sec.label || "Verse");
+            const enabled = sec.enabled !== false;
+            return (
+              '<section class="practice-lyric-block practice-lyric-block--edit practice-lyric-block--' + kind + (enabled ? "" : " is-off") + '" data-block-index="' + i + '">' +
+                '<div class="practice-lyric-block__toolbar">' +
+                  '<p class="practice-lyric-block__label">' + label + '</p>' +
+                  '<div class="practice-block-actions">' +
+                    '<button type="button" class="practice-block-btn" data-block-move="up" title="Move up" aria-label="Move up"' + (i === 0 ? " disabled" : "") + '>' +
+                      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>' +
+                    '</button>' +
+                    '<button type="button" class="practice-block-btn" data-block-move="down" title="Move down" aria-label="Move down"' + (i >= total - 1 ? " disabled" : "") + '>' +
+                      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+                    '</button>' +
+                    '<button type="button" class="practice-block-btn" data-block-dup title="Duplicate" aria-label="Duplicate">' +
+                      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+                    '</button>' +
+                  '</div>' +
+                  '<label class="practice-block-toggle">' +
+                    '<input type="checkbox" data-block-enabled' + (enabled ? " checked" : "") + ' />' +
+                    '<span>On</span>' +
+                  '</label>' +
+                '</div>' +
+                renderEditLineRows(sec, enabled) +
+              '</section>'
+            );
+          }).join("") + '</div>';
+        }
+        const visible = blocks.filter(function (b) { return b.enabled !== false; });
+        if (!visible.length) {
+          return '<p class="practice-status">No active lyric blocks for this song.</p>';
+        }
+        const legend = songHasVoiceColors(song) ? renderVoiceLegend() : "";
+        return '<div class="practice-lyrics">' + legend + visible.map(function (sec) {
+          const kind = esc(sec.kind || "verse");
+          const label = esc(sec.label || "Verse");
+          return (
+            '<section class="practice-lyric-block practice-lyric-block--' + kind + '">' +
+              '<p class="practice-lyric-block__label">' + label + '</p>' +
+              renderViewLyricLines(sec.body || "", sec.voices) +
+            '</section>'
+          );
+        }).join("") + '</div>';
+      }
+
+      function flushCurrentSongEdits() {
+        if (!state.editing) return;
+        const song = state.songs[state.index];
+        if (!song || !Array.isArray(song.blocks)) return;
+        root.querySelectorAll("[data-block-index]").forEach(function (el) {
+          const i = Number(el.getAttribute("data-block-index"));
+          if (!song.blocks[i]) return;
+          const enabledEl = el.querySelector("[data-block-enabled]");
+          song.blocks[i].enabled = !!(enabledEl && enabledEl.checked);
+          const lineInputs = el.querySelectorAll("[data-line-text]");
+          if (lineInputs.length) {
+            const lines = [];
+            const voices = [];
+            lineInputs.forEach(function (input) {
+              lines.push(input.value);
+              const row = input.closest("[data-line-index]");
+              const voiceBtn = row ? row.querySelector("[data-line-voice]") : null;
+              let voice = "";
+              if (voiceBtn) {
+                if (voiceBtn.classList.contains("is-man")) voice = "man";
+                else if (voiceBtn.classList.contains("is-woman")) voice = "woman";
+              }
+              voices.push(voice);
+            });
+            song.blocks[i].body = lines.join("\n");
+            song.blocks[i].voices = voices;
+          } else {
+            const bodyEl = el.querySelector("[data-block-body]");
+            if (bodyEl) {
+              song.blocks[i].body = bodyEl.value;
+              song.blocks[i].voices = syncVoicesToLines(bodyEl.value, song.blocks[i].voices);
+            }
+          }
+        });
+      }
+
+      function autosizeLineInput(el) {
+        if (!el) return;
+        el.style.height = "auto";
+        el.style.height = Math.max(36, el.scrollHeight) + "px";
+      }
+
+      function applyBlockMutation(mutator) {
+        flushCurrentSongEdits();
+        const song = state.songs[state.index];
+        if (!song || !Array.isArray(song.blocks)) return;
+        mutator(song.blocks);
+        setDirty(true);
+        renderCurrentSong();
+      }
+
+      function bindEditHandlers() {
+        if (!state.editing) return;
+        root.querySelectorAll("[data-block-index]").forEach(function (el) {
+          const enabledEl = el.querySelector("[data-block-enabled]");
+          const blockIndex = Number(el.getAttribute("data-block-index"));
+          if (enabledEl) {
+            enabledEl.addEventListener("change", function () {
+              el.classList.toggle("is-off", !enabledEl.checked);
+              el.querySelectorAll("[data-line-text], [data-line-voice], [data-line-add]").forEach(function (node) {
+                node.disabled = !enabledEl.checked;
+              });
+              setDirty(true);
+            });
+          }
+          const moveUp = el.querySelector('[data-block-move="up"]');
+          const moveDown = el.querySelector('[data-block-move="down"]');
+          const dupBtn = el.querySelector("[data-block-dup]");
+          if (moveUp) {
+            moveUp.addEventListener("click", function () {
+              if (blockIndex <= 0) return;
+              applyBlockMutation(function (blocks) {
+                const tmp = blocks[blockIndex - 1];
+                blocks[blockIndex - 1] = blocks[blockIndex];
+                blocks[blockIndex] = tmp;
+              });
+            });
+          }
+          if (moveDown) {
+            moveDown.addEventListener("click", function () {
+              applyBlockMutation(function (blocks) {
+                if (blockIndex >= blocks.length - 1) return;
+                const tmp = blocks[blockIndex + 1];
+                blocks[blockIndex + 1] = blocks[blockIndex];
+                blocks[blockIndex] = tmp;
+              });
+            });
+          }
+          if (dupBtn) {
+            dupBtn.addEventListener("click", function () {
+              applyBlockMutation(function (blocks) {
+                const src = blocks[blockIndex];
+                if (!src) return;
+                const copy = {
+                  id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                  kind: src.kind || "verse",
+                  label: src.label || "Verse",
+                  body: src.body || "",
+                  enabled: src.enabled !== false,
+                  voices: (src.voices || []).slice(),
+                };
+                blocks.splice(blockIndex + 1, 0, copy);
+              });
+            });
+          }
+          el.querySelectorAll("[data-line-voice]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              let voice = "";
+              if (btn.classList.contains("is-man")) voice = "man";
+              else if (btn.classList.contains("is-woman")) voice = "woman";
+              const next = nextVoice(voice);
+              btn.classList.toggle("is-man", next === "man");
+              btn.classList.toggle("is-woman", next === "woman");
+              btn.textContent = voiceButtonLabel(next);
+              btn.setAttribute("aria-label", "Voice: " + (next || "all"));
+              const input = btn.parentElement && btn.parentElement.querySelector("[data-line-text]");
+              if (input) {
+                input.classList.toggle("is-man", next === "man");
+                input.classList.toggle("is-woman", next === "woman");
+              }
+              setDirty(true);
+            });
+          });
+          el.querySelectorAll("[data-line-text]").forEach(function (input) {
+            autosizeLineInput(input);
+            input.addEventListener("input", function () {
+              autosizeLineInput(input);
+              setDirty(true);
+            });
+          });
+          const addBtn = el.querySelector("[data-line-add]");
+          if (addBtn) {
+            addBtn.addEventListener("click", function () {
+              applyBlockMutation(function (blocks) {
+                const block = blocks[blockIndex];
+                if (!block) return;
+                const lines = splitLyricLines(block.body || "");
+                lines.push("");
+                block.body = lines.join("\n");
+                block.voices = syncVoicesToLines(block.body, block.voices);
+              });
+            });
+          }
         });
       }
 
@@ -1389,81 +1846,6 @@
           sections.push({ kind: "verse", label: "Lyrics", body: text.trim() });
         }
         return sections;
-      }
-
-      function renderPracticeLyrics(song) {
-        const blocks = Array.isArray(song.blocks) ? song.blocks : normalizeSongBlocks(song);
-        if (!blocks.length) {
-          return '<p class="practice-status">No lyrics for this song.</p>';
-        }
-        if (state.editing) {
-          return '<div class="practice-lyrics">' + blocks.map(function (sec, i) {
-            const kind = esc(sec.kind || "verse");
-            const label = esc(sec.label || "Verse");
-            const enabled = sec.enabled !== false;
-            return (
-              '<section class="practice-lyric-block practice-lyric-block--edit practice-lyric-block--' + kind + (enabled ? "" : " is-off") + '" data-block-index="' + i + '">' +
-                '<div class="practice-lyric-block__toolbar">' +
-                  '<p class="practice-lyric-block__label">' + label + '</p>' +
-                  '<label class="practice-block-toggle">' +
-                    '<input type="checkbox" data-block-enabled' + (enabled ? " checked" : "") + ' />' +
-                    '<span>On</span>' +
-                  '</label>' +
-                '</div>' +
-                '<textarea class="practice-lyric-block__edit" data-block-body rows="4"' + (enabled ? "" : " disabled") + '>' +
-                  esc(sec.body || "") +
-                '</textarea>' +
-              '</section>'
-            );
-          }).join("") + '</div>';
-        }
-        const visible = blocks.filter(function (b) { return b.enabled !== false; });
-        if (!visible.length) {
-          return '<p class="practice-status">No active lyric blocks for this song.</p>';
-        }
-        return '<div class="practice-lyrics">' + visible.map(function (sec) {
-          const kind = esc(sec.kind || "verse");
-          const label = esc(sec.label || "Verse");
-          const body = esc(formatLyricsFirstLetters(sec.body || ""));
-          return (
-            '<section class="practice-lyric-block practice-lyric-block--' + kind + '">' +
-              '<p class="practice-lyric-block__label">' + label + '</p>' +
-              '<pre class="practice-lyric-block__body">' + body + '</pre>' +
-            '</section>'
-          );
-        }).join("") + '</div>';
-      }
-
-      function flushCurrentSongEdits() {
-        if (!state.editing) return;
-        const song = state.songs[state.index];
-        if (!song || !Array.isArray(song.blocks)) return;
-        root.querySelectorAll("[data-block-index]").forEach(function (el) {
-          const i = Number(el.getAttribute("data-block-index"));
-          if (!song.blocks[i]) return;
-          const enabledEl = el.querySelector("[data-block-enabled]");
-          const bodyEl = el.querySelector("[data-block-body]");
-          song.blocks[i].enabled = !!(enabledEl && enabledEl.checked);
-          if (bodyEl) song.blocks[i].body = bodyEl.value;
-        });
-      }
-
-      function bindEditHandlers() {
-        if (!state.editing) return;
-        root.querySelectorAll("[data-block-index]").forEach(function (el) {
-          const enabledEl = el.querySelector("[data-block-enabled]");
-          const bodyEl = el.querySelector("[data-block-body]");
-          if (enabledEl) {
-            enabledEl.addEventListener("change", function () {
-              el.classList.toggle("is-off", !enabledEl.checked);
-              if (bodyEl) bodyEl.disabled = !enabledEl.checked;
-              setDirty(true);
-            });
-          }
-          if (bodyEl) {
-            bodyEl.addEventListener("input", function () { setDirty(true); });
-          }
-        });
       }
 
       function syncSongTabs() {
@@ -1781,6 +2163,7 @@
                 label: b.label || "",
                 body: b.body || "",
                 enabled: b.enabled !== false,
+                voices: syncVoicesToLines(b.body || "", b.voices),
               };
             }),
           };

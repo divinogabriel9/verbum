@@ -402,6 +402,39 @@
       "added_at": "2026-08-09T02:13:47.040438+00:00",
       "language": "English",
       "updated_at": "2026-08-09T02:13:47.040438+00:00"
+    },
+    {
+      "id": "enter_rejoice_and_come_in",
+      "title": "Enter, Rejoice And Come In",
+      "author": "",
+      "lyrics": "Verse 1\nEnter, Rejoice And Come In\nOpen Your Hearts To The Lord\nToday Will Be A Joyful Day\nEnter, Rejoice And Come In\n\nVerse 2\nGather Us All In Your Love (2X)\nThat We May All One Body Be\nGather Us All In Your Love\n\nVerse 3\nGlory To God, Glory (2X)\nLet Us Resound With Joyful Song\nGlory To God, Glory\n\nVerse 4\nSing Alleluia (2X)\nToday Will Be A Joyful Day\nSing Alleluia",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-08-15T01:17:57.867304+00:00",
+      "language": "English",
+      "updated_at": "2026-08-16T19:19:01.122426+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:jjLtaakLwls",
+        "youtube_id": "jjLtaakLwls",
+        "youtube_url": "https://www.youtube.com/watch?v=jjLtaakLwls",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "triumphant"
+      ],
+      "audio_preview": {
+        "method": "words",
+        "source": "preview",
+        "basename": "preview_entrance_enter_rejoice_and_come_in_10.mp3",
+        "start_sec": 27.34,
+        "youtube_id": "jjLtaakLwls",
+        "youtube_url": "https://www.youtube.com/watch?v=jjLtaakLwls",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     }
   ],
   "offertory": [
@@ -510,10 +543,29 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-14T19:55:58.534694+00:00",
       "language": "English",
+      "updated_at": "2026-08-16T19:19:31.741848+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:o8BZm-JKB1k",
+        "youtube_id": "o8BZm-JKB1k",
+        "youtube_url": "https://www.youtube.com/watch?v=o8BZm-JKB1k",
+        "display_name": "Take Oh Lord This Offering"
+      },
       "gospel_moods": [
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_take_oh_lord_this_offering_10.mp3",
+        "start_sec": 13.58,
+        "youtube_id": "o8BZm-JKB1k",
+        "youtube_url": "https://www.youtube.com/watch?v=o8BZm-JKB1k",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "one_more_gift",
@@ -793,23 +845,6 @@
         "triumphant",
         "journey"
       ]
-    },
-    {
-      "id": "enter_rejoice_and_come_in",
-      "title": "Enter, Rejoice And Come In",
-      "author": "",
-      "lyrics": "Verse 1\nEnter, Rejoice, And Come In.\nEnter, Rejoice, And Come In.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 2\nOpen Your Ears To The Song.\nOpen Your Ears To The Song.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 3\nOpen Your Hearts Ev'ryone.\nOpen Your Hearts Ev'ryone.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 4\nDon't Be Afraid Of Some Change.\nDon't Be Afraid Of Some Change.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.\n\nVerse 5\nEnter, Rejoice, And Come In.\nEnter, Rejoice, And Come In.\nToday Will Be A Joyful Day;\nEnter, Rejoice, And Come In.",
-      "source": "lyrics_dashboard",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-08-14T16:03:56.986914+00:00",
-      "language": "English",
-      "updated_at": "2026-08-14T16:05:02.034424+00:00",
-      "gospel_moods": [
-        "triumphant",
-        "mercy"
-      ]
     }
   ],
   "communion": [
@@ -944,7 +979,7 @@
     },
     {
       "id": "you_are_mine",
-      "title": "You are Mine",
+      "title": "You Are Mine",
       "author": "David Haas",
       "lyrics": "Verse 1\nI Will Come To You In The Silence\nI Will Lift You From All Your Fear\nYou Will Hear My Voice\nI Claim You As My Choice\nBe Still, And Know I Am Near\n\nVerse 2\nI Am Hope For All Who Are Hopeless\nI Am Eyes For All Who Long To See\nIn The Shadows Of The Night\nI Will Be Your Light\nCome And Rest In Me\n\nChorus\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine\n\nVerse 3\nI Am Strength For All The Despairing\nHealing For The Ones Who Dwell In Shame\nAll The Blind Will See,\nThe Lame Will All Run Free\nAnd All Will Know My Name\n\nChorus\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine\n\nVerse 4\nI Am The Word That Leads All To Freedom\nI Am The Peace The World Cannot Give\nI Will Call Your Name,\nEmbracing All Your Pain\nStand Up, Now, Walk, And Live\n\nChorus\nDo Not Be Afraid, I Am With You\nI Have Called You Each By Name\nCome And Follow Me\nI Will Bring You Home\nI Love You And You Are Mine",
       "source": "lyrics_dashboard",
@@ -953,17 +988,27 @@
       ],
       "added_at": "2026-08-14T16:12:56.716524+00:00",
       "language": "English",
-      "updated_at": "2026-08-14T19:43:04.067189+00:00",
+      "updated_at": "2026-08-16T18:35:04.411060+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:Sgm9lkTNQmc",
+        "youtube_id": "Sgm9lkTNQmc",
+        "youtube_url": "https://www.youtube.com/watch?v=Sgm9lkTNQmc",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "mercy",
         "journey"
       ],
-      "audio_media": {
-        "basename": "yt:Sgm9lkTNQmc",
-        "display_name": "You are Mine",
-        "source": "youtube",
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_communion_you_are_mine_10.mp3",
+        "start_sec": 79.94,
         "youtube_id": "Sgm9lkTNQmc",
-        "youtube_url": "https://www.youtube.com/watch?v=Sgm9lkTNQmc"
+        "youtube_url": "https://www.youtube.com/watch?v=Sgm9lkTNQmc",
+        "display_name": "10s preview",
+        "duration_sec": 10
       }
     },
     {
@@ -1516,16 +1561,26 @@
       ],
       "added_at": "2026-08-13T12:30:33.274873+00:00",
       "language": "English",
-      "updated_at": "2026-08-14T19:43:20.225084+00:00",
+      "updated_at": "2026-08-16T19:19:59.722973+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:jTDIrEqA5L0",
+        "youtube_id": "jTDIrEqA5L0",
+        "youtube_url": "https://www.youtube.com/watch?v=jTDIrEqA5L0",
+        "display_name": "Amare Et Servire"
+      },
       "gospel_moods": [
         "reverent"
       ],
-      "audio_media": {
-        "basename": "yt:jTDIrEqA5L0",
-        "display_name": "Amare Et Servire",
-        "source": "youtube",
+      "audio_preview": {
+        "method": "start",
+        "source": "preview",
+        "basename": "preview_communion_amare_wt_servire_10.mp3",
+        "start_sec": 0.0,
         "youtube_id": "jTDIrEqA5L0",
-        "youtube_url": "https://www.youtube.com/watch?v=jTDIrEqA5L0"
+        "youtube_url": "https://www.youtube.com/watch?v=jTDIrEqA5L0",
+        "display_name": "10s preview",
+        "duration_sec": 10
       }
     }
   ],
@@ -1533,17 +1588,37 @@
     {
       "id": "we_are_called",
       "title": "We Are Called",
-      "lyrics": "Verse 1\nWe Are Called To Act With Justice,\nWe Are Called To Love Tenderly;\nWe Are Called To Serve One Another,\nTo Walk Humbly With God.\n\nVerse 2\nCome! Live In The Light!\nShine With The Joy And The Love Of The Lord!\n\nVerse 3\nGod Of Daybreak, God Of Shadow,\nCome Into Our Restless Lives;\nLift From Us The Fear Of Shadows,\nThat We May Arise With Light.\n\nVerse 4\nWe Are Called To Act With Justice...\nCome! Live In The Light!...\n\nVerse 5\nGod Of Newness, God Of Freshness,\nCome Into Our Morning Song:\nGive To Us A New Beginning,\nSend Us Forth With Hearts Made Strong.\n\nVerse 6\nWe Are Called To Act With Justice...\nCome! Live In The Light!...",
+      "author": "David Haas",
+      "lyrics": "Verse 1\nCome! Live In The Light!\nShine With The Joy And The Love Of The Lord!\nWe Are Called To Be Light For The Kingdom,\nTo Live In The Freedom Of The City Of God!\n\nRefrain\nWe Are Called To Act With Justice.\nWe Are Called To Love Tenderly.\nWe Are Called To Serve One Another, To Walk Humbly With God.\n\nVerse 2\nCome! Open Your Heart!\nShow Your Mercy To All Those In Fear!\nWe Are Called To Be Hope For The Hopeless,\nSo All Hatred And Blindness Will Be No More!\n\nRefrain\nWe Are Called To Act With Justice.\nWe Are Called To Love Tenderly.\nWe Are Called To Serve One Another, To Walk Humbly With God.\n\nVerse 3\nSing! Sing A New Song!\nSing Of That Great Day When All Will Be One!\nGod Will Reign And We'll Walk With Each Other As Sisters And Brothers United In Love!",
       "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time"
       ],
       "added_at": "2026-08-13T08:57:10.678308+00:00",
       "language": "English",
-      "updated_at": "2026-08-14T16:36:45.518981+00:00",
+      "updated_at": "2026-08-16T19:20:40.084600+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:ITJYbi6b0e8",
+        "youtube_id": "ITJYbi6b0e8",
+        "youtube_url": "https://www.youtube.com/watch?v=ITJYbi6b0e8",
+        "display_name": "We Are Called"
+      },
       "gospel_moods": [
-        "mercy"
-      ]
+        "triumphant",
+        "mercy",
+        "journey"
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_recessional_we_are_called_10.mp3",
+        "start_sec": 37.04,
+        "youtube_id": "ITJYbi6b0e8",
+        "youtube_url": "https://www.youtube.com/watch?v=ITJYbi6b0e8",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "go_make",
@@ -1662,6 +1737,13 @@
       "added_at": "2026-08-09T02:33:47.203815+00:00",
       "language": "Tagalog",
       "updated_at": "2026-08-14T19:43:40.388205+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:zBSkpl8U0xk",
+        "youtube_id": "zBSkpl8U0xk",
+        "youtube_url": "https://www.youtube.com/watch?v=zBSkpl8U0xk",
+        "display_name": "Humayo't Ihayag"
+      },
       "video_media": {
         "basename": "video_183d2e0dbe3043b796dfe366f3be1f41.mp4",
         "display_name": "Humayo't Ihayag Instrumental.mp4"
@@ -1669,14 +1751,7 @@
       "gospel_moods": [
         "triumphant",
         "reverent"
-      ],
-      "audio_media": {
-        "basename": "yt:zBSkpl8U0xk",
-        "display_name": "Humayo't Ihayag",
-        "source": "youtube",
-        "youtube_id": "zBSkpl8U0xk",
-        "youtube_url": "https://www.youtube.com/watch?v=zBSkpl8U0xk"
-      }
+      ]
     },
     {
       "id": "covenant_journey",

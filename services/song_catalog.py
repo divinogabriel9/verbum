@@ -152,11 +152,46 @@ def normalize_song_media_ref(raw: Any) -> Optional[dict[str, str]]:
     return {"basename": basename[:180], "display_name": display[:240]}
 
 
+def normalize_audio_preview_ref(raw: Any) -> Optional[dict[str, Any]]:
+    """Normalize a short practice clip attached to a catalog song."""
+    if not isinstance(raw, dict):
+        return None
+    basename = str(raw.get("basename") or "").strip()
+    if not basename or basename.lower().startswith("yt:"):
+        return None
+    try:
+        duration = int(round(float(raw.get("duration_sec") or 10)))
+    except (TypeError, ValueError):
+        duration = 10
+    duration = max(5, min(10, duration))
+    try:
+        start = float(raw.get("start_sec") or 0)
+    except (TypeError, ValueError):
+        start = 0.0
+    display = str(raw.get("display_name") or "").strip() or f"{duration}s preview"
+    out: dict[str, Any] = {
+        "basename": basename[:180],
+        "display_name": display[:240],
+        "duration_sec": duration,
+        "start_sec": round(max(0.0, start), 2),
+        "source": "preview",
+    }
+    method = str(raw.get("method") or "").strip()
+    if method:
+        out["method"] = method[:40]
+    yt = parse_youtube_video_id(str(raw.get("youtube_id") or raw.get("youtube_url") or ""))
+    if yt:
+        out["youtube_id"] = yt
+        out["youtube_url"] = "https://www.youtube.com/watch?v=" + yt
+    return out
+
+
 def _apply_song_media_fields(
     target: dict[str, Any],
     *,
     audio_media: Any = ...,
     video_media: Any = ...,
+    audio_preview: Any = ...,
 ) -> None:
     if audio_media is not ...:
         ref = normalize_song_media_ref(audio_media)
@@ -170,6 +205,12 @@ def _apply_song_media_fields(
             target["video_media"] = ref
         elif "video_media" in target:
             del target["video_media"]
+    if audio_preview is not ...:
+        ref = normalize_audio_preview_ref(audio_preview)
+        if ref:
+            target["audio_preview"] = ref
+        elif "audio_preview" in target:
+            del target["audio_preview"]
 
 
 def _stamp_song_timestamps(row: dict[str, Any], *, is_new: bool) -> None:
@@ -528,6 +569,7 @@ def save_lyrics_song(
     seasons: list[str] | None = None,
     audio_media: Any = ...,
     video_media: Any = ...,
+    audio_preview: Any = ...,
     updated_by: str | None = None,
 ) -> dict[str, Any]:
     """Upsert a full lyric text into one or more local hymn catalog sections."""
@@ -599,7 +641,12 @@ def save_lyrics_song(
                 target["gospel_moods"] = moods
             elif "gospel_moods" in target:
                 del target["gospel_moods"]
-        _apply_song_media_fields(target, audio_media=audio_media, video_media=video_media)
+        _apply_song_media_fields(
+            target,
+            audio_media=audio_media,
+            video_media=video_media,
+            audio_preview=audio_preview,
+        )
         row_id = str(target.get("id") or "").strip()
         if row_id:
             canonical_ids.add(row_id)
@@ -644,6 +691,7 @@ def save_lyrics_song(
         "updated": updated,
         "audio_media": normalize_song_media_ref((primary or {}).get("audio_media")),
         "video_media": normalize_song_media_ref((primary or {}).get("video_media")),
+        "audio_preview": normalize_audio_preview_ref((primary or {}).get("audio_preview")),
     }
 
 
@@ -739,6 +787,7 @@ def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[d
                     "gospel_moods": moods,
                     "audio_media": normalize_song_media_ref(item.get("audio_media")),
                     "video_media": normalize_song_media_ref(item.get("video_media")),
+                    "audio_preview": normalize_audio_preview_ref(item.get("audio_preview")),
                 }
             )
         out[sec] = rows
@@ -756,7 +805,7 @@ def catalog_lite_response() -> tuple[bytes, str]:
     payload = {"ok": True, "catalog": catalog_for_api(include_inferred_moods=True)}
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     # v2: lite catalog includes inferred gospel_moods (was empty before → first-song picks)
-    etag = f'W/"cat-lite-v2-{revision_key}-{len(body)}"'
+    etag = f'W/"cat-lite-v3-{revision_key}-{len(body)}"'
     _catalog_lite_bytes = body
     _catalog_lite_etag = etag
     _catalog_lite_mtime = revision_key
@@ -774,6 +823,7 @@ def update_catalog_song(
     gospel_moods: Optional[list[str]] = None,
     audio_media: Any = ...,
     video_media: Any = ...,
+    audio_preview: Any = ...,
     updated_by: str | None = None,
 ) -> dict[str, Any]:
     sec = (section or "").strip().lower()
@@ -800,7 +850,12 @@ def update_catalog_song(
                 item["gospel_moods"] = moods
             elif "gospel_moods" in item:
                 del item["gospel_moods"]
-        _apply_song_media_fields(item, audio_media=audio_media, video_media=video_media)
+        _apply_song_media_fields(
+            item,
+            audio_media=audio_media,
+            video_media=video_media,
+            audio_preview=audio_preview,
+        )
         _stamp_song_timestamps(item, is_new=False)
         save_catalog(
             data,
@@ -812,6 +867,7 @@ def update_catalog_song(
             "ok": True,
             "audio_media": normalize_song_media_ref(item.get("audio_media")),
             "video_media": normalize_song_media_ref(item.get("video_media")),
+            "audio_preview": normalize_audio_preview_ref(item.get("audio_preview")),
         }
     return {"ok": False, "error": "Song not found."}
 
