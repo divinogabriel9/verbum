@@ -1529,8 +1529,8 @@
         root.innerHTML =
           '<div class="practice-pin-wrap">' +
             '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
-              '<label id="practice-pin-label" for="practice-pin-trap">Enter the 6-digit password</label>' +
-              '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">Choir members use the choir PIN. Leaders use the separate leader password to edit from this same link.</p>' +
+              '<label id="practice-pin-label" for="practice-pin-trap">Enter the 6-digit PIN from your choir leader</label>' +
+              '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">The PIN is not included in the link — share it separately (e.g. in person or by text).</p>' +
               '<div class="practice-pin-entry">' +
                 '<div class="pin-otp__wrap" id="practice-pin-otp" role="group" aria-labelledby="practice-pin-label">' +
                   pinOtpMarkup() +
@@ -1557,11 +1557,11 @@
 
       async function submitPin(pin) {
         if (pin.length !== 6) {
-          renderPinForm("Enter the full 6-digit password.");
+          renderPinForm("Enter the full 6-digit PIN.");
           return;
         }
         document.body.classList.remove("practice-pin-open");
-        root.innerHTML = '<p class="practice-status">Checking password…</p>';
+        root.innerHTML = '<p class="practice-status">Checking PIN…</p>';
         try {
           const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/unlock", {
             method: "POST",
@@ -1575,7 +1575,7 @@
             return;
           }
           if (!res.ok) {
-            renderPinForm(data.error || data.detail || "Incorrect password.");
+            renderPinForm(data.error || data.detail || "Incorrect PIN.");
             return;
           }
           if (data.lead_token) {
@@ -1584,7 +1584,7 @@
           }
           renderPractice(data);
         } catch (_err) {
-          renderPinForm("Could not verify password. Check your connection.");
+          renderPinForm("Could not verify PIN. Check your connection.");
         }
       }
 
