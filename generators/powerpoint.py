@@ -3321,6 +3321,16 @@ def _apply_line_alpha(shape, rgb: RGBColor, alpha_val: int, *, width_emu: int = 
     alpha.set("val", str(alpha_val))
 
 
+def _apply_no_line(shape) -> None:
+    sp_pr = shape._element.spPr
+    ln = sp_pr.find(qn("a:ln"))
+    if ln is None:
+        ln = etree.SubElement(sp_pr, qn("a:ln"))
+    for child in list(ln):
+        ln.remove(child)
+    etree.SubElement(ln, qn("a:noFill"))
+
+
 def _divider_add_rounded_panel(
     slide,
     left,
@@ -3331,11 +3341,15 @@ def _divider_add_rounded_panel(
     fill_rgb: RGBColor,
     border_rgb: RGBColor,
     alpha_val: int,
+    no_line: bool = False,
 ) -> None:
     shp = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
     shp.adjustments[0] = _DIVIDER_CORNER_ADJ
     _apply_solid_fill_alpha(shp, fill_rgb, alpha_val)
-    _apply_line_alpha(shp, border_rgb, alpha_val)
+    if no_line:
+        _apply_no_line(shp)
+    else:
+        _apply_line_alpha(shp, border_rgb, alpha_val)
 
 
 def _set_divider_gradient_bg(slide, start: RGBColor, end: RGBColor) -> None:
@@ -3994,6 +4008,8 @@ _D3_CO_NAME_W, _D3_CO_NAME_H = 9.1636, 1.156
 _D3_KICKER_TEXT = "HOLY EUCHARISTIC CELEBRATION"
 _D3_CO_LABEL_TEXT = "CO - CELEBRANT:"
 _D3_INK_GOSPEL = RGBColor(0xFF, 0xDE, 0x9E)
+_D3_PANEL_FILL = RGBColor(0, 0, 0)
+_D3_PANEL_ALPHA = 30000  # 70% transparent / 30% opaque (PowerPoint alpha)
 # Right-panel interior padding (quote + citation must stay inside the rounded panel).
 _D3_PANEL_PAD_X = 0.35
 _D3_PANEL_PAD_TOP = 0.38
@@ -4143,9 +4159,10 @@ def _render_divider3_cover(
         Inches(_D3_PANEL_T),
         Inches(_D3_PANEL_W),
         Inches(_D3_PANEL_H),
-        fill_rgb=pal.panel_fill,
+        fill_rgb=_D3_PANEL_FILL,
         border_rgb=pal.panel_border,
-        alpha_val=_DIVIDER_PANEL_ALPHA,
+        alpha_val=_D3_PANEL_ALPHA,
+        no_line=True,
     )
     _divider_add_rounded_panel(
         slide,
