@@ -14,6 +14,8 @@ import logging
 import math
 import re
 import shutil
+import subprocess
+import tempfile
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -42,6 +44,8 @@ from services.mass_text_format import (
 from services.prayer_service import get_our_father, get_prayer
 from services.prayer_templates import PENITENTIAL_ACT
 from services.mass_language import normalize_mass_language
+from services.mass_divider.templates import resolve_divider_template_id
+from services.mass_divider.types import DIVIDER_TEMPLATE_DEFAULT, DIVIDER_TEMPLATE_IDS
 from services.responsorial_reading import responsorial_section_title
 from . import gfcc_flow_content as GFCC
 from . import gfcc_flow_content_tagalog as GFCC_TL
@@ -656,11 +660,70 @@ def _layout_blank(prs: Presentation):
     return prs.slide_layouts[-1]
 
 
-def _video_poster_png(title: str, theme: Optional[SlideTheme] = None) -> Path:
-    """Solid poster frame for embedded movies (python-pptx requires one)."""
-    import tempfile
+_VIDEO_POSTER_FONT_CANDIDATES = (
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+    "/Library/Fonts/Arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "C:\\Windows\\Fonts\\arialbd.ttf",
+    "C:\\Windows\\Fonts\\arial.ttf",
+)
 
-    from PIL import Image, ImageDraw, ImageFont
+
+def _load_video_poster_font(size: int):
+    from PIL import ImageFont
+
+    for path in _VIDEO_POSTER_FONT_CANDIDATES:
+        if Path(path).is_file():
+            try:
+                return ImageFont.truetype(path, size)
+            except OSError:
+                continue
+    return ImageFont.load_default()
+
+
+def _video_poster_from_mp4(video_path: Path) -> Optional[Path]:
+    """Use the first decoded frame as the poster when ffmpeg is available."""
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        return None
+    tmp = tempfile.NamedTemporaryFile(prefix="verbum_vid_poster_", suffix=".png", delete=False)
+    tmp.close()
+    out = Path(tmp.name)
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-ss",
+        "0.1",
+        "-i",
+        str(video_path.resolve()),
+        "-frames:v",
+        "1",
+        "-q:v",
+        "2",
+        str(out),
+    ]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, timeout=45)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+        try:
+            out.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return None
+    if out.is_file() and out.stat().st_size > 800:
+        return out
+    try:
+        out.unlink(missing_ok=True)
+    except OSError:
+        pass
+    return None
+
+
+def _video_poster_png(title: str, theme: Optional[SlideTheme] = None) -> Path:
+    """Visible poster frame for embedded movies (python-pptx requires one)."""
+    from PIL import Image, ImageDraw
 
     w, h = 1920, 1080
     bg = (16, 18, 22)
@@ -670,28 +733,47 @@ def _video_poster_png(title: str, theme: Optional[SlideTheme] = None) -> Path:
             bg = (int(c[0]), int(c[1]), int(c[2]))
         except Exception:
             pass
+    if sum(bg) < 36:
+        bg = (16, 18, 22)
     img = Image.new("RGB", (w, h), bg)
     draw = ImageDraw.Draw(img)
+    accent = (255, 184, 0)
+    if theme is not None:
+        try:
+            c = theme.emphasis
+            accent = (int(c[0]), int(c[1]), int(c[2]))
+        except Exception:
+            pass
+    cx, cy = w // 2, h // 2
+    tri = [(cx - 52, cy - 72), (cx - 52, cy + 72), (cx + 78, cy)]
+    draw.polygon(tri, fill=accent)
+    draw.ellipse((cx - 118, cy - 118, cx + 118, cy + 118), outline=accent, width=8)
     label = (title or "Video").strip() or "Video"
-    try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 56)
-    except Exception:
-        font = ImageFont.load_default()
-    bbox = draw.textbbox((0, 0), label, font=font)
+    title_font = _load_video_poster_font(64)
+    hint_font = _load_video_poster_font(34)
+    bbox = draw.textbbox((0, 0), label, font=title_font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text(((w - tw) / 2, (h - th) / 2 - 40), label, fill=(240, 240, 240), font=font)
-    hint = "▶  Video for Mass"
-    try:
-        font2 = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
-    except Exception:
-        font2 = font
-    bbox2 = draw.textbbox((0, 0), hint, font=font2)
-    tw2, th2 = bbox2[2] - bbox2[0], bbox2[3] - bbox2[1]
-    draw.text(((w - tw2) / 2, (h - th2) / 2 + 40), hint, fill=(200, 200, 200), font=font2)
+    draw.text(((w - tw) / 2, cy + 150), label, fill=(245, 245, 245), font=title_font)
+    hint = "Video slide — plays in slideshow"
+    bbox2 = draw.textbbox((0, 0), hint, font=hint_font)
+    tw2 = bbox2[2] - bbox2[0]
+    draw.text(((w - tw2) / 2, cy + 150 + th + 18), hint, fill=(196, 196, 196), font=hint_font)
     tmp = tempfile.NamedTemporaryFile(prefix="verbum_vid_poster_", suffix=".png", delete=False)
     img.save(tmp.name, format="PNG")
     tmp.close()
     return Path(tmp.name)
+
+
+def _resolve_video_poster_png(
+    video_path: Path,
+    *,
+    title: str,
+    theme: Optional[SlideTheme] = None,
+) -> Path:
+    frame = _video_poster_from_mp4(video_path)
+    if frame is not None:
+        return frame
+    return _video_poster_png(title, theme)
 
 
 def _enable_embedded_movie_playback(movie, *, autoplay: bool = True) -> None:
@@ -710,16 +792,26 @@ def _enable_embedded_movie_playback(movie, *, autoplay: bool = True) -> None:
         video_rid = (vf.get(qn("r:link")) or "").strip()
         if video_rid:
             break
+    media_rid = ""
+    p14_ns = "http://schemas.microsoft.com/office/powerpoint/2010/main"
+    for node in pic.findall(f".//{{{p14_ns}}}media"):
+        media_rid = (node.get(qn("r:embed")) or "").strip()
+        if media_rid:
+            break
+    play_rid = media_rid or video_rid
     r_id_attr = qn("r:id")
     for hlink in pic.findall(".//" + qn("a:hlinkClick")):
-        if video_rid:
-            hlink.set(r_id_attr, video_rid)
+        if play_rid:
+            hlink.set(r_id_attr, play_rid)
         elif hlink.get(r_id_attr) == "":
             del hlink.attrib[r_id_attr]
     if not autoplay:
         return
     sld = pic.getroottree().getroot()
     for video in sld.findall(".//" + qn("p:video")):
+        media_node = video.find(qn("p:cMediaNode"))
+        if media_node is not None:
+            media_node.set("showWhenStopped", "1")
         for cond in video.findall(".//" + qn("p:cond")):
             if cond.get("delay") == "indefinite":
                 cond.set("delay", "0")
@@ -738,7 +830,7 @@ def _add_video_replacement_slide(
         return False
     poster: Optional[Path] = None
     try:
-        poster = _video_poster_png(title, theme)
+        poster = _resolve_video_poster_png(p, title=title, theme=theme)
         slide = prs.slides.add_slide(_layout_blank(prs))
         movie = slide.shapes.add_movie(
             str(p.resolve()),
@@ -3054,14 +3146,57 @@ _DIVIDER_CORNER_ADJ = 0.1667  # matches reference freeform corner radius (~16.67
 _DIVIDER_PANEL_ALPHA = 44706  # ~44.7% opaque (reference right panel)
 _DIVIDER_BAR_ALPHA = 60784  # ~60.8% opaque (reference bottom bar)
 _DIVIDER_LINE_W = 14299  # reference outline weight (EMU)
-_DIVIDER_STYLE_IDS = frozenset({"divider1", "divider2", "divider3"})
-_DIVIDER_STYLE_DEFAULT = "divider1"
+_DIVIDER_STYLE_IDS = frozenset(DIVIDER_TEMPLATE_IDS)
+_DIVIDER_STYLE_DEFAULT = DIVIDER_TEMPLATE_DEFAULT
 _DIVIDER2_PLATE_FILENAME = "divider2_plate.png"
 
 
-def _resolve_divider_style(selection: Optional[str]) -> str:
-    key = str(selection or "").strip().lower() or _DIVIDER_STYLE_DEFAULT
-    return key if key in _DIVIDER_STYLE_IDS else _DIVIDER_STYLE_DEFAULT
+def _resolve_divider_style(
+    selection: Optional[str],
+    *,
+    gospel_quote: str = "",
+    mass_title: str = "",
+) -> str:
+    return resolve_divider_template_id(
+        selection, gospel_quote=gospel_quote, sunday_title=mass_title
+    )
+
+
+def _apply_divider_artwork(
+    slide,
+    prs: Presentation,
+    theme: SlideTheme,
+    *,
+    background_image_path: Optional[Path] = None,
+    static_plate: Optional[Path] = None,
+) -> str:
+    """Place AI artwork, static plate, or theme fill. Returns surface kind."""
+    bg = Path(background_image_path).resolve() if background_image_path else None
+    if bg is not None and bg.is_file():
+        slide.shapes.add_picture(
+            str(bg),
+            left=0,
+            top=0,
+            width=prs.slide_width,
+            height=prs.slide_height,
+        )
+        return "photo"
+    plate = Path(static_plate).resolve() if static_plate else None
+    if plate is not None and plate.is_file() and not theme.mono_surfaces:
+        slide.shapes.add_picture(
+            str(plate),
+            left=0,
+            top=0,
+            width=prs.slide_width,
+            height=prs.slide_height,
+        )
+        return "plate"
+    pal = _divider_palette(theme)
+    if theme.mono_surfaces:
+        _set_slide_bg(slide, theme.divider_bg)
+        return "solid"
+    _set_divider_gradient_bg(slide, pal.grad_start, pal.grad_end)
+    return "gradient"
 
 
 def _divider2_plate_path() -> Optional[Path]:
@@ -3292,18 +3427,19 @@ def _divider3_year_date_line(lectionary_cycle: str, date: str) -> str:
 
 
 def _divider3_title_lines(mass_title: str, season: str) -> List[str]:
-    """Split ``20th Sunday in Ordinary Time`` into two centered lines."""
+    """``20th Sunday | in Ordinary Time`` style from the Aug15 plate."""
     title = (mass_title or season or "Sunday Mass").strip()
     title = title.replace(" Celebration", "").strip() or "Sunday Mass"
     m = re.match(r"^(.*?)\s+(in\s+.+)$", title, flags=re.IGNORECASE)
     if m and m.group(1).strip() and m.group(2).strip():
-        return [m.group(1).strip(), m.group(2).strip()]
+        return [f"{m.group(1).strip()} | {m.group(2).strip()}"]
     return [title]
 
 
-def _divider3_gospel_lines(gospel_reference: str) -> List[str]:
+def _divider3_gospel_citation_lines(gospel_reference: str) -> List[str]:
+    """Two-line citation block: ``GOSPEL`` then the verse reference."""
     cite = _divider2_gospel_citation(gospel_reference)
-    return ["GOSPEL", f"({cite})"]
+    return ["GOSPEL", cite]
 
 
 def _divider_quote_lines(quote: str) -> List[str]:
@@ -3373,6 +3509,7 @@ def _divider_add_textbox(
     height,
     lines: List[Tuple[str, dict]],
     anchor_middle: bool = False,
+    anchor_top: bool = False,
     no_wrap: bool = False,
 ) -> None:
     """Add a textbox; each item is (text, style kwargs for _style_para)."""
@@ -3384,7 +3521,9 @@ def _divider_add_textbox(
     tf.clear()
     if no_wrap:
         tf.word_wrap = False
-    if anchor_middle:
+    if anchor_top:
+        tf.vertical_anchor = MSO_ANCHOR.TOP
+    elif anchor_middle:
         tf.vertical_anchor = BODY_VERTICAL_ANCHOR
     first = True
     for text, style in lines:
@@ -3420,9 +3559,31 @@ def _render_default_divider_cover(
     gospel_quote: str,
     quote_max_chars: int,
     theme: SlideTheme,
+    prs: Presentation,
+    background_image_path: Optional[Path] = None,
 ) -> None:
     pal = _divider_palette(theme)
-    _set_divider_gradient_bg(slide, pal.grad_start, pal.grad_end)
+    surface = _apply_divider_artwork(
+        slide,
+        prs,
+        theme,
+        background_image_path=background_image_path,
+    )
+    if surface in {"photo", "plate"}:
+        quote_color = _D2_INK_QUOTE
+        label_color = _D2_INK_LABEL
+        primary_color = _D2_INK_PRIMARY
+        gospel_color = _D2_INK_LABEL
+        co_label_color = _D2_INK_CO_LABEL
+        co_name_color = _D2_INK_CO_NAME
+    else:
+        quote_color = pal.quote
+        label_color = pal.label
+        primary_color = pal.primary
+        gospel_color = pal.gospel_label
+        co_label_color = label_color
+        co_name_color = primary_color
+
     _divider_add_rounded_panel(
         slide,
         Inches(7.498),
@@ -3457,7 +3618,7 @@ def _render_default_divider_cover(
         top=Inches(2.614),
         width=Inches(4.604),
         height=Inches(0.698),
-        lines=[("MASS CELEBRANT:", {"size_pt": 37, "color": pal.label, "bold": True})],
+        lines=[("MASS CELEBRANT:", {"size_pt": 37, "color": label_color, "bold": True})],
         anchor_middle=True,
     )
     _divider_add_textbox(
@@ -3466,7 +3627,7 @@ def _render_default_divider_cover(
         top=Inches(3.339),
         width=Inches(7.206),
         height=Inches(1.156),
-        lines=[(celebrant_name, {"size_pt": celebrant_pt, "color": pal.primary, "bold": True})],
+        lines=[(celebrant_name, {"size_pt": celebrant_pt, "color": primary_color, "bold": True})],
         anchor_middle=True,
         no_wrap=True,
     )
@@ -3488,7 +3649,7 @@ def _render_default_divider_cover(
         lines=[
             (
                 year_date_line,
-                {"size_pt": year_date_pt, "color": pal.primary, "bold": True, "italic": True},
+                {"size_pt": year_date_pt, "color": primary_color, "bold": True, "italic": True},
             )
         ],
         anchor_middle=True,
@@ -3504,7 +3665,7 @@ def _render_default_divider_cover(
             top=Inches(6.208),
             width=Inches(4.604),
             height=Inches(0.698),
-            lines=[("CO-CELEBRANT:", {"size_pt": 37, "color": pal.label, "bold": True})],
+            lines=[("CO-CELEBRANT:", {"size_pt": 37, "color": co_label_color, "bold": True})],
             anchor_middle=True,
         )
         co_pt = _divider_fit_single_line_pt(
@@ -3519,7 +3680,7 @@ def _render_default_divider_cover(
             top=Inches(6.966),
             width=Inches(7.206),
             height=Inches(1.156),
-            lines=[(co_name, {"size_pt": co_pt, "color": pal.primary, "bold": True})],
+            lines=[(co_name, {"size_pt": co_pt, "color": co_name_color, "bold": True})],
             anchor_middle=True,
             no_wrap=True,
         )
@@ -3537,7 +3698,7 @@ def _render_default_divider_cover(
         max_pt=39,
         min_pt=22,
     )
-    quote_style = {"size_pt": quote_pt, "color": pal.quote, "bold": False}
+    quote_style = {"size_pt": quote_pt, "color": quote_color, "bold": False}
     _divider_add_textbox(
         slide,
         left=Inches(7.546),
@@ -3562,7 +3723,7 @@ def _render_default_divider_cover(
         top=Inches(6.345),
         width=Inches(6.364),
         height=Inches(0.771),
-        lines=[(g_heading, {"size_pt": g_head_pt, "color": pal.gospel_label, "bold": True})],
+        lines=[(g_heading, {"size_pt": g_head_pt, "color": gospel_color, "bold": True})],
         anchor_middle=True,
     )
 
@@ -3581,7 +3742,7 @@ def _render_default_divider_cover(
         top=Inches(9.199),
         width=Inches(13.52),
         height=Inches(1.271),
-        lines=[(bottom_title, {"size_pt": bottom_pt, "color": pal.primary, "bold": True})],
+        lines=[(bottom_title, {"size_pt": bottom_pt, "color": primary_color, "bold": True})],
         anchor_middle=True,
     )
 
@@ -3625,24 +3786,23 @@ def _render_divider2_cover(
     quote_max_chars: int,
     theme: SlideTheme,
     prs: Presentation,
+    background_image_path: Optional[Path] = None,
 ) -> None:
     """Quote-forward Mass divider.
 
     Theme 1 uses the Stone & Light photographic plate. Themes 2–3 (mono)
     use a solid Midnight/Paper divider background with the same text layout.
+    AI artwork, when present, replaces the plate without moving any text boxes.
     """
     pal = _divider_palette(theme)
-    plate = _divider2_plate_path()
-    use_plate = (not theme.mono_surfaces) and plate is not None
-
-    if use_plate:
-        slide.shapes.add_picture(
-            str(plate),
-            left=0,
-            top=0,
-            width=prs.slide_width,
-            height=prs.slide_height,
-        )
+    surface = _apply_divider_artwork(
+        slide,
+        prs,
+        theme,
+        background_image_path=background_image_path,
+        static_plate=_divider2_plate_path(),
+    )
+    if surface in {"photo", "plate"}:
         quote_color = _D2_INK_QUOTE
         label_color = _D2_INK_LABEL
         primary_color = _D2_INK_PRIMARY
@@ -3650,8 +3810,6 @@ def _render_divider2_cover(
         co_label_color = _D2_INK_CO_LABEL
         co_name_color = _D2_INK_CO_NAME
     else:
-        # Theme 2 Midnight / Theme 3 Paper — solid theme surface, no stone plate.
-        _set_slide_bg(slide, theme.divider_bg)
         quote_color = pal.quote
         label_color = pal.label
         primary_color = pal.primary
@@ -3813,28 +3971,116 @@ def _render_divider2_cover(
 # Divider 3 geometry — truth source: 13.333×7.5 massDividerAug15.pptx scaled ×1.5
 # onto the Verbum 20×11.25 canvas. Title + year + celebrant on the left; gospel
 # quote on the right rounded panel; kicker pill top-left.
-_D3_PANEL_L, _D3_PANEL_T = 10.6545, 2.2365
-_D3_PANEL_W, _D3_PANEL_H = 8.5455, 7.4175
-_D3_KICKER_L, _D3_KICKER_T = 0.564, 0.765
-_D3_KICKER_W, _D3_KICKER_H = 10.1895, 1.2165
-_D3_TITLE_L, _D3_TITLE_T = 0.306, 2.6145
+_D3_PANEL_L, _D3_PANEL_T = 10.6545, 2.2364
+_D3_PANEL_W, _D3_PANEL_H = 8.5455, 7.4182
+_D3_KICKER_L, _D3_KICKER_T = 0.5636, 0.7656
+_D3_KICKER_W, _D3_KICKER_H = 10.1891, 1.2170
+_D3_TITLE_L, _D3_TITLE_T = 0.0794, 2.2647
 _D3_TITLE_W, _D3_TITLE_H = 10.7055, 3.2565
-_D3_YEAR_L, _D3_YEAR_T = 1.1235, 5.7345
-_D3_YEAR_W, _D3_YEAR_H = 8.454, 0.9495
-_D3_LABEL_L, _D3_LABEL_T = 1.4445, 7.515
-_D3_LABEL_W, _D3_LABEL_H = 7.206, 0.6975
-_D3_NAME_L, _D3_NAME_T = 0.564, 8.2125
-_D3_NAME_W, _D3_NAME_H = 9.1635, 1.1565
-_D3_QUOTE_L, _D3_QUOTE_T = 9.0735, 2.6145
-_D3_QUOTE_W, _D3_QUOTE_H = 11.784, 2.808
-_D3_GOSPEL_L, _D3_GOSPEL_T = 11.784, 6.345
-_D3_GOSPEL_W, _D3_GOSPEL_H = 6.3645, 0.8175
-_D3_CO_LABEL_L, _D3_CO_LABEL_T = 1.4445, 9.45
-_D3_CO_LABEL_W, _D3_CO_LABEL_H = 7.206, 0.42
-_D3_CO_NAME_L, _D3_CO_NAME_T = 0.564, 9.85
-_D3_CO_NAME_W, _D3_CO_NAME_H = 9.1635, 1.05
+_D3_YEAR_L, _D3_YEAR_T = 1.268, 5.441
+_D3_YEAR_W, _D3_YEAR_H = 8.4535, 1.045
+_D3_LABEL_L, _D3_LABEL_T = 1.8149, 6.8841
+_D3_LABEL_W, _D3_LABEL_H = 7.206, 0.7678
+_D3_NAME_L, _D3_NAME_T = 0.8102, 7.4732
+_D3_NAME_W, _D3_NAME_H = 9.1636, 1.156
+_D3_QUOTE_L, _D3_QUOTE_T = 9.0733, 2.614
+_D3_QUOTE_W, _D3_QUOTE_H = 11.784, 2.8075
+_D3_GOSPEL_L, _D3_GOSPEL_T = 11.7833, 6.345
+_D3_GOSPEL_W, _D3_GOSPEL_H = 6.364, 1.1699
+_D3_CO_LABEL_L, _D3_CO_LABEL_T = 1.5835, 8.8415
+_D3_CO_LABEL_W, _D3_CO_LABEL_H = 7.206, 0.7678
+_D3_CO_NAME_L, _D3_CO_NAME_T = 0.7054, 9.3838
+_D3_CO_NAME_W, _D3_CO_NAME_H = 9.1636, 1.156
 _D3_KICKER_TEXT = "HOLY EUCHARISTIC CELEBRATION"
+_D3_CO_LABEL_TEXT = "CO - CELEBRANT:"
 _D3_INK_GOSPEL = RGBColor(0xFF, 0xDE, 0x9E)
+# Right-panel interior padding (quote + citation must stay inside the rounded panel).
+_D3_PANEL_PAD_X = 0.35
+_D3_PANEL_PAD_TOP = 0.38
+_D3_PANEL_PAD_BOTTOM = 0.35
+_D3_PANEL_QUOTE_GAP = 0.20
+_D3_QUOTE_MIN_PT = 36
+_D3_QUOTE_MAX_PT = 39
+_D3_CITE_H = 1.40
+
+
+def _divider3_panel_inner_width() -> float:
+    return _D3_PANEL_W - (2 * _D3_PANEL_PAD_X)
+
+
+def _divider3_panel_bottom() -> float:
+    return _D3_PANEL_T + _D3_PANEL_H
+
+
+def _divider3_quote_content_height(
+    quote_parts: List[str],
+    *,
+    width_in: float,
+    pt: float,
+) -> float:
+    lines = [p for p in quote_parts if (p or "").strip()]
+    if not lines:
+        return 0.0
+    total_lines = sum(_divider_est_lines(line, width_in, pt) for line in lines)
+    line_h = (pt * 1.14) / 72.0
+    # Small safety margin — Arial wraps slightly earlier than the estimate.
+    return total_lines * line_h * 1.08
+
+
+def _divider3_panel_quote_layout(
+    quote_parts: List[str],
+    *,
+    fallback_line: str,
+) -> tuple[float, float, float, float, float, float, float, float, float, bool]:
+    """Fit gospel quote + citation inside the right panel.
+
+    Quote text never renders below ``_D3_QUOTE_MIN_PT`` (36pt). When the verse
+    grows, the citation block is placed directly beneath the quote area.
+    """
+    inner_w = _divider3_panel_inner_width()
+    inner_l = _D3_PANEL_L + _D3_PANEL_PAD_X
+    quote_t = _D3_QUOTE_T
+    panel_bottom = _divider3_panel_bottom()
+    cite_h = _D3_CITE_H
+    cite_w = min(_D3_GOSPEL_W, inner_w)
+    cite_l = inner_l + max(0.0, (inner_w - cite_w) / 2.0)
+
+    cite_t_floor = panel_bottom - _D3_PANEL_PAD_BOTTOM - cite_h
+    cite_t_default = min(_D3_GOSPEL_T, cite_t_floor)
+    default_quote_zone = max(0.45, cite_t_default - _D3_PANEL_QUOTE_GAP - quote_t)
+
+    chunks = quote_parts or ([fallback_line] if fallback_line else [])
+    quote_pt = _divider_fit_font_pt(
+        chunks,
+        width_in=inner_w,
+        height_in=default_quote_zone * 0.92,
+        max_pt=_D3_QUOTE_MAX_PT,
+        min_pt=_D3_QUOTE_MIN_PT,
+    )
+    quote_pt = max(_D3_QUOTE_MIN_PT, quote_pt)
+    needed_h = _divider3_quote_content_height(chunks, width_in=inner_w, pt=quote_pt)
+    content_bottom = quote_t + needed_h
+
+    cite_t = min(max(cite_t_default, content_bottom + _D3_PANEL_QUOTE_GAP), cite_t_floor)
+    if cite_t <= cite_t_default + 0.02:
+        quote_h = default_quote_zone
+        quote_top_anchor = False
+    else:
+        quote_h = max(0.45, cite_t - _D3_PANEL_QUOTE_GAP - quote_t)
+        quote_top_anchor = True
+
+    return (
+        inner_l,
+        quote_t,
+        inner_w,
+        quote_h,
+        cite_l,
+        cite_t,
+        cite_w,
+        cite_h,
+        quote_pt,
+        quote_top_anchor,
+    )
 
 
 def _render_divider3_cover(
@@ -3850,24 +4096,23 @@ def _render_divider3_cover(
     gospel_quote: str,
     quote_max_chars: int,
     theme: SlideTheme,
+    prs: Presentation,
+    background_image_path: Optional[Path] = None,
 ) -> None:
     """Title-left Mass divider (kicker pill, right quote panel).
 
     Theme 1 uses a season-tinted gradient and cream/gold ink from the source
     plate. Themes 2–3 keep a solid Midnight/Paper surface with palette text.
+    AI artwork, when present, replaces the gradient without moving any text boxes.
     """
     pal = _divider_palette(theme)
-    if theme.mono_surfaces:
-        _set_slide_bg(slide, theme.divider_bg)
-        quote_color = pal.quote
-        label_color = pal.label
-        primary_color = pal.primary
-        gospel_color = pal.gospel_label
-        kicker_color = pal.primary
-        co_label_color = label_color
-        co_name_color = primary_color
-    else:
-        _set_divider_gradient_bg(slide, pal.grad_start, pal.grad_end)
+    surface = _apply_divider_artwork(
+        slide,
+        prs,
+        theme,
+        background_image_path=background_image_path,
+    )
+    if surface in {"photo", "plate"} or (surface == "gradient"):
         quote_color = _D2_INK_QUOTE
         label_color = _D2_INK_LABEL
         primary_color = _D2_INK_PRIMARY
@@ -3875,6 +4120,22 @@ def _render_divider3_cover(
         kicker_color = _D2_INK_PRIMARY
         co_label_color = _D2_INK_CO_LABEL
         co_name_color = _D2_INK_CO_NAME
+        if theme.mono_surfaces and surface != "photo":
+            quote_color = pal.quote
+            label_color = pal.label
+            primary_color = pal.primary
+            gospel_color = pal.gospel_label
+            kicker_color = pal.primary
+            co_label_color = label_color
+            co_name_color = primary_color
+    else:
+        quote_color = pal.quote
+        label_color = pal.label
+        primary_color = pal.primary
+        gospel_color = pal.gospel_label
+        kicker_color = pal.primary
+        co_label_color = label_color
+        co_name_color = primary_color
 
     _divider_add_rounded_panel(
         slide,
@@ -3915,7 +4176,7 @@ def _render_divider3_cover(
         title_lines,
         width_in=_D3_TITLE_W,
         height_in=_D3_TITLE_H,
-        max_pt=88,
+        max_pt=66,
         min_pt=40,
     )
     title_style = {
@@ -3970,7 +4231,7 @@ def _render_divider3_cover(
         top=Inches(_D3_LABEL_T),
         width=Inches(_D3_LABEL_W),
         height=Inches(_D3_LABEL_H),
-        lines=[("HOLY MASS CELEBRANT:", {"size_pt": 32, "color": label_color, "bold": True})],
+        lines=[("HOLY MASS CELEBRANT:", {"size_pt": 37, "color": label_color, "bold": True})],
         anchor_middle=True,
     )
     celeb_pt = _divider_fit_single_line_pt(
@@ -3994,11 +4255,11 @@ def _render_divider3_cover(
             top=Inches(_D3_CO_LABEL_T),
             width=Inches(_D3_CO_LABEL_W),
             height=Inches(_D3_CO_LABEL_H),
-            lines=[("CO-CELEBRANT:", {"size_pt": 26, "color": co_label_color, "bold": True})],
+            lines=[(_D3_CO_LABEL_TEXT, {"size_pt": 37, "color": co_label_color, "bold": True})],
             anchor_middle=True,
         )
         co_pt = _divider_fit_single_line_pt(
-            co_name, width_in=_D3_CO_NAME_W, max_pt=44, min_pt=18
+            co_name, width_in=_D3_CO_NAME_W, max_pt=61, min_pt=18
         )
         _divider_add_textbox(
             slide,
@@ -4015,39 +4276,45 @@ def _render_divider3_cover(
     if quote_max_chars and len(g_line) > quote_max_chars:
         g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
     quote_parts = _divider_quote_lines(g_line)
-    quote_pt = _divider_fit_font_pt(
-        quote_parts or [g_line],
-        width_in=_D3_QUOTE_W,
-        height_in=_D3_QUOTE_H,
-        max_pt=39,
-        min_pt=22,
-    )
+    (
+        quote_l,
+        quote_t,
+        quote_w,
+        quote_h,
+        cite_l,
+        cite_t,
+        cite_w,
+        cite_h,
+        quote_pt,
+        quote_top_anchor,
+    ) = _divider3_panel_quote_layout(quote_parts, fallback_line=g_line)
     quote_style = {"size_pt": quote_pt, "color": quote_color, "bold": False}
     _divider_add_textbox(
         slide,
-        left=Inches(_D3_QUOTE_L),
-        top=Inches(_D3_QUOTE_T),
-        width=Inches(_D3_QUOTE_W),
-        height=Inches(_D3_QUOTE_H),
+        left=Inches(quote_l),
+        top=Inches(quote_t),
+        width=Inches(quote_w),
+        height=Inches(quote_h),
         lines=[(part, quote_style) for part in (quote_parts or ([g_line] if g_line else []))],
-        anchor_middle=True,
+        anchor_middle=not quote_top_anchor,
+        anchor_top=quote_top_anchor,
     )
 
-    gospel_lines = _divider3_gospel_lines(gospel_reference)
+    gospel_lines = _divider3_gospel_citation_lines(gospel_reference)
     g_head_pt = _divider_fit_font_pt(
         gospel_lines,
-        width_in=_D3_GOSPEL_W,
-        height_in=_D3_GOSPEL_H,
+        width_in=cite_w,
+        height_in=cite_h,
         max_pt=35,
-        min_pt=18,
+        min_pt=22,
     )
     gospel_style = {"size_pt": g_head_pt, "color": gospel_color, "bold": True}
     _divider_add_textbox(
         slide,
-        left=Inches(_D3_GOSPEL_L),
-        top=Inches(_D3_GOSPEL_T),
-        width=Inches(_D3_GOSPEL_W),
-        height=Inches(_D3_GOSPEL_H),
+        left=Inches(cite_l),
+        top=Inches(cite_t),
+        width=Inches(cite_w),
+        height=Inches(cite_h),
         lines=[(line, gospel_style) for line in gospel_lines],
         anchor_middle=True,
     )
@@ -4070,7 +4337,6 @@ def _add_divider_cover(
     divider_poster_path: Optional[Path] = None,
     divider_style: str = _DIVIDER_STYLE_DEFAULT,
 ) -> None:
-    del background_image_path  # GFCC divider uses season theme; poster is not overlaid here
     slide = prs.slides.add_slide(_layout_blank(prs))
 
     image_divider = bool(
@@ -4087,7 +4353,13 @@ def _add_divider_cover(
         )
         return
 
-    style = _resolve_divider_style(divider_style)
+    bg_path: Optional[Path] = None
+    if background_image_path and Path(background_image_path).is_file():
+        bg_path = Path(background_image_path).resolve()
+
+    style = _resolve_divider_style(
+        divider_style, gospel_quote=gospel_quote, mass_title=mass_title
+    )
     if style == "divider2":
         _render_divider2_cover(
             slide,
@@ -4102,6 +4374,7 @@ def _add_divider_cover(
             quote_max_chars=quote_max_chars,
             theme=theme,
             prs=prs,
+            background_image_path=bg_path,
         )
         return
     if style == "divider3":
@@ -4117,6 +4390,8 @@ def _add_divider_cover(
             gospel_quote=gospel_quote,
             quote_max_chars=quote_max_chars,
             theme=theme,
+            prs=prs,
+            background_image_path=bg_path,
         )
         return
 
@@ -4132,6 +4407,8 @@ def _add_divider_cover(
         gospel_quote=gospel_quote,
         quote_max_chars=quote_max_chars,
         theme=theme,
+        prs=prs,
+        background_image_path=bg_path,
     )
 
 
@@ -5315,7 +5592,9 @@ def generate_mass_ppt(
         mass_title=title,
         background_image_path=liturgical_poster_png,
         divider_poster_path=divider_poster_png,
-        divider_style=_resolve_divider_style(divider_style),
+        divider_style=_resolve_divider_style(
+            divider_style, gospel_quote=g_line, mass_title=title
+        ),
     )
 
     sel = song_selections or {}

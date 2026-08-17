@@ -1248,7 +1248,7 @@ class GenerateBody(BaseModel):
     ai_poster_style: str = Field(
         "cinematic",
         max_length=L.AI_POSTER_STYLE,
-        description="OpenAI hero art style key from data/styles.json (5 presets).",
+        description="AI artwork style: cinematic | realistic | renaissance | stained_glass | modern | auto.",
     )
     reuse_existing_poster: bool = Field(
         False,
@@ -1275,7 +1275,7 @@ class GenerateBody(BaseModel):
     divider_style: str = Field(
         "divider1",
         max_length=16,
-        description="Mass divider layout: divider1 (classic) | divider2 (Stone & Light) | divider3 (Title Left).",
+        description="Mass divider layout: divider1 | divider2 | divider3 | auto.",
     )
     announcement_basenames: list[str] = Field(default_factory=list)
     mass_collection_amount: Optional[str] = Field(None, max_length=L.COLLECTION_AMOUNT)
@@ -1376,7 +1376,7 @@ class GenerateBody(BaseModel):
         lote = str(self.lote_poster or "").strip().lower()
         self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
         div_style = str(self.divider_style or "").strip().lower()
-        self.divider_style = div_style if div_style in {"divider1", "divider2", "divider3"} else "divider1"
+        self.divider_style = div_style if div_style in {"divider1", "divider2", "divider3", "auto"} else "divider1"
         if self.video_replacements:
             allowed = {
                 "kyrie",

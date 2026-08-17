@@ -19010,7 +19010,8 @@
               </button>
             </div>
             <div class="deck-divider-picker" id="deck-divider-picker">
-              <p class="deck-divider-picker__label" id="deck-divider-picker-label">Mass divider style</p>
+              <p class="deck-divider-picker__label" id="deck-divider-picker-label">Layout — how Mass information is arranged</p>
+              <p class="deck-divider-picker__hint muted" style="margin:0 0 10px;font-size:13px;line-height:1.4;">Text positions stay the same. Visual style only changes the artwork behind them.</p>
               <div class="deck-divider-grid" id="deck-divider-grid" role="radiogroup" aria-labelledby="deck-divider-picker-label">
                 <button type="button" class="deck-divider-option is-selected" role="radio" aria-checked="true" data-divider-style="divider1" id="deck-divider-opt-divider1">
                   <span class="deck-divider-option__preview deck-divider-option__preview--classic" aria-hidden="true"></span>
@@ -19031,6 +19032,13 @@
                   <span class="deck-divider-option__meta">
                     <strong>Divider 3 · Title Left</strong>
                     <span>Sunday title on the left, gospel quote on the right panel.</span>
+                  </span>
+                </button>
+                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="auto" id="deck-divider-opt-auto">
+                  <span class="deck-divider-option__preview deck-divider-option__preview--classic" aria-hidden="true"></span>
+                  <span class="deck-divider-option__meta">
+                    <strong>Auto</strong>
+                    <span>Choose Divider 1–3 from this Mass’s quote and title. You can override anytime.</span>
                   </span>
                 </button>
               </div>
@@ -21978,8 +21986,9 @@
                   <div class="flow-setup-row flow-setup-row--poster-style">
                     <div class="flow-poster-style">
                       <div class="field flow-setup-footer__toggle-item" id="flow-openai-style-wrap">
-                        <label for="flow-openai-poster-style">Poster style</label>
+                        <label for="flow-openai-poster-style">Visual style — how Gospel-inspired artwork looks</label>
                         <select id="flow-openai-poster-style">
+                          <option value="auto">Auto — match the Gospel mood</option>
                           <option value="cinematic">Cinematic</option>
                           <option value="realistic">Realistic</option>
                           <option value="renaissance">Renaissance</option>
@@ -23220,8 +23229,9 @@
               <textarea id="poster-gospel-quote" rows="3" maxlength="2000" placeholder="Short line for the poster"></textarea>
             </div>
             <div class="field" id="poster-openai-style-wrap">
-              <label for="poster-openai-poster-style">OpenAI poster art style</label>
+              <label for="poster-openai-poster-style">Visual style — how Gospel-inspired artwork looks</label>
               <select id="poster-openai-poster-style">
+                <option value="auto">Auto — match the Gospel mood</option>
                 <option value="cinematic">Cinematic — epic biblical scene, volumetric light</option>
                 <option value="realistic">Realistic — cinematic photography, dramatic lighting</option>
                 <option value="renaissance">Renaissance — classical oil painting</option>
@@ -26226,7 +26236,9 @@
         }
         const key = resolveVideoMediaKey(section);
         let item = key ? getMassSectionMedia("video", key) : null;
-        if (!item && !MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+        if (!item && MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
+          item = getMassSectionMedia("video", section);
+        } else if (!item && !MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
           item = getMassSectionMedia("video", section);
         }
         if (item && item.basename && /\.mp4$/i.test(item.basename)) {
@@ -33651,6 +33663,7 @@
       divider1: { id: "divider1", name: "Divider 1 · Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
       divider2: { id: "divider2", name: "Divider 2 · Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
       divider3: { id: "divider3", name: "Divider 3 · Title Left", note: "Sunday title on the left, gospel quote on the right panel." },
+      auto: { id: "auto", name: "Auto", note: "Chooses Divider 1–3 from this Mass’s quote and title." },
     };
     const presetThemes = [
       {
@@ -46753,24 +46766,26 @@
         "Validating liturgical information",
         "Loading liturgical calendar",
         "Fetching Sunday readings",
+        "Understanding the Gospel",
         "Connecting to AI",
-        "Creating sacred artwork",
-        "Enhancing image",
+        "Creating the artwork",
+        "Composing your Mass Divider",
         "Building PowerPoint slides",
-        "Applying presentation preset",
-        "Finalizing presentation",
+        "Checking typography",
+        "Finalizing your poster",
       ],
       withAiUpload: [
         "Validating liturgical information",
         "Loading liturgical calendar",
         "Fetching Sunday readings",
         "Uploading artwork",
+        "Understanding the Gospel",
         "Connecting to AI",
-        "Creating sacred artwork",
-        "Enhancing image",
+        "Creating the artwork",
+        "Composing your Mass Divider",
         "Building PowerPoint slides",
-        "Applying presentation preset",
-        "Finalizing presentation",
+        "Checking typography",
+        "Finalizing your poster",
       ],
       reusePoster: [
         "Validating liturgical information",
@@ -48447,7 +48462,7 @@
         activeTheme = resolvedTheme;
         body.custom_theme = pptThemePayload(resolvedTheme);
         const divStyleEl = $("flow-divider-style");
-        const divAllowed = ["divider1", "divider2", "divider3"];
+        const divAllowed = ["divider1", "divider2", "divider3", "auto"];
         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
         const divHidden = (divStyleEl && divStyleEl.value) || "";
         const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider1");

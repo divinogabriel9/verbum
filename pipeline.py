@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 import logging
 import os
@@ -33,6 +34,8 @@ from services.song_selection import (
 logger = logging.getLogger(__name__)
 from services.liturgical_calendar import get_liturgical_color
 from services.lectionary_service import get_liturgical_data, payload_complete
+from services.mass_divider.gospel_analysis import analyze_gospel_visual
+from services.mass_divider.templates import resolve_divider_template_id
 from services.media_naming import mass_export_stem
 from services.runtime_config import song_web_fetch_enabled
 from services.web_hymn_discovery import discover_hymns_for_readings
@@ -300,15 +303,23 @@ def _hymn_title_for_poster(section: str, hymn_id: str) -> str:
 def _resolve_divider_poster_path(
     *,
     uploaded: Optional[Path],
-    poster_ppt_path: Optional[Path],
-    use_poster_as_divider: bool,
+    poster_ppt_path: Optional[Path] = None,
+    use_poster_as_divider: bool = False,
 ) -> Optional[Path]:
-    """Uploaded divider wins; otherwise use 16:9 poster when OpenAI poster is enabled."""
+    """Uploaded divider still replaces the whole cover. AI artwork is a background, not a poster."""
+    del poster_ppt_path, use_poster_as_divider
     if uploaded and Path(uploaded).is_file():
         return Path(uploaded)
-    if use_poster_as_divider and poster_ppt_path and Path(poster_ppt_path).is_file():
-        return Path(poster_ppt_path)
     return None
+
+
+def _cached_hero_path(date: str, images_dir: Path) -> Optional[Path]:
+    iso = (date or "").strip()
+    if not iso or not images_dir.is_dir():
+        return None
+    matches = sorted(images_dir.glob(f"{iso}_*_hero.png"))
+    real = [p for p in matches if p.is_file() and p.stat().st_size > 2048]
+    return real[-1] if real else None
 
 
 _PREVIEW_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
@@ -556,54 +567,40 @@ def generate_mass_media(
         gospel_quote_override=gospel_quote_override,
     )
 
-    picks = _merge_default_and_user_songs(season_key, song_selections)
+    layout_id = resolve_divider_template_id(
+        divider_style, gospel_quote=slide_line, sunday_title=title
+    )
+    gospel_analysis = analyze_gospel_visual(
+        sunday_title=title.replace(" Celebration", "").strip() or title,
+        gospel_reference=gospel_ref,
+        gospel_text=gospel_text,
+        gospel_quote=slide_line,
+        season_key=season_key,
+    )
 
-    # Ensure selected songs have lyrics before deck generation (best-effort auto-heal).
-    sec_map = {
-        "entrance": "entrance",
-        "offertory": "offertory",
-        "communion_1": "communion",
-        "communion_2": "communion",
-        "communion_3": "communion",
-        "communion_4": "communion",
-        "communion_5": "communion",
-        "recessional": "recessional",
-        "meditation": "meditation",
-    }
-    for key, sec in sec_map.items():
-        sid = str(picks.get(key) or "").strip()
-        if sid:
-            ensure_lyrics_for_song(sec, sid)
+    picks = _merge_default_and_user_songs(season_key, song_selections)
 
     community_display = get_community_name()
     stem = mass_export_stem(community_display, date, title, season)
+    display_title = title.replace(" Celebration", "").strip() or title
 
     tpl = _poster_template_arg(poster_template)
     logo = get_logo_path()
-    entrance_title = _hymn_title_for_poster("entrance", picks.get("entrance", ""))
-    comm_titles: list[str] = []
-    for i in range(1, 6):
-        t = _hymn_title_for_poster("communion", picks.get(f"communion_{i}", ""))
-        if t:
-            comm_titles.append(t)
-    communion_line = " · ".join(comm_titles)
-
-    psalm_body = resolve_psalm_slide_text(
-        (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
-        data.get("psalm") or "",
-        psalm_response=(data.get("psalm_response") or "").strip(),
-        psalm_text_override=effective_psalm_override,
-        refrain_index=psalm_refrain_index,
-    )
-
     _root = Path(__file__).resolve().parent
     _out = _root / "outputs"
+    hero_path: Optional[Path] = None
+    poster_path: Optional[Path] = None
+    poster_ppt_path: Optional[Path] = None
+    backend = (ai_poster_backend or "openai").strip().lower()
+    if backend not in ("openai", "gemini"):
+        backend = "openai"
 
-    # Primary posters: AI (OpenAI or Gemini hero art) or liturgical color template.
+    # Kick off the image API immediately so it overlaps hymn lyric fetches and
+    # (after the hero lands) the PowerPoint build.
+    ai_pool: Optional[ThreadPoolExecutor] = None
+    hero_future = None
+    compose_future = None
     if include_ai_mass_poster:
-        backend = (ai_poster_backend or "openai").strip().lower()
-        if backend not in ("openai", "gemini"):
-            backend = "openai"
         if backend == "gemini":
             try:
                 from services.env_config import gemini_api_key_configured, gemini_sdk_available
@@ -635,133 +632,199 @@ def generate_mass_media(
                 ok=False,
                 error="OPENAI_API_KEY is required when “Generate poster with OpenAI” is enabled.",
             )
-        try:
-            from generators.ai_poster_generator import generate_primary_openai_posters
+        from generators.ai_poster_generator import ensure_ai_hero
 
-            poster_path, poster_ppt_path = generate_primary_openai_posters(
+        ai_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ai-poster")
+        print("[generate] AI hero started (overlaps lyrics + deck)", flush=True)
+        hero_future = ai_pool.submit(
+            ensure_ai_hero,
+            date,
+            style=ai_poster_style,
+            reuse_existing_hero=reuse_existing_poster,
+            gospel_quote=slide_line,
+            gospel_reference=gospel_ref,
+            liturgical_title=display_title,
+            gospel_text=gospel_text,
+            season_key=season_key,
+            image_backend=backend,
+            divider_style=layout_id,
+            analysis=gospel_analysis,
+        )
+
+    # Ensure selected songs have lyrics before deck generation (best-effort auto-heal).
+    try:
+        sec_map = {
+            "entrance": "entrance",
+            "offertory": "offertory",
+            "communion_1": "communion",
+            "communion_2": "communion",
+            "communion_3": "communion",
+            "communion_4": "communion",
+            "communion_5": "communion",
+            "recessional": "recessional",
+            "meditation": "meditation",
+        }
+        for key, sec in sec_map.items():
+            sid = str(picks.get(key) or "").strip()
+            if sid:
+                ensure_lyrics_for_song(sec, sid)
+
+        entrance_title = _hymn_title_for_poster("entrance", picks.get("entrance", ""))
+        comm_titles: list[str] = []
+        for i in range(1, 6):
+            t = _hymn_title_for_poster("communion", picks.get(f"communion_{i}", ""))
+            if t:
+                comm_titles.append(t)
+        communion_line = " · ".join(comm_titles)
+
+        psalm_body = resolve_psalm_slide_text(
+            (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
+            data.get("psalm") or "",
+            psalm_response=(data.get("psalm_response") or "").strip(),
+            psalm_text_override=effective_psalm_override,
+            refrain_index=psalm_refrain_index,
+        )
+
+        if include_ai_mass_poster and hero_future is not None:
+            try:
+                hero_path = hero_future.result()
+                print("[generate] AI hero ready — composing posters in parallel with PPTX", flush=True)
+            except Exception as exc:
+                label = "Gemini" if backend == "gemini" else "OpenAI"
+                logger.exception("%s poster generation failed", label)
+                return GenerationResult(
+                    ok=False,
+                    error=f"{label} poster generation failed: {exc}",
+                )
+            from generators.ai_poster_generator import compose_primary_posters_from_hero
+
+            assert ai_pool is not None
+            compose_future = ai_pool.submit(
+                compose_primary_posters_from_hero,
                 date,
-                celebrant_name=poster_celebrant,
-                style=ai_poster_style,
+                hero_path=hero_path,
                 output_stem=stem,
                 output_dir=_out,
-                include_social_exports=include_social_exports,
-                reuse_existing_hero=reuse_existing_poster,
+                celebrant_name=celebrant,
+                co_celebrant_name=co_celebrant,
                 gospel_quote=slide_line,
                 gospel_reference=gospel_ref,
-                liturgical_title=title.replace(" Celebration", "").strip() or title,
-                image_backend=backend,
+                liturgical_title=display_title,
+                lectionary_cycle=cycle,
+                season=season,
+                season_key=season_key,
+                divider_style=layout_id,
+                include_social_exports=include_social_exports,
             )
-        except Exception as exc:
-            label = "Gemini" if backend == "gemini" else "OpenAI"
-            logger.exception("%s poster generation failed", label)
-            return GenerationResult(
-                ok=False,
-                error=f"{label} poster generation failed: {exc}",
+        else:
+            poster_path, poster_ppt_path = generate_mass_poster(
+                title=title,
+                gospel_reference=gospel_ref,
+                celebrant=poster_celebrant,
+                date=date,
+                template=tpl,
+                liturgical_color=liturgical_color,
+                logo_path=logo,
+                community_name=community_display,
+                gospel_quote=slide_line,
+                entrance_song_title=entrance_title,
+                communion_song_titles=communion_line,
+                output_stem=stem,
+                include_social_exports=include_social_exports,
             )
-    else:
-        poster_path, poster_ppt_path = generate_mass_poster(
+
+        divider_for_ppt = _resolve_divider_poster_path(uploaded=divider_poster_path)
+
+        slide_count, pptx_path, slideshow_cues = generate_mass_ppt(
             title=title,
             gospel_reference=gospel_ref,
-            celebrant=poster_celebrant,
+            gospel_quote=slide_line or gospel_text,
+            season=season,
+            lectionary_cycle=cycle,
+            celebrant=celebrant,
+            co_celebrant=co_celebrant,
             date=date,
-            template=tpl,
+            quote_attribution=quote_attr,
+            quote_max_chars=400,
+            gospel_full_text=gospel_text,
+            first_reading_ref=data.get("first_reading") or "",
+            first_reading_text=data.get("first_reading_text") or "",
+            psalm_ref=data.get("psalm") or "",
+            psalm_text=psalm_body,
+            second_reading_ref=data.get("second_reading") or "",
+            second_reading_text=data.get("second_reading_text") or "",
+            gospel_acclamation_verse=data.get("gospel_acclamation") or "",
             liturgical_color=liturgical_color,
-            logo_path=logo,
-            community_name=community_display,
-            gospel_quote=slide_line,
-            entrance_song_title=entrance_title,
-            communion_song_titles=communion_line,
+            custom_theme=custom_theme,
+            song_selections=picks,
             output_stem=stem,
-            include_social_exports=include_social_exports,
+            liturgical_poster_png=hero_path,
+            divider_poster_png=divider_for_ppt,
+            divider_style=layout_id,
+            lotw_poster=lotw_poster,
+            lote_poster=lote_poster,
+            announcement_image_paths=announcement_image_paths,
+            mass_collection_amount=mass_collection_amount or "",
+            mass_collection_date_label=mass_collection_date_label or "",
+            mass_collection_currency=mass_collection_currency or "PHP",
+            food_sponsors=food_sponsors,
+            hymn_typography=hymn_typography,
+            include_church_logo=include_church_logo,
+            include_church_name=include_church_name,
+            include_footer=include_footer,
+            footer_brand=(footer_brand or "").strip(),
+            hymn_lyric_overrides=hymn_lyric_overrides,
+            creed_choice=creed_choice,
+            our_father_choice=our_father_choice,
+            hymn_lyrics_layout=hymn_lyrics_layout,
+            hymn_layout_overrides=hymn_layout_overrides,
+            video_replacements=video_replacements,
+            mass_language=mass_language,
+            show_hymn_section_labels=show_hymn_section_labels,
         )
 
-    divider_for_ppt = _resolve_divider_poster_path(
-        uploaded=divider_poster_path,
-        poster_ppt_path=poster_ppt_path,
-        use_poster_as_divider=include_ai_mass_poster,
-    )
+        if compose_future is not None:
+            try:
+                poster_path, poster_ppt_path = compose_future.result()
+            except Exception:
+                logger.warning("AI poster compose failed after deck was built", exc_info=True)
 
-    slide_count, pptx_path, slideshow_cues = generate_mass_ppt(
-        title=title,
-        gospel_reference=gospel_ref,
-        gospel_quote=slide_line or gospel_text,
-        season=season,
-        lectionary_cycle=cycle,
-        celebrant=celebrant,
-        co_celebrant=co_celebrant,
-        date=date,
-        quote_attribution=quote_attr,
-        quote_max_chars=400,
-        gospel_full_text=gospel_text,
-        first_reading_ref=data.get("first_reading") or "",
-        first_reading_text=data.get("first_reading_text") or "",
-        psalm_ref=data.get("psalm") or "",
-        psalm_text=psalm_body,
-        second_reading_ref=data.get("second_reading") or "",
-        second_reading_text=data.get("second_reading_text") or "",
-        gospel_acclamation_verse=data.get("gospel_acclamation") or "",
-        liturgical_color=liturgical_color,
-        custom_theme=custom_theme,
-        song_selections=picks,
-        output_stem=stem,
-        liturgical_poster_png=None,
-        divider_poster_png=divider_for_ppt,
-        divider_style=divider_style,
-        lotw_poster=lotw_poster,
-        lote_poster=lote_poster,
-        announcement_image_paths=announcement_image_paths,
-        mass_collection_amount=mass_collection_amount or "",
-        mass_collection_date_label=mass_collection_date_label or "",
-        mass_collection_currency=mass_collection_currency or "PHP",
-        food_sponsors=food_sponsors,
-        hymn_typography=hymn_typography,
-        include_church_logo=include_church_logo,
-        include_church_name=include_church_name,
-        include_footer=include_footer,
-        footer_brand=(footer_brand or "").strip(),
-        hymn_lyric_overrides=hymn_lyric_overrides,
-        creed_choice=creed_choice,
-        our_father_choice=our_father_choice,
-        hymn_lyrics_layout=hymn_lyrics_layout,
-        hymn_layout_overrides=hymn_layout_overrides,
-        video_replacements=video_replacements,
-        mass_language=mass_language,
-        show_hymn_section_labels=show_hymn_section_labels,
-    )
+        if include_social_exports and poster_path and poster_path.is_file():
+            export_social_variants(poster_path, output_dir=_out, prefix=stem)
+        if include_gospel_art:
+            ref_short = (gospel_ref or "").strip()[:90] if gospel_ref else ""
+            render_gospel_moment(
+                out_path=_root / "outputs" / f"{stem}_gospel_moment.png",
+                liturgical_color=liturgical_color,
+                line1="Gospel",
+                line2=ref_short,
+            )
 
-    if include_social_exports and poster_path and poster_path.is_file():
-        export_social_variants(poster_path, output_dir=_out, prefix=stem)
-    if include_gospel_art:
-        ref_short = (gospel_ref or "").strip()[:90] if gospel_ref else ""
-        render_gospel_moment(
-            out_path=_root / "outputs" / f"{stem}_gospel_moment.png",
+        preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
+
+        return GenerationResult(
+            ok=True,
+            pptx_path=pptx_path,
+            poster_path=poster_path,
+            poster_ppt_path=poster_ppt_path,
+            title=title,
+            gospel_reference=gospel_ref,
+            slide_line_preview=preview,
+            gospel_text_length=len(gospel_text),
+            liturgical_color_name=color_name,
+            liturgical_color_hex=color_hex,
+            liturgical_season_label=season_lbl,
+            selected_songs=dict(picks),
+            gospel_quote=slide_line,
+            slide_count=slide_count,
             liturgical_color=liturgical_color,
-            line1="Gospel",
-            line2=ref_short,
+            export_stem=stem,
+            include_social_exports=include_social_exports,
+            slideshow_cues=list(slideshow_cues or []),
         )
-
-    preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
-
-    return GenerationResult(
-        ok=True,
-        pptx_path=pptx_path,
-        poster_path=poster_path,
-        poster_ppt_path=poster_ppt_path,
-        title=title,
-        gospel_reference=gospel_ref,
-        slide_line_preview=preview,
-        gospel_text_length=len(gospel_text),
-        liturgical_color_name=color_name,
-        liturgical_color_hex=color_hex,
-        liturgical_season_label=season_lbl,
-        selected_songs=dict(picks),
-        gospel_quote=slide_line,
-        slide_count=slide_count,
-        liturgical_color=liturgical_color,
-        export_stem=stem,
-        include_social_exports=include_social_exports,
-        slideshow_cues=list(slideshow_cues or []),
-    )
+    finally:
+        if ai_pool is not None:
+            ai_pool.shutdown(wait=True)
 
 
 def regenerate_mass_pptx(
@@ -848,16 +911,12 @@ def regenerate_mass_pptx(
     community_display = get_community_name()
     stem = mass_export_stem(community_display, date, title, season)
     _root = Path(__file__).resolve().parent
-    _out = _root / "outputs"
-    poster_ppt_path = _out / f"{stem}_16x9.png"
-    if not poster_ppt_path.is_file():
-        poster_ppt_path = None
-
-    divider_for_ppt = _resolve_divider_poster_path(
-        uploaded=divider_poster_path,
-        poster_ppt_path=poster_ppt_path,
-        use_poster_as_divider=bool(poster_ppt_path),
+    layout_id = resolve_divider_template_id(
+        divider_style, gospel_quote=slide_line, sunday_title=title
     )
+    hero_path = _cached_hero_path(date, _root / "outputs" / "images")
+
+    divider_for_ppt = _resolve_divider_poster_path(uploaded=divider_poster_path)
 
     psalm_body = resolve_psalm_slide_text(
         (data.get("psalm_text") or "").split(" or ", 1)[0].strip(),
@@ -890,9 +949,9 @@ def regenerate_mass_pptx(
         custom_theme=custom_theme,
         song_selections=picks,
         output_stem=stem,
-        liturgical_poster_png=None,
+        liturgical_poster_png=hero_path,
         divider_poster_png=divider_for_ppt,
-        divider_style=divider_style,
+        divider_style=layout_id,
         lotw_poster=lotw_poster,
         lote_poster=lote_poster,
         announcement_image_paths=announcement_image_paths,

@@ -26,7 +26,7 @@ from urllib.request import Request, urlopen
 
 from openai import OpenAI
 
-from services.ai_styles import resolve_ai_image_style, style_prompt_fragment
+from services.ai_styles import get_visual_style, resolve_ai_image_style
 from services.gospel_visual_prompt import build_visual_scene_line
 
 logger = logging.getLogger(__name__)
@@ -45,37 +45,6 @@ _DEFAULT_NEGATIVE = (
     "solid color only, flat gradient background, abstract wallpaper, empty scene, "
     "deformed hands, extra limbs, low quality, blurry"
 )
-
-_STYLE_LABELS: dict[str, str] = {
-    "cinematic": "Cinematic",
-    "realistic": "Realistic",
-    "renaissance": "Renaissance",
-    "stained_glass": "Stained Glass",
-    "modern": "Modern",
-}
-
-_STYLE_BEHAVIOR: dict[str, str] = {
-    "cinematic": (
-        "dramatic movie-like lighting, cinematic composition, volumetric light, "
-        "emotional atmosphere, epic worship visuals"
-    ),
-    "realistic": (
-        "realistic biblical environment, natural lighting, authentic textures, "
-        "detailed scenery, believable human proportions"
-    ),
-    "renaissance": (
-        "classical renaissance painting, rich religious oil-painting aesthetic, "
-        "dramatic shadows, sacred artistic composition, cathedral-quality artwork"
-    ),
-    "stained_glass": (
-        "church stained glass window style, colorful segmented glass patterns, "
-        "glowing cathedral lighting, ornate sacred design, luminous mosaic aesthetic"
-    ),
-    "modern": (
-        "modern church social-media aesthetic, minimal layered composition, soft gradients, "
-        "subtle depth, clean premium worship branding"
-    ),
-}
 
 _COMPOSITION_RULES_FULL_BLEED = (
     "16:9 PowerPoint widescreen landscape, ultra high quality, presentation-ready, "
@@ -198,15 +167,27 @@ def build_church_poster_background_prompt(
     style: str,
     visual_scene_line: str = "",
     season_key: str = "",
+    analysis: object | None = None,
+    composition_profile: object | None = None,
 ) -> str:
     """
     Build a visual-only diffusion prompt for a Gospel poster background.
 
     No scripture quotes, titles, or references are sent — text is composited in Python afterward.
+    When ``analysis`` and ``composition_profile`` are provided, the prompt is assembled
+    from Gospel concept + visual style + template safe zones.
     """
     resolved = resolve_ai_image_style(style)
-    style_label = _STYLE_LABELS.get(resolved, resolved.replace("_", " ").title())
-    style_behavior = _STYLE_BEHAVIOR.get(resolved) or style_prompt_fragment(resolved)
+    visual_style = get_visual_style(resolved)
+
+    if analysis is not None and composition_profile is not None:
+        from services.mass_divider.prompt_builder import build_background_prompt
+
+        return build_background_prompt(
+            analysis=analysis,  # type: ignore[arg-type]
+            style=visual_style,
+            profile=composition_profile,  # type: ignore[arg-type]
+        )
 
     scene = _clip(visual_scene_line, 220)
     if not scene:
@@ -220,10 +201,11 @@ def build_church_poster_background_prompt(
         season_key=(season_key or "").strip().lower(),
     )
 
+    avoid = f" Avoid: {visual_style.avoid}." if visual_style.avoid else ""
     parts = [
         "Generate a cinematic biblical illustration BACKGROUND for a church presentation slide.",
         _NO_TEXT_RULES,
-        f"STYLE: {style_label}. {style_behavior}.",
+        f"STYLE: {visual_style.label}. {visual_style.prompt}.{avoid}",
         f"Main scene to paint: {scene}.",
         mood + ".",
         _COMPOSITION_RULES_FULL_BLEED + ".",
@@ -529,8 +511,10 @@ def _openai_image_model() -> str:
 
 
 def _openai_image_quality() -> str:
-    q = (os.environ.get("OPENAI_IMAGE_QUALITY") or "high").strip().lower() or "high"
-    return q if q in ("low", "medium", "high") else "high"
+    # Medium is the Mass Builder default: high at 1920×1088 often adds 20–40s
+    # with little visible gain on a projector. Set OPENAI_IMAGE_QUALITY=high to opt in.
+    q = (os.environ.get("OPENAI_IMAGE_QUALITY") or "medium").strip().lower() or "medium"
+    return q if q in ("low", "medium", "high") else "medium"
 
 
 def _openai_widescreen_api_size() -> str:
@@ -929,6 +913,9 @@ def generate_sacred_illustration(
     scripture_quote: str = "",
     gospel_text: str = "",
     season_key: str = "",
+    prompt_override: Optional[str] = None,
+    analysis: object | None = None,
+    composition_profile: object | None = None,
 ) -> Path:
     """
     Generate a Gospel poster **background** PNG (no baked-in text or logos).
@@ -977,10 +964,12 @@ def generate_sacred_illustration(
     vline = (visual_scene_line or "").strip()
     if not vline:
         vline = build_visual_scene_line(sunday_title, gospel_reference, gospel_text or "")
-    prompt = build_church_poster_background_prompt(
+    prompt = (prompt_override or "").strip() or build_church_poster_background_prompt(
         style=resolved_style,
         visual_scene_line=vline,
         season_key=season_key,
+        analysis=analysis,
+        composition_profile=composition_profile,
     )
     negative = _resolved_negative_prompt()
     prompt_preview = (prompt[:200] + "…") if len(prompt) > 200 else prompt

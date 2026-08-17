@@ -30,12 +30,16 @@ from generators.poster import (
     export_primary_poster_pair,
 )
 from generators.poster.primitives import callout_from_quote
-from services.ai_styles import resolve_ai_image_style
+from services.ai_styles import resolve_ai_image_style, resolve_style_for_generation
 from services.community_config import get_community_name
 from services.gospel_visual_prompt import build_visual_scene_line
 from services.gospel_quote_extractor import first_sentence_slide_quote, split_slide_sentences
 from services.lectionary_service import get_liturgical_data
 from services.liturgical_calendar import get_liturgical_color
+from services.mass_divider.fields import resolve_mass_divider_fields
+from services.mass_divider.gospel_analysis import analyze_gospel_visual
+from services.mass_divider.templates import get_divider_template, resolve_divider_template_id
+from services.mass_divider.types import GospelVisualAnalysis
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _POSTERS_DIR = _PROJECT_ROOT / "outputs" / "posters"
 _IMAGES_DIR = _PROJECT_ROOT / "outputs" / "images"
@@ -49,18 +53,26 @@ def _format_long_date(date_iso: str) -> str:
         return date_iso
 
 
+def hero_cache_path(date: str, style: str) -> Path:
+    resolved = resolve_ai_image_style(style)
+    return _IMAGES_DIR / f"{date.strip()}_{resolved}_hero.png"
+
+
 def _build_mass_poster_master(
     date: str,
     *,
     celebrant_name: Optional[str] = None,
+    co_celebrant_name: Optional[str] = None,
     style: str = "cinematic",
     reuse_existing_hero: bool = False,
     gospel_quote: Optional[str] = None,
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
     image_backend: str = "openai",
-) -> Image.Image:
-    """Liturgical load, AI hero (visual only), composited as a full-bleed poster."""
+    divider_style: str = "divider1",
+    analysis: Optional[GospelVisualAnalysis] = None,
+) -> tuple[Image.Image, Path, str]:
+    """Liturgical load, AI hero (visual only), composited with template text."""
     data = get_liturgical_data(date)
     if not data:
         raise ValueError(f"No liturgical data for {date!r}.")
@@ -85,44 +97,171 @@ def _build_mass_poster_master(
     title = str(data.get("title") or "Sunday Mass Celebration")
     community = get_community_name()
     celebrant = (celebrant_name or os.environ.get("MASS_CELEBRANT") or "TBD").strip()
-
-    _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-    date_iso = date.strip()
-    resolved_style = resolve_ai_image_style(style)
-    hero_path = _IMAGES_DIR / f"{date_iso}_{resolved_style}_hero.png"
+    co_name = (co_celebrant_name or "").strip()
 
     display_title = (liturgical_title or title.replace(" Celebration", "").strip() or title)
-    if not (reuse_existing_hero and hero_path.is_file()):
-        visual_line = build_visual_scene_line(display_title, gospel_ref, gospel_full)
-        generate_sacred_illustration(
-            gospel_ref,
-            out_path=hero_path,
-            style=resolved_style,
-            visual_scene_line=visual_line,
-            image_backend=image_backend,
-            openai_size=_openai_widescreen_api_size(),
-            output_size=WIDESCREEN_16_9,
-            sunday_title=display_title,
-            gospel_text=gospel_full,
-            season_key=season_key,
-        )
+    visual = analysis or analyze_gospel_visual(
+        sunday_title=display_title,
+        gospel_reference=gospel_ref,
+        gospel_text=gospel_full,
+        gospel_quote=quote_for_poster,
+        season_key=season_key,
+    )
+    resolved_style = resolve_style_for_generation(style, recommended=visual.recommended_style)
+    layout_id = resolve_divider_template_id(
+        divider_style, gospel_quote=quote_for_poster, sunday_title=display_title
+    )
 
-    cycle = str(data.get("lectionary_cycle") or "").strip().upper() or "—"
-
-    content = PosterContent(
-        title=display_title,
+    hero_path = ensure_ai_hero(
+        date,
+        style=style,
+        reuse_existing_hero=reuse_existing_hero,
         gospel_quote=quote_for_poster,
         gospel_reference=gospel_ref,
+        liturgical_title=display_title,
+        gospel_text=gospel_full,
+        season_key=season_key,
+        image_backend=image_backend,
+        divider_style=layout_id,
+        analysis=visual,
+    )
+
+    fields = resolve_mass_divider_fields(
+        gospel_quote=quote_for_poster,
+        gospel_reference=gospel_ref,
+        celebrant=celebrant,
+        date=date,
+        lectionary_cycle=str(data.get("lectionary_cycle") or ""),
+        mass_title=display_title,
+        season=str(data.get("season") or ""),
+        co_celebrant=co_name,
+    )
+
+    content = PosterContent(
+        title=fields.sunday_title,
+        gospel_quote=fields.gospel_quote,
+        gospel_reference=fields.gospel_reference,
         date_display=_format_long_date(date),
-        year_cycle=cycle,
-        celebrant_name=celebrant,
+        year_cycle=fields.year_cycle,
+        celebrant_name=fields.celebrant,
         hero_image_path=hero_path,
         liturgical_season_key=season_key,
         logo_path=None,
         community_name=community,
         callout=callout_from_quote(quote_for_poster),
+        co_celebrant_name=fields.co_celebrant,
+        heading=fields.heading,
+        divider_template_id=layout_id,
     )
-    return compose_poster(PPT_SIZE, content, preset="gfcc_flat")
+    return compose_poster(PPT_SIZE, content, preset="mass_divider"), hero_path, resolved_style
+
+
+def ensure_ai_hero(
+    date: str,
+    *,
+    style: str = "cinematic",
+    reuse_existing_hero: bool = False,
+    gospel_quote: str = "",
+    gospel_reference: str = "",
+    liturgical_title: str = "",
+    gospel_text: str = "",
+    season_key: str = "ordinary_time",
+    image_backend: str = "openai",
+    divider_style: str = "divider1",
+    analysis: Optional[GospelVisualAnalysis] = None,
+) -> Path:
+    """Generate (or reuse) the artwork-only hero PNG. Safe to run in a worker thread."""
+    display_title = (liturgical_title or "").strip() or "Sunday Mass"
+    visual = analysis or analyze_gospel_visual(
+        sunday_title=display_title,
+        gospel_reference=gospel_reference,
+        gospel_text=gospel_text,
+        gospel_quote=gospel_quote,
+        season_key=season_key,
+    )
+    resolved_style = resolve_style_for_generation(style, recommended=visual.recommended_style)
+    layout_id = resolve_divider_template_id(
+        divider_style, gospel_quote=gospel_quote, sunday_title=display_title
+    )
+    template = get_divider_template(layout_id)
+    _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    hero_path = hero_cache_path(date.strip(), resolved_style)
+    if reuse_existing_hero and hero_path.is_file():
+        return hero_path
+    visual_line = build_visual_scene_line(display_title, gospel_reference, gospel_text)
+    generate_sacred_illustration(
+        gospel_reference or "Gospel",
+        out_path=hero_path,
+        style=resolved_style,
+        visual_scene_line=visual_line,
+        image_backend=image_backend,
+        openai_size=_openai_widescreen_api_size(),
+        output_size=WIDESCREEN_16_9,
+        sunday_title=display_title,
+        gospel_text=gospel_text,
+        season_key=season_key,
+        analysis=visual,
+        composition_profile=template.composition,
+    )
+    return hero_path
+
+
+def compose_primary_posters_from_hero(
+    date: str,
+    *,
+    hero_path: Path,
+    output_stem: str,
+    output_dir: Path,
+    celebrant_name: str = "",
+    co_celebrant_name: str = "",
+    gospel_quote: str = "",
+    gospel_reference: str = "",
+    liturgical_title: str = "",
+    lectionary_cycle: str = "",
+    season: str = "",
+    season_key: str = "ordinary_time",
+    divider_style: str = "divider1",
+    include_social_exports: bool = False,
+) -> Tuple[Optional[Path], Path]:
+    """Overlay LiturgyFlow type on an existing hero. CPU-only — overlap with PPTX build."""
+    display_title = (liturgical_title or "").strip() or "Sunday Mass"
+    layout_id = resolve_divider_template_id(
+        divider_style, gospel_quote=gospel_quote, sunday_title=display_title
+    )
+    fields = resolve_mass_divider_fields(
+        gospel_quote=gospel_quote,
+        gospel_reference=gospel_reference,
+        celebrant=celebrant_name,
+        date=date,
+        lectionary_cycle=lectionary_cycle,
+        mass_title=display_title,
+        season=season,
+        co_celebrant=co_celebrant_name,
+    )
+    content = PosterContent(
+        title=fields.sunday_title,
+        gospel_quote=fields.gospel_quote,
+        gospel_reference=fields.gospel_reference,
+        date_display=_format_long_date(date),
+        year_cycle=fields.year_cycle,
+        celebrant_name=fields.celebrant,
+        hero_image_path=hero_path,
+        liturgical_season_key=season_key,
+        logo_path=None,
+        community_name=get_community_name(),
+        callout=callout_from_quote(gospel_quote),
+        co_celebrant_name=fields.co_celebrant,
+        heading=fields.heading,
+        divider_template_id=layout_id,
+    )
+    master = compose_poster(PPT_SIZE, content, preset="mass_divider")
+    social_path, ppt_path = export_primary_poster_pair(
+        master, output_dir, output_stem, include_social=include_social_exports
+    )
+    if include_social_exports:
+        _POSTERS_DIR.mkdir(parents=True, exist_ok=True)
+        export_poster_sizes(master, _POSTERS_DIR)
+    return social_path, ppt_path
 
 
 def generate_primary_openai_posters(
@@ -138,23 +277,32 @@ def generate_primary_openai_posters(
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
     image_backend: str = "openai",
-) -> Tuple[Optional[Path], Path]:
+    divider_style: str = "divider1",
+    co_celebrant_name: Optional[str] = None,
+    analysis: Optional[GospelVisualAnalysis] = None,
+) -> Tuple[Optional[Path], Path, Path]:
     """
     Build AI-backed parish posters (OpenAI or Gemini — same prompt).
 
     By default writes only ``{stem}_16x9.png`` (projection / PPT slide).
     When ``include_social_exports`` is true, also writes ``{stem}.png`` (1080×1350)
     and variants under ``outputs/posters/``.
+
+    Returns ``(social_path, ppt_path, hero_path)``. The hero is artwork-only;
+    ``ppt_path`` is the composed divider with LiturgyFlow typography.
     """
-    master = _build_mass_poster_master(
+    master, hero_path, _resolved = _build_mass_poster_master(
         date,
         celebrant_name=celebrant_name,
+        co_celebrant_name=co_celebrant_name,
         style=style,
         reuse_existing_hero=reuse_existing_hero,
         gospel_quote=gospel_quote,
         gospel_reference=gospel_reference,
         liturgical_title=liturgical_title,
         image_backend=image_backend,
+        divider_style=divider_style,
+        analysis=analysis,
     )
     social_path, ppt_path = export_primary_poster_pair(
         master, output_dir, output_stem, include_social=include_social_exports
@@ -162,7 +310,7 @@ def generate_primary_openai_posters(
     if include_social_exports:
         _POSTERS_DIR.mkdir(parents=True, exist_ok=True)
         export_poster_sizes(master, _POSTERS_DIR)
-    return social_path, ppt_path
+    return social_path, ppt_path, hero_path
 
 
 def create_mass_poster(
@@ -179,7 +327,7 @@ def create_mass_poster(
     For main deck posters use :func:`generate_primary_openai_posters`.
     """
     del language  # Reserved for future bilingual prompts / captions.
-    master = _build_mass_poster_master(
+    master, _hero, _style = _build_mass_poster_master(
         date,
         celebrant_name=celebrant_name,
         style=style,

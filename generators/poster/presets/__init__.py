@@ -1,11 +1,12 @@
 """Layout presets for parish posters."""
 
-from generators.poster.presets import gfcc_flat
+from generators.poster.presets import gfcc_flat, mass_divider
 
-PRESET_IDS = ("gfcc_flat",)
+PRESET_IDS = ("gfcc_flat", "mass_divider")
 
 _RENDERERS = {
     "gfcc_flat": gfcc_flat.render,
+    "mass_divider": mass_divider.render,
 }
 
 
