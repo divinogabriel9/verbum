@@ -3069,10 +3069,8 @@ def api_practice_share(
         can_edit = bool(device_id) and verify_lead_token(
             tok, lead, row.get("expires_at"), device_id=device_id
         )
-        if can_edit:
-            allowed, retry_after = check_practice_lead_allowed(request, tok, device_id)
-            if not allowed:
-                return _practice_rate_limit_response(retry_after)
+        # Do not count GET polls against the leader mutation budget.
+        # Polling every few seconds would exhaust it in minutes.
     unlocked = is_unlocked(request, tok, row.get("expires_at")) or can_edit
     payload = fetch_practice_share(tok, unlocked=unlocked, can_edit=can_edit)
     if not payload.get("ok"):

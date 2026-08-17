@@ -43,6 +43,9 @@
       --voice-woman: #a21caf;
       --voice-man-bg: color-mix(in srgb, #0e7490 14%, transparent);
       --voice-woman-bg: color-mix(in srgb, #a21caf 14%, transparent);
+      --lyric-cue: #3d91b8;
+      --line-highlight: #ffffff;
+      --line-highlight-chorus: color-mix(in srgb, #facc15 46%, #ffffff);
       --lyrics-size: clamp(1.0625rem, 4.2vw, 1.1875rem);
       --lyrics-leading: 1.7;
       --safe-top: env(safe-area-inset-top, 0px);
@@ -69,6 +72,9 @@
       --voice-woman: #f0abfc;
       --voice-man-bg: color-mix(in srgb, #5eead4 18%, transparent);
       --voice-woman-bg: color-mix(in srgb, #f0abfc 18%, transparent);
+      --lyric-cue: #9bdcf0;
+      --line-highlight: color-mix(in srgb, #ffffff 18%, transparent);
+      --line-highlight-chorus: color-mix(in srgb, #fde047 34%, transparent);
       --theme-color: #1a2229;
     }
     * { box-sizing: border-box; }
@@ -592,8 +598,8 @@
     }
     .practice-lyric-line {
       margin: 0;
-      padding: 0.08em 0.35em;
-      border-radius: 6px;
+      padding: 0.08em 0.45em;
+      border-radius: 7px;
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-wrap: anywhere;
@@ -603,6 +609,19 @@
       font-weight: 700;
       letter-spacing: 0.01em;
       color: var(--ink);
+      background: var(--line-highlight);
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent);
+    }
+    .practice-lyric-line--blank {
+      background: transparent;
+      box-shadow: none;
+      min-height: 0.55em;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .practice-lyric-block--chorus .practice-lyric-line:not(.practice-lyric-line--man):not(.practice-lyric-line--woman):not(.practice-lyric-line--blank),
+    .practice-lyric-block--refrain .practice-lyric-line:not(.practice-lyric-line--man):not(.practice-lyric-line--woman):not(.practice-lyric-line--blank) {
+      background: var(--line-highlight-chorus);
     }
     .practice-lyric-line--man {
       color: var(--voice-man);
@@ -611,6 +630,15 @@
     .practice-lyric-line--woman {
       color: var(--voice-woman);
       background: var(--voice-woman-bg);
+    }
+    .practice-lyric-cue {
+      color: var(--lyric-cue);
+      font-style: italic;
+      font-weight: 700;
+    }
+    .practice-lyric-line--man .practice-lyric-cue,
+    .practice-lyric-line--woman .practice-lyric-cue {
+      color: var(--lyric-cue);
     }
     .practice-voice-legend {
       display: flex;
@@ -900,16 +928,29 @@
       line-height: 1.45;
       font-weight: 600;
       color: var(--ink);
-      background: var(--card);
+      background: var(--line-highlight);
       resize: none;
       overflow: hidden;
+    }
+    .practice-lyric-block--chorus .practice-line-input:not(.is-man):not(.is-woman),
+    .practice-lyric-block--refrain .practice-line-input:not(.is-man):not(.is-woman) {
+      background: var(--line-highlight-chorus);
+      border-color: color-mix(in srgb, #facc15 45%, var(--line));
     }
     .practice-line-input:disabled {
       background: var(--surface-disabled);
       color: var(--muted);
     }
-    .practice-line-input.is-man { color: var(--voice-man); }
-    .practice-line-input.is-woman { color: var(--voice-woman); }
+    .practice-line-input.is-man {
+      color: var(--voice-man);
+      background: var(--voice-man-bg);
+      border-color: color-mix(in srgb, var(--voice-man) 40%, var(--line));
+    }
+    .practice-line-input.is-woman {
+      color: var(--voice-woman);
+      background: var(--voice-woman-bg);
+      border-color: color-mix(in srgb, var(--voice-woman) 40%, var(--line));
+    }
     .practice-line-add {
       align-self: flex-start;
       margin-top: 2px;
@@ -1625,22 +1666,36 @@
         );
       }
 
+      function colorLyricCues(text) {
+        const s = String(text || "");
+        const re = /(\([^)]*\)|\[[^\]]*\])/g;
+        let out = "";
+        let last = 0;
+        let m;
+        while ((m = re.exec(s))) {
+          if (m.index > last) out += esc(s.slice(last, m.index));
+          out += '<span class="practice-lyric-cue">' + esc(m[0]) + '</span>';
+          last = m.index + m[0].length;
+        }
+        if (last < s.length) out += esc(s.slice(last));
+        return out;
+      }
+
       function renderViewLyricLines(body, voices) {
         const lines = splitLyricLines(body);
         const tagged = syncVoicesToLines(body, voices);
-        if (!lines.length) return '<pre class="practice-lyric-block__body"></pre>';
-        const hasVoice = tagged.some(Boolean);
-        if (!hasVoice) {
-          return '<pre class="practice-lyric-block__body">' + esc(formatLyricsFirstLetters(body || "")) + '</pre>';
-        }
+        if (!lines.length) return '<ul class="practice-lyric-lines"></ul>';
         const formatted = formatLyricsFirstLetters(body || "").split("\n");
         return (
           '<ul class="practice-lyric-lines">' +
-          lines.map(function (_ln, i) {
+          lines.map(function (raw, i) {
             const voice = tagged[i] || "";
-            const cls = voice ? (" practice-lyric-line--" + voice) : "";
             const text = formatted[i] != null ? formatted[i] : "";
-            return '<li class="practice-lyric-line' + cls + '">' + esc(text) + '</li>';
+            const blank = !String(raw || "").trim();
+            const cls = voice
+              ? (" practice-lyric-line--" + voice)
+              : (blank ? " practice-lyric-line--blank" : "");
+            return '<li class="practice-lyric-line' + cls + '">' + (blank ? "&nbsp;" : colorLyricCues(text)) + '</li>';
           }).join("") +
           '</ul>'
         );

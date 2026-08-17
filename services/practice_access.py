@@ -370,7 +370,7 @@ def check_practice_lead_allowed(request: Request, token: str, device_id: Optiona
     tok = (token or "").strip()[:24]
     device_hash = hash_device_id(device_id) or "nodevice"
     ip = client_ip(request)
-    return check_rate_limit_key(f"practice:lead:{device_hash}:{tok}:{ip}", "practice_lead")
+    return check_rate_limit_key(f"practice:lead:v2:{device_hash}:{tok}:{ip}", "practice_lead")
 
 
 def check_practice_lead_song_allowed(request: Request, token: str, device_id: Optional[str] = None) -> Tuple[bool, int]:
@@ -378,7 +378,7 @@ def check_practice_lead_song_allowed(request: Request, token: str, device_id: Op
     tok = (token or "").strip()[:24]
     device_hash = hash_device_id(device_id) or "nodevice"
     ip = client_ip(request)
-    return check_rate_limit_key(f"practice:lead-song:{device_hash}:{tok}:{ip}", "practice_lead_song")
+    return check_rate_limit_key(f"practice:lead-song:v2:{device_hash}:{tok}:{ip}", "practice_lead_song")
 
 
 def practice_no_store_headers() -> dict[str, str]:
