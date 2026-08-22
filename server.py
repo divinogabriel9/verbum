@@ -1286,6 +1286,32 @@ class GenerateBody(BaseModel):
     )
     mass_collection_date_label: Optional[str] = Field(None, max_length=L.COLLECTION_DATE_LABEL)
     food_sponsors: list[str] = Field(default_factory=list)
+    include_mass_collection_slide: bool = Field(
+        False,
+        description="When true, include the color-coded Mass Collection announcement slide.",
+    )
+    include_food_sponsor_slide: bool = Field(
+        False,
+        description="When true, include the color-coded Today's Food Sponsor announcement slide.",
+    )
+    include_sponsorship_contact_slide: bool = Field(
+        False,
+        description="When true, include the Food/Mass Sponsorship contact-person slide.",
+    )
+    include_merienda_location_slide: bool = Field(
+        False,
+        description="When true, include the Food/Mass Sponsorship merienda-location slide.",
+    )
+    sponsorship_contact: Optional[str] = Field(
+        None,
+        max_length=L.FOOD_SPONSOR,
+        description="Contact person text for the sponsorship contact slide.",
+    )
+    merienda_location: Optional[str] = Field(
+        None,
+        max_length=L.COLLECTION_DATE_LABEL,
+        description="Location text for the merienda announcement slide.",
+    )
     psalm_text_override: Optional[str] = Field(None, max_length=L.PSALM_FULL)
     psalm_refrain_index: Optional[int] = Field(None, ge=0)
     psalm_response_override: Optional[str] = Field(
@@ -3798,6 +3824,12 @@ def api_generate(
             if body.mass_collection_currency
             else "PHP",
             food_sponsors=sponsors or None,
+            include_mass_collection_slide=bool(body.include_mass_collection_slide),
+            include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
+            include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
+            include_merienda_location_slide=bool(body.include_merienda_location_slide),
+            sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
+            merienda_location=(body.merienda_location or "").strip() or None,
             psalm_text_override=psalm_override,
             psalm_refrain_index=body.psalm_refrain_index,
             psalm_response_override=(body.psalm_response_override or "").strip() or None,
@@ -4134,6 +4166,12 @@ async def api_regenerate_pptx(
             if body.mass_collection_currency
             else "PHP",
             food_sponsors=sponsors or None,
+            include_mass_collection_slide=bool(body.include_mass_collection_slide),
+            include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
+            include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
+            include_merienda_location_slide=bool(body.include_merienda_location_slide),
+            sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
+            merienda_location=(body.merienda_location or "").strip() or None,
             psalm_text_override=psalm_override,
             psalm_refrain_index=body.psalm_refrain_index,
             psalm_response_override=(body.psalm_response_override or "").strip() or None,

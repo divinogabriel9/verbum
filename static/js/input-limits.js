@@ -50,6 +50,8 @@
     "celebrant": "celebrant_name",
     "flow-collection-amount": "collection_amount",
     "flow-food-sponsor-input": "food_sponsor",
+    "flow-sponsorship-contact": "food_sponsor",
+    "flow-merienda-location": "collection_date_label",
     "flow-gospel-custom": "gospel_quote",
     "flow-psalm-custom": "psalm_refrain",
     "poster-celebrant": "celebrant_name",

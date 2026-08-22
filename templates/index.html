@@ -21344,6 +21344,62 @@
           font-size: var(--mw-type-caption);
           line-height: var(--leading-caption);
         }
+        
+        .mw-announcement-slides {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .mw-announcement-option {
+          display: grid;
+          grid-template-columns: auto auto 1fr;
+          align-items: center;
+          gap: 10px 12px;
+          padding: 12px 14px;
+          border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+          border-radius: 12px;
+          background: color-mix(in srgb, var(--surface-solid, #fff) 92%, var(--paper, #f7f5f0));
+          cursor: pointer;
+        }
+        .mw-announcement-option input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          margin: 0;
+          accent-color: var(--accent, #8b5a2b);
+        }
+        .mw-announcement-option__swatch {
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          background: var(--ann-swatch);
+          box-shadow: inset 0 0 0 1px rgba(0,0,0,0.18);
+          flex: 0 0 auto;
+        }
+        .mw-announcement-option__text {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          min-width: 0;
+        }
+        .mw-announcement-option__text strong {
+          font-size: 0.95rem;
+          color: var(--ink);
+        }
+        .mw-announcement-option__fields {
+          margin: -2px 0 8px;
+          padding: 12px 14px 4px;
+          border-left: 3px solid color-mix(in srgb, var(--ink) 14%, transparent);
+        }
+        .mw-announcement-hint {
+          margin: 6px 0 0;
+          font-size: 0.8rem;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-extras-block__sub {
+          margin: 4px 0 0;
+          font-size: var(--mw-type-caption, 0.875rem);
+          color: var(--muted, #6b6b6b);
+        }
+
         body.mw-on .mw-step-canvas.is-extras-step .mw-extras-stewardship-grid {
           display: grid;
           grid-template-columns: 1fr;
@@ -21769,45 +21825,102 @@
 
                 <article class="flow-bento-cell flow-setup-card2 mw-extras-block" id="mass-step-target-stewardship" data-mw-step="6" hidden>
                   <header class="mw-extras-block__head">
-                    <h3 class="mw-extras-block__title">Stewardship &amp; Collection</h3>
+                    <h3 class="mw-extras-block__title">Additional Details</h3>
+                    <p class="mw-extras-block__sub">Optional announcement slides for the deck. Check each slide you want to include.</p>
                   </header>
-                  <div class="mw-extras-stewardship-grid">
-                    <div class="field">
-                      <label id="flow-collection-date-label" for="flow-collection-date-trigger">Collection date</label>
-                      <div class="mass-date-picker" id="flow-collection-date-picker">
-                        <button type="button" class="mass-date-picker__trigger vb-select__trigger" id="flow-collection-date-trigger" aria-labelledby="flow-collection-date-label" aria-haspopup="dialog" aria-expanded="false" aria-controls="flow-collection-date-popover">
-                          <span class="mass-date-picker__value vb-select__value is-placeholder" id="flow-collection-date-display">Select date</span>
-                          <svg class="mass-date-picker__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                        </button>
-                        <div class="mass-date-picker__popover event-date-popover" id="flow-collection-date-popover" hidden>
-                          <div class="event-date-cal mass-date-cal" id="flow-collection-date-cal" role="application" aria-label="Collection date calendar"></div>
+
+                  <div class="mw-announcement-slides" id="flow-announcement-slides">
+                    <label class="mw-announcement-option">
+                      <input type="checkbox" id="flow-slide-mass-collection" />
+                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#223723" aria-hidden="true"></span>
+                      <span class="mw-announcement-option__text">
+                        <strong>Mass Collection</strong>
+                        <span class="muted">Dark green slide with amount + thank-you</span>
+                      </span>
+                    </label>
+                    <div class="mw-announcement-option__fields" data-ann-fields="collection" hidden>
+                      <div class="mw-extras-stewardship-grid">
+                        <div class="field">
+                          <label id="flow-collection-date-label" for="flow-collection-date-trigger">Collection date</label>
+                          <div class="mass-date-picker" id="flow-collection-date-picker">
+                            <button type="button" class="mass-date-picker__trigger vb-select__trigger" id="flow-collection-date-trigger" aria-labelledby="flow-collection-date-label" aria-haspopup="dialog" aria-expanded="false" aria-controls="flow-collection-date-popover">
+                              <span class="mass-date-picker__value vb-select__value is-placeholder" id="flow-collection-date-display">Select date</span>
+                              <svg class="mass-date-picker__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                            </button>
+                            <div class="mass-date-picker__popover event-date-popover" id="flow-collection-date-popover" hidden>
+                              <div class="event-date-cal mass-date-cal" id="flow-collection-date-cal" role="application" aria-label="Collection date calendar"></div>
+                            </div>
+                            <input type="date" id="flow-collection-date" class="mass-date-picker__native" tabindex="-1" aria-hidden="true" />
+                          </div>
                         </div>
-                        <input type="date" id="flow-collection-date" class="mass-date-picker__native" tabindex="-1" aria-hidden="true" />
+                        <div class="field">
+                          <label for="flow-collection-amount">Collection amount</label>
+                          <div class="flow-input-group flow-collection-amount-row">
+                            <select id="flow-collection-currency" aria-label="Collection currency">
+                              <option value="PHP">₱</option>
+                              <option value="KRW">₩</option>
+                              <option value="MYR">RM</option>
+                            </select>
+                            <input type="text" id="flow-collection-amount" inputmode="numeric" placeholder="Enter mass collection" maxlength="120" autocomplete="off" />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div class="field">
-                      <label for="flow-collection-amount">Collection amount</label>
-                      <div class="flow-input-group flow-collection-amount-row">
-                        <select id="flow-collection-currency" aria-label="Collection currency">
-                          <option value="PHP">₱</option>
-                          <option value="KRW">₩</option>
-                          <option value="MYR">RM</option>
-                        </select>
-                        <input type="text" id="flow-collection-amount" inputmode="numeric" placeholder="Enter mass collection" maxlength="120" autocomplete="off" />
+
+                    <label class="mw-announcement-option">
+                      <input type="checkbox" id="flow-slide-food-sponsor" />
+                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#394f80" aria-hidden="true"></span>
+                      <span class="mw-announcement-option__text">
+                        <strong>Today's Food Sponsor</strong>
+                        <span class="muted">Navy slide with sponsor name(s)</span>
+                      </span>
+                    </label>
+                    <div class="mw-announcement-option__fields" data-ann-fields="food" hidden>
+                      <div class="mw-extras-sponsor-panel" id="flow-sponsor-card">
+                        <div class="field flow-steward-sponsor">
+                          <label for="flow-food-sponsor-input">Food Sponsors</label>
+                          <div class="flow-input-group mw-extras-sponsor-input-row">
+                            <input type="text" id="flow-food-sponsor-input" placeholder="Type name" maxlength="120" autocomplete="off" />
+                            <button type="button" class="primary flow-setup-add-btn" id="btn-flow-food-add">Add</button>
+                          </div>
+                          <textarea id="flow-food-sponsors" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                        </div>
+                        <div class="mw-extras-sponsor-mobile-host" id="flow-food-sponsors-mobile-host" aria-live="polite">
+                          <p class="mw-aside__sponsors-empty muted" id="mw-aside-sponsors-empty-mobile">No sponsors added yet.</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="mw-extras-sponsor-panel" id="flow-sponsor-card">
-                    <div class="field flow-steward-sponsor">
-                      <label for="flow-food-sponsor-input">Food Sponsors</label>
-                      <div class="flow-input-group mw-extras-sponsor-input-row">
-                        <input type="text" id="flow-food-sponsor-input" placeholder="Type name" maxlength="120" autocomplete="off" />
-                        <button type="button" class="primary flow-setup-add-btn" id="btn-flow-food-add">Add</button>
+
+                    <label class="mw-announcement-option">
+                      <input type="checkbox" id="flow-slide-sponsorship-contact" />
+                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#a77026" aria-hidden="true"></span>
+                      <span class="mw-announcement-option__text">
+                        <strong>Food / Mass Sponsorship — Contact</strong>
+                        <span class="muted">Gold slide with who to look for</span>
+                      </span>
+                    </label>
+                    <div class="mw-announcement-option__fields" data-ann-fields="contact" hidden>
+                      <div class="field">
+                        <label for="flow-sponsorship-contact">Contact person</label>
+                        <input type="text" id="flow-sponsorship-contact" placeholder="e.g. Ms. Rica Norba" maxlength="120" autocomplete="off" />
+                        <p class="muted mw-announcement-hint">Shown as “Look For … or Any GFCC Volunteers”.</p>
                       </div>
-                      <textarea id="flow-food-sponsors" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
                     </div>
-                    <div class="mw-extras-sponsor-mobile-host" id="flow-food-sponsors-mobile-host" aria-live="polite">
-                      <p class="mw-aside__sponsors-empty muted" id="mw-aside-sponsors-empty-mobile">No sponsors added yet.</p>
+
+                    <label class="mw-announcement-option">
+                      <input type="checkbox" id="flow-slide-merienda-location" />
+                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#fb5f54" aria-hidden="true"></span>
+                      <span class="mw-announcement-option__text">
+                        <strong>Food / Mass Sponsorship — Merienda location</strong>
+                        <span class="muted">Coral slide with where merienda is held</span>
+                      </span>
+                    </label>
+                    <div class="mw-announcement-option__fields" data-ann-fields="merienda" hidden>
+                      <div class="field">
+                        <label for="flow-merienda-location">Location</label>
+                        <input type="text" id="flow-merienda-location" placeholder="e.g. 3rd Floor" maxlength="200" autocomplete="off" />
+                        <p class="muted mw-announcement-hint">Shown as “We will be having a MERIENDA at the …”.</p>
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -22301,7 +22414,12 @@
           var ann = $('flow-announcement-posters'); var nann = (ann && ann.files) ? ann.files.length : 0;
           if ($('mw-sum-ann')) $('mw-sum-ann').textContent = nann ? (nann + ' file' + (nann > 1 ? 's' : '')) : 'None';
           var amt = $('flow-collection-amount');
-          if ($('mw-sum-collection')) $('mw-sum-collection').textContent = (amt && amt.value.trim()) ? ('Yes (' + amt.value.trim() + ')') : 'No';
+          var collOn = $('flow-slide-mass-collection') && $('flow-slide-mass-collection').checked;
+          if ($('mw-sum-collection')) {
+            if (collOn && amt && amt.value.trim()) $('mw-sum-collection').textContent = 'Yes (' + amt.value.trim() + ')';
+            else if (collOn) $('mw-sum-collection').textContent = 'Yes';
+            else $('mw-sum-collection').textContent = 'No';
+          }
           var slides = '—';
           if (window.__mwPreviewData && window.__mwPreviewData.estimated_slide_count) slides = window.__mwPreviewData.estimated_slide_count;
           if ($('mw-sum-slides')) $('mw-sum-slides').textContent = slides;
@@ -30837,6 +30955,9 @@
         "flow-mass-language",
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
+        "flow-slide-mass-collection", "flow-slide-food-sponsor",
+        "flow-slide-sponsorship-contact", "flow-slide-merienda-location",
+        "flow-sponsorship-contact", "flow-merienda-location",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-openai-poster", "flow-use-gemini-poster",
         "flow-include-church-logo", "flow-include-church-name", "flow-show-footer",
@@ -31107,6 +31228,7 @@
         if (Object.prototype.hasOwnProperty.call(f, id)) setMassBuilderFieldValue(id, f[id]);
       });
       ensureCollectionDefaultDate();
+      if (typeof window.syncAnnouncementSlideFields === "function") window.syncAnnouncementSlideFields();
       if (typeof applyRiteVideoState === "function") {
         applyRiteVideoState(draft.riteVideo || { mode: {}, lang: {} });
       }
@@ -43612,6 +43734,31 @@
       hidden.value = getFlowFoodSponsorsLines().join("\n");
     }
 
+    
+    (function initAnnouncementSlideToggles() {
+      const pairs = [
+        ["flow-slide-mass-collection", "collection"],
+        ["flow-slide-food-sponsor", "food"],
+        ["flow-slide-sponsorship-contact", "contact"],
+        ["flow-slide-merienda-location", "merienda"],
+      ];
+      function syncAnnouncementFields() {
+        pairs.forEach(([cbId, key]) => {
+          const cb = document.getElementById(cbId);
+          const panel = document.querySelector('[data-ann-fields="' + key + '"]');
+          if (!panel) return;
+          const on = !!(cb && cb.checked);
+          panel.hidden = !on;
+        });
+      }
+      pairs.forEach(([cbId]) => {
+        const cb = document.getElementById(cbId);
+        if (cb) cb.addEventListener("change", syncAnnouncementFields);
+      });
+      syncAnnouncementFields();
+      window.syncAnnouncementSlideFields = syncAnnouncementFields;
+    })();
+
     function getFlowFoodSponsorsLines() {
       const list = ensureFoodSponsorsList();
       if (!list) return [];
@@ -48475,6 +48622,14 @@
         }
         if (collLabel) body.mass_collection_date_label = collLabel;
         if (foodLines.length) body.food_sponsors = foodLines;
+        body.include_mass_collection_slide = !!( $("flow-slide-mass-collection") && $("flow-slide-mass-collection").checked );
+        body.include_food_sponsor_slide = !!( $("flow-slide-food-sponsor") && $("flow-slide-food-sponsor").checked );
+        body.include_sponsorship_contact_slide = !!( $("flow-slide-sponsorship-contact") && $("flow-slide-sponsorship-contact").checked );
+        body.include_merienda_location_slide = !!( $("flow-slide-merienda-location") && $("flow-slide-merienda-location").checked );
+        const sponsorshipContact = $("flow-sponsorship-contact") && $("flow-sponsorship-contact").value.trim();
+        const meriendaLocation = $("flow-merienda-location") && $("flow-merienda-location").value.trim();
+        if (sponsorshipContact) body.sponsorship_contact = sponsorshipContact;
+        if (meriendaLocation) body.merienda_location = meriendaLocation;
         const creedSel = $("flow-creed-choice");
         body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
         const ofSel = $("flow-our-father-choice");
@@ -48510,6 +48665,12 @@
           mass_collection_currency: body.mass_collection_currency || null,
           mass_collection_date_label: body.mass_collection_date_label || null,
           food_sponsors: body.food_sponsors || [],
+          include_mass_collection_slide: !!body.include_mass_collection_slide,
+          include_food_sponsor_slide: !!body.include_food_sponsor_slide,
+          include_sponsorship_contact_slide: !!body.include_sponsorship_contact_slide,
+          include_merienda_location_slide: !!body.include_merienda_location_slide,
+          sponsorship_contact: body.sponsorship_contact || null,
+          merienda_location: body.merienda_location || null,
           psalm_text_override: body.psalm_text_override || null,
           psalm_refrain_index: body.psalm_refrain_index != null ? body.psalm_refrain_index : null,
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
