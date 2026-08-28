@@ -12919,6 +12919,42 @@
       cursor: pointer;
       white-space: nowrap;
     }
+    .song-composer-toolbar-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .song-composer-add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--liturgical-accent);
+      border-radius: var(--radius-sm);
+      background: var(--liturgical-accent);
+      color: var(--on-accent, #fff);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .song-composer-add-btn:hover {
+      background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+    }
+    .song-composer-add-btn:active {
+      transform: scale(0.97);
+    }
+    .song-composer-upload-btn--icon {
+      width: 36px;
+      min-width: 36px;
+      padding: 0;
+      justify-content: center;
+    }
     .lyrics-file-input {
       position: absolute;
       width: 1px;
@@ -13296,6 +13332,189 @@
     #song-metadata-modal .primary:hover {
       background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
       border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+    }
+    #composer-new-song-modal .ui-card {
+      width: min(680px, calc(100vw - 2rem));
+      max-width: min(680px, calc(100vw - 2rem));
+      max-height: min(92vh, 900px);
+      overflow: hidden;
+    }
+    #composer-new-song-modal .ui-card__content {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      overflow: auto;
+    }
+    .composer-new-song-search {
+      position: relative;
+    }
+    .composer-new-song-search input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .composer-new-song-results {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 4;
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-sm);
+      background: var(--surface-solid, var(--surface-2));
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 14%, transparent);
+    }
+    .composer-new-song-results[hidden] {
+      display: none !important;
+    }
+    .composer-new-song-results__empty {
+      margin: 0;
+      padding: 10px 12px;
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+    .composer-new-song-results__list {
+      list-style: none;
+      margin: 0;
+      padding: 4px;
+    }
+    .composer-new-song-results__item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      padding: 8px 10px;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+    }
+    .composer-new-song-results__item:hover,
+    .composer-new-song-results__item:focus-visible {
+      background: color-mix(in srgb, var(--liturgical-accent) 10%, var(--surface-2));
+      outline: none;
+    }
+    .composer-new-song-results__title {
+      display: block;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    .composer-new-song-results__meta {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .composer-new-song-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 14px;
+    }
+    .composer-new-song-details .field {
+      margin: 0;
+      min-width: 0;
+    }
+    .composer-new-song-details .composer-new-song-moods {
+      grid-column: 1 / -1;
+      margin: 0;
+      border: none;
+      padding: 0;
+    }
+    .composer-new-song-details .composer-new-song-moods legend {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .composer-new-song-details .song-metadata-moods__grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+    }
+    .composer-new-song-lyrics-wrap textarea {
+      width: 100%;
+      min-height: 180px;
+      max-height: 36vh;
+      resize: vertical;
+      box-sizing: border-box;
+      font-family: inherit;
+      line-height: 1.45;
+    }
+    .composer-new-song-error {
+      margin: 0;
+      font-size: 0.8125rem;
+      color: var(--danger, #b42318);
+    }
+    .composer-new-song-search-hint {
+      margin: 6px 0 0;
+      font-size: 0.75rem;
+      line-height: 1.35;
+    }
+    .composer-new-song-search-hint.warn {
+      color: var(--danger, #b42318);
+    }
+    .composer-new-song-field.is-attention input,
+    .composer-new-song-field.is-attention select,
+    .composer-new-song-field.is-attention textarea {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--line)) !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent) 22%, transparent);
+      animation: song-save-mood-pulse 1.8s ease-in-out infinite;
+    }
+    .composer-new-song-field.is-attention .vb-select__trigger {
+      border-color: color-mix(in srgb, var(--liturgical-accent) 55%, var(--line)) !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--liturgical-accent) 22%, transparent);
+      animation: song-save-mood-pulse 1.8s ease-in-out infinite;
+    }
+    .composer-new-song-moods.composer-new-song-field.is-attention {
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent) 45%, var(--line-soft));
+      border-radius: 10px;
+      padding: 8px;
+      animation: song-save-mood-pulse 1.8s ease-in-out infinite;
+    }
+    .composer-new-song-results .song-catalog-empty__google-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+      cursor: pointer;
+    }
+    #composer-new-song-modal .song-save-mood-google {
+      margin: 8px 0 0;
+      padding-top: 0;
+      border-top: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .composer-new-song-field.is-attention input,
+      .composer-new-song-field.is-attention select,
+      .composer-new-song-field.is-attention textarea,
+      .composer-new-song-field.is-attention .vb-select__trigger,
+      .composer-new-song-moods.composer-new-song-field.is-attention {
+        animation: none;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--liturgical-accent) 40%, transparent);
+      }
+    }
+    #composer-new-song-modal .primary {
+      background: var(--liturgical-accent);
+      border-color: var(--liturgical-accent);
+      color: var(--on-accent, #fff);
+    }
+    #composer-new-song-modal .primary:hover {
+      background: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+      border-color: color-mix(in srgb, var(--liturgical-accent) 88%, black);
+    }
+    /* Language / Google confirm must stack above Add new song modal (both default z-index 60). */
+    #song-catalog-google-modal.ui-overlay {
+      z-index: 70;
+    }
+    #song-catalog-google-modal .vb-select__panel {
+      z-index: 80;
+    }
+    @media (max-width: 640px) {
+      .composer-new-song-details {
+        grid-template-columns: 1fr;
+      }
     }
     #song-metadata-modal .ui-card {
       width: min(720px, calc(100vw - 2rem));
@@ -18745,7 +18964,7 @@
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
                     </span>
                     <span class="home-qa-tile__title">Share Choir Lyrics</span>
-                    <span class="home-qa-tile__desc">PIN-protected link for choir practice</span>
+                    <span class="home-qa-tile__desc">Open practice link for your choir</span>
                   </button>
                   <a class="home-qa-tile" role="listitem" href="/mass/builder" data-route="/mass/builder">
                     <span class="home-qa-tile__icon" aria-hidden="true">
@@ -18960,7 +19179,7 @@
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="deck-theme-modal-title">Choose your slide theme</h3>
-              <p class="ui-card__description" id="deck-theme-modal-desc">Pick how Mass slides look. You can change this later on Review.</p>
+              <p class="ui-card__description" id="deck-theme-modal-desc">Pick how Mass slides look. You can change this later under Additional Details.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="deck-theme-modal-close" aria-label="Close" hidden>×</button>
           </header>
@@ -19254,7 +19473,7 @@
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="practice-share-sections-title">Share lyrics for choir</h3>
-              <p class="ui-card__description" id="practice-share-sections-sub">Pick songs for each Mass section, then share a PIN-protected link.</p>
+              <p class="ui-card__description" id="practice-share-sections-sub">Pick songs for each Mass section, then share a practice link.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="practice-share-sections-close" aria-label="Close">×</button>
           </header>
@@ -19308,21 +19527,7 @@
           </header>
           <div class="ui-card__content practice-share-body">
             <div class="practice-share-setup" id="practice-share-setup">
-              <p class="practice-share-setup__lead">Create a 6-digit choir PIN. We’ll also generate a private leader password so you can open the same link later to edit.</p>
-              <div class="field practice-share-pin-field" id="practice-share-pin-wrap">
-                <label>Create PIN</label>
-                <div class="pin-otp pin-otp__wrap" id="practice-share-pin-otp">
-                  <input type="tel" class="pin-otp__trap" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" aria-label="6-digit PIN" />
-                  <div class="pin-otp__cells" aria-hidden="true">
-                    <span class="pin-otp__box" data-pin-box></span>
-                    <span class="pin-otp__box" data-pin-box></span>
-                    <span class="pin-otp__box" data-pin-box></span>
-                    <span class="pin-otp__box" data-pin-box></span>
-                    <span class="pin-otp__box" data-pin-box></span>
-                    <span class="pin-otp__box" data-pin-box></span>
-                  </div>
-                </div>
-              </div>
+              <p class="practice-share-setup__lead">Anyone with the link can open the lyrics — no choir PIN. We’ll generate a private leader password so you can edit from the same link.</p>
             </div>
             <div class="practice-share-loading" id="practice-share-loading" hidden role="status" aria-live="polite">
               <div class="loader-wrapper">
@@ -19355,7 +19560,7 @@
                   <p class="practice-share-pin-display__value" id="practice-share-leader-pin-value">————</p>
                   <button type="button" class="secondary" id="practice-share-copy-leader-pin">Copy</button>
                 </div>
-                <p class="muted" style="margin:0;font-size:0.78rem;line-height:1.4;">Also emailed to you. Keep private — use it if you open the choir link later to edit.</p>
+                <p class="muted" style="margin:0;font-size:0.78rem;line-height:1.4;">Also emailed to you. Keep private — open the link and tap Leader mode to edit.</p>
               </div>
               <p class="practice-share-pin-display__missing" id="practice-share-leader-pin-missing" hidden>Leader password was emailed when this link was created. Check your inbox, or create a new share if you need it again.</p>
               <button type="button" class="primary practice-share-lead-btn" id="practice-share-lets-practice" hidden>Let’s practice</button>
@@ -19498,8 +19703,8 @@
         <article class="ui-card" role="alertdialog" aria-labelledby="lyrics-clear-title" aria-describedby="lyrics-clear-desc" aria-modal="true">
           <header class="ui-card__header">
             <div class="ui-card__header-text">
-              <h3 class="ui-card__title" id="lyrics-clear-title">Clear lyrics?</h3>
-              <p class="ui-card__description" id="lyrics-clear-desc">This clears the raw text and structured blocks in the editor. It does not delete songs from the library.</p>
+              <h3 class="ui-card__title" id="lyrics-clear-title">Clear editor?</h3>
+              <p class="ui-card__description" id="lyrics-clear-desc">This clears the title, details, lyrics, and structured blocks in the editor. It does not delete songs from the library.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="lyrics-clear-close" aria-label="Close">×</button>
           </header>
@@ -19727,6 +19932,81 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="composer-new-song-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="composer-new-song-backdrop"></div>
+        <article class="ui-card ui-card--popover-safe composer-new-song-card" role="dialog" aria-labelledby="composer-new-song-modal-heading" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="composer-new-song-modal-heading">Add new song</h3>
+              <p class="ui-card__description" id="composer-new-song-desc">Search your library, set details, paste lyrics, then analyze to structure.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="composer-new-song-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content">
+            <div class="field composer-new-song-search composer-new-song-field" id="composer-new-song-title-search-field">
+              <label for="composer-new-song-title-search">Search song title</label>
+              <input type="search" id="composer-new-song-title-search" maxlength="200" autocomplete="off" aria-describedby="composer-new-song-search-hint" placeholder="Search songs title" />
+              <p class="muted composer-new-song-search-hint" id="composer-new-song-search-hint" hidden></p>
+              <div class="composer-new-song-results" id="composer-new-song-results" hidden></div>
+            </div>
+            <div class="composer-new-song-details">
+              <div class="field composer-new-song-field" id="composer-new-song-title-field">
+                <label for="composer-new-song-title">Title</label>
+                <input type="text" id="composer-new-song-title" maxlength="240" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="composer-new-song-author">Author</label>
+                <input type="text" id="composer-new-song-author" placeholder="Optional" maxlength="240" autocomplete="off" />
+              </div>
+              <div class="field composer-new-song-field" id="composer-new-song-language-field">
+                <label for="composer-new-song-language">Language</label>
+                <select id="composer-new-song-language">
+                  <option value="" disabled hidden>Select language</option>
+                  <option value="English">English</option>
+                  <option value="Tagalog">Tagalog</option>
+                  <option value="Latin">Latin</option>
+                  <option value="Mix">Mix</option>
+                </select>
+              </div>
+              <div class="field composer-new-song-field" id="composer-new-song-section-field">
+                <label for="composer-new-song-section">Section</label>
+                <select id="composer-new-song-section">
+                  <option value="" disabled hidden>Select section</option>
+                  <option value="entrance">Entrance</option>
+                  <option value="offertory">Offertory</option>
+                  <option value="communion">Communion</option>
+                  <option value="recessional">Recessional</option>
+                  <option value="meditation">Meditation / Other</option>
+                </select>
+              </div>
+              <fieldset class="song-metadata-moods composer-new-song-moods composer-new-song-field" id="composer-new-song-moods-field">
+                <legend>Gospel mood</legend>
+                <div class="song-metadata-moods__grid">
+                  <label><input type="checkbox" value="triumphant" data-composer-new-mood-opt /> Triumphant</label>
+                  <label><input type="checkbox" value="solemn" data-composer-new-mood-opt /> Solemn</label>
+                  <label><input type="checkbox" value="mercy" data-composer-new-mood-opt /> Mercy</label>
+                  <label><input type="checkbox" value="journey" data-composer-new-mood-opt /> Journey</label>
+                  <label><input type="checkbox" value="reverent" data-composer-new-mood-opt /> Reverent</label>
+                </div>
+                <p class="song-save-mood-google" id="composer-new-song-mood-google-wrap" hidden>
+                  Not sure?
+                  <button type="button" class="song-save-mood-google-link" id="composer-new-song-mood-google-link">Search Google for this song&apos;s mood</button>
+                </p>
+              </fieldset>
+            </div>
+            <div class="field composer-new-song-lyrics-wrap composer-new-song-field" id="composer-new-song-lyrics-field">
+              <label for="composer-new-song-lyrics">Lyrics</label>
+              <textarea id="composer-new-song-lyrics" maxlength="50000" spellcheck="true" placeholder="Paste or type lyrics here…"></textarea>
+            </div>
+            <p class="composer-new-song-error" id="composer-new-song-error" hidden></p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="composer-new-song-cancel">Cancel</button>
+            <button type="button" class="primary" id="composer-new-song-analyze">Analyze</button>
+          </footer>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="media-delete-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="media-delete-backdrop"></div>
         <article class="ui-card" role="alertdialog" aria-labelledby="media-delete-title" aria-describedby="media-delete-desc" aria-modal="true">
@@ -19817,8 +20097,31 @@
             <p class="muted mw-rite__hint" id="mw-media-pick-youtube-hint" style="margin:8px 0 0;">Click the YouTube tab to search this song in a new tab, then paste the URL here. Play is for practice only — it is not added to the PowerPoint.</p>
           </div>
           <div class="mw-modal__actions mw-media-pick-actions">
+            <button type="button" class="mw-btn mw-btn--soft" id="mw-media-pick-view-lyrics" hidden>View lyrics</button>
             <button type="button" class="mw-btn mw-media-pick-clear" id="mw-media-pick-clear">Unlink</button>
             <button type="button" class="mw-btn mw-btn--ghost mw-media-pick-close" id="mw-media-pick-close">Close</button>
+          </div>
+        </div>
+      </div>
+      <div class="mw-modal" id="mass-song-lyrics-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mass-song-lyrics-title">
+        <div class="mw-modal__card mass-song-lyrics-card" style="max-width:min(640px,94vw);">
+          <h3 class="mw-modal__title" id="mass-song-lyrics-title">Lyrics</h3>
+          <p class="sa-song-lyrics-meta" id="mass-song-lyrics-meta" hidden></p>
+          <pre class="sa-song-lyrics-body" id="mass-song-lyrics-body"></pre>
+          <p class="status" id="mass-song-lyrics-status" aria-live="polite" hidden></p>
+          <div class="mw-modal__actions">
+            <button type="button" class="mw-btn mw-btn--ghost" id="mass-song-lyrics-close">Close</button>
+          </div>
+        </div>
+      </div>
+      <div class="mw-modal" id="mw-missing-options-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-missing-options-title">
+        <div class="mw-modal__card" style="max-width:min(480px,94vw);">
+          <h3 class="mw-modal__title" id="mw-missing-options-title">Unselected options</h3>
+          <p class="mw-modal__sub" id="mw-missing-options-desc">Please pick options before you proceed.</p>
+          <ul class="mw-missing-options-list" id="mw-missing-options-list" aria-label="Options still needed"></ul>
+          <div class="mw-modal__actions">
+            <button type="button" class="mw-btn mw-btn--ghost" id="mw-missing-options-close">Close</button>
+            <button type="button" class="mw-btn mw-btn--primary" id="mw-missing-options-fix">Select options</button>
           </div>
         </div>
       </div>
@@ -19836,10 +20139,12 @@
                     <input type="search" id="song-catalog-search" placeholder="Search songs title" maxlength="200" autocomplete="off" aria-label="Search song title" aria-describedby="song-catalog-search-hint" />
                     <button type="button" class="song-composer-search-clear is-idle" id="song-catalog-search-clear" aria-label="Clear search" aria-hidden="true" tabindex="-1">×</button>
                   </div>
-                  <label class="song-composer-upload-btn" id="lyrics-drop-zone" for="lyrics-file" title="Upload .txt or .rtf — plain lyrics or Verbum multi-song catalog (===SONG===)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-                    <span>Upload .txt</span>
-                  </label>
+                  <div class="song-composer-toolbar-actions">
+                    <button type="button" class="song-composer-add-btn" id="btn-composer-add-song">Add new songs</button>
+                    <label class="song-composer-upload-btn song-composer-upload-btn--icon" id="lyrics-drop-zone" for="lyrics-file" title="Upload .txt or .rtf — plain lyrics or Verbum multi-song catalog (===SONG===)" aria-label="Upload .txt or .rtf">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+                    </label>
+                  </div>
                   <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,.rtf,text/plain,application/rtf,text/rtf" tabindex="-1" />
                 </div>
                 <p class="muted song-composer-search-hint" id="song-catalog-search-hint" style="margin:6px 0 0;font-size:0.75rem;line-height:1.35;" hidden></p>
@@ -20205,12 +20510,14 @@
         .mw-rite__body { padding: 0 16px 16px; display: grid; gap: 12px; }
         .mw-rite.is-default .field select { opacity: .55; }
         .mw-play { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); cursor: not-allowed; font-size: var(--mw-type-micro, 0.625rem); }
-        .mw-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: var(--mw-type-caption, 0.875rem); color: var(--ink); position: relative; }
-        .mw-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
-        .mw-switch__track { width: 42px; height: 24px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--card-border); position: relative; transition: background .25s, border-color .25s; flex: none; }
-        .mw-switch__knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .25s; }
+        .mw-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: var(--mw-type-caption, 0.875rem); color: var(--ink); position: relative; user-select: none; }
+        .mw-switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+        .mw-switch__track { width: 42px; height: 24px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--card-border); position: relative; transition: background .25s, border-color .25s; flex: none; pointer-events: none; }
+        .mw-switch__knob { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .25s; pointer-events: none; }
         .mw-switch input:checked + .mw-switch__track { background: var(--accent); border-color: var(--accent); }
         .mw-switch input:checked + .mw-switch__track .mw-switch__knob { transform: translateX(18px); }
+        .mw-switch__text { font-weight: 600; pointer-events: none; }
+        .flow-poster-style__ai .mw-switch { margin-top: 4px; }
         .mw-link { align-self: flex-start; background: none; border: 0; color: var(--accent); font-weight: 600; font-size: var(--mw-type-caption, 0.875rem); cursor: pointer; padding: 0; }
         .mw-link:hover { text-decoration: underline; }
         .mw-ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: var(--mw-type-micro, 0.625rem); font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); padding: 2px 8px; border-radius: 999px; }
@@ -20250,6 +20557,17 @@
         /* Above song Edit Details (.ui-overlay z-index 60) when previewing from Song Composer */
         #mw-preview-modal { z-index: 140; }
         #song-media-preview-modal { z-index: 160; }
+        #mass-song-lyrics-modal { z-index: 150; }
+        .mw-media-pick-card.is-lyrics-access-only .mw-media-pick-tabs,
+        .mw-media-pick-card.is-lyrics-access-only .mw-media-pick-pane {
+          display: none !important;
+        }
+        .mw-media-pick-card.is-lyrics-access-only .mw-media-pick-clear {
+          display: none !important;
+        }
+        .mass-song-lyrics-card .sa-song-lyrics-body {
+          max-height: min(62vh, 560px);
+        }
         #song-media-preview-modal .song-media-preview-modal__card { width: min(720px, 94vw); }
         #song-media-preview-modal .song-media-preview-modal__video {
           display: block;
@@ -20549,7 +20867,7 @@
         .mw-option__text:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
         .mw-option__text:active { transform: scale(.9); }
         .mw-option__media { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; align-items: center; }
-        body:not(.is-superadmin) .mw-option__media { display: none !important; }
+        /* Lyrics|Video is for all users; Audio/Video link chips stay SA-only via .mw-media-chip--sa */
         .mw-option__media.mass-song-media-row {
           display: flex;
           flex-wrap: wrap;
@@ -20557,6 +20875,10 @@
           align-items: center;
           margin-top: 8px;
           width: 100%;
+        }
+        /* Non-SA: hide unused Audio/Video groups (chips are SA-only); keep ready play controls */
+        body:not(.is-superadmin) .mw-option__media .mw-media-group:has(.mw-media-chip--sa):not(:has(.mw-media-play.is-ready)) {
+          display: none;
         }
         .mw-option--video .mw-option__row { flex-wrap: wrap; align-items: center; gap: 8px; }
         .mw-video-lang-select {
@@ -20835,6 +21157,360 @@
         .mw-option[aria-checked="true"] .mw-option__check::after { transform: scale(1); }
         .mw-rite__hint { font-size: var(--mw-type-caption, 0.875rem); color: var(--muted); margin: 2px 0 0; line-height: 1.35; }
         .mw-receipt, .mw-card.mw-default-setup { max-width: 860px; }
+        .mw-default-pin {
+          margin-left: auto;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: var(--mw-type-micro, 0.625rem);
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: var(--muted);
+          cursor: pointer;
+          flex: none;
+          user-select: none;
+        }
+        .mw-default-pin input {
+          width: 14px;
+          height: 14px;
+          margin: 0;
+          accent-color: var(--accent);
+          cursor: pointer;
+        }
+        .mw-default-pin.is-on { color: var(--accent); }
+        .mw-field-default-pin { margin-top: 6px; }
+        /* Introductory Rites + Eucharist: collapse to pinned default; peek strips + expand on hover */
+        @media (hover: hover) {
+          body.mw-on .mw-rite.mw-rite--collapse-default {
+            --mw-rite-ease: var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+            --mw-rite-enter: var(--motion-duration-base, 200ms);
+            --mw-rite-exit: var(--motion-duration-exit, 120ms);
+          }
+          /* Collapsed = default → fast, snappy hover-out */
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options {
+            transition: gap var(--mw-rite-exit) var(--mw-rite-ease);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options {
+            gap: 3px;
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options {
+            gap: 5px;
+            transition-duration: var(--mw-rite-enter);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option {
+            transition:
+              max-height var(--mw-rite-exit) var(--mw-rite-ease),
+              min-height var(--mw-rite-exit) var(--mw-rite-ease),
+              padding var(--mw-rite-exit) var(--mw-rite-ease),
+              border-color var(--mw-rite-exit) var(--mw-rite-ease),
+              background var(--mw-rite-exit) var(--mw-rite-ease),
+              gap var(--mw-rite-exit) var(--mw-rite-ease),
+              transform var(--mw-rite-exit) var(--mw-rite-ease);
+            max-height: 520px;
+            overflow: hidden;
+            transform: translateY(0) scale(1);
+            transform-origin: top center;
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option {
+            transition-duration: var(--mw-rite-enter);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) {
+            max-height: 16px;
+            min-height: 16px;
+            opacity: 1;
+            margin-block: 0;
+            padding: 0 10px;
+            border: 1px solid var(--line-soft);
+            border-radius: 10px;
+            pointer-events: none;
+            transform: scale(0.99);
+            background: var(--surface-solid);
+            color: var(--ink);
+            box-shadow: none;
+            gap: 0;
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__row {
+            transition:
+              max-height var(--mw-rite-exit) var(--mw-rite-ease),
+              opacity var(--mw-rite-exit) var(--mw-rite-ease),
+              padding var(--mw-rite-exit) var(--mw-rite-ease),
+              transform var(--mw-rite-exit) var(--mw-rite-ease);
+            max-height: 120px;
+            transform: translateY(0);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__row {
+            transition-duration: var(--mw-rite-enter);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__row {
+            visibility: visible;
+            height: auto;
+            max-height: 16px;
+            min-height: 16px;
+            margin: 0;
+            padding: 0;
+            opacity: 1;
+            align-items: center;
+            gap: 6px;
+            transform: translateY(0);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__label {
+            transition:
+              font-size var(--mw-rite-exit) var(--mw-rite-ease),
+              line-height var(--mw-rite-exit) var(--mw-rite-ease),
+              opacity var(--mw-rite-exit) var(--mw-rite-ease);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__label {
+            transition-duration: var(--mw-rite-enter);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__label {
+            visibility: visible;
+            opacity: 1;
+            font-size: var(--mw-type-micro, 0.625rem);
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--ink);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__media {
+            transition:
+              max-height var(--mw-rite-exit) var(--mw-rite-ease),
+              opacity var(--mw-rite-exit) var(--mw-rite-ease),
+              margin var(--mw-rite-exit) var(--mw-rite-ease),
+              transform var(--mw-rite-exit) var(--mw-rite-ease);
+            max-height: 180px;
+            overflow: hidden;
+            transform: translateY(0) scale(1);
+            transform-origin: top center;
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__media {
+            transition-duration: var(--mw-rite-enter);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__media {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            pointer-events: none;
+            transform: translateY(-3px) scale(0.98);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__check,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-default-pin,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__text {
+            transition:
+              opacity var(--mw-rite-exit) var(--mw-rite-ease),
+              max-width var(--mw-rite-exit) var(--mw-rite-ease),
+              margin var(--mw-rite-exit) var(--mw-rite-ease),
+              transform var(--mw-rite-exit) var(--mw-rite-ease);
+            max-width: 140px;
+            overflow: hidden;
+            transform: scale(1);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__check,
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-default-pin,
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__text {
+            transition-duration: var(--mw-rite-enter);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__check,
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-default-pin,
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__text {
+            opacity: 0;
+            max-width: 0;
+            margin: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-rite__head {
+            cursor: pointer;
+          }
+        }
+        @media (hover: hover) and (prefers-reduced-motion: reduce) {
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__row,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__label,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__media,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__check,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-default-pin,
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option .mw-option__text {
+            transition: none;
+          }
+        }
+        .mw-review-full {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px 12px;
+          width: 100%;
+          max-width: none;
+        }
+        .mw-review-section {
+          border: 1px solid var(--card-border);
+          border-radius: 12px;
+          background: var(--surface);
+          padding: 10px 12px;
+          box-shadow: var(--shadow-light);
+          min-width: 0;
+        }
+        .mw-review-section[data-mw-review-go] {
+          cursor: pointer;
+          text-align: left;
+          transition: border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+        }
+        .mw-review-section[data-mw-review-go]:hover {
+          border-color: color-mix(in srgb, var(--accent) 38%, var(--card-border));
+          box-shadow: var(--shadow-light), 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+        .mw-review-section[data-mw-review-go]:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+        .mw-review-section[data-mw-review-go]:active {
+          transform: scale(0.996);
+        }
+        .mw-review-section__head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin: 0 0 6px;
+          padding-bottom: 6px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .mw-review-section__head h3 {
+          margin: 0;
+          font-size: 0.8125rem;
+          font-weight: 700;
+          color: var(--ink);
+          line-height: 1.2;
+        }
+        .mw-review-section__head span {
+          flex: none;
+          font-size: 0.625rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: var(--accent);
+          padding: 2px 6px;
+          border-radius: 999px;
+          background: color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+        .mw-review-section[data-mw-review-go] .mw-review-section__edit {
+          margin-left: auto;
+          font-size: 0.625rem;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: var(--muted);
+          opacity: 0;
+          transition: opacity .15s ease, color .15s ease;
+        }
+        .mw-review-section[data-mw-review-go]:hover .mw-review-section__edit,
+        .mw-review-section[data-mw-review-go]:focus-visible .mw-review-section__edit {
+          opacity: 1;
+          color: var(--accent);
+        }
+        .mw-review-rows { margin: 0; display: grid; gap: 0; }
+        .mw-review-rows .mw-aside__row {
+          display: grid;
+          grid-template-columns: minmax(4.75rem, 42%) minmax(0, 1fr);
+          gap: 4px 8px;
+          align-items: baseline;
+          padding: 3px 0;
+          border-bottom: 1px dashed var(--line);
+        }
+        .mw-review-rows .mw-aside__row:last-child { border-bottom: 0; }
+        .mw-review-rows .mw-aside__row dt {
+          font-size: 0.6875rem;
+          line-height: 1.25;
+        }
+        .mw-review-rows .mw-aside__row dd {
+          font-size: 0.75rem;
+          font-weight: 600;
+          line-height: 1.25;
+          text-align: right;
+          word-break: break-word;
+        }
+        .mw-review-section--multi .mw-review-rows {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          column-gap: 14px;
+        }
+        .mw-review-total {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 0;
+          padding: 8px 14px;
+          border-radius: 10px;
+          border: 1px solid var(--card-border);
+          background: var(--surface-2);
+          font-size: 0.8125rem;
+          color: var(--muted);
+        }
+        .mw-review-total strong { font-size: 1.25rem; color: var(--accent); }
+        @keyframes mw-missing-blink {
+          0%, 100% {
+            box-shadow: 0 0 0 0 transparent;
+            background: var(--surface);
+          }
+          50% {
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+            background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+          }
+        }
+        .mw-review-section.is-missing-highlight,
+        .mw-review-rows .mw-aside__row.is-missing-highlight {
+          animation: mw-missing-blink 1.1s ease-in-out 5;
+          border-color: color-mix(in srgb, var(--accent) 42%, var(--card-border));
+        }
+        .mw-rite.mw-missing-target,
+        .mass-song-plan-card.mw-missing-target,
+        body.mw-on #flow-page .field.mw-missing-target {
+          animation: mw-missing-blink 1.1s ease-in-out infinite;
+          outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+          outline-offset: 3px;
+          border-radius: 12px;
+        }
+        .mw-missing-options-list {
+          margin: 12px 0 0;
+          padding: 0;
+          list-style: none;
+          display: grid;
+          gap: 6px;
+          max-height: min(40vh, 280px);
+          overflow: auto;
+        }
+        .mw-missing-options-list li {
+          padding: 8px 10px;
+          border-radius: 8px;
+          border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--card-border));
+          background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+          font-size: 0.8125rem;
+          font-weight: 600;
+          color: var(--ink);
+        }
+        .mw-missing-options-list__step {
+          display: block;
+          margin-top: 2px;
+          font-size: 0.6875rem;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+        @media (max-width: 1100px) {
+          .mw-review-full { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 640px) {
+          .mw-review-full { grid-template-columns: 1fr; }
+          .mw-review-section--multi .mw-review-rows { grid-template-columns: 1fr; }
+          .mw-review-rows .mw-aside__row {
+            grid-template-columns: 1fr;
+            gap: 1px;
+          }
+          .mw-review-rows .mw-aside__row dd { text-align: left; }
+        }
         .mw-aside[hidden] { display: none !important; }
         .mw-aside__illus {
           aspect-ratio: 4 / 3;
@@ -20874,6 +21550,14 @@
           font-weight: 700;
           color: var(--ink);
           line-height: 1.35;
+        }
+        .mw-aside__legend {
+          margin: 12px 0 0;
+          padding-top: 12px;
+          border-top: 1px solid var(--line-soft);
+          font-size: var(--mw-type-caption, 0.875rem);
+          color: var(--muted);
+          line-height: 1.4;
         }
         .mw-aside__sponsors {
           margin-top: 0;
@@ -21570,34 +22254,26 @@
           gap: 4px;
         }
 
-        /* Review step — defaults left, receipt summary right */
+        /* Review step — full wizard summary */
         body.mw-on .mw-step-canvas.is-review-step .mw-review {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(14rem, 300px);
-          gap: clamp(16px, 2vw, 24px);
-          align-items: start;
+          display: block;
           max-width: none;
           width: 100%;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          box-shadow: none;
         }
-        body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt {
-          grid-column: 2;
-          grid-row: 1 / span 2;
-          position: sticky;
-          top: calc(var(--app-header-offset, 0px) + 12px);
-          margin-top: 0;
-          max-width: none;
+        body.mw-on .mw-step-canvas.is-extras-step #mw-deck-theme-card {
+          margin: 0;
+          padding: 0;
+          border: 0;
+          box-shadow: none;
+          background: transparent;
+          border-radius: 0;
         }
-        body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-deck-theme {
-          grid-column: 1;
-          grid-row: 1;
-          margin-top: 0;
-          max-width: none;
-        }
-        body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup {
-          grid-column: 1;
-          grid-row: 2;
-          margin-top: 0;
-          max-width: none;
+        body.mw-on .mw-step-canvas.is-extras-step #mw-deck-theme-card .mw-card__head {
+          margin-bottom: 10px;
         }
         .mw-deck-theme-summary {
           display: flex;
@@ -21665,9 +22341,7 @@
           body.mw-on .mw-step-canvas.is-extras-step .flow-setup-side,
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-main,
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-summary,
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt,
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-deck-theme,
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup {
+          body.mw-on .mw-step-canvas.is-review-step .mw-review {
             grid-column: 1;
             grid-row: auto;
             position: static;
@@ -21684,11 +22358,12 @@
           body.mw-on .mw-step-canvas.is-extras-step .flow-divider-poster-picks__row {
             grid-template-columns: minmax(0, 1fr) !important;
           }
+          body.mw-on .mw-step-canvas.is-extras-step #mw-deck-theme-card .mw-deck-theme-summary {
+            flex-wrap: wrap;
+          }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-main { order: 1; }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-summary { order: 2; }
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-deck-theme { order: 1; }
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-card.mw-default-setup { order: 2; }
-          body.mw-on .mw-step-canvas.is-review-step .mw-review .mw-receipt { order: 3; }
+
         }
       </style>
       <section class="page" id="flow-page" data-route="/mass/builder">
@@ -21818,6 +22493,7 @@
                         <option value="english" selected>English</option>
                         <option value="tagalog">Tagalog (Filipino Ordo)</option>
                       </select>
+                      <div class="mw-field-default-pin" data-mw-field-pin="flow-mass-language"></div>
                       <p class="muted flow-setup-field-hint">Order of Mass slide texts + Tagalog readings from Awit at Papuri. Tagalog defaults Creed to Apostles’ and Our Father to Ama Namin.</p>
                     </div>
                   </div>
@@ -21935,7 +22611,6 @@
                           <option value="form-b">Form B</option>
                           <option value="form-c">Form C (Invocations)</option>
                         </select>
-                        <p class="mw-rite__hint">Aa opens a one-page text preview from the slide(s).</p>
                       </div>
                     </article>
                     <article class="mw-rite" data-mw-rite data-mw-media-slot="kyrie">
@@ -21946,7 +22621,6 @@
                           <option value="greek">Greek (Kyrie eleison)</option>
                           <option value="latin">Latin</option>
                         </select>
-                        <p class="mw-rite__hint">Aa = slide text · Lyrics|Video like Music Ministry · Audio ▶ for practice</p>
                       </div>
                     </article>
                     <article class="mw-rite" data-mw-rite data-mw-media-slot="gloria">
@@ -21956,7 +22630,6 @@
                           <option value="english" selected>English</option>
                           <option value="latin">Latin</option>
                         </select>
-                        <p class="mw-rite__hint">Aa = slide text · Lyrics|Video like Music Ministry · Audio ▶ for practice</p>
                       </div>
                     </article>
                   </div>
@@ -21971,7 +22644,6 @@
                           <option value="nicene" selected>Nicene Creed</option>
                           <option value="apostles">Apostles' Creed</option>
                         </select>
-                        <p class="mw-rite__hint">Aa opens a one-page text preview from the slide(s).</p>
                       </div>
                     </article>
                     <article class="mw-rite" data-mw-rite data-mw-placeholder data-mw-media-slot="sanctus">
@@ -21987,7 +22659,6 @@
                             <div class="mw-option__media mass-song-media-row" data-mw-media-row="sanctus::default" data-mw-rite-media="1" data-mw-media-section="sanctus" data-mw-media-lang="default"></div>
                           </div>
                         </div>
-                        <p class="mw-rite__hint">Aa = slide text · Lyrics|Video like Music Ministry · Audio ▶ for practice</p>
                       </div>
                     </article>
                     <article class="mw-rite" data-mw-rite data-mw-media-slot="our_father">
@@ -22000,7 +22671,6 @@
                           <option value="visaya">Visaya (Amahan Namo)</option>
                           <option value="korean">Korean (주님의 기도)</option>
                         </select>
-                        <p class="mw-rite__hint">Aa = slide text · Lyrics|Video like Music Ministry · Audio ▶ for practice</p>
                       </div>
                     </article>
                     <article class="mw-rite" data-mw-rite data-mw-media-slot="lamb_of_god">
@@ -22010,7 +22680,6 @@
                           <option value="english" selected>English</option>
                           <option value="latin">Latin (Agnus Dei)</option>
                         </select>
-                        <p class="mw-rite__hint">Aa = slide text · Lyrics|Video like Music Ministry · Audio ▶ for practice</p>
                       </div>
                     </article>
                   </div>
@@ -22056,9 +22725,29 @@
               <div class="flow-setup-side">
                 <article class="flow-bento-cell flow-setup-card2 mw-extras-block" id="mass-step-target-media" data-mw-step="6" hidden>
                   <header class="mw-extras-block__head">
-                    <h3 class="mw-extras-block__title">Posters &amp; imagery</h3>
-                    <p class="mw-extras-block__sub muted">Templates, AI art, and optional upload dividers.</p>
+                    <h3 class="mw-extras-block__title">Look &amp; posters</h3>
+                    <p class="mw-extras-block__sub muted">Slide theme, divider templates, AI art, and optional uploads.</p>
                   </header>
+                  <div class="mw-card mw-deck-theme" id="mw-deck-theme-card">
+                    <div class="mw-card__head">
+                      <h3>Slide theme</h3>
+                      <button type="button" class="ghost mini" id="mw-deck-theme-change">Change</button>
+                    </div>
+                    <div class="mw-deck-theme-summary" id="mw-deck-theme-summary">
+                      <div class="mw-deck-theme-summary__preview" id="mw-deck-theme-preview" data-theme-id="theme1" aria-hidden="true">
+                        <div class="mw-dt-kicker" id="mw-deck-theme-preview-kicker">Liturgy of the Word</div>
+                        <div class="mw-dt-title" id="mw-deck-theme-preview-title">First Reading</div>
+                        <div class="mw-dt-body" id="mw-deck-theme-preview-body">A reading from the Book…</div>
+                      </div>
+                      <div class="mw-deck-theme-summary__meta">
+                        <strong id="mw-deck-theme-name">Theme 1 · Liturgy Flow</strong>
+                        <span id="mw-deck-theme-note">Black background with amber titles. Dividers follow the liturgical season.</span>
+                        <span id="mw-deck-divider-note" style="display:block;margin-top:6px;">Divider 1 · Classic</span>
+                      </div>
+                    </div>
+                    <input type="hidden" id="flow-deck-theme" value="theme1" />
+                    <input type="hidden" id="flow-divider-style" value="divider1" />
+                  </div>
                   <div class="flow-setup-row flow-divider-poster-picks">
                     <div class="field">
                       <input type="hidden" id="flow-lotw-poster" value="lotw1" />
@@ -22114,11 +22803,14 @@
                           <span class="flow-setup-quota-badge__dot" aria-hidden="true"></span>
                           <p class="ai-image-quota-hint" id="flow-ai-quota-hint" aria-live="polite"></p>
                         </div>
-                        <p class="flow-poster-style__ai-label">AI Generation Controls</p>
-                        <div class="flow-setup-output-checks">
-                          <label><input type="checkbox" id="flow-use-openai-poster" /> OpenAI</label>
-                          <label><input type="checkbox" id="flow-use-gemini-poster" /> Gemini</label>
-                        </div>
+                        <p class="flow-poster-style__ai-label">AI poster art</p>
+                        <label class="mw-switch">
+                          <input type="checkbox" id="flow-use-ai-poster" />
+                          <span class="mw-switch__track" aria-hidden="true"><span class="mw-switch__knob"></span></span>
+                          <span class="mw-switch__text">Off</span>
+                        </label>
+                        <input type="checkbox" id="flow-use-openai-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
+                        <input type="checkbox" id="flow-use-gemini-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
                       </div>
                     </div>
                   </div>
@@ -22150,48 +22842,7 @@
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2 mw-review" id="mw-review" data-mw-step="7" hidden>
-                  <div class="mw-card mw-deck-theme" id="mw-deck-theme-card">
-                    <div class="mw-card__head">
-                      <h3>Slide theme</h3>
-                      <button type="button" class="ghost mini" id="mw-deck-theme-change">Change</button>
-                    </div>
-                    <div class="mw-deck-theme-summary" id="mw-deck-theme-summary">
-                      <div class="mw-deck-theme-summary__preview" id="mw-deck-theme-preview" data-theme-id="theme1" aria-hidden="true">
-                        <div class="mw-dt-kicker" id="mw-deck-theme-preview-kicker">Liturgy of the Word</div>
-                        <div class="mw-dt-title" id="mw-deck-theme-preview-title">First Reading</div>
-                        <div class="mw-dt-body" id="mw-deck-theme-preview-body">A reading from the Book…</div>
-                      </div>
-                      <div class="mw-deck-theme-summary__meta">
-                        <strong id="mw-deck-theme-name">Theme 1 · Liturgy Flow</strong>
-                        <span id="mw-deck-theme-note">Black background with amber titles. Dividers follow the liturgical season.</span>
-                        <span id="mw-deck-divider-note" style="display:block;margin-top:6px;">Divider 1 · Classic</span>
-                      </div>
-                    </div>
-                    <input type="hidden" id="flow-deck-theme" value="theme1" />
-                    <input type="hidden" id="flow-divider-style" value="divider1" />
-                  </div>
-                  <div class="mw-receipt">
-                    <div class="mw-receipt__row"><span>Date</span><strong id="mw-sum-date">—</strong></div>
-                    <div class="mw-receipt__row"><span>Celebrant</span><strong id="mw-sum-celebrant">—</strong></div>
-                    <div class="mw-receipt__row"><span>Readings imported</span><strong id="mw-sum-readings">—</strong></div>
-                    <div class="mw-receipt__row"><span>Songs selected</span><strong id="mw-sum-songs">—</strong></div>
-                    <div class="mw-receipt__row"><span>Announcements added</span><strong id="mw-sum-ann">—</strong></div>
-                    <div class="mw-receipt__row"><span>Collection included</span><strong id="mw-sum-collection">—</strong></div>
-                    <div class="mw-receipt__total"><span>Estimated slides</span><strong id="mw-sum-slides">—</strong></div>
-                  </div>
-                  <div class="mw-card mw-default-setup">
-                    <div class="mw-card__head"><h3>Save as Default Setup</h3><span class="mw-ai-badge" title="Saved preferences coming soon">Preview</span></div>
-                    <div class="mw-check-grid">
-                      <label><input type="checkbox" data-mw-default-save checked> Penitential Act</label>
-                      <label><input type="checkbox" data-mw-default-save checked> Kyrie</label>
-                      <label><input type="checkbox" data-mw-default-save checked> Gloria</label>
-                      <label><input type="checkbox" data-mw-default-save checked> Creed</label>
-                      <label><input type="checkbox" data-mw-default-save checked> Sanctus</label>
-                      <label><input type="checkbox" data-mw-default-save checked> Our Father</label>
-                      <label><input type="checkbox" data-mw-default-save checked> Lamb of God</label>
-                      <label><input type="checkbox" data-mw-default-save checked> Song Preferences</label>
-                    </div>
-                  </div>
+                  <div class="mw-review-full" id="mw-review-summary" aria-live="polite"></div>
                 </article>
               </div>
             </div>
@@ -22224,6 +22875,7 @@
                     <label><input type="radio" name="flow-hymn-layout" value="single" /> 1 verse / slide</label>
                     <label><input type="radio" name="flow-hymn-layout" value="dual" checked /> 2 verses / slide</label>
                   </div>
+                  <div class="mw-field-default-pin" data-mw-field-pin="flow-hymn-layout"></div>
                 </div>
                 <div class="mass-summary-lang-field mass-summary-align-field">
                   <label id="mass-summary-hymn-align-label">Lyric alignment</label>
@@ -22311,6 +22963,7 @@
                 <div class="mw-aside__card">
                   <p class="mw-aside__eyebrow" id="mw-aside-eyebrow">At a glance</p>
                   <dl class="mw-aside__list" id="mw-aside-list"></dl>
+                  <p class="mw-aside__legend" id="mw-aside-legend" hidden>Aa = slide text · Lyrics|Video like Music Ministry · Audio ▶ for practice</p>
                   <div class="mw-aside__sponsors" id="mw-aside-sponsors" hidden>
                     <p class="mw-aside__sponsors-label">Food sponsors</p>
                     <div id="mw-aside-sponsors-list-host"></div>
@@ -22365,8 +23018,8 @@
           3: { title: 'Liturgy of the Word', sub: 'Readings import automatically — refine the psalm and Gospel lines.' },
           4: { title: 'Liturgy of the Eucharist', sub: 'Creed, Sanctus, Our Father, and Lamb of God.' },
           5: { title: 'Music Ministry', sub: 'Choose songs for each part of the Mass.' },
-          6: { title: 'Additional Details', sub: 'Stewardship, posters, and AI imagery.' },
-          7: { title: 'Review & Generate', sub: 'Confirm everything, then build your deck.' }
+          6: { title: 'Additional Details', sub: 'Stewardship, slide theme, posters, and AI imagery.' },
+          7: { title: 'Review & Generate', sub: 'Full summary of your Mass — confirm, then build your deck.' }
         };
         var ASIDE_STEPS = { 1: true, 2: true, 4: true, 6: true };
         var ASIDE_ART = {
@@ -22403,27 +23056,119 @@
           if (!date || !date.value) return;
           if (!readingsLoaded()) { var b = $('btn-load-flow'); if (b) b.click(); }
         }
-        function fillReceipt() {
-          var d = $('mass-date'); if ($('mw-sum-date')) $('mw-sum-date').textContent = (d && d.value) ? d.value : '—';
+        function reviewSection(title, stepLabel, rowsHtml, opts) {
+          opts = opts || {};
+          var step = parseInt(opts.step, 10) || 0;
+          var cls = 'mw-review-section' + (opts.multi ? ' mw-review-section--multi' : '');
+          var attrs = '';
+          if (step >= 1 && step <= 6) {
+            attrs = ' role="button" tabindex="0" data-mw-review-go="' + step + '" aria-label="Edit ' + title + ', ' + stepLabel + '"';
+          }
+          var editHint = (step >= 1 && step <= 6) ? '<span class="mw-review-section__edit" aria-hidden="true">Edit</span>' : '';
+          return '<section class="' + cls + '"' + attrs + '>' +
+            '<header class="mw-review-section__head"><h3>' + title + '</h3>' + editHint + '<span>' + stepLabel + '</span></header>' +
+            '<dl class="mw-review-rows mw-aside__list">' + rowsHtml + '</dl></section>';
+        }
+        function bindReviewSummaryNavigation() {
+          var host = $('mw-review-summary');
+          if (!host || host.dataset.mwReviewNavBound === '1') return;
+          host.dataset.mwReviewNavBound = '1';
+          function goReviewStep(card) {
+            var s = parseInt(card.getAttribute('data-mw-review-go'), 10);
+            if (s >= 1 && s <= 6) showStep(s);
+          }
+          host.addEventListener('click', function (e) {
+            var card = e.target.closest('[data-mw-review-go]');
+            if (!card || !host.contains(card)) return;
+            goReviewStep(card);
+          });
+          host.addEventListener('keydown', function (e) {
+            var card = e.target.closest('[data-mw-review-go]');
+            if (!card || !host.contains(card)) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              goReviewStep(card);
+            }
+          });
+        }
+        function fillWizardReviewSummary() {
+          var host = $('mw-review-summary');
+          if (!host) return;
+          var sections = [];
+          var d = $('mass-date');
           var cd = $('celebrant-display');
           var cname = (cd && cd.textContent && cd.textContent.trim() && cd.textContent.indexOf('Select') < 0) ? cd.textContent.trim() : '—';
-          if ($('mw-sum-celebrant')) $('mw-sum-celebrant').textContent = cname;
-          if ($('mw-sum-readings')) $('mw-sum-readings').textContent = readingsLoaded() ? 'Yes' : 'Not loaded';
-          var sc = $('flow-song-count'), st = $('mass-summary-song-total');
-          if ($('mw-sum-songs')) $('mw-sum-songs').textContent = (sc ? sc.textContent : '0') + ' / ' + (st ? st.textContent : '5');
-          var ann = $('flow-announcement-posters'); var nann = (ann && ann.files) ? ann.files.length : 0;
-          if ($('mw-sum-ann')) $('mw-sum-ann').textContent = nann ? (nann + ' file' + (nann > 1 ? 's' : '')) : 'None';
-          var amt = $('flow-collection-amount');
-          var collOn = $('flow-slide-mass-collection') && $('flow-slide-mass-collection').checked;
-          if ($('mw-sum-collection')) {
-            if (collOn && amt && amt.value.trim()) $('mw-sum-collection').textContent = 'Yes (' + amt.value.trim() + ')';
-            else if (collOn) $('mw-sum-collection').textContent = 'Yes';
-            else $('mw-sum-collection').textContent = 'No';
+          var co = $('co-celebrant');
+          var s1 = asideRow('Date', fmtAsideDate(d && d.value), 'mass_date');
+          s1 += asideRow('Celebrant', cname, 'celebrant');
+          if (co && co.value.trim()) s1 += asideRow('Co-celebrant', co.value.trim());
+          s1 += asideRow('Mass language', selText('flow-mass-language'));
+          var pd = window.__mwPreviewData || null;
+          if (pd && pd.season) s1 += asideRow('Season', pd.season);
+          sections.push(reviewSection('Mass info', 'Step 1', s1, { step: 1 }));
+          var s2 = asideRow('Penitential Act', selText('flow-penitential-choice') || '—', 'penitential');
+          s2 += asideRow('Kyrie', riteVideoAsideLabel('kyrie', 'flow-kyrie-choice') || '—', 'kyrie');
+          s2 += asideRow('Gloria', riteVideoAsideLabel('gloria', 'flow-gloria-choice') || '—', 'gloria');
+          sections.push(reviewSection('Introductory rites', 'Step 2', s2, { step: 2 }));
+          var psalm = $('flow-psalm-custom');
+          var psalmVal = (psalm && psalm.value.trim()) ? psalm.value.trim() : selText('flow-psalm-refrain');
+          var gospel = $('flow-gospel-custom');
+          var gospelVal = (gospel && gospel.value.trim()) ? gospel.value.trim() : selText('flow-gospel-sentence');
+          var s3 = asideRow('Readings', readingsLoaded() ? 'Loaded' : 'Not loaded', 'readings');
+          s3 += asideRow('Psalm', psalmVal || '—');
+          s3 += asideRow('Gospel line', gospelVal || '—');
+          var gr = $('flow-gospel-ref');
+          if (gr && gr.textContent && gr.textContent.trim() !== '—') s3 += asideRow('Gospel ref', gr.textContent.trim());
+          sections.push(reviewSection('Liturgy of the Word', 'Step 3', s3, { step: 3 }));
+          var s4 = asideRow('Creed', selText('flow-creed-choice') || '—', 'creed');
+          s4 += asideRow('Sanctus', sanctusLabel() || '—', 'sanctus');
+          s4 += asideRow('Our Father', riteVideoAsideLabel('our_father', 'flow-our-father-choice') || '—', 'our_father');
+          s4 += asideRow('Lamb of God', riteVideoAsideLabel('lamb_of_god', 'flow-lamb-choice') || '—', 'lamb_of_god');
+          sections.push(reviewSection('Liturgy of the Eucharist', 'Step 4', s4, { step: 4 }));
+          var songRows = '';
+          if (typeof buildMassGenerateReceiptModel === 'function') {
+            try {
+              var model = buildMassGenerateReceiptModel();
+              (model.songs || []).forEach(function (song) {
+                if (!song.id) return;
+                songRows += asideRow(typeof receiptSlotShortLabel === 'function' ? receiptSlotShortLabel(song) : song.label, song.title || song.id || '—', 'song:' + song.slotKey);
+              });
+            } catch (e) { /* optional */ }
           }
+          if (!songRows) {
+            var sc = $('flow-song-count'), st = $('mass-summary-song-total');
+            songRows = asideRow('Songs', (sc ? sc.textContent : '0') + ' / ' + (st ? st.textContent : '5') + ' selected');
+          }
+          var hymnLayout = document.querySelector('input[name="flow-hymn-layout"]:checked');
+          if (hymnLayout) songRows += asideRow('Hymn layout', hymnLayout.value === 'single' ? '1 verse / slide' : '2 verses / slide');
+          sections.push(reviewSection('Music ministry', 'Step 5', songRows, { multi: true, step: 5 }));
+          var themeName = $('mw-deck-theme-name');
+          var s6 = asideRow('Slide theme', themeName ? themeName.textContent.trim() : selText('flow-deck-theme'));
+          var aiOn = $('flow-use-ai-poster') && $('flow-use-ai-poster').checked;
+          s6 += asideRow('AI poster art', aiOn ? 'On' : 'Off');
+          if (aiOn) {
+            var styleEl = $('flow-openai-poster-style');
+            if (styleEl && styleEl.value) s6 += asideRow('AI style', selText('flow-openai-poster-style') || styleEl.value);
+          }
+          var collOn = $('flow-slide-mass-collection') && $('flow-slide-mass-collection').checked;
+          var amt = $('flow-collection-amount');
+          var cur = $('flow-collection-currency');
+          var coll = collOn ? ((amt && amt.value.trim()) ? ((cur && cur.value) ? (cur.value + ' ' + amt.value.trim()) : amt.value.trim()) : 'Included') : 'Off';
+          s6 += asideRow('Collection slide', coll);
+          var annFlags = [];
+          if ($('flow-slide-food-sponsor') && $('flow-slide-food-sponsor').checked) annFlags.push('Food sponsor');
+          if ($('flow-slide-sponsorship-contact') && $('flow-slide-sponsorship-contact').checked) annFlags.push('Sponsorship contact');
+          if ($('flow-slide-merienda-location') && $('flow-slide-merienda-location').checked) annFlags.push('Merienda');
+          var ann = $('flow-announcement-posters'); var nann = (ann && ann.files) ? ann.files.length : 0;
+          s6 += asideRow('Announcement slides', annFlags.length ? annFlags.join(', ') : (nann ? (nann + ' upload' + (nann > 1 ? 's' : '')) : 'None'));
+          sections.push(reviewSection('Additional details', 'Step 6', s6, { multi: true, step: 6 }));
           var slides = '—';
           if (window.__mwPreviewData && window.__mwPreviewData.estimated_slide_count) slides = window.__mwPreviewData.estimated_slide_count;
-          if ($('mw-sum-slides')) $('mw-sum-slides').textContent = slides;
+          host.innerHTML =
+            '<div class="mw-review-total"><span>Estimated slides</span><strong>' + slides + '</strong></div>' +
+            sections.join('');
         }
+        function fillReceipt() { fillWizardReviewSummary(); }
         function fmtAsideDate(iso) {
           if (!iso) return '—';
           try {
@@ -22465,8 +23210,9 @@
           var c = flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"]) .mw-option__label');
           return c ? c.textContent.trim() : '';
         }
-        function asideRow(label, val) {
-          return '<div class="mw-aside__row"><dt>' + label + '</dt><dd>' + (val || '—') + '</dd></div>';
+        function asideRow(label, val, reviewId) {
+          var attr = reviewId ? ' data-mw-review-item="' + reviewId + '"' : '';
+          return '<div class="mw-aside__row"' + attr + '><dt>' + label + '</dt><dd>' + (val || '—') + '</dd></div>';
         }
         function fillAside(n) {
           var aside = $('mw-aside');
@@ -22515,6 +23261,8 @@
             rows.push(asideRow('Collection', coll || 'Not set'));
           }
           list.innerHTML = rows.join('');
+          var legend = $('mw-aside-legend');
+          if (legend) legend.hidden = n !== 2 && n !== 4;
           var sponsorsWrap = $('mw-aside-sponsors');
           if (sponsorsWrap) sponsorsWrap.hidden = n !== 6;
           if (n === 6 && typeof window.syncFoodSponsorsListHost === 'function') window.syncFoodSponsorsListHost();
@@ -22692,6 +23440,15 @@
                      '" data-mw-media-lang="' + escapeAttr(o.value) + '"></div>')
                   : '');
               item.querySelector('.mw-option__label').textContent = o.textContent;
+              var pinKey = sel.id || (section ? ('flow-' + section.replace(/_/g, '-') + '-choice') : '');
+              if (pinKey) {
+                var pin = document.createElement('label');
+                pin.className = 'mw-default-pin';
+                pin.title = 'Use this choice as my default next time';
+                pin.innerHTML = '<input type="checkbox" class="mw-default-pin__input" data-mw-default-key="' + escapeAttr(pinKey) + '" data-mw-default-value="' + escapeAttr(o.value) + '" /><span class="mw-default-pin__text">Default</span>';
+                pin.addEventListener('click', function (e) { e.stopPropagation(); });
+                item.querySelector('.mw-option__row').appendChild(pin);
+              }
               var textBtn = item.querySelector('[data-mw-text-preview]');
               if (textBtn && mediaKey) {
                 textBtn.setAttribute('data-mw-media-key', mediaKey);
@@ -22715,6 +23472,7 @@
             sel.addEventListener('change', function () { sync(); });
             if (typeof window.registerRiteVideoSync === 'function') window.registerRiteVideoSync(section, sync);
             sync();
+            if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins(wrap);
           });
         }
         function restartAnim(el) { if (!el) return; el.classList.remove('mw-step-anim'); void el.offsetWidth; el.classList.add('mw-step-anim'); }
@@ -22780,6 +23538,15 @@
             if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
             refreshContinue();
           }
+          if (defaultOpt && !defaultOpt.querySelector('.mw-default-pin')) {
+            var sanctusPin = document.createElement('label');
+            sanctusPin.className = 'mw-default-pin';
+            sanctusPin.title = 'Use this choice as my default next time';
+            sanctusPin.innerHTML = '<input type="checkbox" class="mw-default-pin__input" data-mw-default-key="sanctus_tune" data-mw-default-value="default" /><span class="mw-default-pin__text">Default</span>';
+            sanctusPin.addEventListener('click', function (e) { e.stopPropagation(); });
+            var sanctusRow = defaultOpt.querySelector('.mw-option__row');
+            if (sanctusRow) sanctusRow.appendChild(sanctusPin);
+          }
           if (defaultOpt && defaultOpt.dataset.mwSanctusLangBound !== '1') {
             defaultOpt.dataset.mwSanctusLangBound = '1';
             defaultOpt.addEventListener('click', function (e) {
@@ -22799,6 +23566,295 @@
           window.registerRiteVideoSync(section, sync);
           sync();
         }
+        var lastMissingOptions = [];
+        var missingGuideQueue = [];
+        var missingGuideCurrent = null;
+        var missingGuideActive = false;
+        var missingGuideBound = false;
+        function riteOptionOk(selectId, section) {
+          if (selVal(selectId)) return true;
+          return !!(section && window.massRiteVideoMode && window.massRiteVideoMode[section]);
+        }
+        function collectMassMissingSongOptions() {
+          var out = [];
+          try {
+            if (typeof lyricSongSlots === 'undefined' || !lyricSongSlots || typeof selectedLyricsSongs === 'undefined') return out;
+            lyricSongSlots.forEach(function (slot) {
+              var id = String((selectedLyricsSongs[slot.key] || '')).trim();
+              if (id) return;
+              out.push({
+                id: 'song:' + slot.key,
+                label: slot.custom ? (((slot.label || '').trim()) || 'Custom section') : (slot.label || slot.key),
+                step: 5,
+                reviewId: 'song:' + slot.key,
+                songSlot: slot.key
+              });
+            });
+          } catch (e) { /* optional */ }
+          return out;
+        }
+        function massPlanSlotLabel(slot) {
+          return slot.custom ? (((slot.label || '').trim()) || 'Custom section') : (slot.label || slot.key);
+        }
+        function massPlanSongTitle(id) {
+          var title = String(id || '').trim();
+          if (!title) return title;
+          try {
+            if (typeof lookupMassPlanSong === 'function') {
+              var row = lookupMassPlanSong(title);
+              if (row && row.title) return String(row.title).trim() || title;
+            }
+          } catch (e) { /* optional */ }
+          return title;
+        }
+        function collectMassDuplicateSongOptions() {
+          var out = [];
+          try {
+            if (typeof lyricSongSlots === 'undefined' || !lyricSongSlots || typeof selectedLyricsSongs === 'undefined') return out;
+            var byId = {};
+            lyricSongSlots.forEach(function (slot) {
+              var id = String((selectedLyricsSongs[slot.key] || '')).trim();
+              if (!id) return;
+              if (!byId[id]) byId[id] = [];
+              byId[id].push(slot);
+            });
+            Object.keys(byId).forEach(function (id) {
+              var slots = byId[id];
+              if (slots.length < 2) return;
+              var songTitle = massPlanSongTitle(id);
+              slots.forEach(function (slot) {
+                var others = slots.filter(function (s) { return s.key !== slot.key; }).map(massPlanSlotLabel);
+                out.push({
+                  id: 'dup-song:' + slot.key + ':' + id,
+                  kind: 'duplicate',
+                  label: massPlanSlotLabel(slot) + ' — same song as ' + others.join(' & ') + ' (“' + songTitle + '”)',
+                  step: 5,
+                  reviewId: 'song:' + slot.key,
+                  songSlot: slot.key
+                });
+              });
+            });
+          } catch (e) { /* optional */ }
+          return out;
+        }
+        function collectMassMissingOptions() {
+          var missing = [];
+          function add(item) { missing.push(item); }
+          var d = $('mass-date');
+          if (!(d && d.value)) {
+            add({ id: 'mass_date', label: 'Mass date', step: 1, reviewId: 'mass_date', fieldId: 'mass-date' });
+          }
+          var cel = $('celebrant');
+          if (!(cel && cel.value && cel.value.trim())) {
+            add({ id: 'celebrant', label: 'Celebrant', step: 1, reviewId: 'celebrant', fieldId: 'celebrant-display' });
+          }
+          if (!selVal('flow-penitential-choice')) {
+            add({ id: 'penitential', label: 'Penitential Act', step: 2, reviewId: 'penitential', selectId: 'flow-penitential-choice' });
+          }
+          if (!riteOptionOk('flow-kyrie-choice', 'kyrie')) {
+            add({ id: 'kyrie', label: 'Kyrie', step: 2, reviewId: 'kyrie', selectId: 'flow-kyrie-choice', mediaSlot: 'kyrie' });
+          }
+          if (!riteOptionOk('flow-gloria-choice', 'gloria')) {
+            add({ id: 'gloria', label: 'Gloria', step: 2, reviewId: 'gloria', selectId: 'flow-gloria-choice', mediaSlot: 'gloria' });
+          }
+          if (!readingsLoaded()) {
+            add({ id: 'readings', label: 'Liturgical readings', step: 3, reviewId: 'readings', targetId: 'btn-load-flow' });
+          }
+          if (!selVal('flow-creed-choice')) {
+            add({ id: 'creed', label: 'Creed', step: 4, reviewId: 'creed', selectId: 'flow-creed-choice' });
+          }
+          if (!sanctusPicked()) {
+            add({ id: 'sanctus', label: 'Sanctus', step: 4, reviewId: 'sanctus', mediaSlot: 'sanctus' });
+          }
+          if (!riteOptionOk('flow-our-father-choice', 'our_father')) {
+            add({ id: 'our_father', label: 'Our Father', step: 4, reviewId: 'our_father', selectId: 'flow-our-father-choice', mediaSlot: 'our_father' });
+          }
+          if (!riteOptionOk('flow-lamb-choice', 'lamb_of_god')) {
+            add({ id: 'lamb_of_god', label: 'Lamb of God', step: 4, reviewId: 'lamb_of_god', selectId: 'flow-lamb-choice', mediaSlot: 'lamb_of_god' });
+          }
+          collectMassMissingSongOptions().forEach(function (song) { add(song); });
+          collectMassDuplicateSongOptions().forEach(function (dup) { add(dup); });
+          return missing;
+        }
+        function clearReviewMissingHighlights() {
+          Array.prototype.forEach.call(document.querySelectorAll('#mw-review-summary .is-missing-highlight'), function (el) {
+            el.classList.remove('is-missing-highlight');
+          });
+        }
+        function highlightReviewMissing(missing) {
+          clearReviewMissingHighlights();
+          if (!missing || !missing.length) return;
+          missing.forEach(function (item) {
+            var row = document.querySelector('#mw-review-summary [data-mw-review-item="' + item.reviewId + '"]');
+            if (row) row.classList.add('is-missing-highlight');
+            var sec = document.querySelector('#mw-review-summary [data-mw-review-go="' + item.step + '"]');
+            if (sec) sec.classList.add('is-missing-highlight');
+          });
+        }
+        function clearMissingTargetHighlight() {
+          Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-missing-target'), function (el) {
+            el.classList.remove('mw-missing-target');
+          });
+        }
+        function resolveMissingTarget(item) {
+          if (!item) return null;
+          if (item.songSlot) {
+            return document.querySelector('.mass-song-plan-card[data-slot-key="' + item.songSlot + '"]');
+          }
+          if (item.targetId) {
+            var btn = $(item.targetId);
+            return btn ? (btn.closest('.field') || btn) : null;
+          }
+          if (item.mediaSlot) {
+            var rite = flowPage.querySelector('[data-mw-media-slot="' + item.mediaSlot + '"]');
+            if (rite) return rite;
+          }
+          if (item.selectId) {
+            var sel = $(item.selectId);
+            if (sel) return sel.closest('.mw-rite') || sel.closest('.field') || sel;
+          }
+          if (item.fieldId) {
+            var fieldEl = $(item.fieldId);
+            return fieldEl ? (fieldEl.closest('.field') || fieldEl) : null;
+          }
+          return null;
+        }
+        function focusMissingOption(item) {
+          clearMissingTargetHighlight();
+          missingGuideCurrent = item;
+          showStep(item.step);
+          setTimeout(function () {
+            var target = resolveMissingTarget(item);
+            if (target) {
+              target.classList.add('mw-missing-target');
+              mwReveal(target);
+            }
+          }, 140);
+        }
+        function focusNextMissingInGuide() {
+          if (!missingGuideQueue.length) {
+            endMissingOptionsGuide(true);
+            return;
+          }
+          focusMissingOption(missingGuideQueue.shift());
+        }
+        function isMissingItem(item) {
+          if (!item) return false;
+          return collectMassMissingOptions().some(function (m) { return m.id === item.id; });
+        }
+        function onMissingGuideProgress() {
+          if (!missingGuideActive || !missingGuideCurrent) return;
+          if (!isMissingItem(missingGuideCurrent)) {
+            missingGuideCurrent = null;
+            clearMissingTargetHighlight();
+            refreshContinue();
+            if (current === 7) fillReceipt();
+            if (missingGuideQueue.length) {
+              setTimeout(focusNextMissingInGuide, 320);
+            } else {
+              endMissingOptionsGuide(true);
+            }
+          }
+        }
+        function bindMissingGuideWatcher() {
+          if (missingGuideBound) return;
+          missingGuideBound = true;
+          flowPage.addEventListener('change', onMissingGuideProgress, true);
+          flowPage.addEventListener('click', function () {
+            setTimeout(onMissingGuideProgress, 0);
+          }, true);
+          document.addEventListener('mw:preview', onMissingGuideProgress);
+        }
+        function endMissingOptionsGuide(success) {
+          missingGuideActive = false;
+          missingGuideQueue = [];
+          missingGuideCurrent = null;
+          clearMissingTargetHighlight();
+          if (success) {
+            lastMissingOptions = [];
+            clearReviewMissingHighlights();
+            if (current !== 7) showStep(7);
+            fillReceipt();
+          }
+          refreshContinue();
+        }
+        function closeMassMissingOptionsModal(opts) {
+          opts = opts || {};
+          var modal = $('mw-missing-options-modal');
+          if (modal) {
+            modal.setAttribute('data-open', 'false');
+            modal.setAttribute('aria-hidden', 'true');
+          }
+          if (opts.highlightReview !== false && lastMissingOptions.length) {
+            if (current !== 7) showStep(7);
+            setTimeout(function () {
+              fillReceipt();
+              highlightReviewMissing(lastMissingOptions);
+            }, 80);
+          }
+        }
+        function openMassMissingOptionsModal(missing) {
+          lastMissingOptions = (missing || []).slice();
+          var modal = $('mw-missing-options-modal');
+          var list = $('mw-missing-options-list');
+          var titleEl = $('mw-missing-options-title');
+          var descEl = $('mw-missing-options-desc');
+          if (!modal || !list) return;
+          var hasDup = lastMissingOptions.some(function (item) { return item.kind === 'duplicate'; });
+          var hasMissing = lastMissingOptions.some(function (item) { return item.kind !== 'duplicate'; });
+          if (titleEl && descEl) {
+            if (hasDup && !hasMissing) {
+              titleEl.textContent = 'Duplicate songs';
+              descEl.textContent = 'Each song can only appear once in the Mass plan. Change or clear the duplicates below.';
+            } else if (hasDup && hasMissing) {
+              titleEl.textContent = 'Fix before generating';
+              descEl.textContent = 'Complete missing selections and resolve duplicate songs below.';
+            } else {
+              titleEl.textContent = 'Unselected options';
+              descEl.textContent = 'Please pick options before you proceed.';
+            }
+          }
+          list.innerHTML = lastMissingOptions.map(function (item) {
+            return '<li>' + item.label + '<span class="mw-missing-options-list__step">Step ' + item.step + '</span></li>';
+          }).join('');
+          modal.setAttribute('data-open', 'true');
+          modal.setAttribute('aria-hidden', 'false');
+          var fixBtn = $('mw-missing-options-fix');
+          if (fixBtn) fixBtn.focus();
+        }
+        function startMissingOptionsGuide() {
+          if (!lastMissingOptions.length) return;
+          missingGuideActive = true;
+          missingGuideQueue = lastMissingOptions.slice();
+          missingGuideCurrent = null;
+          closeMassMissingOptionsModal({ highlightReview: false });
+          clearReviewMissingHighlights();
+          bindMissingGuideWatcher();
+          focusNextMissingInGuide();
+        }
+        function bindMassMissingOptionsModal() {
+          var modal = $('mw-missing-options-modal');
+          if (!modal || modal.dataset.mwMissingBound === '1') return;
+          modal.dataset.mwMissingBound = '1';
+          var closeBtn = $('mw-missing-options-close');
+          var fixBtn = $('mw-missing-options-fix');
+          if (closeBtn) closeBtn.addEventListener('click', function () { closeMassMissingOptionsModal(); });
+          if (fixBtn) fixBtn.addEventListener('click', startMissingOptionsGuide);
+          modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeMassMissingOptionsModal();
+          });
+          document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            if (modal.getAttribute('data-open') !== 'true') return;
+            closeMassMissingOptionsModal();
+          });
+        }
+        function validateBeforeGenerate() {
+          var missing = collectMassMissingOptions();
+          if (!missing.length) return false;
+          openMassMissingOptionsModal(missing);
+          return true;
+        }
         var STEP_DONE = {
           1: function () { var d = $('mass-date'); return !!(d && d.value); },
           2: function () {
@@ -22813,12 +23869,14 @@
             var oOk = selVal('flow-our-father-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.our_father);
             var lOk = selVal('flow-lamb-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.lamb_of_god);
             return oOk && lOk;
-          }
+          },
+          7: function () { return collectMassMissingOptions().length === 0; }
         };
         function stepReady(n) { return STEP_DONE[n] ? !!STEP_DONE[n]() : true; }
         function refreshContinue() {
           var nb = $('mw-next'); if (nb) nb.classList.toggle('is-ready', stepReady(current));
-          var g = $('mw-generate'); if (g) g.classList.toggle('is-ready', current === 7 && stepReady(7));
+          var g = $('mw-generate'); if (g) g.classList.toggle('is-ready', current === 7);
+          if (current === 7 && collectMassMissingOptions().length === 0) clearReviewMissingHighlights();
           fillAside(current);
         }
         function flashHint(msg) {
@@ -22833,7 +23891,11 @@
           document.body.classList.add('mw-on');
           if ($('mw-next')) $('mw-next').addEventListener('click', next);
           if ($('mw-back')) $('mw-back').addEventListener('click', back);
-          if ($('mw-generate')) $('mw-generate').addEventListener('click', function () { var g = $('btn-generate-flow'); if (g) g.click(); });
+          if ($('mw-generate')) $('mw-generate').addEventListener('click', function () {
+            if (validateBeforeGenerate()) return;
+            var g = $('btn-generate-flow'); if (g) g.click();
+          });
+          bindMassMissingOptionsModal();
           if ($('mw-present')) $('mw-present').addEventListener('click', function () {
             if (typeof window.reopenLastMassSlideshow === 'function') window.reopenLastMassSlideshow();
           });
@@ -22864,6 +23926,7 @@
             });
           }
           progItems.forEach(function (it) { it.addEventListener('click', function () { var s = parseInt(it.getAttribute('data-mw-go'), 10); if (s) showStep(s); }); });
+          bindReviewSummaryNavigation();
           Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-text-preview]'), function (p) {
             if (p.dataset.mwTextBound === '1') return;
             p.dataset.mwTextBound = '1';
@@ -23019,6 +24082,8 @@
               if (s >= 1 && s <= 7) showStep(s);
               if (typeof window.scheduleMassBuilderDraftAutoSave === "function") window.scheduleMassBuilderDraftAutoSave();
             },
+            getMissingOptions: function () { return collectMassMissingOptions(); },
+            validateBeforeGenerate: validateBeforeGenerate,
             hasProgress: function () {
               if (current > 1) return true;
               var cel = $('celebrant');
@@ -23358,7 +24423,7 @@
               </select>
             </div>
             <div class="field" id="poster-liturgical-template-wrap">
-              <label for="poster-template">Liturgical template (when OpenAI is off)</label>
+              <label for="poster-template">Liturgical template (when AI is off)</label>
               <select id="poster-template">
                 <option value="liturgical_color">Liturgical color fill</option>
                 <option value="classic_white">Classic white</option>
@@ -23369,12 +24434,14 @@
               <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Off by default: PowerPoint and 16:9 poster only.</p>
             </div>
             <div class="field">
-              <label><input type="checkbox" id="poster-use-openai-poster" /> Generate poster with OpenAI</label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Full-bleed Gospel art (requires OPENAI_API_KEY in .env).</p>
-            </div>
-            <div class="field">
-              <label><input type="checkbox" id="poster-use-gemini-poster" /> Generate poster with Gemini</label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Same prompt as OpenAI; uses GEMINI_API_KEY from Settings (saved to .env.gemini).</p>
+              <label class="mw-switch">
+                <input type="checkbox" id="poster-use-ai-poster" />
+                <span class="mw-switch__track" aria-hidden="true"><span class="mw-switch__knob"></span></span>
+                <span class="mw-switch__text">AI poster art · Off</span>
+              </label>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Full-bleed Gospel art for this Sunday. Uses weekly AI generation quota.</p>
+              <input type="checkbox" id="poster-use-openai-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
+              <input type="checkbox" id="poster-use-gemini-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
             </div>
             <p class="muted ai-image-quota-hint" id="poster-ai-quota-hint" style="margin:0 0 12px;font-size:0.78rem;" aria-live="polite"></p>
             <div class="actions">
@@ -23843,13 +24910,13 @@
             <article class="sa-panel flow-bento-cell" id="sa-panel-system-ai" data-sa-panel="system-ai" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
-                  <h3>AI &amp; quota</h3>
+                  <h3>AI &amp; weekly quota</h3>
                   <p>Gemini integration and daily image generation limits.</p>
                 </div>
               </header>
               <p class="muted" id="sa-ai-quota-summary">Loading quota…</p>
               <div class="sa-table-wrap" id="sa-parish-quota-wrap">
-                <table class="sa-table" id="sa-parish-quota-table" aria-label="Per-parish AI image quota today">
+                <table class="sa-table" id="sa-parish-quota-table" aria-label="Per-parish AI image quota this week">
                   <thead>
                     <tr>
                       <th scope="col">Parish</th>
@@ -26600,6 +27667,7 @@
         btn.setAttribute("aria-label", playing ? "Stop audio clip" : "Play audio clip");
         btn.setAttribute("aria-disabled", hasAudio ? "false" : "true");
       });
+      if (typeof syncMassDefaultPins === "function") syncMassDefaultPins();
     }
 
     function stopMassSectionAudio() {
@@ -27705,7 +28773,11 @@
         purpose: "mass",
         songField: "",
         loading: false,
+        youtubeOnly: false,
+        fromTitle: false,
       };
+      const card = document.querySelector(".mw-media-pick-card");
+      if (card) card.classList.remove("is-lyrics-access-only");
       setMassMediaPickLoading(false);
       const status = $("mw-media-pick-upload-status");
       if (status) {
@@ -27713,6 +28785,116 @@
         status.className = "status mw-media-pick-upload-status";
       }
       if ($("mw-media-pick-file")) $("mw-media-pick-file").value = "";
+      refreshMassMediaPickLyricsUi();
+    }
+
+    function openMassSongLyricsModal(opts) {
+      const options = opts || {};
+      const modal = $("mass-song-lyrics-modal");
+      const titleEl = $("mass-song-lyrics-title");
+      const metaEl = $("mass-song-lyrics-meta");
+      const bodyEl = $("mass-song-lyrics-body");
+      const statusEl = $("mass-song-lyrics-status");
+      if (!modal || !bodyEl) return;
+      const title = String(options.title || "Lyrics").trim() || "Lyrics";
+      const language = String(options.language || "").trim();
+      const author = String(options.author || "").trim();
+      const lyrics = String(options.lyrics || "").trim();
+      if (titleEl) titleEl.textContent = title;
+      if (metaEl) {
+        const bits = [];
+        if (language) bits.push(language);
+        if (author) bits.push("Author: " + author);
+        if (bits.length) {
+          metaEl.hidden = false;
+          metaEl.textContent = bits.join(" · ");
+        } else {
+          metaEl.hidden = true;
+          metaEl.textContent = "";
+        }
+      }
+      bodyEl.textContent = lyrics || "No lyrics saved for this song.";
+      if (statusEl) statusEl.hidden = true;
+      modal.setAttribute("data-open", "true");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeMassSongLyricsModal() {
+      const modal = $("mass-song-lyrics-modal");
+      if (!modal) return;
+      modal.setAttribute("data-open", "false");
+      modal.setAttribute("aria-hidden", "true");
+      const bodyEl = $("mass-song-lyrics-body");
+      if (bodyEl) bodyEl.textContent = "";
+    }
+
+    async function openMassSongLyricsForSlot(slotKey) {
+      const key = String(slotKey || "").trim();
+      const assigned = massSlotAssignedSong(key);
+      if (!assigned || !assigned.id) {
+        if (typeof notify === "function") notify("Choose a song first.", "warn");
+        return;
+      }
+      const btn = $("mw-media-pick-view-lyrics");
+      const statusEl = $("mass-song-lyrics-status");
+      const bodyEl = $("mass-song-lyrics-body");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Loading…";
+      }
+      try {
+        const data = await fetchSongDetail(assigned.section, assigned.id);
+        const song = (data && data.song) || {};
+        const lyrics = String(song.lyrics || "").trim();
+        if (!lyrics) {
+          if (typeof notify === "function") notify("No lyrics saved for this song.", "warn");
+          return;
+        }
+        openMassSongLyricsModal({
+          title: song.title || (assigned.row && assigned.row.title) || "Lyrics",
+          author: song.author || "",
+          language: song.language || "",
+          lyrics: lyrics,
+        });
+      } catch (err) {
+        if (statusEl) {
+          statusEl.hidden = false;
+          statusEl.textContent = err.message || "Could not load lyrics.";
+          statusEl.className = "status error";
+        } else if (typeof notify === "function") {
+          notify(err.message || "Could not load lyrics.", "error");
+        }
+        if (bodyEl) bodyEl.textContent = "";
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "View lyrics";
+        }
+        refreshMassMediaPickLyricsUi();
+      }
+    }
+
+    async function openMassSongLyricsFromMediaPick() {
+      const slot = massMediaPickState && massMediaPickState.slot;
+      if (!slot) return;
+      await openMassSongLyricsForSlot(slot);
+    }
+
+    function refreshMassMediaPickLyricsUi() {
+      const btn = $("mw-media-pick-view-lyrics");
+      const card = document.querySelector(".mw-media-pick-card");
+      if (!btn) return;
+      const state = massMediaPickState || {};
+      const isMass = state.purpose === "mass";
+      const isSa = !!(document.body.classList.contains("is-superadmin") ||
+        (churchMembershipState && churchMembershipState.is_superadmin));
+      const lyricsOnly = isMass && !isSa && !state.youtubeOnly;
+      const target = isMass ? massMediaPickSongTarget() : null;
+      const hasLyrics = !!(target && target.row && target.row.has_lyrics);
+      if (card) card.classList.toggle("is-lyrics-access-only", lyricsOnly);
+      btn.hidden = !isMass || !target;
+      btn.disabled = !hasLyrics;
+      btn.title = hasLyrics ? "Open scrollable lyrics" : "No lyrics saved for this song";
     }
 
     function clearMassMediaPickSelection() {
@@ -28291,9 +29473,10 @@
       const purpose = options.purpose === "song" ? "song" : "mass";
       const isVideo = kind === "video";
       const youtubeOnly = !isVideo && !!options.youtubeOnly;
+      const fromTitle = !!options.fromTitle;
       const isSa = !!(document.body.classList.contains("is-superadmin") ||
         (churchMembershipState && churchMembershipState.is_superadmin));
-      if (purpose === "mass" && !youtubeOnly) {
+      if (purpose === "mass" && !youtubeOnly && !fromTitle) {
         if (!isSa) {
           if (typeof notify === "function") notify("Only superadmins can link Media files here.", "warn");
           return;
@@ -28307,6 +29490,7 @@
         songField: options.songField === "video" ? "video" : "audio",
         loading: false,
         youtubeOnly: youtubeOnly,
+        fromTitle: fromTitle,
       };
       const title = $("mw-media-pick-title");
       const hint = $("mw-media-pick-hint");
@@ -28344,6 +29528,13 @@
               : "Fetch a 5–10s chorus clip from YouTube (same as Superadmin). It plays from the card ▶ — not embedded in the deck.");
         }
       }
+      const lyricsOnly = purpose === "mass" && !isSa && !youtubeOnly;
+      if (lyricsOnly) {
+        const target = massSlotAssignedSong(slot);
+        if (title) title.textContent = (target && target.row && target.row.title) || "Song";
+        if (hint) hint.textContent = "View the full lyrics for this Mass slot.";
+      }
+      refreshMassMediaPickLyricsUi();
       if ($("mw-media-pick-q")) $("mw-media-pick-q").value = "";
       const uploadTitle = $("mw-media-pick-upload-title");
       const uploadHint = $("mw-media-pick-upload-hint");
@@ -28385,6 +29576,12 @@
       if (!m) return;
       m.setAttribute("data-open", "true");
       m.setAttribute("aria-hidden", "false");
+      if (lyricsOnly) {
+        setMassMediaPickLoading(false);
+        const lyricsBtn = $("mw-media-pick-view-lyrics");
+        if (lyricsBtn && !lyricsBtn.hidden && !lyricsBtn.disabled) lyricsBtn.focus();
+        return;
+      }
       if (youtubeOnly || useFetchClip) {
         setMassMediaPickLoading(false);
         if (useFetchClip) refreshMassMediaPickFetchUi();
@@ -28554,6 +29751,34 @@
           void playMassSectionAudio(massMediaPickState.slot, fetchPlay);
         });
       }
+      const viewLyrics = $("mw-media-pick-view-lyrics");
+      if (viewLyrics && viewLyrics.dataset.wired !== "1") {
+        viewLyrics.dataset.wired = "1";
+        viewLyrics.addEventListener("click", () => { void openMassSongLyricsFromMediaPick(); });
+      }
+      const lyricsClose = $("mass-song-lyrics-close");
+      if (lyricsClose && lyricsClose.dataset.wired !== "1") {
+        lyricsClose.dataset.wired = "1";
+        lyricsClose.addEventListener("click", closeMassSongLyricsModal);
+      }
+      const lyricsModal = $("mass-song-lyrics-modal");
+      if (lyricsModal && lyricsModal.dataset.wired !== "1") {
+        lyricsModal.dataset.wired = "1";
+        lyricsModal.addEventListener("click", (e) => {
+          if (e.target === lyricsModal) closeMassSongLyricsModal();
+        });
+      }
+      if (!document.documentElement.dataset.massLyricsEscBound) {
+        document.documentElement.dataset.massLyricsEscBound = "1";
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
+          const lyricsOpen = $("mass-song-lyrics-modal") && $("mass-song-lyrics-modal").getAttribute("data-open") === "true";
+          if (lyricsOpen) {
+            e.preventDefault();
+            closeMassSongLyricsModal();
+          }
+        });
+      }
     }
     wireMassMediaPickUploadUi();
 
@@ -28566,6 +29791,8 @@
     window.refreshMassSectionMediaUi = refreshMassSectionMediaUi;
     window.openMassMediaPickModal = openMassMediaPickModal;
     window.closeMassMediaPickModal = closeMassMediaPickModal;
+    window.openMassSongLyricsForSlot = openMassSongLyricsForSlot;
+    window.closeMassSongLyricsModal = closeMassSongLyricsModal;
     window.clearMassMediaPickSelection = clearMassMediaPickSelection;
     window.clearMassYouTubeLink = clearMassYouTubeLink;
     window.renderMassMediaPickList = renderMassMediaPickList;
@@ -30959,7 +32186,7 @@
         "flow-slide-sponsorship-contact", "flow-slide-merienda-location",
         "flow-sponsorship-contact", "flow-merienda-location",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
-        "flow-use-openai-poster", "flow-use-gemini-poster",
+        "flow-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster",
         "flow-include-church-logo", "flow-include-church-name", "flow-show-footer",
         "flow-include-social-exports", "flow-deck-theme", "flow-divider-style",
       ];
@@ -31229,6 +32456,8 @@
       });
       ensureCollectionDefaultDate();
       if (typeof window.syncAnnouncementSlideFields === "function") window.syncAnnouncementSlideFields();
+      if (typeof migrateLegacyAiPosterToggles === "function") migrateLegacyAiPosterToggles();
+      if (typeof syncOpenAiPosterUi === "function") syncOpenAiPosterUi();
       if (typeof applyRiteVideoState === "function") {
         applyRiteVideoState(draft.riteVideo || { mode: {}, lang: {} });
       }
@@ -32278,18 +33507,396 @@
       if ($("lyrics-save-title")) $("lyrics-save-title").value = "";
       if ($("lyrics-save-author")) $("lyrics-save-author").value = "";
       composerLoadedSong = null;
+      composerCatalogLyrics = "";
+      composerParishVersion = false;
       composerSongMedia = { audio: null, video: null, preview: null };
       if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) stopMassSectionAudio();
       renderComposerSongMediaFields();
       setComposerSongLanguage("");
       setComposerSongSection("");
       composerGospelMoods = [];
+      if (typeof syncComposerAccordionMoodsFromState === "function") syncComposerAccordionMoodsFromState();
       autoResizeLyricsMainInput();
       renderLyrics({ writeBack: false });
       setLyricsAnalyzeHint("", "");
       setLyricsAnalyzeOverlay("idle");
       updateLyricsWordStats();
+      if (typeof updateLyricsComposerDetailsPreview === "function") updateLyricsComposerDetailsPreview();
+      if (typeof updateParishLyricsControls === "function") updateParishLyricsControls();
       if (!preserveUndo) clearComposerUndoStack();
+    }
+
+    function composerEditorHasContentToClear() {
+      const hasRaw = !!(($("lyrics-input") && $("lyrics-input").value.trim()) || "");
+      const hasBlocks = !!(lyricBlocks && lyricBlocks.length);
+      const hasTitle = !!(($("lyrics-save-title") && $("lyrics-save-title").value.trim()) || "");
+      const hasAuthor = !!(($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "");
+      const hasLanguage = !!(($("lyrics-save-language") && $("lyrics-save-language").value) || "");
+      const hasSection = !!(($("lyrics-save-section") && $("lyrics-save-section").value) || "");
+      const hasMoods = Array.isArray(composerGospelMoods) && composerGospelMoods.length > 0;
+      const hasMedia = !!(
+        (composerSongMedia && (composerSongMedia.audio || composerSongMedia.video || composerSongMedia.preview)) ||
+        false
+      );
+      return hasRaw || hasBlocks || hasTitle || hasAuthor || hasLanguage || hasSection || hasMoods || hasMedia;
+    }
+
+    function startComposerNewSong() {
+      openComposerNewSongModal();
+    }
+
+    let composerNewSongSearchDebounce = 0;
+    let composerNewSongPickedCatalog = null;
+
+    function readComposerNewSongMoodChecks() {
+      return Array.from(document.querySelectorAll("[data-composer-new-mood-opt]:checked")).map((el) => el.value);
+    }
+
+    function setComposerNewSongMoodChecks(moods) {
+      const picked = new Set(Array.isArray(moods) ? moods : []);
+      document.querySelectorAll("[data-composer-new-mood-opt]").forEach((el) => {
+        el.checked = picked.has(el.value);
+      });
+    }
+
+    function setComposerNewSongError(message) {
+      const el = $("composer-new-song-error");
+      if (!el) return;
+      const text = String(message || "").trim();
+      el.hidden = !text;
+      el.textContent = text;
+    }
+
+    function setComposerNewSongSearchHint(message, kind) {
+      const el = $("composer-new-song-search-hint");
+      if (!el) return;
+      const text = String(message || "").trim();
+      el.hidden = !text;
+      el.textContent = text;
+      el.className = "muted composer-new-song-search-hint" + (kind ? " " + kind : "");
+    }
+
+    function clearComposerNewSongFieldAttention() {
+      document.querySelectorAll("#composer-new-song-modal .composer-new-song-field.is-attention").forEach((el) => {
+        el.classList.remove("is-attention");
+      });
+    }
+
+    function setComposerNewSongFieldAttention(fieldKey, on) {
+      const map = {
+        title: "composer-new-song-title-field",
+        titleSearch: "composer-new-song-title-search-field",
+        language: "composer-new-song-language-field",
+        section: "composer-new-song-section-field",
+        moods: "composer-new-song-moods-field",
+        lyrics: "composer-new-song-lyrics-field",
+      };
+      const el = map[fieldKey] && $(map[fieldKey]);
+      if (el) el.classList.toggle("is-attention", !!on);
+    }
+
+    function getComposerNewSongTitle() {
+      const title = (($("composer-new-song-title") && $("composer-new-song-title").value) || "").trim();
+      if (title) return title;
+      const search = trimSongCatalogSearchText(($("composer-new-song-title-search") && $("composer-new-song-title-search").value) || "");
+      return stripSongCatalogLyricsTag(search) || search;
+    }
+
+    function syncComposerNewSongTitleFieldsFromSearch(raw) {
+      const titleEl = $("composer-new-song-title");
+      const core = stripSongCatalogLyricsTag(trimSongCatalogSearchText(raw || "")) || trimSongCatalogSearchText(raw || "");
+      if (titleEl) titleEl.value = core;
+      updateComposerNewSongMoodGoogleVisibility();
+    }
+
+    function updateComposerNewSongMoodGoogleVisibility() {
+      const wrap = $("composer-new-song-mood-google-wrap");
+      if (!wrap) return;
+      wrap.hidden = !getComposerNewSongTitle();
+    }
+
+    function openComposerNewSongMoodGoogleSearch() {
+      const title = getComposerNewSongTitle();
+      const lang = ($("composer-new-song-language") && $("composer-new-song-language").value) || "";
+      if (!title) return;
+      if (!lang) {
+        setComposerNewSongFieldAttention("language", true);
+        setComposerNewSongError("Select a language before searching mood on Google.");
+        if ($("composer-new-song-language")) $("composer-new-song-language").focus();
+        return;
+      }
+      setComposerNewSongError("");
+      openExternalGoogleSearch(buildSongMoodGoogleQuery(title, lang));
+    }
+
+    function composerNewSongSearchHasNoMatches(query) {
+      if (!songCatalogData) return false;
+      const q = songCatalogSearchMeetsMinimum(query)
+        ? songCatalogLibraryQuery(query).toLowerCase()
+        : "";
+      if (!q) return false;
+      return !collectComposerNewSongSearchHits(query).length;
+    }
+
+    function validateComposerNewSongForm() {
+      const title = getComposerNewSongTitle();
+      const language = ($("composer-new-song-language") && $("composer-new-song-language").value) || "";
+      const section = ($("composer-new-song-section") && $("composer-new-song-section").value) || "";
+      const moods = readComposerNewSongMoodChecks();
+      const lyrics = (($("composer-new-song-lyrics") && $("composer-new-song-lyrics").value) || "").trim();
+      clearComposerNewSongFieldAttention();
+      const missing = [];
+      if (!title) {
+        setComposerNewSongFieldAttention("title", true);
+        setComposerNewSongFieldAttention("titleSearch", true);
+        missing.push("Title");
+      }
+      if (!language) {
+        setComposerNewSongFieldAttention("language", true);
+        missing.push("Language");
+      }
+      if (!section) {
+        setComposerNewSongFieldAttention("section", true);
+        missing.push("Section");
+      }
+      if (!moods.length) {
+        setComposerNewSongFieldAttention("moods", true);
+        missing.push("Gospel mood");
+      }
+      if (!lyrics) {
+        setComposerNewSongFieldAttention("lyrics", true);
+        missing.push("Lyrics");
+      }
+      if (missing.length) {
+        setComposerNewSongError("Fill in all required fields: " + missing.join(", ") + ".");
+        const focusOrder = [
+          ["title", "composer-new-song-title"],
+          ["titleSearch", "composer-new-song-title-search"],
+          ["language", "composer-new-song-language"],
+          ["section", "composer-new-song-section"],
+          ["moods", "composer-new-song-moods-field"],
+          ["lyrics", "composer-new-song-lyrics"],
+        ];
+        for (const [key, id] of focusOrder) {
+          const map = { title: !title, titleSearch: !title, language: !language, section: !section, moods: !moods.length, lyrics: !lyrics };
+          if (!map[key]) continue;
+          const el = $(id);
+          if (el) {
+            el.focus();
+            break;
+          }
+        }
+        return false;
+      }
+      setComposerNewSongError("");
+      return true;
+    }
+
+    function closeComposerNewSongResults() {
+      const box = $("composer-new-song-results");
+      if (!box) return;
+      box.hidden = true;
+      box.innerHTML = "";
+    }
+
+    function resetComposerNewSongModalFields() {
+      composerNewSongPickedCatalog = null;
+      if ($("composer-new-song-title-search")) $("composer-new-song-title-search").value = "";
+      if ($("composer-new-song-title")) $("composer-new-song-title").value = "";
+      if ($("composer-new-song-author")) $("composer-new-song-author").value = "";
+      if ($("composer-new-song-language")) $("composer-new-song-language").value = "";
+      if ($("composer-new-song-section")) $("composer-new-song-section").value = "";
+      if ($("composer-new-song-lyrics")) $("composer-new-song-lyrics").value = "";
+      setComposerNewSongMoodChecks([]);
+      setComposerNewSongError("");
+      setComposerNewSongSearchHint("", "");
+      clearComposerNewSongFieldAttention();
+      updateComposerNewSongMoodGoogleVisibility();
+      closeComposerNewSongResults();
+    }
+
+    function collectComposerNewSongSearchHits(query) {
+      if (!songCatalogSearchMeetsMinimum(query)) return [];
+      const q = songCatalogLibraryQuery(query).toLowerCase();
+      if (!q || !songCatalogData) return [];
+      const hits = [];
+      SECTION_ORDER.forEach(({ key: sec, label }) => {
+        filterSongCatalogRows(songCatalogData[sec] || [], sec, q).forEach((row) => {
+          hits.push({ section: sec, sectionLabel: label, row });
+        });
+      });
+      return hits.slice(0, 12);
+    }
+
+    function buildComposerNewSongNoMatchesHtml(rawQuery) {
+      const q = String(rawQuery || "").trim();
+      const canGoogle = songCatalogSearchMeetsMinimum(q);
+      const core = stripSongCatalogLyricsTag(q) || q;
+      let html = "<div class=\"song-catalog-empty\">";
+      html += "<p class=\"muted\">No matches. Clear the search or try another title or author.</p>";
+      if (canGoogle) {
+        html +=
+          "<p class=\"song-catalog-empty__google\">Not in your library? " +
+          "<button type=\"button\" class=\"song-catalog-empty__google-btn\" data-composer-new-google-search=\"" +
+          escapeHtml(q) + "\">Search Google for \"" + escapeHtml(core) + "\" lyrics</button></p>";
+        html += "<p class=\"muted\" style=\"margin-top:8px;font-size:0.75rem;\">Or press Enter to search Google.</p>";
+      }
+      html += "</div>";
+      return html;
+    }
+
+    function renderComposerNewSongSearchResults(query) {
+      const box = $("composer-new-song-results");
+      if (!box) return;
+      const q = trimSongCatalogSearchText(query);
+      const statusHint = songCatalogSearchStatusHint(q);
+      setComposerNewSongSearchHint(statusHint.text, statusHint.kind);
+      if (!q) {
+        closeComposerNewSongResults();
+        return;
+      }
+      if (!songCatalogSearchMeetsMinimum(q)) {
+        closeComposerNewSongResults();
+        return;
+      }
+      const hits = collectComposerNewSongSearchHits(q);
+      if (!hits.length) {
+        box.innerHTML = buildComposerNewSongNoMatchesHtml(q);
+        box.hidden = false;
+        return;
+      }
+      box.innerHTML =
+        "<ul class=\"composer-new-song-results__list\" role=\"listbox\">" +
+        hits.map(({ section, sectionLabel, row }) => (
+          "<li><button type=\"button\" class=\"composer-new-song-results__item\" role=\"option\" " +
+          "data-new-song-sec=\"" + escapeHtml(section) + "\" data-new-song-id=\"" + escapeHtml(String(row.id || "")) + "\">" +
+          "<span class=\"composer-new-song-results__title\">" + escapeHtml(row.title || "Song") + "</span>" +
+          "<span class=\"composer-new-song-results__meta\">" +
+          escapeHtml(sectionLabel) +
+          (row.author ? " · " + escapeHtml(row.author) : "") +
+          (row.language ? " · " + escapeHtml(row.language) : "") +
+          "</span></button></li>"
+        )).join("") +
+        "</ul>";
+      box.hidden = false;
+    }
+
+    function handleComposerNewSongSearchEnter(e) {
+      if (e.key !== "Enter") return;
+      const el = $("composer-new-song-title-search");
+      if (!el || e.target !== el) return;
+      e.preventDefault();
+      clearTimeout(composerNewSongSearchDebounce);
+      syncComposerNewSongTitleFieldsFromSearch(el.value);
+      renderComposerNewSongSearchResults(el.value);
+      const query = trimSongCatalogSearchText(el.value);
+      if (!query || !songCatalogSearchMeetsMinimum(query)) return;
+      if (!composerNewSongSearchHasNoMatches(query)) return;
+      openSongCatalogGoogleConfirmModal(query);
+    }
+
+    function trimComposerNewSongSearchOnBlur() {
+      const el = $("composer-new-song-title-search");
+      if (!el) return;
+      let cleaned = trimSongCatalogSearchText(el.value);
+      cleaned = normalizeSongCatalogLyricsTag(cleaned);
+      if (cleaned === el.value) return;
+      el.value = cleaned;
+      syncComposerNewSongTitleFieldsFromSearch(cleaned);
+      renderComposerNewSongSearchResults(cleaned);
+    }
+
+    async function applyComposerNewSongCatalogPick(section, id) {
+      const sec = String(section || "").trim().toLowerCase();
+      const sid = String(id || "").trim();
+      if (!sec || !sid) return;
+      try {
+        const data = await fetchSongDetail(sec, sid, { forceNetwork: true });
+        const song = data.song || {};
+        const resolvedSec = String(data.section || sec || "").trim().toLowerCase() || sec;
+        composerNewSongPickedCatalog = { section: resolvedSec, id: sid };
+        if ($("composer-new-song-title-search")) $("composer-new-song-title-search").value = song.title || "";
+        if ($("composer-new-song-title")) $("composer-new-song-title").value = song.title || "";
+        if ($("composer-new-song-author")) $("composer-new-song-author").value = song.author || "";
+        if ($("composer-new-song-language")) $("composer-new-song-language").value = song.language || "";
+        if ($("composer-new-song-section")) $("composer-new-song-section").value = resolvedSec || "";
+        if ($("composer-new-song-lyrics") && song.lyrics) $("composer-new-song-lyrics").value = String(song.lyrics);
+        setComposerNewSongMoodChecks(song.gospel_moods || []);
+        if (typeof refreshVerbumSelect === "function") {
+          refreshVerbumSelect($("composer-new-song-language"));
+          refreshVerbumSelect($("composer-new-song-section"));
+        }
+        closeComposerNewSongResults();
+        setComposerNewSongError("");
+        clearComposerNewSongFieldAttention();
+        updateComposerNewSongMoodGoogleVisibility();
+      } catch (_err) {
+        setComposerNewSongError("Could not load that song. Try again or enter details manually.");
+      }
+    }
+
+    function closeComposerNewSongModal() {
+      setUiOverlayOpen($("composer-new-song-modal"), false);
+      closeComposerNewSongResults();
+      setComposerNewSongError("");
+      setComposerNewSongSearchHint("", "");
+      clearComposerNewSongFieldAttention();
+      composerNewSongPickedCatalog = null;
+    }
+
+    async function openComposerNewSongModal() {
+      if (normalizeRoute(currentRoute()) !== "/library/songs") {
+        showRoute("/library/songs");
+      }
+      composerSuppressPreload = true;
+      composerPreloadSeq += 1;
+      resetComposerNewSongModalFields();
+      try {
+        await loadSongCatalog(true);
+      } catch (_e) { /* catalog optional for manual entry */ }
+      setUiOverlayOpen($("composer-new-song-modal"), true);
+      if (typeof initVerbumSelects === "function") initVerbumSelects($("composer-new-song-modal"));
+      if (typeof syncVerbumSelectTrigger === "function") {
+        syncVerbumSelectTrigger($("composer-new-song-language"));
+        syncVerbumSelectTrigger($("composer-new-song-section"));
+      }
+      const search = $("composer-new-song-title-search");
+      if (search) search.focus();
+      updateComposerNewSongMoodGoogleVisibility();
+    }
+
+    async function confirmComposerNewSongAnalyze() {
+      if (!validateComposerNewSongForm()) return;
+      const title = formatSongTitleCase(getComposerNewSongTitle());
+      const author = (($("composer-new-song-author") && $("composer-new-song-author").value) || "").trim();
+      const language = ($("composer-new-song-language") && $("composer-new-song-language").value) || "";
+      const section = ($("composer-new-song-section") && $("composer-new-song-section").value) || "";
+      const moods = readComposerNewSongMoodChecks();
+      const lyrics = (($("composer-new-song-lyrics") && $("composer-new-song-lyrics").value) || "").trim();
+      resetComposerEditorEmpty();
+      if ($("lyrics-save-title")) $("lyrics-save-title").value = title;
+      if ($("lyrics-save-author")) $("lyrics-save-author").value = author;
+      if (typeof setComposerSongLanguage === "function") setComposerSongLanguage(language);
+      else if ($("lyrics-save-language")) $("lyrics-save-language").value = language;
+      if (typeof setComposerSongSection === "function") setComposerSongSection(section);
+      else if ($("lyrics-save-section")) $("lyrics-save-section").value = section;
+      composerGospelMoods = moods.slice();
+      if ($("lyrics-input")) $("lyrics-input").value = lyrics;
+      lyricsRawSnapshot = "";
+      lyricBlocks = [];
+      composerLoadedSong = composerNewSongPickedCatalog ? Object.assign({}, composerNewSongPickedCatalog, { title }) : null;
+      autoResizeLyricsMainInput();
+      updateLyricsWordStats();
+      if (typeof updateLyricsComposerDetailsPreview === "function") updateLyricsComposerDetailsPreview();
+      if (typeof clearSongCatalogSearch === "function") clearSongCatalogSearch();
+      closeComposerNewSongModal();
+      if (typeof expandSongComposerPanel === "function") expandSongComposerPanel();
+      if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(false);
+      setLyricsStatus("Analyzing lyrics…", "");
+      const workspace = $("lyrics-workspace-row");
+      if (workspace) workspace.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      if (typeof scrollLyricsComposerToTab === "function") scrollLyricsComposerToTab("raw");
+      await analyzeLyrics();
     }
 
     function autoAnalyzeLyricsOnLibraryTab() {
@@ -33365,9 +34972,7 @@
     });
     $("btn-clear-lyrics") && $("btn-clear-lyrics").addEventListener("click", () => {
       if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
-      const hasRaw = !!(($("lyrics-input") && $("lyrics-input").value.trim()) || "");
-      const hasBlocks = !!(lyricBlocks && lyricBlocks.length);
-      if (!hasRaw && !hasBlocks) {
+      if (!composerEditorHasContentToClear()) {
         setLyricsStatus("Nothing to clear.", "");
         return;
       }
@@ -33425,9 +35030,6 @@
     function openExternalGoogleSearch(queryOrUrl) {
       const bridgeUrl = buildInBrowserGoogleSearchUrl(queryOrUrl);
       if (!bridgeUrl) return;
-      const opened = window.open(bridgeUrl, "_blank", "noopener,noreferrer");
-      if (opened) return;
-      // Popup blocked: fall back to same-tab navigation of the bridge page.
       const a = document.createElement("a");
       a.href = bridgeUrl;
       a.target = "_blank";
@@ -33881,6 +35483,7 @@
       }
       paintMiniDeckThemePreview($("mw-deck-theme-preview"), activeTheme);
       syncDeckThemeHiddenInput();
+      if (typeof syncMassDefaultPins === "function") syncMassDefaultPins();
     }
 
     function updateThemeIndicators() {
@@ -33973,7 +35576,7 @@
       if (desc) {
         desc.textContent = deckThemeModalMode === "review"
           ? "Update how this Mass deck looks. Save as default if you want it next time too."
-          : "Pick how Mass slides look. You can change this later on Review.";
+          : "Pick how Mass slides look. You can change this later under Additional Details.";
       }
       if (closeBtn) closeBtn.hidden = deckThemeModalMode !== "review";
       setUiOverlayOpen($("deck-theme-modal"), true);
@@ -34457,7 +36060,8 @@
           if (id) {
             titleEl.setAttribute("role", "button");
             titleEl.setAttribute("tabindex", "0");
-            titleEl.title = "Click to link or change the 5–10s audio clip";
+            titleEl.title = "Click to view lyrics"
+              + (document.body.classList.contains("is-superadmin") ? " and link audio" : "");
           } else {
             titleEl.removeAttribute("role");
             titleEl.removeAttribute("tabindex");
@@ -36120,13 +37724,7 @@
         if (typeof notify === "function") notify("Choose a song first.", "warn");
         return;
       }
-      const isSa = !!(document.body.classList.contains("is-superadmin") ||
-        (churchMembershipState && churchMembershipState.is_superadmin));
-      if (!isSa) {
-        if (typeof notify === "function") notify("Only superadmins can link audio clips here.", "warn");
-        return;
-      }
-      openMassMediaPickModal("audio", key);
+      openMassMediaPickModal("audio", key, { fromTitle: true });
     }
 
     function resolveMassSongSection(slotKey, row) {
@@ -36560,6 +38158,7 @@
       if ($("practice-share-sections-modal") && $("practice-share-sections-modal").classList.contains("is-open")) {
         renderPracticeShareSongPlan({ skipMassSync: true });
       }
+      if (typeof syncMassDefaultPins === "function") syncMassDefaultPins($("mass-song-plan"));
     }
 
     function renderPracticeShareSongPlan(opts) {
@@ -37120,9 +38719,7 @@
     }
 
     function syncPracticeSharePinUi() {
-      const wrap = $("practice-share-pin-wrap");
-      if (wrap) wrap.hidden = false;
-      practiceSharePinOtp?.focus();
+      /* Choir PIN step removed — lyrics are open via the link. */
     }
 
     function stopPracticeShareHistoryCountdown() {
@@ -37530,15 +39127,11 @@
       if (sub) {
         const n = practiceShareSlotFilter ? practiceShareSlotFilter.size : 0;
         sub.textContent = n
-          ? ("Share " + n + " section" + (n === 1 ? "" : "s") + " for " + date + ". Set a 6-digit PIN, then generate the link.")
-          : ("Share lyrics for " + date + ". Set a 6-digit PIN, then generate the link.");
+          ? ("Share " + n + " section" + (n === 1 ? "" : "s") + " for " + date + ". Generate a link anyone can open.")
+          : ("Share lyrics for " + date + ". Anyone with the link can open them — no PIN.");
       }
       requestAnimationFrame(() => {
-        practiceSharePinOtp?.focus();
-        const pinWrap = $("practice-share-pin-wrap");
-        if (pinWrap) {
-          try { pinWrap.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (_e) { /* ignore */ }
-        }
+        /* no PIN field to focus */
       });
       syncPracticeShareBottomNavChrome();
     }
@@ -37566,7 +39159,7 @@
       const sub = $("practice-share-sections-sub");
       if (sub) {
         sub.textContent = available
-          ? ("Pick or change songs for " + date + ", then share a PIN-protected link.")
+          ? ("Pick or change songs for " + date + ", then share an open practice link.")
           : "Search and pick songs for each section, then share.";
       }
       if (continueBtn) continueBtn.disabled = available === 0;
@@ -37706,7 +39299,7 @@
       const msgEl = $("practice-share-loading-msg");
       const msgs = [
         "Freezing lyrics and building your QR…",
-        "Securing your practice PIN…",
+        "Generating your leader password…",
         "Almost ready to share…",
       ];
       let i = 0;
@@ -37790,8 +39383,8 @@
       const sub = $("practice-share-sub");
       if (sub) {
         sub.textContent = data.restored
-          ? "Your active practice link. Share the link/QR and choir PIN in group chat; keep the leader password for yourself."
-          : "Share the link or QR with your choir PIN. The leader password is for you only — also sent to your email.";
+          ? "Your active practice link. Share the link or QR with your choir; keep the leader password for yourself."
+          : "Share the link or QR with your choir. The leader password is for you only — also sent to your email.";
       }
       if (data.leader_pin_emailed) {
         notify("Leader password emailed to your account.", "ok");
@@ -37819,15 +39412,6 @@
         }
         return;
       }
-      const pinRaw = getPracticeSharePin();
-      if (pinRaw.length !== 6) {
-        if (status) {
-          status.textContent = "Enter a 6-digit PIN for this practice link.";
-          status.hidden = false;
-        }
-        practiceSharePinOtp?.focus();
-        return;
-      }
       if (setup) setup.hidden = true;
       if (loading) loading.hidden = false;
       if (generateBtn) generateBtn.disabled = true;
@@ -37849,10 +39433,9 @@
           celebrant: celebrant,
           songs: songs,
           ttl_days: 0,
-          optional_pin: pinRaw,
         });
         if (!data.ok) throw new Error(data.error || data.detail || "Could not create link.");
-        showPracticeShareResult({ ...data, pin: pinRaw, leader_pin: data.leader_pin, mass_date: date });
+        showPracticeShareResult({ ...data, leader_pin: data.leader_pin, mass_date: date });
       } catch (err) {
         stopPracticeShareLoadingAnim();
         if (loading) loading.hidden = true;
@@ -37921,12 +39504,7 @@
       $("practice-share-generate") && $("practice-share-generate").addEventListener("click", () => {
         createPracticeShareLink();
       });
-      const pinOtpRoot = $("practice-share-pin-otp");
-      if (pinOtpRoot) {
-        practiceSharePinOtp = mountPinOtp(pinOtpRoot, {
-          onSubmit: () => $("practice-share-generate")?.click(),
-        });
-      }
+      /* Choir PIN OTP removed — open practice links use leader password only. */
       $("practice-share-copy") && $("practice-share-copy").addEventListener("click", () => {
         copyPracticeShareLink();
       });
@@ -41826,7 +43404,7 @@
             "</dl>" +
           "</section>" +
           "<section class=\"sa-detail-section\">" +
-            "<h4>AI quota today (UTC)</h4>" +
+            "<h4>AI quota this week (UTC)</h4>" +
             "<dl class=\"sa-detail-kv\">" +
               "<dt>Used</dt><dd>" + escapeHtml(String(quota.used != null ? quota.used : "—")) + " / " + escapeHtml(String(quota.limit != null ? quota.limit : "—")) + "</dd>" +
               "<dt>Remaining</dt><dd>" + escapeHtml(String(quota.remaining != null ? quota.remaining : "—")) + "</dd>" +
@@ -42270,6 +43848,8 @@
       });
 
       const aiControls = [
+        "flow-use-ai-poster",
+        "poster-use-ai-poster",
         "flow-use-openai-poster",
         "flow-use-gemini-poster",
         "poster-use-openai-poster",
@@ -42999,9 +44579,9 @@
         const used = q.used || 0;
         const remaining = q.remaining != null ? q.remaining : "?";
         if (q.scope === "parish") {
-          el.textContent = "Your parish pool today (UTC): " + remaining + " of " + limit + " AI image" + (limit === 1 ? "" : "s") + " remaining · " + used + " used · shared by all parish members.";
+          el.textContent = "Your parish pool this week (UTC): " + remaining + " of " + limit + " AI image" + (limit === 1 ? "" : "s") + " remaining · " + used + " used · shared by all parish members.";
         } else {
-          el.textContent = "Daily limit: " + limit + " · Used: " + used + " · Remaining: " + remaining + " (UTC).";
+          el.textContent = "Weekly limit: " + limit + " · Used: " + used + " · Remaining: " + remaining + " (UTC week).";
         }
       } catch (_e) {
         el.textContent = "Could not load quota status.";
@@ -43028,7 +44608,7 @@
         st.page = meta.page;
         const summary = $("sa-ai-quota-summary");
         if (summary && data.date) {
-          summary.textContent = "Today (UTC " + data.date + "): " + (data.total_used || 0) + " AI image" + ((data.total_used || 0) === 1 ? "" : "s") + " across " + (data.parish_count || data.total || items.length) + " parish" + ((data.parish_count || data.total || items.length) === 1 ? "" : "es") + " · " + (data.limit_per_parish || "?") + " per parish per day.";
+          summary.textContent = "This week (UTC " + data.date + "): " + (data.total_used || 0) + " AI image" + ((data.total_used || 0) === 1 ? "" : "s") + " across " + (data.parish_count || data.total || items.length) + " parish" + ((data.parish_count || data.total || items.length) === 1 ? "" : "es") + " · " + (data.limit_per_parish || "?") + " per parish per week.";
         }
         if (!items.length) {
           body.innerHTML = "<tr><td colspan=\"4\" class=\"muted\">No parish usage recorded today.</td></tr>";
@@ -46153,10 +47733,7 @@
       function openAddSong() {
         showRoute("/library/songs");
         requestAnimationFrame(() => {
-          if (typeof expandSongComposerPanel === "function") expandSongComposerPanel();
-          if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(false);
-          const title = $("lyrics-save-title");
-          if (title) title.focus();
+          startComposerNewSong();
         });
       }
 
@@ -46474,6 +48051,204 @@
           applyHomePreviewData(Object.assign({}, (window.__homePreview || {}), data, { __previewDate: activeDate }), activeDate);
         }
       } catch (_homeSyncErr) { /* home card optional */ }
+    }
+
+    const MASS_PINNED_DEFAULTS_KEY = "mass_builder_pinned_defaults";
+
+    function readMassPinnedDefaults() {
+      try {
+        const raw = localStorage.getItem(MASS_PINNED_DEFAULTS_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_e) {
+        return {};
+      }
+    }
+
+    function writeMassPinnedDefaults(map) {
+      try {
+        localStorage.setItem(MASS_PINNED_DEFAULTS_KEY, JSON.stringify(map || {}));
+      } catch (_e) { /* ignore */ }
+    }
+
+    function massDefaultPinCurrentValue(key) {
+      const k = String(key || "").trim();
+      if (!k) return "";
+      if (k.startsWith("songs.")) {
+        const slot = k.slice(6);
+        return String((selectedLyricsSongs && selectedLyricsSongs[slot]) || "").trim();
+      }
+      if (k === "flow-hymn-layout") {
+        const picked = document.querySelector('input[name="flow-hymn-layout"]:checked');
+        return picked ? String(picked.value || "").trim() : "";
+      }
+      const el = $(k);
+      return el ? String(el.value || "").trim() : "";
+    }
+
+    function setMassDefaultPin(key, value, on) {
+      const k = String(key || "").trim();
+      const v = String(value || "").trim();
+      if (!k || !v) return;
+      const map = readMassPinnedDefaults();
+      if (on) map[k] = v;
+      else if (map[k] === v) delete map[k];
+      writeMassPinnedDefaults(map);
+      syncMassDefaultPins();
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+    }
+    window.setMassDefaultPin = setMassDefaultPin;
+
+    function massDefaultPinCompareValue(inp) {
+      const key = inp.getAttribute("data-mw-default-key") || "";
+      const optionVal = String(inp.getAttribute("data-mw-default-value") || "").trim();
+      if (optionVal) return optionVal;
+      const currentVal = massDefaultPinCurrentValue(key);
+      if (currentVal) inp.setAttribute("data-mw-default-value", currentVal);
+      return currentVal;
+    }
+
+    function syncMassDefaultPins(root) {
+      const map = readMassPinnedDefaults();
+      const scope = root && root.querySelectorAll ? root : document;
+      const nodes = scope.querySelectorAll ? scope.querySelectorAll(".mw-default-pin__input") : [];
+      nodes.forEach((inp) => {
+        const key = inp.getAttribute("data-mw-default-key") || "";
+        const compareVal = massDefaultPinCompareValue(inp);
+        const on = !!(key && compareVal && map[key] === compareVal);
+        inp.checked = on;
+        const wrap = inp.closest(".mw-default-pin");
+        if (wrap) wrap.classList.toggle("is-on", on);
+      });
+      syncRiteOptionsCollapse(root);
+    }
+    window.syncMassDefaultPins = syncMassDefaultPins;
+
+    function riteSectionPinKey(riteEl) {
+      if (!riteEl) return "";
+      const sel = riteEl.querySelector("select[data-mw-tunes]");
+      if (sel && sel.id) return sel.id;
+      const pin = riteEl.querySelector(".mw-default-pin__input[data-mw-default-key]");
+      return pin ? String(pin.getAttribute("data-mw-default-key") || "").trim() : "";
+    }
+
+    function syncRiteOptionsCollapse(root) {
+      const flowPage = $("flow-page");
+      if (!flowPage) return;
+      const map = readMassPinnedDefaults();
+      let rites = [];
+      if (root && root.classList && root.classList.contains("mw-rite")) {
+        rites = [root];
+      } else if (root && root.closest) {
+        const parentRite = root.closest('[data-mw-step="2"] .mw-rite, [data-mw-step="4"] .mw-rite');
+        rites = parentRite
+          ? [parentRite]
+          : Array.from(flowPage.querySelectorAll('[data-mw-step="2"] .mw-rite, [data-mw-step="4"] .mw-rite'));
+      } else {
+        rites = Array.from(flowPage.querySelectorAll('[data-mw-step="2"] .mw-rite, [data-mw-step="4"] .mw-rite'));
+      }
+      rites.forEach((rite) => {
+        const optsWrap = rite.querySelector(".mw-options");
+        if (!optsWrap) {
+          rite.classList.remove("mw-rite--collapse-default");
+          return;
+        }
+        const pinKey = riteSectionPinKey(rite);
+        const pinnedVal = pinKey ? String(map[pinKey] || "").trim() : "";
+        const collapsed = !!pinnedVal;
+        rite.classList.toggle("mw-rite--collapse-default", collapsed);
+        optsWrap.querySelectorAll(".mw-option").forEach((opt) => {
+          const val = String(opt.getAttribute("data-val") || "");
+          opt.classList.toggle("mw-option--collapse-show", !collapsed || val === pinnedVal);
+        });
+      });
+    }
+    window.syncRiteOptionsCollapse = syncRiteOptionsCollapse;
+
+    function initMassFieldDefaultPins() {
+      document.querySelectorAll("[data-mw-field-pin]").forEach((host) => {
+        const fieldId = host.getAttribute("data-mw-field-pin") || "";
+        if (!fieldId || host.dataset.mwFieldPinReady === "1") return;
+        host.dataset.mwFieldPinReady = "1";
+        const label = document.createElement("label");
+        label.className = "mw-default-pin";
+        label.title = "Save current choice as my default next time";
+        label.innerHTML =
+          "<input type=\"checkbox\" class=\"mw-default-pin__input\" data-mw-default-key=\"" + escapeHtml(fieldId) + "\" />" +
+          "<span class=\"mw-default-pin__text\">Use as default</span>";
+        label.addEventListener("click", (e) => e.stopPropagation());
+        label.addEventListener("change", (e) => {
+          e.stopPropagation();
+          const val = massDefaultPinCurrentValue(fieldId);
+          if (!val) {
+            e.target.checked = false;
+            return;
+          }
+          setMassDefaultPin(fieldId, val, !!e.target.checked);
+        });
+        host.appendChild(label);
+        if (fieldId === "flow-hymn-layout") {
+          document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+            el.addEventListener("change", () => syncMassDefaultPins(host));
+          });
+        } else {
+          const el = $(fieldId);
+          if (el) el.addEventListener("change", () => syncMassDefaultPins(host));
+        }
+      });
+      syncMassDefaultPins();
+    }
+
+    function applyMassPinnedDefaults() {
+      const map = readMassPinnedDefaults();
+      Object.keys(map).forEach((key) => {
+        const val = String(map[key] || "").trim();
+        if (!val) return;
+        if (key.startsWith("songs.")) {
+          const slot = key.slice(6);
+          if (slot) assignMassSlotSong(slot, val);
+          return;
+        }
+        if (key === "flow-hymn-layout") {
+          document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+            el.checked = el.value === val;
+          });
+          return;
+        }
+        if (key === "flow-deck-theme" && typeof setActiveDeckTheme === "function") {
+          setActiveDeckTheme(val);
+          return;
+        }
+        if (key === "sanctus_tune") return;
+        const el = $(key);
+        if (el && "value" in el) {
+          setMassBuilderFieldValue(key, val);
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+      if (typeof syncRiteVideoUi === "function") syncRiteVideoUi();
+      syncMassDefaultPins();
+    }
+
+    function bindMassDefaultPinDelegation() {
+      if (window.__massDefaultPinBound) return;
+      window.__massDefaultPinBound = true;
+      document.addEventListener("change", (e) => {
+        const inp = e.target && e.target.classList && e.target.classList.contains("mw-default-pin__input")
+          ? e.target
+          : null;
+        if (!inp) return;
+        const key = inp.getAttribute("data-mw-default-key") || "";
+        const val = massDefaultPinCompareValue(inp);
+        if (!val) {
+          inp.checked = false;
+          return;
+        }
+        setMassDefaultPin(key, val, !!inp.checked);
+      });
+      document.addEventListener("click", (e) => {
+        if (e.target.closest(".mw-default-pin")) e.stopPropagation();
+      }, true);
     }
 
     let massHabitsCache = null;
@@ -47185,23 +48960,76 @@
           style: "cinematic",
         };
       }
-      const flowOpenAi = $("flow-use-openai-poster");
-      const flowGemini = $("flow-use-gemini-poster");
-      const posterOpenAi = $("poster-use-openai-poster");
-      const posterGemini = $("poster-use-gemini-poster");
-      const useOpenai = flowOpenAi ? flowOpenAi.checked : !!(posterOpenAi && posterOpenAi.checked);
-      const useGemini = flowGemini ? flowGemini.checked : !!(posterGemini && posterGemini.checked);
+      syncAiPosterToggleState();
+      const flowAi = $("flow-use-ai-poster");
+      const posterAi = $("poster-use-ai-poster");
+      const useAi = !!(
+        (flowAi && flowAi.checked) ||
+        (posterAi && posterAi.checked) ||
+        ($("flow-use-openai-poster") && $("flow-use-openai-poster").checked) ||
+        ($("flow-use-gemini-poster") && $("flow-use-gemini-poster").checked) ||
+        ($("poster-use-openai-poster") && $("poster-use-openai-poster").checked) ||
+        ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)
+      );
       const styleEl = $("flow-openai-poster-style") || $("poster-openai-poster-style");
       return {
-        useOpenai,
-        useGemini,
-        useAi: useOpenai || useGemini,
-        backend: useGemini ? "gemini" : useOpenai ? "openai" : null,
+        useOpenai: useAi,
+        useGemini: false,
+        useAi,
+        backend: useAi ? "openai" : null,
         style: (styleEl && styleEl.value) || "cinematic",
       };
     }
 
+    function setAiPosterSwitchLabel(on) {
+      const flowInput = $("flow-use-ai-poster");
+      const flowLabel = flowInput && flowInput.closest("label");
+      const flowText = flowLabel && flowLabel.querySelector(".mw-switch__text");
+      if (flowText) flowText.textContent = on ? "On" : "Off";
+      const posterInput = $("poster-use-ai-poster");
+      const posterLabel = posterInput && posterInput.closest("label");
+      const posterText = posterLabel && posterLabel.querySelector(".mw-switch__text");
+      if (posterText) posterText.textContent = on ? "AI poster art · On" : "AI poster art · Off";
+    }
+
+    function migrateLegacyAiPosterToggles() {
+      const masters = ["flow-use-ai-poster", "poster-use-ai-poster"]
+        .map((id) => $(id))
+        .filter(Boolean);
+      if (!masters.length || masters.some((el) => el.checked)) return;
+      const legacyOn = [
+        "flow-use-openai-poster",
+        "flow-use-gemini-poster",
+        "poster-use-openai-poster",
+        "poster-use-gemini-poster",
+      ].some((id) => {
+        const el = $(id);
+        return !!(el && el.checked);
+      });
+      if (legacyOn) masters.forEach((el) => { el.checked = true; });
+    }
+
+    function syncAiPosterToggleState() {
+      const masters = ["flow-use-ai-poster", "poster-use-ai-poster"]
+        .map((id) => $(id))
+        .filter(Boolean);
+      // Masters are the source of truth. Never re-enable from legacy checkboxes here —
+      // that snapped the switch back On after the user turned it Off.
+      const on = masters.some((el) => el.checked);
+      masters.forEach((el) => { el.checked = on; });
+      ["flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+        const el = $(id);
+        if (el) el.checked = on;
+      });
+      ["flow-use-gemini-poster", "poster-use-gemini-poster"].forEach((id) => {
+        const el = $(id);
+        if (el) el.checked = false;
+      });
+      setAiPosterSwitchLabel(on);
+    }
+
     function syncOpenAiPosterUi() {
+      syncAiPosterToggleState();
       const { useAi } = readOpenAiPosterSettings();
       const litWrap = $("poster-liturgical-template-wrap");
       if (litWrap) litWrap.style.display = useAi ? "none" : "";
@@ -47233,18 +49061,20 @@
         const q = await res.json();
         nodes.forEach((el) => {
           const compact = el.closest(".flow-setup-quota-badge");
+          const rem = (q.remaining != null ? q.remaining : "?");
+          const lim = (q.limit != null ? q.limit : "?");
           const msg = q.allowed
             ? (compact
-              ? (q.remaining + " generation" + (q.remaining === 1 ? "" : "s") + " remaining (utc)")
-              : (q.remaining + " of " + q.limit + " AI image generation" + (q.limit === 1 ? "" : "s") + " left today (UTC)."))
+              ? (rem + " left this week")
+              : (rem + " of " + lim + " AI poster generation" + (lim === 1 ? "" : "s") + " left this week."))
             : (compact
-              ? ("Daily limit reached (" + q.limit + "/day utc)")
-              : ("Daily AI image limit reached (" + q.limit + "/day UTC). Use liturgical template instead, or try again tomorrow."));
+              ? ("Weekly limit reached (" + lim + "/wk)")
+              : ("Weekly AI image limit reached (" + lim + "/week UTC). Use the liturgical template, or try again next week."));
           el.textContent = msg;
           el.style.color = q.allowed ? "" : "var(--warn)";
         });
         const disableAi = !q.allowed;
-        ["flow-use-openai-poster", "flow-use-gemini-poster", "poster-use-openai-poster", "poster-use-gemini-poster"].forEach((id) => {
+        ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster", "poster-use-openai-poster", "poster-use-gemini-poster"].forEach((id) => {
           const el = $(id);
           if (!el) return;
           el.disabled = disableAi;
@@ -47256,41 +49086,29 @@
       }
     }
 
-    function bindOpenAiPosterControls() {
-      const openAiBoxes = ["flow-use-openai-poster", "poster-use-openai-poster"];
-      const geminiBoxes = ["flow-use-gemini-poster", "poster-use-gemini-poster"];
-      openAiBoxes.forEach((id) => {
+    
+    function bindAiPosterQuotaStyleWatch() {
+      if (window.__aiQuotaStyleBound) return;
+      window.__aiQuotaStyleBound = true;
+      ["flow-openai-poster-style", "poster-openai-poster-style", "mass-date"].forEach((id) => {
         const el = $(id);
         if (!el) return;
-        el.addEventListener("change", () => {
-          if (el.checked) {
-            geminiBoxes.forEach((gid) => {
-              const g = $(gid);
-              if (g) g.checked = false;
-            });
-          }
-          openAiBoxes.forEach((oid) => {
-            const other = $(oid);
-            if (other) other.checked = el.checked;
-          });
-          syncOpenAiPosterUi();
-        });
+        el.addEventListener("change", () => { refreshAiImageQuotaHint(); });
       });
-      geminiBoxes.forEach((id) => {
+    }
+
+    function bindOpenAiPosterControls() {
+      ["flow-use-ai-poster", "poster-use-ai-poster"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         el.addEventListener("change", () => {
-          if (el.checked) {
-            openAiBoxes.forEach((oid) => {
-              const o = $(oid);
-              if (o) o.checked = false;
-            });
-          }
-          geminiBoxes.forEach((gid) => {
-            const other = $(gid);
-            if (other) other.checked = el.checked;
+          const on = !!el.checked;
+          ["flow-use-ai-poster", "poster-use-ai-poster"].forEach((oid) => {
+            const other = $(oid);
+            if (other) other.checked = on;
           });
           syncOpenAiPosterUi();
+          if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
         });
       });
       const textCheckboxes = ["flow-include-poster-text", "poster-include-poster-text"];
@@ -47315,6 +49133,7 @@
           });
         });
       });
+      migrateLegacyAiPosterToggles();
       syncOpenAiPosterUi();
     }
 
@@ -47344,7 +49163,7 @@
     function receiptFootnote(model) {
       const parts = [];
       if (model.collection) parts.push(model.collection);
-      if (model.aiPoster) parts.push(model.aiBackend === "gemini" ? "Gemini poster" : "OpenAI poster");
+      if (model.aiPoster) parts.push("AI poster");
       if (model.creed) parts.push(model.creed);
       return parts.join(" · ");
     }
@@ -48481,6 +50300,11 @@
     async function runFullMassGenerate(options) {
       const o = options || {};
       const statusFn = o.setStatus || setFlowStatus;
+      if (window.MassWizard && typeof window.MassWizard.validateBeforeGenerate === "function") {
+        if (window.MassWizard.validateBeforeGenerate()) {
+          return null;
+        }
+      }
       if (!churchMembershipState.can_use_full_app) {
         statusFn("Mass generation requires approved parish membership.", "error");
         return null;
@@ -48700,34 +50524,15 @@
           }
         }
 
-        // Reuse a previously generated Sunday poster instead of re-paying for AI art.
-        // Ask once per session per date+style, then remember the choice.
+        // Silent shared/local hero reuse (server may skip the image API), but the
+        // product still charges weekly quota and always shows the AI-generation UX.
         body.reuse_existing_poster = false;
         if (body.include_ai_mass_poster) {
           try {
-            const reuseKey = [date, body.ai_poster_backend, body.ai_poster_style].join("|");
-            let decisions = {};
-            try {
-              decisions = JSON.parse(sessionStorage.getItem("posterReuseDecisions") || "{}") || {};
-            } catch (_e) {
-              decisions = {};
-            }
-            if (Object.prototype.hasOwnProperty.call(decisions, reuseKey)) {
-              body.reuse_existing_poster = !!decisions[reuseKey];
-            } else {
-              const qs = "date=" + encodeURIComponent(date) + "&style=" + encodeURIComponent(body.ai_poster_style || "cinematic");
-              const exRes = await fetch("/api/poster-exists?" + qs);
-              const exData = exRes.ok ? await exRes.json() : { exists: false };
-              if (exData && exData.exists) {
-                setMassGenLoading(false);
-                const reuse = window.confirm("Poster for this Sunday is already generated. Reuse it?\n\nOK = reuse the existing poster (no extra AI cost)\nCancel = regenerate fresh poster art");
-                decisions[reuseKey] = reuse;
-                try {
-                  sessionStorage.setItem("posterReuseDecisions", JSON.stringify(decisions));
-                } catch (_e) {}
-                body.reuse_existing_poster = reuse;
-              }
-            }
+            const qs = "date=" + encodeURIComponent(date) + "&style=" + encodeURIComponent(body.ai_poster_style || "cinematic");
+            const exRes = await fetch("/api/poster-exists?" + qs);
+            const exData = exRes.ok ? await exRes.json() : { exists: false };
+            if (exData && exData.exists) body.reuse_existing_poster = true;
           } catch (_e) {
             body.reuse_existing_poster = false;
           }
@@ -48735,18 +50540,15 @@
 
         genSteps = buildMassGenStepList({
           hasUpload,
-          useAi: body.include_ai_mass_poster && !body.reuse_existing_poster,
-          reusePoster: body.include_ai_mass_poster && body.reuse_existing_poster,
+          useAi: !!body.include_ai_mass_poster,
+          reusePoster: false,
         });
         massGenProgressState.steps = genSteps;
 
         let workIdx = massGenStepIndex("Building PowerPoint slides");
-        if (body.include_ai_mass_poster && !body.reuse_existing_poster) {
+        if (body.include_ai_mass_poster) {
           workIdx = massGenStepIndex("Connecting to AI");
           statusFn("Creating sacred artwork and building your presentation…", "");
-        } else if (body.reuse_existing_poster) {
-          workIdx = massGenStepIndex("Applying saved artwork");
-          statusFn("Applying saved artwork and rebuilding your presentation…", "");
         } else {
           statusFn("Building PowerPoint slides…", "");
         }
@@ -48757,7 +50559,7 @@
           steps: genSteps,
           step: workIdx,
         });
-        startMassGenStepSimulation(workIdx + 1, body.include_ai_mass_poster && !body.reuse_existing_poster ? 2800 : 2200);
+        startMassGenStepSimulation(workIdx + 1, body.include_ai_mass_poster ? 2800 : 2200);
         const data = await postJSON("/api/generate", body);
         clearMassGenProgressTimers();
         advanceMassGenStep(genSteps.length - 1, { message: "Finalizing presentation…", percent: 100 });
@@ -50314,6 +52116,7 @@
     }
 
     let songCatalogGooglePendingQuery = "";
+    let songCatalogGoogleSearchOpening = false;
 
     function closeSongCatalogGoogleConfirmModal() {
       const langPick = $("song-catalog-google-lang");
@@ -50348,7 +52151,9 @@
       if (!songCatalogSearchMeetsMinimum(subject) && !opts.force) return;
       songCatalogGooglePendingQuery = subject;
       const langPick = $("song-catalog-google-lang");
-      const composerLang = getComposerSongLanguage();
+      const newSongModalOpen = $("composer-new-song-modal") && $("composer-new-song-modal").classList.contains("is-open");
+      const modalLang = newSongModalOpen && $("composer-new-song-language") && $("composer-new-song-language").value;
+      const composerLang = modalLang || getComposerSongLanguage();
       if (langPick) {
         langPick.value = composerLang || "";
         refreshVerbumSelect(langPick);
@@ -50402,6 +52207,7 @@
     }
 
     function confirmSongCatalogGoogleSearch() {
+      if (songCatalogGoogleSearchOpening) return;
       const lang = ($("song-catalog-google-lang") && $("song-catalog-google-lang").value) || "";
       const query = songCatalogGooglePendingQuery;
       if (!query) {
@@ -50413,8 +52219,12 @@
         return;
       }
       const url = songCatalogGoogleLyricsSearchUrl(query, lang);
+      songCatalogGoogleSearchOpening = true;
       closeSongCatalogGoogleConfirmModal();
       if (url) openExternalGoogleSearch(url);
+      window.setTimeout(() => {
+        songCatalogGoogleSearchOpening = false;
+      }, 500);
     }
 
     function handleSongCatalogSearchEnter(e) {
@@ -51494,6 +53304,9 @@
         ["song-catalog-google-backdrop", closeSongCatalogGoogleConfirmModal],
         ["song-catalog-google-close", closeSongCatalogGoogleConfirmModal],
         ["song-catalog-google-cancel", closeSongCatalogGoogleConfirmModal],
+        ["composer-new-song-backdrop", closeComposerNewSongModal],
+        ["composer-new-song-close", closeComposerNewSongModal],
+        ["composer-new-song-cancel", closeComposerNewSongModal],
       ].forEach(([id, fn]) => {
         const el = $(id);
         if (el) el.addEventListener("click", fn);
@@ -51530,6 +53343,79 @@
       $("song-catalog-google-confirm") && $("song-catalog-google-confirm").addEventListener("click", () => {
         confirmSongCatalogGoogleSearch();
       });
+      $("composer-new-song-analyze") && $("composer-new-song-analyze").addEventListener("click", () => {
+        void confirmComposerNewSongAnalyze();
+      });
+      $("composer-new-song-mood-google-link") && $("composer-new-song-mood-google-link").addEventListener("click", () => {
+        openComposerNewSongMoodGoogleSearch();
+      });
+      $("composer-new-song-title-search") && $("composer-new-song-title-search").addEventListener("input", (e) => {
+        composerNewSongPickedCatalog = null;
+        syncComposerNewSongTitleFieldsFromSearch(e.target.value || "");
+        setComposerNewSongFieldAttention("title", false);
+        setComposerNewSongFieldAttention("titleSearch", false);
+        clearTimeout(composerNewSongSearchDebounce);
+        composerNewSongSearchDebounce = window.setTimeout(() => {
+          renderComposerNewSongSearchResults(e.target.value || "");
+        }, SONG_CATALOG_SEARCH_DEBOUNCE_MS);
+      });
+      $("composer-new-song-title") && $("composer-new-song-title").addEventListener("input", (e) => {
+        composerNewSongPickedCatalog = null;
+        const val = e.target.value || "";
+        if ($("composer-new-song-title-search")) $("composer-new-song-title-search").value = val;
+        updateComposerNewSongMoodGoogleVisibility();
+        setComposerNewSongFieldAttention("title", false);
+        setComposerNewSongFieldAttention("titleSearch", false);
+        clearTimeout(composerNewSongSearchDebounce);
+        composerNewSongSearchDebounce = window.setTimeout(() => {
+          renderComposerNewSongSearchResults(val);
+        }, SONG_CATALOG_SEARCH_DEBOUNCE_MS);
+      });
+      $("composer-new-song-title-search") && $("composer-new-song-title-search").addEventListener("keydown", handleComposerNewSongSearchEnter);
+      $("composer-new-song-title-search") && $("composer-new-song-title-search").addEventListener("search", (e) => {
+        e.preventDefault();
+        handleComposerNewSongSearchEnter({ key: "Enter", target: e.target, preventDefault: () => e.preventDefault() });
+      });
+      $("composer-new-song-title-search") && $("composer-new-song-title-search").addEventListener("blur", () => {
+        trimComposerNewSongSearchOnBlur();
+      });
+      $("composer-new-song-title-search") && $("composer-new-song-title-search").addEventListener("focus", (e) => {
+        renderComposerNewSongSearchResults(e.target.value || "");
+      });
+      ["composer-new-song-language", "composer-new-song-section"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.addEventListener("change", () => {
+          if (id === "composer-new-song-language") setComposerNewSongFieldAttention("language", false);
+          if (id === "composer-new-song-section") setComposerNewSongFieldAttention("section", false);
+        });
+      });
+      $("composer-new-song-lyrics") && $("composer-new-song-lyrics").addEventListener("input", () => {
+        setComposerNewSongFieldAttention("lyrics", false);
+      });
+      document.querySelectorAll("[data-composer-new-mood-opt]").forEach((el) => {
+        el.addEventListener("change", () => {
+          if (readComposerNewSongMoodChecks().length) setComposerNewSongFieldAttention("moods", false);
+        });
+      });
+      $("composer-new-song-results") && $("composer-new-song-results").addEventListener("click", (e) => {
+        const googleBtn = e.target.closest("[data-composer-new-google-search]");
+        if (googleBtn) {
+          e.preventDefault();
+          openSongCatalogGoogleConfirmModal(googleBtn.getAttribute("data-composer-new-google-search") || "");
+          return;
+        }
+        const btn = e.target.closest("[data-new-song-sec][data-new-song-id]");
+        if (!btn) return;
+        e.preventDefault();
+        void applyComposerNewSongCatalogPick(btn.getAttribute("data-new-song-sec"), btn.getAttribute("data-new-song-id"));
+      });
+      document.addEventListener("click", (e) => {
+        const modal = $("composer-new-song-modal");
+        if (!modal || !modal.classList.contains("is-open")) return;
+        if (e.target.closest(".composer-new-song-search")) return;
+        closeComposerNewSongResults();
+      });
       $("song-catalog-google-lang") && $("song-catalog-google-lang").addEventListener("change", () => {
         updateSongCatalogGoogleModalPreview();
       });
@@ -51563,6 +53449,7 @@
         else if ($("song-save-mood-modal") && $("song-save-mood-modal").classList.contains("is-open")) closeSongSaveMoodModal();
         else if ($("song-save-success-modal") && $("song-save-success-modal").classList.contains("is-open")) closeSongSaveSuccessModal();
         else if ($("song-catalog-google-modal") && $("song-catalog-google-modal").classList.contains("is-open")) closeSongCatalogGoogleConfirmModal();
+        else if ($("composer-new-song-modal") && $("composer-new-song-modal").classList.contains("is-open")) closeComposerNewSongModal();
         else if (logoLockModal && logoLockModal.classList.contains("is-open")) closeLogoLockModal();
         else if (logoPreviewModal && logoPreviewModal.classList.contains("is-open")) closeLogoPreviewModal();
         else if (parishModal && parishModal.classList.contains("is-open")) closeParishSubmitModal();
@@ -51736,6 +53623,10 @@
 
     $("song-catalog-search-clear") && $("song-catalog-search-clear").addEventListener("click", () => {
       clearSongCatalogSearch();
+    });
+
+    $("btn-composer-add-song") && $("btn-composer-add-song").addEventListener("click", () => {
+      openComposerNewSongModal();
     });
 
     $("song-composer-recent-list") && $("song-composer-recent-list").addEventListener("click", (e) => {
@@ -52201,11 +54092,12 @@
         celebrant,
         poster_template: $("poster-template").value,
         include_social: isFeatureEnabled("social_poster_export") && $("poster-include-social").checked,
-        include_ai: isFeatureEnabled("ai_image_generation") && (($("poster-use-openai-poster") && $("poster-use-openai-poster").checked)
-          || ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)),
-        ai_poster_backend: ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)
-          ? "gemini"
-          : "openai",
+        include_ai: isFeatureEnabled("ai_image_generation") && !!(
+          ($("poster-use-ai-poster") && $("poster-use-ai-poster").checked) ||
+          ($("poster-use-openai-poster") && $("poster-use-openai-poster").checked) ||
+          ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)
+        ),
+        ai_poster_backend: "openai",
         ai_poster_style: $("poster-openai-poster-style").value,
         downloadRowId: "poster-download-row",
         links: [
@@ -52989,6 +54881,11 @@
     renderCollectionsRecent();
     bindSocialExportControls();
     bindOpenAiPosterControls();
+    bindAiPosterQuotaStyleWatch();
+    bindMassDefaultPinDelegation();
+    initMassFieldDefaultPins();
+    applyMassPinnedDefaults();
+    syncMassDefaultPins($("flow-page"));
     if (typeof consumeEmailDeepLinkIntent === "function") consumeEmailDeepLinkIntent();
     showRoute(currentRoute(), true);
     renderLyrics({ writeBack: false });
@@ -53015,6 +54912,7 @@
     initCreateMenu();
     initVerbumSelects();
     initDividerPosterPickers();
+    migrateLegacyAiPosterToggles();
     syncOpenAiPosterUi();
     initGlobalSearch();
     initHeaderTicker();

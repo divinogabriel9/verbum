@@ -138,6 +138,7 @@ def list_parish_image_quota(*, q: str = "", limit: int = 100) -> dict[str, Any]:
         "date": today,
         "timezone": "UTC",
         "limit_per_parish": DAILY_IMAGE_LIMIT,
+        "limit_period": "week",
         "total_used": total_used,
         "parish_count": total,
         "total": total,

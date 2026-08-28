@@ -1230,6 +1230,13 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   position: relative;
 }
 
+.song-composer-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
 .song-composer-search-wrap {
   position: relative;
   min-width: 0;
@@ -1349,6 +1356,36 @@ html[data-theme="dark"] .flow-builder-tabs button:hover {
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
+  cursor: pointer;
+}
+
+.song-composer-upload-btn--icon {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+}
+
+.song-composer-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--liturgical-accent, var(--color-primary));
+  border-radius: var(--radius-sm);
+  background: var(--liturgical-accent, var(--color-primary));
+  color: var(--on-accent, var(--on-primary, #fff));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.song-composer-add-btn:hover {
+  background: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 88%, black);
+  border-color: color-mix(in srgb, var(--liturgical-accent, var(--color-primary)) 88%, black);
 }
 
 .song-composer-upload-btn:hover,
@@ -1950,8 +1987,30 @@ html[data-theme="dark"] .lyric-block.type-outro .vb-select--pill .vb-select__tri
   .song-composer-toolbar-row {
     grid-template-columns: 1fr;
   }
-  .song-composer-upload-btn {
+  .song-composer-panel--deflated .song-composer-toolbar-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .song-composer-toolbar-actions {
     width: 100%;
+    justify-content: stretch;
+  }
+  .song-composer-panel--deflated .song-composer-toolbar-actions {
+    width: auto;
+    justify-content: flex-end;
+  }
+  .song-composer-add-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .song-composer-panel--deflated .song-composer-add-btn {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 0.75rem;
+  }
+  .song-composer-upload-btn--icon {
+    width: 36px;
+    flex: 0 0 36px;
   }
 }
 

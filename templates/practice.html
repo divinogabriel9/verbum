@@ -1019,6 +1019,7 @@
             <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"/></svg>
           </button>
           <button type="button" class="practice-top__action practice-top__action--secondary" id="practice-send-member" hidden>Send to Mass</button>
+          <button type="button" class="practice-top__action practice-top__action--secondary" id="practice-leader-mode" hidden>Leader mode</button>
           <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
         </div>
       </div>
@@ -1092,6 +1093,7 @@
       const tabs = document.getElementById("practice-tabs");
       const footnote = document.getElementById("practice-footnote");
       const leadAction = document.getElementById("practice-lead-action");
+      const leaderModeBtn = document.getElementById("practice-leader-mode");
       const leadNote = document.getElementById("practice-lead-note");
       const sendMemberBtn = document.getElementById("practice-send-member");
       const memberOverlay = document.getElementById("practice-member-overlay");
@@ -1114,6 +1116,8 @@
         meta: {},
       };
       let pollTimer = null;
+      let seatHeartbeatTimer = null;
+      let lastGuestPayload = null;
       let toastTimer = null;
       let tabAnimToken = 0;
       let catalogSongs = null;
@@ -1214,6 +1218,10 @@
       });
 
       function syncLeadChrome() {
+        if (leaderModeBtn) {
+          leaderModeBtn.hidden = !!state.isLeader;
+          leaderModeBtn.disabled = false;
+        }
         if (!leadAction) return;
         if (!state.isLeader) {
           leadAction.hidden = true;
@@ -1236,6 +1244,57 @@
           leadAction.classList.add("practice-top__action--secondary");
           if (leadNote) leadNote.hidden = true;
         }
+      }
+
+      function stopSeatHeartbeat() {
+        if (seatHeartbeatTimer) {
+          clearInterval(seatHeartbeatTimer);
+          seatHeartbeatTimer = null;
+        }
+      }
+
+      function startSeatHeartbeat() {
+        stopSeatHeartbeat();
+        if (!state.isLeader || !leadToken) return;
+        seatHeartbeatTimer = setInterval(function () {
+          void renewLeaderSeat();
+        }, 40000);
+      }
+
+      async function renewLeaderSeat() {
+        if (!state.isLeader || !leadToken || document.hidden) return;
+        try {
+          const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lead", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ lead_token: leadToken, force: false }),
+          });
+          if (res.status === 409) {
+            dropLeaderMode("Another leader took over. You’re back in guest view.");
+            return;
+          }
+          if (!res.ok) {
+            dropLeaderMode("Leader session ended. Tap Leader mode to continue editing.");
+          }
+        } catch (_err) { /* ignore */ }
+      }
+
+      function dropLeaderMode(message) {
+        leadToken = "";
+        try { sessionStorage.removeItem(LEAD_STORE_KEY); } catch (_e) { /* ignore */ }
+        state.isLeader = false;
+        state.editing = false;
+        stopSeatHeartbeat();
+        syncLeadChrome();
+        if (message) showSyncToast(message);
+        renderCurrentSong();
+      }
+
+      function confirmLeaderTakeover() {
+        return window.confirm(
+          "A leader is already logged in on another device.\n\nContinue to take over leader mode?"
+        );
       }
 
       function closeMemberPicker() {
@@ -1522,15 +1581,17 @@
         tabs.hidden = true;
         footnote.hidden = true;
         if (leadAction) leadAction.hidden = true;
+        if (leaderModeBtn) leaderModeBtn.hidden = true;
         if (sendMemberBtn) sendMemberBtn.hidden = true;
         if (leadNote) leadNote.hidden = true;
         setPracticeChromeReady(false);
         stopPoll();
+        stopSeatHeartbeat();
         root.innerHTML =
           '<div class="practice-pin-wrap">' +
             '<section class="practice-pin" aria-labelledby="practice-pin-label">' +
-              '<label id="practice-pin-label" for="practice-pin-trap">Enter the 6-digit PIN from your choir leader</label>' +
-              '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">The PIN is not included in the link — share it separately (e.g. in person or by text).</p>' +
+              '<label id="practice-pin-label" for="practice-pin-trap">Enter your leader password</label>' +
+              '<p class="muted" style="margin:0 0 12px;font-size:0.8125rem;line-height:1.45;">This unlocks edit mode on this device. Only one leader can edit at a time.</p>' +
               '<div class="practice-pin-entry">' +
                 '<div class="pin-otp__wrap" id="practice-pin-otp" role="group" aria-labelledby="practice-pin-label">' +
                   pinOtpMarkup() +
@@ -1538,6 +1599,7 @@
                 '<button type="button" class="practice-pin-submit" id="practice-pin-submit">Unlock</button>' +
               '</div>' +
               (errorMsg ? '<p class="practice-pin-error" role="alert">' + esc(errorMsg) + '</p>' : '') +
+              '<button type="button" class="practice-member-close" id="practice-pin-cancel" style="margin-top:16px;">Back to lyrics</button>' +
             '</section>' +
           '</div>';
         const trap = document.querySelector("#practice-pin-otp .pin-otp__trap");
@@ -1545,8 +1607,16 @@
         const otp = mountPinOtp(document.getElementById("practice-pin-otp"));
         const btn = document.getElementById("practice-pin-submit");
         btn.addEventListener("click", function () {
-          submitPin(otp.getValue());
+          submitPin(otp.getValue(), false);
         });
+        const cancel = document.getElementById("practice-pin-cancel");
+        if (cancel) {
+          cancel.addEventListener("click", function () {
+            document.body.classList.remove("practice-pin-open");
+            if (lastGuestPayload) renderPractice(lastGuestPayload);
+            else loadPractice();
+          });
+        }
         if (trap) {
           trap.addEventListener("keydown", function (ev) {
             if (ev.key === "Enter") btn.click();
@@ -1555,27 +1625,37 @@
         openPinKeyboard(trap);
       }
 
-      async function submitPin(pin) {
+      async function submitPin(pin, force) {
         if (pin.length !== 6) {
-          renderPinForm("Enter the full 6-digit PIN.");
+          renderPinForm("Enter the full 6-digit leader password.");
           return;
         }
         document.body.classList.remove("practice-pin-open");
-        root.innerHTML = '<p class="practice-status">Checking PIN…</p>';
+        root.innerHTML = '<p class="practice-status">Checking leader password…</p>';
         try {
           const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/unlock", {
             method: "POST",
             credentials: "same-origin",
             headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({ pin: pin }),
+            body: JSON.stringify({ pin: pin, force: !!force }),
           });
           const data = await res.json().catch(function () { return {}; });
           if (res.status === 429) {
             renderPinForm(data.detail || "Too many attempts. Wait a few minutes and try again.");
             return;
           }
+          if (res.status === 409 || data.leader_busy) {
+            if (confirmLeaderTakeover()) {
+              await submitPin(pin, true);
+              return;
+            }
+            document.body.classList.remove("practice-pin-open");
+            if (lastGuestPayload) renderPractice(lastGuestPayload);
+            else loadPractice();
+            return;
+          }
           if (!res.ok) {
-            renderPinForm(data.error || data.detail || "Incorrect PIN.");
+            renderPinForm(data.error || data.detail || "Incorrect leader password.");
             return;
           }
           if (data.lead_token) {
@@ -1583,8 +1663,9 @@
             try { sessionStorage.setItem(LEAD_STORE_KEY, leadToken); } catch (_e) { /* ignore */ }
           }
           renderPractice(data);
+          startSeatHeartbeat();
         } catch (_err) {
-          renderPinForm("Could not verify PIN. Check your connection.");
+          renderPinForm("Could not verify password. Check your connection.");
         }
       }
 
@@ -1950,6 +2031,7 @@
 
       function renderPractice(data, opts) {
         document.body.classList.remove("practice-pin-open");
+        if (!leadToken) lastGuestPayload = data;
         applyPracticePayload(data, Object.assign({ resetDirty: true, exitEditing: true }, opts || {}));
         const songs = state.songs;
         if (!songs.length) {
@@ -1957,6 +2039,7 @@
           tabs.hidden = true;
           footnote.hidden = true;
           if (leadAction) leadAction.hidden = true;
+          if (leaderModeBtn) leaderModeBtn.hidden = true;
           if (leadNote) leadNote.hidden = true;
           setPracticeChromeReady(false);
           root.innerHTML = '<p class="practice-status error">No songs in this practice link.</p>';
@@ -1973,8 +2056,12 @@
         top.hidden = false;
         setPracticeChromeReady(true);
         footnote.hidden = false;
-        footnote.textContent = "Live practice lyrics · updates when your leader saves";
+        footnote.textContent = state.isLeader
+          ? "Leader mode · only one leader can edit at a time"
+          : "Live practice lyrics · updates when your leader saves";
         syncLeadChrome();
+        if (state.isLeader) startSeatHeartbeat();
+        else stopSeatHeartbeat();
 
         tabs.innerHTML = "";
         tabs.hidden = songs.length < 2;
@@ -2449,6 +2536,10 @@
             body: JSON.stringify({ lead_token: leadToken, songs: songs }),
           });
           const data = await res.json().catch(function () { return {}; });
+          if (res.status === 409) {
+            dropLeaderMode(data.detail || "Another leader took over. You’re back in guest view.");
+            return false;
+          }
           if (!res.ok || !data.ok) {
             throw new Error(data.detail || data.error || "Could not save.");
           }
@@ -2517,41 +2608,55 @@
 
       window.addEventListener("pagehide", stopPoll);
 
+      async function enterLeaderSession(force) {
+        if (!leadToken) return false;
+        const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lead", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ lead_token: leadToken, force: !!force }),
+        });
+        const data = await res.json().catch(function () { return {}; });
+        if (res.status === 429) {
+          root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "Too many requests. Please try again shortly.") + '</p>';
+          return true;
+        }
+        if (res.status === 409 || data.leader_busy) {
+          if (confirmLeaderTakeover()) {
+            return enterLeaderSession(true);
+          }
+          leadToken = "";
+          try { sessionStorage.removeItem(LEAD_STORE_KEY); } catch (_eClr) { /* ignore */ }
+          return false;
+        }
+        if (!res.ok) {
+          leadToken = "";
+          try { sessionStorage.removeItem(LEAD_STORE_KEY); } catch (_eClr) { /* ignore */ }
+          try {
+            window.history.replaceState({}, "", window.location.pathname);
+          } catch (_eHist) { /* ignore */ }
+          return false;
+        }
+        try {
+          window.history.replaceState({}, "", window.location.pathname);
+        } catch (_e) { /* ignore */ }
+        renderPractice(data);
+        return true;
+      }
+
       async function loadPractice() {
         root.innerHTML = '<p class="practice-status">Loading practice set…</p>';
         top.hidden = true;
         tabs.hidden = true;
         footnote.hidden = true;
         if (leadAction) leadAction.hidden = true;
+        if (leaderModeBtn) leaderModeBtn.hidden = true;
         if (leadNote) leadNote.hidden = true;
         setPracticeChromeReady(false);
         try {
           if (leadToken) {
-            const res = await fetch("/api/practice/" + encodeURIComponent(token) + "/lead", {
-              method: "POST",
-              credentials: "same-origin",
-              headers: practiceFetchHeaders({ "Content-Type": "application/json" }),
-              body: JSON.stringify({ lead_token: leadToken }),
-            });
-            const data = await res.json().catch(function () { return {}; });
-            if (res.status === 429) {
-              root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "Too many requests. Please try again shortly.") + '</p>';
-              return;
-            }
-            if (!res.ok) {
-              // Wrong device / leaked lead URL: drop leader mode and fall through to guest PIN flow.
-              leadToken = "";
-              try { sessionStorage.removeItem(LEAD_STORE_KEY); } catch (_eClr) { /* ignore */ }
-              try {
-                window.history.replaceState({}, "", window.location.pathname);
-              } catch (_eHist) { /* ignore */ }
-            } else {
-              try {
-                window.history.replaceState({}, "", window.location.pathname);
-              } catch (_e) { /* ignore */ }
-              renderPractice(data);
-              return;
-            }
+            const entered = await enterLeaderSession(false);
+            if (entered) return;
           }
 
           const res = await fetch("/api/practice/" + encodeURIComponent(token), fetchOpts);
@@ -2564,16 +2669,19 @@
             root.innerHTML = '<p class="practice-status error">' + esc(data.detail || "This link is invalid or expired.") + '</p>';
             return;
           }
-          if (data.requires_pin) {
-            renderPinForm();
-            return;
-          }
+          // Lyrics are always open — no guest PIN gate.
           renderPractice(data);
         } catch (_err) {
           root.innerHTML = '<p class="practice-status error">Could not load practice lyrics. Check your connection.</p>';
         }
       }
 
+      if (leaderModeBtn) {
+        leaderModeBtn.addEventListener("click", function () {
+          if (state.isLeader) return;
+          renderPinForm();
+        });
+      }
       if (leadAction) {
         leadAction.addEventListener("click", function () {
           if (!state.isLeader) return;

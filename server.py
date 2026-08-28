@@ -132,13 +132,14 @@ from services.practice_access import (
     check_practice_page_allowed,
     check_practice_share_create_allowed,
     check_practice_token_allowed,
+    claim_practice_leader_seat,
     ensure_practice_secret_configured,
     is_unlocked,
     issue_lead_token,
-    issue_unlock_cookie,
     practice_device_id_from_request,
     practice_no_store_headers,
     release_unlock_slot,
+    renew_practice_leader_seat,
     try_acquire_unlock_slot,
     verify_lead_token,
 )
@@ -1252,7 +1253,7 @@ class GenerateBody(BaseModel):
     )
     reuse_existing_poster: bool = Field(
         False,
-        description="Reuse the cached hero art for this date+style instead of re-calling the AI image API.",
+        description="Server may silently reuse shared hero art for this date+style; weekly quota is still charged.",
     )
     community_name: Optional[str] = Field(None, max_length=L.CHURCH_NAME)
     songs: Optional[SongSelection] = None
@@ -1589,16 +1590,18 @@ class PracticeShareBody(BaseModel):
     celebrant: str = Field("", max_length=L.CELEBRANT_NAME)
     songs: list[PracticeShareSongBody] = Field(default_factory=list, max_length=24)
     ttl_days: int = Field(0, ge=0, le=7)
-    # Client-chosen 6-digit PIN (required).
-    optional_pin: str = Field(..., min_length=6, max_length=6)
+    # Optional legacy choir PIN — ignored for new open-link shares.
+    optional_pin: str = Field("", max_length=6)
 
 
 class PracticeUnlockBody(BaseModel):
     pin: str = Field("", min_length=6, max_length=6)
+    force: bool = False
 
 
 class PracticeLeadBody(BaseModel):
     lead_token: str = Field(..., min_length=16, max_length=512)
+    force: bool = False
 
 
 class PracticeLyricBlockBody(BaseModel):
@@ -2066,7 +2069,6 @@ def go_google_search(q: str = "") -> HTMLResponse:
         "<meta charset=\"utf-8\"/>"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>"
         "<meta name=\"referrer\" content=\"no-referrer\"/>"
-        f"<meta http-equiv=\"refresh\" content=\"0;url={href}\"/>"
         "<title>Opening Google search…</title>"
         f"<script>location.replace({js_url});</script>"
         "</head><body style=\"font:16px/1.4 system-ui,sans-serif;padding:24px;color:#1f2937\">"
@@ -2092,20 +2094,25 @@ def api_image_quota(
 
 
 @app.get("/api/poster-exists")
-def api_poster_exists(date: str, style: str = "cinematic") -> dict[str, bool]:
+def api_poster_exists(date: str, style: str = "cinematic") -> dict[str, Any]:
     """Report whether a cached AI hero already exists for this date + style.
 
-    Used by the UI to offer reusing a previously generated Sunday poster
-    instead of re-calling (and re-paying for) the AI image API.
+    Checks local disk then the shared Supabase Sunday cache so the server can silently reuse art without another paid image-API call
+    (weekly product quota is still charged).
     """
+    from services.ai_hero_cache import shared_hero_exists
     from services.ai_styles import resolve_ai_image_style
 
     iso = (date or "").strip()
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", iso):
-        return {"exists": False}
+        return {"exists": False, "source": None}
     resolved_style = resolve_ai_image_style((style or "cinematic").strip())
     hero_path = _OUTPUT_DIR / "images" / f"{iso}_{resolved_style}_hero.png"
-    return {"exists": hero_path.is_file()}
+    if hero_path.is_file():
+        return {"exists": True, "source": "local"}
+    if shared_hero_exists(date=iso, style=resolved_style):
+        return {"exists": True, "source": "shared"}
+    return {"exists": False, "source": None}
 
 
 def _enforce_ai_image_quota(
@@ -3010,12 +3017,17 @@ def _require_practice_lead(
     if not device_id:
         raise HTTPException(
             status_code=401,
-            detail="Open Let’s practice from LiturgyFlow on the device you used to create this share.",
+            detail="Open Leader mode on this device with your leader password.",
         )
     if not verify_lead_token(token, lead, share_expires_at, device_id=device_id):
         raise HTTPException(
             status_code=401,
-            detail="Leader link is invalid, expired, or from another device. Open Let’s practice again from LiturgyFlow.",
+            detail="Leader session is invalid, expired, or from another device. Enter Leader mode again.",
+        )
+    if not renew_practice_leader_seat(token, device_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Another leader is logged in. Re-enter Leader mode to take over.",
         )
     allowed, retry_after = check_practice_lead_allowed(request, token, device_id)
     if not allowed:
@@ -3033,6 +3045,40 @@ def _require_practice_lead(
                 headers={"Retry-After": str(max(1, retry_song))},
             )
     return device_id
+
+
+def _claim_leader_seat_or_busy(
+    request: Request,
+    token: str,
+    *,
+    force: bool = False,
+) -> tuple[Optional[str], Optional[JSONResponse]]:
+    """Claim exclusive leader seat. Returns (device_id, error_response)."""
+    device = practice_device_id_from_request(request)
+    if not device:
+        return None, JSONResponse(
+            {
+                "ok": False,
+                "error": "This browser could not start leader mode. Refresh and try again.",
+                "requires_pin": True,
+            },
+            status_code=400,
+            headers=practice_no_store_headers(),
+        )
+    seat = claim_practice_leader_seat(token, device, force=force)
+    if not seat.get("ok"):
+        status = 409 if seat.get("leader_busy") else 400
+        return None, JSONResponse(
+            {
+                "ok": False,
+                "error": seat.get("error") or "Could not start leader mode.",
+                "leader_busy": bool(seat.get("leader_busy")),
+                "requires_pin": True,
+            },
+            status_code=status,
+            headers=practice_no_store_headers(),
+        )
+    return device, None
 
 
 @app.get("/api/practice/shares/recent")
@@ -3110,10 +3156,10 @@ def api_practice_unlock(
     body: PracticeUnlockBody,
     request: Request,
 ) -> Any:
-    """Verify choir or leader PIN.
+    """Verify leader password → device-bound lead token (edit mode).
 
-    Choir PIN → guest unlock cookie (read lyrics).
-    Leader PIN → device-bound lead token (edit mode) without guest cookie.
+    Choir lyrics are open without a PIN. Only the leader password unlocks edit mode.
+    Only one leader device at a time; pass force=true to take over.
     """
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
@@ -3138,35 +3184,30 @@ def api_practice_unlock(
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
 
-    if result.get("is_leader"):
-        device = practice_device_id_from_request(request)
-        if not device:
-            return JSONResponse(
-                {
-                    "ok": False,
-                    "error": "This browser could not start leader mode. Refresh and try again.",
-                    "requires_pin": True,
-                },
-                status_code=400,
-                headers=practice_no_store_headers(),
-            )
-        try:
-            lead = issue_lead_token(tok, row.get("expires_at"), device_id=device)
-        except ValueError as exc:
-            return JSONResponse(
-                {"ok": False, "error": str(exc), "requires_pin": True},
-                status_code=400,
-                headers=practice_no_store_headers(),
-            )
-        out = dict(result)
-        out["lead_token"] = lead
-        out["can_edit"] = True
-        # No guest unlock cookie — leader privilege is lead-token + device only.
-        return JSONResponse(out, headers=practice_no_store_headers())
+    if not result.get("is_leader"):
+        # Guest PIN path removed — lyrics are open; unlock is leader-only.
+        return JSONResponse(
+            {"ok": False, "error": "Enter the leader password to edit.", "requires_pin": True},
+            status_code=401,
+            headers=practice_no_store_headers(),
+        )
 
-    response = JSONResponse(result, headers=practice_no_store_headers())
-    issue_unlock_cookie(request, response, tok, row.get("expires_at"))
-    return response
+    device, busy = _claim_leader_seat_or_busy(request, tok, force=bool(body.force))
+    if busy is not None:
+        return busy
+    assert device is not None
+    try:
+        lead = issue_lead_token(tok, row.get("expires_at"), device_id=device)
+    except ValueError as exc:
+        return JSONResponse(
+            {"ok": False, "error": str(exc), "requires_pin": True},
+            status_code=400,
+            headers=practice_no_store_headers(),
+        )
+    out = dict(result)
+    out["lead_token"] = lead
+    out["can_edit"] = True
+    return JSONResponse(out, headers=practice_no_store_headers())
 
 
 @app.post("/api/practice/{token}/lead")
@@ -3175,17 +3216,43 @@ def api_practice_lead(
     body: PracticeLeadBody,
     request: Request,
 ) -> Any:
-    """Leader entry — edit mode via signed lead token (no PIN, no guest unlock cookie)."""
+    """Leader entry — edit mode via signed lead token. One leader at a time."""
     if token.strip().lower() == "qr":
         raise HTTPException(status_code=404, detail="Not found.")
     tok = token.strip()
     row = get_practice_share_by_token(tok)
     if not row:
         raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
-    _require_practice_lead(request, tok, body.lead_token, row.get("expires_at"))
+    device_id = practice_device_id_from_request(request)
+    if not device_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Open Leader mode on this device with your leader password.",
+        )
+    if not verify_lead_token(tok, body.lead_token, row.get("expires_at"), device_id=device_id):
+        raise HTTPException(
+            status_code=401,
+            detail="Leader session is invalid, expired, or from another device. Enter Leader mode again.",
+        )
+    seat = claim_practice_leader_seat(tok, device_id, force=bool(body.force))
+    if not seat.get("ok"):
+        return JSONResponse(
+            {
+                "ok": False,
+                "error": seat.get("error") or "A leader is already logged in.",
+                "leader_busy": bool(seat.get("leader_busy")),
+            },
+            status_code=409 if seat.get("leader_busy") else 400,
+            headers=practice_no_store_headers(),
+        )
+    allowed, retry_after = check_practice_lead_allowed(request, tok, device_id)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many leader requests. Please slow down.",
+            headers={"Retry-After": str(max(1, retry_after))},
+        )
     payload = fetch_practice_share(tok, unlocked=True, can_edit=True)
-    # Do not issue a guest unlock cookie here — that would let this device open the
-    # shared choir link without a PIN. Leader privilege stays lead-token-only.
     return JSONResponse(payload, headers=practice_no_store_headers())
 
 
@@ -3786,8 +3853,14 @@ def api_generate(
         session, body.video_replacements, temp_assets=temp_assets
     )
 
+    # Prefer shared/local hero cache under the hood, but always burn weekly quota
+    # so the product still feels like a paid AI generation to the user.
+    reuse_poster = False
     if body.include_ai_mass_poster:
         backend = (body.ai_poster_backend or "openai").strip().lower()
+        style_key = (body.ai_poster_style or "cinematic").strip() or "cinematic"
+        exists_info = api_poster_exists(body.date.strip(), style_key)
+        reuse_poster = bool(exists_info.get("exists"))
         _enforce_ai_image_quota(
             session,
             request,
@@ -3807,7 +3880,7 @@ def api_generate(
             include_ai_mass_poster=body.include_ai_mass_poster,
             ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
             ai_poster_style=body.ai_poster_style.strip() or "cinematic",
-            reuse_existing_poster=body.reuse_existing_poster,
+            reuse_existing_poster=reuse_poster,
             community_name=body.community_name.strip() if body.community_name else None,
             song_selections=song_map,
             custom_theme=body.custom_theme,

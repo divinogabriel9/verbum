@@ -381,6 +381,85 @@ def check_practice_lead_song_allowed(request: Request, token: str, device_id: Op
     return check_rate_limit_key(f"practice:lead-song:v2:{device_hash}:{tok}:{ip}", "practice_lead_song")
 
 
+_LEADER_SEAT_TTL_S = 90
+_LEADER_SEAT_PREFIX = "practice:leader_seat:"
+
+
+def _leader_seat_key(token: str) -> str:
+    return f"{_LEADER_SEAT_PREFIX}{(token or '').strip()}"
+
+
+def get_practice_leader_seat(token: str) -> Optional[dict[str, Any]]:
+    from services.platform_cache import cache_get_json
+
+    row = cache_get_json(_leader_seat_key(token))
+    return row if isinstance(row, dict) else None
+
+
+def claim_practice_leader_seat(
+    token: str,
+    device_id: str,
+    *,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Exclusive leader seat: one device at a time. ``force`` takes over."""
+    from services.platform_cache import cache_set_json
+
+    tok = (token or "").strip()
+    device = normalize_device_id(device_id)
+    if not tok or not device:
+        return {"ok": False, "error": "Missing practice token or device."}
+
+    current = get_practice_leader_seat(tok)
+    holder = normalize_device_id(str((current or {}).get("device_id") or ""))
+    if holder and holder != device and not force:
+        return {
+            "ok": False,
+            "leader_busy": True,
+            "error": "A leader is already logged in on another device.",
+        }
+
+    cache_set_json(
+        _leader_seat_key(tok),
+        {"device_id": device, "claimed_at": int(time.time())},
+        ttl_s=_LEADER_SEAT_TTL_S,
+    )
+    return {"ok": True, "took_over": bool(holder and holder != device and force)}
+
+
+def renew_practice_leader_seat(token: str, device_id: str) -> bool:
+    """Keep the seat alive; returns False if another device owns it."""
+    from services.platform_cache import cache_set_json
+
+    tok = (token or "").strip()
+    device = normalize_device_id(device_id)
+    if not tok or not device:
+        return False
+    current = get_practice_leader_seat(tok)
+    holder = normalize_device_id(str((current or {}).get("device_id") or ""))
+    if holder and holder != device:
+        return False
+    cache_set_json(
+        _leader_seat_key(tok),
+        {"device_id": device, "claimed_at": int((current or {}).get("claimed_at") or time.time())},
+        ttl_s=_LEADER_SEAT_TTL_S,
+    )
+    return True
+
+
+def release_practice_leader_seat(token: str, device_id: str) -> None:
+    from services.platform_cache import cache_delete
+
+    tok = (token or "").strip()
+    device = normalize_device_id(device_id)
+    current = get_practice_leader_seat(tok)
+    holder = normalize_device_id(str((current or {}).get("device_id") or ""))
+    if holder and device and holder != device:
+        return
+    if tok:
+        cache_delete(_leader_seat_key(tok))
+
+
 def practice_no_store_headers() -> dict[str, str]:
     return {
         "Cache-Control": "no-store, private",

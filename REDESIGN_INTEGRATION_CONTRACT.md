@@ -173,8 +173,9 @@ these via fetch — design them as empty containers), and **Endpoints** it calls
   `flow-gospel-custom`; sponsors (`flow-food-sponsor-input`, `btn-flow-food-add`, hidden
   `flow-food-sponsors`, list `flow-food-sponsors-list`); poster pickers
   (`data-poster-picker` with `data-target="flow-lotw-poster"`/`"flow-lote-poster"`, hidden inputs
-  `flow-lotw-poster`/`flow-lote-poster`); checkboxes `flow-use-openai-poster`,
-  `flow-use-gemini-poster`, `flow-export-pdf`; uploads `flow-divider-poster` (+ `flow-divider-status`),
+  `flow-lotw-poster`/`flow-lote-poster`); AI on/off `flow-use-ai-poster` (legacy hidden
+  `flow-use-openai-poster` / `flow-use-gemini-poster` kept for drafts); `flow-export-pdf`;
+  uploads `flow-divider-poster` (+ `flow-divider-status`),
   `flow-announcement-posters` (+ `flow-announcement-status`); quota hint `flow-ai-quota-hint`.
 - **Song-plan panel:** select `mass-song-plan-lang`; hymn layout radios `name="flow-hymn-layout"`
   (single/dual); regions `mass-song-plan`, `flow-song-count`, `mass-summary-song-total`,
@@ -211,7 +212,8 @@ these via fetch — design them as empty containers), and **Endpoints** it calls
 ### 2.6 Posters / Media — `#posters-page` (`/media/posters`)
 - **Selects:** `poster-openai-poster-style`, `poster-template`.
 - **Key interactive IDs:** `poster-mass-date`, `poster-celebrant`, `poster-gospel-quote`,
-  `poster-include-social`, `poster-use-openai-poster`, `poster-use-gemini-poster`,
+  `poster-include-social`, `poster-use-ai-poster` (legacy hidden `poster-use-openai-poster` /
+  `poster-use-gemini-poster`),
   `saved-poster-upload`, `btn-poster-sync`, `btn-poster-generate`.
 - **Dynamic regions:** `poster-ai-quota-hint`, `poster-status`, `saved-poster-status`,
   `saved-poster-list`, live preview `poster-live-preview` (`poster-prev-kicker`/`-title`/

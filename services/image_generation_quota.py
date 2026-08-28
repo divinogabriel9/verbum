@@ -1,4 +1,8 @@
-"""Daily limit for paid AI image generation (OpenAI / Gemini)."""
+"""Weekly limit for paid AI image generation (OpenAI / Gemini).
+
+Shared Sunday hero cache may avoid a paid image-API call, but product quota
+is still reserved so users experience a weekly generation budget.
+"""
 
 from __future__ import annotations
 
@@ -18,31 +22,65 @@ _DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 _DB_PATH = _DATA_DIR / "app.sqlite"
 _KEY_PREFIX = "verbum:quota:image:"
 
-DAILY_IMAGE_LIMIT = max(1, int(os.environ.get("IMAGE_GENERATION_DAILY_LIMIT", "1")))
+_daily_fallback = max(1, int(os.environ.get("IMAGE_GENERATION_DAILY_LIMIT", "1")))
+WEEKLY_IMAGE_LIMIT = max(
+    1,
+    int(
+        os.environ.get(
+            "IMAGE_GENERATION_WEEKLY_LIMIT",
+            str(max(_daily_fallback * 7, 5)),
+        )
+    ),
+)
+# Backward-compatible alias for admin / health probes.
+DAILY_IMAGE_LIMIT = WEEKLY_IMAGE_LIMIT
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _utc_date() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    """Legacy helper — returns the current ISO week id (kept for callers)."""
+    return _utc_week_id()
 
 
-def _utc_day_end_timestamp() -> int:
-    today = datetime.now(timezone.utc).date()
-    tomorrow = today + timedelta(days=1)
-    end = datetime(tomorrow.year, tomorrow.month, tomorrow.day, tzinfo=timezone.utc)
+def _utc_week_id(when: Optional[datetime] = None) -> str:
+    d = (when or _utc_now()).date()
+    iso = d.isocalendar()
+    return f"{iso.year}-W{iso.week:02d}"
+
+
+def _utc_week_end_timestamp(when: Optional[datetime] = None) -> int:
+    """Unix time for the start of the next ISO week (Monday 00:00 UTC)."""
+    d = (when or _utc_now()).date()
+    iso = d.isocalendar()
+    # ISO weekday: Monday=1 … Sunday=7
+    days_until_next_monday = 8 - iso.weekday
+    next_monday = d + timedelta(days=days_until_next_monday)
+    end = datetime(next_monday.year, next_monday.month, next_monday.day, tzinfo=timezone.utc)
     return int(end.timestamp())
 
 
-def _quota_key(subject: str, usage_date: str) -> str:
-    return f"{_KEY_PREFIX}{subject}:{usage_date}"
+def _week_resets_on_label(when: Optional[datetime] = None) -> str:
+    """ISO date of the Monday that ends the current week window."""
+    ts = _utc_week_end_timestamp(when)
+    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
 
 
-def _quota_status_from_used(used: int, today: str) -> dict[str, Any]:
-    remaining = max(0, DAILY_IMAGE_LIMIT - used)
+def _quota_key(subject: str, usage_period: str) -> str:
+    return f"{_KEY_PREFIX}{subject}:{usage_period}"
+
+
+def _quota_status_from_used(used: int, period: str) -> dict[str, Any]:
+    remaining = max(0, WEEKLY_IMAGE_LIMIT - used)
     return {
-        "limit": DAILY_IMAGE_LIMIT,
+        "limit": WEEKLY_IMAGE_LIMIT,
         "used": used,
         "remaining": remaining,
-        "resets_on": today,
+        "resets_on": _week_resets_on_label(),
+        "period": period,
+        "period_label": "week",
         "timezone": "UTC",
         "allowed": remaining > 0,
     }
@@ -92,7 +130,7 @@ def resolve_subject(
     return "local:anonymous"
 
 
-def _get_quota_status_sqlite(subject: str, today: str) -> dict[str, Any]:
+def _get_quota_status_sqlite(subject: str, period: str) -> dict[str, Any]:
     with _connect() as conn:
         row = conn.execute(
             """
@@ -100,24 +138,24 @@ def _get_quota_status_sqlite(subject: str, today: str) -> dict[str, Any]:
             FROM image_generation_daily
             WHERE subject_key = ? AND usage_date = ?
             """,
-            (subject, today),
+            (subject, period),
         ).fetchone()
     used = int(row["generation_count"]) if row else 0
-    return _quota_status_from_used(used, today)
+    return _quota_status_from_used(used, period)
 
 
-def _get_quota_status_redis(subject: str, today: str) -> dict[str, Any]:
+def _get_quota_status_redis(subject: str, period: str) -> dict[str, Any]:
     client = get_redis()
     if client is None:
-        return _get_quota_status_sqlite(subject, today)
-    raw = client.get(_quota_key(subject, today))
+        return _get_quota_status_sqlite(subject, period)
+    raw = client.get(_quota_key(subject, period))
     used = int(raw) if raw else 0
-    return _quota_status_from_used(used, today)
+    return _quota_status_from_used(used, period)
 
 
 def get_quota_status(subject: str) -> dict[str, Any]:
-    today = _utc_date()
-    return _get_quota_status_redis(subject, today)
+    period = _utc_week_id()
+    return _get_quota_status_redis(subject, period)
 
 
 def quota_status_payload(
@@ -141,11 +179,12 @@ def quota_status_payload(
         "scope": scope,
         "parish_id": parish_id,
         "shared": scope == "parish",
+        "cache_reuse_free": False,
     }
 
 
-def _reserve_quota_sqlite(subject: str, *, source: str, today: str) -> dict[str, Any]:
-    now = datetime.now(timezone.utc).isoformat()
+def _reserve_quota_sqlite(subject: str, *, source: str, period: str) -> dict[str, Any]:
+    now = _utc_now().isoformat()
 
     with _connect() as conn:
         conn.execute("BEGIN IMMEDIATE")
@@ -155,16 +194,17 @@ def _reserve_quota_sqlite(subject: str, *, source: str, today: str) -> dict[str,
             FROM image_generation_daily
             WHERE subject_key = ? AND usage_date = ?
             """,
-            (subject, today),
+            (subject, period),
         ).fetchone()
         used = int(row["generation_count"]) if row else 0
-        if used >= DAILY_IMAGE_LIMIT:
+        if used >= WEEKLY_IMAGE_LIMIT:
             conn.execute("ROLLBACK")
             raise HTTPException(
                 status_code=429,
                 detail=(
-                    f"Daily AI image limit reached ({DAILY_IMAGE_LIMIT} per day, UTC). "
-                    "Try again tomorrow or disable AI poster to use the liturgical template."
+                    f"Weekly AI image limit reached ({WEEKLY_IMAGE_LIMIT} per week, UTC). "
+                    "Reuse a cached Sunday style, disable AI poster for the liturgical "
+                    "template, or try again next week."
                 ),
             )
         if row:
@@ -176,7 +216,7 @@ def _reserve_quota_sqlite(subject: str, *, source: str, today: str) -> dict[str,
                     last_source = ?
                 WHERE subject_key = ? AND usage_date = ?
                 """,
-                (now, source, subject, today),
+                (now, source, subject, period),
             )
         else:
             conn.execute(
@@ -185,42 +225,48 @@ def _reserve_quota_sqlite(subject: str, *, source: str, today: str) -> dict[str,
                     (subject_key, usage_date, generation_count, last_generated_at, last_source)
                 VALUES (?, ?, 1, ?, ?)
                 """,
-                (subject, today, now, source),
+                (subject, period, now, source),
             )
         conn.commit()
 
     return get_quota_status(subject)
 
 
-def _reserve_quota_redis(subject: str, *, source: str, today: str) -> dict[str, Any]:
+def _reserve_quota_redis(subject: str, *, source: str, period: str) -> dict[str, Any]:
     client = get_redis()
     if client is None:
-        return _reserve_quota_sqlite(subject, source=source, today=today)
+        return _reserve_quota_sqlite(subject, source=source, period=period)
 
-    key = _quota_key(subject, today)
+    key = _quota_key(subject, period)
     try:
         count = int(client.incr(key))
         if count == 1:
-            client.expireat(key, _utc_day_end_timestamp())
-        if count > DAILY_IMAGE_LIMIT:
+            client.expireat(key, _utc_week_end_timestamp())
+        if count > WEEKLY_IMAGE_LIMIT:
             client.decr(key)
             raise HTTPException(
                 status_code=429,
                 detail=(
-                    f"Daily AI image limit reached ({DAILY_IMAGE_LIMIT} per day, UTC). "
-                    "Try again tomorrow or disable AI poster to use the liturgical template."
+                    f"Weekly AI image limit reached ({WEEKLY_IMAGE_LIMIT} per week, UTC). "
+                    "Reuse a cached Sunday style, disable AI poster for the liturgical "
+                    "template, or try again next week."
                 ),
             )
-        # Optional metadata for debugging (short TTL, non-critical).
         meta_key = f"{key}:meta"
-        client.hset(meta_key, mapping={"last_source": source, "last_at": datetime.now(timezone.utc).isoformat()})
-        client.expireat(meta_key, _utc_day_end_timestamp())
+        client.hset(
+            meta_key,
+            mapping={
+                "last_source": source,
+                "last_at": _utc_now().isoformat(),
+            },
+        )
+        client.expireat(meta_key, _utc_week_end_timestamp())
     except HTTPException:
         raise
     except Exception:
-        return _reserve_quota_sqlite(subject, source=source, today=today)
+        return _reserve_quota_sqlite(subject, source=source, period=period)
 
-    return _quota_status_from_used(count, today)
+    return _quota_status_from_used(count, period)
 
 
 def reserve_daily_image_generation(
@@ -228,6 +274,9 @@ def reserve_daily_image_generation(
     *,
     source: str,
 ) -> dict[str, Any]:
-    """Reserve one daily slot before calling an image API. Raises 429 when exhausted."""
-    today = _utc_date()
-    return _reserve_quota_redis(subject, source=source, today=today)
+    """Reserve one weekly slot before calling an image API. Raises 429 when exhausted.
+
+    Name kept for callers; period is ISO week UTC.
+    """
+    period = _utc_week_id()
+    return _reserve_quota_redis(subject, source=source, period=period)

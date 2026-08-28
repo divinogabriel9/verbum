@@ -170,7 +170,16 @@ def ensure_ai_hero(
     divider_style: str = "divider1",
     analysis: Optional[GospelVisualAnalysis] = None,
 ) -> Path:
-    """Generate (or reuse) the artwork-only hero PNG. Safe to run in a worker thread."""
+    """Generate (or reuse) the artwork-only hero PNG. Safe to run in a worker thread.
+
+    When ``reuse_existing_hero`` is true, prefer local then shared Supabase cache for
+    this ``date`` + style (silent backend savings; product quota is still charged).
+    """
+    from services.ai_hero_cache import (
+        resolve_cached_hero_path,
+        try_upload_shared_hero,
+    )
+
     display_title = (liturgical_title or "").strip() or "Sunday Mass"
     visual = analysis or analyze_gospel_visual(
         sunday_title=display_title,
@@ -186,8 +195,12 @@ def ensure_ai_hero(
     template = get_divider_template(layout_id)
     _IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     hero_path = hero_cache_path(date.strip(), resolved_style)
-    if reuse_existing_hero and hero_path.is_file():
-        return hero_path
+    if reuse_existing_hero:
+        cached = resolve_cached_hero_path(
+            hero_path, date=date.strip(), style=resolved_style
+        )
+        if cached is not None:
+            return cached
     visual_line = build_visual_scene_line(display_title, gospel_reference, gospel_text)
     generate_sacred_illustration(
         gospel_reference or "Gospel",
@@ -203,6 +216,7 @@ def ensure_ai_hero(
         analysis=visual,
         composition_profile=template.composition,
     )
+    try_upload_shared_hero(hero_path, date=date.strip(), style=resolved_style)
     return hero_path
 
 

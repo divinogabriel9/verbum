@@ -907,6 +907,30 @@
         "triumphant",
         "journey"
       ]
+    },
+    {
+      "id": "living_sacrifice",
+      "title": "Living Sacrifice",
+      "author": "Chris Christian",
+      "lyrics": "Verse 1\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life a living Sacrifice\nHoly And acceptable To You\n\nVerse 2\nI Look Upon My life And Realize At Last\nWithin Myself There's Nothing I Can Do\nAnd Yet Here I Stand To Offer All I Am\nAnd Give Myself Completely, Lord, To You\n\nVerse 3\nTake My Life A Living Sacrifice\nI Know That It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\n\nVerse 4\nI Cannot Be Content\nUntil I Reach That Place\nHow Little I Have Given Up To You\nLord, Break Down My Will\nMakе My Desires Your Own\nI Long To Give My Еverything To You\n\nVerse 5\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\n\nVerse 6\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\nHoly And Acceptable To You",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-08-28T20:54:57.284775+00:00",
+      "language": "English",
+      "updated_at": "2026-08-28T21:03:27.431281+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:XwmUBqXo-Gs",
+        "youtube_id": "XwmUBqXo-Gs",
+        "youtube_url": "https://www.youtube.com/watch?v=XwmUBqXo-Gs",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "mercy",
+        "reverent"
+      ]
     }
   ],
   "communion": [
@@ -1658,7 +1682,7 @@
       ],
       "added_at": "2026-08-13T08:57:10.678308+00:00",
       "language": "English",
-      "updated_at": "2026-08-16T19:46:10.618985+00:00",
+      "updated_at": "2026-08-25T03:05:03.623226+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:ITJYbi6b0e8",
@@ -1672,12 +1696,12 @@
         "journey"
       ],
       "audio_preview": {
-        "method": "words",
+        "method": "start",
         "source": "preview",
         "basename": "preview_recessional_we_are_called_10.mp3",
-        "start_sec": 7.94,
-        "youtube_id": "uPLaBJqUUDc",
-        "youtube_url": "https://www.youtube.com/watch?v=uPLaBJqUUDc",
+        "start_sec": 0.0,
+        "youtube_id": "ITJYbi6b0e8",
+        "youtube_url": "https://www.youtube.com/watch?v=ITJYbi6b0e8",
         "display_name": "10s preview",
         "duration_sec": 10
       }

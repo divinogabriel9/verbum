@@ -311,8 +311,8 @@ def notify_practice_leader_password(
         f"Your choir practice leader password for {date_label}:",
         pin,
         "",
-        "Keep this private. Use it when you open the choir practice link to edit lyrics.",
-        "Share only the choir PIN with choir members — not this leader password.",
+        "Keep this private. Use it when you open the choir practice link and tap Leader mode to edit.",
+        "Choir members only need the practice link — no password.",
         "",
     ]
     if url:
@@ -323,13 +323,13 @@ def notify_practice_leader_password(
         text="\n".join(text_bits),
         html=wrap_html(
             title="Your leader password",
-            subtitle="Keep this private. Use it to edit lyrics from the shared choir practice link.",
+            subtitle="Keep this private. Open the practice link and use Leader mode to edit lyrics.",
             event_date=date_label,
             event_title=title,
             body_html=detail_rows(rows),
             cta_label="Open practice link" if url else "",
             cta_url=url if url else "",
-            helper="Do not share this password with the choir. They use the choir PIN you created.",
+            helper="Do not share this password with the choir. They only need the practice link.",
             preheader=f"Leader password · {mass_date}",
         ),
     )

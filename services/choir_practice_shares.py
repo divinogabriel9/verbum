@@ -614,10 +614,10 @@ def create_practice_share(
     if not normalized:
         raise ValueError("At least one song with lyrics is required.")
 
-    # Client must supply a 6-digit choir PIN; leader PIN is auto-generated.
-    pin = _normalize_pin(optional_pin)
-    pin_stored = hash_pin(pin)
-    leader_plain = generate_leader_pin(exclude=pin)
+    # No choir PIN — lyrics are open. Leader password is auto-generated for edit mode.
+    pin_digits = "".join(ch for ch in str(optional_pin or "") if ch.isdigit())
+    pin_stored = hash_pin(pin_digits) if len(pin_digits) == 6 else None
+    leader_plain = generate_leader_pin(exclude=pin_digits if len(pin_digits) == 6 else None)
     leader_stored = hash_pin(leader_plain)
     token = secrets.token_urlsafe(24)
     # ttl_days ignored — expire Sunday 23:59 UTC of the Mass week (max 7 days).
@@ -717,7 +717,7 @@ def create_practice_share(
         "token": out_token,
         "expires_at": row.get("expires_at") or expires_at,
         "song_count": len(normalized),
-        "pin": pin,
+        "pin": None,
         "leader_pin": leader_plain,
         "mass_date": parsed_date.isoformat(),
         "mass_title": (mass_title or "").strip(),
@@ -789,11 +789,11 @@ def fetch_practice_share(
     row = get_practice_share_by_token(tok)
     if not row:
         return {"ok": False, "error": "This practice link is invalid or has expired."}
-    stored_pin = row.get("optional_pin")
-    access_granted = not pin_required(stored_pin) or unlocked or can_edit
-    shaped = _shape_public(row, access_granted=access_granted, can_edit=can_edit)
-    if shaped.get("requires_pin"):
-        shaped["error"] = "PIN required."
+    # Lyrics are open to anyone with the link. Leader edit mode is password-gated separately.
+    _ = unlocked
+    shaped = _shape_public(row, access_granted=True, can_edit=can_edit)
+    shaped["requires_pin"] = False
+    shaped.pop("error", None)
     _cache_set_shape(shape_key, shaped)
     return shaped
 
@@ -1099,10 +1099,10 @@ def update_practice_share_lyrics(
 
 
 def verify_practice_share_pin(token: str, pin: str) -> dict[str, Any]:
+    """Verify the leader password only (choir lyrics are open without a PIN)."""
     row = get_practice_share_by_token(token)
     if not row:
         return {"ok": False, "error": "This practice link is invalid or has expired."}
-    stored_pin = row.get("optional_pin")
     stored_leader = row.get("leader_pin")
     # Prefer local mirror when remote row predates leader_pin column.
     if not pin_required(stored_leader):
@@ -1111,23 +1111,21 @@ def verify_practice_share_pin(token: str, pin: str) -> dict[str, Any]:
             stored_leader = local.get("leader_pin")
             row = {**row, "leader_pin": stored_leader}
 
-    if not pin_required(stored_pin) and not pin_required(stored_leader):
-        return fetch_practice_share(token, unlocked=True)
+    if not pin_required(stored_leader):
+        return {
+            "ok": False,
+            "error": "This practice link has no leader password. Create a new share.",
+            "requires_pin": True,
+        }
 
-    # Leader password unlocks edit mode from the shared choir URL.
-    if pin_required(stored_leader) and verify_pin(stored_leader, pin):
+    if verify_pin(stored_leader, pin):
         shaped = _shape_public(row, access_granted=True, can_edit=True)
         shaped["is_leader"] = True
+        shaped["requires_pin"] = False
         _cache_set_shape(_shape_cache_key((token or "").strip(), unlocked=True, can_edit=True), shaped)
         return shaped
 
-    if pin_required(stored_pin) and verify_pin(stored_pin, pin):
-        shaped = _shape_public(row, access_granted=True, can_edit=False)
-        shaped["is_leader"] = False
-        _cache_set_shape(_shape_cache_key((token or "").strip(), unlocked=True, can_edit=False), shaped)
-        return shaped
-
-    return {"ok": False, "error": "Incorrect PIN.", "requires_pin": True}
+    return {"ok": False, "error": "Incorrect leader password.", "requires_pin": True}
 
 
 def revoke_practice_share(token: str, *, actor_user_id: Optional[str] = None) -> dict[str, Any]:

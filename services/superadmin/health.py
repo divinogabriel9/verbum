@@ -58,7 +58,7 @@ def build_health_payload() -> dict[str, Any]:
             "OPENAI_API_KEY": _env_configured("OPENAI_API_KEY"),
             "GEMINI_API_KEY": _env_configured("GEMINI_API_KEY"),
             "SUPERADMIN_EMAILS": _env_configured("SUPERADMIN_EMAILS"),
-            "IMAGE_GENERATION_DAILY_LIMIT": (os.environ.get("IMAGE_GENERATION_DAILY_LIMIT") or "1").strip(),
+            "IMAGE_GENERATION_WEEKLY_LIMIT": (os.environ.get("IMAGE_GENERATION_WEEKLY_LIMIT") or os.environ.get("IMAGE_GENERATION_DAILY_LIMIT") or "5").strip(),
         },
         "readings_cache": _readings_cache_stats(),
         "version": version.get("version"),

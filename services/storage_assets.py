@@ -107,6 +107,41 @@ def upload_parish_asset(
     return StoredAsset(path=path, signed_url=_signed_url(client, path))
 
 
+def upload_shared_asset(
+    *,
+    relative_path: str,
+    raw: bytes,
+    content_type: str,
+    upsert: bool = True,
+) -> StoredAsset:
+    """Platform-shared object (service role). Path is used as-is under the bucket root."""
+    client = get_service_client()
+    path = (relative_path or "").strip().lstrip("/")
+    if not path:
+        raise ValueError("relative_path is required.")
+    options = {"content-type": content_type, "upsert": "true" if upsert else "false"}
+    client.storage.from_(_BUCKET).upload(path, raw, options)
+    return StoredAsset(path=path, signed_url=_signed_url(client, path))
+
+
+def shared_asset_exists(*, relative_path: str) -> bool:
+    """Best-effort existence check for a shared storage object."""
+    path = (relative_path or "").strip().lstrip("/")
+    if not path:
+        return False
+    client = get_service_client()
+    folder, _, name = path.rpartition("/")
+    if not name:
+        return False
+    rows = client.storage.from_(_BUCKET).list(folder or "")
+    if not isinstance(rows, list):
+        return False
+    for row in rows:
+        if str((row or {}).get("name") or "").strip() == name:
+            return True
+    return False
+
+
 def signed_asset_url(*, access_token: str, path: str, expires_in: int = 3600) -> str:
     p = (path or "").strip()
     if not p:
