@@ -13011,12 +13011,62 @@
       background: var(--surface-2);
     }
     .song-composer-recent__title {
-      margin: 0 0 8px;
+      margin: 0;
       font-size: 0.6875rem;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--muted);
+    }
+    .song-composer-recent__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .collections-recent-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .flow-segment--compact {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      border-radius: 999px;
+      border: 1px solid var(--line-soft);
+      background: var(--surface-1);
+    }
+    .flow-segment--compact label {
+      margin: 0;
+      padding: 3px 8px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--muted);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .flow-segment--compact label:has(input:checked) {
+      background: var(--surface-2);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px var(--line-soft);
+    }
+    .flow-segment--compact input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .song-composer-recent-item__actor {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 1px;
     }
     .song-composer-recent-list {
       flex: 1 1 auto;
@@ -20177,7 +20227,13 @@
               </div>
             </div>
             <aside class="song-composer-recent" aria-label="Recent songs">
-              <h4 class="song-composer-recent__title">Recent</h4>
+              <div class="song-composer-recent__head">
+                <h4 class="song-composer-recent__title">Recent</h4>
+                <div class="song-composer-recent__scope flow-segment flow-segment--compact" id="song-composer-recent-scope" role="radiogroup" aria-label="Recent songs scope" hidden>
+                  <label><input type="radio" name="song-recent-scope" value="mine" checked /> Mine</label>
+                  <label><input type="radio" name="song-recent-scope" value="parish" /> Parish</label>
+                </div>
+              </div>
               <div class="song-composer-recent-list" id="song-composer-recent-list" role="list"></div>
             </aside>
           </section>
@@ -24492,7 +24548,13 @@
             <button type="button" class="secondary" id="btn-collections-open-builder">Open Mass Builder</button>
           </div>
           <div class="new-songs-card">
-            <strong style="font-size:0.88rem;">Recently added (this browser)</strong>
+            <div class="collections-recent-head">
+              <strong style="font-size:0.88rem;">Recently added</strong>
+              <div class="song-composer-recent__scope flow-segment flow-segment--compact" id="collections-recent-scope" role="radiogroup" aria-label="Recent songs scope" hidden>
+                <label><input type="radio" name="collections-recent-scope" value="mine" checked /> Mine</label>
+                <label><input type="radio" name="collections-recent-scope" value="parish" /> Parish</label>
+              </div>
+            </div>
             <div id="collections-recent-songs" class="muted" style="margin-top:8px;font-size:0.86rem;">Nothing tracked yet — saving lyrics from Song Library adds entries here.</div>
           </div>
           <div class="song-catalog-panel" style="margin-top:16px; max-height: min(62vh, 560px);">
@@ -41944,6 +42006,7 @@
       syncMembershipUi(data);
       applyCelebrantNamesFromServer(data.celebrant_names || []);
       bindCelebrantSelect();
+      if (typeof syncSongHistoryScopeUi === "function") syncSongHistoryScopeUi();
     }
 
     async function fetchCommunityFromServer() {
@@ -41966,6 +42029,8 @@
       if (auth && auth.setCommunityPayload) auth.setCommunityPayload(data);
       applyCommunityPayload(data);
       updateAccountMenuDisplay();
+      if (typeof syncSongHistoryScopeUi === "function") syncSongHistoryScopeUi();
+      if (typeof pullSongHistoryFromAccount === "function") void pullSongHistoryFromAccount();
       if (!celebrantNamesCache.length) {
         migrateCelebrantsFromBrowserStorage().then(() => {
           applyCelebrantNamesFromServer(celebrantNamesCache);
@@ -51406,6 +51471,12 @@
     }
 
     const RECENT_SONGS_KEY = "churchMediaRecentSongAdds";
+    const SONG_HISTORY_MAX = 120;
+    const SONG_HISTORY_SCOPE_KEY = "verbumSongHistoryScope";
+    let songHistorySyncTimer = 0;
+    let songHistoryPullPromise = null;
+    let songHistoryParishPullPromise = null;
+    let parishSongHistoryRows = [];
     const SONG_HISTORY_KIND_LABELS = {
       new: "Added",
       edited: "Edited",
@@ -51660,12 +51731,224 @@
       return sec + "\0" + String(r.title || "").trim().toLowerCase();
     }
 
-    function readSongHistoryRaw() {
+    function songHistoryUserId() {
       try {
-        return JSON.parse(localStorage.getItem(RECENT_SONGS_KEY) || "[]");
+        const auth = window.VerbumAuth;
+        const user = auth && auth.getUser ? auth.getUser() : null;
+        return user && user.id ? String(user.id).trim() : "";
+      } catch (_e) {
+        return "";
+      }
+    }
+
+    function songHistoryParishId() {
+      try {
+        if (churchMembershipState && churchMembershipState.parish_id) {
+          return String(churchMembershipState.parish_id).trim();
+        }
+      } catch (_e) { /* ignore */ }
+      return "";
+    }
+
+    function getSongHistoryViewScope() {
+      try {
+        const saved = String(sessionStorage.getItem(SONG_HISTORY_SCOPE_KEY) || "").trim().toLowerCase();
+        if (saved === "parish" || saved === "mine") return saved;
+      } catch (_e) { /* ignore */ }
+      return "mine";
+    }
+
+    function setSongHistoryViewScope(scope) {
+      const next = scope === "parish" ? "parish" : "mine";
+      try {
+        sessionStorage.setItem(SONG_HISTORY_SCOPE_KEY, next);
+      } catch (_e) { /* ignore */ }
+      syncSongHistoryScopeUi();
+      renderCollectionsRecent();
+      renderComposerRecent();
+      if (next === "parish") void pullParishSongHistoryFromAccount();
+    }
+
+    function syncSongHistoryScopeUi() {
+      const scope = getSongHistoryViewScope();
+      const hasParish = !!songHistoryParishId();
+      const composerScope = $("song-composer-recent-scope");
+      const collectionsScope = $("collections-recent-scope");
+      if (composerScope) composerScope.hidden = !hasParish;
+      if (collectionsScope) collectionsScope.hidden = !hasParish;
+      document.querySelectorAll('input[name="song-recent-scope"]').forEach((input) => {
+        input.checked = input.value === scope;
+      });
+      document.querySelectorAll('input[name="collections-recent-scope"]').forEach((input) => {
+        input.checked = input.value === scope;
+      });
+    }
+
+    function songHistoryStorageKey() {
+      const uid = songHistoryUserId();
+      const pid = songHistoryParishId();
+      if (uid && pid) return RECENT_SONGS_KEY + ":u:" + uid + ":p:" + pid;
+      if (uid) return RECENT_SONGS_KEY + ":u:" + uid;
+      return RECENT_SONGS_KEY;
+    }
+
+    function readSongHistoryRawFromKey(key) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || "[]");
       } catch (_e) {
         return [];
       }
+    }
+
+    function writeSongHistoryRaw(raw) {
+      try {
+        localStorage.setItem(
+          songHistoryStorageKey(),
+          JSON.stringify((raw || []).slice(0, SONG_HISTORY_MAX))
+        );
+      } catch (_e) { /* ignore quota */ }
+    }
+
+    function mergeSongHistoryLists() {
+      const sources = [];
+      const uid = songHistoryUserId();
+      const pid = songHistoryParishId();
+      if (uid) {
+        sources.push(readSongHistoryRawFromKey(songHistoryStorageKey()));
+        if (pid) sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":u:" + uid));
+        sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":u:" + uid + ":p:none"));
+      }
+      sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY));
+      const seen = new Set();
+      const merged = [];
+      sources.forEach((list) => {
+        (Array.isArray(list) ? list : []).forEach((raw) => {
+          const r = normalizeSongHistoryRow(raw);
+          if (!r || !r.title) return;
+          const key = recentSongDedupeKey(r);
+          if (seen.has(key)) return;
+          seen.add(key);
+          merged.push(r);
+        });
+      });
+      merged.sort((a, b) => (b.t || 0) - (a.t || 0));
+      return merged.slice(0, SONG_HISTORY_MAX);
+    }
+
+    async function pullParishSongHistoryFromAccount() {
+      if (!memberApiAvailable() || !songHistoryParishId()) {
+        parishSongHistoryRows = [];
+        return false;
+      }
+      if (songHistoryParishPullPromise) return songHistoryParishPullPromise;
+      songHistoryParishPullPromise = (async () => {
+        try {
+          const headers = await catalogAuthHeaders();
+          const res = await fetch("/api/user/song-history?scope=parish", { headers, cache: "no-store" });
+          if (!res.ok) {
+            parishSongHistoryRows = [];
+            return false;
+          }
+          const data = await res.json();
+          parishSongHistoryRows = (Array.isArray(data.entries) ? data.entries : [])
+            .map((raw) => normalizeSongHistoryRow(raw))
+            .filter(Boolean);
+          if (getSongHistoryViewScope() === "parish") {
+            renderCollectionsRecent();
+            renderComposerRecent();
+            if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
+          }
+          return true;
+        } catch (_e) {
+          parishSongHistoryRows = [];
+          return false;
+        } finally {
+          songHistoryParishPullPromise = null;
+        }
+      })();
+      return songHistoryParishPullPromise;
+    }
+
+    async function pullSongHistoryFromAccount() {
+      if (!memberApiAvailable()) return false;
+      if (songHistoryPullPromise) return songHistoryPullPromise;
+      songHistoryPullPromise = (async () => {
+        try {
+          const headers = await catalogAuthHeaders();
+          const res = await fetch("/api/user/song-history?scope=mine", { headers, cache: "no-store" });
+          if (!res.ok) return false;
+          const data = await res.json();
+          const remote = Array.isArray(data.entries) ? data.entries : [];
+          const local = mergeSongHistoryLists();
+          const byKey = new Map();
+          remote.forEach((raw) => {
+            const r = normalizeSongHistoryRow(raw);
+            if (!r || !r.title) return;
+            byKey.set(recentSongDedupeKey(r), r);
+          });
+          local.forEach((r) => {
+            const key = recentSongDedupeKey(r);
+            const existing = byKey.get(key);
+            if (!existing || (r.t || 0) > (existing.t || 0)) byKey.set(key, r);
+          });
+          const merged = Array.from(byKey.values()).sort((a, b) => (b.t || 0) - (a.t || 0)).slice(0, SONG_HISTORY_MAX);
+          writeSongHistoryRaw(merged);
+          syncSongHistoryScopeUi();
+          if (getSongHistoryViewScope() === "mine") {
+            renderCollectionsRecent();
+            renderComposerRecent();
+            if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
+          }
+          const remoteKeys = new Set(
+            remote.map((raw) => {
+              const r = normalizeSongHistoryRow(raw);
+              return r ? recentSongDedupeKey(r) : "";
+            }).filter(Boolean)
+          );
+          const localOnly = merged.some((r) => !remoteKeys.has(recentSongDedupeKey(r)));
+          if (localOnly) scheduleSongHistoryPush(true);
+          void pullParishSongHistoryFromAccount();
+          return true;
+        } catch (_e) {
+          return false;
+        } finally {
+          songHistoryPullPromise = null;
+        }
+      })();
+      return songHistoryPullPromise;
+    }
+
+    function scheduleSongHistoryPush(immediate) {
+      if (!memberApiAvailable()) return;
+      if (songHistorySyncTimer) {
+        clearTimeout(songHistorySyncTimer);
+        songHistorySyncTimer = 0;
+      }
+      const run = async () => {
+        songHistorySyncTimer = 0;
+        try {
+          const rows = getSongHistoryRows(SONG_HISTORY_MAX);
+          const headers = Object.assign(
+            { "Content-Type": "application/json" },
+            await catalogAuthHeaders()
+          );
+          await fetch("/api/user/song-history", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ entries: rows }),
+          });
+          void pullParishSongHistoryFromAccount();
+        } catch (_e) { /* best-effort sync */ }
+      };
+      if (immediate) {
+        void run();
+        return;
+      }
+      songHistorySyncTimer = setTimeout(run, 900);
+    }
+
+    function readSongHistoryRaw() {
+      return readSongHistoryRawFromKey(songHistoryStorageKey());
     }
 
     function normalizeSongHistoryRow(r) {
@@ -51686,7 +51969,26 @@
         id: r.id || "",
         language: r.language || "",
         kind,
+        actor_name: r.actor_name || "",
+        user_id: r.user_id || "",
       };
+    }
+
+    function getActiveSongHistoryRows(limit, kindsFilter) {
+      if (getSongHistoryViewScope() === "parish" && songHistoryParishId()) {
+        const seen = new Set();
+        const rows = [];
+        (parishSongHistoryRows || []).forEach((r) => {
+          if (!r || !r.title) return;
+          if (kindsFilter && !kindsFilter.has(r.kind)) return;
+          const key = recentSongDedupeKey(r);
+          if (seen.has(key)) return;
+          seen.add(key);
+          rows.push(r);
+        });
+        return rows.slice(0, limit || 16);
+      }
+      return getSongHistoryRows(limit, kindsFilter);
     }
 
     function getSongHistoryRows(limit, kindsFilter) {
@@ -51732,10 +52034,11 @@
         });
       });
       // Keep enough room for bulk TXT imports (was 32).
-      localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 120)));
+      writeSongHistoryRaw(raw);
       renderCollectionsRecent();
       renderComposerRecent();
       if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
+      scheduleSongHistoryPush(false);
     }
 
     const SONG_IMPORT_UNDO_KEY = "verbum:last-song-import-undo";
@@ -51821,13 +52124,12 @@
           });
         }
       });
-      localStorage.setItem(RECENT_SONGS_KEY, JSON.stringify(raw.slice(0, 120)));
+      writeSongHistoryRaw(raw);
       renderCollectionsRecent();
       renderComposerRecent();
       if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
+      scheduleSongHistoryPush(false);
     }
-
-    async function undoLastSongImport(opts) {
       const options = opts || {};
       const remembered = getRememberedSongImportUndo();
       const token = String(options.token || (remembered && remembered.token) || "").trim();
@@ -51867,9 +52169,13 @@
     function renderComposerRecent() {
       const el = $("song-composer-recent-list");
       if (!el) return;
-      const rows = getSongHistoryRows(14, COMPOSER_RECENT_KINDS);
+      syncSongHistoryScopeUi();
+      const rows = getActiveSongHistoryRows(14, COMPOSER_RECENT_KINDS);
+      const parishView = getSongHistoryViewScope() === "parish" && songHistoryParishId();
       if (!rows.length) {
-        el.innerHTML = "<p class=\"song-composer-recent-empty\">Added, edited, or deleted songs appear here.</p>";
+        el.innerHTML = parishView
+          ? "<p class=\"song-composer-recent-empty\">Parish song activity from your team appears here.</p>"
+          : "<p class=\"song-composer-recent-empty\">Added, edited, or deleted songs appear here.</p>";
         return;
       }
       el.innerHTML = rows.map((r) => {
@@ -51880,7 +52186,10 @@
         ).trim();
         const hasId = r.id && displaySec && r.kind !== "deleted";
         const badge = SONG_HISTORY_KIND_LABELS[r.kind] || "Recent";
-        const meta = songSectionLabel(displaySec) + (r.t ? " · " + formatSongHistoryWhen(r.t) : "");
+        const metaParts = [songSectionLabel(displaySec)];
+        if (r.t) metaParts.push(formatSongHistoryWhen(r.t));
+        if (parishView && r.actor_name) metaParts.push(r.actor_name);
+        const meta = metaParts.join(" · ");
         const attrs = hasId
           ? " type=\"button\" data-recent-sec=\"" + escapeHtml(displaySec) + "\" data-recent-id=\"" + escapeHtml(r.id) + "\" data-recent-title=\"" + escapeHtml(r.title || "") + "\" data-recent-lang=\"" + escapeHtml(displayLang) + "\""
           : " type=\"button\" disabled";
@@ -51908,27 +52217,52 @@
     function renderCollectionsRecent() {
       const el = $("collections-recent-songs");
       if (!el) return;
-      const rows = getSongHistoryRows(12, COMPOSER_RECENT_KINDS);
+      syncSongHistoryScopeUi();
+      const rows = getActiveSongHistoryRows(12, COMPOSER_RECENT_KINDS);
+      const parishView = getSongHistoryViewScope() === "parish" && songHistoryParishId();
       if (!rows.length) {
-        el.textContent = "Nothing tracked yet — saving or opening songs in Song Library adds entries here.";
+        el.textContent = parishView
+          ? "No parish activity yet — when your team saves or edits songs, they show up here."
+          : "Nothing tracked yet — saving or opening songs in Song Library adds entries here.";
         return;
       }
       el.innerHTML = rows.map((r) => {
         const hasId = r.id && r.section;
         const rightBits = [];
-        if (r.kind === "edited" || r.kind === "saved") {
+        if (r.kind === "edited" || r.kind === "saved" || r.kind === "lyrics_updated") {
           rightBits.push("<span class=\"collections-recent-label\">" + escapeHtml(SONG_HISTORY_KIND_LABELS[r.kind] || "") + "</span>");
         }
         if (hasId) {
           rightBits.push("<button type=\"button\" class=\"ghost\" style=\"font-size:0.76rem;white-space:nowrap;\" data-jump-song=\"" + escapeHtml(r.section) + "\" data-jump-id=\"" + escapeHtml(r.id) + "\">Open</button>");
         }
+        const actorBit = parishView && r.actor_name
+          ? " <span class=\"muted\">· " + escapeHtml(r.actor_name) + "</span>"
+          : "";
         return (
           "<div class=\"collections-recent-row\">" +
-            "<div><strong>" + escapeHtml(r.title || "Song") + "</strong> <span class=\"muted\">· " + escapeHtml(songSectionLabel(r.section)) + "</span></div>" +
+            "<div><strong>" + escapeHtml(r.title || "Song") + "</strong> <span class=\"muted\">· " + escapeHtml(songSectionLabel(r.section)) + "</span>" + actorBit + "</div>" +
             "<div style=\"display:flex;align-items:center;gap:8px;flex-shrink:0;\">" + rightBits.join("") + "</div>" +
           "</div>"
         );
       }).join("");
+    }
+
+    function bindSongHistoryScopeControls() {
+      const onScopeChange = (e) => {
+        const input = e.target.closest('input[name="song-recent-scope"], input[name="collections-recent-scope"]');
+        if (!input || !input.checked) return;
+        setSongHistoryViewScope(input.value);
+      };
+      const composerScope = $("song-composer-recent-scope");
+      const collectionsScope = $("collections-recent-scope");
+      if (composerScope && !composerScope.dataset.bound) {
+        composerScope.dataset.bound = "1";
+        composerScope.addEventListener("change", onScopeChange);
+      }
+      if (collectionsScope && !collectionsScope.dataset.bound) {
+        collectionsScope.dataset.bound = "1";
+        collectionsScope.addEventListener("change", onScopeChange);
+      }
     }
 
     async function loadSongCatalog(force) {
@@ -54879,6 +55213,7 @@
     bindCelebrantSelect();
     renderComposerRecent();
     renderCollectionsRecent();
+    bindSongHistoryScopeControls();
     bindSocialExportControls();
     bindOpenAiPosterControls();
     bindAiPosterQuotaStyleWatch();
@@ -54968,12 +55303,14 @@
             acceptParishInviteFromUrl();
             maybeShowMobileWelcomeModal();
             maybeShowSongsWhatsNewModal();
+            void pullSongHistoryFromAccount();
           });
         } else {
           refreshCommunity();
           acceptParishInviteFromUrl();
           maybeShowMobileWelcomeModal();
           maybeShowSongsWhatsNewModal();
+          void pullSongHistoryFromAccount();
         }
       };
       if (!window.__VERBUM_AUTH_GATE__) {
@@ -54994,6 +55331,7 @@
         if (memberApiAvailable()) {
           loadSongCatalog();
           refreshAiImageQuotaHint();
+          void pullSongHistoryFromAccount();
         }
       });
       if (window.VerbumAuth && window.VerbumAuth.isReady && window.VerbumAuth.isReady()) {

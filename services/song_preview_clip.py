@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import re
@@ -61,6 +62,7 @@ _LANG_CODES = {
 }
 
 _JOB_LOCK = threading.Lock()
+_COOKIE_CACHE: Optional[Path] = None
 
 
 def try_begin_preview_job() -> bool:
@@ -472,6 +474,56 @@ def _pick_downloaded_source(dest_dir: Path) -> Path:
     return hits[0]
 
 
+def _yt_dlp_cookiefile() -> Optional[str]:
+    """Optional Netscape cookies for YouTube on datacenter IPs (Render, etc.)."""
+    global _COOKIE_CACHE
+
+    explicit = (os.environ.get("YTDLP_COOKIES_FILE") or "").strip()
+    if explicit:
+        path = Path(explicit).expanduser()
+        if path.is_file():
+            return str(path)
+        logger.warning("YTDLP_COOKIES_FILE is set but not readable: %s", explicit)
+        return None
+
+    b64 = (os.environ.get("YTDLP_COOKIES_B64") or "").strip()
+    if not b64:
+        return None
+
+    if _COOKIE_CACHE is not None and _COOKIE_CACHE.is_file():
+        return str(_COOKIE_CACHE)
+
+    try:
+        content = base64.b64decode(b64, validate=True)
+    except Exception:
+        logger.warning("YTDLP_COOKIES_B64 is not valid base64.")
+        return None
+    if not content.strip():
+        logger.warning("YTDLP_COOKIES_B64 decoded to empty content.")
+        return None
+
+    dest = Path(tempfile.gettempdir()) / "verbum_ytdlp_cookies.txt"
+    try:
+        dest.write_bytes(content)
+    except OSError as exc:
+        logger.warning("Could not write yt-dlp cookies file: %s", exc)
+        return None
+    _COOKIE_CACHE = dest
+    return str(dest)
+
+
+def _yt_dlp_download_error_hint(err: str) -> str:
+    lowered = err.lower()
+    if "sign in to confirm" in lowered or "not a bot" in lowered:
+        if not _yt_dlp_cookiefile():
+            return (
+                err[:180]
+                + " On Render/datacenter hosts, export YouTube cookies from your browser "
+                "and set YTDLP_COOKIES_B64 in Render env (see .env.example)."
+            )
+    return err[:240]
+
+
 def _yt_dlp_js_runtimes() -> dict[str, dict[str, str]]:
     """Prefer Deno (yt-dlp default), then Node — required for modern YouTube formats."""
     runtimes: dict[str, dict[str, str]] = {}
@@ -484,7 +536,17 @@ def _yt_dlp_js_runtimes() -> dict[str, dict[str, str]]:
 
 def _download_audio_attempts() -> list[dict[str, Any]]:
     """Ordered yt-dlp option overlays — YouTube CDN often 403s android_sdkless/vr URLs."""
-    return [
+    attempts: list[dict[str, Any]] = []
+    if _yt_dlp_cookiefile():
+        attempts.append(
+            {
+                "extractor_args": {
+                    "youtube": {"player_client": ["web"]},
+                },
+            }
+        )
+    attempts.extend(
+        [
         {
             "extractor_args": {
                 "youtube": {"player_client": ["default", "-android_sdkless"]},
@@ -510,7 +572,9 @@ def _download_audio_attempts() -> list[dict[str, Any]]:
             },
             "format": "ba[protocol=m3u8_native]/b[protocol=m3u8_native]/bestaudio/best",
         },
-    ]
+        ]
+    )
+    return attempts
 
 
 def _download_audio(
@@ -539,10 +603,16 @@ def _download_audio(
         yt_dlp = None  # type: ignore[assignment]
 
     js_runtimes = _yt_dlp_js_runtimes()
+    cookiefile = _yt_dlp_cookiefile()
     if not js_runtimes:
         logger.warning(
             "No JS runtime (deno/node) found for yt-dlp; YouTube downloads may 403. "
             "Install Node.js or Deno: https://github.com/yt-dlp/yt-dlp/wiki/EJS"
+        )
+    if not cookiefile:
+        logger.info(
+            "No YTDLP cookies configured; YouTube may block datacenter IPs. "
+            "Set YTDLP_COOKIES_B64 on Render if preview fetch fails."
         )
 
     if yt_dlp is not None:
@@ -569,6 +639,8 @@ def _download_audio(
             }
             if js_runtimes:
                 opts["js_runtimes"] = js_runtimes
+            if cookiefile:
+                opts["cookiefile"] = cookiefile
             opts.update(attempt)
             try:
                 with yt_dlp.YoutubeDL(opts) as ydl:
@@ -583,7 +655,7 @@ def _download_audio(
                 )
                 continue
         raise RuntimeError(
-            str(last_err)[:240] if last_err else "Could not download audio."
+            _yt_dlp_download_error_hint(str(last_err)) if last_err else "Could not download audio."
         ) from last_err
 
     js_flags: list[str] = []
@@ -620,6 +692,8 @@ def _download_audio(
             "-o",
             out_tmpl,
         ]
+        if cookiefile:
+            cmd.extend(["--cookies", cookiefile])
         extractor = attempt.get("extractor_args") or {}
         yt_args = (extractor.get("youtube") or {}) if isinstance(extractor, dict) else {}
         client = yt_args.get("player_client") if isinstance(yt_args, dict) else None
@@ -635,7 +709,9 @@ def _download_audio(
         last_cli_err = (proc.stderr or proc.stdout or "yt-dlp failed").strip()
         logger.info("yt-dlp CLI attempt failed: %s", last_cli_err.splitlines()[-1][:180] if last_cli_err else "unknown")
     raise RuntimeError(
-        last_cli_err.splitlines()[-1][:240] if last_cli_err else "Could not download audio."
+        _yt_dlp_download_error_hint(last_cli_err.splitlines()[-1] if last_cli_err else "")
+        if last_cli_err
+        else "Could not download audio."
     )
 
 

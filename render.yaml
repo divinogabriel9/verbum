@@ -119,6 +119,9 @@ services:
         value: "60"
       - key: CATALOG_LYRIC_FETCH_WINDOW
         value: "3600"
+      # Base64 Netscape YouTube cookies — required for SA preview fetch on Render IPs
+      - key: YTDLP_COOKIES_B64
+        sync: false
 
   # Twice daily (06:00 & 18:00 Asia/Seoul = 21:00 & 09:00 UTC). Hits the web
   # service so readings land on the live cache — not the cron ephemeral disk.

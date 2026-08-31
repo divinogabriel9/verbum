@@ -95,7 +95,7 @@
       ],
       "added_at": "2026-08-28T22:53:38.430828+00:00",
       "language": "English",
-      "updated_at": "2026-08-28T22:53:38.430828+00:00",
+      "updated_at": "2026-08-31T07:27:40.156543+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:c7GiWZG-AI4",
@@ -107,7 +107,17 @@
         "triumphant",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_entrance_glory_praise_10.mp3",
+        "start_sec": 11.24,
+        "youtube_id": "c7GiWZG-AI4",
+        "youtube_url": "https://www.youtube.com/watch?v=c7GiWZG-AI4",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "joyful_joyful",
@@ -1081,7 +1091,7 @@
       ],
       "added_at": "2026-08-28T20:54:57.284775+00:00",
       "language": "English",
-      "updated_at": "2026-08-28T21:03:27.431281+00:00",
+      "updated_at": "2026-08-31T07:30:29.745396+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:XwmUBqXo-Gs",
@@ -1092,7 +1102,17 @@
       "gospel_moods": [
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_living_sacrifice_10.mp3",
+        "start_sec": 7.84,
+        "youtube_id": "XwmUBqXo-Gs",
+        "youtube_url": "https://www.youtube.com/watch?v=XwmUBqXo-Gs",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     }
   ],
   "communion": [

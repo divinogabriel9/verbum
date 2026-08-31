@@ -1487,6 +1487,19 @@ class SongMediaRefBody(BaseModel):
         return self
 
 
+class UserSongHistoryEntry(BaseModel):
+    t: Optional[int] = None
+    title: str = Field("", max_length=L.SONG_TITLE)
+    section: str = Field("", max_length=32)
+    id: str = Field("", max_length=256)
+    language: str = Field("", max_length=L.LANGUAGE)
+    kind: str = Field("lyrics_updated", max_length=32)
+
+
+class UserSongHistorySyncBody(BaseModel):
+    entries: list[UserSongHistoryEntry] = Field(default_factory=list, max_length=120)
+
+
 class SaveLyricsBody(BaseModel):
     title: str = Field(..., min_length=1, max_length=L.SONG_TITLE)
     lyrics: str = Field(..., min_length=1, max_length=L.LYRICS_FULL)
@@ -2722,6 +2735,77 @@ def api_catalog_songs_whats_new(
 ) -> dict[str, Any]:
     """Songs added this month + updates from the last 7 days (for post-login modal)."""
     return catalog_whats_new()
+
+
+@app.get("/api/user/song-history")
+def api_get_user_song_history(
+    scope: str = "mine",
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Recent Song Library activity for the signed-in user or whole parish."""
+    if not session:
+        return {"ok": True, "entries": [], "synced": False, "scope": scope}
+    from services.parish_store import get_user_parish_context
+    from services.user_song_history import list_parish_song_history, list_user_song_history
+
+    parish_ctx = get_user_parish_context(session.user.user_id, access_token=session.token) or {}
+    parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
+    mode = (scope or "mine").strip().lower()
+    if mode == "parish":
+        if not parish_id:
+            return {"ok": True, "entries": [], "synced": True, "scope": "parish", "parish_id": None}
+        entries = list_parish_song_history(
+            session.user.user_id,
+            access_token=session.token,
+            parish_id=parish_id,
+        )
+        return {
+            "ok": True,
+            "entries": entries,
+            "synced": True,
+            "scope": "parish",
+            "parish_id": parish_id,
+        }
+    entries = list_user_song_history(
+        session.user.user_id,
+        access_token=session.token,
+        parish_id=parish_id,
+    )
+    return {
+        "ok": True,
+        "entries": entries,
+        "synced": True,
+        "scope": "mine",
+        "parish_id": parish_id,
+    }
+
+
+@app.post("/api/user/song-history")
+def api_sync_user_song_history(
+    body: UserSongHistorySyncBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Upsert recent Song Library activity (account + parish sync)."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    from services.parish_store import get_user_parish_context
+    from services.user_song_history import sync_user_song_history
+
+    parish_ctx = get_user_parish_context(session.user.user_id, access_token=session.token) or {}
+    parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
+    payload = [entry.model_dump() for entry in body.entries]
+    result = sync_user_song_history(
+        session.user.user_id,
+        payload,
+        access_token=session.token,
+        parish_id=parish_id,
+    )
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=503,
+            detail=result.get("error") or "Could not sync song history.",
+        )
+    return result
 
 
 @app.get("/api/catalog/songs/{section}/{hymn_id:path}")
