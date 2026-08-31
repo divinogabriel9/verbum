@@ -52130,6 +52130,8 @@
       if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
       scheduleSongHistoryPush(false);
     }
+
+    async function undoLastSongImport(opts) {
       const options = opts || {};
       const remembered = getRememberedSongImportUndo();
       const token = String(options.token || (remembered && remembered.token) || "").trim();
