@@ -36,14 +36,24 @@
     },
     {
       "id": "all_creatures",
-      "title": "All Creatures of Our God and King",
+      "title": "All Creatures Of Our God And King",
+      "author": "",
       "lyrics": "Verse 1\nAll Creatures Of Our God And King\nLift Up Your Voice And With Us Sing\nO Praise Him! Alleluia!\nThou, Burning Sun With Golden Beam\nThou, Silver Moon With Softer Gleam\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 2\nLet All Things Their Creator Bless\nAnd Worship Him In Humbleness\nO Praise Him! Alleluia!\nPraise, Praise The Father, Praise The Son\nAnd Praise The Spirit, Three-in-one\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 3\nAll The Redeemed Washed By His Blood\nCome And Rejoice In His Great Love\nO Praise Him! Alleluia!\nChrist Has Defeated Every Sin\nCast All Your Burdens Now On Him\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!\n\nVerse 4\nHe Shall Return In Pow’r To Reign\nHeaven And Earth Will Join To Say\nO Praise Him! Alleluia!\nThen Who Shall Fall On Bended Knee?\nAll Creatures Of Our God And King\nO Praise Him! O Praise Him!\nAlleluia! Alleluia! Alleluia!",
       "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time",
         "easter"
       ],
+      "added_at": "2026-08-29T00:49:39.429461+00:00",
       "language": "English",
+      "updated_at": "2026-08-29T00:49:39.429461+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:U3eKQLX7nO0",
+        "youtube_id": "U3eKQLX7nO0",
+        "youtube_url": "https://www.youtube.com/watch?v=U3eKQLX7nO0",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -83,7 +93,16 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-28T22:53:38.430828+00:00",
       "language": "English",
+      "updated_at": "2026-08-28T22:53:38.430828+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:c7GiWZG-AI4",
+        "youtube_id": "c7GiWZG-AI4",
+        "youtube_url": "https://www.youtube.com/watch?v=c7GiWZG-AI4",
+        "display_name": "Glory and Praise to Our God"
+      },
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -93,11 +112,22 @@
     {
       "id": "joyful_joyful",
       "title": "Joyful, Joyful, We Adore Thee",
+      "author": "",
       "lyrics": "Joyful, Joyful, We Adore Thee,\nGod Of Glory, Lord Of Love;\nHearts Unfold Like Flowers Before Thee,\nHailing Thee, The Sun Above.\n\nMelt The Clouds Of Sin And Sadness,\nDrive The Dark Of Doubt Away;\nGiver Of Immortal Gladness,\nFill Us With The Light Of Day.\n\nAll Thy Works With Joy Surround Thee,\nEarth And Heav'n Reflect Thy Rays,\nStars And Angels Sing Around Thee,\nCenter Of Unbroken Praise.\n\nField And Forest, Vale And Mountain,\nFlowery Meadow, Flashing Sea,\nChanting Bird And Flowing Fountain,\nCall Us To Rejoice In Thee.\n\nThou Art Giving And Forgiving,\nEver Blessing, Ever Blest,\nWell-spring Of The Joy Of Living,\nOcean Depth Of Happy Rest!\n\nThou Our Father, Christ Our Brother—\nAll Who Live In Love Are Thine;\nTeach Us How To Love Each Other,\nLift Us To The Joy Divine.\n\nMortals, Join The Mighty Chorus,\nWhich The Morning Stars Began;\nLove Divine Is Reigning O'er Us,\nLeading To The Light Of Man.",
       "seasons": [
         "easter",
         "ordinary_time"
       ],
+      "added_at": "2026-08-29T00:50:55.865731+00:00",
+      "language": "English",
+      "updated_at": "2026-08-29T00:50:55.865731+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:2yZVweZ2Cvg",
+        "youtube_id": "2yZVweZ2Cvg",
+        "youtube_url": "https://www.youtube.com/watch?v=2yZVweZ2Cvg",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -107,10 +137,21 @@
     {
       "id": "holy_holy_holy",
       "title": "Holy, Holy, Holy",
+      "author": "",
       "lyrics": "Holy, Holy, Holy! Lord God Almighty!\nEarly In The Morning Our Song Shall Rise To Thee;\nHoly, Holy, Holy! Merciful And Mighty!\nGod In Three Persons, Blessed Trinity!\n\nHoly, Holy, Holy! All The Saints Adore Thee,\nCasting Down Their Golden Crowns Around The Glassy Sea;\nCherubim And Seraphim Falling Down Before Thee,\nWho Wert And Art And Evermore Shalt Be.\n\nHoly, Holy, Holy! Though The Darkness Hide Thee,\nThough The Eye Of Sinful Man Thy Glory May Not See,\nOnly Thou Art Holy; There Is None Beside Thee,\nPerfect In Power, In Love, And Purity.\n\nHoly, Holy, Holy! Lord God Almighty!\nAll Thy Works Shall Praise Thy Name, In Earth And Sky And Sea;\nHoly, Holy, Holy! Merciful And Mighty!\nGod In Three Persons, Blessed Trinity!",
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-29T01:11:03.545959+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-08-29T01:11:03.545959+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:VR-c7MSsbqs",
+        "youtube_id": "VR-c7MSsbqs",
+        "youtube_url": "https://www.youtube.com/watch?v=VR-c7MSsbqs",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -119,12 +160,23 @@
     },
     {
       "id": "crown_him",
-      "title": "Crown Him with Many Crowns",
+      "title": "Crown Him With Many Crowns",
+      "author": "",
       "lyrics": "Crown Him With Many Crowns,\nThe Lamb Upon His Throne;\nHark! How The Heavenly Anthem Drowns\nAll Music But Its Own.\nAwake, My Soul, And Sing\nOf Him Who Died For Thee,\nAnd Hail Him As Thy Matchless King\nThrough All Eternity.\n\nCrown Him The Lord Of Life,\nWho Triumphed O'er The Grave,\nAnd Rose Victorious In The Strife\nFor Those He Came To Save.\nHis Glories Now We Sing,\nWho Died And Rose On High,\nWho Died, Eternal Life To Bring,\nAnd Lives That Death May Die.\n\nCrown Him The Lord Of Peace,\nWhose Power A Scepter Sways\nFrom Pole To Pole, That Wars May Cease,\nAnd All Be Prayer And Praise.\nHis Reign Shall Know No End,\nAnd Round His Pierced Feet\nFair Flowers Of Paradise Extend\nTheir Fragrance Ever Sweet.",
       "seasons": [
         "easter",
         "ordinary_time"
       ],
+      "added_at": "2026-08-29T01:09:01.572094+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-08-29T01:09:01.572094+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:wGK1Up1_eiw",
+        "youtube_id": "wGK1Up1_eiw",
+        "youtube_url": "https://www.youtube.com/watch?v=wGK1Up1_eiw",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant",
         "reverent"
@@ -132,11 +184,22 @@
     },
     {
       "id": "praise_to_lord",
-      "title": "Praise to the Lord, the Almighty",
+      "title": "Praise To The Lord, The Almighty",
+      "author": "",
       "lyrics": "Praise To The Lord, The Almighty, The King Of Creation!\nO My Soul, Praise Him, For He Is Your Health And Salvation!\nAll You Who Hear, Now To His Altar Draw Near,\nJoining In Glad Adoration.\n\nPraise To The Lord, Who O'er All Things Is Wondrously Reigning,\nAnd, As On Wings Of An Eagle, Uplifting, Sustaining.\nHave You Not Seen All That Is Needful Has Been\nSent By His Gracious Ordaining?\n\nPraise To The Lord, Who Will Prosper Your Work And Defend You;\nSurely His Goodness And Mercy Shall Daily Attend You.\nPonder Anew What The Almighty Can Do,\nWho With His Love Will Befriend You.\n\nPraise To The Lord! O Let All That Is In Me Adore Him!\nAll That Has Life And Breath, Come Now With Praises Before Him!\nLet The Amen Sound From His People Again;\nGladly Forever Adore Him!",
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-29T01:01:34.958932+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-08-29T01:01:34.958932+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:zo70rezn16c",
+        "youtube_id": "zo70rezn16c",
+        "youtube_url": "https://www.youtube.com/watch?v=zo70rezn16c",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant",
         "mercy",
@@ -152,7 +215,19 @@
       "seasons": [
         "all"
       ],
-      "language": "English"
+      "added_at": "2026-08-29T00:51:59.918359+00:00",
+      "language": "English",
+      "updated_at": "2026-08-29T00:51:59.918359+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:NDb35qrSH1A",
+        "youtube_id": "NDb35qrSH1A",
+        "youtube_url": "https://www.youtube.com/watch?v=NDb35qrSH1A",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "reverent"
+      ]
     },
     {
       "id": "purihin_ang_panginoon",
@@ -165,7 +240,14 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-08-28T23:26:44.473576+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:UZ-ZcsvVjTw",
+        "youtube_id": "UZ-ZcsvVjTw",
+        "youtube_url": "https://www.youtube.com/watch?v=UZ-ZcsvVjTw",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant"
       ]
@@ -179,7 +261,16 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-29T00:10:48.112854+00:00",
       "language": "English",
+      "updated_at": "2026-08-29T00:10:48.112854+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:bwfKYpymoRI",
+        "youtube_id": "bwfKYpymoRI",
+        "youtube_url": "https://www.youtube.com/watch?v=bwfKYpymoRI",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "solemn",
         "mercy",
@@ -197,7 +288,14 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-08-29T00:59:42.820428+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:_LeMD0vrJpI",
+        "youtube_id": "_LeMD0vrJpI",
+        "youtube_url": "https://www.youtube.com/watch?v=_LeMD0vrJpI",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "journey",
         "reverent"
@@ -281,10 +379,17 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-08-29T00:56:08.111176+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:wx1_gBscKOU",
+        "youtube_id": "wx1_gBscKOU",
+        "youtube_url": "https://www.youtube.com/watch?v=wx1_gBscKOU",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
-        "journey",
-        "triumphant"
+        "triumphant",
+        "journey"
       ]
     },
     {
@@ -494,11 +599,22 @@
     {
       "id": "christify",
       "title": "Christify",
+      "author": "",
       "lyrics": "Verse 1\nChristify The Gifts We Bring To You\nBounty Of The Earth Receive Anew\nTake And Bless The Work Of Our Hands\nChristify These Gifts At Your Command\n\nVerse 2\nSun And Moon And Earth And Wind And Rain\nAll The World's Contained In Every Grain\nAll The Toil And Dreams Of Humankind\nAll We Are We Bring As Bread And Wine\n\nVerse 3\nTurn The Bread And Wine Our Hearts Implore (Turn The Bread And Wine Our Hearts Implore)\nTo The Living Presence Of The Lord (To The Living Presence Of The Lord)\nBlessed And Broken Shared With All In Need (Blessed And Broken Shared With All In Need)\nAll Our Hungers Sacred Bread Will Feed\n\nVerse 4\nWith This Bread And Wine You Christify (With This Bread And Wine You Christify)\nNow Our Deepest Thirst You Satisfy (Now Our Deepest Thirst You Satisfy)\nWe Who By This Bread You Sanctify (We Who By This Bread You Sanctify)\nDraw The World For You To Christify\n\nVerse 5\nWe Who By This Bread You Sanctify (We Who By This Bread You Sanctify)\nDraw The World For You To Christify",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-29T00:45:47.286899+00:00",
+      "language": "English",
+      "updated_at": "2026-08-29T00:45:47.286899+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:n-wTFir4fnY",
+        "youtube_id": "n-wTFir4fnY",
+        "youtube_url": "https://www.youtube.com/watch?v=n-wTFir4fnY",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "mercy"
       ]
@@ -535,6 +651,15 @@
         "ordinary_time",
         "easter"
       ],
+      "added_at": "2026-08-28T22:55:15.525370+00:00",
+      "updated_at": "2026-08-28T22:59:25.430510+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:gADDeVUH4uc",
+        "youtube_id": "gADDeVUH4uc",
+        "youtube_url": "https://www.youtube.com/watch?v=gADDeVUH4uc",
+        "display_name": "I Am the Bread of Life"
+      },
       "gospel_moods": [
         "triumphant",
         "mercy"
@@ -543,10 +668,21 @@
     {
       "id": "one_bread_offertory",
       "title": "One Bread, One Body",
+      "author": "",
       "lyrics": "One Bread, One Body, One Lord Of All,\nOne Cup Of Blessing Which We Bless.\nAnd We, Though Many, Throughout The Earth,\nWe Are One Body In This One Lord.\n\nGentile Or Jew, Servant Or Free,\nWoman Or Man, No More.\n\nMany The Gifts, Many The Works,\nMany The Ways We Serve;\nMany The Moments, Many The Hours,\nMany The Talents Shared.\n\nOne Bread, One Body, One Lord Of All,\nOne Cup Of Blessing Which We Bless.\nAnd We, Though Many, Throughout The Earth,\nWe Are One Body In This One Lord.",
       "seasons": [
         "ordinary_time"
       ],
+      "added_at": "2026-08-29T00:47:27.168663+00:00",
+      "language": "English",
+      "updated_at": "2026-08-29T00:47:27.168663+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:WHAu3fLF7NI",
+        "youtube_id": "WHAu3fLF7NI",
+        "youtube_url": "https://www.youtube.com/watch?v=WHAu3fLF7NI",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "solemn",
         "mercy",
@@ -629,7 +765,19 @@
       "seasons": [
         "all"
       ],
-      "language": "English"
+      "added_at": "2026-08-29T01:02:39.221201+00:00",
+      "language": "English",
+      "updated_at": "2026-08-29T01:02:39.221201+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:nXcjecHR8PE",
+        "youtube_id": "nXcjecHR8PE",
+        "youtube_url": "https://www.youtube.com/watch?v=nXcjecHR8PE",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "reverent"
+      ]
     },
     {
       "id": "take_and_receive",
@@ -665,10 +813,17 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-08-29T01:08:22.025281+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:5Lrd7X2j3X8",
+        "youtube_id": "5Lrd7X2j3X8",
+        "youtube_url": "https://www.youtube.com/watch?v=5Lrd7X2j3X8",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
-        "reverent",
-        "solemn"
+        "solemn",
+        "reverent"
       ]
     },
     {
@@ -733,10 +888,17 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-08-29T01:03:43.294995+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:l4K-wEZwe00",
+        "youtube_id": "l4K-wEZwe00",
+        "youtube_url": "https://www.youtube.com/watch?v=l4K-wEZwe00",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
-        "reverent",
-        "mercy"
+        "mercy",
+        "reverent"
       ]
     },
     {
@@ -1030,7 +1192,16 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-28T22:57:43.163437+00:00",
       "language": "English",
+      "updated_at": "2026-08-28T22:57:43.163437+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:IJ0jOjqISPU",
+        "youtube_id": "IJ0jOjqISPU",
+        "youtube_url": "https://www.youtube.com/watch?v=IJ0jOjqISPU",
+        "display_name": "Be Not Afraid"
+      },
       "gospel_moods": [
         "mercy"
       ]
@@ -1720,14 +1891,23 @@
     },
     {
       "id": "city_of_god",
-      "title": "City of God",
+      "title": "City Of God",
       "author": "",
       "lyrics": "Verse 1\nAwake From Your Slumber\nArise From Your Sleep\nA New Day Is Dawning\nFor All Those Who Weep\n\nVerse 2\nThe People In Darkness\nHave Seen A Great Light\nThe Lord Of Our Longing\nHas Conquered The Night\n\nChorus\nLet Us Build The City Of God\nMay Our Tears Be Turned Into Dancing\nFor The Lord, Our Light And Our Love\nHas Turned The Night Into Day\n\nVerse 3\nWe Are Sons Of The Morning\nWe Are Daughters Of Day\nThe One Who Has Loved Us\nHas Brightened Our Way\n\nChorus\nLet Us Build The City Of God\nMay Our Tears Be Turned Into Dancing\nFor The Lord, Our Light And Our Love\nHas Turned The Night Into Day\n\nVerse 4\nGod Is Light\nIn Him There Is No Darkness\nLet Us Walk In His Light\nHis Children One And All\n\nVerse 5\nOh, Comfort My People\nMake Gentle Your Words\nProclaim To My City\nThe Day Of Her Birth\n\nChorus\nLet Us Build The City Of God\nMay Our Tears Be Turned Into Dancing\nFor The Lord, Our Light And Our Love\nHas Turned The Night Into Day",
       "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time"
       ],
+      "added_at": "2026-08-29T01:14:25.678243+00:00",
       "language": "English",
+      "updated_at": "2026-08-29T01:14:25.678243+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:gzJv2oTIGfk",
+        "youtube_id": "gzJv2oTIGfk",
+        "youtube_url": "https://www.youtube.com/watch?v=gzJv2oTIGfk",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "mercy",
         "journey",
@@ -1884,7 +2064,16 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-08-28T22:58:29.615662+00:00",
       "language": "English",
+      "updated_at": "2026-08-28T22:58:29.615662+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:L8zwiiSckQM",
+        "youtube_id": "L8zwiiSckQM",
+        "youtube_url": "https://www.youtube.com/watch?v=L8zwiiSckQM",
+        "display_name": "Tell The World Of His Love"
+      },
       "gospel_moods": [
         "solemn",
         "journey",
