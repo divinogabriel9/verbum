@@ -2710,9 +2710,19 @@ def api_delete_saved_media_video(
 def api_catalog_songs(
     lite: bool = True,
     if_none_match: Optional[str] = Header(None, alias="If-None-Match"),
-    _session: Optional[AuthSession] = Depends(require_approved_membership),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> Response:
-    if lite:
+    parish_id: Optional[str] = None
+    if session and session.user and session.user.user_id:
+        try:
+            from services.parish_store import get_user_parish_context
+
+            parish_ctx = get_user_parish_context(session.user.user_id) or {}
+            parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
+        except Exception:
+            parish_id = None
+
+    if lite and not parish_id:
         body, etag = catalog_lite_response()
         headers = {
             "Cache-Control": "private, no-cache",
@@ -2722,11 +2732,23 @@ def api_catalog_songs(
         if if_none_match and if_none_match.strip() == etag:
             return Response(status_code=304, headers=headers)
         return Response(content=body, media_type="application/json", headers=headers)
-    payload = {
-        "ok": True,
-        "catalog": catalog_for_api(include_inferred_moods=True),
-    }
-    return JSONResponse(payload, headers={"Cache-Control": "private, max-age=120"})
+
+    catalog = catalog_for_api(include_inferred_moods=True)
+    if parish_id:
+        try:
+            from services.parish_hymn_overrides import merge_parish_songs_into_catalog
+
+            catalog = merge_parish_songs_into_catalog(catalog, parish_id)
+        except Exception:
+            logger.warning("Could not merge parish songs into catalog", exc_info=True)
+    payload = {"ok": True, "catalog": catalog}
+    return JSONResponse(
+        payload,
+        headers={
+            "Cache-Control": "private, no-cache" if parish_id else "private, max-age=120",
+            "Vary": "Authorization",
+        },
+    )
 
 
 @app.get("/api/catalog/songs/whats-new")
@@ -2846,29 +2868,62 @@ def api_get_catalog_song(
         if normalized:
             row = normalized
             resolved_section = str(normalized.get("section") or requested_sec).strip().lower() or requested_sec
-    if not row:
-        raise HTTPException(status_code=404, detail="Song not found.")
-    lyrics = fetch_lyrics_from_normalized(hid) or str(row.get("lyrics") or "")
-    catalog_lyrics = lyrics
+    parish_only = False
     parish_version = False
-    if session and session.user and session.user.user_id:
+    lyrics = ""
+    catalog_lyrics = ""
+    if not row and session and session.user and session.user.user_id:
+        # Parish-original song (not yet in global catalog).
         try:
-            from services.parish_hymn_overrides import get_override
+            from services.parish_hymn_overrides import get_parish_song_by_id
             from services.parish_store import get_user_parish_context
 
             parish_ctx = get_user_parish_context(session.user.user_id) or {}
             parish_id = str(parish_ctx.get("parish_id") or "").strip()
             if parish_id:
-                ov = get_override(parish_id, hymn_id=hid, section=resolved_section)
+                ov = get_parish_song_by_id(parish_id, hymn_id=hid, section=requested_sec)
                 if not ov:
-                    ov = get_override(parish_id, hymn_id=hid)
+                    ov = get_parish_song_by_id(parish_id, hymn_id=hid)
                 if ov and str(ov.get("lyrics") or "").strip():
-                    lyrics = str(ov.get("lyrics") or "")
+                    parish_only = True
                     parish_version = True
-                    if ov.get("section"):
-                        resolved_section = str(ov.get("section") or resolved_section)
+                    resolved_section = str(ov.get("section") or requested_sec).strip().lower() or requested_sec
+                    lyrics = str(ov.get("lyrics") or "")
+                    catalog_lyrics = ""
+                    moods = ov.get("gospel_moods") if isinstance(ov.get("gospel_moods"), list) else []
+                    row = {
+                        "id": hid,
+                        "title": str(ov.get("title") or ""),
+                        "author": str(ov.get("author") or ""),
+                        "language": str(ov.get("language") or "").strip(),
+                        "lyrics": lyrics,
+                        "gospel_moods": moods,
+                    }
         except Exception:
             pass
+    if not row:
+        raise HTTPException(status_code=404, detail="Song not found.")
+    if not parish_only:
+        lyrics = fetch_lyrics_from_normalized(hid) or str(row.get("lyrics") or "")
+        catalog_lyrics = lyrics
+        if session and session.user and session.user.user_id:
+            try:
+                from services.parish_hymn_overrides import get_override
+                from services.parish_store import get_user_parish_context
+
+                parish_ctx = get_user_parish_context(session.user.user_id) or {}
+                parish_id = str(parish_ctx.get("parish_id") or "").strip()
+                if parish_id:
+                    ov = get_override(parish_id, hymn_id=hid, section=resolved_section)
+                    if not ov:
+                        ov = get_override(parish_id, hymn_id=hid)
+                    if ov and str(ov.get("lyrics") or "").strip():
+                        lyrics = str(ov.get("lyrics") or "")
+                        parish_version = True
+                        if ov.get("section"):
+                            resolved_section = str(ov.get("section") or resolved_section)
+            except Exception:
+                pass
     log_lyric_read(
         user_id=uid,
         hymn_id=hid,
@@ -2886,6 +2941,7 @@ def api_get_catalog_song(
             "lyrics": lyrics,
             "catalog_lyrics": catalog_lyrics,
             "parish_version": parish_version,
+            "parish_only": parish_only,
             "gospel_moods": gospel_moods_for_song(row),
             "audio_media": row.get("audio_media") if isinstance(row.get("audio_media"), dict) else None,
             "video_media": row.get("video_media") if isinstance(row.get("video_media"), dict) else None,
@@ -4520,7 +4576,7 @@ def api_save_lyrics(
     session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> dict[str, Any]:
     if auth_enabled() and session and not is_superadmin_user(session.user):
-        from services.parish_hymn_overrides import save_override
+        from services.parish_hymn_overrides import save_override, save_parish_original_song
         from services.parish_store import get_user_parish_context
         from services.song_catalog import find_catalog_matches_by_title, format_song_title_case
 
@@ -4532,8 +4588,13 @@ def api_save_lyrics(
         ]
         parish_ctx = get_user_parish_context(session.user.user_id) or {}
         parish_id = str(parish_ctx.get("parish_id") or "").strip()
+        if not parish_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Join a parish to save songs. New songs stay in your parish catalog until a superadmin approves them for the global catalog.",
+            )
         # Existing catalog song → parish short version (does not change global SoT).
-        if exact and parish_id:
+        if exact:
             hit = exact[0]
             result = save_override(
                 parish_id,
@@ -4542,10 +4603,32 @@ def api_save_lyrics(
                 lyrics=body.lyrics,
                 title=clean_title,
                 updated_by=session.user.user_id,
+                language=body.language,
+                author=body.author,
+                gospel_moods=body.gospel_moods,
+                origin="override",
             )
             if not result.get("ok"):
                 raise HTTPException(status_code=400, detail=result.get("error") or "Could not save parish lyrics.")
             return result
+
+        # New song → save to parish catalog immediately, then queue for SA global approval.
+        section = str((body.sections or ["meditation"])[0] or "meditation").strip().lower()
+        parish_save = save_parish_original_song(
+            parish_id,
+            title=body.title,
+            lyrics=body.lyrics,
+            section=section,
+            language=body.language,
+            author=body.author,
+            gospel_moods=body.gospel_moods,
+            updated_by=session.user.user_id,
+        )
+        if not parish_save.get("ok"):
+            raise HTTPException(
+                status_code=400,
+                detail=parish_save.get("error") or "Could not save parish song.",
+            )
         result = submit_pending_song(
             session,
             title=body.title,
@@ -4553,13 +4636,49 @@ def api_save_lyrics(
             sections=body.sections,
             language=body.language,
             author=body.author,
+            gospel_moods=body.gospel_moods,
+            parish_hymn_id=str(parish_save.get("id") or ""),
+            parish_section=str(parish_save.get("section") or section),
         )
         if not result.get("ok"):
-            raise HTTPException(
-                status_code=409 if result.get("duplicate") else 400,
-                detail=result.get("error") or "Could not submit song.",
+            # Parish song is already saved; surface submission issues without losing the parish copy.
+            return {
+                **parish_save,
+                "pending": False,
+                "submission_error": result.get("error") or "Could not submit for global approval.",
+                "message": (
+                    (parish_save.get("message") or "Saved to your parish catalog.")
+                    + " "
+                    + (result.get("error") or "Could not submit for global approval.")
+                ),
+            }
+        # Attach submission id onto parish row when possible.
+        try:
+            from services.parish_hymn_overrides import save_override as _save_ov
+
+            _save_ov(
+                parish_id,
+                hymn_id=str(parish_save.get("id") or ""),
+                section=str(parish_save.get("section") or section),
+                lyrics=body.lyrics,
+                title=clean_title,
+                updated_by=session.user.user_id,
+                language=body.language,
+                author=body.author,
+                gospel_moods=body.gospel_moods,
+                origin="parish",
+                submission_id=str(result.get("submission_id") or "") or None,
             )
-        return result
+        except Exception:
+            pass
+        return {
+            **parish_save,
+            "pending": True,
+            "submission_id": result.get("submission_id"),
+            "created": [str(parish_save.get("section") or section)],
+            "message": result.get("message")
+            or "Saved to your parish catalog and submitted for superadmin approval.",
+        }
     result = save_lyrics_song(
         title=body.title,
         lyrics=body.lyrics,

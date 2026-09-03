@@ -1093,22 +1093,22 @@
       "language": "English",
       "updated_at": "2026-09-03T09:15:26.962197+00:00",
       "audio_media": {
-        "basename": "yt:XwmUBqXo-Gs",
-        "display_name": "YouTube",
         "source": "youtube",
+        "basename": "yt:XwmUBqXo-Gs",
         "youtube_id": "XwmUBqXo-Gs",
-        "youtube_url": "https://www.youtube.com/watch?v=XwmUBqXo-Gs"
+        "youtube_url": "https://www.youtube.com/watch?v=XwmUBqXo-Gs",
+        "display_name": "YouTube"
       },
       "gospel_moods": [
         "mercy",
         "reverent"
       ],
       "audio_preview": {
+        "source": "preview",
         "basename": "preview_offertory_living_sacrifice_10.mp3",
-        "display_name": "10s preview",
-        "duration_sec": 10,
         "start_sec": 7.84,
-        "source": "preview"
+        "display_name": "10s preview",
+        "duration_sec": 10
       }
     }
   ],

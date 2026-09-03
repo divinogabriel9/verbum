@@ -220,6 +220,9 @@ def submit_pending_song(
     sections: list[str],
     language: str = "English",
     author: str = "",
+    gospel_moods: list[str] | None = None,
+    parish_hymn_id: str | None = None,
+    parish_section: str | None = None,
 ) -> dict[str, Any]:
     from services.song_catalog import find_catalog_matches_by_title, format_song_title_case
 
@@ -245,23 +248,28 @@ def submit_pending_song(
                 }
             )
 
-    if exact_catalog or pending_matches:
-        names = [m.get("title") for m in (exact_catalog or pending_matches) if m.get("title")]
+    # Exact global match should be handled by parish override path, not pending submission.
+    if exact_catalog:
+        names = [m.get("title") for m in exact_catalog if m.get("title")]
         label = names[0] if names else clean_title
-        where = "the catalog" if exact_catalog else "pending submissions"
         return {
             "ok": False,
             "duplicate": True,
             "error": (
-                f"“{label}” already exists in {where}. "
-                "Open it from the Song Library and save a parish version, "
-                "or ask a superadmin if this is a true new entry."
+                f"“{label}” already exists in the catalog. "
+                "Open it from the Song Library and save a parish version."
             ),
-            "matches": exact_catalog + pending_matches + [
+            "matches": exact_catalog + [
                 m for m in catalog_matches if m.get("match") != "exact"
             ],
-            "notify_superadmin": True,
         }
+
+    if pending_matches:
+        # Allow re-save to parish catalog while an identical title is already pending.
+        # Reuse the existing pending submission id when possible.
+        existing_pending_id = str(pending_matches[0].get("id") or "").strip() or None
+    else:
+        existing_pending_id = None
 
     payload = {
         "title": clean_title,
@@ -269,17 +277,30 @@ def submit_pending_song(
         "sections": sections,
         "language": language,
         "author": author.strip(),
+        "gospel_moods": list(gospel_moods or []),
         "possible_matches": catalog_matches,
+        "parish_hymn_id": (parish_hymn_id or "").strip() or None,
+        "parish_section": (parish_section or "").strip().lower() or None,
     }
     if supabase_enabled():
-        row = _insert_submission_db(session, kind="song", payload=payload)
+        if existing_pending_id:
+            row = {"id": existing_pending_id, "payload": payload}
+            try:
+                _service_client().table("content_submissions").update(
+                    {"payload": payload}
+                ).eq("id", existing_pending_id).execute()
+            except Exception:
+                pass
+        else:
+            row = _insert_submission_db(session, kind="song", payload=payload)
         return {
             "ok": True,
             "pending": True,
             "submission_id": row.get("id"),
             "possible_matches": catalog_matches,
             "message": (
-                "Song submitted for superadmin approval."
+                "Saved to your parish catalog and submitted for superadmin approval "
+                "before it appears in the global catalog."
                 + (
                     f" Note: {len(catalog_matches)} similar title(s) already in the catalog."
                     if catalog_matches
@@ -288,22 +309,42 @@ def submit_pending_song(
             ),
         }
     rows = _read_rows(_SONGS_PATH)
-    row = {
-        "id": uuid.uuid4().hex,
-        "status": "pending",
-        "created_at": _now_iso(),
-        "submitted_by_user_id": session.user.user_id,
-        "submitted_by_email": session.user.email or "",
-        "payload": payload,
-    }
-    rows.append(row)
+    if existing_pending_id:
+        for item in rows:
+            if str(item.get("id") or "") == existing_pending_id:
+                item["payload"] = payload
+                row = item
+                break
+        else:
+            row = {
+                "id": existing_pending_id,
+                "status": "pending",
+                "created_at": _now_iso(),
+                "submitted_by_user_id": session.user.user_id,
+                "submitted_by_email": session.user.email or "",
+                "payload": payload,
+            }
+            rows.append(row)
+    else:
+        row = {
+            "id": uuid.uuid4().hex,
+            "status": "pending",
+            "created_at": _now_iso(),
+            "submitted_by_user_id": session.user.user_id,
+            "submitted_by_email": session.user.email or "",
+            "payload": payload,
+        }
+        rows.append(row)
     _write_rows(_SONGS_PATH, rows)
     return {
         "ok": True,
         "pending": True,
         "submission_id": row["id"],
         "possible_matches": catalog_matches,
-        "message": "Song submitted for superadmin approval.",
+        "message": (
+            "Saved to your parish catalog and submitted for superadmin approval "
+            "before it appears in the global catalog."
+        ),
     }
 
 
@@ -574,16 +615,61 @@ def approve_song_submission(
         sections=list(payload.get("sections") or []),
         language=str(payload.get("language") or "English"),
         author=str(payload.get("author") or ""),
+        gospel_moods=list(payload.get("gospel_moods") or []) or None,
         updated_by=acting_user_id,
     )
     if not result.get("ok"):
         return result
+
+    # Link parish-original song to the new global id (keeps parish copy usable).
+    parish_id = str(row.get("parish_id") or "").strip()
+    parish_hymn_id = str(payload.get("parish_hymn_id") or "").strip()
+    parish_section = str(
+        payload.get("parish_section")
+        or (list(payload.get("sections") or [])[:1] or ["meditation"])[0]
+        or "meditation"
+    ).strip().lower()
+    global_id = str(result.get("id") or "").strip()
+    if parish_id and parish_hymn_id and global_id:
+        try:
+            from services.parish_hymn_overrides import mark_parish_song_promoted
+
+            mark_parish_song_promoted(
+                parish_id,
+                hymn_id=parish_hymn_id,
+                section=parish_section,
+                global_hymn_id=global_id,
+            )
+        except Exception:
+            logger.warning("Could not mark parish song as promoted", exc_info=True)
+
+    # Only after SA approval does the song appear in Global recent history.
+    if acting_user_id and global_id:
+        try:
+            from services.user_song_history import sync_user_song_history
+
+            sync_user_song_history(
+                acting_user_id,
+                [
+                    {
+                        "title": str(result.get("title") or payload.get("title") or ""),
+                        "section": parish_section,
+                        "id": global_id,
+                        "language": str(payload.get("language") or ""),
+                        "kind": "new",
+                    }
+                ],
+                is_superadmin=True,
+            )
+        except Exception:
+            logger.warning("Could not sync approved song into global history", exc_info=True)
+
     _log_admin_action(
         actor_user_id=acting_user_id,
         action="approve",
         entity_type="song_submission",
         entity_id=str(row.get("id") or submission_id),
-        detail={"title": payload.get("title")},
+        detail={"title": payload.get("title"), "global_id": global_id},
     )
     return {"ok": True, "song": result, "submission": row}
 
