@@ -643,24 +643,34 @@ def approve_song_submission(
         except Exception:
             logger.warning("Could not mark parish song as promoted", exc_info=True)
 
-    # Only after SA approval does the song appear in Global recent history.
-    if acting_user_id and global_id:
+    # Only after SA approval does the song appear in Global recent history,
+    # attributed to the member who submitted it (not the approving superadmin).
+    if global_id:
         try:
-            from services.user_song_history import sync_user_song_history
+            from services.user_song_history import (
+                record_global_song_history_entry,
+                resolve_history_actor_user_id,
+            )
 
-            sync_user_song_history(
-                acting_user_id,
-                [
+            submitter_uid, submitter_label = resolve_history_actor_user_id(
+                user_id=str(row.get("submitted_by_user_id") or "").strip() or None,
+                email=str(row.get("submitted_by_email") or "").strip() or None,
+            )
+            history_uid = submitter_uid or (acting_user_id or "").strip()
+            if history_uid:
+                record_global_song_history_entry(
+                    history_uid,
                     {
                         "title": str(result.get("title") or payload.get("title") or ""),
                         "section": parish_section,
                         "id": global_id,
                         "language": str(payload.get("language") or ""),
                         "kind": "new",
-                    }
-                ],
-                is_superadmin=True,
-            )
+                    },
+                    actor_label=submitter_label
+                    or str(row.get("submitted_by_email") or "").strip()
+                    or None,
+                )
         except Exception:
             logger.warning("Could not sync approved song into global history", exc_info=True)
 

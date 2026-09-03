@@ -583,7 +583,7 @@
     },
     {
       "id": "great_is_god",
-      "title": "Great Is God",
+      "title": "Great Is Our God",
       "author": "",
       "lyrics": "Chorus\nCome Let Us Sing To Every Nation:\n\"Great Is Our God And King!\nHe Is The Rock Of Our Salvation\nLift Up Your Hearts And Sing!\"\n\nVerse 1\nSo Sing, For We Are God's People\nFor He Has Shown Us His Ways\nHe Gathers Us To His Table\nTo Partake Of His Grace\n\nChorus\nCome Let Us Sing To Every Nation:\n\"Great Is Our God And King!\nHe Is The Rock Of Our Salvation\nLift Up Your Hearts And Sing!\"\n\nVerse 2\nSo When The Lord’s Voice You Hear\nDon't Fear Or Harden Your Hearts\nWe Know That Our God Is Near\nBy The Word He Imparts\n\nChorus\nCome Let Us Sing To Every Nation:\n\"Great Is Our God And King!\nHe Is The Rock Of Our Salvation\nLift Up Your Hearts And Sing!\"\n\nOutro\nGreat Is Our God And King",
       "source": "lyrics_dashboard",
@@ -592,17 +592,27 @@
       ],
       "added_at": "2026-08-21T14:03:31.316974+00:00",
       "language": "English",
-      "updated_at": "2026-08-21T14:04:08.189614+00:00",
+      "updated_at": "2026-09-03T12:00:41.310405+00:00",
       "audio_media": {
-        "source": "youtube",
         "basename": "yt:KLR3fLtDCHU",
+        "display_name": "YouTube",
+        "source": "youtube",
         "youtube_id": "KLR3fLtDCHU",
-        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU",
-        "display_name": "YouTube"
+        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU"
       },
       "gospel_moods": [
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "basename": "preview_entrance_great_is_god_10.mp3",
+        "display_name": "10s preview",
+        "duration_sec": 10,
+        "start_sec": 12.5,
+        "source": "preview",
+        "method": "chorus",
+        "youtube_id": "KLR3fLtDCHU",
+        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU"
+      }
     }
   ],
   "offertory": [
@@ -1110,6 +1120,19 @@
         "display_name": "10s preview",
         "duration_sec": 10
       }
+    },
+    {
+      "id": "blessed_be_god",
+      "title": "Blessed Be God",
+      "author": "",
+      "lyrics": "Verse 1\nBlest Are You, Lord God Of All Creation\nThanks To Your Goodness, This Bread We Offer:\nFruit Of The Earth, Work Of Our Hands,\nIt Will Become The Bread Of Life.\n\nResponse\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\n\nVerse 2\nBlest Are You, Lord God Of All Creation\nThanks To Your Goodness, This Wine We Offer:\nFruit Of The Vine, Work Of Our Hands,\nIt Will Become Our Cup Of Joy.\n\nResponse 2\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-03T11:31:53.217719+00:00",
+      "language": "English",
+      "updated_at": "2026-09-03T11:31:53.217719+00:00"
     }
   ],
   "communion": [

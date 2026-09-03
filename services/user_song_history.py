@@ -108,6 +108,7 @@ def _profile_label(row: dict[str, Any]) -> str:
 
 def _row_to_api(row: dict[str, Any], *, actor_labels: Optional[dict[str, str]] = None) -> dict[str, Any]:
     uid = str(row.get("user_id") or "").strip()
+    override = str(row.get("actor_label") or "").strip()
     payload: dict[str, Any] = {
         "t": _iso_to_ms(row.get("activity_at")),
         "title": str(row.get("title") or ""),
@@ -118,8 +119,10 @@ def _row_to_api(row: dict[str, Any], *, actor_labels: Optional[dict[str, str]] =
     }
     if uid:
         payload["user_id"] = uid
-        if actor_labels and uid in actor_labels:
-            payload["actor_name"] = actor_labels[uid]
+    if override:
+        payload["actor_name"] = override
+    elif uid and actor_labels and uid in actor_labels:
+        payload["actor_name"] = actor_labels[uid]
     return payload
 
 
@@ -203,7 +206,7 @@ def list_global_song_history(
         client = _client_for_user(access_token)
         result = (
             client.table("user_song_history")
-            .select("user_id, section, hymn_id, title, language, kind, activity_at, dedupe_key")
+            .select("user_id, section, hymn_id, title, language, kind, activity_at, dedupe_key, actor_label")
             .eq("scope_key", GLOBAL_SCOPE_KEY)
             .order("activity_at", desc=True)
             .limit(min(cap * 4, 480))
@@ -234,7 +237,7 @@ def list_parish_song_history(
         client = _client_for_user(access_token)
         result = (
             client.table("user_song_history")
-            .select("user_id, section, hymn_id, title, language, kind, activity_at, dedupe_key")
+            .select("user_id, section, hymn_id, title, language, kind, activity_at, dedupe_key, actor_label")
             .eq("parish_id", pid)
             .order("activity_at", desc=True)
             .limit(min(cap * 4, 480))
@@ -271,6 +274,84 @@ def _trim_user_song_history(
         if not row_id:
             continue
         client.table("user_song_history").delete().eq("id", row_id).execute()
+
+
+def record_global_song_history_entry(
+    user_id: str,
+    entry: dict[str, Any],
+    *,
+    actor_label: Optional[str] = None,
+) -> dict[str, Any]:
+    """Service-role insert into Global history attributed to ``user_id`` (e.g. submitter)."""
+    uid = (user_id or "").strip()
+    if not uid or not supabase_enabled():
+        return {"ok": False, "error": "user_id required"}
+    row = _normalize_entry(entry if isinstance(entry, dict) else {})
+    if not row:
+        return {"ok": False, "error": "invalid entry"}
+    try:
+        client = get_service_client()
+        payload: dict[str, Any] = {
+            "user_id": uid,
+            "parish_id": None,
+            "scope_key": GLOBAL_SCOPE_KEY,
+            "dedupe_key": row["dedupe_key"],
+            "section": row["section"],
+            "hymn_id": row["hymn_id"],
+            "title": row["title"],
+            "language": row["language"],
+            "kind": row["kind"],
+            "activity_at": row["activity_at"],
+            "actor_label": (actor_label or "").strip()[:120],
+        }
+        client.table("user_song_history").upsert(
+            payload,
+            on_conflict="user_id,scope_key,dedupe_key",
+        ).execute()
+        _trim_user_song_history(client, uid, GLOBAL_SCOPE_KEY)
+        return {"ok": True, "synced": True, "scope": "global", "user_id": uid}
+    except Exception as exc:
+        logger.warning("record_global_song_history_entry failed (%s)", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def resolve_history_actor_user_id(
+    *,
+    user_id: Optional[str] = None,
+    email: Optional[str] = None,
+) -> tuple[Optional[str], str]:
+    """Return (user_id, display_label) for history attribution."""
+    uid = (user_id or "").strip()
+    mail = (email or "").strip()
+    label = ""
+    if uid:
+        try:
+            profile = get_profile(uid) or {}
+            label = _profile_label(profile)
+            if label:
+                return uid, label
+        except Exception:
+            pass
+        return uid, label or "Member"
+    if mail and supabase_enabled():
+        try:
+            client = get_service_client()
+            result = (
+                client.table("profiles")
+                .select("id, first_name, last_name, email")
+                .eq("email", mail)
+                .limit(1)
+                .execute()
+            )
+            rows = result.data or []
+            if rows and isinstance(rows[0], dict) and rows[0].get("id"):
+                return str(rows[0]["id"]), _profile_label(rows[0])
+        except Exception:
+            pass
+        if "@" in mail:
+            return None, mail.split("@", 1)[0]
+        return None, mail
+    return None, ""
 
 
 def sync_user_song_history(

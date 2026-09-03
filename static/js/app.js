@@ -1,6 +1,9 @@
-/* Main SPA app logic — extracted from templates/index.html */
-/* Restore point: git tag restore-before-index-split */
-    const $ = (id) => document.getElementById(id);
+/* Verbum SPA — generated from static/js/app/app-0N-*.js
+ * Edit the part files, then run: python3 scripts/rebuild-app-js.py
+ */
+
+/* ==== app-01-core.js ==== */
+    var $ = (id) => document.getElementById(id);
 
     function syncAppHeaderOffset() {
       const header = $("app-header");
@@ -26,7 +29,7 @@
     }
     initAppHeaderOffset();
 
-    const mobileChromeRestore = { inited: false, litBefore: null, notifBefore: null, tickerNext: null, createParent: null, navParent: null, navNext: null };
+    var mobileChromeRestore = { inited: false, litBefore: null, notifBefore: null, tickerNext: null, createParent: null, navParent: null, navNext: null };
 
     function isMobileChromeLayout() {
       return !!(window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
@@ -212,11 +215,11 @@
       }, { passive: true });
     }
 
-    const MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
-    const MOBILE_NAV_DEFAULT_ORDER = ["/home", "/mass/builder", "/library/songs", "/notifications"];
-    const MOBILE_NAV_LOCKED = new Set(["/home", "/mass/builder", "/library/songs"]);
-    let mobileNavDragBound = false;
-    let mobileNavDragState = null;
+    var MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
+    var MOBILE_NAV_DEFAULT_ORDER = ["/home", "/mass/builder", "/library/songs", "/notifications"];
+    var MOBILE_NAV_LOCKED = new Set(["/home", "/mass/builder", "/library/songs"]);
+    var mobileNavDragBound = false;
+    var mobileNavDragState = null;
 
     function shortMobileNavLabel(text) {
       const t = String(text || "").trim();
@@ -549,17 +552,17 @@
 
       document.addEventListener("pointerdown", onPointerDown, true);
     }
-    const escapeHtml = (value) => {
+    var escapeHtml = (value) => {
       const div = document.createElement("div");
       div.textContent = String(value || "");
       return div.innerHTML;
     };
-    const formatDateInput = (date) => {
+    var formatDateInput = (date) => {
       const d = new Date(date);
       if (Number.isNaN(d.getTime())) return "";
       return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     };
-    const PRACTICE_DEVICE_STORE_KEY = "lf-practice-device-id";
+    var PRACTICE_DEVICE_STORE_KEY = "lf-practice-device-id";
     function getPracticeDeviceId() {
       try {
         let id = String(localStorage.getItem(PRACTICE_DEVICE_STORE_KEY) || "").trim();
@@ -583,7 +586,7 @@
     window.getPracticeDeviceId = getPracticeDeviceId;
     window.practiceDeviceHeaders = practiceDeviceHeaders;
 
-    const postJSON = async (url, body, opts) => {
+    var postJSON = async (url, body, opts) => {
       const skipAuthWait = !!(opts && opts.skipAuthWait);
       if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
@@ -621,7 +624,7 @@
       return data;
     };
 
-    const getJSON = async (url, opts) => {
+    var getJSON = async (url, opts) => {
       const skipAuthWait = !!(opts && opts.skipAuthWait);
       if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
@@ -640,13 +643,13 @@
       return data;
     };
 
-    const previewCache = new Map();
-    const previewInflight = new Map();
-    const readingsInflight = new Map();
-    const READINGS_LS_PREFIX = "verbumReadings:";
-    const READINGS_POLL_INTERVAL_MS = 4000;
-    const READINGS_POLL_MAX_ATTEMPTS = 18;
-    const readingsPollers = new Map();
+    var previewCache = new Map();
+    var previewInflight = new Map();
+    var readingsInflight = new Map();
+    var READINGS_LS_PREFIX = "verbumReadings:";
+    var READINGS_POLL_INTERVAL_MS = 4000;
+    var READINGS_POLL_MAX_ATTEMPTS = 18;
+    var readingsPollers = new Map();
 
     function currentMassLanguage() {
       const sel = $("flow-mass-language");
@@ -934,15 +937,15 @@
       });
     });
 
-    const THEME_STORAGE_KEY = "verbumColorTheme";
-    const TOGGLE_DARK_STORAGE_KEY = "verbumToggleDarkMode";
-    const ACCENT_STORAGE_KEY = "verbumAccentColor";
-    const HOME_NEWS_ENABLED_KEY = "verbumHomeNewsEnabled";
-    const HOME_NEWS_VATICAN_KEY = "verbumHomeNewsVatican";
-    const HOME_NEWS_CNA_KEY = "verbumHomeNewsCna";
-    const NAV_TABS_ENABLED_KEY = "verbumNavTabsEnabled";
-    const NAV_TABS_HIDDEN_KEY = "verbumNavTabsHidden"; // legacy — migrated on read
-    const NAV_TAB_DEFS = [
+    var THEME_STORAGE_KEY = "verbumColorTheme";
+    var TOGGLE_DARK_STORAGE_KEY = "verbumToggleDarkMode";
+    var ACCENT_STORAGE_KEY = "verbumAccentColor";
+    var HOME_NEWS_ENABLED_KEY = "verbumHomeNewsEnabled";
+    var HOME_NEWS_VATICAN_KEY = "verbumHomeNewsVatican";
+    var HOME_NEWS_CNA_KEY = "verbumHomeNewsCna";
+    var NAV_TABS_ENABLED_KEY = "verbumNavTabsEnabled";
+    var NAV_TABS_HIDDEN_KEY = "verbumNavTabsHidden"; // legacy — migrated on read
+    var NAV_TAB_DEFS = [
       { id: "home", label: "Home", required: true },
       { id: "mass", label: "Mass", required: true },
       { id: "library", label: "Lyrics Library", required: true },
@@ -1158,37 +1161,37 @@
       });
     }
 
-    const EWTN_RADIO_STORAGE_KEY = "verbumEwtRadioStationId";
-    const EWTN_HLS_FALLBACK = {
+    var EWTN_RADIO_STORAGE_KEY = "verbumEwtRadioStationId";
+    var EWTN_HLS_FALLBACK = {
       us: "https://ewtn-sgrewind.streamguys1.com/sgrewind/english/chunks.m3u8",
       extra: "https://ewtn-sgrewind.streamguys1.com/sgrewind/classics/chunks.m3u8",
       gbie: "https://ewtn-sgrewind.streamguys1.com/sgrewind/sky/chunks.m3u8",
       philippines: "https://ewtn-sgrewind.streamguys1.com/sgrewind/philippines/chunks.m3u8",
       catolica: "https://ewtn-sgrewind.streamguys1.com/sgrewind/spanish/chunks.m3u8",
     };
-    let ewtnRadioStations = [];
-    let ewtnRadioPlaying = false;
-    let ewtnHls = null;
-    let ewtnRadioActiveId = null;
-    let mediaHubPlayerMode = "radio";
-    let savedMediaLibrary = { music: [], video: [] };
-    let libraryPlaylist = [];
-    let libraryTrackIndex = -1;
-    let libraryActiveItem = null;
-    let libraryPlayObjectUrl = null;
-    let librarySeekDragging = false;
+    var ewtnRadioStations = [];
+    var ewtnRadioPlaying = false;
+    var ewtnHls = null;
+    var ewtnRadioActiveId = null;
+    var mediaHubPlayerMode = "radio";
+    var savedMediaLibrary = { music: [], video: [] };
+    var libraryPlaylist = [];
+    var libraryTrackIndex = -1;
+    var libraryActiveItem = null;
+    var libraryPlayObjectUrl = null;
+    var librarySeekDragging = false;
 
-    const MASS_SECTION_VIDEO_SLOTS = [
+    var MASS_SECTION_VIDEO_SLOTS = [
       "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god",
       "entrance", "offertory",
       "communion_1", "communion_2", "communion_3", "communion_4", "communion_5",
       "recessional",
     ];
-    const MASS_SECTION_VIDEO_SLOT_SET = new Set(MASS_SECTION_VIDEO_SLOTS);
-    const MASS_RITE_OPTION_SECTIONS = new Set([
+    var MASS_SECTION_VIDEO_SLOT_SET = new Set(MASS_SECTION_VIDEO_SLOTS);
+    var MASS_RITE_OPTION_SECTIONS = new Set([
       "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god", "penitential", "creed",
     ]);
-    const MASS_RITE_VIDEO_MODE_SECTIONS = new Set([
+    var MASS_RITE_VIDEO_MODE_SECTIONS = new Set([
       "kyrie", "gloria", "sanctus", "our_father", "lamb_of_god",
     ]);
     window.massRiteVideoMode = window.massRiteVideoMode || {};
@@ -1204,7 +1207,7 @@
       else Object.keys(map).forEach((k) => map[k]());
     }
     window.syncRiteVideoUi = syncRiteVideoUi;
-    const MASS_SECTION_MEDIA_LABELS = {
+    var MASS_SECTION_MEDIA_LABELS = {
       kyrie: "Kyrie",
       gloria: "Gloria",
       sanctus: "Sanctus",
@@ -1221,7 +1224,7 @@
       communion_5: "Communion 5",
       recessional: "Recessional",
     };
-    const MASS_RITE_OPTION_LABELS = {
+    var MASS_RITE_OPTION_LABELS = {
       "kyrie::english": "Kyrie · English",
       "kyrie::greek": "Kyrie · Greek",
       "kyrie::latin": "Kyrie · Latin",
@@ -1241,7 +1244,7 @@
       "creed::nicene": "Creed · Nicene",
       "creed::apostles": "Creed · Apostles'",
     };
-    const MASS_RITE_OPTION_PREVIEW_TEXT = {
+    var MASS_RITE_OPTION_PREVIEW_TEXT = {
       "kyrie::english": "Lord, have mercy.\nChrist, have mercy.\nLord, have mercy.",
       "kyrie::greek": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
       "kyrie::latin": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
@@ -1261,10 +1264,10 @@
       "creed::nicene": "I believe in one God,\nthe Father almighty,\nmaker of heaven and earth,\nof all things visible and invisible…\n\n(Full Nicene Creed appears on the Mass slides.)",
       "creed::apostles": "I believe in God,\nthe Father almighty,\nCreator of heaven and earth,\nand in Jesus Christ, his only Son, our Lord…\n\n(Full Apostles' Creed appears on the Mass slides.)",
     };
-    let massSectionMedia = { audio: {}, video: {} };
-    let massSectionAudioEl = null;
-    let massSectionAudioPlayingSlot = "";
-    let massSectionMediaObjectUrl = null;
+    var massSectionMedia = { audio: {}, video: {} };
+    var massSectionAudioEl = null;
+    var massSectionAudioPlayingSlot = "";
+    var massSectionMediaObjectUrl = null;
     // massMediaPickState / composerSongMedia declared with media-pick helpers below.
 
     function revokeMassSectionMediaObjectUrl() {
@@ -1538,8 +1541,8 @@
       return !!(row && row.video_media && (row.video_media.basename || row.video_media));
     }
 
-    let massSongVideoPickPendingSlot = "";
-    let massRiteVideoPickPending = null;
+    var massSongVideoPickPendingSlot = "";
+    var massRiteVideoPickPending = null;
 
     function massRiteOptionMediaInnerHtml(mediaKey, section, lang) {
       const key = String(mediaKey || "").trim();
@@ -1799,7 +1802,7 @@
         .trim();
     }
 
-    const riteSlidePreviewCache = {};
+    var riteSlidePreviewCache = {};
 
     async function fetchRiteSlidePreview(section, option) {
       const sec = String(section || "").trim().toLowerCase();
@@ -2043,8 +2046,8 @@
       });
     }
 
-    const COMPOSER_SONG_MEDIA_SLOT = "song-composer";
-    const COMPOSER_SONG_YOUTUBE_SLOT = "song-composer:yt";
+    var COMPOSER_SONG_MEDIA_SLOT = "song-composer";
+    var COMPOSER_SONG_YOUTUBE_SLOT = "song-composer:yt";
 
     function youtubePlayingSlot(slot) {
       return String(slot || "") + ":yt";
@@ -2055,7 +2058,7 @@
       return window.confirm("Unlink " + label + "?\n\nThis cannot be undone until you link it again.");
     }
 
-    let songMediaPreviewObjectUrl = null;
+    var songMediaPreviewObjectUrl = null;
 
     function revokeSongMediaPreviewObjectUrl() {
       if (songMediaPreviewObjectUrl) {
@@ -2578,7 +2581,7 @@
       void playEl;
     }
 
-    let massMediaPickState = {
+    var massMediaPickState = {
       kind: "",
       slot: "",
       purpose: "mass", // mass | song
@@ -2609,7 +2612,7 @@
       };
     }
 
-    let composerSongMedia = { audio: null, video: null, preview: null };
+    var composerSongMedia = { audio: null, video: null, preview: null };
 
     function setComposerSongMediaField(field, item) {
       const key = field === "video" ? "video" : "audio";
@@ -3498,6 +3501,8 @@
       }
     }
 
+
+/* ==== app-02-media-radio.js ==== */
     function updateLocalCatalogSongPreview(section, songId, previewRef) {
       const id = String(songId || "").trim();
       if (!id) return;
@@ -3606,7 +3611,7 @@
       } catch (_e) { /* local catalog already updated for this session */ }
     }
 
-    const previewFetchState = {
+    var previewFetchState = {
       attempted: {},
       applied: {},
       pollTimer: null,
@@ -4148,9 +4153,9 @@
     window.clearMassYouTubeLink = clearMassYouTubeLink;
     window.renderMassMediaPickList = renderMassMediaPickList;
 
-    const MEDIA_THUMB_PLAY_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><polygon points=\"8 5 19 12 8 19 8 5\"/></svg>";
-    const MEDIA_THUMB_VIDEO_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\"/><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/></svg>";
-    const MEDIA_DOWNLOAD_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/></svg>";
+    var MEDIA_THUMB_PLAY_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><polygon points=\"8 5 19 12 8 19 8 5\"/></svg>";
+    var MEDIA_THUMB_VIDEO_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5\"/><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/></svg>";
+    var MEDIA_DOWNLOAD_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"/></svg>";
 
     function getEwtRadioHlsUrl(station) {
       if (!station) return "";
@@ -5030,8 +5035,8 @@
       return u;
     }
 
-    const HOME_NEWS_PLACEHOLDER_LIGHT = "/static/images/news-no-image-placeholder.png";
-    const HOME_NEWS_PLACEHOLDER_DARK = "/static/images/news-no-image-placeholder-dark.png";
+    var HOME_NEWS_PLACEHOLDER_LIGHT = "/static/images/news-no-image-placeholder.png";
+    var HOME_NEWS_PLACEHOLDER_DARK = "/static/images/news-no-image-placeholder-dark.png";
 
     function getHomeNewsPlaceholderSrc() {
       return (document.documentElement.getAttribute("data-theme") || "light") === "dark"
@@ -5103,13 +5108,13 @@
       return '<article class="' + itemClass + '">' + inner + "</article>";
     }
 
-    const HOME_NEWS_HOME_PREVIEW_COUNT = 6;
-    const HOME_WYD_PREVIEW_COUNT = 3;
-    const HOME_NEWS_EXPAND_COLS = 3;
-    const HOME_NEWS_EXPAND_ROWS = 5;
-    const HOME_NEWS_EXPAND_PAGE_SIZE = HOME_NEWS_EXPAND_COLS * HOME_NEWS_EXPAND_ROWS;
-    const HOME_NEWS_MAX_AGE_DAYS = 3;
-    const EMIL_STAGGER_STEP_MS = 42;
+    var HOME_NEWS_HOME_PREVIEW_COUNT = 6;
+    var HOME_WYD_PREVIEW_COUNT = 3;
+    var HOME_NEWS_EXPAND_COLS = 3;
+    var HOME_NEWS_EXPAND_ROWS = 5;
+    var HOME_NEWS_EXPAND_PAGE_SIZE = HOME_NEWS_EXPAND_COLS * HOME_NEWS_EXPAND_ROWS;
+    var HOME_NEWS_MAX_AGE_DAYS = 3;
+    var EMIL_STAGGER_STEP_MS = 42;
 
     function homeNewsSkeletonHtml(count) {
       const n = count || 6;
@@ -5228,7 +5233,7 @@
       return data;
     }
 
-    const homeNewsExpandState = {
+    var homeNewsExpandState = {
       offset: 0,
       loading: false,
       hasMore: true,
@@ -5280,9 +5285,9 @@
       }
     }
 
-    let homeNewsLastRefreshAt = 0;
-    let wydNewsLastRefreshAt = 0;
-    const HOME_NEWS_STALE_MS = 5 * 60 * 1000;
+    var homeNewsLastRefreshAt = 0;
+    var wydNewsLastRefreshAt = 0;
+    var HOME_NEWS_STALE_MS = 5 * 60 * 1000;
 
     async function refreshCatholicNews(force) {
       const prefs = getHomeNewsPrefs();
@@ -5305,14 +5310,14 @@
       }
     }
 
-    const HEADER_TICKER_ROTATE_MS = 6000;
-    const HEADER_TICKER_HOLD_MS = 2200;
-    const HEADER_TICKER_HOLD_END_MS = 1400;
-    const HEADER_TICKER_SCROLL_PX_PER_SEC = 36;
-    let headerTickerItems = [];
-    let headerTickerIndex = 0;
-    let headerTickerAdvanceTimer = null;
-    let headerTickerScrollTimer = null;
+    var HEADER_TICKER_ROTATE_MS = 6000;
+    var HEADER_TICKER_HOLD_MS = 2200;
+    var HEADER_TICKER_HOLD_END_MS = 1400;
+    var HEADER_TICKER_SCROLL_PX_PER_SEC = 36;
+    var headerTickerItems = [];
+    var headerTickerIndex = 0;
+    var headerTickerAdvanceTimer = null;
+    var headerTickerScrollTimer = null;
 
     function clearHeaderTickerTimers() {
       if (headerTickerAdvanceTimer) {
@@ -5375,7 +5380,7 @@
       });
     }
 
-    const TICKER_SEASON_ACCENTS = {
+    var TICKER_SEASON_ACCENTS = {
       ordinary: "#22c55e",
       advent: "#8b5cf6",
       christmas: "#f59e0b",
@@ -5717,7 +5722,7 @@
       if (va) va.addEventListener("change", onChange);
       if (cna) cna.addEventListener("change", onChange);
     }
-    const VISUAL_STYLE_STORAGE_KEY = "verbumVisualStyle";
+    var VISUAL_STYLE_STORAGE_KEY = "verbumVisualStyle";
 
     function hexToRgb(hex) {
       const raw = String(hex || "").replace("#", "").trim();
@@ -5769,7 +5774,7 @@
     }
 
     /** App icon accent — default app chrome, not season-driven. */
-    const APP_ICON_ACCENT_PALETTE = {
+    var APP_ICON_ACCENT_PALETTE = {
       light: { accent: "#a10f0d", glow: "#b91c1c", secondary: "#788898" },
       dark: { accent: "#a10f0d", glow: "#b91c1c", secondary: "#788898" },
     };
@@ -5975,7 +5980,7 @@
       } catch (_e) { /* ignore */ }
     }
 
-    const routeMeta = {
+    var routeMeta = {
       "/home": "Mission control for the upcoming Sunday Mass.",
       "/notifications": "Liturgical season and app notifications.",
       "/mass/builder": "Assemble songs, timeline, and generate the full package.",
@@ -5994,7 +5999,7 @@
       "/superadmin": "Platform mission control — superadmin only.",
     };
 
-    const routeBreadcrumb = {
+    var routeBreadcrumb = {
       "/home": ["Home"],
       "/notifications": ["Notifications"],
       "/mass/builder": ["Mass", "Builder"],
@@ -6048,7 +6053,7 @@
       }
     }
 
-    const legacyRoutes = {
+    var legacyRoutes = {
       "/today": "/notifications",
       "/lyrics-dashboard": "/library/songs",
       "/theme-dashboard": "/design/theme-lab",
@@ -6056,7 +6061,7 @@
       "/media/presentation": "/mass/builder",
     };
 
-    const EMAIL_DEEPLINK_STORE_KEY = "verbum:email-deeplink";
+    var EMAIL_DEEPLINK_STORE_KEY = "verbum:email-deeplink";
     (function captureEmailDeepLinkEarly() {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -6072,7 +6077,7 @@
       } catch (_e) { /* ignore */ }
     })();
 
-    const rawPathInit = window.location.pathname;
+    var rawPathInit = window.location.pathname;
     if (legacyRoutes[rawPathInit]) {
       history.replaceState({}, "", legacyRoutes[rawPathInit]);
     } else if (rawPathInit === "/" || rawPathInit === "") {
@@ -6337,7 +6342,7 @@
       return route === "/superadmin";
     }
 
-    const SA_UNLOCK_KEY = "verbum:sa-unlocked";
+    var SA_UNLOCK_KEY = "verbum:sa-unlocked";
 
     function currentSaUnlockUserId() {
       try {
@@ -6419,7 +6424,7 @@
       updateCalAdminFetchButtons();
     }
 
-    let saUnlockPendingNotify = false;
+    var saUnlockPendingNotify = false;
 
     function completeSuperadminUnlock() {
       persistSuperadminUnlock();
@@ -6476,13 +6481,13 @@
       return route === "/settings/account" || route === "/settings/church" || route === "/settings/team" || route === "/settings/app";
     }
 
-    let lastNonSettingsRoute = "/home";
+    var lastNonSettingsRoute = "/home";
 
-    const MASS_BUILDER_DRAFT_VERSION = 1;
-    let massDraftSkipRestore = false;
-    let massDraftAutoSaveTimer = null;
-    let massDraftRestoring = false;
-    let massDraftToastLastAt = 0;
+    var MASS_BUILDER_DRAFT_VERSION = 1;
+    var massDraftSkipRestore = false;
+    var massDraftAutoSaveTimer = null;
+    var massDraftRestoring = false;
+    var massDraftToastLastAt = 0;
 
     function massBuilderDraftStorageKey() {
       let scope = "local";
@@ -6971,6 +6976,8 @@
       return page.dataset.route === route;
     }
 
+
+/* ==== app-03-routing-lyrics.js ==== */
     function applyRouteState(r, replaceOnly) {
       if (!isSettingsRoute(r)) lastNonSettingsRoute = r;
       syncAppHeaderOffset();
@@ -7175,7 +7182,7 @@
 
     document.querySelectorAll(".app-sidebar__link[data-route], .app-bottom-nav .nav-link, .app-more-sheet__link.nav-link, .app-mobile-menu__link[data-route], .settings-sidebar-link, .settings-modal-tab, .brand-block[data-route], #account-menu-panel .nav-link, .home-card-head__action[data-route], .home-mass-cta[data-route], .home-mass-snippet[data-route]").forEach(bindSpaRouteLink);
 
-    const appSidebar = document.getElementById("app-sidebar");
+    var appSidebar = document.getElementById("app-sidebar");
     if (appSidebar && appSidebar.dataset.spaBound !== "1") {
       appSidebar.dataset.spaBound = "1";
       appSidebar.addEventListener("click", (event) => {
@@ -7192,7 +7199,7 @@
       event.preventDefault();
       showRoute(link.dataset.route);
     });
-    const routeSwitcherEl = $("route-switcher");
+    var routeSwitcherEl = $("route-switcher");
     if (routeSwitcherEl) routeSwitcherEl.addEventListener("change", (event) => showRoute(event.target.value));
     window.addEventListener("popstate", () => showRoute(currentRoute(), true));
 
@@ -7210,24 +7217,24 @@
       });
     })();
 
-    let lyricBlocks = [];
-    let draggedLyricId = null;
-    let lyricsSyncLock = false;
-    let lyricsRawSnapshot = "";
-    let lyricsAnalyzeInFlight = false;
-    let composerLoadedSong = null;
-    let composerCatalogLyrics = "";
-    let composerParishVersion = false;
-    let composerUndoStack = [];
-    let composerUndoApplying = false;
-    let composerUndoBurstTimer = 0;
-    let composerUndoLabelTimer = 0;
-    let composerUndoHideTimer = 0;
-    const COMPOSER_UNDO_MAX = 40;
-    const COMPOSER_UNDO_BURST_MS = 700;
-    const COMPOSER_UNDO_LABEL_MS = 2600;
-    const COMPOSER_UNDO_EXIT_MS = 120;
-    const typeLabels = {
+    var lyricBlocks = [];
+    var draggedLyricId = null;
+    var lyricsSyncLock = false;
+    var lyricsRawSnapshot = "";
+    var lyricsAnalyzeInFlight = false;
+    var composerLoadedSong = null;
+    var composerCatalogLyrics = "";
+    var composerParishVersion = false;
+    var composerUndoStack = [];
+    var composerUndoApplying = false;
+    var composerUndoBurstTimer = 0;
+    var composerUndoLabelTimer = 0;
+    var composerUndoHideTimer = 0;
+    var COMPOSER_UNDO_MAX = 40;
+    var COMPOSER_UNDO_BURST_MS = 700;
+    var COMPOSER_UNDO_LABEL_MS = 2600;
+    var COMPOSER_UNDO_EXIT_MS = 120;
+    var typeLabels = {
       verse: "Verse",
       chorus: "Chorus",
       "pre-chorus": "Pre-Chorus",
@@ -7236,23 +7243,23 @@
       bridge: "Bridge",
       response: "Response",
     };
-    const LYRIC_BLOCK_DRAG_SVG =
+    var LYRIC_BLOCK_DRAG_SVG =
       '<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">' +
       '<circle cx="2.5" cy="2" r="1.1"/><circle cx="7.5" cy="2" r="1.1"/>' +
       '<circle cx="2.5" cy="7" r="1.1"/><circle cx="7.5" cy="7" r="1.1"/>' +
       '<circle cx="2.5" cy="12" r="1.1"/><circle cx="7.5" cy="12" r="1.1"/></svg>';
-    const LYRIC_BLOCK_ICON_UP =
+    var LYRIC_BLOCK_ICON_UP =
       '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>';
-    const LYRIC_BLOCK_ICON_DOWN =
+    var LYRIC_BLOCK_ICON_DOWN =
       '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
-    const LYRIC_BLOCK_ICON_DUPLICATE =
+    var LYRIC_BLOCK_ICON_DUPLICATE =
       '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-    const LYRIC_BLOCK_ICON_DELETE =
+    var LYRIC_BLOCK_ICON_DELETE =
       '<svg class="lyric-block__btn-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>';
-    const LINES_PER_SLIDE = 6;
-    const HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD = 6;
+    var LINES_PER_SLIDE = 6;
+    var HYMN_DUAL_SOLO_PARAGRAPH_THRESHOLD = 6;
 
     function cloneComposerLyricBlocks(blocks) {
       return (blocks || []).map((block) => Object.assign({}, block));
@@ -7637,17 +7644,17 @@
       return "verse";
     }
 
-    const LYRIC_STRUCTURE_LABEL_NAMES =
+    var LYRIC_STRUCTURE_LABEL_NAMES =
       "pre[- ]?chorus|post[- ]?chorus|pre[- ]?verse|post[- ]?verse|middle[- ]?8|" +
       "refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|" +
       "interlude|instrumental|ending|finale|hook|breakdown|spoken|solo|" +
       "ad[- ]?lib|tag|turnaround|chant";
-    const LYRIC_STRUCTURE_HEADER_RE = new RegExp(
+    var LYRIC_STRUCTURE_HEADER_RE = new RegExp(
       "^\\s*[\\[(]?\\s*(" + LYRIC_STRUCTURE_LABEL_NAMES + ")(\\s*[\\w\\d.-]*)?\\s*[\\])]?\\s*[:.)-]?\\s*$",
       "i"
     );
     // Header + optional number only (not arbitrary words): "Verse 1", "Chorus", "[Refrain]"
-    const LYRIC_STRUCTURE_HEADER_WITH_NUM =
+    var LYRIC_STRUCTURE_HEADER_WITH_NUM =
       "(?:\\[|\\()?\\s*(?:" + LYRIC_STRUCTURE_LABEL_NAMES + ")(?:[ \\t]+\\d+)?\\s*(?:\\]|\\))?\\s*[:.)-]?";
 
     /** Insert blank lines before Verse/Chorus/… labels when lyrics were flattened into one paragraph. */
@@ -7747,7 +7754,7 @@
       }
     }
 
-    const LYRICS_ANALYZE_TOTAL_MS = 2000;
+    var LYRICS_ANALYZE_TOTAL_MS = 2000;
 
     function setLyricsAnalyzeProgress(message) {
       const el = $("lyrics-analyze-overlay-progress");
@@ -7896,8 +7903,8 @@
       openComposerNewSongModal();
     }
 
-    let composerNewSongSearchDebounce = 0;
-    let composerNewSongPickedCatalog = null;
+    var composerNewSongSearchDebounce = 0;
+    var composerNewSongPickedCatalog = null;
 
     function readComposerNewSongMoodChecks() {
       return Array.from(document.querySelectorAll("[data-composer-new-mood-opt]:checked")).map((el) => el.value);
@@ -8958,7 +8965,7 @@
       openComposerSongDetailsModal({ intent: "edit" });
     });
 
-    let lyricsComposerMobileTab = "raw";
+    var lyricsComposerMobileTab = "raw";
 
     function updateLyricsComposerDetailsPreview() {
       const preview = $("lyrics-composer-details-preview");
@@ -9125,10 +9132,10 @@
         }
       }, { passive: true });
     }
-    const LYRICS_FLOAT_FADE_DELAY_MS = 2400;
-    const LYRICS_FLOAT_LEAVE_DELAY_MS = 1400;
-    let lyricsFloatFadeTimer = null;
-    let lyricsFloatBound = false;
+    var LYRICS_FLOAT_FADE_DELAY_MS = 2400;
+    var LYRICS_FLOAT_LEAVE_DELAY_MS = 1400;
+    var lyricsFloatFadeTimer = null;
+    var lyricsFloatBound = false;
 
     function clearLyricsEditorFloatFadeTimer() {
       if (lyricsFloatFadeTimer) {
@@ -9347,7 +9354,7 @@
       });
     }
 
-    let songSaveMoodSearchTitle = "";
+    var songSaveMoodSearchTitle = "";
 
     function closeSongSaveMoodModal() {
       setUiOverlayOpen($("song-save-mood-modal"), false);
@@ -9614,7 +9621,7 @@
       }
     }
 
-    let songSavePendingTitle = "";
+    var songSavePendingTitle = "";
 
     function findExistingCatalogSongMatches(title) {
       if (!songCatalogData || !title) return [];
@@ -9738,16 +9745,16 @@
     // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
     // Theme 1 = Liturgy Flow (amber). Themes 2–3 are strict mono black/white.
     // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (title left).
-    const DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
-    const DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
-    const DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
-    const DIVIDER_STYLES = {
+    var DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
+    var DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
+    var DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
+    var DIVIDER_STYLES = {
       divider1: { id: "divider1", name: "Divider 1 · Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
       divider2: { id: "divider2", name: "Divider 2 · Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
       divider3: { id: "divider3", name: "Divider 3 · Title Left", note: "Sunday title on the left, gospel quote on the right panel." },
       auto: { id: "auto", name: "Auto", note: "Chooses Divider 1–3 from this Mass’s quote and title." },
     };
-    const presetThemes = [
+    var presetThemes = [
       {
         id: "theme1",
         name: "Theme 1 · Liturgy Flow",
@@ -9779,12 +9786,12 @@
         font: "Arial, Helvetica, sans-serif",
       },
     ];
-    let activeTheme = presetThemes[0];
-    let activeDividerStyle = "divider1";
-    let customThemes = [];
-    let deckThemeModalMode = "startup"; // "startup" | "review"
-    let deckThemeModalPendingId = "theme1";
-    let deckDividerModalPendingId = "divider1";
+    var activeTheme = presetThemes[0];
+    var activeDividerStyle = "divider1";
+    var customThemes = [];
+    var deckThemeModalMode = "startup"; // "startup" | "review"
+    var deckThemeModalPendingId = "theme1";
+    var deckDividerModalPendingId = "divider1";
 
     function findPresetTheme(id) {
       const tid = String(id || "").trim().toLowerCase();
@@ -10149,8 +10156,8 @@
       });
     })();
 
-    const MASS_SONG_LANG_KEY = "churchMediaMassSongLang";
-    let massSongPlanLanguage = "all";
+    var MASS_SONG_LANG_KEY = "churchMediaMassSongLang";
+    var massSongPlanLanguage = "all";
 
     function normSongLangToken(s) {
       return String(s || "").trim().toLowerCase();
@@ -10182,23 +10189,23 @@
       if ([...sel.options].some((o) => o.value === v)) sel.value = v;
       massSongPlanLanguage = sel.value;
     }
-    const MASS_COMMUNION_MAX = 5;
-    let massCommunionCount = 2;
-    let lyricSongSlots = [
+    var MASS_COMMUNION_MAX = 5;
+    var massCommunionCount = 2;
+    var lyricSongSlots = [
       { key: "entrance", label: "Entrance song", section: "entrance" },
       { key: "offertory", label: "Offertory song", section: "offertory" },
       { key: "communion_1", label: "Communion song 1", section: "communion" },
       { key: "communion_2", label: "Communion song 2", section: "communion" },
       { key: "recessional", label: "Recessional song", section: "recessional" },
     ];
-    const MASS_SONG_PLAN_MAX_SECTIONS = 10;
-    let massCustomSlotSeq = 0;
-    let selectedLyricsSongs = { entrance: "", offertory: "", communion_1: "", communion_2: "", recessional: "" };
-    let songOptionsBySection = { entrance: [], offertory: [], communion: [], recessional: [], meditation: [] };
-    let flowPreviewData = null;
-    let massPlanAllSongs = [];
-    let massPlanSearchDebounce = null;
-    let massCommunionCountTimer = null;
+    var MASS_SONG_PLAN_MAX_SECTIONS = 10;
+    var massCustomSlotSeq = 0;
+    var selectedLyricsSongs = { entrance: "", offertory: "", communion_1: "", communion_2: "", recessional: "" };
+    var songOptionsBySection = { entrance: [], offertory: [], communion: [], recessional: [], meditation: [] };
+    var flowPreviewData = null;
+    var massPlanAllSongs = [];
+    var massPlanSearchDebounce = null;
+    var massCommunionCountTimer = null;
 
     function clampMassCommunionCount(n) {
       const v = parseInt(n, 10);
@@ -10477,9 +10484,9 @@
       syncPracticeShareContinueEnabled();
     }
 
-    const PS_TITLE_HOLD_MS = 2200;
-    const PS_TITLE_HOLD_END_MS = 1400;
-    const PS_TITLE_SCROLL_PX_PER_SEC = 36;
+    var PS_TITLE_HOLD_MS = 2200;
+    var PS_TITLE_HOLD_END_MS = 1400;
+    var PS_TITLE_SCROLL_PX_PER_SEC = 36;
 
     function clearPracticeShareTitleMarquee(card) {
       if (!card) return;
@@ -10495,6 +10502,8 @@
       card.classList.remove("is-title-marquee");
     }
 
+
+/* ==== app-04-song-plan.js ==== */
     function setupPracticeShareTitleMarquee(card) {
       if (!card || !card.closest("#practice-share-sections-modal")) return;
       const wrap = card.querySelector(".mass-song-plan-card__title-wrap");
@@ -10562,7 +10571,7 @@
       if (isHeaderSheetPanel(panel)) syncHeaderSheetBackdrop({ allowPointer: true });
     }
 
-    const HEADER_SHEET_PANEL_IDS = new Set([
+    var HEADER_SHEET_PANEL_IDS = new Set([
       "notif-panel",
       "account-menu-panel",
       "liturgical-indicator-panel",
@@ -10775,14 +10784,14 @@
       if (!stillOpen) clearPracticeShareDropdownPad();
     }
 
-    const massSongLyricsCache = new Map();
-    const HYMN_TYPO_STORAGE_KEY = "churchMediaHymnTypography";
-    const HYMN_LAYOUT_STORAGE_KEY = "churchMediaHymnLyricsLayout";
-    const HYMN_BODY_ALIGN_STORAGE_KEY = "churchMediaHymnBodyAlign";
-    const HYMN_SECTION_LABELS_STORAGE_KEY = "churchMediaHymnSectionLabels";
-    const COLLECTION_CURRENCY_STORAGE_KEY = "churchMediaCollectionCurrency";
+    var massSongLyricsCache = new Map();
+    var HYMN_TYPO_STORAGE_KEY = "churchMediaHymnTypography";
+    var HYMN_LAYOUT_STORAGE_KEY = "churchMediaHymnLyricsLayout";
+    var HYMN_BODY_ALIGN_STORAGE_KEY = "churchMediaHymnBodyAlign";
+    var HYMN_SECTION_LABELS_STORAGE_KEY = "churchMediaHymnSectionLabels";
+    var COLLECTION_CURRENCY_STORAGE_KEY = "churchMediaCollectionCurrency";
 
-    const COLLECTION_CURRENCIES = {
+    var COLLECTION_CURRENCIES = {
       PHP: { symbol: "₱", prefix: true, spaceAfterSymbol: false, decimals: 0 },
       KRW: { symbol: "₩", prefix: true, spaceAfterSymbol: false, decimals: 0 },
       MYR: { symbol: "RM", prefix: true, spaceAfterSymbol: true, decimals: 0 },
@@ -11044,7 +11053,7 @@
         });
       });
     }
-    const SLOT_TO_HYMN_SECTION = {
+    var SLOT_TO_HYMN_SECTION = {
       entrance: "entrance",
       offertory: "offertory",
       communion_1: "communion",
@@ -11054,18 +11063,18 @@
       communion_5: "communion",
       recessional: "recessional",
     };
-    let hymnTypographyBySection = {};
-    let hymnLyricOverrides = {};
-    const HYMN_LYRIC_OV_KEY = "churchMediaHymnLyricOverrides";
-    const HYMN_SLIDE_PLAN_KEY = "churchMediaHymnSlidePlan";
-    const HYMN_SONG_LAYOUT_KEY = "churchMediaHymnSongLayoutDefaults";
-    let hymnSlidePlans = {};
-    let hymnLayoutOverrides = {};
-    let hymnSongLayoutDefaults = {};
-    let songPreviewState = null;
-    let windowLastMassGenerateBody = null;
-    let hymnSlidePreviewDirty = false;
-    let hymnPreviewBaselineSignature = "";
+    var hymnTypographyBySection = {};
+    var hymnLyricOverrides = {};
+    var HYMN_LYRIC_OV_KEY = "churchMediaHymnLyricOverrides";
+    var HYMN_SLIDE_PLAN_KEY = "churchMediaHymnSlidePlan";
+    var HYMN_SONG_LAYOUT_KEY = "churchMediaHymnSongLayoutDefaults";
+    var hymnSlidePlans = {};
+    var hymnLayoutOverrides = {};
+    var hymnSongLayoutDefaults = {};
+    var songPreviewState = null;
+    var windowLastMassGenerateBody = null;
+    var hymnSlidePreviewDirty = false;
+    var hymnPreviewBaselineSignature = "";
 
     function resetHymnSlidePlansSession() {
       hymnSlidePlans = {};
@@ -11500,9 +11509,9 @@
       return next;
     }
 
-    const HYMN_PPT_SLIDE_W_PT = 1440;
-    const HYMN_PREVIEW_LINE_PITCH = 1.2;
-    const HYMN_PREVIEW_LINE_RELAX = 1.22;
+    var HYMN_PPT_SLIDE_W_PT = 1440;
+    var HYMN_PREVIEW_LINE_PITCH = 1.2;
+    var HYMN_PREVIEW_LINE_RELAX = 1.22;
 
     function hymnPreviewCssLineHeight(pptLineSpacing) {
       const base = Number(pptLineSpacing);
@@ -11568,8 +11577,8 @@
       scope.querySelectorAll(".slide-preview.hymn-slide[data-hymn-slide=\"1\"]").forEach(scaleHymnPreviewSlide);
     }
 
-    let hymnPreviewScaleQueued = false;
-    let hymnPreviewScaleObserver = null;
+    var hymnPreviewScaleQueued = false;
+    var hymnPreviewScaleObserver = null;
 
     function scheduleHymnPreviewScale(root) {
       if (hymnPreviewScaleQueued) return;
@@ -11887,13 +11896,13 @@
       }
     }
 
-    const MASS_SONG_PLAN_DRAG_SVG =
+    var MASS_SONG_PLAN_DRAG_SVG =
       "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\">" +
         "<circle cx=\"9\" cy=\"7\" r=\"1.25\"/><circle cx=\"15\" cy=\"7\" r=\"1.25\"/>" +
         "<circle cx=\"9\" cy=\"12\" r=\"1.25\"/><circle cx=\"15\" cy=\"12\" r=\"1.25\"/>" +
         "<circle cx=\"9\" cy=\"17\" r=\"1.25\"/><circle cx=\"15\" cy=\"17\" r=\"1.25\"/>" +
       "</svg>";
-    const MASS_SONG_PLAN_TRASH_SVG =
+    var MASS_SONG_PLAN_TRASH_SVG =
       "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
         "<path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/>" +
       "</svg>";
@@ -11951,7 +11960,7 @@
       );
     }
 
-    const _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(pre[- ]?chorus|post[- ]?chorus|refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|ending|finale)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
+    var _LYRIC_STRUCTURE_HEADER_RE = /^\[?\s*(pre[- ]?chorus|post[- ]?chorus|refrain|verse|chorus|stanza|bridge|response|coda|intro|vamp|outro|ending|finale)(\s*[\w\d]*)?\]?\s*[:.)-]?\s*$/i;
 
     /** Match backend ``ensure_lyric_section_breaks`` — blank line before Verse/Chorus labels. */
     function ensureLyricSectionBreaks(raw) {
@@ -12635,18 +12644,18 @@
       focusPracticeShareSectionSearch(next.key);
     }
 
-    let practiceShareLastUrl = "";
-    let practiceShareLastLeadUrl = "";
-    let practiceShareLastToken = "";
-    let practiceShareLastPin = "";
-    let practiceShareLastLeaderPin = "";
-    let practiceShareLastMassDate = "";
-    let practiceShareSlotFilter = null;
-    let practiceShareExcludedSlots = new Set();
-    let practiceShareHistoryCache = [];
-    let practiceShareHistoryCountdownTimer = null;
-    const PRACTICE_PIN_LS_PREFIX = "lf-practice-pin:";
-    const PRACTICE_LEADER_PIN_LS_PREFIX = "lf-practice-leader-pin:";
+    var practiceShareLastUrl = "";
+    var practiceShareLastLeadUrl = "";
+    var practiceShareLastToken = "";
+    var practiceShareLastPin = "";
+    var practiceShareLastLeaderPin = "";
+    var practiceShareLastMassDate = "";
+    var practiceShareSlotFilter = null;
+    var practiceShareExcludedSlots = new Set();
+    var practiceShareHistoryCache = [];
+    var practiceShareHistoryCountdownTimer = null;
+    var PRACTICE_PIN_LS_PREFIX = "lf-practice-pin:";
+    var PRACTICE_LEADER_PIN_LS_PREFIX = "lf-practice-leader-pin:";
 
     function practicePinStorageKey(token) {
       return PRACTICE_PIN_LS_PREFIX + String(token || "").trim();
@@ -12884,8 +12893,8 @@
       setTimeout(run, 450);
     }
 
-    let practiceSharePinOtp = null;
-    let practiceShareOpenedFromHistory = false;
+    var practiceSharePinOtp = null;
+    var practiceShareOpenedFromHistory = false;
 
     function getPracticeSharePin() {
       return practiceSharePinOtp ? practiceSharePinOtp.getValue() : "";
@@ -12910,9 +12919,9 @@
       }
     }
 
-    let practiceShareNavHideTimer = null;
-    const PRACTICE_SHARE_NAV_HIDE_MS = 3200;
-    let practiceShareNavGesture = null;
+    var practiceShareNavHideTimer = null;
+    var PRACTICE_SHARE_NAV_HIDE_MS = 3200;
+    var practiceShareNavGesture = null;
 
     function isPracticeShareSheetOpen() {
       const sections = $("practice-share-sections-modal");
@@ -13646,7 +13655,7 @@
       showFallback();
     }
 
-    let practiceShareLoadingTimer = null;
+    var practiceShareLoadingTimer = null;
 
     function stopPracticeShareLoadingAnim() {
       if (practiceShareLoadingTimer) {
@@ -13898,22 +13907,22 @@
       return null;
     }
 
-    const GOSPEL_MOOD_TIPS = {
+    var GOSPEL_MOOD_TIPS = {
       triumphant: "Joyful and triumphant — resurrection light and hope.",
       solemn: "Solemn and reflective — repentance and preparation.",
       mercy: "Gentle and compassionate — mercy and healing warmth.",
       journey: "Forward-moving — call to follow Christ and serve.",
       reverent: "Reverent and worshipful — sacred Sunday storytelling.",
     };
-    const MOOD_PICK_SECTIONS = [
+    var MOOD_PICK_SECTIONS = [
       { key: "entrance", label: "Entrance", slotKey: "entrance", count: 1 },
       { key: "offertory", label: "Offertory", slotKey: "offertory", count: 1 },
       { key: "communion", label: "Communion", slotKeys: communionSlotKeys(massCommunionCount), count: clampMassCommunionCount(massCommunionCount) },
       { key: "recessional", label: "Recessional", slotKey: "recessional", count: 1 },
     ];
-    let massMoodPickSelections = [];
-    let massMoodPickExcludeIds = new Set();
-    const GOSPEL_MOOD_RELATED = {
+    var massMoodPickSelections = [];
+    var massMoodPickExcludeIds = new Set();
+    var GOSPEL_MOOD_RELATED = {
       triumphant: ["reverent"],
       solemn: ["reverent", "mercy"],
       mercy: ["solemn", "reverent"],
@@ -13952,14 +13961,14 @@
       return key ? GOSPEL_MOOD_TIPS[key] : null;
     }
 
-    const COMPOSER_MOOD_KEYWORDS = {
+    var COMPOSER_MOOD_KEYWORDS = {
       triumphant: ["alleluia", "hallelujah", "risen", "resurrection", "easter", "glory", "joyful", "joy to", "crown him", "triumph", "victory", "praise to the lord", "sing a new song"],
       solemn: ["repent", "passion", "cross", "forty days", "lent", "advent", "emmanuel", "prepare the way", "remember me", "save your people", "wait for the lord", "my song is love unknown"],
       mercy: ["mercy", "heal", "comfort", "forgiv", "compassion", "welcome", "afraid", "bread", "table", "hold your people", "tender", "bless"],
       journey: ["here i am", "send me", "follow", "go tell", "city of god", "many parts", "disciples", "mission", "road", "pilgrim", "lead me"],
       reverent: ["holy", "adore", "worship", "praise", "sanctus", "blessed", "lord of", "almighty"],
     };
-    const COMPOSER_MOOD_ORDER = ["triumphant", "solemn", "mercy", "journey", "reverent"];
+    var COMPOSER_MOOD_ORDER = ["triumphant", "solemn", "mercy", "journey", "reverent"];
 
     function inferGospelMoodsFromText(title, author, lyrics) {
       const blob = [
@@ -13999,6 +14008,8 @@
       return arr;
     }
 
+
+/* ==== app-05-community.js ==== */
     function appendSectionSongSelections(selections, sec, songs) {
       if (sec.slotKeys) {
         sec.slotKeys.forEach((slotKey, i) => {
@@ -14270,7 +14281,7 @@
     }
 
     // Legacy EN/TL "first unused" defaults (removed server-side). Sticky drafts still carry these.
-    const LEGACY_FIRST_SONG_DEFAULTS = {
+    var LEGACY_FIRST_SONG_DEFAULTS = {
       entrance: "sing_new_song",
       offertory: "gift_finest_wheat",
       recessional: "we_are_called",
@@ -14355,7 +14366,7 @@
       return moods.map((m) => labels[m] || m).join(", ");
     }
 
-    let composerGospelMoods = [];
+    var composerGospelMoods = [];
 
     function setComposerSongLanguage(value) {
       const sel = $("lyrics-save-language");
@@ -15066,8 +15077,8 @@
       syncFlowDockVisibility("setup");
     })();
 
-    const NOTIF_STORAGE_KEY = "verbumNotifications";
-    let appNotifications = [];
+    var NOTIF_STORAGE_KEY = "verbumNotifications";
+    var appNotifications = [];
 
     function loadAppNotifications() {
       try {
@@ -15305,7 +15316,7 @@
       });
     })();
 
-    const clearNotifBtn = $("btn-clear-notifications");
+    var clearNotifBtn = $("btn-clear-notifications");
     if (clearNotifBtn) {
       clearNotifBtn.addEventListener("click", () => {
         appNotifications = [];
@@ -15327,7 +15338,7 @@
       /* church name is managed in Settings → Church Profile */
     }
 
-    let celebrantNamesCache = [];
+    var celebrantNamesCache = [];
 
     function getMainCelebrantName() {
       const el = $("celebrant");
@@ -15359,7 +15370,7 @@
       if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
     }
 
-    const CELEBRANT_PLACEHOLDER = "Select celebrant";
+    var CELEBRANT_PLACEHOLDER = "Select celebrant";
 
     function setCelebrantPickerValue(name) {
       const hidden = $("celebrant");
@@ -15614,8 +15625,8 @@
     window.ensureCollectionDefaultDate = ensureCollectionDefaultDate;
 
     /** Email CTAs: /sign-in?redirect_url=/home&intent=practice-share&date=… */
-    let emailDeepLinkConsumed = false;
-    let pendingPracticeLyricsHandoff = null;
+    var emailDeepLinkConsumed = false;
+    var pendingPracticeLyricsHandoff = null;
     function readEmailDeepLink() {
       let intent = "";
       let dateParam = "";
@@ -15876,7 +15887,7 @@
       }
     })();
 
-    let churchMembershipState = {
+    var churchMembershipState = {
       membership_status: "draft",
       community_name_locked: false,
       logo_locked: false,
@@ -15907,12 +15918,12 @@
       notify(msg, "error");
       return false;
     }
-    let pendingLogoUploadFile = null;
-    let currentLogoPreviewUrl = "";
-    let currentAvatarPreviewUrl = "";
-    let logoPreviewObjectUrl = "";
-    let avatarPreviewObjectUrl = "";
-    let imagePreviewKind = "logo"; // "logo" | "avatar"
+    var pendingLogoUploadFile = null;
+    var currentLogoPreviewUrl = "";
+    var currentAvatarPreviewUrl = "";
+    var logoPreviewObjectUrl = "";
+    var avatarPreviewObjectUrl = "";
+    var imagePreviewKind = "logo"; // "logo" | "avatar"
 
     /** Safe src for <img> — never append query params to blob:/data:/signed URLs. */
     function displayImageSrc(url) {
@@ -16511,11 +16522,11 @@
       return auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
     }
 
-    const SA_APPROVAL_DONE_KEY = "verbum:sa-approval-done";
-    const SA_APPROVAL_SESSION_KEY = "verbum:sa-session-started";
-    const SA_APPROVAL_MODAL_KEY = "verbum:sa-approval-modal-dismissed";
-    let saApprovalInbox = [];
-    let saApprovalDone = [];
+    var SA_APPROVAL_DONE_KEY = "verbum:sa-approval-done";
+    var SA_APPROVAL_SESSION_KEY = "verbum:sa-session-started";
+    var SA_APPROVAL_MODAL_KEY = "verbum:sa-approval-modal-dismissed";
+    var saApprovalInbox = [];
+    var saApprovalDone = [];
 
     function loadSaApprovalDone() {
       try {
@@ -17062,7 +17073,7 @@
       }
     }
 
-    const saState = {
+    var saState = {
       panel: "dashboard",
       parishes: { page: 1, perPage: 25, q: "" },
       users: { page: 1, perPage: 25, q: "" },
@@ -17075,7 +17086,7 @@
       songPreviews: { page: 1, perPage: 40, q: "", section: "all", status: "all" },
     };
 
-    const SA_PAGE_SIZE = 25;
+    var SA_PAGE_SIZE = 25;
 
     function saPagerMeta(total, page, perPage) {
       const t = Math.max(0, Number(total) || 0);
@@ -17548,6 +17559,8 @@
       }
     }
 
+
+/* ==== app-06-superadmin.js ==== */
     async function saveSaUserParishRole(btn) {
       const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
       if (!uid) return;
@@ -18143,8 +18156,8 @@
       }
     }
 
-    let verbumFeatureFlags = {};
-    const FEATURE_OFF_HINT = "This feature is turned off for maintenance.";
+    var verbumFeatureFlags = {};
+    var FEATURE_OFF_HINT = "This feature is turned off for maintenance.";
 
     function isFeatureEnabled(flagKey) {
       const flags = verbumFeatureFlags || {};
@@ -19588,7 +19601,7 @@
       }
     }
 
-    const RECENT_KEY = "churchMediaRecentDownloads";
+    var RECENT_KEY = "churchMediaRecentDownloads";
 
     function readRecent() {
       try {
@@ -19666,7 +19679,7 @@
       return /^R\.?\s/i.test(refrain) ? refrain : "R. " + refrain;
     }
 
-    const FLOW_FOOD_MAX = 24;
+    var FLOW_FOOD_MAX = 24;
 
     function syncFlowPsalmOverrideHidden() {
       /* legacy no-op — psalm custom line is sent directly from #flow-psalm-custom */
@@ -19926,11 +19939,11 @@
       if (isOrdinary) applyLiturgicalColorBar(liturgicalColor);
     }
 
-    const WYD_2027_START_ISO = "2027-08-03";
-    const USER_EVENTS_KEY = "verbumUserEvents";
-    const USER_EVENT_NAME_KEY = "verbumUserEventName";
-    const USER_EVENT_DATE_KEY = "verbumUserEventDate";
-    let liturgicalCountdownTimer = null;
+    var WYD_2027_START_ISO = "2027-08-03";
+    var USER_EVENTS_KEY = "verbumUserEvents";
+    var USER_EVENT_NAME_KEY = "verbumUserEventName";
+    var USER_EVENT_DATE_KEY = "verbumUserEventDate";
+    var liturgicalCountdownTimer = null;
 
     function parseLocalDateISO(iso) {
       if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
@@ -20100,8 +20113,8 @@
       );
     }
 
-    const EVENTS_MONTH_FILTER_THRESHOLD = 5;
-    let liturgicalSundayCelebrationsCache = {};
+    var EVENTS_MONTH_FILTER_THRESHOLD = 5;
+    var liturgicalSundayCelebrationsCache = {};
 
     function getNextThreeSundayISOs() {
       const sun = getNextSundayCountdownTarget();
@@ -20286,7 +20299,7 @@
       if (tile) tile.classList.toggle("is-empty", !hasContent);
     }
 
-    let eventDateRangeState = { month: new Date(), start: null, end: null };
+    var eventDateRangeState = { month: new Date(), start: null, end: null };
 
     function updateEventDateTriggerLabel() {
       const label = $("home-event-date-trigger-label");
@@ -20801,7 +20814,7 @@
       return "ordinary";
     }
 
-    const NEXT_SEASON_LABELS = {
+    var NEXT_SEASON_LABELS = {
       advent: "Advent",
       christmas: "Christmas",
       lent: "Lent",
@@ -21001,9 +21014,11 @@
       if (signOutBtn) signOutBtn.addEventListener("click", () => closeHeaderMenus());
     }
 
-    const MOBILE_WELCOME_PENDING_KEY = "verbum:mobile-welcome-pending";
-    let mobileWelcomeShownThisLoad = false;
+    var MOBILE_WELCOME_PENDING_KEY = "verbum:mobile-welcome-pending";
+    var mobileWelcomeShownThisLoad = false;
 
+
+/* ==== app-07-posters-slideshow.js ==== */
     function getMobileWelcomeDisplayName() {
       const auth = window.VerbumAuth;
       const user = auth && auth.getUser ? auth.getUser() : null;
@@ -21113,13 +21128,13 @@
       });
     }
 
-    const SONGS_WHATS_NEW_SKIP_KEY = "verbum:songs-whats-new-skip-day";
-    const SONGS_WHATS_NEW_SORT_KEY = "verbum:songs-whats-new-sort";
-    const SONGS_WHATS_NEW_POPUP_KEY = "verbumSongsWhatsNewPopup";
-    let songsWhatsNewPage = 0;
-    let songsWhatsNewData = null;
-    let songsWhatsNewShownThisLoad = false;
-    let songsWhatsNewSort = "date_desc";
+    var SONGS_WHATS_NEW_SKIP_KEY = "verbum:songs-whats-new-skip-day";
+    var SONGS_WHATS_NEW_SORT_KEY = "verbum:songs-whats-new-sort";
+    var SONGS_WHATS_NEW_POPUP_KEY = "verbumSongsWhatsNewPopup";
+    var songsWhatsNewPage = 0;
+    var songsWhatsNewData = null;
+    var songsWhatsNewShownThisLoad = false;
+    var songsWhatsNewSort = "date_desc";
 
     function isSongsWhatsNewPopupEnabled() {
       try {
@@ -21462,7 +21477,7 @@
       });
     }
 
-    const GLOBAL_SEARCH_ITEMS = [
+    var GLOBAL_SEARCH_ITEMS = [
       { id: "page-home", label: "Home", hint: "Page", group: "Pages", route: "/home", keywords: ["home", "dashboard", "liturgyflow", "sunday"] },
       { id: "page-mass", label: "Mass Builder", hint: "Page", group: "Pages", route: "/mass/builder", keywords: ["mass", "builder", "pptx", "powerpoint", "slides", "generate"] },
       { id: "page-songs", label: "Song Library", hint: "Page", group: "Pages", route: "/library/songs", keywords: ["library", "song", "lyrics", "hymn", "music"] },
@@ -21481,8 +21496,8 @@
       { id: "act-readings", label: "Load readings", hint: "Action", group: "Actions", action: "load-readings", keywords: ["readings", "load", "refresh"] },
     ];
 
-    let globalSearchActiveIndex = -1;
-    let globalSearchVisibleItems = [];
+    var globalSearchActiveIndex = -1;
+    var globalSearchVisibleItems = [];
 
     function scoreGlobalSearchItem(item, query) {
       if (!query) return 1;
@@ -21673,7 +21688,7 @@
       globalSearchVisibleItems = [];
     }
 
-    const VB_SELECT_CHEVRON_SVG =
+    var VB_SELECT_CHEVRON_SVG =
       "<svg class=\"vb-select__chevron\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg>";
 
     function syncVerbumSelectTrigger(select) {
@@ -21823,7 +21838,7 @@
       });
     }
 
-    const POSTER_DESIGNS = [
+    var POSTER_DESIGNS = [
       { n: 1, label: "Design 1 · Warm beige" },
       { n: 2, label: "Design 2 · Light, cross accents" },
       { n: 3, label: "Design 3 · Spotlight (dark)" },
@@ -22069,7 +22084,7 @@
       populateHomeMassSnippet("last", lastSundayISO());
     }
 
-    const HOME_SONG_SLOTS = [
+    var HOME_SONG_SLOTS = [
       { key: "entrance", label: "Entrance" },
       { key: "offertory", label: "Offertory" },
       { key: "communion_1", label: "Communion 1" },
@@ -22147,7 +22162,7 @@
       }
     }
 
-    const reflectionImageCache = new Map();
+    var reflectionImageCache = new Map();
 
     function applyReflectionBackground(payload) {
       const card = $("home-reflection-card");
@@ -22268,7 +22283,7 @@
       }
     }
 
-    const WYD_OFFICIAL_URL = "https://wydseoul.org/en";
+    var WYD_OFFICIAL_URL = "https://wydseoul.org/en";
 
     function visitWydSite(skipConfirm) {
       if (!skipConfirm && !window.confirm("Open the official World Youth Day Seoul 2027 website in a new tab?")) {
@@ -22421,7 +22436,7 @@
       } catch (_homeSyncErr) { /* home card optional */ }
     }
 
-    const MASS_PINNED_DEFAULTS_KEY = "mass_builder_pinned_defaults";
+    var MASS_PINNED_DEFAULTS_KEY = "mass_builder_pinned_defaults";
 
     function readMassPinnedDefaults() {
       try {
@@ -22619,9 +22634,9 @@
       }, true);
     }
 
-    let massHabitsCache = null;
-    let massHabitsCacheDate = "";
-    let massHabitsDismissedForDate = "";
+    var massHabitsCache = null;
+    var massHabitsCacheDate = "";
+    var massHabitsDismissedForDate = "";
 
     function hideMassHabitsBanner() {
       const banner = $("mw-habits-banner");
@@ -23024,7 +23039,7 @@
       return data.basename;
     }
 
-    const massGenProgressState = {
+    var massGenProgressState = {
       steps: [],
       current: 0,
       simTimer: null,
@@ -23032,7 +23047,7 @@
       onRetry: null,
     };
 
-    const MASS_GEN_STEP_SETS = {
+    var MASS_GEN_STEP_SETS = {
       standard: [
         "Validating liturgical information",
         "Loading liturgical calendar",
@@ -23505,9 +23520,9 @@
       syncOpenAiPosterUi();
     }
 
-    let massGenReceiptResolve = null;
-    let massGenReceiptEditMode = false;
-    let massGenReceiptOptionsCache = null;
+    var massGenReceiptResolve = null;
+    var massGenReceiptEditMode = false;
+    var massGenReceiptOptionsCache = null;
 
     function receiptSlotShortLabel(song) {
       const map = {
@@ -23956,7 +23971,7 @@
       }
     }
 
-    const massSlideshowState = {
+    var massSlideshowState = {
       open: false,
       index: 0,
       mode: "image",
@@ -23975,8 +23990,8 @@
       complete: true,
     };
 
-    let lastMassGenerateResult = null;
-    let lastMassSlideshowSession = null;
+    var lastMassGenerateResult = null;
+    var lastMassSlideshowSession = null;
     window.__massPresentAvailable = false;
 
     function syncMassPresentAgainUi() {
@@ -24469,6 +24484,8 @@
       rememberMassSlideshowSessionFromState();
     }
 
+
+/* ==== app-08-calendar-catalog.js ==== */
     function bindMassSlideshowControls() {
       if (massSlideshowState.bound) return;
       massSlideshowState.bound = true;
@@ -25045,10 +25062,10 @@
       updatePosterLivePreview();
     }
 
-    let calendarCursor = new Date();
-    let calendarMonthData = {};
-    let calendarMonthLoading = false;
-    let calendarMonthKey = "";
+    var calendarCursor = new Date();
+    var calendarMonthData = {};
+    var calendarMonthLoading = false;
+    var calendarMonthKey = "";
 
     function updateCalReadingCard(refEl, excerptEl, toggleEl, ref, body) {
       const text = (body || "").trim();
@@ -25153,10 +25170,10 @@
       }
     }
 
-    let calReadingsAdminDate = "";
-    let calReadingsAdminDetail = null;
+    var calReadingsAdminDate = "";
+    var calReadingsAdminDetail = null;
 
-    const CAL_ADMIN_FIELD_KEYS = [
+    var CAL_ADMIN_FIELD_KEYS = [
       "first_reading_ref", "first_reading",
       "second_reading_ref", "second_reading",
       "psalm_ref", "psalm_response", "psalm_verses", "psalm_text",
@@ -25255,7 +25272,7 @@
       });
     }
 
-    let calAdminSaveAnimTimer = 0;
+    var calAdminSaveAnimTimer = 0;
 
     function setCalAdminSaveOverlay(mode) {
       // mode: "" | "saving" | "success"
@@ -25416,8 +25433,8 @@
       }
     }
 
-    const CAL_ADMIN_MAX_FETCH_ATTEMPTS = 3;
-    const calAdminFetchJob = {
+    var CAL_ADMIN_MAX_FETCH_ATTEMPTS = 3;
+    var calAdminFetchJob = {
       active: false,
       cancelled: false,
       abort: null,
@@ -25428,7 +25445,7 @@
       improved: 0,
     };
 
-    const CAL_ADMIN_FETCH_BUTTON_IDS = [
+    var CAL_ADMIN_FETCH_BUTTON_IDS = [
       "cal-admin-fetch-missing-btn",
       "cal-admin-fetch-month-btn",
       "cal-readings-admin-fetch",
@@ -25718,7 +25735,7 @@
       }
     }
 
-    let calSelected = upcomingSundayISO();
+    var calSelected = upcomingSundayISO();
 
     function setCalDetail(iso) {
       const prev = calSelected;
@@ -25773,49 +25790,49 @@
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), data.second_reading_reference, data.second_reading_excerpt || "");
     }
 
-    const RECENT_SONGS_KEY = "churchMediaRecentSongAdds";
-    const SONG_HISTORY_MAX = 120;
-    const SONG_HISTORY_SCOPE_KEY = "verbumSongHistoryScope";
-    let songHistorySyncTimer = 0;
-    let songHistoryPullPromise = null;
-    let songHistoryParishPullPromise = null;
-    let songHistoryGlobalPullPromise = null;
-    let parishSongHistoryRows = [];
-    let globalSongHistoryRows = [];
-    const SONG_HISTORY_KIND_LABELS = {
+    var RECENT_SONGS_KEY = "churchMediaRecentSongAdds";
+    var SONG_HISTORY_MAX = 120;
+    var SONG_HISTORY_SCOPE_KEY = "verbumSongHistoryScope";
+    var songHistorySyncTimer = 0;
+    var songHistoryPullPromise = null;
+    var songHistoryParishPullPromise = null;
+    var songHistoryGlobalPullPromise = null;
+    var parishSongHistoryRows = [];
+    var globalSongHistoryRows = [];
+    var SONG_HISTORY_KIND_LABELS = {
       new: "Added",
       edited: "Edited",
       lyrics_updated: "Updated lyrics",
       saved: "Updated lyrics",
       deleted: "Deleted",
     };
-    const COMPOSER_RECENT_KINDS = new Set(["new", "edited", "lyrics_updated", "saved", "deleted"]);
-    const SECTION_ORDER = [
+    var COMPOSER_RECENT_KINDS = new Set(["new", "edited", "lyrics_updated", "saved", "deleted"]);
+    var SECTION_ORDER = [
       { key: "entrance", label: "Entrance" },
       { key: "offertory", label: "Offertory" },
       { key: "communion", label: "Communion" },
       { key: "recessional", label: "Recessional" },
       { key: "meditation", label: "Meditation" },
     ];
-    let songCatalogData = null;
-    let songCatalogFilter = "";
-    let composerPendingFromMassSearch = null;
-    let composerSuppressPreload = false;
-    let composerEditorLoadSeq = 0;
-    let songCatalogLoaded = false;
-    let songCatalogLoadPromise = null;
-    let songCatalogLoadSeq = 0;
-    const SONG_CATALOG_SEARCH_DEBOUNCE_MS = 320;
-    const SONG_CATALOG_SEARCH_MIN_LEN = 2;
-    const SONG_CATALOG_SEARCH_MAX_LEN = 200;
-    const SONG_CATALOG_SEARCH_MIN_WORDS = 1;
-    const SONG_CATALOG_SEARCH_MAX_WORDS = 25;
-    const songDetailCache = new Map();
-    const songDetailInflight = new Map();
-    const SONG_DETAIL_SS_PREFIX = "verbumSong:"; // legacy — no longer persisted
-    let songDetailPrefetchTimer = null;
-    let lyricsAnalyzeFrame = 0;
-    const songCatalogExpanded = { entrance: false, offertory: false, communion: false, recessional: false, meditation: false };
+    var songCatalogData = null;
+    var songCatalogFilter = "";
+    var composerPendingFromMassSearch = null;
+    var composerSuppressPreload = false;
+    var composerEditorLoadSeq = 0;
+    var songCatalogLoaded = false;
+    var songCatalogLoadPromise = null;
+    var songCatalogLoadSeq = 0;
+    var SONG_CATALOG_SEARCH_DEBOUNCE_MS = 320;
+    var SONG_CATALOG_SEARCH_MIN_LEN = 2;
+    var SONG_CATALOG_SEARCH_MAX_LEN = 200;
+    var SONG_CATALOG_SEARCH_MIN_WORDS = 1;
+    var SONG_CATALOG_SEARCH_MAX_WORDS = 25;
+    var songDetailCache = new Map();
+    var songDetailInflight = new Map();
+    var SONG_DETAIL_SS_PREFIX = "verbumSong:"; // legacy — no longer persisted
+    var songDetailPrefetchTimer = null;
+    var lyricsAnalyzeFrame = 0;
+    var songCatalogExpanded = { entrance: false, offertory: false, communion: false, recessional: false, meditation: false };
 
     function songDetailCacheKey(section, id) {
       return String(section || "").trim().toLowerCase() + "\0" + String(id || "").trim();
@@ -26403,7 +26420,7 @@
       scheduleSongHistoryPush(false);
     }
 
-    const SONG_IMPORT_UNDO_KEY = "verbum:last-song-import-undo";
+    var SONG_IMPORT_UNDO_KEY = "verbum:last-song-import-undo";
 
     function rememberSongImportUndo(token, expiresAt) {
       const tid = String(token || "").trim();
@@ -26814,8 +26831,8 @@
       });
     }
 
-    let songCatalogGooglePendingQuery = "";
-    let songCatalogGoogleSearchOpening = false;
+    var songCatalogGooglePendingQuery = "";
+    var songCatalogGoogleSearchOpening = false;
 
     function closeSongCatalogGoogleConfirmModal() {
       const langPick = $("song-catalog-google-lang");
@@ -27110,7 +27127,7 @@
       } catch (_e) { /* ignore */ }
     }
 
-    let composerPreloadSeq = 0;
+    var composerPreloadSeq = 0;
 
     async function preloadComposerFromLatestSong() {
       const seq = ++composerPreloadSeq;
@@ -27379,9 +27396,9 @@
       }
     }
 
-    let songMetaEditCtx = null;
-    let songMetaSnapshot = null;
-    let songDeletePending = null;
+    var songMetaEditCtx = null;
+    var songMetaSnapshot = null;
+    var songDeletePending = null;
 
     function setUiOverlayOpen(modal, open) {
       if (!modal) return;
@@ -27500,6 +27517,8 @@
       );
     }
 
+
+/* ==== app-09-boot.js ==== */
     function refreshMetadataModalPrimaryState() {
       const btn = $("song-metadata-save");
       if (!btn) return;
@@ -28301,7 +28320,7 @@
       if (peer && peer !== sourceEl) peer.value = songCatalogFilter;
     }
 
-    let songCatalogSearchDebounce = null;
+    var songCatalogSearchDebounce = null;
 
     function syncSongComposerCollapseBtn() {
       const panel = $("song-composer-panel");
@@ -28924,8 +28943,8 @@
       );
     }
 
-    const MEDIA_UPLOAD_MAX_FILES = 5;
-    const mediaThumbObjectUrls = new Map();
+    var MEDIA_UPLOAD_MAX_FILES = 5;
+    var mediaThumbObjectUrls = new Map();
 
     function mediaThumbCacheKey(kind, basename) {
       return kind + "|" + basename;
@@ -29228,7 +29247,7 @@
       }
     }
 
-    const savedPosterListEl = $("saved-poster-list");
+    var savedPosterListEl = $("saved-poster-list");
     if (savedPosterListEl) {
       savedPosterListEl.addEventListener("click", async (e) => {
         const b = e.target.closest("button[data-del-poster]");
@@ -29241,7 +29260,7 @@
       });
     }
 
-    const savedPosterUpload = $("saved-poster-upload");
+    var savedPosterUpload = $("saved-poster-upload");
     if (savedPosterUpload) {
       savedPosterUpload.addEventListener("change", async (e) => {
         if (!guardSuperadminAction()) {
@@ -29269,7 +29288,7 @@
 
     wireMediaDropzone("media-upload-drop", "media-upload-file");
 
-    const mediaFileUpload = $("media-upload-file");
+    var mediaFileUpload = $("media-upload-file");
     if (mediaFileUpload) {
       mediaFileUpload.addEventListener("change", async (e) => {
         if (!guardFullAppAction()) {
@@ -29287,7 +29306,7 @@
       });
     }
 
-    let mediaDeletePending = null;
+    var mediaDeletePending = null;
 
     function closeMediaDeleteModal() {
       setUiOverlayOpen($("media-delete-modal"), false);
@@ -29396,11 +29415,11 @@
       }
     }
 
-    const mediaLibrary = $("media-library");
+    var mediaLibrary = $("media-library");
     if (mediaLibrary) mediaLibrary.addEventListener("click", handleSavedMediaListClick);
     initMediaDeleteModal();
 
-    const btnAnalyzeTpl = $("btn-analyze-template-pptx");
+    var btnAnalyzeTpl = $("btn-analyze-template-pptx");
     if (btnAnalyzeTpl) {
       btnAnalyzeTpl.addEventListener("click", async () => {
         if (!guardSuperadminAction()) return;
@@ -29453,7 +29472,7 @@
       calendarMonthKey = "";
       loadCalendarMonth();
     });
-    const calLanguageSel = $("cal-language");
+    var calLanguageSel = $("cal-language");
     if (calLanguageSel) {
       try {
         const savedCalLang = localStorage.getItem("verbumCalLanguage");
@@ -29470,7 +29489,7 @@
         loadCalendarMonth().then(() => setCalDetail(calSelected));
       });
     }
-    const calReadingStack = $("cal-reading-stack");
+    var calReadingStack = $("cal-reading-stack");
     if (calReadingStack) {
       calReadingStack.addEventListener("click", (e) => {
         const toggle = e.target.closest(".cal-reading-toggle");
@@ -29495,7 +29514,7 @@
       setCalDetail(iso);
       openCalReadingsAdminModal(iso);
     });
-    const btnCalEditReadings = $("btn-cal-edit-readings");
+    var btnCalEditReadings = $("btn-cal-edit-readings");
     if (btnCalEditReadings) {
       btnCalEditReadings.addEventListener("click", () => {
         if (!canUseCalendarReadingsAdmin() || !calSelected) return;
@@ -29525,11 +29544,11 @@
     bindCalFetchToggleButton($("cal-readings-admin-fetch"), () => {
       if (calReadingsAdminDate) fetchCalReadingsAdminDate(calReadingsAdminDate);
     });
-    const calReadingsAdminSaveBtn = $("cal-readings-admin-save");
+    var calReadingsAdminSaveBtn = $("cal-readings-admin-save");
     if (calReadingsAdminSaveBtn) {
       calReadingsAdminSaveBtn.addEventListener("click", () => saveCalReadingsAdminAll());
     }
-    const calReadingsAdminModal = $("cal-readings-admin-modal");
+    var calReadingsAdminModal = $("cal-readings-admin-modal");
     if (calReadingsAdminModal) {
       ["cal-readings-admin-close", "cal-readings-admin-backdrop"].forEach((id) => {
         const el = $(id);
@@ -29672,7 +29691,7 @@
     refreshHomeMission();
     refreshHomeSongsCard();
     updateHomeMassWelcome();
-    const bootDeferredData = () => {
+    var bootDeferredData = () => {
       loadCalendarMonth().then(() => setCalDetail(upcomingSundayISO()));
       refreshSavedPosters();
       refreshAiImageQuotaHint();
@@ -29689,7 +29708,7 @@
     }
     }
 
-    let dashboardBooted = false;
+    var dashboardBooted = false;
     function scheduleDashboardBoot() {
       const run = () => {
         if (dashboardBooted) return;
