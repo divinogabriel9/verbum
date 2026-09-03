@@ -2739,34 +2739,39 @@ def api_catalog_songs_whats_new(
 
 @app.get("/api/user/song-history")
 def api_get_user_song_history(
-    scope: str = "mine",
+    scope: str = "parish",
     session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> dict[str, Any]:
-    """Recent Song Library activity for the signed-in user or whole parish."""
+    """Recent Song Library activity: global (superadmin) or parish team."""
     if not session:
         return {"ok": True, "entries": [], "synced": False, "scope": scope}
+    from services.membership_config import is_superadmin_user
     from services.parish_store import get_user_parish_context
-    from services.user_song_history import list_parish_song_history, list_user_song_history
+    from services.user_song_history import list_global_song_history, list_parish_song_history
 
     parish_ctx = get_user_parish_context(session.user.user_id, access_token=session.token) or {}
     parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
-    mode = (scope or "mine").strip().lower()
-    if mode == "parish":
-        if not parish_id:
-            return {"ok": True, "entries": [], "synced": True, "scope": "parish", "parish_id": None}
-        entries = list_parish_song_history(
-            session.user.user_id,
-            access_token=session.token,
-            parish_id=parish_id,
-        )
+    mode = (scope or "parish").strip().lower()
+    if mode in {"mine", "global"}:
+        entries = list_global_song_history(access_token=session.token)
         return {
             "ok": True,
             "entries": entries,
             "synced": True,
-            "scope": "parish",
+            "scope": "global",
             "parish_id": parish_id,
+            "is_superadmin": is_superadmin_user(session.user),
         }
-    entries = list_user_song_history(
+    if not parish_id:
+        return {
+            "ok": True,
+            "entries": [],
+            "synced": True,
+            "scope": "parish",
+            "parish_id": None,
+            "is_superadmin": is_superadmin_user(session.user),
+        }
+    entries = list_parish_song_history(
         session.user.user_id,
         access_token=session.token,
         parish_id=parish_id,
@@ -2775,8 +2780,9 @@ def api_get_user_song_history(
         "ok": True,
         "entries": entries,
         "synced": True,
-        "scope": "mine",
+        "scope": "parish",
         "parish_id": parish_id,
+        "is_superadmin": is_superadmin_user(session.user),
     }
 
 
@@ -2785,20 +2791,25 @@ def api_sync_user_song_history(
     body: UserSongHistorySyncBody,
     session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> dict[str, Any]:
-    """Upsert recent Song Library activity (account + parish sync)."""
+    """Upsert recent Song Library activity (global for superadmin, else parish)."""
     if not session:
         raise HTTPException(status_code=401, detail="Sign in required.")
+    from services.membership_config import is_superadmin_user
     from services.parish_store import get_user_parish_context
-    from services.user_song_history import sync_user_song_history
+    from services.user_song_history import sync_user_song_history, user_is_superadmin
 
     parish_ctx = get_user_parish_context(session.user.user_id, access_token=session.token) or {}
     parish_id = str(parish_ctx.get("parish_id") or "").strip() or None
     payload = [entry.model_dump() for entry in body.entries]
+    is_sa = is_superadmin_user(session.user) or user_is_superadmin(
+        session.user.user_id, access_token=session.token
+    )
     result = sync_user_song_history(
         session.user.user_id,
         payload,
         access_token=session.token,
         parish_id=parish_id,
+        is_superadmin=is_sa,
     )
     if not result.get("ok"):
         raise HTTPException(

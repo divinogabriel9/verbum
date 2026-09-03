@@ -20229,8 +20229,8 @@
             <aside class="song-composer-recent" aria-label="Recent songs">
               <div class="song-composer-recent__head">
                 <h4 class="song-composer-recent__title">Recent</h4>
-                <div class="song-composer-recent__scope flow-segment flow-segment--compact" id="song-composer-recent-scope" role="radiogroup" aria-label="Recent songs scope" hidden>
-                  <label><input type="radio" name="song-recent-scope" value="mine" checked /> Mine</label>
+                <div class="song-composer-recent__scope flow-segment flow-segment--compact" id="song-composer-recent-scope" role="radiogroup" aria-label="Recent songs scope">
+                  <label><input type="radio" name="song-recent-scope" value="global" checked /> Global</label>
                   <label><input type="radio" name="song-recent-scope" value="parish" /> Parish</label>
                 </div>
               </div>
@@ -24550,8 +24550,8 @@
           <div class="new-songs-card">
             <div class="collections-recent-head">
               <strong style="font-size:0.88rem;">Recently added</strong>
-              <div class="song-composer-recent__scope flow-segment flow-segment--compact" id="collections-recent-scope" role="radiogroup" aria-label="Recent songs scope" hidden>
-                <label><input type="radio" name="collections-recent-scope" value="mine" checked /> Mine</label>
+              <div class="song-composer-recent__scope flow-segment flow-segment--compact" id="collections-recent-scope" role="radiogroup" aria-label="Recent songs scope">
+                <label><input type="radio" name="collections-recent-scope" value="global" checked /> Global</label>
                 <label><input type="radio" name="collections-recent-scope" value="parish" /> Parish</label>
               </div>
             </div>
@@ -42030,7 +42030,11 @@
       applyCommunityPayload(data);
       updateAccountMenuDisplay();
       if (typeof syncSongHistoryScopeUi === "function") syncSongHistoryScopeUi();
-      if (typeof pullSongHistoryFromAccount === "function") void pullSongHistoryFromAccount();
+      if (typeof pullSongHistoryFromAccount === "function") {
+        void pullSongHistoryFromAccount().then(() => {
+          if (typeof maybePreloadComposerFromRecentHistory === "function") maybePreloadComposerFromRecentHistory();
+        });
+      }
       if (!celebrantNamesCache.length) {
         migrateCelebrantsFromBrowserStorage().then(() => {
           applyCelebrantNamesFromServer(celebrantNamesCache);
@@ -51476,7 +51480,9 @@
     let songHistorySyncTimer = 0;
     let songHistoryPullPromise = null;
     let songHistoryParishPullPromise = null;
+    let songHistoryGlobalPullPromise = null;
     let parishSongHistoryRows = [];
+    let globalSongHistoryRows = [];
     const SONG_HISTORY_KIND_LABELS = {
       new: "Added",
       edited: "Edited",
@@ -51741,6 +51747,14 @@
       }
     }
 
+    function songHistoryIsSuperadmin() {
+      try {
+        return !!(churchMembershipState && churchMembershipState.is_superadmin);
+      } catch (_e) {
+        return false;
+      }
+    }
+
     function songHistoryParishId() {
       try {
         if (churchMembershipState && churchMembershipState.parish_id) {
@@ -51750,16 +51764,23 @@
       return "";
     }
 
+    function songHistoryWriteBucket() {
+      // Superadmin catalog edits feed Global; parish members feed Parish.
+      return songHistoryIsSuperadmin() ? "global" : "parish";
+    }
+
     function getSongHistoryViewScope() {
       try {
         const saved = String(sessionStorage.getItem(SONG_HISTORY_SCOPE_KEY) || "").trim().toLowerCase();
-        if (saved === "parish" || saved === "mine") return saved;
+        if (saved === "mine") return "global";
+        if (saved === "parish" || saved === "global") return saved;
       } catch (_e) { /* ignore */ }
-      return "mine";
+      return songHistoryParishId() ? "parish" : "global";
     }
 
     function setSongHistoryViewScope(scope) {
-      const next = scope === "parish" ? "parish" : "mine";
+      let next = scope === "parish" ? "parish" : "global";
+      if (next === "parish" && !songHistoryParishId()) next = "global";
       try {
         sessionStorage.setItem(SONG_HISTORY_SCOPE_KEY, next);
       } catch (_e) { /* ignore */ }
@@ -51767,15 +51788,28 @@
       renderCollectionsRecent();
       renderComposerRecent();
       if (next === "parish") void pullParishSongHistoryFromAccount();
+      else void pullGlobalSongHistoryFromAccount();
     }
 
     function syncSongHistoryScopeUi() {
-      const scope = getSongHistoryViewScope();
       const hasParish = !!songHistoryParishId();
+      let scope = getSongHistoryViewScope();
+      if (scope === "parish" && !hasParish) scope = "global";
       const composerScope = $("song-composer-recent-scope");
       const collectionsScope = $("collections-recent-scope");
-      if (composerScope) composerScope.hidden = !hasParish;
-      if (collectionsScope) collectionsScope.hidden = !hasParish;
+      if (composerScope) composerScope.hidden = false;
+      if (collectionsScope) collectionsScope.hidden = false;
+      document.querySelectorAll("#song-composer-recent-scope label, #collections-recent-scope label").forEach((label) => {
+        const input = label.querySelector('input[type="radio"]');
+        if (!input) return;
+        if (input.value === "parish") {
+          label.hidden = !hasParish;
+          input.disabled = !hasParish;
+        } else {
+          label.hidden = false;
+          input.disabled = false;
+        }
+      });
       document.querySelectorAll('input[name="song-recent-scope"]').forEach((input) => {
         input.checked = input.value === scope;
       });
@@ -51786,6 +51820,9 @@
 
     function songHistoryStorageKey() {
       const uid = songHistoryUserId();
+      if (songHistoryWriteBucket() === "global") {
+        return uid ? RECENT_SONGS_KEY + ":global:u:" + uid : RECENT_SONGS_KEY + ":global";
+      }
       const pid = songHistoryParishId();
       if (uid && pid) return RECENT_SONGS_KEY + ":u:" + uid + ":p:" + pid;
       if (uid) return RECENT_SONGS_KEY + ":u:" + uid;
@@ -51813,11 +51850,14 @@
       const sources = [];
       const uid = songHistoryUserId();
       const pid = songHistoryParishId();
+      sources.push(readSongHistoryRawFromKey(songHistoryStorageKey()));
       if (uid) {
-        sources.push(readSongHistoryRawFromKey(songHistoryStorageKey()));
-        if (pid) sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":u:" + uid));
+        sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":global:u:" + uid));
+        if (pid) sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":u:" + uid + ":p:" + pid));
+        sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":u:" + uid));
         sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":u:" + uid + ":p:none"));
       }
+      sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY + ":global"));
       sources.push(readSongHistoryRawFromKey(RECENT_SONGS_KEY));
       const seen = new Set();
       const merged = [];
@@ -51869,45 +51909,60 @@
       return songHistoryParishPullPromise;
     }
 
+    async function pullGlobalSongHistoryFromAccount() {
+      if (!memberApiAvailable()) {
+        globalSongHistoryRows = [];
+        return false;
+      }
+      if (songHistoryGlobalPullPromise) return songHistoryGlobalPullPromise;
+      songHistoryGlobalPullPromise = (async () => {
+        try {
+          const headers = await catalogAuthHeaders();
+          const res = await fetch("/api/user/song-history?scope=global", { headers, cache: "no-store" });
+          if (!res.ok) {
+            globalSongHistoryRows = [];
+            return false;
+          }
+          const data = await res.json();
+          globalSongHistoryRows = (Array.isArray(data.entries) ? data.entries : [])
+            .map((raw) => normalizeSongHistoryRow(raw))
+            .filter(Boolean);
+          if (getSongHistoryViewScope() === "global") {
+            renderCollectionsRecent();
+            renderComposerRecent();
+            if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
+          }
+          return true;
+        } catch (_e) {
+          globalSongHistoryRows = [];
+          return false;
+        } finally {
+          songHistoryGlobalPullPromise = null;
+        }
+      })();
+      return songHistoryGlobalPullPromise;
+    }
+
     async function pullSongHistoryFromAccount() {
       if (!memberApiAvailable()) return false;
       if (songHistoryPullPromise) return songHistoryPullPromise;
       songHistoryPullPromise = (async () => {
         try {
-          const headers = await catalogAuthHeaders();
-          const res = await fetch("/api/user/song-history?scope=mine", { headers, cache: "no-store" });
-          if (!res.ok) return false;
-          const data = await res.json();
-          const remote = Array.isArray(data.entries) ? data.entries : [];
+          // Seed local write-cache from legacy keys, then push own activity into the
+          // correct bucket (global for superadmin, parish for members).
           const local = mergeSongHistoryLists();
-          const byKey = new Map();
-          remote.forEach((raw) => {
-            const r = normalizeSongHistoryRow(raw);
-            if (!r || !r.title) return;
-            byKey.set(recentSongDedupeKey(r), r);
-          });
-          local.forEach((r) => {
-            const key = recentSongDedupeKey(r);
-            const existing = byKey.get(key);
-            if (!existing || (r.t || 0) > (existing.t || 0)) byKey.set(key, r);
-          });
-          const merged = Array.from(byKey.values()).sort((a, b) => (b.t || 0) - (a.t || 0)).slice(0, SONG_HISTORY_MAX);
-          writeSongHistoryRaw(merged);
-          syncSongHistoryScopeUi();
-          if (getSongHistoryViewScope() === "mine") {
-            renderCollectionsRecent();
-            renderComposerRecent();
-            if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
+          if (local.length) {
+            writeSongHistoryRaw(local);
+            scheduleSongHistoryPush(true);
           }
-          const remoteKeys = new Set(
-            remote.map((raw) => {
-              const r = normalizeSongHistoryRow(raw);
-              return r ? recentSongDedupeKey(r) : "";
-            }).filter(Boolean)
-          );
-          const localOnly = merged.some((r) => !remoteKeys.has(recentSongDedupeKey(r)));
-          if (localOnly) scheduleSongHistoryPush(true);
-          void pullParishSongHistoryFromAccount();
+          syncSongHistoryScopeUi();
+          await Promise.all([
+            pullGlobalSongHistoryFromAccount(),
+            pullParishSongHistoryFromAccount(),
+          ]);
+          renderCollectionsRecent();
+          renderComposerRecent();
+          if (typeof refreshHomeSongsCard === "function") refreshHomeSongsCard();
           return true;
         } catch (_e) {
           return false;
@@ -51920,6 +51975,7 @@
 
     function scheduleSongHistoryPush(immediate) {
       if (!memberApiAvailable()) return;
+      if (songHistoryWriteBucket() === "parish" && !songHistoryParishId()) return;
       if (songHistorySyncTimer) {
         clearTimeout(songHistorySyncTimer);
         songHistorySyncTimer = 0;
@@ -51937,7 +51993,8 @@
             headers,
             body: JSON.stringify({ entries: rows }),
           });
-          void pullParishSongHistoryFromAccount();
+          if (songHistoryWriteBucket() === "global") void pullGlobalSongHistoryFromAccount();
+          else void pullParishSongHistoryFromAccount();
         } catch (_e) { /* best-effort sync */ }
       };
       if (immediate) {
@@ -51975,10 +52032,15 @@
     }
 
     function getActiveSongHistoryRows(limit, kindsFilter) {
-      if (getSongHistoryViewScope() === "parish" && songHistoryParishId()) {
+      const scope = getSongHistoryViewScope();
+      const source =
+        scope === "parish" && songHistoryParishId()
+          ? (parishSongHistoryRows || [])
+          : (globalSongHistoryRows || []);
+      if (source.length) {
         const seen = new Set();
         const rows = [];
-        (parishSongHistoryRows || []).forEach((r) => {
+        source.forEach((r) => {
           if (!r || !r.title) return;
           if (kindsFilter && !kindsFilter.has(r.kind)) return;
           const key = recentSongDedupeKey(r);
@@ -51988,6 +52050,7 @@
         });
         return rows.slice(0, limit || 16);
       }
+      // Offline / not-yet-synced fallback: local write cache for the active bucket.
       return getSongHistoryRows(limit, kindsFilter);
     }
 
@@ -52173,11 +52236,12 @@
       if (!el) return;
       syncSongHistoryScopeUi();
       const rows = getActiveSongHistoryRows(14, COMPOSER_RECENT_KINDS);
-      const parishView = getSongHistoryViewScope() === "parish" && songHistoryParishId();
+      const scope = getSongHistoryViewScope();
+      const showActor = true;
       if (!rows.length) {
-        el.innerHTML = parishView
+        el.innerHTML = scope === "parish"
           ? "<p class=\"song-composer-recent-empty\">Parish song activity from your team appears here.</p>"
-          : "<p class=\"song-composer-recent-empty\">Added, edited, or deleted songs appear here.</p>";
+          : "<p class=\"song-composer-recent-empty\">Global catalog updates from Verbum appear here.</p>";
         return;
       }
       el.innerHTML = rows.map((r) => {
@@ -52190,7 +52254,7 @@
         const badge = SONG_HISTORY_KIND_LABELS[r.kind] || "Recent";
         const metaParts = [songSectionLabel(displaySec)];
         if (r.t) metaParts.push(formatSongHistoryWhen(r.t));
-        if (parishView && r.actor_name) metaParts.push(r.actor_name);
+        if (showActor && r.actor_name) metaParts.push(r.actor_name);
         const meta = metaParts.join(" · ");
         const attrs = hasId
           ? " type=\"button\" data-recent-sec=\"" + escapeHtml(displaySec) + "\" data-recent-id=\"" + escapeHtml(r.id) + "\" data-recent-title=\"" + escapeHtml(r.title || "") + "\" data-recent-lang=\"" + escapeHtml(displayLang) + "\""
@@ -52221,11 +52285,11 @@
       if (!el) return;
       syncSongHistoryScopeUi();
       const rows = getActiveSongHistoryRows(12, COMPOSER_RECENT_KINDS);
-      const parishView = getSongHistoryViewScope() === "parish" && songHistoryParishId();
+      const scope = getSongHistoryViewScope();
       if (!rows.length) {
-        el.textContent = parishView
+        el.textContent = scope === "parish"
           ? "No parish activity yet — when your team saves or edits songs, they show up here."
-          : "Nothing tracked yet — saving or opening songs in Song Library adds entries here.";
+          : "No global catalog updates yet — superadmin song changes appear here.";
         return;
       }
       el.innerHTML = rows.map((r) => {
@@ -52237,7 +52301,7 @@
         if (hasId) {
           rightBits.push("<button type=\"button\" class=\"ghost\" style=\"font-size:0.76rem;white-space:nowrap;\" data-jump-song=\"" + escapeHtml(r.section) + "\" data-jump-id=\"" + escapeHtml(r.id) + "\">Open</button>");
         }
-        const actorBit = parishView && r.actor_name
+        const actorBit = r.actor_name
           ? " <span class=\"muted\">· " + escapeHtml(r.actor_name) + "</span>"
           : "";
         return (
@@ -52699,14 +52763,25 @@
     }
 
     function getLatestComposerPreloadEntry() {
-      const rows = readSongHistoryRaw()
-        .map(normalizeSongHistoryRow)
-        .filter((r) => r && r.kind !== "deleted" && r.title);
+      // Prefer the active recent list (global catalog or parish team), newest first.
+      const rows = getActiveSongHistoryRows(32, COMPOSER_RECENT_KINDS).filter(
+        (r) => r && r.kind !== "deleted" && r.title
+      );
       for (let i = 0; i < rows.length; i += 1) {
         const r = rows[i];
         const placement = resolveCatalogSongPlacement(r.section, r.id, r.title);
-        if (placement && placement.row) {
-          return Object.assign({}, r, { section: placement.section, id: placement.id });
+        if (placement && placement.id) {
+          const lang = String(
+            (placement.row && placement.row.language) || r.language || ""
+          ).trim();
+          return Object.assign({}, r, {
+            section: placement.section,
+            id: placement.id,
+            language: lang,
+          });
+        }
+        if (String(r.section || "").trim() && String(r.id || "").trim()) {
+          return r;
         }
       }
       return null;
@@ -52719,18 +52794,45 @@
       return (songCatalogData[sec] || []).some((row) => String(row.id) === sid);
     }
 
+    function composerEditorIsIdleForPreload() {
+      if (composerSuppressPreload) return false;
+      if (composerLoadedSong && composerLoadedSong.id) return false;
+      const raw = ($("lyrics-input") && $("lyrics-input").value.trim()) || "";
+      if (raw) return false;
+      if (lyricBlocks && lyricBlocks.length) return false;
+      return true;
+    }
+
+    function maybePreloadComposerFromRecentHistory() {
+      try {
+        if (typeof normalizeRoute !== "function" || normalizeRoute(currentRoute()) !== "/library/songs") return;
+        if (!composerEditorIsIdleForPreload()) return;
+        void preloadComposerFromLatestSong();
+      } catch (_e) { /* ignore */ }
+    }
+
     let composerPreloadSeq = 0;
 
     async function preloadComposerFromLatestSong() {
       const seq = ++composerPreloadSeq;
+      // Wait for account/parish history so the last edited song is available across devices.
+      if (typeof memberApiAvailable === "function" && memberApiAvailable() && typeof pullSongHistoryFromAccount === "function") {
+        try {
+          await pullSongHistoryFromAccount();
+        } catch (_e) { /* use local cache */ }
+      }
+      if (seq !== composerPreloadSeq) return;
+      if (composerSuppressPreload) return;
       await loadSongCatalog(true);
       if (seq !== composerPreloadSeq) return;
       if (composerSuppressPreload) return;
       renderComposerRecent();
       const entry = getLatestComposerPreloadEntry();
       if (!entry) {
-        resetComposerEditorEmpty();
-        setLyricsStatus("Pick a song from the library or start typing new lyrics.", "");
+        if (composerEditorIsIdleForPreload()) {
+          resetComposerEditorEmpty();
+          setLyricsStatus("Pick a song from the library or start typing new lyrics.", "");
+        }
         return;
       }
       try {
@@ -52741,8 +52843,10 @@
         });
       } catch (_e) {
         if (seq !== composerPreloadSeq) return;
-        resetComposerEditorEmpty();
-        setLyricsStatus("Could not load your most recent song.", "error");
+        if (composerEditorIsIdleForPreload()) {
+          resetComposerEditorEmpty();
+          setLyricsStatus("Could not load your most recent song.", "error");
+        }
       }
     }
 
@@ -55305,14 +55409,18 @@
             acceptParishInviteFromUrl();
             maybeShowMobileWelcomeModal();
             maybeShowSongsWhatsNewModal();
-            void pullSongHistoryFromAccount();
+            void pullSongHistoryFromAccount().then(() => {
+              if (typeof maybePreloadComposerFromRecentHistory === "function") maybePreloadComposerFromRecentHistory();
+            });
           });
         } else {
           refreshCommunity();
           acceptParishInviteFromUrl();
           maybeShowMobileWelcomeModal();
           maybeShowSongsWhatsNewModal();
-          void pullSongHistoryFromAccount();
+          void pullSongHistoryFromAccount().then(() => {
+            if (typeof maybePreloadComposerFromRecentHistory === "function") maybePreloadComposerFromRecentHistory();
+          });
         }
       };
       if (!window.__VERBUM_AUTH_GATE__) {
@@ -55333,7 +55441,9 @@
         if (memberApiAvailable()) {
           loadSongCatalog();
           refreshAiImageQuotaHint();
-          void pullSongHistoryFromAccount();
+          void pullSongHistoryFromAccount().then(() => {
+            if (typeof maybePreloadComposerFromRecentHistory === "function") maybePreloadComposerFromRecentHistory();
+          });
         }
       });
       if (window.VerbumAuth && window.VerbumAuth.isReady && window.VerbumAuth.isReady()) {

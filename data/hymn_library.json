@@ -1084,34 +1084,31 @@
       "id": "living_sacrifice",
       "title": "Living Sacrifice",
       "author": "Chris Christian",
-      "lyrics": "Verse 1\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life a living Sacrifice\nHoly And acceptable To You\n\nVerse 2\nI Look Upon My life And Realize At Last\nWithin Myself There's Nothing I Can Do\nAnd Yet Here I Stand To Offer All I Am\nAnd Give Myself Completely, Lord, To You\n\nVerse 3\nTake My Life A Living Sacrifice\nI Know That It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\n\nVerse 4\nI Cannot Be Content\nUntil I Reach That Place\nHow Little I Have Given Up To You\nLord, Break Down My Will\nMakе My Desires Your Own\nI Long To Give My Еverything To You\n\nVerse 5\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\n\nVerse 6\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\nHoly And Acceptable To You",
+      "lyrics": "Chorus\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life a living Sacrifice\nHoly And acceptable To You\n\nVerse 1\nI Look Upon My life And Realize At Last\nWithin Myself There's Nothing I Can Do\nAnd Yet Here I Stand To Offer All I Am\nAnd Give Myself Completely, Lord, To You\n\nChorus\nTake My Life A Living Sacrifice\nI Know That It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\n\nVerse 2\nI Cannot Be Content\nUntil I Reach That Place\nHow Little I Have Given Up To You\nLord, Break Down My Will\nMakе My Desires Your Own\nI Long To Give My Еverything To You\n\nChorus\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\n\nOutro\nTake My Life A Living Sacrifice\nKnowing It's The Least That I Can Do\nMake My Life A Living Sacrifice\nHoly And Acceptable To You\nHoly And Acceptable To You",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
       "added_at": "2026-08-28T20:54:57.284775+00:00",
       "language": "English",
-      "updated_at": "2026-08-31T07:30:29.745396+00:00",
+      "updated_at": "2026-09-03T09:15:26.962197+00:00",
       "audio_media": {
-        "source": "youtube",
         "basename": "yt:XwmUBqXo-Gs",
+        "display_name": "YouTube",
+        "source": "youtube",
         "youtube_id": "XwmUBqXo-Gs",
-        "youtube_url": "https://www.youtube.com/watch?v=XwmUBqXo-Gs",
-        "display_name": "YouTube"
+        "youtube_url": "https://www.youtube.com/watch?v=XwmUBqXo-Gs"
       },
       "gospel_moods": [
         "mercy",
         "reverent"
       ],
       "audio_preview": {
-        "method": "verse",
-        "source": "preview",
         "basename": "preview_offertory_living_sacrifice_10.mp3",
-        "start_sec": 7.84,
-        "youtube_id": "XwmUBqXo-Gs",
-        "youtube_url": "https://www.youtube.com/watch?v=XwmUBqXo-Gs",
         "display_name": "10s preview",
-        "duration_sec": 10
+        "duration_sec": 10,
+        "start_sec": 7.84,
+        "source": "preview"
       }
     }
   ],

@@ -1,4 +1,4 @@
-"""Per-user / per-parish Song Library recent activity (synced via Supabase)."""
+"""Song Library recent activity: global (superadmin) + parish team scopes."""
 
 from __future__ import annotations
 
@@ -8,12 +8,13 @@ from typing import Any, Optional
 
 from services.auth_config import supabase_enabled
 from services.parish_store import get_user_parish_context
-from services.supabase_client import _client_for_user, get_service_client
+from services.supabase_client import _client_for_user, get_profile, get_service_client
 
 logger = logging.getLogger(__name__)
 
 MAX_ENTRIES = 120
 ALLOWED_KINDS = frozenset({"new", "edited", "lyrics_updated", "saved", "deleted"})
+GLOBAL_SCOPE_KEY = "global"
 
 
 def song_history_dedupe_key(section: str, hymn_id: str, title: str) -> str:
@@ -36,6 +37,17 @@ def normalize_song_history_kind(kind: str) -> str:
     if k in ALLOWED_KINDS:
         return k
     return "lyrics_updated"
+
+
+def user_is_superadmin(user_id: str, *, access_token: Optional[str] = None) -> bool:
+    uid = (user_id or "").strip()
+    if not uid:
+        return False
+    try:
+        profile = get_profile(uid, access_token=access_token) or {}
+        return str(profile.get("role") or "").strip().lower() == "superadmin"
+    except Exception:
+        return False
 
 
 def resolve_parish_id_for_user(
@@ -158,34 +170,51 @@ def _fetch_actor_labels(user_ids: list[str]) -> dict[str, str]:
         return {}
 
 
-def list_user_song_history(
-    user_id: str,
+def _dedupe_latest_rows(rows: list[dict[str, Any]], *, limit: int) -> list[dict[str, Any]]:
+    seen: set[str] = set()
+    picked: list[dict[str, Any]] = []
+    for row in rows:
+        key = str(row.get("dedupe_key") or "").strip()
+        if not key:
+            key = song_history_dedupe_key(
+                str(row.get("section") or ""),
+                str(row.get("hymn_id") or ""),
+                str(row.get("title") or ""),
+            )
+        if key in seen:
+            continue
+        seen.add(key)
+        picked.append(row)
+        if len(picked) >= limit:
+            break
+    return picked
+
+
+def list_global_song_history(
     *,
     access_token: Optional[str] = None,
-    parish_id: Optional[str] = None,
     limit: int = MAX_ENTRIES,
 ) -> list[dict[str, Any]]:
-    uid = (user_id or "").strip()
-    if not uid or not supabase_enabled():
+    """Platform catalog recent activity written by superadmins."""
+    if not supabase_enabled():
         return []
-    pid = resolve_parish_id_for_user(uid, access_token=access_token, parish_id=parish_id)
-    scope = scope_key_for_parish(pid)
     cap = max(1, min(int(limit or MAX_ENTRIES), MAX_ENTRIES))
     try:
         client = _client_for_user(access_token)
         result = (
             client.table("user_song_history")
-            .select("user_id, section, hymn_id, title, language, kind, activity_at")
-            .eq("user_id", uid)
-            .eq("scope_key", scope)
+            .select("user_id, section, hymn_id, title, language, kind, activity_at, dedupe_key")
+            .eq("scope_key", GLOBAL_SCOPE_KEY)
             .order("activity_at", desc=True)
-            .limit(cap)
+            .limit(min(cap * 4, 480))
             .execute()
         )
         rows = [r for r in (result.data or []) if isinstance(r, dict)]
-        return [_row_to_api(row) for row in rows]
+        picked = _dedupe_latest_rows(rows, limit=cap)
+        actor_labels = _fetch_actor_labels([str(r.get("user_id") or "") for r in picked])
+        return [_row_to_api(row, actor_labels=actor_labels) for row in picked]
     except Exception as exc:
-        logger.warning("user_song_history list failed (%s)", exc)
+        logger.warning("user_song_history global list failed (%s)", exc)
         return []
 
 
@@ -212,22 +241,7 @@ def list_parish_song_history(
             .execute()
         )
         rows = [r for r in (result.data or []) if isinstance(r, dict)]
-        seen: set[str] = set()
-        picked: list[dict[str, Any]] = []
-        for row in rows:
-            key = str(row.get("dedupe_key") or "").strip()
-            if not key:
-                key = song_history_dedupe_key(
-                    str(row.get("section") or ""),
-                    str(row.get("hymn_id") or ""),
-                    str(row.get("title") or ""),
-                )
-            if key in seen:
-                continue
-            seen.add(key)
-            picked.append(row)
-            if len(picked) >= cap:
-                break
+        picked = _dedupe_latest_rows(rows, limit=cap)
         actor_labels = _fetch_actor_labels([str(r.get("user_id") or "") for r in picked])
         return [_row_to_api(row, actor_labels=actor_labels) for row in picked]
     except Exception as exc:
@@ -265,16 +279,35 @@ def sync_user_song_history(
     *,
     access_token: Optional[str] = None,
     parish_id: Optional[str] = None,
+    is_superadmin: Optional[bool] = None,
 ) -> dict[str, Any]:
-    """Upsert recent song rows for the user within their parish scope."""
+    """Upsert recent song rows into global (superadmin) or parish scope."""
     uid = (user_id or "").strip()
     if not uid:
         return {"ok": False, "error": "user_id required", "entries": []}
     if not supabase_enabled():
         return {"ok": True, "synced": False, "entries": []}
 
-    pid = resolve_parish_id_for_user(uid, access_token=access_token, parish_id=parish_id)
-    scope = scope_key_for_parish(pid)
+    superadmin = (
+        bool(is_superadmin)
+        if is_superadmin is not None
+        else user_is_superadmin(uid, access_token=access_token)
+    )
+    if superadmin:
+        pid = None
+        scope = GLOBAL_SCOPE_KEY
+        write_scope = "global"
+    else:
+        pid = resolve_parish_id_for_user(uid, access_token=access_token, parish_id=parish_id)
+        if not pid:
+            return {
+                "ok": False,
+                "synced": False,
+                "error": "Join a parish to sync song history.",
+                "entries": [],
+            }
+        scope = scope_key_for_parish(pid)
+        write_scope = "parish"
 
     normalized: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -291,7 +324,14 @@ def sync_user_song_history(
             break
 
     if not normalized:
-        return {"ok": True, "synced": True, "entries": [], "count": 0, "parish_id": pid}
+        return {
+            "ok": True,
+            "synced": True,
+            "entries": [],
+            "count": 0,
+            "parish_id": pid,
+            "scope": write_scope,
+        }
 
     try:
         client = _client_for_user(access_token)
@@ -315,14 +355,36 @@ def sync_user_song_history(
             on_conflict="user_id,scope_key,dedupe_key",
         ).execute()
         _trim_user_song_history(client, uid, scope)
-        stored = list_user_song_history(uid, access_token=access_token, parish_id=pid)
+        if write_scope == "global":
+            stored = list_global_song_history(access_token=access_token)
+        else:
+            stored = list_parish_song_history(uid, access_token=access_token, parish_id=pid)
         return {
             "ok": True,
             "synced": True,
             "entries": stored,
             "count": len(stored),
             "parish_id": pid,
+            "scope": write_scope,
         }
     except Exception as exc:
         logger.warning("user_song_history sync failed (%s)", exc)
         return {"ok": False, "synced": False, "error": str(exc), "entries": []}
+
+
+# Back-compat alias used by older call sites / tests.
+def list_user_song_history(
+    user_id: str,
+    *,
+    access_token: Optional[str] = None,
+    parish_id: Optional[str] = None,
+    limit: int = MAX_ENTRIES,
+) -> list[dict[str, Any]]:
+    if user_is_superadmin(user_id, access_token=access_token):
+        return list_global_song_history(access_token=access_token, limit=limit)
+    return list_parish_song_history(
+        user_id,
+        access_token=access_token,
+        parish_id=parish_id,
+        limit=limit,
+    )
