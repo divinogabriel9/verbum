@@ -602,35 +602,20 @@
       aspect-ratio: 16 / 9;
       position: relative;
     }
-    .practice-yt-embed iframe {
+    .practice-yt-embed iframe,
+    .practice-yt-embed .practice-yt-host {
       display: block;
       width: 100%;
       height: 100%;
       border: 0;
     }
-    .practice-yt-unmute {
-      position: absolute;
-      left: 50%;
-      bottom: 14px;
-      transform: translateX(-50%);
-      z-index: 2;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 14px;
-      border: 0;
-      border-radius: 999px;
-      background: rgba(15, 18, 22, 0.88);
-      color: #fff;
-      font: inherit;
-      font-size: 0.8125rem;
-      font-weight: 700;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+    .practice-yt-embed.is-idle .practice-yt-host,
+    .practice-yt-embed.is-idle iframe {
+      /* Keep player warm/loaded, but don’t invite taps on YouTube’s own play control. */
+      pointer-events: none;
     }
-    .practice-yt-unmute[hidden] {
-      display: none;
+    .practice-yt-unmute {
+      display: none !important;
     }
     .practice-song-head__meta {
       margin: 0;
@@ -1311,6 +1296,9 @@
       let pickerCloseHandler = null;
       let playingYoutubeId = "";
       let practiceYtMuted = false;
+      let practiceYtPlayer = null;
+      let practiceYtPlayerId = "";
+      let practiceYtApiPromise = null;
       let playCoachPhase = "idle"; // idle | tour | pulse | done
       let playCoachEl = null;
       let playCoachTimers = [];
@@ -1622,6 +1610,9 @@
         showCoachStep(0);
       }
 
+      // Warm the YouTube API as soon as practice opens so Play can start with sound on iOS.
+      void loadYouTubeIframeApi();
+
       function esc(s) {
         return String(s || "")
           .replace(/&/g, "&amp;")
@@ -1650,46 +1641,160 @@
       function isAppleTouchDevice() {
         try {
           if (/iPad|iPhone|iPod/.test(navigator.userAgent || "")) return true;
-          // iPadOS reports as Mac but has touch
           if (navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1) return true;
         } catch (_e) { /* ignore */ }
         return false;
       }
 
-      function practiceYoutubeEmbedUrl(ytId, opts) {
-        opts = opts || {};
-        const params = [
-          "autoplay=1",
-          "playsinline=1",
-          "rel=0",
-          "modestbranding=1",
-          "enablejsapi=1",
-        ];
-        if (opts.muted) params.push("mute=1");
-        try {
-          const origin = window.location && window.location.origin;
-          if (origin && /^https?:\/\//.test(origin)) {
-            params.push("origin=" + encodeURIComponent(origin));
+      function loadYouTubeIframeApi() {
+        if (window.YT && window.YT.Player) {
+          return Promise.resolve(window.YT);
+        }
+        if (practiceYtApiPromise) return practiceYtApiPromise;
+        practiceYtApiPromise = new Promise(function (resolve) {
+          const prior = window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady = function () {
+            try { if (typeof prior === "function") prior(); } catch (_e) { /* ignore */ }
+            resolve(window.YT);
+          };
+          if (!document.getElementById("practice-yt-api")) {
+            const tag = document.createElement("script");
+            tag.id = "practice-yt-api";
+            tag.src = "https://www.youtube.com/iframe_api";
+            tag.async = true;
+            document.head.appendChild(tag);
           }
-        } catch (_e) { /* ignore */ }
-        // youtube.com (not nocookie) is more reliable for gesture autoplay on iOS Safari
-        return "https://www.youtube.com/embed/" + encodeURIComponent(ytId) + "?" + params.join("&");
+          // If API already mid-load, poll briefly.
+          let tries = 0;
+          const timer = setInterval(function () {
+            if (window.YT && window.YT.Player) {
+              clearInterval(timer);
+              resolve(window.YT);
+            } else if (++tries > 80) {
+              clearInterval(timer);
+              resolve(null);
+            }
+          }, 50);
+        });
+        return practiceYtApiPromise;
       }
 
-      function mountPracticeYoutubeEmbed(ytId, opts) {
-        opts = opts || {};
-        const muted = !!opts.muted;
-        practiceYtMuted = muted;
+      function destroyPracticeYtPlayer() {
+        try {
+          if (practiceYtPlayer && typeof practiceYtPlayer.destroy === "function") {
+            practiceYtPlayer.destroy();
+          }
+        } catch (_e) { /* ignore */ }
+        practiceYtPlayer = null;
+        practiceYtPlayerId = "";
+      }
+
+      function ensurePracticeYtHost() {
         let wrap = document.getElementById("practice-yt-embed");
         const head = document.querySelector(".practice-song-head");
         if (!wrap && head) {
           wrap = document.createElement("div");
-          wrap.className = "practice-yt-embed";
+          wrap.className = "practice-yt-embed is-idle";
           wrap.id = "practice-yt-embed";
           head.appendChild(wrap);
         }
         if (!wrap) return null;
+        let host = document.getElementById("practice-yt-host");
+        if (!host) {
+          wrap.innerHTML = "";
+          host = document.createElement("div");
+          host.id = "practice-yt-host";
+          host.className = "practice-yt-host";
+          wrap.appendChild(host);
+        }
+        return wrap;
+      }
 
+      function warmupPracticeYoutube(ytId) {
+        if (!ytId) return;
+        const wrap = ensurePracticeYtHost();
+        if (!wrap) return;
+        wrap.classList.toggle("is-idle", playingYoutubeId !== ytId);
+        if (practiceYtPlayerId === ytId && practiceYtPlayer) return;
+
+        destroyPracticeYtPlayer();
+        practiceYtPlayerId = ytId;
+        void loadYouTubeIframeApi().then(function (YT) {
+          if (!YT || !YT.Player) return;
+          if (practiceYtPlayerId !== ytId) return;
+          const host = document.getElementById("practice-yt-host");
+          if (!host) return;
+          try {
+            practiceYtPlayer = new YT.Player("practice-yt-host", {
+              videoId: ytId,
+              width: "100%",
+              height: "100%",
+              playerVars: {
+                autoplay: 0,
+                playsinline: 1,
+                rel: 0,
+                modestbranding: 1,
+                controls: 1,
+                fs: 1,
+                origin: window.location.origin,
+              },
+              events: {
+                onReady: function () {
+                  try {
+                    // Prime the element so the later Play tap can start with sound.
+                    if (practiceYtPlayer && typeof practiceYtPlayer.mute === "function") {
+                      practiceYtPlayer.mute();
+                      practiceYtPlayer.pauseVideo();
+                    }
+                  } catch (_e) { /* ignore */ }
+                },
+              },
+            });
+          } catch (_err) {
+            practiceYtPlayer = null;
+          }
+        });
+      }
+
+      function startPracticeYoutubePlayback(ytId) {
+        playingYoutubeId = ytId;
+        practiceYtMuted = false;
+        const wrap = ensurePracticeYtHost();
+        if (wrap) wrap.classList.remove("is-idle");
+
+        // Best path on iOS: player already warmed — play+unmute inside this tap.
+        if (practiceYtPlayer && practiceYtPlayerId === ytId) {
+          try {
+            // Nudge WebKit's media unlock in the same gesture.
+            try {
+              const AC = window.AudioContext || window.webkitAudioContext;
+              if (AC) {
+                const ctx = new AC();
+                if (ctx.state === "suspended") void ctx.resume();
+              }
+            } catch (_audio) { /* ignore */ }
+            if (typeof practiceYtPlayer.unMute === "function") practiceYtPlayer.unMute();
+            if (typeof practiceYtPlayer.setVolume === "function") practiceYtPlayer.setVolume(100);
+            if (typeof practiceYtPlayer.seekTo === "function") {
+              try { practiceYtPlayer.seekTo(0, true); } catch (_s) { /* ignore */ }
+            }
+            if (typeof practiceYtPlayer.playVideo === "function") practiceYtPlayer.playVideo();
+            return true;
+          } catch (_e) { /* fall through */ }
+        }
+
+        // Player not ready yet — mount unmuted autoplay iframe synchronously in this tap.
+        // (Async YT.Player creation would lose the iOS user-gesture.)
+        mountPracticeYoutubeEmbedFallback(ytId);
+        return true;
+      }
+
+      function mountPracticeYoutubeEmbedFallback(ytId) {
+        destroyPracticeYtPlayer();
+        practiceYtPlayerId = ytId;
+        const wrap = ensurePracticeYtHost();
+        if (!wrap) return;
+        wrap.classList.remove("is-idle");
         wrap.innerHTML = "";
         const iframe = document.createElement("iframe");
         iframe.id = "practice-yt-frame";
@@ -1700,37 +1805,40 @@
         iframe.setAttribute("playsinline", "true");
         iframe.setAttribute("webkit-playsinline", "true");
         iframe.referrerPolicy = "strict-origin-when-cross-origin";
-        // Assign src last, in the user-gesture stack, so iOS treats it as intentional playback.
-        iframe.src = practiceYoutubeEmbedUrl(ytId, { muted: muted });
+        const params = [
+          "autoplay=1",
+          "playsinline=1",
+          "rel=0",
+          "modestbranding=1",
+          "enablejsapi=1",
+        ];
+        try {
+          if (window.location && window.location.origin) {
+            params.push("origin=" + encodeURIComponent(window.location.origin));
+          }
+        } catch (_e) { /* ignore */ }
+        iframe.src = "https://www.youtube.com/embed/" + encodeURIComponent(ytId) + "?" + params.join("&");
         wrap.appendChild(iframe);
-
-        if (muted) {
-          const unmute = document.createElement("button");
-          unmute.type = "button";
-          unmute.className = "practice-yt-unmute";
-          unmute.id = "practice-yt-unmute";
-          unmute.textContent = "Tap for sound";
-          unmute.addEventListener("click", function (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            // Second user gesture — remount unmuted so Safari allows audio.
-            mountPracticeYoutubeEmbed(ytId, { muted: false });
-          });
-          wrap.appendChild(unmute);
-        }
-        return iframe;
       }
 
       function stopPracticeYoutube() {
         playingYoutubeId = "";
         practiceYtMuted = false;
+        try {
+          if (practiceYtPlayer && typeof practiceYtPlayer.pauseVideo === "function") {
+            practiceYtPlayer.pauseVideo();
+            // Stay unmuted so the next Play tap can resume with sound immediately.
+          }
+        } catch (_e) { /* ignore */ }
+        const wrap = document.getElementById("practice-yt-embed");
+        if (wrap) wrap.classList.add("is-idle");
         const frame = document.getElementById("practice-yt-frame");
-        if (frame) {
-          try { frame.src = "about:blank"; } catch (_e) { /* ignore */ }
+        if (frame && !practiceYtPlayer) {
+          // Fallback iframe path — blank it so Close actually stops audio.
+          try { frame.src = "about:blank"; } catch (_e2) { /* ignore */ }
           frame.removeAttribute("src");
+          practiceYtPlayerId = "";
         }
-        const unmute = document.getElementById("practice-yt-unmute");
-        if (unmute) unmute.remove();
       }
 
       function formatDate(iso) {
@@ -2934,14 +3042,19 @@
         const ytId = practiceYoutubeId(song);
         const ytPlaying = !!(ytId && playingYoutubeId === ytId);
 
-        // Keep the live iframe across re-paints so iOS autoplay isn't interrupted.
+        // Keep the warmed/playing YouTube host across re-paints (critical for iOS one-tap play).
         let savedEmbed = null;
-        if (ytPlaying && !opts.forceRemount) {
+        if (ytId && !opts.forceRemount) {
           const live = document.getElementById("practice-yt-embed");
-          if (live && live.querySelector("#practice-yt-frame[src]")) {
+          const sameVideo = practiceYtPlayerId === ytId;
+          if (sameVideo && live && (live.querySelector("#practice-yt-host") || live.querySelector("iframe"))) {
             savedEmbed = live;
             live.remove();
+          } else if (live && practiceYtPlayerId && practiceYtPlayerId !== ytId) {
+            destroyPracticeYtPlayer();
           }
+        } else if (opts.forceRemount) {
+          destroyPracticeYtPlayer();
         }
 
         const playBtn = ytId
@@ -2968,8 +3081,9 @@
               '</div>'
             )
           : ('<h2>' + esc(song.title || "Untitled") + '</h2>');
-        const embed = ytPlaying
-          ? '<div class="practice-yt-embed" id="practice-yt-embed"></div>'
+        // Always reserve the embed when this song has YouTube so we can warm the player before Play.
+        const embed = ytId
+          ? ('<div class="practice-yt-embed' + (ytPlaying ? "" : " is-idle") + '" id="practice-yt-embed"></div>')
           : "";
         root.innerHTML =
           '<div class="practice-song-head">' +
@@ -2987,6 +3101,7 @@
           const placeholder = document.getElementById("practice-yt-embed");
           if (placeholder && placeholder.parentNode) {
             placeholder.parentNode.replaceChild(savedEmbed, placeholder);
+            savedEmbed.classList.toggle("is-idle", !ytPlaying);
           }
         }
 
@@ -2998,27 +3113,40 @@
             ev.stopPropagation();
             if (playingYoutubeId === ytId) {
               stopPracticeYoutube();
-              paintCurrentSong();
+              // Refresh label only — keep warmed player for the next Play.
+              const btn = document.getElementById("practice-yt-play");
+              if (btn) {
+                btn.classList.remove("is-on");
+                btn.setAttribute("aria-pressed", "false");
+                btn.setAttribute("aria-label", "Play YouTube");
+                btn.innerHTML =
+                  '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 19 12 8 19 8 5"/></svg>Play';
+              }
+              const wrap = document.getElementById("practice-yt-embed");
+              if (wrap) wrap.classList.add("is-idle");
               return;
             }
             completePlayCoach();
-            playingYoutubeId = ytId;
-            // Paint shell first, then mount iframe in this same tap so iOS allows autoplay.
-            paintCurrentSong({ skipAutoMount: true, forceRemount: true });
-            mountPracticeYoutubeEmbed(ytId, {
-              // iOS Safari usually blocks unmuted autoplay in cross-origin embeds;
-              // start muted so it actually plays, then offer one-tap unmute.
-              muted: isAppleTouchDevice(),
-            });
+            // Start in this same tap — do not rebuild the page (moving the YT iframe breaks iOS play).
+            startPracticeYoutubePlayback(ytId);
+            ytPlay.classList.add("is-on");
+            ytPlay.setAttribute("aria-pressed", "true");
+            ytPlay.setAttribute("aria-label", "Close YouTube");
+            ytPlay.innerHTML =
+              '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="8 5 19 12 8 19 8 5"/></svg>Close';
           });
         }
-        if (ytPlaying) {
-          if (!savedEmbed && !opts.skipAutoMount) {
-            mountPracticeYoutubeEmbed(ytId, { muted: practiceYtMuted || isAppleTouchDevice() });
+        if (ytId) {
+          if (ytPlaying) {
+            completePlayCoach();
+          } else {
+            if (!savedEmbed || practiceYtPlayerId !== ytId) warmupPracticeYoutube(ytId);
+            requestAnimationFrame(function () {
+              startPlayCoach();
+            });
           }
-          completePlayCoach();
         } else {
-          // Defer so tabs + play button layout are settled.
+          destroyPracticeYtPlayer();
           requestAnimationFrame(function () {
             startPlayCoach();
           });
