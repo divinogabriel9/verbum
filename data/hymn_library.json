@@ -753,6 +753,13 @@
       "added_at": "2026-08-21T14:03:31.316974+00:00",
       "language": "English",
       "updated_at": "2026-09-04T05:53:48.246151+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:KLR3fLtDCHU",
+        "youtube_id": "KLR3fLtDCHU",
+        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU",
+        "display_name": "Great Is Our God"
+      },
       "gospel_moods": [
         "mercy"
       ],
@@ -765,13 +772,6 @@
         "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU",
         "display_name": "10s preview",
         "duration_sec": 10
-      },
-      "audio_media": {
-        "basename": "yt:KLR3fLtDCHU",
-        "display_name": "Great Is Our God",
-        "source": "youtube",
-        "youtube_id": "KLR3fLtDCHU",
-        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU"
       }
     }
   ],
@@ -1695,11 +1695,11 @@
       "language": "Tagalog",
       "updated_at": "2026-09-04T05:51:49.679663+00:00",
       "audio_media": {
-        "basename": "yt:9aqkW1W6Aw0",
-        "display_name": "Tinapay Ng Buhay",
         "source": "youtube",
+        "basename": "yt:9aqkW1W6Aw0",
         "youtube_id": "9aqkW1W6Aw0",
-        "youtube_url": "https://www.youtube.com/watch?v=9aqkW1W6Aw0"
+        "youtube_url": "https://www.youtube.com/watch?v=9aqkW1W6Aw0",
+        "display_name": "Tinapay Ng Buhay"
       },
       "gospel_moods": [
         "solemn",
@@ -2267,6 +2267,13 @@
       "added_at": "2026-09-04T00:16:14.084812+00:00",
       "language": "English",
       "updated_at": "2026-09-04T05:52:54.598741+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:5AM3uQnvP7I",
+        "youtube_id": "5AM3uQnvP7I",
+        "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I",
+        "display_name": "Love Is The Answer"
+      },
       "gospel_moods": [
         "reverent"
       ],
@@ -2276,13 +2283,6 @@
         "start_sec": 11.6,
         "display_name": "10s preview",
         "duration_sec": 10
-      },
-      "audio_media": {
-        "basename": "yt:5AM3uQnvP7I",
-        "display_name": "Love Is The Answer",
-        "source": "youtube",
-        "youtube_id": "5AM3uQnvP7I",
-        "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I"
       }
     },
     {
@@ -2548,6 +2548,13 @@
       "added_at": "2026-09-04T05:09:09.728741+00:00",
       "language": "English",
       "updated_at": "2026-09-04T05:54:58.753129+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:rp55ezAxQkI",
+        "youtube_id": "rp55ezAxQkI",
+        "youtube_url": "https://www.youtube.com/watch?v=rp55ezAxQkI",
+        "display_name": "Covenant Journey"
+      },
       "gospel_moods": [
         "solemn",
         "journey"
@@ -2558,13 +2565,6 @@
         "start_sec": 30.56,
         "display_name": "10s preview",
         "duration_sec": 10
-      },
-      "audio_media": {
-        "basename": "yt:rp55ezAxQkI",
-        "display_name": "Covenant Journey",
-        "source": "youtube",
-        "youtube_id": "rp55ezAxQkI",
-        "youtube_url": "https://www.youtube.com/watch?v=rp55ezAxQkI"
       }
     },
     {
