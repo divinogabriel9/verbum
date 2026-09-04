@@ -1744,12 +1744,21 @@ class GenerateImageResponse(BaseModel):
 
 
 def _resolve_soffice_bin() -> Optional[str]:
-    custom = shutil.which("soffice")
-    if custom:
-        return custom
+    for name in ("soffice", "libreoffice"):
+        custom = shutil.which(name)
+        if custom:
+            return custom
     mac_bin = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
     if Path(mac_bin).is_file():
         return mac_bin
+    linux_bins = (
+        "/usr/bin/soffice",
+        "/usr/bin/libreoffice",
+        "/usr/lib/libreoffice/program/soffice",
+    )
+    for path in linux_bins:
+        if Path(path).is_file():
+            return path
     return None
 
 

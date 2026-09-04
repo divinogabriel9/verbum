@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 import zipfile
 from pathlib import Path
 from typing import Callable, Optional
@@ -98,43 +99,62 @@ def _prepare_lo_user_installation() -> tuple[Path, str]:
                 shutil.copy2(ttf, user_fonts / ttf.name)
             except OSError:
                 logger.warning("Could not copy preview font %s", ttf.name)
-    return profile, profile.resolve().as_uri()
+    uri = profile.resolve().as_uri()
+    if not uri.endswith("/"):
+        uri += "/"
+    return profile, uri
 
 
-def _write_preview_fontconfig(path: Path) -> None:
-    fonts_dir = _FONTS_DIR.resolve()
-    alias = ""
-    conf_src = _FONTS_DIR / "99-verbum-pptx.conf"
-    if conf_src.is_file():
-        raw = conf_src.read_text(encoding="utf-8")
-        raw = re.sub(r"<\?xml[^>]*\?>", "", raw)
-        raw = re.sub(r"<!DOCTYPE[^>]*>", "", raw)
-        raw = raw.replace("<fontconfig>", "").replace("</fontconfig>", "")
-        alias = raw.strip()
-    path.write_text(
-        f"""<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
-<fontconfig>
-  <dir>{fonts_dir}</dir>
-  <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
-  <include ignore_missing="yes">/usr/local/etc/fonts/fonts.conf</include>
-  <include ignore_missing="yes">/opt/homebrew/etc/fonts/fonts.conf</include>
-  {alias}
-  <alias binding="same">
-    <family>Georgia</family>
-    <prefer><family>Gelasio</family></prefer>
-  </alias>
-  <alias binding="same">
-    <family>Arial</family>
-    <prefer><family>Arimo</family></prefer>
-  </alias>
-  <alias binding="same">
-    <family>Calibri</family>
-    <prefer><family>Carlito</family></prefer>
-  </alias>
-</fontconfig>
-""",
-        encoding="utf-8",
+def _wait_for_pdf(out_dir: Path, stems: list[str], *, timeout_s: float = 45.0) -> Optional[Path]:
+    """LibreOffice often exits before the PDF is fully flushed to disk."""
+    deadline = time.monotonic() + max(1.0, timeout_s)
+    while time.monotonic() < deadline:
+        for stem in stems:
+            candidate = out_dir / f"{stem}.pdf"
+            try:
+                if candidate.is_file() and candidate.stat().st_size > 64:
+                    return candidate
+            except OSError:
+                continue
+        pdfs = [p for p in out_dir.glob("*.pdf") if p.is_file()]
+        pdfs = [p for p in pdfs if p.stat().st_size > 64]
+        if pdfs:
+            return max(pdfs, key=lambda p: p.stat().st_mtime)
+        time.sleep(0.35)
+    return None
+
+
+def _run_soffice_convert(
+    *,
+    soffice_bin: str,
+    ppt: Path,
+    out_dir: Path,
+    env: dict[str, str],
+    extra_args: Optional[list[str]] = None,
+    convert_to: str = "pdf",
+    timeout: int = 180,
+) -> subprocess.CompletedProcess[str]:
+    cmd = [
+        soffice_bin,
+        *(extra_args or []),
+        "--headless",
+        "--norestore",
+        "--nologo",
+        "--nodefault",
+        "--nofirststartwizard",
+        "--convert-to",
+        convert_to,
+        "--outdir",
+        str(out_dir),
+        str(ppt.resolve()),
+    ]
+    return subprocess.run(
+        cmd,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env=env,
     )
 
 
@@ -149,7 +169,6 @@ def convert_pptx_to_pdf(
     out_dir.mkdir(parents=True, exist_ok=True)
     profile_dir: Optional[Path] = None
     tmp_dir: Optional[Path] = None
-    fc_dir: Optional[Path] = None
     work_ppt = ppt
     try:
         profile_dir, profile_uri = _prepare_lo_user_installation()
@@ -162,55 +181,93 @@ def convert_pptx_to_pdf(
             logger.warning("Preview font rewrite failed; converting original PPTX", exc_info=True)
             work_ppt = ppt
 
-        env = os.environ.copy()
+        base_env = os.environ.copy()
+        base_env.setdefault("PYTHONUNBUFFERED", "1")
+        # Do not override FONTCONFIG_FILE — a lone conf file replaces system fonts and
+        # can make LibreOffice abort on Linux/Render.
+        # SVP (no display) + writable HOME are Linux/container needs; they crash macOS LO.
+        is_linux = False
         try:
-            fc_dir = Path(tempfile.mkdtemp(prefix="fc-verbum-"))
-            fc_file = fc_dir / "fonts.conf"
-            _write_preview_fontconfig(fc_file)
-            env["FONTCONFIG_FILE"] = str(fc_file.resolve())
-        except Exception:
-            logger.warning("Could not write preview fontconfig", exc_info=True)
+            is_linux = os.uname().sysname == "Linux"
+        except AttributeError:
+            is_linux = False
+        if is_linux:
+            base_env["HOME"] = str(profile_dir)
+            base_env.setdefault("SAL_USE_VCLPLUGIN", "svp")
+            base_env.setdefault("DBUS_SESSION_BUS_ADDRESS", "/dev/null")
+            base_env.setdefault("LANG", "C.UTF-8")
+            base_env.setdefault("LC_ALL", "C.UTF-8")
 
-        cmd = [
-            soffice_bin,
-            f"-env:UserInstallation={profile_uri}",
-            "--headless",
-            "--norestore",
-            "--convert-to",
-            "pdf",
-            "--outdir",
-            str(out_dir),
-            str(work_ppt.resolve()),
+        attempts: list[tuple[str, dict[str, str], list[str]]] = [
+            (
+                "profile+fonts",
+                dict(base_env),
+                [f"-env:UserInstallation={profile_uri}"],
+            ),
+            (
+                "impress_pdf",
+                dict(base_env),
+                [f"-env:UserInstallation={profile_uri}"],
+            ),
+            (
+                "plain",
+                dict(base_env),
+                [],
+            ),
         ]
-        try:
-            subprocess.run(
-                cmd, check=True, capture_output=True, text=True, timeout=timeout, env=env
-            )
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-            return None
 
-        for stem in (work_ppt.stem, ppt.stem):
-            candidate = out_dir / f"{stem}.pdf"
-            if candidate.is_file():
+        last_err = ""
+        for label, env, extra in attempts:
+            convert_to = "pdf:impress_pdf_Export" if label == "impress_pdf" else "pdf"
+            try:
+                proc = _run_soffice_convert(
+                    soffice_bin=soffice_bin,
+                    ppt=work_ppt,
+                    out_dir=out_dir,
+                    env=env,
+                    extra_args=extra,
+                    convert_to=convert_to,
+                    timeout=timeout,
+                )
+            except (subprocess.TimeoutExpired, OSError) as exc:
+                last_err = str(exc)
+                logger.warning("LibreOffice convert failed (%s): %s", label, exc)
+                continue
+
+            if proc.returncode != 0:
+                last_err = (proc.stderr or proc.stdout or "").strip()[:800]
+                logger.warning(
+                    "LibreOffice convert exit=%s (%s): %s",
+                    proc.returncode,
+                    label,
+                    last_err or "(no output)",
+                )
+
+            pdf = _wait_for_pdf(
+                out_dir,
+                [work_ppt.stem, ppt.stem],
+                timeout_s=20.0 if proc.returncode == 0 else 8.0,
+            )
+            if pdf is not None:
                 final = out_dir / f"{ppt.stem}.pdf"
-                if candidate.resolve() != final.resolve():
+                if pdf.resolve() != final.resolve():
                     try:
                         if final.exists():
                             final.unlink()
-                        candidate.rename(final)
+                        pdf.replace(final)
                         return final
                     except OSError:
-                        return candidate
-                return candidate
-        pdfs = sorted(out_dir.glob("*.pdf"))
-        return pdfs[0] if pdfs else None
+                        return pdf
+                return pdf
+            last_err = last_err or "PDF not produced"
+
+        logger.error("LibreOffice could not convert %s to PDF (%s)", ppt.name, last_err)
+        return None
     finally:
         if tmp_dir and tmp_dir.exists():
             shutil.rmtree(tmp_dir, ignore_errors=True)
         if profile_dir and profile_dir.exists():
             shutil.rmtree(profile_dir, ignore_errors=True)
-        if fc_dir and fc_dir.exists():
-            shutil.rmtree(fc_dir, ignore_errors=True)
 
 
 def _save_pil_image(pil_image, dest: Path, *, image_format: str) -> bool:
@@ -224,7 +281,6 @@ def _save_pil_image(pil_image, dest: Path, *, image_format: str) -> bool:
         else:
             if dest.suffix.lower() != ".png":
                 dest = dest.with_suffix(".png")
-            # optimize=False — much faster for large decks; size difference is minor.
             pil_image.save(dest, format="PNG", optimize=False)
         return True
     except OSError:
@@ -255,6 +311,7 @@ def render_pdf_page_range(
     try:
         import pypdfium2 as pdfium  # type: ignore[import-untyped]
     except ImportError:
+        logger.error("pypdfium2 is not installed — cannot rasterize PDF slides")
         return []
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -262,6 +319,7 @@ def render_pdf_page_range(
     try:
         doc = pdfium.PdfDocument(str(pdf_path))
     except Exception:
+        logger.exception("Failed to open PDF for slideshow rasterization: %s", pdf_path)
         return []
 
     render_scale = max(0.5, float(scale or 1.25))
@@ -284,6 +342,7 @@ def render_pdf_page_range(
                     except Exception:
                         pass
             except Exception:
+                logger.exception("Failed rasterizing PDF page %s", i + 1)
                 continue
             finally:
                 try:
@@ -341,7 +400,6 @@ def begin_progressive_ppt_preview(
     if pdf_path is None:
         return ([], None, n_slides, "LibreOffice could not convert the deck to PDF.")
 
-    # Normalize name so status/background always find it.
     stable_pdf = out_dir / "_deck.pdf"
     if pdf_path.resolve() != stable_pdf.resolve():
         try:
@@ -350,7 +408,7 @@ def begin_progressive_ppt_preview(
             pdf_path.replace(stable_pdf)
             pdf_path = stable_pdf
         except OSError:
-            pdf_path = pdf_path  # keep LO name
+            pass
 
     total = count_pdf_pages(pdf_path) or n_slides
     batch = max(1, int(first_batch or 1))
@@ -362,6 +420,13 @@ def begin_progressive_ppt_preview(
         scale=scale,
         image_format=image_format,
     )
+    if not first:
+        return (
+            [],
+            pdf_path,
+            total or n_slides,
+            "PDF converted but slide images failed (check pypdfium2 / memory).",
+        )
     msg = ""
     if n_slides and total and n_slides != total:
         msg = (
@@ -387,13 +452,11 @@ def render_ppt_preview_pngs(
     n_slides = count_ppt_slides(ppt)
     message = ""
 
-    # --- Primary: PDF export then pypdfium2 (full deck) ---
     with tempfile.TemporaryDirectory(prefix="ppt_pdf_") as tmp:
         tmp_path = Path(tmp)
         pdf_path = convert_pptx_to_pdf(ppt, tmp_path, soffice_bin=soffice_bin)
 
         if pdf_path is not None:
-            # Clear prior slide images only (keep other files if any).
             for old in list_slide_images(out_dir):
                 old.unlink(missing_ok=True)
             pdf_pages = render_pdf_page_range(
@@ -407,7 +470,6 @@ def render_ppt_preview_pngs(
                     )
                 return (sorted(pdf_pages, key=lambda p: p.name), message)
 
-    # --- Fallback: direct PNG export (often first slide only) ---
     png_cmd = [
         soffice_bin,
         "--headless",
