@@ -474,7 +474,7 @@
       var raw = sessionStorage.getItem(STORAGE_KEY);
       if (!raw) return false;
       var draft = JSON.parse(raw);
-      if (draft.language) state.language = draft.language;
+      if (draft.language) state.language = "english";
       if (draft.themeId) state.themeId = draft.themeId;
       if (draft.celebrant) state.celebrant = draft.celebrant;
       if (draft.massDate) state.massDate = draft.massDate;
@@ -633,7 +633,9 @@
   }
 
   async function onLanguageChange(lang) {
-    state.language = lang;
+    var next = String(lang || "").toLowerCase();
+    if (next !== "english") return;
+    state.language = next;
     syncFormFromState();
     if (state.step >= 4) {
       try {
@@ -893,8 +895,9 @@
 
     document.querySelectorAll("[data-lf-lang]").forEach(function (btn) {
       btn.addEventListener("click", function () {
+        if (btn.disabled || btn.getAttribute("aria-disabled") === "true") return;
         var lang = btn.getAttribute("data-lf-lang");
-        if (!lang) return;
+        if (!lang || lang === "tagalog" || lang === "malay") return;
         onLanguageChange(lang);
       });
     });
