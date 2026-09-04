@@ -5459,6 +5459,28 @@ _ANN_BG_CONTACT = RGBColor(0xA7, 0x70, 0x26)
 _ANN_BG_MERIENDA = RGBColor(0xFB, 0x5F, 0x54)
 
 
+def _ann_resolve_bg(value: Any, fallback: RGBColor) -> RGBColor:
+    parsed = _hex_to_rgb(value)
+    return parsed if parsed is not None else fallback
+
+
+def _ann_title_color_for_bg(bg: RGBColor) -> RGBColor:
+    """Gold on dark backgrounds; near-black on bright ones (e.g. coral merienda)."""
+    try:
+        lum = _rel_lum(int(bg[0]), int(bg[1]), int(bg[2]))
+    except Exception:
+        return _ANN_GOLD
+    return _ANN_BLACK if lum > 0.55 else _ANN_GOLD
+
+
+def _ann_body_color_for_bg(bg: RGBColor) -> RGBColor:
+    try:
+        lum = _rel_lum(int(bg[0]), int(bg[1]), int(bg[2]))
+    except Exception:
+        return _ANN_WHITE
+    return _ANN_BLACK if lum > 0.62 else _ANN_WHITE
+
+
 def _add_solid_bg_slide(prs: Presentation, bg: RGBColor):
     slide = prs.slides.add_slide(_layout_blank(prs))
     _set_slide_bg(slide, bg)
@@ -5542,12 +5564,16 @@ def _add_color_mass_collection_slide(
     date_label: str,
     currency: str = "PHP",
     theme: Optional[SlideTheme] = None,
+    bg_color: Any = None,
 ) -> None:
     """Dark-green Mass Collection slide matching the parish announcement template."""
-    slide = _add_solid_bg_slide(prs, _ANN_BG_COLLECTION)
+    bg = _ann_resolve_bg(bg_color, _ANN_BG_COLLECTION)
+    slide = _add_solid_bg_slide(prs, bg)
     if theme is not None:
         _apply_slide_branding(slide, theme)
-    _ann_add_title(slide, "Mass Collection", color=_ANN_GOLD, size_pt=46)
+    title_color = _ann_title_color_for_bg(bg)
+    body_color = _ann_body_color_for_bg(bg)
+    _ann_add_title(slide, "Mass Collection", color=title_color, size_pt=46)
     _ann_add_date_line(slide, date_label)
 
     formatted = _format_collection_amount(amount, currency) or "(Enter collection amount)"
@@ -5562,21 +5588,21 @@ def _add_color_mass_collection_slide(
     if m and m.group(1).strip() and m.group(2).strip():
         r0 = p.add_run()
         r0.text = m.group(1)
-        _ann_style_run(r0, size_pt=72, color=_ANN_WHITE, bold=True)
+        _ann_style_run(r0, size_pt=72, color=body_color, bold=True)
         r1 = p.add_run()
         r1.text = m.group(2)
-        _ann_style_run(r1, size_pt=72, color=_ANN_GOLD, bold=True)
+        _ann_style_run(r1, size_pt=72, color=title_color if title_color != body_color else _ANN_GOLD, bold=True)
     else:
         r = p.add_run()
         r.text = formatted
-        _ann_style_run(r, size_pt=72, color=_ANN_GOLD, bold=True)
+        _ann_style_run(r, size_pt=72, color=title_color if title_color != _ANN_BLACK else _ANN_GOLD, bold=True)
 
     foot, ftf = _ann_add_centered_textbox(slide, lx, Inches(7.6), w, Inches(1.4))
     fp = ftf.paragraphs[0]
     fp.alignment = PP_ALIGN.CENTER
     fr = fp.add_run()
     fr.text = 'Thank you for your donation. "for God loves a cheerful giver."'
-    _ann_style_run(fr, size_pt=18, color=_ANN_WHITE, italic=True)
+    _ann_style_run(fr, size_pt=18, color=body_color, italic=True)
     _ann_add_scripture_pill(slide, "2 Corinthians 9:7", top_in=9.2)
 
 
@@ -5586,14 +5612,18 @@ def _add_color_food_sponsor_slide(
     sponsors: List[str],
     date_label: str = "",
     theme: Optional[SlideTheme] = None,
+    bg_color: Any = None,
 ) -> None:
     names = [(s or "").strip() for s in (sponsors or []) if (s or "").strip()]
     if not names:
         return
-    slide = _add_solid_bg_slide(prs, _ANN_BG_FOOD_SPONSOR)
+    bg = _ann_resolve_bg(bg_color, _ANN_BG_FOOD_SPONSOR)
+    slide = _add_solid_bg_slide(prs, bg)
     if theme is not None:
         _apply_slide_branding(slide, theme)
-    _ann_add_title(slide, "Today's Food Sponsor", color=_ANN_GOLD, size_pt=42)
+    title_color = _ann_title_color_for_bg(bg)
+    body_color = _ann_body_color_for_bg(bg)
+    _ann_add_title(slide, "Today's Food Sponsor", color=title_color, size_pt=42)
     _ann_add_date_line(slide, date_label)
 
     hero = "\n".join(names) if len(names) > 1 else names[0]
@@ -5608,21 +5638,21 @@ def _add_color_food_sponsor_slide(
         p.alignment = PP_ALIGN.CENTER
         run = p.add_run()
         run.text = line
-        _ann_style_run(run, size_pt=48 if len(names) == 1 else 36, color=_ANN_WHITE, bold=True)
+        _ann_style_run(run, size_pt=48 if len(names) == 1 else 36, color=body_color, bold=True)
 
     msg, mtf = _ann_add_centered_textbox(slide, lx, Inches(6.5), w, Inches(1.1))
     mp = mtf.paragraphs[0]
     mp.alignment = PP_ALIGN.CENTER
     mr = mp.add_run()
     mr.text = "Your generosity nourished more than just our meal today. Thank You."
-    _ann_style_run(mr, size_pt=17, color=_ANN_WHITE, italic=True)
+    _ann_style_run(mr, size_pt=17, color=body_color, italic=True)
 
     quote, qtf = _ann_add_centered_textbox(slide, lx, Inches(7.7), w, Inches(0.5))
     qp = qtf.paragraphs[0]
     qp.alignment = PP_ALIGN.CENTER
     qr = qp.add_run()
     qr.text = '"..The Lord will provide"'
-    _ann_style_run(qr, size_pt=18, color=_ANN_GOLD, bold=False)
+    _ann_style_run(qr, size_pt=18, color=title_color if title_color != body_color else _ANN_GOLD, bold=False)
     _ann_add_scripture_pill(slide, "Genesis 22:14", top_in=8.45)
 
 
@@ -5631,6 +5661,7 @@ def _add_color_sponsorship_contact_slide(
     *,
     contact_text: str,
     theme: Optional[SlideTheme] = None,
+    bg_color: Any = None,
 ) -> None:
     raw = (contact_text or "").strip() or "Look For Ms. Rica Norba\nor\nAny GFCC Volunteers"
     lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
@@ -5644,10 +5675,13 @@ def _add_color_sponsorship_contact_slide(
     elif len(lines) == 1:
         lines = [f"Look For {lines[0]}", "or", "Any GFCC Volunteers"]
 
-    slide = _add_solid_bg_slide(prs, _ANN_BG_CONTACT)
+    bg = _ann_resolve_bg(bg_color, _ANN_BG_CONTACT)
+    slide = _add_solid_bg_slide(prs, bg)
     if theme is not None:
         _apply_slide_branding(slide, theme)
-    _ann_add_title(slide, "Food or Mass Sponsorship", color=_ANN_GOLD, size_pt=40)
+    title_color = _ann_title_color_for_bg(bg)
+    body_color = _ann_body_color_for_bg(bg)
+    _ann_add_title(slide, "Food or Mass Sponsorship", color=title_color, size_pt=40)
 
     lx = MARGIN_SIDE
     w = SLIDE_WIDTH - 2 * MARGIN_SIDE
@@ -5660,14 +5694,14 @@ def _add_color_sponsorship_contact_slide(
         p.alignment = PP_ALIGN.CENTER
         run = p.add_run()
         run.text = line
-        _ann_style_run(run, size_pt=40, color=_ANN_WHITE, bold=True)
+        _ann_style_run(run, size_pt=40, color=body_color, bold=True)
 
     foot, ftf = _ann_add_centered_textbox(slide, lx, Inches(8.4), w, Inches(0.8))
     fp = ftf.paragraphs[0]
     fp.alignment = PP_ALIGN.CENTER
     fr = fp.add_run()
     fr.text = "Food sponsorships and donations are welcome! Thank You."
-    _ann_style_run(fr, size_pt=17, color=_ANN_WHITE, italic=True)
+    _ann_style_run(fr, size_pt=17, color=body_color, italic=True)
 
 
 def _add_color_merienda_location_slide(
@@ -5675,6 +5709,7 @@ def _add_color_merienda_location_slide(
     *,
     location_text: str,
     theme: Optional[SlideTheme] = None,
+    bg_color: Any = None,
 ) -> None:
     raw = (location_text or "").strip() or "We will be having a\nMERIENDA at the 3rd Floor."
     lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
@@ -5683,11 +5718,14 @@ def _add_color_merienda_location_slide(
         if not loc.lower().startswith("we will"):
             lines = ["We will be having a", f"MERIENDA at the {loc}."]
 
-    slide = _add_solid_bg_slide(prs, _ANN_BG_MERIENDA)
+    bg = _ann_resolve_bg(bg_color, _ANN_BG_MERIENDA)
+    slide = _add_solid_bg_slide(prs, bg)
     if theme is not None:
         _apply_slide_branding(slide, theme)
     # Dark title on the bright coral background (matches the parish template).
-    _ann_add_title(slide, "Food or Mass Sponsorship", color=_ANN_BLACK, size_pt=40)
+    title_color = _ann_title_color_for_bg(bg)
+    body_color = _ann_body_color_for_bg(bg)
+    _ann_add_title(slide, "Food or Mass Sponsorship", color=title_color, size_pt=40)
 
     lx = MARGIN_SIDE
     w = SLIDE_WIDTH - 2 * MARGIN_SIDE
@@ -5700,19 +5738,57 @@ def _add_color_merienda_location_slide(
         p.alignment = PP_ALIGN.CENTER
         run = p.add_run()
         run.text = line
-        _ann_style_run(run, size_pt=40, color=_ANN_WHITE, bold=True)
+        _ann_style_run(run, size_pt=40, color=body_color, bold=True)
 
     foot, ftf = _ann_add_centered_textbox(slide, lx, Inches(8.2), w, Inches(1.0))
     fp = ftf.paragraphs[0]
     fp.alignment = PP_ALIGN.CENTER
     fr = fp.add_run()
     fr.text = "Food sponsorships and donations are welcome!"
-    _ann_style_run(fr, size_pt=17, color=_ANN_WHITE, italic=True)
+    _ann_style_run(fr, size_pt=17, color=body_color, italic=True)
     fp2 = ftf.add_paragraph()
     fp2.alignment = PP_ALIGN.CENTER
     fr2 = fp2.add_run()
     fr2.text = "Thank You."
-    _ann_style_run(fr2, size_pt=17, color=_ANN_WHITE, italic=True)
+    _ann_style_run(fr2, size_pt=17, color=body_color, italic=True)
+
+
+def _add_color_custom_announcement_slide(
+    prs: Presentation,
+    *,
+    title: str,
+    content: str,
+    bg_color: Any = None,
+    theme: Optional[SlideTheme] = None,
+) -> None:
+    """User-authored announcement slide; content uses food-sponsor hero text style."""
+    heading = (title or "").strip() or "Announcement"
+    lines = [ln.strip() for ln in str(content or "").splitlines() if ln.strip()]
+    if not lines and not heading:
+        return
+    bg = _ann_resolve_bg(bg_color, _ANN_BG_FOOD_SPONSOR)
+    slide = _add_solid_bg_slide(prs, bg)
+    if theme is not None:
+        _apply_slide_branding(slide, theme)
+    title_color = _ann_title_color_for_bg(bg)
+    body_color = _ann_body_color_for_bg(bg)
+    _ann_add_title(slide, heading, color=title_color, size_pt=42)
+
+    if not lines:
+        return
+    lx = MARGIN_SIDE
+    w = SLIDE_WIDTH - 2 * MARGIN_SIDE
+    box, tf = _ann_add_centered_textbox(slide, lx, Inches(2.9), w, Inches(4.8))
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    first = True
+    size_pt = 48 if len(lines) == 1 else (36 if len(lines) <= 4 else 28)
+    for line in lines:
+        p = tf.paragraphs[0] if first else tf.add_paragraph()
+        first = False
+        p.alignment = PP_ALIGN.CENTER
+        run = p.add_run()
+        run.text = line
+        _ann_style_run(run, size_pt=size_pt, color=body_color, bold=True)
 
 
 
@@ -5822,8 +5898,11 @@ def generate_mass_ppt(
     include_food_sponsor_slide: bool = False,
     include_sponsorship_contact_slide: bool = False,
     include_merienda_location_slide: bool = False,
+    include_welcoming_newcomers_slide: bool = True,
     sponsorship_contact: str = "",
     merienda_location: str = "",
+    announcement_bg_colors: Optional[Mapping[str, Any]] = None,
+    custom_announcement_slides: Optional[List[Mapping[str, Any]]] = None,
     hymn_typography: Optional[Mapping[str, Any]] = None,
     include_church_logo: bool = False,
     include_church_name: bool = False,
@@ -6228,7 +6307,7 @@ def generate_mass_ppt(
     # Confession. The "Church Announcements" title and "Updates" slides were removed
     # from the template, so they are no longer generated.
     ann_paths: List[Optional[Path]] = list(announcement_image_paths or [])
-    if not ann_paths:
+    if include_welcoming_newcomers_slide:
         church_name = (get_community_name() or "").strip() or _TPL_CHURCH_NAME
         if not _clone_master_section(
             prs, "welcoming_newcomers", theme, "Welcoming Newcomers",
@@ -6249,16 +6328,18 @@ def generate_mass_ppt(
             exact=["mass collection"], top_below=Inches(2),
         )
 
-    if include_mass_collection_slide:
+    _has_collection_amount = bool((mass_collection_amount or "").strip())
+    if include_mass_collection_slide and _has_collection_amount:
         _add_color_mass_collection_slide(
             prs,
             amount=mass_collection_amount or "",
             date_label=mass_collection_date_label or "",
             currency=mass_collection_currency or "PHP",
             theme=theme,
+            bg_color=(announcement_bg_colors or {}).get("collection"),
         )
-    elif (mass_collection_amount or "").strip() or collection_date:
-        # Legacy path: amount/date filled without the new checkbox still get a slide.
+    elif _has_collection_amount:
+        # Legacy path: amount filled without the new checkbox still get a slide.
         if not _clone_master_section(prs, "mass_collection", theme, "Mass Collection", mutate=_inject_collection):
             _add_mass_collection_slide(
                 prs,
@@ -6275,6 +6356,7 @@ def generate_mass_ppt(
             sponsors=_sponsor_names,
             date_label=mass_collection_date_label or "",
             theme=theme,
+            bg_color=(announcement_bg_colors or {}).get("food"),
         )
     elif _sponsor_names and not include_food_sponsor_slide:
         upper_names = [n.upper() for n in _sponsor_names]
@@ -6286,11 +6368,28 @@ def generate_mass_ppt(
             prs,
             contact_text=sponsorship_contact or "",
             theme=theme,
+            bg_color=(announcement_bg_colors or {}).get("contact"),
         )
     if include_merienda_location_slide:
         _add_color_merienda_location_slide(
             prs,
             location_text=merienda_location or "",
+            theme=theme,
+            bg_color=(announcement_bg_colors or {}).get("merienda"),
+        )
+
+    for raw_custom in (custom_announcement_slides or []):
+        if not isinstance(raw_custom, Mapping):
+            continue
+        c_title = str(raw_custom.get("title") or "").strip()
+        c_content = str(raw_custom.get("content") or "").strip()
+        if not c_title and not c_content:
+            continue
+        _add_color_custom_announcement_slide(
+            prs,
+            title=c_title,
+            content=c_content,
+            bg_color=raw_custom.get("bg_color") or raw_custom.get("bgColor"),
             theme=theme,
         )
 

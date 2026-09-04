@@ -164,6 +164,8 @@ from services import input_limits as L
 from services.input_validation import (
     check_hymn_layout_overrides,
     check_hymn_overrides,
+    check_length,
+    check_optional_length,
     check_string_list,
 )
 from services.private_files import (
@@ -1303,6 +1305,10 @@ class GenerateBody(BaseModel):
         False,
         description="When true, include the Food/Mass Sponsorship merienda-location slide.",
     )
+    include_welcoming_newcomers_slide: bool = Field(
+        True,
+        description="When true, include the Welcoming Newcomers slide(s).",
+    )
     sponsorship_contact: Optional[str] = Field(
         None,
         max_length=L.FOOD_SPONSOR,
@@ -1312,6 +1318,20 @@ class GenerateBody(BaseModel):
         None,
         max_length=L.COLLECTION_DATE_LABEL,
         description="Location text for the merienda announcement slide.",
+    )
+    announcement_bg_colors: Optional[dict[str, str]] = Field(
+        None,
+        description=(
+            "Optional hex background overrides for built-in announcement slides. "
+            "Keys: collection | food | contact | merienda."
+        ),
+    )
+    custom_announcement_slides: list[dict[str, str]] = Field(
+        default_factory=list,
+        description=(
+            "Optional custom announcement slides. Each item: "
+            "{title, content, bg_color}."
+        ),
     )
     psalm_text_override: Optional[str] = Field(None, max_length=L.PSALM_FULL)
     psalm_refrain_index: Optional[int] = Field(None, ge=0)
@@ -1396,6 +1416,52 @@ class GenerateBody(BaseModel):
             max_items=L.MAX_ANNOUNCEMENT_IMAGES,
             item_max_len=L.FILE_BASENAME,
         ) or []
+        allowed_bg_keys = {"collection", "food", "contact", "merienda"}
+        cleaned_bgs: dict[str, str] = {}
+        if isinstance(self.announcement_bg_colors, dict):
+            for key, val in self.announcement_bg_colors.items():
+                k = str(key or "").strip().lower()
+                if k not in allowed_bg_keys:
+                    continue
+                hx = str(val or "").strip()
+                if hx and not hx.startswith("#"):
+                    hx = "#" + hx
+                if len(hx) == 4 and all(c in "0123456789abcdefABCDEF#" for c in hx):
+                    hx = "#" + "".join(ch * 2 for ch in hx[1:])
+                if len(hx) == 7 and all(c in "0123456789abcdefABCDEF#" for c in hx):
+                    cleaned_bgs[k] = hx.lower()
+        self.announcement_bg_colors = cleaned_bgs or None
+        cleaned_custom: list[dict[str, str]] = []
+        for raw in (self.custom_announcement_slides or [])[: L.MAX_CUSTOM_ANNOUNCEMENT_SLIDES]:
+            if not isinstance(raw, dict):
+                continue
+            title = check_length(
+                str(raw.get("title") or ""),
+                field="custom_announcement_slides.title",
+                max_len=L.CUSTOM_SLIDE_TITLE,
+            )
+            content = check_optional_length(
+                str(raw.get("content") or ""),
+                field="custom_announcement_slides.content",
+                max_len=L.CUSTOM_SLIDE_CONTENT,
+            ) or ""
+            if not title and not content:
+                continue
+            hx = str(raw.get("bg_color") or raw.get("bgColor") or "#394f80").strip()
+            if hx and not hx.startswith("#"):
+                hx = "#" + hx
+            if len(hx) == 4 and all(c in "0123456789abcdefABCDEF#" for c in hx):
+                hx = "#" + "".join(ch * 2 for ch in hx[1:])
+            if not (len(hx) == 7 and all(c in "0123456789abcdefABCDEF#" for c in hx)):
+                hx = "#394f80"
+            cleaned_custom.append(
+                {
+                    "title": title or "Announcement",
+                    "content": content,
+                    "bg_color": hx.lower(),
+                }
+            )
+        self.custom_announcement_slides = cleaned_custom
         self.hymn_lyric_overrides = check_hymn_overrides(self.hymn_lyric_overrides)
         self.hymn_layout_overrides = check_hymn_layout_overrides(self.hymn_layout_overrides)
         lotw = str(self.lotw_poster or "").strip().lower()
@@ -4052,8 +4118,11 @@ def api_generate(
             include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
             include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
             include_merienda_location_slide=bool(body.include_merienda_location_slide),
+            include_welcoming_newcomers_slide=bool(body.include_welcoming_newcomers_slide),
             sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
             merienda_location=(body.merienda_location or "").strip() or None,
+            announcement_bg_colors=body.announcement_bg_colors,
+            custom_announcement_slides=body.custom_announcement_slides or None,
             psalm_text_override=psalm_override,
             psalm_refrain_index=body.psalm_refrain_index,
             psalm_response_override=(body.psalm_response_override or "").strip() or None,
@@ -4394,8 +4463,11 @@ async def api_regenerate_pptx(
             include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
             include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
             include_merienda_location_slide=bool(body.include_merienda_location_slide),
+            include_welcoming_newcomers_slide=bool(body.include_welcoming_newcomers_slide),
             sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
             merienda_location=(body.merienda_location or "").strip() or None,
+            announcement_bg_colors=body.announcement_bg_colors,
+            custom_announcement_slides=body.custom_announcement_slides or None,
             psalm_text_override=psalm_override,
             psalm_refrain_index=body.psalm_refrain_index,
             psalm_response_override=(body.psalm_response_override or "").strip() or None,

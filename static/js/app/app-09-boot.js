@@ -758,9 +758,12 @@
         if (!e.target.closest(".song-row-clickable")) return;
         composerSuppressPreload = true;
         composerPreloadSeq += 1;
+        const titleEl = row.querySelector(".song-row-title");
+        const songTitle = titleEl ? titleEl.textContent.trim() : "";
+        if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+        if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
         try {
-          await loadSongIntoEditor(section, id);
-          if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
+          await loadSongIntoEditor(section, id, { title: songTitle });
           if (normalizeRoute(currentRoute()) !== "/library/songs") showRoute("/library/songs");
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");
@@ -784,9 +787,12 @@
         const id = row.dataset.sid;
         composerSuppressPreload = true;
         composerPreloadSeq += 1;
+        const titleEl = row.querySelector(".song-row-title");
+        const songTitle = titleEl ? titleEl.textContent.trim() : "";
+        if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+        if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
         try {
-          await loadSongIntoEditor(section, id);
-          if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
+          await loadSongIntoEditor(section, id, { title: songTitle });
           if (normalizeRoute(currentRoute()) !== "/library/songs") showRoute("/library/songs");
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");

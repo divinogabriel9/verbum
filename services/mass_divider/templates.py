@@ -207,8 +207,8 @@ DIVIDER2 = _register(
 DIVIDER3 = _register(
     DividerTemplate(
         id="divider3",
-        name="Divider 3 · Title Left",
-        description="Sunday title on the left, gospel quote on the right panel.",
+        name="Divider 3 · Gospel",
+        description="Sunday title and celebrant on the left, gospel quote on the right panel.",
         preview="/static/images/dividers/divider3_preview.jpg",
         has_heading=True,
         boxes={

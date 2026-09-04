@@ -27,7 +27,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260903" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260904j" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260903" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260904f" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -703,14 +703,17 @@
         <article class="ui-card deck-theme-card" role="dialog" aria-labelledby="deck-theme-modal-title" aria-describedby="deck-theme-modal-desc" aria-modal="true">
           <header class="ui-card__header">
             <div class="ui-card__header-text">
-              <h3 class="ui-card__title" id="deck-theme-modal-title">Choose your slide theme</h3>
-              <p class="ui-card__description" id="deck-theme-modal-desc">Pick how Mass slides look. You can change this later under Additional Details.</p>
+              <h3 class="ui-card__title" id="deck-theme-modal-title">Slide theme</h3>
+              <p class="ui-card__description" id="deck-theme-modal-desc">Theme and divider layout for this Mass.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="deck-theme-modal-close" aria-label="Close" hidden>×</button>
           </header>
           <div class="ui-card__content">
-            <div class="deck-theme-grid" id="deck-theme-grid" role="radiogroup" aria-label="Slide themes">
-              <button type="button" class="deck-theme-option is-selected" role="radio" aria-checked="true" data-theme-id="theme1" id="deck-theme-opt-theme1">
+            <div class="deck-theme-picker" id="deck-theme-picker">
+              <p class="deck-theme-picker__label" id="deck-theme-picker-label">Overall PowerPoint theme</p>
+              <p class="deck-theme-picker__hint">Applies to the whole deck — readings, songs, and dividers. Pick one look, not six separate themes.</p>
+              <div class="deck-theme-grid" id="deck-theme-grid" role="radiogroup" aria-labelledby="deck-theme-picker-label">
+              <button type="button" class="deck-theme-option is-selected" role="radio" aria-checked="true" data-theme-id="theme1" id="deck-theme-opt-theme1" aria-label="LiturgyFlow">
                 <div class="deck-theme-option__slide" data-theme-id="theme1" aria-hidden="true">
                   <div class="deck-theme-option__slide-inner">
                     <span class="deck-theme-option__kicker">Liturgy of the Word</span>
@@ -718,13 +721,10 @@
                     <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
                     <span class="deck-theme-option__divider">Mass divider · season color</span>
                   </div>
-                </div>
-                <div class="deck-theme-option__meta">
-                  <strong>Theme 1 · Liturgy Flow</strong>
-                  <span>Black + amber accents. Dividers follow the season.</span>
+                  <span class="deck-theme-option__name">LiturgyFlow</span>
                 </div>
               </button>
-              <button type="button" class="deck-theme-option" role="radio" aria-checked="false" data-theme-id="theme2" id="deck-theme-opt-theme2">
+              <button type="button" class="deck-theme-option" role="radio" aria-checked="false" data-theme-id="theme2" id="deck-theme-opt-theme2" aria-label="Midnight">
                 <div class="deck-theme-option__slide" data-theme-id="theme2" aria-hidden="true">
                   <div class="deck-theme-option__slide-inner">
                     <span class="deck-theme-option__kicker">Liturgy of the Word</span>
@@ -732,13 +732,10 @@
                     <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
                     <span class="deck-theme-option__divider">Mass divider · white on black</span>
                   </div>
-                </div>
-                <div class="deck-theme-option__meta">
-                  <strong>Theme 2 · Midnight</strong>
-                  <span>Black background. All text white, including titles &amp; dividers.</span>
+                  <span class="deck-theme-option__name">Midnight</span>
                 </div>
               </button>
-              <button type="button" class="deck-theme-option" role="radio" aria-checked="false" data-theme-id="theme3" id="deck-theme-opt-theme3">
+              <button type="button" class="deck-theme-option" role="radio" aria-checked="false" data-theme-id="theme3" id="deck-theme-opt-theme3" aria-label="Paper">
                 <div class="deck-theme-option__slide" data-theme-id="theme3" aria-hidden="true">
                   <div class="deck-theme-option__slide-inner">
                     <span class="deck-theme-option__kicker">Liturgy of the Word</span>
@@ -746,50 +743,67 @@
                     <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
                     <span class="deck-theme-option__divider">Mass divider · black on white</span>
                   </div>
-                </div>
-                <div class="deck-theme-option__meta">
-                  <strong>Theme 3 · Paper</strong>
-                  <span>White background. All text black, including titles &amp; dividers.</span>
+                  <span class="deck-theme-option__name">Paper</span>
                 </div>
               </button>
+              </div>
             </div>
             <div class="deck-divider-picker" id="deck-divider-picker">
-              <p class="deck-divider-picker__label" id="deck-divider-picker-label">Layout — how Mass information is arranged</p>
-              <p class="deck-divider-picker__hint muted" style="margin:0 0 10px;font-size:13px;line-height:1.4;">Text positions stay the same. Visual style only changes the artwork behind them.</p>
+              <p class="deck-divider-picker__label" id="deck-divider-picker-label">Mass divider layout</p>
               <div class="deck-divider-grid" id="deck-divider-grid" role="radiogroup" aria-labelledby="deck-divider-picker-label">
-                <button type="button" class="deck-divider-option is-selected" role="radio" aria-checked="true" data-divider-style="divider1" id="deck-divider-opt-divider1">
-                  <span class="deck-divider-option__preview deck-divider-option__preview--classic" aria-hidden="true"></span>
-                  <span class="deck-divider-option__meta">
-                    <strong>Divider 1 · Classic</strong>
-                    <span>Celebrant left, gospel quote card, bottom title bar.</span>
+                <button type="button" class="deck-divider-option is-selected" role="radio" aria-checked="true" data-divider-style="divider1" id="deck-divider-opt-divider1" aria-label="Classic">
+                  <span class="deck-divider-option__preview deck-divider-mock deck-divider-mock--classic" aria-hidden="true">
+                    <span class="deck-divider-option__stripes">
+                      <span class="deck-divider-option__stripe" data-lit="purple"></span>
+                      <span class="deck-divider-option__stripe" data-lit="white"></span>
+                      <span class="deck-divider-option__stripe" data-lit="green"></span>
+                      <span class="deck-divider-option__stripe" data-lit="red"></span>
+                    </span>
+                    <span class="deck-divider-mock__dark"></span>
+                    <span class="deck-divider-mock__stage">
+                      <span class="d1-panel"></span>
+                      <span class="d1-bar"></span>
+                      <span class="d1-label">MASS CELEBRANT:</span>
+                      <span class="d1-name">Divino Gabriel</span>
+                      <span class="d1-year">YEAR A · AUGUST 16, 2026</span>
+                      <span class="d1-quote">“O woman, great is your faith!”</span>
+                      <span class="d1-cite">GOSPEL (MATTHEW 15:21–28)</span>
+                      <span class="d1-title">20th Sunday in Ordinary Time</span>
+                    </span>
                   </span>
+                  <span class="deck-divider-option__name">Classic</span>
                 </button>
-                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="divider2" id="deck-divider-opt-divider2">
+                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="divider3" id="deck-divider-opt-divider3" aria-label="Gospel">
+                  <span class="deck-divider-option__preview deck-divider-mock deck-divider-mock--gospel" aria-hidden="true">
+                    <span class="deck-divider-option__stripes">
+                      <span class="deck-divider-option__stripe" data-lit="purple"></span>
+                      <span class="deck-divider-option__stripe" data-lit="white"></span>
+                      <span class="deck-divider-option__stripe" data-lit="green"></span>
+                      <span class="deck-divider-option__stripe" data-lit="red"></span>
+                    </span>
+                    <span class="deck-divider-mock__dark"></span>
+                    <span class="deck-divider-mock__stage">
+                      <span class="d3-panel"></span>
+                      <span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>
+                      <span class="d3-sunday">20th Sunday in Ordinary Time</span>
+                      <span class="d3-year">YEAR A | AUGUST 16, 2026</span>
+                      <span class="d3-label">HOLY MASS CELEBRANT:</span>
+                      <span class="d3-name">Divino Gabriel</span>
+                      <span class="d3-quote">“O woman, great is your faith!”</span>
+                      <span class="d3-cite"><span>GOSPEL</span><span>MATTHEW 15:21–28</span></span>
+                    </span>
+                  </span>
+                  <span class="deck-divider-option__name">Gospel</span>
+                </button>
+                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="divider2" id="deck-divider-opt-divider2" aria-label="Stone &amp; Light">
                   <img class="deck-divider-option__preview" src="/static/images/dividers/divider2_preview.jpg" alt="" loading="lazy" width="320" height="180" />
-                  <span class="deck-divider-option__meta">
-                    <strong>Divider 2 · Stone &amp; Light</strong>
-                    <span>Gospel quote with citation, celebrant on the right, bold title.</span>
-                  </span>
-                </button>
-                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="divider3" id="deck-divider-opt-divider3">
-                  <img class="deck-divider-option__preview" src="/static/images/dividers/divider3_preview.jpg" alt="" loading="lazy" width="320" height="180" />
-                  <span class="deck-divider-option__meta">
-                    <strong>Divider 3 · Title Left</strong>
-                    <span>Sunday title on the left, gospel quote on the right panel.</span>
-                  </span>
-                </button>
-                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="auto" id="deck-divider-opt-auto">
-                  <span class="deck-divider-option__preview deck-divider-option__preview--classic" aria-hidden="true"></span>
-                  <span class="deck-divider-option__meta">
-                    <strong>Auto</strong>
-                    <span>Choose Divider 1–3 from this Mass’s quote and title. You can override anytime.</span>
-                  </span>
+                  <span class="deck-divider-option__name">Stone &amp; Light</span>
                 </button>
               </div>
             </div>
           </div>
           <footer class="ui-card__footer ui-card__footer--row deck-theme-footer">
-            <button type="button" class="secondary" id="deck-theme-once">Use for this Mass only</button>
+            <button type="button" class="secondary" id="deck-theme-once">This Mass only</button>
             <button type="button" class="primary" id="deck-theme-default">Save as default</button>
           </footer>
         </article>
@@ -870,7 +884,7 @@
             </div>
             <div class="song-metadata-media" id="song-metadata-media">
               <h4 class="song-metadata-media__heading">Audio &amp; video</h4>
-                  <p class="muted song-metadata-media__hint">Three separate links: a 5–10s audio clip, a YouTube video for choir practice, and an instrumental MP4. YouTube is not added to the PowerPoint.</p>
+                  <p class="muted song-metadata-media__hint">Three separate links: a 5–10s audio clip, a YouTube video for choir practice, and an instrumental MP4 (paste a YouTube URL to download the full video, same as the clip fetch). YouTube practice links are not added to the PowerPoint.</p>
                   <div class="song-metadata-media__row">
                     <div class="song-metadata-media__slot">
                       <span class="song-metadata-media__label">Audio clip</span>
@@ -1550,6 +1564,35 @@
       </div>
 
       <!-- Mass Builder rite preview / media pick — outside .page so position:fixed covers the viewport -->
+      <div class="mw-modal" id="flow-custom-slide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="flow-custom-slide-modal-title">
+        <div class="mw-modal__card mw-custom-slide-modal__card">
+          <h3 class="mw-modal__title" id="flow-custom-slide-modal-title">Add custom slide</h3>
+          <p class="mw-modal__sub">Title and content appear on a color-coded announcement slide. Content uses the Food Sponsor text style.</p>
+          <div class="field">
+            <label for="flow-custom-slide-title">Slide title</label>
+            <input type="text" id="flow-custom-slide-title" placeholder="e.g. Parish Announcement" maxlength="120" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="flow-custom-slide-content">Slide content</label>
+            <textarea id="flow-custom-slide-content" rows="4" maxlength="800" placeholder="One line per name or message"></textarea>
+          </div>
+          <div class="field">
+            <span class="mw-color-picker__label">Background color</span>
+            <div class="mw-color-picker mw-color-picker--inline" data-ann-color="custom-form">
+              <button type="button" class="mw-color-picker__swatch" id="flow-custom-slide-bg-swatch" style="--mw-swatch:#394f80" aria-label="Custom slide background color" aria-haspopup="dialog" aria-expanded="false" aria-controls="flow-custom-slide-bg-pop"></button>
+              <div class="mw-color-picker__popover" id="flow-custom-slide-bg-pop" hidden role="dialog" aria-label="Pick custom slide background">
+                <input type="color" id="flow-custom-slide-bg" value="#394f80" aria-label="Color swatch" />
+                <input type="text" id="flow-custom-slide-bg-hex" class="mw-color-picker__hex" value="#394f80" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color code" inputmode="text" placeholder="#000000" />
+              </div>
+            </div>
+          </div>
+          <div class="mw-modal__actions">
+            <button type="button" class="primary" id="btn-flow-custom-slide-save">Add to deck</button>
+            <button type="button" class="ghost" id="btn-flow-custom-slide-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <div class="mw-modal" id="mw-preview-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-preview-title">
         <div class="mw-modal__card">
           <h3 class="mw-modal__title" id="mw-preview-title">Preview</h3>
@@ -1658,6 +1701,7 @@
               <div class="song-composer-rail__cluster">
                 <div class="song-composer-head__copy">
                   <h3>Song Composer</h3>
+                  <p class="song-composer-load-status" id="song-composer-load-status" hidden aria-live="polite"></p>
                 </div>
                 <div class="song-composer-toolbar-row">
                   <div class="song-composer-search-wrap">
@@ -1714,6 +1758,27 @@
           </section>
 
           <div class="lyrics-workspace-row" id="lyrics-workspace-row">
+            <div class="composer-song-loading" id="composer-song-loading" hidden aria-hidden="true" aria-live="polite">
+              <div class="composer-song-loading__card composer-song-loading__card--details" aria-hidden="true">
+                <span class="emil-skeleton emil-skeleton--line emil-skeleton--line-sm composer-song-loading__head"></span>
+                <span class="emil-skeleton emil-skeleton--line emil-skeleton--line-lg composer-song-loading__title"></span>
+                <span class="emil-skeleton emil-skeleton--line emil-skeleton--line-sm composer-song-loading__sub"></span>
+                <span class="emil-skeleton emil-skeleton--line emil-skeleton--line-sm composer-song-loading__chip"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line composer-song-loading__line--mid"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line composer-song-loading__line--short"></span>
+              </div>
+              <div class="composer-song-loading__card composer-song-loading__card--structured" aria-hidden="true">
+                <span class="emil-skeleton emil-skeleton--line emil-skeleton--line-sm composer-song-loading__head"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line composer-song-loading__line--mid"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line composer-song-loading__line--short"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line composer-song-loading__line--mid"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line composer-song-loading__line--short"></span>
+                <span class="emil-skeleton emil-skeleton--line composer-song-loading__line"></span>
+              </div>
+              <p class="composer-song-loading__label" id="composer-song-loading-label" role="status">Loading song…</p>
+            </div>
             <section class="panel lyrics-details-panel">
               <div class="panel-head lyrics-details-panel__desktop-head">
                 <div>
@@ -2087,14 +2152,28 @@
                   </header>
 
                   <div class="mw-announcement-slides" id="flow-announcement-slides">
-                    <label class="mw-announcement-option">
+                    <div class="mw-announcement-option mw-announcement-option--plain">
+                      <input type="checkbox" id="flow-slide-welcoming-newcomers" checked />
+                      <label class="mw-announcement-option__text" for="flow-slide-welcoming-newcomers">
+                        <strong>Welcoming Newcomers</strong>
+                          <span class="muted">Welcome slide for first-time visitors</span>
+                      </label>
+                    </div>
+
+                    <div class="mw-announcement-option">
                       <input type="checkbox" id="flow-slide-mass-collection" />
-                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#223723" aria-hidden="true"></span>
-                      <span class="mw-announcement-option__text">
+                      <div class="mw-color-picker" data-ann-color="collection">
+                        <button type="button" class="mw-color-picker__swatch" id="flow-slide-bg-collection-swatch" style="--mw-swatch:#223723" aria-label="Mass Collection background color" aria-haspopup="dialog" aria-expanded="false" aria-controls="flow-slide-bg-collection-pop"></button>
+                        <div class="mw-color-picker__popover" id="flow-slide-bg-collection-pop" hidden role="dialog" aria-label="Pick Mass Collection background">
+                          <input type="color" id="flow-slide-bg-collection" value="#223723" aria-label="Color swatch" />
+                          <input type="text" id="flow-slide-bg-collection-hex" class="mw-color-picker__hex" value="#223723" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color code" inputmode="text" placeholder="#000000" />
+                        </div>
+                      </div>
+                      <label class="mw-announcement-option__text" for="flow-slide-mass-collection">
                         <strong>Mass Collection</strong>
-                        <span class="muted">Dark green slide with amount + thank-you</span>
-                      </span>
-                    </label>
+                          <span class="muted">Amount + thank-you slide</span>
+                      </label>
+                    </div>
                     <div class="mw-announcement-option__fields" data-ann-fields="collection" hidden>
                       <div class="mw-extras-stewardship-grid">
                         <div class="field">
@@ -2124,14 +2203,20 @@
                       </div>
                     </div>
 
-                    <label class="mw-announcement-option">
+                    <div class="mw-announcement-option">
                       <input type="checkbox" id="flow-slide-food-sponsor" />
-                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#394f80" aria-hidden="true"></span>
-                      <span class="mw-announcement-option__text">
+                      <div class="mw-color-picker" data-ann-color="food">
+                        <button type="button" class="mw-color-picker__swatch" id="flow-slide-bg-food-swatch" style="--mw-swatch:#394f80" aria-label="Food Sponsor background color" aria-haspopup="dialog" aria-expanded="false" aria-controls="flow-slide-bg-food-pop"></button>
+                        <div class="mw-color-picker__popover" id="flow-slide-bg-food-pop" hidden role="dialog" aria-label="Pick Food Sponsor background">
+                          <input type="color" id="flow-slide-bg-food" value="#394f80" aria-label="Color swatch" />
+                          <input type="text" id="flow-slide-bg-food-hex" class="mw-color-picker__hex" value="#394f80" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color code" inputmode="text" placeholder="#000000" />
+                        </div>
+                      </div>
+                      <label class="mw-announcement-option__text" for="flow-slide-food-sponsor">
                         <strong>Today's Food Sponsor</strong>
-                        <span class="muted">Navy slide with sponsor name(s)</span>
-                      </span>
-                    </label>
+                          <span class="muted">Sponsor name(s) slide</span>
+                      </label>
+                    </div>
                     <div class="mw-announcement-option__fields" data-ann-fields="food" hidden>
                       <div class="mw-extras-sponsor-panel" id="flow-sponsor-card">
                         <div class="field flow-steward-sponsor">
@@ -2148,14 +2233,20 @@
                       </div>
                     </div>
 
-                    <label class="mw-announcement-option">
+                    <div class="mw-announcement-option">
                       <input type="checkbox" id="flow-slide-sponsorship-contact" />
-                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#a77026" aria-hidden="true"></span>
-                      <span class="mw-announcement-option__text">
+                      <div class="mw-color-picker" data-ann-color="contact">
+                        <button type="button" class="mw-color-picker__swatch" id="flow-slide-bg-contact-swatch" style="--mw-swatch:#a77026" aria-label="Sponsorship contact background color" aria-haspopup="dialog" aria-expanded="false" aria-controls="flow-slide-bg-contact-pop"></button>
+                        <div class="mw-color-picker__popover" id="flow-slide-bg-contact-pop" hidden role="dialog" aria-label="Pick sponsorship contact background">
+                          <input type="color" id="flow-slide-bg-contact" value="#a77026" aria-label="Color swatch" />
+                          <input type="text" id="flow-slide-bg-contact-hex" class="mw-color-picker__hex" value="#a77026" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color code" inputmode="text" placeholder="#000000" />
+                        </div>
+                      </div>
+                      <label class="mw-announcement-option__text" for="flow-slide-sponsorship-contact">
                         <strong>Food / Mass Sponsorship — Contact</strong>
-                        <span class="muted">Gold slide with who to look for</span>
-                      </span>
-                    </label>
+                          <span class="muted">Who to look for</span>
+                      </label>
+                    </div>
                     <div class="mw-announcement-option__fields" data-ann-fields="contact" hidden>
                       <div class="field">
                         <label for="flow-sponsorship-contact">Contact person</label>
@@ -2164,14 +2255,20 @@
                       </div>
                     </div>
 
-                    <label class="mw-announcement-option">
+                    <div class="mw-announcement-option">
                       <input type="checkbox" id="flow-slide-merienda-location" />
-                      <span class="mw-announcement-option__swatch" style="--ann-swatch:#fb5f54" aria-hidden="true"></span>
-                      <span class="mw-announcement-option__text">
+                      <div class="mw-color-picker" data-ann-color="merienda">
+                        <button type="button" class="mw-color-picker__swatch" id="flow-slide-bg-merienda-swatch" style="--mw-swatch:#fb5f54" aria-label="Merienda location background color" aria-haspopup="dialog" aria-expanded="false" aria-controls="flow-slide-bg-merienda-pop"></button>
+                        <div class="mw-color-picker__popover" id="flow-slide-bg-merienda-pop" hidden role="dialog" aria-label="Pick merienda location background">
+                          <input type="color" id="flow-slide-bg-merienda" value="#fb5f54" aria-label="Color swatch" />
+                          <input type="text" id="flow-slide-bg-merienda-hex" class="mw-color-picker__hex" value="#fb5f54" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color code" inputmode="text" placeholder="#000000" />
+                        </div>
+                      </div>
+                      <label class="mw-announcement-option__text" for="flow-slide-merienda-location">
                         <strong>Food / Mass Sponsorship — Merienda location</strong>
-                        <span class="muted">Coral slide with where merienda is held</span>
-                      </span>
-                    </label>
+                          <span class="muted">Where merienda is held</span>
+                      </label>
+                    </div>
                     <div class="mw-announcement-option__fields" data-ann-fields="merienda" hidden>
                       <div class="field">
                         <label for="flow-merienda-location">Location</label>
@@ -2179,6 +2276,12 @@
                         <p class="muted mw-announcement-hint">Shown as “We will be having a MERIENDA at the …”.</p>
                       </div>
                     </div>
+
+                    <ul class="mw-custom-slides__list" id="flow-custom-slides-list" aria-live="polite"></ul>
+                    <button type="button" class="mw-custom-slides__add" id="btn-flow-custom-slide-add">
+                      <span class="mw-custom-slides__add-label">Add custom slide</span>
+                      <span class="mw-custom-slides__add-plus" aria-hidden="true">+</span>
+                    </button>
                   </div>
                 </article>
 
@@ -2311,35 +2414,18 @@
                   </header>
                   <div class="mw-card mw-deck-theme" id="mw-deck-theme-card">
                     <div class="mw-card__head">
-                      <h3>Slide theme</h3>
+                      <h3>Look &amp; liturgy posters</h3>
                       <button type="button" class="ghost mini" id="mw-deck-theme-change">Change</button>
                     </div>
-                    <div class="mw-deck-theme-summary" id="mw-deck-theme-summary">
-                      <div class="mw-deck-theme-summary__preview" id="mw-deck-theme-preview" data-theme-id="theme1" aria-hidden="true">
-                        <div class="mw-dt-kicker" id="mw-deck-theme-preview-kicker">Liturgy of the Word</div>
-                        <div class="mw-dt-title" id="mw-deck-theme-preview-title">First Reading</div>
-                        <div class="mw-dt-body" id="mw-deck-theme-preview-body">A reading from the Book…</div>
-                      </div>
-                      <div class="mw-deck-theme-summary__meta">
-                        <strong id="mw-deck-theme-name">Theme 1 · Liturgy Flow</strong>
-                        <span id="mw-deck-theme-note">Black background with amber titles. Dividers follow the liturgical season.</span>
-                        <span id="mw-deck-divider-note" style="display:block;margin-top:6px;">Divider 1 · Classic</span>
-                      </div>
-                    </div>
-                    <input type="hidden" id="flow-deck-theme" value="theme1" />
-                    <input type="hidden" id="flow-divider-style" value="divider1" />
-                  </div>
-                  <div class="flow-setup-row flow-divider-poster-picks">
-                    <div class="field">
-                      <input type="hidden" id="flow-lotw-poster" value="lotw1" />
-                      <input type="hidden" id="flow-lote-poster" value="lote1" />
-                      <div class="flow-divider-poster-picks__row">
-                        <div class="flow-divider-poster-picks__copy">
-                          <span class="flow-poster-picker-label" id="flow-liturgy-poster-label">Liturgy divider posters</span>
-                          <p class="muted flow-setup-field-hint">Word and Eucharist designs are paired for a matching style.</p>
+                    <div class="mw-look-previews" id="mw-deck-theme-summary">
+                      <div class="mw-look-previews__rail">
+                        <div class="mw-look-preview mw-deck-theme-summary__preview" id="mw-deck-theme-preview" data-theme-id="theme1" aria-hidden="true">
+                          <div class="mw-dt-kicker" id="mw-deck-theme-preview-kicker">Liturgy of the Word</div>
+                          <div class="mw-dt-title" id="mw-deck-theme-preview-title">First Reading</div>
+                          <div class="mw-dt-body" id="mw-deck-theme-preview-body">A reading from the Book…</div>
                         </div>
                         <div
-                          class="poster-picker poster-picker--pair"
+                          class="poster-picker poster-picker--pair poster-picker--look-inline"
                           data-poster-picker
                           data-pair="1"
                           data-lotw-target="flow-lotw-poster"
@@ -2349,11 +2435,11 @@
                           <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-liturgy-poster-label">
                             <span class="poster-picker__pair" aria-hidden="true">
                               <span class="poster-picker__pair-item">
-                                <img class="poster-picker__current" data-pair-role="lotw" src="/static/images/posters/lotw1.png" alt="" loading="lazy" />
+                                <img class="poster-picker__current mw-look-preview" data-pair-role="lotw" src="/static/images/posters/lotw1.png" alt="" loading="lazy" />
                                 <span class="poster-picker__pair-caption">Word</span>
                               </span>
                               <span class="poster-picker__pair-item">
-                                <img class="poster-picker__current" data-pair-role="lote" src="/static/images/posters/lote1.png" alt="" loading="lazy" />
+                                <img class="poster-picker__current mw-look-preview" data-pair-role="lote" src="/static/images/posters/lote1.png" alt="" loading="lazy" />
                                 <span class="poster-picker__pair-caption">Eucharist</span>
                               </span>
                             </span>
@@ -2364,7 +2450,17 @@
                           <div class="poster-picker__menu" role="listbox" aria-label="Liturgy divider poster pairs" hidden></div>
                         </div>
                       </div>
+                      <div class="mw-look-previews__meta">
+                        <strong id="mw-deck-theme-name">LiturgyFlow</strong>
+                        <span class="flow-poster-picker-label" id="flow-liturgy-poster-label">Liturgy divider posters</span>
+                        <span id="mw-deck-theme-note" class="sr-only"></span>
+                        <span id="mw-deck-divider-note" class="sr-only"></span>
+                      </div>
                     </div>
+                    <input type="hidden" id="flow-deck-theme" value="theme1" />
+                    <input type="hidden" id="flow-divider-style" value="divider1" />
+                    <input type="hidden" id="flow-lotw-poster" value="lotw1" />
+                    <input type="hidden" id="flow-lote-poster" value="lote1" />
                   </div>
                   <div class="flow-setup-row flow-setup-row--poster-style">
                     <div class="flow-poster-style">
@@ -2577,7 +2673,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260903"></script>
+      <script src="/static/js/mw-wizard.js?v=20260904e"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3318,8 +3414,8 @@
               <p class="status" id="sa-hymn-catalog-status" aria-live="polite"></p>
 
               <h4 class="settings-admin-subhead" style="margin-top:22px;">Chorus preview clips</h4>
-              <p class="muted" style="font-size:0.86rem;">Paste a YouTube URL to fetch a 5–10s audio clip for that song. This does not replace the song’s YouTube video — the clip is a separate preview. The start is the first sung lyrics (captions, then auto-detecting words in the audio so intros are skipped).</p>
-              <div class="sa-toolbar" style="flex-wrap:wrap;gap:10px;margin-top:8px;">
+              <p class="muted" style="font-size:0.86rem;">Paste a YouTube URL to fetch a 5–10s audio clip for that song. This does not replace the song’s YouTube video — the clip is a separate preview. The start is the first sung lyrics (captions, then auto-detecting words in the audio so intros are skipped). Use <strong>Fetch all linked</strong> to queue clips for every filtered song that already has a YouTube link but no clip yet.</p>
+              <div class="sa-toolbar" style="flex-wrap:wrap;gap:10px;margin-top:8px;align-items:flex-end;">
                 <div class="field" style="margin:0;min-width:220px;flex:1;">
                   <label for="sa-preview-search">Search songs</label>
                   <input type="search" id="sa-preview-search" placeholder="Title, author, or id" autocomplete="off" />
@@ -3347,6 +3443,7 @@
                   <label for="sa-preview-duration">Clip length: <span id="sa-preview-duration-label">10</span>s</label>
                   <input type="range" id="sa-preview-duration" class="sa-preview-range" min="5" max="10" step="1" value="10" />
                 </div>
+                <button type="button" class="primary" id="sa-btn-fetch-all-previews" title="Queue 5–10s clips for songs that already have a YouTube link">Fetch all linked</button>
               </div>
               <div class="sa-table-wrap" id="sa-song-preview-wrap" aria-live="polite">
                 <p class="muted">Loading songs…</p>
@@ -4128,7 +4225,7 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260903d"></script>
+  <script src="/static/js/app.js?v=20260904m"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260703"></script>

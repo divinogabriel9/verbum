@@ -2769,21 +2769,20 @@
     });
 
     // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
-    // Theme 1 = Liturgy Flow (amber). Themes 2–3 are strict mono black/white.
-    // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (title left).
+    // Theme 1 = LiturgyFlow (amber). Themes 2–3 are strict mono black/white.
+    // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (Gospel).
     var DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
     var DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
     var DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
     var DIVIDER_STYLES = {
-      divider1: { id: "divider1", name: "Divider 1 · Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
-      divider2: { id: "divider2", name: "Divider 2 · Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
-      divider3: { id: "divider3", name: "Divider 3 · Title Left", note: "Sunday title on the left, gospel quote on the right panel." },
-      auto: { id: "auto", name: "Auto", note: "Chooses Divider 1–3 from this Mass’s quote and title." },
+      divider1: { id: "divider1", name: "Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
+      divider2: { id: "divider2", name: "Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
+      divider3: { id: "divider3", name: "Gospel", note: "Sunday title and celebrant on the left, gospel quote on the right panel." },
     };
     var presetThemes = [
       {
         id: "theme1",
-        name: "Theme 1 · Liturgy Flow",
+        name: "LiturgyFlow",
         note: "Black background with amber titles. Dividers follow the liturgical season.",
         bg: "#000000",
         primary: "#f0fdf4",
@@ -2793,7 +2792,7 @@
       },
       {
         id: "theme2",
-        name: "Theme 2 · Midnight",
+        name: "Midnight",
         note: "Black background. All text white, including titles and Mass dividers.",
         bg: "#000000",
         primary: "#ffffff",
@@ -2803,7 +2802,7 @@
       },
       {
         id: "theme3",
-        name: "Theme 3 · Paper",
+        name: "Paper",
         note: "White background. All text black, including titles and Mass dividers.",
         bg: "#ffffff",
         primary: "#000000",
@@ -2826,6 +2825,8 @@
 
     function findDividerStyle(id) {
       const key = String(id || "").trim().toLowerCase();
+      // Auto was removed from the chooser; map legacy "auto" to Classic.
+      if (key === "auto") return DIVIDER_STYLES.divider1;
       return DIVIDER_STYLES[key] || DIVIDER_STYLES.divider1;
     }
 

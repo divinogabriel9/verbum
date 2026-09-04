@@ -2817,21 +2817,46 @@
       return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
     }
 
-    function openYouTubeSearchForCurrentSong() {
-      const query = currentMediaPickSongQuery();
+    function withInstrumentalSearchSuffix(query) {
+      const q = String(query || "").replace(/\s+/g, " ").trim();
+      if (!q) return "instrumental";
+      if (/\binstrumental\b/i.test(q)) return q;
+      return (q + " instrumental").replace(/\s+/g, " ").trim();
+    }
+
+    function openYouTubeSearchForCurrentSong(opts) {
+      const options = opts || {};
+      let query = currentMediaPickSongQuery();
+      if (options.instrumental) query = withInstrumentalSearchSuffix(query);
       const url = youtubeSearchUrlForQuery(query);
       const opened = window.open(url, "_blank", "noopener,noreferrer");
       if (!opened && typeof notify === "function") {
-        notify(query ? "Allow pop-ups to search YouTube for this song." : "Allow pop-ups to open YouTube.", "warn");
+        notify(
+          query
+            ? (options.instrumental
+              ? "Allow pop-ups to search YouTube for an instrumental version."
+              : "Allow pop-ups to search YouTube for this song.")
+            : "Allow pop-ups to open YouTube.",
+          "warn"
+        );
       }
     }
 
-    function openYouTubeSearchForComposerSong() {
-      const query = currentComposerSongQuery();
+    function openYouTubeSearchForComposerSong(opts) {
+      const options = opts || {};
+      let query = currentComposerSongQuery();
+      if (options.instrumental) query = withInstrumentalSearchSuffix(query);
       const url = youtubeSearchUrlForQuery(query);
       const opened = window.open(url, "_blank", "noopener,noreferrer");
       if (!opened && typeof notify === "function") {
-        notify(query ? "Allow pop-ups to search YouTube for this song." : "Allow pop-ups to open YouTube.", "warn");
+        notify(
+          query
+            ? (options.instrumental
+              ? "Allow pop-ups to search YouTube for an instrumental version."
+              : "Allow pop-ups to search YouTube for this song.")
+            : "Allow pop-ups to open YouTube.",
+          "warn"
+        );
       }
     }
 
@@ -2939,6 +2964,39 @@
       };
     }
 
+    function massMediaPickFetchIsInstrumental() {
+      return massMediaPickState.kind === "video" || massMediaPickState.songField === "video";
+    }
+
+    function syncMassMediaPickFetchPaneMode(isInstrumental) {
+      const instrumental = !!isInstrumental;
+      const hint = document.querySelector("#mw-media-pick-pane-fetch .mw-rite__hint");
+      const durWrap = $("mw-media-pick-fetch-duration");
+      const durField = durWrap ? durWrap.closest(".field") : null;
+      const urlLabel = document.querySelector("label[for=\"mw-media-pick-fetch-url\"]");
+      const runBtn = $("mw-media-pick-fetch-run");
+      const searchBtn = $("mw-media-pick-fetch-search");
+      if (hint) {
+        hint.textContent = instrumental
+          ? "Search YouTube for an instrumental version of this song (query adds “instrumental”), paste that URL, then download the full video. This is separate from the 10s audio clip and the choir-practice YouTube link."
+          : "Paste a YouTube URL and fetch a 5–10s chorus clip. Captions are scanned for the chorus (or first verse). This does not replace the song’s full YouTube practice link.";
+      }
+      if (durField) durField.hidden = instrumental;
+      if (urlLabel) {
+        urlLabel.textContent = instrumental ? "YouTube URL (instrumental video)" : "YouTube URL (clip source)";
+      }
+      if (runBtn && !runBtn.disabled) {
+        runBtn.textContent = instrumental ? "Download video" : "Fetch clip";
+      }
+      if (searchBtn) {
+        searchBtn.title = instrumental
+          ? "Search YouTube for this song + instrumental"
+          : "Search YouTube for this song";
+        searchBtn.textContent = instrumental ? "Search instrumental" : "Search";
+      }
+    }
+    window.syncMassMediaPickFetchPaneMode = syncMassMediaPickFetchPaneMode;
+
     function massMediaPickFetchDurationSec() {
       const el = $("mw-media-pick-fetch-duration");
       const n = el ? parseInt(el.value, 10) : 10;
@@ -2950,22 +3008,35 @@
       const statusEl = $("mw-media-pick-fetch-status");
       const playBtn = $("mw-media-pick-fetch-play");
       const urlEl = $("mw-media-pick-fetch-url");
+      const instrumental = massMediaPickFetchIsInstrumental();
+      syncMassMediaPickFetchPaneMode(instrumental);
       let preview = null;
+      let video = null;
       let youtube = null;
       if (massMediaPickState.purpose === "song") {
         preview = composerSongMedia && composerSongMedia.preview;
+        video = composerSongMedia && composerSongMedia.video;
         youtube = typeof composerYoutubeRef === "function" ? composerYoutubeRef() : null;
       } else {
         preview = massSlotPreviewRef(massMediaPickState.slot);
+        video = getMassSectionMedia("video", massMediaPickState.slot);
         youtube = massSlotYoutubeRef(massMediaPickState.slot);
       }
       preview = normalizeAudioPreviewRef(preview);
+      video = video ? normalizeComposerMediaRef(video) : null;
       if (urlEl && document.activeElement !== urlEl) {
-        const fromPreview = preview && (preview.youtube_url || "");
-        const fromYt = youtube && (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube)));
-        urlEl.value = fromPreview || fromYt || "";
+        if (instrumental) {
+          // Instrumental uses its own YouTube source — do not reuse the practice/audio link.
+          if (!String(urlEl.value || "").trim()) urlEl.value = "";
+        } else {
+          const fromPreview = preview && (preview.youtube_url || "");
+          const fromYt = youtube && (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube)));
+          urlEl.value = fromPreview || fromYt || "";
+        }
       }
-      const ready = !!(preview && preview.basename);
+      const ready = instrumental
+        ? !!(video && video.basename && !isYouTubeMediaRef(video))
+        : !!(preview && preview.basename);
       if (playBtn) {
         playBtn.hidden = !ready;
         playBtn.disabled = !ready;
@@ -2973,13 +3044,19 @@
       }
       if (statusEl && !statusEl.dataset.fetching) {
         if (!target || !target.id) {
-          statusEl.textContent = "Choose a song first, then fetch a clip.";
+          statusEl.textContent = instrumental
+            ? "Choose a song first, then download the video."
+            : "Choose a song first, then fetch a clip.";
           statusEl.className = "status mw-media-pick-fetch-status";
         } else if (ready) {
-          statusEl.textContent = (preview.duration_sec || 10) + "s clip ready.";
+          statusEl.textContent = instrumental
+            ? ((video.display_name || video.basename) + " ready.")
+            : ((preview.duration_sec || 10) + "s clip ready.");
           statusEl.className = "status ok mw-media-pick-fetch-status";
         } else {
-          statusEl.textContent = "No clip yet — paste a YouTube URL and fetch.";
+          statusEl.textContent = instrumental
+            ? "No instrumental video yet — paste a YouTube URL and download."
+            : "No clip yet — paste a YouTube URL and fetch.";
           statusEl.className = "status mw-media-pick-fetch-status";
         }
       }
@@ -2990,6 +3067,7 @@
       const statusEl = $("mw-media-pick-fetch-status");
       const btn = $("mw-media-pick-fetch-run");
       const urlEl = $("mw-media-pick-fetch-url");
+      const instrumental = massMediaPickFetchIsInstrumental();
       if (!target || !target.section || !target.id) {
         if (typeof notify === "function") notify("Choose a song first.", "warn");
         return;
@@ -3001,35 +3079,60 @@
         return;
       }
       if (urlEl) urlEl.value = ref.youtube_url || youtubeUrl;
-      if (btn) { btn.disabled = true; btn.textContent = "Queued…"; }
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Queued…";
+      }
       if (statusEl) {
         statusEl.dataset.fetching = "1";
-        statusEl.textContent = "Scanning captions and fetching clip…";
+        statusEl.textContent = instrumental
+          ? "Downloading full instrumental video…"
+          : "Scanning captions and fetching clip…";
         statusEl.className = "status mw-media-pick-fetch-status";
       }
       previewFetchState.attempted[target.section + ":" + target.id] = true;
       try {
-        await startPreviewFetchJob({
-          section: target.section,
-          id: target.id,
-          title: target.title || "this song",
-          youtube_url: ref.youtube_url || youtubeUrl,
-          duration_sec: massMediaPickFetchDurationSec(),
-          toast: true,
-        });
+        if (instrumental) {
+          await startInstrumentalFetchJob({
+            section: target.section,
+            id: target.id,
+            title: target.title || "this song",
+            youtube_url: ref.youtube_url || youtubeUrl,
+            toast: true,
+          });
+        } else {
+          await startPreviewFetchJob({
+            section: target.section,
+            id: target.id,
+            title: target.title || "this song",
+            youtube_url: ref.youtube_url || youtubeUrl,
+            duration_sec: massMediaPickFetchDurationSec(),
+            toast: true,
+          });
+        }
         if (statusEl) {
           statusEl.textContent = "Fetch started — watch the progress bar below.";
           statusEl.className = "status ok mw-media-pick-fetch-status";
         }
       } catch (err) {
         if (statusEl) {
-          statusEl.textContent = (err && err.message) || "Could not start clip fetch.";
+          statusEl.textContent = (err && err.message) || (instrumental
+            ? "Could not start video download."
+            : "Could not start clip fetch.");
           statusEl.className = "status error mw-media-pick-fetch-status";
         }
-        if (typeof notify === "function") notify((err && err.message) || "Could not start clip fetch.", "warn");
+        if (typeof notify === "function") {
+          notify(
+            (err && err.message) || (instrumental ? "Could not start video download." : "Could not start clip fetch."),
+            "warn"
+          );
+        }
       } finally {
         if (statusEl) delete statusEl.dataset.fetching;
-        if (btn) { btn.disabled = false; btn.textContent = "Fetch clip"; }
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = instrumental ? "Download video" : "Fetch clip";
+        }
       }
     }
 
@@ -3533,9 +3636,62 @@
           songDetailCache.set(key, data);
         });
       }
-      if (typeof composerLoadedSong !== "undefined" && composerLoadedSong && String(composerLoadedSong.id) === id) {
+      if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id || "") === id &&
+        typeof setComposerAudioSnippet === "function"
+      ) {
+        setComposerAudioSnippet(ref);
+      } else if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id) === id
+      ) {
         composerSongMedia.preview = ref;
         if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      }
+      if (typeof renderSongCatalog === "function") renderSongCatalog();
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+    }
+
+    function updateLocalCatalogSongVideo(section, songId, videoRef) {
+      const id = String(songId || "").trim();
+      if (!id) return;
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      const prefer = String(section || "").trim().toLowerCase();
+      const ordered = prefer && secs.indexOf(prefer) >= 0
+        ? [prefer].concat(secs.filter((s) => s !== prefer))
+        : secs;
+      const ref = videoRef ? normalizeComposerMediaRef(videoRef) : null;
+      if (typeof songCatalogData !== "undefined" && songCatalogData) {
+        ordered.forEach((sec) => {
+          if (!Array.isArray(songCatalogData[sec])) return;
+          const idx = songCatalogData[sec].findIndex((r) => String(r.id) === id);
+          if (idx < 0) return;
+          const next = Object.assign({}, songCatalogData[sec][idx]);
+          next.video_media = ref;
+          songCatalogData[sec][idx] = next;
+        });
+      }
+      if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+      if (typeof songDetailCache !== "undefined" && typeof songDetailCacheKey === "function") {
+        ordered.forEach((sec) => {
+          const key = songDetailCacheKey(sec, id);
+          if (!songDetailCache.has(key)) return;
+          const data = songDetailCache.get(key);
+          if (!data || !data.song) return;
+          data.song.video_media = ref;
+          songDetailCache.set(key, data);
+        });
+      }
+      if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id || "") === id &&
+        typeof setComposerSongMediaField === "function"
+      ) {
+        setComposerSongMediaField("video", ref);
       }
       if (typeof renderSongCatalog === "function") renderSongCatalog();
       if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
@@ -3619,16 +3775,18 @@
       currentJobId: "",
     };
 
-    function previewFetchStageLabel(stage) {
+    function previewFetchStageLabel(stage, kind) {
       const key = String(stage || "").toLowerCase();
+      const isVideo = kind === "instrumental_video";
       if (key === "captions") return "Scanning lyrics";
       if (key === "words") return "Listening for sung words";
-      if (key === "download") return "Downloading audio";
+      if (key === "download") return isVideo ? "Downloading video" : "Downloading audio";
+      if (key === "compressing") return "Compressing video";
       if (key === "cutting") return "Trimming clip";
-      if (key === "saving") return "Saving clip";
+      if (key === "saving") return isVideo ? "Saving video" : "Saving clip";
       if (key === "queued") return "Waiting";
-      if (key === "done") return "Clip ready";
-      return "Fetching chorus clip";
+      if (key === "done") return isVideo ? "Video ready" : "Clip ready";
+      return isVideo ? "Fetching instrumental video" : "Fetching chorus clip";
     }
 
     function setPreviewFetchStrip(visible, text, percent) {
@@ -3664,12 +3822,22 @@
           if (job.status !== "done" && job.status !== "error") return;
           previewFetchState.applied[jid] = true;
           const title = String(job.title || "this song").trim() || "this song";
+          const isInstrumental = job.kind === "instrumental_video";
           if (job.status === "done") {
             if (job.section && job.id) {
-              updateLocalCatalogSongPreview(job.section, job.id, job.audio_preview || null);
+              if (isInstrumental) {
+                updateLocalCatalogSongVideo(job.section, job.id, job.video_media || null);
+              } else {
+                updateLocalCatalogSongPreview(job.section, job.id, job.audio_preview || null);
+              }
             }
             if (typeof showToast === "function") {
-              showToast("Chorus clip ready for \"" + title + "\".", "ok");
+              showToast(
+                isInstrumental
+                  ? ("Instrumental video ready for \"" + title + "\".")
+                  : ("Chorus clip ready for \"" + title + "\"."),
+                "ok"
+              );
             }
             const pickModal = $("mw-media-pick-modal");
             if (pickModal && pickModal.getAttribute("data-open") === "true") {
@@ -3679,14 +3847,22 @@
             }
           } else {
             if (typeof showToast === "function") {
-              showToast(job.error || ("Could not fetch a chorus clip for \"" + title + "\"."), "warn");
+              showToast(
+                job.error ||
+                  (isInstrumental
+                    ? ("Could not download instrumental video for \"" + title + "\".")
+                    : ("Could not fetch a chorus clip for \"" + title + "\".")),
+                "warn"
+              );
             }
             const pickModal = $("mw-media-pick-modal");
             if (pickModal && pickModal.getAttribute("data-open") === "true") {
               const statusEl = $("mw-media-pick-fetch-status");
               if (statusEl) {
                 delete statusEl.dataset.fetching;
-                statusEl.textContent = job.error || "Could not fetch a chorus clip.";
+                statusEl.textContent = job.error || (isInstrumental
+                  ? "Could not download instrumental video."
+                  : "Could not fetch a chorus clip.");
                 statusEl.className = "status error mw-media-pick-fetch-status";
               }
             }
@@ -3696,10 +3872,10 @@
           const current = data.active || queued[0];
           const title = String(current.title || "this song").trim() || "this song";
           const pct = Number(current.percent) || 0;
-          const prefix = queued.length > 1 ? (queued.length + " clips · ") : "";
+          const prefix = queued.length > 1 ? (queued.length + " media · ") : "";
           setPreviewFetchStrip(
             true,
-            prefix + previewFetchStageLabel(current.stage) + " · " + title,
+            prefix + previewFetchStageLabel(current.stage, current.kind) + " · " + title,
             pct
           );
           const pickModal = $("mw-media-pick-modal");
@@ -3707,7 +3883,7 @@
             const statusEl = $("mw-media-pick-fetch-status");
             if (statusEl) {
               statusEl.dataset.fetching = "1";
-              statusEl.textContent = prefix + previewFetchStageLabel(current.stage) + "…";
+              statusEl.textContent = prefix + previewFetchStageLabel(current.stage, current.kind) + "…";
               statusEl.className = "status mw-media-pick-fetch-status";
             }
           }
@@ -3755,9 +3931,49 @@
       const jobId = data.job_id || "";
       if (!jobId) throw new Error("Could not start preview fetch.");
       previewFetchState.currentJobId = jobId;
-      setPreviewFetchStrip(true, previewFetchStageLabel(data.stage) + " · " + title, data.percent || 1);
+      setPreviewFetchStrip(true, previewFetchStageLabel(data.stage, data.kind) + " · " + title, data.percent || 1);
       if (options.toast !== false && typeof showToast === "function") {
         showToast("Fetching a " + (body.duration_sec || 10) + "s chorus clip for \"" + title + "\".", "info");
+      }
+      if (!previewFetchState.pollTimer) {
+        previewFetchState.pollTimer = setInterval(pollPreviewFetchJobs, 450);
+      }
+      pollPreviewFetchJobs();
+      return data;
+    }
+
+    async function startInstrumentalFetchJob(opts) {
+      const options = opts || {};
+      const section = String(options.section || "").trim();
+      const id = String(options.id || "").trim();
+      if (!section || !id || typeof saFetchAdmin !== "function") return null;
+      if (previewFetchState.hideTimer) {
+        clearTimeout(previewFetchState.hideTimer);
+        previewFetchState.hideTimer = null;
+      }
+      const title = String(options.title || "this song").trim() || "this song";
+      const body = {
+        youtube_url: String(options.youtube_url || "").trim(),
+      };
+      if (!body.youtube_url) throw new Error("Enter a valid YouTube URL.");
+      const data = await saFetchAdmin(
+        "/api/admin/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id) + "/instrumental-job",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+      const jobId = data.job_id || "";
+      if (!jobId) throw new Error("Could not start instrumental video download.");
+      previewFetchState.currentJobId = jobId;
+      setPreviewFetchStrip(
+        true,
+        previewFetchStageLabel(data.stage || "download", "instrumental_video") + " · " + title,
+        data.percent || 1
+      );
+      if (options.toast !== false && typeof showToast === "function") {
+        showToast("Downloading full instrumental video for \"" + title + "\".", "info");
       }
       if (!previewFetchState.pollTimer) {
         previewFetchState.pollTimer = setInterval(pollPreviewFetchJobs, 450);
@@ -3854,17 +4070,28 @@
       const libTab = $("mw-media-pick-tab-library");
       const fetchTab = $("mw-media-pick-tab-fetch");
       const upTab = $("mw-media-pick-tab-upload");
-      const useFetchClip = !isVideo && !youtubeOnly;
+      const useInstrumentalFetch = isVideo && isSa;
+      const useFetchClip = (!isVideo && !youtubeOnly) || useInstrumentalFetch;
       const showYoutube = !isVideo;
       if (ytTab) ytTab.hidden = !showYoutube;
-      if (libTab) libTab.hidden = youtubeOnly || useFetchClip;
-      if (fetchTab) fetchTab.hidden = !useFetchClip;
+      if (libTab) libTab.hidden = youtubeOnly || (useFetchClip && !isVideo);
+      if (fetchTab) {
+        fetchTab.hidden = !useFetchClip;
+        fetchTab.textContent = useInstrumentalFetch ? "Fetch video" : "Fetch clip";
+      }
       if (upTab) upTab.hidden = youtubeOnly;
+      syncMassMediaPickFetchPaneMode(useInstrumentalFetch);
       if (purpose === "song") {
-        if (title) title.textContent = isVideo ? "Choose video for this song" : (youtubeOnly ? "YouTube" : "Fetch audio clip");
+        if (title) {
+          title.textContent = isVideo
+            ? (useInstrumentalFetch ? "Instrumental video" : "Choose video for this song")
+            : (youtubeOnly ? "YouTube" : "Fetch audio clip");
+        }
         if (hint) {
           hint.textContent = isVideo
-            ? "Pick an MP4 from your Media library or upload a new one. It stays linked on this song."
+            ? (useInstrumentalFetch
+              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video. Separate from the 10s clip and choir-practice YouTube link."
+              : "Pick an MP4 from your Media library or upload a new one. It stays linked on this song.")
             : (youtubeOnly
               ? "Paste a YouTube URL for the full song (choir practice). This does not replace the 5–10s audio clip."
               : "Fetch a 5–10s chorus clip from YouTube, or upload an MP3. Full-song YouTube is a separate link.");
@@ -3873,12 +4100,14 @@
         const label = massMediaDisplayLabel(slot);
         if (title) {
           title.textContent = isVideo
-            ? "Choose video for " + label
+            ? (useInstrumentalFetch ? "Instrumental video for " + label : "Choose video for " + label)
             : (youtubeOnly ? "YouTube" : "Fetch audio clip for " + label);
         }
         if (hint) {
           hint.textContent = isVideo
-            ? "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time."
+            ? (useInstrumentalFetch
+              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video for this option."
+              : "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time.")
             : (youtubeOnly
               ? "Paste a YouTube URL for choir practice. This does not replace the 5–10s audio clip."
               : "Fetch a 5–10s chorus clip from YouTube (same as Superadmin). It plays from the card ▶ — not embedded in the deck.");
@@ -4081,7 +4310,12 @@
       }
       const fetchSearch = $("mw-media-pick-fetch-search");
       if (fetchSearch) {
-        fetchSearch.addEventListener("click", () => openYouTubeSearchForCurrentSong());
+        fetchSearch.addEventListener("click", () => {
+          const instrumental = typeof massMediaPickFetchIsInstrumental === "function"
+            ? massMediaPickFetchIsInstrumental()
+            : (massMediaPickState.kind === "video" || massMediaPickState.songField === "video");
+          openYouTubeSearchForCurrentSong({ instrumental: instrumental });
+        });
       }
       const fetchRun = $("mw-media-pick-fetch-run");
       if (fetchRun) {
@@ -4099,6 +4333,15 @@
       const fetchPlay = $("mw-media-pick-fetch-play");
       if (fetchPlay) {
         fetchPlay.addEventListener("click", () => {
+          const instrumental = massMediaPickState.kind === "video" || massMediaPickState.songField === "video";
+          if (instrumental) {
+            if (massMediaPickState.purpose === "song") {
+              void playComposerSongMedia("video", fetchPlay);
+            } else if (typeof playMassSectionVideo === "function") {
+              void playMassSectionVideo(massMediaPickState.slot, fetchPlay);
+            }
+            return;
+          }
           if (massMediaPickState.purpose === "song") {
             const snippet = typeof composerAudioSnippetRef === "function" ? composerAudioSnippetRef() : null;
             if (snippet) void playSavedMusicRef(snippet, COMPOSER_SONG_MEDIA_SLOT, fetchPlay);
@@ -6540,6 +6783,11 @@
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
         "flow-slide-mass-collection", "flow-slide-food-sponsor",
         "flow-slide-sponsorship-contact", "flow-slide-merienda-location",
+        "flow-slide-welcoming-newcomers",
+        "flow-slide-bg-collection", "flow-slide-bg-collection-hex",
+        "flow-slide-bg-food", "flow-slide-bg-food-hex",
+        "flow-slide-bg-contact", "flow-slide-bg-contact-hex",
+        "flow-slide-bg-merienda", "flow-slide-bg-merienda-hex",
         "flow-sponsorship-contact", "flow-merienda-location",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster",
@@ -6648,6 +6896,8 @@
         fields: fields,
         sanctusPicked: massBuilderSanctusPicked(),
         foodSponsors: typeof getFlowFoodSponsorsLines === "function" ? getFlowFoodSponsorsLines() : [],
+        customAnnouncementSlides: typeof getFlowCustomSlidesPayload === "function" ? getFlowCustomSlidesPayload() : [],
+        announcementBgColors: typeof getAnnouncementBgColors === "function" ? getAnnouncementBgColors() : null,
         lyricSongSlots: JSON.parse(JSON.stringify(lyricSongSlots)),
         selectedLyricsSongs: Object.assign({}, selectedLyricsSongs),
         massCommunionCount: massCommunionCount,
@@ -6840,6 +7090,12 @@
         renderFlowFoodSponsorsList(draft.foodSponsors);
         if (typeof syncFlowFoodSponsorsHidden === "function") syncFlowFoodSponsorsHidden();
       }
+      if (typeof setAnnouncementBgColors === "function" && draft.announcementBgColors) {
+        setAnnouncementBgColors(draft.announcementBgColors);
+      }
+      if (typeof setFlowCustomSlidesUI === "function") {
+        setFlowCustomSlidesUI(Array.isArray(draft.customAnnouncementSlides) ? draft.customAnnouncementSlides : []);
+      }
       if (savedSlots) lyricSongSlots = savedSlots;
       if (savedSongs) selectedLyricsSongs = savedSongs;
       if (draft.massCustomSlotSeq != null) massCustomSlotSeq = draft.massCustomSlotSeq;
@@ -6852,9 +7108,13 @@
         }
       }
       const layoutVal = draft.hymnLayout || "dual";
-      document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
-        el.checked = el.value === layoutVal;
-      });
+      if (typeof applyHymnLyricsLayout === "function") {
+        applyHymnLyricsLayout(layoutVal);
+      } else {
+        document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+          el.checked = el.value === layoutVal;
+        });
+      }
       if (typeof applyHymnBodyAlign === "function") {
         applyHymnBodyAlign(draft.hymnBodyAlign || "center");
       }
@@ -9743,21 +10003,20 @@
     });
 
     // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
-    // Theme 1 = Liturgy Flow (amber). Themes 2–3 are strict mono black/white.
-    // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (title left).
+    // Theme 1 = LiturgyFlow (amber). Themes 2–3 are strict mono black/white.
+    // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (Gospel).
     var DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
     var DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
     var DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
     var DIVIDER_STYLES = {
-      divider1: { id: "divider1", name: "Divider 1 · Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
-      divider2: { id: "divider2", name: "Divider 2 · Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
-      divider3: { id: "divider3", name: "Divider 3 · Title Left", note: "Sunday title on the left, gospel quote on the right panel." },
-      auto: { id: "auto", name: "Auto", note: "Chooses Divider 1–3 from this Mass’s quote and title." },
+      divider1: { id: "divider1", name: "Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
+      divider2: { id: "divider2", name: "Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
+      divider3: { id: "divider3", name: "Gospel", note: "Sunday title and celebrant on the left, gospel quote on the right panel." },
     };
     var presetThemes = [
       {
         id: "theme1",
-        name: "Theme 1 · Liturgy Flow",
+        name: "LiturgyFlow",
         note: "Black background with amber titles. Dividers follow the liturgical season.",
         bg: "#000000",
         primary: "#f0fdf4",
@@ -9767,7 +10026,7 @@
       },
       {
         id: "theme2",
-        name: "Theme 2 · Midnight",
+        name: "Midnight",
         note: "Black background. All text white, including titles and Mass dividers.",
         bg: "#000000",
         primary: "#ffffff",
@@ -9777,7 +10036,7 @@
       },
       {
         id: "theme3",
-        name: "Theme 3 · Paper",
+        name: "Paper",
         note: "White background. All text black, including titles and Mass dividers.",
         bg: "#ffffff",
         primary: "#000000",
@@ -9800,6 +10059,8 @@
 
     function findDividerStyle(id) {
       const key = String(id || "").trim().toLowerCase();
+      // Auto was removed from the chooser; map legacy "auto" to Classic.
+      if (key === "auto") return DIVIDER_STYLES.divider1;
       return DIVIDER_STYLES[key] || DIVIDER_STYLES.divider1;
     }
 
@@ -18862,6 +19123,132 @@
       }
     }
 
+    async function collectSaSongsNeedingLinkedPreview() {
+      const st = saState.songPreviews || { q: "", section: "all" };
+      const pageSize = 200;
+      const candidates = [];
+      let offset = 0;
+      let total = Infinity;
+      while (offset < total) {
+        const data = await saFetchAdmin(
+          "/api/admin/songs/previews?q=" + encodeURIComponent(st.q || "") +
+          "&section=" + encodeURIComponent(st.section || "all") +
+          "&status=missing" +
+          "&limit=" + pageSize +
+          "&offset=" + offset
+        );
+        const songs = Array.isArray(data.songs) ? data.songs : [];
+        total = Number(data.total);
+        if (!Number.isFinite(total)) total = offset + songs.length;
+        songs.forEach((song) => {
+          const url = String((song && song.youtube_url) || "").trim();
+          if (!url) return;
+          if (!(song && song.section && song.id)) return;
+          candidates.push({
+            section: String(song.section),
+            id: String(song.id),
+            title: String(song.title || song.id).trim() || String(song.id),
+            youtube_url: url,
+          });
+        });
+        if (!songs.length) break;
+        offset += songs.length;
+        if (songs.length < pageSize) break;
+      }
+      return candidates;
+    }
+
+    async function fetchAllSaSongPreviewsWithLinks() {
+      if (!guardSuperadminAction()) return;
+      if (typeof startPreviewFetchJob !== "function") {
+        if (typeof notify === "function") notify("Clip fetch is not available.", "warn");
+        return;
+      }
+      const btn = $("sa-btn-fetch-all-previews");
+      const statusEl = $("sa-song-preview-status");
+      if (btn && btn.dataset.busy === "1") return;
+      const durationSec = saPreviewDurationSec();
+      if (btn) {
+        btn.dataset.busy = "1";
+        btn.disabled = true;
+        btn.textContent = "Scanning…";
+      }
+      if (statusEl) {
+        statusEl.textContent = "Finding songs with a YouTube link but no clip…";
+        statusEl.className = "status";
+      }
+      try {
+        const candidates = await collectSaSongsNeedingLinkedPreview();
+        if (!candidates.length) {
+          const msg = "No songs with a YouTube link are missing a clip" +
+            ((saState.songPreviews && (saState.songPreviews.q || saState.songPreviews.section !== "all"))
+              ? " for the current filters."
+              : ".");
+          if (statusEl) { statusEl.textContent = msg; statusEl.className = "status ok"; }
+          if (typeof notify === "function") notify(msg, "info");
+          return;
+        }
+        const confirmMsg =
+          "Queue " + durationSec + "s chorus clips for " + candidates.length +
+          " song" + (candidates.length === 1 ? "" : "s") +
+          " that already have a YouTube link?\n\nJobs run one at a time — you can leave this page open and watch the progress bar.";
+        if (!window.confirm(confirmMsg)) {
+          if (statusEl) { statusEl.textContent = "Bulk fetch cancelled."; statusEl.className = "status"; }
+          return;
+        }
+        if (btn) btn.textContent = "Queuing…";
+        if (statusEl) {
+          statusEl.textContent = "Queuing " + candidates.length + " clip fetch" +
+            (candidates.length === 1 ? "" : "es") + "…";
+          statusEl.className = "status";
+        }
+        let queued = 0;
+        let failed = 0;
+        for (let i = 0; i < candidates.length; i += 1) {
+          const song = candidates[i];
+          const key = song.section + ":" + song.id;
+          previewFetchState.attempted[key] = true;
+          if (btn) btn.textContent = "Queuing " + (i + 1) + "/" + candidates.length;
+          try {
+            await startPreviewFetchJob({
+              section: song.section,
+              id: song.id,
+              title: song.title,
+              youtube_url: song.youtube_url,
+              duration_sec: durationSec,
+              toast: false,
+            });
+            queued += 1;
+          } catch (_err) {
+            failed += 1;
+          }
+        }
+        const summary =
+          "Queued " + queued + " × " + durationSec + "s clip" + (queued === 1 ? "" : "s") +
+          (failed ? (" · " + failed + " failed to queue") : "") +
+          ". Watch the progress bar — clips process one at a time.";
+        if (statusEl) {
+          statusEl.textContent = summary;
+          statusEl.className = failed && !queued ? "status error" : "status ok";
+        }
+        if (typeof showToast === "function") {
+          showToast(summary, failed && !queued ? "warn" : "info");
+        } else if (typeof notify === "function") {
+          notify(summary, failed && !queued ? "warn" : "ok");
+        }
+      } catch (err) {
+        const msg = (err && err.message) || "Could not queue linked clip fetches.";
+        if (statusEl) { statusEl.textContent = msg; statusEl.className = "status error"; }
+        if (typeof notify === "function") notify(msg, "warn");
+      } finally {
+        if (btn) {
+          btn.dataset.busy = "0";
+          btn.disabled = false;
+          btn.textContent = "Fetch all linked";
+        }
+      }
+    }
+
     async function commitSaPreviewYoutubeInput(input, opts) {
       const options = opts || {};
       if (!input || !guardSuperadminAction()) return;
@@ -19158,6 +19545,7 @@
       $("sa-btn-open-templates") && $("sa-btn-open-templates").addEventListener("click", () => showRoute("/design/templates"));
       $("sa-btn-open-library") && $("sa-btn-open-library").addEventListener("click", () => showRoute("/library/songs"));
       $("sa-btn-sync-hymn-catalog") && $("sa-btn-sync-hymn-catalog").addEventListener("click", () => syncSaHymnCatalog());
+      $("sa-btn-fetch-all-previews") && $("sa-btn-fetch-all-previews").addEventListener("click", () => fetchAllSaSongPreviewsWithLinks());
       $("sa-btn-refresh-hymn-catalog") && $("sa-btn-refresh-hymn-catalog").addEventListener("click", () => {
         loadSaHymnCatalogStatus();
         loadSaSongPreviews();
@@ -19680,6 +20068,373 @@
     }
 
     var FLOW_FOOD_MAX = 24;
+    var FLOW_CUSTOM_SLIDES_MAX = 8;
+    var FLOW_CUSTOM_SLIDE_TITLE_MAX = 120;
+    var FLOW_CUSTOM_SLIDE_CONTENT_MAX = 800;
+    var ANN_BG_DEFAULTS = {
+      collection: "#223723",
+      food: "#394f80",
+      contact: "#a77026",
+      merienda: "#fb5f54",
+    };
+    var flowCustomSlides = [];
+    var flowCustomSlideSeq = 0;
+    var flowCustomSlideEditId = null;
+
+    function normalizeAnnouncementHex(value, fallback) {
+      var raw = String(value || "").trim();
+      if (!raw) return fallback || "#394f80";
+      if (raw.charAt(0) !== "#") raw = "#" + raw;
+      var m = raw.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+      if (!m) return fallback || "#394f80";
+      var hex = m[1];
+      if (hex.length === 3) {
+        hex = hex.split("").map(function (c) { return c + c; }).join("");
+      }
+      return ("#" + hex).toLowerCase();
+    }
+
+    function announcementColorRoot(colorId) {
+      var colorEl = $(colorId);
+      return colorEl ? colorEl.closest(".mw-color-picker") : null;
+    }
+
+    function syncAnnouncementColorUi(colorId, hex) {
+      var root = announcementColorRoot(colorId);
+      var colorEl = $(colorId);
+      var hexEl = $(colorId + "-hex");
+      var swatch = root ? root.querySelector(".mw-color-picker__swatch") : null;
+      if (colorEl) colorEl.value = hex;
+      if (hexEl) hexEl.value = hex.toUpperCase();
+      if (swatch) swatch.style.setProperty("--mw-swatch", hex);
+    }
+
+    function readAnnouncementBg(key) {
+      var fallback = ANN_BG_DEFAULTS[key] || "#394f80";
+      var hexEl = $("flow-slide-bg-" + key + "-hex");
+      var colorEl = $("flow-slide-bg-" + key);
+      var raw = (hexEl && hexEl.value) || (colorEl && colorEl.value) || fallback;
+      return normalizeAnnouncementHex(raw, fallback);
+    }
+
+    function setAnnouncementBg(key, value) {
+      var fallback = ANN_BG_DEFAULTS[key] || "#394f80";
+      var hex = normalizeAnnouncementHex(value, fallback);
+      syncAnnouncementColorUi("flow-slide-bg-" + key, hex);
+    }
+
+    function getAnnouncementBgColors() {
+      return {
+        collection: readAnnouncementBg("collection"),
+        food: readAnnouncementBg("food"),
+        contact: readAnnouncementBg("contact"),
+        merienda: readAnnouncementBg("merienda"),
+      };
+    }
+
+    function setAnnouncementBgColors(colors) {
+      var src = colors && typeof colors === "object" ? colors : {};
+      Object.keys(ANN_BG_DEFAULTS).forEach(function (key) {
+        if (src[key]) setAnnouncementBg(key, src[key]);
+        else setAnnouncementBg(key, ANN_BG_DEFAULTS[key]);
+      });
+    }
+
+    function closeAllAnnouncementColorPopovers(exceptRoot) {
+      document.querySelectorAll(".mw-color-picker").forEach(function (root) {
+        if (exceptRoot && root === exceptRoot) return;
+        var pop = root.querySelector(".mw-color-picker__popover");
+        var swatch = root.querySelector(".mw-color-picker__swatch");
+        if (pop) pop.hidden = true;
+        if (swatch) swatch.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    function bindAnnouncementColorPair(colorId, fallback, onChange) {
+      var colorEl = $(colorId);
+      var hexEl = $(colorId + "-hex");
+      var root = announcementColorRoot(colorId);
+      if (!colorEl || !hexEl || !root || root.dataset.annColorBound === "1") return;
+      root.dataset.annColorBound = "1";
+      var swatch = root.querySelector(".mw-color-picker__swatch");
+      var pop = root.querySelector(".mw-color-picker__popover");
+      var def = fallback || colorEl.value || "#394f80";
+      var initial = normalizeAnnouncementHex(hexEl.value || colorEl.value || def, def);
+      syncAnnouncementColorUi(colorId, initial);
+
+      function applyFromColor() {
+        var hex = normalizeAnnouncementHex(colorEl.value, def);
+        syncAnnouncementColorUi(colorId, hex);
+        if (typeof onChange === "function") onChange(hex);
+      }
+      function applyFromHex() {
+        var hex = normalizeAnnouncementHex(hexEl.value, colorEl.value || def);
+        syncAnnouncementColorUi(colorId, hex);
+        if (typeof onChange === "function") onChange(hex);
+      }
+
+      colorEl.addEventListener("input", applyFromColor);
+      colorEl.addEventListener("change", applyFromColor);
+      hexEl.addEventListener("change", applyFromHex);
+      hexEl.addEventListener("blur", applyFromHex);
+      hexEl.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          applyFromHex();
+          hexEl.blur();
+        }
+      });
+      hexEl.addEventListener("paste", function () {
+        setTimeout(applyFromHex, 0);
+      });
+
+      if (swatch && pop) {
+        swatch.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var open = pop.hidden;
+          closeAllAnnouncementColorPopovers(root);
+          pop.hidden = !open;
+          swatch.setAttribute("aria-expanded", open ? "true" : "false");
+          if (open) {
+            setTimeout(function () { try { hexEl.focus(); hexEl.select(); } catch (_e) {} }, 0);
+          }
+        });
+        pop.addEventListener("click", function (e) { e.stopPropagation(); });
+      }
+    }
+
+    function initAnnouncementBgColorPickers() {
+      Object.keys(ANN_BG_DEFAULTS).forEach(function (key) {
+        bindAnnouncementColorPair("flow-slide-bg-" + key, ANN_BG_DEFAULTS[key]);
+      });
+      bindAnnouncementColorPair("flow-custom-slide-bg", "#394f80");
+      if (!document.documentElement.dataset.annColorDocBound) {
+        document.documentElement.dataset.annColorDocBound = "1";
+        document.addEventListener("click", function () {
+          closeAllAnnouncementColorPopovers();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") closeAllAnnouncementColorPopovers();
+        });
+      }
+    }
+
+    function getFlowCustomSlidesPayload() {
+      return (flowCustomSlides || []).map(function (slide) {
+        return {
+          title: String(slide.title || "").trim().slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX),
+          content: String(slide.content || "").trim().slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX),
+          bg_color: normalizeAnnouncementHex(slide.bg_color, "#394f80"),
+        };
+      }).filter(function (slide) {
+        return !!(slide.title || slide.content);
+      }).slice(0, FLOW_CUSTOM_SLIDES_MAX);
+    }
+
+    function previewCustomSlideContent(content) {
+      var text = String(content || "").replace(/\s+/g, " ").trim();
+      if (!text) return "No content yet";
+      return text.length > 72 ? text.slice(0, 71) + "…" : text;
+    }
+
+    function renderFlowCustomSlidesList() {
+      var list = $("flow-custom-slides-list");
+      if (!list) return;
+      list.innerHTML = (flowCustomSlides || []).map(function (slide) {
+        var bg = normalizeAnnouncementHex(slide.bg_color, "#394f80");
+        var colorId = "flow-custom-live-bg-" + slide.id;
+        var popId = colorId + "-pop";
+        return (
+          "<li class=\"mw-announcement-option mw-custom-slide-item\" data-custom-slide-id=\"" + escapeHtml(String(slide.id)) + "\">" +
+            "<div class=\"mw-custom-slide-item__actions mw-custom-slide-item__actions--color\">" +
+              "<div class=\"mw-color-picker\" data-ann-color=\"custom-" + escapeHtml(String(slide.id)) + "\">" +
+                "<button type=\"button\" class=\"mw-color-picker__swatch\" style=\"--mw-swatch:" + escapeHtml(bg) + "\" aria-label=\"Custom slide background color\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-controls=\"" + escapeHtml(popId) + "\"></button>" +
+                "<div class=\"mw-color-picker__popover\" id=\"" + escapeHtml(popId) + "\" hidden role=\"dialog\" aria-label=\"Pick custom slide background\">" +
+                  "<input type=\"color\" id=\"" + escapeHtml(colorId) + "\" value=\"" + escapeHtml(bg) + "\" aria-label=\"Color swatch\" />" +
+                  "<input type=\"text\" id=\"" + escapeHtml(colorId) + "-hex\" class=\"mw-color-picker__hex\" value=\"" + escapeHtml(bg.toUpperCase()) + "\" maxlength=\"7\" spellcheck=\"false\" autocomplete=\"off\" aria-label=\"Hex color code\" inputmode=\"text\" placeholder=\"#000000\" />" +
+                "</div>" +
+              "</div>" +
+            "</div>" +
+            "<button type=\"button\" class=\"mw-custom-slide-item__main\" data-custom-slide-edit=\"" + escapeHtml(String(slide.id)) + "\" aria-label=\"Edit custom slide\">" +
+              "<span class=\"mw-announcement-option__text\">" +
+                "<strong>" + escapeHtml(slide.title || "Announcement") + "</strong>" +
+                "<span class=\"muted\">" + escapeHtml(previewCustomSlideContent(slide.content)) + "</span>" +
+              "</span>" +
+            "</button>" +
+            "<button type=\"button\" class=\"ghost mini mw-custom-slide-item__remove\" data-custom-slide-remove=\"" + escapeHtml(String(slide.id)) + "\" aria-label=\"Remove custom slide\">×</button>" +
+          "</li>"
+        );
+      }).join("");
+      (flowCustomSlides || []).forEach(function (slide) {
+        var colorId = "flow-custom-live-bg-" + slide.id;
+        bindAnnouncementColorPair(colorId, slide.bg_color || "#394f80", function (hex) {
+          slide.bg_color = hex;
+          if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+        });
+      });
+    }
+
+    function setFlowCustomSlidesUI(slides) {
+      flowCustomSlides = [];
+      flowCustomSlideSeq = 0;
+      flowCustomSlideEditId = null;
+      (slides || []).forEach(function (raw) {
+        if (!raw || typeof raw !== "object") return;
+        if (flowCustomSlides.length >= FLOW_CUSTOM_SLIDES_MAX) return;
+        flowCustomSlideSeq += 1;
+        flowCustomSlides.push({
+          id: "cs-" + flowCustomSlideSeq,
+          title: String(raw.title || "").trim().slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX),
+          content: String(raw.content || "").trim().slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX),
+          bg_color: normalizeAnnouncementHex(raw.bg_color || raw.bgColor, "#394f80"),
+        });
+      });
+      renderFlowCustomSlidesList();
+    }
+
+    function findFlowCustomSlide(id) {
+      return (flowCustomSlides || []).find(function (s) { return String(s.id) === String(id); }) || null;
+    }
+
+    function openCustomSlideForm(editId) {
+      var modal = $("flow-custom-slide-modal");
+      if (!modal) return;
+      flowCustomSlideEditId = editId || null;
+      var slide = flowCustomSlideEditId ? findFlowCustomSlide(flowCustomSlideEditId) : null;
+      var titleEl = $("flow-custom-slide-title");
+      var contentEl = $("flow-custom-slide-content");
+      var heading = $("flow-custom-slide-modal-title");
+      var saveBtn = $("btn-flow-custom-slide-save");
+      if (heading) heading.textContent = slide ? "Edit custom slide" : "Add custom slide";
+      if (saveBtn) saveBtn.textContent = slide ? "Save slide" : "Add to deck";
+      if (titleEl) titleEl.value = slide ? (slide.title || "") : "";
+      if (contentEl) contentEl.value = slide ? (slide.content || "") : "";
+      syncAnnouncementColorUi(
+        "flow-custom-slide-bg",
+        normalizeAnnouncementHex(slide && slide.bg_color, "#394f80")
+      );
+      closeAllAnnouncementColorPopovers();
+      modal.setAttribute("data-open", "true");
+      modal.setAttribute("aria-hidden", "false");
+      setTimeout(function () {
+        if (titleEl) titleEl.focus();
+      }, 0);
+    }
+
+    function closeCustomSlideForm() {
+      var modal = $("flow-custom-slide-modal");
+      if (modal) {
+        modal.setAttribute("data-open", "false");
+        modal.setAttribute("aria-hidden", "true");
+      }
+      flowCustomSlideEditId = null;
+      closeAllAnnouncementColorPopovers();
+    }
+
+    function saveCustomSlideFromForm() {
+      var titleEl = $("flow-custom-slide-title");
+      var contentEl = $("flow-custom-slide-content");
+      var title = titleEl ? titleEl.value.trim() : "";
+      var content = contentEl ? contentEl.value.trim() : "";
+      if (!title && !content) {
+        if (typeof notify === "function") notify("Enter a slide title or content.", "warn");
+        if (titleEl) titleEl.focus();
+        return;
+      }
+      if (!title) title = "Announcement";
+      var bg = normalizeAnnouncementHex(
+        ($("flow-custom-slide-bg-hex") && $("flow-custom-slide-bg-hex").value) ||
+        ($("flow-custom-slide-bg") && $("flow-custom-slide-bg").value),
+        "#394f80"
+      );
+      if (flowCustomSlideEditId) {
+        var existing = findFlowCustomSlide(flowCustomSlideEditId);
+        if (existing) {
+          existing.title = title.slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX);
+          existing.content = content.slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX);
+          existing.bg_color = bg;
+        }
+      } else {
+        if ((flowCustomSlides || []).length >= FLOW_CUSTOM_SLIDES_MAX) {
+          if (typeof notify === "function") notify("You can add up to " + FLOW_CUSTOM_SLIDES_MAX + " custom slides.", "warn");
+          return;
+        }
+        flowCustomSlideSeq += 1;
+        flowCustomSlides.push({
+          id: "cs-" + flowCustomSlideSeq,
+          title: title.slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX),
+          content: content.slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX),
+          bg_color: bg,
+        });
+      }
+      renderFlowCustomSlidesList();
+      closeCustomSlideForm();
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+    }
+
+    function initFlowCustomSlides() {
+      initAnnouncementBgColorPickers();
+      var addBtn = $("btn-flow-custom-slide-add");
+      var saveBtn = $("btn-flow-custom-slide-save");
+      var cancelBtn = $("btn-flow-custom-slide-cancel");
+      var modal = $("flow-custom-slide-modal");
+      var list = $("flow-custom-slides-list");
+      if (addBtn && !addBtn.dataset.bound) {
+        addBtn.dataset.bound = "1";
+        addBtn.addEventListener("click", function () {
+          if ((flowCustomSlides || []).length >= FLOW_CUSTOM_SLIDES_MAX) {
+            if (typeof notify === "function") notify("You can add up to " + FLOW_CUSTOM_SLIDES_MAX + " custom slides.", "warn");
+            return;
+          }
+          openCustomSlideForm(null);
+        });
+      }
+      if (saveBtn && !saveBtn.dataset.bound) {
+        saveBtn.dataset.bound = "1";
+        saveBtn.addEventListener("click", saveCustomSlideFromForm);
+      }
+      if (cancelBtn && !cancelBtn.dataset.bound) {
+        cancelBtn.dataset.bound = "1";
+        cancelBtn.addEventListener("click", closeCustomSlideForm);
+      }
+      if (modal && !modal.dataset.bound) {
+        modal.dataset.bound = "1";
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeCustomSlideForm();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && modal.getAttribute("data-open") === "true") {
+            closeCustomSlideForm();
+          }
+        });
+      }
+      if (list && !list.dataset.bound) {
+        list.dataset.bound = "1";
+        list.addEventListener("click", function (e) {
+          var removeBtn = e.target.closest("[data-custom-slide-remove]");
+          if (removeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var rid = removeBtn.getAttribute("data-custom-slide-remove");
+            flowCustomSlides = (flowCustomSlides || []).filter(function (s) { return String(s.id) !== String(rid); });
+            renderFlowCustomSlidesList();
+            if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+            return;
+          }
+          if (e.target.closest(".mw-color-picker")) return;
+          var editBtn = e.target.closest("[data-custom-slide-edit]");
+          if (!editBtn) return;
+          openCustomSlideForm(editBtn.getAttribute("data-custom-slide-edit"));
+        });
+      }
+      renderFlowCustomSlidesList();
+    }
+
+    window.getFlowCustomSlidesPayload = getFlowCustomSlidesPayload;
+    window.setFlowCustomSlidesUI = setFlowCustomSlidesUI;
+    window.getAnnouncementBgColors = getAnnouncementBgColors;
+    window.setAnnouncementBgColors = setAnnouncementBgColors;
 
     function syncFlowPsalmOverrideHidden() {
       /* legacy no-op — psalm custom line is sent directly from #flow-psalm-custom */
@@ -19792,6 +20547,7 @@
     }
 
     function initFlowInputGroups() {
+      initFlowCustomSlides();
       const foodIn = $("flow-food-sponsor-input");
       const foodAdd = $("btn-flow-food-add");
       ensureFoodSponsorsList();
@@ -22469,14 +23225,23 @@
       return el ? String(el.value || "").trim() : "";
     }
 
-    function setMassDefaultPin(key, value, on) {
+    function setMassDefaultPin(key, value, on, opts) {
+      const options = opts || {};
       const k = String(key || "").trim();
       const v = String(value || "").trim();
-      if (!k || !v) return;
+      if (!k) return;
       const map = readMassPinnedDefaults();
-      if (on) map[k] = v;
-      else if (map[k] === v) delete map[k];
+      if (on) {
+        if (!v) return;
+        map[k] = v;
+      } else if (options.clearKey || !v || map[k] === v) {
+        // Field-level pins clear the whole key; option pins only clear when that option is pinned.
+        delete map[k];
+      }
       writeMassPinnedDefaults(map);
+      if (on && k === "flow-hymn-layout" && (v === "single" || v === "dual") && typeof applyHymnLyricsLayout === "function") {
+        applyHymnLyricsLayout(v);
+      }
       syncMassDefaultPins();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
     }
@@ -22484,11 +23249,13 @@
 
     function massDefaultPinCompareValue(inp) {
       const key = inp.getAttribute("data-mw-default-key") || "";
-      const optionVal = String(inp.getAttribute("data-mw-default-value") || "").trim();
-      if (optionVal) return optionVal;
-      const currentVal = massDefaultPinCurrentValue(key);
-      if (currentVal) inp.setAttribute("data-mw-default-value", currentVal);
-      return currentVal;
+      // Rite/option pins ship with an explicit data-mw-default-value. Field pins must
+      // compare against the live selection — never cache it onto the checkbox or the
+      // "Use as default" control sticks to the first value (e.g. dual) forever.
+      if (inp.hasAttribute("data-mw-default-value")) {
+        return String(inp.getAttribute("data-mw-default-value") || "").trim();
+      }
+      return massDefaultPinCurrentValue(key);
     }
 
     function syncMassDefaultPins(root) {
@@ -22562,12 +23329,17 @@
         label.addEventListener("click", (e) => e.stopPropagation());
         label.addEventListener("change", (e) => {
           e.stopPropagation();
+          const checked = !!e.target.checked;
+          if (!checked) {
+            setMassDefaultPin(fieldId, massDefaultPinCurrentValue(fieldId), false, { clearKey: true });
+            return;
+          }
           const val = massDefaultPinCurrentValue(fieldId);
           if (!val) {
             e.target.checked = false;
             return;
           }
-          setMassDefaultPin(fieldId, val, !!e.target.checked);
+          setMassDefaultPin(fieldId, val, true);
         });
         host.appendChild(label);
         if (fieldId === "flow-hymn-layout") {
@@ -22593,9 +23365,13 @@
           return;
         }
         if (key === "flow-hymn-layout") {
-          document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
-            el.checked = el.value === val;
-          });
+          if (typeof applyHymnLyricsLayout === "function") {
+            applyHymnLyricsLayout(val);
+          } else {
+            document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+              el.checked = el.value === val;
+            });
+          }
           return;
         }
         if (key === "flow-deck-theme" && typeof setActiveDeckTheme === "function") {
@@ -22621,6 +23397,8 @@
           ? e.target
           : null;
         if (!inp) return;
+        // Field-level pins handle their own change (and stopPropagation).
+        if (!inp.hasAttribute("data-mw-default-value")) return;
         const key = inp.getAttribute("data-mw-default-key") || "";
         const val = massDefaultPinCompareValue(inp);
         if (!val) {
@@ -24831,14 +25609,23 @@
         }
         if (collLabel) body.mass_collection_date_label = collLabel;
         if (foodLines.length) body.food_sponsors = foodLines;
-        body.include_mass_collection_slide = !!( $("flow-slide-mass-collection") && $("flow-slide-mass-collection").checked );
+        const collAmtLive = ($("flow-collection-amount") && $("flow-collection-amount").value.trim()) || "";
+        body.include_mass_collection_slide = !!( $("flow-slide-mass-collection") && $("flow-slide-mass-collection").checked && collAmtLive );
         body.include_food_sponsor_slide = !!( $("flow-slide-food-sponsor") && $("flow-slide-food-sponsor").checked );
         body.include_sponsorship_contact_slide = !!( $("flow-slide-sponsorship-contact") && $("flow-slide-sponsorship-contact").checked );
         body.include_merienda_location_slide = !!( $("flow-slide-merienda-location") && $("flow-slide-merienda-location").checked );
+        body.include_welcoming_newcomers_slide = !!( $("flow-slide-welcoming-newcomers") && $("flow-slide-welcoming-newcomers").checked );
         const sponsorshipContact = $("flow-sponsorship-contact") && $("flow-sponsorship-contact").value.trim();
         const meriendaLocation = $("flow-merienda-location") && $("flow-merienda-location").value.trim();
         if (sponsorshipContact) body.sponsorship_contact = sponsorshipContact;
         if (meriendaLocation) body.merienda_location = meriendaLocation;
+        if (typeof getAnnouncementBgColors === "function") {
+          body.announcement_bg_colors = getAnnouncementBgColors();
+        }
+        if (typeof getFlowCustomSlidesPayload === "function") {
+          const customSlides = getFlowCustomSlidesPayload();
+          if (customSlides.length) body.custom_announcement_slides = customSlides;
+        }
         const creedSel = $("flow-creed-choice");
         body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
         const ofSel = $("flow-our-father-choice");
@@ -24878,8 +25665,11 @@
           include_food_sponsor_slide: !!body.include_food_sponsor_slide,
           include_sponsorship_contact_slide: !!body.include_sponsorship_contact_slide,
           include_merienda_location_slide: !!body.include_merienda_location_slide,
+          include_welcoming_newcomers_slide: !!body.include_welcoming_newcomers_slide,
           sponsorship_contact: body.sponsorship_contact || null,
           merienda_location: body.merienda_location || null,
+          announcement_bg_colors: body.announcement_bg_colors || null,
+          custom_announcement_slides: body.custom_announcement_slides || [],
           psalm_text_override: body.psalm_text_override || null,
           psalm_refrain_index: body.psalm_refrain_index != null ? body.psalm_refrain_index : null,
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
@@ -26033,17 +26823,25 @@
       return req;
     }
 
-    function prefetchSongDetail(section, id) {
+    function prefetchSongDetail(section, id, options) {
+      const opts = options || {};
       const sec = String(section || "").trim().toLowerCase();
       const sid = String(id || "").trim();
       if (!sec || !sid) return;
       if (songDetailCache.has(songDetailCacheKey(sec, sid))) return;
+      if (songDetailInflight.has(songDetailCacheKey(sec, sid))) return;
+      const run = () => {
+        fetchSongDetail(sec, sid).catch(() => {});
+      };
+      if (opts.immediate) {
+        clearTimeout(songDetailPrefetchTimer);
+        run();
+        return;
+      }
       // Avoid burning the production lyric rate limit by prefetching every hovered row.
       if (songDetailInflight.size > 0) return;
       clearTimeout(songDetailPrefetchTimer);
-      songDetailPrefetchTimer = setTimeout(() => {
-        fetchSongDetail(sec, sid).catch(() => {});
-      }, 450);
+      songDetailPrefetchTimer = setTimeout(run, 450);
     }
 
     function recentSongDedupeKey(r) {
@@ -26583,6 +27381,8 @@
           "</button>"
         );
       }).join("");
+      const top = rows.find((r) => r && r.kind !== "deleted" && r.id && r.section);
+      if (top) prefetchSongDetail(top.section, top.id, { immediate: true });
     }
 
     function formatSongHistoryWhen(ts) {
@@ -27128,36 +27928,120 @@
     }
 
     var composerPreloadSeq = 0;
+    var composerSongLoadingToken = 0;
+
+    function clearComposerSongRowLoading() {
+      document.querySelectorAll(".song-row.is-loading-song, .song-composer-recent-item.is-loading-song").forEach((el) => {
+        el.classList.remove("is-loading-song");
+      });
+    }
+
+    function markComposerSongSourceLoading(section, id) {
+      clearComposerSongRowLoading();
+      const sec = String(section || "").trim().toLowerCase();
+      const sid = String(id || "").trim();
+      if (!sec || !sid) return;
+      document.querySelectorAll(
+        '.song-row[data-ssec="' + sec + '"][data-sid="' + sid + '"],' +
+        '.song-composer-recent-item[data-recent-sec="' + sec + '"][data-recent-id="' + sid + '"]'
+      ).forEach((el) => el.classList.add("is-loading-song"));
+    }
+
+    function setComposerSongLoading(active, options) {
+      const opts = options || {};
+      const workspace = $("lyrics-workspace");
+      const panel = $("song-composer-panel");
+      const overlay = $("composer-song-loading");
+      const label = $("composer-song-loading-label");
+      const railStatus = $("song-composer-load-status");
+      const titleHint = String(opts.title || "").trim();
+      const statusText = titleHint
+        ? ("Loading “" + titleHint + "”…")
+        : (opts.message || "Loading song…");
+      if (active) {
+        composerSongLoadingToken += 1;
+        if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+        if (workspace) workspace.classList.add("is-loading-song");
+        if (panel) panel.classList.add("is-loading-song");
+        if (overlay) {
+          overlay.hidden = false;
+          overlay.setAttribute("aria-hidden", "false");
+        }
+        if (label) label.textContent = statusText;
+        if (railStatus) {
+          railStatus.hidden = false;
+          railStatus.textContent = statusText;
+        }
+        if (opts.section && opts.id) markComposerSongSourceLoading(opts.section, opts.id);
+        return composerSongLoadingToken;
+      }
+      const token = opts.token;
+      if (token != null && token !== composerSongLoadingToken) return composerSongLoadingToken;
+      if (workspace) workspace.classList.remove("is-loading-song");
+      if (panel) panel.classList.remove("is-loading-song");
+      if (overlay) {
+        overlay.hidden = true;
+        overlay.setAttribute("aria-hidden", "true");
+      }
+      if (railStatus) {
+        railStatus.hidden = true;
+        railStatus.textContent = "";
+      }
+      clearComposerSongRowLoading();
+      return composerSongLoadingToken;
+    }
 
     async function preloadComposerFromLatestSong() {
       const seq = ++composerPreloadSeq;
-      // Wait for account/parish history so the last edited song is available across devices.
-      if (typeof memberApiAvailable === "function" && memberApiAvailable() && typeof pullSongHistoryFromAccount === "function") {
-        try {
-          await pullSongHistoryFromAccount();
-        } catch (_e) { /* use local cache */ }
+      const loadingToken = setComposerSongLoading(true, { message: "Loading your recent song…" });
+      // Prefer local recent history for an instant open; sync account history in parallel.
+      const historyPromise = (
+        typeof memberApiAvailable === "function" && memberApiAvailable() && typeof pullSongHistoryFromAccount === "function"
+      ) ? pullSongHistoryFromAccount().catch(() => false) : Promise.resolve(false);
+      await loadSongCatalog(false);
+      if (seq !== composerPreloadSeq) {
+        setComposerSongLoading(false, { token: loadingToken });
+        return;
       }
-      if (seq !== composerPreloadSeq) return;
-      if (composerSuppressPreload) return;
-      await loadSongCatalog(true);
-      if (seq !== composerPreloadSeq) return;
-      if (composerSuppressPreload) return;
+      if (composerSuppressPreload) {
+        setComposerSongLoading(false, { token: loadingToken });
+        return;
+      }
       renderComposerRecent();
-      const entry = getLatestComposerPreloadEntry();
+      let entry = getLatestComposerPreloadEntry();
       if (!entry) {
+        await historyPromise;
+        if (seq !== composerPreloadSeq) {
+          setComposerSongLoading(false, { token: loadingToken });
+          return;
+        }
+        if (composerSuppressPreload) {
+          setComposerSongLoading(false, { token: loadingToken });
+          return;
+        }
+        renderComposerRecent();
+        entry = getLatestComposerPreloadEntry();
+      } else {
+        void historyPromise;
+      }
+      if (!entry) {
+        setComposerSongLoading(false, { token: loadingToken });
         if (composerEditorIsIdleForPreload()) {
           resetComposerEditorEmpty();
           setLyricsStatus("Pick a song from the library or start typing new lyrics.", "");
         }
         return;
       }
+      prefetchSongDetail(entry.section, entry.id, { immediate: true });
       try {
         await loadSongIntoEditor(entry.section, entry.id, {
           clearSearch: false,
           title: entry.title || "",
           language: entry.language || "",
+          loadingToken,
         });
       } catch (_e) {
+        setComposerSongLoading(false, { token: loadingToken });
         if (seq !== composerPreloadSeq) return;
         if (composerEditorIsIdleForPreload()) {
           resetComposerEditorEmpty();
@@ -27172,73 +28056,112 @@
       composerPreloadSeq += 1;
       composerSuppressPreload = true;
       const clearSearch = opts.clearSearch !== false;
+      const forceNetwork = !!opts.forceNetwork;
       const hint = {
         title: String(opts.title || "").trim(),
         language: String(opts.language || "").trim(),
         section: String(section || "").trim().toLowerCase(),
       };
-      await loadSongCatalog(true);
-      if (loadSeq !== composerEditorLoadSeq) return;
-      const requestedSec = String(section || "").trim().toLowerCase();
-      const requestedId = String(id || "").trim();
-      const placement = resolveCatalogSongPlacement(requestedSec, requestedId, hint.title);
-      const sec = placement ? placement.section : requestedSec;
-      const sid = placement ? placement.id : requestedId;
-      const catalogRow = placement && placement.row ? placement.row : null;
-      if (catalogRow || hint.title || hint.language) {
-        applySongMetaToForm(sec, mergeSongEditorMeta(catalogRow, {}, sec, hint));
+      // Collapse the library immediately so the editor stays in focus while lyrics load.
+      if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+      // Paint title immediately so the editor feels responsive while lyrics load.
+      if (hint.title || hint.language || hint.section) {
+        applySongMetaToForm(hint.section, mergeSongEditorMeta(null, {}, hint.section, hint));
       }
-      setLyricsStatus(
-        catalogRow
-          ? "Retrieving lyrics for \"" + catalogRow.title + "\"…"
-          : "Retrieving song…",
-        ""
-      );
-      bustStoredSongDetail(requestedSec, requestedId);
-      if (sec !== requestedSec || sid !== requestedId) {
-        bustStoredSongDetail(sec, sid);
+      let loadingToken = opts.loadingToken != null
+        ? opts.loadingToken
+        : setComposerSongLoading(true, {
+            title: hint.title,
+            section: hint.section,
+            id: String(id || "").trim(),
+            message: hint.title ? undefined : "Retrieving song…",
+          });
+      if (opts.loadingToken != null) {
+        // Keep preload overlay, but switch copy to the concrete song title when known.
+        const statusText = hint.title
+          ? ("Loading “" + hint.title + "”…")
+          : "Retrieving song…";
+        const labelEl = $("composer-song-loading-label");
+        const railStatus = $("song-composer-load-status");
+        if (labelEl) labelEl.textContent = statusText;
+        if (railStatus) {
+          railStatus.hidden = false;
+          railStatus.textContent = statusText;
+        }
+        markComposerSongSourceLoading(hint.section, String(id || "").trim());
       }
-      const data = await fetchSongDetail(sec, sid, { forceNetwork: true });
-      if (loadSeq !== composerEditorLoadSeq) return;
-      const s = data.song || {};
-      const apiSec = String(data.section || sec).trim().toLowerCase();
-      const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
-      applySongMetaToForm(apiSec, merged);
-      composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
-      composerSongMedia = {
-        audio: normalizeComposerMediaRef(s.audio_media || (catalogRow && catalogRow.audio_media)),
-        video: normalizeComposerMediaRef(s.video_media || (catalogRow && catalogRow.video_media)),
-        preview: normalizeAudioPreviewRef(s.audio_preview || (catalogRow && catalogRow.audio_preview)),
-      };
-      renderComposerSongMediaFields();
-      maybeAutoFetchSongPreview(apiSec, sid, {
-        title: merged.title || s.title || "",
-        audio: composerSongMedia.audio,
-        preview: composerSongMedia.preview,
-      });
-      composerCatalogLyrics = String(
-        s.catalog_lyrics != null && String(s.catalog_lyrics).length
-          ? s.catalog_lyrics
-          : (s.parish_version ? "" : (s.lyrics || ""))
-      );
-      composerParishVersion = !!s.parish_version;
-      if (($("lyrics-input") && $("lyrics-input").value.trim()) || (lyricBlocks && lyricBlocks.length)) {
-        pushComposerUndoCheckpoint();
+      try {
+        await loadSongCatalog(false);
+        if (loadSeq !== composerEditorLoadSeq) return;
+        const requestedSec = String(section || "").trim().toLowerCase();
+        const requestedId = String(id || "").trim();
+        const placement = resolveCatalogSongPlacement(requestedSec, requestedId, hint.title);
+        const sec = placement ? placement.section : requestedSec;
+        const sid = placement ? placement.id : requestedId;
+        const catalogRow = placement && placement.row ? placement.row : null;
+        if (catalogRow || hint.title || hint.language) {
+          applySongMetaToForm(sec, mergeSongEditorMeta(catalogRow, {}, sec, hint));
+        }
+        const songTitle = String((catalogRow && catalogRow.title) || hint.title || "").trim();
+        const statusText = songTitle ? ("Loading “" + songTitle + "”…") : "Retrieving song…";
+        markComposerSongSourceLoading(sec, sid);
+        const labelEl = $("composer-song-loading-label");
+        const railStatus = $("song-composer-load-status");
+        if (labelEl) labelEl.textContent = statusText;
+        if (railStatus) {
+          railStatus.hidden = false;
+          railStatus.textContent = statusText;
+        }
+        setLyricsStatus(
+          songTitle ? ("Retrieving lyrics for \"" + songTitle + "\"…") : "Retrieving song…",
+          ""
+        );
+        const data = await fetchSongDetail(sec, sid, forceNetwork ? { forceNetwork: true } : {});
+        if (loadSeq !== composerEditorLoadSeq) return;
+        const s = data.song || {};
+        const apiSec = String(data.section || sec).trim().toLowerCase();
+        const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
+        applySongMetaToForm(apiSec, merged);
+        composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
+        composerSongMedia = {
+          audio: normalizeComposerMediaRef(s.audio_media || (catalogRow && catalogRow.audio_media)),
+          video: normalizeComposerMediaRef(s.video_media || (catalogRow && catalogRow.video_media)),
+          preview: normalizeAudioPreviewRef(s.audio_preview || (catalogRow && catalogRow.audio_preview)),
+        };
+        renderComposerSongMediaFields();
+        maybeAutoFetchSongPreview(apiSec, sid, {
+          title: merged.title || s.title || "",
+          audio: composerSongMedia.audio,
+          preview: composerSongMedia.preview,
+        });
+        composerCatalogLyrics = String(
+          s.catalog_lyrics != null && String(s.catalog_lyrics).length
+            ? s.catalog_lyrics
+            : (s.parish_version ? "" : (s.lyrics || ""))
+        );
+        composerParishVersion = !!s.parish_version;
+        if (($("lyrics-input") && $("lyrics-input").value.trim()) || (lyricBlocks && lyricBlocks.length)) {
+          pushComposerUndoCheckpoint();
+        }
+        lyricBlocks = [];
+        if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
+        scheduleLyricsStructuredSync(true);
+        updateParishLyricsControls();
+        if (composerParishVersion && !normalizeLyricsForCompare(composerCatalogLyrics)) {
+          void refreshComposerCatalogBaseline(apiSec, sid);
+        }
+        setLyricsStatus(
+          "Loaded \"" + (merged.title || s.title || "") + "\" from " + songSectionLabel(apiSec) +
+          (composerParishVersion ? " (parish version)." : "."),
+          "ok"
+        );
+        if (clearSearch) clearSongCatalogSearch();
+        setSongComposerDeflated(true);
+      } finally {
+        if (loadSeq === composerEditorLoadSeq) {
+          setComposerSongLoading(false, { token: loadingToken });
+        }
       }
-      lyricBlocks = [];
-      if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
-      scheduleLyricsStructuredSync(true);
-      updateParishLyricsControls();
-      if (composerParishVersion && !normalizeLyricsForCompare(composerCatalogLyrics)) {
-        void refreshComposerCatalogBaseline(apiSec, sid);
-      }
-      setLyricsStatus(
-        "Loaded \"" + (merged.title || s.title || "") + "\" from " + songSectionLabel(apiSec) +
-        (composerParishVersion ? " (parish version)." : "."),
-        "ok"
-      );
-      if (clearSearch) clearSongCatalogSearch();
-      setSongComposerDeflated(true);
     }
 
     function songSectionLabel(key) {
@@ -28273,9 +29196,12 @@
         if (!e.target.closest(".song-row-clickable")) return;
         composerSuppressPreload = true;
         composerPreloadSeq += 1;
+        const titleEl = row.querySelector(".song-row-title");
+        const songTitle = titleEl ? titleEl.textContent.trim() : "";
+        if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+        if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
         try {
-          await loadSongIntoEditor(section, id);
-          if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
+          await loadSongIntoEditor(section, id, { title: songTitle });
           if (normalizeRoute(currentRoute()) !== "/library/songs") showRoute("/library/songs");
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");
@@ -28299,9 +29225,12 @@
         const id = row.dataset.sid;
         composerSuppressPreload = true;
         composerPreloadSeq += 1;
+        const titleEl = row.querySelector(".song-row-title");
+        const songTitle = titleEl ? titleEl.textContent.trim() : "";
+        if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+        if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
         try {
-          await loadSongIntoEditor(section, id);
-          if (root.id === "song-catalog-root") collapseSongCatalogSection(section);
+          await loadSongIntoEditor(section, id, { title: songTitle });
           if (normalizeRoute(currentRoute()) !== "/library/songs") showRoute("/library/songs");
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");

@@ -349,14 +349,23 @@
         }
         if (collLabel) body.mass_collection_date_label = collLabel;
         if (foodLines.length) body.food_sponsors = foodLines;
-        body.include_mass_collection_slide = !!( $("flow-slide-mass-collection") && $("flow-slide-mass-collection").checked );
+        const collAmtLive = ($("flow-collection-amount") && $("flow-collection-amount").value.trim()) || "";
+        body.include_mass_collection_slide = !!( $("flow-slide-mass-collection") && $("flow-slide-mass-collection").checked && collAmtLive );
         body.include_food_sponsor_slide = !!( $("flow-slide-food-sponsor") && $("flow-slide-food-sponsor").checked );
         body.include_sponsorship_contact_slide = !!( $("flow-slide-sponsorship-contact") && $("flow-slide-sponsorship-contact").checked );
         body.include_merienda_location_slide = !!( $("flow-slide-merienda-location") && $("flow-slide-merienda-location").checked );
+        body.include_welcoming_newcomers_slide = !!( $("flow-slide-welcoming-newcomers") && $("flow-slide-welcoming-newcomers").checked );
         const sponsorshipContact = $("flow-sponsorship-contact") && $("flow-sponsorship-contact").value.trim();
         const meriendaLocation = $("flow-merienda-location") && $("flow-merienda-location").value.trim();
         if (sponsorshipContact) body.sponsorship_contact = sponsorshipContact;
         if (meriendaLocation) body.merienda_location = meriendaLocation;
+        if (typeof getAnnouncementBgColors === "function") {
+          body.announcement_bg_colors = getAnnouncementBgColors();
+        }
+        if (typeof getFlowCustomSlidesPayload === "function") {
+          const customSlides = getFlowCustomSlidesPayload();
+          if (customSlides.length) body.custom_announcement_slides = customSlides;
+        }
         const creedSel = $("flow-creed-choice");
         body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
         const ofSel = $("flow-our-father-choice");
@@ -396,8 +405,11 @@
           include_food_sponsor_slide: !!body.include_food_sponsor_slide,
           include_sponsorship_contact_slide: !!body.include_sponsorship_contact_slide,
           include_merienda_location_slide: !!body.include_merienda_location_slide,
+          include_welcoming_newcomers_slide: !!body.include_welcoming_newcomers_slide,
           sponsorship_contact: body.sponsorship_contact || null,
           merienda_location: body.merienda_location || null,
+          announcement_bg_colors: body.announcement_bg_colors || null,
+          custom_announcement_slides: body.custom_announcement_slides || [],
           psalm_text_override: body.psalm_text_override || null,
           psalm_refrain_index: body.psalm_refrain_index != null ? body.psalm_refrain_index : null,
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
@@ -1551,17 +1563,25 @@
       return req;
     }
 
-    function prefetchSongDetail(section, id) {
+    function prefetchSongDetail(section, id, options) {
+      const opts = options || {};
       const sec = String(section || "").trim().toLowerCase();
       const sid = String(id || "").trim();
       if (!sec || !sid) return;
       if (songDetailCache.has(songDetailCacheKey(sec, sid))) return;
+      if (songDetailInflight.has(songDetailCacheKey(sec, sid))) return;
+      const run = () => {
+        fetchSongDetail(sec, sid).catch(() => {});
+      };
+      if (opts.immediate) {
+        clearTimeout(songDetailPrefetchTimer);
+        run();
+        return;
+      }
       // Avoid burning the production lyric rate limit by prefetching every hovered row.
       if (songDetailInflight.size > 0) return;
       clearTimeout(songDetailPrefetchTimer);
-      songDetailPrefetchTimer = setTimeout(() => {
-        fetchSongDetail(sec, sid).catch(() => {});
-      }, 450);
+      songDetailPrefetchTimer = setTimeout(run, 450);
     }
 
     function recentSongDedupeKey(r) {
@@ -2101,6 +2121,8 @@
           "</button>"
         );
       }).join("");
+      const top = rows.find((r) => r && r.kind !== "deleted" && r.id && r.section);
+      if (top) prefetchSongDetail(top.section, top.id, { immediate: true });
     }
 
     function formatSongHistoryWhen(ts) {
@@ -2646,36 +2668,120 @@
     }
 
     var composerPreloadSeq = 0;
+    var composerSongLoadingToken = 0;
+
+    function clearComposerSongRowLoading() {
+      document.querySelectorAll(".song-row.is-loading-song, .song-composer-recent-item.is-loading-song").forEach((el) => {
+        el.classList.remove("is-loading-song");
+      });
+    }
+
+    function markComposerSongSourceLoading(section, id) {
+      clearComposerSongRowLoading();
+      const sec = String(section || "").trim().toLowerCase();
+      const sid = String(id || "").trim();
+      if (!sec || !sid) return;
+      document.querySelectorAll(
+        '.song-row[data-ssec="' + sec + '"][data-sid="' + sid + '"],' +
+        '.song-composer-recent-item[data-recent-sec="' + sec + '"][data-recent-id="' + sid + '"]'
+      ).forEach((el) => el.classList.add("is-loading-song"));
+    }
+
+    function setComposerSongLoading(active, options) {
+      const opts = options || {};
+      const workspace = $("lyrics-workspace");
+      const panel = $("song-composer-panel");
+      const overlay = $("composer-song-loading");
+      const label = $("composer-song-loading-label");
+      const railStatus = $("song-composer-load-status");
+      const titleHint = String(opts.title || "").trim();
+      const statusText = titleHint
+        ? ("Loading “" + titleHint + "”…")
+        : (opts.message || "Loading song…");
+      if (active) {
+        composerSongLoadingToken += 1;
+        if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+        if (workspace) workspace.classList.add("is-loading-song");
+        if (panel) panel.classList.add("is-loading-song");
+        if (overlay) {
+          overlay.hidden = false;
+          overlay.setAttribute("aria-hidden", "false");
+        }
+        if (label) label.textContent = statusText;
+        if (railStatus) {
+          railStatus.hidden = false;
+          railStatus.textContent = statusText;
+        }
+        if (opts.section && opts.id) markComposerSongSourceLoading(opts.section, opts.id);
+        return composerSongLoadingToken;
+      }
+      const token = opts.token;
+      if (token != null && token !== composerSongLoadingToken) return composerSongLoadingToken;
+      if (workspace) workspace.classList.remove("is-loading-song");
+      if (panel) panel.classList.remove("is-loading-song");
+      if (overlay) {
+        overlay.hidden = true;
+        overlay.setAttribute("aria-hidden", "true");
+      }
+      if (railStatus) {
+        railStatus.hidden = true;
+        railStatus.textContent = "";
+      }
+      clearComposerSongRowLoading();
+      return composerSongLoadingToken;
+    }
 
     async function preloadComposerFromLatestSong() {
       const seq = ++composerPreloadSeq;
-      // Wait for account/parish history so the last edited song is available across devices.
-      if (typeof memberApiAvailable === "function" && memberApiAvailable() && typeof pullSongHistoryFromAccount === "function") {
-        try {
-          await pullSongHistoryFromAccount();
-        } catch (_e) { /* use local cache */ }
+      const loadingToken = setComposerSongLoading(true, { message: "Loading your recent song…" });
+      // Prefer local recent history for an instant open; sync account history in parallel.
+      const historyPromise = (
+        typeof memberApiAvailable === "function" && memberApiAvailable() && typeof pullSongHistoryFromAccount === "function"
+      ) ? pullSongHistoryFromAccount().catch(() => false) : Promise.resolve(false);
+      await loadSongCatalog(false);
+      if (seq !== composerPreloadSeq) {
+        setComposerSongLoading(false, { token: loadingToken });
+        return;
       }
-      if (seq !== composerPreloadSeq) return;
-      if (composerSuppressPreload) return;
-      await loadSongCatalog(true);
-      if (seq !== composerPreloadSeq) return;
-      if (composerSuppressPreload) return;
+      if (composerSuppressPreload) {
+        setComposerSongLoading(false, { token: loadingToken });
+        return;
+      }
       renderComposerRecent();
-      const entry = getLatestComposerPreloadEntry();
+      let entry = getLatestComposerPreloadEntry();
       if (!entry) {
+        await historyPromise;
+        if (seq !== composerPreloadSeq) {
+          setComposerSongLoading(false, { token: loadingToken });
+          return;
+        }
+        if (composerSuppressPreload) {
+          setComposerSongLoading(false, { token: loadingToken });
+          return;
+        }
+        renderComposerRecent();
+        entry = getLatestComposerPreloadEntry();
+      } else {
+        void historyPromise;
+      }
+      if (!entry) {
+        setComposerSongLoading(false, { token: loadingToken });
         if (composerEditorIsIdleForPreload()) {
           resetComposerEditorEmpty();
           setLyricsStatus("Pick a song from the library or start typing new lyrics.", "");
         }
         return;
       }
+      prefetchSongDetail(entry.section, entry.id, { immediate: true });
       try {
         await loadSongIntoEditor(entry.section, entry.id, {
           clearSearch: false,
           title: entry.title || "",
           language: entry.language || "",
+          loadingToken,
         });
       } catch (_e) {
+        setComposerSongLoading(false, { token: loadingToken });
         if (seq !== composerPreloadSeq) return;
         if (composerEditorIsIdleForPreload()) {
           resetComposerEditorEmpty();
@@ -2690,73 +2796,112 @@
       composerPreloadSeq += 1;
       composerSuppressPreload = true;
       const clearSearch = opts.clearSearch !== false;
+      const forceNetwork = !!opts.forceNetwork;
       const hint = {
         title: String(opts.title || "").trim(),
         language: String(opts.language || "").trim(),
         section: String(section || "").trim().toLowerCase(),
       };
-      await loadSongCatalog(true);
-      if (loadSeq !== composerEditorLoadSeq) return;
-      const requestedSec = String(section || "").trim().toLowerCase();
-      const requestedId = String(id || "").trim();
-      const placement = resolveCatalogSongPlacement(requestedSec, requestedId, hint.title);
-      const sec = placement ? placement.section : requestedSec;
-      const sid = placement ? placement.id : requestedId;
-      const catalogRow = placement && placement.row ? placement.row : null;
-      if (catalogRow || hint.title || hint.language) {
-        applySongMetaToForm(sec, mergeSongEditorMeta(catalogRow, {}, sec, hint));
+      // Collapse the library immediately so the editor stays in focus while lyrics load.
+      if (typeof setSongComposerDeflated === "function") setSongComposerDeflated(true);
+      // Paint title immediately so the editor feels responsive while lyrics load.
+      if (hint.title || hint.language || hint.section) {
+        applySongMetaToForm(hint.section, mergeSongEditorMeta(null, {}, hint.section, hint));
       }
-      setLyricsStatus(
-        catalogRow
-          ? "Retrieving lyrics for \"" + catalogRow.title + "\"…"
-          : "Retrieving song…",
-        ""
-      );
-      bustStoredSongDetail(requestedSec, requestedId);
-      if (sec !== requestedSec || sid !== requestedId) {
-        bustStoredSongDetail(sec, sid);
+      let loadingToken = opts.loadingToken != null
+        ? opts.loadingToken
+        : setComposerSongLoading(true, {
+            title: hint.title,
+            section: hint.section,
+            id: String(id || "").trim(),
+            message: hint.title ? undefined : "Retrieving song…",
+          });
+      if (opts.loadingToken != null) {
+        // Keep preload overlay, but switch copy to the concrete song title when known.
+        const statusText = hint.title
+          ? ("Loading “" + hint.title + "”…")
+          : "Retrieving song…";
+        const labelEl = $("composer-song-loading-label");
+        const railStatus = $("song-composer-load-status");
+        if (labelEl) labelEl.textContent = statusText;
+        if (railStatus) {
+          railStatus.hidden = false;
+          railStatus.textContent = statusText;
+        }
+        markComposerSongSourceLoading(hint.section, String(id || "").trim());
       }
-      const data = await fetchSongDetail(sec, sid, { forceNetwork: true });
-      if (loadSeq !== composerEditorLoadSeq) return;
-      const s = data.song || {};
-      const apiSec = String(data.section || sec).trim().toLowerCase();
-      const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
-      applySongMetaToForm(apiSec, merged);
-      composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
-      composerSongMedia = {
-        audio: normalizeComposerMediaRef(s.audio_media || (catalogRow && catalogRow.audio_media)),
-        video: normalizeComposerMediaRef(s.video_media || (catalogRow && catalogRow.video_media)),
-        preview: normalizeAudioPreviewRef(s.audio_preview || (catalogRow && catalogRow.audio_preview)),
-      };
-      renderComposerSongMediaFields();
-      maybeAutoFetchSongPreview(apiSec, sid, {
-        title: merged.title || s.title || "",
-        audio: composerSongMedia.audio,
-        preview: composerSongMedia.preview,
-      });
-      composerCatalogLyrics = String(
-        s.catalog_lyrics != null && String(s.catalog_lyrics).length
-          ? s.catalog_lyrics
-          : (s.parish_version ? "" : (s.lyrics || ""))
-      );
-      composerParishVersion = !!s.parish_version;
-      if (($("lyrics-input") && $("lyrics-input").value.trim()) || (lyricBlocks && lyricBlocks.length)) {
-        pushComposerUndoCheckpoint();
+      try {
+        await loadSongCatalog(false);
+        if (loadSeq !== composerEditorLoadSeq) return;
+        const requestedSec = String(section || "").trim().toLowerCase();
+        const requestedId = String(id || "").trim();
+        const placement = resolveCatalogSongPlacement(requestedSec, requestedId, hint.title);
+        const sec = placement ? placement.section : requestedSec;
+        const sid = placement ? placement.id : requestedId;
+        const catalogRow = placement && placement.row ? placement.row : null;
+        if (catalogRow || hint.title || hint.language) {
+          applySongMetaToForm(sec, mergeSongEditorMeta(catalogRow, {}, sec, hint));
+        }
+        const songTitle = String((catalogRow && catalogRow.title) || hint.title || "").trim();
+        const statusText = songTitle ? ("Loading “" + songTitle + "”…") : "Retrieving song…";
+        markComposerSongSourceLoading(sec, sid);
+        const labelEl = $("composer-song-loading-label");
+        const railStatus = $("song-composer-load-status");
+        if (labelEl) labelEl.textContent = statusText;
+        if (railStatus) {
+          railStatus.hidden = false;
+          railStatus.textContent = statusText;
+        }
+        setLyricsStatus(
+          songTitle ? ("Retrieving lyrics for \"" + songTitle + "\"…") : "Retrieving song…",
+          ""
+        );
+        const data = await fetchSongDetail(sec, sid, forceNetwork ? { forceNetwork: true } : {});
+        if (loadSeq !== composerEditorLoadSeq) return;
+        const s = data.song || {};
+        const apiSec = String(data.section || sec).trim().toLowerCase();
+        const merged = mergeSongEditorMeta(catalogRow, Object.assign({}, s, { id: sid }), apiSec, hint);
+        applySongMetaToForm(apiSec, merged);
+        composerLoadedSong = { section: apiSec, id: sid, title: merged.title };
+        composerSongMedia = {
+          audio: normalizeComposerMediaRef(s.audio_media || (catalogRow && catalogRow.audio_media)),
+          video: normalizeComposerMediaRef(s.video_media || (catalogRow && catalogRow.video_media)),
+          preview: normalizeAudioPreviewRef(s.audio_preview || (catalogRow && catalogRow.audio_preview)),
+        };
+        renderComposerSongMediaFields();
+        maybeAutoFetchSongPreview(apiSec, sid, {
+          title: merged.title || s.title || "",
+          audio: composerSongMedia.audio,
+          preview: composerSongMedia.preview,
+        });
+        composerCatalogLyrics = String(
+          s.catalog_lyrics != null && String(s.catalog_lyrics).length
+            ? s.catalog_lyrics
+            : (s.parish_version ? "" : (s.lyrics || ""))
+        );
+        composerParishVersion = !!s.parish_version;
+        if (($("lyrics-input") && $("lyrics-input").value.trim()) || (lyricBlocks && lyricBlocks.length)) {
+          pushComposerUndoCheckpoint();
+        }
+        lyricBlocks = [];
+        if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
+        scheduleLyricsStructuredSync(true);
+        updateParishLyricsControls();
+        if (composerParishVersion && !normalizeLyricsForCompare(composerCatalogLyrics)) {
+          void refreshComposerCatalogBaseline(apiSec, sid);
+        }
+        setLyricsStatus(
+          "Loaded \"" + (merged.title || s.title || "") + "\" from " + songSectionLabel(apiSec) +
+          (composerParishVersion ? " (parish version)." : "."),
+          "ok"
+        );
+        if (clearSearch) clearSongCatalogSearch();
+        setSongComposerDeflated(true);
+      } finally {
+        if (loadSeq === composerEditorLoadSeq) {
+          setComposerSongLoading(false, { token: loadingToken });
+        }
       }
-      lyricBlocks = [];
-      if ($("lyrics-input")) $("lyrics-input").value = s.lyrics || "";
-      scheduleLyricsStructuredSync(true);
-      updateParishLyricsControls();
-      if (composerParishVersion && !normalizeLyricsForCompare(composerCatalogLyrics)) {
-        void refreshComposerCatalogBaseline(apiSec, sid);
-      }
-      setLyricsStatus(
-        "Loaded \"" + (merged.title || s.title || "") + "\" from " + songSectionLabel(apiSec) +
-        (composerParishVersion ? " (parish version)." : "."),
-        "ok"
-      );
-      if (clearSearch) clearSongCatalogSearch();
-      setSongComposerDeflated(true);
     }
 
     function songSectionLabel(key) {

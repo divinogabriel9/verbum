@@ -1454,14 +1454,23 @@
       return el ? String(el.value || "").trim() : "";
     }
 
-    function setMassDefaultPin(key, value, on) {
+    function setMassDefaultPin(key, value, on, opts) {
+      const options = opts || {};
       const k = String(key || "").trim();
       const v = String(value || "").trim();
-      if (!k || !v) return;
+      if (!k) return;
       const map = readMassPinnedDefaults();
-      if (on) map[k] = v;
-      else if (map[k] === v) delete map[k];
+      if (on) {
+        if (!v) return;
+        map[k] = v;
+      } else if (options.clearKey || !v || map[k] === v) {
+        // Field-level pins clear the whole key; option pins only clear when that option is pinned.
+        delete map[k];
+      }
       writeMassPinnedDefaults(map);
+      if (on && k === "flow-hymn-layout" && (v === "single" || v === "dual") && typeof applyHymnLyricsLayout === "function") {
+        applyHymnLyricsLayout(v);
+      }
       syncMassDefaultPins();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
     }
@@ -1469,11 +1478,13 @@
 
     function massDefaultPinCompareValue(inp) {
       const key = inp.getAttribute("data-mw-default-key") || "";
-      const optionVal = String(inp.getAttribute("data-mw-default-value") || "").trim();
-      if (optionVal) return optionVal;
-      const currentVal = massDefaultPinCurrentValue(key);
-      if (currentVal) inp.setAttribute("data-mw-default-value", currentVal);
-      return currentVal;
+      // Rite/option pins ship with an explicit data-mw-default-value. Field pins must
+      // compare against the live selection — never cache it onto the checkbox or the
+      // "Use as default" control sticks to the first value (e.g. dual) forever.
+      if (inp.hasAttribute("data-mw-default-value")) {
+        return String(inp.getAttribute("data-mw-default-value") || "").trim();
+      }
+      return massDefaultPinCurrentValue(key);
     }
 
     function syncMassDefaultPins(root) {
@@ -1547,12 +1558,17 @@
         label.addEventListener("click", (e) => e.stopPropagation());
         label.addEventListener("change", (e) => {
           e.stopPropagation();
+          const checked = !!e.target.checked;
+          if (!checked) {
+            setMassDefaultPin(fieldId, massDefaultPinCurrentValue(fieldId), false, { clearKey: true });
+            return;
+          }
           const val = massDefaultPinCurrentValue(fieldId);
           if (!val) {
             e.target.checked = false;
             return;
           }
-          setMassDefaultPin(fieldId, val, !!e.target.checked);
+          setMassDefaultPin(fieldId, val, true);
         });
         host.appendChild(label);
         if (fieldId === "flow-hymn-layout") {
@@ -1578,9 +1594,13 @@
           return;
         }
         if (key === "flow-hymn-layout") {
-          document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
-            el.checked = el.value === val;
-          });
+          if (typeof applyHymnLyricsLayout === "function") {
+            applyHymnLyricsLayout(val);
+          } else {
+            document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+              el.checked = el.value === val;
+            });
+          }
           return;
         }
         if (key === "flow-deck-theme" && typeof setActiveDeckTheme === "function") {
@@ -1606,6 +1626,8 @@
           ? e.target
           : null;
         if (!inp) return;
+        // Field-level pins handle their own change (and stopPropagation).
+        if (!inp.hasAttribute("data-mw-default-value")) return;
         const key = inp.getAttribute("data-mw-default-key") || "";
         const val = massDefaultPinCompareValue(inp);
         if (!val) {

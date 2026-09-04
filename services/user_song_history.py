@@ -15,23 +15,33 @@ logger = logging.getLogger(__name__)
 MAX_ENTRIES = 120
 ALLOWED_KINDS = frozenset({"new", "edited", "lyrics_updated", "saved", "deleted"})
 GLOBAL_SCOPE_KEY = "global"
+# Unit separator — same role as "\0" for local JS keys, but Postgres text rejects NUL.
+_DEDUPE_SEP = "\x1f"
+
+
+def _clean_pg_text(value: Any, *, limit: Optional[int] = None) -> str:
+    """Strip NUL and other chars Postgres rejects in text columns."""
+    text = str(value or "").replace("\x00", "").replace("\u0000", "")
+    if limit is not None:
+        text = text[:limit]
+    return text
 
 
 def song_history_dedupe_key(section: str, hymn_id: str, title: str) -> str:
-    sec = (section or "").strip().lower()
-    hid = (hymn_id or "").strip()
+    sec = _clean_pg_text(section).strip().lower()
+    hid = _clean_pg_text(hymn_id).strip()
     if sec and hid:
-        return f"{sec}\0{hid}"
-    return f"{sec}\0{(title or '').strip().lower()}"
+        return f"{sec}{_DEDUPE_SEP}{hid}"
+    return f"{sec}{_DEDUPE_SEP}{_clean_pg_text(title).strip().lower()}"
 
 
 def scope_key_for_parish(parish_id: Optional[str]) -> str:
-    pid = (parish_id or "").strip()
+    pid = _clean_pg_text(parish_id).strip()
     return pid if pid else ""
 
 
 def normalize_song_history_kind(kind: str) -> str:
-    k = (kind or "").strip().lower()
+    k = _clean_pg_text(kind).strip().lower()
     if k == "saved":
         return "lyrics_updated"
     if k in ALLOWED_KINDS:
@@ -129,15 +139,15 @@ def _row_to_api(row: dict[str, Any], *, actor_labels: Optional[dict[str, str]] =
 def _normalize_entry(entry: dict[str, Any]) -> Optional[dict[str, Any]]:
     if not isinstance(entry, dict):
         return None
-    title = str(entry.get("title") or "").strip()
+    title = _clean_pg_text(entry.get("title")).strip()
     if not title:
         return None
     kind = normalize_song_history_kind(str(entry.get("kind") or ""))
     if kind in {"loaded", "opened"}:
         return None
-    section = str(entry.get("section") or "").strip().lower()
-    hymn_id = str(entry.get("id") or entry.get("hymn_id") or "").strip()
-    language = str(entry.get("language") or "").strip()
+    section = _clean_pg_text(entry.get("section")).strip().lower()
+    hymn_id = _clean_pg_text(entry.get("id") or entry.get("hymn_id")).strip()
+    language = _clean_pg_text(entry.get("language")).strip()
     activity_ms = entry.get("t")
     dedupe = song_history_dedupe_key(section, hymn_id, title)
     return {
@@ -302,7 +312,7 @@ def record_global_song_history_entry(
             "language": row["language"],
             "kind": row["kind"],
             "activity_at": row["activity_at"],
-            "actor_label": (actor_label or "").strip()[:120],
+            "actor_label": _clean_pg_text(actor_label, limit=120).strip(),
         }
         client.table("user_song_history").upsert(
             payload,

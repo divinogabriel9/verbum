@@ -932,3 +932,226 @@ def build_preview_clip(
         "has_chorus": lyric_source == "chorus",
         "basename": dest_path.name,
     }
+
+
+INSTRUMENTAL_MAX_HEIGHT = 720
+INSTRUMENTAL_TARGET_BYTES = 12_000_000
+INSTRUMENTAL_HARD_MAX_BYTES = 40_000_000
+
+
+def _pick_downloaded_video(dest_dir: Path) -> Path:
+    hits = [
+        p
+        for p in dest_dir.glob("video.*")
+        if p.is_file()
+        and p.suffix.lower() not in {".part", ".ytdl", ".temp", ".vtt", ".srt", ".json", ".m4a", ".webm"}
+    ]
+    if not hits:
+        hits = [
+            p
+            for p in dest_dir.iterdir()
+            if p.is_file()
+            and p.suffix.lower() in {".mp4", ".mkv", ".webm", ".mov"}
+        ]
+    if not hits:
+        raise RuntimeError("YouTube download finished but no video file was found.")
+    hits.sort(key=lambda p: p.stat().st_size, reverse=True)
+    return hits[0]
+
+
+def _download_video_attempts() -> list[dict[str, Any]]:
+    fmt = (
+        f"bv*[height<={INSTRUMENTAL_MAX_HEIGHT}][ext=mp4]+ba[ext=m4a]/"
+        f"b[height<={INSTRUMENTAL_MAX_HEIGHT}][ext=mp4]/"
+        f"bv*[height<={INSTRUMENTAL_MAX_HEIGHT}]+ba/b[height<={INSTRUMENTAL_MAX_HEIGHT}]/b"
+    )
+    attempts: list[dict[str, Any]] = []
+    for client in ("web", "ios", "android", "tv", "mweb"):
+        attempts.append(
+            {
+                "format": fmt,
+                "merge_output_format": "mp4",
+                "extractor_args": {"youtube": {"player_client": [client]}},
+            }
+        )
+    attempts.append({"format": fmt, "merge_output_format": "mp4"})
+    return attempts
+
+
+def _download_video(
+    youtube_url: str,
+    dest_dir: Path,
+    progress_cb: Optional[ProgressCb] = None,
+) -> Path:
+    out_tmpl = str(dest_dir / "video.%(ext)s")
+    last_pct = {"n": -1}
+
+    def hook(payload: dict[str, Any]) -> None:
+        if not progress_cb or payload.get("status") != "downloading":
+            return
+        total = float(payload.get("total_bytes") or payload.get("total_bytes_estimate") or 0)
+        got = float(payload.get("downloaded_bytes") or 0)
+        pct = int(got * 100 / total) if total > 0 else 0
+        pct = max(0, min(100, pct))
+        if pct == last_pct["n"]:
+            return
+        last_pct["n"] = pct
+        progress_cb(pct, "download")
+
+    try:
+        import yt_dlp
+    except Exception:
+        yt_dlp = None  # type: ignore[assignment]
+
+    js_runtimes = _yt_dlp_js_runtimes()
+    cookiefile = _yt_dlp_cookiefile()
+    if yt_dlp is not None:
+        last_err: Optional[BaseException] = None
+        for attempt in _download_video_attempts():
+            for stale in dest_dir.glob("video.*"):
+                try:
+                    stale.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            opts: dict[str, Any] = {
+                "format": attempt.get("format") or "b",
+                "outtmpl": out_tmpl,
+                "noplaylist": True,
+                "quiet": True,
+                "noprogress": True,
+                "progress_hooks": [hook],
+                "merge_output_format": "mp4",
+                "remote_components": {"ejs:github"},
+            }
+            if js_runtimes:
+                opts["js_runtimes"] = js_runtimes
+            if cookiefile:
+                opts["cookiefile"] = cookiefile
+            if attempt.get("extractor_args"):
+                opts["extractor_args"] = attempt["extractor_args"]
+            try:
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    ydl.download([youtube_url])
+                return _pick_downloaded_video(dest_dir)
+            except Exception as exc:
+                last_err = exc
+                logger.info(
+                    "yt-dlp video attempt failed (%s): %s",
+                    (attempt.get("extractor_args") or {}).get("youtube") or "default",
+                    str(exc)[:180],
+                )
+                continue
+        raise RuntimeError(
+            _yt_dlp_download_error_hint(str(last_err)) if last_err else "Could not download video."
+        ) from last_err
+
+    raise RuntimeError("yt-dlp is not installed on this server.")
+
+
+def _ensure_mp4(src: Path, dest: Path) -> Path:
+    if src.suffix.lower() == ".mp4" and src.resolve() != dest.resolve():
+        shutil.copy2(src, dest)
+        return dest
+    if src.suffix.lower() == ".mp4":
+        return src
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise RuntimeError("ffmpeg is not installed on this server.")
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-i",
+        str(src),
+        "-c",
+        "copy",
+        "-movflags",
+        "+faststart",
+        str(dest),
+    ]
+    proc = _run(cmd, timeout=180)
+    if proc.returncode != 0 or not dest.is_file() or dest.stat().st_size < 1000:
+        err = (proc.stderr or proc.stdout or "ffmpeg failed").strip()
+        raise RuntimeError(err.splitlines()[-1][:240] if err else "Could not remux video to MP4.")
+    return dest
+
+
+def _compress_instrumental_mp4(src: Path, dest: Path) -> Path:
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        return src
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-i",
+        str(src),
+        "-vf",
+        f"scale='min({INSTRUMENTAL_MAX_HEIGHT},iw)':-2",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "28",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-movflags",
+        "+faststart",
+        str(dest),
+    ]
+    proc = _run(cmd, timeout=420)
+    if proc.returncode != 0 or not dest.is_file() or dest.stat().st_size < 1000:
+        return src
+    return dest
+
+
+def build_instrumental_video(
+    *,
+    youtube_url: str,
+    dest_path: Path,
+    progress_cb: Optional[ProgressCb] = None,
+) -> dict[str, Any]:
+    """Download a full YouTube video and save dest_path as MP4 for instrumental use."""
+    def report(pct: int, stage: str) -> None:
+        if progress_cb:
+            progress_cb(max(0, min(100, int(pct))), stage)
+
+    video_id = parse_youtube_video_id(youtube_url)
+    if not video_id:
+        raise RuntimeError("Enter a valid YouTube URL.")
+    watch_url = "https://www.youtube.com/watch?v=" + video_id
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    report(4, "starting")
+    report(8, "download")
+    with tempfile.TemporaryDirectory(prefix="verbum_ytv_") as tmp:
+        tmp_dir = Path(tmp)
+
+        def on_download(pct: int, _stage: str) -> None:
+            report(8 + int(pct * 0.72), "download")
+
+        src = _download_video(watch_url, tmp_dir, progress_cb=on_download)
+        report(84, "saving")
+        remuxed = tmp_dir / "instrumental.mp4"
+        mp4 = _ensure_mp4(src, remuxed)
+        if mp4.stat().st_size > INSTRUMENTAL_TARGET_BYTES:
+            report(88, "compressing")
+            compressed = tmp_dir / "instrumental_small.mp4"
+            mp4 = _compress_instrumental_mp4(mp4, compressed)
+        if mp4.stat().st_size > INSTRUMENTAL_HARD_MAX_BYTES:
+            raise RuntimeError(
+                "Downloaded video is too large after compression. Try a shorter instrumental upload."
+            )
+        if dest_path.exists():
+            try:
+                dest_path.unlink()
+            except OSError:
+                pass
+        shutil.copy2(mp4, dest_path)
+    report(96, "saving")
+    return {
+        "youtube_id": video_id,
+        "youtube_url": watch_url,
+        "basename": dest_path.name,
+        "bytes": dest_path.stat().st_size if dest_path.is_file() else 0,
+    }

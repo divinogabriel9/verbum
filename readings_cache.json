@@ -117,7 +117,7 @@
     "psalm_ref": "Psalm 95:1-2, 6-7, 8-9",
     "second_reading_ref": "Romans 13:8-10",
     "gospel_ref": "Matthew 18:15-20",
-    "updated_at": "2026-09-03T12:03:14.238712+00:00"
+    "updated_at": "2026-09-04T00:33:33.543792+00:00"
   },
   "2026-09-13": {
     "first_reading": "Wrath and anger are hateful things, yet the sinner hugs them tight. The vengeful will suffer the LORD’s vengeance, for he remembers their sins in detail. Forgive your neighbor’s injustice; then when you pray, your own sins will be forgiven. Could anyone nourish anger against another and expect healing from the LORD? Could anyone refuse mercy to another like himself, can he seek pardon for his own sins? If one who is but flesh cherishes wrath, who will forgive his sins? Remember your last days, set enmity aside; remember death and decay, and cease from sin! Think of the commandments, hate not your neighbor; remember the Most High’s covenant, and overlook faults.",
@@ -4093,5 +4093,20 @@
     "second_reading_ref": "",
     "gospel_ref": "Luke 4:16-30",
     "updated_at": "2026-08-31T07:26:47.809616+00:00"
+  },
+  "2026-09-04": {
+    "first_reading": "Brothers and sisters: Thus should one regard us: as servants of Christ and stewards of the mysteries of God. Now it is of course required of stewards that they be found trustworthy. It does not concern me in the least that I be judged by you or any human tribunal; I do not even pass judgment on myself; I am not conscious of anything against me, but I do not thereby stand acquitted; the one who judges me is the Lord. Therefore, do not make any judgment before the appointed time, until the Lord comes, for he will bring to light what is hidden in darkness and will manifest the motives of our hearts, and then everyone will receive praise from God.",
+    "psalm_text": "R. The salvation of the just comes from the Lord.",
+    "psalm_response": "The salvation of the just comes from the Lord.",
+    "psalm_verses": "Trust in Yahweh, and do good.\nDwell in the land, and enjoy safe pasture.\nAlso delight yourself in Yahweh,\nand he will give you the desires of your heart.\nCommit your way to Yahweh.\nTrust also in him, and he will do this:\nhe will make your righteousness go out as the light,\nand your justice as the noon day sun.\nDepart from evil, and do good.\nLive securely forever.\nFor Yahweh loves justice,\nand doesn’t forsake his saints.\nThey are preserved forever,\nbut the children of the wicked shall be cut off.\nBut the salvation of the righteous is from Yahweh.\nHe is their stronghold in the time of trouble.\nYahweh helps them, and rescues them.\nHe rescues them from the wicked, and saves them,\nBecause they have taken refuge in him.",
+    "second_reading": "",
+    "gospel": "The scribes and Pharisees said to Jesus, “The disciples of John the Baptist fast often and offer prayers, and the disciples of the Pharisees do the same; but yours eat and drink.” Jesus answered them, “Can you make the wedding guests fast while the bridegroom is with them? But the days will come, and when the bridegroom is taken away from them, then they will fast in those days.” And he also told them a parable. “No one tears a piece from a new cloak to patch an old one. Otherwise, he will tear the new and the piece from it will not match the old cloak. Likewise, no one pours new wine into old wineskins. Otherwise, the new wine will burst the skins, and it will be spilled, and the skins will be ruined. Rather, new wine must be poured into fresh wineskins. And no one who has been drinking old wine desires new, for he says, ‘The old is good.’”",
+    "gospel_acclamation": "R. Alleluia, alleluia. I am the light of the world, says the Lord; whoever follows me will have the light of life. R. Alleluia, alleluia.",
+    "mass_celebration": "Friday of the Twenty-second Week in Ordinary Time",
+    "first_reading_ref": "1 Corinthians 4:1-5",
+    "psalm_ref": "Psalm 37:3-4, 5-6, 27-28, 39-40",
+    "second_reading_ref": "",
+    "gospel_ref": "Luke 5:33-39",
+    "updated_at": "2026-09-03T21:18:49.735075+00:00"
   }
 }

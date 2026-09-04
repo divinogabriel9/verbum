@@ -60,6 +60,7 @@ from services.superadmin.hymn_catalog_admin import (
     build_hymn_catalog_status,
     clear_song_audio_preview,
     enqueue_song_audio_preview,
+    enqueue_song_instrumental_video,
     generate_song_audio_preview,
     get_song_preview_job,
     list_song_preview_jobs,
@@ -160,6 +161,10 @@ class SongAudioPreviewBody(BaseModel):
     youtube_url: str = Field("", max_length=400)
     duration_sec: int = Field(10, ge=5, le=10)
     start_sec: Optional[float] = Field(None, ge=0, le=7200)
+
+
+class SongInstrumentalVideoBody(BaseModel):
+    youtube_url: str = Field("", max_length=400)
 
 
 class ReminderPushBody(BaseModel):
@@ -528,6 +533,26 @@ def register_admin_routes(app) -> None:
         )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Could not start preview fetch.")
+        return result
+
+    @app.post("/api/admin/songs/{section}/{hymn_id:path}/instrumental-job")
+    def api_admin_enqueue_song_instrumental(
+        section: str,
+        hymn_id: str,
+        body: SongInstrumentalVideoBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = enqueue_song_instrumental_video(
+            section=section,
+            hymn_id=hymn_id,
+            youtube_url=body.youtube_url,
+            updated_by=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error") or "Could not start instrumental video download.",
+            )
         return result
 
     @app.get("/api/admin/songs/preview-jobs")

@@ -1305,6 +1305,132 @@
       }
     }
 
+    async function collectSaSongsNeedingLinkedPreview() {
+      const st = saState.songPreviews || { q: "", section: "all" };
+      const pageSize = 200;
+      const candidates = [];
+      let offset = 0;
+      let total = Infinity;
+      while (offset < total) {
+        const data = await saFetchAdmin(
+          "/api/admin/songs/previews?q=" + encodeURIComponent(st.q || "") +
+          "&section=" + encodeURIComponent(st.section || "all") +
+          "&status=missing" +
+          "&limit=" + pageSize +
+          "&offset=" + offset
+        );
+        const songs = Array.isArray(data.songs) ? data.songs : [];
+        total = Number(data.total);
+        if (!Number.isFinite(total)) total = offset + songs.length;
+        songs.forEach((song) => {
+          const url = String((song && song.youtube_url) || "").trim();
+          if (!url) return;
+          if (!(song && song.section && song.id)) return;
+          candidates.push({
+            section: String(song.section),
+            id: String(song.id),
+            title: String(song.title || song.id).trim() || String(song.id),
+            youtube_url: url,
+          });
+        });
+        if (!songs.length) break;
+        offset += songs.length;
+        if (songs.length < pageSize) break;
+      }
+      return candidates;
+    }
+
+    async function fetchAllSaSongPreviewsWithLinks() {
+      if (!guardSuperadminAction()) return;
+      if (typeof startPreviewFetchJob !== "function") {
+        if (typeof notify === "function") notify("Clip fetch is not available.", "warn");
+        return;
+      }
+      const btn = $("sa-btn-fetch-all-previews");
+      const statusEl = $("sa-song-preview-status");
+      if (btn && btn.dataset.busy === "1") return;
+      const durationSec = saPreviewDurationSec();
+      if (btn) {
+        btn.dataset.busy = "1";
+        btn.disabled = true;
+        btn.textContent = "Scanning…";
+      }
+      if (statusEl) {
+        statusEl.textContent = "Finding songs with a YouTube link but no clip…";
+        statusEl.className = "status";
+      }
+      try {
+        const candidates = await collectSaSongsNeedingLinkedPreview();
+        if (!candidates.length) {
+          const msg = "No songs with a YouTube link are missing a clip" +
+            ((saState.songPreviews && (saState.songPreviews.q || saState.songPreviews.section !== "all"))
+              ? " for the current filters."
+              : ".");
+          if (statusEl) { statusEl.textContent = msg; statusEl.className = "status ok"; }
+          if (typeof notify === "function") notify(msg, "info");
+          return;
+        }
+        const confirmMsg =
+          "Queue " + durationSec + "s chorus clips for " + candidates.length +
+          " song" + (candidates.length === 1 ? "" : "s") +
+          " that already have a YouTube link?\n\nJobs run one at a time — you can leave this page open and watch the progress bar.";
+        if (!window.confirm(confirmMsg)) {
+          if (statusEl) { statusEl.textContent = "Bulk fetch cancelled."; statusEl.className = "status"; }
+          return;
+        }
+        if (btn) btn.textContent = "Queuing…";
+        if (statusEl) {
+          statusEl.textContent = "Queuing " + candidates.length + " clip fetch" +
+            (candidates.length === 1 ? "" : "es") + "…";
+          statusEl.className = "status";
+        }
+        let queued = 0;
+        let failed = 0;
+        for (let i = 0; i < candidates.length; i += 1) {
+          const song = candidates[i];
+          const key = song.section + ":" + song.id;
+          previewFetchState.attempted[key] = true;
+          if (btn) btn.textContent = "Queuing " + (i + 1) + "/" + candidates.length;
+          try {
+            await startPreviewFetchJob({
+              section: song.section,
+              id: song.id,
+              title: song.title,
+              youtube_url: song.youtube_url,
+              duration_sec: durationSec,
+              toast: false,
+            });
+            queued += 1;
+          } catch (_err) {
+            failed += 1;
+          }
+        }
+        const summary =
+          "Queued " + queued + " × " + durationSec + "s clip" + (queued === 1 ? "" : "s") +
+          (failed ? (" · " + failed + " failed to queue") : "") +
+          ". Watch the progress bar — clips process one at a time.";
+        if (statusEl) {
+          statusEl.textContent = summary;
+          statusEl.className = failed && !queued ? "status error" : "status ok";
+        }
+        if (typeof showToast === "function") {
+          showToast(summary, failed && !queued ? "warn" : "info");
+        } else if (typeof notify === "function") {
+          notify(summary, failed && !queued ? "warn" : "ok");
+        }
+      } catch (err) {
+        const msg = (err && err.message) || "Could not queue linked clip fetches.";
+        if (statusEl) { statusEl.textContent = msg; statusEl.className = "status error"; }
+        if (typeof notify === "function") notify(msg, "warn");
+      } finally {
+        if (btn) {
+          btn.dataset.busy = "0";
+          btn.disabled = false;
+          btn.textContent = "Fetch all linked";
+        }
+      }
+    }
+
     async function commitSaPreviewYoutubeInput(input, opts) {
       const options = opts || {};
       if (!input || !guardSuperadminAction()) return;
@@ -1601,6 +1727,7 @@
       $("sa-btn-open-templates") && $("sa-btn-open-templates").addEventListener("click", () => showRoute("/design/templates"));
       $("sa-btn-open-library") && $("sa-btn-open-library").addEventListener("click", () => showRoute("/library/songs"));
       $("sa-btn-sync-hymn-catalog") && $("sa-btn-sync-hymn-catalog").addEventListener("click", () => syncSaHymnCatalog());
+      $("sa-btn-fetch-all-previews") && $("sa-btn-fetch-all-previews").addEventListener("click", () => fetchAllSaSongPreviewsWithLinks());
       $("sa-btn-refresh-hymn-catalog") && $("sa-btn-refresh-hymn-catalog").addEventListener("click", () => {
         loadSaHymnCatalogStatus();
         loadSaSongPreviews();
@@ -2123,6 +2250,373 @@
     }
 
     var FLOW_FOOD_MAX = 24;
+    var FLOW_CUSTOM_SLIDES_MAX = 8;
+    var FLOW_CUSTOM_SLIDE_TITLE_MAX = 120;
+    var FLOW_CUSTOM_SLIDE_CONTENT_MAX = 800;
+    var ANN_BG_DEFAULTS = {
+      collection: "#223723",
+      food: "#394f80",
+      contact: "#a77026",
+      merienda: "#fb5f54",
+    };
+    var flowCustomSlides = [];
+    var flowCustomSlideSeq = 0;
+    var flowCustomSlideEditId = null;
+
+    function normalizeAnnouncementHex(value, fallback) {
+      var raw = String(value || "").trim();
+      if (!raw) return fallback || "#394f80";
+      if (raw.charAt(0) !== "#") raw = "#" + raw;
+      var m = raw.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+      if (!m) return fallback || "#394f80";
+      var hex = m[1];
+      if (hex.length === 3) {
+        hex = hex.split("").map(function (c) { return c + c; }).join("");
+      }
+      return ("#" + hex).toLowerCase();
+    }
+
+    function announcementColorRoot(colorId) {
+      var colorEl = $(colorId);
+      return colorEl ? colorEl.closest(".mw-color-picker") : null;
+    }
+
+    function syncAnnouncementColorUi(colorId, hex) {
+      var root = announcementColorRoot(colorId);
+      var colorEl = $(colorId);
+      var hexEl = $(colorId + "-hex");
+      var swatch = root ? root.querySelector(".mw-color-picker__swatch") : null;
+      if (colorEl) colorEl.value = hex;
+      if (hexEl) hexEl.value = hex.toUpperCase();
+      if (swatch) swatch.style.setProperty("--mw-swatch", hex);
+    }
+
+    function readAnnouncementBg(key) {
+      var fallback = ANN_BG_DEFAULTS[key] || "#394f80";
+      var hexEl = $("flow-slide-bg-" + key + "-hex");
+      var colorEl = $("flow-slide-bg-" + key);
+      var raw = (hexEl && hexEl.value) || (colorEl && colorEl.value) || fallback;
+      return normalizeAnnouncementHex(raw, fallback);
+    }
+
+    function setAnnouncementBg(key, value) {
+      var fallback = ANN_BG_DEFAULTS[key] || "#394f80";
+      var hex = normalizeAnnouncementHex(value, fallback);
+      syncAnnouncementColorUi("flow-slide-bg-" + key, hex);
+    }
+
+    function getAnnouncementBgColors() {
+      return {
+        collection: readAnnouncementBg("collection"),
+        food: readAnnouncementBg("food"),
+        contact: readAnnouncementBg("contact"),
+        merienda: readAnnouncementBg("merienda"),
+      };
+    }
+
+    function setAnnouncementBgColors(colors) {
+      var src = colors && typeof colors === "object" ? colors : {};
+      Object.keys(ANN_BG_DEFAULTS).forEach(function (key) {
+        if (src[key]) setAnnouncementBg(key, src[key]);
+        else setAnnouncementBg(key, ANN_BG_DEFAULTS[key]);
+      });
+    }
+
+    function closeAllAnnouncementColorPopovers(exceptRoot) {
+      document.querySelectorAll(".mw-color-picker").forEach(function (root) {
+        if (exceptRoot && root === exceptRoot) return;
+        var pop = root.querySelector(".mw-color-picker__popover");
+        var swatch = root.querySelector(".mw-color-picker__swatch");
+        if (pop) pop.hidden = true;
+        if (swatch) swatch.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    function bindAnnouncementColorPair(colorId, fallback, onChange) {
+      var colorEl = $(colorId);
+      var hexEl = $(colorId + "-hex");
+      var root = announcementColorRoot(colorId);
+      if (!colorEl || !hexEl || !root || root.dataset.annColorBound === "1") return;
+      root.dataset.annColorBound = "1";
+      var swatch = root.querySelector(".mw-color-picker__swatch");
+      var pop = root.querySelector(".mw-color-picker__popover");
+      var def = fallback || colorEl.value || "#394f80";
+      var initial = normalizeAnnouncementHex(hexEl.value || colorEl.value || def, def);
+      syncAnnouncementColorUi(colorId, initial);
+
+      function applyFromColor() {
+        var hex = normalizeAnnouncementHex(colorEl.value, def);
+        syncAnnouncementColorUi(colorId, hex);
+        if (typeof onChange === "function") onChange(hex);
+      }
+      function applyFromHex() {
+        var hex = normalizeAnnouncementHex(hexEl.value, colorEl.value || def);
+        syncAnnouncementColorUi(colorId, hex);
+        if (typeof onChange === "function") onChange(hex);
+      }
+
+      colorEl.addEventListener("input", applyFromColor);
+      colorEl.addEventListener("change", applyFromColor);
+      hexEl.addEventListener("change", applyFromHex);
+      hexEl.addEventListener("blur", applyFromHex);
+      hexEl.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          applyFromHex();
+          hexEl.blur();
+        }
+      });
+      hexEl.addEventListener("paste", function () {
+        setTimeout(applyFromHex, 0);
+      });
+
+      if (swatch && pop) {
+        swatch.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var open = pop.hidden;
+          closeAllAnnouncementColorPopovers(root);
+          pop.hidden = !open;
+          swatch.setAttribute("aria-expanded", open ? "true" : "false");
+          if (open) {
+            setTimeout(function () { try { hexEl.focus(); hexEl.select(); } catch (_e) {} }, 0);
+          }
+        });
+        pop.addEventListener("click", function (e) { e.stopPropagation(); });
+      }
+    }
+
+    function initAnnouncementBgColorPickers() {
+      Object.keys(ANN_BG_DEFAULTS).forEach(function (key) {
+        bindAnnouncementColorPair("flow-slide-bg-" + key, ANN_BG_DEFAULTS[key]);
+      });
+      bindAnnouncementColorPair("flow-custom-slide-bg", "#394f80");
+      if (!document.documentElement.dataset.annColorDocBound) {
+        document.documentElement.dataset.annColorDocBound = "1";
+        document.addEventListener("click", function () {
+          closeAllAnnouncementColorPopovers();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape") closeAllAnnouncementColorPopovers();
+        });
+      }
+    }
+
+    function getFlowCustomSlidesPayload() {
+      return (flowCustomSlides || []).map(function (slide) {
+        return {
+          title: String(slide.title || "").trim().slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX),
+          content: String(slide.content || "").trim().slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX),
+          bg_color: normalizeAnnouncementHex(slide.bg_color, "#394f80"),
+        };
+      }).filter(function (slide) {
+        return !!(slide.title || slide.content);
+      }).slice(0, FLOW_CUSTOM_SLIDES_MAX);
+    }
+
+    function previewCustomSlideContent(content) {
+      var text = String(content || "").replace(/\s+/g, " ").trim();
+      if (!text) return "No content yet";
+      return text.length > 72 ? text.slice(0, 71) + "…" : text;
+    }
+
+    function renderFlowCustomSlidesList() {
+      var list = $("flow-custom-slides-list");
+      if (!list) return;
+      list.innerHTML = (flowCustomSlides || []).map(function (slide) {
+        var bg = normalizeAnnouncementHex(slide.bg_color, "#394f80");
+        var colorId = "flow-custom-live-bg-" + slide.id;
+        var popId = colorId + "-pop";
+        return (
+          "<li class=\"mw-announcement-option mw-custom-slide-item\" data-custom-slide-id=\"" + escapeHtml(String(slide.id)) + "\">" +
+            "<div class=\"mw-custom-slide-item__actions mw-custom-slide-item__actions--color\">" +
+              "<div class=\"mw-color-picker\" data-ann-color=\"custom-" + escapeHtml(String(slide.id)) + "\">" +
+                "<button type=\"button\" class=\"mw-color-picker__swatch\" style=\"--mw-swatch:" + escapeHtml(bg) + "\" aria-label=\"Custom slide background color\" aria-haspopup=\"dialog\" aria-expanded=\"false\" aria-controls=\"" + escapeHtml(popId) + "\"></button>" +
+                "<div class=\"mw-color-picker__popover\" id=\"" + escapeHtml(popId) + "\" hidden role=\"dialog\" aria-label=\"Pick custom slide background\">" +
+                  "<input type=\"color\" id=\"" + escapeHtml(colorId) + "\" value=\"" + escapeHtml(bg) + "\" aria-label=\"Color swatch\" />" +
+                  "<input type=\"text\" id=\"" + escapeHtml(colorId) + "-hex\" class=\"mw-color-picker__hex\" value=\"" + escapeHtml(bg.toUpperCase()) + "\" maxlength=\"7\" spellcheck=\"false\" autocomplete=\"off\" aria-label=\"Hex color code\" inputmode=\"text\" placeholder=\"#000000\" />" +
+                "</div>" +
+              "</div>" +
+            "</div>" +
+            "<button type=\"button\" class=\"mw-custom-slide-item__main\" data-custom-slide-edit=\"" + escapeHtml(String(slide.id)) + "\" aria-label=\"Edit custom slide\">" +
+              "<span class=\"mw-announcement-option__text\">" +
+                "<strong>" + escapeHtml(slide.title || "Announcement") + "</strong>" +
+                "<span class=\"muted\">" + escapeHtml(previewCustomSlideContent(slide.content)) + "</span>" +
+              "</span>" +
+            "</button>" +
+            "<button type=\"button\" class=\"ghost mini mw-custom-slide-item__remove\" data-custom-slide-remove=\"" + escapeHtml(String(slide.id)) + "\" aria-label=\"Remove custom slide\">×</button>" +
+          "</li>"
+        );
+      }).join("");
+      (flowCustomSlides || []).forEach(function (slide) {
+        var colorId = "flow-custom-live-bg-" + slide.id;
+        bindAnnouncementColorPair(colorId, slide.bg_color || "#394f80", function (hex) {
+          slide.bg_color = hex;
+          if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+        });
+      });
+    }
+
+    function setFlowCustomSlidesUI(slides) {
+      flowCustomSlides = [];
+      flowCustomSlideSeq = 0;
+      flowCustomSlideEditId = null;
+      (slides || []).forEach(function (raw) {
+        if (!raw || typeof raw !== "object") return;
+        if (flowCustomSlides.length >= FLOW_CUSTOM_SLIDES_MAX) return;
+        flowCustomSlideSeq += 1;
+        flowCustomSlides.push({
+          id: "cs-" + flowCustomSlideSeq,
+          title: String(raw.title || "").trim().slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX),
+          content: String(raw.content || "").trim().slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX),
+          bg_color: normalizeAnnouncementHex(raw.bg_color || raw.bgColor, "#394f80"),
+        });
+      });
+      renderFlowCustomSlidesList();
+    }
+
+    function findFlowCustomSlide(id) {
+      return (flowCustomSlides || []).find(function (s) { return String(s.id) === String(id); }) || null;
+    }
+
+    function openCustomSlideForm(editId) {
+      var modal = $("flow-custom-slide-modal");
+      if (!modal) return;
+      flowCustomSlideEditId = editId || null;
+      var slide = flowCustomSlideEditId ? findFlowCustomSlide(flowCustomSlideEditId) : null;
+      var titleEl = $("flow-custom-slide-title");
+      var contentEl = $("flow-custom-slide-content");
+      var heading = $("flow-custom-slide-modal-title");
+      var saveBtn = $("btn-flow-custom-slide-save");
+      if (heading) heading.textContent = slide ? "Edit custom slide" : "Add custom slide";
+      if (saveBtn) saveBtn.textContent = slide ? "Save slide" : "Add to deck";
+      if (titleEl) titleEl.value = slide ? (slide.title || "") : "";
+      if (contentEl) contentEl.value = slide ? (slide.content || "") : "";
+      syncAnnouncementColorUi(
+        "flow-custom-slide-bg",
+        normalizeAnnouncementHex(slide && slide.bg_color, "#394f80")
+      );
+      closeAllAnnouncementColorPopovers();
+      modal.setAttribute("data-open", "true");
+      modal.setAttribute("aria-hidden", "false");
+      setTimeout(function () {
+        if (titleEl) titleEl.focus();
+      }, 0);
+    }
+
+    function closeCustomSlideForm() {
+      var modal = $("flow-custom-slide-modal");
+      if (modal) {
+        modal.setAttribute("data-open", "false");
+        modal.setAttribute("aria-hidden", "true");
+      }
+      flowCustomSlideEditId = null;
+      closeAllAnnouncementColorPopovers();
+    }
+
+    function saveCustomSlideFromForm() {
+      var titleEl = $("flow-custom-slide-title");
+      var contentEl = $("flow-custom-slide-content");
+      var title = titleEl ? titleEl.value.trim() : "";
+      var content = contentEl ? contentEl.value.trim() : "";
+      if (!title && !content) {
+        if (typeof notify === "function") notify("Enter a slide title or content.", "warn");
+        if (titleEl) titleEl.focus();
+        return;
+      }
+      if (!title) title = "Announcement";
+      var bg = normalizeAnnouncementHex(
+        ($("flow-custom-slide-bg-hex") && $("flow-custom-slide-bg-hex").value) ||
+        ($("flow-custom-slide-bg") && $("flow-custom-slide-bg").value),
+        "#394f80"
+      );
+      if (flowCustomSlideEditId) {
+        var existing = findFlowCustomSlide(flowCustomSlideEditId);
+        if (existing) {
+          existing.title = title.slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX);
+          existing.content = content.slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX);
+          existing.bg_color = bg;
+        }
+      } else {
+        if ((flowCustomSlides || []).length >= FLOW_CUSTOM_SLIDES_MAX) {
+          if (typeof notify === "function") notify("You can add up to " + FLOW_CUSTOM_SLIDES_MAX + " custom slides.", "warn");
+          return;
+        }
+        flowCustomSlideSeq += 1;
+        flowCustomSlides.push({
+          id: "cs-" + flowCustomSlideSeq,
+          title: title.slice(0, FLOW_CUSTOM_SLIDE_TITLE_MAX),
+          content: content.slice(0, FLOW_CUSTOM_SLIDE_CONTENT_MAX),
+          bg_color: bg,
+        });
+      }
+      renderFlowCustomSlidesList();
+      closeCustomSlideForm();
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+    }
+
+    function initFlowCustomSlides() {
+      initAnnouncementBgColorPickers();
+      var addBtn = $("btn-flow-custom-slide-add");
+      var saveBtn = $("btn-flow-custom-slide-save");
+      var cancelBtn = $("btn-flow-custom-slide-cancel");
+      var modal = $("flow-custom-slide-modal");
+      var list = $("flow-custom-slides-list");
+      if (addBtn && !addBtn.dataset.bound) {
+        addBtn.dataset.bound = "1";
+        addBtn.addEventListener("click", function () {
+          if ((flowCustomSlides || []).length >= FLOW_CUSTOM_SLIDES_MAX) {
+            if (typeof notify === "function") notify("You can add up to " + FLOW_CUSTOM_SLIDES_MAX + " custom slides.", "warn");
+            return;
+          }
+          openCustomSlideForm(null);
+        });
+      }
+      if (saveBtn && !saveBtn.dataset.bound) {
+        saveBtn.dataset.bound = "1";
+        saveBtn.addEventListener("click", saveCustomSlideFromForm);
+      }
+      if (cancelBtn && !cancelBtn.dataset.bound) {
+        cancelBtn.dataset.bound = "1";
+        cancelBtn.addEventListener("click", closeCustomSlideForm);
+      }
+      if (modal && !modal.dataset.bound) {
+        modal.dataset.bound = "1";
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeCustomSlideForm();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && modal.getAttribute("data-open") === "true") {
+            closeCustomSlideForm();
+          }
+        });
+      }
+      if (list && !list.dataset.bound) {
+        list.dataset.bound = "1";
+        list.addEventListener("click", function (e) {
+          var removeBtn = e.target.closest("[data-custom-slide-remove]");
+          if (removeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            var rid = removeBtn.getAttribute("data-custom-slide-remove");
+            flowCustomSlides = (flowCustomSlides || []).filter(function (s) { return String(s.id) !== String(rid); });
+            renderFlowCustomSlidesList();
+            if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+            return;
+          }
+          if (e.target.closest(".mw-color-picker")) return;
+          var editBtn = e.target.closest("[data-custom-slide-edit]");
+          if (!editBtn) return;
+          openCustomSlideForm(editBtn.getAttribute("data-custom-slide-edit"));
+        });
+      }
+      renderFlowCustomSlidesList();
+    }
+
+    window.getFlowCustomSlidesPayload = getFlowCustomSlidesPayload;
+    window.setFlowCustomSlidesUI = setFlowCustomSlidesUI;
+    window.getAnnouncementBgColors = getAnnouncementBgColors;
+    window.setAnnouncementBgColors = setAnnouncementBgColors;
 
     function syncFlowPsalmOverrideHidden() {
       /* legacy no-op — psalm custom line is sent directly from #flow-psalm-custom */
@@ -2235,6 +2729,7 @@
     }
 
     function initFlowInputGroups() {
+      initFlowCustomSlides();
       const foodIn = $("flow-food-sponsor-input");
       const foodAdd = $("btn-flow-food-add");
       ensureFoodSponsorsList();

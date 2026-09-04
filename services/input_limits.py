@@ -20,6 +20,8 @@ EVENT_NAME = 120
 FOOD_SPONSOR = 120
 COLLECTION_AMOUNT = 120
 COLLECTION_DATE_LABEL = 240
+CUSTOM_SLIDE_TITLE = 120
+CUSTOM_SLIDE_CONTENT = 800
 THEME_NAME = 80
 HEX_COLOR = 7
 AI_PROMPT = 4000
@@ -33,6 +35,7 @@ IMPORT_LIST_ITEM = 240
 MAX_CELEBRANTS = 32
 MAX_FOOD_SPONSORS = 24
 MAX_ANNOUNCEMENT_IMAGES = 24
+MAX_CUSTOM_ANNOUNCEMENT_SLIDES = 8
 MAX_EXTRA_SONG_SECTIONS = 12
 MAX_IMPORT_SONG_ROWS = 500
 MAX_GOSPEL_MOODS = 5
@@ -59,6 +62,8 @@ def public_limits() -> dict[str, int]:
         "food_sponsor": FOOD_SPONSOR,
         "collection_amount": COLLECTION_AMOUNT,
         "collection_date_label": COLLECTION_DATE_LABEL,
+        "custom_slide_title": CUSTOM_SLIDE_TITLE,
+        "custom_slide_content": CUSTOM_SLIDE_CONTENT,
         "theme_name": THEME_NAME,
         "hex_color": HEX_COLOR,
         "ai_prompt": AI_PROMPT,

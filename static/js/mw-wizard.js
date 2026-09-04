@@ -158,9 +158,12 @@
           var coll = collOn ? ((amt && amt.value.trim()) ? ((cur && cur.value) ? (cur.value + ' ' + amt.value.trim()) : amt.value.trim()) : 'Included') : 'Off';
           s6 += asideRow('Collection slide', coll);
           var annFlags = [];
+          if ($('flow-slide-welcoming-newcomers') && $('flow-slide-welcoming-newcomers').checked) annFlags.push('Newcomers');
           if ($('flow-slide-food-sponsor') && $('flow-slide-food-sponsor').checked) annFlags.push('Food sponsor');
           if ($('flow-slide-sponsorship-contact') && $('flow-slide-sponsorship-contact').checked) annFlags.push('Sponsorship contact');
           if ($('flow-slide-merienda-location') && $('flow-slide-merienda-location').checked) annFlags.push('Merienda');
+          var customSlides = (typeof getFlowCustomSlidesPayload === 'function') ? getFlowCustomSlidesPayload() : [];
+          if (customSlides.length) annFlags.push(customSlides.length + ' custom');
           var ann = $('flow-announcement-posters'); var nann = (ann && ann.files) ? ann.files.length : 0;
           s6 += asideRow('Announcement slides', annFlags.length ? annFlags.join(', ') : (nann ? (nann + ' upload' + (nann > 1 ? 's' : '')) : 'None'));
           sections.push(reviewSection('Additional details', 'Step 6', s6, { multi: true, step: 6 }));

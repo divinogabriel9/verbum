@@ -34,9 +34,62 @@
           songDetailCache.set(key, data);
         });
       }
-      if (typeof composerLoadedSong !== "undefined" && composerLoadedSong && String(composerLoadedSong.id) === id) {
+      if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id || "") === id &&
+        typeof setComposerAudioSnippet === "function"
+      ) {
+        setComposerAudioSnippet(ref);
+      } else if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id) === id
+      ) {
         composerSongMedia.preview = ref;
         if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      }
+      if (typeof renderSongCatalog === "function") renderSongCatalog();
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+    }
+
+    function updateLocalCatalogSongVideo(section, songId, videoRef) {
+      const id = String(songId || "").trim();
+      if (!id) return;
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      const prefer = String(section || "").trim().toLowerCase();
+      const ordered = prefer && secs.indexOf(prefer) >= 0
+        ? [prefer].concat(secs.filter((s) => s !== prefer))
+        : secs;
+      const ref = videoRef ? normalizeComposerMediaRef(videoRef) : null;
+      if (typeof songCatalogData !== "undefined" && songCatalogData) {
+        ordered.forEach((sec) => {
+          if (!Array.isArray(songCatalogData[sec])) return;
+          const idx = songCatalogData[sec].findIndex((r) => String(r.id) === id);
+          if (idx < 0) return;
+          const next = Object.assign({}, songCatalogData[sec][idx]);
+          next.video_media = ref;
+          songCatalogData[sec][idx] = next;
+        });
+      }
+      if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+      if (typeof songDetailCache !== "undefined" && typeof songDetailCacheKey === "function") {
+        ordered.forEach((sec) => {
+          const key = songDetailCacheKey(sec, id);
+          if (!songDetailCache.has(key)) return;
+          const data = songDetailCache.get(key);
+          if (!data || !data.song) return;
+          data.song.video_media = ref;
+          songDetailCache.set(key, data);
+        });
+      }
+      if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id || "") === id &&
+        typeof setComposerSongMediaField === "function"
+      ) {
+        setComposerSongMediaField("video", ref);
       }
       if (typeof renderSongCatalog === "function") renderSongCatalog();
       if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
@@ -120,16 +173,18 @@
       currentJobId: "",
     };
 
-    function previewFetchStageLabel(stage) {
+    function previewFetchStageLabel(stage, kind) {
       const key = String(stage || "").toLowerCase();
+      const isVideo = kind === "instrumental_video";
       if (key === "captions") return "Scanning lyrics";
       if (key === "words") return "Listening for sung words";
-      if (key === "download") return "Downloading audio";
+      if (key === "download") return isVideo ? "Downloading video" : "Downloading audio";
+      if (key === "compressing") return "Compressing video";
       if (key === "cutting") return "Trimming clip";
-      if (key === "saving") return "Saving clip";
+      if (key === "saving") return isVideo ? "Saving video" : "Saving clip";
       if (key === "queued") return "Waiting";
-      if (key === "done") return "Clip ready";
-      return "Fetching chorus clip";
+      if (key === "done") return isVideo ? "Video ready" : "Clip ready";
+      return isVideo ? "Fetching instrumental video" : "Fetching chorus clip";
     }
 
     function setPreviewFetchStrip(visible, text, percent) {
@@ -165,12 +220,22 @@
           if (job.status !== "done" && job.status !== "error") return;
           previewFetchState.applied[jid] = true;
           const title = String(job.title || "this song").trim() || "this song";
+          const isInstrumental = job.kind === "instrumental_video";
           if (job.status === "done") {
             if (job.section && job.id) {
-              updateLocalCatalogSongPreview(job.section, job.id, job.audio_preview || null);
+              if (isInstrumental) {
+                updateLocalCatalogSongVideo(job.section, job.id, job.video_media || null);
+              } else {
+                updateLocalCatalogSongPreview(job.section, job.id, job.audio_preview || null);
+              }
             }
             if (typeof showToast === "function") {
-              showToast("Chorus clip ready for \"" + title + "\".", "ok");
+              showToast(
+                isInstrumental
+                  ? ("Instrumental video ready for \"" + title + "\".")
+                  : ("Chorus clip ready for \"" + title + "\"."),
+                "ok"
+              );
             }
             const pickModal = $("mw-media-pick-modal");
             if (pickModal && pickModal.getAttribute("data-open") === "true") {
@@ -180,14 +245,22 @@
             }
           } else {
             if (typeof showToast === "function") {
-              showToast(job.error || ("Could not fetch a chorus clip for \"" + title + "\"."), "warn");
+              showToast(
+                job.error ||
+                  (isInstrumental
+                    ? ("Could not download instrumental video for \"" + title + "\".")
+                    : ("Could not fetch a chorus clip for \"" + title + "\".")),
+                "warn"
+              );
             }
             const pickModal = $("mw-media-pick-modal");
             if (pickModal && pickModal.getAttribute("data-open") === "true") {
               const statusEl = $("mw-media-pick-fetch-status");
               if (statusEl) {
                 delete statusEl.dataset.fetching;
-                statusEl.textContent = job.error || "Could not fetch a chorus clip.";
+                statusEl.textContent = job.error || (isInstrumental
+                  ? "Could not download instrumental video."
+                  : "Could not fetch a chorus clip.");
                 statusEl.className = "status error mw-media-pick-fetch-status";
               }
             }
@@ -197,10 +270,10 @@
           const current = data.active || queued[0];
           const title = String(current.title || "this song").trim() || "this song";
           const pct = Number(current.percent) || 0;
-          const prefix = queued.length > 1 ? (queued.length + " clips · ") : "";
+          const prefix = queued.length > 1 ? (queued.length + " media · ") : "";
           setPreviewFetchStrip(
             true,
-            prefix + previewFetchStageLabel(current.stage) + " · " + title,
+            prefix + previewFetchStageLabel(current.stage, current.kind) + " · " + title,
             pct
           );
           const pickModal = $("mw-media-pick-modal");
@@ -208,7 +281,7 @@
             const statusEl = $("mw-media-pick-fetch-status");
             if (statusEl) {
               statusEl.dataset.fetching = "1";
-              statusEl.textContent = prefix + previewFetchStageLabel(current.stage) + "…";
+              statusEl.textContent = prefix + previewFetchStageLabel(current.stage, current.kind) + "…";
               statusEl.className = "status mw-media-pick-fetch-status";
             }
           }
@@ -256,9 +329,49 @@
       const jobId = data.job_id || "";
       if (!jobId) throw new Error("Could not start preview fetch.");
       previewFetchState.currentJobId = jobId;
-      setPreviewFetchStrip(true, previewFetchStageLabel(data.stage) + " · " + title, data.percent || 1);
+      setPreviewFetchStrip(true, previewFetchStageLabel(data.stage, data.kind) + " · " + title, data.percent || 1);
       if (options.toast !== false && typeof showToast === "function") {
         showToast("Fetching a " + (body.duration_sec || 10) + "s chorus clip for \"" + title + "\".", "info");
+      }
+      if (!previewFetchState.pollTimer) {
+        previewFetchState.pollTimer = setInterval(pollPreviewFetchJobs, 450);
+      }
+      pollPreviewFetchJobs();
+      return data;
+    }
+
+    async function startInstrumentalFetchJob(opts) {
+      const options = opts || {};
+      const section = String(options.section || "").trim();
+      const id = String(options.id || "").trim();
+      if (!section || !id || typeof saFetchAdmin !== "function") return null;
+      if (previewFetchState.hideTimer) {
+        clearTimeout(previewFetchState.hideTimer);
+        previewFetchState.hideTimer = null;
+      }
+      const title = String(options.title || "this song").trim() || "this song";
+      const body = {
+        youtube_url: String(options.youtube_url || "").trim(),
+      };
+      if (!body.youtube_url) throw new Error("Enter a valid YouTube URL.");
+      const data = await saFetchAdmin(
+        "/api/admin/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id) + "/instrumental-job",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+      const jobId = data.job_id || "";
+      if (!jobId) throw new Error("Could not start instrumental video download.");
+      previewFetchState.currentJobId = jobId;
+      setPreviewFetchStrip(
+        true,
+        previewFetchStageLabel(data.stage || "download", "instrumental_video") + " · " + title,
+        data.percent || 1
+      );
+      if (options.toast !== false && typeof showToast === "function") {
+        showToast("Downloading full instrumental video for \"" + title + "\".", "info");
       }
       if (!previewFetchState.pollTimer) {
         previewFetchState.pollTimer = setInterval(pollPreviewFetchJobs, 450);
@@ -355,17 +468,28 @@
       const libTab = $("mw-media-pick-tab-library");
       const fetchTab = $("mw-media-pick-tab-fetch");
       const upTab = $("mw-media-pick-tab-upload");
-      const useFetchClip = !isVideo && !youtubeOnly;
+      const useInstrumentalFetch = isVideo && isSa;
+      const useFetchClip = (!isVideo && !youtubeOnly) || useInstrumentalFetch;
       const showYoutube = !isVideo;
       if (ytTab) ytTab.hidden = !showYoutube;
-      if (libTab) libTab.hidden = youtubeOnly || useFetchClip;
-      if (fetchTab) fetchTab.hidden = !useFetchClip;
+      if (libTab) libTab.hidden = youtubeOnly || (useFetchClip && !isVideo);
+      if (fetchTab) {
+        fetchTab.hidden = !useFetchClip;
+        fetchTab.textContent = useInstrumentalFetch ? "Fetch video" : "Fetch clip";
+      }
       if (upTab) upTab.hidden = youtubeOnly;
+      syncMassMediaPickFetchPaneMode(useInstrumentalFetch);
       if (purpose === "song") {
-        if (title) title.textContent = isVideo ? "Choose video for this song" : (youtubeOnly ? "YouTube" : "Fetch audio clip");
+        if (title) {
+          title.textContent = isVideo
+            ? (useInstrumentalFetch ? "Instrumental video" : "Choose video for this song")
+            : (youtubeOnly ? "YouTube" : "Fetch audio clip");
+        }
         if (hint) {
           hint.textContent = isVideo
-            ? "Pick an MP4 from your Media library or upload a new one. It stays linked on this song."
+            ? (useInstrumentalFetch
+              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video. Separate from the 10s clip and choir-practice YouTube link."
+              : "Pick an MP4 from your Media library or upload a new one. It stays linked on this song.")
             : (youtubeOnly
               ? "Paste a YouTube URL for the full song (choir practice). This does not replace the 5–10s audio clip."
               : "Fetch a 5–10s chorus clip from YouTube, or upload an MP3. Full-song YouTube is a separate link.");
@@ -374,12 +498,14 @@
         const label = massMediaDisplayLabel(slot);
         if (title) {
           title.textContent = isVideo
-            ? "Choose video for " + label
+            ? (useInstrumentalFetch ? "Instrumental video for " + label : "Choose video for " + label)
             : (youtubeOnly ? "YouTube" : "Fetch audio clip for " + label);
         }
         if (hint) {
           hint.textContent = isVideo
-            ? "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time."
+            ? (useInstrumentalFetch
+              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video for this option."
+              : "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time.")
             : (youtubeOnly
               ? "Paste a YouTube URL for choir practice. This does not replace the 5–10s audio clip."
               : "Fetch a 5–10s chorus clip from YouTube (same as Superadmin). It plays from the card ▶ — not embedded in the deck.");
@@ -582,7 +708,12 @@
       }
       const fetchSearch = $("mw-media-pick-fetch-search");
       if (fetchSearch) {
-        fetchSearch.addEventListener("click", () => openYouTubeSearchForCurrentSong());
+        fetchSearch.addEventListener("click", () => {
+          const instrumental = typeof massMediaPickFetchIsInstrumental === "function"
+            ? massMediaPickFetchIsInstrumental()
+            : (massMediaPickState.kind === "video" || massMediaPickState.songField === "video");
+          openYouTubeSearchForCurrentSong({ instrumental: instrumental });
+        });
       }
       const fetchRun = $("mw-media-pick-fetch-run");
       if (fetchRun) {
@@ -600,6 +731,15 @@
       const fetchPlay = $("mw-media-pick-fetch-play");
       if (fetchPlay) {
         fetchPlay.addEventListener("click", () => {
+          const instrumental = massMediaPickState.kind === "video" || massMediaPickState.songField === "video";
+          if (instrumental) {
+            if (massMediaPickState.purpose === "song") {
+              void playComposerSongMedia("video", fetchPlay);
+            } else if (typeof playMassSectionVideo === "function") {
+              void playMassSectionVideo(massMediaPickState.slot, fetchPlay);
+            }
+            return;
+          }
           if (massMediaPickState.purpose === "song") {
             const snippet = typeof composerAudioSnippetRef === "function" ? composerAudioSnippetRef() : null;
             if (snippet) void playSavedMusicRef(snippet, COMPOSER_SONG_MEDIA_SLOT, fetchPlay);
@@ -3041,6 +3181,11 @@
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
         "flow-slide-mass-collection", "flow-slide-food-sponsor",
         "flow-slide-sponsorship-contact", "flow-slide-merienda-location",
+        "flow-slide-welcoming-newcomers",
+        "flow-slide-bg-collection", "flow-slide-bg-collection-hex",
+        "flow-slide-bg-food", "flow-slide-bg-food-hex",
+        "flow-slide-bg-contact", "flow-slide-bg-contact-hex",
+        "flow-slide-bg-merienda", "flow-slide-bg-merienda-hex",
         "flow-sponsorship-contact", "flow-merienda-location",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster",
@@ -3149,6 +3294,8 @@
         fields: fields,
         sanctusPicked: massBuilderSanctusPicked(),
         foodSponsors: typeof getFlowFoodSponsorsLines === "function" ? getFlowFoodSponsorsLines() : [],
+        customAnnouncementSlides: typeof getFlowCustomSlidesPayload === "function" ? getFlowCustomSlidesPayload() : [],
+        announcementBgColors: typeof getAnnouncementBgColors === "function" ? getAnnouncementBgColors() : null,
         lyricSongSlots: JSON.parse(JSON.stringify(lyricSongSlots)),
         selectedLyricsSongs: Object.assign({}, selectedLyricsSongs),
         massCommunionCount: massCommunionCount,
@@ -3341,6 +3488,12 @@
         renderFlowFoodSponsorsList(draft.foodSponsors);
         if (typeof syncFlowFoodSponsorsHidden === "function") syncFlowFoodSponsorsHidden();
       }
+      if (typeof setAnnouncementBgColors === "function" && draft.announcementBgColors) {
+        setAnnouncementBgColors(draft.announcementBgColors);
+      }
+      if (typeof setFlowCustomSlidesUI === "function") {
+        setFlowCustomSlidesUI(Array.isArray(draft.customAnnouncementSlides) ? draft.customAnnouncementSlides : []);
+      }
       if (savedSlots) lyricSongSlots = savedSlots;
       if (savedSongs) selectedLyricsSongs = savedSongs;
       if (draft.massCustomSlotSeq != null) massCustomSlotSeq = draft.massCustomSlotSeq;
@@ -3353,9 +3506,13 @@
         }
       }
       const layoutVal = draft.hymnLayout || "dual";
-      document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
-        el.checked = el.value === layoutVal;
-      });
+      if (typeof applyHymnLyricsLayout === "function") {
+        applyHymnLyricsLayout(layoutVal);
+      } else {
+        document.querySelectorAll('input[name="flow-hymn-layout"]').forEach((el) => {
+          el.checked = el.value === layoutVal;
+        });
+      }
       if (typeof applyHymnBodyAlign === "function") {
         applyHymnBodyAlign(draft.hymnBodyAlign || "center");
       }

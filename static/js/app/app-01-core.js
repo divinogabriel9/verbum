@@ -2818,21 +2818,46 @@
       return "https://www.youtube.com/results?search_query=" + encodeURIComponent(q);
     }
 
-    function openYouTubeSearchForCurrentSong() {
-      const query = currentMediaPickSongQuery();
+    function withInstrumentalSearchSuffix(query) {
+      const q = String(query || "").replace(/\s+/g, " ").trim();
+      if (!q) return "instrumental";
+      if (/\binstrumental\b/i.test(q)) return q;
+      return (q + " instrumental").replace(/\s+/g, " ").trim();
+    }
+
+    function openYouTubeSearchForCurrentSong(opts) {
+      const options = opts || {};
+      let query = currentMediaPickSongQuery();
+      if (options.instrumental) query = withInstrumentalSearchSuffix(query);
       const url = youtubeSearchUrlForQuery(query);
       const opened = window.open(url, "_blank", "noopener,noreferrer");
       if (!opened && typeof notify === "function") {
-        notify(query ? "Allow pop-ups to search YouTube for this song." : "Allow pop-ups to open YouTube.", "warn");
+        notify(
+          query
+            ? (options.instrumental
+              ? "Allow pop-ups to search YouTube for an instrumental version."
+              : "Allow pop-ups to search YouTube for this song.")
+            : "Allow pop-ups to open YouTube.",
+          "warn"
+        );
       }
     }
 
-    function openYouTubeSearchForComposerSong() {
-      const query = currentComposerSongQuery();
+    function openYouTubeSearchForComposerSong(opts) {
+      const options = opts || {};
+      let query = currentComposerSongQuery();
+      if (options.instrumental) query = withInstrumentalSearchSuffix(query);
       const url = youtubeSearchUrlForQuery(query);
       const opened = window.open(url, "_blank", "noopener,noreferrer");
       if (!opened && typeof notify === "function") {
-        notify(query ? "Allow pop-ups to search YouTube for this song." : "Allow pop-ups to open YouTube.", "warn");
+        notify(
+          query
+            ? (options.instrumental
+              ? "Allow pop-ups to search YouTube for an instrumental version."
+              : "Allow pop-ups to search YouTube for this song.")
+            : "Allow pop-ups to open YouTube.",
+          "warn"
+        );
       }
     }
 
@@ -2940,6 +2965,39 @@
       };
     }
 
+    function massMediaPickFetchIsInstrumental() {
+      return massMediaPickState.kind === "video" || massMediaPickState.songField === "video";
+    }
+
+    function syncMassMediaPickFetchPaneMode(isInstrumental) {
+      const instrumental = !!isInstrumental;
+      const hint = document.querySelector("#mw-media-pick-pane-fetch .mw-rite__hint");
+      const durWrap = $("mw-media-pick-fetch-duration");
+      const durField = durWrap ? durWrap.closest(".field") : null;
+      const urlLabel = document.querySelector("label[for=\"mw-media-pick-fetch-url\"]");
+      const runBtn = $("mw-media-pick-fetch-run");
+      const searchBtn = $("mw-media-pick-fetch-search");
+      if (hint) {
+        hint.textContent = instrumental
+          ? "Search YouTube for an instrumental version of this song (query adds “instrumental”), paste that URL, then download the full video. This is separate from the 10s audio clip and the choir-practice YouTube link."
+          : "Paste a YouTube URL and fetch a 5–10s chorus clip. Captions are scanned for the chorus (or first verse). This does not replace the song’s full YouTube practice link.";
+      }
+      if (durField) durField.hidden = instrumental;
+      if (urlLabel) {
+        urlLabel.textContent = instrumental ? "YouTube URL (instrumental video)" : "YouTube URL (clip source)";
+      }
+      if (runBtn && !runBtn.disabled) {
+        runBtn.textContent = instrumental ? "Download video" : "Fetch clip";
+      }
+      if (searchBtn) {
+        searchBtn.title = instrumental
+          ? "Search YouTube for this song + instrumental"
+          : "Search YouTube for this song";
+        searchBtn.textContent = instrumental ? "Search instrumental" : "Search";
+      }
+    }
+    window.syncMassMediaPickFetchPaneMode = syncMassMediaPickFetchPaneMode;
+
     function massMediaPickFetchDurationSec() {
       const el = $("mw-media-pick-fetch-duration");
       const n = el ? parseInt(el.value, 10) : 10;
@@ -2951,22 +3009,35 @@
       const statusEl = $("mw-media-pick-fetch-status");
       const playBtn = $("mw-media-pick-fetch-play");
       const urlEl = $("mw-media-pick-fetch-url");
+      const instrumental = massMediaPickFetchIsInstrumental();
+      syncMassMediaPickFetchPaneMode(instrumental);
       let preview = null;
+      let video = null;
       let youtube = null;
       if (massMediaPickState.purpose === "song") {
         preview = composerSongMedia && composerSongMedia.preview;
+        video = composerSongMedia && composerSongMedia.video;
         youtube = typeof composerYoutubeRef === "function" ? composerYoutubeRef() : null;
       } else {
         preview = massSlotPreviewRef(massMediaPickState.slot);
+        video = getMassSectionMedia("video", massMediaPickState.slot);
         youtube = massSlotYoutubeRef(massMediaPickState.slot);
       }
       preview = normalizeAudioPreviewRef(preview);
+      video = video ? normalizeComposerMediaRef(video) : null;
       if (urlEl && document.activeElement !== urlEl) {
-        const fromPreview = preview && (preview.youtube_url || "");
-        const fromYt = youtube && (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube)));
-        urlEl.value = fromPreview || fromYt || "";
+        if (instrumental) {
+          // Instrumental uses its own YouTube source — do not reuse the practice/audio link.
+          if (!String(urlEl.value || "").trim()) urlEl.value = "";
+        } else {
+          const fromPreview = preview && (preview.youtube_url || "");
+          const fromYt = youtube && (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube)));
+          urlEl.value = fromPreview || fromYt || "";
+        }
       }
-      const ready = !!(preview && preview.basename);
+      const ready = instrumental
+        ? !!(video && video.basename && !isYouTubeMediaRef(video))
+        : !!(preview && preview.basename);
       if (playBtn) {
         playBtn.hidden = !ready;
         playBtn.disabled = !ready;
@@ -2974,13 +3045,19 @@
       }
       if (statusEl && !statusEl.dataset.fetching) {
         if (!target || !target.id) {
-          statusEl.textContent = "Choose a song first, then fetch a clip.";
+          statusEl.textContent = instrumental
+            ? "Choose a song first, then download the video."
+            : "Choose a song first, then fetch a clip.";
           statusEl.className = "status mw-media-pick-fetch-status";
         } else if (ready) {
-          statusEl.textContent = (preview.duration_sec || 10) + "s clip ready.";
+          statusEl.textContent = instrumental
+            ? ((video.display_name || video.basename) + " ready.")
+            : ((preview.duration_sec || 10) + "s clip ready.");
           statusEl.className = "status ok mw-media-pick-fetch-status";
         } else {
-          statusEl.textContent = "No clip yet — paste a YouTube URL and fetch.";
+          statusEl.textContent = instrumental
+            ? "No instrumental video yet — paste a YouTube URL and download."
+            : "No clip yet — paste a YouTube URL and fetch.";
           statusEl.className = "status mw-media-pick-fetch-status";
         }
       }
@@ -2991,6 +3068,7 @@
       const statusEl = $("mw-media-pick-fetch-status");
       const btn = $("mw-media-pick-fetch-run");
       const urlEl = $("mw-media-pick-fetch-url");
+      const instrumental = massMediaPickFetchIsInstrumental();
       if (!target || !target.section || !target.id) {
         if (typeof notify === "function") notify("Choose a song first.", "warn");
         return;
@@ -3002,35 +3080,60 @@
         return;
       }
       if (urlEl) urlEl.value = ref.youtube_url || youtubeUrl;
-      if (btn) { btn.disabled = true; btn.textContent = "Queued…"; }
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Queued…";
+      }
       if (statusEl) {
         statusEl.dataset.fetching = "1";
-        statusEl.textContent = "Scanning captions and fetching clip…";
+        statusEl.textContent = instrumental
+          ? "Downloading full instrumental video…"
+          : "Scanning captions and fetching clip…";
         statusEl.className = "status mw-media-pick-fetch-status";
       }
       previewFetchState.attempted[target.section + ":" + target.id] = true;
       try {
-        await startPreviewFetchJob({
-          section: target.section,
-          id: target.id,
-          title: target.title || "this song",
-          youtube_url: ref.youtube_url || youtubeUrl,
-          duration_sec: massMediaPickFetchDurationSec(),
-          toast: true,
-        });
+        if (instrumental) {
+          await startInstrumentalFetchJob({
+            section: target.section,
+            id: target.id,
+            title: target.title || "this song",
+            youtube_url: ref.youtube_url || youtubeUrl,
+            toast: true,
+          });
+        } else {
+          await startPreviewFetchJob({
+            section: target.section,
+            id: target.id,
+            title: target.title || "this song",
+            youtube_url: ref.youtube_url || youtubeUrl,
+            duration_sec: massMediaPickFetchDurationSec(),
+            toast: true,
+          });
+        }
         if (statusEl) {
           statusEl.textContent = "Fetch started — watch the progress bar below.";
           statusEl.className = "status ok mw-media-pick-fetch-status";
         }
       } catch (err) {
         if (statusEl) {
-          statusEl.textContent = (err && err.message) || "Could not start clip fetch.";
+          statusEl.textContent = (err && err.message) || (instrumental
+            ? "Could not start video download."
+            : "Could not start clip fetch.");
           statusEl.className = "status error mw-media-pick-fetch-status";
         }
-        if (typeof notify === "function") notify((err && err.message) || "Could not start clip fetch.", "warn");
+        if (typeof notify === "function") {
+          notify(
+            (err && err.message) || (instrumental ? "Could not start video download." : "Could not start clip fetch."),
+            "warn"
+          );
+        }
       } finally {
         if (statusEl) delete statusEl.dataset.fetching;
-        if (btn) { btn.disabled = false; btn.textContent = "Fetch clip"; }
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = instrumental ? "Download video" : "Fetch clip";
+        }
       }
     }
 

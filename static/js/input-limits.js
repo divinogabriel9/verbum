@@ -21,6 +21,8 @@
     food_sponsor: 120,
     collection_amount: 120,
     collection_date_label: 240,
+    custom_slide_title: 120,
+    custom_slide_content: 800,
     theme_name: 80,
     hex_color: 7,
     ai_prompt: 4000,

@@ -373,6 +373,7 @@ def _preview_job_public(job: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": True,
         "job_id": job.get("id") or "",
+        "kind": job.get("kind") or "audio_preview",
         "status": job.get("status") or "queued",
         "percent": int(job.get("percent") or 0),
         "stage": job.get("stage") or "",
@@ -381,6 +382,7 @@ def _preview_job_public(job: dict[str, Any]) -> dict[str, Any]:
         "title": job.get("title") or "",
         "error": job.get("error") or "",
         "audio_preview": job.get("audio_preview"),
+        "video_media": job.get("video_media"),
         "duration_sec": job.get("duration_sec"),
         "method": job.get("method") or "",
     }
@@ -408,33 +410,60 @@ def _preview_job_worker() -> None:
             def on_progress(pct: int, stage: str) -> None:
                 _update_preview_job(job_id, percent=pct, stage=stage, status="running")
 
-            result = generate_song_audio_preview(
-                section=str(job.get("section") or ""),
-                hymn_id=str(job.get("hymn_id") or ""),
-                youtube_url=str(job.get("youtube_url") or ""),
-                duration_sec=int(job.get("duration_sec") or 10),
-                start_sec=job.get("start_sec"),
-                updated_by=job.get("updated_by"),
-                progress_cb=on_progress,
-            )
-            if result.get("ok"):
-                _update_preview_job(
-                    job_id,
-                    status="done",
-                    percent=100,
-                    stage="done",
-                    error="",
-                    audio_preview=result.get("audio_preview"),
-                    duration_sec=result.get("duration_sec"),
-                    method=result.get("method") or "",
+            kind = str(job.get("kind") or "audio_preview")
+            if kind == "instrumental_video":
+                result = generate_song_instrumental_video(
+                    section=str(job.get("section") or ""),
+                    hymn_id=str(job.get("hymn_id") or ""),
+                    youtube_url=str(job.get("youtube_url") or ""),
+                    updated_by=job.get("updated_by"),
+                    progress_cb=on_progress,
                 )
+                if result.get("ok"):
+                    _update_preview_job(
+                        job_id,
+                        status="done",
+                        percent=100,
+                        stage="done",
+                        error="",
+                        video_media=result.get("video_media"),
+                        method="instrumental",
+                    )
+                else:
+                    _update_preview_job(
+                        job_id,
+                        status="error",
+                        stage="error",
+                        error=str(result.get("error") or "Instrumental video fetch failed."),
+                    )
             else:
-                _update_preview_job(
-                    job_id,
-                    status="error",
-                    stage="error",
-                    error=str(result.get("error") or "Preview fetch failed."),
+                result = generate_song_audio_preview(
+                    section=str(job.get("section") or ""),
+                    hymn_id=str(job.get("hymn_id") or ""),
+                    youtube_url=str(job.get("youtube_url") or ""),
+                    duration_sec=int(job.get("duration_sec") or 10),
+                    start_sec=job.get("start_sec"),
+                    updated_by=job.get("updated_by"),
+                    progress_cb=on_progress,
                 )
+                if result.get("ok"):
+                    _update_preview_job(
+                        job_id,
+                        status="done",
+                        percent=100,
+                        stage="done",
+                        error="",
+                        audio_preview=result.get("audio_preview"),
+                        duration_sec=result.get("duration_sec"),
+                        method=result.get("method") or "",
+                    )
+                else:
+                    _update_preview_job(
+                        job_id,
+                        status="error",
+                        stage="error",
+                        error=str(result.get("error") or "Preview fetch failed."),
+                    )
         except Exception as exc:
             _update_preview_job(job_id, status="error", stage="error", error=str(exc)[:240])
         finally:
@@ -448,6 +477,86 @@ def _ensure_preview_worker() -> None:
             return
         _PREVIEW_WORKER_STARTED = True
     threading.Thread(target=_preview_job_worker, name="song-preview-fetch", daemon=True).start()
+
+
+def generate_song_instrumental_video(
+    *,
+    section: str,
+    hymn_id: str,
+    youtube_url: str = "",
+    updated_by: str | None = None,
+    progress_cb: Any = None,
+) -> dict[str, Any]:
+    from services.community_config import uploads_dir
+    from services.private_files import upload_file_url
+    from services.song_catalog import (
+        normalize_song_media_ref,
+        parse_youtube_video_id,
+        update_catalog_song,
+    )
+    from services.song_preview_clip import (
+        build_instrumental_video,
+        end_preview_job,
+        try_begin_preview_job,
+    )
+
+    catalog = load_catalog_dict()
+    sec = str(section or "").strip().lower()
+    hid = str(hymn_id or "").strip()
+    row = None
+    for item in catalog.get(sec) or []:
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
+            row = item
+            break
+    if row is None:
+        return {"ok": False, "error": "Song not found."}
+
+    existing_audio = normalize_song_media_ref(row.get("audio_media"))
+    url = str(youtube_url or "").strip()
+    if not url and existing_audio:
+        url = str(existing_audio.get("youtube_url") or "")
+    video_id = parse_youtube_video_id(url)
+    if not video_id:
+        return {"ok": False, "error": "Paste a YouTube URL for this song first."}
+
+    safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in hid)[:48]
+    dest_dir = uploads_dir() / "saved_media" / "video"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"instrumental_{sec}_{safe_id}_{video_id}.mp4"
+    title = str(row.get("title") or "").strip() or hid
+    if not try_begin_preview_job():
+        return {"ok": False, "error": "A media fetch is already running. Wait for it to finish."}
+    try:
+        meta = build_instrumental_video(
+            youtube_url=url,
+            dest_path=dest,
+            progress_cb=progress_cb,
+        )
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:240]}
+    finally:
+        end_preview_job()
+
+    video_ref = {
+        "basename": dest.name,
+        "display_name": (title + " · instrumental")[:240],
+    }
+    saved = update_catalog_song(
+        section=sec,
+        hymn_id=hid,
+        video_media=video_ref,
+        updated_by=updated_by,
+    )
+    if not saved.get("ok"):
+        return {"ok": False, "error": saved.get("error") or "Could not save instrumental video."}
+    return {
+        "ok": True,
+        "video_media": normalize_song_media_ref(saved.get("video_media") or video_ref),
+        "url": upload_file_url(f"saved_media/video/{dest.name}"),
+        "youtube_id": meta.get("youtube_id") or video_id,
+        "youtube_url": meta.get("youtube_url") or url,
+        "bytes": meta.get("bytes") or 0,
+    }
 
 
 def enqueue_song_audio_preview(
@@ -482,7 +591,7 @@ def enqueue_song_audio_preview(
     if not parse_youtube_video_id(url):
         return {"ok": False, "error": "Paste a YouTube URL for this song first."}
 
-    key = sec + ":" + hid
+    key = sec + ":" + hid + ":audio_preview"
     with _PREVIEW_JOBS_LOCK:
         for job in _PREVIEW_JOBS.values():
             if str(job.get("key") or "") != key:
@@ -493,6 +602,7 @@ def enqueue_song_audio_preview(
         job = {
             "id": job_id,
             "key": key,
+            "kind": "audio_preview",
             "section": sec,
             "hymn_id": hid,
             "title": str(row.get("title") or "").strip(),
@@ -505,6 +615,69 @@ def enqueue_song_audio_preview(
             "stage": "queued",
             "error": "",
             "audio_preview": normalize_audio_preview_ref(row.get("audio_preview")),
+            "video_media": None,
+            "created_at": time.time(),
+            "updated_at": time.time(),
+        }
+        _PREVIEW_JOBS[job_id] = job
+    _ensure_preview_worker()
+    _PREVIEW_JOB_QUEUE.put(job_id)
+    return _preview_job_public(job)
+
+
+def enqueue_song_instrumental_video(
+    *,
+    section: str,
+    hymn_id: str,
+    youtube_url: str = "",
+    updated_by: str | None = None,
+) -> dict[str, Any]:
+    catalog = load_catalog_dict()
+    sec = str(section or "").strip().lower()
+    hid = str(hymn_id or "").strip()
+    row = None
+    for item in catalog.get(sec) or []:
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
+            row = item
+            break
+    if row is None:
+        return {"ok": False, "error": "Song not found."}
+
+    from services.song_catalog import normalize_song_media_ref, parse_youtube_video_id
+
+    existing_audio = normalize_song_media_ref(row.get("audio_media"))
+    existing_video = normalize_song_media_ref(row.get("video_media"))
+    url = str(youtube_url or "").strip()
+    if not url and existing_audio:
+        url = str(existing_audio.get("youtube_url") or "")
+    if not parse_youtube_video_id(url):
+        return {"ok": False, "error": "Paste a YouTube URL for this song first."}
+
+    key = sec + ":" + hid + ":instrumental_video"
+    with _PREVIEW_JOBS_LOCK:
+        for job in _PREVIEW_JOBS.values():
+            if str(job.get("key") or "") != key:
+                continue
+            if job.get("status") in {"queued", "running"}:
+                return _preview_job_public(job)
+        job_id = uuid.uuid4().hex[:12]
+        job = {
+            "id": job_id,
+            "key": key,
+            "kind": "instrumental_video",
+            "section": sec,
+            "hymn_id": hid,
+            "title": str(row.get("title") or "").strip(),
+            "youtube_url": url,
+            "duration_sec": None,
+            "start_sec": None,
+            "updated_by": updated_by,
+            "status": "queued",
+            "percent": 0,
+            "stage": "queued",
+            "error": "",
+            "audio_preview": None,
+            "video_media": existing_video,
             "created_at": time.time(),
             "updated_at": time.time(),
         }

@@ -46,7 +46,7 @@
       ],
       "added_at": "2026-08-29T00:49:39.429461+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T00:49:39.429461+00:00",
+      "updated_at": "2026-09-03T13:45:30.598481+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:U3eKQLX7nO0",
@@ -58,7 +58,17 @@
         "triumphant",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_all_creatures_10.mp3",
+        "start_sec": 19.96,
+        "youtube_id": "U3eKQLX7nO0",
+        "youtube_url": "https://www.youtube.com/watch?v=U3eKQLX7nO0",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "here_i_am",
@@ -70,7 +80,7 @@
       ],
       "added_at": "2026-08-21T14:09:48.884608+00:00",
       "language": "English",
-      "updated_at": "2026-08-21T14:10:20.923356+00:00",
+      "updated_at": "2026-09-03T13:45:50.457172+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:cDdniihKBzI",
@@ -82,7 +92,17 @@
         "mercy",
         "journey",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_here_i_am_10.mp3",
+        "start_sec": 13.08,
+        "youtube_id": "cDdniihKBzI",
+        "youtube_url": "https://www.youtube.com/watch?v=cDdniihKBzI",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "glory_praise",
@@ -130,7 +150,7 @@
       ],
       "added_at": "2026-08-29T00:50:55.865731+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T00:50:55.865731+00:00",
+      "updated_at": "2026-09-03T13:44:52.912174+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:2yZVweZ2Cvg",
@@ -142,7 +162,17 @@
         "triumphant",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_joyful_joyful_10.mp3",
+        "start_sec": 21.08,
+        "youtube_id": "2yZVweZ2Cvg",
+        "youtube_url": "https://www.youtube.com/watch?v=2yZVweZ2Cvg",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "holy_holy_holy",
@@ -154,7 +184,7 @@
       ],
       "added_at": "2026-08-29T01:11:03.545959+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-29T01:11:03.545959+00:00",
+      "updated_at": "2026-09-03T13:46:07.707060+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:VR-c7MSsbqs",
@@ -166,7 +196,17 @@
         "triumphant",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_holy_holy_holy_10.mp3",
+        "start_sec": 4.08,
+        "youtube_id": "VR-c7MSsbqs",
+        "youtube_url": "https://www.youtube.com/watch?v=VR-c7MSsbqs",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "crown_him",
@@ -179,7 +219,7 @@
       ],
       "added_at": "2026-08-29T01:09:01.572094+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-29T01:09:01.572094+00:00",
+      "updated_at": "2026-09-03T13:46:26.920961+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:wGK1Up1_eiw",
@@ -190,7 +230,17 @@
       "gospel_moods": [
         "triumphant",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_crown_him_10.mp3",
+        "start_sec": 14.56,
+        "youtube_id": "wGK1Up1_eiw",
+        "youtube_url": "https://www.youtube.com/watch?v=wGK1Up1_eiw",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "praise_to_lord",
@@ -202,7 +252,7 @@
       ],
       "added_at": "2026-08-29T01:01:34.958932+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-29T01:01:34.958932+00:00",
+      "updated_at": "2026-09-03T13:46:49.840771+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:zo70rezn16c",
@@ -214,7 +264,17 @@
         "triumphant",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_praise_to_lord_10.mp3",
+        "start_sec": 13.76,
+        "youtube_id": "zo70rezn16c",
+        "youtube_url": "https://www.youtube.com/watch?v=zo70rezn16c",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "here_we_are",
@@ -227,7 +287,7 @@
       ],
       "added_at": "2026-08-29T00:51:59.918359+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T00:51:59.918359+00:00",
+      "updated_at": "2026-09-03T13:47:02.723998+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:NDb35qrSH1A",
@@ -237,7 +297,17 @@
       },
       "gospel_moods": [
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_entrance_here_we_are_10.mp3",
+        "start_sec": 0.32,
+        "youtube_id": "NDb35qrSH1A",
+        "youtube_url": "https://www.youtube.com/watch?v=NDb35qrSH1A",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "purihin_ang_panginoon",
@@ -250,7 +320,7 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-28T23:26:44.473576+00:00",
+      "updated_at": "2026-09-03T13:47:23.355622+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:UZ-ZcsvVjTw",
@@ -260,7 +330,17 @@
       },
       "gospel_moods": [
         "triumphant"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_purihin_ang_panginoon_10.mp3",
+        "start_sec": 46.54,
+        "youtube_id": "UZ-ZcsvVjTw",
+        "youtube_url": "https://www.youtube.com/watch?v=UZ-ZcsvVjTw",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "table_of_plenty",
@@ -273,7 +353,7 @@
       ],
       "added_at": "2026-08-29T00:10:48.112854+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T00:10:48.112854+00:00",
+      "updated_at": "2026-09-03T13:47:45.628448+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:bwfKYpymoRI",
@@ -285,7 +365,17 @@
         "solemn",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_entrance_table_of_plenty_10.mp3",
+        "start_sec": 10.32,
+        "youtube_id": "bwfKYpymoRI",
+        "youtube_url": "https://www.youtube.com/watch?v=bwfKYpymoRI",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "buksan_ang_aming_puso",
@@ -298,7 +388,7 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-29T00:59:42.820428+00:00",
+      "updated_at": "2026-09-03T13:48:02.163786+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:_LeMD0vrJpI",
@@ -309,7 +399,17 @@
       "gospel_moods": [
         "journey",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_entrance_buksan_ang_aming_puso_10.mp3",
+        "start_sec": 102.1,
+        "youtube_id": "_LeMD0vrJpI",
+        "youtube_url": "https://www.youtube.com/watch?v=_LeMD0vrJpI",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "pag_aalaala",
@@ -389,7 +489,7 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-29T00:56:08.111176+00:00",
+      "updated_at": "2026-09-03T13:48:21.058301+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:wx1_gBscKOU",
@@ -400,7 +500,17 @@
       "gospel_moods": [
         "triumphant",
         "journey"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_entrance_balang_araw_10.mp3",
+        "start_sec": 20.48,
+        "youtube_id": "wx1_gBscKOU",
+        "youtube_url": "https://www.youtube.com/watch?v=wx1_gBscKOU",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "sa_hapag_ng_panginoon",
@@ -594,24 +704,24 @@
       "language": "English",
       "updated_at": "2026-09-03T12:00:41.310405+00:00",
       "audio_media": {
-        "basename": "yt:KLR3fLtDCHU",
-        "display_name": "YouTube",
         "source": "youtube",
+        "basename": "yt:KLR3fLtDCHU",
         "youtube_id": "KLR3fLtDCHU",
-        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU"
+        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU",
+        "display_name": "YouTube"
       },
       "gospel_moods": [
         "mercy"
       ],
       "audio_preview": {
-        "basename": "preview_entrance_great_is_god_10.mp3",
-        "display_name": "10s preview",
-        "duration_sec": 10,
-        "start_sec": 12.5,
-        "source": "preview",
         "method": "chorus",
+        "source": "preview",
+        "basename": "preview_entrance_great_is_god_10.mp3",
+        "start_sec": 12.5,
         "youtube_id": "KLR3fLtDCHU",
-        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU"
+        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU",
+        "display_name": "10s preview",
+        "duration_sec": 10
       }
     }
   ],
@@ -627,7 +737,7 @@
       ],
       "added_at": "2026-08-29T00:45:47.286899+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T00:45:47.286899+00:00",
+      "updated_at": "2026-09-03T13:10:25.776478+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:n-wTFir4fnY",
@@ -637,7 +747,17 @@
       },
       "gospel_moods": [
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_christify_10.mp3",
+        "start_sec": 19.94,
+        "youtube_id": "n-wTFir4fnY",
+        "youtube_url": "https://www.youtube.com/watch?v=n-wTFir4fnY",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "take_o_take",
@@ -672,7 +792,7 @@
         "easter"
       ],
       "added_at": "2026-08-28T22:55:15.525370+00:00",
-      "updated_at": "2026-08-28T22:59:25.430510+00:00",
+      "updated_at": "2026-09-03T13:48:41.044016+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:gADDeVUH4uc",
@@ -683,7 +803,17 @@
       "gospel_moods": [
         "triumphant",
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_bread_of_life_offertory_10.mp3",
+        "start_sec": 17.12,
+        "youtube_id": "gADDeVUH4uc",
+        "youtube_url": "https://www.youtube.com/watch?v=gADDeVUH4uc",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "one_bread_offertory",
@@ -695,7 +825,7 @@
       ],
       "added_at": "2026-08-29T00:47:27.168663+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T00:47:27.168663+00:00",
+      "updated_at": "2026-09-03T13:49:01.962264+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:WHAu3fLF7NI",
@@ -707,7 +837,17 @@
         "solemn",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_one_bread_offertory_10.mp3",
+        "start_sec": 14.4,
+        "youtube_id": "WHAu3fLF7NI",
+        "youtube_url": "https://www.youtube.com/watch?v=WHAu3fLF7NI",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "doxology",
@@ -787,7 +927,7 @@
       ],
       "added_at": "2026-08-29T01:02:39.221201+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T01:02:39.221201+00:00",
+      "updated_at": "2026-09-03T13:49:14.199518+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:nXcjecHR8PE",
@@ -797,7 +937,17 @@
       },
       "gospel_moods": [
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_offertory_one_more_gift_10.mp3",
+        "start_sec": 24.96,
+        "youtube_id": "nXcjecHR8PE",
+        "youtube_url": "https://www.youtube.com/watch?v=nXcjecHR8PE",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "take_and_receive",
@@ -810,7 +960,7 @@
       ],
       "added_at": "2026-08-21T14:05:34.041277+00:00",
       "language": "English",
-      "updated_at": "2026-08-21T14:06:24.628170+00:00",
+      "updated_at": "2026-09-03T13:49:31.636337+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:KfAdxm5cZJA",
@@ -820,7 +970,17 @@
       },
       "gospel_moods": [
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_take_and_receive_10.mp3",
+        "start_sec": 21.4,
+        "youtube_id": "KfAdxm5cZJA",
+        "youtube_url": "https://www.youtube.com/watch?v=KfAdxm5cZJA",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "unang_alay",
@@ -833,7 +993,7 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-29T01:08:22.025281+00:00",
+      "updated_at": "2026-09-03T13:49:50.529507+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:5Lrd7X2j3X8",
@@ -844,7 +1004,17 @@
       "gospel_moods": [
         "solemn",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "scan",
+        "source": "preview",
+        "basename": "preview_offertory_unang_alay_10.mp3",
+        "start_sec": 27.44,
+        "youtube_id": "5Lrd7X2j3X8",
+        "youtube_url": "https://www.youtube.com/watch?v=5Lrd7X2j3X8",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "paghahandog_ng_sarili",
@@ -908,7 +1078,7 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-29T01:03:43.294995+00:00",
+      "updated_at": "2026-09-03T13:50:06.891916+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:l4K-wEZwe00",
@@ -919,7 +1089,17 @@
       "gospel_moods": [
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_tanging_yaman_10.mp3",
+        "start_sec": 114.52,
+        "youtube_id": "l4K-wEZwe00",
+        "youtube_url": "https://www.youtube.com/watch?v=l4K-wEZwe00",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "isang_pagkain_isang_katawan_isang_bayan",
@@ -1234,7 +1414,7 @@
       ],
       "added_at": "2026-08-28T22:57:43.163437+00:00",
       "language": "English",
-      "updated_at": "2026-08-28T22:57:43.163437+00:00",
+      "updated_at": "2026-09-03T13:50:23.177988+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:IJ0jOjqISPU",
@@ -1244,7 +1424,17 @@
       },
       "gospel_moods": [
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_communion_be_not_afraid_10.mp3",
+        "start_sec": 16.68,
+        "youtube_id": "IJ0jOjqISPU",
+        "youtube_url": "https://www.youtube.com/watch?v=IJ0jOjqISPU",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "iesu_panis_vitae",
@@ -1879,6 +2069,43 @@
         "display_name": "10s preview",
         "duration_sec": 10
       }
+    },
+    {
+      "id": "love_is_the_answer",
+      "title": "Love Is The Answer",
+      "author": "",
+      "lyrics": "Verse 1\nMorning Comes And I Must Go\nDay Is Breaking Yonder\nAfter All The Places I Have Been\nNow I'm Going Home\n\nVerse 2\nI Have Been To Seek The Sky\nTo Travel On The Highway\nAnd The Time Has Come I Don't Know Why\nI Am Going Home\n\nVerse 3\nWhere Is The Answer To So Many Questions\nI Don't Know\nSo I Begin Another Journey\nWhere Is The Meaning For My World?\n(Where Is Meaning For My World?)\nI See The Answer Now\n\nVerse 4\nThough We Came By Diff'rent Roads\nNow We Walk Together\nStay Beside Me All Our Days\nStrangers Never More\n\nVerse 5\nThrough The Cool Of Sum-mer Rains\nBy The Hearthside Fire\nI'll Be With You When Nothing Remains\nI Am Home To Stay\n\nVerse 6\nFor Love Is The Answer To\nSo Many Quest-ions Now I Know\nAnd I Can Stop My Endless Wond'ring\nLove Gives The Meaning To My World\n(Gives The Meaning To My World)\nI See The Answer Now\n\nVerse 7\nLove Gives Meaning To My World\n(Love Gives Meaning To My World)\nAnd I See The Ans-wer Now\nLove Is The Ans-wer\nLove...",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-04T00:16:14.084812+00:00",
+      "language": "English",
+      "updated_at": "2026-09-04T00:17:02.489589+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:5AM3uQnvP7I",
+        "youtube_id": "5AM3uQnvP7I",
+        "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I",
+        "display_name": "YouTube"
+      },
+      "video_media": {
+        "basename": "instrumental_communion_love_is_the_answer_5AM3uQnvP7I.mp4",
+        "display_name": "Love Is The Answer · instrumental"
+      },
+      "gospel_moods": [
+        "reverent"
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_communion_love_is_the_answer_10.mp3",
+        "start_sec": 11.6,
+        "youtube_id": "5AM3uQnvP7I",
+        "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     }
   ],
   "recessional": [
@@ -1940,7 +2167,7 @@
       ],
       "added_at": "2026-08-29T01:14:25.678243+00:00",
       "language": "English",
-      "updated_at": "2026-08-29T01:14:25.678243+00:00",
+      "updated_at": "2026-09-03T13:50:42.091691+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:gzJv2oTIGfk",
@@ -1952,7 +2179,17 @@
         "mercy",
         "journey",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_recessional_city_of_god_10.mp3",
+        "start_sec": 91.04,
+        "youtube_id": "gzJv2oTIGfk",
+        "youtube_url": "https://www.youtube.com/watch?v=gzJv2oTIGfk",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "alleluia_sing",
@@ -2028,7 +2265,7 @@
       ],
       "added_at": "2026-08-21T14:08:57.863529+00:00",
       "language": "English",
-      "updated_at": "2026-08-21T14:08:57.863529+00:00",
+      "updated_at": "2026-09-03T13:51:00.612672+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:E_i-GxtbD54",
@@ -2039,7 +2276,17 @@
       "gospel_moods": [
         "triumphant",
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_recessional_shine_jesus_shine_10.mp3",
+        "start_sec": 8.88,
+        "youtube_id": "E_i-GxtbD54",
+        "youtube_url": "https://www.youtube.com/watch?v=E_i-GxtbD54",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "halina_t_humayag",
@@ -2052,7 +2299,7 @@
       ],
       "added_at": "2026-08-09T02:33:47.203815+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-08-14T19:43:40.388205+00:00",
+      "updated_at": "2026-09-03T13:51:25.884299+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:zBSkpl8U0xk",
@@ -2067,7 +2314,17 @@
       "gospel_moods": [
         "triumphant",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "words",
+        "source": "preview",
+        "basename": "preview_recessional_halina_t_humayag_10.mp3",
+        "start_sec": 32.44,
+        "youtube_id": "zBSkpl8U0xk",
+        "youtube_url": "https://www.youtube.com/watch?v=zBSkpl8U0xk",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "covenant_journey",
@@ -2106,7 +2363,7 @@
       ],
       "added_at": "2026-08-28T22:58:29.615662+00:00",
       "language": "English",
-      "updated_at": "2026-08-28T22:58:29.615662+00:00",
+      "updated_at": "2026-09-03T13:51:43.582689+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:L8zwiiSckQM",
@@ -2118,7 +2375,17 @@
         "solemn",
         "journey",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_recessional_tell_the_world_of_his_love_10.mp3",
+        "start_sec": 53.76,
+        "youtube_id": "L8zwiiSckQM",
+        "youtube_url": "https://www.youtube.com/watch?v=L8zwiiSckQM",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     }
   ],
   "meditation": [
