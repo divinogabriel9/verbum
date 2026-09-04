@@ -422,6 +422,12 @@
       font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
+      position: relative;
+      z-index: 1;
+      transition:
+        background 150ms ease,
+        border-color 150ms ease,
+        transform 150ms ease;
     }
     .practice-yt-play:hover,
     .practice-yt-play.is-on {
@@ -432,6 +438,161 @@
     .practice-yt-play svg {
       width: 12px;
       height: 12px;
+    }
+    .practice-yt-play.is-coach-target,
+    .practice-tabs.is-coach-target,
+    .practice-tab.is-coach-demo {
+      z-index: 10002;
+      position: relative;
+    }
+    .practice-yt-play.is-coach-target {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent),
+        0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent),
+        0 8px 24px color-mix(in srgb, var(--ink) 12%, transparent);
+    }
+    .practice-tabs.is-coach-target {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
+        0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent);
+      border-radius: 14px;
+    }
+    .practice-tab.is-coach-demo {
+      animation: practice-tab-coach-pulse 1.2s ease-in-out infinite;
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+      color: var(--accent);
+    }
+    @keyframes practice-tab-coach-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .practice-yt-play.is-pulse-hint {
+      animation: practice-yt-play-pulse 1.35s ease-in-out infinite;
+    }
+    @keyframes practice-yt-play-pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow:
+          0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent),
+          0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+      }
+      50% {
+        transform: scale(1.06);
+        box-shadow:
+          0 0 0 10px color-mix(in srgb, var(--accent) 0%, transparent),
+          0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+      }
+    }
+    .practice-play-coach {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      pointer-events: none;
+    }
+    .practice-play-coach__scrim {
+      position: absolute;
+      inset: 0;
+      background: color-mix(in srgb, #0b1220 48%, transparent);
+      opacity: 0;
+      transition: opacity 220ms ease;
+    }
+    .practice-play-coach.is-in .practice-play-coach__scrim {
+      opacity: 1;
+    }
+    .practice-play-coach.is-out .practice-play-coach__scrim,
+    .practice-play-coach.is-out .practice-play-coach__bubble,
+    .practice-play-coach.is-out .practice-play-coach__hole {
+      opacity: 0;
+    }
+    .practice-play-coach__hole {
+      position: absolute;
+      border-radius: 999px;
+      box-shadow: 0 0 0 9999px color-mix(in srgb, #0b1220 48%, transparent);
+      outline: 2px solid color-mix(in srgb, var(--accent) 55%, #fff);
+      outline-offset: 3px;
+      pointer-events: none;
+      opacity: 0;
+      transition:
+        top 180ms ease,
+        left 180ms ease,
+        width 180ms ease,
+        height 180ms ease,
+        border-radius 180ms ease,
+        opacity 220ms ease;
+    }
+    .practice-play-coach__hole[data-shape="rect"] {
+      border-radius: 16px;
+    }
+    .practice-play-coach.is-in .practice-play-coach__hole {
+      opacity: 1;
+    }
+    .practice-play-coach__bubble {
+      position: absolute;
+      width: min(260px, calc(100vw - 32px));
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: var(--card);
+      color: var(--ink);
+      border: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent),
+        0 14px 36px color-mix(in srgb, var(--ink) 14%, transparent);
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+      transition:
+        opacity 220ms ease,
+        transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+      pointer-events: auto;
+    }
+    .practice-play-coach.is-in .practice-play-coach__bubble {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .practice-play-coach__bubble p {
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+    .practice-play-coach__bubble strong {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .practice-play-coach__bubble::after {
+      content: "";
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: var(--card);
+      border-right: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
+      transform: rotate(45deg);
+      left: var(--coach-arrow-x, 50%);
+      margin-left: -6px;
+      right: auto;
+    }
+    .practice-play-coach__bubble[data-side="bottom"]::after {
+      top: -6px;
+      bottom: auto;
+      border-right: 0;
+      border-bottom: 0;
+      border-left: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
+      border-top: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
+    }
+    .practice-play-coach__bubble[data-side="top"]::after {
+      bottom: -6px;
+      top: auto;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .practice-yt-play.is-pulse-hint,
+      .practice-tab.is-coach-demo {
+        animation: none;
+      }
+      .practice-play-coach__scrim,
+      .practice-play-coach__bubble,
+      .practice-play-coach__hole {
+        transition: none;
+      }
     }
     .practice-yt-embed {
       margin: 12px 0 0;
@@ -1124,9 +1285,316 @@
       let catalogLoading = null;
       let pickerCloseHandler = null;
       let playingYoutubeId = "";
+      let playCoachPhase = "idle"; // idle | tour | pulse | done
+      let playCoachEl = null;
+      let playCoachTimers = [];
+      let playCoachStepIndex = 0;
+      let playCoachSteps = [];
+      let playCoachResizeHandler = null;
+      let playCoachDismissHandler = null;
+      const PLAY_COACH_KEY = "lf-practice-play-coach:" + String(token || "");
       const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const TAB_EXIT_MS = 120;
       const TAB_ENTER_MS = 200;
+      const COACH_STEP_MS = prefersReducedMotion ? 1600 : 3800;
+
+      function clearPlayCoachTimers() {
+        playCoachTimers.forEach(function (id) { clearTimeout(id); });
+        playCoachTimers = [];
+      }
+
+      function clearCoachTargetClasses() {
+        document.querySelectorAll(".is-coach-target, .is-coach-demo").forEach(function (el) {
+          el.classList.remove("is-coach-target", "is-coach-demo");
+        });
+      }
+
+      function removePlayCoachDom() {
+        if (playCoachDismissHandler) {
+          document.removeEventListener("pointerdown", playCoachDismissHandler, true);
+          playCoachDismissHandler = null;
+        }
+        if (playCoachResizeHandler) {
+          window.removeEventListener("resize", playCoachResizeHandler);
+          playCoachResizeHandler = null;
+        }
+        if (playCoachEl && playCoachEl.parentNode) {
+          playCoachEl.parentNode.removeChild(playCoachEl);
+        }
+        playCoachEl = null;
+        clearCoachTargetClasses();
+      }
+
+      function stopPlayPulse() {
+        document.querySelectorAll(".practice-yt-play.is-pulse-hint").forEach(function (btn) {
+          btn.classList.remove("is-pulse-hint");
+        });
+      }
+
+      function completePlayCoach() {
+        clearPlayCoachTimers();
+        removePlayCoachDom();
+        stopPlayPulse();
+        playCoachPhase = "done";
+        playCoachSteps = [];
+        playCoachStepIndex = 0;
+        try { sessionStorage.setItem(PLAY_COACH_KEY, "1"); } catch (_e) { /* ignore */ }
+      }
+
+      function positionPlayCoach(target, opts) {
+        if (!playCoachEl || !target) return;
+        opts = opts || {};
+        const hole = playCoachEl.querySelector(".practice-play-coach__hole");
+        const bubble = playCoachEl.querySelector(".practice-play-coach__bubble");
+        if (!hole || !bubble) return;
+        const rect = target.getBoundingClientRect();
+        const pad = opts.pad != null ? opts.pad : 8;
+        const shape = opts.shape || "pill";
+        hole.dataset.shape = shape === "rect" ? "rect" : "pill";
+        hole.style.top = Math.max(0, rect.top - pad) + "px";
+        hole.style.left = Math.max(0, rect.left - pad) + "px";
+        hole.style.width = (rect.width + pad * 2) + "px";
+        hole.style.height = (rect.height + pad * 2) + "px";
+
+        const vw = window.innerWidth;
+        const bubbleW = Math.min(opts.align === "end" ? 260 : 280, vw - 32);
+        bubble.style.width = bubbleW + "px";
+
+        // Place bubble: end-align for small right-side controls (Play), else center.
+        let left;
+        if (opts.align === "end") {
+          left = rect.right - bubbleW;
+        } else if (opts.align === "start") {
+          left = rect.left;
+        } else {
+          left = rect.left + (rect.width / 2) - (bubbleW / 2);
+        }
+        left = Math.max(16, Math.min(left, vw - bubbleW - 16));
+
+        // Measure after width is set so vertical placement is accurate.
+        const bubbleH = Math.max(bubble.offsetHeight || 72, 64);
+        const gap = 12;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let side = "bottom";
+        let top = rect.bottom + gap;
+        if (spaceBelow < bubbleH + gap + 8 && rect.top > bubbleH + gap + 8) {
+          side = "top";
+          top = rect.top - gap - bubbleH;
+        }
+        bubble.dataset.side = side;
+        bubble.style.left = left + "px";
+        bubble.style.top = Math.max(12, Math.min(top, window.innerHeight - bubbleH - 12)) + "px";
+
+        // Point the caret at the target’s horizontal center.
+        const targetCenterX = rect.left + rect.width / 2;
+        const arrowX = Math.max(18, Math.min(bubbleW - 18, targetCenterX - left));
+        bubble.style.setProperty("--coach-arrow-x", arrowX + "px");
+      }
+
+      function currentCoachStep() {
+        return playCoachSteps[playCoachStepIndex] || null;
+      }
+
+      function resolveCoachTarget(step) {
+        if (!step) return null;
+        if (typeof step.getEl === "function") return step.getEl();
+        return null;
+      }
+
+      function applyCoachStepHighlight(step, target) {
+        clearCoachTargetClasses();
+        if (!target) return;
+        target.classList.add("is-coach-target");
+        if (step && step.demoTab) {
+          const demo = target.querySelector(".practice-tab:not(.is-active)") || target.querySelector(".practice-tab");
+          if (demo) demo.classList.add("is-coach-demo");
+        }
+      }
+
+      function setCoachBubbleHtml(html) {
+        if (!playCoachEl) return;
+        const bubble = playCoachEl.querySelector(".practice-play-coach__bubble");
+        if (bubble) bubble.innerHTML = html;
+      }
+
+      function finishCoachTourToPulse() {
+        try { sessionStorage.setItem(PLAY_COACH_KEY, "1"); } catch (_e) { /* ignore */ }
+        const playBtn = document.getElementById("practice-yt-play");
+        if (!playCoachEl) {
+          if (playBtn && playCoachPhase !== "done" && !playingYoutubeId) {
+            playCoachPhase = "pulse";
+            playBtn.classList.add("is-pulse-hint");
+          } else {
+            playCoachPhase = playCoachPhase === "done" ? "done" : "idle";
+          }
+          return;
+        }
+        playCoachEl.classList.remove("is-in");
+        playCoachEl.classList.add("is-out");
+        playCoachTimers.push(setTimeout(function () {
+          removePlayCoachDom();
+          const livePlay = document.getElementById("practice-yt-play");
+          if (livePlay && playCoachPhase !== "done" && !playingYoutubeId) {
+            playCoachPhase = "pulse";
+            livePlay.classList.add("is-pulse-hint");
+          } else if (playCoachPhase !== "done") {
+            playCoachPhase = "idle";
+          }
+        }, prefersReducedMotion ? 0 : 240));
+      }
+
+      function showCoachStep(index) {
+        playCoachStepIndex = index;
+        const step = currentCoachStep();
+        if (!step) {
+          finishCoachTourToPulse();
+          return;
+        }
+        const target = resolveCoachTarget(step);
+        if (!target || (target.hidden === true) || target.getClientRects().length === 0) {
+          showCoachStep(index + 1);
+          return;
+        }
+        if (!playCoachEl) {
+          playCoachEl = document.createElement("div");
+          playCoachEl.className = "practice-play-coach";
+          playCoachEl.setAttribute("role", "status");
+          playCoachEl.innerHTML =
+            '<div class="practice-play-coach__hole" aria-hidden="true"></div>' +
+            '<div class="practice-play-coach__bubble"></div>';
+          document.body.appendChild(playCoachEl);
+        }
+        playCoachEl.classList.remove("is-out");
+        setCoachBubbleHtml(step.html);
+        applyCoachStepHighlight(step, target);
+        positionPlayCoach(target, step);
+        requestAnimationFrame(function () {
+          const live = resolveCoachTarget(currentCoachStep());
+          if (live) positionPlayCoach(live, currentCoachStep() || step);
+          if (playCoachEl) playCoachEl.classList.add("is-in");
+        });
+
+        clearPlayCoachTimers();
+        if (playCoachDismissHandler) {
+          document.removeEventListener("pointerdown", playCoachDismissHandler, true);
+        }
+        playCoachDismissHandler = function (ev) {
+          const t = ev && ev.target;
+          if (t && t.closest) {
+            if (t.closest("#practice-yt-play") || t.closest(".practice-tab")) return;
+          }
+          document.removeEventListener("pointerdown", playCoachDismissHandler, true);
+          playCoachDismissHandler = null;
+          // Skip ahead / end tour on outside tap
+          advanceOrFinishCoach();
+        };
+        document.addEventListener("pointerdown", playCoachDismissHandler, true);
+
+        if (!playCoachResizeHandler) {
+          playCoachResizeHandler = function () {
+            const liveStep = currentCoachStep();
+            const liveTarget = resolveCoachTarget(liveStep);
+            if (liveTarget) positionPlayCoach(liveTarget, liveStep || {});
+          };
+          window.addEventListener("resize", playCoachResizeHandler);
+        }
+
+        playCoachTimers.push(setTimeout(function () {
+          advanceOrFinishCoach();
+        }, COACH_STEP_MS));
+      }
+
+      function advanceOrFinishCoach() {
+        const next = playCoachStepIndex + 1;
+        if (next < playCoachSteps.length) {
+          // Soft fade between steps
+          if (playCoachEl) {
+            playCoachEl.classList.remove("is-in");
+            playCoachEl.classList.add("is-out");
+            playCoachTimers.push(setTimeout(function () {
+              if (playCoachEl) playCoachEl.classList.remove("is-out");
+              showCoachStep(next);
+            }, prefersReducedMotion ? 0 : 180));
+          } else {
+            showCoachStep(next);
+          }
+          return;
+        }
+        finishCoachTourToPulse();
+      }
+
+      function buildPracticeCoachSteps() {
+        const steps = [];
+        const playBtn = document.getElementById("practice-yt-play");
+        if (playBtn && !playingYoutubeId) {
+          steps.push({
+            id: "play",
+            pad: 8,
+            shape: "pill",
+            align: "end",
+            html: "<p>Press <strong>Play</strong> to start practicing with the audio.</p>",
+            getEl: function () { return document.getElementById("practice-yt-play"); },
+          });
+        }
+        const tabsEl = document.getElementById("practice-tabs");
+        if (tabsEl && !tabsEl.hidden && state.songs && state.songs.length > 1) {
+          steps.push({
+            id: "sections",
+            pad: 6,
+            shape: "rect",
+            demoTab: true,
+            html:
+              "<p>Switch Mass parts here — <strong>Entrance</strong>, <strong>Offertory</strong>, Communion, and more.</p>" +
+              "<p style=\"margin:8px 0 0;font-size:0.8125rem;color:var(--muted);font-weight:500;\">Tap a section tab to change songs.</p>",
+            getEl: function () {
+              const el = document.getElementById("practice-tabs");
+              return el && !el.hidden ? el : null;
+            },
+          });
+        }
+        return steps;
+      }
+
+      function startPlayCoach() {
+        if (playCoachPhase === "done") return;
+        let seen = false;
+        try { seen = sessionStorage.getItem(PLAY_COACH_KEY) === "1"; } catch (_e) { seen = false; }
+
+        const playBtn = document.getElementById("practice-yt-play");
+
+        // Tour already shown this browser session — don't nag again.
+        if (seen && playCoachPhase !== "pulse" && playCoachPhase !== "tour") {
+          return;
+        }
+
+        // Keep pulsing after the bubble fades, until they press Play.
+        if (playCoachPhase === "pulse") {
+          if (playBtn && !playingYoutubeId) playBtn.classList.add("is-pulse-hint");
+          return;
+        }
+
+        // Re-paint during an active tour: re-target current step.
+        if (playCoachPhase === "tour" && playCoachEl) {
+          const step = currentCoachStep();
+          const target = resolveCoachTarget(step);
+          if (target) {
+            applyCoachStepHighlight(step, target);
+            positionPlayCoach(target, step || {});
+          }
+          return;
+        }
+
+        if (seen) return;
+
+        playCoachSteps = buildPracticeCoachSteps();
+        if (!playCoachSteps.length) return;
+
+        clearPlayCoachTimers();
+        removePlayCoachDom();
+        playCoachPhase = "tour";
+        playCoachStepIndex = 0;
+        showCoachStep(0);
+      }
 
       function esc(s) {
         return String(s || "")
@@ -2410,9 +2878,22 @@
           ytPlay.addEventListener("click", function (ev) {
             ev.preventDefault();
             ev.stopPropagation();
-            if (playingYoutubeId === ytId) stopPracticeYoutube();
-            else playingYoutubeId = ytId;
+            if (playingYoutubeId === ytId) {
+              stopPracticeYoutube();
+              paintCurrentSong();
+              return;
+            }
+            completePlayCoach();
+            playingYoutubeId = ytId;
             paintCurrentSong();
+          });
+        }
+        if (ytPlaying) {
+          completePlayCoach();
+        } else {
+          // Defer so tabs + play button layout are settled.
+          requestAnimationFrame(function () {
+            startPlayCoach();
           });
         }
         if (state.editing) {

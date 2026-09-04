@@ -102,8 +102,21 @@ def parse_youtube_video_id(value: str) -> Optional[str]:
     return None
 
 
+def _media_basename_is_file(basename: str) -> bool:
+    base = str(basename or "").strip()
+    if not base or base.lower().startswith("yt:"):
+        return False
+    # Real library uploads / downloads — never collapse these into a YouTube-only ref.
+    return "." in base.split("/")[-1]
+
+
 def normalize_song_media_ref(raw: Any) -> Optional[dict[str, str]]:
-    """Normalize a catalog media link (library file or YouTube URL)."""
+    """Normalize a catalog media link (library file or YouTube URL).
+
+    File refs (mp3/mp4/…) may include optional youtube_id provenance without
+    becoming a YouTube practice link. YouTube-only refs use source=youtube /
+    basename yt:<id>.
+    """
     if raw is None:
         return None
     if isinstance(raw, str):
@@ -122,21 +135,34 @@ def normalize_song_media_ref(raw: Any) -> Optional[dict[str, str]]:
         return {"basename": basename[:180], "display_name": basename[:240]}
     if not isinstance(raw, dict):
         return None
+
+    source = str(raw.get("source") or "").strip().lower()
+    basename = str(raw.get("basename") or "").strip()
+    if source == "preview" or _media_basename_is_file(basename):
+        display = str(raw.get("display_name") or "").strip() or basename
+        out: dict[str, str] = {
+            "basename": basename[:180],
+            "display_name": display[:240],
+        }
+        if source == "preview":
+            out["source"] = "preview"
+        yt = parse_youtube_video_id(
+            str(raw.get("youtube_id") or "") or str(raw.get("youtube_url") or "")
+        )
+        if yt:
+            out["youtube_id"] = yt
+            out["youtube_url"] = "https://www.youtube.com/watch?v=" + yt
+        return out
+
     yt = parse_youtube_video_id(
         str(raw.get("youtube_id") or "")
         or str(raw.get("youtube_url") or "")
         or str(raw.get("url") or "")
-        or (
-            str(raw.get("basename") or "")
-            if str(raw.get("source") or "").strip().lower() == "youtube"
-            else ""
-        )
+        or (basename if source == "youtube" else "")
     )
-    if not yt:
-        base = str(raw.get("basename") or "").strip()
-        if base.lower().startswith("yt:"):
-            yt = parse_youtube_video_id(base[3:])
-    if yt:
+    if not yt and basename.lower().startswith("yt:"):
+        yt = parse_youtube_video_id(basename[3:])
+    if yt and (source == "youtube" or basename.lower().startswith("yt:") or not basename):
         display = str(raw.get("display_name") or "").strip() or "YouTube"
         return {
             "basename": "yt:" + yt,
@@ -145,7 +171,6 @@ def normalize_song_media_ref(raw: Any) -> Optional[dict[str, str]]:
             "youtube_id": yt,
             "youtube_url": "https://www.youtube.com/watch?v=" + yt,
         }
-    basename = str(raw.get("basename") or "").strip()
     if not basename:
         return None
     display = str(raw.get("display_name") or "").strip() or basename

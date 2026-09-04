@@ -386,16 +386,76 @@
     }
 
     function inferComposerSongMoods() {
-      const title = ($("lyrics-save-title") && $("lyrics-save-title").value.trim()) || "";
-      const author = ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) || "";
+      const title = (
+        ($("song-metadata-edit-title") && $("song-metadata-edit-title").value.trim()) ||
+        ($("lyrics-save-title") && $("lyrics-save-title").value.trim()) ||
+        ""
+      );
+      const author = (
+        ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) ||
+        ($("lyrics-save-author") && $("lyrics-save-author").value.trim()) ||
+        ""
+      );
       let lyrics = "";
       if (lyricBlocks.length) {
-        flushLyricBlocksFromDom();
-        lyrics = serializedLyrics();
-      } else if ($("lyrics-input")) {
-        lyrics = $("lyrics-input").value.trim();
+        try {
+          flushLyricBlocksFromDom();
+          lyrics = serializedLyrics();
+        } catch (_e) { /* keep empty */ }
       }
+      if (!lyrics && $("lyrics-input")) lyrics = $("lyrics-input").value.trim();
       return inferGospelMoodsFromText(title, author, lyrics);
+    }
+
+    function applyComposerMoodScan(moods, options) {
+      const opts = options || {};
+      const picked = Array.isArray(moods) ? moods.filter(Boolean) : [];
+      if (!picked.length) return false;
+      setSongMetadataMoodChecks(picked);
+      composerGospelMoods = picked.slice();
+      highlightDetectedSaveMoods(picked);
+      const moodsEl = $("song-metadata-moods");
+      if (moodsEl) moodsEl.classList.add("is-attention");
+      const hintEl = $("song-metadata-mood-hint");
+      if (hintEl) {
+        const label = formatGospelMoodsLabel(picked);
+        hintEl.textContent = label
+          ? "Scanned from lyrics: " + label + ". Adjust if needed."
+          : "Select at least one Gospel mood before saving.";
+      }
+      const errEl = $("song-metadata-mood-error");
+      if (errEl) errEl.hidden = true;
+      if (typeof refreshMetadataModalPrimaryState === "function") refreshMetadataModalPrimaryState();
+      if (typeof updateLyricsComposerDetailsPreview === "function") updateLyricsComposerDetailsPreview();
+      if (opts.notify && typeof setLyricsStatus === "function") {
+        const label = formatGospelMoodsLabel(picked);
+        setLyricsStatus(label ? ("Mood scan: " + label + ".") : "Mood scan finished.", "ok");
+      }
+      return true;
+    }
+
+    function scanComposerLyricsForMood(options) {
+      const opts = options || {};
+      const payloadTitle = (
+        ($("song-metadata-edit-title") && $("song-metadata-edit-title").value.trim()) ||
+        ($("lyrics-save-title") && $("lyrics-save-title").value.trim()) ||
+        ""
+      );
+      let lyrics = "";
+      if (lyricBlocks.length) {
+        try {
+          flushLyricBlocksFromDom();
+          lyrics = serializedLyrics();
+        } catch (_e) { /* keep empty */ }
+      }
+      if (!lyrics && $("lyrics-input")) lyrics = $("lyrics-input").value.trim();
+      if (!payloadTitle && !lyrics) {
+        if (opts.notify) setLyricsStatus("Add a title or lyrics before scanning for mood.", "error");
+        return [];
+      }
+      const detected = inferComposerSongMoods();
+      applyComposerMoodScan(detected, opts);
+      return detected;
     }
 
     function getComposerSongMoods() {
@@ -442,7 +502,7 @@
       if (hintEl) {
         const detectedLabel = formatGospelMoodsLabel(detected || []);
         hintEl.textContent = detectedLabel
-          ? "Pulsing options match our keyword guess: " + detectedLabel + ". Adjust if needed."
+          ? "Scanned from lyrics: " + detectedLabel + ". Adjust if needed."
           : "Select at least one Gospel mood before saving.";
       }
     }

@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_SUNDAYS_AHEAD = 8
 DEFAULT_ATTEMPTS = 3
+DEFAULT_WINDOW: Literal["upcoming", "year"] = "year"
+MAX_UPCOMING_SUNDAYS = 16
 _FETCH_GAP_S = 0.75
 _RETRY_GAP_S = 2.0
 
@@ -26,6 +28,32 @@ def upcoming_sundays(*, from_date: dt.date | None = None, count: int = DEFAULT_S
     days_to_sun = (6 - start.weekday()) % 7
     first = start + dt.timedelta(days=days_to_sun)
     return [(first + dt.timedelta(days=7 * i)).isoformat() for i in range(max(1, count))]
+
+
+def sundays_in_year(year: int | None = None) -> list[str]:
+    """Every Sunday in the civil year (Jan–Dec), ISO dates ascending."""
+    y = int(year if year is not None else dt.date.today().year)
+    first = dt.date(y, 1, 1)
+    # weekday(): Mon=0 … Sun=6 → days until first Sunday
+    first_sun = first + dt.timedelta(days=(6 - first.weekday()) % 7)
+    out: list[str] = []
+    cur = first_sun
+    while cur.year == y:
+        out.append(cur.isoformat())
+        cur += dt.timedelta(days=7)
+    return out
+
+
+def resolve_target_sundays(
+    *,
+    window: Literal["upcoming", "year"] = DEFAULT_WINDOW,
+    sundays_ahead: int = DEFAULT_SUNDAYS_AHEAD,
+    year: int | None = None,
+) -> list[str]:
+    if window == "year":
+        return sundays_in_year(year)
+    count = max(1, min(int(sundays_ahead or DEFAULT_SUNDAYS_AHEAD), MAX_UPCOMING_SUNDAYS))
+    return upcoming_sundays(count=count)
 
 
 def _health_status(iso: str) -> str:
@@ -42,19 +70,26 @@ def run_readings_autofetch(
     *,
     attempts: int = DEFAULT_ATTEMPTS,
     sundays_ahead: int = DEFAULT_SUNDAYS_AHEAD,
+    window: Literal["upcoming", "year"] = DEFAULT_WINDOW,
+    year: int | None = None,
     scope: Literal["missing", "all"] = "missing",
     dry_run: bool = False,
     alert: bool = True,
 ) -> dict[str, Any]:
     """
-    Check upcoming Sundays and live-fetch incomplete ones.
+    Check target Sundays and live-fetch incomplete ones.
+
+    ``window="year"`` covers every Sunday in the civil year (default: this year)
+    so gospel / readings / psalm stay healthy across the calendar. ``window=
+    "upcoming"`` only looks ``sundays_ahead`` Sundays forward.
 
     Runs up to ``attempts`` passes. After the final pass, emails superadmins when
     any target Sunday is still ``critical``.
     """
     attempts = max(1, min(int(attempts or DEFAULT_ATTEMPTS), 5))
-    sundays_ahead = max(1, min(int(sundays_ahead or DEFAULT_SUNDAYS_AHEAD), 16))
-    targets = upcoming_sundays(count=sundays_ahead)
+    sundays_ahead = max(1, min(int(sundays_ahead or DEFAULT_SUNDAYS_AHEAD), MAX_UPCOMING_SUNDAYS))
+    win: Literal["upcoming", "year"] = "year" if window == "year" else "upcoming"
+    targets = resolve_target_sundays(window=win, sundays_ahead=sundays_ahead, year=year)
 
     before_map = {iso: _health_status(iso) for iso in targets}
     pass_details: list[dict[str, Any]] = []
@@ -112,6 +147,7 @@ def run_readings_autofetch(
     still_unhealthy = [iso for iso in targets if after_map.get(iso) != "healthy"]
     critical_sundays = [iso for iso in targets if after_map.get(iso) == "critical"]
     warning_sundays = [iso for iso in targets if after_map.get(iso) == "warning"]
+    healthy_count = sum(1 for iso in targets if after_map.get(iso) == "healthy")
 
     alert_result: dict[str, Any] | None = None
     if alert and critical_sundays and not dry_run:
@@ -132,9 +168,13 @@ def run_readings_autofetch(
         "ok": True,
         "dry_run": dry_run,
         "scope": scope,
+        "window": win,
+        "year": year if win == "year" else None,
         "attempts": attempts,
-        "sundays_ahead": sundays_ahead,
+        "sundays_ahead": sundays_ahead if win == "upcoming" else len(targets),
         "targets": targets,
+        "target_count": len(targets),
+        "healthy_count": healthy_count,
         "before": before_map,
         "after": after_map,
         "improved": improved,

@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional, Tuple
 from services.auth_config import supabase_enabled
 from services.practice_access import hash_pin, pin_required, verify_pin
 from services.song_catalog import (
+    _media_basename_is_file,
     format_song_title_case,
     normalize_song_media_ref,
     parse_youtube_video_id,
@@ -339,13 +340,24 @@ def _ensure_song_blocks(song: dict[str, Any]) -> dict[str, Any]:
 
 
 def _youtube_public_fields(*values: Any) -> dict[str, str]:
-    """Return youtube_id + youtube_url from a URL, id, or audio_media ref."""
+    """Return youtube_id + youtube_url from a URL, id, or YouTube-only audio_media ref.
+
+    Ignores preview clips / library files that merely store download provenance.
+    """
     for value in values:
         if value is None or value == "":
             continue
         yt = ""
         if isinstance(value, dict):
+            source = str(value.get("source") or "").strip().lower()
+            basename = str(value.get("basename") or "").strip()
+            if source == "preview" or _media_basename_is_file(basename):
+                continue
             ref = normalize_song_media_ref(value) or {}
+            if str(ref.get("source") or "").strip().lower() != "youtube" and not str(
+                ref.get("basename") or ""
+            ).lower().startswith("yt:"):
+                continue
             yt = str(ref.get("youtube_id") or "").strip()
             if not yt:
                 yt = parse_youtube_video_id(

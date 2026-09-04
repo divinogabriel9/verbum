@@ -422,11 +422,28 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-09-04T04:47:46.833808+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:dwvdrXxOee0",
+        "youtube_id": "dwvdrXxOee0",
+        "youtube_url": "https://www.youtube.com/watch?v=dwvdrXxOee0",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "triumphant",
         "journey"
-      ]
+      ],
+      "audio_preview": {
+        "method": "words",
+        "source": "preview",
+        "basename": "preview_entrance_pag_aalaala_10.mp3",
+        "start_sec": 32.42,
+        "youtube_id": "dwvdrXxOee0",
+        "youtube_url": "https://www.youtube.com/watch?v=dwvdrXxOee0",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "magsiawit_sa_panginoon",
@@ -439,10 +456,27 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-09-04T04:49:33.587258+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:z1oABolP29w",
+        "youtube_id": "z1oABolP29w",
+        "youtube_url": "https://www.youtube.com/watch?v=z1oABolP29w",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
-        "triumphant"
-      ]
+        "reverent"
+      ],
+      "audio_preview": {
+        "method": "scan",
+        "source": "preview",
+        "basename": "preview_entrance_magsiawit_sa_panginoon_10.mp3",
+        "start_sec": 40.76,
+        "youtube_id": "z1oABolP29w",
+        "youtube_url": "https://www.youtube.com/watch?v=z1oABolP29w",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "bayan_umapaw_sa_pag_asa",
@@ -472,11 +506,27 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-09-04T05:01:53.456002+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:IRQO-mOc2j8",
+        "youtube_id": "IRQO-mOc2j8",
+        "youtube_url": "https://www.youtube.com/watch?v=IRQO-mOc2j8",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
-        "journey",
         "solemn"
-      ]
+      ],
+      "audio_preview": {
+        "method": "words",
+        "source": "preview",
+        "basename": "preview_entrance_halina_hesus_halina_10.mp3",
+        "start_sec": 48.18,
+        "youtube_id": "IRQO-mOc2j8",
+        "youtube_url": "https://www.youtube.com/watch?v=IRQO-mOc2j8",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "balang_araw",
@@ -702,14 +752,7 @@
       ],
       "added_at": "2026-08-21T14:03:31.316974+00:00",
       "language": "English",
-      "updated_at": "2026-09-03T12:00:41.310405+00:00",
-      "audio_media": {
-        "source": "youtube",
-        "basename": "yt:KLR3fLtDCHU",
-        "youtube_id": "KLR3fLtDCHU",
-        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU",
-        "display_name": "YouTube"
-      },
+      "updated_at": "2026-09-04T05:53:48.246151+00:00",
       "gospel_moods": [
         "mercy"
       ],
@@ -722,6 +765,13 @@
         "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU",
         "display_name": "10s preview",
         "duration_sec": 10
+      },
+      "audio_media": {
+        "basename": "yt:KLR3fLtDCHU",
+        "display_name": "Great Is Our God",
+        "source": "youtube",
+        "youtube_id": "KLR3fLtDCHU",
+        "youtube_url": "https://www.youtube.com/watch?v=KLR3fLtDCHU"
       }
     }
   ],
@@ -772,16 +822,37 @@
     },
     {
       "id": "gift_finest_wheat",
-      "title": "Gift of Finest Wheat",
+      "title": "Gift Of Finest Wheat",
+      "author": "",
       "lyrics": "You Satisfy The Hungry Heart\nWith Gift Of Finest Wheat,\nCome Give To Us, O Saving Lord,\nThe Bread Of Life To Eat.\n\nAs When The Grain By Saints Believed\nWas Blessed And Broken, Lord,\nSo May Your Church In Lands Today\nBe Fed, Your Praise Restored.\n\nO Lord Of Harvest, Grant That We\nWho Share This Mystery Here\nMay Follow You Unceasingly\nIn Praise, In Love, In Fear.\n\nOne Bread, One Cup, One Life, One Lord—\nWe Offer, Christ, To You;\nUntil We Share Your Banquet Board\nWhere All The World Is New.",
       "seasons": [
         "ordinary_time"
       ],
+      "added_at": "2026-09-04T04:45:15.543615+00:00",
+      "language": "English",
+      "updated_at": "2026-09-04T04:59:22.909900+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:kw3XTnDjCg0",
+        "youtube_id": "kw3XTnDjCg0",
+        "youtube_url": "https://www.youtube.com/watch?v=kw3XTnDjCg0",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "mercy",
         "journey",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_gift_finest_wheat_10.mp3",
+        "start_sec": 11.74,
+        "youtube_id": "kw3XTnDjCg0",
+        "youtube_url": "https://www.youtube.com/watch?v=kw3XTnDjCg0",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "bread_of_life_offertory",
@@ -1044,11 +1115,27 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-09-04T04:51:27.044895+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:AJKHC6KlWOQ",
+        "youtube_id": "AJKHC6KlWOQ",
+        "youtube_url": "https://www.youtube.com/watch?v=AJKHC6KlWOQ",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
-        "reverent",
-        "journey"
-      ]
+        "reverent"
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_offertory_paghahandog_10.mp3",
+        "start_sec": 43.72,
+        "youtube_id": "AJKHC6KlWOQ",
+        "youtube_url": "https://www.youtube.com/watch?v=AJKHC6KlWOQ",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "tinapay_at_alak_naming_hatid",
@@ -1312,11 +1399,28 @@
       ],
       "added_at": "2026-09-03T11:31:53.217719+00:00",
       "language": "English",
-      "updated_at": "2026-09-04T01:27:20.682198+00:00",
+      "updated_at": "2026-09-04T04:34:56.455770+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:_tDelBKWZvI",
+        "youtube_id": "_tDelBKWZvI",
+        "youtube_url": "https://www.youtube.com/watch?v=_tDelBKWZvI",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_offertory_blessed_be_god_10.mp3",
+        "start_sec": 7.84,
+        "youtube_id": "_tDelBKWZvI",
+        "youtube_url": "https://www.youtube.com/watch?v=_tDelBKWZvI",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     }
   ],
   "communion": [
@@ -1587,11 +1691,30 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-09-04T05:08:23.838137+00:00",
       "language": "Tagalog",
+      "updated_at": "2026-09-04T05:51:49.679663+00:00",
+      "audio_media": {
+        "basename": "yt:9aqkW1W6Aw0",
+        "display_name": "Tinapay Ng Buhay",
+        "source": "youtube",
+        "youtube_id": "9aqkW1W6Aw0",
+        "youtube_url": "https://www.youtube.com/watch?v=9aqkW1W6Aw0"
+      },
       "gospel_moods": [
         "solemn",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_communion_tinapay_ng_buhay_10.mp3",
+        "start_sec": 35.96,
+        "youtube_id": "9aqkW1W6Aw0",
+        "youtube_url": "https://www.youtube.com/watch?v=9aqkW1W6Aw0",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "your_heart_today",
@@ -1602,11 +1725,31 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-09-04T04:53:25.170056+00:00",
       "language": "English",
+      "updated_at": "2026-09-04T04:53:42.531836+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:2C-1U8g6h5k",
+        "youtube_id": "2C-1U8g6h5k",
+        "youtube_url": "https://www.youtube.com/watch?v=2C-1U8g6h5k",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "solemn",
-        "mercy"
-      ]
+        "mercy",
+        "reverent"
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_communion_your_heart_today_10.mp3",
+        "start_sec": 47.72,
+        "youtube_id": "2C-1U8g6h5k",
+        "youtube_url": "https://www.youtube.com/watch?v=2C-1U8g6h5k",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "you_are_near",
@@ -1920,11 +2063,28 @@
       ],
       "added_at": "2026-07-29T06:48:55.111304+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-29T07:20:37.963003+00:00",
+      "updated_at": "2026-09-04T04:52:33.638988+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:c8PjxeS14UQ",
+        "youtube_id": "c8PjxeS14UQ",
+        "youtube_url": "https://www.youtube.com/watch?v=c8PjxeS14UQ",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "journey",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "chorus",
+        "source": "preview",
+        "basename": "preview_communion_awit_ng_paghahangad_10.mp3",
+        "start_sec": 107.42,
+        "youtube_id": "c8PjxeS14UQ",
+        "youtube_url": "https://www.youtube.com/watch?v=c8PjxeS14UQ",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "hesus_ng_aking_buhay",
@@ -2106,14 +2266,7 @@
       ],
       "added_at": "2026-09-04T00:16:14.084812+00:00",
       "language": "English",
-      "updated_at": "2026-09-04T01:08:20.895818+00:00",
-      "audio_media": {
-        "source": "youtube",
-        "basename": "yt:5AM3uQnvP7I",
-        "youtube_id": "5AM3uQnvP7I",
-        "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I",
-        "display_name": "YouTube"
-      },
+      "updated_at": "2026-09-04T05:52:54.598741+00:00",
       "gospel_moods": [
         "reverent"
       ],
@@ -2121,6 +2274,45 @@
         "source": "preview",
         "basename": "preview_communion_love_is_the_answer_10.mp3",
         "start_sec": 11.6,
+        "display_name": "10s preview",
+        "duration_sec": 10
+      },
+      "audio_media": {
+        "basename": "yt:5AM3uQnvP7I",
+        "display_name": "Love Is The Answer",
+        "source": "youtube",
+        "youtube_id": "5AM3uQnvP7I",
+        "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I"
+      }
+    },
+    {
+      "id": "how_lovely_is_your_dwelling_place",
+      "title": "How Lovely Is Your Dwelling Place",
+      "author": "",
+      "lyrics": "Refrain\nHow Lovely Is Your Dwelling Place\nO, Lord, Mighty God, Lord Of All.\n\nVerse 1\nEven The Lowly Sparrow Finds A Home For Her Brood,\nAnd The Swallow, A Nest For Herself\nWhere She May Lay Her Young\nIn Your Altars, My King And My God. (Refrain)\n\nRefrain\nHow Lovely Is Your Dwelling Place\nO, Lord, Mighty God, Lord Of All.\n\nVerse 2\nBlessed Are They Whose Dwelling Is Your Own, Lord Of Peace.\nBlest Are They Refreshed By Springs And By Rain\nWhen Dryness Daunts And Scathes.\nBehold My Shield, My King And My God. (Refrain)\n\nRefrain\nHow Lovely Is Your Dwelling Place\nO, Lord, Mighty God, Lord Of All.\n\nVerse 3\nI Would Forsake A Thousand Other Days Anywhere\nIf I Could Spend One Day In Your Courts,\nBelong To You Alone.\nMy Strength Are You Alone,\nMy Glory, My King And My God. (Refrain)\n\nOutro\nHow Lovely, Your Dwelling Place\nO, Lord, Mighty God, Lord Of All.",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-04T04:59:32.650505+00:00",
+      "language": "English",
+      "updated_at": "2026-09-04T05:00:33.834869+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:JiWgKmP_vZA",
+        "youtube_id": "JiWgKmP_vZA",
+        "youtube_url": "https://www.youtube.com/watch?v=JiWgKmP_vZA",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "triumphant",
+        "mercy",
+        "reverent"
+      ],
+      "audio_preview": {
+        "source": "preview",
+        "basename": "preview_communion_how_lovely_is_your_dwelling_place_10.mp3",
+        "start_sec": 0.0,
         "display_name": "10s preview",
         "duration_sec": 10
       }
@@ -2348,12 +2540,32 @@
       "id": "covenant_journey",
       "title": "Covenant Journey",
       "author": "",
-      "lyrics": "Verse 1\nLet Me Walk With You, As I Journey To This Land\nSearching For A Meaning As Each Moment Passes By\nLet The Hand Of Time Be Like Footprints In The Sand\nAs I Carry You From The Dawn To The Setting Sun.\n\nChorus\nWith Just One Hand We Can Travel Far Together\nOne’s Life Sharing In Love\nI Will Hold You Forever\nYes, I Love You With All My Heart.\n\nVerse 2\nThere’ll Be Many Crossroads As We Walk  Along The Way\nThere’ll Be Many Questions As We Live Life Day By Day\nThis Will Never Matter If The Lord Is Always There\nHe Will Surely Find The Answers Just Because He Cares",
+      "lyrics": "Verse 1\nLet Me Walk With You, As I Journey To This Land\nSearching For A Meaning As Each Moment Passes By\nLet The Hand Of Time Be Like Footprints In The Sand\nAs I Carry You From The Dawn To The Setting Sun.\n\nChorus\nWith Just One Hand We Can Travel Far Together\nOne’s Life Sharing In Love\nI Will Hold You Forever\nYes, I Love You With All My Heart.\n\nVerse 2\nThere’ll Be Many Crossroads As We Walk  Along The Way\nThere’ll Be Many Questions As We Live Life Day By Day\nThis Will Never Matter If The Lord Is Always There\nHe Will Surely Find The Answers Just Because He Cares\n\nChorus\nWith Just One Hand We Can Travel Far Together\nOne’s Life Sharing In Love\nI Will Hold You Forever\nYes, I Love You With All My Heart.\nYes, I Love You With All My Heart.",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "language": "English"
+      "added_at": "2026-09-04T05:09:09.728741+00:00",
+      "language": "English",
+      "updated_at": "2026-09-04T05:54:58.753129+00:00",
+      "gospel_moods": [
+        "solemn",
+        "journey"
+      ],
+      "audio_preview": {
+        "source": "preview",
+        "basename": "preview_recessional_covenant_journey_10.mp3",
+        "start_sec": 30.56,
+        "display_name": "10s preview",
+        "duration_sec": 10
+      },
+      "audio_media": {
+        "basename": "yt:rp55ezAxQkI",
+        "display_name": "Covenant Journey",
+        "source": "youtube",
+        "youtube_id": "rp55ezAxQkI",
+        "youtube_url": "https://www.youtube.com/watch?v=rp55ezAxQkI"
+      }
     },
     {
       "id": "all_the_ends_of_the_world",
@@ -2502,6 +2714,29 @@
       "gospel_moods": [
         "mercy",
         "reverent"
+      ]
+    },
+    {
+      "id": "confidite_ego_vici_mundum",
+      "title": "Confidite Ego Vici Mundum",
+      "author": "",
+      "lyrics": "Verse 1\n[Kr]\n동쪽에 떠오른\n빛을 따라온 너와 나\n\nVerse 2\n잠들던 마음을 깨워\n걸어가기 시작하네\n\nVerse 3\n[En]\n‘Till The World’s Farthest End\nThe Lord Remains By Our Side\n\nVerse 4\nWhenever Our Weary Footsteps Fall\nThe Word Of Love Brings Grace To All\n\nVerse 5\n[Kr]\n'너희는 세상의 빛이다'\n서로의 길을 비추어라\n\nVerse 6\n[En]\nThrough The Fear, Darkness, Our Trembling Way\nWe Shall Carry Hope\n\nVerse 7\nAnd Now, [Kr] '용기를 내어라\n내가 세상을 이겼다'\n\nVerse 8\n[Lat] Confidite Ego Vici Mundum.\n\nVerse 9\n[It] Si Compia In Me\n[Fr] Ainsi Soit-il\n[Es] Que Así Sea\n[Pt] Assim Seja\n\nVerse 10\n[It]\nLungo Un Nuovo Cammin\nLa Mia Preghiera Sale A Te\n\nVerse 11\nDalla Mia Delusione\nMi Chiami A Te, Risponderò\n\nVerse 12\n[Es]\nAun Si La Noche Acecha\nEn Nosotros Presente Estás\n\nVerse 13\nCuando La Tristeza Queda\nTu Palabra Siembra Esperanza\n\nVerse 14\n[Kr]\n'너희는 세상의 빛이다'\n서로의 길을 비추어라\n\nVerse 15\n[En]\nThrough The Fear, Darkness, Our Trembling Way\nWe Shall Carry Hope\n\nVerse 16\nAnd Now, [Kr] '용기를 내어라\n내가 세상을 이겼다'\n\nVerse 17\n[Lat] Confidite Ego Vici Mundum.\n\nVerse 18\n[Kr]\n이뤄지소서.\n\nVerse 19\n'너희는 세상의 빛이다'\n서로의 길을 비추어라\n\nVerse 20\n[En]\nThrough The Fear, Darkness, Our Trembling Way\nWe Shall Carry Hope\n\nVerse 21\nAnd Now, [Kr] '용기를 내어라\n내가 세상을 이겼다'\n\nVerse 22\n[Lat] Confidite Ego Vici Mundum.\n\nVerse 23\n[It] Si Compia In Me\n[Fr] Ainsi Soit-il\n[Es] Que Así Sea\n[Pt] Assim Seja\n[Kr]이뤄지소서.",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-04T05:07:34.639704+00:00",
+      "language": "Mix",
+      "updated_at": "2026-09-04T05:07:34.639704+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:0E7KnOOPl6s",
+        "youtube_id": "0E7KnOOPl6s",
+        "youtube_url": "https://www.youtube.com/watch?v=0E7KnOOPl6s",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "mercy"
       ]
     }
   ]

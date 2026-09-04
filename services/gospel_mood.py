@@ -17,7 +17,6 @@ GOSPEL_MOOD_LABELS = {
 _MOOD_KEYWORDS: dict[str, tuple[str, ...]] = {
     "triumphant": (
         "alleluia",
-        "alleluia",
         "hallelujah",
         "risen",
         "resurrection",
@@ -30,6 +29,9 @@ _MOOD_KEYWORDS: dict[str, tuple[str, ...]] = {
         "victory",
         "praise to the lord",
         "sing a new song",
+        "rejoice",
+        "hosanna",
+        "lift high",
     ),
     "solemn": (
         "repent",
@@ -44,6 +46,10 @@ _MOOD_KEYWORDS: dict[str, tuple[str, ...]] = {
         "save your people",
         "wait for the lord",
         "my song is love unknown",
+        "ashes",
+        "crucify",
+        "suffer",
+        "lament",
     ),
     "mercy": (
         "mercy",
@@ -58,6 +64,11 @@ _MOOD_KEYWORDS: dict[str, tuple[str, ...]] = {
         "hold your people",
         "tender",
         "bless",
+        "grace",
+        "wretch",
+        "saved a",
+        "loving kindness",
+        "shepherd",
     ),
     "journey": (
         "here i am",
@@ -71,6 +82,9 @@ _MOOD_KEYWORDS: dict[str, tuple[str, ...]] = {
         "road",
         "pilgrim",
         "lead me",
+        "walk with",
+        "guide me",
+        "onward",
     ),
     "reverent": (
         "holy",
@@ -81,6 +95,9 @@ _MOOD_KEYWORDS: dict[str, tuple[str, ...]] = {
         "blessed",
         "lord of",
         "almighty",
+        "sacred",
+        "behold",
+        "king of kings",
     ),
 }
 
@@ -93,7 +110,7 @@ def _blob_from_song(*, title: str = "", author: str = "", lyrics: str = "", seas
         [
             (title or "").lower(),
             (author or "").lower(),
-            (lyrics or "")[:800].lower(),
+            (lyrics or "")[:2500].lower(),
             season_text.lower().replace("_", " "),
         ]
     )

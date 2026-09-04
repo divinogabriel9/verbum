@@ -569,6 +569,9 @@ def generate_song_instrumental_video(
         "basename": dest.name,
         "display_name": (title + " · instrumental")[:240],
     }
+    if video_id:
+        video_ref["youtube_id"] = video_id
+        video_ref["youtube_url"] = "https://www.youtube.com/watch?v=" + video_id
     saved = update_catalog_song(
         section=sec,
         hymn_id=hid,
@@ -868,6 +871,10 @@ def generate_song_karaoke_instrumental(
         "basename": dest.name,
         "display_name": (title + " · karaoke")[:240],
     }
+    yt_saved = str(meta.get("youtube_id") or video_id or "").strip()
+    if yt_saved:
+        video_ref["youtube_id"] = yt_saved
+        video_ref["youtube_url"] = str(meta.get("youtube_url") or ("https://www.youtube.com/watch?v=" + yt_saved))
     saved = update_catalog_song(
         section=sec,
         hymn_id=hid,

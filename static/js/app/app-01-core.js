@@ -1395,11 +1395,19 @@
 
     function isYouTubeMediaRef(item) {
       if (!item || typeof item !== "object") return false;
-      return !!(item.source === "youtube" || item.youtube_id || parseYouTubeVideoId(item.youtube_url || item.url || item.basename || ""));
+      if (item.source === "preview") return false;
+      const basename = String(item.basename || "").trim();
+      if (basename && !/^yt:/i.test(basename) && /\.[a-z0-9]{2,5}$/i.test(basename)) {
+        // Real audio/video files may carry youtube_id provenance — not a practice link.
+        return false;
+      }
+      if (item.source === "youtube" || /^yt:/i.test(basename)) return true;
+      return !!(item.youtube_id || parseYouTubeVideoId(item.youtube_url || item.url || ""));
     }
 
     function youtubeIdFromMediaRef(item) {
       if (!item || typeof item !== "object") return "";
+      if (!isYouTubeMediaRef(item)) return "";
       return parseYouTubeVideoId(item.youtube_id || item.youtube_url || item.url || item.basename || "");
     }
 
@@ -2597,12 +2605,28 @@
         );
         return null;
       }
+      const source = String(raw.source || "").trim().toLowerCase();
+      const basename = String(raw.basename || "").trim();
+      // Preview clips and library files keep their basename; optional youtube_* is provenance only.
+      if (source === "preview" || (basename && !/^yt:/i.test(basename) && /\.[a-z0-9]{2,5}$/i.test(basename))) {
+        const out = {
+          basename: basename,
+          display_name: String(raw.display_name || "").trim() || basename,
+          url: String(raw.url || "").trim(),
+        };
+        if (source === "preview") out.source = "preview";
+        const ytProv = parseYouTubeVideoId(raw.youtube_id || raw.youtube_url || "");
+        if (ytProv) {
+          out.youtube_id = ytProv;
+          out.youtube_url = youtubeWatchUrl(ytProv);
+        }
+        return out;
+      }
       const yt = youtubeMediaRefFromInput(
-        raw.youtube_id || raw.youtube_url || raw.url || (raw.source === "youtube" ? raw.basename : "") || "",
+        raw.youtube_id || raw.youtube_url || raw.url || (source === "youtube" ? basename : "") || "",
         raw.display_name
       );
       if (yt) return yt;
-      const basename = String(raw.basename || "").trim();
       if (!basename) return null;
       const fromBase = youtubeMediaRefFromInput(basename, raw.display_name);
       if (fromBase) return fromBase;
@@ -2888,6 +2912,9 @@
         stopMassSectionAudio();
       }
       setComposerYouTubeLink(null);
+      if (typeof persistComposerSongMediaToCatalog === "function") {
+        void persistComposerSongMediaToCatalog();
+      }
       if (typeof notify === "function") notify("Cleared YouTube link.", "ok");
       return true;
     }
@@ -3024,6 +3051,9 @@
       const urlEl = $("mw-media-pick-fetch-url");
       const instrumental = massMediaPickFetchIsInstrumental();
       syncMassMediaPickFetchPaneMode(instrumental);
+      const targetKey = target && target.section && target.id
+        ? (String(target.section) + ":" + String(target.id))
+        : "";
       let preview = null;
       let video = null;
       let youtube = null;
@@ -3039,14 +3069,26 @@
       preview = normalizeAudioPreviewRef(preview);
       video = video ? normalizeComposerMediaRef(video) : null;
       if (urlEl && document.activeElement !== urlEl) {
+        const prevKey = String(urlEl.dataset.songKey || "");
+        const songChanged = prevKey !== targetKey;
+        if (songChanged) {
+          urlEl.dataset.songKey = targetKey;
+          urlEl.value = "";
+        }
         if (instrumental) {
-          // Instrumental uses its own YouTube source — do not reuse the practice/audio link.
-          if (!String(urlEl.value || "").trim()) urlEl.value = "";
+          // Never carry a pasted URL from another song. Leave empty unless this
+          // song's video_media already records a YouTube source.
+          if (songChanged || !String(urlEl.value || "").trim()) {
+            const fromVideo = video && (video.youtube_url || youtubeWatchUrl(video.youtube_id || ""));
+            urlEl.value = fromVideo || "";
+          }
         } else {
           const fromPreview = preview && (preview.youtube_url || "");
           const fromYt = youtube && (youtube.youtube_url || youtubeWatchUrl(youtubeIdFromMediaRef(youtube)));
           urlEl.value = fromPreview || fromYt || "";
         }
+      } else if (urlEl && targetKey) {
+        urlEl.dataset.songKey = targetKey;
       }
       const ready = instrumental
         ? !!(video && video.basename && !isYouTubeMediaRef(video))
@@ -3258,6 +3300,9 @@
           setComposerAudioSnippet(row);
         }
         closeMassMediaPickModal();
+        if (typeof persistComposerSongMediaToCatalog === "function") {
+          void persistComposerSongMediaToCatalog();
+        }
         if (typeof notify === "function") {
           notify(
             (massMediaPickState.songField === "video" ? "Instrumental video" : "Audio clip") + " linked to this song.",
@@ -3283,6 +3328,9 @@
         return;
       }
       setMassSectionMedia(pickKind, pickSlot, row);
+      if (pickKind === "video" && typeof persistMassSlotVideoToCatalogSong === "function") {
+        void persistMassSlotVideoToCatalogSong(pickSlot, row);
+      }
       const pendingSongVideo = pickKind === "video" && massSongVideoPickPendingSlot === pickSlot;
       if (pendingSongVideo) {
         massSongVideoPickPendingSlot = "";
@@ -3464,9 +3512,15 @@
           clearComposerYouTubeLink({ skipConfirm: true });
         } else if ((massMediaPickState.songField || "audio") === "video") {
           setComposerSongMediaField("video", null);
+          if (typeof persistComposerSongMediaToCatalog === "function") {
+            void persistComposerSongMediaToCatalog();
+          }
         } else {
           if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) stopMassSectionAudio();
           clearComposerAudioSnippet();
+          if (typeof persistComposerSongMediaToCatalog === "function") {
+            void persistComposerSongMediaToCatalog();
+          }
         }
         closeMassMediaPickModal();
         if (typeof notify === "function") notify("Cleared media link.", "ok");
@@ -3483,6 +3537,9 @@
         void persistMassSlotPreviewToCatalogSong(slot, null);
       } else {
         setMassSectionMedia(kind, slot, null);
+        if (typeof persistMassSlotVideoToCatalogSong === "function") {
+          void persistMassSlotVideoToCatalogSong(slot, null);
+        }
       }
       closeMassMediaPickModal();
       if (typeof notify === "function") notify("Cleared media link.", "ok");
@@ -3656,17 +3713,152 @@
       return { id: songId, section: section, row: row };
     }
 
-    function updateLocalCatalogSongAudio(section, songId, audioRef) {
+    function massSlotsForSongId(songId) {
       const id = String(songId || "").trim();
-      if (!id) return;
-      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      const out = [];
+      if (!id || typeof selectedLyricsSongs === "undefined" || !selectedLyricsSongs) return out;
+      Object.keys(selectedLyricsSongs).forEach((slot) => {
+        if (String(selectedLyricsSongs[slot] || "") === id) out.push(slot);
+      });
+      return out;
+    }
+
+    function catalogRowForSongMedia(section, songId) {
+      const id = String(songId || "").trim();
+      if (!id) return null;
+      if (typeof lookupMassPlanSong === "function") {
+        const hit = lookupMassPlanSong(id);
+        if (hit) return hit;
+      }
       const prefer = String(section || "").trim().toLowerCase();
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
       const ordered = prefer && secs.indexOf(prefer) >= 0
         ? [prefer].concat(secs.filter((s) => s !== prefer))
         : secs;
+      if (typeof songCatalogData === "undefined" || !songCatalogData) return null;
+      for (let i = 0; i < ordered.length; i++) {
+        const sec = ordered[i];
+        const rows = songCatalogData[sec] || [];
+        const row = rows.find((r) => String(r.id) === id);
+        if (row) return Object.assign({ section: sec }, row);
+      }
+      return null;
+    }
+
+    /**
+     * Keep Music Ministry slots + Song Composer on the same catalog media links.
+     * Catalog is the source of truth after any link/unlink.
+     */
+    function syncSongMediaSurfaces(section, songId, opts) {
+      const options = opts || {};
+      const id = String(songId || "").trim();
+      if (!id) return;
+      const prefer = String(section || "").trim().toLowerCase();
+      if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+      const row = catalogRowForSongMedia(prefer, id);
+      massSlotsForSongId(id).forEach((slot) => {
+        if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(slot, id);
+        if (typeof updateMassSlotChip === "function") updateMassSlotChip(slot);
+        if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(slot);
+      });
+      if (
+        !options.skipComposer &&
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id || "") === id &&
+        (!prefer || String(composerLoadedSong.section || "").toLowerCase() === prefer || !composerLoadedSong.section)
+      ) {
+        if (row) {
+          const audio = normalizeComposerMediaRef(row.audio_media);
+          const video = normalizeComposerMediaRef(row.video_media);
+          const preview = normalizeAudioPreviewRef(row.audio_preview);
+          if (options.fromComposer) {
+            // Composer already holds the new values; only fill missing fields from catalog.
+            if (composerSongMedia.audio == null && audio) composerSongMedia.audio = audio;
+            if (composerSongMedia.video == null && video) composerSongMedia.video = video;
+            if (composerSongMedia.preview == null && preview) composerSongMedia.preview = preview;
+          } else {
+            composerSongMedia = {
+              audio: audio,
+              video: video,
+              preview: preview,
+            };
+          }
+        }
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+        if (typeof songMetaSnapshot !== "undefined" && songMetaSnapshot && typeof captureMetadataModalSnapshot === "function") {
+          /* keep dirty-check honest after external ministry edits */
+        }
+        if (typeof refreshMetadataModalPrimaryState === "function") refreshMetadataModalPrimaryState();
+      }
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+    }
+    window.syncSongMediaSurfaces = syncSongMediaSurfaces;
+
+    async function persistComposerSongMediaToCatalog(opts) {
+      const options = opts || {};
+      if (!composerLoadedSong || !composerLoadedSong.id) return false;
+      if (!(churchMembershipState && churchMembershipState.is_superadmin) && !options.force) {
+        // Parish users still sync ministry slots from local composer state via catalog merge below.
+        syncSongMediaSurfaces(composerLoadedSong.section, composerLoadedSong.id, { fromComposer: true });
+        return false;
+      }
+      const section = String(composerLoadedSong.section || "").trim().toLowerCase();
+      const id = String(composerLoadedSong.id || "").trim();
+      if (!section || !id) return false;
+      const youtube = typeof composerYoutubeRef === "function" ? composerYoutubeRef() : null;
+      const snippet = typeof composerAudioSnippetRef === "function" ? composerAudioSnippetRef() : null;
+      const video = composerSongMedia && composerSongMedia.video;
+      const body = {};
+      if (youtube) body.audio_media = serializeSongMediaRef(youtube);
+      else body.clear_audio_media = true;
+      if (snippet) body.audio_preview = serializeAudioPreviewRef(snippet);
+      else body.clear_audio_preview = true;
+      if (video && video.basename && !isYouTubeMediaRef(video)) {
+        body.video_media = {
+          basename: video.basename,
+          display_name: video.display_name || video.basename,
+        };
+        if (video.youtube_id) body.video_media.youtube_id = video.youtube_id;
+        if (video.youtube_url) body.video_media.youtube_url = video.youtube_url;
+      } else {
+        body.clear_video_media = true;
+      }
+      try {
+        const headers = typeof catalogAuthHeaders === "function"
+          ? Object.assign({ "Content-Type": "application/json" }, await catalogAuthHeaders())
+          : { "Content-Type": "application/json" };
+        if (!headers["Content-Type"]) headers["Content-Type"] = "application/json";
+        const res = await fetch(
+          "/api/catalog/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id),
+          { method: "PATCH", headers: headers, body: JSON.stringify(body) }
+        );
+        if (!res.ok) return false;
+        if (typeof bustStoredSongDetail === "function") bustStoredSongDetail(section, id);
+        updateLocalCatalogSongAudio(section, id, youtube);
+        updateLocalCatalogSongPreview(section, id, snippet);
+        updateLocalCatalogSongVideo(section, id, (video && video.basename && !isYouTubeMediaRef(video)) ? video : null);
+        syncSongMediaSurfaces(section, id, { fromComposer: true, skipComposer: true });
+        massSlotsForSongId(id).forEach((slot) => {
+          if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(slot, id);
+        });
+        if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+        return true;
+      } catch (_e) {
+        return false;
+      }
+    }
+    window.persistComposerSongMediaToCatalog = persistComposerSongMediaToCatalog;
+
+    function updateLocalCatalogSongAudio(section, songId, audioRef) {
+      const id = String(songId || "").trim();
+      if (!id) return;
+      const prefer = String(section || "").trim().toLowerCase();
+      const secs = ["entrance", "offertory", "communion", "recessional", "meditation"];
+      const targets = prefer && secs.indexOf(prefer) >= 0 ? [prefer] : secs;
       const ref = audioRef ? normalizeComposerMediaRef(audioRef) : null;
       if (typeof songCatalogData !== "undefined" && songCatalogData) {
-        ordered.forEach((sec) => {
+        targets.forEach((sec) => {
           if (!Array.isArray(songCatalogData[sec])) return;
           const idx = songCatalogData[sec].findIndex((r) => String(r.id) === id);
           if (idx < 0) return;
@@ -3677,7 +3869,7 @@
       }
       if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
       if (typeof songDetailCache !== "undefined" && typeof songDetailCacheKey === "function") {
-        ordered.forEach((sec) => {
+        targets.forEach((sec) => {
           const key = songDetailCacheKey(sec, id);
           if (!songDetailCache.has(key)) return;
           const data = songDetailCache.get(key);
@@ -3686,7 +3878,12 @@
           songDetailCache.set(key, data);
         });
       }
-      if (typeof composerLoadedSong !== "undefined" && composerLoadedSong && String(composerLoadedSong.id) === id) {
+      if (
+        typeof composerLoadedSong !== "undefined" &&
+        composerLoadedSong &&
+        String(composerLoadedSong.id) === id &&
+        (!prefer || String(composerLoadedSong.section || "").toLowerCase() === prefer)
+      ) {
         if (ref && isYouTubeMediaRef(ref) && composerSongMedia.audio && !isYouTubeMediaRef(composerSongMedia.audio) && !(composerSongMedia.preview && composerSongMedia.preview.basename)) {
           composerSongMedia.preview = fileToAudioPreviewRef(composerSongMedia.audio);
         }
@@ -3700,5 +3897,11 @@
         }
         if (typeof refreshMetadataModalPrimaryState === "function") refreshMetadataModalPrimaryState();
       }
+      massSlotsForSongId(id).forEach((slot) => {
+        if (typeof syncMassSlotMediaToSong === "function") syncMassSlotMediaToSong(slot, id);
+        if (typeof updateMassSlotChip === "function") updateMassSlotChip(slot);
+        if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(slot);
+      });
+      if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
     }
 

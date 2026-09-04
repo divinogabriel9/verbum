@@ -3096,10 +3096,14 @@
           language: row.language || "",
           lyrics: lyrics,
         };
+        // Choir practice embed must use the dedicated YouTube practice link only —
+        // never a 10s preview clip or instrumental/karaoke file that happens to
+        // carry a youtube_id from download provenance (that caused cross-song mixes).
         const slotAudio = typeof getMassSectionMedia === "function" ? getMassSectionMedia("audio", slot.key) : null;
+        const catalogAudio = row.audio_media || null;
         const ytRef = (typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(slotAudio))
           ? slotAudio
-          : ((typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(row.audio_media)) ? row.audio_media : null);
+          : ((typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(catalogAudio)) ? catalogAudio : null);
         const ytId = ytRef && typeof youtubeIdFromMediaRef === "function" ? youtubeIdFromMediaRef(ytRef) : "";
         if (ytId) {
           payload.youtube_id = ytId;
@@ -3462,11 +3466,11 @@
     }
 
     var COMPOSER_MOOD_KEYWORDS = {
-      triumphant: ["alleluia", "hallelujah", "risen", "resurrection", "easter", "glory", "joyful", "joy to", "crown him", "triumph", "victory", "praise to the lord", "sing a new song"],
-      solemn: ["repent", "passion", "cross", "forty days", "lent", "advent", "emmanuel", "prepare the way", "remember me", "save your people", "wait for the lord", "my song is love unknown"],
-      mercy: ["mercy", "heal", "comfort", "forgiv", "compassion", "welcome", "afraid", "bread", "table", "hold your people", "tender", "bless"],
-      journey: ["here i am", "send me", "follow", "go tell", "city of god", "many parts", "disciples", "mission", "road", "pilgrim", "lead me"],
-      reverent: ["holy", "adore", "worship", "praise", "sanctus", "blessed", "lord of", "almighty"],
+      triumphant: ["alleluia", "hallelujah", "risen", "resurrection", "easter", "glory", "joyful", "joy to", "crown him", "triumph", "victory", "praise to the lord", "sing a new song", "rejoice", "hosanna", "lift high"],
+      solemn: ["repent", "passion", "cross", "forty days", "lent", "advent", "emmanuel", "prepare the way", "remember me", "save your people", "wait for the lord", "my song is love unknown", "ashes", "crucify", "suffer", "lament"],
+      mercy: ["mercy", "heal", "comfort", "forgiv", "compassion", "welcome", "afraid", "bread", "table", "hold your people", "tender", "bless", "grace", "wretch", "saved a", "loving kindness", "shepherd"],
+      journey: ["here i am", "send me", "follow", "go tell", "city of god", "many parts", "disciples", "mission", "road", "pilgrim", "lead me", "walk with", "guide me", "onward"],
+      reverent: ["holy", "adore", "worship", "praise", "sanctus", "blessed", "lord of", "almighty", "sacred", "behold", "king of kings"],
     };
     var COMPOSER_MOOD_ORDER = ["triumphant", "solemn", "mercy", "journey", "reverent"];
 
@@ -3474,7 +3478,7 @@
       const blob = [
         (title || "").toLowerCase(),
         (author || "").toLowerCase(),
-        (lyrics || "").slice(0, 800).toLowerCase(),
+        (lyrics || "").slice(0, 2500).toLowerCase(),
       ].join(" ");
       const matched = [];
       COMPOSER_MOOD_ORDER.forEach((mood) => {

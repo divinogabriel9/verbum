@@ -3,6 +3,8 @@
 
 Uses APP_PUBLIC_URL + CRON_SECRET so the fetch runs on the web dyno (where the
 readings cache lives), not on an ephemeral cron filesystem.
+
+Default: once-daily year sweep — every Sunday in the current year, missing only.
 """
 
 from __future__ import annotations
@@ -24,11 +26,16 @@ def main() -> int:
         print("CRON_SECRET is required", file=sys.stderr)
         return 2
 
+    year_raw = (os.environ.get("READINGS_AUTOFETCH_YEAR") or "").strip()
+    year = int(year_raw) if year_raw.isdigit() else None
+
     url = f"{base}/api/internal/readings/auto-fetch"
     body = json.dumps(
         {
             "attempts": int(os.environ.get("READINGS_AUTOFETCH_ATTEMPTS") or "3"),
             "sundays_ahead": int(os.environ.get("READINGS_AUTOFETCH_SUNDAYS") or "8"),
+            "window": (os.environ.get("READINGS_AUTOFETCH_WINDOW") or "year").strip() or "year",
+            "year": year,
             "scope": (os.environ.get("READINGS_AUTOFETCH_SCOPE") or "missing").strip() or "missing",
             "alert": (os.environ.get("READINGS_AUTOFETCH_ALERT") or "1").strip() not in ("0", "false", "no"),
             "dry_run": False,
@@ -44,8 +51,10 @@ def main() -> int:
             "User-Agent": "verbum-readings-autofetch-cron/1.0",
         },
     )
+    # Year sweep can take several minutes when many Sundays need a live fetch.
+    timeout_s = int(os.environ.get("READINGS_AUTOFETCH_TIMEOUT_S") or "1800")
     try:
-        with urllib.request.urlopen(req, timeout=900) as resp:
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             raw = resp.read().decode("utf-8", errors="replace")
             print(raw)
             try:

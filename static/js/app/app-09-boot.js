@@ -101,14 +101,16 @@
         setSongMetadataDismissLabel("cancel");
       }
       const detected = inferComposerSongMoods();
-      const selected = composerGospelMoods.length ? composerGospelMoods : detected;
+      const shouldAutoScan = intent === "save" || intent === "paste" || !composerGospelMoods.length;
+      const selected = shouldAutoScan ? detected : composerGospelMoods.slice();
+      if (shouldAutoScan) composerGospelMoods = detected.slice();
       setSongMetadataMoodChecks(selected);
       clearMetadataMoodAttention();
-      if (intent === "save" || intent === "paste") {
+      if (shouldAutoScan) {
         pulseMetadataMoodAttention(detected);
       } else {
         const hintEl = $("song-metadata-mood-hint");
-        if (hintEl) hintEl.textContent = "Select the mood that best fits this song.";
+        if (hintEl) hintEl.textContent = "Select the mood that best fits this song, or scan lyrics again.";
       }
       songMetaSnapshot = captureMetadataModalSnapshot();
       bindMetadataModalDirtyTracking();
@@ -296,6 +298,9 @@
               video_media: composerSongMedia && composerSongMedia.video,
               audio_preview: composerSongMedia && composerSongMedia.preview,
             });
+            if (typeof syncSongMediaSurfaces === "function") {
+              syncSongMediaSurfaces(section, id, { fromComposer: true });
+            }
             renderSongCatalog();
             refreshSongCatalogInBackground();
           }
@@ -329,6 +334,9 @@
           video_media: composerSongMedia && composerSongMedia.video,
           audio_preview: composerSongMedia && composerSongMedia.preview,
         });
+        if (typeof syncSongMediaSurfaces === "function") {
+          syncSongMediaSurfaces(section, id, { fromComposer: true });
+        }
         renderSongCatalog();
         refreshSongCatalogInBackground();
         if ($("lyrics-save-title")) $("lyrics-save-title").value = patched.title;
@@ -469,6 +477,9 @@
           return;
         }
         setComposerYouTubeLink(ref);
+        if (typeof persistComposerSongMediaToCatalog === "function") {
+          void persistComposerSongMediaToCatalog();
+        }
         if (typeof notify === "function") notify("YouTube linked for choir practice.", "ok");
         if (composerLoadedSong && composerLoadedSong.id) {
           maybeAutoFetchSongPreview(composerLoadedSong.section, composerLoadedSong.id, {
@@ -486,6 +497,9 @@
       if (ytClearBtn) {
         ytClearBtn.addEventListener("click", () => {
           clearComposerYouTubeLink();
+          if (typeof persistComposerSongMediaToCatalog === "function") {
+            void persistComposerSongMediaToCatalog();
+          }
         });
       }
       if (ytLinkBtn) ytLinkBtn.addEventListener("click", commitComposerYouTubeLink);
@@ -521,11 +535,17 @@
         if (!confirmUnlinkMedia("this audio clip")) return;
         if (massSectionAudioPlayingSlot === COMPOSER_SONG_MEDIA_SLOT) stopMassSectionAudio();
         clearComposerAudioSnippet();
+        if (typeof persistComposerSongMediaToCatalog === "function") {
+          void persistComposerSongMediaToCatalog();
+        }
         if (typeof notify === "function") notify("Cleared audio clip.", "ok");
       });
       $("song-metadata-video-clear") && $("song-metadata-video-clear").addEventListener("click", () => {
         if (!confirmUnlinkMedia("this instrumental video")) return;
         setComposerSongMediaField("video", null);
+        if (typeof persistComposerSongMediaToCatalog === "function") {
+          void persistComposerSongMediaToCatalog();
+        }
         if (typeof notify === "function") notify("Cleared video link.", "ok");
       });
       $("song-delete-confirm") && $("song-delete-confirm").addEventListener("click", () => {
@@ -571,6 +591,9 @@
       });
       $("song-metadata-mood-google-link") && $("song-metadata-mood-google-link").addEventListener("click", () => {
         openSongMoodGoogleSearch();
+      });
+      $("song-metadata-mood-scan-btn") && $("song-metadata-mood-scan-btn").addEventListener("click", () => {
+        scanComposerLyricsForMood({ notify: true });
       });
       $("btn-sync-catalog-lyrics") && $("btn-sync-catalog-lyrics").addEventListener("click", () => {
         syncParishLyricsToCatalog();
