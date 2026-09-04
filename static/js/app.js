@@ -25885,8 +25885,14 @@
           && lastMassSlideshowSession.pptxUrl === latestUrl
         );
 
-        // 1) Instant resume from cached slide URLs only when they match the latest generated deck.
-        if (sessionMatchesLatest) {
+        // 1) Instant resume from cached slide URLs only when they match the latest
+        // generated deck AND were image-mode (never reuse a text-fallback session).
+        const cachedImageSession = !!(
+          sessionMatchesLatest
+          && lastMassSlideshowSession
+          && lastMassSlideshowSession.mode !== "text"
+        );
+        if (cachedImageSession) {
           try {
             await openMassSlideshow({
               mode: lastMassSlideshowSession.mode || "image",
@@ -25910,7 +25916,7 @@
             /* fall through */
           }
         } else if (lastMassSlideshowSession) {
-          // Stale cache from a previous generate — discard.
+          // Stale cache / prior text fallback — discard and re-rasterize.
           lastMassSlideshowSession = null;
         }
 

@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-crosextra-carlito \
     libreoffice-impress \
     libreoffice-draw \
+    libreoffice-java-common \
+    default-jre-headless \
     ffmpeg \
     nodejs \
     && (command -v soffice >/dev/null || ln -sf "$(command -v libreoffice)" /usr/bin/soffice) \

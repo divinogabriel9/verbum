@@ -66,6 +66,7 @@ from services.rite_slide_preview import build_rite_slide_preview
 from services.lyrics_fetcher import fetch_and_store_for_selection
 from services.ppt_preview_render import (
     begin_progressive_ppt_preview,
+    get_last_convert_error,
     list_slide_images,
     render_pdf_page_range,
     render_ppt_preview_pngs,
@@ -2077,6 +2078,11 @@ def api_ppt_preview_slideshow_start(
 
     if not first_paths or pdf_path is None:
         text_slides = _extract_ppt_text_slides(ppt)
+        lo_err = (get_last_convert_error() or "").strip()
+        fail_msg = (pdf_msg or "Could not render slide images.").strip()
+        if lo_err and lo_err not in fail_msg:
+            fail_msg = f"{fail_msg} ({lo_err[:240]})"
+        fail_msg = fail_msg + " Showing text fallback."
         with _slideshow_job_lock:
             if _slideshow_job.get("generation") == generation:
                 _slideshow_job.update(
@@ -2086,8 +2092,7 @@ def api_ppt_preview_slideshow_start(
                         "total": len(text_slides),
                         "ready": len(text_slides),
                         "complete": True,
-                        "message": (pdf_msg or "Could not render slide images.")
-                        + " Showing text fallback.",
+                        "message": fail_msg,
                         "pptx_name": ppt_name,
                         "pptx_mtime": ppt_mtime,
                     }
@@ -2100,7 +2105,7 @@ def api_ppt_preview_slideshow_start(
             "total": len(text_slides),
             "complete": True,
             "status": "done",
-            "message": (pdf_msg or "Could not render slide images.") + " Showing text fallback.",
+            "message": fail_msg,
             "quality": quality,
             "pptx_name": ppt_name,
             "pptx_mtime": ppt_mtime,
@@ -2382,16 +2387,18 @@ def api_feature_flags(
 
 
 @app.get("/health")
-async def health() -> dict[str, str | None]:
+async def health() -> dict[str, str | bool | None]:
     # Async so a wedged sync thread pool (e.g. hung Supabase/httpx) cannot
     # make the health check itself hang.
     info = get_version_info()
+    soffice = _resolve_soffice_bin()
     return {
         "status": "ok",
         "version": str(info.get("version") or "dev"),
         "git_commit": info.get("git_commit_short") or info.get("git_commit"),
         "git_branch": info.get("git_branch"),
         "built_at": info.get("built_at"),
+        "soffice": bool(soffice),
     }
 
 

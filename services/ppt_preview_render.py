@@ -14,6 +14,7 @@ immediately, then continue rasterizing the rest into ``out_dir``.
 from __future__ import annotations
 
 import logging
+import threading
 import os
 import re
 import shutil
@@ -25,6 +26,14 @@ from pathlib import Path
 from typing import Callable, Optional
 
 logger = logging.getLogger(__name__)
+
+# LibreOffice is single-process; concurrent converts corrupt profiles / hang.
+_SOFFICE_LOCK = threading.Lock()
+_LAST_CONVERT_ERROR = ""
+
+
+def get_last_convert_error() -> str:
+    return _LAST_CONVERT_ERROR
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _FONTS_DIR = _PROJECT_ROOT / "data" / "reference" / "fonts"
@@ -163,111 +172,140 @@ def convert_pptx_to_pdf(
     out_dir: Path,
     *,
     soffice_bin: str,
-    timeout: int = 180,
+    timeout: int = 90,
 ) -> Optional[Path]:
     """Convert ``ppt`` to a PDF in ``out_dir`` via LibreOffice. Returns the PDF path or ``None``."""
+    global _LAST_CONVERT_ERROR
     out_dir.mkdir(parents=True, exist_ok=True)
-    profile_dir: Optional[Path] = None
-    tmp_dir: Optional[Path] = None
-    work_ppt = ppt
+
+    is_linux = False
     try:
-        profile_dir, profile_uri = _prepare_lo_user_installation()
-        tmp_dir = Path(tempfile.mkdtemp(prefix="ppt-preview-"))
-        tmp_ppt = tmp_dir / f"{ppt.stem}_preview.pptx"
-        try:
-            _rewrite_pptx_fonts_for_preview(ppt, tmp_ppt)
-            work_ppt = tmp_ppt
-        except Exception:
-            logger.warning("Preview font rewrite failed; converting original PPTX", exc_info=True)
-            work_ppt = ppt
-
-        base_env = os.environ.copy()
-        base_env.setdefault("PYTHONUNBUFFERED", "1")
-        # Do not override FONTCONFIG_FILE — a lone conf file replaces system fonts and
-        # can make LibreOffice abort on Linux/Render.
-        # SVP (no display) + writable HOME are Linux/container needs; they crash macOS LO.
+        is_linux = os.uname().sysname == "Linux"
+    except AttributeError:
         is_linux = False
+
+    with _SOFFICE_LOCK:
+        profile_dir: Optional[Path] = None
+        tmp_dir: Optional[Path] = None
+        work_ppt = ppt
         try:
-            is_linux = os.uname().sysname == "Linux"
-        except AttributeError:
-            is_linux = False
-        if is_linux:
-            base_env["HOME"] = str(profile_dir)
-            base_env.setdefault("SAL_USE_VCLPLUGIN", "svp")
-            base_env.setdefault("DBUS_SESSION_BUS_ADDRESS", "/dev/null")
-            base_env.setdefault("LANG", "C.UTF-8")
-            base_env.setdefault("LC_ALL", "C.UTF-8")
+            # On Linux/Render, prefer the original PPTX + system fonts first (Dockerfile
+            # already installs OFL fonts). Font rewrite + fresh UserInstallation often
+            # OOMs or hangs on free-tier memory.
+            if not is_linux:
+                profile_dir, profile_uri = _prepare_lo_user_installation()
+                tmp_dir = Path(tempfile.mkdtemp(prefix="ppt-preview-"))
+                tmp_ppt = tmp_dir / f"{ppt.stem}_preview.pptx"
+                try:
+                    _rewrite_pptx_fonts_for_preview(ppt, tmp_ppt)
+                    work_ppt = tmp_ppt
+                except Exception:
+                    logger.warning("Preview font rewrite failed; converting original PPTX", exc_info=True)
+                    work_ppt = ppt
+            else:
+                profile_uri = ""
+                # Reuse one profile dir under /tmp so LO does not rebuild font caches every time.
+                stable = Path(tempfile.gettempdir()) / "verbum-lo-user"
+                stable.mkdir(parents=True, exist_ok=True)
+                profile_dir = stable
+                profile_uri = stable.resolve().as_uri()
+                if not profile_uri.endswith("/"):
+                    profile_uri += "/"
 
-        attempts: list[tuple[str, dict[str, str], list[str]]] = [
-            (
-                "profile+fonts",
-                dict(base_env),
-                [f"-env:UserInstallation={profile_uri}"],
-            ),
-            (
-                "impress_pdf",
-                dict(base_env),
-                [f"-env:UserInstallation={profile_uri}"],
-            ),
-            (
-                "plain",
-                dict(base_env),
-                [],
-            ),
-        ]
+            base_env = os.environ.copy()
+            base_env.setdefault("PYTHONUNBUFFERED", "1")
+            # Never set FONTCONFIG_FILE to our alias conf alone — it replaces the system
+            # config and aborts LibreOffice on Linux.
+            if is_linux:
+                home = str(Path(tempfile.gettempdir()))
+                base_env["HOME"] = home
+                base_env.setdefault("SAL_USE_VCLPLUGIN", "svp")
+                base_env.setdefault("DBUS_SESSION_BUS_ADDRESS", "/dev/null")
+                base_env.setdefault("LANG", "C.UTF-8")
+                base_env.setdefault("LC_ALL", "C.UTF-8")
 
-        last_err = ""
-        for label, env, extra in attempts:
-            convert_to = "pdf:impress_pdf_Export" if label == "impress_pdf" else "pdf"
-            try:
-                proc = _run_soffice_convert(
-                    soffice_bin=soffice_bin,
-                    ppt=work_ppt,
-                    out_dir=out_dir,
-                    env=env,
-                    extra_args=extra,
-                    convert_to=convert_to,
-                    timeout=timeout,
+            if is_linux:
+                attempts: list[tuple[str, dict[str, str], list[str], str]] = [
+                    ("plain_impress", dict(base_env), [], "pdf:impress_pdf_Export"),
+                    ("plain", dict(base_env), [], "pdf"),
+                    (
+                        "profile_impress",
+                        dict(base_env),
+                        [f"-env:UserInstallation={profile_uri}"],
+                        "pdf:impress_pdf_Export",
+                    ),
+                ]
+            else:
+                attempts = [
+                    (
+                        "profile+fonts",
+                        dict(base_env),
+                        [f"-env:UserInstallation={profile_uri}"],
+                        "pdf",
+                    ),
+                    (
+                        "impress_pdf",
+                        dict(base_env),
+                        [f"-env:UserInstallation={profile_uri}"],
+                        "pdf:impress_pdf_Export",
+                    ),
+                    ("plain", dict(base_env), [], "pdf"),
+                ]
+
+            last_err = ""
+            per_timeout = max(45, min(int(timeout or 90), 120))
+            for label, env, extra, convert_to in attempts:
+                try:
+                    proc = _run_soffice_convert(
+                        soffice_bin=soffice_bin,
+                        ppt=work_ppt,
+                        out_dir=out_dir,
+                        env=env,
+                        extra_args=extra,
+                        convert_to=convert_to,
+                        timeout=per_timeout,
+                    )
+                except (subprocess.TimeoutExpired, OSError) as exc:
+                    last_err = f"{label}: {exc}"
+                    logger.warning("LibreOffice convert failed (%s): %s", label, exc)
+                    continue
+
+                if proc.returncode != 0:
+                    err = (proc.stderr or proc.stdout or "").strip()[:800]
+                    last_err = f"{label} exit={proc.returncode}: {err or '(no output)'}"
+                    logger.warning("LibreOffice convert %s", last_err)
+
+                pdf = _wait_for_pdf(
+                    out_dir,
+                    [work_ppt.stem, ppt.stem],
+                    timeout_s=12.0 if proc.returncode == 0 else 4.0,
                 )
-            except (subprocess.TimeoutExpired, OSError) as exc:
-                last_err = str(exc)
-                logger.warning("LibreOffice convert failed (%s): %s", label, exc)
-                continue
+                if pdf is not None:
+                    final = out_dir / f"{ppt.stem}.pdf"
+                    if pdf.resolve() != final.resolve():
+                        try:
+                            if final.exists():
+                                final.unlink()
+                            pdf.replace(final)
+                            _LAST_CONVERT_ERROR = ""
+                            return final
+                        except OSError:
+                            _LAST_CONVERT_ERROR = ""
+                            return pdf
+                    _LAST_CONVERT_ERROR = ""
+                    return pdf
+                last_err = last_err or f"{label}: PDF not produced"
 
-            if proc.returncode != 0:
-                last_err = (proc.stderr or proc.stdout or "").strip()[:800]
-                logger.warning(
-                    "LibreOffice convert exit=%s (%s): %s",
-                    proc.returncode,
-                    label,
-                    last_err or "(no output)",
-                )
+            _LAST_CONVERT_ERROR = last_err or "LibreOffice could not convert to PDF"
+            logger.error("LibreOffice could not convert %s to PDF (%s)", ppt.name, _LAST_CONVERT_ERROR)
+            return None
+        finally:
+            if tmp_dir and tmp_dir.exists():
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+            # Keep stable Linux profile; only wipe throwaway Mac profiles.
+            if profile_dir and profile_dir.exists() and profile_dir.name.startswith("lo-verbum-fonts-"):
+                shutil.rmtree(profile_dir, ignore_errors=True)
 
-            pdf = _wait_for_pdf(
-                out_dir,
-                [work_ppt.stem, ppt.stem],
-                timeout_s=20.0 if proc.returncode == 0 else 8.0,
-            )
-            if pdf is not None:
-                final = out_dir / f"{ppt.stem}.pdf"
-                if pdf.resolve() != final.resolve():
-                    try:
-                        if final.exists():
-                            final.unlink()
-                        pdf.replace(final)
-                        return final
-                    except OSError:
-                        return pdf
-                return pdf
-            last_err = last_err or "PDF not produced"
-
-        logger.error("LibreOffice could not convert %s to PDF (%s)", ppt.name, last_err)
-        return None
-    finally:
-        if tmp_dir and tmp_dir.exists():
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-        if profile_dir and profile_dir.exists():
-            shutil.rmtree(profile_dir, ignore_errors=True)
 
 
 def _save_pil_image(pil_image, dest: Path, *, image_format: str) -> bool:
