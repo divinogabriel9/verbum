@@ -402,12 +402,12 @@
     }
     .tools {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
     }
     button.tool {
       min-height: 50px;
-      font-size: 0.92rem;
+      font-size: 0.88rem;
       background: var(--bg-elev);
     }
     button.tool.is-on {
@@ -419,6 +419,67 @@
       border-color: rgba(184, 74, 58, 0.55);
       background: var(--warn-soft);
       color: #f0b0a4;
+    }
+    button.tool-fs.is-on {
+      border-color: rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .confirm {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      place-items: center;
+      padding: 18px var(--pad-r) calc(18px + var(--pad-b)) var(--pad);
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .confirm.is-open { display: grid; }
+    .confirm__card {
+      width: min(100%, 340px);
+      background: #161616;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      padding: 18px 16px 14px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+      text-align: center;
+    }
+    .confirm__card h2 {
+      margin: 0 0 8px;
+      font-family: var(--font-flow);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1.15rem;
+    }
+    .confirm__card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+    .confirm__actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .confirm__actions button {
+      appearance: none;
+      min-height: 46px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .confirm__actions button.primary {
+      background: var(--accent);
+      border-color: var(--accent-line);
+      color: var(--on-accent);
     }
 
     .lightbox {
@@ -523,10 +584,22 @@
 
   <div class="tools">
     <button type="button" id="btn-blank" class="tool tool-warn">Black</button>
+    <button type="button" id="btn-fullscreen" class="tool tool-fs">Full</button>
     <button type="button" id="btn-freeze" class="tool">Freeze</button>
   </div>
 
   <div class="footer-gap" aria-hidden="true"></div>
+
+  <div class="confirm" id="fs-confirm" aria-hidden="true">
+    <div class="confirm__card" role="dialog" aria-modal="true" aria-labelledby="fs-confirm-title">
+      <h2 id="fs-confirm-title">Enter fullscreen?</h2>
+      <p id="fs-confirm-body">Use the full phone screen for the remote controls.</p>
+      <div class="confirm__actions">
+        <button type="button" id="fs-confirm-cancel">Cancel</button>
+        <button type="button" class="primary" id="fs-confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
 
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lightbox__card" role="dialog" aria-modal="true" aria-labelledby="lightbox-title">
@@ -549,6 +622,7 @@
     total: 0,
     blank: false,
     frozen: false,
+    fullscreen: false,
   };
   var peekIndex = { prev: -1, next: -1 };
 
@@ -563,7 +637,38 @@
   var nextThumb = $("next-thumb");
   var lightbox = $("lightbox");
   var lightboxImg = $("lightbox-img");
+  var fsConfirm = $("fs-confirm");
   var bust = Date.now();
+  var pendingFullscreenEnter = true;
+
+  function syncFullscreenBtn() {
+    var btn = $("btn-fullscreen");
+    var on = !!state.fullscreen;
+    btn.textContent = on ? "Exit" : "Full";
+    btn.classList.toggle("is-on", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  function openFsConfirm() {
+    var entering = !state.fullscreen;
+    pendingFullscreenEnter = entering;
+    $("fs-confirm-title").textContent = entering ? "Enter Present fullscreen?" : "Exit Present fullscreen?";
+    $("fs-confirm-body").textContent = entering
+      ? "This asks the Present screen to go fullscreen. You may need to tap once on the projector computer to confirm."
+      : "This asks the Present screen to leave fullscreen. You may need to tap once on the projector computer to confirm.";
+    fsConfirm.classList.add("is-open");
+    fsConfirm.setAttribute("aria-hidden", "false");
+  }
+
+  function closeFsConfirm() {
+    fsConfirm.classList.remove("is-open");
+    fsConfirm.setAttribute("aria-hidden", "true");
+  }
+
+  function applyFullscreenChoice() {
+    closeFsConfirm();
+    command(pendingFullscreenEnter ? "fullscreen_on" : "fullscreen_off");
+  }
 
   function showErr(msg) {
     if (!msg) {
@@ -647,6 +752,7 @@
     $("btn-freeze").classList.toggle("is-on", !!state.frozen);
     $("btn-blank").textContent = state.blank ? "Show" : "Black";
     $("btn-blank").classList.toggle("is-on", !!state.blank);
+    syncFullscreenBtn();
 
     var liveBtn = $("btn-live");
     var canGoLive = !!state.frozen;
@@ -684,6 +790,7 @@
       state.total = data.total || data.slide_count || 0;
       state.blank = !!data.blank;
       state.frozen = !!data.frozen;
+      state.fullscreen = !!data.fullscreen;
       showErr("");
       render();
     } catch (e) {
@@ -706,6 +813,7 @@
       state.total = data.total || data.slide_count || 0;
       state.blank = !!data.blank;
       state.frozen = !!data.frozen;
+      state.fullscreen = !!data.fullscreen;
       showErr("");
       render();
     } catch (e) {
@@ -721,6 +829,12 @@
   });
   $("btn-blank").addEventListener("click", function () { command("blank_toggle"); });
   $("btn-freeze").addEventListener("click", function () { command("freeze_toggle"); });
+  $("btn-fullscreen").addEventListener("click", openFsConfirm);
+  $("fs-confirm-cancel").addEventListener("click", closeFsConfirm);
+  $("fs-confirm-ok").addEventListener("click", applyFullscreenChoice);
+  fsConfirm.addEventListener("click", function (e) {
+    if (e.target === fsConfirm) closeFsConfirm();
+  });
   $("btn-live").addEventListener("click", function () {
     if (state.frozen) command("go_live");
   });
@@ -740,6 +854,7 @@
     empty.hidden = true;
   });
 
+  syncFullscreenBtn();
   refresh();
   setInterval(refresh, 1200);
 })();

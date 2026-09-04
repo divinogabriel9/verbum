@@ -24917,6 +24917,7 @@
       pptxUrl: "",
       pptxName: "mass_presentation.pptx",
       blank: false,
+      pendingFullscreen: null, // true = enter, false = exit, null = none
       chromeTimer: null,
       hintTimer: null,
       cursorTimer: null,
@@ -25060,11 +25061,15 @@
 
     function pushMassProjectionState() {
       if (!massProjectionRemote.token || massProjectionRemote.applyingRemote || !massSlideshowState.open) return;
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      const desired = massSlideshowState.pendingFullscreen;
       const body = {
         index: massSlideshowState.index || 0,
         total: Math.max(massSlideshowState.slides.length, massSlideshowState.expectedTotal || 0),
         blank: !!massSlideshowState.blank,
         preview_index: massSlideshowState.index || 0,
+        // Keep remote UI in sync with a pending request until Present confirms it.
+        fullscreen: desired == null ? on : !!desired,
         pptx_name: massSlideshowPptxName(),
         slide_names: massSlideshowSlideNames(),
       };
@@ -25086,9 +25091,14 @@
         else if (action === "blank_on") setMassSlideshowBlank(true);
         else if (action === "blank_off") setMassSlideshowBlank(false);
         else if (action === "blank_toggle") setMassSlideshowBlank(!massSlideshowState.blank);
+        else if (action === "fullscreen_on") setMassSlideshowFullscreen(true, { fromRemote: true });
+        else if (action === "fullscreen_off") setMassSlideshowFullscreen(false, { fromRemote: true });
+        else if (action === "fullscreen_toggle") {
+          const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+          setMassSlideshowFullscreen(!on, { fromRemote: true });
+        }
         else if (action === "go_live") {
           const idx = (typeof cmd.index === "number") ? cmd.index : null;
-          // State sync after poll handles index from session.
           setMassSlideshowBlank(false);
           if (idx != null && !Number.isNaN(idx)) massSlideshowJump(idx);
         } else if (action === "preview_next" || action === "preview_prev" || action === "preview_jump"
@@ -25130,6 +25140,17 @@
             massProjectionRemote.applyingRemote = true;
             try { setMassSlideshowBlank(st.blank); }
             finally { massProjectionRemote.applyingRemote = false; }
+          }
+          if (typeof st.fullscreen === "boolean") {
+            const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+            const pending = massSlideshowState.pendingFullscreen;
+            if (pending != null && pending === st.fullscreen) {
+              // Waiting for presenter tap — keep gate open.
+            } else if (st.fullscreen !== on) {
+              massProjectionRemote.applyingRemote = true;
+              try { setMassSlideshowFullscreen(st.fullscreen, { fromRemote: true }); }
+              finally { massProjectionRemote.applyingRemote = false; }
+            }
           }
         }
       } catch (_e) { /* ignore transient */ }
@@ -25439,24 +25460,92 @@
 
     function syncMassSlideshowFullscreenUi() {
       const btn = $("mass-slideshow-fullscreen");
-      if (!btn) return;
       const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
-      btn.textContent = on ? "Exit full" : "Fullscreen";
-      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      if (btn) {
+        btn.textContent = on ? "Exit full" : "Fullscreen";
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      if (on && massSlideshowState.pendingFullscreen === true) {
+        hideMassSlideshowFullscreenGate();
+      }
+      if (!on && massSlideshowState.pendingFullscreen === false) {
+        hideMassSlideshowFullscreenGate();
+      }
+      pushMassProjectionState();
+    }
+
+    function showMassSlideshowFullscreenGate(wantOn) {
+      massSlideshowState.pendingFullscreen = !!wantOn;
+      const gate = $("mass-slideshow-fs-gate");
+      const title = $("mass-slideshow-fs-gate-title");
+      const sub = $("mass-slideshow-fs-gate-sub");
+      if (title) title.textContent = wantOn ? "Enter fullscreen?" : "Exit fullscreen?";
+      if (sub) {
+        sub.textContent = wantOn
+          ? "Remote requested this — tap here on the presenter to confirm"
+          : "Remote requested exit — tap here on the presenter to confirm";
+      }
+      if (gate) gate.hidden = false;
+      setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
+    }
+
+    function hideMassSlideshowFullscreenGate() {
+      massSlideshowState.pendingFullscreen = null;
+      const gate = $("mass-slideshow-fs-gate");
+      if (gate) gate.hidden = true;
+    }
+
+    async function setMassSlideshowFullscreen(wantOn, opts) {
+      const options = opts || {};
+      const root = $("mass-slideshow");
+      if (!root || !massSlideshowState.open) return;
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      const fromRemote = !!options.fromRemote;
+      const fromUserGesture = !!options.fromUserGesture;
+
+      if (wantOn && on) {
+        hideMassSlideshowFullscreenGate();
+        syncMassSlideshowFullscreenUi();
+        return;
+      }
+      if (!wantOn && !on) {
+        hideMassSlideshowFullscreenGate();
+        syncMassSlideshowFullscreenUi();
+        return;
+      }
+
+      try {
+        if (wantOn && !on) {
+          if (root.requestFullscreen) await root.requestFullscreen();
+        } else if (!wantOn && document.fullscreenElement) {
+          if (document.exitFullscreen) await document.exitFullscreen();
+        }
+        const nowOn = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+        if (wantOn ? nowOn : !nowOn) {
+          hideMassSlideshowFullscreenGate();
+        } else if (fromRemote || !fromUserGesture) {
+          showMassSlideshowFullscreenGate(wantOn);
+        } else {
+          setFlowStatus("Fullscreen was blocked by the browser.", "warn");
+          hideMassSlideshowFullscreenGate();
+        }
+      } catch (_e) {
+        // Browsers block scripted fullscreen without a gesture on this window.
+        if (fromRemote || !fromUserGesture) {
+          showMassSlideshowFullscreenGate(wantOn);
+        } else {
+          setFlowStatus("Fullscreen was blocked by the browser.", "warn");
+          hideMassSlideshowFullscreenGate();
+        }
+      }
+      syncMassSlideshowFullscreenUi();
+      setMassSlideshowChromeVisible(true);
     }
 
     async function toggleMassSlideshowFullscreen() {
-      const root = $("mass-slideshow");
-      if (!root || !massSlideshowState.open) return;
-      try {
-        if (document.fullscreenElement) {
-          if (document.exitFullscreen) await document.exitFullscreen();
-        } else if (root.requestFullscreen) {
-          await root.requestFullscreen();
-        }
-      } catch (_e) { /* browser may block without gesture */ }
-      syncMassSlideshowFullscreenUi();
-      setMassSlideshowChromeVisible(true);
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      await setMassSlideshowFullscreen(!on, { fromUserGesture: true });
     }
 
     function massSlideshowGo(delta) {
@@ -25497,6 +25586,7 @@
       massSlideshowState.open = false;
       massSlideshowState.blank = false;
       massSlideshowState.complete = true;
+      hideMassSlideshowFullscreenGate();
       stopMassSlideshowPoll();
       resetMassProjectionRemote();
       pauseMassSlideshowVideo();
@@ -25633,6 +25723,15 @@
       $("mass-slideshow-fullscreen") && $("mass-slideshow-fullscreen").addEventListener("click", (e) => {
         e.stopPropagation();
         toggleMassSlideshowFullscreen();
+      });
+      $("mass-slideshow-fs-gate-btn") && $("mass-slideshow-fs-gate-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        const want = massSlideshowState.pendingFullscreen;
+        if (want == null) {
+          hideMassSlideshowFullscreenGate();
+          return;
+        }
+        setMassSlideshowFullscreen(!!want, { fromUserGesture: true });
       });
       $("mass-slideshow-remote") && $("mass-slideshow-remote").addEventListener("click", async (e) => {
         e.stopPropagation();

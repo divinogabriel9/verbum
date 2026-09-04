@@ -2169,6 +2169,7 @@ class ProjectionStateBody(BaseModel):
     total: Optional[int] = None
     blank: Optional[bool] = None
     frozen: Optional[bool] = None
+    fullscreen: Optional[bool] = None
     preview_index: Optional[int] = None
     pptx_name: Optional[str] = None
     slide_names: Optional[list[str]] = None
@@ -2236,6 +2237,7 @@ def api_projection_push_state(token: str, body: ProjectionStateBody) -> dict[str
         total=body.total,
         blank=body.blank,
         frozen=body.frozen,
+        fullscreen=body.fullscreen,
         preview_index=body.preview_index,
         slide_names=body.slide_names,
         pptx_name=body.pptx_name,

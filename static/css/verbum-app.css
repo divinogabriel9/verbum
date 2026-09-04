@@ -18596,6 +18596,42 @@
     .mass-slideshow__remote[hidden] {
       display: none !important;
     }
+    .mass-slideshow__fs-gate {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.62);
+      backdrop-filter: blur(6px);
+    }
+    .mass-slideshow__fs-gate[hidden] {
+      display: none !important;
+    }
+    .mass-slideshow__fs-gate-btn {
+      appearance: none;
+      max-width: min(420px, 92vw);
+      border: 1px solid rgba(161, 15, 13, 0.55);
+      background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 22px 24px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    .mass-slideshow__fs-gate-btn strong {
+      display: block;
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+    }
+    .mass-slideshow__fs-gate-btn span {
+      display: block;
+      font-size: 0.88rem;
+      opacity: 0.78;
+      line-height: 1.4;
+    }
     .mass-slideshow__remote-card {
       display: flex;
       gap: 18px;

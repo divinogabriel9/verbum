@@ -28,6 +28,7 @@ class ProjectionSession:
     total: int = 0
     blank: bool = False
     frozen: bool = False
+    fullscreen: bool = False
     preview_index: int = 0  # 0-based remote browse cursor
     slide_names: list[str] = field(default_factory=list)  # preview_slides filenames
     pptx_name: str = ""
@@ -44,6 +45,7 @@ class ProjectionSession:
             "total": self.total,
             "blank": self.blank,
             "frozen": self.frozen,
+            "fullscreen": self.fullscreen,
             "preview_index": self.preview_index,
             "pptx_name": self.pptx_name,
             "command_seq": self.command_seq,
@@ -116,6 +118,7 @@ def update_projector_state(
     total: Optional[int] = None,
     blank: Optional[bool] = None,
     frozen: Optional[bool] = None,
+    fullscreen: Optional[bool] = None,
     preview_index: Optional[int] = None,
     slide_names: Optional[list[str]] = None,
     pptx_name: Optional[str] = None,
@@ -136,6 +139,8 @@ def update_projector_state(
             session.frozen = bool(frozen)
             if not session.frozen:
                 session.preview_index = session.index
+        if fullscreen is not None:
+            session.fullscreen = bool(fullscreen)
         if preview_index is not None and session.total:
             session.preview_index = max(0, min(int(preview_index), session.total - 1))
         elif preview_index is not None:
@@ -206,6 +211,12 @@ def enqueue_command(token: str, action: str, **payload: Any) -> Optional[Project
             session.blank = False
         elif action_key == "blank_toggle":
             session.blank = not session.blank
+        elif action_key == "fullscreen_on":
+            session.fullscreen = True
+        elif action_key == "fullscreen_off":
+            session.fullscreen = False
+        elif action_key == "fullscreen_toggle":
+            session.fullscreen = not session.fullscreen
         elif action_key == "next" and not session.frozen:
             if session.total:
                 session.index = min(session.total - 1, session.index + 1)
