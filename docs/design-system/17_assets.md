@@ -68,7 +68,8 @@ Selected via poster pickers (`data-poster-picker`, `data-target=flow-lotw/lote-p
 | **Inter** | Google Fonts (400/500/600) | Fallback UI font (app + landing) |
 | **Playfair Display** | Google Fonts (italic 400/500) | Wordmark / serif accent |
 | **Material Symbols Outlined** | Google Fonts | Landing icons only |
-| **Poppins-Bold.ttf** | `data/reference/fonts/` | PPTX deck generation (server-side, not web UI) |
+| **Poppins-*.ttf** | `data/reference/fonts/` | PPTX + LibreOffice Present on Render (installed via Dockerfile) |
+| **99-verbum-pptx.conf** | `data/reference/fonts/` | fontconfig aliases for PPTX family names (Poppins Bold, Georgia→Liberation Serif, …) |
 | Bricolage Grotesque / Hanken Grotesk / JetBrains Mono | wizard config | **System B only — off-brand, do not use in app** |
 
 ## 7. SVGs

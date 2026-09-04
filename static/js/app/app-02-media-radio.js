@@ -175,15 +175,21 @@
 
     function previewFetchStageLabel(stage, kind) {
       const key = String(stage || "").toLowerCase();
-      const isVideo = kind === "instrumental_video";
+      const isVideo = kind === "instrumental_video" || kind === "karaoke_instrumental";
+      const isKaraoke = kind === "karaoke_instrumental";
       if (key === "captions") return "Scanning lyrics";
       if (key === "words") return "Listening for sung words";
       if (key === "download") return isVideo ? "Downloading video" : "Downloading audio";
+      if (key === "extract") return "Using saved video";
       if (key === "compressing") return "Compressing video";
+      if (key === "aligning") return "Timing lyrics to vocals";
+      if (key === "vocals") return "Building instrumental bed";
+      if (key === "rendering") return "Rendering karaoke video";
       if (key === "cutting") return "Trimming clip";
       if (key === "saving") return isVideo ? "Saving video" : "Saving clip";
       if (key === "queued") return "Waiting";
-      if (key === "done") return isVideo ? "Video ready" : "Clip ready";
+      if (key === "done") return isKaraoke ? "Karaoke ready" : (isVideo ? "Video ready" : "Clip ready");
+      if (isKaraoke) return "Building karaoke";
       return isVideo ? "Fetching instrumental video" : "Fetching chorus clip";
     }
 
@@ -220,7 +226,8 @@
           if (job.status !== "done" && job.status !== "error") return;
           previewFetchState.applied[jid] = true;
           const title = String(job.title || "this song").trim() || "this song";
-          const isInstrumental = job.kind === "instrumental_video";
+          const isInstrumental = job.kind === "instrumental_video" || job.kind === "karaoke_instrumental";
+          const isKaraoke = job.kind === "karaoke_instrumental";
           if (job.status === "done") {
             if (job.section && job.id) {
               if (isInstrumental) {
@@ -231,9 +238,11 @@
             }
             if (typeof showToast === "function") {
               showToast(
-                isInstrumental
-                  ? ("Instrumental video ready for \"" + title + "\".")
-                  : ("Chorus clip ready for \"" + title + "\"."),
+                isKaraoke
+                  ? ("Karaoke ready for \"" + title + "\".")
+                  : (isInstrumental
+                    ? ("Instrumental video ready for \"" + title + "\".")
+                    : ("Chorus clip ready for \"" + title + "\".")),
                 "ok"
               );
             }
@@ -247,9 +256,11 @@
             if (typeof showToast === "function") {
               showToast(
                 job.error ||
-                  (isInstrumental
-                    ? ("Could not download instrumental video for \"" + title + "\".")
-                    : ("Could not fetch a chorus clip for \"" + title + "\".")),
+                  (isKaraoke
+                    ? ("Could not build karaoke for \"" + title + "\".")
+                    : (isInstrumental
+                      ? ("Could not download instrumental video for \"" + title + "\".")
+                      : ("Could not fetch a chorus clip for \"" + title + "\"."))),
                 "warn"
               );
             }
@@ -258,9 +269,11 @@
               const statusEl = $("mw-media-pick-fetch-status");
               if (statusEl) {
                 delete statusEl.dataset.fetching;
-                statusEl.textContent = job.error || (isInstrumental
-                  ? "Could not download instrumental video."
-                  : "Could not fetch a chorus clip.");
+                statusEl.textContent = job.error || (isKaraoke
+                  ? "Could not build karaoke."
+                  : (isInstrumental
+                    ? "Could not download instrumental video."
+                    : "Could not fetch a chorus clip."));
                 statusEl.className = "status error mw-media-pick-fetch-status";
               }
             }
@@ -380,6 +393,45 @@
       return data;
     }
 
+    async function startKaraokeFetchJob(opts) {
+      const options = opts || {};
+      const section = String(options.section || "").trim();
+      const id = String(options.id || "").trim();
+      if (!section || !id || typeof saFetchAdmin !== "function") return null;
+      if (previewFetchState.hideTimer) {
+        clearTimeout(previewFetchState.hideTimer);
+        previewFetchState.hideTimer = null;
+      }
+      const title = String(options.title || "this song").trim() || "this song";
+      const body = {
+        youtube_url: String(options.youtube_url || "").trim(),
+      };
+      const data = await saFetchAdmin(
+        "/api/admin/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id) + "/karaoke-job",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+      const jobId = data.job_id || "";
+      if (!jobId) throw new Error("Could not start karaoke build.");
+      previewFetchState.currentJobId = jobId;
+      setPreviewFetchStrip(
+        true,
+        previewFetchStageLabel(data.stage || "download", "karaoke_instrumental") + " · " + title,
+        data.percent || 1
+      );
+      if (options.toast !== false && typeof showToast === "function") {
+        showToast("Building karaoke for \"" + title + "\" — timing from sung audio, then stripping vocals.", "info");
+      }
+      if (!previewFetchState.pollTimer) {
+        previewFetchState.pollTimer = setInterval(pollPreviewFetchJobs, 450);
+      }
+      pollPreviewFetchJobs();
+      return data;
+    }
+
     function maybeAutoFetchSongPreview(section, id, opts) {
       const options = opts || {};
       if (!(churchMembershipState && churchMembershipState.is_superadmin)) return;
@@ -488,7 +540,7 @@
         if (hint) {
           hint.textContent = isVideo
             ? (useInstrumentalFetch
-              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video. Separate from the 10s clip and choir-practice YouTube link."
+              ? "Download video: Search instrumental → paste URL → Download (best karaoke bed). Make karaoke: Search sung → paste that URL → Make karaoke (Whisper timing; uses instrumental bed if downloaded, else strips vocals)."
               : "Pick an MP4 from your Media library or upload a new one. It stays linked on this song.")
             : (youtubeOnly
               ? "Paste a YouTube URL for the full song (choir practice). This does not replace the 5–10s audio clip."
@@ -504,7 +556,7 @@
         if (hint) {
           hint.textContent = isVideo
             ? (useInstrumentalFetch
-              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video for this option."
+              ? "Download video: Search instrumental → paste URL → Download (best karaoke bed). Make karaoke: Search sung → paste that URL → Make karaoke (Whisper timing; uses instrumental bed if downloaded, else strips vocals)."
               : "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time.")
             : (youtubeOnly
               ? "Paste a YouTube URL for choir practice. This does not replace the 5–10s audio clip."
@@ -715,9 +767,19 @@
           openYouTubeSearchForCurrentSong({ instrumental: instrumental });
         });
       }
+      const fetchSearchSung = $("mw-media-pick-fetch-search-sung");
+      if (fetchSearchSung) {
+        fetchSearchSung.addEventListener("click", () => {
+          openYouTubeSearchForCurrentSong({ instrumental: false });
+        });
+      }
       const fetchRun = $("mw-media-pick-fetch-run");
       if (fetchRun) {
         fetchRun.addEventListener("click", () => { void runMassMediaPickFetch(); });
+      }
+      const fetchKaraoke = $("mw-media-pick-fetch-karaoke");
+      if (fetchKaraoke) {
+        fetchKaraoke.addEventListener("click", () => { void runMassMediaPickKaraoke(); });
       }
       const fetchUrl = $("mw-media-pick-fetch-url");
       if (fetchUrl) {

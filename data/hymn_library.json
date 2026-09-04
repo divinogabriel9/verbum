@@ -1305,14 +1305,18 @@
       "id": "blessed_be_god",
       "title": "Blessed Be God",
       "author": "",
-      "lyrics": "Verse 1\nBlest Are You, Lord God Of All Creation\nThanks To Your Goodness, This Bread We Offer:\nFruit Of The Earth, Work Of Our Hands,\nIt Will Become The Bread Of Life.\n\nResponse\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\n\nVerse 2\nBlest Are You, Lord God Of All Creation\nThanks To Your Goodness, This Wine We Offer:\nFruit Of The Vine, Work Of Our Hands,\nIt Will Become Our Cup Of Joy.\n\nResponse 2\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.",
+      "lyrics": "Verse 1\nBlest Are You, Lord God Of All Creation\nThanks To Your Goodness,\nThis Bread We Offer:\nFruit Of The Earth, Work Of Our Hands,\nIt Will Become The Bread Of Life.\n\nResponse\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\n\nVerse 2\nBlest Are You, Lord God Of All Creation\nThanks To Your Goodness,\nThis Wine We Offer:\nFruit Of The Vine, Work Of Our Hands,\nIt Will Become Our Cup Of Joy.\n\nResponse 2\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.\nBlessed Be God, Blessed Be God,\nBlessed Be God, Forever. Amen.",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
       "added_at": "2026-09-03T11:31:53.217719+00:00",
       "language": "English",
-      "updated_at": "2026-09-03T11:31:53.217719+00:00"
+      "updated_at": "2026-09-04T01:27:20.682198+00:00",
+      "gospel_moods": [
+        "mercy",
+        "reverent"
+      ]
     }
   ],
   "communion": [
@@ -1331,15 +1335,36 @@
     {
       "id": "one_bread_communion",
       "title": "One Bread, One Body",
+      "author": "",
       "lyrics": "One Bread, One Body, One Lord Of All,\nOne Cup Of Blessing Which We Bless.\nAnd We, Though Many, Throughout The Earth,\nWe Are One Body In This One Lord.\n\nGentile Or Jew, Servant Or Free,\nWoman Or Man, No More.\n\nMany The Gifts, Many The Works,\nMany The Ways We Serve.\nMany The Moments, Many The Hours,\nMany The Talents Shared.\n\nOne Bread, One Body, One Lord Of All,\nOne Cup Of Blessing Which We Bless.\nAnd We, Though Many, Throughout The Earth,\nWe Are One Body In This One Lord.",
       "seasons": [
         "ordinary_time"
       ],
+      "added_at": "2026-09-04T01:17:17.534829+00:00",
+      "language": "English",
+      "updated_at": "2026-09-04T01:17:33.056136+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:WHAu3fLF7NI",
+        "youtube_id": "WHAu3fLF7NI",
+        "youtube_url": "https://www.youtube.com/watch?v=WHAu3fLF7NI",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "solemn",
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_communion_one_bread_communion_10.mp3",
+        "start_sec": 14.4,
+        "youtube_id": "WHAu3fLF7NI",
+        "youtube_url": "https://www.youtube.com/watch?v=WHAu3fLF7NI",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "bread_of_life_comm_1",
@@ -2081,7 +2106,7 @@
       ],
       "added_at": "2026-09-04T00:16:14.084812+00:00",
       "language": "English",
-      "updated_at": "2026-09-04T00:17:02.489589+00:00",
+      "updated_at": "2026-09-04T01:08:20.895818+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:5AM3uQnvP7I",
@@ -2089,20 +2114,13 @@
         "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I",
         "display_name": "YouTube"
       },
-      "video_media": {
-        "basename": "instrumental_communion_love_is_the_answer_5AM3uQnvP7I.mp4",
-        "display_name": "Love Is The Answer · instrumental"
-      },
       "gospel_moods": [
         "reverent"
       ],
       "audio_preview": {
-        "method": "verse",
         "source": "preview",
         "basename": "preview_communion_love_is_the_answer_10.mp3",
         "start_sec": 11.6,
-        "youtube_id": "5AM3uQnvP7I",
-        "youtube_url": "https://www.youtube.com/watch?v=5AM3uQnvP7I",
         "display_name": "10s preview",
         "duration_sec": 10
       }

@@ -90,8 +90,8 @@ _MUTED = RGBColor(155, 155, 165)
 
 # --- Theme 1 (the app's default deck theme — "LiturgyFlowTemplate1") -----------
 # Built-in deck themes (selected via ``custom_theme.id`` from Mass Setup).
-# Theme 1 keeps amber accents; Themes 2–3 are strict mono (bg ↔ text swapped),
-# including titles, hymns, and Mass dividers (no liturgical-season tint).
+# Theme 1 keeps amber accents; Themes 2–3 are strict mono for readings/hymns.
+# Mass dividers always use liturgical-season tint regardless of deck theme.
 _THEME1_BG = RGBColor(0x00, 0x00, 0x00)        # black background (all non-divider slides)
 _THEME1_PRIMARY = RGBColor(0xF0, 0xFD, 0xF4)   # off-white body text
 _THEME1_MUTED = RGBColor(0xBC, 0xBA, 0xC6)     # muted secondary text
@@ -346,7 +346,7 @@ class SlideTheme:
       ``hymn_*``/``chorus_accent``/``paren_accent`` roles.
 
     Theme 1 tints only Mass dividers by liturgical season. Themes 2–3 set
-    ``mono_surfaces=True`` so dividers match the same black/white palette.
+    ``mono_surfaces=True`` for readings/hymns; Mass dividers still use season color.
     """
 
     bg: RGBColor
@@ -443,7 +443,11 @@ def _theme_with_roles(
 
 
 def _mono_slide_theme(*, dark: bool) -> SlideTheme:
-    """Strict black↔white palette for Themes 2–3 (all text roles match, incl. dividers)."""
+    """Strict black↔white palette for Themes 2–3 reading slides.
+
+    Mass Divider colors are attached separately from the liturgical season —
+    deck Midnight/Paper must not recolor divider backgrounds.
+    """
     if dark:
         bg, primary, muted, emphasis = (
             _THEME2_BG,
@@ -473,10 +477,6 @@ def _mono_slide_theme(*, dark: bool) -> SlideTheme:
         paren_accent=muted,
         hymn_brand=primary,
         footer_muted=footer,
-        divider_bg=bg,
-        divider_primary=primary,
-        divider_muted=muted,
-        divider_emphasis=emphasis,
         mono_surfaces=True,
     )
 
@@ -532,21 +532,24 @@ def _build_slide_theme(
 ) -> SlideTheme:
     """Build the deck palette for the selected built-in theme.
 
-    - ``theme1`` (Liturgy Flow): fixed black + amber; season color tints Mass dividers only.
-    - ``theme2`` (Midnight): black background, all-white text including titles & dividers.
-    - ``theme3`` (Paper): white background, all-black text including titles & dividers.
+    - ``theme1`` (Liturgy Flow): fixed black + amber readings; season color on Mass dividers.
+    - ``theme2`` (Midnight): black readings, white text. Mass dividers still use season color.
+    - ``theme3`` (Paper): white readings, black text. Mass dividers still use season color.
 
-    ``custom_theme.id`` (preferred) or ``custom_theme.name`` selects the theme.
+    Deck theme never recolors Mass Divider backgrounds — those always follow the
+    liturgical season. ``custom_theme.id`` (preferred) or ``custom_theme.name``
+    selects the deck theme.
     """
+    d_bg, d_primary, d_muted, d_emphasis = _season_surface_roles(liturgical_color)
     theme_id = _resolve_deck_theme_id(custom_theme)
     if theme_id == "theme2":
-        return _mono_slide_theme(dark=True)
-    if theme_id == "theme3":
-        return _mono_slide_theme(dark=False)
-    base = _theme_with_roles(
-        _THEME1_BG, _THEME1_PRIMARY, _THEME1_MUTED, _THEME1_EMPHASIS, _THEME1_FONT
-    )
-    d_bg, d_primary, d_muted, d_emphasis = _season_surface_roles(liturgical_color)
+        base = _mono_slide_theme(dark=True)
+    elif theme_id == "theme3":
+        base = _mono_slide_theme(dark=False)
+    else:
+        base = _theme_with_roles(
+            _THEME1_BG, _THEME1_PRIMARY, _THEME1_MUTED, _THEME1_EMPHASIS, _THEME1_FONT
+        )
     return replace(
         base,
         divider_bg=d_bg,
@@ -3183,6 +3186,7 @@ def _apply_divider_artwork(
         )
         return "photo"
     plate = Path(static_plate).resolve() if static_plate else None
+    # Stone & Light plate is Theme 1 only; Midnight/Paper still use season fill.
     if plate is not None and plate.is_file() and not theme.mono_surfaces:
         slide.shapes.add_picture(
             str(plate),
@@ -3193,9 +3197,7 @@ def _apply_divider_artwork(
         )
         return "plate"
     pal = _divider_palette(theme)
-    if theme.mono_surfaces:
-        _set_slide_bg(slide, theme.divider_bg)
-        return "solid"
+    # Mass Divider fill always follows liturgical season — never deck Midnight/Paper.
     _set_divider_gradient_bg(slide, pal.grad_start, pal.grad_end)
     return "gradient"
 
@@ -3239,31 +3241,12 @@ def _mix_rgb(a: RGBColor, b: RGBColor, t: float) -> RGBColor:
 
 
 def _divider_palette(theme: SlideTheme) -> _DividerPalette:
-    """Divider colors for the Mass section cards.
+    """Season-derived colors for Mass Divider cards.
 
-    Theme 1 follows the liturgical season via ``divider_*``. Mono themes (2–3) keep a
-    solid black or white divider with matching text — no season tint.
+    Always reads ``divider_*`` (liturgical season). Deck Midnight/Paper themes
+    do not supply divider fills — those roles are season-tinted for every theme.
     """
     bg = theme.divider_bg
-    if theme.mono_surfaces:
-        primary = theme.divider_primary
-        muted = theme.divider_muted
-        emphasis = theme.divider_emphasis
-        panel_fill = _mix_rgb(bg, primary, 0.06)
-        panel_border = _mix_rgb(bg, primary, 0.18)
-        bar_fill = _mix_rgb(bg, primary, 0.12)
-        return _DividerPalette(
-            grad_start=bg,
-            grad_end=bg,
-            panel_fill=panel_fill,
-            panel_border=panel_border,
-            bar_fill=bar_fill,
-            bar_border=bar_fill,
-            label=emphasis,
-            primary=primary,
-            quote=muted,
-            gospel_label=emphasis,
-        )
     black = RGBColor(8, 8, 10)
     white = RGBColor(255, 255, 255)
     grad_start = _mix_rgb(bg, black, 0.82)
@@ -3805,8 +3788,8 @@ def _render_divider2_cover(
 ) -> None:
     """Quote-forward Mass divider.
 
-    Theme 1 uses the Stone & Light photographic plate. Themes 2–3 (mono)
-    use a solid Midnight/Paper divider background with the same text layout.
+    Theme 1 uses the Stone & Light photographic plate. Themes 2–3 keep the same
+    text layout on a liturgical-season gradient (never Midnight/Paper fill).
     AI artwork, when present, replaces the plate without moving any text boxes.
     """
     pal = _divider_palette(theme)
@@ -4118,9 +4101,9 @@ def _render_divider3_cover(
 ) -> None:
     """Title-left Mass divider (kicker pill, right quote panel).
 
-    Theme 1 uses a season-tinted gradient and cream/gold ink from the source
-    plate. Themes 2–3 keep a solid Midnight/Paper surface with palette text.
-    AI artwork, when present, replaces the gradient without moving any text boxes.
+    Background is always liturgical-season tinted (or AI artwork). Deck
+    Midnight/Paper themes do not recolor this surface. Cream/gold ink matches
+    the season plate when the fill is a gradient or photo.
     """
     pal = _divider_palette(theme)
     surface = _apply_divider_artwork(
@@ -4129,7 +4112,7 @@ def _render_divider3_cover(
         theme,
         background_image_path=background_image_path,
     )
-    if surface in {"photo", "plate"} or (surface == "gradient"):
+    if surface in {"photo", "plate", "gradient"}:
         quote_color = _D2_INK_QUOTE
         label_color = _D2_INK_LABEL
         primary_color = _D2_INK_PRIMARY
@@ -4137,14 +4120,6 @@ def _render_divider3_cover(
         kicker_color = _D2_INK_PRIMARY
         co_label_color = _D2_INK_CO_LABEL
         co_name_color = _D2_INK_CO_NAME
-        if theme.mono_surfaces and surface != "photo":
-            quote_color = pal.quote
-            label_color = pal.label
-            primary_color = pal.primary
-            gospel_color = pal.gospel_label
-            kicker_color = pal.primary
-            co_label_color = label_color
-            co_name_color = primary_color
     else:
         quote_color = pal.quote
         label_color = pal.label

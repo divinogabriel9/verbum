@@ -385,6 +385,7 @@ def _preview_job_public(job: dict[str, Any]) -> dict[str, Any]:
         "video_media": job.get("video_media"),
         "duration_sec": job.get("duration_sec"),
         "method": job.get("method") or "",
+        "vocal_removal": job.get("vocal_removal") or "",
     }
 
 
@@ -411,7 +412,34 @@ def _preview_job_worker() -> None:
                 _update_preview_job(job_id, percent=pct, stage=stage, status="running")
 
             kind = str(job.get("kind") or "audio_preview")
-            if kind == "instrumental_video":
+            if kind == "karaoke_instrumental":
+                result = generate_song_karaoke_instrumental(
+                    section=str(job.get("section") or ""),
+                    hymn_id=str(job.get("hymn_id") or ""),
+                    youtube_url=str(job.get("youtube_url") or ""),
+                    updated_by=job.get("updated_by"),
+                    progress_cb=on_progress,
+                )
+                if result.get("ok"):
+                    _update_preview_job(
+                        job_id,
+                        status="done",
+                        percent=100,
+                        stage="done",
+                        error="",
+                        video_media=result.get("video_media"),
+                        method=result.get("method") or "karaoke",
+                        duration_sec=result.get("duration_sec"),
+                        vocal_removal=result.get("vocal_removal") or "",
+                    )
+                else:
+                    _update_preview_job(
+                        job_id,
+                        status="error",
+                        stage="error",
+                        error=str(result.get("error") or "Karaoke build failed."),
+                    )
+            elif kind == "instrumental_video":
                 result = generate_song_instrumental_video(
                     section=str(job.get("section") or ""),
                     hymn_id=str(job.get("hymn_id") or ""),
@@ -665,6 +693,260 @@ def enqueue_song_instrumental_video(
             "id": job_id,
             "key": key,
             "kind": "instrumental_video",
+            "section": sec,
+            "hymn_id": hid,
+            "title": str(row.get("title") or "").strip(),
+            "youtube_url": url,
+            "duration_sec": None,
+            "start_sec": None,
+            "updated_by": updated_by,
+            "status": "queued",
+            "percent": 0,
+            "stage": "queued",
+            "error": "",
+            "audio_preview": None,
+            "video_media": existing_video,
+            "created_at": time.time(),
+            "updated_at": time.time(),
+        }
+        _PREVIEW_JOBS[job_id] = job
+    _ensure_preview_worker()
+    _PREVIEW_JOB_QUEUE.put(job_id)
+    return _preview_job_public(job)
+
+
+def _resolve_local_instrumental_video(
+    *,
+    dest_dir: Path,
+    section: str,
+    hymn_id: str,
+    existing_video: dict[str, Any] | None,
+    video_id: str = "",
+    prefer_vocal: bool = False,
+) -> Path | None:
+    """Prefer an already-downloaded MP4 over re-fetching YouTube.
+
+    When ``prefer_vocal`` is True (karaoke path), skip ``instrumental_*`` beds —
+    Whisper needs a sung mix. Prefer a linked non-karaoke file, else download.
+    """
+    sec = str(section or "").strip().lower()
+    safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in str(hymn_id or ""))[:48]
+    candidates: list[Path] = []
+
+    def _consider(path: Path) -> None:
+        if path.is_file() and path.stat().st_size >= 1000:
+            candidates.append(path)
+
+    if existing_video and existing_video.get("basename"):
+        bn = str(existing_video.get("basename") or "").strip()
+        if bn and not bn.lower().startswith("karaoke_"):
+            if not (prefer_vocal and bn.lower().startswith("instrumental_")):
+                _consider(dest_dir / bn)
+
+    if not prefer_vocal:
+        if video_id:
+            _consider(dest_dir / f"instrumental_{sec}_{safe_id}_{video_id}.mp4")
+        pattern = f"instrumental_{sec}_{safe_id}_*.mp4"
+        for hit in sorted(dest_dir.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True):
+            _consider(hit)
+
+    if not candidates:
+        return None
+    if prefer_vocal:
+        # Prefer non-instrumental linked uploads (likely sung / full mix).
+        candidates.sort(
+            key=lambda p: (
+                1 if p.name.lower().startswith("instrumental_") else 0,
+                -p.stat().st_mtime,
+            )
+        )
+    else:
+        candidates.sort(
+            key=lambda p: (
+                0 if p.name.lower().startswith("instrumental_") else 1,
+                -p.stat().st_mtime,
+            )
+        )
+    return candidates[0]
+
+
+def generate_song_karaoke_instrumental(
+    *,
+    section: str,
+    hymn_id: str,
+    youtube_url: str = "",
+    updated_by: str | None = None,
+    progress_cb: Any = None,
+) -> dict[str, Any]:
+    from services.community_config import uploads_dir
+    from services.karaoke_instrumental import build_karaoke_instrumental
+    from services.private_files import upload_file_url
+    from services.song_catalog import (
+        normalize_song_media_ref,
+        parse_youtube_video_id,
+        update_catalog_song,
+    )
+    from services.song_preview_clip import end_preview_job, try_begin_preview_job
+
+    catalog = load_catalog_dict()
+    sec = str(section or "").strip().lower()
+    hid = str(hymn_id or "").strip()
+    row = None
+    for item in catalog.get(sec) or []:
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
+            row = item
+            break
+    if row is None:
+        return {"ok": False, "error": "Song not found."}
+
+    lyrics = str(row.get("lyrics") or "").strip()
+    if not lyrics:
+        return {"ok": False, "error": "Add lyrics to this song first — karaoke timing uses the library text."}
+
+    existing_audio = normalize_song_media_ref(row.get("audio_media"))
+    existing_video = normalize_song_media_ref(row.get("video_media"))
+    url = str(youtube_url or "").strip()
+    if not url and existing_audio:
+        url = str(existing_audio.get("youtube_url") or "")
+    video_id = parse_youtube_video_id(url) or ""
+
+    safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in hid)[:48]
+    dest_dir = uploads_dir() / "saved_media" / "video"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    source_video = _resolve_local_instrumental_video(
+        dest_dir=dest_dir,
+        section=sec,
+        hymn_id=hid,
+        existing_video=existing_video,
+        video_id=video_id,
+        prefer_vocal=True,
+    )
+    bed_video = _resolve_local_instrumental_video(
+        dest_dir=dest_dir,
+        section=sec,
+        hymn_id=hid,
+        existing_video=existing_video,
+        video_id="",
+        prefer_vocal=False,
+    )
+    # Fresh sung YouTube URL → download that for Whisper (don't reuse instrumental as source).
+    if video_id and source_video and str(source_video.name).lower().startswith("instrumental_"):
+        source_video = None
+    # Bed must be a true instrumental download — not a sung/karaoke file.
+    if bed_video and not str(bed_video.name).lower().startswith("instrumental_"):
+        bed_video = None
+    if bed_video and source_video and bed_video.resolve() == source_video.resolve():
+        bed_video = None
+    if not video_id and not source_video:
+        return {"ok": False, "error": "Paste a sung YouTube URL (with vocals), or download a vocal video first."}
+
+    stem_id = video_id or (source_video.stem[-11:] if source_video else "local")
+    dest = dest_dir / f"karaoke_{sec}_{safe_id}_{stem_id}.mp4"
+    for prior in (source_video, bed_video):
+        if prior and dest.resolve() == prior.resolve():
+            dest = dest_dir / f"karaoke_{sec}_{safe_id}_{stem_id}_v2.mp4"
+            break
+    title = str(row.get("title") or "").strip() or hid
+    if not try_begin_preview_job():
+        return {"ok": False, "error": "A media fetch is already running. Wait for it to finish."}
+    try:
+        meta = build_karaoke_instrumental(
+            youtube_url=url,
+            lyrics=lyrics,
+            title=title,
+            dest_path=dest,
+            source_video_path=source_video,
+            bed_video_path=bed_video,
+            progress_cb=progress_cb,
+        )
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:240]}
+    finally:
+        end_preview_job()
+
+    video_ref = {
+        "basename": dest.name,
+        "display_name": (title + " · karaoke")[:240],
+    }
+    saved = update_catalog_song(
+        section=sec,
+        hymn_id=hid,
+        video_media=video_ref,
+        updated_by=updated_by,
+    )
+    if not saved.get("ok"):
+        return {"ok": False, "error": saved.get("error") or "Could not save karaoke video."}
+    return {
+        "ok": True,
+        "video_media": normalize_song_media_ref(saved.get("video_media") or video_ref),
+        "url": upload_file_url(f"saved_media/video/{dest.name}"),
+        "youtube_id": meta.get("youtube_id") or video_id,
+        "youtube_url": meta.get("youtube_url") or url,
+        "bytes": meta.get("bytes") or 0,
+        "duration_sec": meta.get("duration_sec"),
+        "method": meta.get("method") or "karaoke",
+        "line_count": meta.get("line_count") or 0,
+        "reused_local_video": bool(meta.get("reused_local_video")),
+        "vocal_removal": meta.get("vocal_removal") or "",
+    }
+
+
+def enqueue_song_karaoke_instrumental(
+    *,
+    section: str,
+    hymn_id: str,
+    youtube_url: str = "",
+    updated_by: str | None = None,
+) -> dict[str, Any]:
+    catalog = load_catalog_dict()
+    sec = str(section or "").strip().lower()
+    hid = str(hymn_id or "").strip()
+    row = None
+    for item in catalog.get(sec) or []:
+        if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
+            row = item
+            break
+    if row is None:
+        return {"ok": False, "error": "Song not found."}
+    if not str(row.get("lyrics") or "").strip():
+        return {"ok": False, "error": "Add lyrics to this song first — karaoke timing uses the library text."}
+
+    from services.community_config import uploads_dir
+    from services.song_catalog import normalize_song_media_ref, parse_youtube_video_id
+
+    existing_audio = normalize_song_media_ref(row.get("audio_media"))
+    existing_video = normalize_song_media_ref(row.get("video_media"))
+    url = str(youtube_url or "").strip()
+    if not url and existing_audio:
+        url = str(existing_audio.get("youtube_url") or "")
+    video_id = parse_youtube_video_id(url) or ""
+    dest_dir = uploads_dir() / "saved_media" / "video"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    source_video = _resolve_local_instrumental_video(
+        dest_dir=dest_dir,
+        section=sec,
+        hymn_id=hid,
+        existing_video=existing_video,
+        video_id=video_id,
+        prefer_vocal=True,
+    )
+    if video_id and source_video and str(source_video.name).lower().startswith("instrumental_"):
+        source_video = None
+    if not video_id and not source_video:
+        return {"ok": False, "error": "Paste a sung YouTube URL (with vocals), or download a vocal video first."}
+
+    key = sec + ":" + hid + ":karaoke_instrumental"
+    with _PREVIEW_JOBS_LOCK:
+        for job in _PREVIEW_JOBS.values():
+            if str(job.get("key") or "") != key:
+                continue
+            if job.get("status") in {"queued", "running"}:
+                return _preview_job_public(job)
+        job_id = uuid.uuid4().hex[:12]
+        job = {
+            "id": job_id,
+            "key": key,
+            "kind": "karaoke_instrumental",
             "section": sec,
             "hymn_id": hid,
             "title": str(row.get("title") or "").strip(),

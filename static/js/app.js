@@ -2975,24 +2975,37 @@
       const durField = durWrap ? durWrap.closest(".field") : null;
       const urlLabel = document.querySelector("label[for=\"mw-media-pick-fetch-url\"]");
       const runBtn = $("mw-media-pick-fetch-run");
+      const karaokeBtn = $("mw-media-pick-fetch-karaoke");
       const searchBtn = $("mw-media-pick-fetch-search");
+      const searchSungBtn = $("mw-media-pick-fetch-search-sung");
       if (hint) {
         hint.textContent = instrumental
-          ? "Search YouTube for an instrumental version of this song (query adds “instrumental”), paste that URL, then download the full video. This is separate from the 10s audio clip and the choir-practice YouTube link."
+          ? "Download video: search instrumental → raw MP4 (best karaoke bed). Make karaoke: search sung → Whisper times lyrics; uses instrumental bed if present, else strips vocals."
           : "Paste a YouTube URL and fetch a 5–10s chorus clip. Captions are scanned for the chorus (or first verse). This does not replace the song’s full YouTube practice link.";
       }
       if (durField) durField.hidden = instrumental;
       if (urlLabel) {
-        urlLabel.textContent = instrumental ? "YouTube URL (instrumental video)" : "YouTube URL (clip source)";
+        urlLabel.textContent = instrumental
+          ? "YouTube URL (instrumental for download · sung for karaoke)"
+          : "YouTube URL (clip source)";
       }
       if (runBtn && !runBtn.disabled) {
         runBtn.textContent = instrumental ? "Download video" : "Fetch clip";
+      }
+      if (karaokeBtn) {
+        karaokeBtn.hidden = !instrumental;
+        if (!karaokeBtn.disabled) karaokeBtn.textContent = "Make karaoke";
       }
       if (searchBtn) {
         searchBtn.title = instrumental
           ? "Search YouTube for this song + instrumental"
           : "Search YouTube for this song";
         searchBtn.textContent = instrumental ? "Search instrumental" : "Search";
+      }
+      if (searchSungBtn) {
+        searchSungBtn.hidden = !instrumental;
+        searchSungBtn.title = "Search YouTube for a sung version (best for karaoke timing)";
+        searchSungBtn.textContent = "Search sung";
       }
     }
     window.syncMassMediaPickFetchPaneMode = syncMassMediaPickFetchPaneMode;
@@ -3133,6 +3146,90 @@
           btn.disabled = false;
           btn.textContent = instrumental ? "Download video" : "Fetch clip";
         }
+      }
+    }
+
+    function massMediaPickLinkedVocalVideo() {
+      const video = (() => {
+        if (massMediaPickState.purpose === "song") {
+          return composerSongMedia && composerSongMedia.video
+            ? normalizeComposerMediaRef(composerSongMedia.video)
+            : null;
+        }
+        const slotVideo = typeof getMassSectionMedia === "function"
+          ? getMassSectionMedia("video", massMediaPickState.slot)
+          : null;
+        return slotVideo ? normalizeComposerMediaRef(slotVideo) : null;
+      })();
+      if (!video || !video.basename) return null;
+      if (typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(video)) return null;
+      const bn = String(video.basename || "").toLowerCase();
+      if (bn.startsWith("karaoke_") || bn.startsWith("instrumental_")) return null;
+      return video;
+    }
+
+    async function runMassMediaPickKaraoke() {
+      const target = massMediaPickSongTarget();
+      const statusEl = $("mw-media-pick-fetch-status");
+      const btn = $("mw-media-pick-fetch-karaoke");
+      const runBtn = $("mw-media-pick-fetch-run");
+      const urlEl = $("mw-media-pick-fetch-url");
+      if (!massMediaPickFetchIsInstrumental()) {
+        if (typeof notify === "function") notify("Open video fetch first.", "warn");
+        return;
+      }
+      if (!target || !target.section || !target.id) {
+        if (typeof notify === "function") notify("Choose a song first.", "warn");
+        return;
+      }
+      const youtubeUrl = String((urlEl && urlEl.value) || "").trim();
+      const ref = youtubeUrl ? youtubeMediaRefFromInput(youtubeUrl, target.title || "YouTube") : null;
+      if (youtubeUrl && !ref) {
+        if (typeof notify === "function") notify("Enter a valid YouTube URL, or clear the field to use a saved sung video.", "warn");
+        return;
+      }
+      const hasVocalVideo = !!massMediaPickLinkedVocalVideo();
+      if (!ref && !hasVocalVideo) {
+        if (typeof notify === "function") {
+          notify("Paste a sung YouTube URL (with vocals), or use Search sung first.", "warn");
+        }
+        return;
+      }
+      if (urlEl && ref) urlEl.value = ref.youtube_url || youtubeUrl;
+      if (btn) { btn.disabled = true; btn.textContent = "Queued…"; }
+      if (runBtn) runBtn.disabled = true;
+      if (statusEl) {
+        statusEl.dataset.fetching = "1";
+        statusEl.textContent = hasVocalVideo && !ref
+          ? "Using saved sung video — timing lyrics, then removing vocals…"
+          : "Building karaoke (Whisper timing → strip vocals → lyrics)…";
+        statusEl.className = "status mw-media-pick-fetch-status";
+      }
+      previewFetchState.attempted[target.section + ":" + target.id + ":karaoke"] = true;
+      try {
+        await startKaraokeFetchJob({
+          section: target.section,
+          id: target.id,
+          title: target.title || "this song",
+          youtube_url: ref ? (ref.youtube_url || youtubeUrl) : "",
+          toast: true,
+        });
+        if (statusEl) {
+          statusEl.textContent = "Karaoke build started — watch the progress bar below.";
+          statusEl.className = "status ok mw-media-pick-fetch-status";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || "Could not start karaoke build.";
+          statusEl.className = "status error mw-media-pick-fetch-status";
+        }
+        if (typeof notify === "function") {
+          notify((err && err.message) || "Could not start karaoke build.", "warn");
+        }
+      } finally {
+        if (statusEl) delete statusEl.dataset.fetching;
+        if (btn) { btn.disabled = false; btn.textContent = "Make karaoke"; }
+        if (runBtn) runBtn.disabled = false;
       }
     }
 
@@ -3777,15 +3874,21 @@
 
     function previewFetchStageLabel(stage, kind) {
       const key = String(stage || "").toLowerCase();
-      const isVideo = kind === "instrumental_video";
+      const isVideo = kind === "instrumental_video" || kind === "karaoke_instrumental";
+      const isKaraoke = kind === "karaoke_instrumental";
       if (key === "captions") return "Scanning lyrics";
       if (key === "words") return "Listening for sung words";
       if (key === "download") return isVideo ? "Downloading video" : "Downloading audio";
+      if (key === "extract") return "Using saved video";
       if (key === "compressing") return "Compressing video";
+      if (key === "aligning") return "Timing lyrics to vocals";
+      if (key === "vocals") return "Building instrumental bed";
+      if (key === "rendering") return "Rendering karaoke video";
       if (key === "cutting") return "Trimming clip";
       if (key === "saving") return isVideo ? "Saving video" : "Saving clip";
       if (key === "queued") return "Waiting";
-      if (key === "done") return isVideo ? "Video ready" : "Clip ready";
+      if (key === "done") return isKaraoke ? "Karaoke ready" : (isVideo ? "Video ready" : "Clip ready");
+      if (isKaraoke) return "Building karaoke";
       return isVideo ? "Fetching instrumental video" : "Fetching chorus clip";
     }
 
@@ -3822,7 +3925,8 @@
           if (job.status !== "done" && job.status !== "error") return;
           previewFetchState.applied[jid] = true;
           const title = String(job.title || "this song").trim() || "this song";
-          const isInstrumental = job.kind === "instrumental_video";
+          const isInstrumental = job.kind === "instrumental_video" || job.kind === "karaoke_instrumental";
+          const isKaraoke = job.kind === "karaoke_instrumental";
           if (job.status === "done") {
             if (job.section && job.id) {
               if (isInstrumental) {
@@ -3833,9 +3937,11 @@
             }
             if (typeof showToast === "function") {
               showToast(
-                isInstrumental
-                  ? ("Instrumental video ready for \"" + title + "\".")
-                  : ("Chorus clip ready for \"" + title + "\"."),
+                isKaraoke
+                  ? ("Karaoke ready for \"" + title + "\".")
+                  : (isInstrumental
+                    ? ("Instrumental video ready for \"" + title + "\".")
+                    : ("Chorus clip ready for \"" + title + "\".")),
                 "ok"
               );
             }
@@ -3849,9 +3955,11 @@
             if (typeof showToast === "function") {
               showToast(
                 job.error ||
-                  (isInstrumental
-                    ? ("Could not download instrumental video for \"" + title + "\".")
-                    : ("Could not fetch a chorus clip for \"" + title + "\".")),
+                  (isKaraoke
+                    ? ("Could not build karaoke for \"" + title + "\".")
+                    : (isInstrumental
+                      ? ("Could not download instrumental video for \"" + title + "\".")
+                      : ("Could not fetch a chorus clip for \"" + title + "\"."))),
                 "warn"
               );
             }
@@ -3860,9 +3968,11 @@
               const statusEl = $("mw-media-pick-fetch-status");
               if (statusEl) {
                 delete statusEl.dataset.fetching;
-                statusEl.textContent = job.error || (isInstrumental
-                  ? "Could not download instrumental video."
-                  : "Could not fetch a chorus clip.");
+                statusEl.textContent = job.error || (isKaraoke
+                  ? "Could not build karaoke."
+                  : (isInstrumental
+                    ? "Could not download instrumental video."
+                    : "Could not fetch a chorus clip."));
                 statusEl.className = "status error mw-media-pick-fetch-status";
               }
             }
@@ -3982,6 +4092,45 @@
       return data;
     }
 
+    async function startKaraokeFetchJob(opts) {
+      const options = opts || {};
+      const section = String(options.section || "").trim();
+      const id = String(options.id || "").trim();
+      if (!section || !id || typeof saFetchAdmin !== "function") return null;
+      if (previewFetchState.hideTimer) {
+        clearTimeout(previewFetchState.hideTimer);
+        previewFetchState.hideTimer = null;
+      }
+      const title = String(options.title || "this song").trim() || "this song";
+      const body = {
+        youtube_url: String(options.youtube_url || "").trim(),
+      };
+      const data = await saFetchAdmin(
+        "/api/admin/songs/" + encodeURIComponent(section) + "/" + encodeURIComponent(id) + "/karaoke-job",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
+      const jobId = data.job_id || "";
+      if (!jobId) throw new Error("Could not start karaoke build.");
+      previewFetchState.currentJobId = jobId;
+      setPreviewFetchStrip(
+        true,
+        previewFetchStageLabel(data.stage || "download", "karaoke_instrumental") + " · " + title,
+        data.percent || 1
+      );
+      if (options.toast !== false && typeof showToast === "function") {
+        showToast("Building karaoke for \"" + title + "\" — timing from sung audio, then stripping vocals.", "info");
+      }
+      if (!previewFetchState.pollTimer) {
+        previewFetchState.pollTimer = setInterval(pollPreviewFetchJobs, 450);
+      }
+      pollPreviewFetchJobs();
+      return data;
+    }
+
     function maybeAutoFetchSongPreview(section, id, opts) {
       const options = opts || {};
       if (!(churchMembershipState && churchMembershipState.is_superadmin)) return;
@@ -4090,7 +4239,7 @@
         if (hint) {
           hint.textContent = isVideo
             ? (useInstrumentalFetch
-              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video. Separate from the 10s clip and choir-practice YouTube link."
+              ? "Download video: Search instrumental → paste URL → Download (best karaoke bed). Make karaoke: Search sung → paste that URL → Make karaoke (Whisper timing; uses instrumental bed if downloaded, else strips vocals)."
               : "Pick an MP4 from your Media library or upload a new one. It stays linked on this song.")
             : (youtubeOnly
               ? "Paste a YouTube URL for the full song (choir practice). This does not replace the 5–10s audio clip."
@@ -4106,7 +4255,7 @@
         if (hint) {
           hint.textContent = isVideo
             ? (useInstrumentalFetch
-              ? "Search YouTube for this song + “instrumental”, paste that URL, then download the full video for this option."
+              ? "Download video: Search instrumental → paste URL → Download (best karaoke bed). Make karaoke: Search sung → paste that URL → Make karaoke (Whisper timing; uses instrumental bed if downloaded, else strips vocals)."
               : "This MP4 replaces the lyric/prayer slides with one embedded video slide when this option is selected at generate time.")
             : (youtubeOnly
               ? "Paste a YouTube URL for choir practice. This does not replace the 5–10s audio clip."
@@ -4317,9 +4466,19 @@
           openYouTubeSearchForCurrentSong({ instrumental: instrumental });
         });
       }
+      const fetchSearchSung = $("mw-media-pick-fetch-search-sung");
+      if (fetchSearchSung) {
+        fetchSearchSung.addEventListener("click", () => {
+          openYouTubeSearchForCurrentSong({ instrumental: false });
+        });
+      }
       const fetchRun = $("mw-media-pick-fetch-run");
       if (fetchRun) {
         fetchRun.addEventListener("click", () => { void runMassMediaPickFetch(); });
+      }
+      const fetchKaraoke = $("mw-media-pick-fetch-karaoke");
+      if (fetchKaraoke) {
+        fetchKaraoke.addEventListener("click", () => { void runMassMediaPickKaraoke(); });
       }
       const fetchUrl = $("mw-media-pick-fetch-url");
       if (fetchUrl) {
@@ -10027,7 +10186,7 @@
       {
         id: "theme2",
         name: "Midnight",
-        note: "Black background. All text white, including titles and Mass dividers.",
+        note: "Black background. All reading text white. Mass dividers still use the liturgical season.",
         bg: "#000000",
         primary: "#ffffff",
         accent: "#ffffff",
@@ -10037,7 +10196,7 @@
       {
         id: "theme3",
         name: "Paper",
-        note: "White background. All text black, including titles and Mass dividers.",
+        note: "White background. All reading text black. Mass dividers still use the liturgical season.",
         bg: "#ffffff",
         primary: "#000000",
         accent: "#000000",
@@ -24824,7 +24983,175 @@
     function rememberMassGenerateResult(data) {
       if (!data) return;
       lastMassGenerateResult = data;
+      // Always drop Present cache after generate — same stem can be a new deck.
+      lastMassSlideshowSession = null;
       syncMassPresentAgainUi();
+    }
+
+    var massProjectionRemote = {
+      token: null,
+      remoteUrl: "",
+      qrUrl: "",
+      lastSeq: 0,
+      pollTimer: null,
+      applyingRemote: false,
+      panelOpen: false,
+    };
+
+    function massSlideshowPptxName() {
+      if (massSlideshowState.pptxName) return massSlideshowState.pptxName;
+      if (lastMassGenerateResult && lastMassGenerateResult.export_stem) {
+        return lastMassGenerateResult.export_stem + ".pptx";
+      }
+      return "";
+    }
+
+    function massSlideshowSlideNames() {
+      return (massSlideshowState.slides || []).map((s, i) => {
+        const url = (s && s.image_url) || "";
+        const m = url.match(/\/preview\/([^/?#]+)/);
+        if (m && m[1]) return decodeURIComponent(m[1]);
+        return "slide_" + String(i + 1).padStart(4, "0") + ".jpg";
+      });
+    }
+
+    function stopMassProjectionRemotePoll() {
+      if (massProjectionRemote.pollTimer) {
+        clearTimeout(massProjectionRemote.pollTimer);
+        massProjectionRemote.pollTimer = null;
+      }
+    }
+
+    function setMassProjectionRemotePanel(open) {
+      massProjectionRemote.panelOpen = !!open;
+      const panel = $("mass-slideshow-remote-panel");
+      if (panel) panel.hidden = !open;
+      if (open) setMassSlideshowChromeVisible(true);
+    }
+
+    async function ensureMassProjectionSession() {
+      if (!massSlideshowState.open) return null;
+      if (massProjectionRemote.token) return massProjectionRemote;
+      try {
+        const data = await postJSON("/api/projection/session", {
+          total: Math.max(massSlideshowState.slides.length, massSlideshowState.expectedTotal || 0),
+          index: massSlideshowState.index || 0,
+          pptx_name: massSlideshowPptxName(),
+          slide_names: massSlideshowSlideNames(),
+        });
+        if (!data || !data.token) return null;
+        massProjectionRemote.token = data.token;
+        massProjectionRemote.remoteUrl = data.remote_url || (location.origin + "/projection/" + data.token);
+        massProjectionRemote.qrUrl = data.qr_url || ("/api/projection/" + data.token + "/qr.png");
+        massProjectionRemote.lastSeq = data.command_seq || 0;
+        const qr = $("mass-slideshow-remote-qr");
+        if (qr) qr.src = massProjectionRemote.qrUrl + "?t=" + Date.now();
+        const link = $("mass-slideshow-remote-link");
+        if (link) {
+          link.href = massProjectionRemote.remoteUrl;
+          link.textContent = massProjectionRemote.remoteUrl;
+        }
+        scheduleMassProjectionRemotePoll();
+        return massProjectionRemote;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function pushMassProjectionState() {
+      if (!massProjectionRemote.token || massProjectionRemote.applyingRemote || !massSlideshowState.open) return;
+      const body = {
+        index: massSlideshowState.index || 0,
+        total: Math.max(massSlideshowState.slides.length, massSlideshowState.expectedTotal || 0),
+        blank: !!massSlideshowState.blank,
+        preview_index: massSlideshowState.index || 0,
+        pptx_name: massSlideshowPptxName(),
+        slide_names: massSlideshowSlideNames(),
+      };
+      authorizedFetch("/api/projection/" + encodeURIComponent(massProjectionRemote.token) + "/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).catch(() => {});
+    }
+
+    function applyMassProjectionCommand(cmd) {
+      if (!cmd || !cmd.action) return;
+      const action = String(cmd.action || "").toLowerCase();
+      massProjectionRemote.applyingRemote = true;
+      try {
+        if (action === "next") massSlideshowGo(1);
+        else if (action === "prev") massSlideshowGo(-1);
+        else if (action === "jump" && cmd.index != null) massSlideshowJump(parseInt(cmd.index, 10) || 0);
+        else if (action === "blank_on") setMassSlideshowBlank(true);
+        else if (action === "blank_off") setMassSlideshowBlank(false);
+        else if (action === "blank_toggle") setMassSlideshowBlank(!massSlideshowState.blank);
+        else if (action === "go_live") {
+          const idx = (typeof cmd.index === "number") ? cmd.index : null;
+          // State sync after poll handles index from session.
+          setMassSlideshowBlank(false);
+          if (idx != null && !Number.isNaN(idx)) massSlideshowJump(idx);
+        } else if (action === "preview_next" || action === "preview_prev" || action === "preview_jump"
+          || action === "freeze_on" || action === "freeze_off" || action === "freeze_toggle") {
+          setMassSlideshowChromeVisible(true);
+        }
+      } finally {
+        massProjectionRemote.applyingRemote = false;
+      }
+    }
+
+    async function pollMassProjectionRemoteOnce() {
+      if (!massProjectionRemote.token || !massSlideshowState.open) return;
+      try {
+        const res = await authorizedFetch(
+          "/api/projection/" + encodeURIComponent(massProjectionRemote.token)
+            + "/poll?after=" + encodeURIComponent(String(massProjectionRemote.lastSeq || 0))
+        );
+        if (res.status === 404) {
+          massProjectionRemote.token = null;
+          stopMassProjectionRemotePoll();
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json();
+        const st = data && data.state;
+        const cmds = (data && data.commands) || [];
+        cmds.forEach((cmd) => {
+          if (cmd && cmd.id) massProjectionRemote.lastSeq = Math.max(massProjectionRemote.lastSeq, cmd.id);
+          applyMassProjectionCommand(cmd);
+        });
+        if (st && !massProjectionRemote.applyingRemote) {
+          if (typeof st.index === "number" && st.index !== massSlideshowState.index && !st.frozen) {
+            massProjectionRemote.applyingRemote = true;
+            try { massSlideshowJump(st.index); }
+            finally { massProjectionRemote.applyingRemote = false; }
+          }
+          if (typeof st.blank === "boolean" && st.blank !== massSlideshowState.blank) {
+            massProjectionRemote.applyingRemote = true;
+            try { setMassSlideshowBlank(st.blank); }
+            finally { massProjectionRemote.applyingRemote = false; }
+          }
+        }
+      } catch (_e) { /* ignore transient */ }
+    }
+
+    function scheduleMassProjectionRemotePoll() {
+      stopMassProjectionRemotePoll();
+      if (!massProjectionRemote.token || !massSlideshowState.open) return;
+      massProjectionRemote.pollTimer = setTimeout(async () => {
+        await pollMassProjectionRemoteOnce();
+        scheduleMassProjectionRemotePoll();
+      }, 700);
+    }
+
+    function resetMassProjectionRemote() {
+      stopMassProjectionRemotePoll();
+      massProjectionRemote.token = null;
+      massProjectionRemote.remoteUrl = "";
+      massProjectionRemote.qrUrl = "";
+      massProjectionRemote.lastSeq = 0;
+      massProjectionRemote.applyingRemote = false;
+      setMassProjectionRemotePanel(false);
     }
 
     function stopMassSlideshowPoll() {
@@ -25121,6 +25448,7 @@
       massSlideshowState.index = next;
       renderMassSlideshowSlide();
       setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
     }
 
     function massSlideshowJump(index) {
@@ -25129,6 +25457,7 @@
       setMassSlideshowBlank(false);
       renderMassSlideshowSlide();
       setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
     }
 
     function setMassSlideshowBlank(on) {
@@ -25136,6 +25465,7 @@
       const root = $("mass-slideshow");
       if (root) root.classList.toggle("is-blank", massSlideshowState.blank);
       if (!massSlideshowState.blank) setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
     }
 
     function closeMassSlideshow() {
@@ -25146,6 +25476,7 @@
       massSlideshowState.blank = false;
       massSlideshowState.complete = true;
       stopMassSlideshowPoll();
+      resetMassProjectionRemote();
       pauseMassSlideshowVideo();
       root.classList.remove("is-open", "is-blank", "is-chrome-visible", "is-hint-visible", "is-cursor-hidden");
       root.setAttribute("aria-hidden", "true");
@@ -25176,6 +25507,7 @@
       const opts = payload || {};
       const slidesIn = Array.isArray(opts.slides) ? opts.slides : [];
       stopMassSlideshowPoll();
+      resetMassProjectionRemote();
       revokeMassSlideshowObjectUrls();
       massSlideshowState.mode = opts.mode === "text" ? "text" : "image";
       massSlideshowState.pptxUrl = opts.pptxUrl || "";
@@ -25275,6 +25607,19 @@
         e.stopPropagation();
         closeMassSlideshow();
       });
+      $("mass-slideshow-remote") && $("mass-slideshow-remote").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const session = await ensureMassProjectionSession();
+        if (!session) {
+          setFlowStatus("Could not start phone remote.", "error");
+          return;
+        }
+        setMassProjectionRemotePanel(true);
+      });
+      $("mass-slideshow-remote-close") && $("mass-slideshow-remote-close").addEventListener("click", (e) => {
+        e.stopPropagation();
+        setMassProjectionRemotePanel(false);
+      });
       $("mass-slideshow-download") && $("mass-slideshow-download").addEventListener("click", async (e) => {
         e.stopPropagation();
         if (!massSlideshowState.pptxUrl) return;
@@ -25343,7 +25688,10 @@
         percent: 100,
       });
       try {
-        const preview = await postJSON("/api/ppt-preview/slideshow/start", { quality: "presentation" });
+        const preview = await postJSON("/api/ppt-preview/slideshow/start", {
+          quality: "presentation",
+          pptx_name: ((data && data.export_stem) || "") || massSlideshowPptxName(),
+        });
         const slides = (preview && preview.slides) || [];
         if (!slides.length) {
           throw new Error((preview && preview.message) || "No slides were rendered for slideshow.");
@@ -25393,8 +25741,17 @@
         }
       };
       try {
-        // 1) Instant resume from cached slide URLs (no regenerate, no LibreOffice).
-        if (lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length) {
+        const latestUrl = (lastMassGenerateResult && lastMassGenerateResult.pptx_url) || "";
+        const sessionMatchesLatest = !!(
+          lastMassSlideshowSession
+          && lastMassSlideshowSession.slides
+          && lastMassSlideshowSession.slides.length
+          && latestUrl
+          && lastMassSlideshowSession.pptxUrl === latestUrl
+        );
+
+        // 1) Instant resume from cached slide URLs only when they match the latest generated deck.
+        if (sessionMatchesLatest) {
           try {
             await openMassSlideshow({
               mode: lastMassSlideshowSession.mode || "image",
@@ -25417,20 +25774,32 @@
             quietCloseFailedOpen();
             /* fall through */
           }
+        } else if (lastMassSlideshowSession) {
+          // Stale cache from a previous generate — discard.
+          lastMassSlideshowSession = null;
         }
 
-        // 2) Reuse already-rendered preview images on the server.
+        // 2) Reuse already-rendered preview images on the server when they match this deck.
         try {
           const st = await fetchMassSlideshowStatus();
-          if (st && st.mode === "image" && st.slides && st.slides.length) {
+          const wantName = ((lastMassGenerateResult && lastMassGenerateResult.export_stem) || "") + ".pptx";
+          const serverMatches = !!(
+            st
+            && !st.stale
+            && st.mode === "image"
+            && st.slides
+            && st.slides.length
+            && (!wantName || wantName === ".pptx" || !st.pptx_name || st.pptx_name === wantName)
+          );
+          if (serverMatches) {
             await openMassSlideshow({
               mode: "image",
               slides: st.slides,
-              pptxUrl: (lastMassGenerateResult && lastMassGenerateResult.pptx_url) || (lastMassSlideshowSession && lastMassSlideshowSession.pptxUrl) || "",
-              pptxName: ((lastMassGenerateResult && lastMassGenerateResult.export_stem) || "mass_presentation") + ".pptx",
+              pptxUrl: (lastMassGenerateResult && lastMassGenerateResult.pptx_url) || "",
+              pptxName: wantName !== ".pptx" ? wantName : "mass_presentation.pptx",
               expectedTotal: st.total || st.slides.length,
               complete: !!st.complete,
-              resumeIndex: (lastMassSlideshowSession && lastMassSlideshowSession.resumeIndex) || 0,
+              resumeIndex: 0,
               cues: st.cues || (lastMassGenerateResult && lastMassGenerateResult.slideshow_cues) || [],
             });
             if (massSlideshowState.mode === "image" && !massSlideshowState.slides.some((s) => s.objectUrl || s.videoObjectUrl || (s.kind === "video" && s.video_url))) {
@@ -25445,7 +25814,7 @@
           /* fall through */
         }
 
-        // 3) Re-rasterize latest PPTX only (still no Mass regenerate).
+        // 3) Re-rasterize the generated PPTX (still no Mass regenerate).
         if (!lastMassGenerateResult || !lastMassGenerateResult.pptx_url) {
           throw new Error("No generated deck yet. Use Generate or Slideshow first.");
         }

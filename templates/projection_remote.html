@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0b0c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>{{ title }} · Verbum</title>
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --panel: #161618;
+      --line: rgba(255,255,255,0.12);
+      --text: #f4f2ee;
+      --muted: rgba(244,242,238,0.62);
+      --accent: #c9a227;
+      --danger: #b84a3a;
+      --ok: #3d8f6e;
+      --pad: max(16px, env(safe-area-inset-left));
+      --pad-r: max(16px, env(safe-area-inset-right));
+      --pad-b: max(16px, env(safe-area-inset-bottom));
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: radial-gradient(120% 80% at 50% -10%, #1c1c20 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      padding: 18px var(--pad-r) calc(18px + var(--pad-b)) var(--pad);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+    .badge {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+    .badge.is-frozen { color: #f0d78c; border-color: rgba(201,162,39,0.45); }
+    .badge.is-blank { color: #f0b0a4; border-color: rgba(184,74,58,0.45); }
+    .stage {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 16 / 9;
+      margin-bottom: 12px;
+    }
+    .stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+    .stage .empty {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+    .next-row {
+      display: grid;
+      grid-template-columns: 1fr 88px;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .next-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 72px;
+    }
+    .next-card span {
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .next-card strong { font-size: 0.92rem; font-weight: 600; }
+    .next-thumb {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    .next-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pad {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #222226;
+      color: var(--text);
+      border-radius: 16px;
+      min-height: 64px;
+      font-size: 1.05rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.4; }
+    button.primary { background: #2a2a30; border-color: rgba(255,255,255,0.2); }
+    button.warn { background: rgba(184,74,58,0.18); border-color: rgba(184,74,58,0.45); }
+    button.accent { background: rgba(201,162,39,0.16); border-color: rgba(201,162,39,0.45); color: #f0d78c; }
+    button.ok { background: rgba(61,143,110,0.18); border-color: rgba(61,143,110,0.45); }
+    .tools {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .hint {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .err {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(184,74,58,0.15);
+      border: 1px solid rgba(184,74,58,0.35);
+      color: #f0b0a4;
+      font-size: 0.85rem;
+      display: none;
+    }
+    .err.is-on { display: block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Projection remote</h1>
+    <span class="badge" id="mode-badge">Live</span>
+  </header>
+  <p class="err" id="err"></p>
+  <div class="stage" id="stage">
+    <img id="preview" alt="Slide preview" hidden />
+    <div class="empty" id="empty">Connecting…</div>
+  </div>
+  <div class="meta">
+    <span id="counter">—</span>
+    <span id="live-label">Projected: —</span>
+  </div>
+  <div class="next-row">
+    <div class="next-card">
+      <span>Up next</span>
+      <strong id="next-label">End of deck</strong>
+    </div>
+    <div class="next-thumb">
+      <img id="next-img" alt="" hidden />
+    </div>
+  </div>
+  <div class="pad">
+    <button type="button" id="btn-prev" class="primary">Prev</button>
+    <button type="button" id="btn-next" class="primary">Next</button>
+  </div>
+  <div class="tools">
+    <button type="button" id="btn-blank" class="warn">Black screen</button>
+    <button type="button" id="btn-freeze" class="accent">Freeze</button>
+  </div>
+  <div class="tools" style="margin-top:10px">
+    <button type="button" id="btn-live" class="ok" hidden>Go live here</button>
+  </div>
+  <p class="hint">
+    Freeze keeps the projector on the current slide while you browse on this phone.
+    Go live jumps the screen to whatever you’re previewing. Black screen blanks the projector.
+  </p>
+  <script>
+(function () {
+  var TOKEN = {{ token|tojson }};
+  var state = {
+    index: 0,
+    preview_index: 0,
+    total: 0,
+    blank: false,
+    frozen: false,
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var errEl = $("err");
+  var preview = $("preview");
+  var empty = $("empty");
+  var nextImg = $("next-img");
+  var bust = Date.now();
+
+  function showErr(msg) {
+    if (!msg) {
+      errEl.classList.remove("is-on");
+      errEl.textContent = "";
+      return;
+    }
+    errEl.textContent = msg;
+    errEl.classList.add("is-on");
+  }
+
+  function slideUrl(i) {
+    return "/api/projection/" + encodeURIComponent(TOKEN) + "/slide/" + i + "?t=" + bust;
+  }
+
+  function render() {
+    var browse = state.frozen ? state.preview_index : state.index;
+    var total = state.total || 0;
+    $("counter").textContent = total
+      ? ((browse + 1) + " / " + total + (state.frozen ? " (preview)" : ""))
+      : "—";
+    $("live-label").textContent = total
+      ? ("Projected: " + (state.index + 1) + (state.blank ? " · black" : ""))
+      : "Projected: —";
+    var badge = $("mode-badge");
+    badge.classList.remove("is-frozen", "is-blank");
+    if (state.blank) {
+      badge.textContent = "Black";
+      badge.classList.add("is-blank");
+    } else if (state.frozen) {
+      badge.textContent = "Frozen";
+      badge.classList.add("is-frozen");
+    } else {
+      badge.textContent = "Live";
+    }
+    $("btn-freeze").textContent = state.frozen ? "Unfreeze" : "Freeze";
+    $("btn-blank").textContent = state.blank ? "Show slide" : "Black screen";
+    $("btn-live").hidden = !state.frozen;
+    $("btn-prev").disabled = browse <= 0;
+    $("btn-next").disabled = !total || browse >= total - 1;
+
+    if (total > 0) {
+      preview.hidden = false;
+      empty.hidden = true;
+      preview.src = slideUrl(browse);
+    } else {
+      preview.hidden = true;
+      empty.hidden = false;
+      empty.textContent = "Waiting for slides…";
+    }
+
+    var nextIdx = browse + 1;
+    if (total && nextIdx < total) {
+      $("next-label").textContent = "Slide " + (nextIdx + 1);
+      nextImg.hidden = false;
+      nextImg.src = slideUrl(nextIdx);
+    } else {
+      $("next-label").textContent = "End of deck";
+      nextImg.hidden = true;
+      nextImg.removeAttribute("src");
+    }
+  }
+
+  async function refresh() {
+    try {
+      var res = await fetch("/api/projection/" + encodeURIComponent(TOKEN), { cache: "no-store" });
+      if (!res.ok) throw new Error(res.status === 404 ? "Session ended on the projector." : "Could not load remote.");
+      var data = await res.json();
+      state.index = data.index || 0;
+      state.preview_index = data.preview_index || 0;
+      state.total = data.total || data.slide_count || 0;
+      state.blank = !!data.blank;
+      state.frozen = !!data.frozen;
+      showErr("");
+      render();
+    } catch (e) {
+      showErr((e && e.message) || "Connection lost.");
+    }
+  }
+
+  async function command(action, extra) {
+    try {
+      var body = Object.assign({ action: action }, extra || {});
+      var res = await fetch("/api/projection/" + encodeURIComponent(TOKEN) + "/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(res.status === 404 ? "Session ended on the projector." : "Command failed.");
+      var data = await res.json();
+      state.index = data.index || 0;
+      state.preview_index = data.preview_index || 0;
+      state.total = data.total || data.slide_count || 0;
+      state.blank = !!data.blank;
+      state.frozen = !!data.frozen;
+      showErr("");
+      render();
+    } catch (e) {
+      showErr((e && e.message) || "Command failed.");
+    }
+  }
+
+  $("btn-prev").addEventListener("click", function () {
+    command(state.frozen ? "preview_prev" : "prev");
+  });
+  $("btn-next").addEventListener("click", function () {
+    command(state.frozen ? "preview_next" : "next");
+  });
+  $("btn-blank").addEventListener("click", function () { command("blank_toggle"); });
+  $("btn-freeze").addEventListener("click", function () { command("freeze_toggle"); });
+  $("btn-live").addEventListener("click", function () { command("go_live"); });
+
+  refresh();
+  setInterval(refresh, 1200);
+})();
+  </script>
+</body>
+</html>

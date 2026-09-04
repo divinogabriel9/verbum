@@ -2793,7 +2793,7 @@
       {
         id: "theme2",
         name: "Midnight",
-        note: "Black background. All text white, including titles and Mass dividers.",
+        note: "Black background. All reading text white. Mass dividers still use the liturgical season.",
         bg: "#000000",
         primary: "#ffffff",
         accent: "#ffffff",
@@ -2803,7 +2803,7 @@
       {
         id: "theme3",
         name: "Paper",
-        note: "White background. All text black, including titles and Mass dividers.",
+        note: "White background. All reading text black. Mass dividers still use the liturgical season.",
         bg: "#ffffff",
         primary: "#000000",
         accent: "#000000",

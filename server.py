@@ -779,6 +779,29 @@ def _latest_pptx_path() -> Optional[Path]:
     return max(cands, key=lambda p: p.stat().st_mtime)
 
 
+def _resolve_pptx_path(name_or_stem: Optional[str] = None) -> Optional[Path]:
+    """Resolve a specific deck by filename/stem, else the newest ``outputs/*.pptx``."""
+    raw = (name_or_stem or "").strip()
+    if raw:
+        base = Path(raw).name
+        if base.lower().endswith(".pptx"):
+            candidate = _OUTPUT_DIR / base
+        else:
+            candidate = _OUTPUT_DIR / f"{base}.pptx"
+        if candidate.is_file():
+            return candidate
+    return _latest_pptx_path()
+
+
+def _pptx_identity(ppt: Optional[Path]) -> tuple[str, float]:
+    if not ppt or not ppt.is_file():
+        return ("", 0.0)
+    try:
+        return (ppt.name, float(ppt.stat().st_mtime))
+    except OSError:
+        return (ppt.name, 0.0)
+
+
 def _write_mass_bundle_zip(result: GenerationResult) -> Path:
     """Pack generated PPT, posters, stem-based social PNGs, gospel art, and optional extras.
 
@@ -1771,6 +1794,7 @@ class PptPreviewRefreshBody(BaseModel):
     """Optional knobs for deck rasterization."""
 
     quality: str = "preview"  # "preview" | "presentation"
+    pptx_name: str = ""  # optional filename or export stem — binds preview to that deck
 
 
 _slideshow_job_lock = threading.Lock()
@@ -1785,6 +1809,8 @@ _slideshow_job: dict[str, Any] = {
     "error": "",
     "scale": 1.25,
     "image_format": "jpeg",
+    "pptx_name": "",
+    "pptx_mtime": 0.0,
 }
 
 
@@ -1820,8 +1846,22 @@ def _slideshow_job_snapshot() -> dict[str, Any]:
         complete = False
     elif ready >= total > 0 and status != "error":
         complete = True
-    ppt = _latest_pptx_path()
-    cues = _load_slideshow_cues_for_ppt(ppt) if ppt else []
+    job_name = str(job.get("pptx_name") or "")
+    job_mtime = float(job.get("pptx_mtime") or 0.0)
+    ppt = _resolve_pptx_path(job_name) if job_name else _latest_pptx_path()
+    live_name, live_mtime = _pptx_identity(ppt)
+    # Preview cache is stale when a newer/different deck exists than the one we rasterized.
+    stale = False
+    if ready > 0 and job_name:
+        stale = (live_name != job_name) or (
+            live_mtime and job_mtime and abs(live_mtime - job_mtime) > 0.5
+        )
+    elif ready > 0 and not job_name and live_name:
+        # Legacy job with no identity — treat as stale so Present re-binds to the latest deck.
+        stale = True
+    cues = _load_slideshow_cues_for_ppt(ppt) if ppt and not stale else (
+        _load_slideshow_cues_for_ppt(ppt) if ppt else []
+    )
     return {
         "ok": True,
         "mode": job.get("mode") or "image",
@@ -1829,11 +1869,14 @@ def _slideshow_job_snapshot() -> dict[str, Any]:
         "complete": complete,
         "ready": ready,
         "total": total,
-        "slides": _preview_slide_payload(paths),
+        "slides": [] if stale else _preview_slide_payload(paths),
         "cues": cues,
-        "message": job.get("message") or "",
+        "message": ("Deck changed — re-open Present to refresh." if stale else (job.get("message") or "")),
         "error": job.get("error") or "",
         "generation": job.get("generation") or 0,
+        "pptx_name": job_name or live_name,
+        "pptx_mtime": job_mtime or live_mtime,
+        "stale": stale,
     }
 
 
@@ -1888,7 +1931,7 @@ def api_ppt_preview_refresh(
     _session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     """Render PPT slides to images for in-app visual preview (full deck, blocking)."""
-    ppt = _latest_pptx_path()
+    ppt = _resolve_pptx_path((body.pptx_name if body else None) or "")
     if not ppt or not ppt.is_file():
         return {"ok": True, "mode": "text", "slides": [], "message": "Generate deck first."}
     soffice = _resolve_soffice_bin()
@@ -1920,7 +1963,19 @@ def api_ppt_preview_refresh(
 
     slides = _preview_slide_payload(png_paths)
     msg = pdf_msg or "Full-deck preview (PDF rasterization)."
-    return {"ok": True, "mode": "image", "slides": slides, "message": msg, "quality": quality}
+    name, mtime = _pptx_identity(ppt)
+    with _slideshow_job_lock:
+        _slideshow_job["pptx_name"] = name
+        _slideshow_job["pptx_mtime"] = mtime
+    return {
+        "ok": True,
+        "mode": "image",
+        "slides": slides,
+        "message": msg,
+        "quality": quality,
+        "pptx_name": name,
+        "pptx_mtime": mtime,
+    }
 
 
 @app.post("/api/ppt-preview/slideshow/start")
@@ -1932,7 +1987,7 @@ def api_ppt_preview_slideshow_start(
     Start a progressive slideshow render: convert PPTX→PDF, return the first slides
     immediately, and keep rasterizing the rest in the background.
     """
-    ppt = _latest_pptx_path()
+    ppt = _resolve_pptx_path((body.pptx_name if body else None) or "")
     if not ppt or not ppt.is_file():
         return {
             "ok": True,
@@ -1945,6 +2000,7 @@ def api_ppt_preview_slideshow_start(
             "message": "Generate deck first.",
         }
 
+    ppt_name, ppt_mtime = _pptx_identity(ppt)
     soffice = _resolve_soffice_bin()
     if not soffice:
         text_slides = _extract_ppt_text_slides(ppt)
@@ -1959,6 +2015,8 @@ def api_ppt_preview_slideshow_start(
                     "mode": "text",
                     "message": "Install LibreOffice for exact image slideshow. Showing text fallback.",
                     "error": "",
+                    "pptx_name": ppt_name,
+                    "pptx_mtime": ppt_mtime,
                 }
             )
         return {
@@ -1970,6 +2028,9 @@ def api_ppt_preview_slideshow_start(
             "complete": True,
             "status": "done",
             "message": "Install LibreOffice for exact image slideshow. Showing text fallback.",
+            "pptx_name": ppt_name,
+            "pptx_mtime": ppt_mtime,
+            "stale": False,
         }
 
     quality = ((body.quality if body else None) or "presentation").strip().lower()
@@ -1991,6 +2052,8 @@ def api_ppt_preview_slideshow_start(
                 "error": "",
                 "scale": scale,
                 "image_format": image_format,
+                "pptx_name": ppt_name,
+                "pptx_mtime": ppt_mtime,
             }
         )
 
@@ -2016,6 +2079,8 @@ def api_ppt_preview_slideshow_start(
                         "complete": True,
                         "message": (pdf_msg or "Could not render slide images.")
                         + " Showing text fallback.",
+                        "pptx_name": ppt_name,
+                        "pptx_mtime": ppt_mtime,
                     }
                 )
         return {
@@ -2028,6 +2093,9 @@ def api_ppt_preview_slideshow_start(
             "status": "done",
             "message": (pdf_msg or "Could not render slide images.") + " Showing text fallback.",
             "quality": quality,
+            "pptx_name": ppt_name,
+            "pptx_mtime": ppt_mtime,
+            "stale": False,
         }
 
     ready = len(first_paths)
@@ -2043,6 +2111,8 @@ def api_ppt_preview_slideshow_start(
                     "mode": "image",
                     "message": pdf_msg or ("Slideshow ready." if complete else "Loading remaining slides…"),
                     "error": "",
+                    "pptx_name": ppt_name,
+                    "pptx_mtime": ppt_mtime,
                 }
             )
 
@@ -2073,6 +2143,9 @@ def api_ppt_preview_slideshow_start(
         "quality": quality,
         "generation": generation,
         "cues": _load_slideshow_cues_for_ppt(ppt),
+        "pptx_name": ppt_name,
+        "pptx_mtime": ppt_mtime,
+        "stale": False,
     }
 
 
@@ -2082,6 +2155,189 @@ def api_ppt_preview_slideshow_status(
 ) -> dict[str, Any]:
     """Poll progressive slideshow render progress."""
     return _slideshow_job_snapshot()
+
+
+class ProjectionCreateBody(BaseModel):
+    total: int = 0
+    index: int = 0
+    pptx_name: str = ""
+    slide_names: list[str] = Field(default_factory=list)
+
+
+class ProjectionStateBody(BaseModel):
+    index: Optional[int] = None
+    total: Optional[int] = None
+    blank: Optional[bool] = None
+    frozen: Optional[bool] = None
+    preview_index: Optional[int] = None
+    pptx_name: Optional[str] = None
+    slide_names: Optional[list[str]] = None
+
+
+class ProjectionCommandBody(BaseModel):
+    action: str
+    index: Optional[int] = None
+
+
+def _projection_public_url(request: Request, token: str) -> str:
+    # Prefer explicit public origin (LAN/tunnel) so phone QR works off localhost.
+    configured = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("APP_PUBLIC_URL") or "").strip().rstrip("/")
+    base = configured or str(request.base_url).rstrip("/")
+    return f"{base}/projection/{token}"
+
+
+@app.post("/api/projection/session")
+def api_projection_create(
+    body: ProjectionCreateBody,
+    request: Request,
+    _session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Create a phone remote session for the open projector slideshow."""
+    from services.projection_session import create_session
+
+    paths = list_slide_images(_PREVIEW_DIR)
+    names = [str(n).strip() for n in (body.slide_names or []) if str(n).strip()]
+    if not names:
+        names = [p.name for p in paths]
+    total = max(int(body.total or 0), len(names), len(paths))
+    session = create_session(
+        total=total,
+        index=int(body.index or 0),
+        slide_names=names,
+        pptx_name=(body.pptx_name or "").strip(),
+    )
+    remote_url = _projection_public_url(request, session.token)
+    return {
+        "ok": True,
+        **session.to_public(),
+        "remote_url": remote_url,
+        "qr_url": f"/api/projection/{session.token}/qr.png",
+    }
+
+
+@app.get("/api/projection/{token}")
+def api_projection_state(token: str) -> dict[str, Any]:
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return {"ok": True, **session.to_public()}
+
+
+@app.post("/api/projection/{token}/state")
+def api_projection_push_state(token: str, body: ProjectionStateBody) -> dict[str, Any]:
+    """Projector pushes local slide/blank/freeze state to the remote session."""
+    from services.projection_session import update_projector_state
+
+    session = update_projector_state(
+        token,
+        index=body.index,
+        total=body.total,
+        blank=body.blank,
+        frozen=body.frozen,
+        preview_index=body.preview_index,
+        slide_names=body.slide_names,
+        pptx_name=body.pptx_name,
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return {"ok": True, **session.to_public()}
+
+
+@app.post("/api/projection/{token}/command")
+def api_projection_command(token: str, body: ProjectionCommandBody) -> dict[str, Any]:
+    """Phone remote sends prev/next/blank/freeze commands."""
+    from services.projection_session import enqueue_command
+
+    payload: dict[str, Any] = {}
+    if body.index is not None:
+        payload["index"] = body.index
+    session = enqueue_command(token, body.action, **payload)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return {"ok": True, **session.to_public()}
+
+
+@app.get("/api/projection/{token}/poll")
+def api_projection_poll(token: str, after: int = 0) -> dict[str, Any]:
+    """Projector polls for pending remote commands."""
+    from services.projection_session import drain_commands, get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    commands = drain_commands(token, after_seq=int(after or 0))
+    return {"ok": True, "state": session.to_public(), "commands": commands}
+
+
+@app.get("/api/projection/{token}/slide/{index}")
+def api_projection_slide(token: str, index: int) -> FileResponse:
+    """Public slide image for the phone remote (token-gated)."""
+    from services.projection_session import get_session, slide_filename
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    idx0 = int(index)
+    total = int(session.total or 0)
+    # Prefer 0-based; accept 1-based when value equals total or is out of 0-based range.
+    if total and idx0 >= total and 1 <= idx0 <= total:
+        idx0 = idx0 - 1
+    elif idx0 < 0:
+        raise HTTPException(status_code=404, detail="Slide not found.")
+    name = slide_filename(token, idx0) or f"slide_{idx0 + 1:04d}.jpg"
+    candidates = [
+        _PREVIEW_DIR / Path(name).name,
+        _PREVIEW_DIR / f"slide_{idx0 + 1:04d}.jpg",
+        _PREVIEW_DIR / f"slide_{idx0 + 1:04d}.jpeg",
+        _PREVIEW_DIR / f"slide_{idx0 + 1:04d}.png",
+    ]
+    path = next((p for p in candidates if p.is_file()), None)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Slide image not ready.")
+    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+
+
+@app.get("/api/projection/{token}/qr.png")
+def api_projection_qr(token: str, request: Request) -> Response:
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    try:
+        import qrcode
+    except ImportError as exc:
+        raise HTTPException(status_code=503, detail="QR library not installed.") from exc
+    url = _projection_public_url(request, token)
+    img = qrcode.make(url)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(content=buf.getvalue(), media_type="image/png")
+
+
+@app.get("/projection/{token}", response_class=HTMLResponse)
+def projection_remote_page(request: Request, token: str) -> Any:
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        return HTMLResponse(
+            "<!doctype html><meta name=viewport content='width=device-width,initial-scale=1'>"
+            "<body style='font-family:system-ui;background:#111;color:#eee;padding:2rem'>"
+            "<h1>Session ended</h1><p>Open Present again on the projector and scan a new QR.</p></body>",
+            status_code=404,
+        )
+    return templates.TemplateResponse(
+        request,
+        "projection_remote.html",
+        {
+            "token": token,
+            "title": "Projection remote",
+            **_template_version_context(),
+        },
+    )
 
 
 @app.get("/api/input-limits")

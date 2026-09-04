@@ -61,6 +61,7 @@ from services.superadmin.hymn_catalog_admin import (
     clear_song_audio_preview,
     enqueue_song_audio_preview,
     enqueue_song_instrumental_video,
+    enqueue_song_karaoke_instrumental,
     generate_song_audio_preview,
     get_song_preview_job,
     list_song_preview_jobs,
@@ -552,6 +553,26 @@ def register_admin_routes(app) -> None:
             raise HTTPException(
                 status_code=400,
                 detail=result.get("error") or "Could not start instrumental video download.",
+            )
+        return result
+
+    @app.post("/api/admin/songs/{section}/{hymn_id:path}/karaoke-job")
+    def api_admin_enqueue_song_karaoke(
+        section: str,
+        hymn_id: str,
+        body: SongInstrumentalVideoBody,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        result = enqueue_song_karaoke_instrumental(
+            section=section,
+            hymn_id=hymn_id,
+            youtube_url=body.youtube_url,
+            updated_by=session.user.user_id,
+        )
+        if not result.get("ok"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error") or "Could not start karaoke instrumental build.",
             )
         return result
 

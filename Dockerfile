@@ -2,11 +2,15 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Poster fonts + LibreOffice for 1:1 in-app slideshow (PPTX → PDF → PNG)
-# ffmpeg cuts 5–10s chorus preview clips from YouTube audio (superadmin tool)
-# node is required by yt-dlp for YouTube JS challenges (avoids HTTP 403 on audio fetch)
+# Poster fonts + LibreOffice for in-app slideshow (PPTX → PDF → PNG).
+# Poppins is bundled (OFL); Liberation/Carlito stand in for Arial/Georgia/Calibri.
+# ffmpeg cuts 5–10s chorus preview clips from YouTube audio (superadmin tool).
+# node is required by yt-dlp for YouTube JS challenges (avoids HTTP 403 on audio fetch).
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    fontconfig \
     fonts-dejavu-core \
+    fonts-liberation \
+    fonts-crosextra-carlito \
     libreoffice-impress \
     ffmpeg \
     nodejs \
@@ -16,7 +20,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN mkdir -p outputs
+RUN mkdir -p outputs \
+    && mkdir -p /usr/share/fonts/truetype/verbum \
+    && cp -v data/reference/fonts/Poppins-*.ttf /usr/share/fonts/truetype/verbum/ \
+    && cp -v data/reference/fonts/99-verbum-pptx.conf /etc/fonts/conf.d/99-verbum-pptx.conf \
+    && fc-cache -f
 
 # Bake deploy identity when Render passes RENDER_GIT_COMMIT / APP_VERSION as build args.
 ARG RENDER_GIT_COMMIT=

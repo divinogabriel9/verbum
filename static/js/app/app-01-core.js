@@ -2976,24 +2976,37 @@
       const durField = durWrap ? durWrap.closest(".field") : null;
       const urlLabel = document.querySelector("label[for=\"mw-media-pick-fetch-url\"]");
       const runBtn = $("mw-media-pick-fetch-run");
+      const karaokeBtn = $("mw-media-pick-fetch-karaoke");
       const searchBtn = $("mw-media-pick-fetch-search");
+      const searchSungBtn = $("mw-media-pick-fetch-search-sung");
       if (hint) {
         hint.textContent = instrumental
-          ? "Search YouTube for an instrumental version of this song (query adds “instrumental”), paste that URL, then download the full video. This is separate from the 10s audio clip and the choir-practice YouTube link."
+          ? "Download video: search instrumental → raw MP4 (best karaoke bed). Make karaoke: search sung → Whisper times lyrics; uses instrumental bed if present, else strips vocals."
           : "Paste a YouTube URL and fetch a 5–10s chorus clip. Captions are scanned for the chorus (or first verse). This does not replace the song’s full YouTube practice link.";
       }
       if (durField) durField.hidden = instrumental;
       if (urlLabel) {
-        urlLabel.textContent = instrumental ? "YouTube URL (instrumental video)" : "YouTube URL (clip source)";
+        urlLabel.textContent = instrumental
+          ? "YouTube URL (instrumental for download · sung for karaoke)"
+          : "YouTube URL (clip source)";
       }
       if (runBtn && !runBtn.disabled) {
         runBtn.textContent = instrumental ? "Download video" : "Fetch clip";
+      }
+      if (karaokeBtn) {
+        karaokeBtn.hidden = !instrumental;
+        if (!karaokeBtn.disabled) karaokeBtn.textContent = "Make karaoke";
       }
       if (searchBtn) {
         searchBtn.title = instrumental
           ? "Search YouTube for this song + instrumental"
           : "Search YouTube for this song";
         searchBtn.textContent = instrumental ? "Search instrumental" : "Search";
+      }
+      if (searchSungBtn) {
+        searchSungBtn.hidden = !instrumental;
+        searchSungBtn.title = "Search YouTube for a sung version (best for karaoke timing)";
+        searchSungBtn.textContent = "Search sung";
       }
     }
     window.syncMassMediaPickFetchPaneMode = syncMassMediaPickFetchPaneMode;
@@ -3134,6 +3147,90 @@
           btn.disabled = false;
           btn.textContent = instrumental ? "Download video" : "Fetch clip";
         }
+      }
+    }
+
+    function massMediaPickLinkedVocalVideo() {
+      const video = (() => {
+        if (massMediaPickState.purpose === "song") {
+          return composerSongMedia && composerSongMedia.video
+            ? normalizeComposerMediaRef(composerSongMedia.video)
+            : null;
+        }
+        const slotVideo = typeof getMassSectionMedia === "function"
+          ? getMassSectionMedia("video", massMediaPickState.slot)
+          : null;
+        return slotVideo ? normalizeComposerMediaRef(slotVideo) : null;
+      })();
+      if (!video || !video.basename) return null;
+      if (typeof isYouTubeMediaRef === "function" && isYouTubeMediaRef(video)) return null;
+      const bn = String(video.basename || "").toLowerCase();
+      if (bn.startsWith("karaoke_") || bn.startsWith("instrumental_")) return null;
+      return video;
+    }
+
+    async function runMassMediaPickKaraoke() {
+      const target = massMediaPickSongTarget();
+      const statusEl = $("mw-media-pick-fetch-status");
+      const btn = $("mw-media-pick-fetch-karaoke");
+      const runBtn = $("mw-media-pick-fetch-run");
+      const urlEl = $("mw-media-pick-fetch-url");
+      if (!massMediaPickFetchIsInstrumental()) {
+        if (typeof notify === "function") notify("Open video fetch first.", "warn");
+        return;
+      }
+      if (!target || !target.section || !target.id) {
+        if (typeof notify === "function") notify("Choose a song first.", "warn");
+        return;
+      }
+      const youtubeUrl = String((urlEl && urlEl.value) || "").trim();
+      const ref = youtubeUrl ? youtubeMediaRefFromInput(youtubeUrl, target.title || "YouTube") : null;
+      if (youtubeUrl && !ref) {
+        if (typeof notify === "function") notify("Enter a valid YouTube URL, or clear the field to use a saved sung video.", "warn");
+        return;
+      }
+      const hasVocalVideo = !!massMediaPickLinkedVocalVideo();
+      if (!ref && !hasVocalVideo) {
+        if (typeof notify === "function") {
+          notify("Paste a sung YouTube URL (with vocals), or use Search sung first.", "warn");
+        }
+        return;
+      }
+      if (urlEl && ref) urlEl.value = ref.youtube_url || youtubeUrl;
+      if (btn) { btn.disabled = true; btn.textContent = "Queued…"; }
+      if (runBtn) runBtn.disabled = true;
+      if (statusEl) {
+        statusEl.dataset.fetching = "1";
+        statusEl.textContent = hasVocalVideo && !ref
+          ? "Using saved sung video — timing lyrics, then removing vocals…"
+          : "Building karaoke (Whisper timing → strip vocals → lyrics)…";
+        statusEl.className = "status mw-media-pick-fetch-status";
+      }
+      previewFetchState.attempted[target.section + ":" + target.id + ":karaoke"] = true;
+      try {
+        await startKaraokeFetchJob({
+          section: target.section,
+          id: target.id,
+          title: target.title || "this song",
+          youtube_url: ref ? (ref.youtube_url || youtubeUrl) : "",
+          toast: true,
+        });
+        if (statusEl) {
+          statusEl.textContent = "Karaoke build started — watch the progress bar below.";
+          statusEl.className = "status ok mw-media-pick-fetch-status";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || "Could not start karaoke build.";
+          statusEl.className = "status error mw-media-pick-fetch-status";
+        }
+        if (typeof notify === "function") {
+          notify((err && err.message) || "Could not start karaoke build.", "warn");
+        }
+      } finally {
+        if (statusEl) delete statusEl.dataset.fetching;
+        if (btn) { btn.disabled = false; btn.textContent = "Make karaoke"; }
+        if (runBtn) runBtn.disabled = false;
       }
     }
 

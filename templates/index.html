@@ -27,7 +27,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260904j" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260904l" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
@@ -730,7 +730,7 @@
                     <span class="deck-theme-option__kicker">Liturgy of the Word</span>
                     <strong class="deck-theme-option__title">First Reading</strong>
                     <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
-                    <span class="deck-theme-option__divider">Mass divider · white on black</span>
+                    <span class="deck-theme-option__divider">Mass divider · season color</span>
                   </div>
                   <span class="deck-theme-option__name">Midnight</span>
                 </div>
@@ -741,7 +741,7 @@
                     <span class="deck-theme-option__kicker">Liturgy of the Word</span>
                     <strong class="deck-theme-option__title">First Reading</strong>
                     <span class="deck-theme-option__body">A reading from the Book of Isaiah…</span>
-                    <span class="deck-theme-option__divider">Mass divider · black on white</span>
+                    <span class="deck-theme-option__divider">Mass divider · season color</span>
                   </div>
                   <span class="deck-theme-option__name">Paper</span>
                 </div>
@@ -1641,9 +1641,11 @@
             <div class="mw-media-pick-youtube-row">
               <input type="url" id="mw-media-pick-fetch-url" placeholder="https://youtu.be/…" inputmode="url" autocomplete="off" maxlength="320" />
               <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-fetch-search" title="Search YouTube for this song">Search</button>
+              <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-fetch-search-sung" hidden title="Search YouTube for a sung version (for karaoke timing)">Search sung</button>
             </div>
             <div class="mw-media-pick-youtube-row" style="margin-top:10px;">
               <button type="button" class="mw-btn mw-btn--primary" id="mw-media-pick-fetch-run" style="flex:1;">Fetch clip</button>
+              <button type="button" class="mw-btn mw-btn--soft" id="mw-media-pick-fetch-karaoke" hidden style="flex:1;">Make karaoke</button>
               <button type="button" class="mw-btn mw-btn--ghost" id="mw-media-pick-fetch-play" hidden>▶ Play</button>
             </div>
             <p class="status mw-media-pick-fetch-status" id="mw-media-pick-fetch-status" aria-live="polite"></p>
@@ -1929,7 +1931,7 @@
             <div class="panel-head theme-one-head">
               <div>
                 <h3>Theme 1 · Liturgy Flow</h3>
-                <p>Default deck theme: <strong>black background with amber #FFB800 highlights</strong>. Mass dividers follow the liturgical season. Mass Setup also offers Theme 2 (Midnight — all white on black) and Theme 3 (Paper — all black on white).</p>
+                <p>Default deck theme: <strong>black background with amber #FFB800 highlights</strong>. Mass dividers always follow the liturgical season. Mass Setup also offers Theme 2 (Midnight — white on black readings) and Theme 3 (Paper — black on white readings); neither recolors Mass dividers.</p>
               </div>
               <span class="theme-one-badge">Built-in · Theme 1</span>
             </div>
@@ -4190,7 +4192,7 @@
   </div>
 
   <div class="mass-slideshow" id="mass-slideshow" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Mass slideshow">
-    <p class="mass-slideshow__hint" id="mass-slideshow-hint">Arrow keys or click to advance · B blank · Esc exit</p>
+    <p class="mass-slideshow__hint" id="mass-slideshow-hint">Arrow keys or click · B blank · Remote for phone · Esc exit</p>
     <div class="mass-slideshow__stage" id="mass-slideshow-stage">
       <div class="mass-slideshow__frame" id="mass-slideshow-frame">
         <img class="mass-slideshow__img" id="mass-slideshow-img" alt="" hidden />
@@ -4203,8 +4205,20 @@
     <div class="mass-slideshow__chrome" id="mass-slideshow-chrome">
       <span class="mass-slideshow__counter" id="mass-slideshow-counter">1 / 1</span>
       <div class="mass-slideshow__actions">
+        <button type="button" class="mass-slideshow__btn" id="mass-slideshow-remote" title="Phone remote">Remote</button>
         <button type="button" class="mass-slideshow__btn" id="mass-slideshow-download">Download PPTX</button>
         <button type="button" class="mass-slideshow__btn" id="mass-slideshow-exit">Exit</button>
+      </div>
+    </div>
+    <div class="mass-slideshow__remote" id="mass-slideshow-remote-panel" hidden>
+      <div class="mass-slideshow__remote-card">
+        <img class="mass-slideshow__remote-qr" id="mass-slideshow-remote-qr" alt="Scan to open phone remote" />
+        <div class="mass-slideshow__remote-copy">
+          <strong>Phone remote</strong>
+          <p>Scan to control prev/next, black screen, freeze, and preview the next slide. Phone and projector must reach the same app URL (use your LAN IP locally, or set PUBLIC_BASE_URL).</p>
+          <a class="mass-slideshow__remote-link" id="mass-slideshow-remote-link" href="#" target="_blank" rel="noopener">Open link</a>
+          <button type="button" class="mass-slideshow__btn" id="mass-slideshow-remote-close">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -4225,7 +4239,7 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260904m"></script>
+  <script src="/static/js/app.js?v=20260904r"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260703"></script>
