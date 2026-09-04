@@ -4192,7 +4192,7 @@
   </div>
 
   <div class="mass-slideshow" id="mass-slideshow" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Mass slideshow">
-    <p class="mass-slideshow__hint" id="mass-slideshow-hint">Arrow keys or click · B blank · Remote for phone · Esc exit</p>
+    <p class="mass-slideshow__hint" id="mass-slideshow-hint">Arrow keys · B blank · F fullscreen · Remote · Esc exit</p>
     <div class="mass-slideshow__stage" id="mass-slideshow-stage">
       <div class="mass-slideshow__frame" id="mass-slideshow-frame">
         <img class="mass-slideshow__img" id="mass-slideshow-img" alt="" hidden />
@@ -4205,6 +4205,7 @@
     <div class="mass-slideshow__chrome" id="mass-slideshow-chrome">
       <span class="mass-slideshow__counter" id="mass-slideshow-counter">1 / 1</span>
       <div class="mass-slideshow__actions">
+        <button type="button" class="mass-slideshow__btn" id="mass-slideshow-fullscreen" title="Fullscreen (F)">Fullscreen</button>
         <button type="button" class="mass-slideshow__btn" id="mass-slideshow-remote" title="Phone remote">Remote</button>
         <button type="button" class="mass-slideshow__btn" id="mass-slideshow-download">Download PPTX</button>
         <button type="button" class="mass-slideshow__btn" id="mass-slideshow-exit">Exit</button>
@@ -4214,8 +4215,8 @@
       <div class="mass-slideshow__remote-card">
         <img class="mass-slideshow__remote-qr" id="mass-slideshow-remote-qr" alt="Scan to open phone remote" />
         <div class="mass-slideshow__remote-copy">
-          <strong>Phone remote</strong>
-          <p>Scan to control prev/next, black screen, freeze, and preview the next slide. Phone and projector must reach the same app URL (use your LAN IP locally, or set PUBLIC_BASE_URL).</p>
+          <strong>LiturgyFlow Remote</strong>
+          <p>Scan to control prev/next, black screen, and freeze from your phone. Phone and projector must reach the same app URL (use your LAN IP locally, or set PUBLIC_BASE_URL).</p>
           <a class="mass-slideshow__remote-link" id="mass-slideshow-remote-link" href="#" target="_blank" rel="noopener">Open link</a>
           <button type="button" class="mass-slideshow__btn" id="mass-slideshow-remote-close">Close</button>
         </div>
@@ -4239,7 +4240,7 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260904r"></script>
+  <script src="/static/js/app.js?v=20260904s"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260703"></script>

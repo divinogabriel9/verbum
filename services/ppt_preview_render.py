@@ -13,11 +13,30 @@ immediately, then continue rasterizing the rest into ``out_dir``.
 
 from __future__ import annotations
 
+import logging
+import os
 import re
+import shutil
 import subprocess
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Callable, Optional
+
+logger = logging.getLogger(__name__)
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_FONTS_DIR = _PROJECT_ROOT / "data" / "reference" / "fonts"
+
+# Preview-only remaps so Mac (system Georgia/Arial) and Linux Present converge.
+# Longer names first.
+_PREVIEW_FONT_REWRITES: tuple[tuple[bytes, bytes], ...] = (
+    (b"Poppins Bold", b"Poppins"),
+    (b"Arial Black", b"Arimo"),
+    (b"Arial", b"Arimo"),
+    (b"Georgia", b"Gelasio"),
+    (b"Calibri", b"Carlito"),
+)
 
 
 def count_ppt_slides(ppt: Path) -> int:
@@ -52,6 +71,73 @@ def list_slide_images(out_dir: Path) -> list[Path]:
     return sorted(files, key=lambda p: p.name)
 
 
+def _rewrite_pptx_fonts_for_preview(src: Path, dest: Path) -> None:
+    """Copy PPTX with typeface names remapped to bundled OFL fonts."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(src, "r") as zin, zipfile.ZipFile(
+        dest, "w", compression=zipfile.ZIP_DEFLATED
+    ) as zout:
+        for info in zin.infolist():
+            data = zin.read(info.filename)
+            lower = info.filename.lower()
+            if lower.endswith(".xml") or lower.endswith(".rels"):
+                for old, new in _PREVIEW_FONT_REWRITES:
+                    if old in data:
+                        data = data.replace(old, new)
+            zout.writestr(info, data)
+
+
+def _prepare_lo_user_installation() -> tuple[Path, str]:
+    """Throwaway LO profile with OFL fonts in ``user/fonts``. Returns (dir, file URI)."""
+    profile = Path(tempfile.mkdtemp(prefix="lo-verbum-fonts-"))
+    user_fonts = profile / "user" / "fonts"
+    user_fonts.mkdir(parents=True, exist_ok=True)
+    if _FONTS_DIR.is_dir():
+        for ttf in sorted(_FONTS_DIR.glob("*.ttf")):
+            try:
+                shutil.copy2(ttf, user_fonts / ttf.name)
+            except OSError:
+                logger.warning("Could not copy preview font %s", ttf.name)
+    return profile, profile.resolve().as_uri()
+
+
+def _write_preview_fontconfig(path: Path) -> None:
+    fonts_dir = _FONTS_DIR.resolve()
+    alias = ""
+    conf_src = _FONTS_DIR / "99-verbum-pptx.conf"
+    if conf_src.is_file():
+        raw = conf_src.read_text(encoding="utf-8")
+        raw = re.sub(r"<\?xml[^>]*\?>", "", raw)
+        raw = re.sub(r"<!DOCTYPE[^>]*>", "", raw)
+        raw = raw.replace("<fontconfig>", "").replace("</fontconfig>", "")
+        alias = raw.strip()
+    path.write_text(
+        f"""<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <dir>{fonts_dir}</dir>
+  <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
+  <include ignore_missing="yes">/usr/local/etc/fonts/fonts.conf</include>
+  <include ignore_missing="yes">/opt/homebrew/etc/fonts/fonts.conf</include>
+  {alias}
+  <alias binding="same">
+    <family>Georgia</family>
+    <prefer><family>Gelasio</family></prefer>
+  </alias>
+  <alias binding="same">
+    <family>Arial</family>
+    <prefer><family>Arimo</family></prefer>
+  </alias>
+  <alias binding="same">
+    <family>Calibri</family>
+    <prefer><family>Carlito</family></prefer>
+  </alias>
+</fontconfig>
+""",
+        encoding="utf-8",
+    )
+
+
 def convert_pptx_to_pdf(
     ppt: Path,
     out_dir: Path,
@@ -61,25 +147,70 @@ def convert_pptx_to_pdf(
 ) -> Optional[Path]:
     """Convert ``ppt`` to a PDF in ``out_dir`` via LibreOffice. Returns the PDF path or ``None``."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        soffice_bin,
-        "--headless",
-        "--convert-to",
-        "pdf",
-        "--outdir",
-        str(out_dir),
-        str(ppt.resolve()),
-    ]
+    profile_dir: Optional[Path] = None
+    tmp_dir: Optional[Path] = None
+    fc_dir: Optional[Path] = None
+    work_ppt = ppt
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=timeout)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-        return None
-    # LibreOffice names the output after the input stem.
-    candidate = out_dir / f"{ppt.stem}.pdf"
-    if candidate.is_file():
-        return candidate
-    pdfs = sorted(out_dir.glob("*.pdf"))
-    return pdfs[0] if pdfs else None
+        profile_dir, profile_uri = _prepare_lo_user_installation()
+        tmp_dir = Path(tempfile.mkdtemp(prefix="ppt-preview-"))
+        tmp_ppt = tmp_dir / f"{ppt.stem}_preview.pptx"
+        try:
+            _rewrite_pptx_fonts_for_preview(ppt, tmp_ppt)
+            work_ppt = tmp_ppt
+        except Exception:
+            logger.warning("Preview font rewrite failed; converting original PPTX", exc_info=True)
+            work_ppt = ppt
+
+        env = os.environ.copy()
+        try:
+            fc_dir = Path(tempfile.mkdtemp(prefix="fc-verbum-"))
+            fc_file = fc_dir / "fonts.conf"
+            _write_preview_fontconfig(fc_file)
+            env["FONTCONFIG_FILE"] = str(fc_file.resolve())
+        except Exception:
+            logger.warning("Could not write preview fontconfig", exc_info=True)
+
+        cmd = [
+            soffice_bin,
+            f"-env:UserInstallation={profile_uri}",
+            "--headless",
+            "--norestore",
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            str(out_dir),
+            str(work_ppt.resolve()),
+        ]
+        try:
+            subprocess.run(
+                cmd, check=True, capture_output=True, text=True, timeout=timeout, env=env
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+            return None
+
+        for stem in (work_ppt.stem, ppt.stem):
+            candidate = out_dir / f"{stem}.pdf"
+            if candidate.is_file():
+                final = out_dir / f"{ppt.stem}.pdf"
+                if candidate.resolve() != final.resolve():
+                    try:
+                        if final.exists():
+                            final.unlink()
+                        candidate.rename(final)
+                        return final
+                    except OSError:
+                        return candidate
+                return candidate
+        pdfs = sorted(out_dir.glob("*.pdf"))
+        return pdfs[0] if pdfs else None
+    finally:
+        if tmp_dir and tmp_dir.exists():
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        if profile_dir and profile_dir.exists():
+            shutil.rmtree(profile_dir, ignore_errors=True)
+        if fc_dir and fc_dir.exists():
+            shutil.rmtree(fc_dir, ignore_errors=True)
 
 
 def _save_pil_image(pil_image, dest: Path, *, image_format: str) -> bool:
@@ -89,7 +220,7 @@ def _save_pil_image(pil_image, dest: Path, *, image_format: str) -> bool:
             if dest.suffix.lower() not in {".jpg", ".jpeg"}:
                 dest = dest.with_suffix(".jpg")
             rgb = pil_image.convert("RGB") if pil_image.mode != "RGB" else pil_image
-            rgb.save(dest, format="JPEG", quality=82, optimize=False)
+            rgb.save(dest, format="JPEG", quality=90, optimize=False)
         else:
             if dest.suffix.lower() != ".png":
                 dest = dest.with_suffix(".png")

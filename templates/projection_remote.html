@@ -3,215 +3,543 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0b0c" />
+  <meta name="theme-color" content="#121212" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>{{ title }} · Verbum</title>
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0b0b0c;
-      --panel: #161618;
-      --line: rgba(255,255,255,0.12);
-      --text: #f4f2ee;
-      --muted: rgba(244,242,238,0.62);
-      --accent: #c9a227;
-      --danger: #b84a3a;
-      --ok: #3d8f6e;
-      --pad: max(16px, env(safe-area-inset-left));
-      --pad-r: max(16px, env(safe-area-inset-right));
-      --pad-b: max(16px, env(safe-area-inset-bottom));
+      --bg: #121212;
+      --bg-elev: #1c1c1c;
+      --panel: #242424;
+      --line: #393939;
+      --text: #fafafa;
+      --muted: #b4b4b4;
+      --accent: #a10f0d;
+      --accent-pressed: #8a0c0b;
+      --accent-soft: rgba(161, 15, 13, 0.18);
+      --accent-line: rgba(161, 15, 13, 0.55);
+      --on-accent: #ffffff;
+      --warn-soft: rgba(184, 74, 58, 0.2);
+      --ok-soft: rgba(61, 143, 110, 0.28);
+      --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      --font-liturgy: "Times New Roman", Times, "Liberation Serif", serif;
+      --font-flow: "Playfair Display", Georgia, serif;
+      --pad: max(14px, env(safe-area-inset-left));
+      --pad-r: max(14px, env(safe-area-inset-right));
+      --pad-b: max(14px, env(safe-area-inset-bottom));
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
     }
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
       min-height: 100%;
-      background: radial-gradient(120% 80% at 50% -10%, #1c1c20 0%, var(--bg) 55%);
+      background:
+        radial-gradient(90% 50% at 50% -8%, color-mix(in srgb, var(--accent) 28%, transparent) 0%, transparent 55%),
+        var(--bg);
       color: var(--text);
-      font-family: "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+      font-family: var(--font-ui);
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+      -webkit-user-select: none;
     }
     body {
-      padding: 18px var(--pad-r) calc(18px + var(--pad-b)) var(--pad);
-      max-width: 480px;
+      padding: 14px var(--pad-r) calc(16px + var(--pad-b)) var(--pad);
+      max-width: 430px;
       margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
+
     header {
       display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2px 0 4px;
+    }
+    .wordmark {
+      display: inline-flex;
       align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
+      white-space: nowrap;
+      font-size: 1.35rem;
+      line-height: 1;
+      letter-spacing: 0;
+      transform: translateX(-0.04em);
     }
-    h1 {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 650;
-      letter-spacing: 0.02em;
+    .wordmark__liturgy {
+      font-family: var(--font-liturgy);
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: -0.02em;
     }
-    .badge {
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+    .wordmark__flow {
+      font-family: var(--font-flow);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+      margin-left: -0.14em;
+      font-size: 1.08em;
+      letter-spacing: -0.03em;
+      transform: translateY(0.02em);
+    }
+    .wordmark__remote {
+      font-family: var(--font-flow);
+      font-weight: 500;
+      font-style: normal;
       color: var(--muted);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 4px 10px;
+      margin-left: 0.35em;
+      font-size: 0.72em;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
-    .badge.is-frozen { color: #f0d78c; border-color: rgba(201,162,39,0.45); }
-    .badge.is-blank { color: #f0b0a4; border-color: rgba(184,74,58,0.45); }
-    .stage {
-      background: var(--panel);
-      border: 1px solid var(--line);
+
+    .err {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--warn-soft);
+      border: 1px solid rgba(184, 74, 58, 0.4);
+      color: #f0b0a4;
+      font-size: 0.84rem;
+      display: none;
+    }
+    .err.is-on { display: block; }
+
+    .live-card {
+      position: relative;
       border-radius: 18px;
       overflow: hidden;
-      position: relative;
+      background: #000;
+      border: 2px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent),
+        0 18px 40px rgba(0, 0, 0, 0.45);
       aspect-ratio: 16 / 9;
-      margin-bottom: 12px;
     }
-    .stage img {
+    .live-card.is-live {
+      border-color: var(--accent);
+      animation: live-pulse 2.8s ease-in-out infinite;
+    }
+    .live-card.is-frozen {
+      border-color: #7ec8e3;
+      box-shadow:
+        0 0 0 1px rgba(126, 200, 227, 0.35),
+        0 0 22px rgba(126, 200, 227, 0.22),
+        0 18px 40px rgba(0, 0, 0, 0.45);
+      animation: none;
+    }
+    .live-card.is-blank-mode {
+      border-color: rgba(240, 176, 164, 0.55);
+      animation: none;
+    }
+    @keyframes live-pulse {
+      0%, 100% {
+        border-color: rgba(161, 15, 13, 0.35);
+        box-shadow:
+          0 0 0 1px rgba(161, 15, 13, 0.12),
+          0 18px 40px rgba(0, 0, 0, 0.45);
+      }
+      50% {
+        border-color: #a10f0d;
+        box-shadow:
+          0 0 0 1px rgba(161, 15, 13, 0.45),
+          0 0 18px rgba(161, 15, 13, 0.35),
+          0 18px 40px rgba(0, 0, 0, 0.45);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .live-card.is-live { animation: none; border-color: var(--accent); }
+    }
+    .live-card img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      background: #000;
+      object-fit: cover;
       display: block;
+      background: #000;
     }
-    .stage .empty {
+    .live-card.is-blank img { visibility: hidden; }
+    .live-card .empty {
       position: absolute;
       inset: 0;
       display: grid;
       place-items: center;
       color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       padding: 1rem;
       text-align: center;
+      background: #000;
+      pointer-events: none;
     }
-    .meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 0.82rem;
-      margin-bottom: 10px;
-      font-variant-numeric: tabular-nums;
+    .live-card .empty[hidden] { display: none !important; }
+    .live-card .blank-veil {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: #000;
+      pointer-events: none;
+      z-index: 2;
     }
-    .next-row {
-      display: grid;
-      grid-template-columns: 1fr 88px;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .next-card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-height: 72px;
-    }
-    .next-card span {
-      font-size: 0.68rem;
+    .live-card.is-blank .blank-veil { display: grid; }
+
+    .status-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 3;
+      font-size: 0.58rem;
+      font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--on-accent);
+      background: rgba(161, 15, 13, 0.82);
+      border-radius: 999px;
+      padding: 3px 7px;
+      line-height: 1.2;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
     }
-    .next-card strong { font-size: 0.92rem; font-weight: 600; }
-    .next-thumb {
-      border-radius: 12px;
+    .status-badge.is-frozen {
+      background: rgba(20, 36, 44, 0.78);
+      color: #b9e6f5;
+      border: 1px solid rgba(126, 200, 227, 0.45);
+      box-shadow: none;
+    }
+    .status-badge.is-blank {
+      background: rgba(10, 10, 10, 0.78);
+      color: #f0b0a4;
+      border: 1px solid rgba(240, 176, 164, 0.4);
+      box-shadow: none;
+    }
+
+    .gloss-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 10px 6px;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.28) 55%, rgba(0,0,0,0.42) 100%);
+      border-top: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      pointer-events: none;
+    }
+    .gloss-bar__label {
+      font-family: var(--font-flow);
+      font-style: italic;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(255,255,255,0.92);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+      line-height: 1;
+    }
+    .gloss-bar__count {
+      font-family: var(--font-ui);
+      font-size: 0.68rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      color: rgba(255,255,255,0.82);
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+      line-height: 1;
+    }
+
+    .peek-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .peek {
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    .peek:disabled {
+      opacity: 0.45;
+      cursor: default;
+      pointer-events: none;
+    }
+    .peek:not(:disabled):active { transform: scale(0.985); }
+    .peek__thumb {
+      position: relative;
+      border-radius: 14px;
       overflow: hidden;
       border: 1px solid var(--line);
-      background: #000;
+      background: #161616;
       aspect-ratio: 16 / 9;
     }
-    .next-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .peek__thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .peek__thumb img[hidden] { display: none !important; }
+    .peek__thumb.is-empty::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: #161616;
+    }
+    .peek__cap {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 8px 7px 5px;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.22) 55%, rgba(0,0,0,0.36) 100%);
+      border-top: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      font-size: 0.56rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.9);
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+      line-height: 1.15;
+    }
+    .peek__cap span:last-child {
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      opacity: 0.88;
+    }
+
+    .go-live {
+      appearance: none;
+      width: 74px;
+      height: 74px;
+      border-radius: 999px;
+      border: 1px solid rgba(61, 143, 110, 0.5);
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), transparent 45%),
+        var(--ok-soft);
+      color: #c8f0dd;
+      font-size: 0.62rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1.15;
+      padding: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+    }
+    .go-live:disabled,
+    .go-live.is-live {
+      opacity: 0.4;
+      cursor: default;
+      filter: grayscale(0.4);
+      border-color: var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      box-shadow: none;
+      pointer-events: none;
+    }
+    .go-live:not(:disabled):active { transform: scale(0.96); }
+
     .pad {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-bottom: 10px;
     }
-    button {
+    button.nav, button.tool {
       appearance: none;
       border: 1px solid var(--line);
-      background: #222226;
+      background: var(--panel);
       color: var(--text);
       border-radius: 16px;
-      min-height: 64px;
-      font-size: 1.05rem;
-      font-weight: 650;
-      letter-spacing: 0.02em;
+      font-weight: 700;
       cursor: pointer;
+      transition: transform 120ms var(--ease), background 120ms var(--ease);
     }
-    button:active { transform: scale(0.98); }
-    button:disabled { opacity: 0.4; }
-    button.primary { background: #2a2a30; border-color: rgba(255,255,255,0.2); }
-    button.warn { background: rgba(184,74,58,0.18); border-color: rgba(184,74,58,0.45); }
-    button.accent { background: rgba(201,162,39,0.16); border-color: rgba(201,162,39,0.45); color: #f0d78c; }
-    button.ok { background: rgba(61,143,110,0.18); border-color: rgba(61,143,110,0.45); }
+    button.nav { min-height: 64px; font-size: 1.02rem; }
+    button.nav:active, button.tool:active { transform: scale(0.97); }
+    button.nav:disabled, button.tool:disabled { opacity: 0.35; pointer-events: none; }
+    button.nav {
+      background: linear-gradient(180deg, #2e2e2e 0%, #222 100%);
+      border-color: #454545;
+    }
+    button.nav--next {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #2a2a2a) 0%, var(--accent-pressed) 100%);
+      border-color: var(--accent-line);
+      color: var(--on-accent);
+      box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
     .tools {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-    .hint {
-      margin-top: 16px;
-      color: var(--muted);
-      font-size: 0.78rem;
-      line-height: 1.45;
+    button.tool {
+      min-height: 50px;
+      font-size: 0.92rem;
+      background: var(--bg-elev);
     }
-    .err {
-      margin: 0 0 12px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(184,74,58,0.15);
-      border: 1px solid rgba(184,74,58,0.35);
+    button.tool.is-on {
+      border-color: var(--accent-line);
+      background: var(--accent-soft);
+      color: #ffc9c7;
+    }
+    button.tool-warn.is-on {
+      border-color: rgba(184, 74, 58, 0.55);
+      background: var(--warn-soft);
       color: #f0b0a4;
-      font-size: 0.85rem;
-      display: none;
     }
-    .err.is-on { display: block; }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      place-items: center;
+      padding: 18px var(--pad-r) calc(18px + var(--pad-b)) var(--pad);
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .lightbox.is-open { display: grid; }
+    .lightbox__card {
+      width: min(100%, 520px);
+      background: #141414;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+    }
+    .lightbox__media {
+      aspect-ratio: 16 / 9;
+      background: #000;
+    }
+    .lightbox__media img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .lightbox__foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .lightbox__foot strong {
+      font-family: var(--font-flow);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+    .lightbox__close {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .footer-gap { flex: 1 1 auto; min-height: 4px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Projection remote</h1>
-    <span class="badge" id="mode-badge">Live</span>
+    <div class="wordmark" aria-label="LiturgyFlow Remote">
+      <span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span><span class="wordmark__remote">Remote</span>
+    </div>
   </header>
+
   <p class="err" id="err"></p>
-  <div class="stage" id="stage">
-    <img id="preview" alt="Slide preview" hidden />
+
+  <section class="live-card" id="stage" aria-label="Live view">
+    <img id="preview" alt="Current slide" hidden />
     <div class="empty" id="empty">Connecting…</div>
-  </div>
-  <div class="meta">
-    <span id="counter">—</span>
-    <span id="live-label">Projected: —</span>
-  </div>
-  <div class="next-row">
-    <div class="next-card">
-      <span>Up next</span>
-      <strong id="next-label">End of deck</strong>
+    <div class="blank-veil" id="blank-veil" aria-hidden="true">Black</div>
+    <span class="status-badge" id="mode-badge">Live</span>
+    <div class="gloss-bar">
+      <span class="gloss-bar__label" id="view-label">On screen</span>
+      <span class="gloss-bar__count" id="counter">—</span>
     </div>
-    <div class="next-thumb">
-      <img id="next-img" alt="" hidden />
-    </div>
+  </section>
+
+  <div class="peek-row" aria-label="Adjacent slides">
+    <button type="button" class="peek" id="peek-prev" disabled aria-label="Enlarge previous slide">
+      <div class="peek__thumb is-empty" id="prev-thumb">
+        <img id="prev-img" alt="" hidden />
+        <div class="peek__cap"><span>Prev</span><span id="prev-label">—</span></div>
+      </div>
+    </button>
+    <button type="button" class="go-live is-live" id="btn-live" disabled>Go<br />live</button>
+    <button type="button" class="peek" id="peek-next" disabled aria-label="Enlarge next slide">
+      <div class="peek__thumb is-empty" id="next-thumb">
+        <img id="next-img" alt="" hidden />
+        <div class="peek__cap"><span>Next</span><span id="next-label">—</span></div>
+      </div>
+    </button>
   </div>
+
   <div class="pad">
-    <button type="button" id="btn-prev" class="primary">Prev</button>
-    <button type="button" id="btn-next" class="primary">Next</button>
+    <button type="button" id="btn-prev" class="nav" aria-label="Previous slide">◀ Prev</button>
+    <button type="button" id="btn-next" class="nav nav--next" aria-label="Next slide">Next ▶</button>
   </div>
+
   <div class="tools">
-    <button type="button" id="btn-blank" class="warn">Black screen</button>
-    <button type="button" id="btn-freeze" class="accent">Freeze</button>
+    <button type="button" id="btn-blank" class="tool tool-warn">Black</button>
+    <button type="button" id="btn-freeze" class="tool">Freeze</button>
   </div>
-  <div class="tools" style="margin-top:10px">
-    <button type="button" id="btn-live" class="ok" hidden>Go live here</button>
+
+  <div class="footer-gap" aria-hidden="true"></div>
+
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lightbox__card" role="dialog" aria-modal="true" aria-labelledby="lightbox-title">
+      <div class="lightbox__media">
+        <img id="lightbox-img" alt="Enlarged slide" />
+      </div>
+      <div class="lightbox__foot">
+        <strong id="lightbox-title">Slide</strong>
+        <button type="button" class="lightbox__close" id="lightbox-close">Close</button>
+      </div>
+    </div>
   </div>
-  <p class="hint">
-    Freeze keeps the projector on the current slide while you browse on this phone.
-    Go live jumps the screen to whatever you’re previewing. Black screen blanks the projector.
-  </p>
+
   <script>
 (function () {
   var TOKEN = {{ token|tojson }};
@@ -222,12 +550,19 @@
     blank: false,
     frozen: false,
   };
+  var peekIndex = { prev: -1, next: -1 };
 
   var $ = function (id) { return document.getElementById(id); };
   var errEl = $("err");
   var preview = $("preview");
   var empty = $("empty");
+  var stage = $("stage");
+  var prevImg = $("prev-img");
   var nextImg = $("next-img");
+  var prevThumb = $("prev-thumb");
+  var nextThumb = $("next-thumb");
+  var lightbox = $("lightbox");
+  var lightboxImg = $("lightbox-img");
   var bust = Date.now();
 
   function showErr(msg) {
@@ -244,18 +579,61 @@
     return "/api/projection/" + encodeURIComponent(TOKEN) + "/slide/" + i + "?t=" + bust;
   }
 
+  function setImg(el, index) {
+    if (!el) return;
+    if (index == null || index < 0) {
+      el.hidden = true;
+      el.removeAttribute("src");
+      el.removeAttribute("data-idx");
+      return;
+    }
+    var key = String(index);
+    if (el.getAttribute("data-idx") !== key) {
+      el.setAttribute("data-idx", key);
+      el.src = slideUrl(index);
+    }
+    el.hidden = false;
+  }
+
+  function setPeek(thumbEl, imgEl, labelEl, btnEl, index, total, which) {
+    peekIndex[which] = (total && index >= 0 && index < total) ? index : -1;
+    if (peekIndex[which] >= 0) {
+      thumbEl.classList.remove("is-empty");
+      labelEl.textContent = String(index + 1);
+      setImg(imgEl, index);
+      btnEl.disabled = false;
+    } else {
+      thumbEl.classList.add("is-empty");
+      labelEl.textContent = "—";
+      setImg(imgEl, -1);
+      btnEl.disabled = true;
+    }
+  }
+
+  function openLightbox(index) {
+    if (index == null || index < 0) return;
+    lightboxImg.src = slideUrl(index);
+    $("lightbox-title").textContent = "Slide " + (index + 1);
+    lightbox.classList.add("is-open");
+    lightbox.setAttribute("aria-hidden", "false");
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove("is-open");
+    lightbox.setAttribute("aria-hidden", "true");
+  }
+
   function render() {
     var browse = state.frozen ? state.preview_index : state.index;
     var total = state.total || 0;
-    $("counter").textContent = total
-      ? ((browse + 1) + " / " + total + (state.frozen ? " (preview)" : ""))
-      : "—";
-    $("live-label").textContent = total
-      ? ("Projected: " + (state.index + 1) + (state.blank ? " · black" : ""))
-      : "Projected: —";
+    var showBlank = !!state.blank && !state.frozen;
+
+    $("counter").textContent = total ? ((browse + 1) + " / " + total) : "—";
+    $("view-label").textContent = state.frozen ? "Preview" : "On screen";
+
     var badge = $("mode-badge");
     badge.classList.remove("is-frozen", "is-blank");
-    if (state.blank) {
+    if (state.blank && !state.frozen) {
       badge.textContent = "Black";
       badge.classList.add("is-blank");
     } else if (state.frozen) {
@@ -264,32 +642,36 @@
     } else {
       badge.textContent = "Live";
     }
+
     $("btn-freeze").textContent = state.frozen ? "Unfreeze" : "Freeze";
-    $("btn-blank").textContent = state.blank ? "Show slide" : "Black screen";
-    $("btn-live").hidden = !state.frozen;
+    $("btn-freeze").classList.toggle("is-on", !!state.frozen);
+    $("btn-blank").textContent = state.blank ? "Show" : "Black";
+    $("btn-blank").classList.toggle("is-on", !!state.blank);
+
+    var liveBtn = $("btn-live");
+    var canGoLive = !!state.frozen;
+    liveBtn.disabled = !canGoLive;
+    liveBtn.classList.toggle("is-live", !canGoLive);
+
     $("btn-prev").disabled = browse <= 0;
     $("btn-next").disabled = !total || browse >= total - 1;
 
+    stage.classList.toggle("is-blank", showBlank);
+    stage.classList.toggle("is-live", !state.frozen && !showBlank && total > 0);
+    stage.classList.toggle("is-frozen", !!state.frozen);
+    stage.classList.toggle("is-blank-mode", showBlank);
+
     if (total > 0) {
-      preview.hidden = false;
       empty.hidden = true;
-      preview.src = slideUrl(browse);
+      setImg(preview, browse);
     } else {
-      preview.hidden = true;
+      setImg(preview, -1);
       empty.hidden = false;
       empty.textContent = "Waiting for slides…";
     }
 
-    var nextIdx = browse + 1;
-    if (total && nextIdx < total) {
-      $("next-label").textContent = "Slide " + (nextIdx + 1);
-      nextImg.hidden = false;
-      nextImg.src = slideUrl(nextIdx);
-    } else {
-      $("next-label").textContent = "End of deck";
-      nextImg.hidden = true;
-      nextImg.removeAttribute("src");
-    }
+    setPeek(prevThumb, prevImg, $("prev-label"), $("peek-prev"), browse - 1, total, "prev");
+    setPeek(nextThumb, nextImg, $("next-label"), $("peek-next"), browse + 1, total, "next");
   }
 
   async function refresh() {
@@ -339,7 +721,24 @@
   });
   $("btn-blank").addEventListener("click", function () { command("blank_toggle"); });
   $("btn-freeze").addEventListener("click", function () { command("freeze_toggle"); });
-  $("btn-live").addEventListener("click", function () { command("go_live"); });
+  $("btn-live").addEventListener("click", function () {
+    if (state.frozen) command("go_live");
+  });
+  $("peek-prev").addEventListener("click", function () { openLightbox(peekIndex.prev); });
+  $("peek-next").addEventListener("click", function () { openLightbox(peekIndex.next); });
+  $("lightbox-close").addEventListener("click", closeLightbox);
+  lightbox.addEventListener("click", function (e) {
+    if (e.target === lightbox) closeLightbox();
+  });
+
+  preview.addEventListener("error", function () {
+    if (!state.total) return;
+    empty.hidden = false;
+    empty.textContent = "Slide image unavailable";
+  });
+  preview.addEventListener("load", function () {
+    empty.hidden = true;
+  });
 
   refresh();
   setInterval(refresh, 1200);

@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN mkdir -p outputs \
     && mkdir -p /usr/share/fonts/truetype/verbum \
-    && cp -v data/reference/fonts/Poppins-*.ttf /usr/share/fonts/truetype/verbum/ \
+    && cp -v data/reference/fonts/*.ttf /usr/share/fonts/truetype/verbum/ \
     && cp -v data/reference/fonts/99-verbum-pptx.conf /etc/fonts/conf.d/99-verbum-pptx.conf \
     && fc-cache -f
 

@@ -2334,7 +2334,7 @@ def projection_remote_page(request: Request, token: str) -> Any:
         "projection_remote.html",
         {
             "token": token,
-            "title": "Projection remote",
+            "title": "LiturgyFlow Remote",
             **_template_version_context(),
         },
     )

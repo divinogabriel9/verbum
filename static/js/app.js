@@ -25437,6 +25437,28 @@
       }, 450);
     }
 
+    function syncMassSlideshowFullscreenUi() {
+      const btn = $("mass-slideshow-fullscreen");
+      if (!btn) return;
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      btn.textContent = on ? "Exit full" : "Fullscreen";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    async function toggleMassSlideshowFullscreen() {
+      const root = $("mass-slideshow");
+      if (!root || !massSlideshowState.open) return;
+      try {
+        if (document.fullscreenElement) {
+          if (document.exitFullscreen) await document.exitFullscreen();
+        } else if (root.requestFullscreen) {
+          await root.requestFullscreen();
+        }
+      } catch (_e) { /* browser may block without gesture */ }
+      syncMassSlideshowFullscreenUi();
+      setMassSlideshowChromeVisible(true);
+    }
+
     function massSlideshowGo(delta) {
       if (!massSlideshowState.open || !massSlideshowState.slides.length) return;
       if (massSlideshowState.blank) {
@@ -25589,6 +25611,7 @@
       try {
         if (root.requestFullscreen) await root.requestFullscreen();
       } catch (_e) { /* ignore — still present windowed */ }
+      syncMassSlideshowFullscreenUi();
       if (root.focus) root.focus();
       if (!massSlideshowState.complete) scheduleMassSlideshowPoll();
       rememberMassSlideshowSessionFromState();
@@ -25606,6 +25629,10 @@
       $("mass-slideshow-exit") && $("mass-slideshow-exit").addEventListener("click", (e) => {
         e.stopPropagation();
         closeMassSlideshow();
+      });
+      $("mass-slideshow-fullscreen") && $("mass-slideshow-fullscreen").addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMassSlideshowFullscreen();
       });
       $("mass-slideshow-remote") && $("mass-slideshow-remote").addEventListener("click", async (e) => {
         e.stopPropagation();
@@ -25643,6 +25670,10 @@
         bumpMassSlideshowCursor();
         setMassSlideshowChromeVisible(true);
       });
+      document.addEventListener("fullscreenchange", () => {
+        if (!massSlideshowState.open) return;
+        syncMassSlideshowFullscreenUi();
+      });
       document.addEventListener("keydown", (e) => {
         if (!massSlideshowState.open) return;
         const key = e.key;
@@ -25650,6 +25681,11 @@
           e.preventDefault();
           e.stopPropagation();
           closeMassSlideshow();
+          return;
+        }
+        if (key === "f" || key === "F") {
+          e.preventDefault();
+          toggleMassSlideshowFullscreen();
           return;
         }
         if (key === "b" || key === "B" || key === ".") {
