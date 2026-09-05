@@ -296,37 +296,60 @@
         );
       }
 
-      async function startGoogleSignIn(opts) {
-        const options = opts || {};
-        const link = !!options.link;
-        showError("");
-        clearSwitchAccountParam();
-        const buttons = [
+      function providerLabel(provider) {
+        return provider === "facebook" ? "Facebook" : "Google";
+      }
+
+      function oauthButtonsFor(provider) {
+        if (provider === "facebook") {
+          return [
+            $("auth-facebook-btn"),
+            $("auth-invite-facebook-btn"),
+            $("auth-session-facebook-btn"),
+          ].filter(Boolean);
+        }
+        return [
           $("auth-google-btn"),
           $("auth-invite-google-btn"),
           $("auth-session-google-btn"),
         ].filter(Boolean);
+      }
+
+      function allOauthButtons() {
+        return oauthButtonsFor("google").concat(oauthButtonsFor("facebook"));
+      }
+
+      async function startOAuthSignIn(provider, opts) {
+        const options = opts || {};
+        const link = !!options.link;
+        const label = providerLabel(provider);
+        showError("");
+        clearSwitchAccountParam();
+        const buttons = allOauthButtons();
         buttons.forEach(function (btn) { btn.disabled = true; });
         try {
           if (inviteToken) stashPendingInvite(inviteToken);
+          const oauthOptions = {
+            redirectTo: oauthRedirectTo(),
+            skipBrowserRedirect: true,
+          };
+          if (provider === "google") {
+            oauthOptions.queryParams = { prompt: "select_account" };
+          }
           if (link) {
             try {
-              sessionStorage.setItem("verbum:link-google", "1");
+              sessionStorage.setItem("verbum:link-" + provider, "1");
             } catch (_e) { /* ignore */ }
             if (typeof client.auth.linkIdentity !== "function") {
-              throw new Error("Google linking is unavailable in this browser. Refresh and try again.");
+              throw new Error(label + " linking is unavailable in this browser. Refresh and try again.");
             }
             const { data: sessionCheck } = await client.auth.getSession();
             if (!sessionCheck || !sessionCheck.session) {
-              throw new Error("Sign in with email first, then connect Google.");
+              throw new Error("Sign in with email first, then connect " + label + ".");
             }
             const { data, error } = await client.auth.linkIdentity({
-              provider: "google",
-              options: {
-                redirectTo: oauthRedirectTo(),
-                skipBrowserRedirect: true,
-                queryParams: { prompt: "select_account" },
-              },
+              provider: provider,
+              options: oauthOptions,
             });
             if (error) {
               const msg = String((error && error.message) || "");
@@ -338,7 +361,7 @@
               }
               if (/manual linking/i.test(msg) || /linking.*(disabled|not enabled)/i.test(msg)) {
                 throw new Error(
-                  "Google linking is disabled in Auth settings. Enable “Allow manual linking” in Supabase, or sign out and use Continue with Google with the same email."
+                  label + " linking is disabled in Auth settings. Enable “Allow manual linking” in Supabase, or sign out and use Continue with " + label + " with the same email."
                 );
               }
               throw error;
@@ -347,59 +370,49 @@
               window.location.assign(data.url);
               return;
             }
-            throw new Error("Google linking did not return a redirect URL.");
+            throw new Error(label + " linking did not return a redirect URL.");
           }
           const { data, error } = await client.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo: oauthRedirectTo(),
-              skipBrowserRedirect: true,
-              queryParams: {
-                prompt: "select_account",
-              },
-            },
+            provider: provider,
+            options: oauthOptions,
           });
           if (error) throw error;
           if (data && data.url) {
             window.location.assign(data.url);
             return;
           }
-          throw new Error("Google sign-in did not return a redirect URL.");
+          throw new Error(label + " sign-in did not return a redirect URL.");
         } catch (err) {
-          showError((err && err.message) || "Google sign-in failed.");
+          showError((err && err.message) || (label + " sign-in failed."));
           buttons.forEach(function (btn) { btn.disabled = false; });
         }
       }
 
-      function userHasGoogle(user) {
+      function userHasProvider(user, provider) {
         const identities = (user && user.identities) || [];
+        const needle = String(provider || "").toLowerCase();
         return identities.some(function (item) {
-          return String((item && item.provider) || "").toLowerCase() === "google";
+          return String((item && item.provider) || "").toLowerCase() === needle;
         });
       }
 
-      function bindGoogleButtons() {
-        const googleBtn = $("auth-google-btn");
-        if (googleBtn && !googleBtn.dataset.bound) {
-          googleBtn.dataset.bound = "1";
-          googleBtn.addEventListener("click", function () {
-            startGoogleSignIn({ link: false });
+      function bindOAuthButtons() {
+        const pairs = [
+          ["auth-google-btn", "google", false],
+          ["auth-facebook-btn", "facebook", false],
+          ["auth-invite-google-btn", "google", false],
+          ["auth-invite-facebook-btn", "facebook", false],
+          ["auth-session-google-btn", "google", true],
+          ["auth-session-facebook-btn", "facebook", true],
+        ];
+        pairs.forEach(function (pair) {
+          const el = $(pair[0]);
+          if (!el || el.dataset.bound) return;
+          el.dataset.bound = "1";
+          el.addEventListener("click", function () {
+            startOAuthSignIn(pair[1], { link: pair[2] });
           });
-        }
-        const inviteGoogle = $("auth-invite-google-btn");
-        if (inviteGoogle && !inviteGoogle.dataset.bound) {
-          inviteGoogle.dataset.bound = "1";
-          inviteGoogle.addEventListener("click", function () {
-            startGoogleSignIn({ link: false });
-          });
-        }
-        const sessionGoogle = $("auth-session-google-btn");
-        if (sessionGoogle && !sessionGoogle.dataset.bound) {
-          sessionGoogle.dataset.bound = "1";
-          sessionGoogle.addEventListener("click", function () {
-            startGoogleSignIn({ link: true });
-          });
-        }
+        });
       }
 
       function showLoginForm() {
@@ -412,14 +425,18 @@
 
         const oauth = $("auth-oauth");
         const oauthDivider = $("auth-oauth-divider");
-        const showGoogle = mode === "sign-in" || mode === "sign-up";
-        if (oauth) oauth.hidden = !showGoogle;
-        if (oauthDivider) oauthDivider.hidden = !showGoogle;
+        const showOAuth = mode === "sign-in" || mode === "sign-up";
+        if (oauth) oauth.hidden = !showOAuth;
+        if (oauthDivider) oauthDivider.hidden = !showOAuth;
         const hint = $("auth-google-hint");
         if (hint) hint.hidden = !(mode === "sign-up" && inviteToken);
-        const label = $("auth-google-btn-label");
-        if (label) {
-          label.textContent = mode === "sign-up" ? "Sign up with Google" : "Continue with Google";
+        const googleLabel = $("auth-google-btn-label");
+        if (googleLabel) {
+          googleLabel.textContent = mode === "sign-up" ? "Sign up with Google" : "Continue with Google";
+        }
+        const facebookLabel = $("auth-facebook-btn-label");
+        if (facebookLabel) {
+          facebookLabel.textContent = mode === "sign-up" ? "Sign up with Facebook" : "Continue with Facebook";
         }
 
         if (mode === "sign-up") {
@@ -434,7 +451,7 @@
           }
         }
 
-        bindGoogleButtons();
+        bindOAuthButtons();
       }
 
       function showExistingSession(user) {
@@ -453,9 +470,13 @@
 
         const sessionGoogle = $("auth-session-google-btn");
         if (sessionGoogle) {
-          sessionGoogle.hidden = userHasGoogle(user);
+          sessionGoogle.hidden = userHasProvider(user, "google");
         }
-        bindGoogleButtons();
+        const sessionFacebook = $("auth-session-facebook-btn");
+        if (sessionFacebook) {
+          sessionFacebook.hidden = userHasProvider(user, "facebook");
+        }
+        bindOAuthButtons();
 
         const continueBtn = $("auth-continue-btn");
         if (continueBtn && !continueBtn.dataset.bound) {
@@ -475,7 +496,7 @@
 
       if (inviteSignupBlocked) {
         showInviteBlocked();
-        bindGoogleButtons();
+        bindOAuthButtons();
         return;
       }
 

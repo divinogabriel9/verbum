@@ -3797,9 +3797,15 @@
                   <div class="church-identity-row__name">
                     <p class="settings-account-meta" id="settings-account-name">—</p>
                     <p class="settings-account-meta" id="settings-account-email" style="margin-top:4px;">—</p>
-                    <div class="settings-account-google" id="settings-account-google" style="margin-top:12px;">
-                      <p class="muted" id="settings-account-google-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Google connection…</p>
-                      <button type="button" class="secondary" id="settings-connect-google" hidden>Connect Google login</button>
+                    <div class="settings-account-social" id="settings-account-social" style="margin-top:12px;">
+                      <div class="settings-account-google" id="settings-account-google" style="margin-bottom:12px;">
+                        <p class="muted" id="settings-account-google-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Google connection…</p>
+                        <button type="button" class="secondary" id="settings-connect-google" hidden>Connect Google login</button>
+                      </div>
+                      <div class="settings-account-facebook" id="settings-account-facebook">
+                        <p class="muted" id="settings-account-facebook-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Facebook connection…</p>
+                        <button type="button" class="secondary" id="settings-connect-facebook" hidden>Connect Facebook login</button>
+                      </div>
                     </div>
                     <p class="muted" style="margin-top:8px;font-size:0.85rem;">This is your photo — separate from the parish logo on Church Profile.</p>
                   </div>
@@ -4289,10 +4295,10 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260905-remote"></script>
+  <script src="/static/js/app.js?v=20260905-facebook1"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
-  <script src="/static/js/auth.js?v=20260905-google2"></script>
+  <script src="/static/js/auth.js?v=20260905-facebook1"></script>
   <script>
     scheduleDashboardBoot();
   </script>

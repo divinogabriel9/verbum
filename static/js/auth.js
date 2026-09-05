@@ -338,12 +338,21 @@
     return null;
   }
 
-  function hasGoogleIdentity(user) {
+  function hasOAuthIdentity(user, provider) {
     const u = user || state.user || (state.session && state.session.user);
     const identities = (u && u.identities) || [];
+    const needle = String(provider || "").toLowerCase();
     return identities.some(
-      (item) => String((item && item.provider) || "").toLowerCase() === "google"
+      (item) => String((item && item.provider) || "").toLowerCase() === needle
     );
+  }
+
+  function hasGoogleIdentity(user) {
+    return hasOAuthIdentity(user, "google");
+  }
+
+  function hasFacebookIdentity(user) {
+    return hasOAuthIdentity(user, "facebook");
   }
 
   async function refreshAuthUser() {
@@ -361,35 +370,47 @@
     return state.user;
   }
 
-  async function linkGoogleAccount() {
+  async function linkOAuthAccount(provider) {
+    const label = provider === "facebook" ? "Facebook" : "Google";
     await ensureSupabase();
     if (!state.supabase) throw new Error("Sign in first.");
     if (typeof state.supabase.auth.linkIdentity !== "function") {
-      throw new Error("This browser session cannot link Google. Refresh and try again.");
+      throw new Error("This browser session cannot link " + label + ". Refresh and try again.");
     }
     const { data: sessionData, error: sessionError } =
       await state.supabase.auth.getSession();
     if (sessionError) throw sessionError;
     if (!sessionData || !sessionData.session) {
-      throw new Error("Sign in with email first, then connect Google.");
+      throw new Error("Sign in with email first, then connect " + label + ".");
     }
     applySession(sessionData.session);
 
     const redirectTo =
-      window.location.origin + "/settings/account?google_linked=1";
+      window.location.origin +
+      "/settings/account?" +
+      (provider === "facebook" ? "facebook_linked=1" : "google_linked=1");
+    const options = {
+      redirectTo,
+      skipBrowserRedirect: true,
+    };
+    if (provider === "google") {
+      options.queryParams = { prompt: "select_account" };
+    }
     const { data, error } = await state.supabase.auth.linkIdentity({
-      provider: "google",
-      options: {
-        redirectTo,
-        skipBrowserRedirect: true,
-        queryParams: { prompt: "select_account" },
-      },
+      provider: provider,
+      options: options,
     });
     if (error) {
       const msg = String((error && error.message) || "");
+      if (/identity_already_exists|already linked/i.test(msg)) {
+        return true;
+      }
       if (/manual linking/i.test(msg) || /linking.*(disabled|not enabled)/i.test(msg)) {
         throw new Error(
-          "Google linking is disabled in Auth settings. Enable “Allow manual linking” in Supabase, or sign out and use Continue with Google with the same email."
+          label +
+            " linking is disabled in Auth settings. Enable “Allow manual linking” in Supabase, or sign out and use Continue with " +
+            label +
+            " with the same email."
         );
       }
       throw error;
@@ -398,7 +419,15 @@
       window.location.assign(data.url);
       return true;
     }
-    throw new Error("Google linking did not return a redirect URL.");
+    throw new Error(label + " linking did not return a redirect URL.");
+  }
+
+  async function linkGoogleAccount() {
+    return linkOAuthAccount("google");
+  }
+
+  async function linkFacebookAccount() {
+    return linkOAuthAccount("facebook");
   }
 
   function getGreetingLabel(user) {
@@ -733,7 +762,9 @@
     updateAccountMenuDisplay,
     getUserFirstName,
     hasGoogleIdentity,
+    hasFacebookIdentity,
     linkGoogleAccount,
+    linkFacebookAccount,
     refreshAuthUser,
     getHomeWelcomeLabel,
     getHomeWelcomeSubtext,

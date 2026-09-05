@@ -327,6 +327,12 @@
           </svg>
           Connect Google to this account
         </button>
+        <button type="button" class="auth-oauth-btn" id="auth-session-facebook-btn" hidden>
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#1877F2" d="M18 9a9 9 0 1 0-10.406 8.89v-6.288H5.309V9h2.285V7.017c0-2.255 1.343-3.501 3.4-3.501.984 0 2.014.176 2.014.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.602H11.406v6.288A9.004 9.004 0 0 0 18 9z"/>
+          </svg>
+          Connect Facebook to this account
+        </button>
       </div>
     </div>
 
@@ -342,6 +348,12 @@
             <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
           </svg>
           Sign in with Google
+        </button>
+        <button type="button" class="auth-oauth-btn" id="auth-invite-facebook-btn">
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#1877F2" d="M18 9a9 9 0 1 0-10.406 8.89v-6.288H5.309V9h2.285V7.017c0-2.255 1.343-3.501 3.4-3.501.984 0 2.014.176 2.014.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.602H11.406v6.288A9.004 9.004 0 0 0 18 9z"/>
+          </svg>
+          Sign in with Facebook
         </button>
         <a class="auth-submit" href="/sign-in" style="text-align:center;text-decoration:none;display:block;">Sign in with email</a>
         {% if invite_contact_email %}
@@ -396,8 +408,14 @@
         </svg>
         <span id="auth-google-btn-label">{% if mode == "sign-up" %}Sign up with Google{% else %}Continue with Google{% endif %}</span>
       </button>
+      <button type="button" class="auth-oauth-btn" id="auth-facebook-btn">
+        <svg viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#1877F2" d="M18 9a9 9 0 1 0-10.406 8.89v-6.288H5.309V9h2.285V7.017c0-2.255 1.343-3.501 3.4-3.501.984 0 2.014.176 2.014.176v2.215h-1.135c-1.118 0-1.467.694-1.467 1.406V9h2.496l-.399 2.602H11.406v6.288A9.004 9.004 0 0 0 18 9z"/>
+        </svg>
+        <span id="auth-facebook-btn-label">{% if mode == "sign-up" %}Sign up with Facebook{% else %}Continue with Facebook{% endif %}</span>
+      </button>
       <p class="muted" id="auth-google-hint" style="margin:0;font-size:0.8rem;text-align:center;" {% if mode != "sign-up" %}hidden{% endif %}>
-        Use the Google account that matches your invite email.
+        Use the Google or Facebook account that matches your invite email.
       </p>
     </div>
 
@@ -438,6 +456,6 @@
     window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
     window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
   </script>
-  <script src="/static/js/auth-page.js?v=20260905f" defer></script>
+  <script src="/static/js/auth-page.js?v=20260905g" defer></script>
 </body>
 </html>

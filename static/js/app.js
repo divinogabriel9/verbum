@@ -16936,56 +16936,86 @@
       if (emailEl) emailEl.textContent = email || "—";
       const googleStatus = $("settings-account-google-status");
       const googleBtn = $("settings-connect-google");
-      const linked = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(user));
+      const facebookStatus = $("settings-account-facebook-status");
+      const facebookBtn = $("settings-connect-facebook");
+      const googleLinked = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(user));
+      const facebookLinked = !!(auth && auth.hasFacebookIdentity && auth.hasFacebookIdentity(user));
       if (googleStatus) {
-        googleStatus.textContent = linked
+        googleStatus.textContent = googleLinked
           ? "Google login is connected. You can sign in with Google next time."
           : "Connect Google to sign in faster with the same account.";
       }
-      if (googleBtn) {
-        googleBtn.hidden = !user || linked;
-        if (!googleBtn.dataset.bound) {
-          googleBtn.dataset.bound = "1";
-          googleBtn.addEventListener("click", async () => {
-            googleBtn.disabled = true;
-            if (googleStatus) googleStatus.textContent = "Opening Google…";
-            try {
-              if (!auth || typeof auth.linkGoogleAccount !== "function") {
-                throw new Error("Google linking is unavailable.");
-              }
-              await auth.linkGoogleAccount();
-            } catch (err) {
-              googleBtn.disabled = false;
-              if (googleStatus) {
-                googleStatus.textContent = (err && err.message) || "Could not connect Google.";
-              }
-            }
-          });
-        }
+      if (facebookStatus) {
+        facebookStatus.textContent = facebookLinked
+          ? "Facebook login is connected. You can sign in with Facebook next time."
+          : "Connect Facebook to sign in faster with the same account.";
       }
+      function bindSocialConnect(btn, statusEl, label, linkFnName, linkedFlag) {
+        if (!btn) return;
+        btn.hidden = !user || linkedFlag;
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          if (statusEl) statusEl.textContent = "Opening " + label + "…";
+          try {
+            if (!auth || typeof auth[linkFnName] !== "function") {
+              throw new Error(label + " linking is unavailable.");
+            }
+            await auth[linkFnName]();
+          } catch (err) {
+            btn.disabled = false;
+            if (statusEl) {
+              statusEl.textContent = (err && err.message) || ("Could not connect " + label + ".");
+            }
+          }
+        });
+      }
+      bindSocialConnect(googleBtn, googleStatus, "Google", "linkGoogleAccount", googleLinked);
+      bindSocialConnect(facebookBtn, facebookStatus, "Facebook", "linkFacebookAccount", facebookLinked);
       try {
         const params = new URLSearchParams(window.location.search);
-        if (params.get("google_linked") === "1") {
+        const linkedParam = params.get("google_linked") === "1"
+          ? "google"
+          : (params.get("facebook_linked") === "1" ? "facebook" : "");
+        if (linkedParam) {
           Promise.resolve(
             auth && typeof auth.refreshAuthUser === "function"
               ? auth.refreshAuthUser()
               : null
           ).then(function (freshUser) {
-            const nowLinked = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(freshUser || user));
+            const nowGoogle = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(freshUser || user));
+            const nowFacebook = !!(auth && auth.hasFacebookIdentity && auth.hasFacebookIdentity(freshUser || user));
             if (googleStatus) {
-              googleStatus.textContent = nowLinked
+              googleStatus.textContent = nowGoogle
+                ? "Google login connected."
+                : (linkedParam === "google"
+                  ? "Google connection updated. Refresh if the status looks wrong."
+                  : googleStatus.textContent);
+            }
+            if (facebookStatus) {
+              facebookStatus.textContent = nowFacebook
+                ? "Facebook login connected."
+                : (linkedParam === "facebook"
+                  ? "Facebook connection updated. Refresh if the status looks wrong."
+                  : facebookStatus.textContent);
+            }
+            if (googleBtn) googleBtn.hidden = !user || nowGoogle;
+            if (facebookBtn) facebookBtn.hidden = !user || nowFacebook;
+          }).catch(function () {
+            if (linkedParam === "google" && googleStatus) {
+              googleStatus.textContent = googleLinked
                 ? "Google login connected."
                 : "Google connection updated. Refresh if the status looks wrong.";
             }
-            if (googleBtn) googleBtn.hidden = !user || nowLinked;
-          }).catch(function () {
-            if (googleStatus) {
-              googleStatus.textContent = linked
-                ? "Google login connected."
-                : "Google connection updated. Refresh if the status looks wrong.";
+            if (linkedParam === "facebook" && facebookStatus) {
+              facebookStatus.textContent = facebookLinked
+                ? "Facebook login connected."
+                : "Facebook connection updated. Refresh if the status looks wrong.";
             }
           });
           params.delete("google_linked");
+          params.delete("facebook_linked");
           const qs = params.toString();
           const next = window.location.pathname + (qs ? "?" + qs : "") + (window.location.hash || "");
           window.history.replaceState({}, "", next);
