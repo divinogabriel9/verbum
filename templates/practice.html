@@ -567,10 +567,13 @@
       border-right: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
       border-bottom: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
       transform: rotate(45deg);
+      left: var(--coach-arrow-x, 50%);
+      margin-left: -6px;
+      right: auto;
     }
     .practice-play-coach__bubble[data-side="bottom"]::after {
       top: -6px;
-      right: 22px;
+      bottom: auto;
       border-right: 0;
       border-bottom: 0;
       border-left: 1px solid color-mix(in srgb, var(--line) 90%, var(--accent) 10%);
@@ -578,7 +581,7 @@
     }
     .practice-play-coach__bubble[data-side="top"]::after {
       bottom: -6px;
-      right: 22px;
+      top: auto;
     }
     @media (prefers-reduced-motion: reduce) {
       .practice-yt-play.is-pulse-hint,
@@ -1344,29 +1347,53 @@
         const hole = playCoachEl.querySelector(".practice-play-coach__hole");
         const bubble = playCoachEl.querySelector(".practice-play-coach__bubble");
         if (!hole || !bubble) return;
+
         const rect = target.getBoundingClientRect();
         const pad = opts.pad != null ? opts.pad : 8;
         const shape = opts.shape || "pill";
+        const align = opts.align || "center";
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
         hole.dataset.shape = shape === "rect" ? "rect" : "pill";
         hole.style.top = Math.max(0, rect.top - pad) + "px";
         hole.style.left = Math.max(0, rect.left - pad) + "px";
         hole.style.width = (rect.width + pad * 2) + "px";
         hole.style.height = (rect.height + pad * 2) + "px";
 
-        const bubbleW = Math.min(280, window.innerWidth - 32);
-        let left = rect.left + (rect.width / 2) - (bubbleW / 2);
-        left = Math.max(16, Math.min(left, window.innerWidth - bubbleW - 16));
-        const spaceBelow = window.innerHeight - rect.bottom;
-        let side = "bottom";
-        let top = rect.bottom + 14;
-        if (spaceBelow < 120 && rect.top > 130) {
-          side = "top";
-          top = rect.top - 14 - 88;
-        }
-        bubble.dataset.side = side;
+        // Play sits on the right — keep the bubble tucked under it (end-aligned).
+        const bubbleW = Math.min(align === "end" ? 240 : 280, vw - 32);
         bubble.style.width = bubbleW + "px";
-        bubble.style.left = left + "px";
-        bubble.style.top = Math.max(12, top) + "px";
+
+        let left;
+        if (align === "end") {
+          left = rect.right - bubbleW;
+        } else if (align === "start") {
+          left = rect.left;
+        } else {
+          left = rect.left + rect.width / 2 - bubbleW / 2;
+        }
+        left = Math.max(16, Math.min(left, vw - bubbleW - 16));
+
+        const gap = 14;
+        // Force layout so height is accurate before vertical placement.
+        const bubbleH = Math.max(bubble.offsetHeight || 0, 72);
+        const spaceBelow = vh - rect.bottom;
+        let side = "bottom";
+        let top = rect.bottom + gap;
+        if (spaceBelow < bubbleH + gap + 12 && rect.top > bubbleH + gap + 12) {
+          side = "top";
+          top = rect.top - gap - bubbleH;
+        }
+
+        bubble.dataset.side = side;
+        bubble.style.left = Math.round(left) + "px";
+        bubble.style.top = Math.round(Math.max(12, Math.min(top, vh - bubbleH - 12))) + "px";
+
+        // Caret points at the control’s center, not a fixed corner.
+        const targetCenterX = rect.left + rect.width / 2;
+        const arrowX = Math.max(16, Math.min(bubbleW - 16, targetCenterX - left));
+        bubble.style.setProperty("--coach-arrow-x", Math.round(arrowX) + "px");
       }
 
       function currentCoachStep() {
@@ -1447,7 +1474,15 @@
         applyCoachStepHighlight(step, target);
         positionPlayCoach(target, step);
         requestAnimationFrame(function () {
+          const liveStep = currentCoachStep();
+          const liveTarget = resolveCoachTarget(liveStep);
+          if (liveTarget) positionPlayCoach(liveTarget, liveStep || step);
           if (playCoachEl) playCoachEl.classList.add("is-in");
+          // One more frame after fade-in transform settles.
+          requestAnimationFrame(function () {
+            const again = resolveCoachTarget(currentCoachStep());
+            if (again) positionPlayCoach(again, currentCoachStep() || step);
+          });
         });
 
         clearPlayCoachTimers();
@@ -1507,6 +1542,7 @@
             id: "play",
             pad: 8,
             shape: "pill",
+            align: "end",
             html: "<p>Press <strong>Play</strong> to start practicing with the audio.</p>",
             getEl: function () { return document.getElementById("practice-yt-play"); },
           });
