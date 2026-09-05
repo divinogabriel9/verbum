@@ -1157,6 +1157,19 @@
           ...item,
           seen: item && item.seen === true,
         }));
+        let keptDraft = false;
+        const collapsed = [];
+        appNotifications.forEach((item) => {
+          if (isMassBuilderDraftNotification(item)) {
+            if (keptDraft) return;
+            keptDraft = true;
+          }
+          collapsed.push(item);
+        });
+        if (collapsed.length !== appNotifications.length) {
+          appNotifications = collapsed;
+          saveAppNotifications();
+        }
       } catch (_e) {
         appNotifications = [];
       }
@@ -1278,7 +1291,15 @@
       updateNotifBadge();
     }
 
+    function isMassBuilderDraftNotification(item) {
+      if (!item) return false;
+      if (item.key === "mass-builder-draft") return true;
+      const msg = String(item.message || "");
+      return msg === "Draft saved" || msg.indexOf("Draft saved · ") === 0;
+    }
+
     function pushAppNotification(message, kind, meta) {
+      const key = meta && meta.key ? String(meta.key) : "";
       const item = {
         id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8),
         message: message || "",
@@ -1287,6 +1308,12 @@
         seen: false,
         downloads: (meta && meta.downloads) ? meta.downloads : [],
       };
+      if (key) item.key = key;
+      if (key === "mass-builder-draft") {
+        appNotifications = appNotifications.filter((existing) => !isMassBuilderDraftNotification(existing));
+      } else if (key) {
+        appNotifications = appNotifications.filter((existing) => existing && existing.key !== key);
+      }
       appNotifications.unshift(item);
       saveAppNotifications();
       renderNotificationFeed();
@@ -1300,14 +1327,42 @@
       setTimeout(() => el.remove(), 220);
     }
 
+    function hasToastWithKey(key) {
+      const stack = $("toast-stack");
+      if (!stack || !key) return false;
+      return Array.from(stack.querySelectorAll(".toast")).some(
+        (el) => el.dataset.toastKey === key && el.isConnected && el.classList.contains("toast--visible")
+      );
+    }
+
+    function toastKindClass(kind) {
+      return kind === "error" ? "error" : kind === "ok" ? "ok" : kind === "warn" ? "warn" : "info";
+    }
+
     function showToast(message, kind, action) {
       const stack = $("toast-stack");
       if (!stack || !message) return;
+      const replaceKey = action && action.replaceKey ? String(action.replaceKey) : "";
+      const duration =
+        (action && action.durationMs) ||
+        (kind === "error" ? 5500 : action && action.label ? 14000 : 4200);
+      if (replaceKey) {
+        const existing = Array.from(stack.querySelectorAll(".toast")).find(
+          (old) => old.dataset.toastKey === replaceKey && old.isConnected
+        );
+        if (existing) {
+          const textEl = existing.querySelector(".toast__text");
+          if (textEl) textEl.textContent = message;
+          existing.className = "toast toast--" + toastKindClass(kind) + " toast--visible";
+          clearTimeout(existing._toastTimer);
+          existing._toastTimer = setTimeout(() => dismissToast(existing), duration);
+          return;
+        }
+      }
       const el = document.createElement("div");
-      el.className = "toast toast--" + (
-        kind === "error" ? "error" : kind === "ok" ? "ok" : kind === "warn" ? "warn" : "info"
-      );
+      el.className = "toast toast--" + toastKindClass(kind);
       el.setAttribute("role", "status");
+      if (replaceKey) el.dataset.toastKey = replaceKey;
       const row = document.createElement("div");
       row.className = "toast__row";
       const text = document.createElement("span");
@@ -1341,9 +1396,6 @@
       el.appendChild(row);
       stack.appendChild(el);
       requestAnimationFrame(() => el.classList.add("toast--visible"));
-      const duration =
-        (action && action.durationMs) ||
-        (kind === "error" ? 5500 : action ? 14000 : 4200);
       el._toastTimer = setTimeout(() => dismissToast(el), duration);
     }
 
@@ -1355,7 +1407,8 @@
       if (!message) return;
       if (kind === "ok" || kind === "error" || kind === "warn") {
         pushAppNotification(message, kind === "warn" ? "error" : kind, meta);
-        showToast(message, kind);
+        if (meta && meta.skipToast) return;
+        showToast(message, kind, meta && meta.key ? { replaceKey: String(meta.key) } : undefined);
       }
     }
 
@@ -2123,6 +2176,63 @@
       const email = (profile && profile.email) || (user && user.email) || "";
       if (nameEl) nameEl.innerHTML = full ? "<strong>" + escapeHtml(full) + "</strong>" : "<strong>Signed in</strong>";
       if (emailEl) emailEl.textContent = email || "—";
+      const googleStatus = $("settings-account-google-status");
+      const googleBtn = $("settings-connect-google");
+      const linked = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(user));
+      if (googleStatus) {
+        googleStatus.textContent = linked
+          ? "Google login is connected. You can sign in with Google next time."
+          : "Connect Google to sign in faster with the same account.";
+      }
+      if (googleBtn) {
+        googleBtn.hidden = !user || linked;
+        if (!googleBtn.dataset.bound) {
+          googleBtn.dataset.bound = "1";
+          googleBtn.addEventListener("click", async () => {
+            googleBtn.disabled = true;
+            if (googleStatus) googleStatus.textContent = "Opening Google…";
+            try {
+              if (!auth || typeof auth.linkGoogleAccount !== "function") {
+                throw new Error("Google linking is unavailable.");
+              }
+              await auth.linkGoogleAccount();
+            } catch (err) {
+              googleBtn.disabled = false;
+              if (googleStatus) {
+                googleStatus.textContent = (err && err.message) || "Could not connect Google.";
+              }
+            }
+          });
+        }
+      }
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("google_linked") === "1") {
+          Promise.resolve(
+            auth && typeof auth.refreshAuthUser === "function"
+              ? auth.refreshAuthUser()
+              : null
+          ).then(function (freshUser) {
+            const nowLinked = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(freshUser || user));
+            if (googleStatus) {
+              googleStatus.textContent = nowLinked
+                ? "Google login connected."
+                : "Google connection updated. Refresh if the status looks wrong.";
+            }
+            if (googleBtn) googleBtn.hidden = !user || nowLinked;
+          }).catch(function () {
+            if (googleStatus) {
+              googleStatus.textContent = linked
+                ? "Google login connected."
+                : "Google connection updated. Refresh if the status looks wrong.";
+            }
+          });
+          params.delete("google_linked");
+          const qs = params.toString();
+          const next = window.location.pathname + (qs ? "?" + qs : "") + (window.location.hash || "");
+          window.history.replaceState({}, "", next);
+        }
+      } catch (_e) { /* ignore */ }
       const avatarUrl = (auth && auth.getAvatarUrl ? auth.getAvatarUrl() : "") || (profile && profile.avatar_url) || "";
       if (avatarUrl && avatarUrl !== currentAvatarPreviewUrl) {
         updateProfileAvatar(avatarUrl);

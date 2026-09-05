@@ -1835,15 +1835,7 @@
       flex-shrink: 0;
     }
     .mass-present-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px 10px 14px;
-      border-radius: 14px;
-      border: 1px solid var(--card-border);
-      background: var(--surface-solid);
-      box-shadow: var(--shadow-card);
-      max-width: min(420px, calc(100vw - 24px));
+      display: none !important;
     }
     .mass-present-bar[hidden] {
       display: none !important;

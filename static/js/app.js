@@ -7377,12 +7377,22 @@
       return massBuilderDraftCompareKey(a) === massBuilderDraftCompareKey(b);
     }
 
+    function formatMassBuilderDraftSavedStamp(date) {
+      const d = date instanceof Date ? date : new Date();
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    }
+
     function notifyMassBuilderDraftSaved(force) {
       if (typeof notify !== "function") return;
       const now = Date.now();
-      if (!force && now - massDraftToastLastAt < 30000) return;
-      massDraftToastLastAt = now;
-      notify("Draft saved", "ok");
+      const stamp = formatMassBuilderDraftSavedStamp(new Date(now));
+      const message = stamp ? ("Draft saved · " + stamp) : "Draft saved";
+      const key = "mass-builder-draft";
+      const toastOpen = typeof hasToastWithKey === "function" && hasToastWithKey(key);
+      const skipToast = !force && !toastOpen && now - massDraftToastLastAt < 30000;
+      if (!skipToast) massDraftToastLastAt = now;
+      notify(message, "ok", { key: key, skipToast: skipToast });
     }
 
     function saveMassBuilderDraft(options) {
@@ -7475,8 +7485,9 @@
       const cta = $("home-mass-cta");
       if (draft) {
         const stepLabel = formatMassBuilderDraftStepLabel(draft.step);
+        const stamp = formatMassBuilderDraftSavedStamp(draft.savedAt ? new Date(draft.savedAt) : new Date());
         if (ctaLabel) ctaLabel.textContent = "Continue where you left off\u00a0›";
-        if (statusEl) statusEl.textContent = "Draft saved";
+        if (statusEl) statusEl.textContent = stamp ? ("Draft saved · " + stamp) : "Draft saved";
         if (statusSub) statusSub.textContent = stepLabel;
         if (cta) cta.setAttribute("data-mw-resume-draft", "1");
       } else {
@@ -14586,6 +14597,7 @@
         ["btn-practice-share-mobile", () => openPracticeShareHistoryModal()],
         ["btn-practice-share-toolbar", () => openPracticeShareHistoryModal()],
         ["btn-practice-share-wizard", () => openPracticeShareHistoryModal()],
+        ["btn-practice-share-wizard-title", () => openPracticeShareHistoryModal()],
         ["btn-home-practice-share", () => openPracticeShareHistoryModal()],
         ["practice-share-history-backdrop", closePracticeShareHistoryModal],
         ["practice-share-history-close", closePracticeShareHistoryModal],
@@ -14870,73 +14882,19 @@
       return selections;
     }
 
-    function clearMassMoodPickMarquee(row) {
-      if (!row) return;
-      if (row._moodTitleTimers) {
-        row._moodTitleTimers.forEach((id) => window.clearTimeout(id));
-        row._moodTitleTimers = null;
-      }
-      const titleEl = row.querySelector(".mass-summary-mood-pick__song");
-      if (titleEl) {
-        titleEl.style.transition = "none";
-        titleEl.style.transform = "translateX(0)";
-      }
-      row.classList.remove("is-song-marquee");
-    }
-
-    function setupMassMoodPickMarquee(row) {
-      if (!row) return;
-      const viewport = row.querySelector(".mass-summary-mood-pick__song-viewport");
-      const titleEl = row.querySelector(".mass-summary-mood-pick__song");
-      if (!viewport || !titleEl) return;
-
-      clearMassMoodPickMarquee(row);
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          if (!row.isConnected) return;
-          const viewW = viewport.clientWidth;
-          if (viewW < 24) return;
-          row.classList.add("is-song-marquee");
-          const textW = Math.ceil(titleEl.scrollWidth);
-          const overflow = textW - viewW;
-          if (overflow <= 6) {
-            row.classList.remove("is-song-marquee");
-            titleEl.style.transition = "none";
-            titleEl.style.transform = "translateX(0)";
-            return;
-          }
-          const scrollMs = Math.max(2800, Math.round((overflow / HEADER_TICKER_SCROLL_PX_PER_SEC) * 1000));
-          const startTimer = window.setTimeout(() => {
-            titleEl.style.transition = "transform " + scrollMs + "ms linear";
-            titleEl.style.transform = "translateX(-" + overflow + "px)";
-          }, HEADER_TICKER_HOLD_MS);
-          const loopTimer = window.setTimeout(() => {
-            titleEl.style.transition = "none";
-            titleEl.style.transform = "translateX(0)";
-            setupMassMoodPickMarquee(row);
-          }, HEADER_TICKER_HOLD_MS + scrollMs + HEADER_TICKER_HOLD_END_MS);
-          row._moodTitleTimers = [startTimer, loopTimer];
-        });
-      });
-    }
-
-    function setupAllMassMoodPickMarquees() {
-      const listEl = $("mass-summary-mood-picks");
-      if (!listEl) return;
-      listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => setupMassMoodPickMarquee(row));
-    }
-
     function renderMassMoodPickList(selections) {
       const listEl = $("mass-summary-mood-picks");
       if (!listEl) return;
       if (!selections.length) {
-        listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
+        if (typeof clearMassMoodPickMarquee === "function") {
+          listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
+        }
         listEl.innerHTML = "";
         return;
       }
-      listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
+      if (typeof clearMassMoodPickMarquee === "function") {
+        listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
+      }
       listEl.innerHTML = selections.map((pick) => (
         "<li class=\"mass-summary-mood-pick\">" +
           "<span class=\"mass-summary-mood-pick__cat\">" + escapeHtml(pick.label) + "</span>" +
@@ -14945,7 +14903,7 @@
           "</span>" +
         "</li>"
       )).join("");
-      setupAllMassMoodPickMarquees();
+      if (typeof setupAllMassMoodPickMarquees === "function") setupAllMassMoodPickMarquees();
     }
 
     function computeMassMoodPickRefresh() {
@@ -15956,6 +15914,19 @@
           ...item,
           seen: item && item.seen === true,
         }));
+        let keptDraft = false;
+        const collapsed = [];
+        appNotifications.forEach((item) => {
+          if (isMassBuilderDraftNotification(item)) {
+            if (keptDraft) return;
+            keptDraft = true;
+          }
+          collapsed.push(item);
+        });
+        if (collapsed.length !== appNotifications.length) {
+          appNotifications = collapsed;
+          saveAppNotifications();
+        }
       } catch (_e) {
         appNotifications = [];
       }
@@ -16077,7 +16048,15 @@
       updateNotifBadge();
     }
 
+    function isMassBuilderDraftNotification(item) {
+      if (!item) return false;
+      if (item.key === "mass-builder-draft") return true;
+      const msg = String(item.message || "");
+      return msg === "Draft saved" || msg.indexOf("Draft saved · ") === 0;
+    }
+
     function pushAppNotification(message, kind, meta) {
+      const key = meta && meta.key ? String(meta.key) : "";
       const item = {
         id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8),
         message: message || "",
@@ -16086,6 +16065,12 @@
         seen: false,
         downloads: (meta && meta.downloads) ? meta.downloads : [],
       };
+      if (key) item.key = key;
+      if (key === "mass-builder-draft") {
+        appNotifications = appNotifications.filter((existing) => !isMassBuilderDraftNotification(existing));
+      } else if (key) {
+        appNotifications = appNotifications.filter((existing) => existing && existing.key !== key);
+      }
       appNotifications.unshift(item);
       saveAppNotifications();
       renderNotificationFeed();
@@ -16099,14 +16084,42 @@
       setTimeout(() => el.remove(), 220);
     }
 
+    function hasToastWithKey(key) {
+      const stack = $("toast-stack");
+      if (!stack || !key) return false;
+      return Array.from(stack.querySelectorAll(".toast")).some(
+        (el) => el.dataset.toastKey === key && el.isConnected && el.classList.contains("toast--visible")
+      );
+    }
+
+    function toastKindClass(kind) {
+      return kind === "error" ? "error" : kind === "ok" ? "ok" : kind === "warn" ? "warn" : "info";
+    }
+
     function showToast(message, kind, action) {
       const stack = $("toast-stack");
       if (!stack || !message) return;
+      const replaceKey = action && action.replaceKey ? String(action.replaceKey) : "";
+      const duration =
+        (action && action.durationMs) ||
+        (kind === "error" ? 5500 : action && action.label ? 14000 : 4200);
+      if (replaceKey) {
+        const existing = Array.from(stack.querySelectorAll(".toast")).find(
+          (old) => old.dataset.toastKey === replaceKey && old.isConnected
+        );
+        if (existing) {
+          const textEl = existing.querySelector(".toast__text");
+          if (textEl) textEl.textContent = message;
+          existing.className = "toast toast--" + toastKindClass(kind) + " toast--visible";
+          clearTimeout(existing._toastTimer);
+          existing._toastTimer = setTimeout(() => dismissToast(existing), duration);
+          return;
+        }
+      }
       const el = document.createElement("div");
-      el.className = "toast toast--" + (
-        kind === "error" ? "error" : kind === "ok" ? "ok" : kind === "warn" ? "warn" : "info"
-      );
+      el.className = "toast toast--" + toastKindClass(kind);
       el.setAttribute("role", "status");
+      if (replaceKey) el.dataset.toastKey = replaceKey;
       const row = document.createElement("div");
       row.className = "toast__row";
       const text = document.createElement("span");
@@ -16140,9 +16153,6 @@
       el.appendChild(row);
       stack.appendChild(el);
       requestAnimationFrame(() => el.classList.add("toast--visible"));
-      const duration =
-        (action && action.durationMs) ||
-        (kind === "error" ? 5500 : action ? 14000 : 4200);
       el._toastTimer = setTimeout(() => dismissToast(el), duration);
     }
 
@@ -16154,7 +16164,8 @@
       if (!message) return;
       if (kind === "ok" || kind === "error" || kind === "warn") {
         pushAppNotification(message, kind === "warn" ? "error" : kind, meta);
-        showToast(message, kind);
+        if (meta && meta.skipToast) return;
+        showToast(message, kind, meta && meta.key ? { replaceKey: String(meta.key) } : undefined);
       }
     }
 
@@ -16922,6 +16933,63 @@
       const email = (profile && profile.email) || (user && user.email) || "";
       if (nameEl) nameEl.innerHTML = full ? "<strong>" + escapeHtml(full) + "</strong>" : "<strong>Signed in</strong>";
       if (emailEl) emailEl.textContent = email || "—";
+      const googleStatus = $("settings-account-google-status");
+      const googleBtn = $("settings-connect-google");
+      const linked = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(user));
+      if (googleStatus) {
+        googleStatus.textContent = linked
+          ? "Google login is connected. You can sign in with Google next time."
+          : "Connect Google to sign in faster with the same account.";
+      }
+      if (googleBtn) {
+        googleBtn.hidden = !user || linked;
+        if (!googleBtn.dataset.bound) {
+          googleBtn.dataset.bound = "1";
+          googleBtn.addEventListener("click", async () => {
+            googleBtn.disabled = true;
+            if (googleStatus) googleStatus.textContent = "Opening Google…";
+            try {
+              if (!auth || typeof auth.linkGoogleAccount !== "function") {
+                throw new Error("Google linking is unavailable.");
+              }
+              await auth.linkGoogleAccount();
+            } catch (err) {
+              googleBtn.disabled = false;
+              if (googleStatus) {
+                googleStatus.textContent = (err && err.message) || "Could not connect Google.";
+              }
+            }
+          });
+        }
+      }
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("google_linked") === "1") {
+          Promise.resolve(
+            auth && typeof auth.refreshAuthUser === "function"
+              ? auth.refreshAuthUser()
+              : null
+          ).then(function (freshUser) {
+            const nowLinked = !!(auth && auth.hasGoogleIdentity && auth.hasGoogleIdentity(freshUser || user));
+            if (googleStatus) {
+              googleStatus.textContent = nowLinked
+                ? "Google login connected."
+                : "Google connection updated. Refresh if the status looks wrong.";
+            }
+            if (googleBtn) googleBtn.hidden = !user || nowLinked;
+          }).catch(function () {
+            if (googleStatus) {
+              googleStatus.textContent = linked
+                ? "Google login connected."
+                : "Google connection updated. Refresh if the status looks wrong.";
+            }
+          });
+          params.delete("google_linked");
+          const qs = params.toString();
+          const next = window.location.pathname + (qs ? "?" + qs : "") + (window.location.hash || "");
+          window.history.replaceState({}, "", next);
+        }
+      } catch (_e) { /* ignore */ }
       const avatarUrl = (auth && auth.getAvatarUrl ? auth.getAvatarUrl() : "") || (profile && profile.avatar_url) || "";
       if (avatarUrl && avatarUrl !== currentAvatarPreviewUrl) {
         updateProfileAvatar(avatarUrl);
@@ -19075,6 +19143,7 @@
         "btn-practice-share-toolbar",
         "btn-practice-share-mobile",
         "btn-practice-share-wizard",
+        "btn-practice-share-wizard-title",
         "btn-home-practice-share",
       ].forEach((id) => {
         const el = $(id);
@@ -24033,213 +24102,6 @@
       /* Quick Mass is always visible; habits still gate the confirm modal */
     }
 
-    function formatQuickMassLabel(key) {
-      const labels = {
-        creed_choice: "Creed",
-        our_father_choice: "Our Father",
-        mass_language: "Mass language",
-        hymn_lyrics_layout: "Hymn lyrics",
-        lotw_poster: "Word poster",
-        lote_poster: "Eucharist poster",
-        divider_style: "Divider style",
-        poster_template: "Poster template",
-        include_church_logo: "Church logo",
-        include_church_name: "Church name",
-        include_footer: "Footer",
-        celebrant: "Celebrant",
-        songs: "Songs",
-      };
-      return labels[key] || key.replace(/_/g, " ");
-    }
-
-    function formatQuickMassValue(key, value) {
-      if (value === true) return "On";
-      if (value === false) return "Off";
-      if (key === "creed_choice") {
-        return value === "apostles" ? "Apostles’ Creed" : "Nicene Creed";
-      }
-      if (key === "our_father_choice" || key === "mass_language") {
-        const s = String(value || "");
-        return s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
-      }
-      if (key === "hymn_lyrics_layout") {
-        return value === "single" ? "1 verse / slide" : "2 verses / slide";
-      }
-      if (key === "songs" && value && typeof value === "object") {
-        const slots = Object.keys(value);
-        const titles = slots.map((slot) => {
-          const id = String(value[slot] || "").trim();
-          if (!id) return "";
-          let title = id;
-          if (typeof catalogSongTitle === "function") {
-            const t = catalogSongTitle(slot, id);
-            if (t) title = t;
-          }
-          if (title === id && typeof songCatalogData !== "undefined" && songCatalogData) {
-            Object.keys(songCatalogData).some((sec) => {
-              const rows = songCatalogData[sec] || [];
-              const row = rows.find((r) => String(r.id) === id);
-              if (row && row.title) {
-                title = row.title;
-                return true;
-              }
-              return false;
-            });
-          }
-          const slotLabel = slot.replace(/_/g, " ");
-          return slotLabel.charAt(0).toUpperCase() + slotLabel.slice(1) + ": " + title;
-        }).filter(Boolean);
-        return titles.length ? titles.join(" · ") : "—";
-      }
-      return value == null || value === "" ? "—" : String(value);
-    }
-
-    function escapeQuickMassText(s) {
-      return String(s == null ? "" : s)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
-    function buildQuickMassDetailsHtml(payload) {
-      const suggestions = (payload && payload.suggestions) || {};
-      const order = [
-        "celebrant",
-        "mass_language",
-        "creed_choice",
-        "our_father_choice",
-        "hymn_lyrics_layout",
-        "songs",
-        "lotw_poster",
-        "lote_poster",
-        "divider_style",
-        "include_church_logo",
-        "include_church_name",
-        "include_footer",
-      ];
-      const rows = [];
-      order.forEach((key) => {
-        if (!(key in suggestions)) return;
-        const val = suggestions[key];
-        if (val == null || val === "") return;
-        if (key === "songs" && typeof val === "object" && !Object.keys(val).length) return;
-        rows.push(
-          '<div class="mw-quick-mass-details__row"><dt>' +
-            escapeQuickMassText(formatQuickMassLabel(key)) +
-            "</dt><dd>" +
-            escapeQuickMassText(formatQuickMassValue(key, val)) +
-            "</dd></div>"
-        );
-      });
-      if (!rows.length) {
-        return '<div class="mw-quick-mass-details__row"><dt>Defaults</dt><dd>Your usual Mass settings will be applied.</dd></div>';
-      }
-      return rows.join("");
-    }
-
-    function closeQuickMassModal() {
-      const modal = $("mw-quick-mass-modal");
-      if (!modal) return;
-      modal.classList.remove("is-open");
-      modal.setAttribute("aria-hidden", "true");
-      modal.setAttribute("data-open", "false");
-    }
-
-    async function openQuickMassModal() {
-      const dateEl = $("mass-date");
-      const date = dateEl ? (dateEl.value || "").trim() : "";
-      if (!date) {
-        notify("Choose a Mass date first.", "error");
-        return;
-      }
-      let payload = massHabitsCache;
-      if (!payload || massHabitsCacheDate !== date) {
-        payload = await fetchMassSmartDefaults(date);
-      }
-      if (!payload || !payload.has_habits) {
-        notify("No Quick Mass defaults available yet.", "error");
-        return;
-      }
-      const details = $("mw-quick-mass-details");
-      if (details) details.innerHTML = buildQuickMassDetailsHtml(payload);
-      const sub = $("mw-quick-mass-sub");
-      if (sub) {
-        const n = payload.learned_count || 0;
-        sub.textContent = n
-          ? ("We'll apply " + n + " remembered setting" + (n === 1 ? "" : "s") + " from your recent Masses, then open Review so you can generate.")
-          : "We'll apply your usual settings for this Mass, then jump to Review to generate.";
-      }
-      const modal = $("mw-quick-mass-modal");
-      if (!modal) return;
-      modal.classList.add("is-open");
-      modal.setAttribute("aria-hidden", "false");
-      modal.setAttribute("data-open", "true");
-      const cont = $("mw-quick-mass-continue");
-      if (cont) cont.focus();
-    }
-
-    async function runQuickMassFromHabits() {
-      const dateEl = $("mass-date");
-      const date = dateEl ? (dateEl.value || "").trim() : "";
-      if (!date) {
-        notify("Choose a Mass date first.", "error");
-        return;
-      }
-      const data = await fetchMassSmartDefaults(date);
-      if (data && data.suggestions) {
-        applyMassHabitSuggestions(data.suggestions, {
-          force: true,
-          confidence: data.confidence || {},
-        });
-        if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
-        if (typeof renderMassSongPlan === "function") renderMassSongPlan();
-        if (typeof renderMassSummarySidebar === "function") renderMassSummarySidebar();
-      }
-      hideMassHabitsBanner();
-      closeQuickMassModal();
-      if (window.MassWizard && typeof window.MassWizard.setStep === "function") {
-        window.MassWizard.setStep(7);
-      }
-      if (typeof scheduleMassBuilderDraftAutoSave === "function") {
-        scheduleMassBuilderDraftAutoSave();
-      }
-      notify("Quick Mass ready — review and generate.", "ok");
-    }
-
-    function wireMassHabitsBanner() {
-      const quick = $("mw-habits-quick");
-      if (quick && quick.dataset.habitsWired !== "1") {
-        quick.dataset.habitsWired = "1";
-        quick.addEventListener("click", () => {
-          openQuickMassModal().catch(() => notify("Could not load Quick Mass defaults.", "error"));
-        });
-      }
-      const keep = $("mw-quick-mass-keep");
-      const cont = $("mw-quick-mass-continue");
-      const modal = $("mw-quick-mass-modal");
-      if (keep && keep.dataset.habitsWired !== "1") {
-        keep.dataset.habitsWired = "1";
-        keep.addEventListener("click", () => closeQuickMassModal());
-      }
-      if (cont && cont.dataset.habitsWired !== "1") {
-        cont.dataset.habitsWired = "1";
-        cont.addEventListener("click", () => {
-          runQuickMassFromHabits().catch(() => notify("Could not apply Quick Mass defaults.", "error"));
-        });
-      }
-      if (modal && modal.dataset.habitsWired !== "1") {
-        modal.dataset.habitsWired = "1";
-        modal.addEventListener("click", (e) => {
-          if (e.target === modal) closeQuickMassModal();
-        });
-        document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape" && modal.classList.contains("is-open")) closeQuickMassModal();
-        });
-      }
-    }
-    wireMassHabitsBanner();
-
     function applyMassHabitSuggestions(suggestions, opts) {
       const o = opts || {};
       const force = !!o.force;
@@ -24388,6 +24250,69 @@
       }
       return data;
     }
+
+    async function runQuickMassFromHabits() {
+      const dateEl = $("mass-date");
+      const date = dateEl ? (dateEl.value || "").trim() : "";
+      if (!date) {
+        notify("Choose a Mass date first.", "error");
+        return;
+      }
+      const data = await fetchMassSmartDefaults(date);
+      if (data && data.suggestions) {
+        applyMassHabitSuggestions(data.suggestions, {
+          force: true,
+          confidence: data.confidence || {},
+        });
+        if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+        if (typeof renderMassSongPlan === "function") renderMassSongPlan();
+        if (typeof renderMassSummarySidebar === "function") renderMassSummarySidebar();
+      }
+      hideMassHabitsBanner();
+      if (window.MassWizard && typeof window.MassWizard.setStep === "function") {
+        window.MassWizard.setStep(7);
+      }
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") {
+        scheduleMassBuilderDraftAutoSave();
+      }
+      notify("Quick Mass ready — review and generate.", "ok");
+    }
+
+    function wireMassHabitsBanner() {
+      const quick = $("mw-habits-quick");
+      if (quick && quick.dataset.habitsWired !== "1") {
+        quick.dataset.habitsWired = "1";
+        quick.addEventListener("click", () => {
+          if (typeof openQuickMassModal === "function") {
+            openQuickMassModal().catch(() => notify("Could not load Quick Mass defaults.", "error"));
+          } else {
+            runQuickMassFromHabits().catch(() => notify("Could not apply Quick Mass defaults.", "error"));
+          }
+        });
+      }
+      const keep = $("mw-quick-mass-keep");
+      const cont = $("mw-quick-mass-continue");
+      const modal = $("mw-quick-mass-modal");
+      if (keep && keep.dataset.habitsWired !== "1") {
+        keep.dataset.habitsWired = "1";
+        keep.addEventListener("click", () => {
+          if (typeof closeQuickMassModal === "function") closeQuickMassModal();
+        });
+      }
+      if (cont && cont.dataset.habitsWired !== "1") {
+        cont.dataset.habitsWired = "1";
+        cont.addEventListener("click", () => {
+          runQuickMassFromHabits().catch(() => notify("Could not apply Quick Mass defaults.", "error"));
+        });
+      }
+      if (modal && modal.dataset.habitsWired !== "1") {
+        modal.dataset.habitsWired = "1";
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal && typeof closeQuickMassModal === "function") closeQuickMassModal();
+        });
+      }
+    }
+    wireMassHabitsBanner();
 
     async function loadFlowData(auto = false) {
       const date = $("mass-date").value;
@@ -25527,22 +25452,13 @@
       );
       window.__massPresentAvailable = available;
       const bar = $("mass-present-bar");
-      const sub = $("mass-present-bar-sub");
-      if (bar) {
-        // Hide while actively presenting.
-        bar.hidden = !available || massSlideshowState.open;
-      }
-      if (sub) {
-        sub.textContent = lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length
-          ? "Resume without regenerating."
-          : "Open slideshow from the latest deck.";
-      }
+      if (bar) bar.hidden = true;
       const mwPresent = $("mw-present");
       if (mwPresent) {
-        const onReview = document.body.classList.contains("mw-on")
-          && $("mw-generate")
-          && !$("mw-generate").hidden;
-        mwPresent.hidden = !available || !onReview || massSlideshowState.open;
+        const inWizard = document.body.classList.contains("mw-on");
+        const show = !!(available && inWizard && !massSlideshowState.open);
+        if (typeof window.setMwNavBtnVisible === "function") window.setMwNavBtnVisible(mwPresent, show);
+        else mwPresent.hidden = !show;
       }
     }
     window.syncMassPresentAgainUi = syncMassPresentAgainUi;

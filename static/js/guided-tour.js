@@ -303,7 +303,7 @@
       {
         element: "#mw-next",
         popover: {
-          title: "Continue",
+          title: "Next step",
           description: "Move forward when the date is set. Readings fetch in the background as you continue.",
           side: "top",
           align: "end",

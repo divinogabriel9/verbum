@@ -540,6 +540,7 @@
       var active = card.getAttribute("data-lf-theme") === state.themeId;
       card.classList.toggle("is-active", active);
       card.setAttribute("aria-pressed", active ? "true" : "false");
+      card.setAttribute("aria-checked", active ? "true" : "false");
     });
     var cel = $("lf-gen-celebrant");
     if (cel && document.activeElement !== cel) cel.value = state.celebrant;
@@ -588,13 +589,41 @@
   function setGenerating(on, message) {
     state.generating = on;
     var overlay = $("lf-gen-busy");
-    if (overlay) overlay.hidden = !on;
+    if (overlay) {
+      // Keep loader on document body so it centers on the full viewport.
+      if (on && overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
+      }
+      overlay.hidden = !on;
+    }
     var busyMsg = $("lf-gen-busy-msg");
     if (busyMsg) busyMsg.textContent = message || "Generating your Mass deck…";
     $("lf-gen-back") && ($("lf-gen-back").disabled = on);
     $("lf-gen-next") && ($("lf-gen-next").disabled = on);
     $("lf-gen-submit") && ($("lf-gen-submit").disabled = on);
     $("lf-gen-close") && ($("lf-gen-close").disabled = on);
+  }
+
+  function triggerAutoDownload(url, filename) {
+    if (!url) return false;
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename || "LiturgyFlow-Mass.pptx";
+      a.rel = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return true;
+    } catch (_err) {
+      try {
+        window.location.href = url;
+        return true;
+      } catch (_err2) {
+        return false;
+      }
+    }
   }
 
   function openModal() {
@@ -718,7 +747,7 @@
       var data = await postJSON("/api/demo-generate", body);
       setGenerating(false);
       if (data.pptx_url) {
-        var readyMsg = "Your Mass deck is ready.";
+        var readyMsg = "Your Mass deck is ready. Download started.";
         if (data.watermark) {
           readyMsg += " Watermark: " + data.watermark;
         }
@@ -732,7 +761,7 @@
         if (done) done.hidden = false;
         $("lf-gen-submit") && ($("lf-gen-submit").hidden = true);
         $("lf-gen-next") && ($("lf-gen-next").hidden = true);
-        window.open(data.pptx_url, "_blank", "noopener");
+        triggerAutoDownload(data.pptx_url, "LiturgyFlow-Mass.pptx");
         requestAnimationFrame(scrollPrimaryActionIntoView);
         return;
       }
@@ -962,19 +991,7 @@
     }
   }
 
-  function paintThemePreviews() {
-    document.querySelectorAll("[data-lf-theme-preview]").forEach(function (el) {
-      var id = el.getAttribute("data-lf-theme-preview");
-      var theme = findTheme(id);
-      el.style.background = theme.bg;
-      el.style.color = theme.text;
-      var accent = el.querySelector(".lf-gen-theme__accent");
-      if (accent) accent.style.color = theme.accent;
-    });
-  }
-
   document.addEventListener("DOMContentLoaded", function () {
-    paintThemePreviews();
     bindEvents();
     state.massDate = upcomingSundayISO();
     var heroDate = $("lf-hero-date");

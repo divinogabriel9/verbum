@@ -3005,22 +3005,13 @@
       );
       window.__massPresentAvailable = available;
       const bar = $("mass-present-bar");
-      const sub = $("mass-present-bar-sub");
-      if (bar) {
-        // Hide while actively presenting.
-        bar.hidden = !available || massSlideshowState.open;
-      }
-      if (sub) {
-        sub.textContent = lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length
-          ? "Resume without regenerating."
-          : "Open slideshow from the latest deck.";
-      }
+      if (bar) bar.hidden = true;
       const mwPresent = $("mw-present");
       if (mwPresent) {
-        const onReview = document.body.classList.contains("mw-on")
-          && $("mw-generate")
-          && !$("mw-generate").hidden;
-        mwPresent.hidden = !available || !onReview || massSlideshowState.open;
+        const inWizard = document.body.classList.contains("mw-on");
+        const show = !!(available && inWizard && !massSlideshowState.open);
+        if (typeof window.setMwNavBtnVisible === "function") window.setMwNavBtnVisible(mwPresent, show);
+        else mwPresent.hidden = !show;
       }
     }
     window.syncMassPresentAgainUi = syncMassPresentAgainUi;

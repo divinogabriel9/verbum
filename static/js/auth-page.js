@@ -58,6 +58,16 @@
     return new URLSearchParams(window.location.search).get("switch") === "1";
   }
 
+  function clearSwitchAccountParam() {
+    try {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has("switch")) return;
+      url.searchParams.delete("switch");
+      const next = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "") + url.hash;
+      window.history.replaceState({}, "", next);
+    } catch (_e) { /* ignore */ }
+  }
+
   function clearSuperadminUnlockCache() {
     try { sessionStorage.removeItem("verbum:sa-unlocked"); } catch (_e) { /* ignore */ }
   }
@@ -137,10 +147,8 @@
         return;
       }
 
-      if (mode === "sign-up" && cfg.invite_only_signup && !inviteValid) {
-        showInviteBlocked();
-        return;
-      }
+      const inviteSignupBlocked =
+        mode === "sign-up" && cfg.invite_only_signup && !inviteValid;
 
       if (mode === "sign-up" && inviteToken) {
         try {
@@ -278,6 +286,8 @@
         params.delete("error");
         params.delete("error_description");
         params.delete("error_code");
+        // Never carry switch=1 into the OAuth return URL — it forces an immediate sign-out.
+        params.delete("switch");
         const qs = params.toString();
         return (
           window.location.origin +
@@ -286,16 +296,64 @@
         );
       }
 
-      async function startGoogleSignIn() {
+      async function startGoogleSignIn(opts) {
+        const options = opts || {};
+        const link = !!options.link;
         showError("");
-        const googleBtn = $("auth-google-btn");
-        if (googleBtn) googleBtn.disabled = true;
+        clearSwitchAccountParam();
+        const buttons = [
+          $("auth-google-btn"),
+          $("auth-invite-google-btn"),
+          $("auth-session-google-btn"),
+        ].filter(Boolean);
+        buttons.forEach(function (btn) { btn.disabled = true; });
         try {
           if (inviteToken) stashPendingInvite(inviteToken);
+          if (link) {
+            try {
+              sessionStorage.setItem("verbum:link-google", "1");
+            } catch (_e) { /* ignore */ }
+            if (typeof client.auth.linkIdentity !== "function") {
+              throw new Error("Google linking is unavailable in this browser. Refresh and try again.");
+            }
+            const { data: sessionCheck } = await client.auth.getSession();
+            if (!sessionCheck || !sessionCheck.session) {
+              throw new Error("Sign in with email first, then connect Google.");
+            }
+            const { data, error } = await client.auth.linkIdentity({
+              provider: "google",
+              options: {
+                redirectTo: oauthRedirectTo(),
+                skipBrowserRedirect: true,
+                queryParams: { prompt: "select_account" },
+              },
+            });
+            if (error) {
+              const msg = String((error && error.message) || "");
+              const code = String((error && error.code) || "");
+              if (/identity_already_exists|already linked/i.test(msg + " " + code)) {
+                showError("");
+                redirectAfterAuth();
+                return;
+              }
+              if (/manual linking/i.test(msg) || /linking.*(disabled|not enabled)/i.test(msg)) {
+                throw new Error(
+                  "Google linking is disabled in Auth settings. Enable “Allow manual linking” in Supabase, or sign out and use Continue with Google with the same email."
+                );
+              }
+              throw error;
+            }
+            if (data && data.url) {
+              window.location.assign(data.url);
+              return;
+            }
+            throw new Error("Google linking did not return a redirect URL.");
+          }
           const { data, error } = await client.auth.signInWithOAuth({
             provider: "google",
             options: {
               redirectTo: oauthRedirectTo(),
+              skipBrowserRedirect: true,
               queryParams: {
                 prompt: "select_account",
               },
@@ -303,13 +361,44 @@
           });
           if (error) throw error;
           if (data && data.url) {
-            window.location.href = data.url;
+            window.location.assign(data.url);
             return;
           }
           throw new Error("Google sign-in did not return a redirect URL.");
         } catch (err) {
           showError((err && err.message) || "Google sign-in failed.");
-          if (googleBtn) googleBtn.disabled = false;
+          buttons.forEach(function (btn) { btn.disabled = false; });
+        }
+      }
+
+      function userHasGoogle(user) {
+        const identities = (user && user.identities) || [];
+        return identities.some(function (item) {
+          return String((item && item.provider) || "").toLowerCase() === "google";
+        });
+      }
+
+      function bindGoogleButtons() {
+        const googleBtn = $("auth-google-btn");
+        if (googleBtn && !googleBtn.dataset.bound) {
+          googleBtn.dataset.bound = "1";
+          googleBtn.addEventListener("click", function () {
+            startGoogleSignIn({ link: false });
+          });
+        }
+        const inviteGoogle = $("auth-invite-google-btn");
+        if (inviteGoogle && !inviteGoogle.dataset.bound) {
+          inviteGoogle.dataset.bound = "1";
+          inviteGoogle.addEventListener("click", function () {
+            startGoogleSignIn({ link: false });
+          });
+        }
+        const sessionGoogle = $("auth-session-google-btn");
+        if (sessionGoogle && !sessionGoogle.dataset.bound) {
+          sessionGoogle.dataset.bound = "1";
+          sessionGoogle.addEventListener("click", function () {
+            startGoogleSignIn({ link: true });
+          });
         }
       }
 
@@ -323,9 +412,15 @@
 
         const oauth = $("auth-oauth");
         const oauthDivider = $("auth-oauth-divider");
-        const showGoogle = mode === "sign-in" || (mode === "sign-up" && !!inviteToken);
+        const showGoogle = mode === "sign-in" || mode === "sign-up";
         if (oauth) oauth.hidden = !showGoogle;
         if (oauthDivider) oauthDivider.hidden = !showGoogle;
+        const hint = $("auth-google-hint");
+        if (hint) hint.hidden = !(mode === "sign-up" && inviteToken);
+        const label = $("auth-google-btn-label");
+        if (label) {
+          label.textContent = mode === "sign-up" ? "Sign up with Google" : "Continue with Google";
+        }
 
         if (mode === "sign-up") {
           applyInviteChurchName(inviteCommunityName);
@@ -339,11 +434,7 @@
           }
         }
 
-        const googleBtn = $("auth-google-btn");
-        if (googleBtn && !googleBtn.dataset.bound) {
-          googleBtn.dataset.bound = "1";
-          googleBtn.addEventListener("click", startGoogleSignIn);
-        }
+        bindGoogleButtons();
       }
 
       function showExistingSession(user) {
@@ -352,45 +443,62 @@
         if (form) form.hidden = true;
         if (signupFields) signupFields.hidden = true;
         if (footer) footer.hidden = true;
+        const oauth = $("auth-oauth");
+        const oauthDivider = $("auth-oauth-divider");
+        if (oauth) oauth.hidden = true;
+        if (oauthDivider) oauthDivider.hidden = true;
         if (sessionPanel) sessionPanel.hidden = false;
         const emailEl = $("auth-session-email");
         if (emailEl) emailEl.textContent = user && user.email ? user.email : "your account";
+
+        const sessionGoogle = $("auth-session-google-btn");
+        if (sessionGoogle) {
+          sessionGoogle.hidden = userHasGoogle(user);
+        }
+        bindGoogleButtons();
 
         const continueBtn = $("auth-continue-btn");
         if (continueBtn && !continueBtn.dataset.bound) {
           continueBtn.dataset.bound = "1";
           continueBtn.addEventListener("click", redirectAfterAuth);
         }
-
-        const switchBtn = $("auth-switch-btn");
-        if (switchBtn && !switchBtn.dataset.bound) {
-          switchBtn.dataset.bound = "1";
-          switchBtn.addEventListener("click", async () => {
-            switchBtn.disabled = true;
-            clearSuperadminUnlockCache();
-            await client.auth.signOut();
-            const params = new URLSearchParams(window.location.search);
-            params.delete("switch");
-            const qs = params.toString();
-            window.location.href = window.location.pathname + (qs ? "?" + qs : "");
-          });
-        }
       }
 
-      if (wantsSwitchAccount()) {
+      if (wantsSwitchAccount() && !isAuthCallback()) {
         clearSuperadminUnlockCache();
         await client.auth.signOut();
+        clearSwitchAccountParam();
+      } else if (wantsSwitchAccount()) {
+        // OAuth/magic-link return: keep the new session; drop switch so it can't loop.
+        clearSwitchAccountParam();
       }
 
-      const oauthError = new URLSearchParams(window.location.search).get("error_description")
-        || new URLSearchParams(window.location.search).get("error");
+      if (inviteSignupBlocked) {
+        showInviteBlocked();
+        bindGoogleButtons();
+        return;
+      }
+
+      const oauthParams = new URLSearchParams(window.location.search);
+      const oauthErrorCode = (oauthParams.get("error_code") || "").trim();
+      const oauthError = oauthParams.get("error_description") || oauthParams.get("error");
       if (oauthError) {
-        showError(decodeURIComponent(String(oauthError).replace(/\+/g, " ")));
+        if (/identity_already_exists|already linked/i.test(oauthErrorCode + " " + String(oauthError))) {
+          // Linking was already done — continue with the current session if present.
+          const { data: linkedSession } = await client.auth.getSession();
+          if (linkedSession && linkedSession.session) {
+            await finishAuthWithSession(linkedSession.session);
+            return;
+          }
+          showError("Google is already linked to an account. Use Continue with Google to sign in.");
+        } else {
+          showError(decodeURIComponent(String(oauthError).replace(/\+/g, " ")));
+        }
       }
 
       if (!oauthError && isAuthCallback()) {
         client.auth.onAuthStateChange((event, session) => {
-          if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+          if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED")) {
             finishAuthWithSession(session);
           }
         });
@@ -406,6 +514,7 @@
           await finishAuthWithSession(retry.data.session);
           return;
         }
+        showError("Google sign-in did not complete. Please try Continue with Google again.");
       }
 
       const { data: sessionData } = await client.auth.getSession();

@@ -1,6 +1,68 @@
 /* Mass Builder wizard controller — extracted from templates/index.html */
       (function () {
         function $(id) { return document.getElementById(id); }
+        function prefersReducedMotion() {
+          return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        }
+        function animateMwNavChrome(el, show) {
+          if (!el) return;
+          var wantShow = !!show;
+          var isHidden = !!el.hidden;
+          var isOut = el.classList.contains('is-nav-out');
+          if (prefersReducedMotion()) {
+            el.hidden = !wantShow;
+            el.classList.remove('is-nav-in', 'is-nav-out');
+            return;
+          }
+          if (wantShow) {
+            if (!isHidden && !isOut) {
+              el.classList.add('is-nav-in');
+              return;
+            }
+            if (el._mwNavOutTimer) {
+              clearTimeout(el._mwNavOutTimer);
+              el._mwNavOutTimer = null;
+            }
+            el.hidden = false;
+            el.classList.remove('is-nav-out');
+            el.classList.remove('is-nav-in');
+            void el.offsetWidth;
+            el.classList.add('is-nav-in');
+            return;
+          }
+          if (isHidden && !isOut) return;
+          el.classList.remove('is-nav-in');
+          el.classList.add('is-nav-out');
+          if (el._mwNavOutTimer) clearTimeout(el._mwNavOutTimer);
+          el._mwNavOutTimer = setTimeout(function () {
+            el._mwNavOutTimer = null;
+            if (el.classList.contains('is-nav-out')) {
+              el.hidden = true;
+              el.classList.remove('is-nav-out');
+            }
+            if (el.id === 'btn-practice-share-wizard' || el.id === 'mw-present') syncMwNavExtraPill();
+          }, 280);
+        }
+        function syncMwNavExtraPill() {
+          var pill = $('mw-nav-extra-pill') || document.querySelector('.mw-nav__pill--extra');
+          if (!pill) return;
+          var share = $('btn-practice-share-wizard');
+          var present = $('mw-present');
+          var want = [share, present].some(function (btn) {
+            return !!(btn && btn.dataset.mwNavWant === '1');
+          });
+          animateMwNavChrome(pill, want);
+        }
+        function setMwNavBtnVisible(el, show) {
+          if (!el) return;
+          if (el.id === 'btn-practice-share-wizard' || el.id === 'mw-present') {
+            el.dataset.mwNavWant = show ? '1' : '0';
+          }
+          animateMwNavChrome(el, show);
+          if (el.id === 'btn-practice-share-wizard' || el.id === 'mw-present') syncMwNavExtraPill();
+        }
+        window.setMwNavBtnVisible = setMwNavBtnVisible;
+        window.syncMwNavExtraPill = syncMwNavExtraPill;
         var flowPage = $('flow-page');
         if (!flowPage) return;
         window.massRiteVideoMode = window.massRiteVideoMode || {};
@@ -21,7 +83,7 @@
           4: { title: 'Liturgy of the Eucharist', sub: 'Creed, Sanctus, Our Father, and Lamb of God.' },
           5: { title: 'Music Ministry', sub: '' },
           6: { title: 'Additional Details', sub: 'Stewardship, slide theme, posters, and AI imagery.' },
-          7: { title: 'Review & Generate', sub: 'Full summary of your Mass — confirm, then build your deck.' }
+          7: { title: 'Review & Generate', sub: '' }
         };
         var ASIDE_STEPS = { 1: true, 2: true, 4: true, 6: true };
         var ASIDE_ART = {
@@ -133,7 +195,9 @@
               var model = buildMassGenerateReceiptModel();
               (model.songs || []).forEach(function (song) {
                 if (!song.id) return;
-                songRows += asideRow(typeof receiptSlotShortLabel === 'function' ? receiptSlotShortLabel(song) : song.label, song.title || song.id || '—', 'song:' + song.slotKey);
+                var sectionLabel = (typeof receiptSlotShortLabel === 'function' ? receiptSlotShortLabel(song) : '') || song.label || 'Song';
+                sectionLabel = String(sectionLabel).replace(/\s+song\b/gi, '').trim() || 'Song';
+                songRows += asideSongRow(sectionLabel, song.title || song.id || '—', 'song:' + song.slotKey);
               });
             } catch (e) { /* optional */ }
           }
@@ -142,10 +206,10 @@
             songRows = asideRow('Songs', (sc ? sc.textContent : '0') + ' / ' + (st ? st.textContent : '5') + ' selected');
           }
           var hymnLayout = document.querySelector('input[name="flow-hymn-layout"]:checked');
-          if (hymnLayout) songRows += asideRow('Hymn layout', hymnLayout.value === 'single' ? '1 verse / slide' : '2 verses / slide');
+          if (hymnLayout) songRows += asideSongRow('Hymn layout', hymnLayout.value === 'single' ? '1 verse / slide' : '2 verses / slide');
           sections.push(reviewSection('Music ministry', 'Step 5', songRows, { multi: true, step: 5 }));
           var themeName = $('mw-deck-theme-name');
-          var s6 = asideRow('Slide theme', themeName ? themeName.textContent.trim() : selText('flow-deck-theme'));
+          var s6 = asideSongRow('Slide theme', themeName ? themeName.textContent.trim() : selText('flow-deck-theme'));
           var aiOn = $('flow-use-ai-poster') && $('flow-use-ai-poster').checked;
           s6 += asideRow('AI poster art', aiOn ? 'On' : 'Off');
           if (aiOn) {
@@ -169,9 +233,11 @@
           sections.push(reviewSection('Additional details', 'Step 6', s6, { multi: true, step: 6 }));
           var slides = '—';
           if (window.__mwPreviewData && window.__mwPreviewData.estimated_slide_count) slides = window.__mwPreviewData.estimated_slide_count;
-          host.innerHTML =
-            '<div class="mw-review-total"><span>Estimated slides</span><strong>' + slides + '</strong></div>' +
-            sections.join('');
+          var slideCountHost = $('mw-review-slide-count');
+          var slideCountVal = $('mw-review-slide-count-value');
+          if (slideCountVal) slideCountVal.textContent = String(slides);
+          if (slideCountHost) slideCountHost.hidden = false;
+          host.innerHTML = sections.join('');
         }
         function fillReceipt() { fillWizardReviewSummary(); }
         function fmtAsideDate(iso) {
@@ -218,6 +284,10 @@
         function asideRow(label, val, reviewId) {
           var attr = reviewId ? ' data-mw-review-item="' + reviewId + '"' : '';
           return '<div class="mw-aside__row"' + attr + '><dt>' + label + '</dt><dd>' + (val || '—') + '</dd></div>';
+        }
+        function asideSongRow(label, val, reviewId) {
+          var attr = reviewId ? ' data-mw-review-item="' + reviewId + '"' : '';
+          return '<div class="mw-aside__row mw-aside__row--song"' + attr + '><dt>' + label + '</dt><dd>' + (val || '—') + '</dd></div>';
         }
         function fillAside(n) {
           var aside = $('mw-aside');
@@ -293,13 +363,17 @@
             $('mw-sub').textContent = meta.sub || '';
             $('mw-sub').hidden = !meta.sub;
           }
-          if ($('mw-back')) $('mw-back').hidden = n === 1;
+          if ($('mw-back')) setMwNavBtnVisible($('mw-back'), n !== 1);
           if ($('mw-next')) $('mw-next').hidden = n === 7;
           if ($('mw-generate')) $('mw-generate').hidden = n !== 7;
-          if ($('mw-present')) $('mw-present').hidden = n !== 7 || !window.__massPresentAvailable;
-          if (typeof window.syncMassPresentAgainUi === 'function') window.syncMassPresentAgainUi();
           var practiceShareNav = $('btn-practice-share-wizard');
-          if (practiceShareNav) practiceShareNav.hidden = n !== 5;
+          if (practiceShareNav) setMwNavBtnVisible(practiceShareNav, n === 5);
+          var practiceShareTitle = $('btn-practice-share-wizard-title');
+          if (practiceShareTitle) practiceShareTitle.hidden = n !== 5;
+          if (typeof window.syncMassPresentAgainUi === 'function') window.syncMassPresentAgainUi();
+          else if ($('mw-present')) setMwNavBtnVisible($('mw-present'), !!window.__massPresentAvailable);
+          var slideCountHost = $('mw-review-slide-count');
+          if (slideCountHost) slideCountHost.hidden = n !== 7;
           if (n === 3) { ensureReadings(); }
           if (n === 5 && typeof window.refreshMassMusicSongPlan === "function") {
             window.refreshMassMusicSongPlan({ force: true }).catch(function () {});
@@ -312,12 +386,14 @@
           var canvas = document.querySelector('#mw-wizard .mw-step-canvas');
           var wiz = $('mw-wizard');
           if (canvas) {
+            canvas.classList.toggle('is-basics-step', n === 1);
             canvas.classList.toggle('is-readings-step', n === 3);
             canvas.classList.toggle('is-extras-step', n === 6);
             canvas.classList.toggle('is-music-step', n === 5);
             canvas.classList.toggle('is-review-step', n === 7);
           }
           if (wiz) {
+            wiz.classList.toggle('is-basics-step', n === 1);
             wiz.classList.toggle('is-readings-step', n === 3);
             wiz.classList.toggle('is-extras-step', n === 6);
             wiz.classList.toggle('is-music-step', n === 5);
@@ -906,6 +982,38 @@
           bindMassMissingOptionsModal();
           if ($('mw-present')) $('mw-present').addEventListener('click', function () {
             if (typeof window.reopenLastMassSlideshow === 'function') window.reopenLastMassSlideshow();
+          });
+          document.addEventListener('keydown', function (e) {
+            if (!document.body.classList.contains('mw-on')) return;
+            if (!flowPage || !flowPage.classList.contains('active')) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            var t = e.target;
+            if (t) {
+              var tag = (t.tagName || '').toLowerCase();
+              if (tag === 'input' || tag === 'textarea' || tag === 'select' || t.isContentEditable) return;
+              if (t.closest && t.closest('[contenteditable="true"]')) return;
+            }
+            if (document.querySelector('.ui-overlay[aria-hidden="false"], .mw-modal:not([hidden]), #mass-slideshow.is-open, .driver-overlay, .driver-active-element')) return;
+            if (e.key === 'ArrowRight' || e.code === 'ArrowRight') {
+              var nb = $('mw-next');
+              if (nb && !nb.hidden) { e.preventDefault(); next(); }
+              return;
+            }
+            if (e.key === 'ArrowLeft' || e.code === 'ArrowLeft') {
+              var bb = $('mw-back');
+              if (bb && !bb.hidden && !bb.classList.contains('is-nav-out') && current > 1) {
+                e.preventDefault();
+                back();
+              }
+              return;
+            }
+            if (e.key === 'Enter') {
+              var gen = $('mw-generate');
+              if (gen && !gen.hidden && !gen.disabled) {
+                e.preventDefault();
+                gen.click();
+              }
+            }
           });
           var massLang = $('flow-mass-language');
           if (massLang && massLang.dataset.mwLangBound !== '1') {

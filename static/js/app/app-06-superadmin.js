@@ -650,6 +650,7 @@
         "btn-practice-share-toolbar",
         "btn-practice-share-mobile",
         "btn-practice-share-wizard",
+        "btn-practice-share-wizard-title",
         "btn-home-practice-share",
       ].forEach((id) => {
         const el = $(id);

@@ -3401,6 +3401,7 @@ def index(request: Request) -> Any:
 @app.get("/library/collections", response_class=HTMLResponse)
 @app.get("/design/theme-lab", response_class=HTMLResponse)
 @app.get("/design/templates", response_class=HTMLResponse)
+@app.get("/settings/account", response_class=HTMLResponse)
 @app.get("/settings/church", response_class=HTMLResponse)
 @app.get("/settings/app", response_class=HTMLResponse)
 @app.get("/settings/team", response_class=HTMLResponse)

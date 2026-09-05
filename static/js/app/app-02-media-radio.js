@@ -3475,12 +3475,22 @@
       return massBuilderDraftCompareKey(a) === massBuilderDraftCompareKey(b);
     }
 
+    function formatMassBuilderDraftSavedStamp(date) {
+      const d = date instanceof Date ? date : new Date();
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    }
+
     function notifyMassBuilderDraftSaved(force) {
       if (typeof notify !== "function") return;
       const now = Date.now();
-      if (!force && now - massDraftToastLastAt < 30000) return;
-      massDraftToastLastAt = now;
-      notify("Draft saved", "ok");
+      const stamp = formatMassBuilderDraftSavedStamp(new Date(now));
+      const message = stamp ? ("Draft saved · " + stamp) : "Draft saved";
+      const key = "mass-builder-draft";
+      const toastOpen = typeof hasToastWithKey === "function" && hasToastWithKey(key);
+      const skipToast = !force && !toastOpen && now - massDraftToastLastAt < 30000;
+      if (!skipToast) massDraftToastLastAt = now;
+      notify(message, "ok", { key: key, skipToast: skipToast });
     }
 
     function saveMassBuilderDraft(options) {
@@ -3573,8 +3583,9 @@
       const cta = $("home-mass-cta");
       if (draft) {
         const stepLabel = formatMassBuilderDraftStepLabel(draft.step);
+        const stamp = formatMassBuilderDraftSavedStamp(draft.savedAt ? new Date(draft.savedAt) : new Date());
         if (ctaLabel) ctaLabel.textContent = "Continue where you left off\u00a0›";
-        if (statusEl) statusEl.textContent = "Draft saved";
+        if (statusEl) statusEl.textContent = stamp ? ("Draft saved · " + stamp) : "Draft saved";
         if (statusSub) statusSub.textContent = stepLabel;
         if (cta) cta.setAttribute("data-mw-resume-draft", "1");
       } else {

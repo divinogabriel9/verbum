@@ -3374,6 +3374,7 @@
         ["btn-practice-share-mobile", () => openPracticeShareHistoryModal()],
         ["btn-practice-share-toolbar", () => openPracticeShareHistoryModal()],
         ["btn-practice-share-wizard", () => openPracticeShareHistoryModal()],
+        ["btn-practice-share-wizard-title", () => openPracticeShareHistoryModal()],
         ["btn-home-practice-share", () => openPracticeShareHistoryModal()],
         ["practice-share-history-backdrop", closePracticeShareHistoryModal],
         ["practice-share-history-close", closePracticeShareHistoryModal],

@@ -338,6 +338,69 @@
     return null;
   }
 
+  function hasGoogleIdentity(user) {
+    const u = user || state.user || (state.session && state.session.user);
+    const identities = (u && u.identities) || [];
+    return identities.some(
+      (item) => String((item && item.provider) || "").toLowerCase() === "google"
+    );
+  }
+
+  async function refreshAuthUser() {
+    await ensureSupabase();
+    if (!state.supabase) return null;
+    const { data, error } = await state.supabase.auth.getUser();
+    if (!error && data && data.user) {
+      state.user = data.user;
+      if (state.session) {
+        state.session = Object.assign({}, state.session, { user: data.user });
+      }
+      updateAccountMenuDisplay();
+      return data.user;
+    }
+    return state.user;
+  }
+
+  async function linkGoogleAccount() {
+    await ensureSupabase();
+    if (!state.supabase) throw new Error("Sign in first.");
+    if (typeof state.supabase.auth.linkIdentity !== "function") {
+      throw new Error("This browser session cannot link Google. Refresh and try again.");
+    }
+    const { data: sessionData, error: sessionError } =
+      await state.supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!sessionData || !sessionData.session) {
+      throw new Error("Sign in with email first, then connect Google.");
+    }
+    applySession(sessionData.session);
+
+    const redirectTo =
+      window.location.origin + "/settings/account?google_linked=1";
+    const { data, error } = await state.supabase.auth.linkIdentity({
+      provider: "google",
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    if (error) {
+      const msg = String((error && error.message) || "");
+      if (/manual linking/i.test(msg) || /linking.*(disabled|not enabled)/i.test(msg)) {
+        throw new Error(
+          "Google linking is disabled in Auth settings. Enable “Allow manual linking” in Supabase, or sign out and use Continue with Google with the same email."
+        );
+      }
+      throw error;
+    }
+    if (data && data.url) {
+      window.location.assign(data.url);
+      return true;
+    }
+    throw new Error("Google linking did not return a redirect URL.");
+  }
+
   function getGreetingLabel(user) {
     const name = getUserFirstName(user);
     return name ? "Hello! " + name : "Hello!";
@@ -551,7 +614,7 @@
     state.cachedToken = null;
     updateAccountMenuDisplay();
     const cfg = state.config;
-    window.location.href = ((cfg && cfg.sign_in_url) || "/sign-in") + "?switch=1";
+    window.location.href = (cfg && cfg.sign_in_url) || "/sign-in";
   }
 
   async function initMainAppAuth() {
@@ -592,7 +655,7 @@
           signOut().catch((err) => {
             console.warn("[Verbum auth] sign out failed", err);
             const base = (state.config && state.config.sign_in_url) || "/sign-in";
-            window.location.href = base + "?switch=1";
+            window.location.href = base;
           });
         });
       }
@@ -669,6 +732,9 @@
     refreshUserProfile,
     updateAccountMenuDisplay,
     getUserFirstName,
+    hasGoogleIdentity,
+    linkGoogleAccount,
+    refreshAuthUser,
     getHomeWelcomeLabel,
     getHomeWelcomeSubtext,
   };
