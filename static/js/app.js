@@ -10989,6 +10989,10 @@
       if (input && document.activeElement !== input) input.value = String(n);
       const custom = input && input.closest(".mass-communion-count__custom");
       if (custom) custom.classList.toggle("is-active", n >= 3);
+      const dec = $("mass-communion-dec");
+      const inc = $("mass-communion-inc");
+      if (dec) dec.disabled = n <= 1;
+      if (inc) inc.disabled = n >= MASS_COMMUNION_MAX;
     }
 
     function applyCommunionCountFromSlotsOrDraft(draft) {
@@ -13181,8 +13185,23 @@
           if (n === 1 || n === 2) setMassCommunionCount(n);
         });
       });
+      const dec = $("mass-communion-dec");
+      const inc = $("mass-communion-inc");
+      if (dec) {
+        dec.addEventListener("click", () => {
+          setMassCommunionCount(massCommunionCount - 1);
+        });
+      }
+      if (inc) {
+        inc.addEventListener("click", () => {
+          setMassCommunionCount(massCommunionCount + 1);
+        });
+      }
       const input = $("mass-communion-custom");
-      if (!input) return;
+      if (!input) {
+        syncCommunionCountUi();
+        return;
+      }
       const commit = () => {
         const raw = String(input.value || "").trim();
         if (!raw) {
@@ -13213,7 +13232,15 @@
           commit();
           input.blur();
         }
-        if (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-") {
+        if (e.key === "ArrowUp" || e.key === "+") {
+          e.preventDefault();
+          setMassCommunionCount(massCommunionCount + 1);
+        }
+        if (e.key === "ArrowDown" || e.key === "-") {
+          e.preventDefault();
+          setMassCommunionCount(massCommunionCount - 1);
+        }
+        if (e.key === "e" || e.key === "E") {
           e.preventDefault();
         }
       });
@@ -14627,10 +14654,10 @@
       reverent: "Reverent and worshipful — sacred Sunday storytelling.",
     };
     var MOOD_PICK_SECTIONS = [
-      { key: "entrance", label: "Entrance", slotKey: "entrance", count: 1 },
-      { key: "offertory", label: "Offertory", slotKey: "offertory", count: 1 },
-      { key: "communion", label: "Communion", slotKeys: communionSlotKeys(massCommunionCount), count: clampMassCommunionCount(massCommunionCount) },
-      { key: "recessional", label: "Recessional", slotKey: "recessional", count: 1 },
+      { key: "entrance", label: "Entrance", shortLabel: "Ent.", slotKey: "entrance", count: 1 },
+      { key: "offertory", label: "Offertory", shortLabel: "Off.", slotKey: "offertory", count: 1 },
+      { key: "communion", label: "Communion", shortLabel: "Com.", slotKeys: communionSlotKeys(massCommunionCount), count: clampMassCommunionCount(massCommunionCount) },
+      { key: "recessional", label: "Recessional", shortLabel: "Rec.", slotKey: "recessional", count: 1 },
     ];
     var massMoodPickSelections = [];
     var massMoodPickExcludeIds = new Set();
@@ -14722,6 +14749,12 @@
 
 
 /* ==== app-05-community.js ==== */
+    function moodPickSectionShortLabel(sec, index) {
+      const base = (sec && (sec.shortLabel || sec.label)) || "";
+      if (sec && sec.count > 1) return base + " " + ((index || 0) + 1);
+      return base;
+    }
+
     function appendSectionSongSelections(selections, sec, songs) {
       if (sec.slotKeys) {
         sec.slotKeys.forEach((slotKey, i) => {
@@ -14732,7 +14765,7 @@
             slotKey,
             id: row.id,
             title: row.title || "",
-            label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
+            label: moodPickSectionShortLabel(sec, i),
           });
         });
         return;
@@ -14744,7 +14777,7 @@
         slotKey: sec.slotKey,
         id: row.id,
         title: row.title || "",
-        label: sec.label,
+        label: moodPickSectionShortLabel(sec, 0),
       });
     }
 
@@ -14837,19 +14870,82 @@
       return selections;
     }
 
+    function clearMassMoodPickMarquee(row) {
+      if (!row) return;
+      if (row._moodTitleTimers) {
+        row._moodTitleTimers.forEach((id) => window.clearTimeout(id));
+        row._moodTitleTimers = null;
+      }
+      const titleEl = row.querySelector(".mass-summary-mood-pick__song");
+      if (titleEl) {
+        titleEl.style.transition = "none";
+        titleEl.style.transform = "translateX(0)";
+      }
+      row.classList.remove("is-song-marquee");
+    }
+
+    function setupMassMoodPickMarquee(row) {
+      if (!row) return;
+      const viewport = row.querySelector(".mass-summary-mood-pick__song-viewport");
+      const titleEl = row.querySelector(".mass-summary-mood-pick__song");
+      if (!viewport || !titleEl) return;
+
+      clearMassMoodPickMarquee(row);
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (!row.isConnected) return;
+          const viewW = viewport.clientWidth;
+          if (viewW < 24) return;
+          row.classList.add("is-song-marquee");
+          const textW = Math.ceil(titleEl.scrollWidth);
+          const overflow = textW - viewW;
+          if (overflow <= 6) {
+            row.classList.remove("is-song-marquee");
+            titleEl.style.transition = "none";
+            titleEl.style.transform = "translateX(0)";
+            return;
+          }
+          const scrollMs = Math.max(2800, Math.round((overflow / HEADER_TICKER_SCROLL_PX_PER_SEC) * 1000));
+          const startTimer = window.setTimeout(() => {
+            titleEl.style.transition = "transform " + scrollMs + "ms linear";
+            titleEl.style.transform = "translateX(-" + overflow + "px)";
+          }, HEADER_TICKER_HOLD_MS);
+          const loopTimer = window.setTimeout(() => {
+            titleEl.style.transition = "none";
+            titleEl.style.transform = "translateX(0)";
+            setupMassMoodPickMarquee(row);
+          }, HEADER_TICKER_HOLD_MS + scrollMs + HEADER_TICKER_HOLD_END_MS);
+          row._moodTitleTimers = [startTimer, loopTimer];
+        });
+      });
+    }
+
+    function setupAllMassMoodPickMarquees() {
+      const listEl = $("mass-summary-mood-picks");
+      if (!listEl) return;
+      listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => setupMassMoodPickMarquee(row));
+    }
+
     function renderMassMoodPickList(selections) {
       const listEl = $("mass-summary-mood-picks");
       if (!listEl) return;
       if (!selections.length) {
+        listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
         listEl.innerHTML = "";
         return;
       }
+      listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
       listEl.innerHTML = selections.map((pick) => (
         "<li class=\"mass-summary-mood-pick\">" +
           "<span class=\"mass-summary-mood-pick__cat\">" + escapeHtml(pick.label) + "</span>" +
-          "<span class=\"mass-summary-mood-pick__song\">" + escapeHtml(pick.title || "—") + "</span>" +
+          "<span class=\"mass-summary-mood-pick__song-viewport\">" +
+            "<span class=\"mass-summary-mood-pick__song\">" + escapeHtml(pick.title || "—") + "</span>" +
+          "</span>" +
         "</li>"
       )).join("");
+      setupAllMassMoodPickMarquees();
     }
 
     function computeMassMoodPickRefresh() {
@@ -14950,7 +15046,7 @@
               slotKey,
               id,
               title: (row && row.title) || catalogSongTitle(sec.key, id) || id,
-              label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
+              label: moodPickSectionShortLabel(sec, i),
               moodKey: mood,
             });
           });
@@ -14964,7 +15060,7 @@
           slotKey: sec.slotKey,
           id,
           title: (row && row.title) || catalogSongTitle(sec.key, id) || id,
-          label: sec.label,
+          label: moodPickSectionShortLabel(sec, 0),
           moodKey: mood,
         });
       });
@@ -23930,31 +24026,219 @@
     function hideMassHabitsBanner() {
       const banner = $("mw-habits-banner");
       if (banner) banner.hidden = true;
+      /* Quick Mass stays visible in the step rail */
     }
 
-    function showMassHabitsBanner(payload) {
-      if (!isFeatureEnabled("mass_habits")) {
-        hideMassHabitsBanner();
-        return;
-      }
-      const banner = $("mw-habits-banner");
-      if (!banner || !payload || !payload.has_habits) {
-        hideMassHabitsBanner();
-        return;
-      }
-      const title = $("mw-habits-banner-title");
-      const hint = $("mw-habits-banner-hint");
-      const n = payload.learned_count || 0;
-      if (title) {
-        title.textContent = n
-          ? ("Your usual settings · " + n + " remembered")
-          : "Your usual settings";
-      }
-      if (hint) {
-        hint.textContent = payload.hint || "Based on your Masses from the last month.";
-      }
-      banner.hidden = false;
+    function showMassHabitsBanner(_payload) {
+      /* Quick Mass is always visible; habits still gate the confirm modal */
     }
+
+    function formatQuickMassLabel(key) {
+      const labels = {
+        creed_choice: "Creed",
+        our_father_choice: "Our Father",
+        mass_language: "Mass language",
+        hymn_lyrics_layout: "Hymn lyrics",
+        lotw_poster: "Word poster",
+        lote_poster: "Eucharist poster",
+        divider_style: "Divider style",
+        poster_template: "Poster template",
+        include_church_logo: "Church logo",
+        include_church_name: "Church name",
+        include_footer: "Footer",
+        celebrant: "Celebrant",
+        songs: "Songs",
+      };
+      return labels[key] || key.replace(/_/g, " ");
+    }
+
+    function formatQuickMassValue(key, value) {
+      if (value === true) return "On";
+      if (value === false) return "Off";
+      if (key === "creed_choice") {
+        return value === "apostles" ? "Apostles’ Creed" : "Nicene Creed";
+      }
+      if (key === "our_father_choice" || key === "mass_language") {
+        const s = String(value || "");
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
+      }
+      if (key === "hymn_lyrics_layout") {
+        return value === "single" ? "1 verse / slide" : "2 verses / slide";
+      }
+      if (key === "songs" && value && typeof value === "object") {
+        const slots = Object.keys(value);
+        const titles = slots.map((slot) => {
+          const id = String(value[slot] || "").trim();
+          if (!id) return "";
+          let title = id;
+          if (typeof catalogSongTitle === "function") {
+            const t = catalogSongTitle(slot, id);
+            if (t) title = t;
+          }
+          if (title === id && typeof songCatalogData !== "undefined" && songCatalogData) {
+            Object.keys(songCatalogData).some((sec) => {
+              const rows = songCatalogData[sec] || [];
+              const row = rows.find((r) => String(r.id) === id);
+              if (row && row.title) {
+                title = row.title;
+                return true;
+              }
+              return false;
+            });
+          }
+          const slotLabel = slot.replace(/_/g, " ");
+          return slotLabel.charAt(0).toUpperCase() + slotLabel.slice(1) + ": " + title;
+        }).filter(Boolean);
+        return titles.length ? titles.join(" · ") : "—";
+      }
+      return value == null || value === "" ? "—" : String(value);
+    }
+
+    function escapeQuickMassText(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function buildQuickMassDetailsHtml(payload) {
+      const suggestions = (payload && payload.suggestions) || {};
+      const order = [
+        "celebrant",
+        "mass_language",
+        "creed_choice",
+        "our_father_choice",
+        "hymn_lyrics_layout",
+        "songs",
+        "lotw_poster",
+        "lote_poster",
+        "divider_style",
+        "include_church_logo",
+        "include_church_name",
+        "include_footer",
+      ];
+      const rows = [];
+      order.forEach((key) => {
+        if (!(key in suggestions)) return;
+        const val = suggestions[key];
+        if (val == null || val === "") return;
+        if (key === "songs" && typeof val === "object" && !Object.keys(val).length) return;
+        rows.push(
+          '<div class="mw-quick-mass-details__row"><dt>' +
+            escapeQuickMassText(formatQuickMassLabel(key)) +
+            "</dt><dd>" +
+            escapeQuickMassText(formatQuickMassValue(key, val)) +
+            "</dd></div>"
+        );
+      });
+      if (!rows.length) {
+        return '<div class="mw-quick-mass-details__row"><dt>Defaults</dt><dd>Your usual Mass settings will be applied.</dd></div>';
+      }
+      return rows.join("");
+    }
+
+    function closeQuickMassModal() {
+      const modal = $("mw-quick-mass-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      modal.setAttribute("data-open", "false");
+    }
+
+    async function openQuickMassModal() {
+      const dateEl = $("mass-date");
+      const date = dateEl ? (dateEl.value || "").trim() : "";
+      if (!date) {
+        notify("Choose a Mass date first.", "error");
+        return;
+      }
+      let payload = massHabitsCache;
+      if (!payload || massHabitsCacheDate !== date) {
+        payload = await fetchMassSmartDefaults(date);
+      }
+      if (!payload || !payload.has_habits) {
+        notify("No Quick Mass defaults available yet.", "error");
+        return;
+      }
+      const details = $("mw-quick-mass-details");
+      if (details) details.innerHTML = buildQuickMassDetailsHtml(payload);
+      const sub = $("mw-quick-mass-sub");
+      if (sub) {
+        const n = payload.learned_count || 0;
+        sub.textContent = n
+          ? ("We'll apply " + n + " remembered setting" + (n === 1 ? "" : "s") + " from your recent Masses, then open Review so you can generate.")
+          : "We'll apply your usual settings for this Mass, then jump to Review to generate.";
+      }
+      const modal = $("mw-quick-mass-modal");
+      if (!modal) return;
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      modal.setAttribute("data-open", "true");
+      const cont = $("mw-quick-mass-continue");
+      if (cont) cont.focus();
+    }
+
+    async function runQuickMassFromHabits() {
+      const dateEl = $("mass-date");
+      const date = dateEl ? (dateEl.value || "").trim() : "";
+      if (!date) {
+        notify("Choose a Mass date first.", "error");
+        return;
+      }
+      const data = await fetchMassSmartDefaults(date);
+      if (data && data.suggestions) {
+        applyMassHabitSuggestions(data.suggestions, {
+          force: true,
+          confidence: data.confidence || {},
+        });
+        if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
+        if (typeof renderMassSongPlan === "function") renderMassSongPlan();
+        if (typeof renderMassSummarySidebar === "function") renderMassSummarySidebar();
+      }
+      hideMassHabitsBanner();
+      closeQuickMassModal();
+      if (window.MassWizard && typeof window.MassWizard.setStep === "function") {
+        window.MassWizard.setStep(7);
+      }
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") {
+        scheduleMassBuilderDraftAutoSave();
+      }
+      notify("Quick Mass ready — review and generate.", "ok");
+    }
+
+    function wireMassHabitsBanner() {
+      const quick = $("mw-habits-quick");
+      if (quick && quick.dataset.habitsWired !== "1") {
+        quick.dataset.habitsWired = "1";
+        quick.addEventListener("click", () => {
+          openQuickMassModal().catch(() => notify("Could not load Quick Mass defaults.", "error"));
+        });
+      }
+      const keep = $("mw-quick-mass-keep");
+      const cont = $("mw-quick-mass-continue");
+      const modal = $("mw-quick-mass-modal");
+      if (keep && keep.dataset.habitsWired !== "1") {
+        keep.dataset.habitsWired = "1";
+        keep.addEventListener("click", () => closeQuickMassModal());
+      }
+      if (cont && cont.dataset.habitsWired !== "1") {
+        cont.dataset.habitsWired = "1";
+        cont.addEventListener("click", () => {
+          runQuickMassFromHabits().catch(() => notify("Could not apply Quick Mass defaults.", "error"));
+        });
+      }
+      if (modal && modal.dataset.habitsWired !== "1") {
+        modal.dataset.habitsWired = "1";
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) closeQuickMassModal();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && modal.classList.contains("is-open")) closeQuickMassModal();
+        });
+      }
+    }
+    wireMassHabitsBanner();
 
     function applyMassHabitSuggestions(suggestions, opts) {
       const o = opts || {};
@@ -24104,53 +24388,6 @@
       }
       return data;
     }
-
-    async function runQuickMassFromHabits() {
-      const dateEl = $("mass-date");
-      const date = dateEl ? (dateEl.value || "").trim() : "";
-      if (!date) {
-        notify("Choose a Mass date first.", "error");
-        return;
-      }
-      const data = await fetchMassSmartDefaults(date);
-      if (data && data.suggestions) {
-        applyMassHabitSuggestions(data.suggestions, {
-          force: true,
-          confidence: data.confidence || {},
-        });
-        if (typeof rebuildMassPlanSongPool === "function") rebuildMassPlanSongPool();
-        if (typeof renderMassSongPlan === "function") renderMassSongPlan();
-        if (typeof renderMassSummarySidebar === "function") renderMassSummarySidebar();
-      }
-      hideMassHabitsBanner();
-      if (window.MassWizard && typeof window.MassWizard.setStep === "function") {
-        window.MassWizard.setStep(7);
-      }
-      if (typeof scheduleMassBuilderDraftAutoSave === "function") {
-        scheduleMassBuilderDraftAutoSave();
-      }
-      notify("Quick Mass ready — review and generate.", "ok");
-    }
-
-    function wireMassHabitsBanner() {
-      const dismiss = $("mw-habits-dismiss");
-      const quick = $("mw-habits-quick");
-      if (dismiss && dismiss.dataset.habitsWired !== "1") {
-        dismiss.dataset.habitsWired = "1";
-        dismiss.addEventListener("click", () => {
-          const d = ($("mass-date") && $("mass-date").value) || massHabitsCacheDate || "";
-          massHabitsDismissedForDate = d;
-          hideMassHabitsBanner();
-        });
-      }
-      if (quick && quick.dataset.habitsWired !== "1") {
-        quick.dataset.habitsWired = "1";
-        quick.addEventListener("click", () => {
-          runQuickMassFromHabits().catch(() => notify("Could not apply Quick Mass defaults.", "error"));
-        });
-      }
-    }
-    wireMassHabitsBanner();
 
     async function loadFlowData(auto = false) {
       const date = $("mass-date").value;

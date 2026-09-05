@@ -2,32 +2,72 @@
 
 .mw-progress-bar {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 18px 20px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
+.mw-progress-bar .mw-tour-btn {
+  order: -1;
+  flex: 0 0 auto;
+  margin: 0;
+  align-self: flex-start;
+}
+
 .mw-progress-bar .mw-progress {
   flex: 1;
   min-width: 0;
+  order: 1;
   padding-top: 0;
   padding-bottom: 18px;
   border-bottom: none;
+}
+
+.mw-progress-bar .mw-quick-mass-btn {
+  order: 2;
+  margin-bottom: 14px;
+  width: auto;
+  flex: 0 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .mw-progress-bar {
+    flex-direction: column;
+    align-items: stretch;
+    border-bottom: 0;
+    padding: 0;
+  }
+  .mw-progress-bar .mw-progress {
+    padding-bottom: 0;
+  }
+  .mw-progress-bar .mw-tour-btn {
+    align-self: flex-start;
+    width: auto;
+    justify-content: flex-start;
+  }
+  .mw-progress-bar .mw-quick-mass-btn {
+    align-self: stretch;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0;
+  }
 }
 
 .mw-tour-btn {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 18px;
-  padding: 7px 12px;
+  gap: 5px;
+  margin-bottom: 0;
+  padding: 5px 9px;
   border-radius: 999px;
   border: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--line));
   background: color-mix(in srgb, var(--accent) 8%, var(--surface-solid));
   color: var(--accent);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -47,8 +87,18 @@
 
 .mw-tour-btn__icon {
   display: inline-flex;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  transform-origin: center;
+  animation: mw-tour-icon-nudge 2.8s var(--motion-ease-out, ease-in-out) infinite;
+}
+
+@keyframes mw-tour-icon-nudge {
+  0%, 72%, 100% { transform: rotate(0deg) scale(1); }
+  78% { transform: rotate(-14deg) scale(1.08); }
+  84% { transform: rotate(10deg) scale(1.05); }
+  90% { transform: rotate(-6deg) scale(1.02); }
+  96% { transform: rotate(0deg) scale(1); }
 }
 
 .home-mass-tour-link {
@@ -378,7 +428,7 @@ body.lf-tour-active .lf-tour-popover button:active {
 @media (max-width: 760px) {
   .mw-progress-bar { padding-inline: 14px; }
   .mw-tour-btn span:not(.mw-tour-btn__icon) { display: none; }
-  .mw-tour-btn { padding: 8px 10px; margin-bottom: 14px; }
+  .mw-tour-btn { padding: 6px 8px; }
 
   .lf-tour-popover.driver-popover {
     --lf-tour-width: min(320px, calc(100vw - 24px));
@@ -389,7 +439,8 @@ body.lf-tour-active .lf-tour-popover button:active {
 @media (prefers-reduced-motion: reduce) {
   body.driver-active.driver-fade .driver-overlay.driver-overlay-animated,
   .lf-tour-popover.lf-tour-popover--ready,
-  body.lf-tour-active .lf-tour-highlight-ring.is-visible {
+  body.lf-tour-active .lf-tour-highlight-ring.is-visible,
+  .mw-tour-btn__icon {
     animation: none !important;
   }
 

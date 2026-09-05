@@ -177,6 +177,53 @@
       box-shadow: 0 0 20px rgba(161, 15, 13, 0.35);
     }
     .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .auth-oauth {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .auth-oauth[hidden] { display: none !important; }
+    .auth-oauth-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+    .auth-oauth-btn:hover {
+      background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+      border-color: color-mix(in srgb, var(--accent-soft) 35%, var(--line));
+    }
+    .auth-oauth-btn:active { transform: scale(0.98); }
+    .auth-oauth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .auth-oauth-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 14px 0 4px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .auth-divider[hidden] { display: none !important; }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
     .auth-error {
       margin: 0 0 12px;
       padding: 10px 12px;
@@ -333,6 +380,18 @@
     </div>
 
     <form id="auth-form" hidden novalidate>
+      <div class="auth-oauth" id="auth-oauth" {% if mode != "sign-in" %}hidden{% endif %}>
+        <button type="button" class="auth-oauth-btn" id="auth-google-btn">
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.97 10.71A5.41 5.41 0 0 1 3.69 9c0-.59.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+      <div class="auth-divider" id="auth-oauth-divider" {% if mode != "sign-in" %}hidden{% endif %}>or</div>
       <div id="auth-signup-fields" hidden>
         <div class="field">
           <label for="auth-church-name">Church / community name</label>
@@ -407,6 +466,6 @@
     window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
     window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
   </script>
-  <script src="/static/js/auth-page.js?v=20260722b" defer></script>
+  <script src="/static/js/auth-page.js?v=20260905a" defer></script>
 </body>
 </html>

@@ -3308,6 +3308,10 @@
       if (input && document.activeElement !== input) input.value = String(n);
       const custom = input && input.closest(".mass-communion-count__custom");
       if (custom) custom.classList.toggle("is-active", n >= 3);
+      const dec = $("mass-communion-dec");
+      const inc = $("mass-communion-inc");
+      if (dec) dec.disabled = n <= 1;
+      if (inc) inc.disabled = n >= MASS_COMMUNION_MAX;
     }
 
     function applyCommunionCountFromSlotsOrDraft(draft) {

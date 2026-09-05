@@ -4,6 +4,12 @@
  * Top-level const/let → var so classic multi-script scope is shared.
  * Lines (pre-split content): 14000-17548
  */
+    function moodPickSectionShortLabel(sec, index) {
+      const base = (sec && (sec.shortLabel || sec.label)) || "";
+      if (sec && sec.count > 1) return base + " " + ((index || 0) + 1);
+      return base;
+    }
+
     function appendSectionSongSelections(selections, sec, songs) {
       if (sec.slotKeys) {
         sec.slotKeys.forEach((slotKey, i) => {
@@ -14,7 +20,7 @@
             slotKey,
             id: row.id,
             title: row.title || "",
-            label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
+            label: moodPickSectionShortLabel(sec, i),
           });
         });
         return;
@@ -26,7 +32,7 @@
         slotKey: sec.slotKey,
         id: row.id,
         title: row.title || "",
-        label: sec.label,
+        label: moodPickSectionShortLabel(sec, 0),
       });
     }
 
@@ -123,15 +129,24 @@
       const listEl = $("mass-summary-mood-picks");
       if (!listEl) return;
       if (!selections.length) {
+        if (typeof clearMassMoodPickMarquee === "function") {
+          listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
+        }
         listEl.innerHTML = "";
         return;
+      }
+      if (typeof clearMassMoodPickMarquee === "function") {
+        listEl.querySelectorAll(".mass-summary-mood-pick").forEach((row) => clearMassMoodPickMarquee(row));
       }
       listEl.innerHTML = selections.map((pick) => (
         "<li class=\"mass-summary-mood-pick\">" +
           "<span class=\"mass-summary-mood-pick__cat\">" + escapeHtml(pick.label) + "</span>" +
-          "<span class=\"mass-summary-mood-pick__song\">" + escapeHtml(pick.title || "—") + "</span>" +
+          "<span class=\"mass-summary-mood-pick__song-viewport\">" +
+            "<span class=\"mass-summary-mood-pick__song\">" + escapeHtml(pick.title || "—") + "</span>" +
+          "</span>" +
         "</li>"
       )).join("");
+      if (typeof setupAllMassMoodPickMarquees === "function") setupAllMassMoodPickMarquees();
     }
 
     function computeMassMoodPickRefresh() {
@@ -232,7 +247,7 @@
               slotKey,
               id,
               title: (row && row.title) || catalogSongTitle(sec.key, id) || id,
-              label: sec.label + (sec.count > 1 ? " " + (i + 1) : ""),
+              label: moodPickSectionShortLabel(sec, i),
               moodKey: mood,
             });
           });
@@ -246,7 +261,7 @@
           slotKey: sec.slotKey,
           id,
           title: (row && row.title) || catalogSongTitle(sec.key, id) || id,
-          label: sec.label,
+          label: moodPickSectionShortLabel(sec, 0),
           moodKey: mood,
         });
       });

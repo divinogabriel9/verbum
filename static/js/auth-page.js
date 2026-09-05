@@ -28,8 +28,30 @@
       params.has("code") ||
       params.get("type") === "signup" ||
       params.get("type") === "recovery" ||
-      params.get("type") === "magiclink"
+      params.get("type") === "magiclink" ||
+      params.get("type") === "invite"
     );
+  }
+
+  function pendingInviteKey() {
+    return "verbum:pending-invite";
+  }
+
+  function stashPendingInvite(token) {
+    if (!token) return;
+    try {
+      sessionStorage.setItem(pendingInviteKey(), token);
+    } catch (_e) { /* ignore */ }
+  }
+
+  function takePendingInvite() {
+    try {
+      const token = sessionStorage.getItem(pendingInviteKey()) || "";
+      sessionStorage.removeItem(pendingInviteKey());
+      return token;
+    } catch (_e) {
+      return "";
+    }
   }
 
   function wantsSwitchAccount() {
@@ -235,6 +257,62 @@
         window.location.href = dest;
       }
 
+      let finishingAuth = false;
+      async function finishAuthWithSession(session) {
+        if (finishingAuth) return;
+        finishingAuth = true;
+        if (!session || !session.access_token) {
+          redirectAfterAuth();
+          return;
+        }
+        const pendingInvite = takePendingInvite() || inviteToken;
+        if (pendingInvite) {
+          await consumeInvite(pendingInvite, session.access_token);
+        }
+        redirectAfterAuth();
+      }
+
+      function oauthRedirectTo() {
+        const params = new URLSearchParams(window.location.search);
+        params.delete("code");
+        params.delete("error");
+        params.delete("error_description");
+        params.delete("error_code");
+        const qs = params.toString();
+        return (
+          window.location.origin +
+          (cfg.sign_in_url || "/sign-in") +
+          (qs ? "?" + qs : "")
+        );
+      }
+
+      async function startGoogleSignIn() {
+        showError("");
+        const googleBtn = $("auth-google-btn");
+        if (googleBtn) googleBtn.disabled = true;
+        try {
+          if (inviteToken) stashPendingInvite(inviteToken);
+          const { data, error } = await client.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              redirectTo: oauthRedirectTo(),
+              queryParams: {
+                prompt: "select_account",
+              },
+            },
+          });
+          if (error) throw error;
+          if (data && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+          throw new Error("Google sign-in did not return a redirect URL.");
+        } catch (err) {
+          showError((err && err.message) || "Google sign-in failed.");
+          if (googleBtn) googleBtn.disabled = false;
+        }
+      }
+
       function showLoginForm() {
         if (loading) loading.remove();
         if (blocked) blocked.hidden = true;
@@ -242,6 +320,12 @@
         if (form) form.hidden = false;
         if (signupFields) signupFields.hidden = mode !== "sign-up";
         if (footer) footer.hidden = false;
+
+        const oauth = $("auth-oauth");
+        const oauthDivider = $("auth-oauth-divider");
+        const showGoogle = mode === "sign-in" || (mode === "sign-up" && !!inviteToken);
+        if (oauth) oauth.hidden = !showGoogle;
+        if (oauthDivider) oauthDivider.hidden = !showGoogle;
 
         if (mode === "sign-up") {
           applyInviteChurchName(inviteCommunityName);
@@ -253,6 +337,12 @@
             emailInput.value = inviteEmail;
             emailInput.readOnly = true;
           }
+        }
+
+        const googleBtn = $("auth-google-btn");
+        if (googleBtn && !googleBtn.dataset.bound) {
+          googleBtn.dataset.bound = "1";
+          googleBtn.addEventListener("click", startGoogleSignIn);
         }
       }
 
@@ -292,15 +382,28 @@
         await client.auth.signOut();
       }
 
-      if (isAuthCallback()) {
+      const oauthError = new URLSearchParams(window.location.search).get("error_description")
+        || new URLSearchParams(window.location.search).get("error");
+      if (oauthError) {
+        showError(decodeURIComponent(String(oauthError).replace(/\+/g, " ")));
+      }
+
+      if (!oauthError && isAuthCallback()) {
         client.auth.onAuthStateChange((event, session) => {
-          if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-            redirectAfterAuth();
+          if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")) {
+            finishAuthWithSession(session);
           }
         });
         const { data: sessionData } = await client.auth.getSession();
         if (sessionData.session) {
-          redirectAfterAuth();
+          await finishAuthWithSession(sessionData.session);
+          return;
+        }
+        // Wait briefly for PKCE code exchange / hash tokens.
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const retry = await client.auth.getSession();
+        if (retry.data && retry.data.session) {
+          await finishAuthWithSession(retry.data.session);
           return;
         }
       }

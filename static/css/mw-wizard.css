@@ -30,39 +30,54 @@
         body.mw-on [data-mw-step][hidden] { display: none !important; }
         .mw-rite__body[hidden], .mw-bookmark[hidden], .mw-review[hidden] { display: none !important; }
         body.mw-on select[data-mw-tunes] { display: none !important; }
-        #mw-wizard.mw { position: relative; background: var(--surface-solid); border: 0; border-radius: clamp(12px, 1.4vw, 18px); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible; }
+        #mw-wizard.mw { position: relative; background: transparent; border: 0; border-radius: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible; }
+        #mw-wizard.mw .mw-shell {
+          position: relative;
+          background: var(--surface-solid);
+          border: 1px solid var(--card-border, var(--line-soft));
+          border-radius: var(--radius-lg, clamp(12px, 1.4vw, 18px));
+          box-shadow: none;
+          overflow: visible;
+          min-width: 0;
+        }
         .mw-habits-banner {
           display: flex;
           flex-wrap: wrap;
           align-items: center;
           justify-content: space-between;
-          gap: 12px 16px;
+          gap: 8px 12px;
           margin: 0 clamp(16px, 2.2vw, 28px) 8px;
-          padding: 12px 16px;
+          padding: 8px 12px;
           border: 1px solid color-mix(in srgb, var(--accent, #7a1f3d) 28%, var(--line-soft));
           border-radius: 12px;
           background: color-mix(in srgb, var(--accent, #7a1f3d) 8%, var(--surface-solid));
         }
         .mw-habits-banner[hidden] { display: none !important; }
-        .mw-habits-banner__text { min-width: 0; flex: 1 1 220px; }
+        .mw-habits-banner__text { min-width: 0; flex: 1 1 180px; }
         .mw-habits-banner__text strong {
           display: block;
-          font-size: 0.95rem;
+          font-size: 0.8125rem;
           font-weight: 650;
           color: var(--ink, #1a1214);
+          line-height: 1.25;
         }
         .mw-habits-banner__text p {
-          margin: 2px 0 0;
-          font-size: 0.85rem;
+          margin: 1px 0 0;
+          font-size: 0.75rem;
           color: var(--muted, #6b5c60);
+          line-height: 1.3;
         }
         .mw-habits-banner__actions {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
+          gap: 6px;
           flex: 0 0 auto;
         }
-        .mw-habits-banner__actions .mw-btn { min-height: 36px; padding: 0 14px; font-size: 0.875rem; }
+        .mw-habits-banner__actions .mw-btn {
+          min-height: 30px;
+          padding: 0 12px;
+          font-size: 0.75rem;
+        }
         .mw-progress { display: flex; gap: 4px; align-items: center; overflow-x: auto; padding: 18px 20px; border-bottom: 1px solid var(--line-soft); scrollbar-width: none; }
         .mw-progress::-webkit-scrollbar { display: none; }
         .mw-progress__item { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; opacity: .5; cursor: pointer; transition: opacity .25s; }
@@ -75,8 +90,22 @@
         @media (max-width: 760px) { .mw-progress__label { display: none; } }
         .mw-step-head { padding: 22px 24px 4px; }
         .mw-step-head__eyebrow { font-size: var(--mw-type-eyebrow, 0.75rem); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0; }
-        .mw-step-head__title { font-family: var(--brand-font-flow); font-size: var(--mw-type-display, clamp(1.875rem, 4.4vw, 2.75rem)); line-height: 1.08; margin: 6px 0 4px; color: var(--ink); letter-spacing: var(--tracking-title, -0.022em); }
+        .mw-step-head__title-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px 16px;
+          flex-wrap: wrap;
+          margin: 6px 0 4px;
+        }
+        .mw-step-head__title { font-family: var(--brand-font-flow); font-size: var(--mw-type-display, clamp(1.875rem, 4.4vw, 2.75rem)); line-height: 1.08; margin: 0; color: var(--ink); letter-spacing: var(--tracking-title, -0.022em); flex: 1 1 auto; min-width: 0; }
+        .mw-step-head__share {
+          flex: 0 0 auto;
+          margin: 0;
+          white-space: nowrap;
+        }
         .mw-step-head__sub { color: var(--muted); font-size: var(--mw-type-lead, clamp(1rem, 1.5vw, 1.125rem)); line-height: var(--leading-caption, 1.43); margin: 0; }
+        .mw-step-head__sub:empty { display: none; }
         body.mw-on .flow-builder-tab-panel { padding: 8px 24px 16px; }
         body.mw-on [data-mw-step="2"].flow-bento-cell,
         body.mw-on [data-mw-step="4"].flow-bento-cell { padding-block: 0; }
@@ -106,13 +135,49 @@
         .mw-card { border: 1px solid var(--card-border); border-radius: 18px; background: var(--surface); padding: 18px; box-shadow: var(--shadow-light); margin-top: 14px; }
         .mw-card__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
         .mw-card__head h3 { margin: 0; font-size: var(--mw-type-section, 1.0625rem); }
-        .mw-nav { position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--line-soft); background: color-mix(in srgb, var(--surface-solid) 88%, transparent); backdrop-filter: blur(10px); }
-        .mw-btn { appearance: none; border: 1px solid var(--card-border); background: var(--surface); color: var(--ink); font-weight: 700; font-size: var(--mw-type-caption, 0.875rem); padding: 12px 22px; border-radius: 999px; cursor: pointer; transition: transform .12s, box-shadow .2s, background .2s; }
+        .mw-nav {
+          position: sticky;
+          bottom: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border: none;
+          border-top: 1px solid color-mix(in srgb, var(--line) 28%, transparent);
+          background: color-mix(in srgb, var(--surface-solid) 14%, transparent);
+          box-shadow: 0 -1px 0 color-mix(in srgb, var(--ink) 3%, transparent);
+          backdrop-filter: blur(20px) saturate(1.2);
+          -webkit-backdrop-filter: blur(20px) saturate(1.2);
+        }
+        /* Prefer viewport dock whenever wizard chrome is active */
+        body.mw-on .mw-nav { position: fixed; }
+        /* full-width nav overrides removed — floating pill uses body.mw-on .mw-nav */
+        .mw-btn {
+          appearance: none;
+          border: 1px solid var(--card-border);
+          background: var(--surface);
+          color: var(--ink);
+          font-weight: 650;
+          font-size: 0.8125rem;
+          padding: 7px 14px;
+          min-height: 34px;
+          border-radius: 999px;
+          cursor: pointer;
+          transition: transform .12s, box-shadow .2s, background .2s;
+        }
         .mw-btn:active { transform: translateY(1px); }
         .mw-btn--ghost { background: transparent; }
-        .mw-btn--primary, .mw-btn--generate { background: var(--accent); color: var(--on-accent); border-color: var(--accent); box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--liturgical-glow) 70%, transparent); }
-        .mw-btn--primary:hover, .mw-btn--generate:hover { background: var(--color-primary-active); box-shadow: 0 8px 26px -6px color-mix(in srgb, var(--liturgical-glow) 80%, transparent); }
-        .mw-btn--generate { padding: 14px 26px; font-size: var(--mw-type-button, 1rem); }
+        .mw-btn--primary, .mw-btn--generate {
+          background: var(--accent);
+          color: var(--on-accent);
+          border-color: var(--accent);
+          box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--liturgical-glow) 70%, transparent);
+        }
+        .mw-btn--primary:hover, .mw-btn--generate:hover {
+          background: var(--color-primary-active);
+          box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--liturgical-glow) 80%, transparent);
+        }
+        .mw-btn--generate { padding: 8px 16px; font-size: 0.8125rem; }
         .mw-btn[disabled] { opacity: .5; cursor: not-allowed; }
         .mw-btn--soft { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 25%, transparent); }
         .mw-receipt { border: 1px dashed var(--card-border); border-radius: 18px; padding: 18px 20px; background: var(--surface-2); }
@@ -1202,9 +1267,8 @@
         .mw-extras-sponsor-mobile-host {
           display: none;
         }
-        /* full-width nav bar, right-aligned action */
-        .mw-nav { padding: 18px var(--mw-pad-x); max-width: none; margin: 0; }
-        .mw-btn--primary, .mw-btn--generate { flex: 0 0 auto; min-width: 220px; min-height: 56px; font-size: var(--mw-type-button, 1rem); }
+        /* floating dock sizing handled under body.mw-on .mw-nav */
+        .mw-btn--primary, .mw-btn--generate { flex: 0 0 auto; min-width: 0; }
         /* per-step entrance animation */
         .mw-step-anim { animation: mwIn .35s cubic-bezier(.22, .61, .36, 1); }
         @keyframes mwIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -1212,15 +1276,38 @@
 
         /* ── Vertical side rail (desktop) — reclaim vertical space ─────────── */
         @media (min-width: 1024px) {
+          /* Outer wizard is a layout frame; .mw-shell is the one card */
           body.mw-on #mw-wizard.mw {
-            display: grid;
-            grid-template-columns: var(--mw-rail-w) minmax(0, 1fr);
-            grid-template-rows: auto 1fr auto;
-            align-items: stretch;
+            display: block;
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
             --mw-rail-w: 184px;
             --mw-pad-x: clamp(28px, 3vw, 56px);
+            --mw-aside-w: min(300px, 26vw);
+            /* Match home CTA ↔ Quick Actions separation */
+            --mw-aside-gap: var(--layout-gap, var(--space-5, 24px));
           }
-          body.mw-on #mw-wizard.mw::before {
+          @media (min-width: 1440px) {
+            body.mw-on #mw-wizard.mw {
+              --mw-aside-gap: var(--space-6, 32px);
+            }
+          }
+          body.mw-on #mw-wizard.mw::before { display: none; }
+          body.mw-on #mw-wizard.mw .mw-shell {
+            position: relative;
+            display: grid;
+            grid-template-columns: var(--mw-rail-w) minmax(0, 1fr);
+            grid-template-rows: auto auto 1fr;
+            align-items: stretch;
+            background: var(--surface-solid);
+            border: 1px solid var(--card-border, var(--line-soft));
+            border-radius: var(--radius-lg, 18px);
+            box-shadow: none;
+            overflow: visible;
+            min-width: 0;
+          }
+          body.mw-on #mw-wizard.mw .mw-shell::before {
             content: "";
             position: absolute;
             top: 0;
@@ -1229,6 +1316,62 @@
             width: 1px;
             background: var(--line-soft);
             pointer-events: none;
+            z-index: 2;
+          }
+          /* Shell | independent side card (At a glance / readings / hymn setup) */
+          body.mw-on #mw-wizard.mw.has-aside,
+          body.mw-on #mw-wizard.mw.is-readings-step,
+          body.mw-on #mw-wizard.mw.is-music-step {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) var(--mw-aside-w);
+            gap: var(--mw-aside-gap);
+            align-items: start;
+          }
+          body.mw-on #mw-wizard.mw.has-aside .mw-shell,
+          body.mw-on #mw-wizard.mw.is-readings-step .mw-shell,
+          body.mw-on #mw-wizard.mw.is-music-step .mw-shell {
+            grid-column: 1;
+            grid-row: 1;
+          }
+          body.mw-on #mw-wizard.mw.has-aside .mw-nav,
+          body.mw-on #mw-wizard.mw.is-readings-step .mw-nav,
+          body.mw-on #mw-wizard.mw.is-music-step .mw-nav {
+            grid-column: 1 / -1;
+          }
+          /* Side cards sit in the same grid row as .mw-shell and must share its
+             top edge. Use static (not sticky-under-header) so At a glance / hymn
+             match LOTW readings: tops stay flush while the shell scrolls. */
+          body.mw-on #mw-wizard.mw > .mw-side-card:not([hidden]) {
+            grid-column: 2;
+            grid-row: 1;
+            position: static !important;
+            top: auto !important;
+            align-self: start;
+            margin-top: 0 !important;
+            z-index: 1;
+            min-width: 0;
+            transform: none !important;
+            padding: 14px;
+            border: 1px solid var(--card-border, var(--line-soft));
+            border-radius: var(--radius-lg, 18px);
+            background: var(--surface-solid);
+            box-shadow: none;
+            max-height: none;
+            overflow-x: hidden;
+            overflow-y: visible;
+          }
+          body.mw-on #mw-wizard.mw > .mw-side-card.flow-bento-cell,
+          body.mw-on #mw-wizard.mw > .mw-side-card.flow-bento-cell:hover {
+            transform: none !important;
+            box-shadow: none;
+          }
+          body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card:not([hidden]),
+          body.mw-on #mw-wizard.mw > .flow-readings-sidebar.mw-side-card:not([hidden]),
+          body.mw-on #mw-wizard.mw > .mw-aside.mw-side-card:not([hidden]) {
+            position: static !important;
+            top: auto !important;
+            margin-top: 0 !important;
+            align-self: start;
           }
           body.mw-on .mw-progress-bar {
             grid-column: 1;
@@ -1330,53 +1473,43 @@
           body.mw-on .mw-step-head {
             grid-column: 2;
             grid-row: 1;
-            --mw-aside-w: min(300px, 26vw);
-            --mw-aside-gap: clamp(24px, 3vw, 40px);
             max-width: var(--mw-control-max-w);
             margin-inline: auto;
             width: 100%;
             padding-inline: var(--mw-pad-x);
             box-sizing: border-box;
           }
-          body.mw-on #mw-wizard.mw.has-aside .mw-step-head {
-            max-width: calc(var(--mw-control-max-w) + var(--mw-aside-w) + var(--mw-aside-gap));
+          body.mw-on #mw-wizard.mw .mw-habits-banner {
+            grid-column: 2;
+            grid-row: 2;
           }
           body.mw-on .mw-step-canvas {
             grid-column: 2;
-            grid-row: 2;
+            grid-row: 3;
             position: relative;
             display: grid;
             grid-template-columns: minmax(0, var(--mw-control-max-w));
-            gap: var(--mw-aside-gap, clamp(24px, 3vw, 40px));
+            gap: 0;
             align-items: start;
             max-width: var(--mw-control-max-w);
             margin-inline: auto;
             padding-inline: var(--mw-pad-x);
             box-sizing: border-box;
-            --mw-aside-w: min(300px, 26vw);
-            --mw-aside-gap: clamp(24px, 3vw, 40px);
+            min-width: 0;
           }
+          /* Canvas no longer hosts aside — single main column inside the shell */
           body.mw-on .mw-step-canvas.has-aside {
-            grid-template-columns: minmax(0, var(--mw-control-max-w)) var(--mw-aside-w);
-            max-width: calc(var(--mw-control-max-w) + var(--mw-aside-w) + var(--mw-aside-gap));
+            grid-template-columns: minmax(0, var(--mw-control-max-w));
+            max-width: var(--mw-control-max-w);
           }
-          body.mw-on .mw-step-canvas.has-aside::before {
-            content: "";
-            position: absolute;
-            right: 0;
-            top: -8px;
-            bottom: 0;
-            width: 48%;
-            background: radial-gradient(ellipse at 85% 18%, color-mix(in srgb, var(--liturgical-accent) 7%, transparent), transparent 68%);
-            pointer-events: none;
-            z-index: 0;
-          }
-          body.mw-on .mw-step-main,
-          body.mw-on .mw-aside { position: relative; z-index: 1; min-width: 0; }
-          body.mw-on .mw-aside {
-            position: sticky;
-            top: calc(var(--app-header-offset) + 16px);
-            align-self: start;
+          body.mw-on .mw-step-canvas.has-aside::before { display: none; }
+          body.mw-on .mw-step-main { z-index: 1; min-width: 0; }
+          body.mw-on .mw-aside__card {
+            margin-top: 12px;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
           }
           body.mw-on .mw-step-main .flow-builder-tab-panel { padding-inline: 0; }
           body.mw-on .mw-step-canvas.is-readings-step,
@@ -1397,7 +1530,6 @@
           body.mw-on #mw-wizard.mw.is-review-step .mw-step-head {
             max-width: none;
           }
-          body.mw-on #mw-wizard > .mw-nav { grid-column: 2; grid-row: 3; }
         }
 
         @media (max-width: 1023px) {
@@ -1406,71 +1538,253 @@
             grid-template-columns: minmax(0, 1fr);
             max-width: none;
           }
+          body.mw-on #mw-wizard.mw.has-aside,
+          body.mw-on #mw-wizard.mw.is-readings-step,
+          body.mw-on #mw-wizard.mw.is-music-step {
+            display: flex;
+            flex-direction: column;
+            gap: var(--mw-aside-gap, var(--layout-gap, 24px));
+          }
+          body.mw-on #mw-wizard.mw > .mw-side-card:not([hidden]) {
+            position: static;
+            max-height: none;
+            width: 100%;
+            order: 2;
+          }
+          body.mw-on #mw-wizard.mw > .mw-shell {
+            order: 1;
+            width: 100%;
+          }
+          body.mw-on #mw-wizard.mw > .mw-nav {
+            order: 3;
+          }
+          /* Mobile: allow hymn setup collapse toggle again */
+          body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .song-plan-summary__head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .song-plan-summary__toggle {
+            display: inline-flex;
+          }
+          body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card:not(.is-expanded) .song-plan-summary__panel {
+            display: none !important;
+          }
+          body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card.is-expanded .song-plan-summary__panel {
+            display: flex !important;
+          }
         }
 
-        /* ── Sticky bottom action dock + Typeform Continue reveal ─────────── */
+        /* ── Viewport-fixed action dock (not card-sticky) ───────────────────
+           Ancestors must not create a fixed containing block (transform/filter/
+           perspective/contain). Page enter animation + card hover transforms
+           otherwise pin .mw-nav to the scrollable wizard card. */
+        body.mw-on #flow-page,
+        body.mw-on #flow-page.active,
+        body.mw-on #flow-page .flow-workspace,
+        body.mw-on #mw-wizard,
+        body.mw-on #mw-wizard.mw,
+        body.mw-on #mw-wizard.panel,
+        body.mw-on #mw-wizard.flow-builder-shell,
+        body.mw-on #mw-wizard .mw-shell {
+          transform: none !important;
+          filter: none !important;
+          perspective: none !important;
+          contain: none !important;
+          will-change: auto !important;
+        }
+        /* Page enter animation leaves a transform containing block in some browsers */
+        body.mw-on #flow-page.active {
+          animation: none !important;
+        }
+        body.mw-on .flow-builder-tab-panel:not([hidden]) {
+          animation: none !important;
+        }
         body.mw-on .mw-nav {
-          position: fixed;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 40;
-          --mw-nav-nudge: 2.5rem;
+          /* Floating pill dock — match lyrics-editor-float */
+          position: fixed !important;
+          left: 50%;
+          right: auto;
+          bottom: calc(44px + env(safe-area-inset-bottom, 0px));
+          transform: translateX(-50%);
+          width: max-content;
+          max-width: calc(100vw - 24px);
+          z-index: 45;
+          --mw-nav-h: 50px;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
           justify-content: center;
-          gap: 10px;
-          padding: 12px var(--mw-pad-x);
-          padding-right: calc(var(--mw-pad-x) + var(--mw-nav-nudge));
-          padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-          border-top: 1px solid var(--line-soft);
-          background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          gap: 8px;
+          padding: 8px 10px;
+          margin: 0;
+          inset-inline: auto;
+          border: 1px solid var(--app-header-glass-border, color-mix(in srgb, var(--line) 42%, transparent));
+          border-radius: 14px;
+          background: var(--app-header-glass-bg, color-mix(in srgb, var(--surface-solid) 28%, transparent));
+          box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.04),
+            0 14px 36px rgba(15, 23, 42, 0.12);
+          backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.15);
+          -webkit-backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.15);
+        }
+        html[data-theme="dark"] body.mw-on .mw-nav {
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.2),
+            0 14px 36px rgba(0, 0, 0, 0.35);
+        }
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+          body.mw-on .mw-nav {
+            background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+          }
+          html[data-theme="dark"] body.mw-on .mw-nav {
+            background: color-mix(in srgb, var(--bg-top) 90%, transparent);
+          }
+        }
+        @media (prefers-reduced-transparency: reduce) {
+          body.mw-on .mw-nav {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            background: var(--surface-solid);
+          }
+          html[data-theme="dark"] body.mw-on .mw-nav {
+            background: var(--bg-top);
+          }
         }
         body.mw-on .mw-nav > span { display: none; }
         body.mw-on #mw-wizard {
-          padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+          padding-bottom: calc(var(--mw-nav-h, 50px) + 56px + env(safe-area-inset-bottom, 0px));
         }
-        body.mw-on .mw-btn--primary,
-        body.mw-on .mw-btn--generate {
+        /* Same button size as lyrics-editor-float */
+        body.mw-on .mw-nav .mw-btn {
+          box-sizing: border-box;
           flex: 0 0 auto;
           min-width: 0;
-          min-height: 48px;
-          padding: 12px 24px;
-          font-size: var(--mw-type-button, 1rem);
+          min-height: 34px;
+          height: 34px;
+          padding: 0 12px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          line-height: 1;
+          border-radius: 10px;
+          border-width: 1px;
+          box-shadow: none;
         }
-        body.mw-on .mw-btn--generate { min-height: 52px; }
-        body.mw-on #mw-back { min-height: 44px; padding: 10px 16px; }
+        body.mw-on .mw-nav .mw-btn--primary,
+        body.mw-on .mw-nav .mw-btn--generate {
+          box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--liturgical-glow) 55%, transparent);
+        }
+        body.mw-on .mw-nav .mw-btn:active {
+          transform: scale(0.97);
+        }
+        /* Habits floating card — sibling pill above the nav dock */
+        body.mw-on #mw-habits-banner:not([hidden]) {
+          position: fixed !important;
+          left: 50%;
+          right: auto;
+          bottom: calc(44px + var(--mw-nav-h, 50px) + 10px + env(safe-area-inset-bottom, 0px));
+          transform: translateX(-50%);
+          z-index: 46;
+          width: max-content;
+          max-width: calc(100vw - 24px);
+          margin: 0;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 8px 10px;
+          border-radius: 14px;
+          border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--app-header-glass-border, var(--line)));
+          background: color-mix(in srgb, var(--accent) 8%, var(--app-header-glass-bg, color-mix(in srgb, var(--surface-solid) 28%, transparent)));
+          backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.15);
+          -webkit-backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.15);
+          box-shadow:
+            0 1px 2px rgba(15, 23, 42, 0.04),
+            0 14px 36px rgba(15, 23, 42, 0.12);
+        }
+        html[data-theme="dark"] body.mw-on #mw-habits-banner:not([hidden]) {
+          background: color-mix(in srgb, var(--accent) 12%, var(--app-header-glass-bg, transparent));
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.2),
+            0 14px 36px rgba(0, 0, 0, 0.35);
+        }
+        body.mw-on #mw-habits-banner:not([hidden]) .mw-habits-banner__text {
+          flex: 0 1 auto;
+          max-width: 14rem;
+        }
+        body.mw-on #mw-habits-banner:not([hidden]) .mw-habits-banner__actions .mw-btn {
+          box-sizing: border-box;
+          min-height: 34px;
+          height: 34px;
+          padding: 0 12px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          line-height: 1;
+          border-radius: 10px;
+        }
+        body.mw-on:has(#mw-habits-banner:not([hidden])) #mw-wizard {
+          padding-bottom: calc(var(--mw-nav-h, 50px) + 56px + 56px + env(safe-area-inset-bottom, 0px));
+        }
         @media (min-width: 768px) {
-          .app-shell.app-shell--sidebar body.mw-on .mw-nav {
-            left: var(--app-sidebar-width);
-            width: calc(100% - var(--app-sidebar-width));
+          /* Stay viewport-centered like lyrics float (no full-bleed sidebar stretch) */
+          body.mw-on:has(.app-shell--sidebar) .mw-nav,
+          body.mw-on:has(.app-shell--sidebar) #mw-habits-banner:not([hidden]),
+          body.mw-on:has(.app-sidebar.is-expanded) .mw-nav,
+          body.mw-on:has(.app-sidebar.is-expanded) #mw-habits-banner:not([hidden]) {
+            left: 50%;
+            right: auto;
+            width: max-content;
+            transform: translateX(-50%);
           }
         }
         @media (max-width: 767px) {
-          body.mw-on .mw-nav { bottom: var(--app-bottom-nav-offset, 56px); }
+          body.mw-on .mw-nav {
+            left: 12px;
+            right: 12px;
+            width: auto;
+            max-width: none;
+            transform: none;
+            bottom: calc(52px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
+            --mw-nav-h: 50px;
+          }
+          body.mw-on #mw-habits-banner:not([hidden]) {
+            left: 12px;
+            right: 12px;
+            width: auto;
+            max-width: none;
+            transform: none;
+            bottom: calc(52px + var(--app-bottom-nav-offset, 56px) + var(--mw-nav-h, 50px) + 10px + env(safe-area-inset-bottom, 0px));
+          }
           body.mw-on #mw-wizard {
-            padding-bottom: calc(64px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
+            padding-bottom: calc(var(--mw-nav-h, 50px) + var(--app-bottom-nav-offset, 56px) + 64px + env(safe-area-inset-bottom, 0px));
+          }
+          body.mw-on:has(#mw-habits-banner:not([hidden])) #mw-wizard {
+            padding-bottom: calc(var(--mw-nav-h, 50px) + var(--app-bottom-nav-offset, 56px) + 64px + 56px + env(safe-area-inset-bottom, 0px));
           }
           body.mw-on #mw-next,
-          body.mw-on #mw-generate { min-width: 140px; }
+          body.mw-on #mw-generate { min-width: 0; flex: 1 1 auto; }
+          body.mw-on #mw-habits-banner:not([hidden]) .mw-habits-banner__text p {
+            display: none;
+          }
         }
+        /* Keep Continue / Generate always on-screen; dim when step incomplete */
         body.mw-on #mw-next,
         body.mw-on #mw-generate {
-          opacity: 0;
-          transform: translateY(8px);
-          pointer-events: none;
-          transition: opacity var(--motion-duration-base, .2s) var(--ease-out, ease),
-                      transform var(--motion-duration-base, .2s) var(--ease-out, ease);
-        }
-        body.mw-on #mw-next.is-ready,
-        body.mw-on #mw-generate.is-ready {
           opacity: 1;
-          transform: none;
           pointer-events: auto;
+          transition: opacity var(--motion-duration-base, .2s) var(--ease-out, ease),
+                      filter var(--motion-duration-base, .2s) var(--ease-out, ease);
+        }
+        body.mw-on #mw-next:not(.is-ready),
+        body.mw-on #mw-generate:not(.is-ready) {
+          opacity: 0.55;
+          filter: grayscale(0.15);
         }
         @media (prefers-reduced-motion: reduce) {
           body.mw-on #mw-next,
           body.mw-on #mw-generate { transition: none; }
+          body.mw-on .mw-nav .mw-btn:active { transform: none; }
         }
 
         /* ── Mass Builder: unify legacy setup / readings typography ───────── */
@@ -1526,31 +1840,35 @@
           padding: 0 0 16px;
         }
 
-        /* Liturgy of the Word — psalm/gospel form | readings sidebar */
+        /* Liturgy of the Word — form in shell; readings are a wizard-level side card */
         body.mw-on .mw-step-canvas.is-readings-step .flow-setup-layout {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
-          gap: 16px;
-          align-items: start;
+          display: block;
           width: 100%;
         }
-        body.mw-on .mw-step-canvas.is-readings-step .flow-readings-sidebar {
+        body.mw-on #mw-wizard.mw > .flow-readings-sidebar.mw-side-card {
           display: flex;
           flex-direction: column;
           gap: 0;
-          grid-column: 2;
-          grid-row: 1;
-          position: sticky;
-          top: calc(var(--app-header-offset, 0px) + 12px);
-          align-self: start;
+        }
+        body.mw-on #mw-wizard.mw > .flow-readings-sidebar.mw-side-card .reading-preview-card,
+        body.mw-on #mw-wizard.mw > .flow-readings-sidebar.mw-side-card .flow-reading-block {
+          background: transparent !important;
+          border-left: 0 !important;
+          border-right: 0 !important;
+          border-top: 0 !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
         }
         body.mw-on .mw-step-canvas.is-readings-step .flow-setup-main {
           display: flex;
           flex-direction: column;
           gap: 12px;
-          grid-column: 1;
-          grid-row: 1;
           min-width: 0;
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
         }
         body.mw-on .mw-step-canvas.is-readings-step .flow-setup-side {
           display: none;
@@ -1992,44 +2310,400 @@
           }
         }
 
+        /* Music — song slots in shell; hymn setup is a wizard-level side card */
         body.mw-on .mw-step-canvas.is-music-step .song-plan-layout {
-          gap: 16px;
-          grid-template-columns: minmax(0, 1fr) minmax(13rem, 260px);
+          display: block;
+          gap: 0;
+          grid-template-columns: minmax(0, 1fr);
           max-width: none;
           width: 100%;
         }
-        body.mw-on .mw-step-canvas.is-music-step .song-plan-summary {
-          position: sticky;
-          top: calc(var(--app-header-offset, 0px) + 12px);
-          align-self: start;
+        body.mw-on .mw-step-canvas.is-music-step .song-plan-toolbar {
+          display: none !important;
         }
-        body.mw-on .mw-step-canvas.is-music-step .song-plan-summary.flow-bento-cell {
-          padding: 12px 14px;
+        body.mw-on .mw-step-canvas.is-music-step .song-plan-main {
+          padding: 0;
+          border: 0;
+          border-radius: 0;
+          background: transparent;
+          box-shadow: none;
+          min-width: 0;
         }
-        body.mw-on .mw-step-canvas.is-music-step .song-plan-summary__head {
-          margin-bottom: 8px;
-          padding-bottom: 8px;
+        body.mw-on #mw-wizard.mw.is-music-step .mw-step-head__title-row {
+          margin-bottom: 0;
         }
-        body.mw-on .mw-step-canvas.is-music-step .song-plan-summary__head .home-card-head__text h3 {
-          font-size: 0.9375rem;
+        body.mw-on #mw-wizard.mw.is-music-step .mw-step-head__share {
+          font-size: 0.8125rem;
+          font-weight: 600;
+          padding: 7px 12px;
+          border-radius: 999px;
+          border: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+          background: color-mix(in srgb, var(--accent) 8%, var(--surface-solid));
+          color: var(--accent);
         }
-        body.mw-on .mw-step-canvas.is-music-step .mass-summary-layout-field,
-        body.mw-on .mw-step-canvas.is-music-step .mass-summary-align-field {
-          margin-bottom: 6px;
+        body.mw-on #mw-wizard.mw.is-music-step .mw-step-head__share:hover {
+          background: color-mix(in srgb, var(--accent) 14%, var(--surface-solid));
         }
-        body.mw-on .mw-step-canvas.is-music-step .mass-summary-communion-field {
-          margin: 0.25rem 0 0.55rem;
+        body.mw-on #mw-wizard.mw.is-music-step .mw-step-head__share:active {
+          transform: scale(0.97);
         }
-        body.mw-on .mw-step-canvas.is-music-step .flow-segment--align label {
-          padding: 4px 4px;
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          padding: 16px;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .song-plan-summary__toggle {
+          display: none;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .song-plan-summary__panel {
+          display: flex !important;
+          flex-direction: column;
+          gap: 10px;
+          min-width: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-links {
+          display: none !important;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .song-plan-summary__head {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0 0 8px;
+          padding: 0;
+          border-bottom: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .song-plan-summary__head .home-card-head__text {
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .song-plan-summary__head .home-card-head__text h3 {
+          margin: 0;
+          font-size: 1.0625rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          line-height: 1.25;
+          color: var(--ink);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-song-count {
+          flex: 0 0 auto;
+          margin: 0;
+          padding: 3px 8px;
+          border-radius: 999px;
+          background: color-mix(in srgb, var(--accent) 10%, var(--surface-solid));
+          color: var(--accent);
+          font-size: 0.75rem;
+          font-weight: 700;
+          line-height: 1.2;
+          letter-spacing: 0.01em;
+          white-space: nowrap;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-block {
+          margin: 0;
+          padding: 0;
+          min-width: 0;
+          border: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-block--settings,
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-block--plan {
+          padding-top: 0;
+          border-top: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-gospel-tip {
+          margin: 0;
+          padding: 8px 10px;
+          border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line-soft));
+          border-radius: 10px;
+          background: color-mix(in srgb, var(--accent) 7%, var(--surface-solid));
+          min-width: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-gospel-tip__label {
+          display: block;
+          margin: 0 0 3px;
           font-size: 0.625rem;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--accent);
+          line-height: 1.2;
         }
-        body.mw-on .mw-step-canvas.is-music-step .mass-summary-stats {
-          margin-bottom: 8px;
-          gap: 4px;
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-gospel-tip__text {
+          margin: 0;
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          font-size: 0.75rem;
+          line-height: 1.35;
+          color: var(--ink);
+          font-weight: 500;
         }
-        body.mw-on .mw-step-canvas.is-music-step .mass-summary-progress-wrap {
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs {
+          margin: 6px 0 0;
+          min-width: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs[hidden] {
+          display: none !important;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs__head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+          margin-bottom: 4px;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs__label {
+          font-size: 0.625rem;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs-refresh {
+          flex-shrink: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          margin: 0;
+          padding: 0;
+          border: 1px solid var(--line-soft);
+          border-radius: 6px;
+          background: var(--surface-solid);
+          color: var(--muted);
+          font-size: 0.75rem;
+          line-height: 1;
+          cursor: pointer;
+          transition:
+            color var(--motion-duration-fast, 150ms) var(--motion-ease-hover, ease),
+            border-color var(--motion-duration-fast, 150ms) var(--motion-ease-hover, ease),
+            transform var(--motion-duration-micro, 100ms) var(--motion-ease-out, ease);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs-refresh:hover {
+          color: var(--ink);
+          border-color: color-mix(in srgb, var(--ink) 18%, var(--line-soft));
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs-refresh:active {
+          transform: scale(0.97);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-picks {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+          display: grid;
+          gap: 2px;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-pick {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          margin: 0;
+          padding: 4px 6px;
+          border: 0;
+          border-radius: 6px;
+          background: transparent;
+          min-width: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-pick:hover {
+          background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-pick__cat {
+          flex: 0 0 3.25rem;
+          display: inline-block;
+          margin: 0;
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          text-transform: none;
+          color: var(--muted);
+          white-space: nowrap;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-pick__song-viewport {
+          flex: 1 1 auto;
+          min-width: 0;
+          overflow: hidden;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-pick__song {
+          display: block;
+          margin: 0;
+          max-width: 100%;
+          color: var(--ink);
+          font-size: 0.875rem;
+          font-weight: 600;
+          line-height: 1.3;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          transform: translateX(0);
+          will-change: transform;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-pick.is-song-marquee .mass-summary-mood-pick__song {
+          display: inline-block;
+          max-width: none;
+          overflow: visible;
+          text-overflow: clip;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-mood-pick__song {
+            transform: none !important;
+            transition: none !important;
+          }
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs-add {
+          display: block;
+          width: 100%;
+          margin: 6px 0 0;
+          padding: 6px 8px;
+          border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line-soft));
+          border-radius: 8px;
+          background: color-mix(in srgb, var(--accent) 10%, var(--surface-solid));
+          color: var(--accent);
+          font-size: 0.75rem;
+          font-weight: 700;
+          cursor: pointer;
+          text-align: center;
+          transition:
+            background var(--motion-duration-fast, 150ms) var(--motion-ease-hover, ease),
+            transform var(--motion-duration-micro, 100ms) var(--motion-ease-out, ease);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs-add:hover {
+          background: color-mix(in srgb, var(--accent) 16%, var(--surface-solid));
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs-add:active {
+          transform: scale(0.97);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-recs-add:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+          transform: none;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-lang-field {
+          margin: 0 0 8px;
+          min-width: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-lang-field > label:not(.flow-option-inline) {
+          display: block;
+          margin: 0 0 4px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--muted);
+          line-height: 1.3;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .flow-segment {
+          width: 100%;
+          gap: 2px;
+          padding: 3px;
+          border-radius: 10px;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .flow-segment label {
+          padding: 6px 6px;
+          font-size: 0.6875rem;
+          border-radius: 8px;
+          white-space: nowrap;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .flow-segment--align {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .flow-segment--align label {
+          padding: 6px 4px;
+          font-size: 0.6875rem;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-section-labels-field {
           margin-bottom: 8px;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-section-labels-field .flow-option-inline {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          margin: 0;
+          font-size: 0.75rem;
+          font-weight: 600;
+          line-height: 1.35;
+          color: var(--ink);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-communion-field {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 2px 0 0;
+          padding: 8px 10px;
+          border: 1px solid var(--line-soft);
+          border-radius: 10px;
+          background: color-mix(in srgb, var(--surface-2) 45%, var(--surface-solid));
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__label {
+          flex: 1 1 auto;
+          min-width: 0;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--ink);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__stepper {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          flex: 0 0 auto;
+          padding: 2px;
+          border-radius: 8px;
+          background: var(--surface-solid);
+          border: 1px solid var(--line-soft);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__step {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 26px;
+          margin: 0;
+          padding: 0;
+          border: 0;
+          border-radius: 6px;
+          background: transparent;
+          color: var(--ink);
+          font-size: 1rem;
+          font-weight: 700;
+          line-height: 1;
+          cursor: pointer;
+          transition:
+            background var(--motion-duration-fast, 150ms) var(--motion-ease-hover, ease),
+            transform var(--motion-duration-micro, 100ms) var(--motion-ease-out, ease);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__step:hover:not(:disabled) {
+          background: color-mix(in srgb, var(--accent) 10%, transparent);
+          color: var(--accent);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__step:active:not(:disabled) {
+          transform: scale(0.95);
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__step:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__stepper input {
+          width: 2rem;
+          min-height: 26px;
+          margin: 0;
+          padding: 0 2px;
+          border: 0;
+          background: transparent;
+          color: var(--ink);
+          font: inherit;
+          font-size: 0.8125rem;
+          font-weight: 700;
+          text-align: center;
+          -moz-appearance: textfield;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__stepper input::-webkit-outer-spin-button,
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__stepper input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-communion-count__stepper input:focus {
+          outline: none;
         }
         body.mw-on .mw-step-canvas.is-music-step .mass-song-search-input {
           min-height: 32px !important;
@@ -2263,7 +2937,6 @@
             grid-template-columns: 1fr !important;
           }
           body.mw-on .mw-step-canvas.is-readings-step .flow-setup-main { order: 1; }
-          body.mw-on .mw-step-canvas.is-readings-step .flow-readings-sidebar { order: 2; }
           body.mw-on .mw-step-canvas.is-extras-step .flow-divider-poster-picks,
           body.mw-on .mw-step-canvas.is-extras-step #mass-step-target-media .flow-setup-row--media {
             grid-template-columns: 1fr !important;
@@ -2275,6 +2948,5 @@
             flex-wrap: wrap;
           }
           body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-main { order: 1; }
-          body.mw-on .mw-step-canvas.is-music-step .song-plan-layout .song-plan-summary { order: 2; }
 
         }

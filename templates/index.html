@@ -27,15 +27,15 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260904n" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260905-1012" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260815a" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260905-1012" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260904f" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260905-1245" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -2029,6 +2029,7 @@
         </div>
         <div class="workspace flow-workspace flow-member-lock">
           <div class="panel flow-builder-shell mw" id="mw-wizard">
+            <div class="mw-shell">
             <div class="mw-progress-bar">
               <div class="mw-progress" id="mw-progress" role="list" aria-label="Mass builder steps">
                 <div class="mw-progress__item is-active" data-mw-go="1" role="listitem"><span class="mw-progress__dot">1</span><span class="mw-progress__label">Mass Info</span></div>
@@ -2046,7 +2047,10 @@
             </div>
             <div class="mw-step-head">
               <p class="mw-step-head__eyebrow" id="mw-eyebrow">Step 1 of 7</p>
-              <h2 class="mw-step-head__title" id="mw-title">Let’s Prepare Today’s Mass</h2>
+              <div class="mw-step-head__title-row">
+                <h2 class="mw-step-head__title" id="mw-title">Let’s Prepare Today’s Mass</h2>
+                <button type="button" class="mw-btn mw-btn--ghost mw-step-head__share" id="btn-practice-share-wizard" hidden>Share lyrics for choir practice</button>
+              </div>
               <p class="mw-step-head__sub" id="mw-sub">Pick a date and who’s celebrating.</p>
             </div>
             <div class="mw-habits-banner" id="mw-habits-banner" hidden role="status">
@@ -2069,37 +2073,6 @@
             </div>
             <div class="flow-builder-tab-panel" id="flow-panel-setup" role="tabpanel" aria-labelledby="flow-tab-setup" data-flow-panel="setup">
             <div class="flow-setup-layout" aria-label="Mass setup">
-              <aside class="flow-bento-cell flow-readings-sidebar" aria-label="Sunday readings" data-mw-step="3" hidden>
-                <article class="flow-reading-block reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
-                  <header>
-                    <strong>First reading</strong>
-                    <span class="flow-reading-ref" id="flow-reading1-ref">—</span>
-                  </header>
-                  <div id="flow-reading1-body" class="flow-reading-text">Load readings to see text.</div>
-                </article>
-                <article class="flow-reading-block reading-preview-card" id="flow-psalm-preview-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
-                  <header>
-                    <strong>Psalm</strong>
-                    <span class="flow-reading-ref" id="flow-psalm-ref">—</span>
-                  </header>
-                  <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm">Load readings to see the full psalm text.</div>
-                </article>
-                <article class="flow-reading-block reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
-                  <header>
-                    <strong>Second reading</strong>
-                    <span class="flow-reading-ref" id="flow-reading2-ref">—</span>
-                  </header>
-                  <div id="flow-reading2-body" class="flow-reading-text">—</div>
-                </article>
-                <article class="flow-reading-block reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
-                  <header>
-                    <strong>Gospel</strong>
-                    <span class="flow-reading-ref" id="flow-gospel-ref">—</span>
-                  </header>
-                  <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel">Load readings to see the full Gospel.</div>
-                </article>
-              </aside>
-
               <div class="flow-setup-main">
 
                 <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-basics" data-mw-step="1">
@@ -2540,88 +2513,7 @@
               </select>
             </div>
             <div class="song-plan-layout">
-              <aside class="flow-bento-cell song-plan-summary mass-summary-sidebar is-collapsible" id="mass-summary-sidebar" aria-labelledby="mass-summary-heading">
-                <header class="flow-bento-cell__head home-card-head song-plan-summary__head">
-                  <div class="home-card-head__text">
-                    <h3 id="mass-summary-heading">Hymn setup</h3>
-                  </div>
-                  <button type="button" class="song-plan-summary__toggle" id="mass-summary-toggle" aria-expanded="false" aria-controls="mass-summary-panel" aria-label="Show hymn setup details" title="Show hymn setup">
-                    <svg class="song-plan-summary__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                  </button>
-                </header>
-                <div class="song-plan-summary__panel" id="mass-summary-panel">
-                <div class="mass-summary-lang-field mass-summary-layout-field">
-                  <label id="mass-summary-hymn-layout-label">Hymn lyrics</label>
-                  <div class="flow-segment flow-segment--full" role="radiogroup" aria-labelledby="mass-summary-hymn-layout-label">
-                    <label><input type="radio" name="flow-hymn-layout" value="single" /> 1 verse / slide</label>
-                    <label><input type="radio" name="flow-hymn-layout" value="dual" checked /> 2 verses / slide</label>
-                  </div>
-                  <div class="mw-field-default-pin" data-mw-field-pin="flow-hymn-layout"></div>
-                </div>
-                <div class="mass-summary-lang-field mass-summary-align-field">
-                  <label id="mass-summary-hymn-align-label">Lyric alignment</label>
-                  <div class="flow-segment flow-segment--full flow-segment--align" role="radiogroup" aria-labelledby="mass-summary-hymn-align-label">
-                    <label><input type="radio" name="flow-hymn-body-align" value="left" /> Left</label>
-                    <label><input type="radio" name="flow-hymn-body-align" value="center" checked /> Center</label>
-                    <label><input type="radio" name="flow-hymn-body-align" value="right" /> Right</label>
-                    <label><input type="radio" name="flow-hymn-body-align" value="justify" /> Justify</label>
-                  </div>
-                </div>
-                <div class="mass-summary-lang-field mass-summary-section-labels-field">
-                  <label class="flow-option-inline" for="flow-hymn-section-labels">
-                    <input type="checkbox" id="flow-hymn-section-labels" />
-                    Show verse / chorus labels on slides
-                  </label>
-                  <p class="muted mass-summary-section-labels-hint" id="mass-summary-section-labels-hint">
-                    Verse → i, ii, iii · Chorus → chor. · Bridge → br.
-                  </p>
-                </div>
-                <div class="mass-summary-communion-field" id="mass-communion-count">
-                  <span class="mass-communion-count__label" id="mass-summary-communion-label">Communion</span>
-                  <div class="mass-communion-count__toggle" role="radiogroup" aria-labelledby="mass-summary-communion-label">
-                    <button type="button" class="mass-communion-count__btn" data-communion-count="1" aria-pressed="false">1</button>
-                    <button type="button" class="mass-communion-count__btn is-active" data-communion-count="2" aria-pressed="true">2</button>
-                  </div>
-                  <label class="mass-communion-count__custom">
-                    <span class="sr-only">Custom count, 1 to 5</span>
-                    <input type="number" id="mass-communion-custom" min="1" max="5" step="1" inputmode="numeric" value="2" aria-label="Custom communion song count, 1 to 5" />
-                  </label>
-                </div>
-                <dl class="mass-summary-stats">
-                  <div class="mass-summary-stat">
-                    <dt>Songs</dt>
-                    <dd aria-live="polite" aria-atomic="true"><span id="flow-song-count">0</span>/<span id="mass-summary-song-total">5</span></dd>
-            </div>
-                  <div class="mass-summary-stat">
-                    <dt>Readings</dt>
-                    <dd id="flow-reading-loaded">—</dd>
-                  </div>
-                </dl>
-                <div class="mass-summary-progress-wrap">
-                  <span class="mass-summary-progress-label" id="mass-summary-progress-label">Plan progress</span>
-                  <div class="mass-summary-progress" role="progressbar" aria-labelledby="mass-summary-progress-label" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" id="mass-summary-progress">
-                    <div class="mass-summary-progress__fill" id="mass-summary-progress-fill"></div>
-                  </div>
-                </div>
-                <p class="mass-summary-gospel-tip" id="mass-summary-gospel-tip" aria-live="polite">
-                  <span class="mass-summary-gospel-tip__label">Gospel mood</span>
-                  <span class="mass-summary-gospel-tip__text" id="mass-summary-gospel-tip-text">Load readings to see this Sunday’s Gospel mood.</span>
-                </p>
-                <div class="mass-summary-recs" id="mass-summary-recs" hidden>
-                  <div class="mass-summary-recs__head">
-                    <span class="mass-summary-recs__label">Suggested songs</span>
-                    <button type="button" class="mass-summary-recs-refresh" id="mass-summary-recs-refresh" aria-label="Refresh song suggestions" title="Refresh suggestions">↻</button>
-                  </div>
-                  <ul class="mass-summary-mood-picks" id="mass-summary-mood-picks" aria-label="Gospel mood song suggestions"></ul>
-                  <button type="button" class="mass-summary-recs-add" id="mass-summary-recs-add">Add to song plan</button>
-                </div>
-                <nav class="mass-summary-links" aria-label="Song plan shortcuts">
-                  <button type="button" class="mass-summary-link mass-summary-link--btn" id="btn-practice-share">Share for choir practice</button>
-                  <a href="/settings/app" data-route="/settings/app" class="mass-summary-link">Preferences</a>
-                  <a href="/library/songs" data-route="/library/songs" class="mass-summary-link">Song library</a>
-                </nav>
-                </div>
-              </aside>
+              
               <div class="song-plan-main">
                 <div class="song-plan-toolbar" id="song-plan-toolbar">
                   <button type="button" class="secondary song-plan-toolbar__share" id="btn-practice-share-toolbar">
@@ -2639,7 +2531,112 @@
             </div>
             </div>
               </div>
-              <aside class="mw-aside" id="mw-aside" aria-label="Step summary" hidden>
+            </div>
+            </div>
+              <aside class="flow-bento-cell flow-readings-sidebar mw-side-card" aria-label="Sunday readings" data-mw-step="3" hidden>
+                <article class="flow-reading-block reading-preview-card" id="flow-reading1-card" tabindex="0" role="button" aria-label="Open first reading preview" data-reading-title="First reading">
+                  <header>
+                    <strong>First reading</strong>
+                    <span class="flow-reading-ref" id="flow-reading1-ref">—</span>
+                  </header>
+                  <div id="flow-reading1-body" class="flow-reading-text">Load readings to see text.</div>
+                </article>
+                <article class="flow-reading-block reading-preview-card" id="flow-psalm-preview-card" tabindex="0" role="button" aria-label="Open psalm preview" data-reading-title="Psalm">
+                  <header>
+                    <strong>Psalm</strong>
+                    <span class="flow-reading-ref" id="flow-psalm-ref">—</span>
+                  </header>
+                  <div id="flow-psalm-body" class="flow-reading-text flow-reading-text--psalm">Load readings to see the full psalm text.</div>
+                </article>
+                <article class="flow-reading-block reading-preview-card" id="flow-reading2-card" tabindex="0" role="button" aria-label="Open second reading preview" data-reading-title="Second reading">
+                  <header>
+                    <strong>Second reading</strong>
+                    <span class="flow-reading-ref" id="flow-reading2-ref">—</span>
+                  </header>
+                  <div id="flow-reading2-body" class="flow-reading-text">—</div>
+                </article>
+                <article class="flow-reading-block reading-preview-card" id="flow-gospel-preview-card" tabindex="0" role="button" aria-label="Open Gospel preview" data-reading-title="Gospel">
+                  <header>
+                    <strong>Gospel</strong>
+                    <span class="flow-reading-ref" id="flow-gospel-ref">—</span>
+                  </header>
+                  <div id="flow-gospel-body" class="flow-reading-text flow-reading-text--gospel">Load readings to see the full Gospel.</div>
+                </article>
+              </aside>
+              <aside class="flow-bento-cell song-plan-summary mass-summary-sidebar is-collapsible mw-side-card" id="mass-summary-sidebar" data-mw-step="5" hidden aria-labelledby="mass-summary-heading">
+                <header class="flow-bento-cell__head home-card-head song-plan-summary__head">
+                  <div class="home-card-head__text">
+                    <h3 id="mass-summary-heading">Hymn setup</h3>
+                  </div>
+                  <p class="mass-summary-song-count" aria-live="polite" aria-atomic="true">
+                    <span id="flow-song-count">0</span>/<span id="mass-summary-song-total">5</span>
+                  </p>
+                  <button type="button" class="song-plan-summary__toggle" id="mass-summary-toggle" aria-expanded="false" aria-controls="mass-summary-panel" aria-label="Show hymn setup details" title="Show hymn setup">
+                    <svg class="song-plan-summary__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                </header>
+                <div class="song-plan-summary__panel" id="mass-summary-panel">
+                <section class="mass-summary-block mass-summary-block--mood" aria-label="Gospel mood">
+                <p class="mass-summary-gospel-tip" id="mass-summary-gospel-tip" aria-live="polite">
+                  <span class="mass-summary-gospel-tip__label">Gospel mood</span>
+                  <span class="mass-summary-gospel-tip__text" id="mass-summary-gospel-tip-text">Load readings to see this Sunday’s Gospel mood.</span>
+                </p>
+                <div class="mass-summary-recs" id="mass-summary-recs" hidden>
+                  <div class="mass-summary-recs__head">
+                    <span class="mass-summary-recs__label">Suggested songs</span>
+                    <button type="button" class="mass-summary-recs-refresh" id="mass-summary-recs-refresh" aria-label="Refresh song suggestions" title="Refresh suggestions">↻</button>
+                  </div>
+                  <ul class="mass-summary-mood-picks" id="mass-summary-mood-picks" aria-label="Gospel mood song suggestions"></ul>
+                  <button type="button" class="mass-summary-recs-add" id="mass-summary-recs-add">Add to song plan</button>
+                </div>
+                </section>
+                <section class="mass-summary-block mass-summary-block--settings" aria-label="Hymn settings">
+                <div class="mass-summary-lang-field mass-summary-layout-field">
+                  <label id="mass-summary-hymn-layout-label">Hymn lyrics</label>
+                  <div class="flow-segment flow-segment--full" role="radiogroup" aria-labelledby="mass-summary-hymn-layout-label">
+                    <label><input type="radio" name="flow-hymn-layout" value="single" /> 1 / slide</label>
+                    <label><input type="radio" name="flow-hymn-layout" value="dual" checked /> 2 / slide</label>
+                  </div>
+                  <div class="mw-field-default-pin" data-mw-field-pin="flow-hymn-layout"></div>
+                </div>
+                <div class="mass-summary-lang-field mass-summary-align-field">
+                  <label id="mass-summary-hymn-align-label">Lyric alignment</label>
+                  <div class="flow-segment flow-segment--full flow-segment--align" role="radiogroup" aria-labelledby="mass-summary-hymn-align-label">
+                    <label><input type="radio" name="flow-hymn-body-align" value="left" /> Left</label>
+                    <label><input type="radio" name="flow-hymn-body-align" value="center" checked /> Center</label>
+                    <label><input type="radio" name="flow-hymn-body-align" value="right" /> Right</label>
+                    <label><input type="radio" name="flow-hymn-body-align" value="justify" /> Justify</label>
+                  </div>
+                </div>
+                <div class="mass-summary-lang-field mass-summary-section-labels-field">
+                  <label class="flow-option-inline" for="flow-hymn-section-labels">
+                    <input type="checkbox" id="flow-hymn-section-labels" />
+                    Show verse / chorus labels
+                  </label>
+                </div>
+                <div class="mass-summary-communion-field" id="mass-communion-count">
+                  <span class="mass-communion-count__label" id="mass-summary-communion-label">Communion songs</span>
+                  <div class="mass-communion-count__stepper" role="group" aria-labelledby="mass-summary-communion-label">
+                    <button type="button" class="mass-communion-count__step" id="mass-communion-dec" aria-label="Fewer communion songs">−</button>
+                    <input type="number" id="mass-communion-custom" min="1" max="5" step="1" inputmode="numeric" value="2" aria-label="Communion song count, 1 to 5" />
+                    <button type="button" class="mass-communion-count__step" id="mass-communion-inc" aria-label="More communion songs">+</button>
+                  </div>
+                </div>
+                </section>
+                <div class="mass-summary-plan-legacy" hidden aria-hidden="true">
+                  <dd id="flow-reading-loaded">—</dd>
+                  <div class="mass-summary-progress" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" id="mass-summary-progress">
+                    <div class="mass-summary-progress__fill" id="mass-summary-progress-fill"></div>
+                  </div>
+                </div>
+                <nav class="mass-summary-links" aria-label="Song plan shortcuts" hidden>
+                  <button type="button" class="mass-summary-link mass-summary-link--btn" id="btn-practice-share">Share for choir practice</button>
+                  <a href="/settings/app" data-route="/settings/app" class="mass-summary-link">Preferences</a>
+                  <a href="/library/songs" data-route="/library/songs" class="mass-summary-link">Song library</a>
+                </nav>
+                </div>
+              </aside>
+              <aside class="mw-aside mw-side-card" id="mw-aside" aria-label="Step summary" hidden>
                 <div class="mw-aside__illus" id="mw-aside-illus" aria-hidden="true"></div>
                 <div class="mw-aside__card">
                   <p class="mw-aside__eyebrow" id="mw-aside-eyebrow">At a glance</p>
@@ -2652,10 +2649,8 @@
                   </div>
                 </div>
               </aside>
-            </div>
             <footer class="mw-nav">
               <button type="button" class="mw-btn mw-btn--ghost" id="mw-back" data-mw-back hidden>Back</button>
-              <button type="button" class="mw-btn mw-btn--ghost" id="btn-practice-share-wizard" hidden>Share lyrics</button>
               <button type="button" class="mw-btn mw-btn--primary" id="mw-next" data-mw-next>Continue →</button>
               <button type="button" class="mw-btn mw-btn--ghost" id="mw-present" hidden>Present</button>
               <button type="button" class="mw-btn mw-btn--generate" id="mw-generate" data-mw-generate hidden>Generate Presentation</button>
@@ -2677,7 +2672,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260904e"></script>
+      <script src="/static/js/mw-wizard.js?v=20260905-1220"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4248,7 +4243,7 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260904x"></script>
+  <script src="/static/js/app.js?v=20260905-1245"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260703"></script>

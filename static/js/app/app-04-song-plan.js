@@ -1973,8 +1973,23 @@
           if (n === 1 || n === 2) setMassCommunionCount(n);
         });
       });
+      const dec = $("mass-communion-dec");
+      const inc = $("mass-communion-inc");
+      if (dec) {
+        dec.addEventListener("click", () => {
+          setMassCommunionCount(massCommunionCount - 1);
+        });
+      }
+      if (inc) {
+        inc.addEventListener("click", () => {
+          setMassCommunionCount(massCommunionCount + 1);
+        });
+      }
       const input = $("mass-communion-custom");
-      if (!input) return;
+      if (!input) {
+        syncCommunionCountUi();
+        return;
+      }
       const commit = () => {
         const raw = String(input.value || "").trim();
         if (!raw) {
@@ -2005,7 +2020,15 @@
           commit();
           input.blur();
         }
-        if (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-") {
+        if (e.key === "ArrowUp" || e.key === "+") {
+          e.preventDefault();
+          setMassCommunionCount(massCommunionCount + 1);
+        }
+        if (e.key === "ArrowDown" || e.key === "-") {
+          e.preventDefault();
+          setMassCommunionCount(massCommunionCount - 1);
+        }
+        if (e.key === "e" || e.key === "E") {
           e.preventDefault();
         }
       });
@@ -3419,10 +3442,10 @@
       reverent: "Reverent and worshipful — sacred Sunday storytelling.",
     };
     var MOOD_PICK_SECTIONS = [
-      { key: "entrance", label: "Entrance", slotKey: "entrance", count: 1 },
-      { key: "offertory", label: "Offertory", slotKey: "offertory", count: 1 },
-      { key: "communion", label: "Communion", slotKeys: communionSlotKeys(massCommunionCount), count: clampMassCommunionCount(massCommunionCount) },
-      { key: "recessional", label: "Recessional", slotKey: "recessional", count: 1 },
+      { key: "entrance", label: "Entrance", shortLabel: "Ent.", slotKey: "entrance", count: 1 },
+      { key: "offertory", label: "Offertory", shortLabel: "Off.", slotKey: "offertory", count: 1 },
+      { key: "communion", label: "Communion", shortLabel: "Com.", slotKeys: communionSlotKeys(massCommunionCount), count: clampMassCommunionCount(massCommunionCount) },
+      { key: "recessional", label: "Recessional", shortLabel: "Rec.", slotKey: "recessional", count: 1 },
     ];
     var massMoodPickSelections = [];
     var massMoodPickExcludeIds = new Set();

@@ -1648,30 +1648,11 @@
     function hideMassHabitsBanner() {
       const banner = $("mw-habits-banner");
       if (banner) banner.hidden = true;
+      /* Quick Mass stays visible in the step rail */
     }
 
-    function showMassHabitsBanner(payload) {
-      if (!isFeatureEnabled("mass_habits")) {
-        hideMassHabitsBanner();
-        return;
-      }
-      const banner = $("mw-habits-banner");
-      if (!banner || !payload || !payload.has_habits) {
-        hideMassHabitsBanner();
-        return;
-      }
-      const title = $("mw-habits-banner-title");
-      const hint = $("mw-habits-banner-hint");
-      const n = payload.learned_count || 0;
-      if (title) {
-        title.textContent = n
-          ? ("Your usual settings · " + n + " remembered")
-          : "Your usual settings";
-      }
-      if (hint) {
-        hint.textContent = payload.hint || "Based on your Masses from the last month.";
-      }
-      banner.hidden = false;
+    function showMassHabitsBanner(_payload) {
+      /* Quick Mass is always visible; habits still gate the confirm modal */
     }
 
     function applyMassHabitSuggestions(suggestions, opts) {
@@ -1851,20 +1832,36 @@
     }
 
     function wireMassHabitsBanner() {
-      const dismiss = $("mw-habits-dismiss");
       const quick = $("mw-habits-quick");
-      if (dismiss && dismiss.dataset.habitsWired !== "1") {
-        dismiss.dataset.habitsWired = "1";
-        dismiss.addEventListener("click", () => {
-          const d = ($("mass-date") && $("mass-date").value) || massHabitsCacheDate || "";
-          massHabitsDismissedForDate = d;
-          hideMassHabitsBanner();
-        });
-      }
       if (quick && quick.dataset.habitsWired !== "1") {
         quick.dataset.habitsWired = "1";
         quick.addEventListener("click", () => {
+          if (typeof openQuickMassModal === "function") {
+            openQuickMassModal().catch(() => notify("Could not load Quick Mass defaults.", "error"));
+          } else {
+            runQuickMassFromHabits().catch(() => notify("Could not apply Quick Mass defaults.", "error"));
+          }
+        });
+      }
+      const keep = $("mw-quick-mass-keep");
+      const cont = $("mw-quick-mass-continue");
+      const modal = $("mw-quick-mass-modal");
+      if (keep && keep.dataset.habitsWired !== "1") {
+        keep.dataset.habitsWired = "1";
+        keep.addEventListener("click", () => {
+          if (typeof closeQuickMassModal === "function") closeQuickMassModal();
+        });
+      }
+      if (cont && cont.dataset.habitsWired !== "1") {
+        cont.dataset.habitsWired = "1";
+        cont.addEventListener("click", () => {
           runQuickMassFromHabits().catch(() => notify("Could not apply Quick Mass defaults.", "error"));
+        });
+      }
+      if (modal && modal.dataset.habitsWired !== "1") {
+        modal.dataset.habitsWired = "1";
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal && typeof closeQuickMassModal === "function") closeQuickMassModal();
         });
       }
     }

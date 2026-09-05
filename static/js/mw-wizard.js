@@ -19,7 +19,7 @@
           2: { title: 'Introductory Rites', sub: 'Set the Penitential Act, Kyrie, and Gloria.' },
           3: { title: 'Liturgy of the Word', sub: 'Readings import automatically — refine the psalm and Gospel lines.' },
           4: { title: 'Liturgy of the Eucharist', sub: 'Creed, Sanctus, Our Father, and Lamb of God.' },
-          5: { title: 'Music Ministry', sub: 'Choose songs for each part of the Mass.' },
+          5: { title: 'Music Ministry', sub: '' },
           6: { title: 'Additional Details', sub: 'Stewardship, slide theme, posters, and AI imagery.' },
           7: { title: 'Review & Generate', sub: 'Full summary of your Mass — confirm, then build your deck.' }
         };
@@ -289,7 +289,10 @@
           var meta = STEP_META[n] || { title: '', sub: '' };
           if ($('mw-eyebrow')) $('mw-eyebrow').textContent = 'Step ' + n + ' of 7';
           if ($('mw-title')) $('mw-title').textContent = meta.title;
-          if ($('mw-sub')) $('mw-sub').textContent = meta.sub;
+          if ($('mw-sub')) {
+            $('mw-sub').textContent = meta.sub || '';
+            $('mw-sub').hidden = !meta.sub;
+          }
           if ($('mw-back')) $('mw-back').hidden = n === 1;
           if ($('mw-next')) $('mw-next').hidden = n === 7;
           if ($('mw-generate')) $('mw-generate').hidden = n !== 7;

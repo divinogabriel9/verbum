@@ -363,10 +363,15 @@ class StaticCacheMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         response = await call_next(request)
         if request.url.path.startswith("/static/"):
-            response.headers.setdefault(
-                "Cache-Control",
-                "public, max-age=31536000, immutable",
-            )
+            # Versioned assets (?v=…) may be cached long-term; unversioned
+            # paths stay short-lived so local CSS/JS edits show up on refresh.
+            if request.url.query:
+                response.headers.setdefault(
+                    "Cache-Control",
+                    "public, max-age=31536000, immutable",
+                )
+            else:
+                response.headers["Cache-Control"] = "no-cache"
         return response
 
 
