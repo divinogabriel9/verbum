@@ -1353,17 +1353,20 @@
       const d = String(date || ($("mass-date") && $("mass-date").value) || "").trim();
       if (!d) return;
       try {
+        try { document.dispatchEvent(new CustomEvent("mw:preview-loading")); } catch (_mwLoad) { /* ignore */ }
         const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: true });
         if (data && data.ok !== false) {
           applyFlowReadingsData(data);
           flowPreviewData = Object.assign({}, flowPreviewData || {}, data, { __previewDate: d });
           window.__mwPreviewData = flowPreviewData;
+          try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
           if (typeof fillAside === "function") {
             /* no-op if wizard aside unavailable outside mw scope */
           }
         }
       } catch (_err) {
         notify("Could not load " + currentMassLanguage() + " readings for this date.", "error");
+        try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
       }
     }
     window.reloadFlowReadingsForLanguage = reloadFlowReadingsForLanguage;
@@ -1873,6 +1876,7 @@
         if (!auto) notify("Choose a Mass date first.", "error");
         return;
       }
+      try { document.dispatchEvent(new CustomEvent("mw:preview-loading")); } catch (_mwLoad) { /* ignore */ }
       $("btn-load-flow").disabled = true;
       if ($("btn-load-flow-inline")) $("btn-load-flow-inline").disabled = true;
       if (!auto) setMassSongPlanRefreshing(true);
@@ -1988,6 +1992,9 @@
           notify(error.message || "Could not load readings.", "error");
         }
         renderMassSongPlan();
+        setTimeout(function () {
+          try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
+        }, 0);
       } finally {
         setMassSongPlanRefreshing(false);
         if (recsWrap) recsWrap.classList.remove("is-refreshing");

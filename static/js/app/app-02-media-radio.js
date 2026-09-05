@@ -3421,6 +3421,7 @@
       el.dispatchEvent(new Event("change", { bubbles: true }));
       el.dispatchEvent(new Event("input", { bubbles: true }));
       if (id === "mass-date" || id === "flow-collection-date") syncMassDatePickerByInputId(id);
+      if (el.tagName === "SELECT" && typeof refreshVerbumSelect === "function") refreshVerbumSelect(el);
     }
 
     function collectMassBuilderDraft() {

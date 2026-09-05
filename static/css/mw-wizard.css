@@ -2117,6 +2117,196 @@
           max-width: none;
         }
 
+        /* Mass Info — liturgical / parish context strip */
+        body.mw-on .mw-mass-context {
+          position: relative;
+          display: block;
+          margin-top: 20px;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid color-mix(in srgb, #b42318 34%, transparent);
+          background:
+            linear-gradient(165deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 38%, transparent 62%),
+            var(--app-header-glass-bg, color-mix(in srgb, var(--surface-solid) 28%, transparent));
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.55),
+            0 1px 2px rgba(15, 23, 42, 0.04),
+            0 12px 28px rgba(15, 23, 42, 0.08);
+          backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.12);
+          -webkit-backdrop-filter: blur(var(--app-header-glass-blur, 24px)) saturate(1.12);
+        }
+        html[data-theme="dark"] body.mw-on .mw-mass-context {
+          border-color: color-mix(in srgb, #f97066 32%, transparent);
+          background:
+            linear-gradient(165deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, transparent 65%),
+            var(--app-header-glass-bg, color-mix(in srgb, var(--bg-top) 32%, transparent));
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 1px 2px rgba(0, 0, 0, 0.18),
+            0 14px 32px rgba(0, 0, 0, 0.28);
+        }
+        body.mw-on .mw-mass-context__rail {
+          display: none !important;
+        }
+        body.mw-on .mw-mass-context__inner {
+          min-width: 0;
+          padding: 14px 16px 15px;
+        }
+        body.mw-on .mw-mass-context__eyebrow {
+          margin: 0 0 8px;
+          font-size: 0.6875rem;
+          font-weight: 650;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+        body.mw-on .mw-mass-context__idle-text {
+          margin: 0;
+          max-width: 28rem;
+          font-size: 0.875rem;
+          line-height: 1.45;
+          color: color-mix(in srgb, var(--muted) 88%, var(--ink));
+        }
+        body.mw-on .mw-mass-context__body {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+          min-width: 0;
+        }
+        body.mw-on .mw-mass-context[data-state="ready"] .mw-mass-context__body {
+          animation: mw-mass-context-in 220ms var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+        }
+        @keyframes mw-mass-context-in {
+          from {
+            opacity: 0;
+            transform: translateY(4px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: none;
+          }
+        }
+        body.mw-on .mw-mass-context__parish {
+          margin: 0;
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          line-height: 1.3;
+          color: var(--muted);
+        }
+        body.mw-on .mw-mass-context__title {
+          display: block;
+          margin: 0;
+          font-size: 1.0625rem;
+          font-weight: 700;
+          letter-spacing: -0.015em;
+          line-height: 1.3;
+          color: var(--ink);
+          text-wrap: balance;
+        }
+        body.mw-on .mw-mass-context__chips {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 6px;
+          margin-top: 2px;
+        }
+        body.mw-on .mw-mass-context__chip {
+          display: inline-flex;
+          align-items: center;
+          min-height: 24px;
+          padding: 0 9px;
+          border-radius: 999px;
+          border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+          background: color-mix(in srgb, var(--surface-solid) 55%, transparent);
+          font-size: 0.75rem;
+          font-weight: 600;
+          line-height: 1;
+          color: color-mix(in srgb, var(--ink) 82%, var(--muted));
+        }
+        body.mw-on .mw-mass-context__chip--color {
+          gap: 6px;
+          --mw-mass-rail: var(--liturgical-ordinary, #2e7d4f);
+          border-color: color-mix(in srgb, var(--mw-mass-rail) 28%, transparent);
+          background: color-mix(in srgb, var(--mw-mass-rail) 12%, var(--surface-solid));
+          color: var(--ink);
+        }
+        body.mw-on .mw-mass-context__chip--color::before {
+          content: "";
+          width: 7px;
+          height: 7px;
+          border-radius: 999px;
+          background: var(--mw-mass-rail);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+        body.mw-on .mw-mass-context__gospel {
+          margin: 4px 0 0;
+          padding-top: 10px;
+          width: 100%;
+          border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+          font-size: 0.8125rem;
+          font-weight: 600;
+          line-height: 1.4;
+          color: var(--ink);
+        }
+        body.mw-on .mw-mass-context__gospel[hidden],
+        body.mw-on .mw-mass-context__parish[hidden],
+        body.mw-on .mw-mass-context__chip[hidden],
+        body.mw-on .mw-mass-context__skeleton[hidden],
+        body.mw-on .mw-mass-context__idle[hidden],
+        body.mw-on .mw-mass-context__body[hidden] {
+          display: none !important;
+        }
+        body.mw-on .mw-mass-context__skeleton {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        body.mw-on .mw-mass-context__skel-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        body.mw-on .mw-mass-context__skel-chip {
+          display: block;
+          width: 4.5rem;
+          height: 24px;
+          border-radius: 999px;
+        }
+        body.mw-on .mw-mass-context__skel-line-lg {
+          display: block;
+          height: 15px;
+          width: min(78%, 20rem);
+        }
+        body.mw-on .mw-mass-context__skel-line-md {
+          display: block;
+          height: 12px;
+          width: min(42%, 11rem);
+        }
+        body.mw-on .mw-mass-context__skel-line-sm {
+          display: block;
+          height: 11px;
+          width: min(52%, 13rem);
+          margin-top: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          body.mw-on .mw-mass-context .emil-skeleton {
+            animation: none;
+          }
+          body.mw-on .mw-mass-context[data-state="ready"] .mw-mass-context__body {
+            animation: none;
+          }
+        }
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+          body.mw-on .mw-mass-context {
+            background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+          }
+          html[data-theme="dark"] body.mw-on .mw-mass-context {
+            background: color-mix(in srgb, var(--bg-top) 92%, transparent);
+          }
+        }
+
         /* Extras — single column; stewardship + sponsors grouped, media below */
         body.mw-on .mw-step-canvas.is-extras-step .flow-setup-layout {
           display: block;
@@ -2136,12 +2326,12 @@
           display: flex;
           flex-direction: column;
           gap: 16px;
-          padding: 20px 22px;
-          margin: 0 0 16px;
-          border: 1px solid var(--card-border);
-          border-radius: 18px;
-          background: var(--surface);
-          box-shadow: var(--shadow-light);
+          padding: 0;
+          margin: 0 0 20px;
+          border: 0;
+          border-radius: 0;
+          background: none;
+          box-shadow: none;
           overflow: visible;
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-extras-block:last-of-type {

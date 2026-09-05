@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260905-1535" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260905-1610" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -2119,22 +2119,47 @@
                         </div>
                       </div>
                       <div class="field">
-                        <label for="flow-mass-language">Mass language</label>
-                        <select id="flow-mass-language" data-vb-select="off">
+                        <label id="mass-language-label" for="flow-mass-language">Mass language</label>
+                        <select id="flow-mass-language" aria-labelledby="mass-language-label">
                           <option value="english" selected>English</option>
                           <option value="tagalog">Tagalog (Filipino Ordo)</option>
                         </select>
                       </div>
                     </div>
                   </div>
+
+                  <div class="mw-mass-context" id="mw-mass-context" data-state="idle" aria-live="polite">
+                    <span class="mw-mass-context__rail" id="mw-mass-context-swatch" aria-hidden="true"></span>
+                    <div class="mw-mass-context__inner">
+                      <p class="mw-mass-context__eyebrow">This Mass</p>
+                      <div class="mw-mass-context__skeleton" id="mw-mass-context-skeleton" hidden aria-hidden="true">
+                        <span class="emil-skeleton emil-skeleton--line mw-mass-context__skel-line-lg"></span>
+                        <span class="emil-skeleton emil-skeleton--line mw-mass-context__skel-line-md"></span>
+                        <div class="mw-mass-context__skel-chips">
+                          <span class="emil-skeleton mw-mass-context__skel-chip"></span>
+                          <span class="emil-skeleton mw-mass-context__skel-chip"></span>
+                          <span class="emil-skeleton mw-mass-context__skel-chip"></span>
+                        </div>
+                        <span class="emil-skeleton emil-skeleton--line mw-mass-context__skel-line-sm"></span>
+                      </div>
+                      <div class="mw-mass-context__idle" id="mw-mass-context-idle">
+                        <p class="mw-mass-context__idle-text">Pick a date to see the parish and liturgical day for this Mass.</p>
+                      </div>
+                      <div class="mw-mass-context__body" id="mw-mass-context-body" hidden>
+                        <p class="mw-mass-context__parish" id="mw-mass-context-parish" hidden></p>
+                        <strong class="mw-mass-context__title" id="mw-mass-context-title">—</strong>
+                        <div class="mw-mass-context__chips" role="list">
+                          <span class="mw-mass-context__chip" role="listitem" id="mw-mass-context-season">—</span>
+                          <span class="mw-mass-context__chip" role="listitem" id="mw-mass-context-year">—</span>
+                          <span class="mw-mass-context__chip mw-mass-context__chip--color" role="listitem" id="mw-mass-context-color" hidden></span>
+                        </div>
+                        <p class="mw-mass-context__gospel" id="mw-mass-context-gospel" hidden></p>
+                      </div>
+                    </div>
+                  </div>
                 </article>
 
                 <article class="flow-bento-cell flow-setup-card2 mw-extras-block" id="mass-step-target-stewardship" data-mw-step="6" hidden>
-                  <header class="mw-extras-block__head">
-                    <h3 class="mw-extras-block__title">Additional Details</h3>
-                    <p class="mw-extras-block__sub">Optional announcement slides for the deck. Check each slide you want to include.</p>
-                  </header>
-
                   <div class="mw-announcement-slides" id="flow-announcement-slides">
                     <div class="mw-announcement-option mw-announcement-option--plain">
                       <input type="checkbox" id="flow-slide-welcoming-newcomers" checked />
@@ -2689,7 +2714,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260905-1515"></script>
+      <script src="/static/js/mw-wizard.js?v=20260905-1612"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4264,7 +4289,7 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260905-1430"></script>
+  <script src="/static/js/app.js?v=20260905-1605"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260905-google2"></script>

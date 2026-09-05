@@ -82,7 +82,7 @@
           3: { title: 'Liturgy of the Word', sub: 'Readings import automatically — refine the psalm and Gospel lines.' },
           4: { title: 'Liturgy of the Eucharist', sub: 'Creed, Sanctus, Our Father, and Lamb of God.' },
           5: { title: 'Music Ministry', sub: '' },
-          6: { title: 'Additional Details', sub: 'Stewardship, slide theme, posters, and AI imagery.' },
+          6: { title: 'Additional Details', sub: '' },
           7: { title: 'Review & Generate', sub: '' }
         };
         var ASIDE_STEPS = { 1: true, 2: true, 4: true, 6: true };
@@ -110,6 +110,132 @@
             ['mw-guide-r2', 'flow-reading2-body'], ['mw-guide-r2-ref', 'flow-reading2-ref'],
             ['mw-guide-gospel', 'flow-gospel-body'], ['mw-guide-gospel-ref', 'flow-gospel-ref']];
           map.forEach(function (p) { var d = $(p[0]), s = $(p[1]); if (d && s) d.textContent = s.textContent; });
+        }
+        function parishNameForContext() {
+          var fromSettings = $('settings-church-name');
+          if (fromSettings && fromSettings.value && fromSettings.value.trim()) return fromSettings.value.trim();
+          try {
+            if (window.VerbumAuth && typeof window.VerbumAuth.getChurchProfile === 'function') {
+              var profile = window.VerbumAuth.getChurchProfile();
+              if (profile && profile.community_name) return String(profile.community_name).trim();
+            }
+          } catch (_e) { /* optional */ }
+          return '';
+        }
+        function formatMwSeasonLabel(seasonStr) {
+          if (typeof window.formatLiturgicalSeasonLabel === 'function') {
+            return window.formatLiturgicalSeasonLabel(seasonStr);
+          }
+          var raw = String(seasonStr || '').split(',')[0].trim();
+          if (!raw) return 'Ordinary Time';
+          return raw.charAt(0).toUpperCase() + raw.slice(1);
+        }
+        function formatMwYearLabel(cycle) {
+          if (typeof window.formatLectionaryYearLabel === 'function') {
+            return window.formatLectionaryYearLabel(cycle);
+          }
+          var c = String(cycle || '').trim();
+          if (!c) return '—';
+          if (/^year\s/i.test(c)) return c;
+          return 'Year ' + c;
+        }
+        function setMwMassContextState(state) {
+          var root = $('mw-mass-context');
+          if (!root) return;
+          var skeleton = $('mw-mass-context-skeleton');
+          var idle = $('mw-mass-context-idle');
+          var body = $('mw-mass-context-body');
+          root.setAttribute('data-state', state || 'idle');
+          if (skeleton) skeleton.hidden = state !== 'loading';
+          if (idle) idle.hidden = state !== 'idle';
+          if (body) body.hidden = state !== 'ready';
+          root.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false');
+        }
+        function fillMwMassContext() {
+          var root = $('mw-mass-context');
+          if (!root) return;
+          var idleText = root.querySelector('.mw-mass-context__idle-text');
+          var dateEl = $('mass-date');
+          var dateVal = dateEl && dateEl.value ? String(dateEl.value).trim() : '';
+          if (!dateVal) {
+            if (idleText) idleText.textContent = 'Pick a date to see the parish and liturgical day for this Mass.';
+            setMwMassContextState('idle');
+            return;
+          }
+          var pd = window.__mwPreviewData || null;
+          var previewDate = pd && pd.__previewDate ? String(pd.__previewDate) : '';
+          var matched = !!(pd && previewDate && previewDate === dateVal && (pd.season || pd.title || pd.lectionary_cycle));
+          if (!matched) {
+            var busy = $('btn-load-flow') && $('btn-load-flow').disabled;
+            if (busy || root.getAttribute('data-state') === 'loading') {
+              setMwMassContextState('loading');
+              return;
+            }
+            if (idleText) idleText.textContent = 'Liturgical details for this date aren’t available yet. They’ll appear when readings load.';
+            setMwMassContextState('idle');
+            return;
+          }
+          var parishEl = $('mw-mass-context-parish');
+          var parish = parishNameForContext();
+          if (parishEl) {
+            if (parish) {
+              parishEl.hidden = false;
+              parishEl.textContent = parish;
+            } else {
+              parishEl.hidden = true;
+              parishEl.textContent = '';
+            }
+          }
+          var titleEl = $('mw-mass-context-title');
+          var seasonEl = $('mw-mass-context-season');
+          var yearEl = $('mw-mass-context-year');
+          var colorEl = $('mw-mass-context-color');
+          var swatch = $('mw-mass-context-swatch');
+          var rootEl = $('mw-mass-context');
+          var gospelEl = $('mw-mass-context-gospel');
+          var seasonLabel = formatMwSeasonLabel(pd.season || '');
+          var yearLabel = formatMwYearLabel(pd.lectionary_cycle || '');
+          var dayTitle = String(pd.title || '').trim() || seasonLabel;
+          if (titleEl) titleEl.textContent = dayTitle;
+          if (seasonEl) seasonEl.textContent = seasonLabel;
+          if (yearEl) yearEl.textContent = yearLabel;
+          var lc = pd.liturgical_color || null;
+          var hex = lc && lc.hex ? String(lc.hex).trim() : '';
+          var colorName = lc && lc.color_name ? String(lc.color_name).trim() : '';
+          var railColor = hex || 'var(--liturgical-ordinary, #2e7d4f)';
+          if (rootEl) rootEl.style.setProperty('--mw-mass-rail', railColor);
+          if (swatch) swatch.style.background = railColor;
+          if (colorEl) {
+            if (colorName) {
+              colorEl.hidden = false;
+              colorEl.textContent = colorName;
+            } else {
+              colorEl.hidden = true;
+              colorEl.textContent = '';
+            }
+          }
+          var gospelRef = '';
+          var gr = $('flow-gospel-ref');
+          if (gr && gr.textContent && gr.textContent.trim() && gr.textContent.trim() !== '—') {
+            gospelRef = gr.textContent.trim();
+          } else if (pd.gospel_reference) {
+            gospelRef = String(pd.gospel_reference).trim();
+          }
+          if (gospelEl) {
+            if (gospelRef) {
+              gospelEl.hidden = false;
+              gospelEl.textContent = 'Gospel · ' + gospelRef;
+            } else {
+              gospelEl.hidden = true;
+              gospelEl.textContent = '';
+            }
+          }
+          setMwMassContextState('ready');
+        }
+        function beginMwMassContextLoading() {
+          var dateEl = $('mass-date');
+          if (dateEl && dateEl.value) setMwMassContextState('loading');
+          else setMwMassContextState('idle');
         }
         function readingsLoaded() {
           var ref = $('flow-gospel-ref');
@@ -383,6 +509,7 @@
           }
           if (n === 7) { fillReceipt(); }
           fillAside(n);
+          fillMwMassContext();
           var canvas = document.querySelector('#mw-wizard .mw-step-canvas');
           var wiz = $('mw-wizard');
           if (canvas) {
@@ -1160,8 +1287,19 @@
             });
           });
           if ($('mw-pof-generate')) $('mw-pof-generate').addEventListener('click', function (e) { e.preventDefault(); });
-          document.addEventListener('mw:preview', function () { if (current === 7) fillReceipt(); refreshContinue(); });
+          document.addEventListener('mw:preview-loading', beginMwMassContextLoading);
+          document.addEventListener('mw:preview', function () {
+            fillMwMassContext();
+            if (current === 1) fillAside(1);
+            if (current === 7) fillReceipt();
+            refreshContinue();
+          });
           document.addEventListener('mw:aside-refresh', function () { if (current === 6) fillAside(6); });
+          var massDateEl = $('mass-date');
+          if (massDateEl && massDateEl.dataset.mwContextBound !== '1') {
+            massDateEl.dataset.mwContextBound = '1';
+            massDateEl.addEventListener('change', beginMwMassContextLoading);
+          }
           buildChoiceCards();
           ensureSanctusVideoOption();
           Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-options[aria-label] .mw-option'), function (opt) {
