@@ -15,6 +15,42 @@
         e.stopPropagation();
         closeMassSlideshow();
       });
+      $("mass-slideshow-fullscreen") && $("mass-slideshow-fullscreen").addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleMassSlideshowFullscreen();
+      });
+      $("mass-slideshow-fs-gate-btn") && $("mass-slideshow-fs-gate-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        const want = massSlideshowState.pendingFullscreen;
+        if (want == null) {
+          hideMassSlideshowFullscreenGate();
+          return;
+        }
+        setMassSlideshowFullscreen(!!want, { fromUserGesture: true });
+      });
+      $("mass-slideshow-remote") && $("mass-slideshow-remote").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (massProjectionRemote.panelOpen) {
+          setMassProjectionRemotePanel(false);
+          return;
+        }
+        const session = await ensureMassProjectionSession();
+        if (!session) {
+          setFlowStatus("Could not start phone remote.", "error");
+          return;
+        }
+        setMassProjectionRemotePanel(true);
+      });
+      $("mass-slideshow-remote-close") && $("mass-slideshow-remote-close").addEventListener("click", (e) => {
+        e.stopPropagation();
+        setMassProjectionRemotePanel(false);
+      });
+      $("mass-slideshow-remote-panel") && $("mass-slideshow-remote-panel").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (e.target && e.target.id === "mass-slideshow-remote-panel") {
+          setMassProjectionRemotePanel(false);
+        }
+      });
       $("mass-slideshow-download") && $("mass-slideshow-download").addEventListener("click", async (e) => {
         e.stopPropagation();
         if (!massSlideshowState.pptxUrl) return;
@@ -38,13 +74,26 @@
         bumpMassSlideshowCursor();
         setMassSlideshowChromeVisible(true);
       });
+      document.addEventListener("fullscreenchange", () => {
+        if (!massSlideshowState.open) return;
+        syncMassSlideshowFullscreenUi();
+      });
       document.addEventListener("keydown", (e) => {
         if (!massSlideshowState.open) return;
         const key = e.key;
         if (key === "Escape") {
           e.preventDefault();
           e.stopPropagation();
+          if (massProjectionRemote.panelOpen) {
+            setMassProjectionRemotePanel(false);
+            return;
+          }
           closeMassSlideshow();
+          return;
+        }
+        if (key === "f" || key === "F") {
+          e.preventDefault();
+          toggleMassSlideshowFullscreen();
           return;
         }
         if (key === "b" || key === "B" || key === ".") {
@@ -121,6 +170,8 @@
         const root = $("mass-slideshow");
         massSlideshowState.open = false;
         stopMassSlideshowPoll();
+        resetMassProjectionRemote();
+        hideMassSlideshowFullscreenGate();
         if (root) {
           root.classList.remove("is-open", "is-blank", "is-chrome-visible", "is-hint-visible", "is-cursor-hidden");
           root.setAttribute("aria-hidden", "true");

@@ -2999,6 +2999,7 @@
       pollTimer: null,
       generation: 0,
       complete: true,
+      pendingFullscreen: null, // true = enter, false = exit, null = none
     };
 
     var lastMassGenerateResult = null;
@@ -3049,6 +3050,191 @@
       if (!data) return;
       lastMassGenerateResult = data;
       syncMassPresentAgainUi();
+    }
+
+    var massProjectionRemote = {
+      token: null,
+      remoteUrl: "",
+      qrUrl: "",
+      lastSeq: 0,
+      pollTimer: null,
+      applyingRemote: false,
+      panelOpen: false,
+    };
+
+    function massSlideshowPptxName() {
+      if (massSlideshowState.pptxName) return massSlideshowState.pptxName;
+      if (lastMassGenerateResult && lastMassGenerateResult.export_stem) {
+        return lastMassGenerateResult.export_stem + ".pptx";
+      }
+      return "";
+    }
+
+    function massSlideshowSlideNames() {
+      return (massSlideshowState.slides || []).map((s, i) => {
+        const url = (s && s.image_url) || "";
+        const m = url.match(/\/preview\/([^/?#]+)/);
+        if (m && m[1]) return decodeURIComponent(m[1]);
+        return "slide_" + String(i + 1).padStart(4, "0") + ".jpg";
+      });
+    }
+
+    function stopMassProjectionRemotePoll() {
+      if (massProjectionRemote.pollTimer) {
+        clearTimeout(massProjectionRemote.pollTimer);
+        massProjectionRemote.pollTimer = null;
+      }
+    }
+
+    function setMassProjectionRemotePanel(open) {
+      massProjectionRemote.panelOpen = !!open;
+      const panel = $("mass-slideshow-remote-panel");
+      if (panel) panel.hidden = !open;
+      if (open) setMassSlideshowChromeVisible(true);
+    }
+
+    async function ensureMassProjectionSession() {
+      if (!massSlideshowState.open) return null;
+      if (massProjectionRemote.token) return massProjectionRemote;
+      try {
+        const data = await postJSON("/api/projection/session", {
+          total: Math.max(massSlideshowState.slides.length, massSlideshowState.expectedTotal || 0),
+          index: massSlideshowState.index || 0,
+          pptx_name: massSlideshowPptxName(),
+          slide_names: massSlideshowSlideNames(),
+        });
+        if (!data || !data.token) return null;
+        massProjectionRemote.token = data.token;
+        massProjectionRemote.remoteUrl = data.remote_url || (location.origin + "/projection/" + data.token);
+        massProjectionRemote.qrUrl = data.qr_url || ("/api/projection/" + data.token + "/qr.png");
+        massProjectionRemote.lastSeq = data.command_seq || 0;
+        const qr = $("mass-slideshow-remote-qr");
+        if (qr) qr.src = massProjectionRemote.qrUrl + "?t=" + Date.now();
+        const link = $("mass-slideshow-remote-link");
+        if (link) {
+          link.href = massProjectionRemote.remoteUrl;
+          link.textContent = massProjectionRemote.remoteUrl;
+        }
+        scheduleMassProjectionRemotePoll();
+        return massProjectionRemote;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function pushMassProjectionState() {
+      if (!massProjectionRemote.token || massProjectionRemote.applyingRemote || !massSlideshowState.open) return;
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      const desired = massSlideshowState.pendingFullscreen;
+      const body = {
+        index: massSlideshowState.index || 0,
+        total: Math.max(massSlideshowState.slides.length, massSlideshowState.expectedTotal || 0),
+        blank: !!massSlideshowState.blank,
+        preview_index: massSlideshowState.index || 0,
+        fullscreen: desired == null ? on : !!desired,
+        pptx_name: massSlideshowPptxName(),
+        slide_names: massSlideshowSlideNames(),
+      };
+      authorizedFetch("/api/projection/" + encodeURIComponent(massProjectionRemote.token) + "/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).catch(() => {});
+    }
+
+    function applyMassProjectionCommand(cmd) {
+      if (!cmd || !cmd.action) return;
+      const action = String(cmd.action || "").toLowerCase();
+      massProjectionRemote.applyingRemote = true;
+      try {
+        if (action === "next") massSlideshowGo(1);
+        else if (action === "prev") massSlideshowGo(-1);
+        else if (action === "jump" && cmd.index != null) massSlideshowJump(parseInt(cmd.index, 10) || 0);
+        else if (action === "blank_on") setMassSlideshowBlank(true);
+        else if (action === "blank_off") setMassSlideshowBlank(false);
+        else if (action === "blank_toggle") setMassSlideshowBlank(!massSlideshowState.blank);
+        else if (action === "fullscreen_on") setMassSlideshowFullscreen(true, { fromRemote: true });
+        else if (action === "fullscreen_off") setMassSlideshowFullscreen(false, { fromRemote: true });
+        else if (action === "fullscreen_toggle") {
+          const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+          setMassSlideshowFullscreen(!on, { fromRemote: true });
+        }
+        else if (action === "go_live") {
+          const idx = (typeof cmd.index === "number") ? cmd.index : null;
+          setMassSlideshowBlank(false);
+          if (idx != null && !Number.isNaN(idx)) massSlideshowJump(idx);
+        } else if (action === "preview_next" || action === "preview_prev" || action === "preview_jump"
+          || action === "freeze_on" || action === "freeze_off" || action === "freeze_toggle") {
+          setMassSlideshowChromeVisible(true);
+        }
+      } finally {
+        massProjectionRemote.applyingRemote = false;
+      }
+    }
+
+    async function pollMassProjectionRemoteOnce() {
+      if (!massProjectionRemote.token || !massSlideshowState.open) return;
+      try {
+        const res = await authorizedFetch(
+          "/api/projection/" + encodeURIComponent(massProjectionRemote.token)
+            + "/poll?after=" + encodeURIComponent(String(massProjectionRemote.lastSeq || 0))
+        );
+        if (res.status === 404) {
+          massProjectionRemote.token = null;
+          stopMassProjectionRemotePoll();
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json();
+        const st = data && data.state;
+        const cmds = (data && data.commands) || [];
+        cmds.forEach((cmd) => {
+          if (cmd && cmd.id) massProjectionRemote.lastSeq = Math.max(massProjectionRemote.lastSeq, cmd.id);
+          applyMassProjectionCommand(cmd);
+        });
+        if (st && !massProjectionRemote.applyingRemote) {
+          if (typeof st.index === "number" && st.index !== massSlideshowState.index && !st.frozen) {
+            massProjectionRemote.applyingRemote = true;
+            try { massSlideshowJump(st.index); }
+            finally { massProjectionRemote.applyingRemote = false; }
+          }
+          if (typeof st.blank === "boolean" && st.blank !== massSlideshowState.blank) {
+            massProjectionRemote.applyingRemote = true;
+            try { setMassSlideshowBlank(st.blank); }
+            finally { massProjectionRemote.applyingRemote = false; }
+          }
+          if (typeof st.fullscreen === "boolean") {
+            const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+            const pending = massSlideshowState.pendingFullscreen;
+            if (pending != null && pending === st.fullscreen) {
+              // Waiting for presenter tap — keep gate open.
+            } else if (st.fullscreen !== on) {
+              massProjectionRemote.applyingRemote = true;
+              try { setMassSlideshowFullscreen(st.fullscreen, { fromRemote: true }); }
+              finally { massProjectionRemote.applyingRemote = false; }
+            }
+          }
+        }
+      } catch (_e) { /* ignore transient */ }
+    }
+
+    function scheduleMassProjectionRemotePoll() {
+      stopMassProjectionRemotePoll();
+      if (!massProjectionRemote.token || !massSlideshowState.open) return;
+      massProjectionRemote.pollTimer = setTimeout(async () => {
+        await pollMassProjectionRemoteOnce();
+        scheduleMassProjectionRemotePoll();
+      }, 700);
+    }
+
+    function resetMassProjectionRemote() {
+      stopMassProjectionRemotePoll();
+      massProjectionRemote.token = null;
+      massProjectionRemote.remoteUrl = "";
+      massProjectionRemote.qrUrl = "";
+      massProjectionRemote.lastSeq = 0;
+      massProjectionRemote.applyingRemote = false;
+      setMassProjectionRemotePanel(false);
     }
 
     function stopMassSlideshowPoll() {
@@ -3127,7 +3313,7 @@
       }
       if (visible) {
         massSlideshowState.chromeTimer = setTimeout(() => {
-          if (massSlideshowState.open && !massSlideshowState.blank) {
+          if (massSlideshowState.open && !massSlideshowState.blank && !massProjectionRemote.panelOpen) {
             root.classList.remove("is-chrome-visible");
           }
         }, 2200);
@@ -3325,13 +3511,104 @@
           if (st.complete) {
             massSlideshowState.complete = true;
             updateMassSlideshowCounter();
+            pushMassProjectionState();
             return;
           }
+          pushMassProjectionState();
         } catch (_e) {
           /* keep polling briefly; generation may still be running */
         }
         scheduleMassSlideshowPoll();
       }, 450);
+    }
+
+    function syncMassSlideshowFullscreenUi() {
+      const btn = $("mass-slideshow-fullscreen");
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      if (btn) {
+        btn.textContent = on ? "Exit full" : "Fullscreen";
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      if (on && massSlideshowState.pendingFullscreen === true) {
+        hideMassSlideshowFullscreenGate();
+      }
+      if (!on && massSlideshowState.pendingFullscreen === false) {
+        hideMassSlideshowFullscreenGate();
+      }
+      pushMassProjectionState();
+    }
+
+    function showMassSlideshowFullscreenGate(wantOn) {
+      massSlideshowState.pendingFullscreen = !!wantOn;
+      const gate = $("mass-slideshow-fs-gate");
+      const title = $("mass-slideshow-fs-gate-title");
+      const sub = $("mass-slideshow-fs-gate-sub");
+      if (title) title.textContent = wantOn ? "Enter fullscreen?" : "Exit fullscreen?";
+      if (sub) {
+        sub.textContent = wantOn
+          ? "Remote requested this — tap here on the presenter to confirm"
+          : "Remote requested exit — tap here on the presenter to confirm";
+      }
+      if (gate) gate.hidden = false;
+      setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
+    }
+
+    function hideMassSlideshowFullscreenGate() {
+      massSlideshowState.pendingFullscreen = null;
+      const gate = $("mass-slideshow-fs-gate");
+      if (gate) gate.hidden = true;
+    }
+
+    async function setMassSlideshowFullscreen(wantOn, opts) {
+      const options = opts || {};
+      const root = $("mass-slideshow");
+      if (!root || !massSlideshowState.open) return;
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      const fromRemote = !!options.fromRemote;
+      const fromUserGesture = !!options.fromUserGesture;
+
+      if (wantOn && on) {
+        hideMassSlideshowFullscreenGate();
+        syncMassSlideshowFullscreenUi();
+        return;
+      }
+      if (!wantOn && !on) {
+        hideMassSlideshowFullscreenGate();
+        syncMassSlideshowFullscreenUi();
+        return;
+      }
+
+      try {
+        if (wantOn && !on) {
+          if (root.requestFullscreen) await root.requestFullscreen();
+        } else if (!wantOn && document.fullscreenElement) {
+          if (document.exitFullscreen) await document.exitFullscreen();
+        }
+        const nowOn = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+        if (wantOn ? nowOn : !nowOn) {
+          hideMassSlideshowFullscreenGate();
+        } else if (fromRemote || !fromUserGesture) {
+          showMassSlideshowFullscreenGate(wantOn);
+        } else {
+          setFlowStatus("Fullscreen was blocked by the browser.", "warn");
+          hideMassSlideshowFullscreenGate();
+        }
+      } catch (_e) {
+        if (fromRemote || !fromUserGesture) {
+          showMassSlideshowFullscreenGate(wantOn);
+        } else {
+          setFlowStatus("Fullscreen was blocked by the browser.", "warn");
+          hideMassSlideshowFullscreenGate();
+        }
+      }
+      syncMassSlideshowFullscreenUi();
+      setMassSlideshowChromeVisible(true);
+    }
+
+    async function toggleMassSlideshowFullscreen() {
+      const on = !!(document.fullscreenElement && document.fullscreenElement.id === "mass-slideshow");
+      await setMassSlideshowFullscreen(!on, { fromUserGesture: true });
     }
 
     function massSlideshowGo(delta) {
@@ -3345,6 +3622,7 @@
       massSlideshowState.index = next;
       renderMassSlideshowSlide();
       setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
     }
 
     function massSlideshowJump(index) {
@@ -3353,6 +3631,7 @@
       setMassSlideshowBlank(false);
       renderMassSlideshowSlide();
       setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
     }
 
     function setMassSlideshowBlank(on) {
@@ -3360,6 +3639,7 @@
       const root = $("mass-slideshow");
       if (root) root.classList.toggle("is-blank", massSlideshowState.blank);
       if (!massSlideshowState.blank) setMassSlideshowChromeVisible(true);
+      pushMassProjectionState();
     }
 
     function closeMassSlideshow() {
@@ -3370,6 +3650,8 @@
       massSlideshowState.blank = false;
       massSlideshowState.complete = true;
       stopMassSlideshowPoll();
+      hideMassSlideshowFullscreenGate();
+      resetMassProjectionRemote();
       pauseMassSlideshowVideo();
       root.classList.remove("is-open", "is-blank", "is-chrome-visible", "is-hint-visible", "is-cursor-hidden");
       root.setAttribute("aria-hidden", "true");
@@ -3400,6 +3682,7 @@
       const opts = payload || {};
       const slidesIn = Array.isArray(opts.slides) ? opts.slides : [];
       stopMassSlideshowPoll();
+      resetMassProjectionRemote();
       revokeMassSlideshowObjectUrls();
       massSlideshowState.mode = opts.mode === "text" ? "text" : "image";
       massSlideshowState.pptxUrl = opts.pptxUrl || "";
@@ -3481,6 +3764,7 @@
       try {
         if (root.requestFullscreen) await root.requestFullscreen();
       } catch (_e) { /* ignore — still present windowed */ }
+      syncMassSlideshowFullscreenUi();
       if (root.focus) root.focus();
       if (!massSlideshowState.complete) scheduleMassSlideshowPoll();
       rememberMassSlideshowSessionFromState();
