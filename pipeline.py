@@ -11,14 +11,11 @@ import time
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from generators.gospel_visual import render_gospel_moment
 from generators.poster_generator import (
-    PosterTemplate,
     export_social_variants,
-    generate_mass_poster,
 )
 from generators.powerpoint import generate_mass_ppt
-from services.community_config import get_community_name, get_logo_path, update_community
+from services.community_config import get_community_name, update_community
 from services.gospel_quote_extractor import (
     first_sentence_slide_quote,
     pick_sentence_interactive,
@@ -473,11 +470,7 @@ class GenerationResult:
     slideshow_cues: list[dict[str, Any]] = field(default_factory=list)
 
 
-def _poster_template_arg(name: str) -> PosterTemplate:
-    n = (name or "").strip().lower()
-    if n == "classic_white" or n == "classic":
-        return "classic_white"
-    return "liturgical_color"
+
 
 
 def generate_mass_media(
@@ -487,9 +480,9 @@ def generate_mass_media(
     co_celebrant: str = "",
     sentence_index: Optional[int] = None,
     interactive_pick: bool = False,
-    poster_template: str = "liturgical_color",
+    poster_template: str = "liturgical_color",  # deprecated — non-AI wallpapers removed; ignored
     include_social_exports: bool = False,
-    include_gospel_art: bool = True,
+    include_gospel_art: bool = False,  # deprecated — gospel_moment PNG removed
     include_ai_mass_poster: bool = False,
     ai_poster_backend: str = "openai",
     ai_poster_style: str = "cinematic",
@@ -592,9 +585,8 @@ def generate_mass_media(
     community_display = get_community_name()
     stem = mass_export_stem(community_display, date, title, season)
     display_title = title.replace(" Celebration", "").strip() or title
+    _ = poster_template  # ignored — non-AI liturgical/classic posters removed
 
-    tpl = _poster_template_arg(poster_template)
-    logo = get_logo_path()
     _root = Path(__file__).resolve().parent
     _out = _root / "outputs"
     hero_path: Optional[Path] = None
@@ -726,21 +718,9 @@ def generate_mass_media(
                 include_social_exports=include_social_exports,
             )
         else:
-            poster_path, poster_ppt_path = generate_mass_poster(
-                title=title,
-                gospel_reference=gospel_ref,
-                celebrant=poster_celebrant,
-                date=date,
-                template=tpl,
-                liturgical_color=liturgical_color,
-                logo_path=logo,
-                community_name=community_display,
-                gospel_quote=slide_line,
-                entrance_song_title=entrance_title,
-                communion_song_titles=communion_line,
-                output_stem=stem,
-                include_social_exports=include_social_exports,
-            )
+            # Non-AI liturgical/classic poster wallpapers removed — PPTX uses
+            # deck themes / uploaded dividers only when AI poster is off.
+            poster_path, poster_ppt_path = None, None
 
         divider_for_ppt = _resolve_divider_poster_path(uploaded=divider_poster_path)
 
@@ -809,14 +789,7 @@ def generate_mass_media(
 
         if include_social_exports and poster_path and poster_path.is_file():
             export_social_variants(poster_path, output_dir=_out, prefix=stem)
-        if include_gospel_art:
-            ref_short = (gospel_ref or "").strip()[:90] if gospel_ref else ""
-            render_gospel_moment(
-                out_path=_root / "outputs" / f"{stem}_gospel_moment.png",
-                liturgical_color=liturgical_color,
-                line1="Gospel",
-                line2=ref_short,
-            )
+        # include_gospel_art is ignored — non-AI gospel_moment PNG export removed.
 
         preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
 

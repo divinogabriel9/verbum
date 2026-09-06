@@ -384,7 +384,7 @@
         element: "#mass-step-target-media",
         popover: {
           title: "Posters & branding",
-          description: "Pick LOTW and LOTE poster styles, upload announcement images, toggle parish branding, and optionally generate AI gospel art (quota applies).",
+          description: "Pick LOTW and LOTE poster styles, upload announcement images, toggle parish branding, and optionally generate AI mass poster art (quota applies).",
           side: "right",
           align: "start",
         },

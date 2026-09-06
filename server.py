@@ -204,7 +204,6 @@ from routes.parish import register_parish_routes
 
 # Optional outputs produced alongside mass_poster.png (Phase 3)
 _BUNDLE_OPTIONAL = (
-    "gospel_moment.png",
     "mass_poster_16x9.png",
     "mass_poster_instagram_square.png",
     "mass_poster_instagram_story.png",
@@ -264,9 +263,6 @@ def _collect_generation_owned_paths(result: GenerationResult) -> list[str]:
             if child.is_file():
                 owned.append(f"posters/{child.name}")
     if result.export_stem:
-        gospel = _OUTPUT_DIR / f"{result.export_stem}_gospel_moment.png"
-        if gospel.is_file():
-            owned.append(gospel.name)
         cues = _OUTPUT_DIR / f"{result.export_stem}_slideshow_cues.json"
         if cues.is_file():
             owned.append(cues.name)
@@ -810,7 +806,7 @@ def _pptx_identity(ppt: Optional[Path]) -> tuple[str, float]:
 
 
 def _write_mass_bundle_zip(result: GenerationResult) -> Path:
-    """Pack generated PPT, posters, stem-based social PNGs, gospel art, and optional extras.
+    """Pack generated PPT, posters, stem-based social PNGs, and optional extras.
 
     Uses ZIP_STORED (no recompress) — .pptx/.png are already compressed, and
     DEFLATED was slow enough to leave the Mass Builder UI stuck after the deck
@@ -834,10 +830,6 @@ def _write_mass_bundle_zip(result: GenerationResult) -> Path:
             for child in sorted(post_dir.glob("*.png")):
                 if child.is_file() and all(o[0] != child for o in entries):
                     entries.append((child, f"posters/{child.name}"))
-    if result.export_stem:
-        g = _OUTPUT_DIR / f"{result.export_stem}_gospel_moment.png"
-        if g.is_file() and all(o[0] != g for o in entries):
-            entries.append((g, g.name))
     if result.include_social_exports:
         for name in _BUNDLE_OPTIONAL:
             p = _OUTPUT_DIR / name
@@ -1263,7 +1255,7 @@ class GenerateBody(BaseModel):
     sentence_index: Optional[int] = Field(None, ge=0)
     poster_template: str = Field(
         "liturgical_color",
-        description="liturgical_color | classic_white",
+        description="Deprecated — non-AI liturgical/classic poster wallpapers were removed. Ignored if set.",
     )
     include_social_exports: bool = Field(
         False,
@@ -1273,7 +1265,10 @@ class GenerateBody(BaseModel):
         False,
         description="Deprecated — PDF export was removed from /api/generate. Ignored if set.",
     )
-    include_gospel_art: bool = Field(True)
+    include_gospel_art: bool = Field(
+        False,
+        description="Deprecated — non-AI gospel_moment PNG export was removed. Ignored if set.",
+    )
     include_ai_mass_poster: bool = Field(
         False,
         description="Use AI (OpenAI or Gemini) for primary parish posters.",
@@ -4426,7 +4421,7 @@ def api_generate(
             sentence_index=body.sentence_index,
             poster_template=body.poster_template,
             include_social_exports=body.include_social_exports,
-            include_gospel_art=body.include_gospel_art,
+            include_gospel_art=False,
             include_ai_mass_poster=body.include_ai_mass_poster,
             ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
             ai_poster_style=body.ai_poster_style.strip() or "cinematic",

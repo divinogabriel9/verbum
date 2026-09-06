@@ -29,7 +29,7 @@
 | `api/` | `liturgical_api.py` |
 | `routes/` | `admin.py`, `auth.py` route registration |
 | `services/` | ~40 modules: auth/security, supabase, redis, image quota, hymn library, gospel mood/visual/quotes, lectionary, prayers, rate limiting, input validation, etc. |
-| `generators/` | `powerpoint.py`, `poster_generator.py`, `ai_image_generator.py`, `ai_poster_generator.py`, `gospel_visual.py`, `deck_template.py` |
+| `generators/` | `powerpoint.py`, `poster_generator.py`, `ai_image_generator.py`, `ai_poster_generator.py`, `deck_template.py` |
 | `templates/` | `index.html` (main SPA), `landing.html`, `auth.html`, `mass_builder_wizard.html`, `mass_builder_mobile.html` |
 | `static/` | `css/`, `js/`, `brand/`, `icons/`, `images/` |
 | `data/` | styles, hymn/song catalogs, presets |

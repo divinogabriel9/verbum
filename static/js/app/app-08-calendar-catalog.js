@@ -281,7 +281,7 @@
         custom_theme: pptThemePayload(activeTheme),
         poster_template: o.poster_template || "liturgical_color",
         include_social_exports: readSocialExportSettings(o),
-        include_gospel_art: o.include_gospel_art !== false,
+        include_gospel_art: false,
         include_ai_mass_poster: useAiPoster,
         ai_poster_backend: aiBackend,
         ai_poster_style: o.ai_poster_style || posterOpts.style,

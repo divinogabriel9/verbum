@@ -297,10 +297,10 @@ date: str (YYYY-MM-DD)
 celebrant: str
 co_celebrant: str = ""
 sentence_index: int? (>=0)
-poster_template: str = "liturgical_color"   # | classic_white
+poster_template: str = "liturgical_color"   # deprecated — non-AI wallpapers removed; ignored
 include_social_exports: bool = false
 export_pdf: bool = false
-include_gospel_art: bool = true
+include_gospel_art: bool = false  # deprecated — gospel_moment PNG removed; ignored
 include_ai_mass_poster: bool = false
 ai_poster_backend: str = "openai"           # openai | gemini
 ai_poster_style: str = "cinematic"

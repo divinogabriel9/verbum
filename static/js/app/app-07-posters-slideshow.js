@@ -2485,7 +2485,7 @@
       syncAiPosterToggleState();
       const { useAi } = readOpenAiPosterSettings();
       const litWrap = $("poster-liturgical-template-wrap");
-      if (litWrap) litWrap.style.display = useAi ? "none" : "";
+      if (litWrap) litWrap.hidden = true;
       ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
         const el = $(id);
         if (!el) return;
