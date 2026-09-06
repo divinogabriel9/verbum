@@ -315,6 +315,7 @@ class AuthGuardMiddleware(BaseHTTPMiddleware):
 
 # Content-Security-Policy. The app loads the Supabase JS SDK from jsDelivr and
 # talks to the Supabase REST/Auth host, so those origins are allowlisted.
+# hCaptcha (auth CAPTCHA modal) needs script/frame/connect/style hosts.
 # 'unsafe-inline' is required for the inline <script>/<style> blocks in the
 # templates; tighten with nonces if those are refactored out.
 def _build_csp() -> str:
@@ -327,6 +328,9 @@ def _build_csp() -> str:
         # EWTN live radio (HLS manifests + segments via hls.js)
         "https://ewtn-sgrewind.streamguys1.com",
         "https://ewtn-ice.streamguys1.com",
+        # hCaptcha siteverify / challenge assets
+        "https://hcaptcha.com",
+        "https://*.hcaptcha.com",
     ]
     sb = supabase_url()
     if sb:
@@ -346,11 +350,11 @@ def _build_csp() -> str:
             "form-action 'self'",
             "img-src 'self' data: blob: https:",
             "font-src 'self' https://fonts.gstatic.com data:",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com",
             "worker-src 'self' blob:",
-            # YouTube practice-audio preview in the song media modal.
-            "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com",
+            # YouTube practice-audio preview + hCaptcha challenge iframe.
+            "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://hcaptcha.com https://*.hcaptcha.com",
             "connect-src " + " ".join(dict.fromkeys(connect)),
             "media-src " + " ".join(dict.fromkeys(media)),
         ]

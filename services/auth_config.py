@@ -114,8 +114,23 @@ def invite_contact_email() -> str:
 
 
 def hcaptcha_site_key() -> str:
-    """Browser-safe hCaptcha sitekey (secret stays in the Supabase dashboard)."""
-    return _clean(os.environ.get("HCAPTCHA_SITE_KEY"))
+    """Browser-safe hCaptcha sitekey (secret stays in env / Supabase dashboard).
+
+    Sitekeys are public (embedded in the page). Prefer ``HCAPTCHA_SITE_KEY`` on
+    Render/local env; fall back to the project sitekey so deployed auth keeps
+    working if the env var was forgotten after enabling CAPTCHA in Supabase.
+    """
+    return _clean(os.environ.get("HCAPTCHA_SITE_KEY")) or (
+        # Public sitekey for liturgyflow.com / local — not the hCaptcha secret.
+        "fab23fa4-0400-49fe-b2e8-b902e7905bc4"
+    )
+
+
+def hcaptcha_secret_key() -> str:
+    """Server-only hCaptcha secret for ``siteverify`` (never expose to the browser)."""
+    return _clean(os.environ.get("HCAPTCHA_SECRET_KEY")) or _clean(
+        os.environ.get("HCAPTCHA_SECRET")
+    )
 
 
 @lru_cache(maxsize=1)
@@ -132,6 +147,7 @@ def public_auth_config() -> dict[str, str | bool]:
         "supabase_anon_key": supabase_client_key(),
         "supabase_publishable_key": supabase_client_key(),
         "hcaptcha_site_key": hcaptcha_site_key(),
+        "hcaptcha_server_verify": bool(hcaptcha_secret_key()),
         "app_public_url": base,
         "email_confirm_redirect_url": (base + "/sign-in") if base else "",
         "sign_in_url": "/sign-in",

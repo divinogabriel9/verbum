@@ -44,6 +44,8 @@ services:
         sync: false
       - key: HCAPTCHA_SITE_KEY
         sync: false
+      - key: HCAPTCHA_SECRET_KEY
+        sync: false
       - key: SUPERADMIN_EMAILS
         sync: false
       - key: INVITE_ONLY_SIGNUP

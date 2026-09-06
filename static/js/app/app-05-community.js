@@ -3167,21 +3167,37 @@
       if (showLoginModal) maybeShowSaApprovalsLoginModal();
     }
 
+    function syncSaMembershipBadges(count, source) {
+      const badges = ["sa-nav-badge-membership", "sa-mobile-badge-membership"]
+        .map((id) => $(id))
+        .filter(Boolean);
+      if (!badges.length) return;
+      badges.forEach((badge) => {
+        if (count > 0) {
+          badge.hidden = false;
+          badge.textContent = String(count);
+          if (source === "inbox") badge.dataset.inboxCount = String(count);
+          if (source === "dashboard") badge.dataset.dashboardCount = String(count);
+        } else {
+          if (source === "inbox") delete badge.dataset.inboxCount;
+          if (source === "dashboard") delete badge.dataset.dashboardCount;
+          if (!badge.dataset.inboxCount && !badge.dataset.dashboardCount) {
+            badge.hidden = true;
+            badge.textContent = "";
+          } else if (badge.dataset.inboxCount) {
+            badge.hidden = false;
+            badge.textContent = badge.dataset.inboxCount;
+          } else if (badge.dataset.dashboardCount) {
+            badge.hidden = false;
+            badge.textContent = badge.dataset.dashboardCount;
+          }
+        }
+      });
+    }
+
     function refreshSuperadminMembershipBadgeFromInbox() {
       const open = (saApprovalInbox || []).filter((row) => !getSaApprovalDoneEntry(row.id)).length;
-      const badge = $("sa-nav-badge-membership");
-      if (!badge) return;
-      if (open > 0) {
-        badge.hidden = false;
-        badge.textContent = String(open);
-        badge.dataset.inboxCount = String(open);
-      } else {
-        delete badge.dataset.inboxCount;
-        if (!badge.dataset.dashboardCount) {
-          badge.hidden = true;
-          badge.textContent = "";
-        }
-      }
+      syncSaMembershipBadges(open, "inbox");
     }
 
     function initSaApprovalNotifications() {
@@ -3399,8 +3415,16 @@
 
     var saState = {
       panel: "dashboard",
+      hub: "overview",
+      hubPanel: {
+        overview: "dashboard",
+        approvals: "membership",
+        directory: "parishes",
+        catalog: "content-songs",
+        platform: "system-ai",
+      },
       parishes: { page: 1, perPage: 25, q: "" },
-      users: { page: 1, perPage: 25, q: "" },
+      users: { page: 1, perPage: 10, q: "", sort: "joined" },
       generations: { page: 1, perPage: 25, q: "" },
       auditLog: { page: 1, perPage: 25, q: "", action: "", entityType: "" },
       storage: { prefix: "", page: 1, perPage: 50 },
@@ -3411,6 +3435,79 @@
     };
 
     var SA_PAGE_SIZE = 25;
+
+    var SA_HUBS = {
+      overview: {
+        label: "Home",
+        group: "Overview",
+        desc: "Platform pulse, analytics, and recent Mass runs.",
+        panels: [
+          { id: "dashboard", label: "Summary" },
+          { id: "analytics", label: "Analytics" },
+          { id: "generations", label: "Generations" },
+        ],
+      },
+      approvals: {
+        label: "Approvals",
+        group: "Inbox",
+        desc: "Membership, renames, songs, and priests waiting on you.",
+        panels: [
+          { id: "membership", label: "Inbox" },
+        ],
+      },
+      directory: {
+        label: "Directory",
+        group: "People",
+        desc: "Parishes, accounts, and invite links.",
+        panels: [
+          { id: "parishes", label: "Parishes" },
+          { id: "users", label: "Users" },
+          { id: "invites", label: "Invites" },
+        ],
+      },
+      catalog: {
+        label: "Catalog",
+        group: "Content",
+        desc: "Songs, readings cache, and projection templates.",
+        panels: [
+          { id: "content-songs", label: "Songs" },
+          { id: "content-readings", label: "Readings" },
+          { id: "content-templates", label: "Templates" },
+        ],
+      },
+      platform: {
+        label: "Platform",
+        group: "System",
+        desc: "AI quotas, banners, storage, flags, health, and audit.",
+        panels: [
+          { id: "system-ai", label: "AI & quota" },
+          { id: "system-announcement", label: "Announce" },
+          { id: "system-storage", label: "Storage" },
+          { id: "system-flags", label: "Flags" },
+          { id: "system-maintenance", label: "Health" },
+          { id: "audit-log", label: "Audit" },
+        ],
+      },
+    };
+
+    function saHubForPanel(panelId) {
+      const id = panelId || "dashboard";
+      for (const [hubId, hub] of Object.entries(SA_HUBS)) {
+        if (hub.panels.some((p) => p.id === id)) return hubId;
+      }
+      return "overview";
+    }
+
+    function saPanelMeta(panelId) {
+      const panel = document.querySelector('.sa-panel[data-sa-panel="' + panelId + '"]');
+      const head = panel && panel.querySelector(".flow-bento-cell__head .home-card-head__text");
+      const h3 = head && head.querySelector("h3");
+      const p = head && head.querySelector("p");
+      return {
+        title: (h3 && h3.textContent.trim()) || panelId,
+        desc: (p && p.textContent.trim()) || "",
+      };
+    }
 
     function saPagerMeta(total, page, perPage) {
       const t = Math.max(0, Number(total) || 0);
@@ -3448,18 +3545,37 @@
     }
 
     function showSaPanel(panelId) {
-      saState.panel = panelId || "dashboard";
-      document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
-        link.classList.toggle("active", link.getAttribute("data-sa-panel") === saState.panel);
+      const nextPanel = panelId || "dashboard";
+      const hubId = saHubForPanel(nextPanel);
+      saState.panel = nextPanel;
+      saState.hub = hubId;
+      if (!saState.hubPanel) saState.hubPanel = {};
+      saState.hubPanel[hubId] = nextPanel;
+
+      document.querySelectorAll(".sa-nav-link[data-sa-hub]").forEach((link) => {
+        link.classList.toggle("active", link.getAttribute("data-sa-hub") === hubId);
       });
-      document.querySelectorAll(".sa-mobile-nav__btn[data-sa-panel]").forEach((btn) => {
-        btn.classList.toggle("active", btn.getAttribute("data-sa-panel") === saState.panel);
+      document.querySelectorAll(".sa-nav-group[data-sa-hub-group]").forEach((group) => {
+        group.classList.toggle("is-active", group.getAttribute("data-sa-hub-group") === hubId);
+      });
+      document.querySelectorAll(".sa-nav-minitab[data-sa-panel]").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.getAttribute("data-sa-panel") === nextPanel);
+      });
+      document.querySelectorAll(".sa-mobile-nav__btn[data-sa-hub]").forEach((btn) => {
+        btn.classList.toggle("active", btn.getAttribute("data-sa-hub") === hubId);
       });
       document.querySelectorAll(".sa-panel[data-sa-panel]").forEach((panel) => {
         const on = panel.getAttribute("data-sa-panel") === saState.panel;
         panel.hidden = !on;
+        panel.classList.remove("sa-panel--enter");
+        if (on) {
+          // Retrigger enter motion on each panel switch.
+          void panel.offsetWidth;
+          panel.classList.add("sa-panel--enter");
+        }
       });
-      syncSaTopbar(saState.panel);
+      renderSaSubnav(hubId, nextPanel);
+      syncSaTopbar(nextPanel);
       scrollSaMobileNavToActive();
       scrollSaPanelToTop();
       if (saState.panel === "dashboard") loadSaDashboard();
@@ -3482,7 +3598,104 @@
       else if (saState.panel === "system-maintenance") loadSaHealth();
     }
 
+    function showSaHub(hubId) {
+      const hub = SA_HUBS[hubId] || SA_HUBS.overview;
+      const remembered = saState.hubPanel && saState.hubPanel[hubId];
+      const fallback = hub.panels[0] && hub.panels[0].id;
+      const panelId = remembered || fallback || "dashboard";
+      showSaPanel(panelId);
+    }
+
+    function buildSaSidebarNav() {
+      const host = $("sa-sidebar-nav");
+      if (!host || host.dataset.built === "1") return;
+      host.dataset.built = "1";
+      host.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      Object.keys(SA_HUBS).forEach((hubId) => {
+        const hub = SA_HUBS[hubId];
+        const group = document.createElement("div");
+        group.className = "sa-nav-group";
+        group.setAttribute("data-sa-hub-group", hubId);
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sa-nav-link";
+        btn.setAttribute("data-sa-hub", hubId);
+        btn.textContent = hub.label;
+        if (hubId === "approvals") {
+          const badge = document.createElement("span");
+          badge.className = "sa-nav-link__badge";
+          badge.id = "sa-nav-badge-membership";
+          badge.hidden = true;
+          btn.appendChild(document.createTextNode(" "));
+          btn.appendChild(badge);
+        }
+        btn.addEventListener("click", () => showSaHub(hubId));
+        group.appendChild(btn);
+
+        if (hub.panels.length > 1) {
+          const mini = document.createElement("div");
+          mini.className = "sa-nav-minitabs";
+          mini.setAttribute("data-sa-minitabs", hubId);
+          mini.setAttribute("role", "group");
+          mini.setAttribute("aria-label", hub.label + " sections");
+          const inner = document.createElement("div");
+          inner.className = "sa-nav-minitabs__inner";
+          hub.panels.forEach((item) => {
+            const tab = document.createElement("button");
+            tab.type = "button";
+            tab.className = "sa-nav-minitab";
+            tab.setAttribute("data-sa-panel", item.id);
+            tab.textContent = item.label;
+            tab.addEventListener("click", () => showSaPanel(item.id));
+            inner.appendChild(tab);
+          });
+          mini.appendChild(inner);
+          group.appendChild(mini);
+        }
+
+        frag.appendChild(group);
+      });
+      host.appendChild(frag);
+    }
+
+    function renderSaSubnav(hubId, panelId) {
+      // Mobile-only chips — desktop uses sidebar minitabs under each hub.
+      const host = $("sa-subnav");
+      if (!host) return;
+      const hub = SA_HUBS[hubId];
+      if (!hub || hub.panels.length <= 1) {
+        host.hidden = true;
+        host.innerHTML = "";
+        return;
+      }
+      host.hidden = false;
+      host.innerHTML = hub.panels.map((item) => {
+        const active = item.id === panelId ? " is-active" : "";
+        return "<button type=\"button\" class=\"sa-subnav__btn" + active + "\" data-sa-panel=\"" +
+          escapeHtml(item.id) + "\">" + escapeHtml(item.label) + "</button>";
+      }).join("");
+      if (!host.dataset.bound) {
+        host.dataset.bound = "1";
+        host.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-sa-panel]");
+          if (!btn) return;
+          showSaPanel(btn.getAttribute("data-sa-panel"));
+        });
+      }
+    }
+
     function scrollSaPanelToTop() {
+      const main = document.querySelector("#superadmin-page .sa-main");
+      if (main) {
+        try {
+          main.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (_e) {
+          main.scrollTop = 0;
+        }
+        return;
+      }
       const dash = document.querySelector(".dashboard");
       const target = $("sa-topbar") || $("superadmin-page");
       if (!dash || !target) return;
@@ -3497,20 +3710,16 @@
     }
 
     function syncSaTopbar(panelId) {
-      const panel = document.querySelector('.sa-panel[data-sa-panel="' + panelId + '"]');
       const titleEl = $("sa-topbar-title");
       const descEl = $("sa-topbar-desc");
       const groupEl = $("sa-topbar-group");
-      if (!panel) return;
-      const head = panel.querySelector(".flow-bento-cell__head .home-card-head__text");
-      const h3 = head && head.querySelector("h3");
-      const p = head && head.querySelector("p");
-      if (titleEl) titleEl.textContent = (h3 && h3.textContent.trim()) || panelId;
-      if (descEl) descEl.textContent = (p && p.textContent.trim()) || "";
-      const link = document.querySelector('.sa-nav-link[data-sa-panel="' + panelId + '"]');
-      const group = link && link.closest(".sa-nav-group");
-      const label = group && group.querySelector(".sa-nav-group__label span");
-      if (groupEl) groupEl.textContent = (label && label.textContent.trim()) || "";
+      const hubId = saHubForPanel(panelId);
+      const hub = SA_HUBS[hubId] || SA_HUBS.overview;
+      const meta = saPanelMeta(panelId);
+      const showPanelTitle = hub.panels.length > 1;
+      if (titleEl) titleEl.textContent = showPanelTitle ? meta.title : hub.label;
+      if (descEl) descEl.textContent = meta.desc || hub.desc;
+      if (groupEl) groupEl.textContent = hub.group || hub.label;
     }
 
     function buildSaMobileNav() {
@@ -3518,18 +3727,22 @@
       if (!host || host.dataset.built === "1") return;
       host.dataset.built = "1";
       const frag = document.createDocumentFragment();
-      document.querySelectorAll("#sa-sidebar-nav .sa-nav-link[data-sa-panel]").forEach((link) => {
+      Object.keys(SA_HUBS).forEach((hubId) => {
+        const hub = SA_HUBS[hubId];
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "sa-mobile-nav__btn";
-        btn.setAttribute("data-sa-panel", link.getAttribute("data-sa-panel"));
-        const label = Array.from(link.childNodes)
-          .filter((n) => n.nodeType === 3)
-          .map((n) => n.textContent.trim())
-          .join(" ")
-          .trim() || link.textContent.trim();
-        btn.textContent = label.replace(/\s+/g, " ").trim();
-        btn.addEventListener("click", () => showSaPanel(btn.getAttribute("data-sa-panel")));
+        btn.setAttribute("data-sa-hub", hubId);
+        btn.textContent = hub.label;
+        if (hubId === "approvals") {
+          const badge = document.createElement("span");
+          badge.className = "sa-nav-link__badge";
+          badge.id = "sa-mobile-badge-membership";
+          badge.hidden = true;
+          btn.appendChild(document.createTextNode(" "));
+          btn.appendChild(badge);
+        }
+        btn.addEventListener("click", () => showSaHub(hubId));
         frag.appendChild(btn);
       });
       host.appendChild(frag);
@@ -3668,28 +3881,11 @@
     }
 
     function refreshSuperadminMembershipBadge(cards) {
-      const badge = $("sa-nav-badge-membership");
-      if (!badge) return;
       const pending = cards
         ? ((cards.parishes_pending || 0) + (cards.pending_songs || 0) + (cards.pending_priests || 0))
         : null;
-      if (pending === null) {
-        if (!badge.dataset.inboxCount) {
-          badge.hidden = true;
-        }
-        return;
-      }
-      if (pending > 0) {
-        badge.hidden = false;
-        badge.textContent = String(pending);
-        badge.dataset.dashboardCount = String(pending);
-      } else {
-        delete badge.dataset.dashboardCount;
-        if (!badge.dataset.inboxCount) {
-          badge.hidden = true;
-          badge.textContent = "";
-        }
-      }
+      if (pending === null) return;
+      syncSaMembershipBadges(pending, "dashboard");
     }
 
     function saRenderTable(headers, rows, emptyMsg) {
@@ -3794,15 +3990,20 @@
           saState.parishOptions = Array.isArray(optData.items) ? optData.items : [];
         }
         const q = saState.users.q || "";
-        const perPage = saState.users.perPage || SA_PAGE_SIZE;
+        const perPage = saState.users.perPage || 10;
+        const sort = saState.users.sort || "joined";
         const data = await saFetchAdmin(
           "/api/admin/users?page=" + saState.users.page +
           "&per_page=" + perPage +
-          "&q=" + encodeURIComponent(q)
+          "&q=" + encodeURIComponent(q) +
+          "&sort=" + encodeURIComponent(sort)
         );
         const items = Array.isArray(data.items) ? data.items : [];
         const meta = saPagerMeta(data.total, data.page || saState.users.page, data.per_page || perPage);
         saState.users.page = meta.page;
+        if (data.sort) saState.users.sort = data.sort;
+        const sortEl = $("sa-users-sort");
+        if (sortEl && saState.users.sort) sortEl.value = saState.users.sort;
         const parishOptions = saState.parishOptions || [];
         if (!items.length) {
           wrap.innerHTML = "<p class=\"sa-empty\">No users found.</p>";
@@ -3847,8 +4048,10 @@
                 "<button type=\"button\" class=\"secondary sa-btn-delete-user\" data-user-id=\"" + uid +
                 "\" data-user-email=\"" + escapeHtml(row.email || "") + "\">Delete</button>";
             }
+            const initial = ((name && name !== "—") ? name : (row.email || "?")).charAt(0).toUpperCase();
             return (
               "<li class=\"sa-user-row\">" +
+                "<span class=\"sa-user-row__avatar\" aria-hidden=\"true\">" + escapeHtml(initial) + "</span>" +
                 "<div class=\"sa-user-row__main\">" +
                   "<div class=\"sa-user-row__title\">" +
                     "<span class=\"sa-user-row__name\">" + escapeHtml(name) + "</span>" +

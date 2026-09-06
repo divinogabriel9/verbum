@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from services.auth_config import supabase_enabled
+from services.practice_visits import get_practice_online_by_day
 from services.supabase_client import get_service_client
 
 
@@ -20,13 +21,22 @@ def _day_key(dt: datetime) -> str:
 
 def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
     if not supabase_enabled():
+        practice_online = get_practice_online_by_day(days=days)
         return {
             "ok": True,
             "days": days,
             "generations_by_day": [],
             "signups_by_day": [],
+            "practice_online_by_day": practice_online,
             "top_parishes": [],
-            "summary": {},
+            "summary": {
+                "practice_online_days": len(practice_online),
+                "practice_unique_today": (
+                    int(practice_online[0]["unique_visitors"])
+                    if practice_online and practice_online[0].get("date") == _day_key(_utc_now())
+                    else 0
+                ),
+            },
         }
 
     days = max(7, min(days, 90))
@@ -82,10 +92,14 @@ def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
         cursor += timedelta(days=1)
 
     generations_series = [
-        {"date": d, "count": gen_by_day.get(d, 0)} for d in day_labels
+        {"date": d, "count": c}
+        for d in day_labels
+        if (c := gen_by_day.get(d, 0)) > 0
     ]
     signups_series = [
-        {"date": d, "count": signups_by_day.get(d, 0)} for d in day_labels
+        {"date": d, "count": c}
+        for d in day_labels
+        if (c := signups_by_day.get(d, 0)) > 0
     ]
 
     user_ids = list({str(r.get("user_id") or "") for r in gen_rows if r.get("user_id")})
@@ -157,12 +171,19 @@ def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
     total_signups = len(signup_rows)
     generations_today = gen_by_day.get(_day_key(now), 0)
     signups_today = signups_by_day.get(_day_key(now), 0)
+    practice_online = get_practice_online_by_day(days=days)
+    practice_unique_today = 0
+    for row in practice_online:
+        if row.get("date") == _day_key(now):
+            practice_unique_today = int(row.get("unique_visitors") or 0)
+            break
 
     return {
         "ok": True,
         "days": days,
         "generations_by_day": generations_series,
         "signups_by_day": signups_series,
+        "practice_online_by_day": practice_online,
         "top_parishes": top_parishes,
         "summary": {
             "generations_in_period": total_generations,
@@ -170,6 +191,8 @@ def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
             "generations_today": generations_today,
             "signups_today": signups_today,
             "active_parishes_7d": len(active_parish_ids),
+            "practice_online_days": len(practice_online),
+            "practice_unique_today": practice_unique_today,
             "period_start": day_labels[0] if day_labels else None,
             "period_end": day_labels[-1] if day_labels else None,
         },

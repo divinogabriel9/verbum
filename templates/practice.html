@@ -310,6 +310,34 @@
       line-height: 1.45;
       color: var(--muted);
     }
+    .practice-top__meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .practice-top__meta #practice-sub {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .practice-presence {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.45;
+      white-space: nowrap;
+    }
+    .practice-presence[hidden] {
+      display: none;
+    }
     .practice-tabs {
       flex: 0 0 auto;
       display: flex;
@@ -322,6 +350,21 @@
       -webkit-overflow-scrolling: touch;
     }
     .practice-tabs::-webkit-scrollbar { display: none; }
+    .practice-presence__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 22%, transparent);
+      animation: practice-presence-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes practice-presence-pulse {
+      0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 18%, transparent); }
+      50% { box-shadow: 0 0 0 5px color-mix(in srgb, #22c55e 8%, transparent); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .practice-presence__dot { animation: none; }
+    }
     .practice-tab {
       flex: 0 0 auto;
       border: 1px solid var(--line);
@@ -1170,9 +1213,8 @@
     <header class="practice-top" id="practice-top" hidden>
       <div class="practice-top__row">
         <div class="practice-top__text">
-      <p class="practice-top__eyebrow">Choir practice</p>
-      <h1 id="practice-title">Upcoming Mass</h1>
-      <p id="practice-sub"></p>
+          <p class="practice-top__eyebrow">Choir practice</p>
+          <h1 id="practice-title">Upcoming Mass</h1>
         </div>
         <div class="practice-top__actions">
           <button type="button" class="practice-theme-toggle" id="practice-theme-toggle" aria-label="Switch to dark mode" title="Theme">
@@ -1182,6 +1224,13 @@
           <button type="button" class="practice-top__action practice-top__action--secondary" id="practice-send-member" hidden>Send to Mass</button>
           <button type="button" class="practice-top__action practice-top__action--secondary" id="practice-leader-mode" hidden>Leader mode</button>
           <button type="button" class="practice-top__action" id="practice-lead-action" hidden>Edit</button>
+        </div>
+      </div>
+      <div class="practice-top__meta">
+        <p id="practice-sub"></p>
+        <div class="practice-presence" id="practice-presence" hidden aria-live="polite">
+          <span class="practice-presence__dot" aria-hidden="true"></span>
+          <span id="practice-presence-label">1 online</span>
         </div>
       </div>
       <p class="practice-lead-note" id="practice-lead-note" hidden>Tap a song title to change it. Turn blocks off, color Man/Woman lines, duplicate or reorder sections, then Save. Use Send to Mass to email the lyric order to a parish teammate for this Mass PPTX only.</p>
@@ -1252,6 +1301,8 @@
       const scroll = document.getElementById("practice-scroll");
       const top = document.getElementById("practice-top");
       const tabs = document.getElementById("practice-tabs");
+      const presence = document.getElementById("practice-presence");
+      const presenceLabel = document.getElementById("practice-presence-label");
       const footnote = document.getElementById("practice-footnote");
       const leadAction = document.getElementById("practice-lead-action");
       const leaderModeBtn = document.getElementById("practice-leader-mode");
@@ -1687,8 +1738,28 @@
         setTheme(currentTheme() === "dark" ? "light" : "dark");
       }
 
+      function syncPracticePresence(activeNow) {
+        if (!presence || !presenceLabel) return;
+        if (!document.body.classList.contains("practice-chrome-ready")) {
+          presence.hidden = true;
+          return;
+        }
+        // Missing/undefined (e.g. unlock payload) — keep last shown count if any.
+        if (activeNow == null || activeNow === "") {
+          return;
+        }
+        const n = Math.max(0, parseInt(activeNow, 10) || 0);
+        if (n < 1) {
+          presence.hidden = true;
+          return;
+        }
+        presence.hidden = false;
+        presenceLabel.textContent = n === 1 ? "1 online" : (n + " online");
+      }
+
       function setPracticeChromeReady(on) {
         document.body.classList.toggle("practice-chrome-ready", !!on);
+        if (!on && presence) presence.hidden = true;
       }
 
       syncThemeToggleUi();
@@ -2517,6 +2588,7 @@
           top.hidden = true;
           tabs.hidden = true;
           footnote.hidden = true;
+          if (presence) presence.hidden = true;
           if (leadAction) leadAction.hidden = true;
           if (leaderModeBtn) leaderModeBtn.hidden = true;
           if (leadNote) leadNote.hidden = true;
@@ -2557,7 +2629,8 @@
           tabs.appendChild(btn);
         });
 
-            renderCurrentSong();
+        syncPracticePresence(data && data.active_now);
+        renderCurrentSong();
         startPoll();
       }
 
@@ -3072,6 +3145,7 @@
           if (!res.ok) return;
           const data = await res.json().catch(function () { return {}; });
           if (data.requires_pin) return;
+          syncPracticePresence(data.active_now);
           const nextRev = String(data.revision || "");
           if (!nextRev || nextRev === state.revision) return;
           const keepIndex = state.index;

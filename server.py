@@ -144,6 +144,12 @@ from services.practice_access import (
     try_acquire_unlock_slot,
     verify_lead_token,
 )
+from services.practice_visits import (
+    count_practice_active_now,
+    get_practice_visit_stats,
+    get_practice_visit_stats_batch,
+    record_practice_visit,
+)
 from services.catalog_rate_limit import check_catalog_lyric_fetch_allowed
 from services.hymn_normalized_store import (
     fetch_lyrics_from_normalized,
@@ -3596,6 +3602,9 @@ def api_list_recent_practice_shares(
         created_by_user_id=session.user.user_id,
         parish_id=parish_id,
     )
+    stats_map = get_practice_visit_stats_batch(
+        [str(s.get("token") or "") for s in shares if isinstance(s, dict)]
+    )
     enriched = []
     for share in shares:
         item = (
@@ -3603,6 +3612,10 @@ def api_list_recent_practice_shares(
             if share.get("status") == "active"
             else dict(share)
         )
+        tok = str(item.get("token") or "").strip()
+        st = stats_map.get(tok) or {}
+        item["unique_visitors"] = int(st.get("unique_visitors") or 0)
+        item["active_now"] = int(st.get("active_now") or 0)
         enriched.append(item)
     return {"ok": True, "shares": enriched}
 
@@ -3636,10 +3649,41 @@ def api_practice_share(
         # Do not count GET polls against the leader mutation budget.
         # Polling every few seconds would exhaust it in minutes.
     unlocked = is_unlocked(request, tok, row.get("expires_at")) or can_edit
+    # Count unique openers (upsert); polls only refresh last_seen.
+    try:
+        record_practice_visit(request, tok)
+    except Exception:
+        logger.exception("practice visit record failed token=%s", tok[:8])
     payload = fetch_practice_share(tok, unlocked=unlocked, can_edit=can_edit)
     if not payload.get("ok"):
         raise HTTPException(status_code=404, detail=payload.get("error") or "Not found.")
+    try:
+        payload["active_now"] = int(count_practice_active_now(tok))
+    except Exception:
+        payload["active_now"] = 0
     return JSONResponse(payload, headers=practice_no_store_headers())
+
+
+@app.get("/api/practice/{token}/stats")
+def api_practice_share_stats(
+    token: str,
+    session: Optional[AuthSession] = Depends(require_approved_membership),
+) -> dict[str, Any]:
+    """Creator-only: unique visitors and who is active on this practice link."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if token.strip().lower() in {"qr", "shares"}:
+        raise HTTPException(status_code=404, detail="Not found.")
+    tok = token.strip()
+    row = get_practice_share_by_token(tok)
+    if not row:
+        raise HTTPException(status_code=404, detail="This practice link is invalid or has expired.")
+    if str(row.get("created_by") or "").strip() != session.user.user_id:
+        raise HTTPException(status_code=403, detail="Only the creator can view practice stats.")
+    stats = get_practice_visit_stats(tok)
+    if not stats.get("ok"):
+        raise HTTPException(status_code=400, detail=stats.get("error") or "Could not load stats.")
+    return stats
 
 
 @app.post("/api/practice/{token}/unlock")
@@ -3699,6 +3743,11 @@ def api_practice_unlock(
     out = dict(result)
     out["lead_token"] = lead
     out["can_edit"] = True
+    try:
+        record_practice_visit(request, tok)
+        out["active_now"] = int(count_practice_active_now(tok))
+    except Exception:
+        out["active_now"] = int(out.get("active_now") or 0)
     return JSONResponse(out, headers=practice_no_store_headers())
 
 
@@ -3745,6 +3794,11 @@ def api_practice_lead(
             headers={"Retry-After": str(max(1, retry_after))},
         )
     payload = fetch_practice_share(tok, unlocked=True, can_edit=True)
+    try:
+        record_practice_visit(request, tok)
+        payload["active_now"] = int(count_practice_active_now(tok))
+    except Exception:
+        payload["active_now"] = int(payload.get("active_now") or 0)
     return JSONResponse(payload, headers=practice_no_store_headers())
 
 

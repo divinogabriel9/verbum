@@ -840,6 +840,63 @@
       });
     }
 
+    function posterPickerScrollParent(el) {
+      var node = el && el.parentElement;
+      while (node && node !== document.body && node !== document.documentElement) {
+        var style = window.getComputedStyle(node);
+        var oy = style.overflowY;
+        if ((oy === "auto" || oy === "scroll" || oy === "overlay") && node.scrollHeight > node.clientHeight + 1) {
+          return node;
+        }
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function scrollPosterPickerMenuIntoView(menu) {
+      if (!menu || menu.hidden) return;
+      var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      var behavior = reduceMotion ? "auto" : "smooth";
+      var run = function () {
+        if (menu.hidden) return;
+        var rect = menu.getBoundingClientRect();
+        if (!rect.height) return;
+        var pad = 14;
+        var header = document.querySelector(".app-header");
+        var headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+        var topLimit = Math.max(pad, headerBottom + pad);
+        var nav = document.querySelector("body.mw-on .mw-nav");
+        var navH = nav && !nav.hidden ? nav.getBoundingClientRect().height : 0;
+        var bottomLimit = window.innerHeight - navH - pad;
+        var delta = 0;
+        if (rect.bottom > bottomLimit) delta = rect.bottom - bottomLimit;
+        else if (rect.top < topLimit) delta = rect.top - topLimit;
+        if (Math.abs(delta) < 2) return;
+        var scroller = posterPickerScrollParent(menu);
+        if (scroller) {
+          scroller.scrollBy({ top: delta, left: 0, behavior: behavior });
+        } else {
+          window.scrollBy({ top: delta, left: 0, behavior: behavior });
+        }
+      };
+      requestAnimationFrame(function () {
+        requestAnimationFrame(run);
+        var imgs = menu.querySelectorAll("img");
+        if (!imgs.length) return;
+        var pending = 0;
+        Array.prototype.forEach.call(imgs, function (img) {
+          if (img.complete) return;
+          pending += 1;
+          var done = function () {
+            pending -= 1;
+            if (pending <= 0) requestAnimationFrame(run);
+          };
+          img.addEventListener("load", done, { once: true });
+          img.addEventListener("error", done, { once: true });
+        });
+      });
+    }
+
     function initDividerPosterPickers() {
       document.querySelectorAll("[data-poster-picker]").forEach((picker) => {
         const trigger = picker.querySelector(".poster-picker__trigger");
@@ -891,6 +948,7 @@
             closeAllPosterPickers(picker);
             menu.hidden = !opening;
             trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+            if (opening) scrollPosterPickerMenuIntoView(menu);
           });
 
           const initial = posterPairNumberFromIds(
@@ -944,6 +1002,7 @@
           closeAllPosterPickers(picker);
           menu.hidden = !opening;
           trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+          if (opening) scrollPosterPickerMenuIntoView(menu);
         });
 
         setSelected(target.value || prefix + "1");

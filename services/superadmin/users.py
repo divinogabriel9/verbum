@@ -8,16 +8,48 @@ from services.auth_config import supabase_enabled
 from services.supabase_client import get_service_client
 from services.user_presence import enrich_user_presence
 
+_SORT_JOINED = "joined"
+_SORT_PARISH = "parish"
+_SORT_NAME = "name"
+_VALID_SORTS = {_SORT_JOINED, _SORT_PARISH, _SORT_NAME}
+
+
+def _normalize_sort(sort: str) -> str:
+    key = (sort or "").strip().lower()
+    if key in {"az", "a-z", "alpha", "alphabetical"}:
+        return _SORT_NAME
+    if key in {"date", "created", "created_at", "joined_at"}:
+        return _SORT_JOINED
+    if key in _VALID_SORTS:
+        return key
+    return _SORT_JOINED
+
+
+def _display_name(row: dict[str, Any]) -> str:
+    name = " ".join(
+        part for part in [(row.get("first_name") or "").strip(), (row.get("last_name") or "").strip()] if part
+    ).strip()
+    return name or (row.get("email") or "").strip().lower() or ""
+
 
 def list_users(
     *,
     page: int = 1,
-    per_page: int = 25,
+    per_page: int = 10,
     q: str = "",
+    sort: str = "joined",
     viewer_user_id: str = "",
 ) -> dict[str, Any]:
+    sort_key = _normalize_sort(sort)
     if not supabase_enabled():
-        return {"ok": True, "items": [], "total": 0, "page": page, "per_page": per_page}
+        return {
+            "ok": True,
+            "items": [],
+            "total": 0,
+            "page": page,
+            "per_page": per_page,
+            "sort": sort_key,
+        }
 
     page = max(1, page)
     per_page = max(1, min(per_page, 100))
@@ -29,32 +61,36 @@ def list_users(
         "id, email, first_name, last_name, phone, role, created_at, updated_at, "
         "last_seen_at, last_seen_country, last_seen_region, last_seen_timezone, preferred_language"
     )
-    query = (
-        client.table("profiles")
-        .select(select_cols, count="exact")
-        .order("created_at", desc=True)
-    )
-    if query_text:
-        query = query.or_(
-            f"email.ilike.%{query_text}%,first_name.ilike.%{query_text}%,"
-            f"last_name.ilike.%{query_text}%,phone.ilike.%{query_text}%"
-        )
+    # Parish sort needs enrichment before pagination; other sorts stay DB-paged.
+    page_in_python = sort_key == _SORT_PARISH
 
-    try:
-        result = query.range(offset, offset + per_page - 1).execute()
-    except Exception:
-        # Older DBs without presence columns — fall back gracefully.
-        query = (
-            client.table("profiles")
-            .select("id, email, first_name, last_name, phone, role, created_at, updated_at", count="exact")
-            .order("created_at", desc=True)
-        )
+    def _build_query(cols: str):
+        query = client.table("profiles").select(cols, count="exact")
+        if sort_key == _SORT_NAME:
+            query = query.order("first_name", desc=False).order("last_name", desc=False).order("email", desc=False)
+        else:
+            query = query.order("created_at", desc=True)
         if query_text:
             query = query.or_(
                 f"email.ilike.%{query_text}%,first_name.ilike.%{query_text}%,"
                 f"last_name.ilike.%{query_text}%,phone.ilike.%{query_text}%"
             )
-        result = query.range(offset, offset + per_page - 1).execute()
+        return query
+
+    try:
+        query = _build_query(select_cols)
+        if page_in_python:
+            result = query.range(0, 1999).execute()
+        else:
+            result = query.range(offset, offset + per_page - 1).execute()
+    except Exception:
+        # Older DBs without presence columns — fall back gracefully.
+        query = _build_query("id, email, first_name, last_name, phone, role, created_at, updated_at")
+        if page_in_python:
+            result = query.range(0, 1999).execute()
+        else:
+            result = query.range(offset, offset + per_page - 1).execute()
+
     rows = list(result.data or [])
     total = int(result.count or len(rows))
 
@@ -129,7 +165,24 @@ def list_users(
             )
         )
 
-    return {"ok": True, "items": items, "total": total, "page": page, "per_page": per_page}
+    if sort_key == _SORT_PARISH:
+        items.sort(
+            key=lambda item: (
+                (item.get("parish_name") or "").strip().lower() or "\uffff",
+                _display_name(item).lower(),
+            )
+        )
+        total = len(items)
+        items = items[offset : offset + per_page]
+
+    return {
+        "ok": True,
+        "items": items,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "sort": sort_key,
+    }
 
 
 def delete_user(user_id: str, *, acting_user_id: str) -> dict[str, Any]:

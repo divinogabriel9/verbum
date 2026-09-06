@@ -13403,6 +13403,7 @@
     var practiceShareExcludedSlots = new Set();
     var practiceShareHistoryCache = [];
     var practiceShareHistoryCountdownTimer = null;
+    var practiceShareVisitsTimer = null;
     var PRACTICE_PIN_LS_PREFIX = "lf-practice-pin:";
     var PRACTICE_LEADER_PIN_LS_PREFIX = "lf-practice-leader-pin:";
 
@@ -13818,6 +13819,7 @@
     }
 
     function closePracticeShareModal() {
+      stopPracticeShareVisitsPoll();
       setUiOverlayOpen($("practice-share-modal"), false);
       document.body.classList.remove("practice-share-pin-top");
       syncPracticeShareBottomNavChrome();
@@ -14006,7 +14008,20 @@
         if (metaEl) {
           const dateLabel = formatPracticeMassDate(share.mass_date);
           const songCount = Number(share.song_count || 0);
-          metaEl.textContent = [dateLabel, songCount ? (songCount + " song" + (songCount === 1 ? "" : "s")) : ""].filter(Boolean).join(" · ");
+          const visitors = Number(share.unique_visitors || 0);
+          const active = Number(share.active_now || 0);
+          const visitBits = [];
+          if (visitors > 0) {
+            visitBits.push(visitors + " visitor" + (visitors === 1 ? "" : "s"));
+          }
+          if (active > 0) {
+            visitBits.push(active + " online");
+          }
+          metaEl.textContent = [
+            dateLabel,
+            songCount ? (songCount + " song" + (songCount === 1 ? "" : "s")) : "",
+            visitBits.join(" · "),
+          ].filter(Boolean).join(" · ");
         }
       });
 
@@ -14503,6 +14518,8 @@
           : (practiceShareLastLeaderPin ? " · leader password below" : "");
         meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + mailNote;
       }
+      renderPracticeShareVisits(data);
+      startPracticeShareVisitsPoll();
       const sub = $("practice-share-sub");
       if (sub) {
         sub.textContent = data.restored
@@ -14514,6 +14531,61 @@
       } else if (practiceShareLastLeaderPin && data.leader_pin_email_error && !data.restored) {
         notify("Could not email leader password — copy it from this card.", "warn");
       }
+    }
+
+    function formatPracticeVisitLabel(stats) {
+      const unique = Number((stats && stats.unique_visitors) || 0);
+      const active = Number((stats && stats.active_now) || 0);
+      if (!unique && !active) return "No choir opens yet";
+      const bits = [unique + " unique visitor" + (unique === 1 ? "" : "s")];
+      if (active > 0) bits.push(active + " online now");
+      return bits.join(" · ");
+    }
+
+    function renderPracticeShareVisits(stats) {
+      const el = $("practice-share-visits");
+      if (!el) return;
+      el.hidden = false;
+      el.textContent = formatPracticeVisitLabel(stats || {});
+    }
+
+    function stopPracticeShareVisitsPoll() {
+      if (practiceShareVisitsTimer) {
+        clearInterval(practiceShareVisitsTimer);
+        practiceShareVisitsTimer = null;
+      }
+    }
+
+    async function refreshPracticeShareVisits() {
+      const tok = String(practiceShareLastToken || "").trim();
+      if (!tok) return;
+      try {
+        if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+          await window.VerbumAuth.waitUntilReady();
+        }
+        const headers = Object.assign({}, practiceDeviceHeaders());
+        if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+          Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+        }
+        const res = await fetch("/api/practice/" + encodeURIComponent(tok) + "/stats", { headers });
+        const data = await res.json().catch(function () { return {}; });
+        if (!res.ok || !data.ok) return;
+        renderPracticeShareVisits(data);
+      } catch (_err) { /* ignore */ }
+    }
+
+    function startPracticeShareVisitsPoll() {
+      stopPracticeShareVisitsPoll();
+      if (!practiceShareLastToken) return;
+      void refreshPracticeShareVisits();
+      practiceShareVisitsTimer = setInterval(function () {
+        const modal = $("practice-share-modal");
+        if (!modal || !modal.classList.contains("is-open")) {
+          stopPracticeShareVisitsPoll();
+          return;
+        }
+        void refreshPracticeShareVisits();
+      }, 15000);
     }
 
     function openPracticeShareLead() {
@@ -17927,21 +17999,37 @@
       if (showLoginModal) maybeShowSaApprovalsLoginModal();
     }
 
+    function syncSaMembershipBadges(count, source) {
+      const badges = ["sa-nav-badge-membership", "sa-mobile-badge-membership"]
+        .map((id) => $(id))
+        .filter(Boolean);
+      if (!badges.length) return;
+      badges.forEach((badge) => {
+        if (count > 0) {
+          badge.hidden = false;
+          badge.textContent = String(count);
+          if (source === "inbox") badge.dataset.inboxCount = String(count);
+          if (source === "dashboard") badge.dataset.dashboardCount = String(count);
+        } else {
+          if (source === "inbox") delete badge.dataset.inboxCount;
+          if (source === "dashboard") delete badge.dataset.dashboardCount;
+          if (!badge.dataset.inboxCount && !badge.dataset.dashboardCount) {
+            badge.hidden = true;
+            badge.textContent = "";
+          } else if (badge.dataset.inboxCount) {
+            badge.hidden = false;
+            badge.textContent = badge.dataset.inboxCount;
+          } else if (badge.dataset.dashboardCount) {
+            badge.hidden = false;
+            badge.textContent = badge.dataset.dashboardCount;
+          }
+        }
+      });
+    }
+
     function refreshSuperadminMembershipBadgeFromInbox() {
       const open = (saApprovalInbox || []).filter((row) => !getSaApprovalDoneEntry(row.id)).length;
-      const badge = $("sa-nav-badge-membership");
-      if (!badge) return;
-      if (open > 0) {
-        badge.hidden = false;
-        badge.textContent = String(open);
-        badge.dataset.inboxCount = String(open);
-      } else {
-        delete badge.dataset.inboxCount;
-        if (!badge.dataset.dashboardCount) {
-          badge.hidden = true;
-          badge.textContent = "";
-        }
-      }
+      syncSaMembershipBadges(open, "inbox");
     }
 
     function initSaApprovalNotifications() {
@@ -18159,8 +18247,16 @@
 
     var saState = {
       panel: "dashboard",
+      hub: "overview",
+      hubPanel: {
+        overview: "dashboard",
+        approvals: "membership",
+        directory: "parishes",
+        catalog: "content-songs",
+        platform: "system-ai",
+      },
       parishes: { page: 1, perPage: 25, q: "" },
-      users: { page: 1, perPage: 25, q: "" },
+      users: { page: 1, perPage: 10, q: "", sort: "joined" },
       generations: { page: 1, perPage: 25, q: "" },
       auditLog: { page: 1, perPage: 25, q: "", action: "", entityType: "" },
       storage: { prefix: "", page: 1, perPage: 50 },
@@ -18171,6 +18267,79 @@
     };
 
     var SA_PAGE_SIZE = 25;
+
+    var SA_HUBS = {
+      overview: {
+        label: "Home",
+        group: "Overview",
+        desc: "Platform pulse, analytics, and recent Mass runs.",
+        panels: [
+          { id: "dashboard", label: "Summary" },
+          { id: "analytics", label: "Analytics" },
+          { id: "generations", label: "Generations" },
+        ],
+      },
+      approvals: {
+        label: "Approvals",
+        group: "Inbox",
+        desc: "Membership, renames, songs, and priests waiting on you.",
+        panels: [
+          { id: "membership", label: "Inbox" },
+        ],
+      },
+      directory: {
+        label: "Directory",
+        group: "People",
+        desc: "Parishes, accounts, and invite links.",
+        panels: [
+          { id: "parishes", label: "Parishes" },
+          { id: "users", label: "Users" },
+          { id: "invites", label: "Invites" },
+        ],
+      },
+      catalog: {
+        label: "Catalog",
+        group: "Content",
+        desc: "Songs, readings cache, and projection templates.",
+        panels: [
+          { id: "content-songs", label: "Songs" },
+          { id: "content-readings", label: "Readings" },
+          { id: "content-templates", label: "Templates" },
+        ],
+      },
+      platform: {
+        label: "Platform",
+        group: "System",
+        desc: "AI quotas, banners, storage, flags, health, and audit.",
+        panels: [
+          { id: "system-ai", label: "AI & quota" },
+          { id: "system-announcement", label: "Announce" },
+          { id: "system-storage", label: "Storage" },
+          { id: "system-flags", label: "Flags" },
+          { id: "system-maintenance", label: "Health" },
+          { id: "audit-log", label: "Audit" },
+        ],
+      },
+    };
+
+    function saHubForPanel(panelId) {
+      const id = panelId || "dashboard";
+      for (const [hubId, hub] of Object.entries(SA_HUBS)) {
+        if (hub.panels.some((p) => p.id === id)) return hubId;
+      }
+      return "overview";
+    }
+
+    function saPanelMeta(panelId) {
+      const panel = document.querySelector('.sa-panel[data-sa-panel="' + panelId + '"]');
+      const head = panel && panel.querySelector(".flow-bento-cell__head .home-card-head__text");
+      const h3 = head && head.querySelector("h3");
+      const p = head && head.querySelector("p");
+      return {
+        title: (h3 && h3.textContent.trim()) || panelId,
+        desc: (p && p.textContent.trim()) || "",
+      };
+    }
 
     function saPagerMeta(total, page, perPage) {
       const t = Math.max(0, Number(total) || 0);
@@ -18208,18 +18377,37 @@
     }
 
     function showSaPanel(panelId) {
-      saState.panel = panelId || "dashboard";
-      document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
-        link.classList.toggle("active", link.getAttribute("data-sa-panel") === saState.panel);
+      const nextPanel = panelId || "dashboard";
+      const hubId = saHubForPanel(nextPanel);
+      saState.panel = nextPanel;
+      saState.hub = hubId;
+      if (!saState.hubPanel) saState.hubPanel = {};
+      saState.hubPanel[hubId] = nextPanel;
+
+      document.querySelectorAll(".sa-nav-link[data-sa-hub]").forEach((link) => {
+        link.classList.toggle("active", link.getAttribute("data-sa-hub") === hubId);
       });
-      document.querySelectorAll(".sa-mobile-nav__btn[data-sa-panel]").forEach((btn) => {
-        btn.classList.toggle("active", btn.getAttribute("data-sa-panel") === saState.panel);
+      document.querySelectorAll(".sa-nav-group[data-sa-hub-group]").forEach((group) => {
+        group.classList.toggle("is-active", group.getAttribute("data-sa-hub-group") === hubId);
+      });
+      document.querySelectorAll(".sa-nav-minitab[data-sa-panel]").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.getAttribute("data-sa-panel") === nextPanel);
+      });
+      document.querySelectorAll(".sa-mobile-nav__btn[data-sa-hub]").forEach((btn) => {
+        btn.classList.toggle("active", btn.getAttribute("data-sa-hub") === hubId);
       });
       document.querySelectorAll(".sa-panel[data-sa-panel]").forEach((panel) => {
         const on = panel.getAttribute("data-sa-panel") === saState.panel;
         panel.hidden = !on;
+        panel.classList.remove("sa-panel--enter");
+        if (on) {
+          // Retrigger enter motion on each panel switch.
+          void panel.offsetWidth;
+          panel.classList.add("sa-panel--enter");
+        }
       });
-      syncSaTopbar(saState.panel);
+      renderSaSubnav(hubId, nextPanel);
+      syncSaTopbar(nextPanel);
       scrollSaMobileNavToActive();
       scrollSaPanelToTop();
       if (saState.panel === "dashboard") loadSaDashboard();
@@ -18242,7 +18430,104 @@
       else if (saState.panel === "system-maintenance") loadSaHealth();
     }
 
+    function showSaHub(hubId) {
+      const hub = SA_HUBS[hubId] || SA_HUBS.overview;
+      const remembered = saState.hubPanel && saState.hubPanel[hubId];
+      const fallback = hub.panels[0] && hub.panels[0].id;
+      const panelId = remembered || fallback || "dashboard";
+      showSaPanel(panelId);
+    }
+
+    function buildSaSidebarNav() {
+      const host = $("sa-sidebar-nav");
+      if (!host || host.dataset.built === "1") return;
+      host.dataset.built = "1";
+      host.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      Object.keys(SA_HUBS).forEach((hubId) => {
+        const hub = SA_HUBS[hubId];
+        const group = document.createElement("div");
+        group.className = "sa-nav-group";
+        group.setAttribute("data-sa-hub-group", hubId);
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sa-nav-link";
+        btn.setAttribute("data-sa-hub", hubId);
+        btn.textContent = hub.label;
+        if (hubId === "approvals") {
+          const badge = document.createElement("span");
+          badge.className = "sa-nav-link__badge";
+          badge.id = "sa-nav-badge-membership";
+          badge.hidden = true;
+          btn.appendChild(document.createTextNode(" "));
+          btn.appendChild(badge);
+        }
+        btn.addEventListener("click", () => showSaHub(hubId));
+        group.appendChild(btn);
+
+        if (hub.panels.length > 1) {
+          const mini = document.createElement("div");
+          mini.className = "sa-nav-minitabs";
+          mini.setAttribute("data-sa-minitabs", hubId);
+          mini.setAttribute("role", "group");
+          mini.setAttribute("aria-label", hub.label + " sections");
+          const inner = document.createElement("div");
+          inner.className = "sa-nav-minitabs__inner";
+          hub.panels.forEach((item) => {
+            const tab = document.createElement("button");
+            tab.type = "button";
+            tab.className = "sa-nav-minitab";
+            tab.setAttribute("data-sa-panel", item.id);
+            tab.textContent = item.label;
+            tab.addEventListener("click", () => showSaPanel(item.id));
+            inner.appendChild(tab);
+          });
+          mini.appendChild(inner);
+          group.appendChild(mini);
+        }
+
+        frag.appendChild(group);
+      });
+      host.appendChild(frag);
+    }
+
+    function renderSaSubnav(hubId, panelId) {
+      // Mobile-only chips — desktop uses sidebar minitabs under each hub.
+      const host = $("sa-subnav");
+      if (!host) return;
+      const hub = SA_HUBS[hubId];
+      if (!hub || hub.panels.length <= 1) {
+        host.hidden = true;
+        host.innerHTML = "";
+        return;
+      }
+      host.hidden = false;
+      host.innerHTML = hub.panels.map((item) => {
+        const active = item.id === panelId ? " is-active" : "";
+        return "<button type=\"button\" class=\"sa-subnav__btn" + active + "\" data-sa-panel=\"" +
+          escapeHtml(item.id) + "\">" + escapeHtml(item.label) + "</button>";
+      }).join("");
+      if (!host.dataset.bound) {
+        host.dataset.bound = "1";
+        host.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-sa-panel]");
+          if (!btn) return;
+          showSaPanel(btn.getAttribute("data-sa-panel"));
+        });
+      }
+    }
+
     function scrollSaPanelToTop() {
+      const main = document.querySelector("#superadmin-page .sa-main");
+      if (main) {
+        try {
+          main.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (_e) {
+          main.scrollTop = 0;
+        }
+        return;
+      }
       const dash = document.querySelector(".dashboard");
       const target = $("sa-topbar") || $("superadmin-page");
       if (!dash || !target) return;
@@ -18257,20 +18542,16 @@
     }
 
     function syncSaTopbar(panelId) {
-      const panel = document.querySelector('.sa-panel[data-sa-panel="' + panelId + '"]');
       const titleEl = $("sa-topbar-title");
       const descEl = $("sa-topbar-desc");
       const groupEl = $("sa-topbar-group");
-      if (!panel) return;
-      const head = panel.querySelector(".flow-bento-cell__head .home-card-head__text");
-      const h3 = head && head.querySelector("h3");
-      const p = head && head.querySelector("p");
-      if (titleEl) titleEl.textContent = (h3 && h3.textContent.trim()) || panelId;
-      if (descEl) descEl.textContent = (p && p.textContent.trim()) || "";
-      const link = document.querySelector('.sa-nav-link[data-sa-panel="' + panelId + '"]');
-      const group = link && link.closest(".sa-nav-group");
-      const label = group && group.querySelector(".sa-nav-group__label span");
-      if (groupEl) groupEl.textContent = (label && label.textContent.trim()) || "";
+      const hubId = saHubForPanel(panelId);
+      const hub = SA_HUBS[hubId] || SA_HUBS.overview;
+      const meta = saPanelMeta(panelId);
+      const showPanelTitle = hub.panels.length > 1;
+      if (titleEl) titleEl.textContent = showPanelTitle ? meta.title : hub.label;
+      if (descEl) descEl.textContent = meta.desc || hub.desc;
+      if (groupEl) groupEl.textContent = hub.group || hub.label;
     }
 
     function buildSaMobileNav() {
@@ -18278,18 +18559,22 @@
       if (!host || host.dataset.built === "1") return;
       host.dataset.built = "1";
       const frag = document.createDocumentFragment();
-      document.querySelectorAll("#sa-sidebar-nav .sa-nav-link[data-sa-panel]").forEach((link) => {
+      Object.keys(SA_HUBS).forEach((hubId) => {
+        const hub = SA_HUBS[hubId];
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "sa-mobile-nav__btn";
-        btn.setAttribute("data-sa-panel", link.getAttribute("data-sa-panel"));
-        const label = Array.from(link.childNodes)
-          .filter((n) => n.nodeType === 3)
-          .map((n) => n.textContent.trim())
-          .join(" ")
-          .trim() || link.textContent.trim();
-        btn.textContent = label.replace(/\s+/g, " ").trim();
-        btn.addEventListener("click", () => showSaPanel(btn.getAttribute("data-sa-panel")));
+        btn.setAttribute("data-sa-hub", hubId);
+        btn.textContent = hub.label;
+        if (hubId === "approvals") {
+          const badge = document.createElement("span");
+          badge.className = "sa-nav-link__badge";
+          badge.id = "sa-mobile-badge-membership";
+          badge.hidden = true;
+          btn.appendChild(document.createTextNode(" "));
+          btn.appendChild(badge);
+        }
+        btn.addEventListener("click", () => showSaHub(hubId));
         frag.appendChild(btn);
       });
       host.appendChild(frag);
@@ -18428,28 +18713,11 @@
     }
 
     function refreshSuperadminMembershipBadge(cards) {
-      const badge = $("sa-nav-badge-membership");
-      if (!badge) return;
       const pending = cards
         ? ((cards.parishes_pending || 0) + (cards.pending_songs || 0) + (cards.pending_priests || 0))
         : null;
-      if (pending === null) {
-        if (!badge.dataset.inboxCount) {
-          badge.hidden = true;
-        }
-        return;
-      }
-      if (pending > 0) {
-        badge.hidden = false;
-        badge.textContent = String(pending);
-        badge.dataset.dashboardCount = String(pending);
-      } else {
-        delete badge.dataset.dashboardCount;
-        if (!badge.dataset.inboxCount) {
-          badge.hidden = true;
-          badge.textContent = "";
-        }
-      }
+      if (pending === null) return;
+      syncSaMembershipBadges(pending, "dashboard");
     }
 
     function saRenderTable(headers, rows, emptyMsg) {
@@ -18554,15 +18822,20 @@
           saState.parishOptions = Array.isArray(optData.items) ? optData.items : [];
         }
         const q = saState.users.q || "";
-        const perPage = saState.users.perPage || SA_PAGE_SIZE;
+        const perPage = saState.users.perPage || 10;
+        const sort = saState.users.sort || "joined";
         const data = await saFetchAdmin(
           "/api/admin/users?page=" + saState.users.page +
           "&per_page=" + perPage +
-          "&q=" + encodeURIComponent(q)
+          "&q=" + encodeURIComponent(q) +
+          "&sort=" + encodeURIComponent(sort)
         );
         const items = Array.isArray(data.items) ? data.items : [];
         const meta = saPagerMeta(data.total, data.page || saState.users.page, data.per_page || perPage);
         saState.users.page = meta.page;
+        if (data.sort) saState.users.sort = data.sort;
+        const sortEl = $("sa-users-sort");
+        if (sortEl && saState.users.sort) sortEl.value = saState.users.sort;
         const parishOptions = saState.parishOptions || [];
         if (!items.length) {
           wrap.innerHTML = "<p class=\"sa-empty\">No users found.</p>";
@@ -18607,8 +18880,10 @@
                 "<button type=\"button\" class=\"secondary sa-btn-delete-user\" data-user-id=\"" + uid +
                 "\" data-user-email=\"" + escapeHtml(row.email || "") + "\">Delete</button>";
             }
+            const initial = ((name && name !== "—") ? name : (row.email || "?")).charAt(0).toUpperCase();
             return (
               "<li class=\"sa-user-row\">" +
+                "<span class=\"sa-user-row__avatar\" aria-hidden=\"true\">" + escapeHtml(initial) + "</span>" +
                 "<div class=\"sa-user-row__main\">" +
                   "<div class=\"sa-user-row__title\">" +
                     "<span class=\"sa-user-row__name\">" + escapeHtml(name) + "</span>" +
@@ -18765,24 +19040,119 @@
       }
     }
 
-    async function deleteSaUser(btn) {
-      const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
-      const email = btn.getAttribute("data-user-email") || uid;
-      if (!uid) return;
-      if (!confirm("Delete account " + email + "? This cannot be undone.")) return;
-      btn.disabled = true;
+    var saUserDeletePending = null;
+
+    function closeSaUserDeleteModal() {
+      const modal = $("sa-user-delete-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      saUserDeletePending = null;
+      const input = $("sa-user-delete-confirm-input");
+      const err = $("sa-user-delete-error");
+      const confirmBtn = $("sa-user-delete-confirm");
+      if (input) input.value = "";
+      if (err) { err.hidden = true; err.textContent = ""; }
+      if (confirmBtn) confirmBtn.disabled = true;
+    }
+
+    function syncSaUserDeleteConfirmEnabled() {
+      const input = $("sa-user-delete-confirm-input");
+      const confirmBtn = $("sa-user-delete-confirm");
+      if (!confirmBtn) return;
+      const typed = ((input && input.value) || "").trim().toLowerCase();
+      confirmBtn.disabled = typed !== "delete" || !saUserDeletePending;
+    }
+
+    function openSaUserDeleteModal(uid, email) {
+      const modal = $("sa-user-delete-modal");
+      if (!modal || !uid) return;
+      saUserDeletePending = { uid: uid, email: email || uid };
+      const target = $("sa-user-delete-target");
+      const input = $("sa-user-delete-confirm-input");
+      const err = $("sa-user-delete-error");
+      if (target) {
+        target.innerHTML = "Account: <strong>" + escapeHtml(email || uid) + "</strong>";
+      }
+      if (err) { err.hidden = true; err.textContent = ""; }
+      if (input) input.value = "";
+      syncSaUserDeleteConfirmEnabled();
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      setTimeout(() => { if (input) input.focus(); }, 30);
+    }
+
+    async function confirmSaUserDelete() {
+      if (!saUserDeletePending || !saUserDeletePending.uid) return;
+      const input = $("sa-user-delete-confirm-input");
+      const err = $("sa-user-delete-error");
+      const confirmBtn = $("sa-user-delete-confirm");
+      const typed = ((input && input.value) || "").trim().toLowerCase();
+      if (typed !== "delete") {
+        if (err) {
+          err.hidden = false;
+          err.textContent = "Type delete exactly to confirm.";
+        }
+        syncSaUserDeleteConfirmEnabled();
+        return;
+      }
+      const uid = saUserDeletePending.uid;
       const statusEl = $("sa-users-status");
+      if (confirmBtn) confirmBtn.disabled = true;
       if (statusEl) { statusEl.textContent = "Deleting user…"; statusEl.className = "status"; }
       try {
         await saFetchAdmin("/api/admin/users/" + encodeURIComponent(uid), { method: "DELETE" });
+        closeSaUserDeleteModal();
         if (statusEl) { statusEl.textContent = "User deleted."; statusEl.className = "status ok"; }
         notify("User deleted.", "ok");
         loadSaUsers();
         loadSaDashboard();
-      } catch (err) {
-        if (statusEl) { statusEl.textContent = err.message || "Delete failed."; statusEl.className = "status err"; }
-        btn.disabled = false;
+      } catch (e) {
+        if (err) {
+          err.hidden = false;
+          err.textContent = e.message || "Delete failed.";
+        }
+        if (statusEl) { statusEl.textContent = e.message || "Delete failed."; statusEl.className = "status err"; }
+        syncSaUserDeleteConfirmEnabled();
       }
+    }
+
+    function deleteSaUser(btn) {
+      const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
+      const email = btn.getAttribute("data-user-email") || uid;
+      if (!uid) return;
+      openSaUserDeleteModal(uid, email);
+    }
+
+    function initSaUserDeleteModal() {
+      if (initSaUserDeleteModal._bound) return;
+      initSaUserDeleteModal._bound = true;
+      const close = () => closeSaUserDeleteModal();
+      $("sa-user-delete-close") && $("sa-user-delete-close").addEventListener("click", close);
+      $("sa-user-delete-cancel") && $("sa-user-delete-cancel").addEventListener("click", close);
+      $("sa-user-delete-backdrop") && $("sa-user-delete-backdrop").addEventListener("click", close);
+      $("sa-user-delete-confirm") && $("sa-user-delete-confirm").addEventListener("click", () => confirmSaUserDelete());
+      const input = $("sa-user-delete-confirm-input");
+      if (input) {
+        input.addEventListener("input", syncSaUserDeleteConfirmEnabled);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            confirmSaUserDelete();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeSaUserDeleteModal();
+          }
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        const modal = $("sa-user-delete-modal");
+        if (modal && modal.classList.contains("is-open")) {
+          closeSaUserDeleteModal();
+          e.preventDefault();
+        }
+      });
     }
 
     function saAuditDetailLabel(detail) {
@@ -19148,6 +19518,7 @@
       const statsEl = $("sa-analytics-stats");
       const gensWrap = $("sa-analytics-gens-wrap");
       const signupsWrap = $("sa-analytics-signups-wrap");
+      const practiceWrap = $("sa-analytics-practice-wrap");
       const parishesWrap = $("sa-analytics-parishes-wrap");
       const statusEl = $("sa-analytics-status");
       const daysEl = $("sa-analytics-days");
@@ -19160,19 +19531,36 @@
           statsEl.innerHTML = [
             saRenderStatCard("Generations (period)", s.generations_in_period),
             saRenderStatCard("Signups (period)", s.signups_in_period),
-            saRenderStatCard("Generations today", s.generations_today),
+            saRenderStatCard("Practice online today", s.practice_unique_today),
             saRenderStatCard("Active parishes (7d)", s.active_parishes_7d),
           ].join("");
         }
-        const genRows = (data.generations_by_day || []).map((row) => (
-          "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        const practiceRows = (data.practice_online_by_day || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.date || "—") + "</td>" +
+          "<td>" + escapeHtml(String(row.unique_visitors != null ? row.unique_visitors : 0)) + "</td>" +
+          "<td>" + escapeHtml(String(row.shares != null ? row.shares : 0)) + "</td>" +
+          "<td>" + escapeHtml(String(row.hits != null ? row.hits : 0)) + "</td></tr>"
         ));
-        const signupRows = (data.signups_by_day || []).map((row) => (
-          "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
-        ));
+        const genRows = (data.generations_by_day || [])
+          .filter((row) => Number(row && row.count) > 0)
+          .map((row) => (
+            "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count)) + "</td></tr>"
+          ));
+        const signupRows = (data.signups_by_day || [])
+          .filter((row) => Number(row && row.count) > 0)
+          .map((row) => (
+            "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count)) + "</td></tr>"
+          ));
         const parishRows = (data.top_parishes || []).map((row) => (
           "<tr><td>" + escapeHtml(row.community_name || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
         ));
+        if (practiceWrap) {
+          practiceWrap.innerHTML = saRenderTable(
+            ["Date", "Online", "Shares", "Hits"],
+            practiceRows,
+            "No practice online activity in period."
+          );
+        }
         if (gensWrap) gensWrap.innerHTML = saRenderTable(["Date", "Count"], genRows, "No generations in period.");
         if (signupsWrap) signupsWrap.innerHTML = saRenderTable(["Date", "Count"], signupRows, "No signups in period.");
         if (parishesWrap) parishesWrap.innerHTML = saRenderTable(["Parish", "Generations"], parishRows, "No parish activity.");
@@ -19551,19 +19939,74 @@
         const items = Array.isArray(data.items) ? data.items : [];
         const meta = saPagerMeta(data.total, data.page || saState.generations.page, data.per_page || perPage);
         saState.generations.page = meta.page;
-        const rows = items.map((row) => (
-          "<tr><td>" + escapeHtml(String(row.mass_date || "—")) + "</td>" +
-          "<td>" + escapeHtml(row.title || row.celebrant || "—") + "</td>" +
-          "<td>" + escapeHtml(row.parish_name || row.user_email || "—") + "</td>" +
-          "<td>" + escapeHtml(row.slide_count != null ? String(row.slide_count) : "—") + "</td>" +
-          "<td class=\"muted\">" + escapeHtml(saFormatLocalDateTime(row.created_at)) + "</td></tr>"
-        ));
-        wrap.innerHTML = saRenderTable(["Mass date", "Title", "Parish / user", "Slides", "When (local)"], rows, "No generations yet.");
+        wrap.innerHTML = renderSaGenerationsGrouped(items);
         saRenderPager(pagerEl, "generations", meta);
         if (statusEl) statusEl.textContent = saPagerStatusText(meta);
       } catch (err) {
         wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
       }
+    }
+
+    function saGenerationUserLabel(row) {
+      const name = String((row && row.user_name) || "").trim();
+      if (name) return name;
+      const email = String((row && row.user_email) || "").trim();
+      if (email) return email;
+      return "Unknown user";
+    }
+
+    function renderSaGenerationsGrouped(items) {
+      if (!items.length) return "<p class=\"sa-empty\">No generations yet.</p>";
+      const groups = [];
+      const byUser = new Map();
+      items.forEach((row) => {
+        const key = String(row.user_id || row.user_email || row.user_name || "unknown");
+        if (!byUser.has(key)) {
+          const group = { key: key, rows: [], meta: row };
+          byUser.set(key, group);
+          groups.push(group);
+        }
+        byUser.get(key).rows.push(row);
+      });
+
+      return (
+        "<div class=\"sa-gen-list\">" +
+        groups.map((group) => {
+          const name = escapeHtml(saGenerationUserLabel(group.meta));
+          const parish = escapeHtml(String(group.meta.parish_name || "").trim() || "No parish");
+          const email = escapeHtml(String(group.meta.user_email || "").trim());
+          const count = group.rows.length;
+          const openAttr = count === 1 ? " open" : "";
+          const countLabel = count === 1 ? "1 run" : (count + " runs");
+          const bodyRows = group.rows.map((row) => (
+            "<tr>" +
+              "<td>" + escapeHtml(String(row.mass_date || "—")) + "</td>" +
+              "<td>" + escapeHtml(row.title || row.celebrant || "—") + "</td>" +
+              "<td>" + escapeHtml(row.slide_count != null ? String(row.slide_count) : "—") + "</td>" +
+              "<td class=\"muted\">" + escapeHtml(saFormatLocalDateTime(row.created_at)) + "</td>" +
+            "</tr>"
+          )).join("");
+          return (
+            "<details class=\"sa-gen-accordion\"" + openAttr + ">" +
+              "<summary class=\"sa-gen-accordion__summary\">" +
+                "<span class=\"sa-gen-accordion__who\">" +
+                  "<span class=\"sa-gen-accordion__name\">" + name + "</span>" +
+                  "<span class=\"sa-gen-accordion__parish\">" + parish + "</span>" +
+                  (email && email !== name ? "<span class=\"sa-gen-accordion__email muted\">" + email + "</span>" : "") +
+                "</span>" +
+                "<span class=\"sa-gen-accordion__count\">" + escapeHtml(countLabel) + "</span>" +
+              "</summary>" +
+              "<div class=\"sa-gen-accordion__body\">" +
+                "<table class=\"sa-table\">" +
+                  "<thead><tr><th>Mass date</th><th>Title</th><th>Slides</th><th>When (local)</th></tr></thead>" +
+                  "<tbody>" + bodyRows + "</tbody>" +
+                "</table>" +
+              "</div>" +
+            "</details>"
+          );
+        }).join("") +
+        "</div>"
+      );
     }
 
     async function refreshAdminPendingRenames() {
@@ -20357,10 +20800,10 @@
     function initSaNav() {
       if (saState.initialized) return;
       saState.initialized = true;
+      initSaUserDeleteModal();
+      buildSaSidebarNav();
       buildSaMobileNav();
-      document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
-        link.addEventListener("click", () => showSaPanel(link.getAttribute("data-sa-panel")));
-      });
+      try { refreshSuperadminMembershipBadgeFromInbox(); } catch (_e) { /* ignore */ }
       document.querySelectorAll("[data-sa-panel-jump]").forEach((btn) => {
         btn.addEventListener("click", () => showSaPanel(btn.getAttribute("data-sa-panel-jump")));
       });
@@ -20500,6 +20943,15 @@
         usersSearch.addEventListener("input", () => {
           clearTimeout(t);
           t = setTimeout(() => { saState.users.q = usersSearch.value.trim(); saState.users.page = 1; loadSaUsers(); }, 300);
+        });
+      }
+      const usersSort = $("sa-users-sort");
+      if (usersSort) {
+        if (saState.users && saState.users.sort) usersSort.value = saState.users.sort;
+        usersSort.addEventListener("change", () => {
+          saState.users.sort = usersSort.value || "joined";
+          saState.users.page = 1;
+          loadSaUsers();
         });
       }
       const genSearch = $("sa-generations-search");
@@ -23435,6 +23887,63 @@
       });
     }
 
+    function posterPickerScrollParent(el) {
+      var node = el && el.parentElement;
+      while (node && node !== document.body && node !== document.documentElement) {
+        var style = window.getComputedStyle(node);
+        var oy = style.overflowY;
+        if ((oy === "auto" || oy === "scroll" || oy === "overlay") && node.scrollHeight > node.clientHeight + 1) {
+          return node;
+        }
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function scrollPosterPickerMenuIntoView(menu) {
+      if (!menu || menu.hidden) return;
+      var reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      var behavior = reduceMotion ? "auto" : "smooth";
+      var run = function () {
+        if (menu.hidden) return;
+        var rect = menu.getBoundingClientRect();
+        if (!rect.height) return;
+        var pad = 14;
+        var header = document.querySelector(".app-header");
+        var headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+        var topLimit = Math.max(pad, headerBottom + pad);
+        var nav = document.querySelector("body.mw-on .mw-nav");
+        var navH = nav && !nav.hidden ? nav.getBoundingClientRect().height : 0;
+        var bottomLimit = window.innerHeight - navH - pad;
+        var delta = 0;
+        if (rect.bottom > bottomLimit) delta = rect.bottom - bottomLimit;
+        else if (rect.top < topLimit) delta = rect.top - topLimit;
+        if (Math.abs(delta) < 2) return;
+        var scroller = posterPickerScrollParent(menu);
+        if (scroller) {
+          scroller.scrollBy({ top: delta, left: 0, behavior: behavior });
+        } else {
+          window.scrollBy({ top: delta, left: 0, behavior: behavior });
+        }
+      };
+      requestAnimationFrame(function () {
+        requestAnimationFrame(run);
+        var imgs = menu.querySelectorAll("img");
+        if (!imgs.length) return;
+        var pending = 0;
+        Array.prototype.forEach.call(imgs, function (img) {
+          if (img.complete) return;
+          pending += 1;
+          var done = function () {
+            pending -= 1;
+            if (pending <= 0) requestAnimationFrame(run);
+          };
+          img.addEventListener("load", done, { once: true });
+          img.addEventListener("error", done, { once: true });
+        });
+      });
+    }
+
     function initDividerPosterPickers() {
       document.querySelectorAll("[data-poster-picker]").forEach((picker) => {
         const trigger = picker.querySelector(".poster-picker__trigger");
@@ -23486,6 +23995,7 @@
             closeAllPosterPickers(picker);
             menu.hidden = !opening;
             trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+            if (opening) scrollPosterPickerMenuIntoView(menu);
           });
 
           const initial = posterPairNumberFromIds(
@@ -23539,6 +24049,7 @@
           closeAllPosterPickers(picker);
           menu.hidden = !opening;
           trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+          if (opening) scrollPosterPickerMenuIntoView(menu);
         });
 
         setSelected(target.value || prefix + "1");

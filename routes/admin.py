@@ -410,14 +410,16 @@ def register_admin_routes(app) -> None:
     @app.get("/api/admin/users")
     def api_admin_users(
         page: int = Query(1, ge=1),
-        per_page: int = Query(25, ge=1, le=100),
+        per_page: int = Query(10, ge=1, le=100),
         q: str = Query(""),
+        sort: str = Query("joined"),
         session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         return list_users(
             page=page,
             per_page=per_page,
             q=q,
+            sort=sort,
             viewer_user_id=session.user.user_id,
         )
 

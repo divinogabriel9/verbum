@@ -124,24 +124,119 @@
       }
     }
 
-    async function deleteSaUser(btn) {
-      const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
-      const email = btn.getAttribute("data-user-email") || uid;
-      if (!uid) return;
-      if (!confirm("Delete account " + email + "? This cannot be undone.")) return;
-      btn.disabled = true;
+    var saUserDeletePending = null;
+
+    function closeSaUserDeleteModal() {
+      const modal = $("sa-user-delete-modal");
+      if (!modal) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      saUserDeletePending = null;
+      const input = $("sa-user-delete-confirm-input");
+      const err = $("sa-user-delete-error");
+      const confirmBtn = $("sa-user-delete-confirm");
+      if (input) input.value = "";
+      if (err) { err.hidden = true; err.textContent = ""; }
+      if (confirmBtn) confirmBtn.disabled = true;
+    }
+
+    function syncSaUserDeleteConfirmEnabled() {
+      const input = $("sa-user-delete-confirm-input");
+      const confirmBtn = $("sa-user-delete-confirm");
+      if (!confirmBtn) return;
+      const typed = ((input && input.value) || "").trim().toLowerCase();
+      confirmBtn.disabled = typed !== "delete" || !saUserDeletePending;
+    }
+
+    function openSaUserDeleteModal(uid, email) {
+      const modal = $("sa-user-delete-modal");
+      if (!modal || !uid) return;
+      saUserDeletePending = { uid: uid, email: email || uid };
+      const target = $("sa-user-delete-target");
+      const input = $("sa-user-delete-confirm-input");
+      const err = $("sa-user-delete-error");
+      if (target) {
+        target.innerHTML = "Account: <strong>" + escapeHtml(email || uid) + "</strong>";
+      }
+      if (err) { err.hidden = true; err.textContent = ""; }
+      if (input) input.value = "";
+      syncSaUserDeleteConfirmEnabled();
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      setTimeout(() => { if (input) input.focus(); }, 30);
+    }
+
+    async function confirmSaUserDelete() {
+      if (!saUserDeletePending || !saUserDeletePending.uid) return;
+      const input = $("sa-user-delete-confirm-input");
+      const err = $("sa-user-delete-error");
+      const confirmBtn = $("sa-user-delete-confirm");
+      const typed = ((input && input.value) || "").trim().toLowerCase();
+      if (typed !== "delete") {
+        if (err) {
+          err.hidden = false;
+          err.textContent = "Type delete exactly to confirm.";
+        }
+        syncSaUserDeleteConfirmEnabled();
+        return;
+      }
+      const uid = saUserDeletePending.uid;
       const statusEl = $("sa-users-status");
+      if (confirmBtn) confirmBtn.disabled = true;
       if (statusEl) { statusEl.textContent = "Deleting user…"; statusEl.className = "status"; }
       try {
         await saFetchAdmin("/api/admin/users/" + encodeURIComponent(uid), { method: "DELETE" });
+        closeSaUserDeleteModal();
         if (statusEl) { statusEl.textContent = "User deleted."; statusEl.className = "status ok"; }
         notify("User deleted.", "ok");
         loadSaUsers();
         loadSaDashboard();
-      } catch (err) {
-        if (statusEl) { statusEl.textContent = err.message || "Delete failed."; statusEl.className = "status err"; }
-        btn.disabled = false;
+      } catch (e) {
+        if (err) {
+          err.hidden = false;
+          err.textContent = e.message || "Delete failed.";
+        }
+        if (statusEl) { statusEl.textContent = e.message || "Delete failed."; statusEl.className = "status err"; }
+        syncSaUserDeleteConfirmEnabled();
       }
+    }
+
+    function deleteSaUser(btn) {
+      const uid = decodeURIComponent(btn.getAttribute("data-user-id") || "");
+      const email = btn.getAttribute("data-user-email") || uid;
+      if (!uid) return;
+      openSaUserDeleteModal(uid, email);
+    }
+
+    function initSaUserDeleteModal() {
+      if (initSaUserDeleteModal._bound) return;
+      initSaUserDeleteModal._bound = true;
+      const close = () => closeSaUserDeleteModal();
+      $("sa-user-delete-close") && $("sa-user-delete-close").addEventListener("click", close);
+      $("sa-user-delete-cancel") && $("sa-user-delete-cancel").addEventListener("click", close);
+      $("sa-user-delete-backdrop") && $("sa-user-delete-backdrop").addEventListener("click", close);
+      $("sa-user-delete-confirm") && $("sa-user-delete-confirm").addEventListener("click", () => confirmSaUserDelete());
+      const input = $("sa-user-delete-confirm-input");
+      if (input) {
+        input.addEventListener("input", syncSaUserDeleteConfirmEnabled);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            confirmSaUserDelete();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeSaUserDeleteModal();
+          }
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        const modal = $("sa-user-delete-modal");
+        if (modal && modal.classList.contains("is-open")) {
+          closeSaUserDeleteModal();
+          e.preventDefault();
+        }
+      });
     }
 
     function saAuditDetailLabel(detail) {
@@ -507,6 +602,7 @@
       const statsEl = $("sa-analytics-stats");
       const gensWrap = $("sa-analytics-gens-wrap");
       const signupsWrap = $("sa-analytics-signups-wrap");
+      const practiceWrap = $("sa-analytics-practice-wrap");
       const parishesWrap = $("sa-analytics-parishes-wrap");
       const statusEl = $("sa-analytics-status");
       const daysEl = $("sa-analytics-days");
@@ -519,19 +615,36 @@
           statsEl.innerHTML = [
             saRenderStatCard("Generations (period)", s.generations_in_period),
             saRenderStatCard("Signups (period)", s.signups_in_period),
-            saRenderStatCard("Generations today", s.generations_today),
+            saRenderStatCard("Practice online today", s.practice_unique_today),
             saRenderStatCard("Active parishes (7d)", s.active_parishes_7d),
           ].join("");
         }
-        const genRows = (data.generations_by_day || []).map((row) => (
-          "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        const practiceRows = (data.practice_online_by_day || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.date || "—") + "</td>" +
+          "<td>" + escapeHtml(String(row.unique_visitors != null ? row.unique_visitors : 0)) + "</td>" +
+          "<td>" + escapeHtml(String(row.shares != null ? row.shares : 0)) + "</td>" +
+          "<td>" + escapeHtml(String(row.hits != null ? row.hits : 0)) + "</td></tr>"
         ));
-        const signupRows = (data.signups_by_day || []).map((row) => (
-          "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
-        ));
+        const genRows = (data.generations_by_day || [])
+          .filter((row) => Number(row && row.count) > 0)
+          .map((row) => (
+            "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count)) + "</td></tr>"
+          ));
+        const signupRows = (data.signups_by_day || [])
+          .filter((row) => Number(row && row.count) > 0)
+          .map((row) => (
+            "<tr><td>" + escapeHtml(row.date || "—") + "</td><td>" + escapeHtml(String(row.count)) + "</td></tr>"
+          ));
         const parishRows = (data.top_parishes || []).map((row) => (
           "<tr><td>" + escapeHtml(row.community_name || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
         ));
+        if (practiceWrap) {
+          practiceWrap.innerHTML = saRenderTable(
+            ["Date", "Online", "Shares", "Hits"],
+            practiceRows,
+            "No practice online activity in period."
+          );
+        }
         if (gensWrap) gensWrap.innerHTML = saRenderTable(["Date", "Count"], genRows, "No generations in period.");
         if (signupsWrap) signupsWrap.innerHTML = saRenderTable(["Date", "Count"], signupRows, "No signups in period.");
         if (parishesWrap) parishesWrap.innerHTML = saRenderTable(["Parish", "Generations"], parishRows, "No parish activity.");
@@ -910,19 +1023,74 @@
         const items = Array.isArray(data.items) ? data.items : [];
         const meta = saPagerMeta(data.total, data.page || saState.generations.page, data.per_page || perPage);
         saState.generations.page = meta.page;
-        const rows = items.map((row) => (
-          "<tr><td>" + escapeHtml(String(row.mass_date || "—")) + "</td>" +
-          "<td>" + escapeHtml(row.title || row.celebrant || "—") + "</td>" +
-          "<td>" + escapeHtml(row.parish_name || row.user_email || "—") + "</td>" +
-          "<td>" + escapeHtml(row.slide_count != null ? String(row.slide_count) : "—") + "</td>" +
-          "<td class=\"muted\">" + escapeHtml(saFormatLocalDateTime(row.created_at)) + "</td></tr>"
-        ));
-        wrap.innerHTML = saRenderTable(["Mass date", "Title", "Parish / user", "Slides", "When (local)"], rows, "No generations yet.");
+        wrap.innerHTML = renderSaGenerationsGrouped(items);
         saRenderPager(pagerEl, "generations", meta);
         if (statusEl) statusEl.textContent = saPagerStatusText(meta);
       } catch (err) {
         wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
       }
+    }
+
+    function saGenerationUserLabel(row) {
+      const name = String((row && row.user_name) || "").trim();
+      if (name) return name;
+      const email = String((row && row.user_email) || "").trim();
+      if (email) return email;
+      return "Unknown user";
+    }
+
+    function renderSaGenerationsGrouped(items) {
+      if (!items.length) return "<p class=\"sa-empty\">No generations yet.</p>";
+      const groups = [];
+      const byUser = new Map();
+      items.forEach((row) => {
+        const key = String(row.user_id || row.user_email || row.user_name || "unknown");
+        if (!byUser.has(key)) {
+          const group = { key: key, rows: [], meta: row };
+          byUser.set(key, group);
+          groups.push(group);
+        }
+        byUser.get(key).rows.push(row);
+      });
+
+      return (
+        "<div class=\"sa-gen-list\">" +
+        groups.map((group) => {
+          const name = escapeHtml(saGenerationUserLabel(group.meta));
+          const parish = escapeHtml(String(group.meta.parish_name || "").trim() || "No parish");
+          const email = escapeHtml(String(group.meta.user_email || "").trim());
+          const count = group.rows.length;
+          const openAttr = count === 1 ? " open" : "";
+          const countLabel = count === 1 ? "1 run" : (count + " runs");
+          const bodyRows = group.rows.map((row) => (
+            "<tr>" +
+              "<td>" + escapeHtml(String(row.mass_date || "—")) + "</td>" +
+              "<td>" + escapeHtml(row.title || row.celebrant || "—") + "</td>" +
+              "<td>" + escapeHtml(row.slide_count != null ? String(row.slide_count) : "—") + "</td>" +
+              "<td class=\"muted\">" + escapeHtml(saFormatLocalDateTime(row.created_at)) + "</td>" +
+            "</tr>"
+          )).join("");
+          return (
+            "<details class=\"sa-gen-accordion\"" + openAttr + ">" +
+              "<summary class=\"sa-gen-accordion__summary\">" +
+                "<span class=\"sa-gen-accordion__who\">" +
+                  "<span class=\"sa-gen-accordion__name\">" + name + "</span>" +
+                  "<span class=\"sa-gen-accordion__parish\">" + parish + "</span>" +
+                  (email && email !== name ? "<span class=\"sa-gen-accordion__email muted\">" + email + "</span>" : "") +
+                "</span>" +
+                "<span class=\"sa-gen-accordion__count\">" + escapeHtml(countLabel) + "</span>" +
+              "</summary>" +
+              "<div class=\"sa-gen-accordion__body\">" +
+                "<table class=\"sa-table\">" +
+                  "<thead><tr><th>Mass date</th><th>Title</th><th>Slides</th><th>When (local)</th></tr></thead>" +
+                  "<tbody>" + bodyRows + "</tbody>" +
+                "</table>" +
+              "</div>" +
+            "</details>"
+          );
+        }).join("") +
+        "</div>"
+      );
     }
 
     async function refreshAdminPendingRenames() {
@@ -1716,10 +1884,10 @@
     function initSaNav() {
       if (saState.initialized) return;
       saState.initialized = true;
+      initSaUserDeleteModal();
+      buildSaSidebarNav();
       buildSaMobileNav();
-      document.querySelectorAll(".sa-nav-link[data-sa-panel]").forEach((link) => {
-        link.addEventListener("click", () => showSaPanel(link.getAttribute("data-sa-panel")));
-      });
+      try { refreshSuperadminMembershipBadgeFromInbox(); } catch (_e) { /* ignore */ }
       document.querySelectorAll("[data-sa-panel-jump]").forEach((btn) => {
         btn.addEventListener("click", () => showSaPanel(btn.getAttribute("data-sa-panel-jump")));
       });
@@ -1859,6 +2027,15 @@
         usersSearch.addEventListener("input", () => {
           clearTimeout(t);
           t = setTimeout(() => { saState.users.q = usersSearch.value.trim(); saState.users.page = 1; loadSaUsers(); }, 300);
+        });
+      }
+      const usersSort = $("sa-users-sort");
+      if (usersSort) {
+        if (saState.users && saState.users.sort) usersSort.value = saState.users.sort;
+        usersSort.addEventListener("change", () => {
+          saState.users.sort = usersSort.value || "joined";
+          saState.users.page = 1;
+          loadSaUsers();
         });
       }
       const genSearch = $("sa-generations-search");

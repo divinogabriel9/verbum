@@ -2177,6 +2177,7 @@
     var practiceShareExcludedSlots = new Set();
     var practiceShareHistoryCache = [];
     var practiceShareHistoryCountdownTimer = null;
+    var practiceShareVisitsTimer = null;
     var PRACTICE_PIN_LS_PREFIX = "lf-practice-pin:";
     var PRACTICE_LEADER_PIN_LS_PREFIX = "lf-practice-leader-pin:";
 
@@ -2592,6 +2593,7 @@
     }
 
     function closePracticeShareModal() {
+      stopPracticeShareVisitsPoll();
       setUiOverlayOpen($("practice-share-modal"), false);
       document.body.classList.remove("practice-share-pin-top");
       syncPracticeShareBottomNavChrome();
@@ -2780,7 +2782,20 @@
         if (metaEl) {
           const dateLabel = formatPracticeMassDate(share.mass_date);
           const songCount = Number(share.song_count || 0);
-          metaEl.textContent = [dateLabel, songCount ? (songCount + " song" + (songCount === 1 ? "" : "s")) : ""].filter(Boolean).join(" · ");
+          const visitors = Number(share.unique_visitors || 0);
+          const active = Number(share.active_now || 0);
+          const visitBits = [];
+          if (visitors > 0) {
+            visitBits.push(visitors + " visitor" + (visitors === 1 ? "" : "s"));
+          }
+          if (active > 0) {
+            visitBits.push(active + " online");
+          }
+          metaEl.textContent = [
+            dateLabel,
+            songCount ? (songCount + " song" + (songCount === 1 ? "" : "s")) : "",
+            visitBits.join(" · "),
+          ].filter(Boolean).join(" · ");
         }
       });
 
@@ -3277,6 +3292,8 @@
           : (practiceShareLastLeaderPin ? " · leader password below" : "");
         meta.textContent = (data.song_count || 0) + " song(s)" + (exp ? (" · expires " + exp) : "") + mailNote;
       }
+      renderPracticeShareVisits(data);
+      startPracticeShareVisitsPoll();
       const sub = $("practice-share-sub");
       if (sub) {
         sub.textContent = data.restored
@@ -3288,6 +3305,61 @@
       } else if (practiceShareLastLeaderPin && data.leader_pin_email_error && !data.restored) {
         notify("Could not email leader password — copy it from this card.", "warn");
       }
+    }
+
+    function formatPracticeVisitLabel(stats) {
+      const unique = Number((stats && stats.unique_visitors) || 0);
+      const active = Number((stats && stats.active_now) || 0);
+      if (!unique && !active) return "No choir opens yet";
+      const bits = [unique + " unique visitor" + (unique === 1 ? "" : "s")];
+      if (active > 0) bits.push(active + " online now");
+      return bits.join(" · ");
+    }
+
+    function renderPracticeShareVisits(stats) {
+      const el = $("practice-share-visits");
+      if (!el) return;
+      el.hidden = false;
+      el.textContent = formatPracticeVisitLabel(stats || {});
+    }
+
+    function stopPracticeShareVisitsPoll() {
+      if (practiceShareVisitsTimer) {
+        clearInterval(practiceShareVisitsTimer);
+        practiceShareVisitsTimer = null;
+      }
+    }
+
+    async function refreshPracticeShareVisits() {
+      const tok = String(practiceShareLastToken || "").trim();
+      if (!tok) return;
+      try {
+        if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
+          await window.VerbumAuth.waitUntilReady();
+        }
+        const headers = Object.assign({}, practiceDeviceHeaders());
+        if (window.VerbumAuth && window.VerbumAuth.getAuthHeaders) {
+          Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+        }
+        const res = await fetch("/api/practice/" + encodeURIComponent(tok) + "/stats", { headers });
+        const data = await res.json().catch(function () { return {}; });
+        if (!res.ok || !data.ok) return;
+        renderPracticeShareVisits(data);
+      } catch (_err) { /* ignore */ }
+    }
+
+    function startPracticeShareVisitsPoll() {
+      stopPracticeShareVisitsPoll();
+      if (!practiceShareLastToken) return;
+      void refreshPracticeShareVisits();
+      practiceShareVisitsTimer = setInterval(function () {
+        const modal = $("practice-share-modal");
+        if (!modal || !modal.classList.contains("is-open")) {
+          stopPracticeShareVisitsPoll();
+          return;
+        }
+        void refreshPracticeShareVisits();
+      }, 15000);
     }
 
     function openPracticeShareLead() {

@@ -27,7 +27,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260906-membership-welcome2" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260906-sa-analytics3" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
@@ -1106,6 +1106,7 @@
               <p class="practice-share-pin-display__missing" id="practice-share-leader-pin-missing" hidden>Leader password was emailed when this link was created. Check your inbox, or create a new share if you need it again.</p>
               <button type="button" class="primary practice-share-lead-btn" id="practice-share-lets-practice" hidden>Let’s practice</button>
               <p class="muted practice-share-meta" id="practice-share-meta"></p>
+              <p class="muted practice-share-visits" id="practice-share-visits" hidden aria-live="polite"></p>
             </div>
             <p class="status error" id="practice-share-status" hidden aria-live="polite"></p>
           </div>
@@ -1218,6 +1219,31 @@
           <footer class="ui-card__footer ui-card__footer--row">
             <button type="button" class="secondary" id="logo-lock-cancel">Go back</button>
             <button type="button" class="primary" id="logo-lock-confirm">Upload &amp; lock logo</button>
+          </footer>
+        </article>
+      </div>
+
+      <div class="ui-overlay" id="sa-user-delete-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="sa-user-delete-backdrop"></div>
+        <article class="ui-card" role="alertdialog" aria-labelledby="sa-user-delete-title" aria-describedby="sa-user-delete-desc" aria-modal="true" style="max-width:min(420px, 94vw);">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="sa-user-delete-title">Delete account?</h3>
+              <p class="ui-card__description" id="sa-user-delete-desc">This permanently removes the user and cannot be undone.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="sa-user-delete-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__body" style="padding:0 1.25rem 0.25rem;">
+            <p class="muted" id="sa-user-delete-target" style="margin:0 0 12px;font-size:0.9rem;"></p>
+            <div class="field" style="margin:0;">
+              <label for="sa-user-delete-confirm-input">Type <strong>delete</strong> to confirm</label>
+              <input type="text" id="sa-user-delete-confirm-input" autocomplete="off" spellcheck="false" placeholder="delete" maxlength="32" />
+            </div>
+            <p class="status error" id="sa-user-delete-error" hidden style="margin-top:8px;"></p>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="sa-user-delete-cancel">Cancel</button>
+            <button type="button" class="primary song-delete-confirm-btn" id="sa-user-delete-confirm" disabled>Delete user</button>
           </footer>
         </article>
       </div>
@@ -3208,62 +3234,21 @@
               </span>
               <div class="home-card-head__text">
                 <h3 id="sa-nav-heading">Superadmin</h3>
-                <p>Platform controls</p>
+                <p>Five places. Related tools live together.</p>
               </div>
             </header>
-            <nav class="sa-nav-list" id="sa-sidebar-nav" aria-label="Superadmin navigation">
-              <div class="sa-nav-group" data-sa-nav-group="overview">
-                <div class="sa-nav-group__label"><span>Overview</span></div>
-                <div class="sa-nav-group__links">
-                  <button type="button" class="sa-nav-link active" data-sa-panel="dashboard">Dashboard</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="analytics">Analytics</button>
-                </div>
-              </div>
-              <div class="sa-nav-group" data-sa-nav-group="people">
-                <div class="sa-nav-group__label"><span>People</span></div>
-                <div class="sa-nav-group__links">
-                  <button type="button" class="sa-nav-link" data-sa-panel="parishes">Parishes</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="users">Users</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="membership">Approvals <span class="sa-nav-link__badge" id="sa-nav-badge-membership" hidden></span></button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="invites">Invites</button>
-                </div>
-              </div>
-              <div class="sa-nav-group" data-sa-nav-group="activity">
-                <div class="sa-nav-group__label"><span>Activity</span></div>
-                <div class="sa-nav-group__links">
-                  <button type="button" class="sa-nav-link" data-sa-panel="generations">Generations</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="audit-log">Audit log</button>
-                </div>
-              </div>
-              <div class="sa-nav-group" data-sa-nav-group="content">
-                <div class="sa-nav-group__label"><span>Content</span></div>
-                <div class="sa-nav-group__links">
-                  <button type="button" class="sa-nav-link" data-sa-panel="content-songs">Songs</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="content-readings">Readings cache</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="content-templates">Templates</button>
-                </div>
-              </div>
-              <div class="sa-nav-group" data-sa-nav-group="system">
-                <div class="sa-nav-group__label"><span>System</span></div>
-                <div class="sa-nav-group__links">
-                  <button type="button" class="sa-nav-link" data-sa-panel="system-ai">AI &amp; Quota</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="system-announcement">Announcement</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="system-storage">Storage</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="system-flags">Feature flags</button>
-                  <button type="button" class="sa-nav-link" data-sa-panel="system-maintenance">Maintenance</button>
-                </div>
-              </div>
-            </nav>
+            <nav class="sa-nav-list" id="sa-sidebar-nav" aria-label="Superadmin navigation"></nav>
           </aside>
           <div class="sa-main">
             <nav class="sa-mobile-nav" id="sa-mobile-nav" aria-label="Superadmin sections"></nav>
             <header class="sa-topbar" id="sa-topbar">
               <div>
-                <h2 class="sa-topbar__title" id="sa-topbar-title">Dashboard</h2>
-                <p class="sa-topbar__desc" id="sa-topbar-desc">Live platform stats and recent activity.</p>
+                <h2 class="sa-topbar__title" id="sa-topbar-title">Home</h2>
+                <p class="sa-topbar__desc" id="sa-topbar-desc">Platform pulse, analytics, and recent Mass runs.</p>
               </div>
               <span class="sa-topbar__meta" id="sa-topbar-group">Overview</span>
             </header>
+            <nav class="sa-subnav sa-subnav--mobile" id="sa-subnav" aria-label="Section tools" hidden></nav>
             <article class="sa-panel flow-bento-cell" id="sa-panel-dashboard" data-sa-panel="dashboard">
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
@@ -3277,13 +3262,12 @@
                 <ul class="sa-activity-list" id="sa-dashboard-activity" aria-live="polite"></ul>
               </div>
               <div class="sa-section">
-                <div class="sa-section__head"><h4>Quick actions</h4></div>
+                <div class="sa-section__head"><h4>Jump</h4></div>
                 <div class="sa-quick-actions">
-                  <button type="button" class="secondary" id="sa-btn-goto-membership">Open approvals queue</button>
-                  <button type="button" class="secondary" id="sa-btn-clear-readings-cache">Clear readings cache</button>
-                  <button type="button" class="secondary" id="sa-btn-bootstrap-superadmins">Bootstrap superadmins</button>
-                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">Gemini settings</button>
-                  <button type="button" class="secondary" id="sa-btn-goto-templates">PPTX templates</button>
+                  <button type="button" class="secondary" id="sa-btn-goto-membership">Approvals</button>
+                  <button type="button" class="secondary" data-sa-panel-jump="analytics">Analytics</button>
+                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">AI &amp; quota</button>
+                  <button type="button" class="secondary" data-sa-panel-jump="content-songs">Song catalog</button>
                 </div>
               </div>
               <p class="status" id="sa-dashboard-status" aria-live="polite"></p>
@@ -3293,7 +3277,7 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Analytics</h3>
-                  <p>Generations, signups, and parish activity (UTC).</p>
+                  <p>Generations, signups, practice online, and parish activity (UTC).</p>
                 </div>
               </header>
               <div class="sa-toolbar">
@@ -3306,17 +3290,27 @@
                 <button type="button" class="secondary" id="sa-analytics-refresh">Refresh</button>
               </div>
               <div class="sa-stat-grid" id="sa-analytics-stats" aria-live="polite"></div>
-              <div class="sa-section sa-section--flush">
-                <h4 class="settings-admin-subhead">Generations by day</h4>
-                <div class="sa-table-wrap" id="sa-analytics-gens-wrap"></div>
-              </div>
-              <div class="sa-section sa-section--flush">
-                <h4 class="settings-admin-subhead">Signups by day</h4>
-                <div class="sa-table-wrap" id="sa-analytics-signups-wrap"></div>
-              </div>
-              <div class="sa-section sa-section--flush">
-                <h4 class="settings-admin-subhead">Top parishes (period)</h4>
-                <div class="sa-table-wrap" id="sa-analytics-parishes-wrap"></div>
+              <div class="sa-analytics-rows">
+                <div class="sa-analytics-row sa-analytics-row--days">
+                  <div class="sa-section sa-section--flush">
+                    <h4 class="settings-admin-subhead">Practice online</h4>
+                    <div class="sa-table-wrap" id="sa-analytics-practice-wrap"></div>
+                  </div>
+                  <div class="sa-section sa-section--flush">
+                    <h4 class="settings-admin-subhead">Generations</h4>
+                    <div class="sa-table-wrap" id="sa-analytics-gens-wrap"></div>
+                  </div>
+                  <div class="sa-section sa-section--flush">
+                    <h4 class="settings-admin-subhead">Signups</h4>
+                    <div class="sa-table-wrap" id="sa-analytics-signups-wrap"></div>
+                  </div>
+                </div>
+                <div class="sa-analytics-row">
+                  <div class="sa-section sa-section--flush">
+                    <h4 class="settings-admin-subhead">Top parishes (period)</h4>
+                    <div class="sa-table-wrap" id="sa-analytics-parishes-wrap"></div>
+                  </div>
+                </div>
               </div>
               <p class="status" id="sa-analytics-status" aria-live="polite"></p>
             </article>
@@ -3378,6 +3372,12 @@
               </header>
               <div class="sa-toolbar">
                 <input type="search" id="sa-users-search" placeholder="Search name or email…" maxlength="120" autocomplete="off" />
+                <label class="sa-toolbar-label" for="sa-users-sort">Sort by</label>
+                <select id="sa-users-sort" class="sa-filter-select" aria-label="Sort users">
+                  <option value="joined" selected>Date joined</option>
+                  <option value="parish">Parish</option>
+                  <option value="name">A–Z</option>
+                </select>
                 <button type="button" class="secondary" id="sa-users-refresh">Refresh</button>
               </div>
               <div class="sa-table-wrap" id="sa-users-table-wrap"></div>
@@ -4360,7 +4360,7 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260906-membership-gate1"></script>
+  <script src="/static/js/app.js?v=20260906-sa-analytics3"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260906-membership-gate1"></script>

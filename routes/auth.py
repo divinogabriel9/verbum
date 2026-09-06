@@ -13,6 +13,7 @@ from services.api_security import AuthSession, _store_auth_context, optional_ses
 from services.auth_config import (
     app_public_url,
     auth_enabled,
+    hcaptcha_site_key,
     invite_contact_email,
     invite_only_signup,
     public_auth_config,
@@ -27,6 +28,10 @@ from services.user_church_context import get_church_profile_context, set_church_
 
 class InviteConsumeBody(BaseModel):
     token: str = Field(..., min_length=8, max_length=128)
+
+
+class CaptchaVerifyBody(BaseModel):
+    token: str = Field(..., min_length=10, max_length=4000)
 
 
 class PresenceHeartbeatBody(BaseModel):
@@ -74,6 +79,7 @@ def _auth_page_context(
         "invite_email": invite_email or "",
         "invite_community_name": invite_community_name or "",
         "invite_contact_email": contact,
+        "hcaptcha_site_key": hcaptcha_site_key(),
         "app_version": str(version.get("version") or "dev"),
         "git_commit": str(version.get("git_commit") or ""),
         "git_commit_short": str(version.get("git_commit_short") or ""),
@@ -87,6 +93,26 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
     @app.get("/api/auth/config")
     def api_auth_config() -> dict[str, Any]:
         return public_auth_config()
+
+    @app.post("/api/auth/captcha/verify")
+    def api_auth_captcha_verify(request: Request, body: CaptchaVerifyBody) -> dict[str, Any]:
+        """Optional app-side hCaptcha siteverify.
+
+        Prefer Supabase CAPTCHA for sign-in/up (pass captchaToken to supabase-js).
+        Tokens are single-use — do not verify here and again in Supabase.
+        """
+        from services.hcaptcha import client_ip, verify_token
+
+        ok, errors = verify_token(body.token, client_ip(request))
+        if not ok:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": "Captcha verification failed.",
+                    "error_codes": errors,
+                },
+            )
+        return {"ok": True}
 
     @app.get("/api/auth/me")
     def api_auth_me(
