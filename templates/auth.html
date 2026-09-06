@@ -14,9 +14,9 @@
   <script>
     (function () {
       try {
-        document.documentElement.setAttribute("data-theme", "dark");
-        document.documentElement.setAttribute("data-theme-preference", "dark");
-        document.documentElement.style.colorScheme = "dark";
+        document.documentElement.setAttribute("data-theme", "light");
+        document.documentElement.setAttribute("data-theme-preference", "light");
+        document.documentElement.style.colorScheme = "light";
         document.documentElement.removeAttribute("data-dark-variant");
       } catch (_e) { /* ignore */ }
     })();
@@ -65,7 +65,7 @@
       padding: 24px;
       position: relative;
       overflow: hidden;
-      /* Match landing hero (“What if you could create Sunday Mass…”) */
+      /* Same backdrop as the landing “Generate” hero */
       background:
         radial-gradient(ellipse 80% 60% at 50% 0%, rgba(161, 15, 13, 0.22) 0%, transparent 55%),
         radial-gradient(ellipse 60% 50% at 80% 100%, rgba(255, 180, 169, 0.08) 0%, transparent 50%),
@@ -83,19 +83,49 @@
       width: min(100%, 420px);
     }
     .auth-shell {
+      /* Force a bright card even when the page theme is dark */
+      --bg: #f7f0ee;
+      --surface: #ffffff;
+      --ink: #3d2c2a;
+      --muted: #7a5f5a;
+      --line: #e8d5d1;
+      --brand-flow-color: #a10f0d;
       position: relative;
       width: 100%;
-      background: color-mix(in srgb, var(--surface) 92%, transparent);
-      border: 1px solid color-mix(in srgb, var(--accent-soft) 22%, var(--line));
+      border: 1px solid rgba(161, 15, 13, 0.12);
       border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(61, 44, 42, 0.1);
-      padding: 28px 24px 24px;
-      overflow: hidden;
+      padding: 16px 18px 14px;
+      overflow: visible;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 248, 246, 0.98) 55%, #f6ebe8 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.9) inset,
+        0 12px 40px rgba(0, 0, 0, 0.28),
+        0 2px 8px rgba(61, 44, 42, 0.12);
+    }
+    .auth-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 85% 50% at 50% -8%, rgba(161, 15, 13, 0.1), transparent 58%),
+        radial-gradient(ellipse 45% 35% at 100% 100%, rgba(255, 180, 169, 0.18), transparent 55%);
+    }
+    .auth-shell > * {
+      position: relative;
+      z-index: 1;
     }
     html[data-theme="dark"] .auth-shell {
-      background: rgba(30, 16, 14, 0.88);
-      border-color: rgba(255, 180, 169, 0.14);
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+      border-color: rgba(161, 15, 13, 0.14);
+      background:
+        linear-gradient(180deg, #ffffff 0%, #fff8f6 52%, #f4e8e5 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 18px 48px rgba(0, 0, 0, 0.4),
+        0 2px 10px rgba(61, 44, 42, 0.16);
     }
     .auth-close {
       position: absolute;
@@ -132,21 +162,440 @@
       height: 18px;
       display: block;
     }
-    .auth-brand { text-align: center; margin-bottom: 20px; padding-top: 4px; }
+    .auth-brand { text-align: center; margin-bottom: 10px; padding-top: 0; }
     .auth-brand__icon {
       display: block;
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 14px;
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 8px;
       object-fit: contain;
     }
     .auth-brand h1.wordmark {
-      margin: 0 0 6px;
-      font-size: clamp(1.75rem, 5vw, 2.15rem);
+      margin: 0 0 2px;
+      font-size: clamp(1.4rem, 4.5vw, 1.75rem);
       font-weight: 400;
       line-height: 1;
     }
-    .auth-brand p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    .auth-brand p { margin: 0; color: var(--muted); font-size: 0.82rem; }
+    .auth-brand #auth-subtitle {
+      max-width: 100%;
+      padding: 0 6px;
+      line-height: 1.35;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      text-wrap: balance;
+    }
+    .auth-brand #auth-subtitle:empty { display: none; }
+    #auth-form {
+      position: relative;
+      z-index: 4;
+    }
+    #auth-form-stage {
+      position: relative;
+      z-index: 5;
+    }
+    #auth-signup-fields {
+      position: relative;
+      z-index: 5;
+    }
+    .auth-steps {
+      position: relative;
+      overflow: visible;
+      min-height: 0;
+      z-index: 5;
+      transition: min-height 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .auth-step {
+      width: 100%;
+      transition:
+        opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .auth-step.is-leave-next {
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      opacity: 0;
+      transform: translateX(-18px);
+      pointer-events: none;
+    }
+    .auth-step.is-leave-back {
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      opacity: 0;
+      transform: translateX(18px);
+      pointer-events: none;
+    }
+    .auth-step.is-enter-next {
+      position: relative;
+      opacity: 0;
+      transform: translateX(18px);
+    }
+    .auth-step.is-enter-back {
+      position: relative;
+      opacity: 0;
+      transform: translateX(-18px);
+    }
+    .auth-step.is-active {
+      opacity: 1;
+      transform: none;
+      position: relative;
+      z-index: 1;
+    }
+    .auth-step[hidden] { display: none !important; }
+    .auth-step.is-animating[hidden] { display: block !important; }
+    .auth-phone-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .auth-phone-combined {
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #faf5f3 100%);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(61, 44, 42, 0.04);
+      overflow: hidden;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .auth-phone-combined:focus-within {
+      border-color: color-mix(in srgb, var(--accent, #a10f0d) 35%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #a10f0d) 12%, transparent);
+      background: #ffffff;
+    }
+    .auth-phone-combined .auth-phone-code-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 54px;
+      padding: 8px 6px 8px 12px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      color: var(--muted);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+    .auth-phone-combined #auth-phone {
+      flex: 1;
+      min-width: 0;
+      width: auto;
+      min-height: 38px;
+      border: none !important;
+      border-radius: 0;
+      background: transparent !important;
+      box-shadow: none !important;
+      outline: none !important;
+      padding: 8px 12px 8px 4px;
+    }
+    .auth-field-error {
+      display: none;
+      margin: 5px 0 0;
+      padding: 0;
+      max-width: 100%;
+      font-size: 0.72rem;
+      font-weight: 500;
+      line-height: 1.35;
+      color: #8b1a18;
+      background: none;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .field.is-invalid > .auth-field-error {
+      display: block;
+    }
+    .field.is-invalid > label,
+    .field.is-invalid > .field-label {
+      color: #8b1a18;
+    }
+    .field.is-invalid input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    .field.is-invalid .auth-vb-select__trigger,
+    .field.is-invalid .auth-country-chip,
+    .field.is-invalid #auth-country-filter,
+    .field.is-invalid .auth-phone-combined {
+      border-color: #c62828 !important;
+      box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.12);
+    }
+    .field.is-invalid .auth-check-grid {
+      outline: 1px solid #f0c4c0;
+      outline-offset: 4px;
+      border-radius: 6px;
+    }
+    @keyframes auth-field-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .field.is-shaking input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    .field.is-shaking .auth-vb-select__trigger,
+    .field.is-shaking .auth-country-chip,
+    .field.is-shaking #auth-country-filter,
+    .field.is-shaking .auth-phone-combined,
+    .field.is-shaking .auth-check-grid {
+      animation: auth-field-shake 0.45s ease-in-out;
+    }
+    .auth-country-picker,
+    .auth-vb-select {
+      position: relative;
+      z-index: 2;
+    }
+    .auth-country-picker:focus-within,
+    .auth-country-picker:has(.auth-dropdown-panel.is-open),
+    .auth-vb-select:has(.auth-vb-select__trigger[aria-expanded="true"]),
+    .auth-vb-select:has(.auth-dropdown-panel.is-open) {
+      z-index: 60;
+    }
+    .auth-country-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 40px;
+      padding: 4px 4px 4px 10px;
+      border: 1px solid color-mix(in srgb, var(--accent, #a10f0d) 28%, var(--line));
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--accent, #a10f0d) 7%, #ffffff);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(61, 44, 42, 0.04);
+    }
+    .auth-country-chip[hidden] { display: none !important; }
+    .auth-country-chip__label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    .auth-country-chip__clear {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      font: inherit;
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+    .auth-country-chip__clear:hover {
+      background: rgba(61, 44, 42, 0.08);
+      color: var(--ink);
+    }
+    .auth-country-picker.is-selected #auth-country-filter {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .auth-vb-select__trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #faf5f3 100%);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.95rem;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(61, 44, 42, 0.04);
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .auth-vb-select__trigger:hover {
+      border-color: color-mix(in srgb, var(--ink) 14%, var(--line));
+    }
+    .auth-vb-select__trigger[aria-expanded="true"] {
+      border-color: color-mix(in srgb, var(--accent, #a10f0d) 40%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #a10f0d) 12%, transparent);
+      background: #ffffff;
+    }
+    .auth-vb-select__value {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .auth-vb-select__value.is-placeholder { color: var(--muted); }
+    .auth-vb-select__chevron {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      color: var(--muted);
+      opacity: 0.85;
+      transition: transform 200ms ease;
+    }
+    .auth-vb-select__trigger[aria-expanded="true"] .auth-vb-select__chevron {
+      transform: rotate(180deg);
+    }
+    .auth-dropdown-panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 70;
+      max-height: min(240px, 42vh);
+      overflow: auto;
+      margin: 0;
+      padding: 6px;
+      list-style: none;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: 0 12px 32px rgba(61, 44, 42, 0.16);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(0.98) translateY(-4px);
+      transform-origin: top center;
+      transition:
+        opacity 180ms ease,
+        transform 180ms ease,
+        visibility 0s linear 180ms;
+    }
+    .auth-dropdown-panel.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
+      transition:
+        opacity 180ms ease,
+        transform 180ms ease,
+        visibility 0s;
+    }
+    .auth-dropdown-panel[hidden] { display: none !important; }
+    .auth-dropdown-panel.is-open[hidden] { display: block !important; }
+    .auth-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.9rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .auth-dropdown-item:hover,
+    .auth-dropdown-item.is-active,
+    .auth-dropdown-item[aria-selected="true"] {
+      background: #f7f0ee;
+    }
+    .auth-dropdown-item.is-empty {
+      color: var(--muted);
+      cursor: default;
+    }
+    .auth-dropdown-item.is-empty:hover { background: transparent; }
+    .auth-flag { font-size: 1.05rem; line-height: 1; flex-shrink: 0; }
+    .auth-check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 12px;
+      row-gap: 1px;
+      margin-top: 2px;
+    }
+    .auth-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 2px 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      line-height: 1.35;
+      color: var(--ink);
+      box-shadow: none;
+    }
+    .auth-check:hover {
+      border-color: transparent;
+      color: color-mix(in srgb, var(--ink) 88%, var(--accent, #a10f0d));
+    }
+    .auth-check:has(input:checked) {
+      border-color: transparent;
+      background: transparent;
+      font-weight: 600;
+    }
+    .auth-check input[type="checkbox"] {
+      -webkit-appearance: checkbox;
+      appearance: checkbox;
+      box-sizing: border-box;
+      width: auto;
+      height: auto;
+      min-width: 0;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      flex-shrink: 0;
+      accent-color: var(--accent, #a10f0d);
+      transform: scale(1.1);
+      transform-origin: left center;
+      cursor: pointer;
+    }
+    @media (max-width: 420px) {
+      .field-row { grid-template-columns: 1fr; }
+      .auth-check-grid { grid-template-columns: 1fr; }
+    }
+    #auth-survey-other-wrap[hidden],
+    #auth-role-other-wrap[hidden] { display: none !important; }
+    .auth-nav-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+      position: relative;
+      z-index: 0;
+    }
+    .auth-nav-row .auth-submit,
+    .auth-nav-row .auth-secondary { margin-top: 0; width: 100%; }
+    .auth-nav-row.is-step1 {
+      grid-template-columns: 1fr;
+    }
+    #auth-step-back[hidden],
+    #auth-step-next[hidden],
+    #auth-submit[hidden],
+    #auth-submit-simple[hidden],
+    #auth-step-nav[hidden] { display: none !important; }
     .wordmark {
       display: inline-flex;
       align-items: baseline;
@@ -172,21 +621,46 @@
       margin-left: -0.19em;
       letter-spacing: -0.02em;
     }
-    .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 0.82rem; font-weight: 500; margin-bottom: 6px; }
-    .field input {
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 5px; color: var(--ink); }
+    .field input:not([type="checkbox"]):not([type="radio"]),
+    .field select.auth-select {
       width: 100%;
-      padding: 10px 12px;
+      padding: 8px 12px;
+      min-height: 40px;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 10px;
       font: inherit;
-      background: transparent;
+      background: linear-gradient(180deg, #ffffff 0%, #faf5f3 100%);
       color: var(--ink);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(61, 44, 42, 0.04);
     }
-    .field input[readonly] {
+    .field input:not([type="checkbox"]):not([type="radio"]):focus,
+    .field select.auth-select:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--accent, #a10f0d) 45%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #a10f0d) 14%, transparent);
+      background: #ffffff;
+    }
+    .field input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+    .field select.auth-select:focus-visible {
+      outline: none;
+    }
+    .field input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill,
+    .field input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill:hover,
+    .field input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--ink);
+      caret-color: var(--ink);
+      box-shadow:
+        0 0 0 1000px #ffffff inset,
+        0 0 0 3px color-mix(in srgb, var(--accent, #a10f0d) 14%, transparent);
+      border-color: color-mix(in srgb, var(--accent, #a10f0d) 45%, var(--line));
+      transition: background-color 99999s ease-out;
+    }
+    .field input[readonly]:not([type="checkbox"]):not([type="radio"]) {
       cursor: default;
       pointer-events: none;
-      background: color-mix(in srgb, var(--line) 18%, transparent);
+      background: #f3ebe8;
       color: var(--muted);
     }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -195,24 +669,26 @@
       margin-top: 8px;
       padding: 11px 14px;
       border: none;
-      border-radius: 8px;
-      background: var(--accent);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #b51210 0%, #a10f0d 100%);
       color: #fff;
       font: inherit;
       font-weight: 600;
       cursor: pointer;
     }
-    html[data-theme="dark"] .auth-submit {
-      color: #ffada2;
+    html[data-theme="dark"] .auth-shell .auth-submit {
+      color: #ffffff;
     }
     .auth-submit:hover {
-      box-shadow: 0 0 20px rgba(161, 15, 13, 0.35);
+      box-shadow: 0 6px 18px rgba(161, 15, 13, 0.28);
     }
     .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
     .auth-oauth {
       display: grid;
       gap: 10px;
       margin: 0 0 4px;
+      position: relative;
+      z-index: 0;
     }
     .auth-oauth[hidden] { display: none !important; }
     .auth-oauth-btn {
@@ -223,17 +699,18 @@
       gap: 10px;
       padding: 11px 14px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7f0ee 100%);
       color: var(--ink);
       font: inherit;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
     }
     .auth-oauth-btn:hover {
-      background: color-mix(in srgb, var(--bg) 70%, var(--surface));
-      border-color: color-mix(in srgb, var(--accent-soft) 35%, var(--line));
+      background: linear-gradient(180deg, #ffffff 0%, #f0e6e3 100%);
+      border-color: color-mix(in srgb, var(--accent-soft) 45%, var(--line));
     }
     .auth-oauth-btn:active { transform: scale(0.98); }
     .auth-oauth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -261,12 +738,9 @@
       padding: 10px 12px;
       border-radius: 8px;
       background: #fef2f2;
+      border: 1px solid #f0d0d4;
       color: #9b3d4e;
       font-size: 0.86rem;
-    }
-    html[data-theme="dark"] .auth-error {
-      background: color-mix(in srgb, #9b3d4e 12%, var(--surface));
-      border: 1px solid color-mix(in srgb, #9b3d4e 28%, var(--line));
     }
     .auth-footer {
       margin-top: 18px;
@@ -288,13 +762,39 @@
       padding: 10px 14px;
       border: 1px solid var(--line);
       border-radius: 10px;
-      background: transparent;
+      background: linear-gradient(180deg, #ffffff 0%, #f7f0ee 100%);
       color: var(--ink);
       font: inherit;
       font-weight: 500;
       cursor: pointer;
     }
-    .auth-secondary:hover { background: var(--bg); }
+    .auth-secondary:hover { background: #f3ebe8; }
+    .auth-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      font: inherit;
+      appearance: none;
+      background-color: #ffffff;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #faf5f3 100%);
+      background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px), 0 0;
+      background-size: 6px 6px, 6px 6px, auto;
+      background-repeat: no-repeat;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(61, 44, 42, 0.04);
+    }
+    .auth-select:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--accent, #a10f0d) 45%, var(--line));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #a10f0d) 14%, transparent);
+    }
+    #auth-credentials-fields[hidden] { display: none !important; }
+    #auth-oauth[hidden] { display: none !important; }
+    #auth-signup-fields[hidden] { display: none !important; }
   </style>
 </head>
 <body>
@@ -308,7 +808,7 @@
     <div class="auth-brand">
       <img src="/static/brand/app-icon.png?v=5" alt="" class="auth-brand__icon" width="64" height="64" decoding="async" />
       <h1 class="wordmark" aria-label="LiturgyFlow"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></h1>
-      <p>{{ subtitle }}</p>
+      <p id="auth-subtitle">{{ subtitle }}</p>
     </div>
 
     <p class="auth-loading" id="auth-loading">Loading…</p>
@@ -356,43 +856,134 @@
           Sign in with Facebook
         </button>
         <a class="auth-submit" href="/sign-in" style="text-align:center;text-decoration:none;display:block;">Sign in with email</a>
-        {% if invite_contact_email %}
-        <a class="auth-secondary" href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request" style="text-align:center;text-decoration:none;display:block;">Contact administrator</a>
-        {% endif %}
+        <a class="auth-secondary" href="/?contact=1&topic=access" style="text-align:center;text-decoration:none;display:block;">Contact Us</a>
       </div>
     </div>
 
     <form id="auth-form" hidden novalidate>
+      <div id="auth-form-stage">
       <div id="auth-signup-fields" hidden>
-        <div class="field">
-          <label for="auth-church-name">Church / community name</label>
-          <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="Set by your administrator" />
-          <p class="muted" id="auth-church-name-hint" style="margin:6px 0 0;font-size:0.8rem;color:var(--muted);" hidden>Your administrator sets the parish name on the invite link.</p>
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="auth-first-name">First name</label>
-            <input type="text" id="auth-first-name" autocomplete="given-name" maxlength="80" />
+        <div class="auth-steps" id="auth-steps">
+          <div class="auth-step is-active" id="auth-step-1" data-step="1">
+            <div class="field-row">
+              <div class="field">
+                <label for="auth-first-name">First Name</label>
+                <input type="text" id="auth-first-name" autocomplete="given-name" maxlength="80" inputmode="text" pattern="[A-Za-zÀ-ÿ' .\-]+" />
+              </div>
+              <div class="field">
+                <label for="auth-last-name">Last Name</label>
+                <input type="text" id="auth-last-name" autocomplete="family-name" maxlength="80" inputmode="text" pattern="[A-Za-zÀ-ÿ' .\-]+" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="auth-middle-name">Middle Name <span style="font-weight:400;color:var(--muted);">(Optional)</span></label>
+              <input type="text" id="auth-middle-name" autocomplete="additional-name" maxlength="80" inputmode="text" pattern="[A-Za-zÀ-ÿ' .\-]*" />
+            </div>
+            <div class="field">
+              <label for="auth-country-filter">Country</label>
+              <div class="auth-country-picker" id="auth-country-picker">
+                <div class="auth-country-chip" id="auth-country-chip" hidden>
+                  <span class="auth-flag" id="auth-country-chip-flag" aria-hidden="true"></span>
+                  <span class="auth-country-chip__label" id="auth-country-chip-label"></span>
+                  <button type="button" class="auth-country-chip__clear" id="auth-country-clear" aria-label="Clear country">&times;</button>
+                </div>
+                <input
+                  type="text"
+                  id="auth-country-filter"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Where Are You From?"
+                  aria-autocomplete="list"
+                  aria-controls="auth-country-menu"
+                  aria-expanded="false"
+                />
+                <ul class="auth-dropdown-panel" id="auth-country-menu" role="listbox" hidden></ul>
+                <input type="hidden" id="auth-phone-country" value="" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="auth-phone">Phone Number</label>
+              <div class="auth-phone-combined" id="auth-phone-combined">
+                <span class="auth-phone-code-display" id="auth-phone-code-display">+</span>
+                <input type="tel" id="auth-phone" autocomplete="tel-national" inputmode="numeric" pattern="[0-9\s\-()]*" maxlength="20" placeholder="Mobile Number" />
+              </div>
+            </div>
+            <div class="field">
+              <label id="auth-ministry-role-label">Your Role in the Parish</label>
+              <div class="auth-vb-select" id="auth-role-select">
+                <button
+                  type="button"
+                  class="auth-vb-select__trigger"
+                  id="auth-role-trigger"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-labelledby="auth-ministry-role-label auth-role-value"
+                >
+                  <span class="auth-vb-select__value is-placeholder" id="auth-role-value">Select a Role</span>
+                  <svg class="auth-vb-select__chevron" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <ul class="auth-dropdown-panel" id="auth-role-menu" role="listbox" hidden aria-labelledby="auth-ministry-role-label">
+                  <li><button type="button" class="auth-dropdown-item" role="option" data-value="media_officer">Media &amp; Projection</button></li>
+                  <li><button type="button" class="auth-dropdown-item" role="option" data-value="choir_leader">Choir / Music Ministry</button></li>
+                  <li><button type="button" class="auth-dropdown-item" role="option" data-value="secretary">Parish Secretary</button></li>
+                  <li><button type="button" class="auth-dropdown-item" role="option" data-value="priest">Priest / Clergy</button></li>
+                  <li><button type="button" class="auth-dropdown-item" role="option" data-value="volunteer">Volunteer</button></li>
+                  <li><button type="button" class="auth-dropdown-item" role="option" data-value="other">Other</button></li>
+                </ul>
+                <input type="hidden" id="auth-ministry-role" value="" />
+              </div>
+            </div>
+            <div class="field" id="auth-role-other-wrap" hidden>
+              <label for="auth-role-other">Describe Your Role</label>
+              <input type="text" id="auth-role-other" maxlength="60" placeholder="Liturgy Coordinator" />
+            </div>
           </div>
-          <div class="field">
-            <label for="auth-last-name">Last name</label>
-            <input type="text" id="auth-last-name" autocomplete="family-name" maxlength="80" />
+          <div class="auth-step" id="auth-step-2" data-step="2" hidden>
+            <div class="field">
+              <label for="auth-church-name">Church/Community Name</label>
+              <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="Gwangju Filipino Catholic Community" />
+              <p class="muted" id="auth-church-name-hint" style="margin:6px 0 0;font-size:0.8rem;color:var(--muted);" hidden>Your administrator sets the parish name on the invite link.</p>
+            </div>
+            <div class="field">
+              <span class="field-label" id="auth-survey-label" style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:5px;color:var(--ink);">How Did You Hear About LiturgyFlow?</span>
+              <div class="auth-check-grid" role="group" aria-labelledby="auth-survey-label" id="auth-survey-sources">
+                <label class="auth-check"><input type="checkbox" name="auth-survey-source" value="parish_colleague" /> Parish Colleague</label>
+                <label class="auth-check"><input type="checkbox" name="auth-survey-source" value="priest_recommendation" /> Priest / Parish</label>
+                <label class="auth-check"><input type="checkbox" name="auth-survey-source" value="google_search" /> Google Search</label>
+                <label class="auth-check"><input type="checkbox" name="auth-survey-source" value="facebook" /> Facebook</label>
+                <label class="auth-check"><input type="checkbox" name="auth-survey-source" value="instagram" /> Instagram</label>
+                <label class="auth-check"><input type="checkbox" name="auth-survey-source" value="tiktok" /> TikTok</label>
+                <label class="auth-check"><input type="checkbox" name="auth-survey-source" value="other" id="auth-survey-other-check" /> Other</label>
+              </div>
+            </div>
+            <div class="field" id="auth-survey-other-wrap" hidden>
+              <label for="auth-survey-other">Please Tell Us More</label>
+              <input type="text" id="auth-survey-other" maxlength="240" placeholder="Diocese Newsletter" />
+            </div>
           </div>
         </div>
+      </div>
+      <div id="auth-credentials-fields">
         <div class="field">
-          <label for="auth-phone">Phone number</label>
-          <input type="tel" id="auth-phone" autocomplete="tel" inputmode="tel" maxlength="32" placeholder="e.g. +1 555 123 4567" />
+          <label for="auth-email">Email</label>
+          <input type="email" id="auth-email" autocomplete="email" required maxlength="320" />
+        </div>
+        <div class="field">
+          <label for="auth-password">Password</label>
+          <input type="password" id="auth-password" autocomplete="{% if mode == 'sign-up' %}new-password{% else %}current-password{% endif %}" required minlength="8" maxlength="128" />
         </div>
       </div>
-      <div class="field">
-        <label for="auth-email">Email</label>
-        <input type="email" id="auth-email" autocomplete="email" required maxlength="320" />
       </div>
-      <div class="field">
-        <label for="auth-password">Password</label>
-        <input type="password" id="auth-password" autocomplete="{% if mode == 'sign-up' %}new-password{% else %}current-password{% endif %}" required minlength="8" maxlength="128" />
+      <div class="auth-nav-row" id="auth-step-nav" hidden>
+        <button type="button" class="auth-secondary" id="auth-step-back" hidden>Back</button>
+        <button type="button" class="auth-submit" id="auth-step-next">Continue</button>
+        <button type="submit" class="auth-submit" id="auth-submit" hidden>
+          {% if mode == "sign-up" %}Create account{% else %}Sign in{% endif %}
+        </button>
       </div>
-      <button type="submit" class="auth-submit" id="auth-submit">
+      <button type="submit" class="auth-submit" id="auth-submit-simple">
         {% if mode == "sign-up" %}Create account{% else %}Sign in{% endif %}
       </button>
     </form>
@@ -421,11 +1012,7 @@
 
     <p class="auth-footer" id="auth-footer">
       {% if mode == "sign-in" %}
-        {% if invite_contact_email %}
-        Need access? <a href="mailto:{{ invite_contact_email }}?subject=LiturgyFlow%20access%20request">Contact your administrator</a>
-        {% else %}
-        Need access? Contact your LiturgyFlow administrator.
-        {% endif %}
+        Need access? <a href="/?contact=1&topic=access">Contact Us</a>
       {% else %}
         Already have an account? <a href="/sign-in">Sign in</a>
       {% endif %}
@@ -456,6 +1043,6 @@
     window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
     window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
   </script>
-  <script src="/static/js/auth-page.js?v=20260905g" defer></script>
+  <script src="/static/js/auth-page.js?v=20260906-onboard13" defer></script>
 </body>
 </html>

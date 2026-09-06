@@ -4920,7 +4920,7 @@ def api_undo_verbum_lyrics_import(
 @app.post("/api/lyrics/save")
 def api_save_lyrics(
     body: SaveLyricsBody,
-    session: Optional[AuthSession] = Depends(require_session_when_auth),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     if auth_enabled() and session and not is_superadmin_user(session.user):
         from services.parish_hymn_overrides import save_override, save_parish_original_song
@@ -5058,7 +5058,7 @@ def api_save_lyrics(
 @app.post("/api/submissions/priest")
 def api_submit_priest(
     body: PriestSubmissionBody,
-    session: Optional[AuthSession] = Depends(require_session_when_auth),
+    session: Optional[AuthSession] = Depends(require_approved_membership),
 ) -> dict[str, Any]:
     if not session:
         raise HTTPException(status_code=401, detail="Sign in required.")

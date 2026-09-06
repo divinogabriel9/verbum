@@ -83,7 +83,8 @@ def membership_payload(
     signed_in = user is not None
     full_access = membership_allows_full_access(row, user=user, profile_role=profile_role)
     can_use_full_app = full_access or not auth_on
-    can_submit = signed_in and auth_on and not superadmin and not full_access
+    # Songs/priests for the global catalog: approved parish members only (not pending/draft).
+    can_submit = signed_in and auth_on and not superadmin and full_access
     can_request_parish_rename = (
         signed_in
         and auth_on

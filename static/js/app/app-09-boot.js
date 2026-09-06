@@ -2181,6 +2181,7 @@
     initDashboardDropdownDismiss();
     initAccountMenu();
     initMobileWelcomeModal();
+    initMembershipWelcomeModal();
     initSongsWhatsNewModal();
     initCreateMenu();
     initVerbumSelects();

@@ -213,6 +213,16 @@ def submit_contact(row: ContactMessage) -> dict[str, Any]:
         email=row.email,
         topic_label=row.topic_label,
     )
+    try:
+        from services.admin_alerts import alert_contact_message
+
+        alert_contact_message(
+            name=row.name,
+            email=row.email,
+            topic=row.topic_label,
+        )
+    except Exception as exc:
+        logger.warning("Contact telegram alert failed: %s", exc)
     if not admin_ok:
         logger.warning(
             "Contact stored but admin email failed. to=%s name=%s email=%s topic=%s",

@@ -27,7 +27,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260905-1345" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260906-membership-welcome2" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260905-1610" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260906-0945" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -1439,6 +1439,71 @@
                 <span class="muted">Compose or import lyrics</span>
               </span>
             </button>
+          </div>
+        </article>
+      </div>
+
+      <div class="ui-overlay membership-welcome-overlay" id="membership-welcome-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="membership-welcome-backdrop"></div>
+        <article class="ui-card membership-welcome-card" role="dialog" aria-labelledby="membership-welcome-title" aria-describedby="membership-welcome-desc" aria-modal="true">
+          <div id="membership-welcome-step-1" class="membership-welcome-step membership-welcome-step--intro">
+            <div class="membership-welcome-layout">
+              <figure class="membership-welcome-art" aria-hidden="true">
+                <img src="/static/images/membership-welcome-altar-boys.jpg" alt="" width="900" height="865" decoding="async" />
+              </figure>
+              <div class="membership-welcome-copy">
+                <header class="ui-card__header membership-welcome-header">
+                  <div class="ui-card__header-text">
+                    <p class="membership-welcome-eyebrow">Welcome aboard</p>
+                    <h3 class="ui-card__title" id="membership-welcome-title">We’re so glad you’re here</h3>
+                    <p class="ui-card__description" id="membership-welcome-desc">LiturgyFlow helps your parish prepare Sunday Mass with warmth and ease — slides, songs, posters, and more, ready when you are.</p>
+                  </div>
+                </header>
+                <div class="ui-card__content membership-welcome-body">
+                  <ul class="membership-welcome-features">
+                    <li>
+                      <strong>Beautiful Mass decks</strong>
+                      <span>Turn the day’s readings, psalm, gospel, and hymns into clear slides.</span>
+                    </li>
+                    <li>
+                      <strong>Parish posters &amp; shares</strong>
+                      <span>Make inviting visuals for announcements and social posts.</span>
+                    </li>
+                    <li>
+                      <strong>Songs &amp; choir practice</strong>
+                      <span>Grow your hymn library and share lyrics for rehearsal.</span>
+                    </li>
+                    <li>
+                      <strong>Gospel-inspired art</strong>
+                      <span>Create imagery that reflects the Sunday Gospel.</span>
+                    </li>
+                  </ul>
+                </div>
+                <footer class="ui-card__footer ui-card__footer--row membership-welcome-footer">
+                  <button type="button" class="primary" id="membership-welcome-continue">Let’s go</button>
+                </footer>
+              </div>
+            </div>
+          </div>
+          <div id="membership-welcome-step-2" class="membership-welcome-step membership-welcome-step--wait" hidden>
+            <div class="membership-welcome-layout membership-welcome-layout--wait">
+              <div class="membership-welcome-copy">
+                <header class="ui-card__header membership-welcome-header">
+                  <div class="ui-card__header-text">
+                    <p class="membership-welcome-eyebrow">One more moment</p>
+                    <h3 class="ui-card__title" id="membership-welcome-title-2">Your parish approval is on the way</h3>
+                    <p class="ui-card__description" id="membership-welcome-desc-2">Mass generation, song saves, and priest submissions unlock once a superadmin confirms your parish membership. While you wait, you can take a friendly tour of the Mass builder.</p>
+                  </div>
+                </header>
+                <div class="ui-card__content membership-welcome-body">
+                  <p class="membership-welcome-tour-hint">Want us to walk you through it while approval is pending?</p>
+                </div>
+                <footer class="ui-card__footer ui-card__footer--row membership-welcome-footer">
+                  <button type="button" class="secondary" id="membership-welcome-later">Maybe later</button>
+                  <button type="button" class="primary" id="membership-welcome-guide">Guide me</button>
+                </footer>
+              </div>
+            </div>
           </div>
         </article>
       </div>
@@ -4295,10 +4360,10 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260905-facebook1"></script>
+  <script src="/static/js/app.js?v=20260906-membership-gate1"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
-  <script src="/static/js/auth.js?v=20260905-facebook1"></script>
+  <script src="/static/js/auth.js?v=20260906-membership-gate1"></script>
   <script>
     scheduleDashboardBoot();
   </script>

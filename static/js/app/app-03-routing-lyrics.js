@@ -2555,6 +2555,7 @@
     }
 
     async function performSaveLyrics() {
+      if (!guardFullAppAction("Saving songs requires approved parish membership.")) return;
       const title = normalizeSongTitleInput($("lyrics-save-title"));
       tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {
@@ -2723,6 +2724,7 @@
     }
 
     $("btn-save-lyrics") && $("btn-save-lyrics").addEventListener("click", async () => {
+      if (!guardFullAppAction("Saving songs requires approved parish membership.")) return;
       if (isMobileChromeLayout()) setLyricsEditorFloatExpanded(false);
       tidyLyricsInEditor({ quiet: true });
       if (lyricBlocks.length) {

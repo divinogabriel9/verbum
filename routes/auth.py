@@ -35,6 +35,21 @@ class PresenceHeartbeatBody(BaseModel):
     region: Optional[str] = Field(None, max_length=80)
 
 
+class OnboardingCompleteBody(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=80)
+    middle_name: str = Field("", max_length=80)
+    last_name: str = Field(..., min_length=1, max_length=80)
+    phone: str = Field(..., min_length=8, max_length=32)
+    community_name: str = Field(..., min_length=2, max_length=120)
+    ministry_role: str = Field(..., min_length=2, max_length=40)
+    ministry_role_other: str = Field("", max_length=60)
+    preferred_language: str = Field("", max_length=40)
+    primary_use: str = Field("", max_length=40)
+    survey_sources: list[str] = Field(default_factory=list)
+    survey_source: str = Field("", max_length=200)
+    survey_source_other: str = Field("", max_length=240)
+
+
 def _auth_page_context(
     *,
     mode: str,
@@ -143,10 +158,55 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                     avatar_url = user.image_url
                 payload["avatar_url"] = avatar_url
                 payload["image_url"] = avatar_url or user.image_url
+                from services.onboarding import profile_onboarding_complete
+
+                payload["onboarding_completed"] = profile_onboarding_complete(
+                    profile_row
+                )
+                payload["needs_onboarding"] = not payload["onboarding_completed"]
             except Exception as exc:
                 payload["supabase_error"] = str(exc)
 
         return payload
+
+    @app.get("/api/auth/onboarding")
+    def api_auth_onboarding_status(
+        session: AuthSession = Depends(require_session),
+    ) -> dict[str, Any]:
+        from services.onboarding import get_onboarding_status
+
+        return get_onboarding_status(
+            session.user.user_id, access_token=session.token
+        )
+
+    @app.post("/api/auth/onboarding/complete")
+    def api_auth_onboarding_complete(
+        body: OnboardingCompleteBody,
+        session: AuthSession = Depends(require_session),
+    ) -> dict[str, Any]:
+        from services.onboarding import complete_onboarding
+        from services.user_church_context import set_church_profile
+
+        result = complete_onboarding(
+            session.user.user_id,
+            access_token=session.token,
+            first_name=body.first_name,
+            middle_name=body.middle_name,
+            last_name=body.last_name,
+            phone=body.phone,
+            community_name=body.community_name,
+            ministry_role=body.ministry_role,
+            ministry_role_other=body.ministry_role_other,
+            preferred_language=body.preferred_language,
+            primary_use=body.primary_use,
+            survey_sources=body.survey_sources,
+            survey_source=body.survey_source,
+            survey_source_other=body.survey_source_other,
+        )
+        church = result.get("church_profile")
+        if isinstance(church, dict):
+            set_church_profile(church)
+        return result
 
     @app.post("/api/auth/heartbeat")
     def api_auth_heartbeat(
@@ -254,7 +314,7 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 mode="sign-up",
                 title="Create account · LiturgyFlow",
                 subtitle="Complete your LiturgyFlow account",
-                invite_token=token if invite_valid else "",
+                invite_token=token if invite_valid and token else "",
                 invite_valid=invite_valid,
                 invite_email=invite_email,
                 invite_community_name=invite_community_name,

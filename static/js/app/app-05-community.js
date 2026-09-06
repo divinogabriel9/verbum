@@ -1647,7 +1647,7 @@
       const key = n.toLowerCase();
       if (celebrantNamesCache.some((x) => x.toLowerCase() === key)) return false;
       if (!churchMembershipState.can_submit_priest && !churchMembershipState.can_edit_church_profile) {
-        throw new Error("Sign in to submit a priest name for approval.");
+        throw new Error("Approved parish membership is required to submit a priest name.");
       }
       if (churchMembershipState.is_superadmin) {
         celebrantNamesCache.push(n);
@@ -2300,18 +2300,133 @@
       if ($("church-logo")) $("church-logo").value = "";
     }
 
+    var MEMBERSHIP_WELCOME_KEY = "verbum:pending-approval-welcome-v1";
+    var membershipWelcomeShownThisLoad = false;
+
+    function shouldShowMembershipWelcome(state) {
+      const s = state || churchMembershipState;
+      if (!s || s.is_superadmin || s.can_use_full_app) return false;
+      const status = (s.membership_status || "draft").toLowerCase();
+      return status === "pending" || status === "draft";
+    }
+
+    function hasSeenMembershipWelcome() {
+      try {
+        return localStorage.getItem(MEMBERSHIP_WELCOME_KEY) === "1";
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function markMembershipWelcomeSeen() {
+      try {
+        localStorage.setItem(MEMBERSHIP_WELCOME_KEY, "1");
+      } catch (_e) { /* ignore */ }
+    }
+
+    function setMembershipWelcomeStep(step) {
+      const step1 = $("membership-welcome-step-1");
+      const step2 = $("membership-welcome-step-2");
+      if (step1) step1.hidden = step !== 1;
+      if (step2) step2.hidden = step !== 2;
+      const title = step === 2 ? $("membership-welcome-title-2") : $("membership-welcome-title");
+      const desc = step === 2 ? $("membership-welcome-desc-2") : $("membership-welcome-desc");
+      const card = document.querySelector("#membership-welcome-modal .membership-welcome-card");
+      if (card) {
+        if (title) card.setAttribute("aria-labelledby", title.id);
+        if (desc) card.setAttribute("aria-describedby", desc.id);
+      }
+    }
+
+    function openMembershipWelcomeModal() {
+      const modal = $("membership-welcome-modal");
+      if (!modal) return;
+      setMembershipWelcomeStep(1);
+      setUiOverlayOpen(modal, true);
+    }
+
+    function closeMembershipWelcomeModal() {
+      setUiOverlayOpen($("membership-welcome-modal"), false);
+      markMembershipWelcomeSeen();
+    }
+
+    function startMembershipWelcomeTour() {
+      closeMembershipWelcomeModal();
+      const tour = window.LiturgyFlowTour;
+      if (tour && typeof tour.startPptxTour === "function") {
+        requestAnimationFrame(() => {
+          setTimeout(() => tour.startPptxTour(), 220);
+        });
+      }
+    }
+
+    function maybeShowMembershipWelcome(state) {
+      if (!shouldShowMembershipWelcome(state)) return;
+      if (hasSeenMembershipWelcome() || membershipWelcomeShownThisLoad) return;
+      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
+
+      function tryOpen() {
+        if (hasSeenMembershipWelcome() || membershipWelcomeShownThisLoad) return;
+        if (!shouldShowMembershipWelcome(churchMembershipState)) return;
+        if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
+        const mobileWelcome = $("mobile-welcome-modal");
+        if (mobileWelcome && mobileWelcome.classList.contains("is-open")) {
+          setTimeout(tryOpen, 500);
+          return;
+        }
+        membershipWelcomeShownThisLoad = true;
+        openMembershipWelcomeModal();
+      }
+
+      setTimeout(tryOpen, 650);
+    }
+
+    function initMembershipWelcomeModal() {
+      const modal = $("membership-welcome-modal");
+      if (!modal || modal.dataset.bound === "1") return;
+      modal.dataset.bound = "1";
+      const backdrop = $("membership-welcome-backdrop");
+      if (backdrop) {
+        backdrop.addEventListener("click", () => {
+          if (modal.classList.contains("is-open")) closeMembershipWelcomeModal();
+        });
+      }
+      const continueBtn = $("membership-welcome-continue");
+      if (continueBtn) {
+        continueBtn.addEventListener("click", () => setMembershipWelcomeStep(2));
+      }
+      const laterBtn = $("membership-welcome-later");
+      if (laterBtn) {
+        laterBtn.addEventListener("click", closeMembershipWelcomeModal);
+      }
+      const guideBtn = $("membership-welcome-guide");
+      if (guideBtn) {
+        guideBtn.addEventListener("click", startMembershipWelcomeTour);
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (modal.classList.contains("is-open")) closeMembershipWelcomeModal();
+      });
+    }
+
     function syncGlobalMembershipBanner(data) {
       const state = data || churchMembershipState;
-      const status = state.membership_status || "draft";
+      const status = (state.membership_status || "draft").toLowerCase();
       const banners = [$("home-membership-banner"), $("flow-membership-banner")];
       let html = "";
       let cls = "app-membership-banner";
       let show = false;
 
-      if (!state.is_superadmin && !state.can_use_full_app && state.can_submit_song) {
-        show = true;
-        cls += " is-pending";
-        html = "Submit songs and priest names for superadmin approval. Mass generation unlocks after your parish membership is approved.";
+      if (!state.is_superadmin && !state.can_use_full_app) {
+        if (status === "pending" || status === "draft") {
+          // Pending-approval users get the welcome + tour popups instead of a global banner.
+          show = false;
+          maybeShowMembershipWelcome(state);
+        } else if (status === "rejected") {
+          show = true;
+          cls += " is-error";
+          html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> or contact the administrator.";
+        }
       } else if (status === "pending") {
         show = true;
         cls += " is-pending";
@@ -2353,8 +2468,8 @@
         can_edit_logo: data.can_edit_logo != null ? !!data.can_edit_logo : !data.logo_locked,
         can_edit_church_profile: !!data.can_edit_church_profile,
         can_use_full_app: data.can_use_full_app != null ? !!data.can_use_full_app : !!data.can_edit_church_profile,
-        can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : !data.is_superadmin,
-        can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : !data.is_superadmin,
+        can_submit_song: data.can_submit_song != null ? !!data.can_submit_song : (!!data.can_use_full_app && !data.is_superadmin),
+        can_submit_priest: data.can_submit_priest != null ? !!data.can_submit_priest : (!!data.can_use_full_app && !data.is_superadmin),
         is_superadmin: !!data.is_superadmin,
         role: (data.role || "member").toLowerCase(),
         parish_role: (data.parish_role || "").toLowerCase(),
@@ -2417,11 +2532,8 @@
         if (churchMembershipState.is_superadmin) {
           msg = "Superadmin account — full access to Mass generation, songs, and parish settings.";
           cls = "status ok";
-        } else if (canSubmitPriest && !churchMembershipState.can_use_full_app) {
-          msg = "You can submit priest names and songs for superadmin approval. Mass generation unlocks after parish membership is approved.";
-          cls = "status";
         } else if (status === "pending") {
-          msg = "Your parish membership is pending superadmin approval.";
+          msg = "Your parish membership is pending superadmin approval. Song saves and priest submissions unlock after approval.";
           cls = "status";
         } else if (status === "rejected") {
           msg = "Your parish membership was not approved. Contact the site administrator if you believe this is an error.";
@@ -2429,6 +2541,9 @@
         } else if (status === "draft" && canName) {
           msg = "Enter your parish name and optional logo, then submit once. Name and logo cannot be changed later; a superadmin will confirm your membership.";
           cls = "status";
+        } else if (canSubmitPriest && churchMembershipState.can_use_full_app) {
+          msg = "Approved parish member — you can save songs and submit priest names for the shared catalog.";
+          cls = "status ok";
         }
         if (msg) {
           banner.hidden = false;

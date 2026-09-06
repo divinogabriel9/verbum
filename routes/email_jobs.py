@@ -7,6 +7,7 @@ from typing import Any, Literal, Optional
 from fastapi import Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from services.admin_alerts import admin_alerts_status, emit_admin_alert
 from services.cron_auth import cron_secret_configured, require_cron_auth
 from services.email import (
     app_home_url,
@@ -17,6 +18,7 @@ from services.email import (
     wrap_html,
 )
 from services.email_reminders import list_reminder_recipients, run_weekly_reminders
+from services.telegram_notify import telegram_enabled
 
 
 class ReminderRunBody(BaseModel):
@@ -122,3 +124,37 @@ def register_email_job_routes(app) -> None:
             force=force,
             audience=audience,
         )
+
+    @app.get("/api/internal/admin-alerts/status")
+    def api_admin_alerts_status(
+        authorization: Optional[str] = Header(None),
+        x_cron_secret: Optional[str] = Header(None, alias="X-Cron-Secret"),
+    ) -> dict[str, Any]:
+        require_cron_auth(authorization, x_cron_secret)
+        return {"ok": True, **admin_alerts_status()}
+
+    @app.post("/api/internal/admin-alerts/test")
+    def api_admin_alerts_test(
+        authorization: Optional[str] = Header(None),
+        x_cron_secret: Optional[str] = Header(None, alias="X-Cron-Secret"),
+    ) -> dict[str, Any]:
+        """Send a sample operator alert on email + Telegram."""
+        require_cron_auth(authorization, x_cron_secret)
+        result = emit_admin_alert(
+            kind="test",
+            title="Alert test",
+            subtitle="If you got this, admin alerts are working.",
+            lines=[
+                f"Email channel: {'on' if email_enabled() else 'off'}",
+                f"Telegram channel: {'on' if telegram_enabled() else 'off'}",
+            ],
+        )
+        return {
+            "ok": result.ok,
+            "email_ok": result.email_ok,
+            "telegram_ok": result.telegram_ok,
+            "email_errors": result.email_errors,
+            "telegram_error": result.telegram_error,
+            "recipients": result.recipients,
+            "status": admin_alerts_status(),
+        }

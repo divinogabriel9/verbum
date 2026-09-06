@@ -3054,6 +3054,11 @@
           line-height: 1.35;
           color: var(--ink);
         }
+        body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-section-labels-field .flow-option-inline input[type="checkbox"] {
+          accent-color: var(--accent, #a10f0d);
+          flex-shrink: 0;
+          margin-top: 0.12em;
+        }
         body.mw-on #mw-wizard.mw > .song-plan-summary.mw-side-card .mass-summary-communion-field {
           display: flex;
           align-items: center;

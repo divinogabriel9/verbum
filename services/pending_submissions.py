@@ -212,6 +212,87 @@ def _resolve_submission_db(
     return _format_db_row(target)
 
 
+def _alert_song(
+    session: AuthSession,
+    payload: dict[str, Any],
+    catalog_matches: list[dict[str, Any]],
+) -> None:
+    try:
+        from services.admin_alerts import alert_song_submission
+
+        alert_song_submission(
+            title=str(payload.get("title") or ""),
+            submitted_by=(session.user.email or session.user.user_id or "").strip(),
+            language=str(payload.get("language") or ""),
+            similar_count=len(catalog_matches or []),
+        )
+    except Exception as exc:
+        logger.warning("Song submission alert failed: %s", exc)
+
+
+def _alert_priest(session: AuthSession, name: str) -> None:
+    try:
+        from services.admin_alerts import alert_priest_submission
+
+        alert_priest_submission(
+            name=name,
+            submitted_by=(session.user.email or session.user.user_id or "").strip(),
+        )
+    except Exception as exc:
+        logger.warning("Priest submission alert failed: %s", exc)
+
+
+def _alert_parish_rename(
+    session: AuthSession,
+    *,
+    previous_name: str,
+    new_name: str,
+) -> None:
+    try:
+        from services.admin_alerts import alert_parish_rename
+
+        alert_parish_rename(
+            previous_name=previous_name,
+            new_name=new_name,
+            submitted_by=(session.user.email or session.user.user_id or "").strip(),
+        )
+    except Exception as exc:
+        logger.warning("Parish rename alert failed: %s", exc)
+
+
+def _membership_blocks_content_submit(session: AuthSession) -> dict[str, Any] | None:
+    """Block song/priest queue submits until parish membership is approved."""
+    from services.membership_config import is_superadmin_user, membership_allows_full_access
+    from services.supabase_client import get_church_profile
+    from services.user_church_context import get_church_profile_context
+
+    if is_superadmin_user(session.user):
+        return None
+    church = get_church_profile_context()
+    if church is None:
+        try:
+            church = get_church_profile(session.user.user_id, access_token=session.token)
+        except Exception:
+            church = None
+    if membership_allows_full_access(church, user=session.user):
+        return None
+    status = ((church or {}).get("membership_status") or "draft").strip().lower()
+    if status == "pending":
+        return {
+            "ok": False,
+            "error": "Parish membership is pending approval. Song and priest submissions unlock after approval.",
+        }
+    if status == "rejected":
+        return {
+            "ok": False,
+            "error": "Parish membership was not approved. Contact the site administrator.",
+        }
+    return {
+        "ok": False,
+        "error": "Approved parish membership is required before submitting songs or priest names.",
+    }
+
+
 def submit_pending_song(
     session: AuthSession,
     *,
@@ -225,6 +306,10 @@ def submit_pending_song(
     parish_section: str | None = None,
 ) -> dict[str, Any]:
     from services.song_catalog import find_catalog_matches_by_title, format_song_title_case
+
+    blocked = _membership_blocks_content_submit(session)
+    if blocked:
+        return blocked
 
     clean_title = format_song_title_case(str(title or "")).strip()
     clean_lyrics = str(lyrics or "").strip()
@@ -291,8 +376,23 @@ def submit_pending_song(
                 ).eq("id", existing_pending_id).execute()
             except Exception:
                 pass
-        else:
-            row = _insert_submission_db(session, kind="song", payload=payload)
+            return {
+                "ok": True,
+                "pending": True,
+                "submission_id": row.get("id"),
+                "possible_matches": catalog_matches,
+                "message": (
+                    "Saved to your parish catalog and submitted for superadmin approval "
+                    "before it appears in the global catalog."
+                    + (
+                        f" Note: {len(catalog_matches)} similar title(s) already in the catalog."
+                        if catalog_matches
+                        else ""
+                    )
+                ),
+            }
+        row = _insert_submission_db(session, kind="song", payload=payload)
+        _alert_song(session, payload, catalog_matches)
         return {
             "ok": True,
             "pending": True,
@@ -336,6 +436,8 @@ def submit_pending_song(
         }
         rows.append(row)
     _write_rows(_SONGS_PATH, rows)
+    if not existing_pending_id:
+        _alert_song(session, payload, catalog_matches)
     return {
         "ok": True,
         "pending": True,
@@ -349,6 +451,9 @@ def submit_pending_song(
 
 
 def submit_pending_priest(session: AuthSession, *, name: str) -> dict[str, Any]:
+    blocked = _membership_blocks_content_submit(session)
+    if blocked:
+        return blocked
     clean = (name or "").strip()
     if not clean:
         return {"ok": False, "error": "Priest name is required."}
@@ -359,6 +464,7 @@ def submit_pending_priest(session: AuthSession, *, name: str) -> dict[str, Any]:
             if str(payload.get("name") or "").strip().lower() == key:
                 return {"ok": False, "error": "This priest name is already awaiting approval."}
         inserted = _insert_submission_db(session, kind="priest", payload={"name": clean})
+        _alert_priest(session, clean)
         return {
             "ok": True,
             "pending": True,
@@ -382,6 +488,7 @@ def submit_pending_priest(session: AuthSession, *, name: str) -> dict[str, Any]:
     }
     rows.append(row)
     _write_rows(_PRIESTS_PATH, rows)
+    _alert_priest(session, clean)
     return {
         "ok": True,
         "pending": True,
@@ -455,6 +562,11 @@ def submit_pending_parish_rename(session: AuthSession, *, community_name: str) -
             ).eq("id", inserted.get("id")).execute()
         except Exception:
             pass
+        _alert_parish_rename(
+            session,
+            previous_name=str(payload.get("previous_name") or ""),
+            new_name=clean,
+        )
         return {
             "ok": True,
             "pending": True,
@@ -474,6 +586,11 @@ def submit_pending_parish_rename(session: AuthSession, *, community_name: str) -
     }
     rows.append(row)
     _write_rows(_PARISH_RENAME_PATH, rows)
+    _alert_parish_rename(
+        session,
+        previous_name=str(payload.get("previous_name") or ""),
+        new_name=clean,
+    )
     return {
         "ok": True,
         "pending": True,

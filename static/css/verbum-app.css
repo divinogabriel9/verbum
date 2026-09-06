@@ -7499,9 +7499,186 @@
       transform: scale(1) translateY(0);
     }
     /* Default size for ordinary modals. Specialty cards override below. */
-    .ui-overlay .ui-card:not(.practice-share-card):not(.ui-card--reading):not(.ui-card--news-expand):not(.song-save-result-card):not(.deck-theme-card):not(.songs-whats-new-card):not(.mobile-welcome-card):not(.logo-preview-card) {
+    .ui-overlay .ui-card:not(.practice-share-card):not(.ui-card--reading):not(.ui-card--news-expand):not(.song-save-result-card):not(.deck-theme-card):not(.songs-whats-new-card):not(.mobile-welcome-card):not(.logo-preview-card):not(.membership-welcome-card) {
       width: min(480px, calc(100vw - 2rem));
       max-width: min(480px, calc(100vw - 2rem));
+    }
+    .ui-overlay .ui-card.membership-welcome-card {
+      width: min(920px, calc(100vw - 2rem));
+      max-width: min(920px, calc(100vw - 2rem));
+      max-height: min(90vh, 720px);
+      overflow: auto;
+      border-radius: 22px;
+      background:
+        radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--liturgical-accent, #a10f0d) 8%, transparent), transparent 55%),
+        linear-gradient(180deg, #fffefb 0%, #fff 48%, #fbf8f4 100%);
+      box-shadow:
+        0 24px 60px rgba(21, 51, 61, 0.18),
+        0 2px 0 rgba(255, 255, 255, 0.7) inset;
+    }
+    #membership-welcome-modal.membership-welcome-overlay .ui-overlay__backdrop {
+      background: rgba(21, 51, 61, 0.22) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    .membership-welcome-layout {
+      display: grid;
+      grid-template-columns: minmax(240px, 0.95fr) minmax(280px, 1.15fr);
+      gap: 8px 28px;
+      align-items: center;
+      padding: 22px 26px 20px;
+      min-height: 420px;
+    }
+    .membership-welcome-layout--wait {
+      grid-template-columns: 1fr;
+      min-height: 320px;
+      max-width: 640px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    .membership-welcome-art {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+    }
+    .membership-welcome-art img {
+      width: 100%;
+      max-width: 380px;
+      height: auto;
+      max-height: min(48vh, 420px);
+      display: block;
+      object-fit: contain;
+      object-position: left center;
+      filter: drop-shadow(0 12px 24px rgba(21, 51, 61, 0.12));
+    }
+    .membership-welcome-copy {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      gap: 4px;
+    }
+    .membership-welcome-header {
+      padding: 0 !important;
+      border: 0 !important;
+    }
+    .membership-welcome-body {
+      padding: 10px 0 4px !important;
+    }
+    .membership-welcome-footer {
+      padding: 14px 0 0 !important;
+      border: 0 !important;
+      margin-top: auto;
+    }
+    .membership-welcome-eyebrow {
+      margin: 0 0 8px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--liturgical-accent, #a10f0d);
+    }
+    #membership-welcome-modal .membership-welcome-card .ui-card__title {
+      font-size: clamp(1.55rem, 2.4vw, 2rem);
+      line-height: 1.2;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      text-wrap: balance;
+    }
+    #membership-welcome-modal .membership-welcome-card .ui-card__description {
+      margin-top: 10px;
+      font-size: clamp(1rem, 1.35vw, 1.125rem);
+      line-height: 1.55;
+      color: color-mix(in srgb, var(--ink) 78%, transparent);
+      max-width: 36ch;
+    }
+    .membership-welcome-features {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 16px;
+    }
+    .membership-welcome-features li {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: color-mix(in srgb, #fff 70%, color-mix(in srgb, var(--liturgical-accent, #a10f0d) 6%, transparent));
+      border: 1px solid color-mix(in srgb, var(--liturgical-accent, #a10f0d) 12%, transparent);
+    }
+    .membership-welcome-features strong {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ink);
+    }
+    .membership-welcome-features span {
+      font-size: 0.9375rem;
+      line-height: 1.45;
+      color: color-mix(in srgb, var(--ink) 68%, transparent);
+    }
+    .membership-welcome-tour-hint {
+      margin: 0;
+      font-size: 1.0625rem;
+      line-height: 1.5;
+      color: color-mix(in srgb, var(--ink) 74%, transparent);
+    }
+    #membership-welcome-step-1 .ui-card__footer,
+    #membership-welcome-step-2 .ui-card__footer {
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    #membership-welcome-step-1 .ui-card__footer .primary,
+    #membership-welcome-step-2 .ui-card__footer .primary {
+      min-width: 8.5rem;
+      min-height: 2.75rem;
+      font-size: 1rem;
+      font-weight: 650;
+    }
+    #membership-welcome-step-2 .ui-card__footer .secondary {
+      min-height: 2.75rem;
+      font-size: 1rem;
+    }
+    @media (max-width: 820px) {
+      .membership-welcome-layout {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 18px 18px 16px;
+        min-height: 0;
+      }
+      .membership-welcome-art {
+        min-height: 0;
+        order: -1;
+      }
+      .membership-welcome-art img {
+        max-width: 280px;
+      }
+      .membership-welcome-features {
+        grid-template-columns: 1fr;
+      }
+      #membership-welcome-modal .membership-welcome-card .ui-card__description {
+        max-width: none;
+      }
+      .membership-welcome-layout--wait {
+        max-width: none;
+      }
+    }
+    html[data-theme="dark"] .ui-overlay .ui-card.membership-welcome-card {
+      background:
+        radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--liturgical-accent, #a10f0d) 18%, transparent), transparent 55%),
+        linear-gradient(180deg, #1c2428 0%, #151b1e 100%);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+    html[data-theme="dark"] #membership-welcome-modal.membership-welcome-overlay .ui-overlay__backdrop {
+      background: rgba(0, 0, 0, 0.38) !important;
+    }
+    html[data-theme="dark"] .membership-welcome-features li {
+      background: color-mix(in srgb, #fff 6%, transparent);
+      border-color: color-mix(in srgb, #fff 12%, transparent);
     }
     .ui-overlay .ui-card.songs-whats-new-card {
       width: min(920px, calc(100vw - 2rem));
@@ -16310,6 +16487,11 @@
       font-size: 0.8125rem;
       line-height: 1.35;
       cursor: pointer;
+    }
+    .mass-summary-section-labels-field .flow-option-inline input[type="checkbox"] {
+      accent-color: var(--accent, #a10f0d);
+      flex-shrink: 0;
+      margin-top: 0.15em;
     }
     .mass-summary-section-labels-hint {
       margin: 0.2rem 0 0 1.35rem;

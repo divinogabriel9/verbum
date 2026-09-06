@@ -52,8 +52,8 @@
       can_edit_logo: m.can_edit_logo != null ? m.can_edit_logo : !row.logo_locked_at,
       can_edit_church_profile: m.can_edit_church_profile != null ? m.can_edit_church_profile : fullAccess,
       can_use_full_app: fullAccess,
-      can_submit_song: m.can_submit_song != null ? !!m.can_submit_song : (!superadmin && !fullAccess),
-      can_submit_priest: m.can_submit_priest != null ? !!m.can_submit_priest : (!superadmin && !fullAccess),
+      can_submit_song: m.can_submit_song != null ? !!m.can_submit_song : (!superadmin && fullAccess),
+      can_submit_priest: m.can_submit_priest != null ? !!m.can_submit_priest : (!superadmin && fullAccess),
       is_superadmin: superadmin,
     };
   }
@@ -481,6 +481,20 @@
         }
         if (data.church_profile) {
           setChurchProfile(data.church_profile, data.membership);
+        }
+        if (data.needs_onboarding) {
+          try {
+            const next = new URL("/sign-up", window.location.origin);
+            next.searchParams.set("complete", "1");
+            const current = window.location.pathname + window.location.search;
+            if (!current.startsWith("/sign-up") && !current.startsWith("/sign-in")) {
+              window.location.href = next.pathname + next.search;
+              return;
+            }
+          } catch (_redirErr) {
+            window.location.href = "/sign-up?complete=1";
+            return;
+          }
         }
         window.dispatchEvent(
           new CustomEvent("verbum:membership", { detail: data.membership || null })

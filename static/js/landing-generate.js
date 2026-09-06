@@ -989,6 +989,27 @@
     if (new URLSearchParams(window.location.search).get("resume") === "1") {
       openModal();
     }
+
+    var contactParams = new URLSearchParams(window.location.search);
+    var wantsContact =
+      contactParams.get("contact") === "1" ||
+      (window.location.hash || "").replace(/^#/, "").toLowerCase() === "contact";
+    if (wantsContact) {
+      var topic = (contactParams.get("topic") || "").trim();
+      var topicEl = $("lf-contact-topic");
+      if (topicEl && topic) {
+        var opt = topicEl.querySelector('option[value="' + topic.replace(/"/g, "") + '"]');
+        if (opt) topicEl.value = topic;
+      }
+      openContact($("lf-hero-contact") || $("lf-foot-contact"));
+      try {
+        var clean = new URL(window.location.href);
+        clean.searchParams.delete("contact");
+        clean.searchParams.delete("topic");
+        if ((clean.hash || "").toLowerCase() === "#contact") clean.hash = "";
+        window.history.replaceState({}, "", clean.pathname + clean.search + clean.hash);
+      } catch (_e) { /* ignore */ }
+    }
   }
 
   document.addEventListener("DOMContentLoaded", function () {

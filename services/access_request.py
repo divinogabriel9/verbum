@@ -145,6 +145,12 @@ def submit_access_request(row: AccessRequest) -> dict[str, Any]:
         email=row.email,
         parish=row.parish,
     )
+    try:
+        from services.admin_alerts import alert_access_request
+
+        alert_access_request(name=row.name, email=row.email, parish=row.parish)
+    except Exception as exc:
+        logger.warning("Access request telegram alert failed: %s", exc)
     emailed = bool(admin.ok or user.ok)
     if not emailed:
         logger.warning(
