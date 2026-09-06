@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Optional
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from typing import Any, Optional, Union
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +39,31 @@ def telegram_enabled() -> bool:
     return bool(telegram_bot_token() and telegram_chat_ids())
 
 
+def _ssl_verify() -> Union[bool, str]:
+    """CA bundle path, True, or False (local MITM / broken macOS certs)."""
+    flag = (_env("TELEGRAM_SSL_VERIFY") or "1").lower()
+    if flag in {"0", "false", "no", "off"}:
+        return False
+    try:
+        import certifi
+
+        return certifi.where()
+    except Exception:
+        return True
+
+
 def telegram_config_status() -> dict[str, Any]:
     chats = telegram_chat_ids()
+    verify = _ssl_verify()
     return {
         "telegram_enabled": telegram_enabled(),
         "bot_token_configured": bool(telegram_bot_token()),
         "chat_ids_configured": len(chats),
+        "ssl_verify": bool(verify),
         "hint": (
             "Create a bot with @BotFather, DM it once, then set TELEGRAM_BOT_TOKEN "
-            "and TELEGRAM_CHAT_ID (get id via @userinfobot or getUpdates)."
+            "and TELEGRAM_CHAT_ID (get id via @userinfobot or getUpdates). "
+            "On macOS SSL errors, set TELEGRAM_SSL_VERIFY=0 in local .env only."
             if not telegram_enabled()
             else "Telegram alerts ready."
         ),
@@ -97,46 +113,44 @@ def send_telegram_message(
     if not targets:
         return TelegramResult(ok=False, error="TELEGRAM_CHAT_ID not set")
 
+    verify = _ssl_verify()
     last_error = ""
     any_ok = False
     last_mid: Optional[int] = None
+    endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
+
     for cid in targets:
-        payload = urlencode(
-            {
-                "chat_id": cid,
-                "text": text,
-                "parse_mode": parse_mode,
-                "disable_web_page_preview": "true" if disable_web_page_preview else "false",
-            }
-        ).encode("utf-8")
-        req = Request(
-            f"https://api.telegram.org/bot{token}/sendMessage",
-            data=payload,
-            method="POST",
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
+        payload = {
+            "chat_id": cid,
+            "text": text,
+            "parse_mode": parse_mode,
+            "disable_web_page_preview": disable_web_page_preview,
+        }
         try:
-            with urlopen(req, timeout=12) as resp:
-                status = getattr(resp, "status", 200) or 200
-                body = resp.read().decode("utf-8", errors="replace")
-            if status >= 400:
-                last_error = f"HTTP {status}: {body[:240]}"
+            resp = requests.post(endpoint, data=payload, timeout=12, verify=verify)
+            body = resp.text or ""
+            if resp.status_code >= 400:
+                last_error = f"HTTP {resp.status_code}: {body[:240]}"
                 logger.warning("Telegram send failed chat=%s: %s", cid, last_error)
                 continue
             any_ok = True
-            if '"message_id":' in body:
-                try:
-                    import json
-
-                    data = json.loads(body)
-                    mid = (data.get("result") or {}).get("message_id")
-                    if mid is not None:
-                        last_mid = int(mid)
-                except Exception:
-                    pass
+            try:
+                data = resp.json()
+                mid = (data.get("result") or {}).get("message_id")
+                if mid is not None:
+                    last_mid = int(mid)
+            except Exception:
+                pass
+        except requests.exceptions.SSLError as exc:
+            last_error = (
+                f"{exc} → Local SSL interception. Add TELEGRAM_SSL_VERIFY=0 to .env "
+                "(local only; leave default on Render)."
+            )
+            logger.warning("Telegram SSL failed chat=%s: %s", cid, last_error)
         except Exception as exc:
             last_error = str(exc)
             logger.warning("Telegram send raised chat=%s: %s", cid, exc)
+
     if any_ok:
         return TelegramResult(ok=True, message_id=last_mid)
     return TelegramResult(ok=False, error=last_error or "telegram send failed")

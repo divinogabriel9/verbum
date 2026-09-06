@@ -195,6 +195,81 @@
         auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
       });
 
+      const hcaptchaSiteKey = String(cfg.hcaptcha_site_key || "").trim();
+      let hcaptchaWidgetId = null;
+      let hcaptchaLoadPromise = null;
+
+      function captchaEnabled() {
+        return !!hcaptchaSiteKey;
+      }
+
+      function loadHCaptcha() {
+        if (!captchaEnabled()) return Promise.resolve();
+        if (window.hcaptcha && typeof window.hcaptcha.render === "function") {
+          return Promise.resolve();
+        }
+        if (hcaptchaLoadPromise) return hcaptchaLoadPromise;
+        hcaptchaLoadPromise = new Promise(function (resolve, reject) {
+          const prev = window.__verbumHcaptchaOnLoad;
+          window.__verbumHcaptchaOnLoad = function () {
+            try {
+              if (typeof prev === "function") prev();
+            } catch (_e) { /* ignore */ }
+            resolve();
+          };
+          const script = document.createElement("script");
+          script.src =
+            "https://js.hcaptcha.com/1/api.js?onload=__verbumHcaptchaOnLoad&render=explicit";
+          script.async = true;
+          script.defer = true;
+          script.onerror = function () {
+            hcaptchaLoadPromise = null;
+            reject(new Error("Could not load hCaptcha."));
+          };
+          document.head.appendChild(script);
+        });
+        return hcaptchaLoadPromise;
+      }
+
+      function ensureHCaptchaWidget() {
+        if (!captchaEnabled() || !window.hcaptcha) return;
+        const el = $("auth-hcaptcha");
+        if (!el) return;
+        if (hcaptchaWidgetId != null) return;
+        hcaptchaWidgetId = window.hcaptcha.render(el, {
+          sitekey: hcaptchaSiteKey,
+          theme: "light",
+        });
+      }
+
+      async function prepareHCaptcha() {
+        if (!captchaEnabled()) return;
+        const wrap = $("auth-hcaptcha-wrap");
+        if (wrap) wrap.hidden = false;
+        await loadHCaptcha();
+        ensureHCaptchaWidget();
+      }
+
+      async function getCaptchaToken() {
+        if (!captchaEnabled()) return "";
+        await prepareHCaptcha();
+        const token =
+          hcaptchaWidgetId != null && window.hcaptcha
+            ? window.hcaptcha.getResponse(hcaptchaWidgetId)
+            : "";
+        if (!token) {
+          throw new Error("Please complete the captcha before continuing.");
+        }
+        return token;
+      }
+
+      function resetCaptcha() {
+        if (hcaptchaWidgetId == null || !window.hcaptcha) return;
+        try {
+          window.hcaptcha.reset(hcaptchaWidgetId);
+        } catch (_e) { /* ignore */ }
+      }
+
       function setMobileWelcomePending() {
         try {
           sessionStorage.setItem("verbum:mobile-welcome-pending", "1");
@@ -931,8 +1006,16 @@
         const submitSimple = $("auth-submit-simple");
         const stepNav = $("auth-step-nav");
         const creds = $("auth-credentials-fields");
+        const captchaWrap = $("auth-hcaptcha-wrap");
         const onboardingMode = form && form.dataset.onboardingMode === "1";
         const multiStep = mode === "sign-up" || onboardingMode;
+        const showCaptcha =
+          captchaEnabled() && !onboardingMode && (!multiStep || signupStep === 2);
+
+        if (captchaWrap) captchaWrap.hidden = !showCaptcha;
+        if (showCaptcha) {
+          prepareHCaptcha().catch(function () { /* non-blocking until submit */ });
+        }
 
         if (!multiStep) {
           if (stepNav) stepNav.hidden = true;
@@ -1775,10 +1858,12 @@
               window.location.origin + cfg.sign_in_url;
 
             if (mode === "sign-up") {
+              const captchaToken = await getCaptchaToken();
               const { data, error } = await client.auth.signUp({
                 email,
                 password,
                 options: {
+                  captchaToken,
                   emailRedirectTo,
                   data: {
                     first_name: details.firstName || undefined,
@@ -1791,6 +1876,7 @@
                   },
                 },
               });
+              resetCaptcha();
               if (error) throw error;
               if (data.session) {
                 if (inviteToken) {
@@ -1809,7 +1895,13 @@
               }
               showError("Check your email to confirm your account, then sign in to finish setup.");
             } else {
-              const { data, error } = await client.auth.signInWithPassword({ email, password });
+              const captchaToken = await getCaptchaToken();
+              const { data, error } = await client.auth.signInWithPassword({
+                email,
+                password,
+                options: { captchaToken },
+              });
+              resetCaptcha();
               if (error) throw error;
               const session = data && data.session;
               if (session) {
@@ -1819,6 +1911,7 @@
               }
             }
           } catch (err) {
+            resetCaptcha();
             showError((err && err.message) || "Authentication failed.");
           } finally {
             setAuthSubmitting(false);

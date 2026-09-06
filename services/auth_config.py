@@ -113,6 +113,11 @@ def invite_contact_email() -> str:
     return ""
 
 
+def hcaptcha_site_key() -> str:
+    """Browser-safe hCaptcha sitekey (secret stays in the Supabase dashboard)."""
+    return _clean(os.environ.get("HCAPTCHA_SITE_KEY"))
+
+
 @lru_cache(maxsize=1)
 def public_auth_config() -> dict[str, str | bool]:
     from services.app_version import get_version_info
@@ -126,6 +131,7 @@ def public_auth_config() -> dict[str, str | bool]:
         "supabase_url": supabase_url(),
         "supabase_anon_key": supabase_client_key(),
         "supabase_publishable_key": supabase_client_key(),
+        "hcaptcha_site_key": hcaptcha_site_key(),
         "app_public_url": base,
         "email_confirm_redirect_url": (base + "/sign-in") if base else "",
         "sign_in_url": "/sign-in",

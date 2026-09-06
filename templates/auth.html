@@ -623,6 +623,15 @@
     }
     .field { margin-bottom: 10px; }
     .field label { display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 5px; color: var(--ink); }
+    .auth-hcaptcha-wrap {
+      margin: 4px 0 12px;
+      display: flex;
+      justify-content: center;
+      min-height: 78px;
+    }
+    .auth-hcaptcha-wrap[hidden] {
+      display: none !important;
+    }
     .field input:not([type="checkbox"]):not([type="radio"]),
     .field select.auth-select {
       width: 100%;
@@ -974,6 +983,9 @@
           <label for="auth-password">Password</label>
           <input type="password" id="auth-password" autocomplete="{% if mode == 'sign-up' %}new-password{% else %}current-password{% endif %}" required minlength="8" maxlength="128" />
         </div>
+        <div class="auth-hcaptcha-wrap" id="auth-hcaptcha-wrap" hidden>
+          <div id="auth-hcaptcha" aria-label="Captcha verification"></div>
+        </div>
       </div>
       </div>
       <div class="auth-nav-row" id="auth-step-nav" hidden>
@@ -1043,6 +1055,6 @@
     window.__VERBUM_INVITE_EMAIL__ = {{ invite_email | tojson }};
     window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
   </script>
-  <script src="/static/js/auth-page.js?v=20260906-onboard13" defer></script>
+  <script src="/static/js/auth-page.js?v=20260906-hcaptcha1" defer></script>
 </body>
 </html>
