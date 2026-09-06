@@ -221,7 +221,6 @@ def get_practice_online_by_day(*, days: int = 14) -> list[dict[str, Any]]:
                         )
 
     unique: dict[str, set[str]] = defaultdict(set)
-    hits: dict[str, int] = defaultdict(int)
     shares: dict[str, set[str]] = defaultdict(set)
     for row in rows:
         day = str(row.get("visit_day") or "")[:10]
@@ -233,7 +232,6 @@ def get_practice_online_by_day(*, days: int = 14) -> list[dict[str, Any]]:
             unique[day].add(visitor)
         if tok:
             shares[day].add(tok)
-        hits[day] += int(row.get("hit_count") or 0)
 
     out: list[dict[str, Any]] = []
     for day in sorted(unique.keys(), reverse=True):
@@ -244,7 +242,6 @@ def get_practice_online_by_day(*, days: int = 14) -> list[dict[str, Any]]:
             {
                 "date": day,
                 "unique_visitors": count,
-                "hits": int(hits.get(day) or 0),
                 "shares": len(shares.get(day) or ()),
             }
         )

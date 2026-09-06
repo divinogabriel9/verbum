@@ -3425,7 +3425,7 @@
       },
       parishes: { page: 1, perPage: 25, q: "" },
       users: { page: 1, perPage: 10, q: "", sort: "joined" },
-      generations: { page: 1, perPage: 25, q: "" },
+      generations: { page: 1, perPage: 10, q: "" },
       auditLog: { page: 1, perPage: 25, q: "", action: "", entityType: "" },
       storage: { prefix: "", page: 1, perPage: 50 },
       aiQuota: { page: 1, perPage: 25, q: "" },

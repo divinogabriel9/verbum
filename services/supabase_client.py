@@ -404,7 +404,11 @@ def record_generation(
     uid = (user_id or "").strip()
     if not uid:
         return
-    client = _client_for_user(access_token)
+    # Service role: logging must not depend on a still-valid user JWT after a long generate.
+    try:
+        client = get_service_client()
+    except RuntimeError:
+        client = _client_for_user(access_token)
     row: dict[str, Any] = {
         "user_id": uid,
         "mass_date": mass_date,

@@ -937,7 +937,11 @@ def _finish_generation_side_effects(
                 parish_id=(parish_id or "").strip() or None,
             )
         except Exception:
-            pass
+            logging.getLogger(__name__).exception(
+                "Failed to record generation_history for user_id=%s mass_date=%s",
+                user_id,
+                mass_date,
+            )
 
 
 def _upload_generation_assets_best_effort(

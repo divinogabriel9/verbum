@@ -622,8 +622,7 @@
         const practiceRows = (data.practice_online_by_day || []).map((row) => (
           "<tr><td>" + escapeHtml(row.date || "—") + "</td>" +
           "<td>" + escapeHtml(String(row.unique_visitors != null ? row.unique_visitors : 0)) + "</td>" +
-          "<td>" + escapeHtml(String(row.shares != null ? row.shares : 0)) + "</td>" +
-          "<td>" + escapeHtml(String(row.hits != null ? row.hits : 0)) + "</td></tr>"
+          "<td>" + escapeHtml(String(row.shares != null ? row.shares : 0)) + "</td></tr>"
         ));
         const genRows = (data.generations_by_day || [])
           .filter((row) => Number(row && row.count) > 0)
@@ -640,7 +639,7 @@
         ));
         if (practiceWrap) {
           practiceWrap.innerHTML = saRenderTable(
-            ["Date", "Online", "Shares", "Hits"],
+            ["Date", "Online", "Shares"],
             practiceRows,
             "No practice online activity in period."
           );
@@ -1025,7 +1024,12 @@
         saState.generations.page = meta.page;
         wrap.innerHTML = renderSaGenerationsGrouped(items);
         saRenderPager(pagerEl, "generations", meta);
-        if (statusEl) statusEl.textContent = saPagerStatusText(meta);
+        if (statusEl) {
+          const base = saPagerStatusText(meta);
+          statusEl.textContent = data.group_by === "user"
+            ? (meta.total ? (base + " users") : "No users with generations yet.")
+            : base;
+        }
       } catch (err) {
         wrap.innerHTML = "<p class=\"sa-empty\">" + escapeHtml(err.message || "Load failed.") + "</p>";
       }
