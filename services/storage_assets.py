@@ -157,7 +157,9 @@ def signed_service_asset_url(*, path: str, expires_in: int = 3600) -> str:
     return _signed_url(get_service_client(), p, expires_in=expires_in)
 
 
-def _list_folder(client: Any, folder: str) -> list[dict[str, Any]]:
+def _list_folder(
+    client: Any, folder: str, *, sign_urls: bool = True
+) -> list[dict[str, Any]]:
     rows = client.storage.from_(_BUCKET).list(folder.rstrip("/"))
     if not isinstance(rows, list):
         return []
@@ -167,24 +169,30 @@ def _list_folder(client: Any, folder: str) -> list[dict[str, Any]]:
         if not name:
             continue
         path = f"{folder.rstrip('/')}/{name}"
-        try:
-            url = _signed_url(client, path)
-        except Exception:
-            url = ""
+        url = ""
+        if sign_urls:
+            try:
+                url = _signed_url(client, path)
+            except Exception:
+                url = ""
         out.append({"name": name, "path": path, "url": url})
     return out
 
 
-def list_user_assets(*, user_id: str, access_token: str, prefix: str) -> list[dict[str, Any]]:
+def list_user_assets(
+    *, user_id: str, access_token: str, prefix: str, sign_urls: bool = True
+) -> list[dict[str, Any]]:
     client = get_user_client(access_token)
     folder = _user_path(user_id, prefix).rstrip("/")
-    return _list_folder(client, folder)
+    return _list_folder(client, folder, sign_urls=sign_urls)
 
 
-def list_parish_assets(*, parish_id: str, prefix: str) -> list[dict[str, Any]]:
+def list_parish_assets(
+    *, parish_id: str, prefix: str, sign_urls: bool = True
+) -> list[dict[str, Any]]:
     client = get_service_client()
     folder = _parish_path(parish_id, prefix).rstrip("/")
-    return _list_folder(client, folder)
+    return _list_folder(client, folder, sign_urls=sign_urls)
 
 
 def shared_media_path(relative_path: str) -> str:
@@ -213,13 +221,13 @@ def upload_shared_media_asset(
     )
 
 
-def list_shared_assets(*, prefix: str) -> list[dict[str, Any]]:
+def list_shared_assets(*, prefix: str, sign_urls: bool = True) -> list[dict[str, Any]]:
     """List platform-shared media under shared/{prefix}."""
     if not parish_storage_ready():
         return []
     client = get_service_client()
     folder = shared_media_path(prefix).rstrip("/")
-    return _list_folder(client, folder)
+    return _list_folder(client, folder, sign_urls=sign_urls)
 
 
 def delete_user_asset(*, user_id: str, access_token: str, relative_path: str) -> None:

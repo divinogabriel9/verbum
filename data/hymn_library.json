@@ -1796,10 +1796,29 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-09-07T05:51:01.392864+00:00",
       "language": "English",
+      "updated_at": "2026-09-07T06:54:21.282902+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:WQX8ic2hsfs",
+        "youtube_id": "WQX8ic2hsfs",
+        "youtube_url": "https://www.youtube.com/watch?v=WQX8ic2hsfs",
+        "display_name": "You Are Near"
+      },
       "gospel_moods": [
         "journey"
-      ]
+      ],
+      "audio_preview": {
+        "method": "start",
+        "source": "preview",
+        "basename": "preview_communion_you_are_near_10.mp3",
+        "start_sec": 0.0,
+        "youtube_id": "WQX8ic2hsfs",
+        "youtube_url": "https://www.youtube.com/watch?v=WQX8ic2hsfs",
+        "display_name": "10s preview",
+        "duration_sec": 10
+      }
     },
     {
       "id": "santo_hontiveros",

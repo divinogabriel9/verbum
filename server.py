@@ -188,7 +188,6 @@ from services.storage_assets import (
     download_service_asset,
     download_user_asset,
     list_parish_assets,
-    list_shared_assets,
     list_user_assets,
     parish_storage_ready,
     signed_asset_url,
@@ -623,9 +622,10 @@ def _list_saved_media_rows(
                 user_id=session.user.user_id,
                 access_token=session.token,
                 prefix=folder,
+                sign_urls=False,
             )
             remote_items.extend(
-                {"basename": row["name"], "url": row["url"] or ""}
+                {"basename": row["name"], "url": ""}
                 for row in rows
                 if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
             )
@@ -633,30 +633,27 @@ def _list_saved_media_rows(
             logger.warning("Could not list %s from storage; using local files.", folder, exc_info=True)
     if parish_id and parish_storage_ready():
         try:
-            rows = list_parish_assets(parish_id=parish_id, prefix=folder)
+            rows = list_parish_assets(parish_id=parish_id, prefix=folder, sign_urls=False)
             remote_items.extend(
-                {"basename": row["name"], "url": row["url"] or ""}
+                {"basename": row["name"], "url": ""}
                 for row in rows
                 if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
             )
         except Exception:
             logger.warning("Could not list parish %s from storage.", folder, exc_info=True)
-    # Global catalog clips (10s previews / instrumental) — visible to every parish.
-    if parish_storage_ready():
-        try:
-            rows = list_shared_assets(prefix=folder)
-            remote_items.extend(
-                {"basename": row["name"], "url": row["url"] or ""}
-                for row in rows
-                if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
-            )
-        except Exception:
-            logger.warning("Could not list shared %s from storage.", folder, exc_info=True)
+    # Note: shared/catalog clips are NOT listed here — they clutter the Media tab
+    # and signing dozens of URLs times out on Render. Catalog 10s play uses
+    # /api/files/uploads/... which hydrates from shared storage on demand.
 
     if remote_items or (parish_id and parish_storage_ready()) or (session and storage_ready(session.token)):
         merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}
         for item in remote_items:
-            merged[item["basename"]] = item
+            # Prefer same-origin private URLs (fast list; server hydrates from storage).
+            name = item["basename"]
+            merged[name] = {
+                "basename": name,
+                "url": upload_file_url(f"{folder}/{name}") or item.get("url") or "",
+            }
         out = list(merged.values())
         out.sort(key=lambda r: r["basename"], reverse=True)
         return out
