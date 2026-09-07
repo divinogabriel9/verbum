@@ -227,6 +227,9 @@ _SAVED_MEDIA_VIDEO_DIR = _UPLOAD_DIR / "saved_media" / "video"
 _SAVED_MEDIA_MUSIC_DIR.mkdir(parents=True, exist_ok=True)
 _SAVED_MEDIA_VIDEO_DIR.mkdir(parents=True, exist_ok=True)
 _SAVED_MEDIA_MANIFEST_PATH = _UPLOAD_DIR / "saved_media" / "manifest.json"
+_SAVED_MEDIA_MANIFEST_STORAGE = "saved_media/manifest.json"
+_SAVED_MEDIA_MANIFEST_CACHE: dict[str, Any] | None = None
+_SAVED_MEDIA_MANIFEST_PULLED = False
 
 _MAX_MUSIC_BYTES = 10_000_000
 _MAX_VIDEO_BYTES = 11_000_000
@@ -494,7 +497,7 @@ async def _save_uploaded_media(
 
 def _manifest_user_key(session: Optional[AuthSession]) -> str:
     if session and session.user and session.user.user_id:
-        return session.user.user_id
+        return str(session.user.user_id).strip() or "_local"
     return "_local"
 
 
@@ -508,21 +511,108 @@ def _manifest_scope_keys(session: Optional[AuthSession]) -> list[tuple[str, str]
     return keys
 
 
-def _load_saved_media_manifest() -> dict[str, Any]:
-    if not _SAVED_MEDIA_MANIFEST_PATH.is_file():
-        return {"users": {}, "parishes": {}}
+def _blank_saved_media_manifest() -> dict[str, Any]:
+    return {"users": {}, "parishes": {}}
+
+
+def _merge_saved_media_manifest(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+    out = _blank_saved_media_manifest()
+    for group in ("users", "parishes"):
+        merged: dict[str, Any] = {}
+        for src in (base, incoming):
+            bucket = src.get(group) if isinstance(src, dict) else None
+            if not isinstance(bucket, dict):
+                continue
+            for key, entries in bucket.items():
+                if not isinstance(entries, dict):
+                    continue
+                slot = merged.setdefault(str(key), {})
+                for basename, payload in entries.items():
+                    if isinstance(payload, dict):
+                        slot[str(basename)] = payload
+        out[group] = merged
+    return out
+
+
+def _pull_saved_media_manifest_from_storage(session: Optional[AuthSession]) -> dict[str, Any]:
+    """Load display-name manifest from parish storage (survives Render restarts)."""
+    if not parish_storage_ready():
+        return _blank_saved_media_manifest()
+    parish_id = _session_parish_id(session)
+    if not parish_id:
+        return _blank_saved_media_manifest()
     try:
-        data = json.loads(_SAVED_MEDIA_MANIFEST_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {"users": {}, "parishes": {}}
+        raw = download_service_asset(
+            path=f"parishes/{parish_id}/{_SAVED_MEDIA_MANIFEST_STORAGE}"
+        )
+        data = json.loads(raw.decode("utf-8"))
+    except Exception:
+        return _blank_saved_media_manifest()
     if not isinstance(data, dict):
-        return {"users": {}, "parishes": {}}
+        return _blank_saved_media_manifest()
     data.setdefault("users", {})
     data.setdefault("parishes", {})
     return data
 
 
-def _save_saved_media_manifest(data: dict[str, Any]) -> None:
+def _push_saved_media_manifest_to_storage(
+    data: dict[str, Any], session: Optional[AuthSession]
+) -> None:
+    parish_id = _session_parish_id(session)
+    if not parish_id or not parish_storage_ready():
+        return
+    try:
+        upload_parish_asset(
+            parish_id=parish_id,
+            relative_path=_SAVED_MEDIA_MANIFEST_STORAGE,
+            raw=json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"),
+            content_type="application/json",
+            upsert=True,
+        )
+    except Exception:
+        logger.warning(
+            "Could not upload saved media manifest to parish storage.",
+            exc_info=True,
+        )
+
+
+def _load_saved_media_manifest(session: Optional[AuthSession] = None) -> dict[str, Any]:
+    global _SAVED_MEDIA_MANIFEST_CACHE, _SAVED_MEDIA_MANIFEST_PULLED
+    if _SAVED_MEDIA_MANIFEST_CACHE is not None and (
+        _SAVED_MEDIA_MANIFEST_PULLED or not parish_storage_ready()
+    ):
+        return _SAVED_MEDIA_MANIFEST_CACHE
+
+    local = _blank_saved_media_manifest()
+    if _SAVED_MEDIA_MANIFEST_PATH.is_file():
+        try:
+            raw = json.loads(_SAVED_MEDIA_MANIFEST_PATH.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                local = raw
+                local.setdefault("users", {})
+                local.setdefault("parishes", {})
+        except (OSError, json.JSONDecodeError):
+            local = _blank_saved_media_manifest()
+
+    remote = _pull_saved_media_manifest_from_storage(session)
+    merged = _merge_saved_media_manifest(remote, local)
+    _SAVED_MEDIA_MANIFEST_CACHE = merged
+    _SAVED_MEDIA_MANIFEST_PULLED = True
+    try:
+        _SAVED_MEDIA_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _SAVED_MEDIA_MANIFEST_PATH.write_text(
+            json.dumps(merged, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+    return merged
+
+
+def _save_saved_media_manifest(
+    data: dict[str, Any], session: Optional[AuthSession] = None
+) -> None:
+    global _SAVED_MEDIA_MANIFEST_CACHE
     _SAVED_MEDIA_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
     data.setdefault("users", {})
     data.setdefault("parishes", {})
@@ -530,6 +620,8 @@ def _save_saved_media_manifest(data: dict[str, Any]) -> None:
         json.dumps(data, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+    _SAVED_MEDIA_MANIFEST_CACHE = data
+    _push_saved_media_manifest_to_storage(data, session)
 
 
 def _register_saved_media_meta(
@@ -538,18 +630,18 @@ def _register_saved_media_meta(
     display_name: str,
     kind: str,
 ) -> None:
-    data = _load_saved_media_manifest()
+    data = _load_saved_media_manifest(session)
     parish_id = _session_parish_id(session)
-    payload = {"display_name": display_name, "kind": kind}
+    clean = str(display_name or "").strip() or basename
+    payload = {"display_name": clean[:240], "kind": kind}
     if parish_id:
         data.setdefault("parishes", {}).setdefault(parish_id, {})[basename] = payload
-    else:
-        data.setdefault("users", {}).setdefault(_manifest_user_key(session), {})[basename] = payload
-    _save_saved_media_manifest(data)
+    data.setdefault("users", {}).setdefault(_manifest_user_key(session), {})[basename] = payload
+    _save_saved_media_manifest(data, session)
 
 
 def _unregister_saved_media_meta(session: Optional[AuthSession], basename: str) -> None:
-    data = _load_saved_media_manifest()
+    data = _load_saved_media_manifest(session)
     changed = False
     for group, key in _manifest_scope_keys(session):
         bucket = (data.get(group) or {}).get(key)
@@ -557,7 +649,58 @@ def _unregister_saved_media_meta(session: Optional[AuthSession], basename: str) 
             del bucket[basename]
             changed = True
     if changed:
-        _save_saved_media_manifest(data)
+        _save_saved_media_manifest(data, session)
+
+
+def _humanize_media_stem(stem: str) -> str:
+    text = str(stem or "").strip()
+    if not text:
+        return ""
+    # Drop trailing YouTube video ids before spacing (ids may contain '-').
+    text = re.sub(r"[_-][0-9A-Za-z_-]{10,12}$", "", text).strip("_- ")
+    text = re.sub(r"[_-]+", " ", text).strip()
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\b[0-9a-f]{16,}\b$", "", text, flags=re.I).strip()
+    if not text:
+        return ""
+    return text.title() if text == text.lower() else text
+
+def _friendly_saved_media_basename(basename: str, *, kind: str) -> str:
+    """Readable label when the durable manifest has no display_name yet."""
+    name = str(basename or "").strip()
+    if not name:
+        return "Media"
+    stem = Path(name).stem
+    suffix = Path(name).suffix.lower()
+    lower = stem.lower()
+
+    if lower.startswith("preview_"):
+        parts = stem.split("_")
+        dur = parts[-1] if parts and parts[-1].isdigit() else ""
+        body = parts[2:-1] if dur and len(parts) > 3 else parts[2:]
+        label = _humanize_media_stem("_".join(body)) or "Song"
+        return f"{label} · {dur}s" if dur else f"{label} · preview"
+
+    for prefix, tag in (
+        ("instrumental_", "instrumental"),
+        ("karaoke_", "karaoke"),
+    ):
+        if lower.startswith(prefix):
+            parts = stem.split("_")
+            body = parts[2:] if len(parts) > 2 else parts[1:]
+            label = _humanize_media_stem("_".join(body)) or tag.title()
+            return f"{label} · {tag}"
+
+    kind_prefix = f"{kind}_"
+    if lower.startswith(kind_prefix):
+        rest = stem[len(kind_prefix) :]
+        if re.fullmatch(r"[0-9a-f]{8,}", rest, flags=re.I):
+            return f"Uploaded {kind}"
+        label = _humanize_media_stem(rest)
+        if label:
+            return label
+
+    return _humanize_media_stem(stem) or name
 
 
 def _saved_media_display_name(
@@ -567,16 +710,24 @@ def _saved_media_display_name(
     kind: str,
     manifest: Optional[dict[str, Any]] = None,
 ) -> str:
-    data = manifest if isinstance(manifest, dict) else _load_saved_media_manifest()
+    data = manifest if isinstance(manifest, dict) else _load_saved_media_manifest(session)
     for group, key in _manifest_scope_keys(session):
         entry = (data.get(group) or {}).get(key, {}).get(basename, {})
         name = str(entry.get("display_name") or "").strip()
         if name:
             return name
-    stem = Path(basename).stem
-    if stem.startswith(f"{kind}_"):
-        return stem[len(kind) + 1 :] + Path(basename).suffix
-    return basename
+    for group in ("parishes", "users"):
+        bucket = data.get(group) or {}
+        if not isinstance(bucket, dict):
+            continue
+        for entries in bucket.values():
+            if not isinstance(entries, dict):
+                continue
+            entry = entries.get(basename) or {}
+            name = str(entry.get("display_name") or "").strip()
+            if name:
+                return name
+    return _friendly_saved_media_basename(basename, kind=kind)
 
 
 def _enrich_saved_media_rows(
@@ -586,7 +737,7 @@ def _enrich_saved_media_rows(
     kind: str,
 ) -> list[dict[str, str]]:
     # Load once — previously re-read manifest.json for every row (slow on large libraries).
-    manifest = _load_saved_media_manifest()
+    manifest = _load_saved_media_manifest(session)
     out: list[dict[str, str]] = []
     for row in rows:
         item = dict(row)

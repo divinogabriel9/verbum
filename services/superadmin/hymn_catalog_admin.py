@@ -340,9 +340,10 @@ def generate_song_audio_preview(
     finally:
         end_preview_job()
 
+    title = str(row.get("title") or "").strip() or hid
     preview = {
         "basename": dest.name,
-        "display_name": f"{duration}s preview",
+        "display_name": (f"{title} · {duration}s")[:240],
         "duration_sec": meta["duration_sec"],
         "start_sec": meta["start_sec"],
         "source": "preview",
