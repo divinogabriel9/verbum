@@ -188,6 +188,7 @@ from services.storage_assets import (
     download_service_asset,
     download_user_asset,
     list_parish_assets,
+    list_shared_assets,
     list_user_assets,
     parish_storage_ready,
     signed_asset_url,
@@ -640,6 +641,17 @@ def _list_saved_media_rows(
             )
         except Exception:
             logger.warning("Could not list parish %s from storage.", folder, exc_info=True)
+    # Global catalog clips (10s previews / instrumental) — visible to every parish.
+    if parish_storage_ready():
+        try:
+            rows = list_shared_assets(prefix=folder)
+            remote_items.extend(
+                {"basename": row["name"], "url": row["url"] or ""}
+                for row in rows
+                if Path(str(row.get("name") or "")).suffix.lower() == allowed_ext
+            )
+        except Exception:
+            logger.warning("Could not list shared %s from storage.", folder, exc_info=True)
 
     if remote_items or (parish_id and parish_storage_ready()) or (session and storage_ready(session.token)):
         merged: dict[str, dict[str, str]] = {item["basename"]: item for item in local_items}

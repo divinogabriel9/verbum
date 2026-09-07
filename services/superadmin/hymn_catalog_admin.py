@@ -24,6 +24,32 @@ from services.song_catalog import save_catalog
 SyncPrefer = Literal["active", "local"]
 
 
+def _upload_catalog_media_url(
+    *,
+    local_path: Path,
+    folder: str,
+    content_type: str,
+    local_url: str,
+) -> str:
+    """Persist catalog clips to shared Supabase storage so deploy can serve them."""
+    if not local_path.is_file():
+        return local_url
+    try:
+        from services.storage_assets import parish_storage_ready, upload_shared_media_asset
+
+        if not parish_storage_ready():
+            return local_url
+        stored = upload_shared_media_asset(
+            relative_path=f"{folder.rstrip('/')}/{local_path.name}",
+            raw=local_path.read_bytes(),
+            content_type=content_type,
+            upsert=True,
+        )
+        return stored.signed_url or local_url
+    except Exception:
+        return local_url
+
+
 def _catalog_counts(catalog: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
     sections: dict[str, dict[str, int]] = {}
     total = 0
@@ -332,11 +358,17 @@ def generate_song_audio_preview(
     )
     if not saved.get("ok"):
         return {"ok": False, "error": saved.get("error") or "Could not save preview."}
+    play_url = _upload_catalog_media_url(
+        local_path=dest,
+        folder="saved_media/music",
+        content_type="audio/mpeg",
+        local_url=upload_file_url(f"saved_media/music/{dest.name}"),
+    )
     return {
         "ok": True,
         "audio_preview": normalize_audio_preview_ref(saved.get("audio_preview") or preview),
         "audio_media": saved.get("audio_media"),
-        "url": upload_file_url(f"saved_media/music/{dest.name}"),
+        "url": play_url,
         "method": meta.get("method"),
         "lyric_source": meta.get("lyric_source") or meta.get("method"),
         "start_sec": meta.get("start_sec"),
@@ -580,10 +612,16 @@ def generate_song_instrumental_video(
     )
     if not saved.get("ok"):
         return {"ok": False, "error": saved.get("error") or "Could not save instrumental video."}
+    play_url = _upload_catalog_media_url(
+        local_path=dest,
+        folder="saved_media/video",
+        content_type="video/mp4",
+        local_url=upload_file_url(f"saved_media/video/{dest.name}"),
+    )
     return {
         "ok": True,
         "video_media": normalize_song_media_ref(saved.get("video_media") or video_ref),
-        "url": upload_file_url(f"saved_media/video/{dest.name}"),
+        "url": play_url,
         "youtube_id": meta.get("youtube_id") or video_id,
         "youtube_url": meta.get("youtube_url") or url,
         "bytes": meta.get("bytes") or 0,
@@ -883,10 +921,16 @@ def generate_song_karaoke_instrumental(
     )
     if not saved.get("ok"):
         return {"ok": False, "error": saved.get("error") or "Could not save karaoke video."}
+    play_url = _upload_catalog_media_url(
+        local_path=dest,
+        folder="saved_media/video",
+        content_type="video/mp4",
+        local_url=upload_file_url(f"saved_media/video/{dest.name}"),
+    )
     return {
         "ok": True,
         "video_media": normalize_song_media_ref(saved.get("video_media") or video_ref),
-        "url": upload_file_url(f"saved_media/video/{dest.name}"),
+        "url": play_url,
         "youtube_id": meta.get("youtube_id") or video_id,
         "youtube_url": meta.get("youtube_url") or url,
         "bytes": meta.get("bytes") or 0,

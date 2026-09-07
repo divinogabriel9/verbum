@@ -187,6 +187,41 @@ def list_parish_assets(*, parish_id: str, prefix: str) -> list[dict[str, Any]]:
     return _list_folder(client, folder)
 
 
+def shared_media_path(relative_path: str) -> str:
+    """Platform-shared catalog clips live under shared/saved_media/..."""
+    rel = (relative_path or "").strip().lstrip("/")
+    if not rel:
+        raise ValueError("relative_path is required.")
+    if rel.startswith("shared/"):
+        return rel
+    return f"shared/{rel}"
+
+
+def upload_shared_media_asset(
+    *,
+    relative_path: str,
+    raw: bytes,
+    content_type: str,
+    upsert: bool = True,
+) -> StoredAsset:
+    """Upload a catalog/shared media file (service role)."""
+    return upload_shared_asset(
+        relative_path=shared_media_path(relative_path),
+        raw=raw,
+        content_type=content_type,
+        upsert=upsert,
+    )
+
+
+def list_shared_assets(*, prefix: str) -> list[dict[str, Any]]:
+    """List platform-shared media under shared/{prefix}."""
+    if not parish_storage_ready():
+        return []
+    client = get_service_client()
+    folder = shared_media_path(prefix).rstrip("/")
+    return _list_folder(client, folder)
+
+
 def delete_user_asset(*, user_id: str, access_token: str, relative_path: str) -> None:
     client = get_user_client(access_token)
     client.storage.from_(_BUCKET).remove([_user_path(user_id, relative_path)])

@@ -1234,25 +1234,25 @@
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
       "updated_at": "2026-09-07T03:52:26.970670+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:1mVDayq9ejA",
+        "youtube_id": "1mVDayq9ejA",
+        "youtube_url": "https://www.youtube.com/watch?v=1mVDayq9ejA",
+        "display_name": "Alay Sa Diyos"
+      },
       "gospel_moods": [
         "reverent"
       ],
-      "audio_media": {
-        "basename": "yt:1mVDayq9ejA",
-        "display_name": "Alay Sa Diyos",
-        "source": "youtube",
-        "youtube_id": "1mVDayq9ejA",
-        "youtube_url": "https://www.youtube.com/watch?v=1mVDayq9ejA"
-      },
       "audio_preview": {
-        "basename": "preview_offertory_alay_sa_diyos_10.mp3",
-        "display_name": "10s preview",
-        "duration_sec": 10,
-        "start_sec": 14.56,
-        "source": "preview",
         "method": "words",
+        "source": "preview",
+        "basename": "preview_offertory_alay_sa_diyos_10.mp3",
+        "start_sec": 14.56,
         "youtube_id": "1mVDayq9ejA",
-        "youtube_url": "https://www.youtube.com/watch?v=1mVDayq9ejA"
+        "youtube_url": "https://www.youtube.com/watch?v=1mVDayq9ejA",
+        "display_name": "10s preview",
+        "duration_sec": 10
       }
     },
     {
