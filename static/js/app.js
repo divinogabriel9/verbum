@@ -2318,6 +2318,22 @@
       const titleEl = $("song-media-preview-title");
       const status = $("song-media-preview-status");
       if (!id || !m || !frame || !wrap) return false;
+      if (window.LiturgyFlowConsent && !window.LiturgyFlowConsent.has("media")) {
+        if (window.LiturgyFlowConsent.openPreferences) {
+          window.LiturgyFlowConsent.openPreferences();
+        }
+        if (titleEl) titleEl.textContent = title || "YouTube preview";
+        if (status) {
+          status.hidden = false;
+          status.textContent = "Enable “Media embeds” in Cookie settings to preview YouTube videos.";
+          status.className = "status song-media-preview-modal__status error";
+        }
+        wrap.hidden = true;
+        frame.removeAttribute("src");
+        m.setAttribute("data-open", "true");
+        m.setAttribute("aria-hidden", "false");
+        return false;
+      }
       if (massSectionAudioEl) {
         try { massSectionAudioEl.pause(); } catch (_eA) {}
         try { massSectionAudioEl.removeAttribute("src"); massSectionAudioEl.load(); } catch (_eB) {}
@@ -5384,9 +5400,14 @@
       });
     }
 
-    function loadEwtRadioWithHls(audio, station) {
+    async function loadEwtRadioWithHls(audio, station) {
       const hlsUrl = getEwtRadioHlsUrl(station);
       if (!hlsUrl) return Promise.reject(new Error("No HLS stream"));
+      if (window.VerbumLazy && typeof window.VerbumLazy.ensureHls === "function") {
+        try {
+          await window.VerbumLazy.ensureHls();
+        } catch (_e) { /* fall through to native HLS / stream_url */ }
+      }
       if (window.Hls && Hls.isSupported()) {
         return new Promise((resolve, reject) => {
           destroyEwtRadioHls();
@@ -7193,13 +7214,48 @@
       return "verbum_mass_builder_draft_v" + MASS_BUILDER_DRAFT_VERSION + ":" + scope;
     }
 
-    function readMassBuilderDraft() {
+    function massBuilderPreviousDraftStorageKey() {
+      return massBuilderDraftStorageKey() + ":previous";
+    }
+
+    function readMassBuilderDraftFromKey(storageKey) {
       try {
-        const raw = localStorage.getItem(massBuilderDraftStorageKey());
+        const raw = localStorage.getItem(storageKey);
         if (!raw) return null;
         const data = JSON.parse(raw);
         if (!data || data.version !== MASS_BUILDER_DRAFT_VERSION) return null;
         return data;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function readMassBuilderDraft() {
+      return readMassBuilderDraftFromKey(massBuilderDraftStorageKey());
+    }
+
+    function readMassBuilderPreviousDraft() {
+      return readMassBuilderDraftFromKey(massBuilderPreviousDraftStorageKey());
+    }
+
+    function archiveMassBuilderDraftToPrevious() {
+      const draft = readMassBuilderDraft();
+      if (!draft) return false;
+      try {
+        localStorage.setItem(massBuilderPreviousDraftStorageKey(), JSON.stringify(draft));
+        return true;
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function promoteMassBuilderPreviousDraft() {
+      const previous = readMassBuilderPreviousDraft();
+      if (!previous) return null;
+      try {
+        localStorage.setItem(massBuilderDraftStorageKey(), JSON.stringify(previous));
+        localStorage.removeItem(massBuilderPreviousDraftStorageKey());
+        return previous;
       } catch (_e) {
         return null;
       }
@@ -7218,6 +7274,27 @@
       const n = parseInt(step, 10);
       if (!n || n < 1 || n > 7) return "In progress";
       return "Step " + n + " · " + (labels[n] || "In progress");
+    }
+
+    function formatMassBuilderStepOfTotal(step) {
+      const n = parseInt(step, 10);
+      const safe = !n || n < 1 || n > 7 ? 1 : n;
+      return "Step " + safe + " of 7";
+    }
+
+    function formatMassBuilderDraftDateShort(draft) {
+      if (!draft) return "";
+      const raw = (draft.fields && draft.fields["mass-date"]) || draft.previewDate || "";
+      if (!raw) return "";
+      const d = new Date(String(raw).includes("T") ? raw : String(raw) + "T12:00:00");
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+
+    function formatMassBuilderContinueCtaLabel(draft) {
+      const dateShort = formatMassBuilderDraftDateShort(draft);
+      if (dateShort) return "Continue Mass · " + dateShort + "\u00a0→";
+      return "Continue Sunday's Mass\u00a0→";
     }
 
     function massBuilderDraftFieldIds() {
@@ -7441,6 +7518,7 @@
 
     function runHomeMassStartNew() {
       massDraftSkipRestore = true;
+      archiveMassBuilderDraftToPrevious();
       clearMassBuilderDraft();
       try { sessionStorage.removeItem("verbumDeckThemePrompted"); } catch (_e) { /* ignore */ }
       if (typeof resetMassSectionMedia === "function") resetMassSectionMedia();
@@ -7461,6 +7539,17 @@
       });
     }
 
+    function runHomeMassContinuePrevious() {
+      const promoted = promoteMassBuilderPreviousDraft();
+      if (!promoted) {
+        updateMassBuilderDraftHomeUI();
+        return;
+      }
+      massDraftSkipRestore = false;
+      updateMassBuilderDraftHomeUI();
+      showRoute("/mass/builder");
+    }
+
     function closeHomeMassNewModal() {
       setUiOverlayOpen($("home-mass-new-modal"), false);
     }
@@ -7471,8 +7560,8 @@
       if (desc) {
         const stepLabel = draft ? formatMassBuilderDraftStepLabel(draft.step) : "";
         desc.textContent = draft
-          ? "Your saved draft (" + stepLabel + ") will be permanently deleted. This cannot be undone."
-          : "Your saved draft will be permanently deleted. This cannot be undone.";
+          ? "Your current draft (" + stepLabel + ") will remain saved. You can return to it later."
+          : "Your current draft will remain saved. You can return to it later.";
       }
       setUiOverlayOpen($("home-mass-new-modal"), true);
       requestAnimationFrame(() => $("home-mass-new-cancel") && $("home-mass-new-cancel").focus());
@@ -7480,22 +7569,92 @@
 
     function updateMassBuilderDraftHomeUI() {
       const draft = readMassBuilderDraft();
+      const previous = readMassBuilderPreviousDraft();
+      const actions = $("home-mass-actions");
       const ctaLabel = $("home-mass-cta-label");
+      const ctaMeta = $("home-mass-cta-meta");
       const statusEl = $("home-mass-stat-status");
       const statusSub = $("home-mass-stat-status-sub");
       const cta = $("home-mass-cta");
+      const ctaNew = $("home-mass-cta-new");
+      const ctaNewLabel = $("home-mass-cta-new-label");
+      const ctaNewMark = ctaNew ? ctaNew.querySelector(".rmc-cta-secondary__mark") : null;
+
       if (draft) {
         const stepLabel = formatMassBuilderDraftStepLabel(draft.step);
+        const stepOf = formatMassBuilderStepOfTotal(draft.step);
         const stamp = formatMassBuilderDraftSavedStamp(draft.savedAt ? new Date(draft.savedAt) : new Date());
-        if (ctaLabel) ctaLabel.textContent = "Continue where you left off\u00a0›";
+        if (actions) actions.setAttribute("data-cta-mode", "resume");
+        if (ctaLabel) ctaLabel.textContent = formatMassBuilderContinueCtaLabel(draft);
+        if (ctaMeta) {
+          ctaMeta.textContent = "Draft saved · " + stepOf;
+          ctaMeta.hidden = false;
+        }
         if (statusEl) statusEl.textContent = stamp ? ("Draft saved · " + stamp) : "Draft saved";
         if (statusSub) statusSub.textContent = stepLabel;
-        if (cta) cta.setAttribute("data-mw-resume-draft", "1");
-      } else {
-        if (ctaLabel) ctaLabel.textContent = "Start preparing\u00a0›";
-        if (statusEl) statusEl.textContent = "Not started";
-        if (statusSub) statusSub.textContent = "Open builder to begin";
-        if (cta) cta.removeAttribute("data-mw-resume-draft");
+        if (cta) {
+          cta.setAttribute("data-mw-resume-draft", "1");
+          cta.removeAttribute("data-mw-start-fresh");
+          cta.setAttribute("aria-describedby", "home-mass-cta-meta");
+          cta.setAttribute("aria-label", (ctaLabel && ctaLabel.textContent ? ctaLabel.textContent.replace(/\u00a0/g, " ") : "Continue Mass") + ". " + (ctaMeta ? ctaMeta.textContent : ""));
+        }
+        if (ctaNew) {
+          ctaNew.hidden = false;
+          ctaNew.dataset.ctaAction = "start-new";
+          if (ctaNewLabel) ctaNewLabel.textContent = "Start a new Mass";
+          if (ctaNewMark) {
+            ctaNewMark.hidden = false;
+            ctaNewMark.textContent = "+";
+          }
+          ctaNew.setAttribute("aria-label", "Start a new Mass");
+        }
+        return;
+      }
+
+      if (previous) {
+        const stepLabel = formatMassBuilderDraftStepLabel(previous.step);
+        const stamp = formatMassBuilderDraftSavedStamp(previous.savedAt ? new Date(previous.savedAt) : new Date());
+        if (actions) actions.setAttribute("data-cta-mode", "fresh-with-previous");
+        if (ctaLabel) ctaLabel.textContent = "Start a new Mass\u00a0→";
+        if (ctaMeta) {
+          ctaMeta.textContent = "";
+          ctaMeta.hidden = true;
+        }
+        if (statusEl) statusEl.textContent = stamp ? ("Previous draft · " + stamp) : "Previous draft saved";
+        if (statusSub) statusSub.textContent = stepLabel;
+        if (cta) {
+          cta.removeAttribute("data-mw-resume-draft");
+          cta.setAttribute("data-mw-start-fresh", "1");
+          cta.removeAttribute("aria-describedby");
+          cta.setAttribute("aria-label", "Start a new Mass");
+        }
+        if (ctaNew) {
+          ctaNew.hidden = false;
+          ctaNew.dataset.ctaAction = "continue-previous";
+          if (ctaNewLabel) ctaNewLabel.textContent = "Continue a previous Mass";
+          if (ctaNewMark) ctaNewMark.hidden = true;
+          ctaNew.setAttribute("aria-label", "Continue a previous Mass");
+        }
+        return;
+      }
+
+      if (actions) actions.setAttribute("data-cta-mode", "fresh");
+      if (ctaLabel) ctaLabel.textContent = "Start a new Mass\u00a0→";
+      if (ctaMeta) {
+        ctaMeta.textContent = "";
+        ctaMeta.hidden = true;
+      }
+      if (statusEl) statusEl.textContent = "Not started";
+      if (statusSub) statusSub.textContent = "Open builder to begin";
+      if (cta) {
+        cta.removeAttribute("data-mw-resume-draft");
+        cta.setAttribute("data-mw-start-fresh", "1");
+        cta.removeAttribute("aria-describedby");
+        cta.setAttribute("aria-label", "Start a new Mass");
+      }
+      if (ctaNew) {
+        ctaNew.hidden = true;
+        ctaNew.dataset.ctaAction = "";
       }
     }
 
@@ -7627,11 +7786,25 @@
         flowPage.addEventListener("change", scheduleMassBuilderDraftAutoSave, true);
       }
       document.addEventListener("mw:preview", scheduleMassBuilderDraftAutoSave);
+      const cta = $("home-mass-cta");
+      if (cta && cta.dataset.draftCtaBound !== "1") {
+        cta.dataset.draftCtaBound = "1";
+        cta.addEventListener("click", () => {
+          if (cta.getAttribute("data-mw-start-fresh") === "1") {
+            massDraftSkipRestore = true;
+          }
+        });
+      }
       const ctaNew = $("home-mass-cta-new");
       if (ctaNew && ctaNew.dataset.draftBound !== "1") {
         ctaNew.dataset.draftBound = "1";
         ctaNew.addEventListener("click", (e) => {
           e.preventDefault();
+          const action = ctaNew.dataset.ctaAction || "";
+          if (action === "continue-previous") {
+            runHomeMassContinuePrevious();
+            return;
+          }
           if (readMassBuilderDraft()) {
             openHomeMassNewModal();
             return;
@@ -7770,39 +7943,55 @@
       }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/mass/builder") {
-        syncChurchFieldsFromSettings();
-        refreshCommunity();
-        refreshMassMusicSongPlan({ force: true }).catch(() => {});
-        const draft = readMassBuilderDraft();
-        const afterBuilderReady = () => {
-          setTimeout(() => {
-            if (typeof window.maybePromptDeckThemeOnStartup === "function") {
-              window.maybePromptDeckThemeOnStartup();
+        const runMassBuilderRoute = () => {
+          syncChurchFieldsFromSettings();
+          refreshCommunity();
+          refreshMassMusicSongPlan({ force: true }).catch(() => {});
+          const draft = readMassBuilderDraft();
+          const afterBuilderReady = () => {
+            setTimeout(() => {
+              if (typeof window.maybePromptDeckThemeOnStartup === "function") {
+                window.maybePromptDeckThemeOnStartup();
+              }
+              if (typeof consumeEmailDeepLinkIntent === "function") {
+                consumeEmailDeepLinkIntent();
+              }
+            }, 0);
+          };
+          if (massDraftSkipRestore) {
+            massDraftSkipRestore = false;
+            ensureMassBuilderDefaultDate({ force: true });
+            ensureCollectionDefaultDate({ force: true });
+            const massDate = $("mass-date") && $("mass-date").value;
+            if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
+              loadFlowData(true);
             }
-            if (typeof consumeEmailDeepLinkIntent === "function") {
-              consumeEmailDeepLinkIntent();
+            afterBuilderReady();
+          } else if (draft) {
+            restoreMassBuilderDraft(draft).catch(() => {}).finally(afterBuilderReady);
+          } else {
+            ensureMassBuilderDefaultDate();
+            ensureCollectionDefaultDate();
+            const massDate = $("mass-date") && $("mass-date").value;
+            if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
+              loadFlowData(true);
             }
-          }, 0);
+            afterBuilderReady();
+          }
+          if (
+            window.VerbumLazy &&
+            typeof window.VerbumLazy.ensureTour === "function" &&
+            window.LiturgyFlowTour &&
+            typeof window.LiturgyFlowTour.shouldAutoStart === "function" &&
+            window.LiturgyFlowTour.shouldAutoStart()
+          ) {
+            window.VerbumLazy.ensureTour().catch(() => {});
+          }
         };
-        if (massDraftSkipRestore) {
-          massDraftSkipRestore = false;
-          ensureMassBuilderDefaultDate({ force: true });
-          ensureCollectionDefaultDate({ force: true });
-          const massDate = $("mass-date") && $("mass-date").value;
-          if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
-            loadFlowData(true);
-          }
-          afterBuilderReady();
-        } else if (draft) {
-          restoreMassBuilderDraft(draft).catch(() => {}).finally(afterBuilderReady);
+        if (window.VerbumLazy && typeof window.VerbumLazy.ensureWizard === "function") {
+          window.VerbumLazy.ensureWizard().then(runMassBuilderRoute).catch(runMassBuilderRoute);
         } else {
-          ensureMassBuilderDefaultDate();
-          ensureCollectionDefaultDate();
-          const massDate = $("mass-date") && $("mass-date").value;
-          if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
-            loadFlowData(true);
-          }
-          afterBuilderReady();
+          runMassBuilderRoute();
         }
       }
       syncFlowDockVisibility(getActiveFlowTab());
@@ -24584,10 +24773,46 @@
       if (on && k === "flow-hymn-layout" && (v === "single" || v === "dual") && typeof applyHymnLyricsLayout === "function") {
         applyHymnLyricsLayout(v);
       }
+      if (on) applyPinnedRiteOptionValue(k, v);
       syncMassDefaultPins();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
     }
     window.setMassDefaultPin = setMassDefaultPin;
+
+    function applyPinnedRiteOptionValue(key, value) {
+      const k = String(key || "").trim();
+      const v = String(value || "").trim();
+      if (!k || !v) return false;
+      if (k === "sanctus_tune") {
+        const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
+        if (!wrap) return false;
+        wrap.querySelectorAll(":scope > .mw-option").forEach((c) => {
+          const cv = c.getAttribute("data-val");
+          if (cv === "__video") return;
+          c.setAttribute("aria-checked", String(cv === v));
+        });
+        if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
+          if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
+          window.massRiteVideoLang.sanctus = v;
+        }
+        if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+        if (typeof syncRiteOptionsCollapse === "function") syncRiteOptionsCollapse();
+        const flowPage = $("flow-page");
+        if (flowPage) flowPage.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+      }
+      const el = $(k);
+      if (el && "value" in el && el.hasAttribute("data-mw-tunes")) {
+        if (String(el.value || "") !== v) {
+          if (typeof setMassBuilderFieldValue === "function") setMassBuilderFieldValue(k, v);
+          else el.value = v;
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        return true;
+      }
+      return false;
+    }
+    window.applyPinnedRiteOptionValue = applyPinnedRiteOptionValue;
 
     function massDefaultPinCompareValue(inp) {
       const key = inp.getAttribute("data-mw-default-key") || "";
@@ -24720,7 +24945,10 @@
           setActiveDeckTheme(val);
           return;
         }
-        if (key === "sanctus_tune") return;
+        if (key === "sanctus_tune") {
+          applyPinnedRiteOptionValue(key, val);
+          return;
+        }
         const el = $(key);
         if (el && "value" in el) {
           setMassBuilderFieldValue(key, val);

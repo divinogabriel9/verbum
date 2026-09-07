@@ -26,6 +26,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&amp;family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500;1,600&amp;display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/static/css/landing.css?v=2"/>
+<link rel="stylesheet" href="/static/css/cookie-consent.css?v=1"/>
 <style>
         body { font-family: "Inter", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
         .wordmark { display: inline-flex; align-items: baseline; line-height: 1; white-space: nowrap; transform: translateX(-0.065em); letter-spacing: 0; }
@@ -164,6 +165,55 @@
             text-underline-offset: 3px;
         }
         .lf-hero__foot-link:active { transform: scale(0.97); }
+        .lf-hero__legal {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 6px 12px;
+        }
+        .lf-hero__copy {
+            color: rgba(227, 190, 185, 0.6);
+            white-space: nowrap;
+        }
+        .lf-hero__legal a {
+            color: rgba(227, 190, 185, 0.75);
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .lf-hero__legal a:hover {
+            color: #ffb4a9;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+        .lf-consent-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: #d8c2bd;
+            margin: 4px 0 8px;
+        }
+        .lf-consent-check input {
+            margin-top: 3px;
+            flex-shrink: 0;
+            accent-color: #a10f0d;
+            width: 16px;
+            height: 16px;
+        }
+        .lf-consent-check a { color: #ffb4a9; }
+        .skip-link {
+            position: absolute;
+            left: -999px;
+            top: 0;
+            z-index: 10000;
+            background: #a10f0d;
+            color: #fff;
+            padding: 8px 12px;
+            text-decoration: none;
+        }
+        .skip-link:focus { left: 12px; top: 12px; }
 
         body.lf-gen-open,
         body.lf-contact-open { overflow: hidden; }
@@ -803,6 +853,7 @@
     </style>
 </head>
 <body class="bg-surface text-on-surface">
+<a class="skip-link" href="#lf-hero-main">Skip to content</a>
 <div class="lf-hero">
     <header class="lf-hero__nav">
         <a href="/" class="lf-hero__brand" aria-label="LiturgyFlow home">
@@ -815,7 +866,7 @@
         </div>
     </header>
 
-    <main class="lf-hero__main">
+    <main class="lf-hero__main" id="lf-hero-main">
         <p class="lf-hero__kicker">Sunday Mass presentations</p>
         <h1 class="lf-hero__title">What if you could create Sunday Mass in just one click?</h1>
         <p class="lf-hero__date" id="lf-hero-date">For this coming Sunday</p>
@@ -823,8 +874,17 @@
     </main>
 
     <footer class="lf-hero__foot">
-        <span>© 2026 LiturgyFlow{% if app_version %} · v {{ app_version }}{% endif %}</span>
-        <button type="button" class="lf-hero__foot-link" id="lf-foot-contact">Contact us</button>
+        <nav class="lf-hero__legal" aria-label="Legal">
+            <span class="lf-hero__copy">© 2026 LiturgyFlow{% if app_version %} · v {{ app_version }}{% endif %}</span>
+            <a href="/legal/privacy">Privacy</a>
+            <a href="/legal/terms">Terms</a>
+            <a href="/legal/cookies">Cookies</a>
+            <a href="/legal/copyright">Copyright</a>
+            <a href="/legal/refund">Refunds</a>
+            <a href="/legal/accessibility">Accessibility</a>
+            <button type="button" class="lf-hero__foot-link" data-lf-consent-manage>Cookie settings</button>
+            <button type="button" class="lf-hero__foot-link" id="lf-foot-contact">Contact us</button>
+        </nav>
     </footer>
 </div>
 
@@ -942,6 +1002,10 @@
                     <label>Message <span style="opacity:.7">(optional)</span>
                         <textarea id="lf-gen-access-message" name="message" maxlength="1000" placeholder="Anything we should know?"></textarea>
                     </label>
+                    <label class="lf-consent-check">
+                        <input type="checkbox" id="lf-gen-access-privacy" name="privacy_consent" required/>
+                        <span>I agree to the <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/legal/terms" target="_blank" rel="noopener">Terms</a>.</span>
+                    </label>
                     <p class="lf-gen-access__err" id="lf-gen-access-err" hidden></p>
                     <div class="lf-gen-access__actions">
                         <button type="submit" class="lf-gen-access__submit" id="lf-gen-access-submit">Request access</button>
@@ -989,11 +1053,19 @@
                     <option value="access">I want access / an invite</option>
                     <option value="demo">Something went wrong with the demo</option>
                     <option value="parish">Parish or partnership</option>
+                    <option value="privacy">Privacy / GDPR / data request</option>
+                    <option value="copyright">Copyright / DMCA / image or hymn claim</option>
+                    <option value="refund">Billing or refund</option>
+                    <option value="accessibility">Accessibility feedback</option>
                     <option value="other">Something else</option>
                 </select>
             </label>
             <label>Message
                 <textarea id="lf-contact-message" name="message" required maxlength="2000" placeholder="How can we help?"></textarea>
+            </label>
+            <label class="lf-consent-check">
+                <input type="checkbox" id="lf-contact-privacy" name="privacy_consent" required/>
+                <span>I agree to the <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a> and understand my message will be processed to respond to this inquiry.</span>
             </label>
             <p class="lf-contact-err" id="lf-contact-err" hidden></p>
             <button type="submit" class="lf-contact-submit" id="lf-contact-submit">Send message</button>
@@ -1004,7 +1076,8 @@
     </div>
 </div>
 
-<script src="/static/js/landing-generate.js?v=11"></script>
+<script src="/static/js/cookie-consent.js?v=1" defer></script>
+<script src="/static/js/landing-generate.js?v=12"></script>
 <script>
   (function () {
     try {

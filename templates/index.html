@@ -27,11 +27,12 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260906-sa-analytics3" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260907-home-cta7" />
+  <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260905-1012" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260907-home-cta6" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
@@ -63,6 +64,32 @@
   {% endif %}
 </head>
 <body data-season="ordinary" class="mw-on">
+  <a class="skip-link" href="#home-page" style="position:absolute;left:-999px;top:0;z-index:10000;background:#a10f0d;color:#fff;padding:8px 12px;text-decoration:none;">Skip to content</a>
+  <style>
+    .skip-link:focus { left: 12px; top: 12px; }
+    .app-legal-footer {
+      margin: 24px 16px 48px;
+      padding-top: 16px;
+      border-top: 1px solid color-mix(in srgb, var(--line, #ddd) 80%, transparent);
+      font-size: 0.78rem;
+      color: var(--muted, #6b5652);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
+    }
+    .app-legal-footer a,
+    .app-legal-footer button {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      background: none;
+      border: 0;
+      padding: 0;
+      font: inherit;
+      cursor: pointer;
+    }
+  </style>
   {% if auth_enabled %}
   <div id="auth-gate-overlay" role="status" aria-live="polite" aria-busy="true">
     <span>Checking your session…</span>
@@ -438,12 +465,16 @@
                 <div class="rmc-hero">
                   <h3 class="rmc-hero-title" id="home-mass-heading">Build this Sunday's Mass</h3>
                   <p class="rmc-hero-sub" id="home-mass-sub">Your liturgy preparation hub — readings, music, and slides in one place.</p>
-                  <div class="rmc-actions" id="home-mass-actions">
-                    <a class="redesign-mass-cta home-mass-cta uiverse-btn uiverse-btn--orange" href="/mass/builder" data-route="/mass/builder" id="home-mass-cta">
-                      <div class="button-outer"><div class="button-inner"><span id="home-mass-cta-label">Start preparing&nbsp;›</span></div></div>
-                    </a>
-                    <a class="redesign-mass-cta home-mass-cta-new uiverse-btn uiverse-btn--accent" href="/mass/builder" id="home-mass-cta-new">
-                      <div class="button-outer"><div class="button-inner"><span>Start new</span></div></div>
+                  <div class="rmc-actions" id="home-mass-actions" data-cta-mode="fresh">
+                    <div class="rmc-cta-primary" id="home-mass-cta-primary">
+                      <a class="redesign-mass-cta home-mass-cta uiverse-btn uiverse-btn--orange" href="/mass/builder" data-route="/mass/builder" id="home-mass-cta" aria-label="Start a new Mass">
+                        <div class="button-outer"><div class="button-inner"><span id="home-mass-cta-label">Start a new Mass&nbsp;→</span></div></div>
+                      </a>
+                      <p class="rmc-cta-meta" id="home-mass-cta-meta" hidden></p>
+                    </div>
+                    <a class="rmc-cta-secondary home-mass-cta-new" href="/mass/builder" id="home-mass-cta-new" hidden>
+                      <span class="rmc-cta-secondary__mark" aria-hidden="true">+</span>
+                      <span id="home-mass-cta-new-label">Start a new Mass</span>
                     </a>
                   </div>
                 </div>
@@ -687,13 +718,13 @@
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="home-mass-new-title">Start a new Mass?</h3>
-              <p class="ui-card__description" id="home-mass-new-desc">Your saved draft will be permanently deleted. This cannot be undone.</p>
+              <p class="ui-card__description" id="home-mass-new-desc">Your current draft will remain saved. You can return to it later.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="home-mass-new-close" aria-label="Close">×</button>
           </header>
           <footer class="ui-card__footer ui-card__footer--row">
-            <button type="button" class="secondary" id="home-mass-new-cancel">Keep draft</button>
-            <button type="button" class="primary" id="home-mass-new-confirm">Start new</button>
+            <button type="button" class="secondary" id="home-mass-new-cancel">Keep Draft</button>
+            <button type="button" class="primary" id="home-mass-new-confirm">Start New</button>
           </footer>
         </article>
       </div>
@@ -2434,7 +2465,7 @@
                       <div class="mw-rite__head"><span class="mw-rite__title">Sanctus</span></div>
                       <div class="mw-rite__body">
                         <div class="mw-options" role="radiogroup" aria-label="Sanctus tune" data-mw-media-section="sanctus">
-                          <div class="mw-option" role="radio" aria-checked="false" tabindex="0" data-val="default" data-mw-media-key="sanctus::default">
+                          <div class="mw-option" role="radio" aria-checked="true" tabindex="0" data-val="default" data-mw-media-key="sanctus::default">
                             <div class="mw-option__row">
                               <span class="mw-option__check" aria-hidden="true"></span>
                               <span class="mw-option__label">Holy, Holy, Holy (default)</span>
@@ -2805,7 +2836,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260905-1612"></script>
+      <script src="/static/js/mw-wizard.js?v=20260907-langorder1"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4057,6 +4088,21 @@
 
                 <hr class="settings-divider" />
 
+                <h3>Privacy &amp; legal</h3>
+                <p class="muted">Review policies, manage cookies, or request access to your data. Image and hymn copyrights remain your parish’s responsibility — see Copyright &amp; IP.</p>
+                <div class="app-legal-footer" style="margin:8px 0 0;padding-top:0;border:0;">
+                  <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a>
+                  <a href="/legal/terms" target="_blank" rel="noopener">Terms</a>
+                  <a href="/legal/cookies" target="_blank" rel="noopener">Cookies</a>
+                  <a href="/legal/copyright" target="_blank" rel="noopener">Copyright &amp; IP</a>
+                  <a href="/legal/refund" target="_blank" rel="noopener">Refunds</a>
+                  <a href="/legal/accessibility" target="_blank" rel="noopener">Accessibility</a>
+                  <button type="button" data-lf-consent-manage>Cookie settings</button>
+                  <a href="/?contact=1&amp;topic=privacy" target="_blank" rel="noopener">Data / GDPR request</a>
+                </div>
+
+                <hr class="settings-divider" />
+
                 <section id="settings-live-radio">
                   <h3>Catholic Live Radio</h3>
                   <p class="muted">Default station for the Live Radio pill in the header. Only stations with an in-browser stream can play from the mini player.</p>
@@ -4360,7 +4406,8 @@
     </div>
   </div>
 
-  <script src="/static/js/app.js?v=20260906-sa-gen-users1"></script>
+  <script src="/static/js/cookie-consent.js?v=1"></script>
+  <script src="/static/js/app.js?v=20260907-sanctus1"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260906-membership-gate1"></script>

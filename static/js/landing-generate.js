@@ -801,10 +801,20 @@
     var email = ($("lf-gen-access-email") || {}).value || "";
     var parish = ($("lf-gen-access-parish") || {}).value || "";
     var message = ($("lf-gen-access-message") || {}).value || "";
+    var privacyEl = $("lf-gen-access-privacy");
+    var privacyConsent = !!(privacyEl && privacyEl.checked);
 
     if (errEl) {
       errEl.hidden = true;
       errEl.textContent = "";
+    }
+    if (!privacyConsent) {
+      if (errEl) {
+        errEl.textContent = "Please agree to the Privacy Policy and Terms before submitting.";
+        errEl.hidden = false;
+      }
+      if (privacyEl) privacyEl.focus();
+      return;
     }
     if (btn) btn.disabled = true;
 
@@ -814,6 +824,7 @@
         email: String(email).trim(),
         parish: String(parish).trim(),
         message: String(message).trim(),
+        privacy_consent: true,
       });
       form.hidden = true;
       thanks.hidden = false;
@@ -881,10 +892,20 @@
     var message = ($("lf-contact-message") || {}).value || "";
     var website = ($("lf-contact-website") || {}).value || "";
     var startedAt = Number(($("lf-contact-started") || {}).value || 0);
+    var privacyEl = $("lf-contact-privacy");
+    var privacyConsent = !!(privacyEl && privacyEl.checked);
 
     if (errEl) {
       errEl.hidden = true;
       errEl.textContent = "";
+    }
+    if (!privacyConsent) {
+      if (errEl) {
+        errEl.textContent = "Please agree to the Privacy Policy before sending your message.";
+        errEl.hidden = false;
+      }
+      if (privacyEl) privacyEl.focus();
+      return;
     }
     if (btn) btn.disabled = true;
 
@@ -896,6 +917,7 @@
         message: String(message).trim(),
         website: String(website),
         started_at: startedAt,
+        privacy_consent: true,
       });
       form.hidden = true;
       thanks.hidden = false;

@@ -879,8 +879,10 @@
     #auth-oauth[hidden] { display: none !important; }
     #auth-signup-fields[hidden] { display: none !important; }
   </style>
+  <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
 </head>
 <body>
+  <a class="skip-link" href="#auth-form" style="position:absolute;left:-999px;top:0;z-index:10000;background:var(--accent);color:#fff;padding:8px 12px;">Skip to form</a>
   <div class="auth-shell-wrap">
   <div class="auth-shell">
     <a href="/?stay=1" class="auth-close" id="auth-close" aria-label="Back to LiturgyFlow home" title="Back to home">
@@ -1057,6 +1059,12 @@
           <label for="auth-password">Password</label>
           <input type="password" id="auth-password" autocomplete="{% if mode == 'sign-up' %}new-password{% else %}current-password{% endif %}" required minlength="8" maxlength="128" />
         </div>
+        {% if mode == "sign-up" %}
+        <label class="auth-check auth-legal-consent" id="auth-legal-consent-wrap" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0 4px;font-size:0.82rem;line-height:1.4;color:var(--muted);">
+          <input type="checkbox" id="auth-privacy-consent" name="privacy_consent" required style="margin-top:3px;flex-shrink:0;" />
+          <span>I agree to the <a href="/legal/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a>, and I understand I am responsible for hymn and image copyright licenses for my parish.</span>
+        </label>
+        {% endif %}
       </div>
       </div>
       <div class="auth-nav-row" id="auth-step-nav" hidden>
@@ -1129,6 +1137,13 @@
         Already have an account? <a href="/sign-in">Sign in</a>
       {% endif %}
     </p>
+    <p class="auth-footer" style="margin-top:6px;opacity:0.8;font-size:0.75rem;line-height:1.45;">
+      <a href="/legal/privacy">Privacy</a> ·
+      <a href="/legal/terms">Terms</a> ·
+      <a href="/legal/cookies">Cookies</a> ·
+      <a href="/legal/copyright">Copyright</a> ·
+      <button type="button" class="lf-consent-manage" data-lf-consent-manage style="font:inherit;font-size:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">Cookie settings</button>
+    </p>
     {% if app_version %}
     <p class="auth-footer" style="margin-top:8px;opacity:0.75;font-size:0.78rem;" title="Deployed build">v {{ app_version }}{% if built_at_display %} · {{ built_at_display }}{% endif %}</p>
     {% endif %}
@@ -1156,6 +1171,7 @@
     window.__VERBUM_INVITE_COMMUNITY_NAME__ = {{ invite_community_name | tojson }};
     window.__VERBUM_HCAPTCHA_SITE_KEY__ = {{ (hcaptcha_site_key or "") | tojson }};
   </script>
+  <script src="/static/js/cookie-consent.js?v=1" defer></script>
   <script src="/static/js/auth-page.js?v=20260906-hcaptcha8" defer></script>
 </body>
 </html>

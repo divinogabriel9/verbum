@@ -77,42 +77,61 @@
       }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/mass/builder") {
-        syncChurchFieldsFromSettings();
-        refreshCommunity();
-        refreshMassMusicSongPlan({ force: true }).catch(() => {});
-        const draft = readMassBuilderDraft();
-        const afterBuilderReady = () => {
-          setTimeout(() => {
-            if (typeof window.maybePromptDeckThemeOnStartup === "function") {
-              window.maybePromptDeckThemeOnStartup();
+        const runMassBuilderRoute = () => {
+          syncChurchFieldsFromSettings();
+          refreshCommunity();
+          refreshMassMusicSongPlan({ force: true }).catch(() => {});
+          const draft = readMassBuilderDraft();
+          const afterBuilderReady = () => {
+            setTimeout(() => {
+              if (typeof window.maybePromptDeckThemeOnStartup === "function") {
+                window.maybePromptDeckThemeOnStartup();
+              }
+              if (typeof consumeEmailDeepLinkIntent === "function") {
+                consumeEmailDeepLinkIntent();
+              }
+            }, 0);
+          };
+          if (massDraftSkipRestore) {
+            massDraftSkipRestore = false;
+            ensureMassBuilderDefaultDate({ force: true });
+            ensureCollectionDefaultDate({ force: true });
+            const massDate = $("mass-date") && $("mass-date").value;
+            if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
+              loadFlowData(true);
             }
-            if (typeof consumeEmailDeepLinkIntent === "function") {
-              consumeEmailDeepLinkIntent();
+            afterBuilderReady();
+          } else if (draft) {
+            restoreMassBuilderDraft(draft).catch(() => {}).finally(afterBuilderReady);
+          } else {
+            ensureMassBuilderDefaultDate();
+            ensureCollectionDefaultDate();
+            const massDate = $("mass-date") && $("mass-date").value;
+            if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
+              loadFlowData(true);
             }
-          }, 0);
+            afterBuilderReady();
+          }
+          if (
+            window.VerbumLazy &&
+            typeof window.VerbumLazy.ensureTour === "function" &&
+            window.LiturgyFlowTour &&
+            typeof window.LiturgyFlowTour.shouldAutoStart === "function" &&
+            window.LiturgyFlowTour.shouldAutoStart()
+          ) {
+            window.VerbumLazy.ensureTour().catch(() => {});
+          }
         };
-        if (massDraftSkipRestore) {
-          massDraftSkipRestore = false;
-          ensureMassBuilderDefaultDate({ force: true });
-          ensureCollectionDefaultDate({ force: true });
-          const massDate = $("mass-date") && $("mass-date").value;
-          if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
-            loadFlowData(true);
-          }
-          afterBuilderReady();
-        } else if (draft) {
-          restoreMassBuilderDraft(draft).catch(() => {}).finally(afterBuilderReady);
+        if (window.VerbumLazy && typeof window.VerbumLazy.ensureWizard === "function") {
+          window.VerbumLazy.ensureWizard().then(runMassBuilderRoute).catch(runMassBuilderRoute);
         } else {
-          ensureMassBuilderDefaultDate();
-          ensureCollectionDefaultDate();
-          const massDate = $("mass-date") && $("mass-date").value;
-          if (massDate && (!flowPreviewData || flowPreviewData.__previewDate !== massDate)) {
-            loadFlowData(true);
-          }
-          afterBuilderReady();
+          runMassBuilderRoute();
         }
       }
       syncFlowDockVisibility(getActiveFlowTab());
+      if (r === "/radio" && window.VerbumLazy && typeof window.VerbumLazy.ensureHls === "function") {
+        window.VerbumLazy.ensureHls().catch(() => {});
+      }
       if (r === "/media/posters") {
         syncPosterFromMassBuilder();
         refreshSavedPosters();

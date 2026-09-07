@@ -123,6 +123,16 @@ services:
         value: "60"
       - key: CATALOG_LYRIC_FETCH_WINDOW
         value: "3600"
+      - key: PRIVACY_CONTACT_EMAIL
+        sync: false
+      - key: DMCA_CONTACT_EMAIL
+        sync: false
+      - key: LEGAL_OPERATOR_NAME
+        value: "LiturgyFlow"
+      - key: LEGAL_JURISDICTION
+        value: "Republic of the Philippines"
+      - key: LEGAL_EFFECTIVE_DATE
+        value: "6 September 2026"
       # Base64 Netscape YouTube cookies — required for SA preview fetch on Render IPs
       - key: YTDLP_COOKIES_B64
         sync: false

@@ -1213,8 +1213,8 @@
     <header class="practice-top" id="practice-top" hidden>
       <div class="practice-top__row">
         <div class="practice-top__text">
-          <p class="practice-top__eyebrow">Choir practice</p>
-          <h1 id="practice-title">Upcoming Mass</h1>
+      <p class="practice-top__eyebrow">Choir practice</p>
+      <h1 id="practice-title">Upcoming Mass</h1>
         </div>
         <div class="practice-top__actions">
           <button type="button" class="practice-theme-toggle" id="practice-theme-toggle" aria-label="Switch to dark mode" title="Theme">
@@ -1227,7 +1227,7 @@
         </div>
       </div>
       <div class="practice-top__meta">
-        <p id="practice-sub"></p>
+      <p id="practice-sub"></p>
         <div class="practice-presence" id="practice-presence" hidden aria-live="polite">
           <span class="practice-presence__dot" aria-hidden="true"></span>
           <span id="practice-presence-label">1 online</span>
@@ -1906,8 +1906,8 @@
             memberList.querySelectorAll("[data-user-id]").forEach(function (btn) {
               btn.addEventListener("click", function () {
                 void sendLyricsToMember(btn.getAttribute("data-user-id"), btn);
-              });
-            });
+          });
+        });
           }
         } catch (_err) {
           if (memberList) memberList.innerHTML = "";
@@ -2630,7 +2630,7 @@
         });
 
         syncPracticePresence(data && data.active_now);
-        renderCurrentSong();
+            renderCurrentSong();
         startPoll();
       }
 

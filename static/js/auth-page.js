@@ -2077,6 +2077,14 @@
             showError("This invite is locked to " + inviteEmail + ".");
             return;
           }
+          if (mode === "sign-up") {
+            const consent = $("auth-privacy-consent");
+            if (consent && !consent.checked) {
+              showError("Please agree to the Terms of Service and Privacy Policy to create an account.");
+              try { consent.focus(); } catch (_e) {}
+              return;
+            }
+          }
 
           setAuthSubmitting(true);
 

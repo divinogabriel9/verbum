@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Concatenate static/js/app/app-0N-*.js into static/js/app.js for the browser."""
+"""Concatenate static/js/app/app-0N-*.js into static/js/app.js (fallback bundle).
+
+The live app loads the nine part files in parallel via static/js/lazy-assets.js.
+Keep app.js in sync for the fallback path and for grepping a single file.
+Edit the part files, then run: python3 scripts/rebuild-app-js.py
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,6 +30,7 @@ def main() -> None:
         raise SystemExit(f"expected 9 part files, found {len(parts)}: {parts}")
     chunks = [
         "/* Verbum SPA — generated from static/js/app/app-0N-*.js\n"
+        " * Prefer loading parts via lazy-assets.js; this file is the fallback bundle.\n"
         " * Edit the part files, then run: python3 scripts/rebuild-app-js.py\n"
         " */\n"
     ]

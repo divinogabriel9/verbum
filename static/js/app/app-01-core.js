@@ -2319,6 +2319,22 @@
       const titleEl = $("song-media-preview-title");
       const status = $("song-media-preview-status");
       if (!id || !m || !frame || !wrap) return false;
+      if (window.LiturgyFlowConsent && !window.LiturgyFlowConsent.has("media")) {
+        if (window.LiturgyFlowConsent.openPreferences) {
+          window.LiturgyFlowConsent.openPreferences();
+        }
+        if (titleEl) titleEl.textContent = title || "YouTube preview";
+        if (status) {
+          status.hidden = false;
+          status.textContent = "Enable “Media embeds” in Cookie settings to preview YouTube videos.";
+          status.className = "status song-media-preview-modal__status error";
+        }
+        wrap.hidden = true;
+        frame.removeAttribute("src");
+        m.setAttribute("data-open", "true");
+        m.setAttribute("aria-hidden", "false");
+        return false;
+      }
       if (massSectionAudioEl) {
         try { massSectionAudioEl.pause(); } catch (_eA) {}
         try { massSectionAudioEl.removeAttribute("src"); massSectionAudioEl.load(); } catch (_eB) {}

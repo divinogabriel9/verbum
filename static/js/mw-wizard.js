@@ -592,6 +592,50 @@
             try { vid.load(); } catch (e1) {}
           }
         }
+        function preferredMassLanguageOption() {
+          var massLang = $('flow-mass-language');
+          var lang = massLang && massLang.value === 'tagalog' ? 'tagalog' : 'english';
+          return lang;
+        }
+        function isLanguageRiteSelect(sel) {
+          if (!sel) return false;
+          var section = sel.getAttribute('data-mw-media-section') || '';
+          return section === 'kyrie' || section === 'gloria' || section === 'our_father' || section === 'lamb_of_god';
+        }
+        function reorderSelectLanguageOptions(sel, preferred) {
+          if (!sel || !preferred || !isLanguageRiteSelect(sel)) return false;
+          var match = null;
+          Array.prototype.forEach.call(sel.options, function (o) {
+            if (!match && o.value === preferred && !o.disabled) match = o;
+          });
+          if (!match) return false;
+          if (sel.options[0] === match) return true;
+          var current = sel.value;
+          sel.insertBefore(match, sel.options[0] || null);
+          if (current) sel.value = current;
+          return true;
+        }
+        function reorderMwLanguageCards(sel, preferred) {
+          if (!sel || !preferred) return false;
+          var wrap = sel.nextElementSibling;
+          if (!wrap || !wrap.classList || !wrap.classList.contains('mw-options')) return false;
+          var card = wrap.querySelector(':scope > .mw-option[data-val="' + preferred + '"]');
+          if (!card) return false;
+          if (wrap.firstElementChild === card) return true;
+          wrap.insertBefore(card, wrap.firstElementChild);
+          return true;
+        }
+        function applyMassLanguageOptionOrder(preferredLang) {
+          var preferred = preferredLang || preferredMassLanguageOption();
+          Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-tunes]'), function (sel) {
+            if (!isLanguageRiteSelect(sel)) return;
+            if (!reorderSelectLanguageOptions(sel, preferred)) return;
+            reorderMwLanguageCards(sel, preferred);
+          });
+          if (typeof window.syncRiteOptionsCollapse === 'function') window.syncRiteOptionsCollapse();
+          if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins();
+        }
+        window.applyMassLanguageOptionOrder = applyMassLanguageOptionOrder;
         function buildChoiceCards() {
           Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-tunes]'), function (sel) {
             if (sel.dataset.mwCards === '1') return; sel.dataset.mwCards = '1';
@@ -738,14 +782,29 @@
           }
           function sync() {
             var onVideo = !!(window.massRiteVideoMode && window.massRiteVideoMode.sanctus);
-            Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
-              var v = c.getAttribute('data-val');
-              if (v === '__video') return;
-              /* Sanctus stays selected when picked; video mode does not uncheck it */
-              if (c.getAttribute('aria-checked') !== 'true' && !onVideo) {
-                /* leave unchecked until user picks */
+            var anyChecked = !!wrap.querySelector(':scope > .mw-option[aria-checked="true"]:not([data-val="__video"])');
+            if (!anyChecked) {
+              var pinned = '';
+              try {
+                var raw = localStorage.getItem('mass_builder_pinned_defaults');
+                var map = raw ? JSON.parse(raw) : {};
+                if (map && typeof map === 'object' && map.sanctus_tune) pinned = String(map.sanctus_tune || '').trim();
+              } catch (ePin) { /* ignore */ }
+              var pick = pinned || 'default';
+              var target = wrap.querySelector(':scope > .mw-option[data-val="' + pick + '"]')
+                || wrap.querySelector(':scope > .mw-option[data-val="default"]');
+              if (target) {
+                Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
+                  var v = c.getAttribute('data-val');
+                  if (v === '__video') return;
+                  c.setAttribute('aria-checked', String(c === target));
+                });
+                if (onVideo) {
+                  if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
+                  window.massRiteVideoLang.sanctus = target.getAttribute('data-val') || 'default';
+                }
               }
-            });
+            }
             if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
             refreshContinue();
           }
@@ -1147,13 +1206,15 @@
             massLang.dataset.mwLangBound = '1';
             massLang.addEventListener('change', function () {
               var lang = massLang.value === 'tagalog' ? 'tagalog' : 'english';
-              if (lang === 'tagalog') {
-                if ($('flow-creed-choice')) $('flow-creed-choice').value = 'apostles';
-                if ($('flow-our-father-choice')) $('flow-our-father-choice').value = 'tagalog';
-              } else {
-                if ($('flow-creed-choice')) $('flow-creed-choice').value = 'nicene';
-                if ($('flow-our-father-choice')) $('flow-our-father-choice').value = 'english';
+              /* Prefer matching vernacular for Our Father only — Creed stays user-chosen. */
+              if ($('flow-our-father-choice')) {
+                var ofSel = $('flow-our-father-choice');
+                var hasLang = Array.prototype.some.call(ofSel.options, function (o) {
+                  return o.value === lang && !o.disabled;
+                });
+                if (hasLang) ofSel.value = lang;
               }
+              applyMassLanguageOptionOrder(lang);
               /* re-render mw option radios driven by hidden selects */
               if (typeof window.syncMassRiteOptionRadios === 'function') window.syncMassRiteOptionRadios();
               else {
@@ -1301,6 +1362,7 @@
             massDateEl.addEventListener('change', beginMwMassContextLoading);
           }
           buildChoiceCards();
+          applyMassLanguageOptionOrder();
           ensureSanctusVideoOption();
           Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-options[aria-label] .mw-option'), function (opt) {
             if (opt.getAttribute('data-val') === '__video' || opt.classList.contains('mw-option--video')) return;

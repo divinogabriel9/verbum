@@ -1,0 +1,89 @@
+<h1>Privacy Policy</h1>
+<p class="legal-meta">Effective: {{ legal.effective_date }} · Controller: {{ legal.operator_name }} · Contact: <a href="mailto:{{ legal.privacy_email }}">{{ legal.privacy_email }}</a></p>
+
+<div class="legal-callout">
+  This Policy explains how {{ legal.product_name }} (“we”, “us”) collects and uses personal data when you visit {{ legal.site_url }}, create an account, request access, contact us, or use Mass media tools. It is designed to align with the <strong>Philippines Data Privacy Act of 2012 (RA 10173)</strong> and, where applicable, the <strong>EU/UK GDPR</strong>.
+</div>
+
+<h2>1. Who we are</h2>
+<p>{{ legal.operator_name }} operates {{ legal.product_name }}, a parish Mass media generator (PowerPoint decks, posters, song planning helpers, and related tools). Our primary operating jurisdiction is the {{ legal.jurisdiction }}.</p>
+
+<h2>2. Data we collect</h2>
+<h3>Account &amp; membership</h3>
+<ul>
+  <li>Name, email address, password (hashed by our auth provider), parish/community name, role, membership status.</li>
+  <li>Optional profile image / parish logo you upload.</li>
+  <li>Invite tokens and team membership metadata.</li>
+</ul>
+<h3>Service usage</h3>
+<ul>
+  <li>Mass dates, celebrant names, song selections, custom lyrics you enter, generation history, and practice-share metadata.</li>
+  <li>Support messages, access requests, and related correspondence.</li>
+  <li>Technical logs needed for security (IP address truncated/keyed for rate limits, user agent, timestamps, error logs).</li>
+</ul>
+<h3>Cookies &amp; device storage</h3>
+<ul>
+  <li>Necessary cookies/storage for sign-in, security, and practice-share unlock.</li>
+  <li>Optional preference and media-embed consent (see <a href="/legal/cookies">Cookie Policy</a>).</li>
+</ul>
+<h3>Payment</h3>
+<p>If paid plans are offered, payment processors (not us) handle card data under their own policies. We receive limited billing status metadata only.</p>
+
+<h2>3. Legal bases (GDPR / DPA)</h2>
+<ul>
+  <li><strong>Contract</strong> — creating your account and providing the service you requested.</li>
+  <li><strong>Legitimate interests</strong> — securing the service, preventing abuse, product improvement (balanced against your rights).</li>
+  <li><strong>Consent</strong> — optional cookies/embeds, marketing emails (if any), and non-essential processing you opt into.</li>
+  <li><strong>Legal obligation</strong> — responding to lawful requests and retaining records where required.</li>
+</ul>
+
+<h2>4. How we use data</h2>
+<ul>
+  <li>Authenticate users and manage parish membership / invites.</li>
+  <li>Generate Mass media, choir practice links, and related outputs.</li>
+  <li>Respond to contact / access / privacy / copyright requests.</li>
+  <li>Enforce rate limits, detect abuse, and maintain platform integrity.</li>
+  <li>Send transactional emails (invites, password resets, membership notices).</li>
+</ul>
+<p>We do <strong>not</strong> sell personal data.</p>
+
+<h2>5. Processors &amp; third parties</h2>
+<p>We use reputable processors under contractual terms, which may include:</p>
+<ul>
+  <li><strong>Supabase</strong> — authentication, database, file storage.</li>
+  <li><strong>Render / hosting &amp; Redis</strong> — application hosting, caching, rate limiting.</li>
+  <li><strong>Email delivery</strong> (e.g. Brevo) — transactional messages.</li>
+  <li><strong>AI image providers</strong> (OpenAI / Google Gemini when enabled) — prompts and generated images for posters you request.</li>
+  <li><strong>Openverse / Creative Commons sources</strong> — optional Gospel background images with attribution.</li>
+  <li><strong>YouTube / radio stream hosts</strong> — only when you play embeds and have consented to media cookies.</li>
+  <li><strong>hCaptcha</strong> — bot protection on authentication where enabled.</li>
+</ul>
+<p>These parties process data under their own privacy notices. International transfers may occur; we rely on appropriate safeguards (e.g. standard contractual clauses / provider terms).</p>
+
+<h2>6. Retention</h2>
+<ul>
+  <li>Account data — while your account is active, then deleted or anonymized within a reasonable period after closure (unless longer retention is required).</li>
+  <li>Generated media — ephemeral on server disks; durable copies (if any) follow your storage settings and account lifecycle.</li>
+  <li>Practice shares — until expiry or revocation.</li>
+  <li>Security / rate-limit logs — short windows (days to weeks).</li>
+  <li>Contact messages — as needed to resolve requests, then archived or deleted.</li>
+</ul>
+
+<h2>7. Your rights</h2>
+<p>Subject to applicable law, you may request:</p>
+<ul>
+  <li>Access, correction, deletion, or portability of your personal data.</li>
+  <li>Restriction or objection to certain processing.</li>
+  <li>Withdrawal of consent (cookie settings or email preferences) without affecting prior lawful processing.</li>
+  <li>Complaint to your supervisory authority (e.g. Philippines National Privacy Commission, or an EU/UK DPA if GDPR applies).</li>
+</ul>
+<p>Email <a href="mailto:{{ legal.privacy_email }}">{{ legal.privacy_email }}</a> with subject “Privacy request”. We may need to verify your identity.</p>
+
+<h2>8. Children</h2>
+<p>{{ legal.product_name }} is intended for adult parish staff and volunteers. We do not knowingly collect personal data from children under 16 (or the digital-consent age in your country). Contact us to delete any such data.</p>
+
+<h2>9. Security</h2>
+<p>We use industry-standard measures (HTTPS, hashed passwords via our auth provider, access controls, rate limiting). No method of transmission or storage is 100% secure.</p>
+
+<h2>10. Changes</h2>
+<p>We may update this Policy. The “Effective” date above will change when we do. Material changes will be highlighted in-product or by email when appropriate.</p>

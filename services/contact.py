@@ -40,6 +40,10 @@ CONTACT_TOPICS: dict[str, str] = {
     "access": "I want access / an invite",
     "demo": "Something went wrong with the demo",
     "parish": "Parish or partnership",
+    "privacy": "Privacy / GDPR / data request",
+    "copyright": "Copyright / DMCA / image or hymn claim",
+    "refund": "Billing or refund",
+    "accessibility": "Accessibility feedback",
     "other": "Something else",
 }
 

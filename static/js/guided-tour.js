@@ -472,15 +472,18 @@
   }
 
   function bindTriggers() {
+    // Prefer VerbumLazy early bindings (lazy-assets.js) to avoid double handlers.
     var helpBtn = document.getElementById("btn-mw-tour");
-    if (helpBtn) {
+    if (helpBtn && helpBtn.dataset.lfTourBound !== "1") {
+      helpBtn.dataset.lfTourBound = "1";
       helpBtn.addEventListener("click", function () {
         startPptxTour();
       });
     }
 
     var acctBtn = document.getElementById("account-tour-link");
-    if (acctBtn) {
+    if (acctBtn && acctBtn.dataset.lfTourBound !== "1") {
+      acctBtn.dataset.lfTourBound = "1";
       acctBtn.addEventListener("click", function (event) {
         event.preventDefault();
         var panel = document.getElementById("account-menu-panel");
@@ -493,7 +496,8 @@
     }
 
     var homeLink = document.getElementById("home-mass-tour-link");
-    if (homeLink) {
+    if (homeLink && homeLink.dataset.lfTourBound !== "1") {
+      homeLink.dataset.lfTourBound = "1";
       homeLink.addEventListener("click", function (event) {
         event.preventDefault();
         startPptxTour();
@@ -530,6 +534,7 @@
   }
 
   window.LiturgyFlowTour = {
+    __fullyLoaded: true,
     startPptxTour: startPptxTour,
     markComplete: markComplete,
     hasCompletedTour: hasCompletedTour,

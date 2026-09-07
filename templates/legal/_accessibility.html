@@ -1,0 +1,35 @@
+<h1>Accessibility Statement</h1>
+<p class="legal-meta">Effective: {{ legal.effective_date }} · Feedback: <a href="mailto:{{ legal.support_email }}">{{ legal.support_email }}</a></p>
+
+<div class="legal-callout">
+  {{ legal.product_name }} aims to meet <strong>WCAG 2.2 Level AA</strong> for core parish workflows. Accessibility is an ongoing effort — please tell us if you hit a barrier.
+</div>
+
+<h2>1. Our commitment</h2>
+<p>We design for keyboard access, visible focus, meaningful labels, sufficient contrast, and reduced-motion preferences. Public pages include a skip link to main content.</p>
+
+<h2>2. Measures we take</h2>
+<ul>
+  <li>Semantic landmarks and labeled form controls on auth, contact, and legal pages.</li>
+  <li><code>aria-live</code> regions for status updates in the app where feasible.</li>
+  <li>Focus outlines on interactive controls; dialogs use <code>aria-modal</code> where implemented.</li>
+  <li>Respect for <code>prefers-reduced-motion</code> on marketing and consent UI.</li>
+  <li>Privacy-enhanced media embeds that do not auto-load without consent.</li>
+</ul>
+
+<h2>3. Known limitations</h2>
+<ul>
+  <li>The Mass Builder SPA is large; some legacy panels may still need improved heading order or mobile focus traps.</li>
+  <li>PowerPoint / PDF outputs inherit limitations of Office formats and are not fully WCAG-conformant documents.</li>
+  <li>Third-party players (YouTube, radio streams) follow their own accessibility support.</li>
+  <li>AI-generated images may lack meaningful text alternatives unless you add captions when publishing.</li>
+</ul>
+
+<h2>4. Compatibility</h2>
+<p>We test with current evergreen browsers (Chrome, Firefox, Safari, Edge) on desktop and common mobile viewports. Assistive technology coverage includes VoiceOver and keyboard-only navigation for primary flows.</p>
+
+<h2>5. Feedback &amp; timeline</h2>
+<p>Email <a href="mailto:{{ legal.support_email }}">{{ legal.support_email }}</a> with subject “Accessibility”. Please include the page URL, what you tried, and your assistive technology if relevant. We aim to acknowledge within 5 business days and prioritize fixes for barriers that block Mass preparation.</p>
+
+<h2>6. Formal approval</h2>
+<p>This statement is maintained by {{ legal.operator_name }}. It was last reviewed on {{ legal.effective_date }}.</p>

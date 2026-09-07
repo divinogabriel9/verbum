@@ -101,16 +101,15 @@ def invite_only_signup() -> bool:
 
 
 def invite_contact_email() -> str:
-    """Shown on landing/sign-in when users need an administrator."""
-    direct = _clean(os.environ.get("INVITE_CONTACT_EMAIL"))
-    if direct:
-        return direct
-    from services.membership_config import superadmin_emails
+    """Public contact shown when users need access — never a personal Gmail.
 
-    emails = superadmin_emails()
-    if emails:
-        return sorted(emails)[0]
-    return ""
+    Prefer ``INVITE_CONTACT_EMAIL`` / ``PUBLIC_CONTACT_EMAIL`` set to a domain
+    address (e.g. hello@liturgyflow.com). Does **not** fall back to
+    ``SUPERADMIN_EMAILS`` (those stay private for delivery only).
+    """
+    from services.public_contacts import public_contact_emails
+
+    return public_contact_emails()["hello"]
 
 
 def hcaptcha_site_key() -> str:

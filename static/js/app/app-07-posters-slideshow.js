@@ -1533,10 +1533,46 @@
       if (on && k === "flow-hymn-layout" && (v === "single" || v === "dual") && typeof applyHymnLyricsLayout === "function") {
         applyHymnLyricsLayout(v);
       }
+      if (on) applyPinnedRiteOptionValue(k, v);
       syncMassDefaultPins();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
     }
     window.setMassDefaultPin = setMassDefaultPin;
+
+    function applyPinnedRiteOptionValue(key, value) {
+      const k = String(key || "").trim();
+      const v = String(value || "").trim();
+      if (!k || !v) return false;
+      if (k === "sanctus_tune") {
+        const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
+        if (!wrap) return false;
+        wrap.querySelectorAll(":scope > .mw-option").forEach((c) => {
+          const cv = c.getAttribute("data-val");
+          if (cv === "__video") return;
+          c.setAttribute("aria-checked", String(cv === v));
+        });
+        if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
+          if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
+          window.massRiteVideoLang.sanctus = v;
+        }
+        if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
+        if (typeof syncRiteOptionsCollapse === "function") syncRiteOptionsCollapse();
+        const flowPage = $("flow-page");
+        if (flowPage) flowPage.dispatchEvent(new Event("change", { bubbles: true }));
+        return true;
+      }
+      const el = $(k);
+      if (el && "value" in el && el.hasAttribute("data-mw-tunes")) {
+        if (String(el.value || "") !== v) {
+          if (typeof setMassBuilderFieldValue === "function") setMassBuilderFieldValue(k, v);
+          else el.value = v;
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        return true;
+      }
+      return false;
+    }
+    window.applyPinnedRiteOptionValue = applyPinnedRiteOptionValue;
 
     function massDefaultPinCompareValue(inp) {
       const key = inp.getAttribute("data-mw-default-key") || "";
@@ -1669,7 +1705,10 @@
           setActiveDeckTheme(val);
           return;
         }
-        if (key === "sanctus_tune") return;
+        if (key === "sanctus_tune") {
+          applyPinnedRiteOptionValue(key, val);
+          return;
+        }
         const el = $(key);
         if (el && "value" in el) {
           setMassBuilderFieldValue(key, val);

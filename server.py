@@ -1188,6 +1188,7 @@ class AccessRequestBody(BaseModel):
     email: str = Field("", max_length=320)
     parish: str = Field("", max_length=240)
     message: str = Field("", max_length=1000)
+    privacy_consent: bool = False
 
 
 class ContactBody(BaseModel):
@@ -1197,6 +1198,7 @@ class ContactBody(BaseModel):
     message: str = Field("", max_length=2000)
     website: str = Field("", max_length=200)
     started_at: float = 0
+    privacy_consent: bool = False
 
 
 class CommunityNameBody(BaseModel):
@@ -1752,8 +1754,8 @@ class GenerateImageResponse(BaseModel):
 def _resolve_soffice_bin() -> Optional[str]:
     for name in ("soffice", "libreoffice"):
         custom = shutil.which(name)
-        if custom:
-            return custom
+    if custom:
+        return custom
     mac_bin = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
     if Path(mac_bin).is_file():
         return mac_bin
@@ -3393,6 +3395,53 @@ def index(request: Request) -> Any:
     )
 
 
+@app.get("/legal", response_class=HTMLResponse)
+@app.get("/legal/{page}", response_class=HTMLResponse)
+def legal_page(request: Request, page: str = "privacy") -> Any:
+    """Public legal / compliance documents (privacy, terms, cookies, etc.)."""
+    from datetime import datetime
+
+    from services.legal_config import LEGAL_SLUGS, legal_config
+
+    slug = (page or "privacy").strip().lower()
+    if slug not in LEGAL_SLUGS:
+        raise HTTPException(status_code=404, detail="Legal page not found.")
+    cfg = legal_config()
+    title_map = {s: label for s, label in cfg["pages"]}
+    return templates.TemplateResponse(
+        request,
+        "legal.html",
+        {
+            "page": slug,
+            "page_title": title_map.get(slug, "Legal"),
+            "legal": cfg,
+            "year": datetime.now().year,
+            **_template_version_context(),
+        },
+    )
+
+
+@app.get("/privacy", include_in_schema=False)
+def privacy_redirect() -> Any:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/legal/privacy", status_code=301)
+
+
+@app.get("/terms", include_in_schema=False)
+def terms_redirect() -> Any:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/legal/terms", status_code=301)
+
+
+@app.get("/cookies", include_in_schema=False)
+def cookies_redirect() -> Any:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/legal/cookies", status_code=301)
+
+
 @app.get("/home", response_class=HTMLResponse)
 @app.get("/notifications", response_class=HTMLResponse)
 @app.get("/today", response_class=HTMLResponse)
@@ -4603,6 +4652,11 @@ def api_access_request(body: AccessRequestBody, request: Request) -> Any:
         validate_access_request,
     )
 
+    if not body.privacy_consent:
+        raise HTTPException(
+            status_code=400,
+            detail="Please agree to the Privacy Policy and Terms before submitting.",
+        )
     row = validate_access_request(
         name=body.name,
         email=body.email,
@@ -4625,6 +4679,11 @@ def api_contact(body: ContactBody, request: Request) -> Any:
 
     if is_honeypot(body.website):
         return {"ok": True, "emailed": True}
+    if not body.privacy_consent:
+        raise HTTPException(
+            status_code=400,
+            detail="Please agree to the Privacy Policy before sending your message.",
+        )
     row = validate_contact(
         name=body.name,
         email=body.email,

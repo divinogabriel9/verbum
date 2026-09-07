@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ page_title }} · {{ legal.product_name }}</title>
+  <meta name="description" content="{{ page_title }} for {{ legal.product_name }}."/>
+  <meta name="robots" content="index,follow"/>
+  <link rel="icon" href="/favicon.ico" sizes="any"/>
+  <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1"/>
+  <style>
+    :root {
+      --ink: #1e100e;
+      --muted: #6b5652;
+      --paper: #fff8f6;
+      --card: #ffffff;
+      --line: rgba(30, 16, 14, 0.12);
+      --accent: #a10f0d;
+      --accent-soft: #ffb4a9;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { animation: none !important; transition: none !important; }
+    }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); }
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .skip-link {
+      position: absolute;
+      left: -999px;
+      top: 0;
+      background: var(--accent);
+      color: #fff;
+      padding: 8px 12px;
+      z-index: 10000;
+    }
+    .skip-link:focus { left: 12px; top: 12px; }
+    .legal-top {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 248, 246, 0.92);
+      border-bottom: 1px solid var(--line);
+    }
+    .legal-top__inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .legal-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+      font-weight: 650;
+    }
+    .legal-brand img { width: 28px; height: 28px; }
+    .legal-top__links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-size: 0.86rem;
+    }
+    .legal-top__links a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .legal-top__links a[aria-current="page"],
+    .legal-top__links a:hover { color: var(--accent); }
+    .legal-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 28px 20px 72px;
+      display: grid;
+      gap: 24px;
+    }
+    @media (min-width: 900px) {
+      .legal-wrap {
+        grid-template-columns: 220px minmax(0, 1fr);
+        align-items: start;
+      }
+    }
+    .legal-nav {
+      position: sticky;
+      top: 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.88rem;
+    }
+    .legal-nav a {
+      text-decoration: none;
+      color: var(--muted);
+      padding: 6px 8px;
+      border-radius: 8px;
+    }
+    .legal-nav a[aria-current="page"] {
+      background: rgba(161, 15, 13, 0.08);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .legal-article {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 8px 28px rgba(30, 16, 14, 0.04);
+    }
+    .legal-article h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.6rem, 3vw, 2rem);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .legal-meta {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .legal-article h2 {
+      margin: 28px 0 10px;
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
+    }
+    .legal-article h3 {
+      margin: 18px 0 8px;
+      font-size: 1rem;
+    }
+    .legal-article p,
+    .legal-article li {
+      color: #3a2a27;
+      font-size: 0.95rem;
+    }
+    .legal-article ul,
+    .legal-article ol {
+      padding-left: 1.2rem;
+      margin: 0 0 12px;
+    }
+    .legal-article li { margin: 0 0 6px; }
+    .legal-callout {
+      margin: 16px 0;
+      padding: 12px 14px;
+      border-left: 3px solid var(--accent);
+      background: rgba(161, 15, 13, 0.05);
+      border-radius: 0 10px 10px 0;
+      font-size: 0.9rem;
+    }
+    .legal-footer {
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .legal-footer nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#legal-main">Skip to content</a>
+  <header class="legal-top">
+    <div class="legal-top__inner">
+      <a class="legal-brand" href="/">
+        <img src="/static/brand/app-icon.png?v=5" alt="" width="28" height="28"/>
+        <span>{{ legal.product_name }}</span>
+      </a>
+      <nav class="legal-top__links" aria-label="Account">
+        <a href="/">Home</a>
+        <a href="/sign-in">Sign in</a>
+        <a href="/?contact=1">Contact</a>
+        <button type="button" class="lf-consent-manage" data-lf-consent-manage>Cookie settings</button>
+      </nav>
+    </div>
+  </header>
+
+  <div class="legal-wrap">
+    <nav class="legal-nav" aria-label="Legal documents">
+      {% for slug, label in legal.pages %}
+      <a href="/legal/{{ slug }}" {% if slug == page %}aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+
+    <main id="legal-main" class="legal-article" tabindex="-1">
+      {% if page == "privacy" %}
+      {% include "legal/_privacy.html" %}
+      {% elif page == "terms" %}
+      {% include "legal/_terms.html" %}
+      {% elif page == "cookies" %}
+      {% include "legal/_cookies.html" %}
+      {% elif page == "refund" %}
+      {% include "legal/_refund.html" %}
+      {% elif page == "copyright" %}
+      {% include "legal/_copyright.html" %}
+      {% elif page == "accessibility" %}
+      {% include "legal/_accessibility.html" %}
+      {% endif %}
+
+      <footer class="legal-footer">
+        <nav aria-label="Related policies">
+          {% for slug, label in legal.pages %}
+          <a href="/legal/{{ slug }}">{{ label }}</a>
+          {% endfor %}
+        </nav>
+        <p>© {{ year }} {{ legal.operator_name }}. These pages are provided for transparency; they do not create a lawyer–client relationship. For advice specific to your parish or diocese, consult counsel.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/static/js/cookie-consent.js?v=1" defer></script>
+</body>
+</html>

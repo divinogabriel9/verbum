@@ -1,0 +1,216 @@
+/* Cookie / privacy consent — LiturgyFlow */
+
+:root {
+  --lf-consent-bg: #1e100e;
+  --lf-consent-fg: #fff1ee;
+  --lf-consent-muted: #d8c2bd;
+  --lf-consent-accent: #a10f0d;
+  --lf-consent-border: rgba(255, 241, 238, 0.14);
+  --lf-consent-panel: #2a1815;
+}
+
+.lf-consent-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10050;
+  padding: 16px;
+  pointer-events: none;
+}
+
+.lf-consent-banner[hidden] {
+  display: none !important;
+}
+
+.lf-consent-banner__panel {
+  pointer-events: auto;
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--lf-consent-bg);
+  color: var(--lf-consent-fg);
+  border: 1px solid var(--lf-consent-border);
+  border-radius: 16px;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.35);
+  padding: 18px 18px 16px;
+}
+
+.lf-consent-banner__title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.lf-consent-banner__text {
+  margin: 0 0 14px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--lf-consent-muted);
+}
+
+.lf-consent-banner__text a {
+  color: #ffb4a9;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.lf-consent-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lf-consent-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.lf-consent-btn:focus-visible {
+  outline: 2px solid #ffb4a9;
+  outline-offset: 2px;
+}
+
+.lf-consent-btn:active {
+  transform: scale(0.98);
+}
+
+.lf-consent-btn--primary {
+  background: var(--lf-consent-accent);
+  color: #fff;
+}
+
+.lf-consent-btn--primary:hover {
+  background: #b91210;
+}
+
+.lf-consent-btn--ghost {
+  background: transparent;
+  color: var(--lf-consent-fg);
+  border-color: var(--lf-consent-border);
+}
+
+.lf-consent-btn--ghost:hover {
+  border-color: rgba(255, 241, 238, 0.35);
+}
+
+.lf-consent-prefs {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.lf-consent-prefs[hidden] {
+  display: none !important;
+}
+
+.lf-consent-prefs__card {
+  width: min(100%, 520px);
+  max-height: min(88vh, 640px);
+  overflow: auto;
+  background: var(--lf-consent-panel);
+  color: var(--lf-consent-fg);
+  border: 1px solid var(--lf-consent-border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+.lf-consent-prefs__card h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.lf-consent-prefs__card > p {
+  margin: 0 0 16px;
+  color: var(--lf-consent-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.lf-consent-cat {
+  border: 1px solid var(--lf-consent-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0 0 10px;
+}
+
+.lf-consent-cat__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lf-consent-cat__row strong {
+  display: block;
+  font-size: 0.92rem;
+  margin-bottom: 4px;
+}
+
+.lf-consent-cat__row p {
+  margin: 0;
+  color: var(--lf-consent-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.lf-consent-switch {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lf-consent-switch input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--lf-consent-accent);
+}
+
+.lf-consent-prefs__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.lf-consent-manage {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lf-consent-manage:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+@media (min-width: 720px) {
+  .lf-consent-prefs {
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-consent-btn {
+    transition: none;
+  }
+}
