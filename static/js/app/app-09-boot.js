@@ -520,6 +520,21 @@
       $("lyrics-composer-play-youtube") && $("lyrics-composer-play-youtube").addEventListener("click", () => {
         playComposerYouTube($("lyrics-composer-play-youtube"));
       });
+      $("lyrics-editor-float-youtube") && $("lyrics-editor-float-youtube").addEventListener("click", () => {
+        playComposerYouTube($("lyrics-editor-float-youtube"));
+      });
+      $("song-media-preview-pip") && $("song-media-preview-pip").addEventListener("click", () => {
+        popoutComposerYouTubeToMini();
+      });
+      $("composer-youtube-dock-close") && $("composer-youtube-dock-close").addEventListener("click", () => {
+        closeComposerYouTubeDock({ silent: true });
+        ensureYouTubeFrameInModal();
+        if (massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT) stopMassSectionAudio();
+        else if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      });
+      $("composer-youtube-dock-expand") && $("composer-youtube-dock-expand").addEventListener("click", () => {
+        expandComposerYouTubeFromMini();
+      });
       $("lyrics-composer-play-video") && $("lyrics-composer-play-video").addEventListener("click", () => {
         playComposerSongMedia("video", $("lyrics-composer-play-video")).catch(() => {});
       });

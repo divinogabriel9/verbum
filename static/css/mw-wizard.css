@@ -250,7 +250,50 @@
         .mass-song-lyrics-card .sa-song-lyrics-body {
           max-height: min(62vh, 560px);
         }
-        #song-media-preview-modal .song-media-preview-modal__card { width: min(720px, 94vw); }
+        #song-media-preview-modal .song-media-preview-modal__card { width: min(720px, 94vw); position: relative; }
+        #song-media-preview-modal .song-media-preview-modal__head {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin: 0 0 12px;
+        }
+        #song-media-preview-modal .song-media-preview-modal__title {
+          flex: 1 1 auto;
+          min-width: 0;
+          margin: 0;
+          padding-right: 4px;
+        }
+        #song-media-preview-modal .song-media-preview-modal__head-actions {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          flex: 0 0 auto;
+          margin-left: auto;
+        }
+        #song-media-preview-modal .song-media-preview-modal__icon-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          margin: 0;
+          padding: 0;
+          border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
+          border-radius: 10px;
+          background: color-mix(in srgb, var(--surface-solid) 88%, var(--ink));
+          color: var(--ink);
+          cursor: pointer;
+        }
+        #song-media-preview-modal .song-media-preview-modal__icon-btn:hover {
+          border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+          background: color-mix(in srgb, var(--accent) 12%, var(--surface-solid));
+        }
+        #song-media-preview-modal .song-media-preview-modal__icon-btn[hidden] {
+          display: none !important;
+        }
+        #song-media-preview-modal .song-media-preview-modal__close {
+          color: var(--ink);
+        }
         #song-media-preview-modal .song-media-preview-modal__video {
           display: block;
           width: 100%;
@@ -268,14 +311,15 @@
           margin: 0 0 12px;
           overflow: hidden;
         }
-        #song-media-preview-modal .song-media-preview-modal__yt iframe {
+        #song-media-preview-modal .song-media-preview-modal__yt iframe,
+        #song-media-preview-modal .yt-embed-shell__frame {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
           border: 0;
         }
-        #song-media-preview-modal .song-media-preview-modal__status { margin: 0 0 10px; }
+        #song-media-preview-modal .song-media-preview-modal__status { margin: 0; }
         .mw-media-pick-youtube {
           display: block;
           margin: 0 0 6px;

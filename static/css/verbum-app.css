@@ -13716,6 +13716,274 @@
         background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
       }
     }
+
+    /* Song Composer YouTube mini player — PiP-style movable / resizable dock */
+    .composer-yt-dock {
+      --composer-yt-chrome-shift: 10px;
+      position: fixed;
+      z-index: 165;
+      left: max(12px, env(safe-area-inset-left, 0px));
+      bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+      width: min(300px, calc(100vw - 24px));
+      aspect-ratio: 16 / 9;
+      display: block;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: #0b0b0f;
+      box-shadow:
+        0 14px 36px rgba(0, 0, 0, 0.38),
+        0 1px 0 rgba(255, 255, 255, 0.12) inset;
+      touch-action: none;
+    }
+    .composer-yt-dock[hidden] {
+      display: none !important;
+    }
+    .composer-yt-dock.is-dragged {
+      right: auto;
+      bottom: auto;
+    }
+    .composer-yt-dock.is-resized {
+      aspect-ratio: auto;
+    }
+    .composer-yt-dock.is-dragging,
+    .composer-yt-dock.is-resizing {
+      box-shadow:
+        0 18px 44px rgba(0, 0, 0, 0.46),
+        0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+      user-select: none;
+    }
+    .composer-yt-dock.is-dragging {
+      cursor: grabbing;
+    }
+    .composer-yt-dock.is-animating {
+      transition:
+        left 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        height 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        border-radius 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+      will-change: left, top, width, height;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .composer-yt-dock.is-animating {
+        transition: none;
+      }
+    }
+    body.has-bottom-nav .composer-yt-dock:not(.is-dragged),
+    body.mobile-chrome-tabs .composer-yt-dock:not(.is-dragged),
+    body.mobile-top-nav .composer-yt-dock:not(.is-dragged) {
+      bottom: calc(88px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
+    }
+    .composer-yt-dock__stage {
+      position: absolute;
+      inset: 0;
+      background: #0b0b0f;
+      overflow: hidden;
+    }
+    .composer-yt-dock__stage iframe,
+    .composer-yt-dock .yt-embed-shell__frame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      pointer-events: auto;
+    }
+    .composer-yt-dock__hit {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: transparent;
+    }
+    .composer-yt-dock.is-chrome-hidden .composer-yt-dock__hit {
+      /* Keep the lower scrubber band clickable on the iframe. */
+      pointer-events: auto;
+      cursor: grab;
+      bottom: 54px;
+    }
+    .composer-yt-dock.is-dragging .composer-yt-dock__stage iframe,
+    .composer-yt-dock.is-resizing .composer-yt-dock__stage iframe {
+      pointer-events: none;
+    }
+    .composer-yt-dock__chrome {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    .composer-yt-dock__bar,
+    .composer-yt-dock__footer {
+      pointer-events: auto;
+      transition:
+        opacity 180ms ease,
+        transform 180ms ease,
+        visibility 180ms ease;
+    }
+    .composer-yt-dock__bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 8px 10px 10px;
+      min-height: 40px;
+      background: linear-gradient(180deg, rgba(8, 10, 14, 0.88) 0%, rgba(8, 10, 14, 0.45) 70%, transparent 100%);
+      color: #fff;
+      cursor: grab;
+      touch-action: none;
+    }
+    .composer-yt-dock.is-dragging .composer-yt-dock__bar {
+      cursor: grabbing;
+    }
+    .composer-yt-dock__footer {
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 18px 12px 8px;
+      background: linear-gradient(0deg, rgba(8, 10, 14, 0.82) 0%, rgba(8, 10, 14, 0.35) 65%, transparent 100%);
+    }
+    .composer-yt-dock.is-chrome-hidden .composer-yt-dock__bar {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(calc(var(--composer-yt-chrome-shift) * -1));
+      pointer-events: none;
+    }
+    .composer-yt-dock.is-chrome-hidden .composer-yt-dock__footer {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(var(--composer-yt-chrome-shift));
+      pointer-events: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .composer-yt-dock__bar,
+      .composer-yt-dock__footer {
+        transition: none;
+      }
+    }
+    .composer-yt-dock__live {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      background: #e11d48;
+      box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.28);
+      animation: composer-yt-dock-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes composer-yt-dock-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.55; transform: scale(0.85); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .composer-yt-dock__live { animation: none; }
+    }
+    .composer-yt-dock__title {
+      margin: 0;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 0.78rem;
+      font-weight: 650;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    }
+    .composer-yt-dock__actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+    .composer-yt-dock__btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      margin: 0;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .composer-yt-dock__btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+    .composer-yt-dock__hint {
+      margin: 0;
+      font-size: 0.68rem;
+      line-height: 1.3;
+      color: rgba(255, 255, 255, 0.78);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    }
+    .composer-yt-dock__resize {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      z-index: 3;
+      width: 22px;
+      height: 22px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0 0 14px 0;
+      background:
+        linear-gradient(135deg, transparent 52%, rgba(255, 255, 255, 0.55) 52%, rgba(255, 255, 255, 0.55) 58%, transparent 58%),
+        linear-gradient(135deg, transparent 68%, rgba(255, 255, 255, 0.4) 68%, rgba(255, 255, 255, 0.4) 74%, transparent 74%);
+      cursor: nwse-resize;
+      touch-action: none;
+      opacity: 0.85;
+    }
+    .composer-yt-dock__resize:hover,
+    .composer-yt-dock.is-resizing .composer-yt-dock__resize {
+      opacity: 1;
+      background:
+        linear-gradient(135deg, transparent 48%, #fff 48%, #fff 56%, transparent 56%),
+        linear-gradient(135deg, transparent 64%, rgba(255, 255, 255, 0.75) 64%, rgba(255, 255, 255, 0.75) 72%, transparent 72%);
+    }
+    .composer-yt-dock.is-chrome-hidden .composer-yt-dock__resize {
+      opacity: 0.35;
+    }
+    .lyrics-editor-float__youtube {
+      flex: 0 0 auto;
+      min-width: 52px;
+      padding-inline: 10px !important;
+      font-variant-numeric: tabular-nums;
+    }
+    .lyrics-editor-float__youtube[hidden] {
+      display: none !important;
+    }
+    .lyrics-editor-float__youtube.is-playing {
+      border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+      background: color-mix(in srgb, var(--accent) 16%, var(--surface-solid));
+    }
+    @media (max-width: 640px) {
+      .composer-yt-dock:not(.is-dragged) {
+        left: 12px;
+        right: auto;
+        width: min(260px, calc(100vw - 88px));
+        bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+      }
+      body.has-bottom-nav .composer-yt-dock:not(.is-dragged),
+      body.mobile-chrome-tabs .composer-yt-dock:not(.is-dragged),
+      body.mobile-top-nav .composer-yt-dock:not(.is-dragged) {
+        bottom: calc(118px + var(--app-bottom-nav-offset, 56px) + env(safe-area-inset-bottom, 0px));
+      }
+      .composer-yt-dock__hint {
+        font-size: 0.62rem;
+      }
+    }
+
     .lyrics-workspace-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

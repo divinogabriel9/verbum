@@ -1390,7 +1390,100 @@
     }
 
     function youtubeEmbedUrl(id) {
-      return id ? ("https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0") : "";
+      const vid = String(id || "").trim();
+      if (!vid) return "";
+      // controls=1 restores the scrubber. End-card suggestions are limited via
+      // rel=0 + loop/playlist, with an API restart fallback in armYouTubeEmbed.
+      const origin =
+        typeof window !== "undefined" && window.location && window.location.origin
+          ? window.location.origin
+          : "";
+      const params = [
+        "autoplay=1",
+        "rel=0",
+        "playsinline=1",
+        "controls=1",
+        "fs=0",
+        "iv_load_policy=3",
+        "disablekb=0",
+        "enablejsapi=1",
+        "loop=1",
+        "playlist=" + encodeURIComponent(vid),
+      ];
+      if (origin && origin.indexOf("http") === 0) {
+        params.push("origin=" + encodeURIComponent(origin));
+      }
+      return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(vid) + "?" + params.join("&");
+    }
+
+    var ytEmbedGuardBound = false;
+
+    function youtubePostCommand(frame, func, args) {
+      if (!frame || !frame.contentWindow || !func) return;
+      try {
+        frame.contentWindow.postMessage(
+          JSON.stringify({
+            event: "command",
+            func: func,
+            args: Array.isArray(args) ? args : [],
+          }),
+          "*"
+        );
+      } catch (_e) { /* ignore */ }
+    }
+
+    function armYouTubeEmbed(frame) {
+      if (!frame) return;
+      if (!ytEmbedGuardBound) {
+        ytEmbedGuardBound = true;
+        window.addEventListener("message", (event) => {
+          const origin = String(event.origin || "");
+          if (
+            origin.indexOf("youtube.com") === -1 &&
+            origin.indexOf("youtube-nocookie.com") === -1
+          ) {
+            return;
+          }
+          let data = event.data;
+          if (typeof data === "string") {
+            try {
+              data = JSON.parse(data);
+            } catch (_e) {
+              return;
+            }
+          }
+          if (!data || typeof data !== "object") return;
+          let state = null;
+          if (data.event === "onStateChange") {
+            state = typeof data.info === "number" ? data.info : null;
+          } else if (data.info && typeof data.info.playerState === "number") {
+            state = data.info.playerState;
+          }
+          // 0 = ended — restart/pause before suggestion cards settle in.
+          if (state !== 0) return;
+          const live = $("song-media-preview-youtube");
+          if (!live || !live.getAttribute("src")) return;
+          youtubePostCommand(live, "seekTo", [0, true]);
+          youtubePostCommand(live, "playVideo");
+        });
+      }
+      const ping = () => {
+        try {
+          frame.contentWindow.postMessage(
+            JSON.stringify({ event: "listening", id: frame.id || "verbum-yt" }),
+            "*"
+          );
+        } catch (_e) { /* ignore */ }
+      };
+      const onLoad = () => {
+        ping();
+        window.setTimeout(ping, 250);
+        window.setTimeout(ping, 900);
+      };
+      frame.removeEventListener("load", frame._verbumYtArmLoad || (() => {}));
+      frame._verbumYtArmLoad = onLoad;
+      frame.addEventListener("load", onLoad);
+      if (frame.getAttribute("src")) onLoad();
     }
 
     function isYouTubeMediaRef(item) {
@@ -2041,6 +2134,7 @@
       }
       massSectionAudioPlayingSlot = "";
       revokeMassSectionMediaObjectUrl();
+      if (typeof closeComposerYouTubeDock === "function") closeComposerYouTubeDock({ silent: true });
       document.querySelectorAll(
         "[data-mw-play-audio].is-playing, [data-mw-play-youtube].is-playing, .mass-song-audio-btn.is-playing, .composer-media-play.is-playing, .song-row-play.is-playing, [data-sa-preview-play].is-playing"
       ).forEach((el) => {
@@ -2192,15 +2286,56 @@
       return "catalog:" + String(section || "") + ":" + String(id || "");
     }
 
-    async function playSavedMusicRef(ref, slotId, playEl) {
-      const item = normalizeAudioPreviewRef(ref) || (ref && ref.basename
+    async function resolveSavedMusicRefForPlayback(ref) {
+      let item = normalizeAudioPreviewRef(ref) || (ref && ref.basename
         ? {
-            basename: ref.basename,
+            basename: String(ref.basename || "").trim(),
             display_name: ref.display_name || ref.basename,
             url: ref.url || fallbackSavedMediaUrl("music", ref.basename),
           }
         : null);
-      if (!item || !item.url) return false;
+      if (!item || !item.basename) return null;
+      // Catalog audio_preview stores basename only (no durable URL). Local
+      // /api/files/... fallbacks 404 on Render's ephemeral disk — prefer the
+      // signed storage URL from /api/saved-media (same path as video preview).
+      const looksLocal = (u) => typeof isPrivateFileUrl === "function" && isPrivateFileUrl(u);
+      try {
+        if (typeof ensureSavedMediaLibrary === "function") {
+          await ensureSavedMediaLibrary(false);
+        }
+      } catch (_lib0) { /* continue with whatever URL we have */ }
+      let libRow = typeof resolveLibraryMediaRow === "function"
+        ? resolveLibraryMediaRow("music", item)
+        : null;
+      if ((!libRow || !libRow.url || looksLocal(libRow.url)) && typeof ensureSavedMediaLibrary === "function") {
+        try {
+          await ensureSavedMediaLibrary(true);
+          libRow = resolveLibraryMediaRow("music", item);
+        } catch (_lib1) { /* fall through */ }
+      }
+      if (libRow && libRow.url) {
+        item = Object.assign({}, item, {
+          url: libRow.url,
+          display_name: libRow.display_name || item.display_name,
+        });
+      }
+      if (!item.url) {
+        item.url = fallbackSavedMediaUrl("music", item.basename);
+      }
+      return item.url ? item : null;
+    }
+
+    async function playSavedMusicRef(ref, slotId, playEl) {
+      let item = null;
+      try {
+        item = await resolveSavedMusicRefForPlayback(ref);
+      } catch (_resolveErr) {
+        item = null;
+      }
+      if (!item || !item.url) {
+        if (typeof notify === "function") notify("Could not play that audio preview.", "error");
+        return false;
+      }
       if (massSectionAudioPlayingSlot === slotId) {
         stopMassSectionAudio();
         return true;
@@ -2279,7 +2414,9 @@
       if (frame) {
         frame.removeAttribute("src");
       }
+      ensureYouTubeFrameInModal();
       if (wrap) wrap.hidden = true;
+      setSongMediaPreviewPipVisible(false);
       if (status) {
         status.hidden = true;
         status.textContent = "";
@@ -2289,10 +2426,11 @@
         m.setAttribute("aria-hidden", "true");
       }
       revokeSongMediaPreviewObjectUrl();
+      closeComposerYouTubeDock({ silent: true, keepPlayback: false });
       if (massSectionAudioPlayingSlot) {
         const slot = massSectionAudioPlayingSlot;
         const isYtSlot = slot === COMPOSER_SONG_YOUTUBE_SLOT || String(slot).slice(-3) === ":yt";
-        if (isYtSlot || isYouTubePreviewOpen()) {
+        if (isYtSlot) {
           massSectionAudioPlayingSlot = "";
           if ((slot === COMPOSER_SONG_YOUTUBE_SLOT || slot === COMPOSER_SONG_MEDIA_SLOT) &&
               typeof renderComposerSongMediaFields === "function") {
@@ -2304,7 +2442,481 @@
       }
     }
 
+    function placeYouTubeFrameIn(container, frame) {
+      if (!container || !frame) return;
+      const firstMask = container.querySelector(".yt-embed-shell__mask");
+      if (firstMask) container.insertBefore(frame, firstMask);
+      else if (frame.parentElement !== container) container.appendChild(frame);
+      else container.insertBefore(frame, container.firstChild);
+    }
+
+    function ensureYouTubeFrameInModal() {
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      if (wrap && frame && frame.parentElement !== wrap) {
+        placeYouTubeFrameIn(wrap, frame);
+      }
+      return frame;
+    }
+
+    function setSongMediaPreviewPipVisible(show) {
+      const pip = $("song-media-preview-pip");
+      if (pip) pip.hidden = !show;
+    }
+
+    function isComposerYouTubeDockOpen() {
+      const dock = $("composer-youtube-dock");
+      const stage = $("composer-youtube-dock-stage");
+      const frame = $("song-media-preview-youtube");
+      return !!(
+        dock &&
+        !dock.hidden &&
+        stage &&
+        frame &&
+        frame.parentElement === stage &&
+        frame.getAttribute("src")
+      );
+    }
+
+    function resetComposerYouTubeDockPosition() {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return;
+      dock.classList.remove("is-dragged", "is-resized", "is-dragging", "is-resizing", "is-chrome-hidden", "is-chrome-pinned", "is-animating");
+      dock.style.left = "";
+      dock.style.top = "";
+      dock.style.right = "";
+      dock.style.bottom = "";
+      dock.style.width = "";
+      dock.style.height = "";
+      dock.style.transition = "";
+    }
+
+    function closeComposerYouTubeDock(opts) {
+      const options = opts || {};
+      const dock = $("composer-youtube-dock");
+      const frame = $("song-media-preview-youtube");
+      clearComposerYouTubeDockChromeTimer();
+      if (!options.keepPlayback && frame) {
+        frame.removeAttribute("src");
+      }
+      ensureYouTubeFrameInModal();
+      if (dock) {
+        dock.hidden = true;
+        dock.classList.remove("is-expanded");
+        dock.setAttribute("aria-hidden", "true");
+      }
+      if (!options.keepPlayback) resetComposerYouTubeDockPosition();
+      if (!options.silent && !options.keepPlayback && massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT) {
+        massSectionAudioPlayingSlot = "";
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      }
+    }
+
+    var composerYtDockDragState = null;
+    var composerYtDockResizeState = null;
+    var composerYtDockChromeTimer = null;
+    var COMPOSER_YT_DOCK_MIN_W = 200;
+    var COMPOSER_YT_DOCK_MAX_W = 720;
+    var COMPOSER_YT_DOCK_CHROME_MS = 1800;
+
+    function clearComposerYouTubeDockChromeTimer() {
+      if (composerYtDockChromeTimer) {
+        window.clearTimeout(composerYtDockChromeTimer);
+        composerYtDockChromeTimer = null;
+      }
+    }
+
+    function revealComposerYouTubeDockChrome(opts) {
+      const options = opts || {};
+      const dock = $("composer-youtube-dock");
+      if (!dock || dock.hidden) return;
+      dock.classList.remove("is-chrome-hidden");
+      clearComposerYouTubeDockChromeTimer();
+      if (options.pin) {
+        dock.classList.add("is-chrome-pinned");
+        return;
+      }
+      if (options.persist) return;
+      scheduleHideComposerYouTubeDockChrome();
+    }
+
+    function scheduleHideComposerYouTubeDockChrome() {
+      const dock = $("composer-youtube-dock");
+      if (!dock || dock.hidden) return;
+      if (dock.classList.contains("is-chrome-pinned")) return;
+      if (dock.classList.contains("is-dragging") || dock.classList.contains("is-resizing")) return;
+      clearComposerYouTubeDockChromeTimer();
+      composerYtDockChromeTimer = window.setTimeout(() => {
+        composerYtDockChromeTimer = null;
+        if (!dock || dock.hidden) return;
+        if (dock.classList.contains("is-chrome-pinned")) return;
+        if (dock.classList.contains("is-dragging") || dock.classList.contains("is-resizing")) return;
+        dock.classList.add("is-chrome-hidden");
+      }, COMPOSER_YT_DOCK_CHROME_MS);
+    }
+
+    function composerYouTubeDockMaxWidth() {
+      return Math.min(COMPOSER_YT_DOCK_MAX_W, Math.max(COMPOSER_YT_DOCK_MIN_W, window.innerWidth - 24));
+    }
+
+    function clampComposerYouTubeDockSize(width) {
+      const maxW = composerYouTubeDockMaxWidth();
+      const w = Math.min(maxW, Math.max(COMPOSER_YT_DOCK_MIN_W, width));
+      return { width: w, height: Math.round((w * 9) / 16) };
+    }
+
+    function applyComposerYouTubeDockSize(width, anchorLeft, anchorTop) {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return null;
+      const size = clampComposerYouTubeDockSize(width);
+      dock.classList.add("is-resized");
+      dock.style.width = size.width + "px";
+      dock.style.height = size.height + "px";
+      if (anchorLeft != null && anchorTop != null) {
+        applyComposerYouTubeDockPosition(anchorLeft, anchorTop);
+      } else if (dock.classList.contains("is-dragged")) {
+        const left = parseFloat(dock.style.left) || 0;
+        const top = parseFloat(dock.style.top) || 0;
+        applyComposerYouTubeDockPosition(left, top);
+      }
+      return size;
+    }
+
+    function clampComposerYouTubeDockPosition(left, top) {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return { left: left, top: top };
+      const pad = 8;
+      const rect = dock.getBoundingClientRect();
+      const maxLeft = Math.max(pad, window.innerWidth - rect.width - pad);
+      const maxTop = Math.max(pad, window.innerHeight - rect.height - pad);
+      return {
+        left: Math.min(maxLeft, Math.max(pad, left)),
+        top: Math.min(maxTop, Math.max(pad, top)),
+      };
+    }
+
+    function applyComposerYouTubeDockPosition(left, top) {
+      const dock = $("composer-youtube-dock");
+      if (!dock) return;
+      const pos = clampComposerYouTubeDockPosition(left, top);
+      dock.classList.add("is-dragged");
+      dock.style.left = pos.left + "px";
+      dock.style.top = pos.top + "px";
+      dock.style.right = "auto";
+      dock.style.bottom = "auto";
+    }
+
+    function endComposerYouTubeDockDrag() {
+      if (!composerYtDockDragState) return;
+      const dock = $("composer-youtube-dock");
+      if (dock) dock.classList.remove("is-dragging");
+      try {
+        if (composerYtDockDragState.pointerId != null && composerYtDockDragState.target) {
+          composerYtDockDragState.target.releasePointerCapture(composerYtDockDragState.pointerId);
+        }
+      } catch (_e) { /* ignore */ }
+      composerYtDockDragState = null;
+      scheduleHideComposerYouTubeDockChrome();
+    }
+
+    function endComposerYouTubeDockResize() {
+      if (!composerYtDockResizeState) return;
+      const dock = $("composer-youtube-dock");
+      if (dock) dock.classList.remove("is-resizing");
+      try {
+        if (composerYtDockResizeState.pointerId != null && composerYtDockResizeState.target) {
+          composerYtDockResizeState.target.releasePointerCapture(composerYtDockResizeState.pointerId);
+        }
+      } catch (_e) { /* ignore */ }
+      composerYtDockResizeState = null;
+      scheduleHideComposerYouTubeDockChrome();
+    }
+
+    function bindComposerYouTubeDockDrag() {
+      const dock = $("composer-youtube-dock");
+      const bar = $("composer-youtube-dock-drag");
+      const resize = $("composer-youtube-dock-resize");
+      const hit = $("composer-youtube-dock-hit");
+      if (!dock || dock.dataset.pipBound === "1") return;
+      dock.dataset.pipBound = "1";
+
+      const onReveal = () => revealComposerYouTubeDockChrome();
+      dock.addEventListener("pointerenter", onReveal);
+      dock.addEventListener("pointermove", onReveal);
+      if (hit) {
+        hit.addEventListener("pointerdown", (e) => {
+          onReveal();
+          // Allow an immediate drag from the video surface when chrome is hidden.
+          if (e.button != null && e.button !== 0) return;
+          const rect = dock.getBoundingClientRect();
+          if (!dock.classList.contains("is-dragged")) {
+            applyComposerYouTubeDockPosition(rect.left, rect.top);
+          }
+          composerYtDockDragState = {
+            pointerId: e.pointerId,
+            target: hit,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+          };
+          dock.classList.add("is-dragging");
+          revealComposerYouTubeDockChrome({ pin: true });
+          try { hit.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ }
+          e.preventDefault();
+        });
+        hit.addEventListener("pointermove", (e) => {
+          if (!composerYtDockDragState || composerYtDockDragState.target !== hit) {
+            onReveal();
+            return;
+          }
+          if (composerYtDockDragState.pointerId !== e.pointerId) return;
+          applyComposerYouTubeDockPosition(
+            e.clientX - composerYtDockDragState.offsetX,
+            e.clientY - composerYtDockDragState.offsetY
+          );
+        });
+        hit.addEventListener("pointerup", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+        hit.addEventListener("pointercancel", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+      }
+      dock.addEventListener("focusin", () => revealComposerYouTubeDockChrome({ persist: true }));
+      dock.addEventListener("focusout", () => {
+        window.setTimeout(() => {
+          if (!dock.contains(document.activeElement)) scheduleHideComposerYouTubeDockChrome();
+        }, 0);
+      });
+      dock.addEventListener("pointerleave", () => {
+        if (composerYtDockDragState || composerYtDockResizeState) return;
+        scheduleHideComposerYouTubeDockChrome();
+      });
+
+      if (bar) {
+        bar.addEventListener("pointerdown", (e) => {
+          if (e.button != null && e.button !== 0) return;
+          if (e.target && e.target.closest && e.target.closest("button")) return;
+          if (dock.hidden) return;
+          const rect = dock.getBoundingClientRect();
+          if (!dock.classList.contains("is-dragged")) {
+            applyComposerYouTubeDockPosition(rect.left, rect.top);
+          }
+          composerYtDockDragState = {
+            pointerId: e.pointerId,
+            target: bar,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+          };
+          dock.classList.add("is-dragging");
+          revealComposerYouTubeDockChrome({ pin: true });
+          try { bar.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ }
+          e.preventDefault();
+        });
+        bar.addEventListener("pointermove", (e) => {
+          if (!composerYtDockDragState || composerYtDockDragState.pointerId !== e.pointerId) return;
+          applyComposerYouTubeDockPosition(
+            e.clientX - composerYtDockDragState.offsetX,
+            e.clientY - composerYtDockDragState.offsetY
+          );
+        });
+        bar.addEventListener("pointerup", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+        bar.addEventListener("pointercancel", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockDrag();
+        });
+      }
+
+      if (resize) {
+        resize.addEventListener("pointerdown", (e) => {
+          if (e.button != null && e.button !== 0) return;
+          if (dock.hidden) return;
+          const rect = dock.getBoundingClientRect();
+          if (!dock.classList.contains("is-dragged")) {
+            applyComposerYouTubeDockPosition(rect.left, rect.top);
+          }
+          composerYtDockResizeState = {
+            pointerId: e.pointerId,
+            target: resize,
+            startX: e.clientX,
+            startW: rect.width,
+            left: rect.left,
+            top: rect.top,
+          };
+          dock.classList.add("is-resizing");
+          revealComposerYouTubeDockChrome({ pin: true });
+          try { resize.setPointerCapture(e.pointerId); } catch (_e) { /* ignore */ }
+          e.preventDefault();
+          e.stopPropagation();
+        });
+        resize.addEventListener("pointermove", (e) => {
+          if (!composerYtDockResizeState || composerYtDockResizeState.pointerId !== e.pointerId) return;
+          const nextW = composerYtDockResizeState.startW + (e.clientX - composerYtDockResizeState.startX);
+          applyComposerYouTubeDockSize(
+            nextW,
+            composerYtDockResizeState.left,
+            composerYtDockResizeState.top
+          );
+        });
+        resize.addEventListener("pointerup", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockResize();
+        });
+        resize.addEventListener("pointercancel", () => {
+          dock.classList.remove("is-chrome-pinned");
+          endComposerYouTubeDockResize();
+        });
+      }
+
+      window.addEventListener("resize", () => {
+        if (!dock || dock.hidden) return;
+        if (dock.classList.contains("is-resized")) {
+          const w = parseFloat(dock.style.width) || dock.getBoundingClientRect().width;
+          applyComposerYouTubeDockSize(
+            w,
+            dock.classList.contains("is-dragged") ? (parseFloat(dock.style.left) || 0) : null,
+            dock.classList.contains("is-dragged") ? (parseFloat(dock.style.top) || 0) : null
+          );
+        } else if (dock.classList.contains("is-dragged")) {
+          const left = parseFloat(dock.style.left) || 0;
+          const top = parseFloat(dock.style.top) || 0;
+          applyComposerYouTubeDockPosition(left, top);
+        }
+      });
+    }
+
+    function popoutComposerYouTubeToMini() {
+      const m = $("song-media-preview-modal");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      const dock = $("composer-youtube-dock");
+      const stage = $("composer-youtube-dock-stage");
+      const titleEl = $("composer-youtube-dock-title");
+      const modalTitle = $("song-media-preview-title");
+      if (!frame || !dock || !stage || !frame.getAttribute("src")) {
+        if (typeof notify === "function") notify("Play YouTube first, then use Mini player.", "warn");
+        return false;
+      }
+
+      const fromEl = wrap && !wrap.hidden ? wrap : (m && m.querySelector(".song-media-preview-modal__card"));
+      const fromRect = fromEl ? fromEl.getBoundingClientRect() : null;
+      const targetSize = clampComposerYouTubeDockSize(Math.min(300, window.innerWidth - 24));
+      const targetLeft = Math.round((window.innerWidth - targetSize.width) / 2);
+      const targetTop = Math.round((window.innerHeight - targetSize.height) / 2);
+      const reduceMotion =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      placeYouTubeFrameIn(stage, frame);
+      armYouTubeEmbed(frame);
+      if (titleEl) {
+        titleEl.textContent =
+          (modalTitle && modalTitle.textContent) ||
+          (composerYoutubeRef() && composerYoutubeRef().display_name) ||
+          "YouTube";
+      }
+      if (wrap) wrap.hidden = true;
+      if (m) {
+        m.setAttribute("data-open", "false");
+        m.setAttribute("aria-hidden", "true");
+      }
+      setSongMediaPreviewPipVisible(false);
+      resetComposerYouTubeDockPosition();
+
+      const startLeft = fromRect ? fromRect.left : targetLeft;
+      const startTop = fromRect ? fromRect.top : targetTop;
+      const startW = fromRect ? Math.max(160, fromRect.width) : targetSize.width;
+      const startH = fromRect ? Math.max(90, fromRect.height) : targetSize.height;
+
+      dock.classList.add("is-dragged", "is-resized");
+      dock.style.left = startLeft + "px";
+      dock.style.top = startTop + "px";
+      dock.style.right = "auto";
+      dock.style.bottom = "auto";
+      dock.style.width = startW + "px";
+      dock.style.height = startH + "px";
+      dock.hidden = false;
+      dock.setAttribute("aria-hidden", "false");
+      bindComposerYouTubeDockDrag();
+      revealComposerYouTubeDockChrome({ persist: true });
+
+      const finishShrink = () => {
+        dock.classList.remove("is-animating", "is-chrome-pinned");
+        applyComposerYouTubeDockSize(targetSize.width, targetLeft, targetTop);
+        revealComposerYouTubeDockChrome();
+        if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      };
+
+      if (reduceMotion) {
+        finishShrink();
+        return true;
+      }
+
+      dock.classList.add("is-animating");
+      // Force layout so the start rect paints before the shrink transition.
+      void dock.offsetWidth;
+      requestAnimationFrame(() => {
+        applyComposerYouTubeDockSize(targetSize.width, targetLeft, targetTop);
+      });
+
+      let settled = false;
+      const onEnd = (e) => {
+        if (settled) return;
+        if (e && e.target !== dock) return;
+        if (e && e.propertyName && e.propertyName !== "width" && e.propertyName !== "left") return;
+        settled = true;
+        dock.removeEventListener("transitionend", onEnd);
+        finishShrink();
+      };
+      dock.addEventListener("transitionend", onEnd);
+      window.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        dock.removeEventListener("transitionend", onEnd);
+        finishShrink();
+      }, 520);
+
+      return true;
+    }
+
+    function expandComposerYouTubeFromMini() {
+      const m = $("song-media-preview-modal");
+      const wrap = $("song-media-preview-youtube-wrap");
+      const frame = $("song-media-preview-youtube");
+      const dock = $("composer-youtube-dock");
+      const vid = $("song-media-preview-video");
+      const titleEl = $("song-media-preview-title");
+      const dockTitle = $("composer-youtube-dock-title");
+      if (!frame || !m || !wrap || !frame.getAttribute("src")) return false;
+      placeYouTubeFrameIn(wrap, frame);
+      wrap.hidden = false;
+      if (vid) vid.hidden = true;
+      if (titleEl) {
+        titleEl.textContent =
+          (dockTitle && dockTitle.textContent) ||
+          (composerYoutubeRef() && composerYoutubeRef().display_name) ||
+          "YouTube preview";
+      }
+      if (dock) {
+        dock.hidden = true;
+        dock.setAttribute("aria-hidden", "true");
+      }
+      endComposerYouTubeDockDrag();
+      endComposerYouTubeDockResize();
+      clearComposerYouTubeDockChromeTimer();
+      setSongMediaPreviewPipVisible(true);
+      m.setAttribute("data-open", "true");
+      m.setAttribute("aria-hidden", "false");
+      if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
+      return true;
+    }
+
     function isYouTubePreviewOpen() {
+      if (isComposerYouTubeDockOpen()) return true;
       const m = $("song-media-preview-modal");
       const frame = $("song-media-preview-youtube");
       return !!(m && m.getAttribute("data-open") === "true" && frame && frame.getAttribute("src"));
@@ -2315,9 +2927,9 @@
       const m = $("song-media-preview-modal");
       const vid = $("song-media-preview-video");
       const wrap = $("song-media-preview-youtube-wrap");
-      const frame = $("song-media-preview-youtube");
       const titleEl = $("song-media-preview-title");
       const status = $("song-media-preview-status");
+      const frame = ensureYouTubeFrameInModal();
       if (!id || !m || !frame || !wrap) return false;
       if (window.LiturgyFlowConsent && !window.LiturgyFlowConsent.has("media")) {
         if (window.LiturgyFlowConsent.openPreferences) {
@@ -2331,10 +2943,12 @@
         }
         wrap.hidden = true;
         frame.removeAttribute("src");
+        setSongMediaPreviewPipVisible(false);
         m.setAttribute("data-open", "true");
         m.setAttribute("aria-hidden", "false");
         return false;
       }
+      closeComposerYouTubeDock({ silent: true, keepPlayback: false });
       if (massSectionAudioEl) {
         try { massSectionAudioEl.pause(); } catch (_eA) {}
         try { massSectionAudioEl.removeAttribute("src"); massSectionAudioEl.load(); } catch (_eB) {}
@@ -2352,7 +2966,10 @@
         status.textContent = "";
       }
       wrap.hidden = false;
+      setSongMediaPreviewPipVisible(true);
+      placeYouTubeFrameIn(wrap, frame);
       frame.src = youtubeEmbedUrl(id);
+      armYouTubeEmbed(frame);
       m.setAttribute("data-open", "true");
       m.setAttribute("aria-hidden", "false");
       return true;
@@ -2365,9 +2982,11 @@
       const status = $("song-media-preview-status");
       if (!m || !vid || !sourceUrl) return false;
       const wrap = $("song-media-preview-youtube-wrap");
-      const frame = $("song-media-preview-youtube");
+      const frame = ensureYouTubeFrameInModal();
       if (frame) frame.removeAttribute("src");
       if (wrap) wrap.hidden = true;
+      setSongMediaPreviewPipVisible(false);
+      closeComposerYouTubeDock({ silent: true });
       vid.hidden = false;
       if (titleEl) titleEl.textContent = title || "Video preview";
       if (status) {
@@ -2512,6 +3131,7 @@
     function playComposerYouTube(playEl) {
       const ytSlot = COMPOSER_SONG_YOUTUBE_SLOT;
       if (massSectionAudioPlayingSlot === ytSlot && isYouTubePreviewOpen()) {
+        closeComposerYouTubeDock({ silent: true });
         closeSongMediaPreviewModal();
         stopMassSectionAudio();
         if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
@@ -2524,8 +3144,12 @@
       }
       stopMassSectionAudio();
       massSectionAudioPlayingSlot = ytSlot;
-      openYouTubePreviewModal(youtubeIdFromMediaRef(ref), ref.display_name || "YouTube");
-      if (playEl) playEl.classList.add("is-playing");
+      const opened = openYouTubePreviewModal(youtubeIdFromMediaRef(ref), ref.display_name || "YouTube");
+      if (!opened) {
+        massSectionAudioPlayingSlot = "";
+      } else if (playEl) {
+        playEl.classList.add("is-playing");
+      }
       if (typeof renderComposerSongMediaFields === "function") renderComposerSongMediaFields();
     }
 
@@ -2699,6 +3323,7 @@
       const audioPlaySummary = $("lyrics-composer-play-audio");
       const youtubePlaySummary = $("lyrics-composer-play-youtube");
       const videoPlaySummary = $("lyrics-composer-play-video");
+      const youtubePlayFloat = $("lyrics-editor-float-youtube");
       const video = composerSongMedia.video;
       const preview = composerSongMedia.preview;
       const snippet = composerAudioSnippetRef();
@@ -2768,8 +3393,24 @@
         youtubePlaySummary.classList.toggle("is-playing", youtubeOn && youtubePlaying);
         youtubePlaySummary.textContent = youtubeOn && youtubePlaying ? "❚❚ Close YouTube" : "▶ Play YouTube";
         youtubePlaySummary.title = youtubeOn
-          ? (youtube.display_name || "YouTube full song")
+          ? (youtube.display_name || "YouTube — plays in mini player while you edit")
           : "Link YouTube in Edit Details first";
+      }
+      if (youtubePlayFloat) {
+        youtubePlayFloat.hidden = !youtubeOn;
+        youtubePlayFloat.disabled = !youtubeOn;
+        youtubePlayFloat.classList.toggle("is-ready", youtubeOn);
+        youtubePlayFloat.classList.toggle("is-playing", youtubeOn && youtubePlaying);
+        youtubePlayFloat.textContent = youtubeOn && youtubePlaying ? "❚❚ YT" : "▶ YT";
+        youtubePlayFloat.title = youtubeOn
+          ? (youtubePlaying
+            ? "Close YouTube mini player"
+            : ("Play “" + (youtube.display_name || "YouTube") + "” while editing lyrics"))
+          : "Link YouTube in Edit Details first";
+        youtubePlayFloat.setAttribute(
+          "aria-label",
+          youtubeOn && youtubePlaying ? "Close YouTube player" : "Play YouTube while editing lyrics"
+        );
       }
       if (videoPlaySummary) {
         videoPlaySummary.disabled = !videoOn;
@@ -2924,6 +3565,7 @@
       if (!composerYoutubeRef()) return false;
       if (!options.skipConfirm && !confirmUnlinkMedia("this YouTube full-song link")) return false;
       if (massSectionAudioPlayingSlot === COMPOSER_SONG_YOUTUBE_SLOT) {
+        closeComposerYouTubeDock({ silent: true });
         closeSongMediaPreviewModal();
         stopMassSectionAudio();
       }

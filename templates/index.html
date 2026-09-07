@@ -27,7 +27,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260907-home-cta7" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260907-audio-preview1" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260906-0945" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260907-yt-scrub1" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -1728,13 +1728,22 @@
       </div>
       <div class="mw-modal song-media-preview-modal" id="song-media-preview-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="song-media-preview-title">
         <div class="mw-modal__card song-media-preview-modal__card">
-          <h3 class="mw-modal__title" id="song-media-preview-title">Video preview</h3>
+          <div class="song-media-preview-modal__head">
+            <h3 class="mw-modal__title song-media-preview-modal__title" id="song-media-preview-title">Video preview</h3>
+            <div class="song-media-preview-modal__head-actions">
+              <button type="button" class="song-media-preview-modal__icon-btn" id="song-media-preview-pip" hidden title="Continue in a movable mini player while editing" aria-label="Mini player">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="11" y="11" width="10" height="7" rx="1" fill="currentColor" stroke="none" opacity="0.9"/></svg>
+              </button>
+              <button type="button" class="song-media-preview-modal__icon-btn song-media-preview-modal__close" id="song-media-preview-close" title="Close" aria-label="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+          </div>
           <video class="mw-modal__video song-media-preview-modal__video" id="song-media-preview-video" controls playsinline preload="auto"></video>
-          <div class="song-media-preview-modal__yt" id="song-media-preview-youtube-wrap" hidden>
-            <iframe id="song-media-preview-youtube" title="YouTube preview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <div class="song-media-preview-modal__yt yt-embed-shell" id="song-media-preview-youtube-wrap" hidden>
+            <iframe id="song-media-preview-youtube" class="yt-embed-shell__frame" title="YouTube preview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
           </div>
           <p class="status song-media-preview-modal__status" id="song-media-preview-status" aria-live="polite" hidden></p>
-          <button type="button" class="mw-btn mw-btn--ghost mw-modal__close" id="song-media-preview-close">Close</button>
         </div>
       </div>
       <div class="mw-modal" id="mw-media-pick-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-media-pick-title">
@@ -4130,6 +4139,7 @@
       </button>
       <div class="lyrics-editor-float__cluster" id="lyrics-editor-float-actions">
         <div class="lyrics-editor-float__inner lyrics-structured-actions actions">
+          <button type="button" class="ghost lyrics-editor-float__youtube composer-media-play" id="lyrics-editor-float-youtube" hidden title="Play YouTube while editing lyrics" aria-label="Play YouTube">▶ YT</button>
           <button type="button" class="primary lyrics-editor-float__save" id="btn-save-lyrics">Save</button>
           <button type="button" class="secondary lyrics-editor-float__analyze" id="btn-analyze-lyrics">
             <span class="lyrics-analyze-refresh-icon" aria-hidden="true">
@@ -4170,6 +4180,28 @@
         </div>
       </div>
     </div>
+    <aside class="composer-yt-dock" id="composer-youtube-dock" hidden aria-hidden="true" aria-label="YouTube mini player">
+      <div class="composer-yt-dock__stage yt-embed-shell" id="composer-youtube-dock-stage"></div>
+      <div class="composer-yt-dock__hit" id="composer-youtube-dock-hit" aria-hidden="true"></div>
+      <div class="composer-yt-dock__chrome" id="composer-youtube-dock-chrome">
+        <header class="composer-yt-dock__bar" id="composer-youtube-dock-drag" title="Drag to move">
+          <span class="composer-yt-dock__live" aria-hidden="true"></span>
+          <p class="composer-yt-dock__title" id="composer-youtube-dock-title">YouTube</p>
+          <div class="composer-yt-dock__actions">
+            <button type="button" class="composer-yt-dock__btn" id="composer-youtube-dock-expand" title="Back to large player" aria-label="Back to large player">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+            </button>
+            <button type="button" class="composer-yt-dock__btn" id="composer-youtube-dock-close" title="Close player" aria-label="Close YouTube player">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+        </header>
+        <div class="composer-yt-dock__footer">
+          <p class="composer-yt-dock__hint">Drag to move · resize from the corner</p>
+        </div>
+      </div>
+      <button type="button" class="composer-yt-dock__resize" id="composer-youtube-dock-resize" title="Resize" aria-label="Resize mini player"></button>
+    </aside>
     <nav class="app-bottom-nav app-nav--mobile" id="app-bottom-nav" aria-label="Main navigation">
       <a class="nav-link" data-nav-tab="home" data-route="/home" href="/home">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -4407,7 +4439,7 @@
   </div>
 
   <script src="/static/js/cookie-consent.js?v=1"></script>
-  <script src="/static/js/app.js?v=20260907-sanctus1"></script>
+  <script src="/static/js/app.js?v=20260907-audio-preview1"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260906-membership-gate1"></script>
