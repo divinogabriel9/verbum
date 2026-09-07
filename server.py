@@ -1039,10 +1039,64 @@ def api_serve_media_file(
 @app.get("/api/files/uploads/{file_path:path}")
 def api_serve_upload_file(
     file_path: str,
-    _session: Optional[AuthSession] = Depends(require_session_when_auth),
-) -> FileResponse:
-    path = resolve_under_root(_UPLOAD_DIR, file_path)
-    return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> Response:
+    try:
+        path = resolve_under_root(_UPLOAD_DIR, file_path)
+        return FileResponse(path, media_type=media_type_for(path), filename=path.name)
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+    # Render disk is ephemeral — catalog/parish clips live in Supabase.
+    payload = _load_upload_bytes_from_storage(session, file_path)
+    if not payload:
+        raise HTTPException(status_code=404, detail="File not found.")
+    raw, media_type, filename = payload
+    return Response(
+        content=raw,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Cache-Control": "private, max-age=300",
+        },
+    )
+
+
+def _load_upload_bytes_from_storage(
+    session: Optional[AuthSession],
+    file_path: str,
+) -> Optional[tuple[bytes, str, str]]:
+    rel = (file_path or "").strip().replace("\\", "/").lstrip("/")
+    if not rel or ".." in rel.split("/") or not rel.startswith("saved_media/"):
+        return None
+    basename = Path(rel).name
+    if not basename or basename != Path(rel).name:
+        return None
+    media_type = media_type_for(Path(basename))
+    candidates: list[str] = []
+    if parish_storage_ready():
+        candidates.append(f"shared/{rel}")
+        parish_id = _session_parish_id(session)
+        if parish_id:
+            candidates.append(f"parishes/{parish_id}/{rel}")
+    user_id = ""
+    if session and session.user and session.user.user_id:
+        user_id = str(session.user.user_id).strip()
+        if user_id:
+            candidates.append(f"{user_id}/{rel}")
+    for key in candidates:
+        try:
+            if user_id and key.startswith(f"{user_id}/") and session and storage_ready(session.token):
+                raw = download_user_asset(access_token=session.token, path=key)
+            elif parish_storage_ready():
+                raw = download_service_asset(path=key)
+            else:
+                continue
+        except Exception:
+            continue
+        if isinstance(raw, (bytes, bytearray)) and raw:
+            return bytes(raw), media_type, basename
+    return None
 
 
 @app.get("/api/files/preview/{filename}")

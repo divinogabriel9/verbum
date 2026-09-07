@@ -2295,15 +2295,19 @@
           }
         : null);
       if (!item || !item.basename) return null;
-      // Catalog audio_preview stores basename only (no durable URL). Local
-      // /api/files/... fallbacks 404 on Render's ephemeral disk — prefer the
-      // signed storage URL from /api/saved-media (same path as video preview).
+      // Prefer same-origin /api/files/... — authorizedFetch turns it into a blob:
+      // URL (CSP media-src allows blob). On Render the server hydrates missing
+      // local files from shared/parish Supabase storage.
+      const localUrl = fallbackSavedMediaUrl("music", item.basename);
+      if (localUrl) {
+        return Object.assign({}, item, { url: localUrl });
+      }
       const looksLocal = (u) => typeof isPrivateFileUrl === "function" && isPrivateFileUrl(u);
       try {
         if (typeof ensureSavedMediaLibrary === "function") {
           await ensureSavedMediaLibrary(false);
         }
-      } catch (_lib0) { /* continue with whatever URL we have */ }
+      } catch (_lib0) { /* continue */ }
       let libRow = typeof resolveLibraryMediaRow === "function"
         ? resolveLibraryMediaRow("music", item)
         : null;
@@ -2314,13 +2318,10 @@
         } catch (_lib1) { /* fall through */ }
       }
       if (libRow && libRow.url) {
-        item = Object.assign({}, item, {
+        return Object.assign({}, item, {
           url: libRow.url,
           display_name: libRow.display_name || item.display_name,
         });
-      }
-      if (!item.url) {
-        item.url = fallbackSavedMediaUrl("music", item.basename);
       }
       return item.url ? item : null;
     }

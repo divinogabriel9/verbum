@@ -338,9 +338,14 @@ def _build_csp() -> str:
     media = [
         "'self'",
         "blob:",
+        # Catalog / parish media played via Supabase signed URLs (Audio/Video).
+        "https://*.supabase.co",
+        "https://*.supabase.in",
         "https://ewtn-sgrewind.streamguys1.com",
         "https://ewtn-ice.streamguys1.com",
     ]
+    if sb:
+        media.append(sb)
     return "; ".join(
         [
             "default-src 'self'",
