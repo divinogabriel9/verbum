@@ -2412,7 +2412,10 @@
     function calExtractPsalmRefrain(psalmText) {
       let line = (psalmText || "").trim().split("\n\n")[0].split("\n")[0].trim();
       if (!line) return "";
-      line = line.replace(/^R\.?\s*/i, "").trim();
+      line = line.replace(/^(R\.\s+)([a-z])/, function (_m, prefix, ch) { return prefix + ch.toUpperCase(); });
+      line = line.replace(/^R\.\s*/i, "").trim();
+      if (/^emember\b/i.test(line)) line = "Remember" + line.slice(7);
+      else if (/^ejoice\b/i.test(line)) line = "Rejoice" + line.slice(6);
       const m = line.match(/^(.+?[.!?])/);
       if (m) line = m[1].trim();
       return line;

@@ -9,7 +9,8 @@ from typing import Any, Literal, Mapping
 
 from services.calendar_month import fetch_calendar_month
 from services.lectionary_service import get_liturgical_data
-from services.lectionary_store import get_cached
+from services.lectionary_store import get_cached, upsert
+from services.mass_language import normalize_mass_language
 from services.readings_snapshot import invalidate_readings_memory
 from services.usccb_readings import (
     CACHE_KEYS,
@@ -20,12 +21,62 @@ from services.usccb_readings import (
     _cache_entry_is_complete,
     _load_cache_file,
     reading_body_is_usable,
+    repair_eaten_r_refrain,
     set_readings_cache_entry,
 )
 
 HealthStatus = str  # "healthy" | "warning" | "critical"
 
 _EDITABLE_KEYS = frozenset(CACHE_KEYS)
+
+# JSON cache keys → Mass Builder / SQLite lectionary payload keys.
+_CACHE_TO_LECTIONARY = (
+    ("first_reading", "first_reading_text"),
+    ("first_reading_ref", "first_reading"),
+    ("second_reading", "second_reading_text"),
+    ("second_reading_ref", "second_reading"),
+    ("psalm_text", "psalm_text"),
+    ("psalm_response", "psalm_response"),
+    ("psalm_verses", "psalm_verses"),
+    ("psalm_ref", "psalm"),
+    ("gospel", "gospel_text"),
+    ("gospel_ref", "gospel_reference"),
+    ("gospel_acclamation", "gospel_acclamation"),
+)
+
+
+def _invalidate_preview_layers(date: str) -> None:
+    invalidate_readings_memory(date)
+    try:
+        from pipeline import invalidate_preview_cache
+
+        invalidate_preview_cache(date)
+    except Exception:
+        pass
+
+
+def _apply_cache_edits_to_lectionary(iso: str, entry: Mapping[str, str]) -> None:
+    """Write calendar edits onto the SQLite payload Mass Builder reads."""
+    cached = get_cached(iso)
+    if not cached:
+        return
+    updated = dict(cached)
+    for cache_key, lec_key in _CACHE_TO_LECTIONARY:
+        updated[lec_key] = str(entry.get(cache_key) or "")
+    for psalm_key in ("psalm_text", "psalm_response"):
+        updated[psalm_key] = repair_eaten_r_refrain(str(updated.get(psalm_key) or ""))
+    gospel_text = str(updated.get("gospel_text") or "").strip()
+    if gospel_text:
+        from services.gospel_quote_extractor import extract_gospel_slide_quote
+
+        updated["gospel_slide_quote"] = (
+            extract_gospel_slide_quote(gospel_text, max_chars=300) or ""
+        )
+    celebration = str(entry.get("mass_celebration") or "").strip()
+    if celebration:
+        updated["celebration"] = celebration
+        updated["title"] = celebration
+    upsert(iso, updated)
 
 
 def _raw_cache_entry(date: str) -> dict[str, str] | None:
@@ -88,7 +139,16 @@ def _field_snapshot(entry: Mapping[str, str] | None, body_key: str, ref_key: str
     }
 
 
-def assess_readings_health(date: str) -> dict[str, Any]:
+def _cache_entry_for_language(iso: str, language: str) -> dict[str, str] | None:
+    lang = normalize_mass_language(language)
+    if lang == "tagalog":
+        from services.awit_at_papuri_readings import get_tagalog_cache_entry
+
+        return get_tagalog_cache_entry(iso)
+    return _raw_cache_entry(iso)
+
+
+def assess_readings_health(date: str, language: str = "english") -> dict[str, Any]:
     """Return overall status and per-column health for a Mass date."""
     iso = date.strip()
     try:
@@ -97,8 +157,9 @@ def assess_readings_health(date: str) -> dict[str, Any]:
         return {"date": iso, "status": "critical", "is_sunday": False, "fields": {}}
 
     is_sunday = on_date.weekday() == 6
-    entry = _raw_cache_entry(iso)
-    if entry and not _cache_entry_has_core_refs(entry):
+    lang = normalize_mass_language(language)
+    entry = _cache_entry_for_language(iso, lang)
+    if lang != "tagalog" and entry and not _cache_entry_has_core_refs(entry):
         entry = _heal_missing_refs_from_lectionary(iso, entry)
 
     psalm_body_ok = bool(entry and _cache_entry_has_psalm(entry))
@@ -159,32 +220,61 @@ def assess_readings_health(date: str) -> dict[str, Any]:
     }
 
 
-def get_readings_admin_detail(date: str) -> dict[str, Any]:
-    entry = _raw_cache_entry(date) or {}
-    if entry and not _cache_entry_has_core_refs(entry):
-        entry = _heal_missing_refs_from_lectionary(date.strip(), entry)
-    health = assess_readings_health(date)
-    cached_payload = get_cached(date.strip())
+def get_readings_admin_detail(date: str, language: str = "english") -> dict[str, Any]:
+    iso = date.strip()
+    lang = normalize_mass_language(language)
+    entry = _cache_entry_for_language(iso, lang) or {}
+    if lang != "tagalog" and entry and not _cache_entry_has_core_refs(entry):
+        entry = _heal_missing_refs_from_lectionary(iso, entry)
+    for psalm_key in ("psalm_text", "psalm_response"):
+        if entry.get(psalm_key):
+            entry[psalm_key] = repair_eaten_r_refrain(str(entry.get(psalm_key) or ""))
+    health = assess_readings_health(iso, language=lang)
+    cached_payload = get_cached(iso) if lang != "tagalog" else None
+    title = (cached_payload or {}).get("title") or ""
+    season = (cached_payload or {}).get("season") or ""
+    if lang == "tagalog":
+        title = str(entry.get("mass_celebration") or "").strip() or title
+        if not season:
+            from services.liturgical_calendar import get_liturgical_color
+
+            color = get_liturgical_color(iso)
+            season = str((color or {}).get("season_label") or (color or {}).get("season") or "")
     return {
         "ok": True,
-        "date": date.strip(),
+        "date": iso,
+        "language": lang,
         "health": health,
         "entry": {k: entry.get(k, "") for k in CACHE_KEYS},
-        "title": (cached_payload or {}).get("title") or "",
-        "season": (cached_payload or {}).get("season") or "",
+        "title": title,
+        "season": season,
     }
 
 
-def patch_readings_admin_entry(date: str, updates: Mapping[str, str]) -> dict[str, Any]:
+def patch_readings_admin_entry(
+    date: str,
+    updates: Mapping[str, str],
+    language: str = "english",
+) -> dict[str, Any]:
     iso = date.strip()
     if not iso:
         raise ValueError("date is required")
 
+    lang = normalize_mass_language(language)
     filtered = {k: str(v) for k, v in updates.items() if k in _EDITABLE_KEYS}
     if not filtered:
         raise ValueError("no valid reading fields to update")
 
-    existing = _raw_cache_entry(iso) or {k: "" for k in CACHE_KEYS}
+    if lang == "tagalog":
+        from services.awit_at_papuri_readings import (
+            CACHE_KEYS as TAGALOG_CACHE_KEYS,
+            get_tagalog_cache_entry,
+            set_tagalog_cache_entry,
+        )
+
+        existing = get_tagalog_cache_entry(iso) or {k: "" for k in TAGALOG_CACHE_KEYS}
+    else:
+        existing = _raw_cache_entry(iso) or {k: "" for k in CACHE_KEYS}
     changed = False
     for key, value in filtered.items():
         if str(existing.get(key) or "") != value:
@@ -192,47 +282,59 @@ def patch_readings_admin_entry(date: str, updates: Mapping[str, str]) -> dict[st
             break
 
     if not changed:
-        detail = get_readings_admin_detail(iso)
+        detail = get_readings_admin_detail(iso, language=lang)
         detail["unchanged"] = True
         return detail
 
     merged = {**existing, **filtered}
-    set_readings_cache_entry(iso, merged)
-    invalidate_readings_memory(iso)
+    for psalm_key in ("psalm_text", "psalm_response"):
+        if merged.get(psalm_key):
+            merged[psalm_key] = repair_eaten_r_refrain(str(merged.get(psalm_key) or ""))
+    if lang == "tagalog":
+        set_tagalog_cache_entry(iso, merged)
+    else:
+        set_readings_cache_entry(iso, merged)
+        _apply_cache_edits_to_lectionary(iso, merged)
+    _invalidate_preview_layers(iso)
     # Do not force a live USCCB refresh here — that belongs to "Fetch from USCCB".
     # Writing the cache + reassessing health is enough for Save.
 
-    detail = get_readings_admin_detail(iso)
+    detail = get_readings_admin_detail(iso, language=lang)
     detail["unchanged"] = False
     return detail
 
 
-def fetch_readings_admin_date(date: str) -> dict[str, Any]:
-    """Force a live USCCB/Bible fetch for one date, bypassing cached rows."""
+def fetch_readings_admin_date(date: str, language: str = "english") -> dict[str, Any]:
+    """Force a live fetch for one date, bypassing cached rows.
+
+    English uses USCCB/Bible. Tagalog uses Awit at Papuri.
+    """
     iso = date.strip()
     if not iso:
         raise ValueError("date is required")
     dt.date.fromisoformat(iso)
+    lang = normalize_mass_language(language)
 
-    before = assess_readings_health(iso)
-    invalidate_readings_memory(iso)
+    before = assess_readings_health(iso, language=lang)
+    _invalidate_preview_layers(iso)
 
     error = ""
     fetched = False
     try:
-        live = get_liturgical_data(iso, force_refresh=True)
+        live = get_liturgical_data(iso, force_refresh=True, language=lang)
         fetched = live is not None
     except Exception as exc:
         error = str(exc).strip() or "Live fetch failed"
 
-    after = assess_readings_health(iso)
-    detail = get_readings_admin_detail(iso)
+    after = assess_readings_health(iso, language=lang)
+    detail = get_readings_admin_detail(iso, language=lang)
     detail["fetch"] = {
         "ok": fetched and after["status"] != "critical",
         "fetched": fetched,
         "before": before["status"],
         "after": after["status"],
         "error": error,
+        "source": "awit_at_papuri" if lang == "tagalog" else "usccb",
     }
     return detail
 
@@ -245,7 +347,7 @@ def fetch_admin_calendar_month(
 ) -> dict[str, Any]:
     base = fetch_calendar_month(year, month, language=language)
     for iso, day in base.get("days", {}).items():
-        health = assess_readings_health(iso)
+        health = assess_readings_health(iso, language=language)
         day["readings_health"] = health["status"]
     base["admin"] = True
     return base
@@ -277,7 +379,7 @@ def scan_month_readings(
         fetched = False
         error = ""
         try:
-            invalidate_readings_memory(iso)
+            _invalidate_preview_layers(iso)
             live = get_liturgical_data(iso, force_refresh=True)
             fetched = live is not None
         except Exception as exc:

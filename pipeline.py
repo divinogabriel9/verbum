@@ -38,7 +38,7 @@ from services.runtime_config import song_web_fetch_enabled
 from services.web_hymn_discovery import discover_hymns_for_readings
 from services.lyrics_fetcher import ensure_lyrics_for_song
 from services.mass_text_format import synopsis_from_reading
-from services.usccb_readings import collect_psalm_refrain_options, resolve_psalm_slide_text
+from services.usccb_readings import collect_psalm_refrain_options, repair_eaten_r_refrain, resolve_psalm_slide_text
 
 
 @dataclass
@@ -66,6 +66,7 @@ class PreviewPayload:
     psalm_reference: str = ""
     psalm_refrains: list[str] = field(default_factory=list)
     gospel_text: str = ""
+    gospel_acclamation: str = ""
     readings_complete: bool = False
 
 
@@ -321,19 +322,26 @@ def _cached_hero_path(date: str, images_dir: Path) -> Optional[Path]:
 
 _PREVIEW_SECTIONS = ("entrance", "offertory", "communion", "recessional", "meditation")
 # Bump when default_song_selections semantics change (e.g. mood-only, no first-song).
-_PREVIEW_CACHE_VERSION = 2
+_PREVIEW_CACHE_VERSION = 3
 _PREVIEW_CACHE: dict[tuple, tuple[float, PreviewPayload]] = {}
 _PREVIEW_CACHE_TTL_S = 600.0
 _PREVIEW_INCOMPLETE_TTL_S = 15.0
 
 
-def invalidate_preview_cache(date: str | None = None) -> None:
+def invalidate_preview_cache(date: str | None = None, language: str | None = None) -> None:
     if not date:
         _PREVIEW_CACHE.clear()
         return
     d = date.strip()
+    lang = None
+    if language:
+        from services.mass_language import normalize_mass_language
+
+        lang = normalize_mass_language(language)
     for key in list(_PREVIEW_CACHE):
-        if key[0] == d:
+        if key[0] != d:
+            continue
+        if lang is None or key[2] == lang:
             del _PREVIEW_CACHE[key]
 
 
@@ -355,7 +363,7 @@ def fetch_preview(
     cache_key = (d, readings_only, lang, _PREVIEW_CACHE_VERSION)
     now = time.monotonic()
     if force_refresh:
-        invalidate_preview_cache(d)
+        invalidate_preview_cache(d, language=lang)
     else:
         cached = _PREVIEW_CACHE.get(cache_key)
         if cached:
@@ -410,9 +418,9 @@ def fetch_preview(
     est_slides = 78 + min(12, len(sentences))
     fr_txt = data.get("first_reading_text") or ""
     sr_txt = data.get("second_reading_text") or ""
-    raw_psalm = (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+    raw_psalm = repair_eaten_r_refrain((data.get("psalm_text") or "").split(" or ", 1)[0].strip())
     psalm_ref = str(data.get("psalm") or "").strip()
-    psalm_resp = (data.get("psalm_response") or "").strip()
+    psalm_resp = repair_eaten_r_refrain((data.get("psalm_response") or "").strip())
     psalm_refrains = collect_psalm_refrain_options(
         raw_psalm,
         psalm_ref,
@@ -441,6 +449,7 @@ def fetch_preview(
         psalm_reference=psalm_ref,
         psalm_refrains=psalm_refrains,
         gospel_text=gospel_text,
+        gospel_acclamation=str(data.get("gospel_acclamation") or "").strip(),
         readings_complete=payload_complete(data),
     )
     _PREVIEW_CACHE[cache_key] = (now, result)
@@ -527,6 +536,7 @@ def generate_mass_media(
     video_replacements: Optional[Mapping[str, Any]] = None,
     mass_language: str = "english",
     show_hymn_section_labels: bool = False,
+    slide_kinds: Optional[list[str]] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -603,6 +613,10 @@ def generate_mass_media(
     ai_pool: Optional[ThreadPoolExecutor] = None
     hero_future = None
     compose_future = None
+    if slide_kinds:
+        include_ai_mass_poster = False
+        include_social_exports = False
+
     if include_ai_mass_poster:
         if backend == "gemini":
             try:
@@ -783,6 +797,7 @@ def generate_mass_media(
             video_replacements=video_replacements,
             mass_language=mass_language,
             show_hymn_section_labels=show_hymn_section_labels,
+            slide_kinds=slide_kinds,
         )
 
         if compose_future is not None:
@@ -867,6 +882,7 @@ def regenerate_mass_pptx(
     video_replacements: Optional[Mapping[str, Any]] = None,
     mass_language: str = "english",
     show_hymn_section_labels: bool = False,
+    slide_kinds: Optional[list[str]] = None,
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
     data = get_liturgical_data(date, language=mass_language)
@@ -989,6 +1005,7 @@ def regenerate_mass_pptx(
         video_replacements=video_replacements,
         mass_language=mass_language,
         show_hymn_section_labels=show_hymn_section_labels,
+        slide_kinds=slide_kinds,
     )
 
     return GenerationResult(

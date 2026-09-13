@@ -1457,6 +1457,7 @@
 
     function syncChurchFieldsToSettings() {
       renderSettingsCelebrantList();
+      if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
     }
 
     function syncChurchFieldsFromSettings() {

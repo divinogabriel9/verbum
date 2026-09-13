@@ -987,7 +987,7 @@
     initHymnSectionLabelsToggle();
     initCollectionCurrencyUi();
     $("mass-date").addEventListener("change", () => {
-      loadFlowData(true);
+      if (!massDraftRestoring) loadFlowData(true);
       renderMassSummarySidebar();
     });
     $("btn-generate-flow").addEventListener("click", async () => {
@@ -1229,6 +1229,22 @@
       }
     });
 
+    $("btn-save-church-branding") && $("btn-save-church-branding").addEventListener("click", () => {
+      const statusEl = $("settings-branding-status") || $("settings-church-status");
+      try {
+        saveChurchBrandingSettingsFromUi();
+        if (statusEl) {
+          statusEl.textContent = "Saved poster branding and developer options.";
+          statusEl.className = "status ok";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Save failed";
+          statusEl.className = "status error";
+        }
+      }
+    });
+
     $("btn-save-community-api").addEventListener("click", async () => {
       if (!churchMembershipState.can_edit_church_profile) {
         $("settings-church-status").textContent = "Submit your parish name and wait for superadmin approval first.";
@@ -1240,6 +1256,7 @@
         const saved = await postJSON("/api/community/profile", {
           celebrant_names: celebrantNamesCache,
         });
+        if (typeof saveChurchBrandingSettingsFromUi === "function") saveChurchBrandingSettingsFromUi();
         applyCommunityPayload(saved);
         $("settings-church-status").textContent = "Saved church profile to database.";
         $("settings-church-status").className = "status ok";
@@ -2067,7 +2084,8 @@
 
     bindCalFetchToggleButton($("cal-admin-fetch-missing-btn"), () => fetchCalendarMonthReadings("missing"));
     bindCalFetchToggleButton($("cal-admin-fetch-month-btn"), () => {
-      if (!confirm("Force-fetch all " + calendarCursor.toLocaleString(undefined, { month: "long" }) + " dates from USCCB? Each date tries up to 3 times. Click the button again to stop.")) return;
+      const source = currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+      if (!confirm("Force-fetch all " + calendarCursor.toLocaleString(undefined, { month: "long" }) + " dates from " + source + "? Each date tries up to 3 times. Click the button again to stop.")) return;
       fetchCalendarMonthReadings("all");
     });
     bindCalFetchToggleButton($("cal-readings-admin-fetch"), () => {
@@ -2091,6 +2109,7 @@
       }
       // Keep Mass language independent of calendar language toggle.
       showRoute("/mass/builder");
+      if (typeof invalidateClientReadings === "function") invalidateClientReadings(calSelected);
       loadFlowData(true);
     });
     $("btn-cal-generate").addEventListener("click", () => {
@@ -2100,6 +2119,7 @@
       }
       // Keep Mass language independent of calendar language toggle.
       showRoute("/mass/builder");
+      if (typeof invalidateClientReadings === "function") invalidateClientReadings(calSelected);
       loadFlowData(false).then(() => $("btn-generate-flow").click());
     });
 
@@ -2110,6 +2130,8 @@
       if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
     });
 
+    applyPersistedMassLanguage();
+    if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
     ensureMassBuilderDefaultDate({ force: true });
     if ($("poster-mass-date")) $("poster-mass-date").value = $("mass-date").value;
     ensureCollectionDefaultDate({ force: true });

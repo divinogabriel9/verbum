@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from services.mass_language import defaults_for_mass_language, normalize_mass_language
+from services.mass_language import (
+    defaults_for_mass_language,
+    normalize_mass_language,
+    reading_section_label,
+)
 from services.prayer_service import get_prayer
 
 
@@ -12,6 +16,13 @@ def test_normalize_mass_language():
     assert normalize_mass_language("tl") == "tagalog"
     assert normalize_mass_language("malay") == "english"
     assert normalize_mass_language(None) == "english"
+
+
+def test_tagalog_reading_section_labels():
+    assert reading_section_label("first", "tagalog") == "Unang Pagbasa"
+    assert reading_section_label("second", "tl") == "Ikalawang Pagbasa"
+    assert reading_section_label("first", "english") == "First Reading"
+    assert reading_section_label("second", "english") == "Second Reading"
 
 
 def test_tagalog_defaults():

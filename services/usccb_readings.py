@@ -624,6 +624,44 @@ def _scraped_responsorial_body(scraped: Optional[str]) -> str:
     return ""
 
 
+# "R." (period required) is the lectionary refrain marker. ``R.?`` without a
+# following space also matches the first letter of Remember / Rejoice.
+_RESPONSORIAL_MARKER = re.compile(r"^R\.\s*", re.I)
+_EATEN_R_WORDS = (
+    ("emember", "Remember"),
+    ("ejoice", "Rejoice"),
+)
+
+
+def looks_like_responsorial_marker(line: str) -> bool:
+    s = (line or "").strip()
+    return bool(re.match(r"^R\.\s", s, re.I) or re.match(r"^R\s+\(", s))
+
+
+def strip_responsorial_marker(line: str) -> str:
+    return _RESPONSORIAL_MARKER.sub("", (line or "").strip(), count=1).strip()
+
+
+def repair_eaten_r_refrain(text: str) -> str:
+    """Restore Remember/Rejoice when a prior ``R.?`` strip ate the leading R."""
+    s = (text or "").strip()
+    if not s:
+        return ""
+    s = re.sub(r"^(R\.\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), s)
+    marker = ""
+    core = s
+    matched = re.match(r"^(R\.\s*)(.*)$", s, flags=re.I)
+    if matched:
+        marker = "R. "
+        core = matched.group(2).strip()
+    low = core.lower()
+    for broken, fixed in _EATEN_R_WORDS:
+        if low.startswith(broken):
+            core = fixed + core[len(broken) :]
+            break
+    return f"{marker}{core}".strip() if marker else core
+
+
 def _extract_responsorial_refrain(text: str) -> str:
     """
     Core responsorial response only, e.g. ``Praise the Lord, Jerusalem.``
@@ -635,7 +673,8 @@ def _extract_responsorial_refrain(text: str) -> str:
     if not line:
         return ""
     line = line.split("\n\n")[0].split("\n")[0].strip()
-    line = re.sub(r"^R\.?\s*", "", line, flags=re.I).strip()
+    line = repair_eaten_r_refrain(line)
+    line = strip_responsorial_marker(line)
     line = re.sub(r"^\([^)]*\)\s*", "", line).strip()
     line = re.sub(r"^\(see[^)]*\)\s*", "", line, flags=re.I).strip()
     line = re.split(r"\s+or:\s*R\.?\s*Alleluia\.\s*", line, maxsplit=1, flags=re.I)[0].strip()
@@ -705,7 +744,7 @@ def _scrape_psalm_response(soup: BeautifulSoup) -> str:
                 break
             if not t:
                 continue
-            if re.match(r"^R\.?\s*", t, re.I):
+            if looks_like_responsorial_marker(t):
                 return _clean_psalm_refrain_line(t)
             if re.search(r"\bresponse\s*:", t, re.I):
                 return _clean_psalm_refrain_line(

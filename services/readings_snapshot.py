@@ -15,7 +15,7 @@ from services.lectionary_service import get_liturgical_data, payload_complete
 from services.lectionary_store import get_cached
 from services.mass_language import normalize_mass_language
 from services.mass_text_format import synopsis_from_reading
-from services.usccb_readings import collect_psalm_refrain_options
+from services.usccb_readings import collect_psalm_refrain_options, repair_eaten_r_refrain
 
 # Memory keys are (date, language) tuples.
 _MEMORY: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
@@ -23,10 +23,13 @@ _MEMORY_TTL_S = 600.0
 _MEMORY_INCOMPLETE_TTL_S = 15.0
 
 
-def invalidate_readings_memory(date: str) -> None:
+def invalidate_readings_memory(date: str, language: str | None = None) -> None:
     d = (date or "").strip()
+    lang = normalize_mass_language(language) if language else None
     for key in list(_MEMORY.keys()):
-        if key[0] == d:
+        if key[0] != d:
+            continue
+        if lang is None or key[1] == lang:
             _MEMORY.pop(key, None)
 
 
@@ -53,10 +56,10 @@ def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
     sentences = split_slide_sentences(base_quote)
     fr_txt = data.get("first_reading_text") or ""
     sr_txt = data.get("second_reading_text") or ""
-    raw_psalm = (data.get("psalm_text") or "").split(" or ", 1)[0].strip()
+    raw_psalm = repair_eaten_r_refrain((data.get("psalm_text") or "").split(" or ", 1)[0].strip())
     psalm_verses = (data.get("psalm_verses") or "").strip()
     psalm_ref = str(data.get("psalm") or "").strip()
-    psalm_resp = (data.get("psalm_response") or "").strip()
+    psalm_resp = repair_eaten_r_refrain((data.get("psalm_response") or "").strip())
 
     return {
         "ok": True,
@@ -86,6 +89,7 @@ def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
             psalm_response=psalm_resp,
         ),
         "gospel_text": gospel_text,
+        "gospel_acclamation": str(data.get("gospel_acclamation") or "").strip(),
         "gospel_slide_quote": gospel_slide_quote,
         "readings_complete": payload_complete(data),
         "readings_language": str(data.get("readings_language") or "english"),
@@ -113,7 +117,7 @@ def readings_snapshot(
 
     now = time.monotonic()
     if force_refresh:
-        invalidate_readings_memory(d)
+        invalidate_readings_memory(d, language=lang)
     else:
         mem = _MEMORY.get(mem_key)
         if mem:

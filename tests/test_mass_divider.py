@@ -80,6 +80,20 @@ def test_fields_keep_celebrant_and_co_separate():
     assert fields.heading == "HOLY EUCHARISTIC CELEBRATION"
 
 
+def test_tagalog_title_drops_year_cycle_suffix():
+    fields = resolve_mass_divider_fields(
+        gospel_quote="Kung magkasala sa iyo ang kapatid mo…",
+        gospel_reference="Mateo 18, 15-20",
+        celebrant="Fr. Celebrant",
+        date="2026-09-06",
+        lectionary_cycle="A",
+        mass_title="Ika-23 Linggo sa Karaniwang Panahon (A)",
+    )
+    assert fields.sunday_title == "Ika-23 Linggo sa Karaniwang Panahon"
+    assert "(A)" not in fields.sunday_title
+    assert fields.year_cycle == "A"
+
+
 def test_gospel_analysis_canaanite_woman():
     analysis = analyze_gospel_visual(
         sunday_title="20th Sunday in Ordinary Time",

@@ -6,6 +6,49 @@
  */
     var $ = (id) => document.getElementById(id);
 
+    var CHURCH_BRANDING_STORAGE = {
+      logo: "churchMediaIncludeChurchLogo",
+      name: "churchMediaIncludeChurchName",
+      footer: "churchMediaShowFooter",
+    };
+
+    function hasSavedChurchBrandingSettings() {
+      try {
+        return localStorage.getItem(CHURCH_BRANDING_STORAGE.logo) != null
+          || localStorage.getItem(CHURCH_BRANDING_STORAGE.name) != null
+          || localStorage.getItem(CHURCH_BRANDING_STORAGE.footer) != null;
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function applySavedChurchBrandingSettings() {
+      try {
+        const logo = localStorage.getItem(CHURCH_BRANDING_STORAGE.logo);
+        const name = localStorage.getItem(CHURCH_BRANDING_STORAGE.name);
+        const footer = localStorage.getItem(CHURCH_BRANDING_STORAGE.footer);
+        const logoEl = $("flow-include-church-logo");
+        const nameEl = $("flow-include-church-name");
+        const footerEl = $("flow-show-footer");
+        if (logoEl && logo != null) logoEl.checked = logo === "1";
+        if (nameEl && name != null) nameEl.checked = name === "1";
+        if (footerEl && footer != null) footerEl.checked = footer === "1";
+      } catch (_e) { /* ignore */ }
+    }
+
+    function saveChurchBrandingSettingsFromUi() {
+      const logoEl = $("flow-include-church-logo");
+      const nameEl = $("flow-include-church-name");
+      const footerEl = $("flow-show-footer");
+      try {
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.logo, logoEl && logoEl.checked ? "1" : "0");
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.name, nameEl && nameEl.checked ? "1" : "0");
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.footer, footerEl && footerEl.checked ? "1" : "0");
+      } catch (_e) {
+        throw new Error("Could not save settings in this browser.");
+      }
+    }
+
     function syncAppHeaderOffset() {
       const header = $("app-header");
       if (!header) return;
@@ -648,13 +691,47 @@
     var previewInflight = new Map();
     var readingsInflight = new Map();
     var READINGS_LS_PREFIX = "verbumReadings:";
+    var MASS_LANGUAGE_LS_KEY = "verbumMassLanguage";
     var READINGS_POLL_INTERVAL_MS = 4000;
     var READINGS_POLL_MAX_ATTEMPTS = 18;
     var readingsPollers = new Map();
+    var flowLoadSeq = 0;
+
+    function persistMassLanguage(language) {
+      const lang = language === "tagalog" ? "tagalog" : "english";
+      try { localStorage.setItem(MASS_LANGUAGE_LS_KEY, lang); } catch (_e) { /* ignore */ }
+      return lang;
+    }
+
+    function readPersistedMassLanguage() {
+      try {
+        const raw = String(localStorage.getItem(MASS_LANGUAGE_LS_KEY) || "").trim().toLowerCase();
+        if (raw === "tagalog" || raw === "filipino" || raw === "tl") return "tagalog";
+        if (raw === "english") return "english";
+      } catch (_e) { /* ignore */ }
+      return "";
+    }
+
+    function applyPersistedMassLanguage() {
+      const sel = $("flow-mass-language");
+      const lang = readPersistedMassLanguage();
+      if (!sel || !lang || sel.value === lang) return lang || (sel && sel.value === "tagalog" ? "tagalog" : "english");
+      sel.value = lang;
+      if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(sel);
+      return lang;
+    }
 
     function currentMassLanguage() {
       const sel = $("flow-mass-language");
       return sel && sel.value === "tagalog" ? "tagalog" : "english";
+    }
+
+    function flowApplyIsCurrent(date, language) {
+      const d = String(date || "").trim();
+      const lang = language === "tagalog" ? "tagalog" : "english";
+      const dateEl = $("mass-date");
+      const liveDate = dateEl ? String(dateEl.value || "").trim() : "";
+      return !!d && liveDate === d && currentMassLanguage() === lang;
     }
 
     function currentCalendarLanguage() {
@@ -693,6 +770,47 @@
       const psalm = String(data.psalm_text || data.psalm_verses || "").trim();
       return !!(frRef && frBody && gospel && (psalmRefrains.length || psalm));
     }
+
+    function readingsLanguageOf(data) {
+      if (!data) return "";
+      const raw = String(data.readings_language || "").trim().toLowerCase();
+      if (raw === "tagalog" || raw === "filipino") return "tagalog";
+      if (raw === "english") return "english";
+      const blob = [
+        data.gospel_reference,
+        data.first_reading_reference,
+        data.psalm_reference,
+        data.title,
+      ].join(" ").toLowerCase();
+      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezekiel|filipos)\b/.test(blob)) {
+        return "tagalog";
+      }
+      if (/\b(matthew|john|luke|mark|psalm)\b/.test(blob)) return "english";
+      return "";
+    }
+
+    function payloadMatchesLanguage(data, language) {
+      if (!readingsPayloadComplete(data)) return false;
+      const got = readingsLanguageOf(data);
+      return !!got && got === language;
+    }
+
+    function dropMismatchedReadingsCache(date, language, data) {
+      if (!data || payloadMatchesLanguage(data, language)) return false;
+      const d = String(date || "").trim();
+      previewCache.delete(previewCacheKey(d, false, language));
+      previewCache.delete(previewCacheKey(d, true, language));
+      try {
+        localStorage.removeItem(READINGS_LS_PREFIX + language + ":" + d);
+      } catch (_e) { /* ignore */ }
+      return true;
+    }
+
+    window.persistMassLanguage = persistMassLanguage;
+    window.applyPersistedMassLanguage = applyPersistedMassLanguage;
+    window.currentMassLanguage = currentMassLanguage;
+    window.readingsLanguageOf = readingsLanguageOf;
+    window.payloadMatchesLanguage = payloadMatchesLanguage;
 
     function stopReadingsPoll(date, language) {
       const d = String(date || "").trim();
@@ -800,6 +918,58 @@
       } catch (_e) { /* quota */ }
     }
 
+    function cachedReadingsForLanguage(date, language) {
+      const d = String(date || "").trim();
+      const lang = language || currentMassLanguage();
+      if (!d) return null;
+      const candidates = [
+        previewCache.get(previewCacheKey(d, false, lang)),
+        previewCache.get(previewCacheKey(d, true, lang)),
+        readStoredReadings(d, lang),
+      ];
+      for (let i = 0; i < candidates.length; i += 1) {
+        const hit = candidates[i];
+        if (!hit) continue;
+        if (dropMismatchedReadingsCache(d, lang, hit)) continue;
+        if (payloadMatchesLanguage(hit, lang)) {
+          previewCache.set(previewCacheKey(d, true, lang), hit);
+          previewCache.set(previewCacheKey(d, false, lang), hit);
+          return hit;
+        }
+      }
+      return null;
+    }
+
+    function prefetchAlternateMassLanguage(date) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      const other = currentMassLanguage() === "tagalog" ? "english" : "tagalog";
+      if (cachedReadingsForLanguage(d, other)) return;
+      fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
+        .then((data) => {
+          if (data && readingsPayloadComplete(data)) writeStoredReadings(d, data, other);
+        })
+        .catch(function () { /* warm cache only */ });
+    }
+
+    function invalidateClientReadings(date) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      ["english", "tagalog"].forEach((lang) => {
+        previewCache.delete(previewCacheKey(d, false, lang));
+        previewCache.delete(previewCacheKey(d, true, lang));
+        stopReadingsPoll(d, lang);
+        try {
+          localStorage.removeItem(READINGS_LS_PREFIX + lang + ":" + d);
+        } catch (_e) { /* ignore */ }
+      });
+      [readingsInflight, previewInflight].forEach((map) => {
+        Array.from(map.keys()).forEach((key) => {
+          if (String(key).indexOf(d) !== -1) map.delete(key);
+        });
+      });
+    }
+
     async function fetchReadings(date, opts) {
       const d = String(date || "").trim();
       const forceRefresh = !!(opts && opts.forceRefresh);
@@ -811,22 +981,25 @@
       const readKey = previewCacheKey(d, true, lang);
       if (!forceRefresh && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
-        if (readingsPayloadComplete(cached)) {
+        if (payloadMatchesLanguage(cached, lang)) {
           previewCache.set(readKey, cached);
           return cached;
         }
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh && previewCache.has(readKey)) {
         const cached = previewCache.get(readKey);
-        if (readingsPayloadComplete(cached)) return cached;
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh) {
         const stored = readStoredReadings(d, lang);
-        if (stored && readingsPayloadComplete(stored)) {
+        if (payloadMatchesLanguage(stored, lang)) {
           previewCache.set(readKey, stored);
           previewCache.set(fullKey, stored);
           return stored;
         }
+        if (stored) dropMismatchedReadingsCache(d, lang, stored);
       }
       const inflightKey = (forceRefresh ? "refresh:" : "") + lang + ":" + d;
       if (readingsInflight.has(inflightKey)) return readingsInflight.get(inflightKey);
@@ -854,15 +1027,18 @@
       const readKey = previewCacheKey(d, true, lang);
       if (!forceRefresh && !readingsOnly && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
-        if (readingsPayloadComplete(cached)) return previewCache.get(fullKey);
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh && readingsOnly && previewCache.has(readKey)) {
         const cached = previewCache.get(readKey);
-        if (readingsPayloadComplete(cached)) return cached;
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh && readingsOnly && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
-        if (readingsPayloadComplete(cached)) return cached;
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       const key = (forceRefresh ? "refresh:" : "") + (readingsOnly ? readKey : fullKey);
       if (previewInflight.has(key)) return previewInflight.get(key);
@@ -873,8 +1049,14 @@
         mass_language: lang,
       })
         .then((data) => {
-          previewCache.set(readingsOnly ? readKey : fullKey, data);
-          if (!readingsOnly) previewCache.set(fullKey, data);
+          if (data && data.ok !== false) {
+            data.readings_language = readingsLanguageOf(data) || lang;
+          }
+          if (payloadMatchesLanguage(data, lang)) {
+            previewCache.set(readingsOnly ? readKey : fullKey, data);
+            if (!readingsOnly) previewCache.set(fullKey, data);
+            if (readingsPayloadComplete(data)) writeStoredReadings(d, data, lang);
+          }
           previewInflight.delete(key);
           return data;
         })
@@ -1653,8 +1835,11 @@
     var massRiteVideoPickPending = null;
 
     function massRiteOptionMediaInnerHtml(mediaKey, section, lang) {
+      const key = String(mediaKey || "").trim();
       const sec = String(section || "").trim().toLowerCase();
       const opt = String(lang || "").trim().toLowerCase();
+      const video = key ? getMassSectionMedia("video", key) : null;
+      const videoOn = !!video;
       const activeLang = String(
         (window.massRiteVideoLang && window.massRiteVideoLang[sec]) || ""
       ).trim().toLowerCase();
@@ -1664,20 +1849,28 @@
         activeLang === opt
       );
       return (
-        "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this rite\" " +
-          "data-mass-rite-slide-mode=\"" + escapeHtml(sec) + "\">" +
-          "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
-            "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
-            "data-mass-rite-slide-mode-val=\"lyrics\" " +
-            "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
-            "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
-            "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
-          "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
-            "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
-            "data-mass-rite-slide-mode-val=\"video\" " +
-            "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
-            "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
-            "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+        "<div class=\"mass-song-slide-mode-row\">" +
+          "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this rite\" " +
+            "data-mass-rite-slide-mode=\"" + escapeHtml(sec) + "\">" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
+              "data-mass-rite-slide-mode-val=\"lyrics\" " +
+              "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
+              "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
+              "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
+              "data-mass-rite-slide-mode-val=\"video\" " +
+              "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
+              "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
+              "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+          "</div>" +
+          "<button type=\"button\" class=\"mw-option__text mw-rite-video-play" + (videoOn ? " is-ready" : "") + "\" " +
+            "data-mw-play-video data-mw-media-slot=\"" + escapeHtml(key) + "\" " +
+            (useVideo ? "" : "hidden ") +
+            (videoOn ? "" : "disabled ") +
+            "aria-label=\"Play video preview\" " +
+            "title=\"" + escapeHtml(videoOn ? ("Play " + (video.display_name || video.basename)) : "Link video from the option title first") + "\">▶</button>" +
         "</div>"
       );
     }
@@ -2090,34 +2283,16 @@
         play.disabled = !has;
         play.classList.toggle("is-ready", has);
       });
-      document.querySelectorAll(".mw-media-dd--play").forEach((dd) => {
-        const audioBtn = dd.querySelector("[data-mw-play-audio]");
-        const videoBtn = dd.querySelector("[data-mw-play-video]");
-        const trigger = dd.querySelector("[data-mw-media-dd-btn=\"play\"]");
-        const audioReady = !!(audioBtn && audioBtn.classList.contains("is-ready"));
-        const videoReady = !!(videoBtn && videoBtn.classList.contains("is-ready"));
-        const playing = !!(audioBtn && audioBtn.classList.contains("is-playing"));
-        if (trigger) {
-          trigger.classList.toggle("is-ready", audioReady || videoReady);
-          trigger.classList.toggle("is-playing", playing);
-          trigger.textContent = playing ? "❚❚" : "▶";
-          trigger.title = playing ? "Stop preview" : "Play preview";
-        }
-        if (audioBtn) {
-          const key = audioBtn.getAttribute("data-mw-media-slot") || "";
-          const item = key ? getMassSectionMedia("audio", key) : null;
-          audioBtn.textContent = playing ? "Stop audio" : "Play audio";
-          audioBtn.title = item
-            ? (playing ? "Stop audio preview" : ("Play " + (item.display_name || item.basename)))
-            : "Link audio from the option title first";
-        }
-        if (videoBtn) {
-          const key = videoBtn.getAttribute("data-mw-media-slot") || "";
-          const item = key ? getMassSectionMedia("video", key) : null;
-          videoBtn.title = item
-            ? ("Play " + (item.display_name || item.basename))
-            : "Link video from the option title first";
-        }
+      document.querySelectorAll(".mw-option__row > [data-mw-play-audio]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot") || "";
+        const item = key ? getMassSectionMedia("audio", key) : null;
+        const playing = !!(key && massSectionAudioPlayingSlot === key);
+        play.classList.toggle("is-ready", !!item);
+        play.classList.toggle("is-playing", playing);
+        play.textContent = playing ? "❚❚" : "▶";
+        play.title = playing
+          ? "Stop audio preview"
+          : (item ? ("Play " + (item.display_name || item.basename)) : "Link audio from the option title first");
       });
       document.querySelectorAll(".mw-media-dd--link").forEach((dd) => {
         const label = dd.querySelector(".mw-option__label");

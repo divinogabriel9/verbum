@@ -69,7 +69,7 @@ ALLELUIA_COMMENTATOR = """<<D>>Kung inaanunsyo ng komentarista ang taludtod bago
 
 GOSPEL_INTRO = """<<P>>Sumainyo ang Panginoon.
 <<A>>At sumaiyo rin.
-<<D>>Binabasa ng Pari ang buong panimulang diyalogo mula sa Misal, gamit ang buong pangungusap mula sa Leksyunaryo para sa Misang ito.
+<<P>>Ang Mabuting Balita ng Panginoon ayon kay {gospel_book}.
 <<A>>Papuri sa iyo, Panginoon."""
 
 GOSPEL_END = """<<P>>Ang Mabuting Balita ng Panginoon.

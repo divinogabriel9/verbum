@@ -1368,6 +1368,7 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "psalm_reference": p.psalm_reference,
         "psalm_refrains": p.psalm_refrains,
         "gospel_text": p.gospel_text,
+        "gospel_acclamation": getattr(p, "gospel_acclamation", "") or "",
         "readings_complete": p.readings_complete,
     }
 
@@ -1663,6 +1664,10 @@ class GenerateBody(BaseModel):
             "slides with a single video slide. Keys: kyrie, gloria, sanctus, our_father, "
             "lamb_of_god, entrance, offertory, communion_1–communion_5, recessional."
         ),
+    )
+    slide_kinds: Optional[list[str]] = Field(
+        None,
+        description="Superadmin only. When set, generate only these slide kinds instead of the full Mass.",
     )
 
     @model_validator(mode="after")
@@ -4727,6 +4732,16 @@ def api_generate(
     UI sits at ~62%. PDF export was removed from this path entirely.
     """
     print(f"[generate] start date={body.date!r}", flush=True)
+    from services.membership_config import is_superadmin_user
+    from services.slide_kinds import normalize_slide_kinds
+
+    wanted_kinds = normalize_slide_kinds(body.slide_kinds)
+    if body.slide_kinds:
+        if not session or not is_superadmin_user(session.user):
+            raise HTTPException(status_code=403, detail="Partial slide generate is limited to superadmin.")
+        if not wanted_kinds:
+            raise HTTPException(status_code=400, detail="Choose at least one valid slide to generate.")
+    slide_kinds_payload = sorted(wanted_kinds) if wanted_kinds else None
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
     temp_assets: list[Path] = []
     divider_path = None
@@ -4784,7 +4799,7 @@ def api_generate(
             poster_template=body.poster_template,
             include_social_exports=body.include_social_exports,
             include_gospel_art=False,
-            include_ai_mass_poster=body.include_ai_mass_poster,
+            include_ai_mass_poster=False if slide_kinds_payload else body.include_ai_mass_poster,
             ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
             ai_poster_style=body.ai_poster_style.strip() or "cinematic",
             reuse_existing_poster=reuse_poster,
@@ -4831,6 +4846,7 @@ def api_generate(
             video_replacements=video_paths or None,
             mass_language=body.mass_language,
             show_hymn_section_labels=bool(body.show_hymn_section_labels),
+            slide_kinds=slide_kinds_payload,
         )
     finally:
         for p in temp_assets:

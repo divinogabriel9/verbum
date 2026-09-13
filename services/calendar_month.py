@@ -6,7 +6,7 @@ import calendar
 import datetime as dt
 from typing import Any, Optional
 
-from services.awit_at_papuri_readings import get_tagalog_cache_entry
+from services.awit_at_papuri_readings import get_tagalog_cache_entry, get_tagalog_cache_month
 from services.lectionary_service import get_liturgical_data
 from services.lectionary_store import get_cached
 from services.liturgical_calendar import get_liturgical_color
@@ -52,10 +52,16 @@ def _summarize_from_payload(data: dict[str, Any], readings: Optional[dict[str, s
         (data.get("gospel_slide_quote") or data.get("gospel_text") or ""),
         56,
     )
+    acclamation = ""
+    if readings:
+        acclamation = str(readings.get("gospel_acclamation") or "").strip()
+    if not acclamation:
+        acclamation = str(data.get("gospel_acclamation") or "").strip()
 
     return {
         "gospel_reference": gospel_ref,
         "gospel_quote_short": gospel_quote,
+        "gospel_acclamation": acclamation,
         "psalm_refrain": _truncate(psalm_refrain, 48),
         "first_reading_reference": first_ref,
         "second_reading_reference": second_ref,
@@ -76,6 +82,7 @@ def _summarize_from_tagalog_cache(entry: dict[str, str]) -> dict[str, Any]:
     return {
         "gospel_reference": gospel_ref,
         "gospel_quote_short": gospel_quote,
+        "gospel_acclamation": str(entry.get("gospel_acclamation") or "").strip(),
         "psalm_refrain": _truncate(psalm_refrain, 48),
         "first_reading_reference": str(entry.get("first_reading_ref") or "").strip(),
         "second_reading_reference": str(entry.get("second_reading_ref") or "").strip(),
@@ -96,7 +103,12 @@ def _apply_english_ph_title(out: dict[str, Any], iso: str) -> None:
     out["calendar_region"] = "philippines"
 
 
-def summarize_day(iso: str, *, language: str = "english") -> dict[str, Any]:
+def summarize_day(
+    iso: str,
+    *,
+    language: str = "english",
+    tagalog_entry: Optional[dict[str, str]] = None,
+) -> dict[str, Any]:
     """Build a calendar cell summary from local caches (no network)."""
     lang = normalize_mass_language(language)
     try:
@@ -113,6 +125,7 @@ def summarize_day(iso: str, *, language: str = "english") -> dict[str, Any]:
         "liturgical_color": liturgical,
         "gospel_reference": "",
         "gospel_quote_short": "",
+        "gospel_acclamation": "",
         "psalm_refrain": "",
         "first_reading_reference": "",
         "second_reading_reference": "",
@@ -124,7 +137,10 @@ def summarize_day(iso: str, *, language: str = "english") -> dict[str, Any]:
     }
 
     if lang == "tagalog":
-        tagalog = get_tagalog_cache_entry(iso)
+        if tagalog_entry is not None:
+            tagalog = tagalog_entry or None
+        else:
+            tagalog = get_tagalog_cache_entry(iso)
         out["has_cache"] = bool(tagalog)
         if tagalog:
             out.update(_summarize_from_tagalog_cache(tagalog))
@@ -153,7 +169,8 @@ def fetch_calendar_month(
     """
     Summaries for every day in ``month`` (1–12).
 
-    ``language=tagalog`` uses Awit at Papuri cache titles/snippets.
+    ``language=tagalog`` uses Awit at Papuri cache titles/snippets only
+    (no live scrape — that belongs to day click / Fetch).
     ``language=english`` uses USCCB/lectionary cache + Philippines Proper titles.
     """
     if month < 1 or month > 12:
@@ -163,31 +180,33 @@ def fetch_calendar_month(
     days_in_month = calendar.monthrange(year, month)[1]
     days: dict[str, dict[str, Any]] = {}
     sundays_missing: list[str] = []
+    tagalog_month = get_tagalog_cache_month(year, month) if lang == "tagalog" else {}
 
     for d in range(1, days_in_month + 1):
         iso = f"{year:04d}-{month:02d}-{d:02d}"
-        summary = summarize_day(iso, language=lang)
+        summary = summarize_day(
+            iso,
+            language=lang,
+            tagalog_entry=tagalog_month.get(iso, {}) if lang == "tagalog" else None,
+        )
         days[iso] = summary
-        if summary.get("is_sunday") and not summary.get("loaded"):
+        # Tagalog live-fetch (Awit at Papuri) is two HTTP calls per Sunday and
+        # made month navigation feel stuck. Serve the grid from cache only;
+        # clicking a day still fetches that date.
+        if lang != "tagalog" and summary.get("is_sunday") and not summary.get("loaded"):
             sundays_missing.append(iso)
 
     for iso in sundays_missing:
         live = get_liturgical_data(iso, use_cache=True, language=lang)
         if not live:
             continue
-        if lang == "tagalog":
-            readings = get_tagalog_cache_entry(iso)
-            # Map tagalog entry-shaped fields if summarize already did; live payload is lectionary-shaped.
-            patch = _summarize_from_payload(live, None)
-        else:
-            readings = get_readings_cache_entry(iso)
-            patch = _summarize_from_payload(live, readings)
+        readings = get_readings_cache_entry(iso)
+        patch = _summarize_from_payload(live, readings)
         days[iso].update(patch)
         if live.get("season"):
             days[iso]["season"] = live.get("season")
         days[iso]["has_cache"] = True
         days[iso]["language"] = lang
-        if lang == "english":
-            _apply_english_ph_title(days[iso], iso)
+        _apply_english_ph_title(days[iso], iso)
 
     return {"year": year, "month": month, "language": lang, "days": days}

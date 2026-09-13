@@ -7,10 +7,11 @@
   <meta name="lf-app-version" content="{{ app_version|default('dev') }}" />
   {% if git_commit_short %}<meta name="lf-git-commit" content="{{ git_commit_short }}" />{% endif %}
   {% if built_at %}<meta name="lf-built-at" content="{{ built_at }}" />{% endif %}
-  <link rel="icon" href="/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="32x32" />
-  <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="192x192" />
-  <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png?v=5" />
+  <link rel="icon" type="image/png" href="/static/brand/favicon-32x32.png?v=6" sizes="32x32" />
+  <link rel="icon" type="image/png" href="/static/brand/favicon-48x48.png?v=6" sizes="48x48" />
+  <link rel="icon" type="image/png" href="/static/brand/favicon-192x192.png?v=6" sizes="192x192" />
+  <link rel="icon" href="/favicon.ico?v=6" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png?v=6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
@@ -37,7 +38,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260913-media-dd2" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260914-dd-float" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -1689,6 +1690,21 @@
       </div>
 
       <!-- Mass Builder rite preview / media pick — outside .page so position:fixed covers the viewport -->
+      <div class="mw-modal" id="mw-partial-gen-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-partial-gen-title">
+        <div class="mw-modal__card mw-partial-gen-card">
+          <h3 class="mw-modal__title" id="mw-partial-gen-title">Generate partially</h3>
+          <p class="mw-modal__sub">Choose which slides to build from this Mass setup. Superadmin only.</p>
+          <div class="mw-partial-gen__toolbar">
+            <button type="button" class="mw-btn mw-btn--ghost" id="mw-partial-gen-all">Select all</button>
+            <button type="button" class="mw-btn mw-btn--ghost" id="mw-partial-gen-none">Clear</button>
+          </div>
+          <div class="mw-partial-gen__list" id="mw-partial-gen-list"></div>
+          <div class="mw-modal__actions">
+            <button type="button" class="mw-btn mw-btn--generate" id="mw-partial-gen-go">Generate selected</button>
+            <button type="button" class="mw-btn mw-btn--ghost" id="mw-partial-gen-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
       <div class="mw-modal" id="flow-custom-slide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="flow-custom-slide-modal-title">
         <div class="mw-modal__card mw-custom-slide-modal__card">
           <h3 class="mw-modal__title" id="flow-custom-slide-modal-title">Add custom slide</h3>
@@ -2509,13 +2525,7 @@
                                   </div>
                                 </span>
                                 <span class="mw-option__text" data-mw-text-preview data-mw-media-key="sanctus::default" role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>
-                                <div class="mw-media-dd mw-media-dd--play">
-                                  <button type="button" class="mw-option__text mw-media-dd__btn" data-mw-media-dd-btn="play" aria-haspopup="menu" aria-expanded="false" aria-label="Play preview" title="Play preview">▶</button>
-                                  <div class="mw-media-dd__menu" hidden role="menu">
-                                    <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-audio data-mw-media-slot="sanctus::default">Play audio</button>
-                                    <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-video data-mw-media-slot="sanctus::default">Play video</button>
-                                  </div>
-                                </div>
+                                <button type="button" class="mw-option__text" data-mw-play-audio data-mw-media-slot="sanctus::default" aria-label="Play audio preview" title="Play audio preview">▶</button>
                               </div>
                               <div class="mw-option__media mass-song-media-row" data-mw-media-row="sanctus::default" data-mw-rite-media="1" data-mw-media-section="sanctus" data-mw-media-lang="default"></div>
                             </div>
@@ -2856,7 +2866,13 @@
                 <div class="mw-nav__pill mw-nav__pill--main">
                   <button type="button" class="mw-btn mw-btn--ghost" id="mw-back" data-mw-back hidden>Back</button>
                   <button type="button" class="mw-btn mw-btn--primary" id="mw-next" data-mw-next>Next step</button>
-                  <button type="button" class="mw-btn mw-btn--generate" id="mw-generate" data-mw-generate hidden>Generate Presentation</button>
+                  <div class="mw-gen-wrap" id="mw-gen-wrap">
+                    <button type="button" class="mw-btn mw-btn--generate" id="mw-generate" data-mw-generate hidden aria-haspopup="menu" aria-expanded="false" aria-controls="mw-gen-menu">Generate Presentation</button>
+                    <div class="mw-gen-menu" id="mw-gen-menu" hidden role="menu" aria-label="Generate options">
+                      <button type="button" class="mw-gen-menu__item" role="menuitem" data-mw-gen-mode="full">Full</button>
+                      <button type="button" class="mw-gen-menu__item" role="menuitem" data-mw-gen-mode="partial">Partially</button>
+                    </div>
+                  </div>
                 </div>
                 <div class="mw-nav__side mw-nav__side--right">
                   <div class="mw-nav__pill mw-nav__pill--extra" id="mw-nav-extra-pill" hidden>
@@ -2883,7 +2899,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260913-media-dd2"></script>
+      <script src="/static/js/mw-wizard.js?v=20260914-dd-float"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3056,6 +3072,11 @@
                 <header><strong>Gospel</strong><span class="cal-reading-ref" id="cal-gospel-ref">—</span></header>
                 <p class="cal-reading-excerpt" id="cal-gospel-excerpt">Select a day to load readings.</p>
                 <button type="button" class="ghost mini cal-reading-toggle" data-target="cal-gospel-excerpt" hidden>Read more</button>
+              </article>
+              <article class="cal-reading-card" data-reading="acclamation">
+                <header><strong>Gospel acclamation</strong><span class="cal-reading-ref" id="cal-acclamation-ref">—</span></header>
+                <p class="cal-reading-excerpt" id="cal-acclamation-excerpt">—</p>
+                <button type="button" class="ghost mini cal-reading-toggle" data-target="cal-acclamation-excerpt" hidden>Read more</button>
               </article>
               <article class="cal-reading-card" data-reading="psalm">
                 <header><strong>Psalm</strong><span class="cal-reading-ref" id="cal-psalm-ref">—</span></header>
@@ -4005,19 +4026,10 @@
                     <label><input type="checkbox" id="flow-show-footer" /> Show slide footer (the small bottom tag)</label>
                   </div>
                 </div>
-                <script>
-                  (function () {
-                    var KEY = "churchMediaShowFooter";
-                    var cb = document.getElementById("flow-show-footer");
-                    if (!cb) return;
-                    try {
-                      cb.checked = localStorage.getItem(KEY) === "1";
-                    } catch (_e) { /* ignore */ }
-                    cb.addEventListener("change", function () {
-                      try { localStorage.setItem(KEY, cb.checked ? "1" : "0"); } catch (_e) { /* ignore */ }
-                    });
-                  })();
-                </script>
+                <div class="actions">
+                  <button type="button" class="primary" id="btn-save-church-branding">Save settings</button>
+                </div>
+                <p class="status" id="settings-branding-status" aria-live="polite"></p>
                 <div class="field">
                   <label for="settings-celebrant-new">Mass celebrants</label>
                   <p class="muted" style="margin:0 0 10px;">Saved to the app database. Names appear in Mass Builder → Basics.</p>
@@ -4485,7 +4497,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20260913-webpptx2"></script>
+  <script src="/static/js/app.js?v=20260914-mass-lang-reload"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260906-membership-gate1"></script>

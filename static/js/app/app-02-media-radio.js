@@ -3405,7 +3405,6 @@
         "flow-sponsorship-contact", "flow-merienda-location",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster",
-        "flow-include-church-logo", "flow-include-church-name", "flow-show-footer",
         "flow-include-social-exports", "flow-deck-theme", "flow-divider-style",
       ];
     }
@@ -3490,6 +3489,7 @@
       el.dispatchEvent(new Event("change", { bubbles: true }));
       el.dispatchEvent(new Event("input", { bubbles: true }));
       if (id === "mass-date" || id === "flow-collection-date") syncMassDatePickerByInputId(id);
+      if (id === "flow-mass-language") persistMassLanguage(el.value);
       if (el.tagName === "SELECT" && typeof refreshVerbumSelect === "function") refreshVerbumSelect(el);
     }
 
@@ -3759,12 +3759,14 @@
       const savedGospelCustom = f["flow-gospel-custom"] || "";
       const savedPsalmRefrain = f["flow-psalm-refrain"];
       const savedGospelSentence = f["flow-gospel-sentence"];
+      if (f["flow-mass-language"]) setMassBuilderFieldValue("flow-mass-language", f["flow-mass-language"]);
+      else applyPersistedMassLanguage();
       if (f["mass-date"]) setMassBuilderFieldValue("mass-date", f["mass-date"]);
       ensureMassBuilderDefaultDate();
       if (typeof setCelebrantPickerValue === "function") setCelebrantPickerValue(f.celebrant || "");
       else if ($("celebrant")) $("celebrant").value = f.celebrant || "";
       massBuilderDraftFieldIds().forEach((id) => {
-        if (id === "mass-date" || id === "flow-psalm-custom" || id === "flow-gospel-custom" ||
+        if (id === "mass-date" || id === "flow-mass-language" || id === "flow-psalm-custom" || id === "flow-gospel-custom" ||
             id === "flow-psalm-refrain" || id === "flow-gospel-sentence") return;
         if (Object.prototype.hasOwnProperty.call(f, id)) setMassBuilderFieldValue(id, f[id]);
       });
@@ -3864,6 +3866,7 @@
       if (typeof renderMassSummarySidebar === "function") renderMassSummarySidebar();
       document.dispatchEvent(new CustomEvent("mw:preview"));
       } finally {
+        if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
         massDraftRestoring = false;
       }
     }

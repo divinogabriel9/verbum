@@ -6,6 +6,49 @@
 /* ==== app-01-core.js ==== */
     var $ = (id) => document.getElementById(id);
 
+    var CHURCH_BRANDING_STORAGE = {
+      logo: "churchMediaIncludeChurchLogo",
+      name: "churchMediaIncludeChurchName",
+      footer: "churchMediaShowFooter",
+    };
+
+    function hasSavedChurchBrandingSettings() {
+      try {
+        return localStorage.getItem(CHURCH_BRANDING_STORAGE.logo) != null
+          || localStorage.getItem(CHURCH_BRANDING_STORAGE.name) != null
+          || localStorage.getItem(CHURCH_BRANDING_STORAGE.footer) != null;
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function applySavedChurchBrandingSettings() {
+      try {
+        const logo = localStorage.getItem(CHURCH_BRANDING_STORAGE.logo);
+        const name = localStorage.getItem(CHURCH_BRANDING_STORAGE.name);
+        const footer = localStorage.getItem(CHURCH_BRANDING_STORAGE.footer);
+        const logoEl = $("flow-include-church-logo");
+        const nameEl = $("flow-include-church-name");
+        const footerEl = $("flow-show-footer");
+        if (logoEl && logo != null) logoEl.checked = logo === "1";
+        if (nameEl && name != null) nameEl.checked = name === "1";
+        if (footerEl && footer != null) footerEl.checked = footer === "1";
+      } catch (_e) { /* ignore */ }
+    }
+
+    function saveChurchBrandingSettingsFromUi() {
+      const logoEl = $("flow-include-church-logo");
+      const nameEl = $("flow-include-church-name");
+      const footerEl = $("flow-show-footer");
+      try {
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.logo, logoEl && logoEl.checked ? "1" : "0");
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.name, nameEl && nameEl.checked ? "1" : "0");
+        localStorage.setItem(CHURCH_BRANDING_STORAGE.footer, footerEl && footerEl.checked ? "1" : "0");
+      } catch (_e) {
+        throw new Error("Could not save settings in this browser.");
+      }
+    }
+
     function syncAppHeaderOffset() {
       const header = $("app-header");
       if (!header) return;
@@ -648,13 +691,47 @@
     var previewInflight = new Map();
     var readingsInflight = new Map();
     var READINGS_LS_PREFIX = "verbumReadings:";
+    var MASS_LANGUAGE_LS_KEY = "verbumMassLanguage";
     var READINGS_POLL_INTERVAL_MS = 4000;
     var READINGS_POLL_MAX_ATTEMPTS = 18;
     var readingsPollers = new Map();
+    var flowLoadSeq = 0;
+
+    function persistMassLanguage(language) {
+      const lang = language === "tagalog" ? "tagalog" : "english";
+      try { localStorage.setItem(MASS_LANGUAGE_LS_KEY, lang); } catch (_e) { /* ignore */ }
+      return lang;
+    }
+
+    function readPersistedMassLanguage() {
+      try {
+        const raw = String(localStorage.getItem(MASS_LANGUAGE_LS_KEY) || "").trim().toLowerCase();
+        if (raw === "tagalog" || raw === "filipino" || raw === "tl") return "tagalog";
+        if (raw === "english") return "english";
+      } catch (_e) { /* ignore */ }
+      return "";
+    }
+
+    function applyPersistedMassLanguage() {
+      const sel = $("flow-mass-language");
+      const lang = readPersistedMassLanguage();
+      if (!sel || !lang || sel.value === lang) return lang || (sel && sel.value === "tagalog" ? "tagalog" : "english");
+      sel.value = lang;
+      if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(sel);
+      return lang;
+    }
 
     function currentMassLanguage() {
       const sel = $("flow-mass-language");
       return sel && sel.value === "tagalog" ? "tagalog" : "english";
+    }
+
+    function flowApplyIsCurrent(date, language) {
+      const d = String(date || "").trim();
+      const lang = language === "tagalog" ? "tagalog" : "english";
+      const dateEl = $("mass-date");
+      const liveDate = dateEl ? String(dateEl.value || "").trim() : "";
+      return !!d && liveDate === d && currentMassLanguage() === lang;
     }
 
     function currentCalendarLanguage() {
@@ -693,6 +770,47 @@
       const psalm = String(data.psalm_text || data.psalm_verses || "").trim();
       return !!(frRef && frBody && gospel && (psalmRefrains.length || psalm));
     }
+
+    function readingsLanguageOf(data) {
+      if (!data) return "";
+      const raw = String(data.readings_language || "").trim().toLowerCase();
+      if (raw === "tagalog" || raw === "filipino") return "tagalog";
+      if (raw === "english") return "english";
+      const blob = [
+        data.gospel_reference,
+        data.first_reading_reference,
+        data.psalm_reference,
+        data.title,
+      ].join(" ").toLowerCase();
+      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezekiel|filipos)\b/.test(blob)) {
+        return "tagalog";
+      }
+      if (/\b(matthew|john|luke|mark|psalm)\b/.test(blob)) return "english";
+      return "";
+    }
+
+    function payloadMatchesLanguage(data, language) {
+      if (!readingsPayloadComplete(data)) return false;
+      const got = readingsLanguageOf(data);
+      return !!got && got === language;
+    }
+
+    function dropMismatchedReadingsCache(date, language, data) {
+      if (!data || payloadMatchesLanguage(data, language)) return false;
+      const d = String(date || "").trim();
+      previewCache.delete(previewCacheKey(d, false, language));
+      previewCache.delete(previewCacheKey(d, true, language));
+      try {
+        localStorage.removeItem(READINGS_LS_PREFIX + language + ":" + d);
+      } catch (_e) { /* ignore */ }
+      return true;
+    }
+
+    window.persistMassLanguage = persistMassLanguage;
+    window.applyPersistedMassLanguage = applyPersistedMassLanguage;
+    window.currentMassLanguage = currentMassLanguage;
+    window.readingsLanguageOf = readingsLanguageOf;
+    window.payloadMatchesLanguage = payloadMatchesLanguage;
 
     function stopReadingsPoll(date, language) {
       const d = String(date || "").trim();
@@ -800,6 +918,58 @@
       } catch (_e) { /* quota */ }
     }
 
+    function cachedReadingsForLanguage(date, language) {
+      const d = String(date || "").trim();
+      const lang = language || currentMassLanguage();
+      if (!d) return null;
+      const candidates = [
+        previewCache.get(previewCacheKey(d, false, lang)),
+        previewCache.get(previewCacheKey(d, true, lang)),
+        readStoredReadings(d, lang),
+      ];
+      for (let i = 0; i < candidates.length; i += 1) {
+        const hit = candidates[i];
+        if (!hit) continue;
+        if (dropMismatchedReadingsCache(d, lang, hit)) continue;
+        if (payloadMatchesLanguage(hit, lang)) {
+          previewCache.set(previewCacheKey(d, true, lang), hit);
+          previewCache.set(previewCacheKey(d, false, lang), hit);
+          return hit;
+        }
+      }
+      return null;
+    }
+
+    function prefetchAlternateMassLanguage(date) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      const other = currentMassLanguage() === "tagalog" ? "english" : "tagalog";
+      if (cachedReadingsForLanguage(d, other)) return;
+      fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
+        .then((data) => {
+          if (data && readingsPayloadComplete(data)) writeStoredReadings(d, data, other);
+        })
+        .catch(function () { /* warm cache only */ });
+    }
+
+    function invalidateClientReadings(date) {
+      const d = String(date || "").trim();
+      if (!d) return;
+      ["english", "tagalog"].forEach((lang) => {
+        previewCache.delete(previewCacheKey(d, false, lang));
+        previewCache.delete(previewCacheKey(d, true, lang));
+        stopReadingsPoll(d, lang);
+        try {
+          localStorage.removeItem(READINGS_LS_PREFIX + lang + ":" + d);
+        } catch (_e) { /* ignore */ }
+      });
+      [readingsInflight, previewInflight].forEach((map) => {
+        Array.from(map.keys()).forEach((key) => {
+          if (String(key).indexOf(d) !== -1) map.delete(key);
+        });
+      });
+    }
+
     async function fetchReadings(date, opts) {
       const d = String(date || "").trim();
       const forceRefresh = !!(opts && opts.forceRefresh);
@@ -811,22 +981,25 @@
       const readKey = previewCacheKey(d, true, lang);
       if (!forceRefresh && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
-        if (readingsPayloadComplete(cached)) {
+        if (payloadMatchesLanguage(cached, lang)) {
           previewCache.set(readKey, cached);
           return cached;
         }
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh && previewCache.has(readKey)) {
         const cached = previewCache.get(readKey);
-        if (readingsPayloadComplete(cached)) return cached;
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh) {
         const stored = readStoredReadings(d, lang);
-        if (stored && readingsPayloadComplete(stored)) {
+        if (payloadMatchesLanguage(stored, lang)) {
           previewCache.set(readKey, stored);
           previewCache.set(fullKey, stored);
           return stored;
         }
+        if (stored) dropMismatchedReadingsCache(d, lang, stored);
       }
       const inflightKey = (forceRefresh ? "refresh:" : "") + lang + ":" + d;
       if (readingsInflight.has(inflightKey)) return readingsInflight.get(inflightKey);
@@ -854,15 +1027,18 @@
       const readKey = previewCacheKey(d, true, lang);
       if (!forceRefresh && !readingsOnly && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
-        if (readingsPayloadComplete(cached)) return previewCache.get(fullKey);
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh && readingsOnly && previewCache.has(readKey)) {
         const cached = previewCache.get(readKey);
-        if (readingsPayloadComplete(cached)) return cached;
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       if (!forceRefresh && readingsOnly && previewCache.has(fullKey)) {
         const cached = previewCache.get(fullKey);
-        if (readingsPayloadComplete(cached)) return cached;
+        if (payloadMatchesLanguage(cached, lang)) return cached;
+        dropMismatchedReadingsCache(d, lang, cached);
       }
       const key = (forceRefresh ? "refresh:" : "") + (readingsOnly ? readKey : fullKey);
       if (previewInflight.has(key)) return previewInflight.get(key);
@@ -873,8 +1049,14 @@
         mass_language: lang,
       })
         .then((data) => {
-          previewCache.set(readingsOnly ? readKey : fullKey, data);
-          if (!readingsOnly) previewCache.set(fullKey, data);
+          if (data && data.ok !== false) {
+            data.readings_language = readingsLanguageOf(data) || lang;
+          }
+          if (payloadMatchesLanguage(data, lang)) {
+            previewCache.set(readingsOnly ? readKey : fullKey, data);
+            if (!readingsOnly) previewCache.set(fullKey, data);
+            if (readingsPayloadComplete(data)) writeStoredReadings(d, data, lang);
+          }
           previewInflight.delete(key);
           return data;
         })
@@ -1653,8 +1835,11 @@
     var massRiteVideoPickPending = null;
 
     function massRiteOptionMediaInnerHtml(mediaKey, section, lang) {
+      const key = String(mediaKey || "").trim();
       const sec = String(section || "").trim().toLowerCase();
       const opt = String(lang || "").trim().toLowerCase();
+      const video = key ? getMassSectionMedia("video", key) : null;
+      const videoOn = !!video;
       const activeLang = String(
         (window.massRiteVideoLang && window.massRiteVideoLang[sec]) || ""
       ).trim().toLowerCase();
@@ -1664,20 +1849,28 @@
         activeLang === opt
       );
       return (
-        "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this rite\" " +
-          "data-mass-rite-slide-mode=\"" + escapeHtml(sec) + "\">" +
-          "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
-            "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
-            "data-mass-rite-slide-mode-val=\"lyrics\" " +
-            "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
-            "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
-            "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
-          "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
-            "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
-            "data-mass-rite-slide-mode-val=\"video\" " +
-            "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
-            "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
-            "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+        "<div class=\"mass-song-slide-mode-row\">" +
+          "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this rite\" " +
+            "data-mass-rite-slide-mode=\"" + escapeHtml(sec) + "\">" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
+              "data-mass-rite-slide-mode-val=\"lyrics\" " +
+              "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
+              "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
+              "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
+            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
+              "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
+              "data-mass-rite-slide-mode-val=\"video\" " +
+              "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
+              "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
+              "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+          "</div>" +
+          "<button type=\"button\" class=\"mw-option__text mw-rite-video-play" + (videoOn ? " is-ready" : "") + "\" " +
+            "data-mw-play-video data-mw-media-slot=\"" + escapeHtml(key) + "\" " +
+            (useVideo ? "" : "hidden ") +
+            (videoOn ? "" : "disabled ") +
+            "aria-label=\"Play video preview\" " +
+            "title=\"" + escapeHtml(videoOn ? ("Play " + (video.display_name || video.basename)) : "Link video from the option title first") + "\">▶</button>" +
         "</div>"
       );
     }
@@ -2090,34 +2283,16 @@
         play.disabled = !has;
         play.classList.toggle("is-ready", has);
       });
-      document.querySelectorAll(".mw-media-dd--play").forEach((dd) => {
-        const audioBtn = dd.querySelector("[data-mw-play-audio]");
-        const videoBtn = dd.querySelector("[data-mw-play-video]");
-        const trigger = dd.querySelector("[data-mw-media-dd-btn=\"play\"]");
-        const audioReady = !!(audioBtn && audioBtn.classList.contains("is-ready"));
-        const videoReady = !!(videoBtn && videoBtn.classList.contains("is-ready"));
-        const playing = !!(audioBtn && audioBtn.classList.contains("is-playing"));
-        if (trigger) {
-          trigger.classList.toggle("is-ready", audioReady || videoReady);
-          trigger.classList.toggle("is-playing", playing);
-          trigger.textContent = playing ? "❚❚" : "▶";
-          trigger.title = playing ? "Stop preview" : "Play preview";
-        }
-        if (audioBtn) {
-          const key = audioBtn.getAttribute("data-mw-media-slot") || "";
-          const item = key ? getMassSectionMedia("audio", key) : null;
-          audioBtn.textContent = playing ? "Stop audio" : "Play audio";
-          audioBtn.title = item
-            ? (playing ? "Stop audio preview" : ("Play " + (item.display_name || item.basename)))
-            : "Link audio from the option title first";
-        }
-        if (videoBtn) {
-          const key = videoBtn.getAttribute("data-mw-media-slot") || "";
-          const item = key ? getMassSectionMedia("video", key) : null;
-          videoBtn.title = item
-            ? ("Play " + (item.display_name || item.basename))
-            : "Link video from the option title first";
-        }
+      document.querySelectorAll(".mw-option__row > [data-mw-play-audio]").forEach((play) => {
+        const key = play.getAttribute("data-mw-media-slot") || "";
+        const item = key ? getMassSectionMedia("audio", key) : null;
+        const playing = !!(key && massSectionAudioPlayingSlot === key);
+        play.classList.toggle("is-ready", !!item);
+        play.classList.toggle("is-playing", playing);
+        play.textContent = playing ? "❚❚" : "▶";
+        play.title = playing
+          ? "Stop audio preview"
+          : (item ? ("Play " + (item.display_name || item.basename)) : "Link audio from the option title first");
       });
       document.querySelectorAll(".mw-media-dd--link").forEach((dd) => {
         const label = dd.querySelector(".mw-option__label");
@@ -8032,7 +8207,6 @@
         "flow-sponsorship-contact", "flow-merienda-location",
         "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
         "flow-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster",
-        "flow-include-church-logo", "flow-include-church-name", "flow-show-footer",
         "flow-include-social-exports", "flow-deck-theme", "flow-divider-style",
       ];
     }
@@ -8117,6 +8291,7 @@
       el.dispatchEvent(new Event("change", { bubbles: true }));
       el.dispatchEvent(new Event("input", { bubbles: true }));
       if (id === "mass-date" || id === "flow-collection-date") syncMassDatePickerByInputId(id);
+      if (id === "flow-mass-language") persistMassLanguage(el.value);
       if (el.tagName === "SELECT" && typeof refreshVerbumSelect === "function") refreshVerbumSelect(el);
     }
 
@@ -8386,12 +8561,14 @@
       const savedGospelCustom = f["flow-gospel-custom"] || "";
       const savedPsalmRefrain = f["flow-psalm-refrain"];
       const savedGospelSentence = f["flow-gospel-sentence"];
+      if (f["flow-mass-language"]) setMassBuilderFieldValue("flow-mass-language", f["flow-mass-language"]);
+      else applyPersistedMassLanguage();
       if (f["mass-date"]) setMassBuilderFieldValue("mass-date", f["mass-date"]);
       ensureMassBuilderDefaultDate();
       if (typeof setCelebrantPickerValue === "function") setCelebrantPickerValue(f.celebrant || "");
       else if ($("celebrant")) $("celebrant").value = f.celebrant || "";
       massBuilderDraftFieldIds().forEach((id) => {
-        if (id === "mass-date" || id === "flow-psalm-custom" || id === "flow-gospel-custom" ||
+        if (id === "mass-date" || id === "flow-mass-language" || id === "flow-psalm-custom" || id === "flow-gospel-custom" ||
             id === "flow-psalm-refrain" || id === "flow-gospel-sentence") return;
         if (Object.prototype.hasOwnProperty.call(f, id)) setMassBuilderFieldValue(id, f[id]);
       });
@@ -8491,6 +8668,7 @@
       if (typeof renderMassSummarySidebar === "function") renderMassSummarySidebar();
       document.dispatchEvent(new CustomEvent("mw:preview"));
       } finally {
+        if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
         massDraftRestoring = false;
       }
     }
@@ -17198,6 +17376,7 @@
 
     function syncChurchFieldsToSettings() {
       renderSettingsCelebrantList();
+      if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
     }
 
     function syncChurchFieldsFromSettings() {
@@ -22278,7 +22457,10 @@
     function calExtractPsalmRefrain(psalmText) {
       let line = (psalmText || "").trim().split("\n\n")[0].split("\n")[0].trim();
       if (!line) return "";
-      line = line.replace(/^R\.?\s*/i, "").trim();
+      line = line.replace(/^(R\.\s+)([a-z])/, function (_m, prefix, ch) { return prefix + ch.toUpperCase(); });
+      line = line.replace(/^R\.\s*/i, "").trim();
+      if (/^emember\b/i.test(line)) line = "Remember" + line.slice(7);
+      else if (/^ejoice\b/i.test(line)) line = "Rejoice" + line.slice(6);
       const m = line.match(/^(.+?[.!?])/);
       if (m) line = m[1].trim();
       return line;
@@ -25409,29 +25591,48 @@
       if (gospelEl && $("home-mass-stat-gospel")) $("home-mass-stat-gospel").textContent = gospelEl.textContent || "—";
     }
 
-    async function reloadFlowReadingsForLanguage(date) {
+    async function reloadFlowReadingsForLanguage(date, language) {
       const d = String(date || ($("mass-date") && $("mass-date").value) || "").trim();
       if (!d) return;
+      const lang = language === "tagalog" || language === "english"
+        ? language
+        : currentMassLanguage();
+      const apply = (data) => {
+        if (!flowApplyIsCurrent(d, lang)) return;
+        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) return;
+        applyFlowReadingsData(data, lang);
+        flowPreviewData = Object.assign({}, flowPreviewData || {}, data, {
+          __previewDate: d,
+          readings_language: lang,
+        });
+        window.__mwPreviewData = flowPreviewData;
+        try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
+      };
+      const cached = typeof cachedReadingsForLanguage === "function"
+        ? cachedReadingsForLanguage(d, lang)
+        : null;
+      if (cached) {
+        apply(cached);
+        return;
+      }
       try {
         try { document.dispatchEvent(new CustomEvent("mw:preview-loading")); } catch (_mwLoad) { /* ignore */ }
-        const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: true });
+        const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: lang });
         if (data && data.ok !== false) {
-          applyFlowReadingsData(data);
-          flowPreviewData = Object.assign({}, flowPreviewData || {}, data, { __previewDate: d });
-          window.__mwPreviewData = flowPreviewData;
-          try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
-          if (typeof fillAside === "function") {
-            /* no-op if wizard aside unavailable outside mw scope */
+          data.readings_language = readingsLanguageOf(data) || lang;
+          if (readingsPayloadComplete(data) && payloadMatchesLanguage(data, lang)) {
+            writeStoredReadings(d, data, lang);
           }
+          apply(data);
         }
       } catch (_err) {
-        notify("Could not load " + currentMassLanguage() + " readings for this date.", "error");
+        notify("Could not load " + lang + " readings for this date.", "error");
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
       }
     }
     window.reloadFlowReadingsForLanguage = reloadFlowReadingsForLanguage;
 
-    function applyFlowReadingsData(data) {
+    function applyFlowReadingsData(data, language) {
       if ($("flow-reading1-ref")) $("flow-reading1-ref").textContent = data.first_reading_reference || "—";
       if ($("flow-reading1-body")) $("flow-reading1-body").textContent = data.first_reading_excerpt || "—";
       if ($("flow-reading2-ref")) $("flow-reading2-ref").textContent = data.second_reading_reference || "—";
@@ -25454,8 +25655,10 @@
       }
       updateFlowParagraphPreviews();
       const activeDate = $("mass-date") && $("mass-date").value;
+      const lang = language || readingsLanguageOf(data) || currentMassLanguage();
       if (flowPreviewData && flowPreviewData.__previewDate === activeDate) {
         Object.assign(flowPreviewData, {
+          title: data.title,
           first_reading_reference: data.first_reading_reference,
           first_reading_excerpt: data.first_reading_excerpt,
           second_reading_reference: data.second_reading_reference,
@@ -25463,22 +25666,25 @@
           gospel_reference: data.gospel_reference,
           gospel_text: data.gospel_text,
           gospel_quote: data.gospel_quote,
+          gospel_slide_quote: data.gospel_slide_quote,
+          sentences: data.sentences,
           psalm_text: data.psalm_text,
           psalm_verses: data.psalm_verses,
           psalm_reference: data.psalm_reference,
           psalm_refrains: data.psalm_refrains,
           readings_complete: data.readings_complete,
+          readings_language: lang,
         });
         window.__mwPreviewData = flowPreviewData;
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
       }
       try {
         const homeSun = upcomingSundayISO();
-        if (activeDate && activeDate === homeSun) {
-          window.__homePreview = Object.assign({}, data, { __previewDate: activeDate });
-          previewCache.set(previewCacheKey(activeDate, false), Object.assign({}, (previewCache.get(previewCacheKey(activeDate, false)) || {}), data));
-          previewCache.set(previewCacheKey(activeDate, true), data);
-          if (readingsPayloadComplete(data)) writeStoredReadings(activeDate, data);
+        if (activeDate && activeDate === homeSun && payloadMatchesLanguage(data, lang)) {
+          window.__homePreview = Object.assign({}, data, { __previewDate: activeDate, readings_language: lang });
+          previewCache.set(previewCacheKey(activeDate, false, lang), Object.assign({}, data, { readings_language: lang }));
+          previewCache.set(previewCacheKey(activeDate, true, lang), Object.assign({}, data, { readings_language: lang }));
+          writeStoredReadings(activeDate, Object.assign({}, data, { readings_language: lang }), lang);
           applyHomePreviewData(Object.assign({}, (window.__homePreview || {}), data, { __previewDate: activeDate }), activeDate);
         }
       } catch (_homeSyncErr) { /* home card optional */ }
@@ -25784,15 +25990,17 @@
         });
         applied = true;
       }
-      if (typeof suggestions.include_church_logo === "boolean") {
+      const brandingLocked = typeof hasSavedChurchBrandingSettings === "function"
+        && hasSavedChurchBrandingSettings();
+      if (!brandingLocked && typeof suggestions.include_church_logo === "boolean") {
         setMassBuilderFieldValue("flow-include-church-logo", suggestions.include_church_logo);
         applied = true;
       }
-      if (typeof suggestions.include_church_name === "boolean") {
+      if (!brandingLocked && typeof suggestions.include_church_name === "boolean") {
         setMassBuilderFieldValue("flow-include-church-name", suggestions.include_church_name);
         applied = true;
       }
-      if (typeof suggestions.include_footer === "boolean") {
+      if (!brandingLocked && typeof suggestions.include_footer === "boolean") {
         setMassBuilderFieldValue("flow-show-footer", suggestions.include_footer);
         applied = true;
       }
@@ -25853,6 +26061,7 @@
           }
         }
       }
+      if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
       return applied;
     }
 
@@ -25969,8 +26178,11 @@
     }
     wireMassHabitsBanner();
 
-    async function loadFlowData(auto = false) {
+    async function loadFlowData(auto = false, opts) {
       const date = $("mass-date").value;
+      const forceRefresh = !!(opts && opts.forceRefresh);
+      const lang = resolveReadingsLanguage(opts);
+      const seq = ++flowLoadSeq;
       if (!date) {
         if (!auto) notify("Choose a Mass date first.", "error");
         return;
@@ -25998,11 +26210,14 @@
       try {
         if (!auto) advanceMassGenStep(2, { message: "Retrieving official readings…" });
         const [data] = await Promise.all([
-          fetchPreview(date, { readingsOnly: false }),
+          fetchPreview(date, { readingsOnly: false, forceRefresh, language: lang }),
           loadSongCatalog(),
         ]);
+        if (seq !== flowLoadSeq || !flowApplyIsCurrent(date, lang)) return;
+        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) return;
         if (!auto) advanceMassGenStep(3, { message: "Preparing the Liturgy of the Word…" });
-        flowPreviewData = Object.assign({}, data, { __previewDate: date });
+        if (data && data.ok !== false) data.readings_language = readingsLanguageOf(data) || lang;
+        flowPreviewData = Object.assign({}, data, { __previewDate: date, readings_language: lang });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         applyLiturgicalSeasonTheme(data.season || "", data.liturgical_color || null);
         renderThemeGrid();
@@ -26059,29 +26274,32 @@
         updatePosterLivePreview();
         window.__mwPreviewData = flowPreviewData;
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
+        if (typeof prefetchAlternateMassLanguage === "function") {
+          prefetchAlternateMassLanguage(date);
+        }
         // Keep the home Sunday readings card on the same preview payload.
         try {
           const homeSun = upcomingSundayISO();
-          if (date === homeSun) {
-            window.__homePreview = Object.assign({}, data, { __previewDate: date });
-            previewCache.set(previewCacheKey(date, false), data);
-            previewCache.set(previewCacheKey(date, true), data);
-            if (readingsPayloadComplete(data)) writeStoredReadings(date, data);
+          if (date === homeSun && payloadMatchesLanguage(data, lang)) {
+            window.__homePreview = Object.assign({}, data, { __previewDate: date, readings_language: lang });
+            previewCache.set(previewCacheKey(date, false, lang), data);
+            previewCache.set(previewCacheKey(date, true, lang), data);
+            if (readingsPayloadComplete(data)) writeStoredReadings(date, data, lang);
             applyHomePreviewData(data, date);
           }
         } catch (_homeSyncErr) { /* home card optional */ }
         if (!readingsPayloadComplete(data)) {
           startReadingsPoll(date, (fresh) => {
-            if ($("mass-date").value !== date) return;
-            applyFlowReadingsData(fresh);
+            if (!flowApplyIsCurrent(date, lang)) return;
+            applyFlowReadingsData(fresh, lang);
             try {
               const homeSun = upcomingSundayISO();
-              if (date === homeSun) {
-                window.__homePreview = Object.assign({}, fresh, { __previewDate: date });
+              if (date === homeSun && payloadMatchesLanguage(fresh, lang)) {
+                window.__homePreview = Object.assign({}, fresh, { __previewDate: date, readings_language: lang });
                 applyHomePreviewData(fresh, date);
               }
             } catch (_e) { /* ignore */ }
-          });
+          }, lang);
         }
         if (!auto) notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
       } catch (error) {
@@ -28425,6 +28643,13 @@
         body.include_church_name = nameCb ? nameCb.checked : false;
         const showFooterCb = $("flow-show-footer");
         body.include_footer = showFooterCb ? !!showFooterCb.checked : false;
+        const pendingKinds = (window.MassWizard && typeof window.MassWizard.consumeSlideKinds === "function")
+          ? window.MassWizard.consumeSlideKinds()
+          : (o.slide_kinds || null);
+        if (pendingKinds && pendingKinds.length) {
+          body.slide_kinds = pendingKinds;
+          body.include_ai_mass_poster = false;
+        }
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -28455,6 +28680,7 @@
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
+          slide_kinds: body.slide_kinds || null,
           our_father_choice: body.our_father_choice || "english",
           kyrie_choice: body.kyrie_choice || "english",
           kyrie_tagalog_slide: body.kyrie_tagalog_slide || 1,
@@ -28639,6 +28865,15 @@
     var calendarMonthLoading = false;
     var calendarMonthKey = "";
 
+    function calAcclamationLabel(text) {
+      const t = String(text || "").toLowerCase();
+      if (!t) return "";
+      if (t.indexOf("aleluya") !== -1) return "Aleluya";
+      if (t.indexOf("alleluia") !== -1) return "Alleluia";
+      if (t.indexOf("praise to you") !== -1 || t.indexOf("glory and praise") !== -1) return "Praise";
+      return "";
+    }
+
     function updateCalReadingCard(refEl, excerptEl, toggleEl, ref, body) {
       const text = (body || "").trim();
       const hasContent = !!(text || (ref || "").trim());
@@ -28713,6 +28948,7 @@
       const lang = currentCalendarLanguage();
       const key = y + "-" + m + "-" + lang;
       calendarMonthLoading = true;
+      if (typeof syncCalAdminFetchSourceLabels === "function") syncCalAdminFetchSourceLabels();
       syncCalendarAdminVisibility();
       renderCalendarGrid();
       const status = $("cal-month-status");
@@ -28771,7 +29007,8 @@
       if (title) title.textContent = "Readings — " + (detail.date || "");
       if (subtitle) {
         const h = health.status || "unknown";
-        subtitle.textContent = "Global cache · " + h.charAt(0).toUpperCase() + h.slice(1);
+        const cacheLabel = detail.language === "tagalog" ? "Tagalog cache" : "Global cache";
+        subtitle.textContent = cacheLabel + " · " + h.charAt(0).toUpperCase() + h.slice(1);
       }
       if (statusEl) {
         statusEl.textContent = detail.title
@@ -28792,6 +29029,10 @@
       setCalAdminFieldStatus("gospel", fields.gospel);
     }
 
+    function calAdminReadingsLangQuery() {
+      return "lang=" + encodeURIComponent(currentCalendarLanguage());
+    }
+
     function openCalReadingsAdminModal(iso) {
       if (!canUseCalendarReadingsAdmin()) return;
       clearCalReadingsAdminSaveAnimation();
@@ -28803,7 +29044,7 @@
         modal.classList.add("is-open");
         modal.setAttribute("aria-hidden", "false");
       }
-      fetch("/api/admin/readings-cache/" + encodeURIComponent(iso))
+      fetch("/api/admin/readings-cache/" + encodeURIComponent(iso) + "?" + calAdminReadingsLangQuery())
         .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
         .then(({ ok, data }) => {
           if (!ok) throw new Error(data.detail || "Could not load readings");
@@ -28966,7 +29207,7 @@
       }
       setCalAdminSaveOverlay("saving");
       try {
-        const res = await fetch("/api/admin/readings-cache/" + encodeURIComponent(calReadingsAdminDate), {
+        const res = await fetch("/api/admin/readings-cache/" + encodeURIComponent(calReadingsAdminDate) + "?" + calAdminReadingsLangQuery(), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -28975,16 +29216,29 @@
         if (!res.ok) throw new Error(data.detail || "Save failed");
         const savedIso = calReadingsAdminDate;
         fillCalReadingsAdminModal(data);
+        if (typeof invalidateClientReadings === "function") invalidateClientReadings(savedIso);
         const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1) + "-" + currentCalendarLanguage();
         if (calendarMonthKey === monthKey && data.health) {
+          const entry = data.entry || {};
           calendarMonthData[savedIso] = Object.assign(
             {},
             calendarMonthData[savedIso] || {},
-            { readings_health: data.health.status }
+            {
+              readings_health: data.health.status,
+              gospel_reference: entry.gospel_ref || (calendarMonthData[savedIso] || {}).gospel_reference,
+              first_reading_reference: entry.first_reading_ref || (calendarMonthData[savedIso] || {}).first_reading_reference,
+              second_reading_reference: entry.second_reading_ref || (calendarMonthData[savedIso] || {}).second_reading_reference,
+              psalm_reference: entry.psalm_ref || (calendarMonthData[savedIso] || {}).psalm_reference,
+              psalm_refrain: entry.psalm_response || (calendarMonthData[savedIso] || {}).psalm_refrain,
+            }
           );
           renderCalendarGrid();
         }
         if (calSelected === savedIso) setCalDetail(calSelected);
+        const massDate = $("mass-date") && $("mass-date").value;
+        if (massDate === savedIso && typeof loadFlowData === "function") {
+          loadFlowData(true);
+        }
         if (data.unchanged) {
           playCalReadingsAdminSaveAnimation(savedIso, {
             message: "No changes to save.",
@@ -29023,6 +29277,28 @@
       "cal-readings-admin-fetch",
     ];
 
+    function calAdminSourceName() {
+      return currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+    }
+
+    function syncCalAdminFetchSourceLabels() {
+      const source = calAdminSourceName();
+      const monthBtn = $("cal-admin-fetch-month-btn");
+      if (monthBtn) {
+        const title = "Force live-fetch every date in this month from " + source;
+        monthBtn.dataset.defaultTitle = title;
+        if (!monthBtn.classList.contains("is-running")) monthBtn.title = title;
+      }
+      const dateBtn = $("cal-readings-admin-fetch");
+      if (dateBtn) {
+        const title = "Force live-fetch from " + source;
+        dateBtn.dataset.defaultTitle = title;
+        if (!dateBtn.classList.contains("is-running")) dateBtn.title = title;
+        const idle = dateBtn.querySelector(".cal-fetch-btn__idle");
+        if (idle) idle.textContent = "Fetch from " + source;
+      }
+    }
+
     function setCalFetchButtonState(btn, running, meta) {
       if (!btn) return;
       btn.classList.toggle("is-running", !!running);
@@ -29048,6 +29324,7 @@
     }
 
     function updateCalAdminFetchButtons(meta) {
+      syncCalAdminFetchSourceLabels();
       const active = getCalAdminActiveFetchButton();
       CAL_ADMIN_FETCH_BUTTON_IDS.forEach((id) => {
         const btn = $(id);
@@ -29150,7 +29427,7 @@
       const res = await fetch("/api/admin/readings-cache/fetch-date", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: iso }),
+        body: JSON.stringify({ date: iso, language: currentCalendarLanguage() }),
         signal: calAdminFetchJob.abort.signal,
       });
       const data = await res.json().catch(() => ({}));
@@ -29160,6 +29437,7 @@
 
     function calAdminApplyFetchResult(iso, data) {
       if (!data || !data.health) return;
+      if (typeof invalidateClientReadings === "function") invalidateClientReadings(iso);
       const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1) + "-" + currentCalendarLanguage();
       if (calendarMonthKey === monthKey) {
         calendarMonthData[iso] = Object.assign({}, calendarMonthData[iso] || {}, { readings_health: data.health.status });
@@ -29167,6 +29445,10 @@
       }
       if (calReadingsAdminDate === iso) fillCalReadingsAdminModal(data);
       if (calSelected === iso) setCalDetail(iso);
+      const massDate = $("mass-date") && $("mass-date").value;
+      if (massDate === iso && typeof loadFlowData === "function") {
+        loadFlowData(true);
+      }
     }
 
     async function fetchCalAdminDateWithRetries(iso, opts) {
@@ -29222,10 +29504,13 @@
         return "Stopped after " + CAL_ADMIN_MAX_FETCH_ATTEMPTS + " attempts — still " + after + ". Edit manually or try later.";
       }
       if (fetchMeta.error) return "Fetch failed: " + fetchMeta.error;
-      if (after === "healthy" && before !== after) return "Fetched from USCCB — now healthy.";
-      if (after === "healthy") return "Fetched from USCCB — readings look complete.";
-      if (fetchMeta.fetched) return "Fetched from USCCB — still " + after + " (bot block or partial data).";
-      return "Could not fetch from USCCB. Try again later.";
+      const source = fetchMeta.source === "awit_at_papuri" || currentCalendarLanguage() === "tagalog"
+        ? "Awit at Papuri"
+        : "USCCB";
+      if (after === "healthy" && before !== after) return "Fetched from " + source + " — now healthy.";
+      if (after === "healthy") return "Fetched from " + source + " — readings look complete.";
+      if (fetchMeta.fetched) return "Fetched from " + source + " — still " + after + " (bot block or partial data).";
+      return "Could not fetch from " + source + ". Try again later.";
     }
 
     async function fetchCalReadingsAdminDate(iso, opts) {
@@ -29325,6 +29610,7 @@
         $("cal-detail-color").textContent = (snap.liturgical_color && snap.liturgical_color.color_name) || "—";
       }
       updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), snap.gospel_reference, snap.gospel_quote_short || "");
+      updateCalReadingCard($("cal-acclamation-ref"), $("cal-acclamation-excerpt"), document.querySelector("[data-target=\"cal-acclamation-excerpt\"]"), calAcclamationLabel(snap.gospel_acclamation), snap.gospel_acclamation || "");
       updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), snap.psalm_reference, snap.psalm_refrain ? "R. " + snap.psalm_refrain : "");
       updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), snap.first_reading_reference, "");
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), snap.second_reading_reference, "");
@@ -29354,9 +29640,11 @@
         $("cal-detail-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
       }
       const gospelBody = (data.gospel_text || data.gospel_quote || "").trim();
+      const acclamation = (data.gospel_acclamation || snap.gospel_acclamation || "").trim();
       const psalmBody = calExtractPsalmRefrain(data.psalm_text || "") || calExtractPsalmRefrain(snap.psalm_refrain || "");
       const psalmRef = data.psalm_reference || snap.psalm_reference || "";
       updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), data.gospel_reference, gospelBody);
+      updateCalReadingCard($("cal-acclamation-ref"), $("cal-acclamation-excerpt"), document.querySelector("[data-target=\"cal-acclamation-excerpt\"]"), calAcclamationLabel(acclamation), acclamation);
       updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), psalmRef, psalmBody ? "R. " + psalmBody : (data.psalm_text || "").trim());
       updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), data.first_reading_reference, data.first_reading_excerpt || "");
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), data.second_reading_reference, data.second_reading_excerpt || "");
@@ -32207,7 +32495,7 @@
     initHymnSectionLabelsToggle();
     initCollectionCurrencyUi();
     $("mass-date").addEventListener("change", () => {
-      loadFlowData(true);
+      if (!massDraftRestoring) loadFlowData(true);
       renderMassSummarySidebar();
     });
     $("btn-generate-flow").addEventListener("click", async () => {
@@ -32449,6 +32737,22 @@
       }
     });
 
+    $("btn-save-church-branding") && $("btn-save-church-branding").addEventListener("click", () => {
+      const statusEl = $("settings-branding-status") || $("settings-church-status");
+      try {
+        saveChurchBrandingSettingsFromUi();
+        if (statusEl) {
+          statusEl.textContent = "Saved poster branding and developer options.";
+          statusEl.className = "status ok";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = err.message || "Save failed";
+          statusEl.className = "status error";
+        }
+      }
+    });
+
     $("btn-save-community-api").addEventListener("click", async () => {
       if (!churchMembershipState.can_edit_church_profile) {
         $("settings-church-status").textContent = "Submit your parish name and wait for superadmin approval first.";
@@ -32460,6 +32764,7 @@
         const saved = await postJSON("/api/community/profile", {
           celebrant_names: celebrantNamesCache,
         });
+        if (typeof saveChurchBrandingSettingsFromUi === "function") saveChurchBrandingSettingsFromUi();
         applyCommunityPayload(saved);
         $("settings-church-status").textContent = "Saved church profile to database.";
         $("settings-church-status").className = "status ok";
@@ -33287,7 +33592,8 @@
 
     bindCalFetchToggleButton($("cal-admin-fetch-missing-btn"), () => fetchCalendarMonthReadings("missing"));
     bindCalFetchToggleButton($("cal-admin-fetch-month-btn"), () => {
-      if (!confirm("Force-fetch all " + calendarCursor.toLocaleString(undefined, { month: "long" }) + " dates from USCCB? Each date tries up to 3 times. Click the button again to stop.")) return;
+      const source = currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+      if (!confirm("Force-fetch all " + calendarCursor.toLocaleString(undefined, { month: "long" }) + " dates from " + source + "? Each date tries up to 3 times. Click the button again to stop.")) return;
       fetchCalendarMonthReadings("all");
     });
     bindCalFetchToggleButton($("cal-readings-admin-fetch"), () => {
@@ -33311,6 +33617,7 @@
       }
       // Keep Mass language independent of calendar language toggle.
       showRoute("/mass/builder");
+      if (typeof invalidateClientReadings === "function") invalidateClientReadings(calSelected);
       loadFlowData(true);
     });
     $("btn-cal-generate").addEventListener("click", () => {
@@ -33320,6 +33627,7 @@
       }
       // Keep Mass language independent of calendar language toggle.
       showRoute("/mass/builder");
+      if (typeof invalidateClientReadings === "function") invalidateClientReadings(calSelected);
       loadFlowData(false).then(() => $("btn-generate-flow").click());
     });
 
@@ -33330,6 +33638,8 @@
       if ($("poster-celebrant")) $("poster-celebrant").value = getMassCelebrantLine();
     });
 
+    applyPersistedMassLanguage();
+    if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
     ensureMassBuilderDefaultDate({ force: true });
     if ($("poster-mass-date")) $("poster-mass-date").value = $("mass-date").value;
     ensureCollectionDefaultDate({ force: true });

@@ -104,6 +104,7 @@ class ReadingsScanMonthBody(BaseModel):
 
 class ReadingsFetchDateBody(BaseModel):
     date: str = Field(..., min_length=10, max_length=10)
+    language: str = Field("english", max_length=16)
 
 
 class CreateInviteBody(BaseModel):
@@ -707,26 +708,28 @@ def register_admin_routes(app) -> None:
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         try:
-            return fetch_readings_admin_date(body.date)
+            return fetch_readings_admin_date(body.date, language=body.language)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/admin/readings-cache/{date}")
     def api_admin_readings_cache_date(
         date: str,
+        lang: str = Query("english"),
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
-        return get_readings_admin_detail(date)
+        return get_readings_admin_detail(date, language=lang)
 
     @app.patch("/api/admin/readings-cache/{date}")
     def api_admin_readings_cache_patch(
         date: str,
         body: ReadingsAdminPatchBody,
+        lang: str = Query("english"),
         _session: AuthSession = Depends(require_superadmin),
     ) -> dict[str, Any]:
         updates = {k: v for k, v in body.model_dump().items() if v is not None}
         try:
-            return patch_readings_admin_entry(date, updates)
+            return patch_readings_admin_entry(date, updates, language=lang)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

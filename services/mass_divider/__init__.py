@@ -5,6 +5,7 @@ from __future__ import annotations
 from services.mass_divider.fields import (
     fields_from_liturgical_payload,
     resolve_mass_divider_fields,
+    strip_sunday_cycle_suffix,
     sunday_title_display,
 )
 from services.mass_divider.gospel_analysis import (
@@ -55,5 +56,6 @@ __all__ = [
     "negative_prompt",
     "resolve_divider_template_id",
     "resolve_mass_divider_fields",
+    "strip_sunday_cycle_suffix",
     "sunday_title_display",
 ]

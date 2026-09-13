@@ -43,7 +43,17 @@ from services.mass_text_format import (
 )
 from services.prayer_service import get_our_father, get_prayer
 from services.prayer_templates import PENITENTIAL_ACT
-from services.mass_language import normalize_mass_language
+from services.gospel_acclamation import (
+    extract_gospel_acclamation_verse,
+    wrap_gospel_acclamation_verse,
+)
+from services.mass_language import (
+    gospel_acclamation_refrain,
+    normalize_mass_language,
+    reading_section_label,
+)
+from services.slide_kinds import normalize_slide_kinds
+from services.mass_divider.fields import sunday_title_display
 from services.mass_divider.templates import resolve_divider_template_id
 from services.mass_divider.types import DIVIDER_TEMPLATE_DEFAULT, DIVIDER_TEMPLATE_IDS
 from services.responsorial_reading import responsorial_section_title
@@ -146,6 +156,19 @@ _SECTION_TITLE_PT_SMALL = 36.0
 _SECTION_TITLE_PT_LARGE = 50.0
 _GOSPEL_ACCLAMATION_BODY_PT = 69.0
 _GOSPEL_ACCLAMATION_BODY_FONT = "Poppins Bold"
+# Alleluya.Format.pptx sandwich (16:9 13.333×7.5 scaled onto the 20×11.25 canvas).
+_GOSPEL_ACCLAMATION_PLATE_FONT = "Arial"
+_GOSPEL_ACCLAMATION_PLATE_PT = 80.0
+_GOSPEL_ACCLAMATION_VERSE_PT_MIN = 60.0
+_GOSPEL_ACCLAMATION_VERSE_PT_MAX = 80.0
+_GOSPEL_ACCLAMATION_REFRAIN_T = 1.2975
+_GOSPEL_ACCLAMATION_REFRAIN_H = 1.508
+_GOSPEL_ACCLAMATION_VERSE_T = 3.461
+_GOSPEL_ACCLAMATION_VERSE_H = 4.328
+_GOSPEL_ACCLAMATION_REFRAIN2_T = 8.444
+_GOSPEL_ACCLAMATION_TL_PRIEST_PT = 88.0
+_GOSPEL_ACCLAMATION_TL_ALL_PT = 96.0
+# GospelAcclamationFormat.English.pptx — 20×11.25, no section title.
 _COMMUNITY_HEADER_PT = 15
 _LYRIC_MIN_WORDS_PER_LINE = 3
 _LYRIC_MIN_PT = 40
@@ -1414,7 +1437,13 @@ def _suppress_all_role_prefix(footer_section: str) -> bool:
 def _is_projection_dialogue_slide(footer_section: str) -> bool:
     """Priest/assembly dialogue: centered body, gold ``Priest:`` label, white text."""
     f = (footer_section or "").strip().lower()
-    return f.startswith("final blessing") or f.startswith("the communion rite") or f == "communion rite"
+    return (
+        f.startswith("final blessing")
+        or f.startswith("the communion rite")
+        or f == "communion rite"
+        or f.startswith("gospel acclamation")
+        or f.startswith("aleluya")
+    )
 
 
 def _is_prayer_rite_slide(footer_section: str) -> bool:
@@ -1691,6 +1720,18 @@ def _set_run_text_keep_format(slide, old: str, new: str) -> bool:
                 if (run.text or "").strip() == want:
                     run.text = new
                     return True
+    # Template labels can be split across runs ("Second" + " Reading").
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        if (shape.text_frame.text or "").strip() != want:
+            continue
+        first = True
+        for para in shape.text_frame.paragraphs:
+            for run in para.runs:
+                run.text = new if first else ""
+                first = False
+        return True
     return False
 
 
@@ -2223,6 +2264,10 @@ def _resolve_bundled_poster(
     key = str(selection or "").strip().lower() or default_id
     if key not in valid_ids:
         key = default_id
+    if _mass_lang() == "tagalog":
+        localized = _POSTER_REFERENCE_DIR / f"{key}-tl.png"
+        if localized.is_file():
+            return localized
     path = _POSTER_REFERENCE_DIR / f"{key}.png"
     return path if path.is_file() else None
 
@@ -2306,6 +2351,9 @@ def _add_pre_mass_slide(prs: Presentation, theme: SlideTheme) -> None:
 
 
 def _add_penitential_act_slides(prs: Presentation, theme: SlideTheme) -> None:
+    if _mass_lang() == "tagalog":
+        _add_tagalog_penitential_act_slides(prs, theme)
+        return
     if _use_english_rite_templates() and _clone_master_section(prs, "penitential", theme, "Penitential Act"):
         return
     if _use_english_rite_templates():
@@ -2314,8 +2362,7 @@ def _add_penitential_act_slides(prs: Presentation, theme: SlideTheme) -> None:
             return
         _add_templated_prayer(prs, PENITENTIAL_ACT, theme)
         return
-    footer = "Pagsisisi" if _mass_lang() == "tagalog" else "Penitential Act"
-    _add_marked_chunked(prs, footer, _prayer("penitential_act"), theme)
+    _add_marked_chunked(prs, "Penitential Act", _prayer("penitential_act"), theme)
 
 
 def _add_kyrie_from_tagalog_deck(prs: Presentation, theme: SlideTheme, slide_index: int) -> bool:
@@ -2407,6 +2454,9 @@ def _apply_gloria_typography(slide) -> None:
 
 def _add_gloria_slides(prs: Presentation, theme: SlideTheme) -> None:
     title = "Papuri sa Diyos" if _mass_lang() == "tagalog" else "Gloria"
+    if _mass_lang() == "tagalog":
+        _add_tagalog_gloria_slides(prs, theme)
+        return
     if _use_english_rite_templates() and _clone_master_section(prs, "gloria", theme, "Gloria"):
         return
     if not _use_english_rite_templates():
@@ -2521,11 +2571,44 @@ def _gospel_book_from_reference(gospel_reference: str) -> str:
     low = ref.lower()
     if "according to" in low:
         return ref.split("according to", 1)[-1].strip().rstrip(".")
+    if "ayon kay" in low:
+        return ref.split("ayon kay", 1)[-1].strip().rstrip(".")
     m = re.match(r"^(?:\d+\s+)?([A-Za-z][A-Za-z]+)", ref)
     if m:
         return m.group(1)
     parts = ref.split()
     return parts[0] if parts else "John"
+
+
+_GOSPEL_BOOK_TL = {
+    "matthew": "San Mateo",
+    "mateo": "San Mateo",
+    "mt": "San Mateo",
+    "mark": "San Marcos",
+    "marcos": "San Marcos",
+    "mk": "San Marcos",
+    "luke": "San Lucas",
+    "lucas": "San Lucas",
+    "lk": "San Lucas",
+    "john": "San Juan",
+    "juan": "San Juan",
+    "jn": "San Juan",
+}
+
+
+def _gospel_book_for_language(gospel_reference: str, language: str | None = None) -> str:
+    book = _gospel_book_from_reference(gospel_reference)
+    if (language or _mass_lang()) != "tagalog":
+        return book
+    key = re.sub(r"^san\s+", "", (book or "").strip().lower())
+    return _GOSPEL_BOOK_TL.get(key) or ("San " + book if book else "San Juan")
+
+
+def _format_gospel_intro(
+    marked: str, gospel_reference: str, language: str | None = None
+) -> str:
+    book = _gospel_book_for_language(gospel_reference, language)
+    return (marked or "").replace("{gospel_book}", book)
 
 
 def _gospel_acclamation_run_font(
@@ -2741,6 +2824,895 @@ def _gospel_acclamation_source_slide_indices(slide_count: int) -> Tuple[int, ...
     return ()
 
 
+def _gospel_acclamation_verse_pt(lines: List[str]) -> float:
+    """Middle verse box: 80pt when short, easing to 60pt as the verse grows."""
+    parts = [ln.strip() for ln in lines if (ln or "").strip()]
+    if not parts:
+        return _GOSPEL_ACCLAMATION_VERSE_PT_MAX
+    chars = sum(len(ln) for ln in parts)
+    score = float(chars + max(0, len(parts) - 1) * 28)
+    lo, hi = 32.0, 120.0
+    if score <= lo:
+        return _GOSPEL_ACCLAMATION_VERSE_PT_MAX
+    if score >= hi:
+        return _GOSPEL_ACCLAMATION_VERSE_PT_MIN
+    t = (score - lo) / (hi - lo)
+    return round(
+        _GOSPEL_ACCLAMATION_VERSE_PT_MAX
+        - t * (_GOSPEL_ACCLAMATION_VERSE_PT_MAX - _GOSPEL_ACCLAMATION_VERSE_PT_MIN),
+        1,
+    )
+
+
+def _add_gospel_acclamation_plate_box(
+    slide,
+    *,
+    top_in: float,
+    height_in: float,
+    lines: List[str],
+    color: RGBColor,
+    size_pt: float = _GOSPEL_ACCLAMATION_PLATE_PT,
+) -> None:
+    """Full-width centered Arial plate from GospelAcclamationFormat.tagalog."""
+    box = slide.shapes.add_textbox(
+        Inches(0), Inches(top_in), SLIDE_WIDTH, Inches(height_in)
+    )
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.NONE
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.08)
+    tf.margin_right = Inches(0.08)
+    tf.margin_top = Inches(0.05)
+    tf.margin_bottom = Inches(0.05)
+    tf.clear()
+    parts = [ln.strip() for ln in lines if (ln or "").strip()] or [""]
+    for i, line in enumerate(parts):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        para.text = ""
+        para.alignment = PP_ALIGN.CENTER
+        para.space_after = Pt(3)
+        run = para.add_run()
+        run.text = line
+        run.font.name = _GOSPEL_ACCLAMATION_PLATE_FONT
+        run.font.size = Pt(size_pt)
+        run.font.bold = True
+        run.font.color.rgb = color
+
+
+def _add_gospel_acclamation_verse_slide(
+    prs: Presentation,
+    theme: SlideTheme,
+    verse: str,
+    footer_section: str,
+) -> None:
+    """Gold refrain / white verse / gold refrain — language-aware sandwich."""
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    refrain = gospel_acclamation_refrain(_mass_lang())
+    lines = wrap_gospel_acclamation_verse(extract_gospel_acclamation_verse(verse))
+    verse_pt = _gospel_acclamation_verse_pt(lines)
+    _add_gospel_acclamation_plate_box(
+        slide,
+        top_in=_GOSPEL_ACCLAMATION_REFRAIN_T,
+        height_in=_GOSPEL_ACCLAMATION_REFRAIN_H,
+        lines=[refrain],
+        color=theme.emphasis,
+        size_pt=_GOSPEL_ACCLAMATION_PLATE_PT,
+    )
+    _add_gospel_acclamation_plate_box(
+        slide,
+        top_in=_GOSPEL_ACCLAMATION_VERSE_T,
+        height_in=_GOSPEL_ACCLAMATION_VERSE_H,
+        lines=lines,
+        color=theme.primary,
+        size_pt=verse_pt,
+    )
+    _add_gospel_acclamation_plate_box(
+        slide,
+        top_in=_GOSPEL_ACCLAMATION_REFRAIN2_T,
+        height_in=_GOSPEL_ACCLAMATION_REFRAIN_H,
+        lines=[refrain],
+        color=theme.emphasis,
+        size_pt=_GOSPEL_ACCLAMATION_PLATE_PT,
+    )
+    if footer_section:
+        _add_community_footer(slide, footer_section, theme)
+
+
+_TL_GOSPEL_DIALOGUE_LAYOUTS = {
+    "greeting": {
+        "priest": (0.0, 2.194, 20.0, 1.643),
+        "assembly": (0.0, 6.596, 20.0, 1.777),
+    },
+    "announcement": {
+        "priest": (0.0, 1.453, 20.0, 3.124),
+        "assembly": (0.0, 5.789, 20.0, 3.393),
+    },
+    "end": {
+        "priest": (1.0, 0.703, 18.0, 3.124),
+        "assembly": (0.0, 5.490, 20.0, 3.393),
+    },
+}
+
+
+def _tagalog_gospel_dialogue_pairs(marked: str) -> List[Tuple[str, str]]:
+    """Group Tagalog gospel dialogue into priest/assembly pairs (one slide each)."""
+    items = [
+        (role, line)
+        for role, line in _parse_marked_lines(marked)
+        if role in ("priest", "all") and (line or "").strip()
+    ]
+    pairs: List[Tuple[str, str]] = []
+    i = 0
+    while i < len(items):
+        priest = ""
+        assembly = ""
+        if items[i][0] == "priest":
+            priest = items[i][1]
+            i += 1
+        if i < len(items) and items[i][0] == "all":
+            assembly = items[i][1]
+            i += 1
+        if priest or assembly:
+            pairs.append((priest, assembly))
+    return pairs
+
+
+def _style_tagalog_gospel_run(
+    run,
+    *,
+    color: RGBColor,
+    size_pt: float,
+    italic: bool = False,
+) -> None:
+    run.font.name = _GOSPEL_ACCLAMATION_PLATE_FONT
+    run.font.size = Pt(size_pt)
+    run.font.bold = True
+    run.font.italic = italic
+    run.font.color.rgb = color
+
+
+def _add_tagalog_gospel_dialogue_box(
+    slide,
+    *,
+    left_in: float,
+    top_in: float,
+    width_in: float,
+    height_in: float,
+    label: str,
+    body: str,
+    size_pt: float,
+    label_color: RGBColor,
+    body_color: RGBColor,
+    italic_span: str = "",
+) -> None:
+    box = slide.shapes.add_textbox(
+        Inches(left_in), Inches(top_in), Inches(width_in), Inches(height_in)
+    )
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.12)
+    tf.margin_right = Inches(0.12)
+    tf.margin_top = Inches(0.08)
+    tf.margin_bottom = Inches(0.08)
+    tf.clear()
+    para = tf.paragraphs[0]
+    para.text = ""
+    para.alignment = PP_ALIGN.CENTER
+
+    label_run = para.add_run()
+    label_run.text = label
+    _style_tagalog_gospel_run(label_run, color=label_color, size_pt=size_pt)
+
+    span = (italic_span or "").strip()
+    if span and span in body:
+        before, after = body.split(span, 1)
+        if before:
+            lead = para.add_run()
+            lead.text = before
+            _style_tagalog_gospel_run(lead, color=body_color, size_pt=size_pt)
+        book_run = para.add_run()
+        book_run.text = span
+        _style_tagalog_gospel_run(
+            book_run, color=body_color, size_pt=size_pt, italic=True
+        )
+        if after:
+            trail = para.add_run()
+            trail.text = after
+            _style_tagalog_gospel_run(trail, color=body_color, size_pt=size_pt)
+        return
+
+    body_run = para.add_run()
+    body_run.text = body
+    _style_tagalog_gospel_run(body_run, color=body_color, size_pt=size_pt)
+
+
+def _add_tagalog_gospel_dialogue_slide(
+    prs: Presentation,
+    theme: SlideTheme,
+    *,
+    priest_body: str,
+    assembly_body: str,
+    footer_section: str,
+    layout: str,
+    italic_span: str = "",
+) -> None:
+    """Two-box Pari / Bayan slide from GospelAcclamationFormat.tagalog."""
+    geom = _TL_GOSPEL_DIALOGUE_LAYOUTS[layout]
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    if priest_body:
+        l, t, w, h = geom["priest"]
+        _add_tagalog_gospel_dialogue_box(
+            slide,
+            left_in=l,
+            top_in=t,
+            width_in=w,
+            height_in=h,
+            label="Pari: ",
+            body=priest_body,
+            size_pt=_GOSPEL_ACCLAMATION_TL_PRIEST_PT,
+            label_color=theme.emphasis,
+            body_color=theme.primary,
+            italic_span=italic_span,
+        )
+    if assembly_body:
+        l, t, w, h = geom["assembly"]
+        _add_tagalog_gospel_dialogue_box(
+            slide,
+            left_in=l,
+            top_in=t,
+            width_in=w,
+            height_in=h,
+            label="Bayan: ",
+            body=assembly_body,
+            size_pt=_GOSPEL_ACCLAMATION_TL_ALL_PT,
+            label_color=theme.primary,
+            body_color=theme.emphasis,
+        )
+    _add_community_footer(slide, footer_section, theme)
+
+
+def _add_tagalog_gospel_intro_slides(
+    prs: Presentation,
+    theme: SlideTheme,
+    *,
+    gospel_reference: str,
+    footer_section: str,
+) -> None:
+    marked = _format_gospel_intro(
+        _flow().GOSPEL_INTRO, gospel_reference, "tagalog"
+    )
+    book = _gospel_book_for_language(gospel_reference, "tagalog")
+    pairs = _tagalog_gospel_dialogue_pairs(marked)
+    layouts = ("greeting", "announcement")
+    for i, (priest, assembly) in enumerate(pairs[:2]):
+        layout = layouts[i] if i < len(layouts) else "announcement"
+        italic = book if book and book in priest else ""
+        _add_tagalog_gospel_dialogue_slide(
+            prs,
+            theme,
+            priest_body=priest,
+            assembly_body=assembly,
+            footer_section=footer_section,
+            layout=layout,
+            italic_span=italic,
+        )
+
+
+def _add_tagalog_gospel_end_slide(
+    prs: Presentation,
+    theme: SlideTheme,
+    marked: str,
+    footer_section: str,
+) -> None:
+    pairs = _tagalog_gospel_dialogue_pairs(marked)
+    if not pairs:
+        return
+    priest, assembly = pairs[0]
+    _add_tagalog_gospel_dialogue_slide(
+        prs,
+        theme,
+        priest_body=priest,
+        assembly_body=assembly,
+        footer_section=footer_section,
+        layout="end",
+    )
+
+
+def _add_tl_intro_text_box(
+    slide,
+    *,
+    left_in: float,
+    top_in: float,
+    width_in: float,
+    height_in: float,
+    lines: List[Tuple[str, RGBColor, float, bool]],
+    auto_size=MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT,
+) -> None:
+    """Centered Arial projection box from SignOfTheCross&PenitentialAct.pptx."""
+    box = slide.shapes.add_textbox(
+        Inches(left_in), Inches(top_in), Inches(width_in), Inches(height_in)
+    )
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.auto_size = auto_size
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.12)
+    tf.margin_right = Inches(0.12)
+    tf.margin_top = Inches(0.08)
+    tf.margin_bottom = Inches(0.08)
+    tf.clear()
+    for i, (text, color, size_pt, italic) in enumerate(lines):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        para.text = ""
+        para.alignment = PP_ALIGN.CENTER
+        run = para.add_run()
+        run.text = text
+        _style_tagalog_gospel_run(
+            run, color=color, size_pt=size_pt, italic=italic
+        )
+
+
+def _add_tl_intro_mixed_box(
+    slide,
+    *,
+    left_in: float,
+    top_in: float,
+    width_in: float,
+    height_in: float,
+    paragraphs: List[List[Tuple[str, RGBColor, float, bool]]],
+    auto_size=MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT,
+) -> None:
+    box = slide.shapes.add_textbox(
+        Inches(left_in), Inches(top_in), Inches(width_in), Inches(height_in)
+    )
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.auto_size = auto_size
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.12)
+    tf.margin_right = Inches(0.12)
+    tf.margin_top = Inches(0.08)
+    tf.margin_bottom = Inches(0.08)
+    tf.clear()
+    for i, runs in enumerate(paragraphs):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        para.text = ""
+        para.alignment = PP_ALIGN.CENTER
+        for text, color, size_pt, italic in runs:
+            run = para.add_run()
+            run.text = text
+            _style_tagalog_gospel_run(
+                run, color=color, size_pt=size_pt, italic=italic
+            )
+
+
+def _add_tagalog_sign_of_the_cross_slides(
+    prs: Presentation, theme: SlideTheme
+) -> None:
+    """Two-slide Sign of the Cross from SignOfTheCross&PenitentialAct.pptx."""
+    gold, white = theme.emphasis, theme.primary
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _add_tl_intro_text_box(
+        slide,
+        left_in=0.0,
+        top_in=0.8436,
+        width_in=20.0,
+        height_in=4.857,
+        lines=[
+            ("Pari:", gold, 88.0, False),
+            ("Sa Ngalan Ng Ama, At Anak, At", white, 88.0, True),
+            ("Ng Espiritu Santo.", white, 88.0, True),
+        ],
+    )
+    _add_tl_intro_mixed_box(
+        slide,
+        left_in=0.0,
+        top_in=6.4635,
+        width_in=20.0,
+        height_in=2.0969,
+        paragraphs=[[
+            ("Bayan: ", white, 115.0, False),
+            ("Amen", gold, 115.0, False),
+            (".", white, 115.0, False),
+        ]],
+    )
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _add_tl_intro_text_box(
+        slide,
+        left_in=0.0,
+        top_in=0.9278,
+        width_in=20.0,
+        height_in=3.1235,
+        lines=[
+            ("Pari:", gold, 88.0, False),
+            ("Sumainyo Ang Panginoon.", white, 88.0, True),
+        ],
+    )
+    _add_tl_intro_mixed_box(
+        slide,
+        left_in=0.0,
+        top_in=6.3057,
+        width_in=20.0,
+        height_in=2.0969,
+        paragraphs=[[
+            ("Bayan: ", white, 115.0, False),
+            ("At Sumainyo Rin", gold, 115.0, False),
+            (".", white, 115.0, False),
+        ]],
+    )
+
+
+def _add_tagalog_penitential_act_slides(
+    prs: Presentation, theme: SlideTheme
+) -> None:
+    """Four-slide Penitential Act from SignOfTheCross&PenitentialAct.pptx."""
+    gold, white = theme.emphasis, theme.primary
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _add_tl_intro_text_box(
+        slide,
+        left_in=0.0,
+        top_in=2.0471,
+        width_in=20.0,
+        height_in=6.3904,
+        lines=[
+            ("Pari:", gold, 70.0, False),
+            (
+                "Mga Kapatid, Aminin Natin Ang Ating Mga Kasalanan "
+                "Upang Tayo’y Maging Marapat Sa Pagdiriwang Ng Banal Na Misteryo...",
+                white,
+                72.0,
+                True,
+            ),
+        ],
+        auto_size=MSO_AUTO_SIZE.NONE,
+    )
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _add_tl_intro_text_box(
+        slide,
+        left_in=0.0,
+        top_in=0.1605,
+        width_in=20.0,
+        height_in=6.0855,
+        lines=[
+            ("Inaamin ko", white, 88.0, True),
+            ("sa Makapangyarihang Diyos,", white, 88.0, False),
+            ("at sa inyo, mga kapatid,", white, 88.0, False),
+            ("na lubha akong nagkasala..", white, 88.0, False),
+        ],
+    )
+    _add_tl_intro_mixed_box(
+        slide,
+        left_in=0.0,
+        top_in=6.7423,
+        width_in=20.0,
+        height_in=4.2006,
+        paragraphs=[
+            [
+                ("(", white, 80.0, True),
+                ("dadagok sa dibdib", gold, 80.0, True),
+                (")", white, 80.0, True),
+            ],
+            [("sa isip, sa salita,", white, 80.0, True)],
+            [("sa gawa at sa aking pagkukulang.", white, 80.0, True)],
+        ],
+    )
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _add_tl_intro_text_box(
+        slide,
+        left_in=0.0,
+        top_in=0.0,
+        width_in=20.0,
+        height_in=11.25,
+        lines=[
+            ("Kaya isinasamo ko sa mahal na", white, 88.0, False),
+            ("Birheng Maria, sa lahat ng", white, 88.0, False),
+            ("mga anghel at mga banal", white, 88.0, False),
+            ("at sa inyo, mga kapatid,", white, 88.0, False),
+            ("na ako’y ipanalangin sa", white, 88.0, False),
+            ("Panginoong ating Diyos.", white, 88.0, False),
+        ],
+        auto_size=MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE,
+    )
+
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _add_tl_intro_text_box(
+        slide,
+        left_in=0.0,
+        top_in=0.6535,
+        width_in=20.0,
+        height_in=5.6143,
+        lines=[
+            ("Pari:", gold, 60.0, False),
+            ("Kaawaan Tayo Ng Makapangyarihang Diyos,", white, 66.0, True),
+            ("Patawarin Tayo Sa Ating Mga Kasalanan,", white, 66.0, False),
+            ("At Patnubayan Tayo", white, 66.0, False),
+            ("Sa Buhay Na Walang Hanggan.", white, 66.0, False),
+        ],
+    )
+    _add_tl_intro_mixed_box(
+        slide,
+        left_in=0.0,
+        top_in=6.5241,
+        width_in=20.0,
+        height_in=2.2512,
+        paragraphs=[[
+            ("Bayan: ", white, 115.0, False),
+            ("Amen", gold, 115.0, False),
+            (".", white, 115.0, False),
+        ]],
+    )
+
+
+def _add_tagalog_section_title(
+    slide, text: str, *, size_pt: float, top_in: float = 0.12, height_in: float = 0.95
+) -> None:
+    """Georgia gold underline title that stays on one line (Pagpapahayag / Papuri)."""
+    box = slide.shapes.add_textbox(
+        Inches(0), Inches(top_in), SLIDE_WIDTH, Inches(height_in)
+    )
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.NONE
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.12)
+    tf.margin_right = Inches(0.12)
+    tf.margin_top = Inches(0.04)
+    tf.margin_bottom = Inches(0.04)
+    tf.clear()
+    para = tf.paragraphs[0]
+    para.text = ""
+    para.alignment = PP_ALIGN.CENTER
+    run = para.add_run()
+    run.text = text
+    run.font.name = _SECTION_TITLE_FONT
+    run.font.size = Pt(size_pt)
+    run.font.bold = True
+    run.font.underline = True
+    run.font.color.rgb = _ACTIVE_THEME.emphasis
+
+
+def _add_tagalog_gloria_slides(prs: Presentation, theme: SlideTheme) -> None:
+    """Three Gloria slides from GloriaandPagpahayag.tagalog.pptx, scaled to 20×11.25."""
+    white, gold = theme.primary, theme.emphasis
+    pages = [
+        [
+            "Papuri sa Diyos sa kaitaasan",
+            "at sa lupa'y kapayapaan",
+            "sa mga taong kinalulugdan niya.",
+            "Pinupuri ka namin, dinarangal ka namin,",
+            "sinasamba ka namin,",
+            "ipinagbubunyi ka namin,",
+            "pinagsasalamatan ka namin dahil sa",
+            "dakila mong angking kapurihan",
+        ],
+        [
+            "Panginoong Hesukristo, Bugtong na Anak,",
+            "Panginoong Diyos, Kordero ng Diyos,",
+            "Anak ng Ama. Ikaw na nag-aalis ng mga",
+            "kasalanan ng sanlibutan,",
+            "maawa ka sa amin.",
+            "Ikaw na nag-aalis ng mga",
+            "kasalanan ng sanlibutan,",
+            "tanggapin mo ang aming kahilingan.",
+        ],
+        [
+            "Ikaw na naluluklok sa kanan ng Ama,",
+            "maawa ka sa amin.",
+            "Sapagkat ikaw lamang ang Banal,",
+            "ikaw lamang ang Panginoon,",
+            "ikaw lamang, O Hesukristo,",
+            "ang Kataas-taasan,",
+            "kasama ng Espiritu Santo",
+            "sa kadakilaan ng Diyos Ama.",
+        ],
+    ]
+    sizes = (72.0, 66.0, 72.0)
+    for i, lines in enumerate(pages):
+        slide = prs.slides.add_slide(_layout_blank(prs))
+        _set_slide_bg(slide, theme.bg)
+        if i == 0:
+            _add_tagalog_section_title(slide, "Papuri", size_pt=36.0)
+            _add_tl_intro_text_box(
+                slide,
+                left_in=0.0,
+                top_in=0.80,
+                width_in=20.0,
+                height_in=10.18,
+                lines=[(ln, white, sizes[i], False) for ln in lines],
+                auto_size=MSO_AUTO_SIZE.NONE,
+            )
+            continue
+        if i == 2:
+            _add_tl_intro_mixed_box(
+                slide,
+                left_in=0.0,
+                top_in=0.0,
+                width_in=20.0,
+                height_in=11.25,
+                paragraphs=[
+                    *[[(ln, white, sizes[i], False)] for ln in lines],
+                    [("Amen", gold, 88.0, False), (".", white, 88.0, False)],
+                ],
+                auto_size=MSO_AUTO_SIZE.NONE,
+            )
+            continue
+        _add_tl_intro_text_box(
+            slide,
+            left_in=0.0,
+            top_in=0.0,
+            width_in=20.0,
+            height_in=11.25,
+            lines=[(ln, white, sizes[i], False) for ln in lines],
+            auto_size=MSO_AUTO_SIZE.NONE,
+        )
+
+
+def _add_tagalog_opening_prayer_slide(prs: Presentation, theme: SlideTheme) -> None:
+    """Pagpapahayag title + Collect cue from GloriaandPagpahayag.tagalog.pptx."""
+    gold, white = theme.emphasis, theme.primary
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    _add_tagalog_section_title(
+        slide, "Pagpapahayag ng Salita ng Diyos", size_pt=36.0
+    )
+    _add_tl_intro_text_box(
+        slide,
+        left_in=0.0,
+        top_in=2.126,
+        width_in=20.0,
+        height_in=3.124,
+        lines=[
+            ("Pari:", gold, 88.0, False),
+            ("Manalangin Tayo.", white, 88.0, True),
+        ],
+    )
+    _add_tl_intro_mixed_box(
+        slide,
+        left_in=0.0,
+        top_in=6.456,
+        width_in=20.0,
+        height_in=2.097,
+        paragraphs=[[
+            ("Bayan: ", white, 115.0, False),
+            ("Amen", gold, 115.0, False),
+            (".", white, 115.0, False),
+        ]],
+    )
+
+
+_EN_GOSPEL_DIALOGUE_LAYOUTS = {
+    "greeting": {
+        "priest": (0.0, 2.2681, 20.0, 1.4939, 88.0),
+        "assembly": (0.0, 6.717, 20.0, 1.536, 96.0),
+    },
+    "announcement": {
+        "priest": (0.0, 1.7099, 20.0, 2.6102, 88.0),
+        "assembly": (0.0, 6.717, 20.0, 1.536, 96.0),
+    },
+    "end": {
+        "priest": (0.0, 2.1775, 20.0, 1.1756, 80.0),
+        "assembly": (0.0, 5.4567, 20.0, 3.028, 100.0),
+    },
+}
+
+
+def _split_trailing_punct(text: str) -> Tuple[str, str]:
+    raw = text or ""
+    m = re.search(r"([.!?]+)$", raw)
+    if not m:
+        return raw, ""
+    return raw[: m.start()], m.group(1)
+
+
+def _english_priest_announcement_lines(body: str) -> List[str]:
+    m = re.search(r"(Gospel according to\s+.+)$", body or "", flags=re.I)
+    if not m:
+        return [body] if body else []
+    lead = (body or "")[: m.start()].strip()
+    tail = m.group(1).strip()
+    return [ln for ln in (lead, tail) if ln]
+
+
+def _english_assembly_end_lines(body: str) -> List[str]:
+    raw = (body or "").strip()
+    marker = "Jesus Christ"
+    idx = raw.find(marker)
+    if idx <= 0:
+        return [raw] if raw else []
+    return [raw[:idx].strip(), raw[idx:].strip()]
+
+
+def _add_english_gospel_dialogue_box(
+    slide,
+    *,
+    left_in: float,
+    top_in: float,
+    width_in: float,
+    height_in: float,
+    label: str,
+    lines: List[str],
+    size_pt: float,
+    label_color: RGBColor,
+    body_color: RGBColor,
+    highlight_body: bool = False,
+    italic_span: str = "",
+    italic_body: bool = False,
+) -> None:
+    """Priest / All plate from GospelAcclamationFormat.English.pptx."""
+    box = slide.shapes.add_textbox(
+        Inches(left_in), Inches(top_in), Inches(width_in), Inches(height_in)
+    )
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.auto_size = MSO_AUTO_SIZE.NONE
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.12)
+    tf.margin_right = Inches(0.12)
+    tf.margin_top = Inches(0.08)
+    tf.margin_bottom = Inches(0.08)
+    tf.clear()
+    parts = [ln.strip() for ln in lines if (ln or "").strip()] or [""]
+    for i, line in enumerate(parts):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        para.text = ""
+        para.alignment = PP_ALIGN.CENTER
+        if i == 0 and label:
+            label_run = para.add_run()
+            label_run.text = label
+            _style_tagalog_gospel_run(label_run, color=label_color, size_pt=size_pt)
+
+        core, punct = _split_trailing_punct(line)
+        paint = body_color
+        if highlight_body:
+            paint = body_color
+        span = (italic_span or "").strip()
+        if span and span in core:
+            before, after = core.split(span, 1)
+            if before:
+                lead = para.add_run()
+                lead.text = before
+                _style_tagalog_gospel_run(lead, color=paint, size_pt=size_pt)
+            book_run = para.add_run()
+            book_run.text = span
+            _style_tagalog_gospel_run(
+                book_run, color=paint, size_pt=size_pt, italic=True
+            )
+            if after:
+                trail = para.add_run()
+                trail.text = after
+                _style_tagalog_gospel_run(
+                    trail, color=paint, size_pt=size_pt, italic=italic_body
+                )
+        elif core:
+            body_run = para.add_run()
+            body_run.text = core
+            _style_tagalog_gospel_run(
+                body_run, color=paint, size_pt=size_pt, italic=italic_body
+            )
+        if punct:
+            punct_run = para.add_run()
+            punct_run.text = punct
+            _style_tagalog_gospel_run(
+                punct_run,
+                color=label_color if highlight_body else paint,
+                size_pt=size_pt,
+                italic=italic_body,
+            )
+
+
+def _add_english_gospel_dialogue_slide(
+    prs: Presentation,
+    theme: SlideTheme,
+    *,
+    priest_body: str,
+    assembly_body: str,
+    layout: str,
+    italic_span: str = "",
+    italic_priest: bool = False,
+    wrap_priest=None,
+    wrap_assembly=None,
+) -> None:
+    geom = _EN_GOSPEL_DIALOGUE_LAYOUTS[layout]
+    slide = prs.slides.add_slide(_layout_blank(prs))
+    _set_slide_bg(slide, theme.bg)
+    if priest_body:
+        l, t, w, h, pt = geom["priest"]
+        priest_lines = wrap_priest(priest_body) if wrap_priest else [priest_body]
+        _add_english_gospel_dialogue_box(
+            slide,
+            left_in=l,
+            top_in=t,
+            width_in=w,
+            height_in=h,
+            label="Priest: ",
+            lines=priest_lines,
+            size_pt=pt,
+            label_color=theme.emphasis,
+            body_color=theme.primary,
+            italic_span=italic_span,
+            italic_body=italic_priest,
+        )
+    if assembly_body:
+        l, t, w, h, pt = geom["assembly"]
+        assembly_lines = wrap_assembly(assembly_body) if wrap_assembly else [assembly_body]
+        _add_english_gospel_dialogue_box(
+            slide,
+            left_in=l,
+            top_in=t,
+            width_in=w,
+            height_in=h,
+            label="All: ",
+            lines=assembly_lines,
+            size_pt=pt,
+            label_color=theme.primary,
+            body_color=theme.emphasis,
+            highlight_body=True,
+        )
+
+
+def _add_english_gospel_intro_slides(
+    prs: Presentation,
+    theme: SlideTheme,
+    *,
+    gospel_reference: str,
+) -> None:
+    marked = _format_gospel_intro(
+        _flow().GOSPEL_INTRO, gospel_reference, "english"
+    )
+    book = _gospel_book_for_language(gospel_reference, "english")
+    pairs = _tagalog_gospel_dialogue_pairs(marked)
+    layouts = ("greeting", "announcement")
+    wraps = (None, _english_priest_announcement_lines)
+    for i, (priest, assembly) in enumerate(pairs[:2]):
+        layout = layouts[i] if i < len(layouts) else "announcement"
+        italic = book if layout == "announcement" and book and book in priest else ""
+        _add_english_gospel_dialogue_slide(
+            prs,
+            theme,
+            priest_body=priest,
+            assembly_body=assembly,
+            layout=layout,
+            italic_span=italic,
+            wrap_priest=wraps[i] if i < len(wraps) else None,
+        )
+
+
+def _add_english_gospel_end_slide(
+    prs: Presentation,
+    theme: SlideTheme,
+    marked: str,
+) -> None:
+    pairs = _tagalog_gospel_dialogue_pairs(marked)
+    if not pairs:
+        return
+    priest, assembly = pairs[0]
+    _add_english_gospel_dialogue_slide(
+        prs,
+        theme,
+        priest_body=priest,
+        assembly_body=assembly,
+        layout="end",
+        italic_priest=True,
+        wrap_assembly=_english_assembly_end_lines,
+    )
+
+
 def _add_gospel_acclamation_slides(
     prs: Presentation,
     theme: SlideTheme,
@@ -2748,73 +3720,24 @@ def _add_gospel_acclamation_slides(
     gospel_reference: str = "",
     gospel_acclamation_verse: str = "",
 ) -> None:
-    """Gospel Acclamation: alleluia + priest/assembly dialogue.
-
-    Both slides are cloned 1:1 from the master template so they mirror the closing
-    "Gospel of the Lord" slide exactly (same title alignment, fonts, and layout).
-    The alleluia keeps the dynamic lectionary verse; the dialogue injects the
-    evangelist/book name.
-    """
-    if not _use_english_rite_templates():
-        title = "Aleluya" if _mass_lang() == "tagalog" else "Gospel Acclamation"
-        alleluia = _flow().ALLELUIA_SING
-        verse = (gospel_acclamation_verse or "").strip()
-        if verse:
-            alleluia = f"{alleluia}\n<<H>>{verse}"
-        _add_marked_slide(prs, title, alleluia, theme)
-        _add_marked_slide(prs, title, _flow().GOSPEL_INTRO, theme)
-        return
-    if _load_master_template() is not None:
-        def _finish_alleluia(slide, _i):
-            shape = _gospel_acclamation_body_shape(slide)
-            if shape is not None:
-                _set_gospel_acclamation_alleluia_body(shape, gospel_acclamation_verse or "")
-            _apply_rite_slide_title_typography(
-                slide, "Gospel Acclamation", size_pt=_SECTION_TITLE_PT_LARGE
-            )
-
-        def _finish_dialogue(slide, _i):
-            ref = (gospel_reference or "").strip()
-            if ref:
-                _set_run_text_keep_format(slide, "Matthew", _gospel_book_from_reference(ref))
-            _apply_rite_slide_title_typography(
-                slide, "Gospel Acclamation", size_pt=_SECTION_TITLE_PT_LARGE
-            )
-
-        _clone_master_section(
-            prs, "gospel_acclamation_alleluia", theme, "Gospel Acclamation (1/2)",
-            mutate=_finish_alleluia,
-        )
-        _clone_master_section(
-            prs, "gospel_acclamation_dialogue", theme, "Gospel Acclamation (2/2)",
-            mutate=_finish_dialogue,
-        )
-        return
-
-    # Fallback: legacy designed deck when the master template is unavailable.
-    tpl = _load_gospel_acclamation_template()
-    indices = _gospel_acclamation_source_slide_indices(
-        len(tpl.slides) if tpl is not None else 0
+    """Gospel Acclamation: Alleluia sandwich + priest/assembly dialogue."""
+    title = "Aleluya" if _mass_lang() == "tagalog" else ""
+    _add_gospel_acclamation_verse_slide(
+        prs, theme, gospel_acclamation_verse or "", title
     )
-    if tpl is None or not indices:
-        _add_marked_slide(prs, "Gospel Acclamation", GFCC.ALLELUIA_SING, theme)
-        _add_marked_slide(prs, "Gospel Acclamation", GFCC.GOSPEL_INTRO, theme)
-        return
-    total = len(indices)
-    for part_i, idx in enumerate(indices):
-        footer = (
-            "Gospel Acclamation"
-            if total == 1
-            else f"Gospel Acclamation ({part_i + 1}/{total})"
+    if _mass_lang() == "tagalog":
+        _add_tagalog_gospel_intro_slides(
+            prs,
+            theme,
+            gospel_reference=gospel_reference,
+            footer_section=title,
         )
-        _copy_slide_into_presentation(prs, tpl.slides[idx], theme, footer)
-        slide = prs.slides[-1]
-        _disable_cloned_slide_autofit(slide)
-        if idx == 0:
-            _patch_gospel_acclamation_alleluia_slide(slide, gospel_acclamation_verse)
-            _apply_gospel_acclamation_typography(slide)
-        else:
-            _apply_gospel_acclamation_intro_typography(slide, gospel_reference)
+        return
+    _add_english_gospel_intro_slides(
+        prs,
+        theme,
+        gospel_reference=gospel_reference,
+    )
 
 
 def _normalize_creed_choice(choice: str) -> str:
@@ -3483,12 +4406,17 @@ def _divider_date_display(date: str) -> str:
     return raw.upper()
 
 
+def _divider_year_word() -> str:
+    return "TAON" if _mass_lang() == "tagalog" else "YEAR"
+
+
 def _divider_year_date_line(lectionary_cycle: str, date: str) -> str:
     cycle = (lectionary_cycle or "—").strip().upper()
     date_line = _divider_date_display(date)
+    word = _divider_year_word()
     if date_line:
-        return f"YEAR {cycle} · {date_line}"
-    return f"YEAR {cycle}"
+        return f"{word} {cycle} · {date_line}"
+    return f"{word} {cycle}"
 
 
 def _divider2_date_display(date: str) -> str:
@@ -3508,9 +4436,10 @@ def _divider2_date_display(date: str) -> str:
 def _divider2_year_date_line(lectionary_cycle: str, date: str) -> str:
     cycle = (lectionary_cycle or "—").strip().upper()
     date_line = _divider2_date_display(date)
+    word = _divider_year_word()
     if date_line:
-        return f"YEAR {cycle} | {date_line}"
-    return f"YEAR {cycle}"
+        return f"{word} {cycle} | {date_line}"
+    return f"{word} {cycle}"
 
 
 def _divider_gospel_heading(gospel_reference: str) -> str:
@@ -3544,15 +4473,15 @@ def _divider3_date_display(date: str) -> str:
 def _divider3_year_date_line(lectionary_cycle: str, date: str) -> str:
     cycle = (lectionary_cycle or "—").strip().upper()
     date_line = _divider3_date_display(date)
+    word = _divider_year_word()
     if date_line:
-        return f"YEAR {cycle} | {date_line}"
-    return f"YEAR {cycle}"
+        return f"{word} {cycle} | {date_line}"
+    return f"{word} {cycle}"
 
 
 def _divider3_title_lines(mass_title: str, season: str) -> List[str]:
     """``20th Sunday | in Ordinary Time`` style from the Aug15 plate."""
-    title = (mass_title or season or "Sunday Mass").strip()
-    title = title.replace(" Celebration", "").strip() or "Sunday Mass"
+    title = sunday_title_display(mass_title, season)
     m = re.match(r"^(.*?)\s+(in\s+.+)$", title, flags=re.IGNORECASE)
     if m and m.group(1).strip() and m.group(2).strip():
         return [f"{m.group(1).strip()} | {m.group(2).strip()}"]
@@ -3850,8 +4779,7 @@ def _render_default_divider_cover(
         anchor_middle=True,
     )
 
-    bottom_title = (mass_title or season or "Sunday Mass").strip()
-    bottom_title = bottom_title.replace(" Celebration", "").strip() or "Sunday Mass"
+    bottom_title = sunday_title_display(mass_title, season)
     bottom_pt = _divider_fit_font_pt(
         [bottom_title],
         width_in=13.52,
@@ -4071,8 +4999,7 @@ def _render_divider2_cover(
             no_wrap=True,
         )
 
-    bottom_title = (mass_title or season or "Sunday Mass").strip()
-    bottom_title = bottom_title.replace(" Celebration", "").strip() or "Sunday Mass"
+    bottom_title = sunday_title_display(mass_title, season)
     bottom_pt = _divider_fit_font_pt(
         [bottom_title],
         width_in=_D2_TITLE_W,
@@ -6019,6 +6946,7 @@ def generate_mass_ppt(
     video_replacements: Optional[Mapping[str, Any]] = None,
     mass_language: str = "english",
     show_hymn_section_labels: bool = False,
+    slide_kinds: Optional[list[str]] = None,
 ) -> tuple[int, Path, list[dict[str, Any]]]:
     global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding, _ACTIVE_MASS_LANG, _SHOW_HYMN_SECTION_LABELS
     global _ACTIVE_KYRIE_CHOICE, _ACTIVE_KYRIE_TAGALOG_SLIDE
@@ -6097,6 +7025,10 @@ def generate_mass_ppt(
                 video_basenames[k] = basename or path.name
 
     video_cues: list[dict[str, Any]] = []
+    wanted_kinds = normalize_slide_kinds(slide_kinds)
+
+    def _want(kind: str) -> bool:
+        return wanted_kinds is None or kind in wanted_kinds
 
     def _use_video(slot: str, label: str) -> bool:
         path = videos.get(slot)
@@ -6118,50 +7050,64 @@ def generate_mass_ppt(
         return True
 
     # --- Pre-Mass (reference deck slide) ---
-    _add_pre_mass_slide(prs, theme)
+    if _want("pre_mass"):
+        _add_pre_mass_slide(prs, theme)
 
-    _add_divider_cover(prs, **ctx)
+    if _want("cover"):
+        _add_divider_cover(prs, **ctx)
 
-    ent_id = str(sel.get("entrance") or "").strip()
-    if _use_video("entrance", "Entrance"):
-        pass
-    elif not ent_id or not _try_library_hymn(
-        prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
-    ):
-        _add_marked_slide(
-            prs,
-            "Entrance",
-            "No Entrance hymn lyrics were selected. Choose one Entrance song in Mass Flow or save lyrics in Lyrics Studio before generating.",
-            theme,
-        )
-    _add_divider_cover(prs, **ctx)
+    if _want("entrance"):
+        ent_id = str(sel.get("entrance") or "").strip()
+        if _use_video("entrance", "Entrance"):
+            pass
+        elif not ent_id or not _try_library_hymn(
+            prs, "entrance", ent_id, "Entrance", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
+        ):
+            _add_marked_slide(
+                prs,
+                "Entrance",
+                "No Entrance hymn lyrics were selected. Choose one Entrance song in Mass Flow or save lyrics in Lyrics Studio before generating.",
+                theme,
+            )
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
 
     # --- Introductory Rites ---
     intro_title = "Pasimula" if _mass_lang() == "tagalog" else "Introductory Rites"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "introductory_rites", theme, "Introductory Rites"
-    ):
-        pass
-    else:
-        _add_marked_slide(prs, intro_title, flow.SIGN_CROSS, theme)
-    _add_penitential_act_slides(prs, theme)
-    if not _use_video("kyrie", "Kyrie"):
+    if _want("intro_rites"):
+        if _mass_lang() == "tagalog":
+            _add_tagalog_sign_of_the_cross_slides(prs, theme)
+            if _want("dividers"):
+                _add_divider_cover(prs, **ctx)
+        elif _use_english_rite_templates() and _clone_master_section(
+            prs, "introductory_rites", theme, "Introductory Rites"
+        ):
+            pass
+        else:
+            _add_marked_slide(prs, intro_title, flow.SIGN_CROSS, theme)
+    if _want("penitential"):
+        _add_penitential_act_slides(prs, theme)
+    if _want("kyrie") and not _use_video("kyrie", "Kyrie"):
         _add_kyrie_slide(prs, theme)
-    if not _use_video("gloria", "Gloria"):
+    if _want("gloria") and not _use_video("gloria", "Gloria"):
         _add_gloria_slides(prs, theme)
     lotw_label = "Pagpapahayag ng Salita ng Diyos" if _mass_lang() == "tagalog" else "Liturgy of the Word"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "lotw_prayer", theme, "Liturgy of the Word"
-    ):
-        pass
-    else:
-        _add_marked_slide(
-            prs, lotw_label, flow.OPENING_PRAYER, theme,
-            title=lotw_label, title_pt=_SECTION_TITLE_PT_LARGE,
-        )
+    if _want("opening_prayer"):
+        if _mass_lang() == "tagalog":
+            _add_tagalog_opening_prayer_slide(prs, theme)
+        elif _use_english_rite_templates() and _clone_master_section(
+            prs, "lotw_prayer", theme, "Liturgy of the Word"
+        ):
+            pass
+        else:
+            _add_marked_slide(
+                prs, lotw_label, flow.OPENING_PRAYER, theme,
+                title=lotw_label, title_pt=_SECTION_TITLE_PT_LARGE,
+            )
 
     # --- Liturgy of the Word ---
-    _add_lotw_title_slide(prs, theme, lotw_poster_path)
+    if _want("lotw_title"):
+        _add_lotw_title_slide(prs, theme, lotw_poster_path)
 
     # --- Readings: citation-only cards cloned 1:1 from the master template.
     # Scripture bodies are intentionally dropped (matches the template card).
@@ -6176,16 +7122,20 @@ def generate_mass_ppt(
         _color_shapes(slide, _ACTIVE_THEME.emphasis, exact=[label])
 
     first_ref = (first_reading_ref or "—").strip() or "—"
+    first_label = reading_section_label("first", _mass_lang())
+    second_label = reading_section_label("second", _mass_lang())
 
     def _inject_first(slide, _i):
         _set_run_text_keep_format(slide, _TPL_FIRST_CITATION, first_ref)
-        _color_reading_card(slide, "First Reading")
+        if first_label != "First Reading":
+            _set_run_text_keep_format(slide, "First Reading", first_label)
+        _color_reading_card(slide, first_label)
 
-    if not _clone_master_section(
+    if _want("first_reading") and not _clone_master_section(
         prs, "first_reading", theme, "Liturgy of the Word", mutate=_inject_first,
     ):
         _add_lotw_reading_slide(
-            prs, section="First Reading", reference=first_ref,
+            prs, section=first_label, reference=first_ref,
             full_text="", theme=theme, reference_only=True,
         )
 
@@ -6212,123 +7162,138 @@ def generate_mass_ppt(
         # Refrain / verse body stays primary (white on Theme 1 & Midnight).
         _color_psalm_antiphon_body(slide, theme.primary)
 
-    if not _clone_master_section(prs, "psalm", theme, "Liturgy of the Word", mutate=_inject_psalm):
+    if _want("psalm") and not _clone_master_section(prs, "psalm", theme, "Liturgy of the Word", mutate=_inject_psalm):
         _add_lotw_reading_slide(
             prs, section=psalm_section, reference=psalm_ref_clean or "—",
             full_text="", theme=theme, reference_only=True,
         )
 
-    if (second_reading_ref or "").strip():
+    if _want("second_reading") and (second_reading_ref or "").strip():
         second_ref = second_reading_ref.strip()
 
         def _inject_second(slide, _i):
             _set_run_text_keep_format(slide, _TPL_SECOND_CITATION, second_ref)
-            _color_reading_card(slide, "Second Reading")
+            if second_label != "Second Reading":
+                _set_run_text_keep_format(slide, "Second Reading", second_label)
+            _color_reading_card(slide, second_label)
 
         if not _clone_master_section(
             prs, "second_reading", theme, "Liturgy of the Word", mutate=_inject_second,
         ):
             _add_lotw_reading_slide(
-                prs, section="Second Reading", reference=second_ref,
+                prs, section=second_label, reference=second_ref,
                 full_text="", theme=theme, reference_only=True,
             )
 
-    _add_gospel_acclamation_slides(
-        prs,
-        theme,
-        gospel_reference=gospel_reference or "",
-        gospel_acclamation_verse=gospel_acclamation_verse or "",
-    )
+    if _want("gospel_acclamation"):
+        _add_gospel_acclamation_slides(
+            prs,
+            theme,
+            gospel_reference=gospel_reference or "",
+            gospel_acclamation_verse=gospel_acclamation_verse or "",
+        )
 
-    gospel_end_title = "Aleluya" if _mass_lang() == "tagalog" else "Gospel Acclamation"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "gospel_acclamation_end", theme, "Gospel Acclamation",
-        mutate=lambda s, _i: _apply_rite_slide_title_typography(
-            s, "Gospel Acclamation", size_pt=_SECTION_TITLE_PT_LARGE
-        ),
-    ):
-        pass
-    else:
-        _add_marked_slide(prs, gospel_end_title, flow.GOSPEL_END, theme)
-    _add_divider_cover(prs, **ctx)
+        gospel_end_title = "Aleluya" if _mass_lang() == "tagalog" else ""
+        if _want("dividers"):
+            _add_divider_cover(prs, **ctx)
+        if _mass_lang() == "tagalog":
+            _add_tagalog_gospel_end_slide(prs, theme, flow.GOSPEL_END, gospel_end_title)
+        else:
+            _add_english_gospel_end_slide(prs, theme, flow.GOSPEL_END)
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
 
     # --- Creed (Nicene or Apostles' — never both) ---
-    _add_creed_slides(prs, theme, creed_choice=creed_choice)
-    _add_divider_cover(prs, **ctx)
+    if _want("creed"):
+        _add_creed_slides(prs, theme, creed_choice=creed_choice)
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
 
     # --- Prayer of the Faithful ---
     pof_title = "Panalangin ng Bayan" if _mass_lang() == "tagalog" else "Prayer of the Faithful"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "prayer_faithful", theme, "Prayer of the Faithful"
-    ):
-        pass
-    else:
-        _add_marked_slide(
-            prs, pof_title, flow.PRAYER_FAITHFUL_1, theme,
-            title=pof_title, title_pt=_SECTION_TITLE_PT_LARGE,
-        )
-        _add_marked_slide(
-            prs, pof_title, flow.PRAYER_FAITHFUL_2, theme,
-            title=pof_title, title_pt=_SECTION_TITLE_PT_LARGE,
-        )
-    _add_divider_cover(prs, **ctx)
+    if _want("prayer_faithful"):
+        if _use_english_rite_templates() and _clone_master_section(
+            prs, "prayer_faithful", theme, "Prayer of the Faithful"
+        ):
+            pass
+        else:
+            _add_marked_slide(
+                prs, pof_title, flow.PRAYER_FAITHFUL_1, theme,
+                title=pof_title, title_pt=_SECTION_TITLE_PT_LARGE,
+            )
+            _add_marked_slide(
+                prs, pof_title, flow.PRAYER_FAITHFUL_2, theme,
+                title=pof_title, title_pt=_SECTION_TITLE_PT_LARGE,
+            )
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
 
     # --- Liturgy of the Eucharist ---
-    off_id = str(sel.get("offertory") or "").strip()
-    if _use_video("offertory", "Offertory"):
-        pass
-    elif not off_id or not _try_library_hymn(
-        prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
-    ):
-        _add_marked_slide(
-            prs,
-            "Offertory",
-            "No Offertory hymn lyrics were selected. Choose one Offertory song in Mass Flow or save lyrics in Lyrics Studio before generating.",
-            theme,
-        )
-    _add_lote_poster_slide(prs, theme, lote_poster_path)
+    if _want("offertory"):
+        off_id = str(sel.get("offertory") or "").strip()
+        if _use_video("offertory", "Offertory"):
+            pass
+        elif not off_id or not _try_library_hymn(
+            prs, "offertory", off_id, "Offertory", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
+        ):
+            _add_marked_slide(
+                prs,
+                "Offertory",
+                "No Offertory hymn lyrics were selected. Choose one Offertory song in Mass Flow or save lyrics in Lyrics Studio before generating.",
+                theme,
+            )
+    if _want("lote_poster"):
+        _add_lote_poster_slide(prs, theme, lote_poster_path)
     lote_title = "Pagdiriwang ng Huling Hapunan" if _mass_lang() == "tagalog" else "Liturgy of the Eucharist"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "lote_pray_brethren", theme, "Liturgy of the Eucharist"
-    ):
-        pass
-    else:
-        _add_marked_slide(prs, lote_title, flow.PRAY_BRETHREN, theme)
-    _add_lote_poster_slide(prs, theme, lote_poster_path)
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "preface_dialogue", theme, "Liturgy of the Eucharist"
-    ):
-        pass
-    else:
-        _add_marked_slide(prs, lote_title, flow.PREFACE_DIALOGUE, theme)
-        _add_marked_slide(prs, lote_title, flow.PREFACE_ACCLAIM, theme)
-    _add_lote_poster_slide(prs, theme, lote_poster_path)
+    if _want("pray_brethren"):
+        if _use_english_rite_templates() and _clone_master_section(
+            prs, "lote_pray_brethren", theme, "Liturgy of the Eucharist"
+        ):
+            pass
+        else:
+            _add_marked_slide(prs, lote_title, flow.PRAY_BRETHREN, theme)
+    if _want("lote_poster"):
+        _add_lote_poster_slide(prs, theme, lote_poster_path)
+    if _want("preface"):
+        if _use_english_rite_templates() and _clone_master_section(
+            prs, "preface_dialogue", theme, "Liturgy of the Eucharist"
+        ):
+            pass
+        else:
+            _add_marked_slide(prs, lote_title, flow.PREFACE_DIALOGUE, theme)
+            _add_marked_slide(prs, lote_title, flow.PREFACE_ACCLAIM, theme)
+    if _want("lote_poster"):
+        _add_lote_poster_slide(prs, theme, lote_poster_path)
     sanctus_title = "Santo, Santo, Santo" if _mass_lang() == "tagalog" else "Sanctus"
-    if not _use_video("sanctus", "Sanctus"):
+    if _want("sanctus") and not _use_video("sanctus", "Sanctus"):
         if _use_english_rite_templates() and _clone_master_section(prs, "sanctus", theme, "Sanctus"):
             pass
         else:
             _add_marked_chunked(prs, sanctus_title, _prayer("holy_holy"), theme)
-    _add_lote_poster_slide(prs, theme, lote_poster_path)
+    if _want("lote_poster"):
+        _add_lote_poster_slide(prs, theme, lote_poster_path)
     mystery_title = "Misteryo ng Pananampalataya" if _mass_lang() == "tagalog" else "The Mystery of Faith"
     ep_footer = "Panalanging Eukaristiko" if _mass_lang() == "tagalog" else "The Eucharistic Prayer"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "mystery_of_faith", theme, "The Eucharistic Prayer"
-    ):
-        pass
-    else:
-        _add_marked_slide(
-            prs, ep_footer, _prayer("mystery_of_faith"), theme,
-            title=mystery_title, title_pt=_SECTION_TITLE_PT_LARGE,
-        )
-    _add_lote_poster_slide(prs, theme, lote_poster_path)
-    if _use_english_rite_templates() and _clone_master_section(prs, "great_amen", theme, "Great Amen"):
-        pass
-    else:
-        _add_marked_slide(prs, "Great Amen", flow.GREAT_AMEN, theme)
+    if _want("mystery_of_faith"):
+        if _use_english_rite_templates() and _clone_master_section(
+            prs, "mystery_of_faith", theme, "The Eucharistic Prayer"
+        ):
+            pass
+        else:
+            _add_marked_slide(
+                prs, ep_footer, _prayer("mystery_of_faith"), theme,
+                title=mystery_title, title_pt=_SECTION_TITLE_PT_LARGE,
+            )
+    if _want("lote_poster"):
+        _add_lote_poster_slide(prs, theme, lote_poster_path)
+    if _want("great_amen"):
+        if _use_english_rite_templates() and _clone_master_section(prs, "great_amen", theme, "Great Amen"):
+            pass
+        else:
+            _add_marked_slide(prs, "Great Amen", flow.GREAT_AMEN, theme)
     _of_choice = _normalize_our_father_choice(our_father_choice)
     of_video_label = _OUR_FATHER_TITLES.get(_of_choice, "Our Father")
-    if not _use_video("our_father", of_video_label):
+    if _want("our_father") and not _use_video("our_father", of_video_label):
         if not _add_our_father_from_deck(prs, theme, _of_choice):
             _add_our_father_slide(
                 prs,
@@ -6337,82 +7302,90 @@ def generate_mass_ppt(
                 theme,
                 title=of_video_label,
             )
-    _add_divider_cover(prs, **ctx)
-    _add_sign_of_peace_slide(prs, theme)
-    if not _use_video("lamb_of_god", "Lamb of God"):
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
+    if _want("sign_of_peace"):
+        _add_sign_of_peace_slide(prs, theme)
+    if _want("lamb_of_god") and not _use_video("lamb_of_god", "Lamb of God"):
         _add_lamb_of_god_slide(prs, theme)
     communion_rite_title = "Rito ng Pakikinabang" if _mass_lang() == "tagalog" else "The Communion Rite"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "communion_rite", theme, "The Communion Rite"
-    ):
-        pass
-    else:
-        _add_marked_slide(prs, communion_rite_title, flow.COMMUNION_DIALOGUE, theme)
-    _add_divider_cover(prs, **ctx)
-    comm_ok = False
-    for i in range(1, 6):
-        key = f"communion_{i}"
-        cid = str(sel.get(key) or "").strip()
-        label = f"Communion ({i})"
-        if _use_video(key, label):
-            comm_ok = True
-        elif cid and _try_library_hymn(
-            prs,
-            "communion",
-            cid,
-            label,
-            theme,
-            hymn_typography=hymn_typography,
-            hymn_lyric_overrides=hymn_lyric_overrides,
-            hymn_lyrics_layout=hymn_lyrics_layout,
-            hymn_layout_overrides=hymn_layout_overrides,
+    if _want("communion_rite"):
+        if _use_english_rite_templates() and _clone_master_section(
+            prs, "communion_rite", theme, "The Communion Rite"
         ):
-            comm_ok = True
-    if not comm_ok:
-        _add_marked_slide(
-            prs,
-            "Communion",
-            "No Communion hymn lyrics were selected. Choose Communion songs in Mass Flow or save lyrics in Lyrics Studio before generating.",
-            theme,
-        )
-    med_id = str(sel.get("meditation") or "").strip()
-    if med_id:
-        _try_library_hymn(
-            prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
-        )
-    extra_sections = sel.get("extra_sections") or []
-    if isinstance(extra_sections, list):
-        for item in extra_sections:
-            if not isinstance(item, dict):
-                continue
-            label = str(item.get("label") or "Custom").strip() or "Custom"
-            song_id = str(item.get("song_id") or "").strip()
-            if song_id:
-                _try_library_hymn(
-                    prs,
-                    "meditation",
-                    song_id,
-                    label,
-                    theme,
-                    hymn_typography=hymn_typography,
-                    hymn_lyric_overrides=hymn_lyric_overrides,
-                    hymn_lyrics_layout=hymn_lyrics_layout,
-                    hymn_layout_overrides=hymn_layout_overrides,
-                )
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "post_communion", theme, "The Communion Rite"
-    ):
-        pass
-    else:
-        _add_marked_slide(prs, communion_rite_title, flow.POST_COMMUNION, theme)
-    _add_divider_cover(prs, **ctx)
+            pass
+        else:
+            _add_marked_slide(prs, communion_rite_title, flow.COMMUNION_DIALOGUE, theme)
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
+    if _want("communion"):
+        comm_ok = False
+        for i in range(1, 6):
+            key = f"communion_{i}"
+            cid = str(sel.get(key) or "").strip()
+            label = f"Communion ({i})"
+            if _use_video(key, label):
+                comm_ok = True
+            elif cid and _try_library_hymn(
+                prs,
+                "communion",
+                cid,
+                label,
+                theme,
+                hymn_typography=hymn_typography,
+                hymn_lyric_overrides=hymn_lyric_overrides,
+                hymn_lyrics_layout=hymn_lyrics_layout,
+                hymn_layout_overrides=hymn_layout_overrides,
+            ):
+                comm_ok = True
+        if not comm_ok:
+            _add_marked_slide(
+                prs,
+                "Communion",
+                "No Communion hymn lyrics were selected. Choose Communion songs in Mass Flow or save lyrics in Lyrics Studio before generating.",
+                theme,
+            )
+    if _want("meditation"):
+        med_id = str(sel.get("meditation") or "").strip()
+        if med_id:
+            _try_library_hymn(
+                prs, "meditation", med_id, "Meditation", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
+            )
+        extra_sections = sel.get("extra_sections") or []
+        if isinstance(extra_sections, list):
+            for item in extra_sections:
+                if not isinstance(item, dict):
+                    continue
+                label = str(item.get("label") or "Custom").strip() or "Custom"
+                song_id = str(item.get("song_id") or "").strip()
+                if song_id:
+                    _try_library_hymn(
+                        prs,
+                        "meditation",
+                        song_id,
+                        label,
+                        theme,
+                        hymn_typography=hymn_typography,
+                        hymn_lyric_overrides=hymn_lyric_overrides,
+                        hymn_lyrics_layout=hymn_lyrics_layout,
+                        hymn_layout_overrides=hymn_layout_overrides,
+                    )
+    if _want("post_communion"):
+        if _use_english_rite_templates() and _clone_master_section(
+            prs, "post_communion", theme, "The Communion Rite"
+        ):
+            pass
+        else:
+            _add_marked_slide(prs, communion_rite_title, flow.POST_COMMUNION, theme)
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
 
     # --- Stewardship, sponsors, announcements (before final blessing) ---
     # Template order: Welcoming Newcomers -> Mass Collection -> Food Sponsors ->
     # Confession. The "Church Announcements" title and "Updates" slides were removed
     # from the template, so they are no longer generated.
     ann_paths: List[Optional[Path]] = list(announcement_image_paths or [])
-    if include_welcoming_newcomers_slide:
+    if include_welcoming_newcomers_slide and _want("welcoming"):
         church_name = (get_community_name() or "").strip() or _TPL_CHURCH_NAME
         if not _clone_master_section(
             prs, "welcoming_newcomers", theme, "Welcoming Newcomers",
@@ -6434,7 +7407,7 @@ def generate_mass_ppt(
         )
 
     _has_collection_amount = bool((mass_collection_amount or "").strip())
-    if include_mass_collection_slide and _has_collection_amount:
+    if include_mass_collection_slide and _has_collection_amount and _want("collection"):
         _add_color_mass_collection_slide(
             prs,
             amount=mass_collection_amount or "",
@@ -6443,7 +7416,7 @@ def generate_mass_ppt(
             theme=theme,
             bg_color=(announcement_bg_colors or {}).get("collection"),
         )
-    elif _has_collection_amount:
+    elif _has_collection_amount and _want("collection"):
         # Legacy path: amount filled without the new checkbox still get a slide.
         if not _clone_master_section(prs, "mass_collection", theme, "Mass Collection", mutate=_inject_collection):
             _add_mass_collection_slide(
@@ -6455,7 +7428,7 @@ def generate_mass_ppt(
             )
 
     _sponsor_names = [(s or "").strip() for s in (food_sponsors or []) if (s or "").strip()]
-    if include_food_sponsor_slide and _sponsor_names:
+    if include_food_sponsor_slide and _sponsor_names and _want("food_sponsors"):
         _add_color_food_sponsor_slide(
             prs,
             sponsors=_sponsor_names,
@@ -6463,19 +7436,19 @@ def generate_mass_ppt(
             theme=theme,
             bg_color=(announcement_bg_colors or {}).get("food"),
         )
-    elif _sponsor_names and not include_food_sponsor_slide:
+    elif _sponsor_names and not include_food_sponsor_slide and _want("food_sponsors"):
         upper_names = [n.upper() for n in _sponsor_names]
         if not _add_food_sponsors_from_template(prs, theme, upper_names):
             _add_food_sponsors_slide(prs, theme, upper_names)
 
-    if include_sponsorship_contact_slide:
+    if include_sponsorship_contact_slide and _want("sponsorship_contact"):
         _add_color_sponsorship_contact_slide(
             prs,
             contact_text=sponsorship_contact or "",
             theme=theme,
             bg_color=(announcement_bg_colors or {}).get("contact"),
         )
-    if include_merienda_location_slide:
+    if include_merienda_location_slide and _want("merienda"):
         _add_color_merienda_location_slide(
             prs,
             location_text=merienda_location or "",
@@ -6483,7 +7456,7 @@ def generate_mass_ppt(
             bg_color=(announcement_bg_colors or {}).get("merienda"),
         )
 
-    for raw_custom in (custom_announcement_slides or []):
+    for raw_custom in (custom_announcement_slides or []) if _want("custom_announcements") else []:
         if not isinstance(raw_custom, Mapping):
             continue
         c_title = str(raw_custom.get("title") or "").strip()
@@ -6498,40 +7471,52 @@ def generate_mass_ppt(
             theme=theme,
         )
 
-    if ann_paths:
-        _add_full_bleed_png_slides(prs, ann_paths)
-    elif _CONFESSION_SLIDE_PNG.is_file():
-        _add_full_bleed_png_slides(prs, [_CONFESSION_SLIDE_PNG])
-    elif not _clone_master_section(prs, "confession", theme, "Announcements"):
-        _add_marked_slide(
-            prs,
-            "Announcements",
-            "The Lord never tires of forgiving us; we are the ones who tire of seeking his mercy.\n— Pope Francis",
-            theme,
-            title="Sacrament of Confession",
-            title_pt=_SECTION_TITLE_PT_LARGE,
-        )
+    if _want("confession"):
+        if ann_paths:
+            _add_full_bleed_png_slides(prs, ann_paths)
+        elif _CONFESSION_SLIDE_PNG.is_file():
+            _add_full_bleed_png_slides(prs, [_CONFESSION_SLIDE_PNG])
+        elif not _clone_master_section(prs, "confession", theme, "Announcements"):
+            _add_marked_slide(
+                prs,
+                "Announcements",
+                "The Lord never tires of forgiving us; we are the ones who tire of seeking his mercy.\n— Pope Francis",
+                theme,
+                title="Sacrament of Confession",
+                title_pt=_SECTION_TITLE_PT_LARGE,
+            )
 
     blessing_title = "Pagbabasbas" if _mass_lang() == "tagalog" else "Final Blessing"
-    if _use_english_rite_templates() and _clone_master_section(
-        prs, "final_blessing", theme, "Final Blessing"
-    ):
-        pass
-    else:
-        _add_marked_slide(prs, blessing_title, flow.FINAL_BLESSING, theme)
-    rec_id = str(sel.get("recessional") or "").strip()
-    if _use_video("recessional", "Recessional"):
-        pass
-    elif not rec_id or not _try_library_hymn(
-        prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
-    ):
+    if _want("final_blessing"):
+        if _use_english_rite_templates() and _clone_master_section(
+            prs, "final_blessing", theme, "Final Blessing"
+        ):
+            pass
+        else:
+            _add_marked_slide(prs, blessing_title, flow.FINAL_BLESSING, theme)
+    if _want("recessional"):
+        rec_id = str(sel.get("recessional") or "").strip()
+        if _use_video("recessional", "Recessional"):
+            pass
+        elif not rec_id or not _try_library_hymn(
+            prs, "recessional", rec_id, "Recessional", theme, hymn_typography=hymn_typography, hymn_lyric_overrides=hymn_lyric_overrides, hymn_lyrics_layout=hymn_lyrics_layout, hymn_layout_overrides=hymn_layout_overrides
+        ):
+            _add_marked_slide(
+                prs,
+                "Recessional",
+                "No Recessional hymn lyrics were selected. Choose one Recessional song in Mass Flow or save lyrics in Lyrics Studio before generating.",
+                theme,
+            )
+    if _want("dividers"):
+        _add_divider_cover(prs, **ctx)
+
+    if len(prs.slides) == 0:
         _add_marked_slide(
             prs,
-            "Recessional",
-            "No Recessional hymn lyrics were selected. Choose one Recessional song in Mass Flow or save lyrics in Lyrics Studio before generating.",
+            "Preview",
+            "No slides were selected for this partial generate.",
             theme,
         )
-    _add_divider_cover(prs, **ctx)
 
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     stem = (output_stem or "mass_presentation").strip() or "mass_presentation"

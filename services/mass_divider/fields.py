@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Mapping, Optional
 
 from services.mass_divider.types import HEADING_DEFAULT, MassDividerFields
+
+_SUNDAY_CYCLE_SUFFIX_RE = re.compile(
+    r"\s*[\(\[]\s*(?:year|taon)?\s*[abc]\s*[\)\]]\s*$",
+    flags=re.IGNORECASE,
+)
 
 
 def _clean(value: Any, *, fallback: str = "") -> str:
@@ -12,10 +18,16 @@ def _clean(value: Any, *, fallback: str = "") -> str:
     return text or fallback
 
 
+def strip_sunday_cycle_suffix(title: str) -> str:
+    """Drop trailing ``(A)`` / ``(Year B)`` — the divider already shows Year/Taon below."""
+    cleaned = _SUNDAY_CYCLE_SUFFIX_RE.sub("", _clean(title)).strip()
+    return cleaned
+
+
 def sunday_title_display(mass_title: str, season: str = "") -> str:
-    title = _clean(mass_title) or _clean(season, fallback="Sunday Mass")
+    title = strip_sunday_cycle_suffix(_clean(mass_title) or _clean(season, fallback="Sunday Mass"))
     title = title.replace(" Celebration", "").strip() or "Sunday Mass"
-    return title
+    return strip_sunday_cycle_suffix(title)
 
 
 def resolve_mass_divider_fields(

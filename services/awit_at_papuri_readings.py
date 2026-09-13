@@ -130,6 +130,13 @@ def _save_cache_file(blob: dict[str, Any]) -> None:
     _file_cache_mtime = path.stat().st_mtime
 
 
+def _row_to_entry(row: dict[str, Any]) -> dict[str, str]:
+    out = _empty_entry()
+    for key in CACHE_KEYS:
+        out[key] = str(row.get(key) or "")
+    return out
+
+
 def get_tagalog_cache_entry(date: str) -> Optional[dict[str, str]]:
     mass_date = _normalize_date(date)
     if not mass_date:
@@ -139,10 +146,19 @@ def get_tagalog_cache_entry(date: str) -> Optional[dict[str, str]]:
         row = blob.get(mass_date)
         if not isinstance(row, dict):
             return None
-        out = _empty_entry()
-        for key in CACHE_KEYS:
-            out[key] = str(row.get(key) or "")
-        return out
+        return _row_to_entry(row)
+
+
+def get_tagalog_cache_month(year: int, month: int) -> dict[str, dict[str, str]]:
+    """All cached Tagalog rows for one calendar month (single file read)."""
+    prefix = f"{year:04d}-{month:02d}-"
+    with _CACHE_LOCK:
+        blob = _load_cache_file()
+    out: dict[str, dict[str, str]] = {}
+    for key, row in blob.items():
+        if isinstance(key, str) and key.startswith(prefix) and isinstance(row, dict):
+            out[key] = _row_to_entry(row)
+    return out
 
 
 def set_tagalog_cache_entry(date: str, entry: dict[str, str]) -> None:

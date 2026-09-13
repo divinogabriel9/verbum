@@ -655,7 +655,14 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-09-13T15:49:55.195373+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:U77073V6fZg",
+        "youtube_id": "U77073V6fZg",
+        "youtube_url": "https://www.youtube.com/watch?v=U77073V6fZg",
+        "display_name": "Awit Ng Pagkakaisa"
+      },
       "gospel_moods": [
         "journey",
         "reverent"
@@ -2691,11 +2698,30 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-09-13T18:14:16.504329+00:00",
       "language": "English",
+      "updated_at": "2026-09-13T18:14:35.001787+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:Wgzh4toH96A",
+        "youtube_id": "Wgzh4toH96A",
+        "youtube_url": "https://www.youtube.com/watch?v=Wgzh4toH96A",
+        "display_name": "All The Ends Of The World"
+      },
       "gospel_moods": [
         "triumphant",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_recessional_all_the_ends_of_the_world_10.mp3",
+        "start_sec": 0.0,
+        "youtube_id": "Wgzh4toH96A",
+        "youtube_url": "https://www.youtube.com/watch?v=Wgzh4toH96A",
+        "display_name": "All The Ends Of The World · 10s",
+        "duration_sec": 10
+      }
     },
     {
       "id": "tell_the_world_of_his_love",
@@ -2743,7 +2769,7 @@
       ],
       "added_at": "2026-09-10T23:00:56.723346+00:00",
       "language": "English",
-      "updated_at": "2026-09-10T23:08:32.342938+00:00",
+      "updated_at": "2026-09-13T15:19:27.480843+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:QB09HyGmCdg",
@@ -2756,12 +2782,9 @@
         "mercy"
       ],
       "audio_preview": {
-        "method": "start",
         "source": "preview",
         "basename": "preview_recessional_my_heart_thanksgiving_10.mp3",
         "start_sec": 0.0,
-        "youtube_id": "QB09HyGmCdg",
-        "youtube_url": "https://www.youtube.com/watch?v=QB09HyGmCdg",
         "display_name": "My Heart Thanksgiving · 10s",
         "duration_sec": 10
       }

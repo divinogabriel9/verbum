@@ -485,6 +485,13 @@
         body.include_church_name = nameCb ? nameCb.checked : false;
         const showFooterCb = $("flow-show-footer");
         body.include_footer = showFooterCb ? !!showFooterCb.checked : false;
+        const pendingKinds = (window.MassWizard && typeof window.MassWizard.consumeSlideKinds === "function")
+          ? window.MassWizard.consumeSlideKinds()
+          : (o.slide_kinds || null);
+        if (pendingKinds && pendingKinds.length) {
+          body.slide_kinds = pendingKinds;
+          body.include_ai_mass_poster = false;
+        }
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -515,6 +522,7 @@
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
+          slide_kinds: body.slide_kinds || null,
           our_father_choice: body.our_father_choice || "english",
           kyrie_choice: body.kyrie_choice || "english",
           kyrie_tagalog_slide: body.kyrie_tagalog_slide || 1,
@@ -699,6 +707,15 @@
     var calendarMonthLoading = false;
     var calendarMonthKey = "";
 
+    function calAcclamationLabel(text) {
+      const t = String(text || "").toLowerCase();
+      if (!t) return "";
+      if (t.indexOf("aleluya") !== -1) return "Aleluya";
+      if (t.indexOf("alleluia") !== -1) return "Alleluia";
+      if (t.indexOf("praise to you") !== -1 || t.indexOf("glory and praise") !== -1) return "Praise";
+      return "";
+    }
+
     function updateCalReadingCard(refEl, excerptEl, toggleEl, ref, body) {
       const text = (body || "").trim();
       const hasContent = !!(text || (ref || "").trim());
@@ -773,6 +790,7 @@
       const lang = currentCalendarLanguage();
       const key = y + "-" + m + "-" + lang;
       calendarMonthLoading = true;
+      if (typeof syncCalAdminFetchSourceLabels === "function") syncCalAdminFetchSourceLabels();
       syncCalendarAdminVisibility();
       renderCalendarGrid();
       const status = $("cal-month-status");
@@ -831,7 +849,8 @@
       if (title) title.textContent = "Readings — " + (detail.date || "");
       if (subtitle) {
         const h = health.status || "unknown";
-        subtitle.textContent = "Global cache · " + h.charAt(0).toUpperCase() + h.slice(1);
+        const cacheLabel = detail.language === "tagalog" ? "Tagalog cache" : "Global cache";
+        subtitle.textContent = cacheLabel + " · " + h.charAt(0).toUpperCase() + h.slice(1);
       }
       if (statusEl) {
         statusEl.textContent = detail.title
@@ -852,6 +871,10 @@
       setCalAdminFieldStatus("gospel", fields.gospel);
     }
 
+    function calAdminReadingsLangQuery() {
+      return "lang=" + encodeURIComponent(currentCalendarLanguage());
+    }
+
     function openCalReadingsAdminModal(iso) {
       if (!canUseCalendarReadingsAdmin()) return;
       clearCalReadingsAdminSaveAnimation();
@@ -863,7 +886,7 @@
         modal.classList.add("is-open");
         modal.setAttribute("aria-hidden", "false");
       }
-      fetch("/api/admin/readings-cache/" + encodeURIComponent(iso))
+      fetch("/api/admin/readings-cache/" + encodeURIComponent(iso) + "?" + calAdminReadingsLangQuery())
         .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
         .then(({ ok, data }) => {
           if (!ok) throw new Error(data.detail || "Could not load readings");
@@ -1026,7 +1049,7 @@
       }
       setCalAdminSaveOverlay("saving");
       try {
-        const res = await fetch("/api/admin/readings-cache/" + encodeURIComponent(calReadingsAdminDate), {
+        const res = await fetch("/api/admin/readings-cache/" + encodeURIComponent(calReadingsAdminDate) + "?" + calAdminReadingsLangQuery(), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -1035,16 +1058,29 @@
         if (!res.ok) throw new Error(data.detail || "Save failed");
         const savedIso = calReadingsAdminDate;
         fillCalReadingsAdminModal(data);
+        if (typeof invalidateClientReadings === "function") invalidateClientReadings(savedIso);
         const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1) + "-" + currentCalendarLanguage();
         if (calendarMonthKey === monthKey && data.health) {
+          const entry = data.entry || {};
           calendarMonthData[savedIso] = Object.assign(
             {},
             calendarMonthData[savedIso] || {},
-            { readings_health: data.health.status }
+            {
+              readings_health: data.health.status,
+              gospel_reference: entry.gospel_ref || (calendarMonthData[savedIso] || {}).gospel_reference,
+              first_reading_reference: entry.first_reading_ref || (calendarMonthData[savedIso] || {}).first_reading_reference,
+              second_reading_reference: entry.second_reading_ref || (calendarMonthData[savedIso] || {}).second_reading_reference,
+              psalm_reference: entry.psalm_ref || (calendarMonthData[savedIso] || {}).psalm_reference,
+              psalm_refrain: entry.psalm_response || (calendarMonthData[savedIso] || {}).psalm_refrain,
+            }
           );
           renderCalendarGrid();
         }
         if (calSelected === savedIso) setCalDetail(calSelected);
+        const massDate = $("mass-date") && $("mass-date").value;
+        if (massDate === savedIso && typeof loadFlowData === "function") {
+          loadFlowData(true);
+        }
         if (data.unchanged) {
           playCalReadingsAdminSaveAnimation(savedIso, {
             message: "No changes to save.",
@@ -1083,6 +1119,28 @@
       "cal-readings-admin-fetch",
     ];
 
+    function calAdminSourceName() {
+      return currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+    }
+
+    function syncCalAdminFetchSourceLabels() {
+      const source = calAdminSourceName();
+      const monthBtn = $("cal-admin-fetch-month-btn");
+      if (monthBtn) {
+        const title = "Force live-fetch every date in this month from " + source;
+        monthBtn.dataset.defaultTitle = title;
+        if (!monthBtn.classList.contains("is-running")) monthBtn.title = title;
+      }
+      const dateBtn = $("cal-readings-admin-fetch");
+      if (dateBtn) {
+        const title = "Force live-fetch from " + source;
+        dateBtn.dataset.defaultTitle = title;
+        if (!dateBtn.classList.contains("is-running")) dateBtn.title = title;
+        const idle = dateBtn.querySelector(".cal-fetch-btn__idle");
+        if (idle) idle.textContent = "Fetch from " + source;
+      }
+    }
+
     function setCalFetchButtonState(btn, running, meta) {
       if (!btn) return;
       btn.classList.toggle("is-running", !!running);
@@ -1108,6 +1166,7 @@
     }
 
     function updateCalAdminFetchButtons(meta) {
+      syncCalAdminFetchSourceLabels();
       const active = getCalAdminActiveFetchButton();
       CAL_ADMIN_FETCH_BUTTON_IDS.forEach((id) => {
         const btn = $(id);
@@ -1210,7 +1269,7 @@
       const res = await fetch("/api/admin/readings-cache/fetch-date", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: iso }),
+        body: JSON.stringify({ date: iso, language: currentCalendarLanguage() }),
         signal: calAdminFetchJob.abort.signal,
       });
       const data = await res.json().catch(() => ({}));
@@ -1220,6 +1279,7 @@
 
     function calAdminApplyFetchResult(iso, data) {
       if (!data || !data.health) return;
+      if (typeof invalidateClientReadings === "function") invalidateClientReadings(iso);
       const monthKey = calendarCursor.getFullYear() + "-" + (calendarCursor.getMonth() + 1) + "-" + currentCalendarLanguage();
       if (calendarMonthKey === monthKey) {
         calendarMonthData[iso] = Object.assign({}, calendarMonthData[iso] || {}, { readings_health: data.health.status });
@@ -1227,6 +1287,10 @@
       }
       if (calReadingsAdminDate === iso) fillCalReadingsAdminModal(data);
       if (calSelected === iso) setCalDetail(iso);
+      const massDate = $("mass-date") && $("mass-date").value;
+      if (massDate === iso && typeof loadFlowData === "function") {
+        loadFlowData(true);
+      }
     }
 
     async function fetchCalAdminDateWithRetries(iso, opts) {
@@ -1282,10 +1346,13 @@
         return "Stopped after " + CAL_ADMIN_MAX_FETCH_ATTEMPTS + " attempts — still " + after + ". Edit manually or try later.";
       }
       if (fetchMeta.error) return "Fetch failed: " + fetchMeta.error;
-      if (after === "healthy" && before !== after) return "Fetched from USCCB — now healthy.";
-      if (after === "healthy") return "Fetched from USCCB — readings look complete.";
-      if (fetchMeta.fetched) return "Fetched from USCCB — still " + after + " (bot block or partial data).";
-      return "Could not fetch from USCCB. Try again later.";
+      const source = fetchMeta.source === "awit_at_papuri" || currentCalendarLanguage() === "tagalog"
+        ? "Awit at Papuri"
+        : "USCCB";
+      if (after === "healthy" && before !== after) return "Fetched from " + source + " — now healthy.";
+      if (after === "healthy") return "Fetched from " + source + " — readings look complete.";
+      if (fetchMeta.fetched) return "Fetched from " + source + " — still " + after + " (bot block or partial data).";
+      return "Could not fetch from " + source + ". Try again later.";
     }
 
     async function fetchCalReadingsAdminDate(iso, opts) {
@@ -1385,6 +1452,7 @@
         $("cal-detail-color").textContent = (snap.liturgical_color && snap.liturgical_color.color_name) || "—";
       }
       updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), snap.gospel_reference, snap.gospel_quote_short || "");
+      updateCalReadingCard($("cal-acclamation-ref"), $("cal-acclamation-excerpt"), document.querySelector("[data-target=\"cal-acclamation-excerpt\"]"), calAcclamationLabel(snap.gospel_acclamation), snap.gospel_acclamation || "");
       updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), snap.psalm_reference, snap.psalm_refrain ? "R. " + snap.psalm_refrain : "");
       updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), snap.first_reading_reference, "");
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), snap.second_reading_reference, "");
@@ -1414,9 +1482,11 @@
         $("cal-detail-color").textContent = (data.liturgical_color && data.liturgical_color.color_name) || "—";
       }
       const gospelBody = (data.gospel_text || data.gospel_quote || "").trim();
+      const acclamation = (data.gospel_acclamation || snap.gospel_acclamation || "").trim();
       const psalmBody = calExtractPsalmRefrain(data.psalm_text || "") || calExtractPsalmRefrain(snap.psalm_refrain || "");
       const psalmRef = data.psalm_reference || snap.psalm_reference || "";
       updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), data.gospel_reference, gospelBody);
+      updateCalReadingCard($("cal-acclamation-ref"), $("cal-acclamation-excerpt"), document.querySelector("[data-target=\"cal-acclamation-excerpt\"]"), calAcclamationLabel(acclamation), acclamation);
       updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), psalmRef, psalmBody ? "R. " + psalmBody : (data.psalm_text || "").trim());
       updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), data.first_reading_reference, data.first_reading_excerpt || "");
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), data.second_reading_reference, data.second_reading_excerpt || "");

@@ -1408,29 +1408,48 @@
       if (gospelEl && $("home-mass-stat-gospel")) $("home-mass-stat-gospel").textContent = gospelEl.textContent || "—";
     }
 
-    async function reloadFlowReadingsForLanguage(date) {
+    async function reloadFlowReadingsForLanguage(date, language) {
       const d = String(date || ($("mass-date") && $("mass-date").value) || "").trim();
       if (!d) return;
+      const lang = language === "tagalog" || language === "english"
+        ? language
+        : currentMassLanguage();
+      const apply = (data) => {
+        if (!flowApplyIsCurrent(d, lang)) return;
+        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) return;
+        applyFlowReadingsData(data, lang);
+        flowPreviewData = Object.assign({}, flowPreviewData || {}, data, {
+          __previewDate: d,
+          readings_language: lang,
+        });
+        window.__mwPreviewData = flowPreviewData;
+        try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
+      };
+      const cached = typeof cachedReadingsForLanguage === "function"
+        ? cachedReadingsForLanguage(d, lang)
+        : null;
+      if (cached) {
+        apply(cached);
+        return;
+      }
       try {
         try { document.dispatchEvent(new CustomEvent("mw:preview-loading")); } catch (_mwLoad) { /* ignore */ }
-        const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: true });
+        const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: lang });
         if (data && data.ok !== false) {
-          applyFlowReadingsData(data);
-          flowPreviewData = Object.assign({}, flowPreviewData || {}, data, { __previewDate: d });
-          window.__mwPreviewData = flowPreviewData;
-          try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
-          if (typeof fillAside === "function") {
-            /* no-op if wizard aside unavailable outside mw scope */
+          data.readings_language = readingsLanguageOf(data) || lang;
+          if (readingsPayloadComplete(data) && payloadMatchesLanguage(data, lang)) {
+            writeStoredReadings(d, data, lang);
           }
+          apply(data);
         }
       } catch (_err) {
-        notify("Could not load " + currentMassLanguage() + " readings for this date.", "error");
+        notify("Could not load " + lang + " readings for this date.", "error");
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (_mwPrev) { /* ignore */ }
       }
     }
     window.reloadFlowReadingsForLanguage = reloadFlowReadingsForLanguage;
 
-    function applyFlowReadingsData(data) {
+    function applyFlowReadingsData(data, language) {
       if ($("flow-reading1-ref")) $("flow-reading1-ref").textContent = data.first_reading_reference || "—";
       if ($("flow-reading1-body")) $("flow-reading1-body").textContent = data.first_reading_excerpt || "—";
       if ($("flow-reading2-ref")) $("flow-reading2-ref").textContent = data.second_reading_reference || "—";
@@ -1453,8 +1472,10 @@
       }
       updateFlowParagraphPreviews();
       const activeDate = $("mass-date") && $("mass-date").value;
+      const lang = language || readingsLanguageOf(data) || currentMassLanguage();
       if (flowPreviewData && flowPreviewData.__previewDate === activeDate) {
         Object.assign(flowPreviewData, {
+          title: data.title,
           first_reading_reference: data.first_reading_reference,
           first_reading_excerpt: data.first_reading_excerpt,
           second_reading_reference: data.second_reading_reference,
@@ -1462,22 +1483,25 @@
           gospel_reference: data.gospel_reference,
           gospel_text: data.gospel_text,
           gospel_quote: data.gospel_quote,
+          gospel_slide_quote: data.gospel_slide_quote,
+          sentences: data.sentences,
           psalm_text: data.psalm_text,
           psalm_verses: data.psalm_verses,
           psalm_reference: data.psalm_reference,
           psalm_refrains: data.psalm_refrains,
           readings_complete: data.readings_complete,
+          readings_language: lang,
         });
         window.__mwPreviewData = flowPreviewData;
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
       }
       try {
         const homeSun = upcomingSundayISO();
-        if (activeDate && activeDate === homeSun) {
-          window.__homePreview = Object.assign({}, data, { __previewDate: activeDate });
-          previewCache.set(previewCacheKey(activeDate, false), Object.assign({}, (previewCache.get(previewCacheKey(activeDate, false)) || {}), data));
-          previewCache.set(previewCacheKey(activeDate, true), data);
-          if (readingsPayloadComplete(data)) writeStoredReadings(activeDate, data);
+        if (activeDate && activeDate === homeSun && payloadMatchesLanguage(data, lang)) {
+          window.__homePreview = Object.assign({}, data, { __previewDate: activeDate, readings_language: lang });
+          previewCache.set(previewCacheKey(activeDate, false, lang), Object.assign({}, data, { readings_language: lang }));
+          previewCache.set(previewCacheKey(activeDate, true, lang), Object.assign({}, data, { readings_language: lang }));
+          writeStoredReadings(activeDate, Object.assign({}, data, { readings_language: lang }), lang);
           applyHomePreviewData(Object.assign({}, (window.__homePreview || {}), data, { __previewDate: activeDate }), activeDate);
         }
       } catch (_homeSyncErr) { /* home card optional */ }
@@ -1783,15 +1807,17 @@
         });
         applied = true;
       }
-      if (typeof suggestions.include_church_logo === "boolean") {
+      const brandingLocked = typeof hasSavedChurchBrandingSettings === "function"
+        && hasSavedChurchBrandingSettings();
+      if (!brandingLocked && typeof suggestions.include_church_logo === "boolean") {
         setMassBuilderFieldValue("flow-include-church-logo", suggestions.include_church_logo);
         applied = true;
       }
-      if (typeof suggestions.include_church_name === "boolean") {
+      if (!brandingLocked && typeof suggestions.include_church_name === "boolean") {
         setMassBuilderFieldValue("flow-include-church-name", suggestions.include_church_name);
         applied = true;
       }
-      if (typeof suggestions.include_footer === "boolean") {
+      if (!brandingLocked && typeof suggestions.include_footer === "boolean") {
         setMassBuilderFieldValue("flow-show-footer", suggestions.include_footer);
         applied = true;
       }
@@ -1852,6 +1878,7 @@
           }
         }
       }
+      if (typeof applySavedChurchBrandingSettings === "function") applySavedChurchBrandingSettings();
       return applied;
     }
 
@@ -1968,8 +1995,11 @@
     }
     wireMassHabitsBanner();
 
-    async function loadFlowData(auto = false) {
+    async function loadFlowData(auto = false, opts) {
       const date = $("mass-date").value;
+      const forceRefresh = !!(opts && opts.forceRefresh);
+      const lang = resolveReadingsLanguage(opts);
+      const seq = ++flowLoadSeq;
       if (!date) {
         if (!auto) notify("Choose a Mass date first.", "error");
         return;
@@ -1997,11 +2027,14 @@
       try {
         if (!auto) advanceMassGenStep(2, { message: "Retrieving official readings…" });
         const [data] = await Promise.all([
-          fetchPreview(date, { readingsOnly: false }),
+          fetchPreview(date, { readingsOnly: false, forceRefresh, language: lang }),
           loadSongCatalog(),
         ]);
+        if (seq !== flowLoadSeq || !flowApplyIsCurrent(date, lang)) return;
+        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) return;
         if (!auto) advanceMassGenStep(3, { message: "Preparing the Liturgy of the Word…" });
-        flowPreviewData = Object.assign({}, data, { __previewDate: date });
+        if (data && data.ok !== false) data.readings_language = readingsLanguageOf(data) || lang;
+        flowPreviewData = Object.assign({}, data, { __previewDate: date, readings_language: lang });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         applyLiturgicalSeasonTheme(data.season || "", data.liturgical_color || null);
         renderThemeGrid();
@@ -2058,29 +2091,32 @@
         updatePosterLivePreview();
         window.__mwPreviewData = flowPreviewData;
         try { document.dispatchEvent(new CustomEvent("mw:preview")); } catch (mwErr) {}
+        if (typeof prefetchAlternateMassLanguage === "function") {
+          prefetchAlternateMassLanguage(date);
+        }
         // Keep the home Sunday readings card on the same preview payload.
         try {
           const homeSun = upcomingSundayISO();
-          if (date === homeSun) {
-            window.__homePreview = Object.assign({}, data, { __previewDate: date });
-            previewCache.set(previewCacheKey(date, false), data);
-            previewCache.set(previewCacheKey(date, true), data);
-            if (readingsPayloadComplete(data)) writeStoredReadings(date, data);
+          if (date === homeSun && payloadMatchesLanguage(data, lang)) {
+            window.__homePreview = Object.assign({}, data, { __previewDate: date, readings_language: lang });
+            previewCache.set(previewCacheKey(date, false, lang), data);
+            previewCache.set(previewCacheKey(date, true, lang), data);
+            if (readingsPayloadComplete(data)) writeStoredReadings(date, data, lang);
             applyHomePreviewData(data, date);
           }
         } catch (_homeSyncErr) { /* home card optional */ }
         if (!readingsPayloadComplete(data)) {
           startReadingsPoll(date, (fresh) => {
-            if ($("mass-date").value !== date) return;
-            applyFlowReadingsData(fresh);
+            if (!flowApplyIsCurrent(date, lang)) return;
+            applyFlowReadingsData(fresh, lang);
             try {
               const homeSun = upcomingSundayISO();
-              if (date === homeSun) {
-                window.__homePreview = Object.assign({}, fresh, { __previewDate: date });
+              if (date === homeSun && payloadMatchesLanguage(fresh, lang)) {
+                window.__homePreview = Object.assign({}, fresh, { __previewDate: date, readings_language: lang });
                 applyHomePreviewData(fresh, date);
               }
             } catch (_e) { /* ignore */ }
-          });
+          }, lang);
         }
         if (!auto) notify("Planner refreshed with lectionary context and hymn recommendations.", "ok");
       } catch (error) {

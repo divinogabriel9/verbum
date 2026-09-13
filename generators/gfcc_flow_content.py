@@ -74,8 +74,8 @@ ALLELUIA_COMMENTATOR = """<<D>>If a commentator announces the verse before the G
 
 GOSPEL_INTRO = """<<P>>The Lord be with you.
 <<A>>And with your spirit.
-<<D>>The Priest says the full introductory dialogue from the Roman Missal, using the complete sentence from the Lectionary for this Mass, beginning “A reading from the holy Gospel according to [name the evangelist or book in full, as printed in the Lectionary—never abbreviated].”
-<<A>>Glory to you, O Lord."""
+<<P>>A reading from the holy Gospel according to {gospel_book}.
+<<A>>Glory to you, O Lord!"""
 
 GOSPEL_END = """<<P>>The Gospel of the Lord.
 <<A>>Praise to you, Lord Jesus Christ."""

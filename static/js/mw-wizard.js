@@ -164,6 +164,25 @@
           }
           var pd = window.__mwPreviewData || null;
           var previewDate = pd && pd.__previewDate ? String(pd.__previewDate) : '';
+          var wantLang = (typeof window.currentMassLanguage === 'function')
+            ? window.currentMassLanguage()
+            : (function () {
+                var sel = $('flow-mass-language');
+                return sel && sel.value === 'tagalog' ? 'tagalog' : 'english';
+              })();
+          var gotLang = (typeof window.readingsLanguageOf === 'function')
+            ? window.readingsLanguageOf(pd)
+            : '';
+          if (pd && previewDate === dateVal && gotLang && gotLang !== wantLang) {
+            setMwMassContextState('loading');
+            var reloadKey = dateVal + ':' + wantLang;
+            if (root.dataset.mwLangReload !== reloadKey && typeof window.reloadFlowReadingsForLanguage === 'function') {
+              root.dataset.mwLangReload = reloadKey;
+              window.reloadFlowReadingsForLanguage(dateVal, wantLang);
+            }
+            return;
+          }
+          if (root.dataset) root.dataset.mwLangReload = '';
           var matched = !!(pd && previewDate && previewDate === dateVal && (pd.season || pd.title || pd.lectionary_cycle));
           if (!matched) {
             var busy = $('btn-load-flow') && $('btn-load-flow').disabled;
@@ -663,33 +682,90 @@
             '</div>' +
           '</span>';
         }
-        function ritePlayDdHtml(mediaKey) {
-          return '<div class="mw-media-dd mw-media-dd--play">' +
-            '<button type="button" class="mw-option__text mw-media-dd__btn" data-mw-media-dd-btn="play" aria-haspopup="menu" aria-expanded="false" aria-label="Play preview" title="Play preview">▶</button>' +
-            '<div class="mw-media-dd__menu" hidden role="menu">' +
-              '<button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-audio data-mw-media-slot="' + escapeAttr(mediaKey) + '">Play audio</button>' +
-              '<button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-video data-mw-media-slot="' + escapeAttr(mediaKey) + '">Play video</button>' +
-            '</div>' +
-          '</div>';
+        function riteAudioPlayHtml(mediaKey) {
+          return '<button type="button" class="mw-option__text" data-mw-play-audio data-mw-media-slot="' + escapeAttr(mediaKey) + '" aria-label="Play audio preview" title="Play audio preview">▶</button>';
+        }
+        var mwFloatingMenus = [];
+        function mwMenuHome(menu) {
+          if (menu && !menu._mwHome) {
+            menu._mwHome = { parent: menu.parentNode, next: menu.nextSibling };
+          }
+          return menu && menu._mwHome;
+        }
+        function mwPlaceFloatingMenu(menu, trigger) {
+          if (!menu || !trigger) return;
+          var r = trigger.getBoundingClientRect();
+          var menuW = menu.offsetWidth || 160;
+          var left = r.left;
+          if (left + menuW > window.innerWidth - 8) left = Math.max(8, r.right - menuW);
+          menu.style.position = 'fixed';
+          menu.style.top = Math.round(r.bottom + 4) + 'px';
+          menu.style.left = Math.round(left) + 'px';
+          menu.style.right = 'auto';
+          menu.style.zIndex = '5000';
+        }
+        function mwFloatMenu(menu, trigger) {
+          if (!menu || !trigger) return;
+          mwMenuHome(menu);
+          var host = trigger.closest('.mw-media-dd, .mw-kyrie-dd');
+          if (host) host._mwFloatedMenu = menu;
+          if (menu.parentNode !== document.body) document.body.appendChild(menu);
+          menu.hidden = false;
+          mwPlaceFloatingMenu(menu, trigger);
+          menu._mwTrigger = trigger;
+          if (mwFloatingMenus.indexOf(menu) === -1) mwFloatingMenus.push(menu);
+        }
+        function mwRestoreMenu(menu) {
+          if (!menu) return;
+          var home = menu._mwHome;
+          menu.hidden = true;
+          menu.style.position = '';
+          menu.style.top = '';
+          menu.style.left = '';
+          menu.style.right = '';
+          menu.style.zIndex = '';
+          menu._mwTrigger = null;
+          if (home && home.parent && menu.parentNode !== home.parent) {
+            if (home.next && home.next.parentNode === home.parent) home.parent.insertBefore(menu, home.next);
+            else home.parent.appendChild(menu);
+          }
+          var i = mwFloatingMenus.indexOf(menu);
+          if (i !== -1) mwFloatingMenus.splice(i, 1);
+        }
+        function mwRepositionFloatingMenus() {
+          mwFloatingMenus.forEach(function (menu) {
+            if (menu._mwTrigger && !menu.hidden) mwPlaceFloatingMenu(menu, menu._mwTrigger);
+          });
+        }
+        if (document.documentElement.dataset.mwFloatMenuDoc !== '1') {
+          document.documentElement.dataset.mwFloatMenuDoc = '1';
+          window.addEventListener('resize', mwRepositionFloatingMenus);
+          window.addEventListener('scroll', mwRepositionFloatingMenus, true);
         }
         function closeAllMediaDd(except) {
           Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-media-dd.is-open'), function (dd) {
             if (except && dd === except) return;
             dd.classList.remove('is-open');
             var btn = dd.querySelector('[data-mw-media-dd-btn]');
-            var menu = dd.querySelector(':scope > .mw-media-dd__menu');
+            var menu = dd.querySelector('.mw-media-dd__menu') || dd._mwFloatedMenu;
             if (btn) btn.setAttribute('aria-expanded', 'false');
-            if (menu) menu.hidden = true;
+            if (menu) mwRestoreMenu(menu);
           });
         }
         function setMediaDdOpen(dd, open) {
           if (!dd) return;
-          if (open) closeAllMediaDd(dd);
+          if (open) {
+            closeAllMediaDd(dd);
+            setKyrieTagalogMenuOpen(false);
+          }
           dd.classList.toggle('is-open', !!open);
           var btn = dd.querySelector('[data-mw-media-dd-btn]');
-          var menu = dd.querySelector(':scope > .mw-media-dd__menu');
+          var menu = dd.querySelector('.mw-media-dd__menu') || dd._mwFloatedMenu;
           if (btn) btn.setAttribute('aria-expanded', String(!!open));
-          if (menu) menu.hidden = !open;
+          if (menu) {
+            if (open) mwFloatMenu(menu, btn);
+            else mwRestoreMenu(menu);
+          }
         }
         function bindMediaDropdowns(scope) {
           Array.prototype.forEach.call((scope || flowPage).querySelectorAll('.mw-media-dd'), function (dd) {
@@ -700,16 +776,21 @@
             btn.addEventListener('click', function (e) {
               e.preventDefault();
               e.stopPropagation();
-              var kind = btn.getAttribute('data-mw-media-dd-btn');
-              if (kind === 'link' && !document.body.classList.contains('is-superadmin')) {
-                var slot = btn.getAttribute('data-mw-media-slot');
-                closeAllMediaDd();
-                if (slot && typeof window.openMassMediaPickModal === 'function') {
-                  window.openMassMediaPickModal('audio', slot, { fromTitle: true });
-                }
-                return;
-              }
               setMediaDdOpen(dd, !dd.classList.contains('is-open'));
+            });
+            Array.prototype.forEach.call(dd.querySelectorAll('[data-mw-link-media]'), function (item) {
+              if (item.dataset.mwDdItemBound === '1') return;
+              item.dataset.mwDdItemBound = '1';
+              item.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeAllMediaDd();
+                var kind = item.getAttribute('data-mw-link-media');
+                var slot = item.getAttribute('data-mw-media-slot');
+                if (kind && slot && typeof window.openMassMediaPickModal === 'function') {
+                  window.openMassMediaPickModal(kind, slot, { fromTitle: true });
+                }
+              });
             });
           });
         }
@@ -743,9 +824,11 @@
           var btn = $('mw-kyrie-tagalog-dd-btn');
           var menu = $('mw-kyrie-tagalog-dd-menu');
           if (!dd || !btn || !menu) return;
+          if (open) closeAllMediaDd();
           dd.classList.toggle('is-open', !!open);
           btn.setAttribute('aria-expanded', String(!!open));
-          menu.hidden = !open;
+          if (open) mwFloatMenu(menu, btn);
+          else mwRestoreMenu(menu);
         }
         function setKyrieTagalogSlide(value) {
           var slideSel = $('flow-kyrie-tagalog-slide');
@@ -787,13 +870,14 @@
             : null;
           var row = tagalogCard && tagalogCard.querySelector(':scope > .mw-option__row');
           var label = row && row.querySelector('.mw-option__label');
-          if (row && label && panel.parentElement !== row) label.insertAdjacentElement('afterend', panel);
+          if (label) label.insertAdjacentElement('afterend', panel);
+          else if (row && panel.parentElement !== row) row.appendChild(panel);
           else if (tagalogCard && panel.parentElement !== tagalogCard) tagalogCard.appendChild(panel);
           if (row) {
-            var textBtn = row.querySelector(':scope > .mw-option__text');
-            var playDd = row.querySelector(':scope > .mw-media-dd--play');
+            var textBtn = row.querySelector(':scope > [data-mw-text-preview]');
+            var audioPlay = row.querySelector(':scope > [data-mw-play-audio]');
             if (textBtn) row.appendChild(textBtn);
-            if (playDd) row.appendChild(playDd);
+            if (audioPlay) row.appendChild(audioPlay);
           }
           if (kyrieSel.dataset.mwKyrieTagalogBound !== '1') {
             kyrieSel.dataset.mwKyrieTagalogBound = '1';
@@ -853,9 +937,9 @@
           if (document.documentElement.dataset.mwKyrieDdDoc !== '1') {
             document.documentElement.dataset.mwKyrieDdDoc = '1';
             document.addEventListener('click', function (e) {
-              if (e.target.closest('#mw-kyrie-tagalog-dd')) return;
+              if (e.target.closest('#mw-kyrie-tagalog-dd, #mw-kyrie-tagalog-dd-menu')) return;
               setKyrieTagalogMenuOpen(false);
-              if (!e.target.closest('.mw-media-dd')) closeAllMediaDd();
+              if (!e.target.closest('.mw-media-dd, .mw-media-dd__menu')) closeAllMediaDd();
             });
             document.addEventListener('keydown', function (e) {
               if (e.key === 'Escape') {
@@ -912,7 +996,7 @@
               var action = (textOnly || mediaRite || mediaKey)
                 ? ('<span class="mw-option__text" data-mw-text-preview role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>')
                 : '';
-              var playDd = (mediaRite && mediaKey) ? ritePlayDdHtml(mediaKey) : '';
+              var playDd = (mediaRite && mediaKey) ? riteAudioPlayHtml(mediaKey) : '';
               var labelHtml = (mediaRite && mediaKey) ? riteLabelLinkHtml(mediaKey) : '<span class="mw-option__label"></span>';
               item.innerHTML =
                 '<div class="mw-option__row">' +
@@ -1402,8 +1486,132 @@
           document.body.classList.add('mw-on');
           if ($('mw-next')) $('mw-next').addEventListener('click', next);
           if ($('mw-back')) $('mw-back').addEventListener('click', back);
-          if ($('mw-generate')) $('mw-generate').addEventListener('click', function () {
+          var pendingSlideKinds = null;
+          var SLIDE_KIND_GROUPS = [
+            ["Introductory rites", [
+              ["pre_mass", "Pre-Mass"], ["cover", "Mass cover"], ["entrance", "Entrance hymn"],
+              ["intro_rites", "Sign of the Cross"], ["penitential", "Penitential Act"],
+              ["kyrie", "Kyrie"], ["gloria", "Gloria"], ["opening_prayer", "Opening prayer"]
+            ]],
+            ["Liturgy of the Word", [
+              ["lotw_title", "LOTW title"], ["first_reading", "First Reading"],
+              ["psalm", "Responsorial Psalm"], ["second_reading", "Second Reading"],
+              ["gospel_acclamation", "Gospel Acclamation"], ["creed", "Creed"],
+              ["prayer_faithful", "Prayer of the Faithful"]
+            ]],
+            ["Liturgy of the Eucharist", [
+              ["offertory", "Offertory hymn"], ["lote_poster", "LOTE posters"],
+              ["pray_brethren", "Pray, brethren"], ["preface", "Preface"],
+              ["sanctus", "Sanctus"], ["mystery_of_faith", "Mystery of Faith"],
+              ["great_amen", "Great Amen"], ["our_father", "Our Father"],
+              ["sign_of_peace", "Sign of Peace"], ["lamb_of_god", "Lamb of God"],
+              ["communion_rite", "Communion rite"], ["communion", "Communion hymns"],
+              ["meditation", "Meditation / extras"], ["post_communion", "Post-communion"]
+            ]],
+            ["Close", [
+              ["welcoming", "Welcoming newcomers"], ["collection", "Mass collection"],
+              ["food_sponsors", "Food sponsors"], ["sponsorship_contact", "Sponsorship contact"],
+              ["merienda", "Merienda location"], ["custom_announcements", "Custom announcements"],
+              ["confession", "Confession / images"], ["final_blessing", "Final blessing"],
+              ["recessional", "Recessional hymn"], ["dividers", "Section divider covers"]
+            ]]
+          ];
+          function isSaGenerate() {
+            return document.body.classList.contains("is-superadmin");
+          }
+          function triggerFullGenerate() {
+            pendingSlideKinds = null;
+            var g = $('btn-generate-flow'); if (g) g.click();
+          }
+          function setGenMenuOpen(open) {
+            var menu = $('mw-gen-menu');
+            var btn = $('mw-generate');
+            if (!menu || !btn) return;
+            menu.hidden = !open;
+            btn.setAttribute("aria-expanded", open ? "true" : "false");
+          }
+          function fillPartialGenList() {
+            var host = $('mw-partial-gen-list');
+            if (!host || host.dataset.built === "1") return;
+            host.dataset.built = "1";
+            var saved = [];
+            try { saved = JSON.parse(sessionStorage.getItem("verbum:sa-slide-kinds") || "[]") || []; } catch (_e) { saved = []; }
+            var savedSet = {};
+            saved.forEach(function (id) { savedSet[id] = true; });
+            host.innerHTML = SLIDE_KIND_GROUPS.map(function (group) {
+              var boxes = group[1].map(function (item) {
+                var checked = saved.length ? (savedSet[item[0]] ? " checked" : "") : " checked";
+                return "<label><input type=\"checkbox\" value=\"" + item[0] + "\"" + checked + " /> " + item[1] + "</label>";
+              }).join("");
+              return "<div class=\"mw-partial-gen__group\"><h4>" + group[0] + "</h4>" + boxes + "</div>";
+            }).join("");
+          }
+          function openPartialGenModal() {
+            fillPartialGenList();
+            var modal = $('mw-partial-gen-modal');
+            if (!modal) return;
+            modal.setAttribute("data-open", "true");
+            modal.setAttribute("aria-hidden", "false");
+          }
+          function closePartialGenModal() {
+            var modal = $('mw-partial-gen-modal');
+            if (!modal) return;
+            modal.removeAttribute("data-open");
+            modal.setAttribute("aria-hidden", "true");
+          }
+          function selectedPartialKinds() {
+            var host = $('mw-partial-gen-list');
+            if (!host) return [];
+            return Array.prototype.slice.call(host.querySelectorAll("input[type=checkbox]:checked"))
+              .map(function (el) { return el.value; })
+              .filter(Boolean);
+          }
+          if ($('mw-generate')) $('mw-generate').addEventListener('click', function (e) {
             if (validateBeforeGenerate()) return;
+            if (isSaGenerate()) {
+              e.preventDefault();
+              var menu = $('mw-gen-menu');
+              setGenMenuOpen(menu ? menu.hidden : true);
+              return;
+            }
+            triggerFullGenerate();
+          });
+          if ($('mw-gen-menu')) $('mw-gen-menu').addEventListener('click', function (e) {
+            var item = e.target.closest("[data-mw-gen-mode]");
+            if (!item) return;
+            setGenMenuOpen(false);
+            if (validateBeforeGenerate()) return;
+            if (item.getAttribute("data-mw-gen-mode") === "partial") {
+              openPartialGenModal();
+              return;
+            }
+            triggerFullGenerate();
+          });
+          document.addEventListener("click", function (e) {
+            var wrap = $('mw-gen-wrap');
+            if (!wrap || !wrap.contains || wrap.contains(e.target)) return;
+            setGenMenuOpen(false);
+          });
+          if ($('mw-partial-gen-all')) $('mw-partial-gen-all').addEventListener('click', function () {
+            var host = $('mw-partial-gen-list');
+            if (!host) return;
+            host.querySelectorAll("input[type=checkbox]").forEach(function (el) { el.checked = true; });
+          });
+          if ($('mw-partial-gen-none')) $('mw-partial-gen-none').addEventListener('click', function () {
+            var host = $('mw-partial-gen-list');
+            if (!host) return;
+            host.querySelectorAll("input[type=checkbox]").forEach(function (el) { el.checked = false; });
+          });
+          if ($('mw-partial-gen-cancel')) $('mw-partial-gen-cancel').addEventListener('click', closePartialGenModal);
+          if ($('mw-partial-gen-modal')) $('mw-partial-gen-modal').addEventListener('click', function (e) {
+            if (e.target === $('mw-partial-gen-modal')) closePartialGenModal();
+          });
+          if ($('mw-partial-gen-go')) $('mw-partial-gen-go').addEventListener('click', function () {
+            var kinds = selectedPartialKinds();
+            if (!kinds.length) return;
+            try { sessionStorage.setItem("verbum:sa-slide-kinds", JSON.stringify(kinds)); } catch (_e) {}
+            pendingSlideKinds = kinds;
+            closePartialGenModal();
             var g = $('btn-generate-flow'); if (g) g.click();
           });
           bindMassMissingOptionsModal();
@@ -1447,6 +1655,7 @@
             massLang.dataset.mwLangBound = '1';
             massLang.addEventListener('change', function () {
               var lang = massLang.value === 'tagalog' ? 'tagalog' : 'english';
+              if (typeof window.persistMassLanguage === 'function') window.persistMassLanguage(lang);
               /* Prefer matching vernacular for Our Father / Kyrie — Creed stays user-chosen. */
               if ($('flow-our-father-choice')) {
                 var ofSel = $('flow-our-father-choice');
@@ -1473,7 +1682,7 @@
               fillAside(1);
               var md = $('mass-date');
               if (md && md.value && typeof window.reloadFlowReadingsForLanguage === 'function') {
-                window.reloadFlowReadingsForLanguage(md.value);
+                window.reloadFlowReadingsForLanguage(md.value, lang);
               }
             });
           }
@@ -1654,6 +1863,11 @@
             },
             getMissingOptions: function () { return collectMassMissingOptions(); },
             validateBeforeGenerate: validateBeforeGenerate,
+            consumeSlideKinds: function () {
+              var kinds = pendingSlideKinds;
+              pendingSlideKinds = null;
+              return kinds;
+            },
             hasProgress: function () {
               if (current > 1) return true;
               var cel = $('celebrant');
