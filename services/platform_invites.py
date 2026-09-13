@@ -210,5 +210,20 @@ def consume_invite(
     )
     rows = result.data or []
     if rows:
+        linked_parish_id = parish_id or None
+        if not linked_parish_id:
+            try:
+                from services.parish_store import get_user_parish_context
+
+                ctx = get_user_parish_context(uid, access_token=access_token)
+                linked_parish_id = str((ctx or {}).get("parish_id") or "").strip() or None
+            except Exception:
+                linked_parish_id = None
+        try:
+            from services.distribution.invites import on_platform_invite_accepted
+
+            on_platform_invite_accepted(tok, uid, parish_id=linked_parish_id)
+        except Exception:
+            pass
         return rows[0]
     raise ValueError("Invite could not be consumed.")

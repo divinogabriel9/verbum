@@ -183,6 +183,7 @@ _SIGN_OF_PEACE_SLIDE_INDEX = 0
 _GLORIA_TEMPLATE_FILENAME = "gloria_slides.pptx"
 _KYRIE_TEMPLATE_FILENAME = "kyrie_slide.pptx"
 _KYRIE_SLIDE_INDEX = 0
+_KYRIE_TAGALOG_TEMPLATE_FILENAME = "kyrie_tagalog_slides.pptx"
 _LOTW_TITLE_IMAGE_FILENAME = "liturgy_of_the_word_title.png"
 _LOTW_TITLE_TEMPLATE_FILENAME = "liturgy_of_the_word_title_slide.pptx"
 _LOTW_TITLE_SLIDE_INDEX = 0
@@ -281,6 +282,7 @@ _lamb_of_god_template: Optional[Presentation] = None
 _sign_of_peace_template: Optional[Presentation] = None
 _gloria_template: Optional[Presentation] = None
 _kyrie_template: Optional[Presentation] = None
+_kyrie_tagalog_template: Optional[Presentation] = None
 _lotw_title_template: Optional[Presentation] = None
 _gospel_acclamation_template: Optional[Presentation] = None
 _apostles_creed_template: Optional[Presentation] = None
@@ -301,6 +303,8 @@ class DeckBrandingOptions:
 
 _deck_branding = DeckBrandingOptions()
 _ACTIVE_MASS_LANG = "english"
+_ACTIVE_KYRIE_CHOICE = "english"
+_ACTIVE_KYRIE_TAGALOG_SLIDE = 1
 
 
 def _mass_lang() -> str:
@@ -1963,20 +1967,118 @@ def _load_kyrie_template() -> Optional[Presentation]:
     return _kyrie_template
 
 
+def _kyrie_tagalog_template_path() -> Optional[Path]:
+    path = _PROJECT_ROOT / "data" / "reference" / _KYRIE_TAGALOG_TEMPLATE_FILENAME
+    if path.is_file():
+        return path.resolve()
+    return None
+
+
+def _load_kyrie_tagalog_template() -> Optional[Presentation]:
+    ref_path = _kyrie_tagalog_template_path()
+    if not ref_path:
+        return None
+    try:
+        return Presentation(str(ref_path))
+    except Exception:
+        return None
+
+
+def _scale_cloned_shapes(slide, scale: float) -> None:
+    """Keep authored 16:9 layout; only enlarge onto the Mass deck canvas."""
+    if scale <= 0 or abs(scale - 1.0) < 1e-6:
+        return
+    for shape in slide.shapes:
+        try:
+            if shape.left is not None:
+                shape.left = int(int(shape.left) * scale)
+            if shape.top is not None:
+                shape.top = int(int(shape.top) * scale)
+            if shape.width is not None:
+                shape.width = int(int(shape.width) * scale)
+            if shape.height is not None:
+                shape.height = int(int(shape.height) * scale)
+        except (AttributeError, TypeError, ValueError):
+            pass
+        if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+            continue
+        for para in shape.text_frame.paragraphs:
+            for run in para.runs:
+                size = run.font.size
+                if size is not None:
+                    run.font.size = Pt(size.pt * scale)
+
+
+def _copy_authored_slide_as_is(
+    prs: Presentation,
+    slide_src,
+    src_width: int,
+    src_height: int,
+    theme: SlideTheme,
+) -> None:
+    """Clone a reference slide without restyling or stretching its orientation."""
+    dest = prs.slides.add_slide(_layout_blank(prs))
+    for shp in list(dest.shapes):
+        el = shp.element
+        el.getparent().remove(el)
+    for shp in slide_src.shapes:
+        dest.shapes._spTree.insert_element_before(deepcopy(shp.element), "p:extLst")
+    src_w = int(src_width or 0)
+    src_h = int(src_height or 0)
+    dest_w = int(prs.slide_width)
+    dest_h = int(prs.slide_height)
+    if src_w > 0 and src_h > 0:
+        _scale_cloned_shapes(dest, min(dest_w / src_w, dest_h / src_h))
+    _set_slide_bg(dest, theme.bg)
+    _recolor_cloned_text_to_theme(dest, theme)
+    _ensure_slide_text_contrast(dest, theme)
+
+
+def _normalize_kyrie_choice(choice: str) -> str:
+    c = (choice or "").strip().lower().replace("-", "_")
+    if c in ("english", "greek", "latin", "tagalog"):
+        return c
+    return "english"
+
+
+def _normalize_kyrie_tagalog_slide(index: int | str) -> int:
+    try:
+        n = int(index)
+    except (TypeError, ValueError):
+        return 1
+    return 2 if n == 2 else 1
+
+
+def _is_kyrie_title_text(text: str) -> bool:
+    return _is_rite_slide_title_text(text, "Kyrie Eleison") or _is_rite_slide_title_text(
+        text, "Kyrie"
+    )
+
+
 def _is_kyrie_body_text(text: str) -> bool:
     """Main Kyrie blocks: LORD / CHRIST HAVE MERCY (all caps, not the section title)."""
     lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
     if not lines:
         return False
     joined = " ".join(lines).upper()
-    if _is_rite_slide_title_text(text, "Kyrie Eleison"):
+    if _is_kyrie_title_text(text):
         return False
-    return "HAVE MERCY" in joined or joined.startswith("LORD,") or joined.startswith("CHRIST,")
+    return (
+        "HAVE MERCY" in joined
+        or joined.startswith("LORD,")
+        or joined.startswith("CHRIST,")
+        or "MAAWA" in joined
+        or "KAAWAAN" in joined
+        or joined.startswith("PANGINOON")
+        or joined.startswith("KRISTO")
+        or joined.startswith("PARI:")
+    )
 
 
 def _apply_kyrie_typography(slide) -> None:
     """Kyrie title Georgia 38.5 pt (same as Gloria); body Poppins Bold 56 pt ALL CAPS blocks."""
     _apply_rite_slide_title_typography(slide, "Kyrie Eleison")
+    _apply_rite_slide_title_typography(slide, "Kyrie")
     parish = get_community_name().strip().lower()
     for shape in slide.shapes:
         if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
@@ -1986,7 +2088,7 @@ def _apply_kyrie_typography(slide) -> None:
         text = (shape.text_frame.text or "").strip()
         if not text or (parish and parish in text.lower()):
             continue
-        if _is_rite_slide_title_text(text, "Kyrie Eleison"):
+        if _is_kyrie_title_text(text):
             continue
         if _is_kyrie_body_text(text):
             _style_shape_font(
@@ -2216,8 +2318,31 @@ def _add_penitential_act_slides(prs: Presentation, theme: SlideTheme) -> None:
     _add_marked_chunked(prs, footer, _prayer("penitential_act"), theme)
 
 
+def _add_kyrie_from_tagalog_deck(prs: Presentation, theme: SlideTheme, slide_index: int) -> bool:
+    """Clone one authored Tagalog Kyrie slide exactly as laid out. False if missing."""
+    tpl = _load_kyrie_tagalog_template()
+    if tpl is None or not tpl.slides:
+        return False
+    idx = 1 if _normalize_kyrie_tagalog_slide(slide_index) == 2 else 0
+    if idx >= len(tpl.slides):
+        idx = len(tpl.slides) - 1
+    _copy_authored_slide_as_is(
+        prs,
+        tpl.slides[idx],
+        int(tpl.slide_width),
+        int(tpl.slide_height),
+        theme,
+    )
+    return True
+
+
 def _add_kyrie_slide(prs: Presentation, theme: SlideTheme) -> None:
     title = "Panginoon, Kaawaan Mo Kami" if _mass_lang() == "tagalog" else "Kyrie Eleison"
+    if _ACTIVE_KYRIE_CHOICE == "tagalog":
+        if _add_kyrie_from_tagalog_deck(prs, theme, _ACTIVE_KYRIE_TAGALOG_SLIDE):
+            return
+        _add_marked_slide(prs, title, get_prayer("kyrie", "tagalog"), theme)
+        return
     if _use_english_rite_templates() and _clone_master_section(prs, "kyrie", theme, "Kyrie Eleison"):
         return
     if _use_english_rite_templates():
@@ -5887,6 +6012,8 @@ def generate_mass_ppt(
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
     our_father_choice: str = "english",
+    kyrie_choice: str = "english",
+    kyrie_tagalog_slide: int = 1,
     hymn_lyrics_layout: str = "dual",
     hymn_layout_overrides: Optional[Mapping[str, Any]] = None,
     video_replacements: Optional[Mapping[str, Any]] = None,
@@ -5894,7 +6021,10 @@ def generate_mass_ppt(
     show_hymn_section_labels: bool = False,
 ) -> tuple[int, Path, list[dict[str, Any]]]:
     global _ACTIVE_FONT, _ACTIVE_THEME, _deck_branding, _ACTIVE_MASS_LANG, _SHOW_HYMN_SECTION_LABELS
+    global _ACTIVE_KYRIE_CHOICE, _ACTIVE_KYRIE_TAGALOG_SLIDE
     _ACTIVE_MASS_LANG = normalize_mass_language(mass_language)
+    _ACTIVE_KYRIE_CHOICE = _normalize_kyrie_choice(kyrie_choice)
+    _ACTIVE_KYRIE_TAGALOG_SLIDE = _normalize_kyrie_tagalog_slide(kyrie_tagalog_slide)
     _SHOW_HYMN_SECTION_LABELS = bool(show_hymn_section_labels)
     _deck_branding = DeckBrandingOptions(
         include_logo=bool(include_church_logo),

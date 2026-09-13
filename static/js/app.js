@@ -1229,6 +1229,9 @@
       "kyrie::english": "Kyrie · English",
       "kyrie::greek": "Kyrie · Greek",
       "kyrie::latin": "Kyrie · Latin",
+      "kyrie::tagalog": "Kyrie · Tagalog",
+      "kyrie::tagalog-1": "Kyrie · Tagalog · Panginoon, Maawa Ka",
+      "kyrie::tagalog-2": "Kyrie · Tagalog · Panginoon, Kaawaan Mo Kami",
       "gloria::english": "Gloria · English",
       "gloria::latin": "Gloria · Latin",
       "sanctus::default": "Sanctus · Holy, Holy, Holy",
@@ -1249,6 +1252,9 @@
       "kyrie::english": "Lord, have mercy.\nChrist, have mercy.\nLord, have mercy.",
       "kyrie::greek": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
       "kyrie::latin": "Kyrie eleison.\nChriste eleison.\nKyrie eleison.",
+      "kyrie::tagalog": "PANGINOON, MAAWA KA.\nKRISTO, MAAWA KA.\nKRISTO, MAAWA KA SA AMIN.",
+      "kyrie::tagalog-1": "PANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\nKRISTO, MAAWA KA.\nKRISTO, MAAWA KA SA AMIN.",
+      "kyrie::tagalog-2": "Pari: Panginoon, Kaawaan Mo Kami.\nB: Panginoon, Kaawaan Mo Kami.\nPari: Kristo, Kaawaan Mo Kami.\nB: Kristo, Kaawaan Mo Kami.\nPari: Panginoon, Kaawaan Mo Kami.\nB: Panginoon, Kaawaan Mo Kami.",
       "gloria::english": "Glory to God in the highest,\nand on earth peace to people of good will.\nWe praise you, we bless you, we adore you,\nwe glorify you, we give you thanks\nfor your great glory,\nLord God, heavenly King, O God, almighty Father.\n\nLord Jesus Christ, Only Begotten Son,\nLord God, Lamb of God, Son of the Father,\nyou take away the sins of the world, have mercy on us;\nyou take away the sins of the world, receive our prayer;\nyou are seated at the right hand of the Father, have mercy on us.\n\nFor you alone are the Holy One,\nyou alone are the Lord,\nyou alone are the Most High,\nJesus Christ,\nwith the Holy Spirit,\nin the glory of God the Father.\nAmen.",
       "gloria::latin": "Gloria in excelsis Deo\net in terra pax hominibus bonae voluntatis.\nLaudamus te, benedicimus te, adoramus te,\nglorificamus te, gratias agimus tibi\npropter magnam gloriam tuam,\nDomine Deus, Rex caelestis, Deus Pater omnipotens.\n\nDomine Fili unigenite, Iesu Christe,\nDomine Deus, Agnus Dei, Filius Patris,\nqui tollis peccata mundi, miserere nobis;\nqui tollis peccata mundi, suscipe deprecationem nostram.\nQui sedes ad dexteram Patris, miserere nobis.\n\nQuoniam tu solus Sanctus, tu solus Dominus,\ntu solus Altissimus, Iesu Christe,\ncum Sancto Spiritu: in gloria Dei Patris.\nAmen.",
       "sanctus::default": "Holy, Holy, Holy Lord God of hosts.\nHeaven and earth are full of your glory.\nHosanna in the highest.\nBlessed is he who comes in the name of the Lord.\nHosanna in the highest.",
@@ -1647,13 +1653,8 @@
     var massRiteVideoPickPending = null;
 
     function massRiteOptionMediaInnerHtml(mediaKey, section, lang) {
-      const key = String(mediaKey || "").trim();
       const sec = String(section || "").trim().toLowerCase();
       const opt = String(lang || "").trim().toLowerCase();
-      const audio = getMassSectionMedia("audio", key);
-      const video = getMassSectionMedia("video", key);
-      const audioOn = !!audio;
-      const videoOn = !!video;
       const activeLang = String(
         (window.massRiteVideoLang && window.massRiteVideoLang[sec]) || ""
       ).trim().toLowerCase();
@@ -1662,18 +1663,6 @@
         window.massRiteVideoMode[sec] &&
         activeLang === opt
       );
-      const audioPlayBtn =
-        "<button type=\"button\" class=\"mw-media-play" + (audioOn ? " is-ready" : "") + "\" " +
-          "data-mw-play-audio data-mw-media-slot=\"" + escapeHtml(key) + "\" " +
-          (audioOn ? "" : "disabled ") +
-          "aria-label=\"Play audio preview\" " +
-          "title=\"" + escapeHtml(audioOn ? ("Play " + (audio.display_name || audio.basename)) : "Link audio first") + "\">▶</button>";
-      const videoPlayBtn =
-        "<button type=\"button\" class=\"mw-media-play" + (videoOn ? " is-ready" : "") + "\" " +
-          "data-mw-play-video data-mw-media-slot=\"" + escapeHtml(key) + "\" " +
-          (videoOn ? "" : "disabled ") +
-          "aria-label=\"Play video preview\" " +
-          "title=\"" + escapeHtml(videoOn ? ("Play " + (video.display_name || video.basename)) : "Link video first") + "\">▶</button>";
       return (
         "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this rite\" " +
           "data-mass-rite-slide-mode=\"" + escapeHtml(sec) + "\">" +
@@ -1689,30 +1678,7 @@
             "data-mass-rite-slide-mode-section=\"" + escapeHtml(sec) + "\" " +
             "data-mass-rite-slide-mode-lang=\"" + escapeHtml(opt) + "\" " +
             "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
-        "</div>" +
-        "<div class=\"mw-media-group\">" +
-          "<button type=\"button\" class=\"mw-media-chip mw-media-chip--sa" + (audioOn ? " is-on" : "") + "\" " +
-            "data-mw-link-media=\"audio\" data-mw-media-slot=\"" + escapeHtml(key) + "\" " +
-            "title=\"Audio snippet for the ministry to learn the tune (not added to the PowerPoint)\">" +
-            "<span>Audio</span>" +
-            (audioOn ? "<span class=\"mw-media-chip__name\">" + escapeHtml(audio.display_name || audio.basename) + "</span>" : "") +
-          "</button>" +
-          audioPlayBtn +
-        "</div>" +
-        "<div class=\"mw-media-group\">" +
-          "<button type=\"button\" class=\"mw-media-chip mw-media-chip--sa" + (videoOn ? " is-on" : "") + "\" " +
-            "data-mw-link-media=\"video\" data-mw-media-slot=\"" + escapeHtml(key) + "\" " +
-            "title=\"Link an MP4. Choose Video above to use it instead of lyric slides.\">" +
-            "<span>Video file</span>" +
-            (videoOn ? "<span class=\"mw-media-chip__name\">" + escapeHtml(video.display_name || video.basename) + "</span>" : "") +
-          "</button>" +
-          videoPlayBtn +
-        "</div>" +
-        "<p class=\"mass-song-slide-mode__hint\">" +
-          (useVideo
-            ? "PowerPoint: video slide replaces lyrics."
-            : "PowerPoint: lyric slides. Audio is preview only.") +
-        "</p>"
+        "</div>"
       );
     }
 
@@ -1734,7 +1700,7 @@
       if (sec === "sanctus") {
         const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
         if (wrap) {
-          wrap.querySelectorAll(":scope > .mw-option").forEach((c) => {
+          wrap.querySelectorAll(".mw-option").forEach((c) => {
             if (c.getAttribute("data-val") === "__video") return;
             c.setAttribute("aria-checked", String(c.getAttribute("data-val") === opt));
           });
@@ -1854,7 +1820,7 @@
       if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
         const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
         if (wrap) {
-          wrap.querySelectorAll(":scope > .mw-option").forEach((c) => {
+          wrap.querySelectorAll(".mw-option").forEach((c) => {
             if (c.getAttribute("data-val") === "__video") return;
             c.setAttribute(
               "aria-checked",
@@ -1890,6 +1856,11 @@
     }
 
     function massMediaDisplayLabel(key) {
+      if (key === "kyrie::tagalog") {
+        const slideSel = $("flow-kyrie-tagalog-slide");
+        const slideKey = slideSel && slideSel.value === "2" ? "kyrie::tagalog-2" : "kyrie::tagalog-1";
+        if (MASS_RITE_OPTION_LABELS[slideKey]) return MASS_RITE_OPTION_LABELS[slideKey];
+      }
       if (MASS_RITE_OPTION_LABELS[key]) return MASS_RITE_OPTION_LABELS[key];
       const parsed = parseMassMediaKey(key);
       const base = MASS_SECTION_MEDIA_LABELS[parsed.section] || parsed.section;
@@ -1908,7 +1879,11 @@
 
     async function fetchRiteSlidePreview(section, option) {
       const sec = String(section || "").trim().toLowerCase();
-      const opt = String(option || "").trim().toLowerCase() || "default";
+      let opt = String(option || "").trim().toLowerCase() || "default";
+      if (sec === "kyrie" && opt === "tagalog") {
+        const slideSel = $("flow-kyrie-tagalog-slide");
+        opt = slideSel && slideSel.value === "2" ? "tagalog-2" : "tagalog-1";
+      }
       const cacheKey = sec + "::" + opt;
       if (riteSlidePreviewCache[cacheKey]) return riteSlidePreviewCache[cacheKey];
       const qs = "section=" + encodeURIComponent(sec) + "&option=" + encodeURIComponent(opt);
@@ -1920,8 +1895,14 @@
       riteSlidePreviewCache[cacheKey] = data;
       return data;
     }
+    window.fetchRiteSlidePreview = fetchRiteSlidePreview;
 
     function getMassMediaPreviewText(key) {
+      if (key === "kyrie::tagalog") {
+        const slideSel = $("flow-kyrie-tagalog-slide");
+        const slideKey = slideSel && slideSel.value === "2" ? "kyrie::tagalog-2" : "kyrie::tagalog-1";
+        if (MASS_RITE_OPTION_PREVIEW_TEXT[slideKey]) return MASS_RITE_OPTION_PREVIEW_TEXT[slideKey];
+      }
       if (MASS_RITE_OPTION_PREVIEW_TEXT[key]) return MASS_RITE_OPTION_PREVIEW_TEXT[key];
       const parsed = parseMassMediaKey(key);
       if (MASS_SECTION_VIDEO_SLOT_SET.has(parsed.section) && !parsed.option) {
@@ -2109,6 +2090,50 @@
         play.disabled = !has;
         play.classList.toggle("is-ready", has);
       });
+      document.querySelectorAll(".mw-media-dd--play").forEach((dd) => {
+        const audioBtn = dd.querySelector("[data-mw-play-audio]");
+        const videoBtn = dd.querySelector("[data-mw-play-video]");
+        const trigger = dd.querySelector("[data-mw-media-dd-btn=\"play\"]");
+        const audioReady = !!(audioBtn && audioBtn.classList.contains("is-ready"));
+        const videoReady = !!(videoBtn && videoBtn.classList.contains("is-ready"));
+        const playing = !!(audioBtn && audioBtn.classList.contains("is-playing"));
+        if (trigger) {
+          trigger.classList.toggle("is-ready", audioReady || videoReady);
+          trigger.classList.toggle("is-playing", playing);
+          trigger.textContent = playing ? "❚❚" : "▶";
+          trigger.title = playing ? "Stop preview" : "Play preview";
+        }
+        if (audioBtn) {
+          const key = audioBtn.getAttribute("data-mw-media-slot") || "";
+          const item = key ? getMassSectionMedia("audio", key) : null;
+          audioBtn.textContent = playing ? "Stop audio" : "Play audio";
+          audioBtn.title = item
+            ? (playing ? "Stop audio preview" : ("Play " + (item.display_name || item.basename)))
+            : "Link audio from the option title first";
+        }
+        if (videoBtn) {
+          const key = videoBtn.getAttribute("data-mw-media-slot") || "";
+          const item = key ? getMassSectionMedia("video", key) : null;
+          videoBtn.title = item
+            ? ("Play " + (item.display_name || item.basename))
+            : "Link video from the option title first";
+        }
+      });
+      document.querySelectorAll(".mw-media-dd--link").forEach((dd) => {
+        const label = dd.querySelector(".mw-option__label");
+        const slot = label && label.getAttribute("data-mw-media-slot");
+        const audioItem = dd.querySelector("[data-mw-link-media=\"audio\"]");
+        const videoItem = dd.querySelector("[data-mw-link-media=\"video\"]");
+        const audio = slot ? getMassSectionMedia("audio", slot) : null;
+        const video = slot ? getMassSectionMedia("video", slot) : null;
+        if (label) {
+          label.classList.toggle("is-linked", !!(audio || video));
+          label.title = "Link audio or video for this option";
+        }
+        if (audioItem) audioItem.textContent = audio ? "Change audio" : "Link audio";
+        if (videoItem) videoItem.textContent = video ? "Change video" : "Link video";
+      });
+      document.dispatchEvent(new CustomEvent("mw:aside-refresh"));
       document.querySelectorAll(".mass-song-audio-btn[data-mass-song-audio]").forEach((btn) => {
         const slot = btn.getAttribute("data-mass-song-audio");
         const hasAudio = !!(slot && massSlotAudioSnippetRef(slot));
@@ -3627,7 +3652,47 @@
         if (inp) window.requestAnimationFrame(() => inp.focus());
         refreshMassMediaPickFetchUi();
       }
+      if (next === "library") {
+        void ensureAndRenderMassMediaPickLibrary();
+      }
     }
+
+    async function ensureAndRenderMassMediaPickLibrary() {
+      const modal = $("mw-media-pick-modal");
+      if (!modal || modal.getAttribute("data-open") !== "true") return;
+      if (massMediaPickState.youtubeOnly) return;
+      if (massMediaPickState._libLoading) return;
+      const kind = massMediaPickState.kind === "video" ? "video" : "music";
+      const cached = (kind === "video" ? savedMediaLibrary.video : savedMediaLibrary.music) || [];
+      const list = $("mw-media-pick-list");
+      const alreadyRendered = !!(list && list.querySelector("[data-pick-basename]"));
+      if (cached.length && alreadyRendered && !massMediaPickState.loading) {
+        renderMassMediaPickList();
+        return;
+      }
+      massMediaPickState._libLoading = true;
+      setMassMediaPickLoading(true, "Loading media library…");
+      try {
+        if (typeof ensureSavedMediaLibrary !== "function") {
+          throw new Error("Media library loader unavailable");
+        }
+        await ensureSavedMediaLibrary(false);
+        if ($("mw-media-pick-modal") && $("mw-media-pick-modal").getAttribute("data-open") === "true") {
+          setMassMediaPickLoading(false);
+          renderMassMediaPickList();
+        }
+      } catch (_e) {
+        setMassMediaPickLoading(false);
+        if (list) {
+          list.hidden = false;
+          list.innerHTML = "<li class=\"muted\">Could not load Media library. Try Upload, or open the Media tab.</li>";
+        }
+        if (typeof notify === "function") notify("Could not load Media library.", "error");
+      } finally {
+        massMediaPickState._libLoading = false;
+      }
+    }
+    window.ensureAndRenderMassMediaPickLibrary = ensureAndRenderMassMediaPickLibrary;
 
     function massMediaPickSongTarget() {
       if (massMediaPickState.purpose === "song") {
@@ -5267,23 +5332,31 @@
       if (youtubeOnly || useFetchClip) {
         setMassMediaPickLoading(false);
         if (useFetchClip) refreshMassMediaPickFetchUi();
+        // Instrumental/video opens on Fetch; preload Library so switching tabs shows items.
+        if (!youtubeOnly && typeof ensureSavedMediaLibrary === "function") {
+          void ensureSavedMediaLibrary(false).catch(() => {});
+        }
         return;
       }
-      setMassMediaPickLoading(true, "Loading media library…");
-      try {
-        await ensureSavedMediaLibrary(false);
-        if (massMediaPickState.loading) {
+      if (typeof ensureAndRenderMassMediaPickLibrary === "function") {
+        await ensureAndRenderMassMediaPickLibrary();
+      } else {
+        setMassMediaPickLoading(true, "Loading media library…");
+        try {
+          await ensureSavedMediaLibrary(false);
+          if (massMediaPickState.loading) {
+            setMassMediaPickLoading(false);
+            renderMassMediaPickList();
+          }
+        } catch (_e) {
           setMassMediaPickLoading(false);
-          renderMassMediaPickList();
+          const list = $("mw-media-pick-list");
+          if (list) {
+            list.hidden = false;
+            list.innerHTML = "<li class=\"muted\">Could not load Media library. Try Upload, or open the Media tab.</li>";
+          }
+          if (typeof notify === "function") notify("Could not load Media library.", "error");
         }
-      } catch (_e) {
-        setMassMediaPickLoading(false);
-        const list = $("mw-media-pick-list");
-        if (list) {
-          list.hidden = false;
-          list.innerHTML = "<li class=\"muted\">Could not load Media library. Try Upload, or open the Media tab.</li>";
-        }
-        if (typeof notify === "function") notify("Could not load Media library.", "error");
       }
       if ($("mw-media-pick-q") && !youtubeOnly) $("mw-media-pick-q").focus();
     }
@@ -7944,7 +8017,7 @@
     function massBuilderDraftFieldIds() {
       return [
         "mass-date", "co-celebrant",
-        "flow-penitential-choice", "flow-kyrie-choice", "flow-gloria-choice",
+        "flow-penitential-choice", "flow-kyrie-choice", "flow-kyrie-tagalog-slide", "flow-gloria-choice",
         "flow-creed-choice", "flow-our-father-choice", "flow-lamb-choice",
         "flow-mass-language",
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
@@ -16607,7 +16680,10 @@
           e.preventDefault();
           const kind = mediaLink.getAttribute("data-mw-link-media");
           const slot = mediaLink.getAttribute("data-mw-media-slot");
-          if (kind && slot) openMassMediaPickModal(kind, slot);
+          if (kind && slot) {
+            const fromTitle = !!mediaLink.closest(".mw-media-dd--link");
+            openMassMediaPickModal(kind, slot, fromTitle ? { fromTitle: true } : {});
+          }
           return;
         }
         const del = e.target.closest("[data-mass-song-delete]");
@@ -19325,6 +19401,26 @@
 
         frag.appendChild(group);
       });
+      const distGroup = document.createElement("div");
+      distGroup.className = "sa-nav-group";
+      distGroup.style.marginTop = "12px";
+      distGroup.style.paddingTop = "10px";
+      distGroup.style.borderTop = "1px solid color-mix(in srgb, var(--line) 85%, transparent)";
+      const distLabel = document.createElement("p");
+      distLabel.className = "muted";
+      distLabel.style.cssText = "margin:0 8px 6px;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;";
+      distLabel.textContent = "Growth";
+      const distLink = document.createElement("a");
+      distLink.className = "sa-nav-link";
+      distLink.href = "/admin/distribution";
+      distLink.textContent = "Distribution CRM";
+      distLink.title = "Open LiturgyFlow Distribution (church acquisition)";
+      distLink.setAttribute("data-sa-external", "distribution");
+      distLink.style.fontWeight = "700";
+      distLink.style.color = "var(--accent)";
+      distGroup.appendChild(distLabel);
+      distGroup.appendChild(distLink);
+      frag.appendChild(distGroup);
       host.appendChild(frag);
     }
 
@@ -19413,6 +19509,13 @@
         btn.addEventListener("click", () => showSaHub(hubId));
         frag.appendChild(btn);
       });
+      const distMobile = document.createElement("a");
+      distMobile.className = "sa-mobile-nav__btn";
+      distMobile.href = "/admin/distribution";
+      distMobile.textContent = "Distribution CRM";
+      distMobile.setAttribute("data-sa-external", "distribution");
+      distMobile.style.fontWeight = "700";
+      frag.appendChild(distMobile);
       host.appendChild(frag);
     }
 
@@ -19521,6 +19624,17 @@
           saRenderStatCard("Redis", c.redis_ok ? "OK" : "Off"),
           saRenderStatCard("Readings cache", (c.readings_cache && c.readings_cache.entries) || 0, ((c.readings_cache && c.readings_cache.bytes) || 0) + " bytes"),
         ].join("");
+        if (!statsEl.querySelector("[data-sa-distribution-link]")) {
+          const distCard = document.createElement("div");
+          distCard.className = "sa-stat";
+          distCard.setAttribute("data-sa-distribution-link", "1");
+          distCard.innerHTML =
+            "<a href=\"/admin/distribution\" style=\"text-decoration:none;color:inherit;display:block\">" +
+            "<span class=\"sa-stat__label\">Distribution</span>" +
+            "<span class=\"sa-stat__value\" style=\"font-size:1rem\">Open CRM →</span>" +
+            "<span class=\"sa-stat__hint\">Church acquisition</span></a>";
+          statsEl.appendChild(distCard);
+        }
         const activity = Array.isArray(data.recent_activity) ? data.recent_activity : [];
         if (activityEl) {
           activityEl.innerHTML = activity.length
@@ -25433,7 +25547,7 @@
       if (k === "sanctus_tune") {
         const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
         if (!wrap) return false;
-        wrap.querySelectorAll(":scope > .mw-option").forEach((c) => {
+        wrap.querySelectorAll(".mw-option").forEach((c) => {
           const cv = c.getAttribute("data-val");
           if (cv === "__video") return;
           c.setAttribute("aria-checked", String(cv === v));
@@ -26985,6 +27099,7 @@
       generation: 0,
       complete: true,
       pendingFullscreen: null, // true = enter, false = exit, null = none
+      webpptx: null,
     };
 
     var lastMassGenerateResult = null;
@@ -27027,6 +27142,15 @@
           title: s.title || "",
           slot: s.slot || "",
         })),
+        cues: (massSlideshowState.slides || [])
+          .filter((s) => s && s.kind === "video" && s.video_url)
+          .map((s) => ({
+            index: s.index,
+            kind: "video",
+            video_url: s.video_url,
+            title: s.title || "",
+            slot: s.slot || "",
+          })),
       };
       syncMassPresentAgainUi();
     }
@@ -27333,10 +27457,24 @@
         : label;
     }
 
+    function hideMassSlideshowWebpptx() {
+      const host = $("mass-slideshow-webpptx");
+      if (host) host.hidden = true;
+    }
+
+    function destroyMassSlideshowWebpptx() {
+      if (massSlideshowState.webpptx && massSlideshowState.webpptx.destroy) {
+        try { massSlideshowState.webpptx.destroy(); } catch (_e) { /* ignore */ }
+      }
+      massSlideshowState.webpptx = null;
+      hideMassSlideshowWebpptx();
+    }
+
     function renderMassSlideshowSlide() {
       const img = $("mass-slideshow-img");
       const video = $("mass-slideshow-video");
       const text = $("mass-slideshow-text");
+      const host = $("mass-slideshow-webpptx");
       const slides = massSlideshowState.slides;
       const total = slides.length;
       const idx = Math.max(0, Math.min(massSlideshowState.index, Math.max(0, total - 1)));
@@ -27346,12 +27484,23 @@
       pauseMassSlideshowVideo();
       if (!slide) {
         if (img) { img.hidden = true; img.removeAttribute("src"); }
+        hideMassSlideshowWebpptx();
         if (text) {
           text.hidden = false;
           text.textContent = "No slides to present.";
         }
         return;
       }
+
+      if (massSlideshowState.mode === "webpptx" && massSlideshowState.webpptx && slide.kind !== "video") {
+        if (img) { img.hidden = true; img.removeAttribute("src"); }
+        if (video) { video.hidden = true; video.removeAttribute("src"); }
+        if (text) { text.hidden = true; text.textContent = ""; }
+        if (host) host.hidden = false;
+        void massSlideshowState.webpptx.goTo(idx);
+        return;
+      }
+      hideMassSlideshowWebpptx();
 
       const showVideo = async (objectUrl) => {
         if (img) { img.hidden = true; img.removeAttribute("src"); }
@@ -27648,6 +27797,7 @@
       massSlideshowState.hintTimer = null;
       massSlideshowState.cursorTimer = null;
       revokeMassSlideshowObjectUrls();
+      destroyMassSlideshowWebpptx();
       massSlideshowState.slides = [];
       massSlideshowState.expectedTotal = 0;
       const img = $("mass-slideshow-img");
@@ -27669,7 +27819,8 @@
       stopMassSlideshowPoll();
       resetMassProjectionRemote();
       revokeMassSlideshowObjectUrls();
-      massSlideshowState.mode = opts.mode === "text" ? "text" : "image";
+      destroyMassSlideshowWebpptx();
+      massSlideshowState.mode = opts.mode === "text" ? "text" : opts.mode === "webpptx" ? "webpptx" : "image";
       massSlideshowState.pptxUrl = opts.pptxUrl || "";
       massSlideshowState.pptxName = opts.pptxName || "mass_presentation.pptx";
       massSlideshowState.index = 0;
@@ -27681,6 +27832,24 @@
 
       const dlBtn = $("mass-slideshow-download");
       if (dlBtn) dlBtn.hidden = !massSlideshowState.pptxUrl;
+
+      if (massSlideshowState.mode === "webpptx") {
+        const host = $("mass-slideshow-webpptx");
+        if (!host || !window.WebPptx || !window.WebPptx.createProjector || !massSlideshowState.pptxUrl) {
+          throw new Error("Browser projector is not available.");
+        }
+        host.hidden = false;
+        host.innerHTML = "";
+        massSlideshowState.webpptx = await window.WebPptx.createProjector(host, {
+          url: massSlideshowState.pptxUrl,
+          fetchImpl: typeof authorizedFetch === "function" ? authorizedFetch : fetch,
+        });
+        const count = massSlideshowState.webpptx.slideCount();
+        massSlideshowState.slides = Array.from({ length: count }, (_, i) => ({ index: i + 1 }));
+        massSlideshowState.expectedTotal = count;
+        massSlideshowState.complete = true;
+        applyMassSlideshowCues(opts.cues || []);
+      } else
 
       if (massSlideshowState.mode === "image") {
         mergeMassSlideshowRemoteSlides(slidesIn);
@@ -27885,6 +28054,26 @@
         percent: 100,
       });
       try {
+        const pptxUrl = (data && data.pptx_url) || "";
+        if (pptxUrl && window.WebPptx && window.WebPptx.createProjector) {
+          setMassGenLoading(true, {
+            title: "Preparing slideshow",
+            message: "Opening the deck in the browser…",
+            percent: 100,
+          });
+          await openMassSlideshow({
+            mode: "webpptx",
+            slides: [],
+            pptxUrl: pptxUrl,
+            pptxName: ((data && data.export_stem) || "mass_presentation") + ".pptx",
+            expectedTotal: 0,
+            complete: true,
+            cues: (data && data.slideshow_cues) || [],
+          });
+          setMassGenLoading(false);
+          setStatus("Slideshow ready.", "ok", { downloads: massGenerateDownloadLinks(data || {}) });
+          return;
+        }
         const preview = await postJSON("/api/ppt-preview/slideshow/start", { quality: "presentation" });
         const slides = (preview && preview.slides) || [];
         if (!slides.length) {
@@ -27938,6 +28127,26 @@
       };
       try {
         // 1) Instant resume from cached slide URLs (no regenerate, no LibreOffice).
+        if (lastMassSlideshowSession && lastMassSlideshowSession.pptxUrl && window.WebPptx && window.WebPptx.createProjector) {
+          try {
+            await openMassSlideshow({
+              mode: "webpptx",
+              slides: [],
+              pptxUrl: lastMassSlideshowSession.pptxUrl,
+              pptxName: lastMassSlideshowSession.pptxName,
+              expectedTotal: 0,
+              complete: true,
+              resumeIndex: lastMassSlideshowSession.resumeIndex || 0,
+              cues: lastMassSlideshowSession.cues
+                || (lastMassGenerateResult && lastMassGenerateResult.slideshow_cues)
+                || [],
+            });
+            setFlowStatus("Slideshow resumed.", "ok");
+            return;
+          } catch (_webErr) {
+            quietCloseFailedOpen();
+          }
+        }
         if (lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length) {
           try {
             await openMassSlideshow({
@@ -27951,6 +28160,10 @@
             });
             // If first media failed to load, fall through to server resume.
             const hasMedia = massSlideshowState.slides.some((s) => s.objectUrl || s.videoObjectUrl || (s.kind === "video" && s.video_url));
+            if (massSlideshowState.mode === "webpptx") {
+              setFlowStatus("Slideshow resumed.", "ok");
+              return;
+            }
             if (massSlideshowState.mode === "image" && !hasMedia) {
               quietCloseFailedOpen();
               throw new Error("Cached slides expired.");
@@ -28175,6 +28388,11 @@
         const ofSel = $("flow-our-father-choice");
         const ofAllowed = ["english", "malay", "tagalog", "visaya", "korean"];
         body.our_father_choice = ofSel && ofAllowed.includes(ofSel.value) ? ofSel.value : "english";
+        const kyrieSel = $("flow-kyrie-choice");
+        const kyrieAllowed = ["english", "greek", "latin", "tagalog"];
+        body.kyrie_choice = kyrieSel && kyrieAllowed.includes(kyrieSel.value) ? kyrieSel.value : "english";
+        const kyrieSlideSel = $("flow-kyrie-tagalog-slide");
+        body.kyrie_tagalog_slide = kyrieSlideSel && kyrieSlideSel.value === "2" ? 2 : 1;
         const massLangSel = $("flow-mass-language");
         body.mass_language = massLangSel && massLangSel.value === "tagalog" ? "tagalog" : "english";
         body.hymn_lyrics_layout = readHymnLyricsLayout();
@@ -28220,6 +28438,8 @@
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
           our_father_choice: body.our_father_choice || "english",
+          kyrie_choice: body.kyrie_choice || "english",
+          kyrie_tagalog_slide: body.kyrie_tagalog_slide || 1,
           mass_language: body.mass_language || "english",
           hymn_lyrics_layout: body.hymn_lyrics_layout || "dual",
           hymn_body_align: (body.hymn_typography && body.hymn_typography.default && body.hymn_typography.default.body_align) || "center",

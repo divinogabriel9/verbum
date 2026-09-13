@@ -198,6 +198,7 @@ from services.storage_assets import (
 )
 from routes.admin import register_admin_routes
 from routes.auth import register_auth_routes
+from routes.distribution import register_distribution_routes
 from routes.email_jobs import register_email_job_routes
 from routes.readings_jobs import register_readings_job_routes
 from routes.parish import register_parish_routes
@@ -1168,6 +1169,7 @@ def favicon() -> FileResponse:
 
 register_auth_routes(app, templates)
 register_admin_routes(app)
+register_distribution_routes(app)
 register_parish_routes(app)
 register_email_job_routes(app)
 register_readings_job_routes(app)
@@ -1621,6 +1623,17 @@ class GenerateBody(BaseModel):
     our_father_choice: str = Field(
         "english",
         description="Our Father language: english | malay | tagalog | visaya | korean.",
+    )
+    kyrie_choice: str = Field(
+        "english",
+        description="Kyrie language: english | greek | latin | tagalog.",
+        max_length=16,
+    )
+    kyrie_tagalog_slide: int = Field(
+        1,
+        ge=1,
+        le=2,
+        description="When kyrie_choice is tagalog, which authored slide to use (1 or 2).",
     )
     mass_language: str = Field(
         "english",
@@ -4725,6 +4738,8 @@ def api_generate(
             hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
             our_father_choice=body.our_father_choice,
+            kyrie_choice=body.kyrie_choice,
+            kyrie_tagalog_slide=body.kyrie_tagalog_slide,
             hymn_lyrics_layout=body.hymn_lyrics_layout,
             hymn_layout_overrides=body.hymn_layout_overrides,
             video_replacements=video_paths or None,
@@ -5079,6 +5094,8 @@ async def api_regenerate_pptx(
             hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
             our_father_choice=body.our_father_choice,
+            kyrie_choice=body.kyrie_choice,
+            kyrie_tagalog_slide=body.kyrie_tagalog_slide,
             hymn_lyrics_layout=body.hymn_lyrics_layout,
             hymn_layout_overrides=body.hymn_layout_overrides,
             video_replacements=video_paths or None,

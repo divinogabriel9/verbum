@@ -939,7 +939,10 @@
           e.preventDefault();
           const kind = mediaLink.getAttribute("data-mw-link-media");
           const slot = mediaLink.getAttribute("data-mw-media-slot");
-          if (kind && slot) openMassMediaPickModal(kind, slot);
+          if (kind && slot) {
+            const fromTitle = !!mediaLink.closest(".mw-media-dd--link");
+            openMassMediaPickModal(kind, slot, fromTitle ? { fromTitle: true } : {});
+          }
           return;
         }
         const del = e.target.closest("[data-mass-song-delete]");
@@ -3657,6 +3660,26 @@
 
         frag.appendChild(group);
       });
+      const distGroup = document.createElement("div");
+      distGroup.className = "sa-nav-group";
+      distGroup.style.marginTop = "12px";
+      distGroup.style.paddingTop = "10px";
+      distGroup.style.borderTop = "1px solid color-mix(in srgb, var(--line) 85%, transparent)";
+      const distLabel = document.createElement("p");
+      distLabel.className = "muted";
+      distLabel.style.cssText = "margin:0 8px 6px;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;";
+      distLabel.textContent = "Growth";
+      const distLink = document.createElement("a");
+      distLink.className = "sa-nav-link";
+      distLink.href = "/admin/distribution";
+      distLink.textContent = "Distribution CRM";
+      distLink.title = "Open LiturgyFlow Distribution (church acquisition)";
+      distLink.setAttribute("data-sa-external", "distribution");
+      distLink.style.fontWeight = "700";
+      distLink.style.color = "var(--accent)";
+      distGroup.appendChild(distLabel);
+      distGroup.appendChild(distLink);
+      frag.appendChild(distGroup);
       host.appendChild(frag);
     }
 
@@ -3745,6 +3768,13 @@
         btn.addEventListener("click", () => showSaHub(hubId));
         frag.appendChild(btn);
       });
+      const distMobile = document.createElement("a");
+      distMobile.className = "sa-mobile-nav__btn";
+      distMobile.href = "/admin/distribution";
+      distMobile.textContent = "Distribution CRM";
+      distMobile.setAttribute("data-sa-external", "distribution");
+      distMobile.style.fontWeight = "700";
+      frag.appendChild(distMobile);
       host.appendChild(frag);
     }
 
@@ -3853,6 +3883,17 @@
           saRenderStatCard("Redis", c.redis_ok ? "OK" : "Off"),
           saRenderStatCard("Readings cache", (c.readings_cache && c.readings_cache.entries) || 0, ((c.readings_cache && c.readings_cache.bytes) || 0) + " bytes"),
         ].join("");
+        if (!statsEl.querySelector("[data-sa-distribution-link]")) {
+          const distCard = document.createElement("div");
+          distCard.className = "sa-stat";
+          distCard.setAttribute("data-sa-distribution-link", "1");
+          distCard.innerHTML =
+            "<a href=\"/admin/distribution\" style=\"text-decoration:none;color:inherit;display:block\">" +
+            "<span class=\"sa-stat__label\">Distribution</span>" +
+            "<span class=\"sa-stat__value\" style=\"font-size:1rem\">Open CRM →</span>" +
+            "<span class=\"sa-stat__hint\">Church acquisition</span></a>";
+          statsEl.appendChild(distCard);
+        }
         const activity = Array.isArray(data.recent_activity) ? data.recent_activity : [];
         if (activityEl) {
           activityEl.innerHTML = activity.length

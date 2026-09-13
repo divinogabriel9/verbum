@@ -132,6 +132,26 @@
         percent: 100,
       });
       try {
+        const pptxUrl = (data && data.pptx_url) || "";
+        if (pptxUrl && window.WebPptx && window.WebPptx.createProjector) {
+          setMassGenLoading(true, {
+            title: "Preparing slideshow",
+            message: "Opening the deck in the browser…",
+            percent: 100,
+          });
+          await openMassSlideshow({
+            mode: "webpptx",
+            slides: [],
+            pptxUrl: pptxUrl,
+            pptxName: ((data && data.export_stem) || "mass_presentation") + ".pptx",
+            expectedTotal: 0,
+            complete: true,
+            cues: (data && data.slideshow_cues) || [],
+          });
+          setMassGenLoading(false);
+          setStatus("Slideshow ready.", "ok", { downloads: massGenerateDownloadLinks(data || {}) });
+          return;
+        }
         const preview = await postJSON("/api/ppt-preview/slideshow/start", { quality: "presentation" });
         const slides = (preview && preview.slides) || [];
         if (!slides.length) {
@@ -185,6 +205,26 @@
       };
       try {
         // 1) Instant resume from cached slide URLs (no regenerate, no LibreOffice).
+        if (lastMassSlideshowSession && lastMassSlideshowSession.pptxUrl && window.WebPptx && window.WebPptx.createProjector) {
+          try {
+            await openMassSlideshow({
+              mode: "webpptx",
+              slides: [],
+              pptxUrl: lastMassSlideshowSession.pptxUrl,
+              pptxName: lastMassSlideshowSession.pptxName,
+              expectedTotal: 0,
+              complete: true,
+              resumeIndex: lastMassSlideshowSession.resumeIndex || 0,
+              cues: lastMassSlideshowSession.cues
+                || (lastMassGenerateResult && lastMassGenerateResult.slideshow_cues)
+                || [],
+            });
+            setFlowStatus("Slideshow resumed.", "ok");
+            return;
+          } catch (_webErr) {
+            quietCloseFailedOpen();
+          }
+        }
         if (lastMassSlideshowSession && lastMassSlideshowSession.slides && lastMassSlideshowSession.slides.length) {
           try {
             await openMassSlideshow({
@@ -198,6 +238,10 @@
             });
             // If first media failed to load, fall through to server resume.
             const hasMedia = massSlideshowState.slides.some((s) => s.objectUrl || s.videoObjectUrl || (s.kind === "video" && s.video_url));
+            if (massSlideshowState.mode === "webpptx") {
+              setFlowStatus("Slideshow resumed.", "ok");
+              return;
+            }
             if (massSlideshowState.mode === "image" && !hasMedia) {
               quietCloseFailedOpen();
               throw new Error("Cached slides expired.");
@@ -422,6 +466,11 @@
         const ofSel = $("flow-our-father-choice");
         const ofAllowed = ["english", "malay", "tagalog", "visaya", "korean"];
         body.our_father_choice = ofSel && ofAllowed.includes(ofSel.value) ? ofSel.value : "english";
+        const kyrieSel = $("flow-kyrie-choice");
+        const kyrieAllowed = ["english", "greek", "latin", "tagalog"];
+        body.kyrie_choice = kyrieSel && kyrieAllowed.includes(kyrieSel.value) ? kyrieSel.value : "english";
+        const kyrieSlideSel = $("flow-kyrie-tagalog-slide");
+        body.kyrie_tagalog_slide = kyrieSlideSel && kyrieSlideSel.value === "2" ? 2 : 1;
         const massLangSel = $("flow-mass-language");
         body.mass_language = massLangSel && massLangSel.value === "tagalog" ? "tagalog" : "english";
         body.hymn_lyrics_layout = readHymnLyricsLayout();
@@ -467,6 +516,8 @@
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
           our_father_choice: body.our_father_choice || "english",
+          kyrie_choice: body.kyrie_choice || "english",
+          kyrie_tagalog_slide: body.kyrie_tagalog_slide || 1,
           mass_language: body.mass_language || "english",
           hymn_lyrics_layout: body.hymn_lyrics_layout || "dual",
           hymn_body_align: (body.hymn_typography && body.hymn_typography.default && body.hymn_typography.default.body_align) || "center",

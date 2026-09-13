@@ -1057,14 +1057,14 @@
       "id": "unang_alay",
       "title": "Unang Alay",
       "author": "Rey Magnaye",
-      "lyrics": "Verse 1\nKunin At Tanggapin Ang Alay Na Ito\nMga Biyayang Nagmula Sa Pagpapala Mo\nTanda Ng Bawat Pusong 'Pagkat Inibig Mo\nNgayo'y Nananalig, Nagmamahal Sa 'Yo\n\nChorus\nTinapay Na Nagmula Sa Butil Ng Trigo\nPagkaing Nagbibigay Ng Buhay Mo\nAt Alak Na Nagmula Sa Isang Tangkay Ng Ubas\nInuming Nagbibigay Lakas\n\nVerse 2\nLahat Ng Mga Lungkot, Ligaya't Pagsubok\nLahat Ng Lakas At Kahinaan Ko\nInaalay Kong Lahat Buong Pagkatao\nIto Ay Isusunod Sa 'Yo\n\nChorus\nTinapay Na Nagmula Sa Butil Ng Trigo\nPagkaing Nagbibigay Ng Buhay Mo\nAt Alak Na Nagmula Sa Isang Tangkay Ng Ubas\nInuming Nagbibigay Lakas\n\nVerse 3\nAng Bayang Inibig Mo, Ngayo'y Umaawit\nSa Iyo Ay Sumasamba't Nananalig\nUmaasang Diringgin Ang Bawat Panalangin\nSa Alay Na Ito'y Nakalakip\n\nChorus\nTinapay Na Nagmula Sa Butil Ng Trigo\nPagkaing Nagbibigay Ng Buhay Mo\nAt Alak Na Nagmula Sa Isang Tangkay Ng Ubas\nInuming Nagbibigay Lakas",
-      "source": "verbum_txt_import",
+      "lyrics": "Chorus\nKunin At Tanggapin Ang Alay Na Ito\nMga Biyayang Nagmula Sa Pagpapala Mo\nTanda Ng Bawat Pusong 'Pagkat Inibig Mo\nNgayo'y Nananalig, Nagmamahal Sa 'Yo\n\nVerse 1\nTinapay Na Nagmula Sa Butil Ng Trigo\nPagkaing Nagbibigay Ng Buhay Mo\nAt Alak Na Nagmula Sa Isang Tangkay Ng Ubas\nInuming Nagbibigay Lakas\n\nChorus\nKunin At Tanggapin Ang Alay Na Ito\nMga Biyayang Nagmula Sa Pagpapala Mo\nTanda Ng Bawat Pusong 'Pagkat Inibig Mo\nNgayo'y Nananalig, Nagmamahal Sa 'Yo\n\nVerse 2\nLahat Ng Mga Lungkot, Ligaya't Pagsubok\nLahat Ng Lakas At Kahinaan Ko\nInaalay Kong Lahat Buong Pagkatao\nIto Ay Isusunod Sa 'Yo\n\nChorus\nKunin At Tanggapin Ang Alay Na Ito\nMga Biyayang Nagmula Sa Pagpapala Mo\nTanda Ng Bawat Pusong 'Pagkat Inibig Mo\nNgayo'y Nananalig, Nagmamahal Sa 'Yo\n\nVerse 3\nAng Bayang Inibig Mo, Ngayo'y Umaawit\nSa Iyo Ay Sumasamba't Nananalig\nUmaasang Diringgin Ang Bawat Panalangin\nSa Alay Na Ito'y Nakalakip\n\nChorus\nKunin At Tanggapin Ang Alay Na Ito\nMga Biyayang Nagmula Sa Pagpapala Mo\nTanda Ng Bawat Pusong 'Pagkat Inibig Mo\nNgayo'y Nananalig, Nagmamahal Sa 'Yo",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-09-03T13:49:50.529507+00:00",
+      "updated_at": "2026-09-11T23:12:55.107470+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:5Lrd7X2j3X8",
@@ -1073,16 +1073,12 @@
         "display_name": "YouTube"
       },
       "gospel_moods": [
-        "solemn",
         "reverent"
       ],
       "audio_preview": {
-        "method": "scan",
         "source": "preview",
         "basename": "preview_offertory_unang_alay_10.mp3",
         "start_sec": 27.44,
-        "youtube_id": "5Lrd7X2j3X8",
-        "youtube_url": "https://www.youtube.com/watch?v=5Lrd7X2j3X8",
         "display_name": "Unang Alay · 10s",
         "duration_sec": 10
       }
@@ -2371,6 +2367,70 @@
         "display_name": "How Lovely Is Your Dwelling Place · 10s",
         "duration_sec": 10
       }
+    },
+    {
+      "id": "fragile_vessel",
+      "title": "Fragile Vessel",
+      "author": "",
+      "lyrics": "Verse 1\nHelp Me, Lord, To Soothe The Lonely Soul With Your Gentle Word; To Heal That Aching Heart With Your Sweet Smile; To Walk With You That Extra Mile.\nVerse?\n\nVerse 2\nGrant Me, Lord, Two Strong Arms That Would Lock In A Warm Embrace; A Watchful Eye To Search Out Every Sheep; A Ready Hand For Those In Need.\n\nRefrain\nTeach Me, Lord, To Mingle My Own Tears With Other Tears; To Lend A Sigh To Those Whose Lives Are Sighs; That All May Know You Also Weep.\nMake Me, Lord, A Fragile Vessel Of Your Very Love; That Men Will Want To Break To Get Inside, And Savor The Sweetness That Is You.\n\nVerse 3\nBreak Me, Lord, That I May Learn To Love Other Broken Things; To Pardon Those Who Know Not Pardoning, To Know True Life In Dying.\n\nVerse 4\nChoose Me, Lord, To Go In Search Of All Little Wand' Ring Sheep; To Sweep Them To My Arms And Lead Them Home;\nWhisper To Them About Your Peace.\n\nRefrain\nTeach Me, Lord, To Mingle My Own Tears With Other Tears; To Lend A Sigh To Those Whose Lives Are Sighs; That All May Know You Also Weep.\nMake Me, Lord, A Fragile Vessel Of Your Very Love; That Men Will Want To Break To Get Inside, And Savor The Sweetness That Is You.\n\nVerse 5\n...The Sweetness...you...",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-10T23:01:18.914001+00:00",
+      "language": "English",
+      "updated_at": "2026-09-10T23:05:51.866856+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:ZBRe_U3Af3A",
+        "youtube_id": "ZBRe_U3Af3A",
+        "youtube_url": "https://www.youtube.com/watch?v=ZBRe_U3Af3A",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "mercy",
+        "journey"
+      ],
+      "audio_preview": {
+        "method": "start",
+        "source": "preview",
+        "basename": "preview_communion_fragile_vessel_10.mp3",
+        "start_sec": 0.0,
+        "youtube_id": "ZBRe_U3Af3A",
+        "youtube_url": "https://www.youtube.com/watch?v=ZBRe_U3Af3A",
+        "display_name": "Fragile Vessel · 10s",
+        "duration_sec": 10
+      }
+    },
+    {
+      "id": "pagkakaibigan",
+      "title": "Pagkakaibigan",
+      "author": "Hangad",
+      "lyrics": "Verse 1\nAng Sino Mang Sa Aki'y Mananahan\nMananahan Din Ako Sa Kanya\nAt Kung Siya'y Mamunga Nang Masagana\nS'ya sa ama'y Nagbigay Ng karangalan\n\nChorus\nMula Ngayon, Kayo'y Aking Kaibigan\nHinango Sa dilim At Kababaan\nAng Kaibiga'y Mag-aalay Ng Sarili N'yang Buhay\nWalang Hihigit Sa Yaring Pag-aalay\n\nVerse 2\nKung Paanong Mahal Ako Ng Aking Ama\nSa Inyo'y Aking Ipinadarama\nSa Pag-ibig Ko, Kayo Sana Ay Manahan\nAt Bilin Ko Sa Inyo Ay Magmahalan\n\nChorus\nMula Ngayon, Kayo'y Aking Kaibigan\nHinango Sa Dilim At Kababaan\nAng Kaibiga'y Mag-aalay Ng Sarili N'yang Buhay\nWalang Hihigit Sa Yaring Pag-aalay\n\nVerse 3\nPinili Ka't Hinirang Upang Mahalin\nNang Mamunga't Bunga Mo'y Panatilihin\nHumayo Ka't Mamunga Nang Masagana\nKagalakang Walang-hanggang Ipamamana",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-10T23:01:29.963802+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-10T23:09:26.902337+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:8FlcEO1pTtc",
+        "youtube_id": "8FlcEO1pTtc",
+        "youtube_url": "https://www.youtube.com/watch?v=8FlcEO1pTtc",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "reverent"
+      ],
+      "audio_preview": {
+        "source": "preview",
+        "basename": "preview_communion_pagkakaibigan_10.mp3",
+        "start_sec": 0.0,
+        "display_name": "Pagkakaibigan · 10s",
+        "duration_sec": 10
+      }
     }
   ],
   "recessional": [
@@ -2671,6 +2731,40 @@
         "display_name": "Tell The World Of His Love · 10s",
         "duration_sec": 10
       }
+    },
+    {
+      "id": "my_heart_thanksgiving",
+      "title": "My Heart Thanksgiving",
+      "author": "",
+      "lyrics": "Verse 1\nAs I Sing My Heart′s Thanksgiving\nAnd My Eyes Look Heavenward\nHow The Stars You've Flung Like Jewels\nBid Your Welcome, Shine Your Light\n\nVerse 2\nAs I Marvel At Your Moonrise\nI′m In Awe, Yet I Ask\nWhat Am I That You Should Love Me\nAnd Hold Me As Your Dearest Love Of All?\n\nVerse 3\nYou Who Crown Me With Honor And Glory\nAnd You Set All Things Under My Feet\nYou Have Made Me A Little Less Than Angels\nEven If I Fly Often Away\n\nVerse 4\nAs I Sing My Heart's Thanksgiving\nAnd My Eyes Look Heavenward\nHow The Stars You've Flung Like Jewels\nBid Your Welcome, Shine Your Light\n\nVerse 5\nAs I Marvel At Your Moonrise\nI′m In Awe, Yet I Ask\nWhat Am I That You Should Love Me\nAnd Hold Me As Your Dearest Love Of All?\n\nVerse 6\nIn My Anxious And Browbeaten Moments\nYou Who Comfort Me, Fill Me With Peace\nWhen My Foes Threaten, There You Surround Me\nYou′re My Strength, You're My Light And My Shield\n\nVerse 7\nAs I Sing My Heart′s Thanksgiving\nAnd My Eyes Look Heavenward\nHow The Stars You've Flung Like Jewels\nBid Your Welcome, Shine Your Light\n\nVerse 8\nAs I Marvel At Your Moonrise\nI′m In Awe, Yet I Ask\nWhat Am I That You Should Love Me\nAnd Hold Me As Your Dearest Love Of All?\n\nVerse 9\nHow Exalted Your Name Is, O Yahweh\nAnd How Lofty The Work Of Your Hands\nYet How Closely, How Dearly You Draw Me\nTo Your Love, Your Divine Majesty\n\nVerse 10\nAs I Sing My Heart's Thanksgiving\nAnd My Eyes Look Heavenward\nHow The Stars You′ve Flung Like Jewels\nBid Your Welcome, Shine Your Light\n\nVerse 11\nAs I Marvel At Your Moonrise\nI'm In Awe, Yet I Ask\nWhat Am I That You Should Love Me\nAnd Hold Me As Your Dearest Love Of All?\n\nVerse 12\nWhat Am I That You Should Love Me\nAnd Hold Me As Your Dearest Love Of All?",
+      "source": "lyrics_dashboard",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-10T23:00:56.723346+00:00",
+      "language": "English",
+      "updated_at": "2026-09-10T23:08:32.342938+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:QB09HyGmCdg",
+        "youtube_id": "QB09HyGmCdg",
+        "youtube_url": "https://www.youtube.com/watch?v=QB09HyGmCdg",
+        "display_name": "YouTube"
+      },
+      "gospel_moods": [
+        "triumphant",
+        "mercy"
+      ],
+      "audio_preview": {
+        "method": "start",
+        "source": "preview",
+        "basename": "preview_recessional_my_heart_thanksgiving_10.mp3",
+        "start_sec": 0.0,
+        "youtube_id": "QB09HyGmCdg",
+        "youtube_url": "https://www.youtube.com/watch?v=QB09HyGmCdg",
+        "display_name": "My Heart Thanksgiving · 10s",
+        "duration_sec": 10
+      }
     }
   ],
   "meditation": [
@@ -2782,7 +2876,7 @@
       ],
       "added_at": "2026-09-04T05:07:34.639704+00:00",
       "language": "Mix",
-      "updated_at": "2026-09-04T05:07:34.639704+00:00",
+      "updated_at": "2026-09-12T23:27:35.520475+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:0E7KnOOPl6s",
@@ -2792,7 +2886,17 @@
       },
       "gospel_moods": [
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "method": "start",
+        "source": "preview",
+        "basename": "preview_meditation_confidite_ego_vici_mundum_10.mp3",
+        "start_sec": 0.0,
+        "youtube_id": "0E7KnOOPl6s",
+        "youtube_url": "https://www.youtube.com/watch?v=0E7KnOOPl6s",
+        "display_name": "Confidite Ego Vici Mundum · 10s",
+        "duration_sec": 10
+      }
     }
   ]
 }

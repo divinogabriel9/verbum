@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>{{ title or "LiturgyFlow Distribution" }}</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="32x32" />
+  <link rel="icon" type="image/png" href="/static/brand/app-icon.png?v=5" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png?v=5" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/distribution.css?v=20260909" />
+</head>
+<body class="dx-body">
+  <div id="dx-boot" class="dx-boot" aria-live="polite">
+    <div class="dx-boot__card">
+      <p class="dx-brand-mark">LiturgyFlow</p>
+      <p class="dx-boot__status" id="dx-boot-status">Checking session…</p>
+    </div>
+  </div>
+
+  <div id="dx-locked" class="dx-locked" hidden>
+    <div class="dx-locked__card">
+      <p class="dx-brand-mark">LiturgyFlow</p>
+      <h1>Superadmin access required</h1>
+      <p>Distribution is limited to LiturgyFlow superadmins.</p>
+      <a class="dx-btn dx-btn--primary" href="/home">Back to app</a>
+    </div>
+  </div>
+
+  <div id="dx-app" class="dx-app" hidden>
+    <aside class="dx-sidebar" id="dx-sidebar">
+      <div class="dx-sidebar__brand">
+        <span class="dx-brand-mark">LiturgyFlow</span>
+        <span class="dx-sidebar__product">Distribution</span>
+      </div>
+      <nav class="dx-nav" id="dx-nav" aria-label="Distribution">
+        <a href="#/dashboard" data-route="dashboard">Dashboard</a>
+        <a href="#/churches" data-route="churches">Churches</a>
+        <a href="#/pipeline" data-route="pipeline">Pipeline</a>
+        <a href="#/campaigns" data-route="campaigns">Campaigns</a>
+        <a href="#/follow-ups" data-route="follow-ups">Follow-ups</a>
+        <a href="#/invitations" data-route="invitations">Invitations</a>
+        <a href="#/referrals" data-route="referrals">Referrals</a>
+        <a href="#/analytics" data-route="analytics">Analytics</a>
+        <a href="#/settings" data-route="settings">Settings</a>
+      </nav>
+      <div class="dx-sidebar__foot">
+        <a href="/superadmin">Superadmin</a>
+        <a href="/home">Main app</a>
+      </div>
+    </aside>
+
+    <div class="dx-shell">
+      <header class="dx-topbar">
+        <button type="button" class="dx-icon-btn dx-sidebar-toggle" id="dx-sidebar-toggle" aria-label="Toggle menu">☰</button>
+        <div class="dx-topbar__titles">
+          <h1 class="dx-topbar__title" id="dx-page-title">Dashboard</h1>
+          <p class="dx-topbar__sub" id="dx-page-sub"></p>
+        </div>
+        <div class="dx-topbar__actions" id="dx-page-actions"></div>
+      </header>
+      <main class="dx-main" id="dx-main" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div id="dx-toast-host" class="dx-toast-host" aria-live="polite"></div>
+  <div id="dx-modal-host" class="dx-modal-host" hidden></div>
+  <div id="dx-sidebar-backdrop" class="dx-sidebar-backdrop" hidden></div>
+
+  <script>window.__VERBUM_AUTH_MODE__ = "distribution";</script>
+  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/distribution/app.js?v=20260909"></script>
+</body>
+</html>

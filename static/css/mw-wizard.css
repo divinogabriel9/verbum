@@ -543,6 +543,7 @@
           border-radius: 0;
           background: transparent;
           box-shadow: none;
+          overflow: visible;
         }
         body.mw-on .mw-rite:last-child { border-bottom: 0; }
         .mw-rite { border-radius: 12px; }
@@ -552,6 +553,14 @@
         .mw-rite__body { padding: 0 0 12px; gap: 6px; }
         /* tune choices — compact rows, same type scale */
         .mw-options { display: grid; gap: 5px; }
+        .mw-option-line {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+          overflow: visible;
+        }
         .mw-option {
           display: flex;
           flex-direction: column;
@@ -571,13 +580,119 @@
           cursor: pointer;
           transition: border-color .18s, background .18s, transform .12s;
         }
-        .mw-option__row { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; }
+        .mw-option__row { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; overflow: visible; }
+        .mw-option { overflow: visible; }
         .mw-option:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--line-soft)); background: color-mix(in srgb, var(--accent) 4%, var(--surface-solid)); }
         .mw-option:active { transform: scale(.995); }
         .mw-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-        .mw-option__check { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--card-border); display: grid; place-items: center; color: #fff; font-size: var(--mw-type-fine, 0.75rem); font-weight: 800; line-height: 1; transition: background .18s, border-color .18s; }
-        .mw-option__check::after { content: "\2713"; transform: scale(0); transition: transform .18s; }
+        .mw-option__check {
+          flex: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          border: 1.5px solid var(--card-border);
+          background: transparent;
+          display: grid;
+          place-items: center;
+          transition: border-color .18s ease;
+        }
+        .mw-option__check::after {
+          content: "";
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--accent);
+          transform: scale(0.72);
+          opacity: 0;
+          transition: transform .16s ease, opacity .16s ease;
+        }
+        .mw-option__label-wrap { flex: 1; min-width: 0; }
         .mw-option__label { flex: 1; min-width: 0; line-height: 1.3; }
+        button.mw-option__label {
+          appearance: none;
+          display: block;
+          width: 100%;
+          border: 0;
+          background: none;
+          padding: 0;
+          margin: 0;
+          font: inherit;
+          font-weight: inherit;
+          color: inherit;
+          text-align: left;
+          cursor: pointer;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        button.mw-option__label:hover,
+        button.mw-option__label.is-linked { color: var(--accent); }
+        .mw-option__label-wrap {
+          flex: 1;
+          min-width: 0;
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        button.mw-option__label {
+          appearance: none;
+          border: 0;
+          background: none;
+          padding: 0;
+          margin: 0;
+          font: inherit;
+          font-weight: inherit;
+          color: inherit;
+          text-align: left;
+          cursor: pointer;
+          width: 100%;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        button.mw-option__label:hover,
+        button.mw-option__label.is-linked { color: var(--accent); }
+        .mw-media-dd { position: relative; flex: none; }
+        .mw-media-dd--link { flex: 1; min-width: 0; }
+        .mw-media-dd__menu {
+          position: absolute;
+          top: calc(100% + 4px);
+          right: 0;
+          min-width: 9.25rem;
+          padding: 4px;
+          border-radius: 10px;
+          border: 1px solid var(--card-border);
+          background: var(--surface-solid, #fff);
+          box-shadow: var(--shadow-light, 0 8px 24px rgba(0,0,0,.12));
+          z-index: 40;
+          display: grid;
+          gap: 2px;
+        }
+        .mw-media-dd--link .mw-media-dd__menu {
+          left: 0;
+          right: auto;
+        }
+        .mw-media-dd__menu[hidden] { display: none !important; }
+        .mw-media-dd__item {
+          display: block;
+          width: 100%;
+          appearance: none;
+          border: 0;
+          background: none;
+          border-radius: 8px;
+          min-height: 32px;
+          padding: 4px 10px;
+          text-align: left;
+          font: inherit;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: inherit;
+          cursor: pointer;
+        }
+        .mw-media-dd__item:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+        .mw-media-dd__item:disabled { opacity: .4; cursor: not-allowed; }
+        body:not(.is-superadmin) .mw-media-dd__item--sa { display: none !important; }
         .mw-option__play { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); cursor: pointer; font-size: var(--mw-type-micro, 0.625rem); transition: background .18s, transform .12s; }
         .mw-option__play:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
         .mw-option__play:active { transform: scale(.9); }
@@ -591,9 +706,124 @@
           transition: background .18s, transform .12s;
         }
         .mw-option__text:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-        .mw-option__text:active { transform: scale(.9); }
+        .mw-option__text:active { transform: scale(.97); }
+        .mw-option__text.is-ready { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+        .mw-option__text.is-playing { animation: mw-play-pulse 1s ease infinite; }
+        .mw-media-dd { position: relative; flex: none; }
+        .mw-media-dd--link { flex: 1; min-width: 0; }
+        .mw-media-dd__menu {
+          position: absolute;
+          top: calc(100% + 4px);
+          min-width: 10.5rem;
+          padding: 4px;
+          border-radius: 10px;
+          border: 1px solid var(--card-border);
+          background: var(--surface-solid, #fff);
+          box-shadow: var(--shadow-light, 0 8px 24px rgba(0,0,0,.12));
+          z-index: 40;
+          transform-origin: top right;
+        }
+        .mw-media-dd--link .mw-media-dd__menu {
+          left: 0;
+          transform-origin: top left;
+        }
+        .mw-media-dd--play .mw-media-dd__menu { right: 0; }
+        .mw-media-dd__menu[hidden] { display: none !important; }
+        .mw-media-dd__item {
+          display: block;
+          width: 100%;
+          appearance: none;
+          border: 0;
+          background: none;
+          text-align: left;
+          min-height: 34px;
+          padding: 6px 10px;
+          border-radius: 8px;
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.78rem;
+          font-weight: 550;
+          color: inherit;
+          line-height: 1.25;
+        }
+        .mw-media-dd__item:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+        .mw-media-dd__item:disabled { opacity: .42; cursor: not-allowed; }
+        .mw-option,
+        .mw-option__row { overflow: visible; }
         .mw-option__media { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; align-items: center; }
-        /* Lyrics|Video is for all users; Audio/Video link chips stay SA-only via .mw-media-chip--sa */
+        .mw-kyrie-tagalog {
+          display: flex;
+          flex: none;
+          align-items: center;
+          width: auto;
+          margin: 0;
+          position: relative;
+        }
+        .mw-kyrie-tagalog[hidden] { display: none !important; }
+        .mw-option[data-val="tagalog"],
+        .mw-option[data-val="tagalog"] .mw-option__row { overflow: visible; }
+        .mw-kyrie-dd { position: relative; }
+        .mw-kyrie-dd__btn {
+          height: 22px;
+          min-width: 4.4rem;
+          padding: 0 18px 0 7px;
+          border-radius: 7px;
+          border: 1px solid var(--card-border);
+          background: var(--surface-2, var(--surface-solid));
+          color: inherit;
+          font: inherit;
+          font-size: 0.7rem;
+          font-weight: 650;
+          line-height: 1;
+          cursor: pointer;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 5px center;
+          background-size: 10px;
+        }
+        .mw-kyrie-dd.is-open .mw-kyrie-dd__btn {
+          border-color: color-mix(in srgb, var(--accent) 40%, var(--card-border));
+        }
+        .mw-kyrie-dd__menu {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          min-width: 8.75rem;
+          padding: 4px;
+          border-radius: 10px;
+          border: 1px solid var(--card-border);
+          background: var(--surface-solid, #fff);
+          box-shadow: var(--shadow-light, 0 8px 24px rgba(0,0,0,.12));
+          z-index: 40;
+        }
+        .mw-kyrie-dd__menu[hidden] { display: none !important; }
+        .mw-kyrie-dd__option {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          min-height: 34px;
+          padding: 2px 4px 2px 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.78rem;
+          font-weight: 650;
+        }
+        .mw-kyrie-dd__option:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+        .mw-kyrie-dd__option[aria-selected="true"] {
+          background: color-mix(in srgb, var(--accent) 12%, transparent);
+          color: var(--accent);
+        }
+        .mw-kyrie-dd__option .mw-option__text {
+          width: 24px;
+          height: 24px;
+          font-size: 0.62rem;
+        }
+        #flow-kyrie-tagalog-slide,
+        .vb-select:has(#flow-kyrie-tagalog-slide) {
+          display: none !important;
+        }
+        /* Lyrics|Video stays on the option; linking moved to the radio title */
         .mw-option__media.mass-song-media-row {
           display: flex;
           flex-wrap: wrap;
@@ -602,6 +832,9 @@
           margin-top: 8px;
           width: 100%;
         }
+        .mw-option__media .mass-song-slide-mode__hint { display: none; }
+        .mw-option__media .mass-song-slide-mode__hint { display: none !important; }
+        .mw-option__media .mw-media-group { display: none !important; }
         /* Non-SA: hide unused Audio/Video groups (chips are SA-only); keep ready play controls */
         body:not(.is-superadmin) .mw-option__media .mw-media-group:has(.mw-media-chip--sa):not(:has(.mw-media-play.is-ready)) {
           display: none;
@@ -879,8 +1112,14 @@
         .mass-song-audio-btn.is-playing { animation: mw-play-pulse 1s ease infinite; }
         .mass-song-plan-card__actions:not(:empty) { display: inline-flex; align-items: center; gap: 6px; }
         .mw-option[aria-checked="true"] { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
-        .mw-option[aria-checked="true"] .mw-option__check { background: var(--accent); border-color: var(--accent); }
-        .mw-option[aria-checked="true"] .mw-option__check::after { transform: scale(1); }
+        .mw-option[aria-checked="true"] .mw-option__check {
+          background: transparent;
+          border-color: color-mix(in srgb, var(--accent) 72%, var(--card-border));
+        }
+        .mw-option[aria-checked="true"] .mw-option__check::after {
+          transform: scale(1);
+          opacity: 1;
+        }
         .mw-rite__hint { font-size: var(--mw-type-caption, 0.875rem); color: var(--muted); margin: 2px 0 0; line-height: 1.35; }
         .mw-receipt, .mw-card.mw-default-setup { max-width: 860px; }
         .mw-default-pin {
@@ -905,6 +1144,81 @@
           cursor: pointer;
         }
         .mw-default-pin.is-on { color: var(--accent); }
+        .mw-default-pin--rite {
+          margin-left: 0;
+          position: relative;
+          display: inline-flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: flex-start;
+          width: auto;
+          min-width: 22px;
+          min-height: 22px;
+          gap: 6px;
+          z-index: 2;
+          font-size: 0.6875rem;
+          font-weight: 500;
+          letter-spacing: 0.01em;
+          text-transform: none;
+        }
+        .mw-default-pin--rite .mw-default-pin__input {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          margin: 0;
+          cursor: pointer;
+        }
+        .mw-default-pin--rite .mw-default-pin__mark {
+          flex: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          border: 1.5px solid var(--card-border);
+          background: var(--surface-solid, #fff);
+          display: grid;
+          place-items: center;
+          color: #fff;
+          pointer-events: none;
+          transition: background .18s, border-color .18s;
+        }
+        .mw-default-pin--rite .mw-default-pin__mark::after {
+          content: "\2713";
+          font-size: 0.58rem;
+          font-weight: 800;
+          line-height: 1;
+          transform: scale(0);
+          transition: transform .18s;
+        }
+        .mw-default-pin--rite.is-on .mw-default-pin__mark {
+          background: var(--accent);
+          border-color: var(--accent);
+        }
+        .mw-default-pin--rite.is-on .mw-default-pin__mark::after { transform: scale(1); }
+        .mw-default-pin--rite .mw-default-pin__text {
+          position: static;
+          transform: none;
+          white-space: nowrap;
+          pointer-events: none;
+          max-width: 5.5rem;
+          overflow: visible;
+          font-weight: 500;
+          letter-spacing: 0.01em;
+          text-transform: none;
+          transition: opacity .4s ease, max-width .4s ease;
+        }
+        .mw-default-pin--rite.is-label-hidden .mw-default-pin__text {
+          opacity: 0;
+          max-width: 0;
+          overflow: hidden;
+        }
+        .mw-default-pin--rite:hover .mw-default-pin__text,
+        .mw-default-pin--rite:focus-within .mw-default-pin__text {
+          opacity: 1;
+          max-width: 5.5rem;
+          overflow: visible;
+        }
         .mw-field-default-pin { margin-top: 6px; }
         /* Introductory Rites + Eucharist: collapse to pinned default; peek strips + expand on hover */
         @media (hover: hover) {
@@ -937,6 +1251,10 @@
             overflow: hidden;
             transform: translateY(0) scale(1);
             transform-origin: top center;
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-options .mw-option.mw-option--collapse-show,
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option {
+            overflow: visible;
           }
           body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option {
             transition-duration: var(--mw-rite-enter);
@@ -1035,17 +1353,35 @@
           }
           body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__check,
           body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-default-pin,
-          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__text {
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-option__text,
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-options .mw-option .mw-media-dd--play {
             transition-duration: var(--mw-rite-enter);
           }
           body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__check,
           body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-default-pin,
-          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__text {
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-option__text,
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-options .mw-option:not(.mw-option--collapse-show) .mw-media-dd--play {
             opacity: 0;
             max-width: 0;
             margin: 0;
             pointer-events: none;
             transform: scale(0.95);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default .mw-option-line > .mw-default-pin {
+            transition:
+              opacity var(--mw-rite-exit) var(--mw-rite-ease),
+              max-width var(--mw-rite-exit) var(--mw-rite-ease),
+              min-width var(--mw-rite-exit) var(--mw-rite-ease);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:hover .mw-option-line > .mw-default-pin {
+            transition-duration: var(--mw-rite-enter);
+          }
+          body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-option-line:not(:has(.mw-option--collapse-show)) .mw-default-pin {
+            opacity: 0;
+            pointer-events: none;
+            max-width: 0;
+            min-width: 0;
+            overflow: hidden;
           }
           body.mw-on .mw-rite.mw-rite--collapse-default:not(:hover) .mw-rite__head {
             cursor: pointer;

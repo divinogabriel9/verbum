@@ -1546,7 +1546,7 @@
       if (k === "sanctus_tune") {
         const wrap = document.querySelector('.mw-options[aria-label="Sanctus tune"]');
         if (!wrap) return false;
-        wrap.querySelectorAll(":scope > .mw-option").forEach((c) => {
+        wrap.querySelectorAll(".mw-option").forEach((c) => {
           const cv = c.getAttribute("data-val");
           if (cv === "__video") return;
           c.setAttribute("aria-checked", String(cv === v));
@@ -3098,6 +3098,7 @@
       generation: 0,
       complete: true,
       pendingFullscreen: null, // true = enter, false = exit, null = none
+      webpptx: null,
     };
 
     var lastMassGenerateResult = null;
@@ -3140,6 +3141,15 @@
           title: s.title || "",
           slot: s.slot || "",
         })),
+        cues: (massSlideshowState.slides || [])
+          .filter((s) => s && s.kind === "video" && s.video_url)
+          .map((s) => ({
+            index: s.index,
+            kind: "video",
+            video_url: s.video_url,
+            title: s.title || "",
+            slot: s.slot || "",
+          })),
       };
       syncMassPresentAgainUi();
     }
@@ -3446,10 +3456,24 @@
         : label;
     }
 
+    function hideMassSlideshowWebpptx() {
+      const host = $("mass-slideshow-webpptx");
+      if (host) host.hidden = true;
+    }
+
+    function destroyMassSlideshowWebpptx() {
+      if (massSlideshowState.webpptx && massSlideshowState.webpptx.destroy) {
+        try { massSlideshowState.webpptx.destroy(); } catch (_e) { /* ignore */ }
+      }
+      massSlideshowState.webpptx = null;
+      hideMassSlideshowWebpptx();
+    }
+
     function renderMassSlideshowSlide() {
       const img = $("mass-slideshow-img");
       const video = $("mass-slideshow-video");
       const text = $("mass-slideshow-text");
+      const host = $("mass-slideshow-webpptx");
       const slides = massSlideshowState.slides;
       const total = slides.length;
       const idx = Math.max(0, Math.min(massSlideshowState.index, Math.max(0, total - 1)));
@@ -3459,12 +3483,23 @@
       pauseMassSlideshowVideo();
       if (!slide) {
         if (img) { img.hidden = true; img.removeAttribute("src"); }
+        hideMassSlideshowWebpptx();
         if (text) {
           text.hidden = false;
           text.textContent = "No slides to present.";
         }
         return;
       }
+
+      if (massSlideshowState.mode === "webpptx" && massSlideshowState.webpptx && slide.kind !== "video") {
+        if (img) { img.hidden = true; img.removeAttribute("src"); }
+        if (video) { video.hidden = true; video.removeAttribute("src"); }
+        if (text) { text.hidden = true; text.textContent = ""; }
+        if (host) host.hidden = false;
+        void massSlideshowState.webpptx.goTo(idx);
+        return;
+      }
+      hideMassSlideshowWebpptx();
 
       const showVideo = async (objectUrl) => {
         if (img) { img.hidden = true; img.removeAttribute("src"); }
@@ -3761,6 +3796,7 @@
       massSlideshowState.hintTimer = null;
       massSlideshowState.cursorTimer = null;
       revokeMassSlideshowObjectUrls();
+      destroyMassSlideshowWebpptx();
       massSlideshowState.slides = [];
       massSlideshowState.expectedTotal = 0;
       const img = $("mass-slideshow-img");
@@ -3782,7 +3818,8 @@
       stopMassSlideshowPoll();
       resetMassProjectionRemote();
       revokeMassSlideshowObjectUrls();
-      massSlideshowState.mode = opts.mode === "text" ? "text" : "image";
+      destroyMassSlideshowWebpptx();
+      massSlideshowState.mode = opts.mode === "text" ? "text" : opts.mode === "webpptx" ? "webpptx" : "image";
       massSlideshowState.pptxUrl = opts.pptxUrl || "";
       massSlideshowState.pptxName = opts.pptxName || "mass_presentation.pptx";
       massSlideshowState.index = 0;
@@ -3794,6 +3831,24 @@
 
       const dlBtn = $("mass-slideshow-download");
       if (dlBtn) dlBtn.hidden = !massSlideshowState.pptxUrl;
+
+      if (massSlideshowState.mode === "webpptx") {
+        const host = $("mass-slideshow-webpptx");
+        if (!host || !window.WebPptx || !window.WebPptx.createProjector || !massSlideshowState.pptxUrl) {
+          throw new Error("Browser projector is not available.");
+        }
+        host.hidden = false;
+        host.innerHTML = "";
+        massSlideshowState.webpptx = await window.WebPptx.createProjector(host, {
+          url: massSlideshowState.pptxUrl,
+          fetchImpl: typeof authorizedFetch === "function" ? authorizedFetch : fetch,
+        });
+        const count = massSlideshowState.webpptx.slideCount();
+        massSlideshowState.slides = Array.from({ length: count }, (_, i) => ({ index: i + 1 }));
+        massSlideshowState.expectedTotal = count;
+        massSlideshowState.complete = true;
+        applyMassSlideshowCues(opts.cues || []);
+      } else
 
       if (massSlideshowState.mode === "image") {
         mergeMassSlideshowRemoteSlides(slidesIn);

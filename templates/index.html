@@ -27,7 +27,8 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260907-audio-preview2" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260913-webpptx1" />
+  <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx1" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
@@ -36,7 +37,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260907-yt-scrub1" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260913-media-dd2" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -2444,7 +2445,29 @@
                           <option value="english" selected>English</option>
                           <option value="greek">Greek (Kyrie eleison)</option>
                           <option value="latin">Latin</option>
+                          <option value="tagalog">Tagalog</option>
                         </select>
+                        <div class="mw-kyrie-tagalog" id="mw-kyrie-tagalog" hidden>
+                          <select id="flow-kyrie-tagalog-slide" hidden aria-hidden="true" tabindex="-1" data-vb-select="off">
+                            <option value="1" selected>Sung</option>
+                            <option value="2">Spoken</option>
+                          </select>
+                          <div class="mw-kyrie-dd" id="mw-kyrie-tagalog-dd">
+                            <button type="button" class="mw-kyrie-dd__btn" id="mw-kyrie-tagalog-dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="mw-kyrie-tagalog-dd-menu">
+                              <span id="mw-kyrie-tagalog-dd-value">Sung</span>
+                            </button>
+                            <div class="mw-kyrie-dd__menu" id="mw-kyrie-tagalog-dd-menu" hidden role="listbox" aria-label="Tagalog Kyrie setting">
+                              <div class="mw-kyrie-dd__option" role="option" data-mw-kyrie-slide="1" aria-selected="true">
+                                <span class="mw-kyrie-dd__name">Sung</span>
+                                <span class="mw-option__text" data-mw-text-preview data-mw-media-key="kyrie::tagalog-1" role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>
+                              </div>
+                              <div class="mw-kyrie-dd__option" role="option" data-mw-kyrie-slide="2" aria-selected="false">
+                                <span class="mw-kyrie-dd__name">Spoken</span>
+                                <span class="mw-option__text" data-mw-text-preview data-mw-media-key="kyrie::tagalog-2" role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </article>
                     <article class="mw-rite" data-mw-rite data-mw-media-slot="gloria">
@@ -2474,13 +2497,28 @@
                       <div class="mw-rite__head"><span class="mw-rite__title">Sanctus</span></div>
                       <div class="mw-rite__body">
                         <div class="mw-options" role="radiogroup" aria-label="Sanctus tune" data-mw-media-section="sanctus">
-                          <div class="mw-option" role="radio" aria-checked="true" tabindex="0" data-val="default" data-mw-media-key="sanctus::default">
-                            <div class="mw-option__row">
-                              <span class="mw-option__check" aria-hidden="true"></span>
-                              <span class="mw-option__label">Holy, Holy, Holy (default)</span>
-                              <span class="mw-option__text" data-mw-text-preview data-mw-media-key="sanctus::default" role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>
+                          <div class="mw-option-line">
+                            <div class="mw-option" role="radio" aria-checked="true" tabindex="0" data-val="default" data-mw-media-key="sanctus::default">
+                              <div class="mw-option__row">
+                                <span class="mw-option__check" aria-hidden="true"></span>
+                                <span class="mw-option__label-wrap mw-media-dd mw-media-dd--link">
+                                  <button type="button" class="mw-option__label mw-media-dd__btn" data-mw-media-dd-btn="link" data-mw-media-slot="sanctus::default">Holy, Holy, Holy (default)</button>
+                                  <div class="mw-media-dd__menu mw-media-dd__menu--link" hidden role="menu">
+                                    <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-link-media="audio" data-mw-media-slot="sanctus::default">Link audio</button>
+                                    <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-link-media="video" data-mw-media-slot="sanctus::default">Link video</button>
+                                  </div>
+                                </span>
+                                <span class="mw-option__text" data-mw-text-preview data-mw-media-key="sanctus::default" role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>
+                                <div class="mw-media-dd mw-media-dd--play">
+                                  <button type="button" class="mw-option__text mw-media-dd__btn" data-mw-media-dd-btn="play" aria-haspopup="menu" aria-expanded="false" aria-label="Play preview" title="Play preview">▶</button>
+                                  <div class="mw-media-dd__menu" hidden role="menu">
+                                    <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-audio data-mw-media-slot="sanctus::default">Play audio</button>
+                                    <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-video data-mw-media-slot="sanctus::default">Play video</button>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="mw-option__media mass-song-media-row" data-mw-media-row="sanctus::default" data-mw-rite-media="1" data-mw-media-section="sanctus" data-mw-media-lang="default"></div>
                             </div>
-                            <div class="mw-option__media mass-song-media-row" data-mw-media-row="sanctus::default" data-mw-rite-media="1" data-mw-media-section="sanctus" data-mw-media-lang="default"></div>
                           </div>
                         </div>
                       </div>
@@ -2804,7 +2842,7 @@
                 <div class="mw-aside__card">
                   <p class="mw-aside__eyebrow" id="mw-aside-eyebrow">At a glance</p>
                   <dl class="mw-aside__list" id="mw-aside-list"></dl>
-                  <p class="mw-aside__legend" id="mw-aside-legend" hidden>Aa = slide text · Lyrics|Video like Music Ministry · Audio ▶ for practice</p>
+                  <p class="mw-aside__legend" id="mw-aside-legend" hidden>PowerPoint: lyric slides. Audio is preview only.</p>
                   <div class="mw-aside__sponsors" id="mw-aside-sponsors" hidden>
                     <p class="mw-aside__sponsors-label">Food sponsors</p>
                     <div id="mw-aside-sponsors-list-host"></div>
@@ -2845,7 +2883,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260907-langorder1"></script>
+      <script src="/static/js/mw-wizard.js?v=20260913-media-dd2"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3304,6 +3342,7 @@
               <div class="sa-section">
                 <div class="sa-section__head"><h4>Jump</h4></div>
                 <div class="sa-quick-actions">
+                  <a class="primary" href="/admin/distribution" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Distribution CRM</a>
                   <button type="button" class="secondary" id="sa-btn-goto-membership">Approvals</button>
                   <button type="button" class="secondary" data-sa-panel-jump="analytics">Analytics</button>
                   <button type="button" class="secondary" data-sa-panel-jump="system-ai">AI &amp; quota</button>
@@ -4390,6 +4429,7 @@
         <img class="mass-slideshow__img" id="mass-slideshow-img" alt="" hidden />
         <video class="mass-slideshow__video" id="mass-slideshow-video" playsinline preload="auto" hidden></video>
         <div class="mass-slideshow__text" id="mass-slideshow-text" hidden></div>
+        <div class="mass-slideshow__webpptx" id="mass-slideshow-webpptx" hidden></div>
       </div>
       <button type="button" class="mass-slideshow__hit mass-slideshow__hit--prev" id="mass-slideshow-hit-prev" aria-label="Previous slide"></button>
       <button type="button" class="mass-slideshow__hit mass-slideshow__hit--next" id="mass-slideshow-hit-next" aria-label="Next slide"></button>
@@ -4439,7 +4479,13 @@
   </div>
 
   <script src="/static/js/cookie-consent.js?v=1"></script>
-  <script src="/static/js/app.js?v=20260907-audio-preview2"></script>
+  <script src="/static/webpptx/webpptx.js?v=20260913-webpptx1"></script>
+  <script>
+    if (window.WebPptx && window.WebPptx.setAssetBase) {
+      window.WebPptx.setAssetBase("/static/webpptx");
+    }
+  </script>
+  <script src="/static/js/app.js?v=20260913-webpptx1"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
   <script src="/static/js/auth.js?v=20260906-membership-gate1"></script>

@@ -381,6 +381,11 @@
         }
         function riteVideoAsideLabel(section, selectId) {
           var languageLabel = selText(selectId);
+          if (section === 'kyrie' && $(selectId) && $(selectId).value === 'tagalog') {
+            var slideSel = $('flow-kyrie-tagalog-slide');
+            var slideLabel = slideSel ? selText('flow-kyrie-tagalog-slide') : '';
+            languageLabel = slideLabel ? ('Tagalog · ' + slideLabel) : 'Tagalog';
+          }
           if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return languageLabel || '';
           var lang = (window.massRiteVideoLang && window.massRiteVideoLang[section]) || '';
           var label = '';
@@ -463,7 +468,10 @@
           }
           list.innerHTML = rows.join('');
           var legend = $('mw-aside-legend');
-          if (legend) legend.hidden = n !== 2 && n !== 4;
+          if (legend) {
+            legend.hidden = n !== 2 && n !== 4;
+            if (n === 2 || n === 4) legend.textContent = riteSlideAsideHint(n);
+          }
           var sponsorsWrap = $('mw-aside-sponsors');
           if (sponsorsWrap) sponsorsWrap.hidden = n !== 6;
           if (n === 6 && typeof window.syncFoodSponsorsListHost === 'function') window.syncFoodSponsorsListHost();
@@ -508,6 +516,7 @@
             window.ensureCollectionDefaultDate();
           }
           if (n === 7) { fillReceipt(); }
+          if (n === 2 || n === 4) scheduleRiteDefaultPinLabelHide(flowPage);
           fillAside(n);
           fillMwMassContext();
           var canvas = document.querySelector('#mw-wizard .mw-step-canvas');
@@ -619,10 +628,11 @@
           if (!sel || !preferred) return false;
           var wrap = sel.nextElementSibling;
           if (!wrap || !wrap.classList || !wrap.classList.contains('mw-options')) return false;
-          var card = wrap.querySelector(':scope > .mw-option[data-val="' + preferred + '"]');
+          var card = wrap.querySelector('.mw-option[data-val="' + preferred + '"]');
           if (!card) return false;
-          if (wrap.firstElementChild === card) return true;
-          wrap.insertBefore(card, wrap.firstElementChild);
+          var move = card.closest('.mw-option-line') || card;
+          if (wrap.firstElementChild === move) return true;
+          wrap.insertBefore(move, wrap.firstElementChild);
           return true;
         }
         function applyMassLanguageOptionOrder(preferredLang) {
@@ -636,6 +646,226 @@
           if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins();
         }
         window.applyMassLanguageOptionOrder = applyMassLanguageOptionOrder;
+        function escapeAttr(s) {
+          return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+        function riteDefaultPinHtml(pinKey, pinVal) {
+          return '<input type="checkbox" class="mw-default-pin__input" data-mw-default-key="' + escapeAttr(pinKey) + '" data-mw-default-value="' + escapeAttr(pinVal) + '" />' +
+            '<span class="mw-default-pin__mark" aria-hidden="true"></span>' +
+            '<span class="mw-default-pin__text">Default</span>';
+        }
+        function riteLabelLinkHtml(mediaKey) {
+          return '<span class="mw-option__label-wrap mw-media-dd mw-media-dd--link">' +
+            '<button type="button" class="mw-option__label mw-media-dd__btn" data-mw-media-dd-btn="link" data-mw-media-slot="' + escapeAttr(mediaKey) + '"></button>' +
+            '<div class="mw-media-dd__menu mw-media-dd__menu--link" hidden role="menu">' +
+              '<button type="button" class="mw-media-dd__item" role="menuitem" data-mw-link-media="audio" data-mw-media-slot="' + escapeAttr(mediaKey) + '">Link audio</button>' +
+              '<button type="button" class="mw-media-dd__item" role="menuitem" data-mw-link-media="video" data-mw-media-slot="' + escapeAttr(mediaKey) + '">Link video</button>' +
+            '</div>' +
+          '</span>';
+        }
+        function ritePlayDdHtml(mediaKey) {
+          return '<div class="mw-media-dd mw-media-dd--play">' +
+            '<button type="button" class="mw-option__text mw-media-dd__btn" data-mw-media-dd-btn="play" aria-haspopup="menu" aria-expanded="false" aria-label="Play preview" title="Play preview">▶</button>' +
+            '<div class="mw-media-dd__menu" hidden role="menu">' +
+              '<button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-audio data-mw-media-slot="' + escapeAttr(mediaKey) + '">Play audio</button>' +
+              '<button type="button" class="mw-media-dd__item" role="menuitem" data-mw-play-video data-mw-media-slot="' + escapeAttr(mediaKey) + '">Play video</button>' +
+            '</div>' +
+          '</div>';
+        }
+        function closeAllMediaDd(except) {
+          Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-media-dd.is-open'), function (dd) {
+            if (except && dd === except) return;
+            dd.classList.remove('is-open');
+            var btn = dd.querySelector('[data-mw-media-dd-btn]');
+            var menu = dd.querySelector(':scope > .mw-media-dd__menu');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (menu) menu.hidden = true;
+          });
+        }
+        function setMediaDdOpen(dd, open) {
+          if (!dd) return;
+          if (open) closeAllMediaDd(dd);
+          dd.classList.toggle('is-open', !!open);
+          var btn = dd.querySelector('[data-mw-media-dd-btn]');
+          var menu = dd.querySelector(':scope > .mw-media-dd__menu');
+          if (btn) btn.setAttribute('aria-expanded', String(!!open));
+          if (menu) menu.hidden = !open;
+        }
+        function bindMediaDropdowns(scope) {
+          Array.prototype.forEach.call((scope || flowPage).querySelectorAll('.mw-media-dd'), function (dd) {
+            if (dd.dataset.mwDdBound === '1') return;
+            dd.dataset.mwDdBound = '1';
+            var btn = dd.querySelector('[data-mw-media-dd-btn]');
+            if (!btn) return;
+            btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var kind = btn.getAttribute('data-mw-media-dd-btn');
+              if (kind === 'link' && !document.body.classList.contains('is-superadmin')) {
+                var slot = btn.getAttribute('data-mw-media-slot');
+                closeAllMediaDd();
+                if (slot && typeof window.openMassMediaPickModal === 'function') {
+                  window.openMassMediaPickModal('audio', slot, { fromTitle: true });
+                }
+                return;
+              }
+              setMediaDdOpen(dd, !dd.classList.contains('is-open'));
+            });
+          });
+        }
+        function riteSlideAsideHint(n) {
+          var secs = n === 2 ? ['kyrie', 'gloria'] : (n === 4 ? ['sanctus', 'our_father', 'lamb_of_god'] : []);
+          var useVideo = secs.some(function (sec) {
+            return !!(window.massRiteVideoMode && window.massRiteVideoMode[sec]);
+          });
+          return useVideo
+            ? 'PowerPoint: video slide replaces lyrics.'
+            : 'PowerPoint: lyric slides. Audio is preview only.';
+        }
+        function scheduleRiteDefaultPinLabelHide(scope) {
+          Array.prototype.forEach.call((scope || flowPage).querySelectorAll('.mw-default-pin--rite'), function (pin) {
+            pin.classList.remove('is-label-hidden');
+            if (pin._mwLabelHide) window.clearTimeout(pin._mwLabelHide);
+            pin._mwLabelHide = window.setTimeout(function () {
+              pin.classList.add('is-label-hidden');
+            }, 2800);
+          });
+        }
+        function kyrieTagalogSlideValue() {
+          var slideSel = $('flow-kyrie-tagalog-slide');
+          return slideSel && slideSel.value === '2' ? '2' : '1';
+        }
+        function kyrieTagalogSlideLabel(value) {
+          return value === '2' ? 'Spoken' : 'Sung';
+        }
+        function setKyrieTagalogMenuOpen(open) {
+          var dd = $('mw-kyrie-tagalog-dd');
+          var btn = $('mw-kyrie-tagalog-dd-btn');
+          var menu = $('mw-kyrie-tagalog-dd-menu');
+          if (!dd || !btn || !menu) return;
+          dd.classList.toggle('is-open', !!open);
+          btn.setAttribute('aria-expanded', String(!!open));
+          menu.hidden = !open;
+        }
+        function setKyrieTagalogSlide(value) {
+          var slideSel = $('flow-kyrie-tagalog-slide');
+          var next = value === '2' ? '2' : '1';
+          if (slideSel && slideSel.value !== next) {
+            slideSel.value = next;
+            slideSel.dispatchEvent(new Event('change', { bubbles: true }));
+            return;
+          }
+          refreshKyrieTagalogPanel();
+        }
+        function refreshKyrieTagalogPanel() {
+          var kyrieSel = $('flow-kyrie-choice');
+          var panel = $('mw-kyrie-tagalog');
+          var slideSel = $('flow-kyrie-tagalog-slide');
+          var valueEl = $('mw-kyrie-tagalog-dd-value');
+          var isTagalog = !!(kyrieSel && kyrieSel.value === 'tagalog');
+          if (panel) panel.hidden = !isTagalog;
+          if (!isTagalog) {
+            setKyrieTagalogMenuOpen(false);
+            return;
+          }
+          var slide = kyrieTagalogSlideValue();
+          if (slideSel && slideSel.value !== slide) slideSel.value = slide;
+          if (valueEl) valueEl.textContent = kyrieTagalogSlideLabel(slide);
+          Array.prototype.forEach.call((panel && panel.querySelectorAll('[data-mw-kyrie-slide]')) || [], function (opt) {
+            opt.setAttribute('aria-selected', String(opt.getAttribute('data-mw-kyrie-slide') === slide));
+          });
+        }
+        function ensureKyrieTagalogPanel() {
+          var kyrieSel = $('flow-kyrie-choice');
+          var panel = $('mw-kyrie-tagalog');
+          var slideSel = $('flow-kyrie-tagalog-slide');
+          var ddBtn = $('mw-kyrie-tagalog-dd-btn');
+          if (!kyrieSel || !panel) return;
+          var wrap = kyrieSel.nextElementSibling;
+          var tagalogCard = wrap && wrap.classList && wrap.classList.contains('mw-options')
+            ? wrap.querySelector('.mw-option[data-val="tagalog"]')
+            : null;
+          var row = tagalogCard && tagalogCard.querySelector(':scope > .mw-option__row');
+          var label = row && row.querySelector('.mw-option__label');
+          if (row && label && panel.parentElement !== row) label.insertAdjacentElement('afterend', panel);
+          else if (tagalogCard && panel.parentElement !== tagalogCard) tagalogCard.appendChild(panel);
+          if (row) {
+            var textBtn = row.querySelector(':scope > .mw-option__text');
+            var playDd = row.querySelector(':scope > .mw-media-dd--play');
+            if (textBtn) row.appendChild(textBtn);
+            if (playDd) row.appendChild(playDd);
+          }
+          if (kyrieSel.dataset.mwKyrieTagalogBound !== '1') {
+            kyrieSel.dataset.mwKyrieTagalogBound = '1';
+            kyrieSel.addEventListener('change', refreshKyrieTagalogPanel);
+          }
+          if (panel && panel.dataset.mwKyrieTagalogPanelBound !== '1') {
+            panel.dataset.mwKyrieTagalogPanelBound = '1';
+            panel.addEventListener('click', function (e) { e.stopPropagation(); });
+            panel.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+          }
+          if (slideSel && slideSel.dataset.mwKyrieTagalogBound !== '1') {
+            slideSel.dataset.mwKyrieTagalogBound = '1';
+            slideSel.addEventListener('change', function (e) {
+              e.stopPropagation();
+              refreshKyrieTagalogPanel();
+              if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+            });
+          }
+          if (ddBtn && ddBtn.dataset.mwKyrieTagalogBound !== '1') {
+            ddBtn.dataset.mwKyrieTagalogBound = '1';
+            ddBtn.addEventListener('click', function (e) {
+              e.stopPropagation();
+              e.preventDefault();
+              var menu = $('mw-kyrie-tagalog-dd-menu');
+              setKyrieTagalogMenuOpen(!!(menu && menu.hidden));
+            });
+          }
+          Array.prototype.forEach.call(panel.querySelectorAll('[data-mw-kyrie-slide]'), function (opt) {
+            if (opt.dataset.mwKyrieChipBound === '1') return;
+            opt.dataset.mwKyrieChipBound = '1';
+            opt.addEventListener('click', function (e) {
+              if (e.target.closest('[data-mw-text-preview]')) return;
+              e.stopPropagation();
+              setKyrieTagalogSlide(opt.getAttribute('data-mw-kyrie-slide'));
+              setKyrieTagalogMenuOpen(false);
+            });
+          });
+          Array.prototype.forEach.call(panel.querySelectorAll('[data-mw-text-preview]'), function (btn) {
+            if (btn.dataset.mwTextBound === '1') return;
+            btn.dataset.mwTextBound = '1';
+            btn.addEventListener('click', function (e) {
+              e.stopPropagation();
+              e.preventDefault();
+              var key = btn.getAttribute('data-mw-media-key');
+              var slide = key && key.indexOf('tagalog-2') !== -1 ? '2' : '1';
+              setKyrieTagalogSlide(slide);
+              if (key && typeof window.openMassRiteTextPreview === 'function') window.openMassRiteTextPreview(key);
+            });
+            btn.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation();
+                e.preventDefault();
+                btn.click();
+              }
+            });
+          });
+          if (document.documentElement.dataset.mwKyrieDdDoc !== '1') {
+            document.documentElement.dataset.mwKyrieDdDoc = '1';
+            document.addEventListener('click', function (e) {
+              if (e.target.closest('#mw-kyrie-tagalog-dd')) return;
+              setKyrieTagalogMenuOpen(false);
+              if (!e.target.closest('.mw-media-dd')) closeAllMediaDd();
+            });
+            document.addEventListener('keydown', function (e) {
+              if (e.key === 'Escape') {
+                setKyrieTagalogMenuOpen(false);
+                closeAllMediaDd();
+              }
+            });
+          }
+          refreshKyrieTagalogPanel();
+        }
         function buildChoiceCards() {
           Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-tunes]'), function (sel) {
             if (sel.dataset.mwCards === '1') return; sel.dataset.mwCards = '1';
@@ -646,7 +876,6 @@
             if (section) wrap.setAttribute('data-mw-media-section', section);
             var opts = Array.prototype.slice.call(sel.options).filter(function (o) { return o.value && !o.disabled; });
             sel.selectedIndex = -1;
-            function escapeAttr(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
             function videoModeOn() {
               return !!(window.massRiteVideoMode && window.massRiteVideoMode[section]);
             }
@@ -655,7 +884,7 @@
               return map[section] || (opts[0] && opts[0].value) || '';
             }
             function sync() {
-              Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
+              Array.prototype.forEach.call(wrap.querySelectorAll('.mw-option'), function (c) {
                 var v = c.getAttribute('data-val');
                 c.setAttribute('aria-checked', String(!!sel.value && sel.value === v));
               });
@@ -683,11 +912,14 @@
               var action = (textOnly || mediaRite || mediaKey)
                 ? ('<span class="mw-option__text" data-mw-text-preview role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>')
                 : '';
+              var playDd = (mediaRite && mediaKey) ? ritePlayDdHtml(mediaKey) : '';
+              var labelHtml = (mediaRite && mediaKey) ? riteLabelLinkHtml(mediaKey) : '<span class="mw-option__label"></span>';
               item.innerHTML =
                 '<div class="mw-option__row">' +
                   '<span class="mw-option__check" aria-hidden="true"></span>' +
-                  '<span class="mw-option__label"></span>' +
+                  labelHtml +
                   action +
+                  playDd +
                 '</div>' +
                 (mediaRite && mediaKey
                   ? ('<div class="mw-option__media mass-song-media-row" data-mw-media-row="' + escapeAttr(mediaKey) +
@@ -696,13 +928,17 @@
                   : '');
               item.querySelector('.mw-option__label').textContent = o.textContent;
               var pinKey = sel.id || (section ? ('flow-' + section.replace(/_/g, '-') + '-choice') : '');
+              var line = document.createElement('div');
+              line.className = 'mw-option-line';
+              line.appendChild(item);
               if (pinKey) {
                 var pin = document.createElement('label');
-                pin.className = 'mw-default-pin';
+                pin.className = 'mw-default-pin mw-default-pin--rite';
                 pin.title = 'Use this choice as my default next time';
-                pin.innerHTML = '<input type="checkbox" class="mw-default-pin__input" data-mw-default-key="' + escapeAttr(pinKey) + '" data-mw-default-value="' + escapeAttr(o.value) + '" /><span class="mw-default-pin__text">Default</span>';
+                pin.setAttribute('aria-label', 'Default');
+                pin.innerHTML = riteDefaultPinHtml(pinKey, o.value);
                 pin.addEventListener('click', function (e) { e.stopPropagation(); });
-                item.querySelector('.mw-option__row').appendChild(pin);
+                line.appendChild(pin);
               }
               var textBtn = item.querySelector('[data-mw-text-preview]');
               if (textBtn && mediaKey) {
@@ -716,12 +952,14 @@
                 });
               }
               item.addEventListener('click', function (e) {
-                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val]')) return;
+                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], .mw-kyrie-tagalog, .mw-kyrie-dd, .mw-media-dd')) return;
                 pickLang(o.value);
               });
               item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickLang(o.value); } });
-              wrap.appendChild(item);
+              wrap.appendChild(line);
             });
+            scheduleRiteDefaultPinLabelHide(wrap);
+            bindMediaDropdowns(wrap);
             sel.style.display = 'none';
             sel.insertAdjacentElement('afterend', wrap);
             sel.addEventListener('change', function () { sync(); });
@@ -763,11 +1001,12 @@
           var wrap = flowPage.querySelector('.mw-options[aria-label="Sanctus tune"]');
           if (!wrap) return;
           /* Remove legacy separate Video option card if present */
-          Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option[data-val="__video"], :scope > .mw-option.mw-option--video'), function (card) {
-            card.remove();
+          Array.prototype.forEach.call(wrap.querySelectorAll('.mw-option[data-val="__video"], .mw-option.mw-option--video'), function (card) {
+            var dead = card.closest('.mw-option-line') || card;
+            dead.remove();
           });
           var section = 'sanctus';
-          var defaultOpt = wrap.querySelector(':scope > .mw-option[data-val="default"]');
+          var defaultOpt = wrap.querySelector('.mw-option[data-val="default"]');
           if (defaultOpt) {
             var mediaRow = defaultOpt.querySelector('[data-mw-rite-media="1"]');
             if (!mediaRow) {
@@ -782,7 +1021,7 @@
           }
           function sync() {
             var onVideo = !!(window.massRiteVideoMode && window.massRiteVideoMode.sanctus);
-            var anyChecked = !!wrap.querySelector(':scope > .mw-option[aria-checked="true"]:not([data-val="__video"])');
+            var anyChecked = !!wrap.querySelector('.mw-option[aria-checked="true"]:not([data-val="__video"])');
             if (!anyChecked) {
               var pinned = '';
               try {
@@ -791,10 +1030,10 @@
                 if (map && typeof map === 'object' && map.sanctus_tune) pinned = String(map.sanctus_tune || '').trim();
               } catch (ePin) { /* ignore */ }
               var pick = pinned || 'default';
-              var target = wrap.querySelector(':scope > .mw-option[data-val="' + pick + '"]')
-                || wrap.querySelector(':scope > .mw-option[data-val="default"]');
+              var target = wrap.querySelector('.mw-option[data-val="' + pick + '"]')
+                || wrap.querySelector('.mw-option[data-val="default"]');
               if (target) {
-                Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
+                Array.prototype.forEach.call(wrap.querySelectorAll('.mw-option'), function (c) {
                   var v = c.getAttribute('data-val');
                   if (v === '__video') return;
                   c.setAttribute('aria-checked', String(c === target));
@@ -808,20 +1047,22 @@
             if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
             refreshContinue();
           }
-          if (defaultOpt && !defaultOpt.querySelector('.mw-default-pin')) {
+          var sanctusLine = defaultOpt && defaultOpt.closest('.mw-option-line');
+          if (defaultOpt && sanctusLine && !sanctusLine.querySelector('.mw-default-pin')) {
             var sanctusPin = document.createElement('label');
-            sanctusPin.className = 'mw-default-pin';
+            sanctusPin.className = 'mw-default-pin mw-default-pin--rite';
             sanctusPin.title = 'Use this choice as my default next time';
-            sanctusPin.innerHTML = '<input type="checkbox" class="mw-default-pin__input" data-mw-default-key="sanctus_tune" data-mw-default-value="default" /><span class="mw-default-pin__text">Default</span>';
+            sanctusPin.setAttribute('aria-label', 'Default');
+            sanctusPin.innerHTML = riteDefaultPinHtml('sanctus_tune', 'default');
             sanctusPin.addEventListener('click', function (e) { e.stopPropagation(); });
-            var sanctusRow = defaultOpt.querySelector('.mw-option__row');
-            if (sanctusRow) sanctusRow.appendChild(sanctusPin);
+            sanctusLine.appendChild(sanctusPin);
+            scheduleRiteDefaultPinLabelHide(sanctusLine);
           }
           if (defaultOpt && defaultOpt.dataset.mwSanctusLangBound !== '1') {
             defaultOpt.dataset.mwSanctusLangBound = '1';
             defaultOpt.addEventListener('click', function (e) {
-              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val]')) return;
-              Array.prototype.forEach.call(wrap.querySelectorAll(':scope > .mw-option'), function (c) {
+              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], .mw-media-dd')) return;
+              Array.prototype.forEach.call(wrap.querySelectorAll('.mw-option'), function (c) {
                 c.setAttribute('aria-checked', String(c.getAttribute('data-val') === 'default'));
               });
               if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
@@ -1206,13 +1447,20 @@
             massLang.dataset.mwLangBound = '1';
             massLang.addEventListener('change', function () {
               var lang = massLang.value === 'tagalog' ? 'tagalog' : 'english';
-              /* Prefer matching vernacular for Our Father only — Creed stays user-chosen. */
+              /* Prefer matching vernacular for Our Father / Kyrie — Creed stays user-chosen. */
               if ($('flow-our-father-choice')) {
                 var ofSel = $('flow-our-father-choice');
                 var hasLang = Array.prototype.some.call(ofSel.options, function (o) {
                   return o.value === lang && !o.disabled;
                 });
                 if (hasLang) ofSel.value = lang;
+              }
+              if ($('flow-kyrie-choice')) {
+                var kSel = $('flow-kyrie-choice');
+                var hasKyrie = Array.prototype.some.call(kSel.options, function (o) {
+                  return o.value === lang && !o.disabled;
+                });
+                if (hasKyrie) kSel.value = lang;
               }
               applyMassLanguageOptionOrder(lang);
               /* re-render mw option radios driven by hidden selects */
@@ -1294,10 +1542,11 @@
             if (chip && flowPage.contains(chip)) {
               e.preventDefault();
               e.stopPropagation();
+              closeAllMediaDd();
               var kind = chip.getAttribute('data-mw-link-media');
               var slot = chip.getAttribute('data-mw-media-slot');
               if (kind && slot && typeof window.openMassMediaPickModal === 'function') {
-                window.openMassMediaPickModal(kind, slot);
+                window.openMassMediaPickModal(kind, slot, chip.closest('.mw-media-dd--link') ? { fromTitle: true } : {});
               }
               return;
             }
@@ -1305,6 +1554,7 @@
             if (audioPlay && flowPage.contains(audioPlay)) {
               e.preventDefault();
               e.stopPropagation();
+              closeAllMediaDd();
               var aSlot = audioPlay.getAttribute('data-mw-media-slot');
               if (aSlot && typeof window.playMassSectionAudio === 'function') window.playMassSectionAudio(aSlot, audioPlay);
               return;
@@ -1321,6 +1571,7 @@
             if (videoPlay && flowPage.contains(videoPlay)) {
               e.preventDefault();
               e.stopPropagation();
+              closeAllMediaDd();
               var vSlot = videoPlay.getAttribute('data-mw-media-slot');
               if (vSlot && typeof window.playMassSectionVideo === 'function') window.playMassSectionVideo(vSlot, videoPlay);
             }
@@ -1355,7 +1606,7 @@
             if (current === 7) fillReceipt();
             refreshContinue();
           });
-          document.addEventListener('mw:aside-refresh', function () { if (current === 6) fillAside(6); });
+          document.addEventListener('mw:aside-refresh', function () { fillAside(current); });
           var massDateEl = $('mass-date');
           if (massDateEl && massDateEl.dataset.mwContextBound !== '1') {
             massDateEl.dataset.mwContextBound = '1';
@@ -1363,7 +1614,10 @@
           }
           buildChoiceCards();
           applyMassLanguageOptionOrder();
+          ensureKyrieTagalogPanel();
           ensureSanctusVideoOption();
+          bindMediaDropdowns(flowPage);
+          scheduleRiteDefaultPinLabelHide(flowPage);
           Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-options[aria-label] .mw-option'), function (opt) {
             if (opt.getAttribute('data-val') === '__video' || opt.classList.contains('mw-option--video')) return;
             if (opt.dataset.mwWired === '1' || opt.dataset.mwSanctusLangBound === '1') return;
@@ -1372,7 +1626,7 @@
             function pickStandalone() {
               var group = opt.closest('[role="radiogroup"]');
               var section = group && group.getAttribute('data-mw-media-section');
-              if (group) Array.prototype.forEach.call(group.querySelectorAll(':scope > .mw-option'), function (c) {
+              if (group) Array.prototype.forEach.call(group.querySelectorAll('.mw-option'), function (c) {
                 if (c.getAttribute('data-val') === '__video') return;
                 c.setAttribute('aria-checked', 'false');
               });
@@ -1385,7 +1639,7 @@
               refreshContinue();
               mwAdvanceAfterPick(opt);
             }
-            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select')) { e.preventDefault(); return; } pickStandalone(); });
+            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select, .mw-media-dd')) { e.preventDefault(); return; } pickStandalone(); });
             opt.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickStandalone(); } });
           });
           flowPage.addEventListener('input', refreshContinue, true);

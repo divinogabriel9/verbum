@@ -705,23 +705,31 @@
       if (youtubeOnly || useFetchClip) {
         setMassMediaPickLoading(false);
         if (useFetchClip) refreshMassMediaPickFetchUi();
+        // Instrumental/video opens on Fetch; preload Library so switching tabs shows items.
+        if (!youtubeOnly && typeof ensureSavedMediaLibrary === "function") {
+          void ensureSavedMediaLibrary(false).catch(() => {});
+        }
         return;
       }
-      setMassMediaPickLoading(true, "Loading media library…");
-      try {
-        await ensureSavedMediaLibrary(false);
-        if (massMediaPickState.loading) {
+      if (typeof ensureAndRenderMassMediaPickLibrary === "function") {
+        await ensureAndRenderMassMediaPickLibrary();
+      } else {
+        setMassMediaPickLoading(true, "Loading media library…");
+        try {
+          await ensureSavedMediaLibrary(false);
+          if (massMediaPickState.loading) {
+            setMassMediaPickLoading(false);
+            renderMassMediaPickList();
+          }
+        } catch (_e) {
           setMassMediaPickLoading(false);
-          renderMassMediaPickList();
+          const list = $("mw-media-pick-list");
+          if (list) {
+            list.hidden = false;
+            list.innerHTML = "<li class=\"muted\">Could not load Media library. Try Upload, or open the Media tab.</li>";
+          }
+          if (typeof notify === "function") notify("Could not load Media library.", "error");
         }
-      } catch (_e) {
-        setMassMediaPickLoading(false);
-        const list = $("mw-media-pick-list");
-        if (list) {
-          list.hidden = false;
-          list.innerHTML = "<li class=\"muted\">Could not load Media library. Try Upload, or open the Media tab.</li>";
-        }
-        if (typeof notify === "function") notify("Could not load Media library.", "error");
       }
       if ($("mw-media-pick-q") && !youtubeOnly) $("mw-media-pick-q").focus();
     }
@@ -3382,7 +3390,7 @@
     function massBuilderDraftFieldIds() {
       return [
         "mass-date", "co-celebrant",
-        "flow-penitential-choice", "flow-kyrie-choice", "flow-gloria-choice",
+        "flow-penitential-choice", "flow-kyrie-choice", "flow-kyrie-tagalog-slide", "flow-gloria-choice",
         "flow-creed-choice", "flow-our-father-choice", "flow-lamb-choice",
         "flow-mass-language",
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",

@@ -11,8 +11,8 @@
     tour: "/static/js/guided-tour.js?v=20260906-perf1",
     driverCss: "/static/css/driver.css?v=20260703",
     tourCss: "/static/css/guided-tour.css?v=20260703j",
-    wizard: "/static/js/mw-wizard.js?v=20260906-perf1",
-    wizardCss: "/static/css/mw-wizard.css?v=20260906-0945",
+    wizard: "/static/js/mw-wizard.js?v=20260913-media-dd2",
+    wizardCss: "/static/css/mw-wizard.css?v=20260913-media-dd2",
   };
 
   var APP_PARTS = [

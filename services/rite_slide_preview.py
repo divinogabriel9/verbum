@@ -29,8 +29,9 @@ _MASTER_SLIDES: dict[str, tuple[int, ...]] = {
 
 _FOOTER_LABEL_RE = re.compile(
     r"^(?:"
-    r"penitential act|kyrie eleison|gloria|sanctus|lamb of god|"
-    r"our father|nicene creed|apostles'? creed|ama namin"
+    r"penitential act|kyrie eleison|kyrie|gloria|sanctus|lamb of god|"
+    r"our father|nicene creed|apostles'? creed|ama namin|"
+    r"panginoon, kaawaan mo kami|panginoon, maawa ka"
     r")"
     r"(?:\s*\(\d+\s*/\s*\d+\))?$",
     re.IGNORECASE,
@@ -128,7 +129,7 @@ def _iter_shape_texts(slide, *, slide_height: int | None = None) -> list[str]:
     return chunks
 
 
-def _clean_slide_text(chunks: list[str]) -> str:
+def _clean_slide_text(chunks: list[str], *, dedupe: bool = True) -> str:
     kept: list[str] = []
     seen: set[str] = set()
     for raw in chunks:
@@ -147,7 +148,7 @@ def _clean_slide_text(chunks: list[str]) -> str:
         if not cleaned or _is_parish_branding_text(cleaned):
             continue
         key = re.sub(r"\s+", " ", cleaned).lower()
-        if key in seen:
+        if dedupe and key in seen:
             continue
         seen.add(key)
         kept.append(cleaned)
@@ -166,7 +167,12 @@ def _load_presentation(path_str: str) -> Presentation | None:
         return None
 
 
-def _slides_from_deck(path: Path, indices: tuple[int, ...] | None = None) -> list[str]:
+def _slides_from_deck(
+    path: Path,
+    indices: tuple[int, ...] | None = None,
+    *,
+    dedupe: bool = True,
+) -> list[str]:
     prs = _load_presentation(str(path.resolve()))
     if prs is None:
         return []
@@ -180,7 +186,10 @@ def _slides_from_deck(path: Path, indices: tuple[int, ...] | None = None) -> lis
             if 0 <= i < len(prs.slides):
                 slide_list.append(prs.slides[i])
     for slide in slide_list:
-        text = _clean_slide_text(_iter_shape_texts(slide, slide_height=slide_h))
+        text = _clean_slide_text(
+            _iter_shape_texts(slide, slide_height=slide_h),
+            dedupe=dedupe,
+        )
         if text:
             out.append(text)
     return out
@@ -232,6 +241,34 @@ def _resolve_slide_pages(section: str, option: str) -> list[str]:
         return _our_father_slides(opt)
 
     if sec == "kyrie":
+        if opt.startswith("tagalog"):
+            pages = _slides_from_deck(
+                _REFERENCE / "kyrie_tagalog_slides.pptx",
+                dedupe=False,
+            )
+            if pages:
+                if opt in ("tagalog-1", "tagalog"):
+                    return pages[:1]
+                if opt == "tagalog-2":
+                    return pages[1:2] or pages[-1:]
+                return pages
+            fallbacks = {
+                "tagalog-1": (
+                    "PANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\n"
+                    "PANGINOON, MAAWA KA.\nPANGINOON, MAAWA KA.\n"
+                    "KRISTO, MAAWA KA.\nKRISTO, MAAWA KA SA AMIN."
+                ),
+                "tagalog-2": (
+                    "Pari: Panginoon, Kaawaan Mo Kami.\n"
+                    "B: Panginoon, Kaawaan Mo Kami.\n"
+                    "Pari: Kristo, Kaawaan Mo Kami.\n"
+                    "B: Kristo, Kaawaan Mo Kami.\n"
+                    "Pari: Panginoon, Kaawaan Mo Kami.\n"
+                    "B: Panginoon, Kaawaan Mo Kami."
+                ),
+            }
+            text = fallbacks.get(opt) or fallbacks["tagalog-1"]
+            return [text] if text else []
         pages = _slides_from_deck(_REFERENCE / "kyrie_slide.pptx")
         if pages:
             return pages
