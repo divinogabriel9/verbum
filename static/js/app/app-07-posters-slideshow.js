@@ -3224,9 +3224,27 @@
           link.textContent = massProjectionRemote.remoteUrl;
         }
         scheduleMassProjectionRemotePoll();
+        void uploadMassProjectionDeck(massProjectionRemote.token);
         return massProjectionRemote;
       } catch (_e) {
         return null;
+      }
+    }
+
+    async function uploadMassProjectionDeck(token) {
+      if (!token || !massSlideshowState.webpptx || typeof massSlideshowState.webpptx.bytes !== "function") return;
+      try {
+        const bytes = massSlideshowState.webpptx.bytes();
+        if (!bytes || !bytes.byteLength) return;
+        await authorizedFetch("/api/projection/" + encodeURIComponent(token) + "/deck", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          },
+          body: bytes,
+        });
+      } catch (_e) {
+        /* Phone can still open the server copy if generate left the PPTX on disk. */
       }
     }
 

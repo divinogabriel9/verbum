@@ -14,6 +14,7 @@ import base64
 import os
 import re
 import shutil
+import time
 import subprocess
 import tempfile
 import threading
@@ -216,6 +217,10 @@ _OUTPUT_DIR = _PROJECT / "outputs"
 _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 _PREVIEW_DIR = _OUTPUT_DIR / "preview_slides"
 _PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+_PROJECTION_DECK_DIR = _OUTPUT_DIR / "projection_decks"
+_PROJECTION_DECK_DIR.mkdir(parents=True, exist_ok=True)
+_PROJECTION_DECK_TTL_S = 6 * 60 * 60
+_PROJECTION_DECK_MAX_BYTES = 80 * 1024 * 1024
 
 _UPLOAD_DIR = uploads_dir()
 _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -2428,6 +2433,49 @@ class ProjectionCommandBody(BaseModel):
     index: Optional[int] = None
 
 
+def _projection_deck_path(token: str) -> Path:
+    safe = "".join(ch for ch in (token or "") if ch.isalnum() or ch in "-_")
+    if not safe:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    return _PROJECTION_DECK_DIR / f"{safe}.pptx"
+
+
+def _cleanup_projection_decks() -> None:
+    now = time.time()
+    for path in _PROJECTION_DECK_DIR.glob("*.pptx"):
+        try:
+            if now - path.stat().st_mtime > _PROJECTION_DECK_TTL_S:
+                path.unlink(missing_ok=True)
+        except OSError:
+            continue
+
+
+def _projection_has_deck(token: str, pptx_name: str = "") -> bool:
+    stored = _projection_deck_path(token)
+    if stored.is_file() and stored.stat().st_size > 32:
+        return True
+    resolved = _resolve_pptx_path(pptx_name)
+    return bool(resolved and resolved.is_file())
+
+
+def _projection_public(session: Any, request: Optional[Request] = None) -> dict[str, Any]:
+    token = session.token
+    payload = session.to_public()
+    payload["has_deck"] = _projection_has_deck(token, session.pptx_name)
+    payload["deck_url"] = f"/api/projection/{token}/deck.pptx"
+    if request is not None:
+        payload["remote_url"] = _projection_public_url(request, token)
+        payload["qr_url"] = f"/api/projection/{token}/qr.png"
+    return payload
+
+
+def _store_projection_deck(token: str, source: Path) -> None:
+    dest = _projection_deck_path(token)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if source.resolve() != dest.resolve():
+        shutil.copy2(source, dest)
+
+
 def _projection_public_url(request: Request, token: str) -> str:
     # Prefer explicit public origin (LAN/tunnel) so phone QR works off localhost.
     configured = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("APP_PUBLIC_URL") or "").strip().rstrip("/")
@@ -2444,24 +2492,26 @@ def api_projection_create(
     """Create a phone remote session for the open projector slideshow."""
     from services.projection_session import create_session
 
+    _cleanup_projection_decks()
     paths = list_slide_images(_PREVIEW_DIR)
     names = [str(n).strip() for n in (body.slide_names or []) if str(n).strip()]
     if not names:
         names = [p.name for p in paths]
     total = max(int(body.total or 0), len(names), len(paths))
+    pptx_name = (body.pptx_name or "").strip()
     session = create_session(
         total=total,
         index=int(body.index or 0),
         slide_names=names,
-        pptx_name=(body.pptx_name or "").strip(),
+        pptx_name=pptx_name,
     )
-    remote_url = _projection_public_url(request, session.token)
-    return {
-        "ok": True,
-        **session.to_public(),
-        "remote_url": remote_url,
-        "qr_url": f"/api/projection/{session.token}/qr.png",
-    }
+    local_ppt = _resolve_pptx_path(pptx_name)
+    if local_ppt and local_ppt.is_file():
+        try:
+            _store_projection_deck(session.token, local_ppt)
+        except OSError:
+            logger.warning("Could not cache projection deck for remote.", exc_info=True)
+    return {"ok": True, **_projection_public(session, request)}
 
 
 @app.get("/api/projection/{token}")
@@ -2471,7 +2521,7 @@ def api_projection_state(token: str) -> dict[str, Any]:
     session = get_session(token)
     if not session:
         raise HTTPException(status_code=404, detail="Remote session expired or not found.")
-    return {"ok": True, **session.to_public()}
+    return {"ok": True, **_projection_public(session)}
 
 
 @app.post("/api/projection/{token}/state")
@@ -2492,7 +2542,7 @@ def api_projection_push_state(token: str, body: ProjectionStateBody) -> dict[str
     )
     if not session:
         raise HTTPException(status_code=404, detail="Remote session expired or not found.")
-    return {"ok": True, **session.to_public()}
+    return {"ok": True, **_projection_public(session)}
 
 
 @app.post("/api/projection/{token}/command")
@@ -2506,7 +2556,7 @@ def api_projection_command(token: str, body: ProjectionCommandBody) -> dict[str,
     session = enqueue_command(token, body.action, **payload)
     if not session:
         raise HTTPException(status_code=404, detail="Remote session expired or not found.")
-    return {"ok": True, **session.to_public()}
+    return {"ok": True, **_projection_public(session)}
 
 
 @app.get("/api/projection/{token}/poll")
@@ -2518,7 +2568,43 @@ def api_projection_poll(token: str, after: int = 0) -> dict[str, Any]:
     if not session:
         raise HTTPException(status_code=404, detail="Remote session expired or not found.")
     commands = drain_commands(token, after_seq=int(after or 0))
-    return {"ok": True, "state": session.to_public(), "commands": commands}
+    return {"ok": True, "state": _projection_public(session), "commands": commands}
+
+
+@app.put("/api/projection/{token}/deck")
+async def api_projection_put_deck(token: str, request: Request) -> dict[str, Any]:
+    """Presenter uploads the live PPTX so the phone remote can paint the same slides."""
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    data = await request.body()
+    if len(data) < 32 or len(data) > _PROJECTION_DECK_MAX_BYTES or data[:2] != b"PK":
+        raise HTTPException(status_code=400, detail="That file is not a usable PPTX deck.")
+    dest = _projection_deck_path(token)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    return {"ok": True, **_projection_public(session)}
+
+
+@app.get("/api/projection/{token}/deck.pptx")
+def api_projection_get_deck(token: str) -> FileResponse:
+    """Public deck for the phone remote (token-gated)."""
+    from services.projection_session import get_session
+
+    session = get_session(token)
+    if not session:
+        raise HTTPException(status_code=404, detail="Remote session expired or not found.")
+    stored = _projection_deck_path(token)
+    path = stored if stored.is_file() else _resolve_pptx_path(session.pptx_name)
+    if not path or not path.is_file():
+        raise HTTPException(status_code=404, detail="Deck is not ready for the remote yet.")
+    return FileResponse(
+        path,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        filename=path.name or "mass_presentation.pptx",
+    )
 
 
 @app.get("/api/projection/{token}/slide/{index}")

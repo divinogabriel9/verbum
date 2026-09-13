@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <style>
     :root {
       --bg: #121212;
@@ -155,14 +156,21 @@
     @media (prefers-reduced-motion: reduce) {
       .live-card.is-live { animation: none; border-color: var(--accent); }
     }
-    .live-card img {
+    .live-card img,
+    .live-card .pptx-host {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
       background: #000;
     }
-    .live-card.is-blank img { visibility: hidden; }
+    .live-card .pptx-host {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .live-card.is-blank img,
+    .live-card.is-blank .pptx-host { visibility: hidden; }
     .live-card .empty {
       position: absolute;
       inset: 0;
@@ -292,13 +300,20 @@
       background: #161616;
       aspect-ratio: 16 / 9;
     }
-    .peek__thumb img {
+    .peek__thumb img,
+    .peek__thumb .pptx-host {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
-    .peek__thumb img[hidden] { display: none !important; }
+    .peek__thumb .pptx-host {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .peek__thumb img[hidden],
+    .peek__thumb .pptx-host[hidden] { display: none !important; }
     .peek__thumb.is-empty::before {
       content: "";
       position: absolute;
@@ -506,11 +521,20 @@
       aspect-ratio: 16 / 9;
       background: #000;
     }
-    .lightbox__media img {
+    .lightbox__media {
+      position: relative;
+    }
+    .lightbox__media img,
+    .lightbox__media .pptx-host {
       width: 100%;
       height: 100%;
       object-fit: contain;
       display: block;
+    }
+    .lightbox__media .pptx-host {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
     }
     .lightbox__foot {
       display: flex;
@@ -551,6 +575,7 @@
   <p class="err" id="err"></p>
 
   <section class="live-card" id="stage" aria-label="Live view">
+    <div class="pptx-host" id="preview-host" hidden></div>
     <img id="preview" alt="Current slide" hidden />
     <div class="empty" id="empty">Connecting…</div>
     <div class="blank-veil" id="blank-veil" aria-hidden="true">Black</div>
@@ -564,6 +589,7 @@
   <div class="peek-row" aria-label="Adjacent slides">
     <button type="button" class="peek" id="peek-prev" disabled aria-label="Enlarge previous slide">
       <div class="peek__thumb is-empty" id="prev-thumb">
+        <div class="pptx-host" id="prev-host" hidden></div>
         <img id="prev-img" alt="" hidden />
         <div class="peek__cap"><span>Prev</span><span id="prev-label">—</span></div>
       </div>
@@ -571,6 +597,7 @@
     <button type="button" class="go-live is-live" id="btn-live" disabled>Go<br />live</button>
     <button type="button" class="peek" id="peek-next" disabled aria-label="Enlarge next slide">
       <div class="peek__thumb is-empty" id="next-thumb">
+        <div class="pptx-host" id="next-host" hidden></div>
         <img id="next-img" alt="" hidden />
         <div class="peek__cap"><span>Next</span><span id="next-label">—</span></div>
       </div>
@@ -604,6 +631,7 @@
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lightbox__card" role="dialog" aria-modal="true" aria-labelledby="lightbox-title">
       <div class="lightbox__media">
+        <div class="pptx-host" id="lightbox-host" hidden></div>
         <img id="lightbox-img" alt="Enlarged slide" />
       </div>
       <div class="lightbox__foot">
@@ -613,6 +641,7 @@
     </div>
   </div>
 
+  <script src="/static/webpptx/webpptx.js?v=20260913-webpptx2"></script>
   <script>
 (function () {
   var TOKEN = {{ token|tojson }};
@@ -625,18 +654,26 @@
     fullscreen: false,
   };
   var peekIndex = { prev: -1, next: -1 };
+  var deck = null;
+  var deckLoading = false;
+  var expectDeck = false;
+  var painted = { live: -2, prev: -2, next: -2, box: -2 };
 
   var $ = function (id) { return document.getElementById(id); };
   var errEl = $("err");
   var preview = $("preview");
+  var previewHost = $("preview-host");
   var empty = $("empty");
   var stage = $("stage");
   var prevImg = $("prev-img");
   var nextImg = $("next-img");
+  var prevHost = $("prev-host");
+  var nextHost = $("next-host");
   var prevThumb = $("prev-thumb");
   var nextThumb = $("next-thumb");
   var lightbox = $("lightbox");
   var lightboxImg = $("lightbox-img");
+  var lightboxHost = $("lightbox-host");
   var fsConfirm = $("fs-confirm");
   var bust = Date.now();
   var pendingFullscreenEnter = true;
@@ -684,6 +721,45 @@
     return "/api/projection/" + encodeURIComponent(TOKEN) + "/slide/" + i + "?t=" + bust;
   }
 
+  function deckUrl(data) {
+    return (data && data.deck_url) || ("/api/projection/" + encodeURIComponent(TOKEN) + "/deck.pptx");
+  }
+
+  function paintHost(host, index, key) {
+    if (!deck || !host) return;
+    if (index == null || index < 0) {
+      host.innerHTML = "";
+      host.hidden = true;
+      painted[key] = -1;
+      return;
+    }
+    host.hidden = false;
+    if (painted[key] === index && host.querySelector(".pptx-slide")) return;
+    deck.paint(host, index, { fit: "host" });
+    painted[key] = index;
+  }
+
+  async function ensureRemoteDeck(data) {
+    if (deck || deckLoading || !data || !data.has_deck) return;
+    if (!window.WebPptx || !window.WebPptx.openDeck) return;
+    deckLoading = true;
+    try {
+      if (window.WebPptx.setAssetBase) window.WebPptx.setAssetBase("/static/webpptx");
+      empty.hidden = false;
+      empty.textContent = "Opening deck…";
+      deck = await window.WebPptx.openDeck({ url: deckUrl(data) });
+      painted = { live: -2, prev: -2, next: -2, box: -2 };
+      if (deck.slideCount && deck.slideCount() && !state.total) {
+        state.total = deck.slideCount();
+      }
+      render();
+    } catch (_e) {
+      deck = null;
+    } finally {
+      deckLoading = false;
+    }
+  }
+
   function setImg(el, index) {
     if (!el) return;
     if (index == null || index < 0) {
@@ -700,16 +776,26 @@
     el.hidden = false;
   }
 
-  function setPeek(thumbEl, imgEl, labelEl, btnEl, index, total, which) {
+  function setPeek(thumbEl, imgEl, hostEl, labelEl, btnEl, index, total, which) {
     peekIndex[which] = (total && index >= 0 && index < total) ? index : -1;
     if (peekIndex[which] >= 0) {
       thumbEl.classList.remove("is-empty");
       labelEl.textContent = String(index + 1);
-      setImg(imgEl, index);
+      if (deck) {
+        setImg(imgEl, -1);
+        paintHost(hostEl, index, which);
+      } else if (expectDeck || deckLoading) {
+        if (hostEl) hostEl.hidden = true;
+        setImg(imgEl, -1);
+      } else {
+        if (hostEl) hostEl.hidden = true;
+        setImg(imgEl, index);
+      }
       btnEl.disabled = false;
     } else {
       thumbEl.classList.add("is-empty");
       labelEl.textContent = "—";
+      if (hostEl) paintHost(hostEl, -1, which);
       setImg(imgEl, -1);
       btnEl.disabled = true;
     }
@@ -717,10 +803,19 @@
 
   function openLightbox(index) {
     if (index == null || index < 0) return;
-    lightboxImg.src = slideUrl(index);
     $("lightbox-title").textContent = "Slide " + (index + 1);
     lightbox.classList.add("is-open");
     lightbox.setAttribute("aria-hidden", "false");
+    if (deck && lightboxHost) {
+      lightboxImg.hidden = true;
+      lightboxImg.removeAttribute("src");
+      painted.box = -2;
+      requestAnimationFrame(function () { paintHost(lightboxHost, index, "box"); });
+    } else {
+      if (lightboxHost) lightboxHost.hidden = true;
+      lightboxImg.hidden = false;
+      lightboxImg.src = slideUrl(index);
+    }
   }
 
   function closeLightbox() {
@@ -767,17 +862,28 @@
     stage.classList.toggle("is-frozen", !!state.frozen);
     stage.classList.toggle("is-blank-mode", showBlank);
 
-    if (total > 0) {
+    if (total > 0 && deck) {
       empty.hidden = true;
+      setImg(preview, -1);
+      paintHost(previewHost, browse, "live");
+    } else if (total > 0 && (expectDeck || deckLoading)) {
+      setImg(preview, -1);
+      if (previewHost) previewHost.hidden = true;
+      empty.hidden = false;
+      empty.textContent = "Opening deck…";
+    } else if (total > 0) {
+      empty.hidden = true;
+      if (previewHost) previewHost.hidden = true;
       setImg(preview, browse);
     } else {
       setImg(preview, -1);
+      if (previewHost) paintHost(previewHost, -1, "live");
       empty.hidden = false;
-      empty.textContent = "Waiting for slides…";
+      empty.textContent = deckLoading ? "Opening deck…" : "Waiting for slides…";
     }
 
-    setPeek(prevThumb, prevImg, $("prev-label"), $("peek-prev"), browse - 1, total, "prev");
-    setPeek(nextThumb, nextImg, $("next-label"), $("peek-next"), browse + 1, total, "next");
+    setPeek(prevThumb, prevImg, prevHost, $("prev-label"), $("peek-prev"), browse - 1, total, "prev");
+    setPeek(nextThumb, nextImg, nextHost, $("next-label"), $("peek-next"), browse + 1, total, "next");
   }
 
   async function refresh() {
@@ -791,8 +897,10 @@
       state.blank = !!data.blank;
       state.frozen = !!data.frozen;
       state.fullscreen = !!data.fullscreen;
+      expectDeck = !!data.has_deck && !!(window.WebPptx && window.WebPptx.openDeck);
       showErr("");
       render();
+      void ensureRemoteDeck(data);
     } catch (e) {
       showErr((e && e.message) || "Connection lost.");
     }
@@ -814,8 +922,10 @@
       state.blank = !!data.blank;
       state.frozen = !!data.frozen;
       state.fullscreen = !!data.fullscreen;
+      expectDeck = !!data.has_deck && !!(window.WebPptx && window.WebPptx.openDeck);
       showErr("");
       render();
+      void ensureRemoteDeck(data);
     } catch (e) {
       showErr((e && e.message) || "Command failed.");
     }
@@ -852,6 +962,12 @@
   });
   preview.addEventListener("load", function () {
     empty.hidden = true;
+  });
+
+  window.addEventListener("resize", function () {
+    if (!deck) return;
+    painted = { live: -2, prev: -2, next: -2, box: -2 };
+    render();
   });
 
   syncFullscreenBtn();
