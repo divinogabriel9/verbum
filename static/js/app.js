@@ -17231,6 +17231,7 @@
         downloads: (meta && meta.downloads) ? meta.downloads : [],
       };
       if (key) item.key = key;
+      if (meta && meta.serverId) item.serverId = String(meta.serverId);
       if (key === "mass-builder-draft") {
         appNotifications = appNotifications.filter((existing) => !isMassBuilderDraftNotification(existing));
       } else if (key) {
@@ -17332,6 +17333,63 @@
         if (meta && meta.skipToast) return;
         showToast(message, kind, meta && meta.key ? { replaceKey: String(meta.key) } : undefined);
       }
+    }
+
+    function mapServerNotificationKind(kind) {
+      const k = String(kind || "").toLowerCase();
+      if (k === "song_approved" || k === "ok") return "ok";
+      if (k === "song_rejected" || k === "error" || k === "warn") return "error";
+      return "ok";
+    }
+
+    async function syncServerUserNotifications(notifications) {
+      const rows = Array.isArray(notifications) ? notifications : [];
+      if (!rows.length || typeof pushAppNotification !== "function") return;
+      const ackIds = [];
+      rows.forEach((row) => {
+        if (!row || !row.id || !row.message) return;
+        const key = "server-notif:" + String(row.id);
+        const already = appNotifications.some(
+          (item) => item && (item.key === key || item.serverId === String(row.id))
+        );
+        if (already) {
+          ackIds.push(String(row.id));
+          return;
+        }
+        const item = pushAppNotification(
+          row.message,
+          mapServerNotificationKind(row.kind),
+          { key: key, serverId: String(row.id) }
+        );
+        if (item) item.serverId = String(row.id);
+        ackIds.push(String(row.id));
+        if (typeof showToast === "function") {
+          showToast(row.message, mapServerNotificationKind(row.kind) === "error" ? "warn" : "ok", {
+            replaceKey: key,
+          });
+        }
+      });
+      if (!ackIds.length) return;
+      try {
+        const auth = window.VerbumAuth;
+        const headers = auth && auth.getAuthHeaders ? await auth.getAuthHeaders() : {};
+        headers["Content-Type"] = "application/json";
+        await fetch("/api/me/notifications/ack", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({ ids: ackIds }),
+        });
+        if (auth && typeof auth.clearPendingNotifications === "function") {
+          auth.clearPendingNotifications();
+        }
+      } catch (_err) { /* ignore */ }
+    }
+
+    function initServerUserNotifications() {
+      window.addEventListener("verbum:user-notifications", (event) => {
+        const list = event.detail && event.detail.notifications;
+        syncServerUserNotifications(list);
+      });
     }
 
     function setFlowStatus(message, kind, meta) {
@@ -17948,6 +18006,7 @@
     };
 
     loadAppNotifications();
+    initServerUserNotifications();
     renderNotificationFeed();
 
     function guardSuperadminAction(message) {
@@ -18099,6 +18158,24 @@
       const email = (profile && profile.email) || (user && user.email) || "";
       if (nameEl) nameEl.innerHTML = full ? "<strong>" + escapeHtml(full) + "</strong>" : "<strong>Signed in</strong>";
       if (emailEl) emailEl.textContent = email || "—";
+      const contribEl = $("settings-account-contrib");
+      if (contribEl) {
+        const contrib = auth && auth.getSongContrib ? auth.getSongContrib() : null;
+        const count = contrib && Number(contrib.approved_count) > 0 ? Number(contrib.approved_count) : 0;
+        if (count > 0) {
+          contribEl.hidden = false;
+          const label = count === 1
+            ? "1 song in the shared library"
+            : count + " songs in the shared library";
+          contribEl.innerHTML =
+            "<svg class=\"settings-account-contrib__icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/></svg>" +
+            "<span>Song contributor</span>" +
+            "<span class=\"settings-account-contrib__muted\">· " + escapeHtml(label) + "</span>";
+        } else {
+          contribEl.hidden = true;
+          contribEl.textContent = "";
+        }
+      }
       const googleStatus = $("settings-account-google-status");
       const googleBtn = $("settings-connect-google");
       const facebookStatus = $("settings-account-facebook-status");
@@ -29831,6 +29908,9 @@
       const cachedTitle = String((stored.song && stored.song.title) || "").trim();
       const catalogTitle = String(catalogRow.title || "").trim();
       if (catalogTitle && cachedTitle !== catalogTitle) return true;
+      const cachedUpdated = String((stored.song && stored.song.updated_at) || "").trim();
+      const catalogUpdated = String(catalogRow.updated_at || "").trim();
+      if (catalogUpdated && cachedUpdated !== catalogUpdated) return true;
       return false;
     }
 
@@ -31126,7 +31206,9 @@
       composerPreloadSeq += 1;
       composerSuppressPreload = true;
       const clearSearch = opts.clearSearch !== false;
-      const forceNetwork = !!opts.forceNetwork;
+      // Always re-fetch lyrics on open so Render/localhost stay in sync after
+      // global catalog edits (in-memory Map otherwise serves stale text).
+      const forceNetwork = opts.forceNetwork !== false;
       const hint = {
         title: String(opts.title || "").trim(),
         language: String(opts.language || "").trim(),

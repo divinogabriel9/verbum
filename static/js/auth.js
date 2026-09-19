@@ -11,6 +11,8 @@
     communityPayload: null,
     membership: null,
     avatarUrl: null,
+    songContrib: null,
+    pendingNotifications: [],
     cachedToken: null,
     ready: false,
     hydrated: false,
@@ -28,6 +30,8 @@
       state.communityPayload = null;
       state.membership = null;
       state.avatarUrl = null;
+      state.songContrib = null;
+      state.pendingNotifications = [];
     }
   }
 
@@ -460,6 +464,8 @@
       state.user || (state.session && state.session.user ? state.session.user : null);
     if (!user) {
       state.profile = null;
+      state.songContrib = null;
+      state.pendingNotifications = [];
       return;
     }
     try {
@@ -482,6 +488,14 @@
         if (data.church_profile) {
           setChurchProfile(data.church_profile, data.membership);
         }
+        const contrib = data.song_contrib || {};
+        state.songContrib = {
+          approved_count: Math.max(0, Number(contrib.approved_count) || 0),
+          badge: contrib.badge || null,
+        };
+        state.pendingNotifications = Array.isArray(data.notifications)
+          ? data.notifications.slice()
+          : [];
         if (data.needs_onboarding) {
           try {
             const next = new URL("/sign-up", window.location.origin);
@@ -500,6 +514,14 @@
           new CustomEvent("verbum:membership", { detail: data.membership || null })
         );
         window.dispatchEvent(new CustomEvent("verbum:profile-ready"));
+        if (state.pendingNotifications.length) {
+          window.dispatchEvent(
+            new CustomEvent("verbum:user-notifications", {
+              detail: { notifications: state.pendingNotifications.slice() },
+            })
+          );
+        }
+        updateAccountMenuDisplay();
         sendPresenceHeartbeat();
       }
     } catch (_err) {
@@ -602,6 +624,8 @@
       }
       setAvatarVisual("A", "");
       if (nameEl) nameEl.textContent = "Account";
+      const badgeOff = document.getElementById("account-contrib-badge");
+      if (badgeOff) badgeOff.hidden = true;
       if (emailEl) emailEl.textContent = "";
       if (headerEl) headerEl.hidden = true;
       if (signOutBtn) signOutBtn.hidden = true;
@@ -631,6 +655,23 @@
     if (nameEl) {
       nameEl.textContent = greeting.length > 24 ? greeting.slice(0, 22) + "…" : greeting;
     }
+    const badge = document.getElementById("account-contrib-badge");
+    const badgeCount = document.getElementById("account-contrib-badge-count");
+    const approved = state.songContrib && Number(state.songContrib.approved_count) > 0
+      ? Number(state.songContrib.approved_count)
+      : 0;
+    if (badge) {
+      if (approved > 0) {
+        badge.hidden = false;
+        if (badgeCount) badgeCount.textContent = approved > 99 ? "99+" : String(approved);
+        badge.title = approved === 1
+          ? "1 song approved for the shared library"
+          : approved + " songs approved for the shared library";
+      } else {
+        badge.hidden = true;
+        if (badgeCount) badgeCount.textContent = "0";
+      }
+    }
     if (emailEl) emailEl.textContent = email;
     if (headerEl) headerEl.hidden = !email;
   }
@@ -654,6 +695,8 @@
     state.avatarUrl = null;
     state.churchProfile = null;
     state.communityPayload = null;
+    state.songContrib = null;
+    state.pendingNotifications = [];
     state.cachedToken = null;
     updateAccountMenuDisplay();
     const cfg = state.config;
@@ -732,6 +775,11 @@
     getUser: () =>
       state.user || (state.session && state.session.user ? state.session.user : null),
     getProfile: () => state.profile,
+    getSongContrib: () => state.songContrib,
+    getPendingNotifications: () => state.pendingNotifications.slice(),
+    clearPendingNotifications: () => {
+      state.pendingNotifications = [];
+    },
     getAvatarUrl: () => state.avatarUrl || (state.profile && state.profile.avatar_url) || null,
     setAvatarUrl: (url) => {
       state.avatarUrl = url || null;

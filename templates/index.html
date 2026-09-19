@@ -28,7 +28,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260913-webpptx1" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260920-song-contrib1" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
@@ -299,6 +299,10 @@
                   <span class="account-menu-btn__avatar-initial" id="account-menu-avatar-initial">A</span>
                 </span>
                 <span class="account-menu-btn__name" id="account-menu-name">Account</span>
+                <span class="account-contrib-badge" id="account-contrib-badge" hidden title="Songs approved for the shared library">
+                  <svg class="account-contrib-badge__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                  <span class="account-contrib-badge__count" id="account-contrib-badge-count">0</span>
+                </span>
                 <svg class="account-menu-btn__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
               </button>
               <div class="vb-dropdown-panel vb-dropdown-panel--right app-menu-panel app-menu-panel--account" id="account-menu-panel" role="menu" hidden>
@@ -3962,6 +3966,7 @@
                   <div class="church-identity-row__name">
                     <p class="settings-account-meta" id="settings-account-name">—</p>
                     <p class="settings-account-meta" id="settings-account-email" style="margin-top:4px;">—</p>
+                    <p class="settings-account-contrib" id="settings-account-contrib" hidden></p>
                     <div class="settings-account-social" id="settings-account-social" style="margin-top:12px;">
                       <div class="settings-account-google" id="settings-account-google" style="margin-bottom:12px;">
                         <p class="muted" id="settings-account-google-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Google connection…</p>
@@ -4497,10 +4502,10 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20260914-mass-lang-reload"></script>
+  <script src="/static/js/app.js?v=20260920-lyrics-sync1"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260711a"></script>
-  <script src="/static/js/auth.js?v=20260906-membership-gate1"></script>
+  <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>
   <script>
     scheduleDashboardBoot();
   </script>

@@ -503,6 +503,38 @@ def list_pending_songs() -> list[dict[str, Any]]:
     return _pending(_read_rows(_SONGS_PATH))
 
 
+def count_approved_songs_for_user(user_id: str) -> int:
+    """How many songs this user submitted that were approved into the shared library."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return 0
+    if supabase_enabled():
+        try:
+            result = (
+                _service_client()
+                .table("content_submissions")
+                .select("id", count="exact")
+                .eq("kind", "song")
+                .eq("status", "approved")
+                .eq("submitted_by_user_id", uid)
+                .execute()
+            )
+            count = getattr(result, "count", None)
+            if count is not None:
+                return int(count)
+            return len(result.data or [])
+        except Exception:
+            logger.warning("count_approved_songs_for_user failed", exc_info=True)
+            return 0
+    n = 0
+    for row in _read_rows(_SONGS_PATH):
+        if (row.get("status") or "") != "approved":
+            continue
+        if str(row.get("submitted_by_user_id") or "").strip() == uid:
+            n += 1
+    return n
+
+
 def list_pending_priests() -> list[dict[str, Any]]:
     if supabase_enabled():
         return _list_pending_db("priest")

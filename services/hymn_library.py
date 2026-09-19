@@ -237,11 +237,29 @@ def get_hymn(section: str, hymn_id: str) -> Optional[dict[str, Any]]:
         return None
     lib = load_library()
     indexed = _id_index_for_library(lib).get(hid)
+    row: Optional[dict[str, Any]] = None
     if indexed is not None:
-        return indexed
-    for item in lib.get(sec) or []:
-        if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
-            return item
+        row = indexed
+    else:
+        for item in lib.get(sec) or []:
+            if isinstance(item, dict) and str(item.get("id") or "").strip() == hid:
+                row = item
+                break
+    if row is not None:
+        # Prefer live normalized lyrics so Render workers don't serve a stale
+        # in-memory catalog blob after another instance updates Supabase.
+        try:
+            from services.hymn_normalized_store import fetch_lyrics_from_normalized
+
+            live = fetch_lyrics_from_normalized(hid)
+            if live is not None and str(live).strip():
+                if str(row.get("lyrics") or "") != live:
+                    refreshed = dict(row)
+                    refreshed["lyrics"] = live
+                    return refreshed
+        except Exception:
+            pass
+        return row
     # Fallback: web-discovered hymns cached during preview.
     if hid.startswith("web_") and _WEB_CACHE_PATH.is_file():
         try:

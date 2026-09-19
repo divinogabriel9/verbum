@@ -1673,6 +1673,9 @@
       const cachedTitle = String((stored.song && stored.song.title) || "").trim();
       const catalogTitle = String(catalogRow.title || "").trim();
       if (catalogTitle && cachedTitle !== catalogTitle) return true;
+      const cachedUpdated = String((stored.song && stored.song.updated_at) || "").trim();
+      const catalogUpdated = String(catalogRow.updated_at || "").trim();
+      if (catalogUpdated && cachedUpdated !== catalogUpdated) return true;
       return false;
     }
 
@@ -2968,7 +2971,9 @@
       composerPreloadSeq += 1;
       composerSuppressPreload = true;
       const clearSearch = opts.clearSearch !== false;
-      const forceNetwork = !!opts.forceNetwork;
+      // Always re-fetch lyrics on open so Render/localhost stay in sync after
+      // global catalog edits (in-memory Map otherwise serves stale text).
+      const forceNetwork = opts.forceNetwork !== false;
       const hint = {
         title: String(opts.title || "").trim(),
         language: String(opts.language || "").trim(),

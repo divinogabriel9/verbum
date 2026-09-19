@@ -10,6 +10,7 @@ from services.email import EmailResult, detail_rows, email_enabled, send_email, 
 from services.email_links import (
     home_cta_url,
     invite_signup_url,
+    library_songs_cta_url,
     mass_pptx_cta_url,
     practice_lyrics_handoff_cta_url,
     practice_share_cta_url,
@@ -197,6 +198,58 @@ def notify_membership_rejected(
             cta_label="Open LiturgyFlow",
             cta_url=home_cta_url(),
             preheader="Membership update",
+        ),
+    )
+
+
+def notify_song_approved(
+    *,
+    email: str,
+    song_title: str = "",
+    first_name: str = "",
+) -> EmailResult:
+    title = (song_title or "").strip() or "Your song"
+    greeting = (first_name or "").strip()
+    text_lead = f"Hi {greeting},\n\n" if greeting else ""
+    return send_email(
+        to=email,
+        subject=f"Song approved — {title}",
+        text=(
+            f"{text_lead}“{title}” was approved and added to the shared lyrics library.\n"
+            "Thank you for contributing.\n"
+        ),
+        html=wrap_html(
+            title="Song approved",
+            subtitle=f"“{_esc(title)}” is now in the shared lyrics library.",
+            cta_label="Open lyrics library",
+            cta_url=library_songs_cta_url(),
+            preheader=f"{title} was approved",
+        ),
+    )
+
+
+def notify_song_rejected(
+    *,
+    email: str,
+    song_title: str = "",
+    first_name: str = "",
+) -> EmailResult:
+    title = (song_title or "").strip() or "Your song"
+    greeting = (first_name or "").strip()
+    text_lead = f"Hi {greeting},\n\n" if greeting else ""
+    return send_email(
+        to=email,
+        subject=f"Song submission update — {title}",
+        text=(
+            f"{text_lead}We couldn’t approve “{title}” for the shared lyrics library at this time.\n"
+            "You can revise and submit again from the lyrics library.\n"
+        ),
+        html=wrap_html(
+            title="Song submission update",
+            subtitle=f"We couldn’t approve “{_esc(title)}” for the shared library at this time.",
+            cta_label="Open lyrics library",
+            cta_url=library_songs_cta_url(),
+            preheader=f"Update on {title}",
         ),
     )
 

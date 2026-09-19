@@ -3607,6 +3607,7 @@ def api_get_catalog_song(
             "catalog_lyrics": catalog_lyrics,
             "parish_version": parish_version,
             "parish_only": parish_only,
+            "updated_at": str(row.get("updated_at") or "").strip(),
             "gospel_moods": gospel_moods_for_song(row),
             "audio_media": row.get("audio_media") if isinstance(row.get("audio_media"), dict) else None,
             "video_media": row.get("video_media") if isinstance(row.get("video_media"), dict) else None,

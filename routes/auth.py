@@ -30,6 +30,10 @@ class InviteConsumeBody(BaseModel):
     token: str = Field(..., min_length=8, max_length=128)
 
 
+class NotificationAckBody(BaseModel):
+    ids: list[str] = Field(default_factory=list, max_length=50)
+
+
 class CaptchaVerifyBody(BaseModel):
     token: str = Field(..., min_length=10, max_length=4000)
 
@@ -190,10 +194,34 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                     profile_row
                 )
                 payload["needs_onboarding"] = not payload["onboarding_completed"]
+                try:
+                    from services.pending_submissions import count_approved_songs_for_user
+                    from services.user_notifications import list_unseen_user_notifications
+
+                    approved_count = count_approved_songs_for_user(user.user_id)
+                    payload["song_contrib"] = {
+                        "approved_count": approved_count,
+                        "badge": "contributor" if approved_count > 0 else None,
+                    }
+                    payload["notifications"] = list_unseen_user_notifications(
+                        user.user_id, limit=20
+                    )
+                except Exception:
+                    payload["song_contrib"] = {"approved_count": 0, "badge": None}
+                    payload["notifications"] = []
             except Exception as exc:
                 payload["supabase_error"] = str(exc)
 
         return payload
+
+    @app.post("/api/me/notifications/ack")
+    def api_ack_user_notifications(
+        body: NotificationAckBody,
+        session: AuthSession = Depends(require_session),
+    ) -> dict[str, Any]:
+        from services.user_notifications import mark_user_notifications_seen
+
+        return mark_user_notifications_seen(session.user.user_id, body.ids)
 
     @app.get("/api/auth/onboarding")
     def api_auth_onboarding_status(

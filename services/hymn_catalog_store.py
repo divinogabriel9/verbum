@@ -42,9 +42,11 @@ def invalidate_catalog_cache() -> None:
 
 
 def catalog_revision() -> str:
-    """Opaque revision token for HTTP ETags (Supabase updated_at or file mtime)."""
-    if _catalog_revision:
-        return _catalog_revision
+    """Opaque revision token for HTTP ETags (Supabase updated_at or file mtime).
+
+    Always re-read Supabase when configured so multi-instance deploys (e.g. Render)
+    notice catalog writes made by other workers / localhost and invalidate caches.
+    """
     if supabase_enabled():
         try:
             rev = _fetch_supabase_revision()
@@ -52,6 +54,8 @@ def catalog_revision() -> str:
                 return rev
         except Exception as exc:
             logger.warning("Could not read hymn catalog revision from Supabase: %s", exc)
+    if _catalog_revision:
+        return _catalog_revision
     try:
         if _LIBRARY_PATH.is_file():
             return str(int(_LIBRARY_PATH.stat().st_mtime))

@@ -74,13 +74,14 @@
       "id": "here_i_am",
       "title": "Here I Am, Lord",
       "author": "",
-      "lyrics": "I, The Lord Of Sea And Sky,\nI Have Heard My People Cry.\nAll Who Dwell In Dark And Sin,\nMy Hand Will Save.\n\nI Who Made The Stars Of Night,\nI Will Make Their Darkness Bright.\nWho Will Bear My Light To Them?\nWhom Shall I Send?\n\nHere I Am, Lord.\nIs It I, Lord?\nI Have Heard You Calling In The Night.\nI Will Go, Lord,\nIf You Lead Me.\nI Will Hold Your People In My Heart.\n\nI, The Lord Of Snow And Rain,\nI Have Borne My People's Pain.\nI Have Wept For Love Of Them,\nThey Turn Away.\n\nI Will Break Their Hearts Of Stone,\nGive Them Hearts For Love Alone.\nI Will Speak My Word To Them.\nWhom Shall I Send?\n\nHere I Am, Lord.\nIs It I, Lord?\nI Have Heard You Calling In The Night.\nI Will Go, Lord,\nIf You Lead Me.\nI Will Hold Your People In My Heart.\n\nI, The Lord Of Wind And Flame,\nI Will Tend The Poor And Lame.\nI Will Set A Feast For Them.\nMy Hand Will Save.\n\nFinest Bread I Will Provide\nTill Their Hearts Be Satisfied.\nI Will Give My Life To Them.\nWhom Shall I Send?\n\nHere I Am, Lord.\nIs It I, Lord?\nI Have Heard You Calling In The Night.\nI Will Go, Lord,\nIf You Lead Me.\nI Will Hold Your People In My Heart.",
+      "lyrics": "Verse 1\nI, The Lord Of Sea And Sky,\nI Have Heard My People Cry.\nAll Who Dwell In Dark And Sin,\nMy Hand Will Save.\n\nVerse 2\nI Who Made The Stars Of Night,\nI Will Make Their Darkness Bright.\nWho Will Bear My Light To Them?\nWhom Shall I Send?\n\nChorus\nHere I Am, Lord. Is It I, Lord?\nI Have Heard You Calling\nIn The Night. I Will Go, Lord,\nIf You Lead Me. I Will Hold\nYour People In My Heart.\n\nVerse 3\nI, The Lord Of Snow And Rain,\nI Have Borne My People's Pain.\nI Have Wept For Love Of Them,\nThey Turn Away.\n\nVerse 4\nI Will Break Their Hearts Of Stone,\nGive Them Hearts For Love Alone.\nI Will Speak My Word To Them.\nWhom Shall I Send?\n\nChorus\nHere I Am, Lord. Is It I, Lord?\nI Have Heard You Calling\nIn The Night. I Will Go, Lord,\nIf You Lead Me. I Will Hold\nYour People In My Heart.\n\nVerse 5\nI, The Lord Of Wind And Flame,\nI Will Tend The Poor And Lame.\nI Will Set A Feast For Them.\nMy Hand Will Save.\n\nVerse 6\nFinest Bread I Will Provide\nTill Their Hearts Be Satisfied.\nI Will Give My Life To Them.\nWhom Shall I Send?\n\nChorus\nHere I Am, Lord. Is It I, Lord?\nI Have Heard You Calling\nIn The Night. I Will Go, Lord,\nIf You Lead Me. I Will Hold\nYour People In My Heart.",
+      "source": "lyrics_dashboard",
       "seasons": [
         "ordinary_time"
       ],
       "added_at": "2026-08-21T14:09:48.884608+00:00",
       "language": "English",
-      "updated_at": "2026-09-03T13:45:50.457172+00:00",
+      "updated_at": "2026-09-19T16:12:10.831516+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:cDdniihKBzI",
@@ -94,12 +95,9 @@
         "reverent"
       ],
       "audio_preview": {
-        "method": "verse",
         "source": "preview",
         "basename": "preview_entrance_here_i_am_10.mp3",
         "start_sec": 13.08,
-        "youtube_id": "cDdniihKBzI",
-        "youtube_url": "https://www.youtube.com/watch?v=cDdniihKBzI",
         "display_name": "Here I Am, Lord · 10s",
         "duration_sec": 10
       }
@@ -2452,33 +2450,64 @@
       "id": "prayer_for_generosity",
       "title": "Prayer For Generosity",
       "author": "",
-      "language": "English",
+      "lyrics": "Verse 1\nDearest Lord, Teach Me To Be Generous\nTeach Me To Serve You As I Should\nTo Give And Not To Count The Cost\nTo Fight And Not To Heed The Wounds\nTo Toil And Not To Seek For Rest\nTo Labor And Ask Not For Reward\nSave That Of Knowing That I Do Your Most Holy Will",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nDearest Lord, Teach Me To Be Generous\nTeach Me To Serve You As I Should\nTo Give And Not To Count The Cost\nTo Fight And Not To Heed The Wounds\nTo Toil And Not To Seek For Rest\nTo Labor And Ask Not For Reward\nSave That Of Knowing That I Do Your Most Holy Will",
-      "source": "lyrics_dashboard",
       "added_at": "2026-09-19T12:48:25.166664+00:00",
-      "updated_at": "2026-09-19T12:48:25.166664+00:00",
+      "language": "English",
+      "updated_at": "2026-09-19T16:05:32.070670+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:HN4k7VjG5y8",
+        "youtube_id": "HN4k7VjG5y8",
+        "youtube_url": "https://www.youtube.com/watch?v=HN4k7VjG5y8",
+        "display_name": "Prayer For Generosity"
+      },
       "gospel_moods": [
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_communion_prayer_for_generosity_10.mp3",
+        "start_sec": 15.56,
+        "youtube_id": "HN4k7VjG5y8",
+        "youtube_url": "https://www.youtube.com/watch?v=HN4k7VjG5y8",
+        "display_name": "Prayer For Generosity · 10s",
+        "duration_sec": 10
+      }
     },
     {
       "id": "in_him_alone",
       "title": "In Him Alone",
       "author": "",
-      "language": "English",
+      "lyrics": "Verse 1\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We justified\nIn him Alone Are we Saved\n\nVerse 2\nWhat Have We To Offer\nThat does Not Fade Or Wither\nCan The World Ever Satisfy\nThe Emptiness In Our Hearts\nIn Vain We Deny\n\nVerse 3\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We Justified\nIn Him Alone Are We Saved\n\nVerse 4\nWhen Will You Cease Running\nIn Search Of Hollow Meaning\nLet His Love Feed The Hunger\nIn Your Soul Till It Overflows\nWith Joy You Yearn To Know\n\nVerse 5\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\n\nVerse 6\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\n\nVerse 7\nOoh",
+      "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
-      "lyrics": "Verse 1\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We justified\nIn him Alone Are we Saved\n\nVerse 2\nWhat Have We To Offer\nThat does Not Fade Or Wither\nCan The World Ever Satisfy\nThe Emptiness In Our Hearts\nIn Vain We Deny\n\nVerse 3\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We Justified\nIn Him Alone Are We Saved\n\nVerse 4\nWhen Will You Cease Running\nIn Search Of Hollow Meaning\nLet His Love Feed The Hunger\nIn Your Soul Till It Overflows\nWith Joy You Yearn To Know\n\nVerse 5\nYou Might Also Like\nPlease Please Please (Clean Edit)\nSabrina Carpenter\nHead Honcho\nEminem & Ez Mil\nJuno\nSabrina Carpenter\n\nVerse 6\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\n\nVerse 7\nOoh",
-      "source": "lyrics_dashboard",
       "added_at": "2026-09-19T12:48:26.655036+00:00",
-      "updated_at": "2026-09-19T12:48:26.655036+00:00",
+      "language": "English",
+      "updated_at": "2026-09-19T16:21:21.694344+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:Ox_P3YmH1F8",
+        "youtube_id": "Ox_P3YmH1F8",
+        "youtube_url": "https://www.youtube.com/watch?v=Ox_P3YmH1F8",
+        "display_name": "In Him Alone"
+      },
       "gospel_moods": [
         "mercy"
-      ]
+      ],
+      "audio_preview": {
+        "source": "preview",
+        "basename": "preview_communion_in_him_alone_10.mp3",
+        "start_sec": 0.0,
+        "display_name": "In Him Alone · 10s",
+        "duration_sec": 10
+      }
     }
   ],
   "recessional": [
@@ -2734,14 +2763,14 @@
       "id": "all_the_ends_of_the_world",
       "title": "All The Ends Of The World",
       "author": "",
-      "lyrics": "Verse 1\nAll The Ends Of The Earth, All You Creatures Of The Sea,\nLift Up Your Eyes To The Wonders Of The Lord.\nFor The Lord Of The Earth, The Master Of The Sea,\nHas Come With Justice For The World.\nBreak Into Song At The Deeds Of The Lord,\nThe Wonders God Has Done In Every Age.\n\nVerse 2\nAll The Ends Of The Earth, All You Creatures Of The Sea,\nLift Up Your Eyes To The Wonders Of The Lord.\nFor The Lord Of The Earth, The Master Of The Sea,\nHas Come With Justice For The World.\nHeaven And Earth Shall Rejoice In Your Might;\nEvery Heart, Every Nation Call You Lord.\n\nVerse 3\nAll The Ends Of The Earth, All You Creatures Of The Sea,\nLift Up Your Eyes To The Wonders Of The Lord.\nFor The Lord Of The Earth, The Master Of The Sea,\nHas Come With Justice For The World.\nThe Lord Has Made Salvation Known,\nFaithful To The Promises Of Old.\nLet The Ends Of The Earth, Let The Sea\nAnd All It Holds Make Music Before Our God!",
+      "lyrics": "Chorus\nAll The Ends Of The Earth, All You Creatures Of The Sea,\nLift Up Your Eyes To The Wonders Of The Lord.\nFor The Lord Of The Earth, The Master Of The Sea,\nHas Come With Justice For The World.\n\nVerse 1\nBreak Into Song At The Deeds Of The Lord,\nThe Wonders God Has Done In Every Age.\n\nChorus\nAll The Ends Of The Earth, All You Creatures Of The Sea,\nLift Up Your Eyes To The Wonders Of The Lord.\nFor The Lord Of The Earth, The Master Of The Sea,\nHas Come With Justice For The World.\n\nVerse 2\nHeaven And Earth Shall Rejoice In Your Might;\nEvery Heart, Every Nation Call You Lord.\n\nChorus\nAll The Ends Of The Earth, All You Creatures Of The Sea,\nLift Up Your Eyes To The Wonders Of The Lord.\nFor The Lord Of The Earth, The Master Of The Sea,\nHas Come With Justice For The World.\n\nVerse 3\nThe Lord Has Made Salvation Known,\nFaithful To The Promises Of Old.\nLet The Ends Of The Earth, Let The Sea\nAnd All It Holds Make Music Before Our God!\n\nChorus\nAll The Ends Of The Earth, All You Creatures Of The Sea,\nLift Up Your Eyes To The Wonders Of The Lord.\nFor The Lord Of The Earth, The Master Of The Sea,\nHas Come With Justice For The World.",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
       "added_at": "2026-09-13T18:14:16.504329+00:00",
       "language": "English",
-      "updated_at": "2026-09-13T18:14:35.001787+00:00",
+      "updated_at": "2026-09-19T16:19:34.862129+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:Wgzh4toH96A",
@@ -2754,12 +2783,9 @@
         "reverent"
       ],
       "audio_preview": {
-        "method": "verse",
         "source": "preview",
         "basename": "preview_recessional_all_the_ends_of_the_world_10.mp3",
         "start_sec": 0.0,
-        "youtube_id": "Wgzh4toH96A",
-        "youtube_url": "https://www.youtube.com/watch?v=Wgzh4toH96A",
         "display_name": "All The Ends Of The World · 10s",
         "duration_sec": 10
       }

@@ -42,7 +42,8 @@ _PART_MAP = {
     "meditation": "meditation",
 }
 
-_catalog_api_cache: dict[bool, tuple[float, dict[str, list[dict[str, Any]]]]] = {}
+# Cache key: include_inferred_moods → (monotonic_ts, revision, payload)
+_catalog_api_cache: dict[bool, tuple[float, str, dict[str, list[dict[str, Any]]]]] = {}
 _CATALOG_API_TTL_S = 120.0
 _catalog_lite_bytes: Optional[bytes] = None
 _catalog_lite_etag: str = ""
@@ -782,9 +783,14 @@ def find_catalog_matches_by_title(title: str, *, limit: int = 8) -> list[dict[st
 
 def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[dict[str, Any]]]:
     now = time.monotonic()
+    revision = catalog_revision()
     cached = _catalog_api_cache.get(include_inferred_moods)
-    if cached and now - cached[0] < _CATALOG_API_TTL_S:
-        return cached[1]
+    if (
+        cached
+        and now - cached[0] < _CATALOG_API_TTL_S
+        and cached[1] == revision
+    ):
+        return cached[2]
 
     data = load_catalog()
     out: dict[str, list[dict[str, Any]]] = {}
@@ -809,6 +815,7 @@ def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[d
                     "author": str(item.get("author") or "").strip(),
                     "language": str(item.get("language") or "").strip(),
                     "has_lyrics": bool(str(item.get("lyrics") or "").strip()),
+                    "updated_at": str(item.get("updated_at") or "").strip(),
                     "gospel_moods": moods,
                     "audio_media": normalize_song_media_ref(item.get("audio_media")),
                     "video_media": normalize_song_media_ref(item.get("video_media")),
@@ -816,7 +823,7 @@ def catalog_for_api(*, include_inferred_moods: bool = False) -> dict[str, list[d
                 }
             )
         out[sec] = rows
-    _catalog_api_cache[include_inferred_moods] = (now, out)
+    _catalog_api_cache[include_inferred_moods] = (now, revision, out)
     return out
 
 

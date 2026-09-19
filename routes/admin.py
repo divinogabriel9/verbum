@@ -47,6 +47,8 @@ from services.email_notifications import (
     notify_membership_approved,
     notify_membership_rejected,
     notify_platform_invite,
+    notify_song_approved,
+    notify_song_rejected,
     safe_send,
 )
 from services.email_reminders import list_reminder_recipients, run_weekly_reminders
@@ -897,6 +899,48 @@ def register_admin_routes(app) -> None:
         )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Approve failed.")
+        submission = result.get("submission") or {}
+        payload = submission.get("payload") if isinstance(submission.get("payload"), dict) else {}
+        song_title = str(
+            (result.get("song") or {}).get("title")
+            or payload.get("title")
+            or ""
+        ).strip()
+        dest = str(submission.get("submitted_by_email") or "").strip().lower()
+        submitter_uid = str(submission.get("submitted_by_user_id") or "").strip()
+        first_name = ""
+        if submitter_uid:
+            profile = get_profile_by_id(submitter_uid) or {}
+            first_name = str(profile.get("first_name") or "").strip()
+            if not dest:
+                dest = str(profile.get("email") or "").strip().lower()
+        emailed = False
+        if dest:
+            emailed = safe_send(
+                "song_approved",
+                notify_song_approved,
+                email=dest,
+                song_title=song_title,
+                first_name=first_name,
+            ).ok
+        if submitter_uid:
+            try:
+                from services.user_notifications import create_user_notification
+
+                msg = (
+                    f"“{song_title}” was approved and added to the shared library."
+                    if song_title
+                    else "Your song was approved and added to the shared library."
+                )
+                create_user_notification(
+                    user_id=submitter_uid,
+                    kind="song_approved",
+                    message=msg,
+                    meta={"song_title": song_title, "submission_id": str(submission.get("id") or submission_id)},
+                )
+            except Exception:
+                pass
+        result["emailed"] = emailed
         return result
 
     @app.post("/api/admin/submissions/songs/{submission_id}/reject")
@@ -909,6 +953,44 @@ def register_admin_routes(app) -> None:
         )
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Reject failed.")
+        submission = result.get("submission") or {}
+        payload = submission.get("payload") if isinstance(submission.get("payload"), dict) else {}
+        song_title = str(payload.get("title") or "").strip()
+        dest = str(submission.get("submitted_by_email") or "").strip().lower()
+        submitter_uid = str(submission.get("submitted_by_user_id") or "").strip()
+        first_name = ""
+        if submitter_uid:
+            profile = get_profile_by_id(submitter_uid) or {}
+            first_name = str(profile.get("first_name") or "").strip()
+            if not dest:
+                dest = str(profile.get("email") or "").strip().lower()
+        emailed = False
+        if dest:
+            emailed = safe_send(
+                "song_rejected",
+                notify_song_rejected,
+                email=dest,
+                song_title=song_title,
+                first_name=first_name,
+            ).ok
+        if submitter_uid:
+            try:
+                from services.user_notifications import create_user_notification
+
+                msg = (
+                    f"“{song_title}” wasn’t approved for the shared library."
+                    if song_title
+                    else "Your song wasn’t approved for the shared library."
+                )
+                create_user_notification(
+                    user_id=submitter_uid,
+                    kind="song_rejected",
+                    message=msg,
+                    meta={"song_title": song_title, "submission_id": str(submission.get("id") or submission_id)},
+                )
+            except Exception:
+                pass
+        result["emailed"] = emailed
         return result
 
     @app.get("/api/admin/submissions/priests/pending")

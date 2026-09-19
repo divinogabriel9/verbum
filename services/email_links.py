@@ -90,6 +90,10 @@ def home_cta_url() -> str:
     return sign_in_redirect_url("/home")
 
 
+def library_songs_cta_url() -> str:
+    return sign_in_redirect_url("/library/songs")
+
+
 def invite_signup_url(token: str) -> str:
     base = _base()
     tok = (token or "").strip()
