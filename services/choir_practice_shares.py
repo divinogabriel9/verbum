@@ -882,12 +882,13 @@ def resolve_practice_song(
     pid = (parish_id or "").strip()
     if pid:
         try:
-            from services.parish_hymn_overrides import get_override
+            from services.parish_hymn_overrides import get_override, override_is_newer_than
 
             ov = get_override(pid, hymn_id=hid, section=resolved_section or None)
             if not ov:
                 ov = get_override(pid, hymn_id=hid)
-            if ov and str(ov.get("lyrics") or "").strip():
+            catalog_updated = str(row.get("updated_at") or "").strip()
+            if ov and override_is_newer_than(ov, catalog_updated):
                 lyrics = str(ov.get("lyrics") or "")
                 if ov.get("section"):
                     resolved_section = str(ov.get("section") or resolved_section).strip().lower()

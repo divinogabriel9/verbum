@@ -3571,9 +3571,16 @@ def api_get_catalog_song(
     if not parish_only:
         lyrics = fetch_lyrics_from_normalized(hid) or str(row.get("lyrics") or "")
         catalog_lyrics = lyrics
-        if session and session.user and session.user.user_id:
+        # Superadmins edit the global catalog — never shadow with parish copies.
+        apply_parish = bool(
+            session
+            and session.user
+            and session.user.user_id
+            and not is_superadmin_user(session.user)
+        )
+        if apply_parish:
             try:
-                from services.parish_hymn_overrides import get_override
+                from services.parish_hymn_overrides import get_override, override_is_newer_than
                 from services.parish_store import get_user_parish_context
 
                 parish_ctx = get_user_parish_context(session.user.user_id) or {}
@@ -3582,7 +3589,8 @@ def api_get_catalog_song(
                     ov = get_override(parish_id, hymn_id=hid, section=resolved_section)
                     if not ov:
                         ov = get_override(parish_id, hymn_id=hid)
-                    if ov and str(ov.get("lyrics") or "").strip():
+                    catalog_updated = str(row.get("updated_at") or "").strip()
+                    if ov and override_is_newer_than(ov, catalog_updated):
                         lyrics = str(ov.get("lyrics") or "")
                         parish_version = True
                         if ov.get("section"):

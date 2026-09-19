@@ -695,6 +695,15 @@ def save_lyrics_song(
         data[sec] = kept
 
     save_catalog(data, updated_by=updated_by, sync_song_ids=canonical_ids)
+    try:
+        from services.parish_hymn_overrides import clear_stale_overrides_for_hymns
+
+        stamp = ""
+        if primary_row and isinstance(primary_row, dict):
+            stamp = str(primary_row.get("updated_at") or "").strip()
+        clear_stale_overrides_for_hymns(canonical_ids, newer_than=stamp or None)
+    except Exception:
+        pass
     first_id = ""
     primary_section = wanted[0] if wanted else ""
     primary: dict[str, Any] | None = primary_row
@@ -895,6 +904,16 @@ def update_catalog_song(
             sync_song_ids={hid},
             sync_lyrics=lyrics is not None,
         )
+        if lyrics is not None:
+            try:
+                from services.parish_hymn_overrides import clear_stale_overrides_for_hymns
+
+                clear_stale_overrides_for_hymns(
+                    {hid},
+                    newer_than=str(item.get("updated_at") or "").strip() or None,
+                )
+            except Exception:
+                pass
         return {
             "ok": True,
             "audio_media": normalize_song_media_ref(item.get("audio_media")),

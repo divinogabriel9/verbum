@@ -317,6 +317,59 @@ def clear_override(
         return {"ok": False, "error": str(exc)[:200]}
 
 
+def clear_stale_overrides_for_hymns(
+    hymn_ids: set[str] | frozenset[str] | list[str],
+    *,
+    newer_than: str | None = None,
+) -> int:
+    """Drop parish copies older than a global catalog edit so they cannot shadow it.
+
+    Intentional parish short-versions edited *after* the global save are kept.
+    """
+    wanted = {str(x or "").strip() for x in (hymn_ids or []) if str(x or "").strip()}
+    if not wanted or not supabase_enabled():
+        return 0
+    cutoff = (newer_than or "").strip() or _now_iso()
+    removed = 0
+    try:
+        client = _service_client()
+        for hid in wanted:
+            result = (
+                client.table("parish_hymn_overrides")
+                .delete()
+                .eq("hymn_id", hid)
+                .lt("updated_at", cutoff)
+                .execute()
+            )
+            rows = result.data or []
+            removed += len(rows) if isinstance(rows, list) else 0
+    except Exception as exc:
+        logger.warning("clear_stale_overrides_for_hymns failed: %s", exc)
+    return removed
+
+
+def override_is_newer_than(override: dict[str, Any] | None, catalog_updated_at: str | None) -> bool:
+    """True when a parish override should win over the global catalog lyrics."""
+    if not override or not str(override.get("lyrics") or "").strip():
+        return False
+    cat_raw = str(catalog_updated_at or "").strip()
+    ov_raw = str(override.get("updated_at") or "").strip()
+    if not cat_raw:
+        return True
+    if not ov_raw:
+        return False
+    try:
+        from services.song_catalog import _parse_iso_dt
+
+        cat_dt = _parse_iso_dt(cat_raw)
+        ov_dt = _parse_iso_dt(ov_raw)
+        if cat_dt and ov_dt:
+            return ov_dt >= cat_dt
+    except Exception:
+        pass
+    return ov_raw >= cat_raw
+
+
 def merge_parish_songs_into_catalog(
     catalog: dict[str, list[dict[str, Any]]],
     parish_id: str,
