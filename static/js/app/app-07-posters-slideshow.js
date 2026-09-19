@@ -2822,7 +2822,15 @@
       const coCelebrant = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
       const preview = previewForMassSummary();
       const creedSel = $("flow-creed-choice");
-      const creed = creedSel && creedSel.value === "apostles" ? "Apostles' Creed" : "Nicene Creed";
+      const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
+      const creed = creedVal === "apostles"
+        ? "Apostles' Creed"
+        : (creedVal === "none" ? "No Creed" : "Nicene Creed");
+      const gloriaSel = $("flow-gloria-choice");
+      const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
+      const gloria = gloriaVal === "latin"
+        ? "Gloria · Latin"
+        : (gloriaVal === "none" ? "No Gloria" : "Gloria · English");
       const collFormatted = getFormattedCollectionAmount();
       const foodLines = getFlowFoodSponsorsLines();
       const posterOpts = readOpenAiPosterSettings();

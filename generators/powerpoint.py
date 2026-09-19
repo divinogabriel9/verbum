@@ -2521,24 +2521,10 @@ def _gospel_acclamation_body_shape(slide):
 
 def _format_gospel_acclamation_projection_text(verse: str) -> str:
     """Alleluia + lectionary verse + Alleluia (one projection block, uniform sizing)."""
-    raw = (verse or "").strip()
-    if not raw:
+    core = extract_gospel_acclamation_verse(verse)
+    if not core:
         return ""
-    raw = re.sub(r"^R\.?\s*", "", raw, flags=re.I).strip()
-    lines = [ln.strip() for ln in re.split(r"\n+", raw) if ln.strip()]
-    core_lines = [
-        ln
-        for ln in lines
-        if not re.match(r"^alleluia[,.!]?\s*$", ln, flags=re.I)
-    ]
-    core = " ".join(core_lines) if core_lines else raw
-    core = re.sub(
-        r"^Alleluia[,.!]?\s*(?=.)",
-        "",
-        core,
-        count=1,
-        flags=re.I,
-    ).strip()
+    core = " ".join(ln.strip() for ln in re.split(r"\n+", core) if ln.strip())
     if not core:
         return ""
     return (
@@ -3742,9 +3728,20 @@ def _add_gospel_acclamation_slides(
 
 def _normalize_creed_choice(choice: str) -> str:
     c = (choice or "").strip().lower().replace("-", "_")
+    if c in ("none", "omit", "skip", "no", "no_creed", "off"):
+        return "none"
     if c in ("apostles", "apostles_creed", "apostle"):
         return "apostles"
     return "nicene"
+
+
+def _normalize_gloria_choice(choice: str) -> str:
+    c = (choice or "").strip().lower().replace("-", "_")
+    if c in ("none", "omit", "skip", "no", "no_gloria", "off"):
+        return "none"
+    if c == "latin":
+        return "latin"
+    return "english"
 
 
 def _normalize_our_father_choice(choice: str) -> str:
@@ -3874,8 +3871,11 @@ def _add_nicene_creed_slides(prs: Presentation, theme: SlideTheme) -> None:
 
 
 def _add_creed_slides(prs: Presentation, theme: SlideTheme, *, creed_choice: str = "nicene") -> None:
-    """Nicene or Apostles' Creed — same place in the Mass, never both."""
-    if _normalize_creed_choice(creed_choice) == "apostles":
+    """Nicene or Apostles' Creed — same place in the Mass, never both. ``none`` omits."""
+    choice = _normalize_creed_choice(creed_choice)
+    if choice == "none":
+        return
+    if choice == "apostles":
         _add_apostles_creed_slides(prs, theme)
         return
     _add_nicene_creed_slides(prs, theme)
@@ -6938,6 +6938,7 @@ def generate_mass_ppt(
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
+    gloria_choice: str = "english",
     our_father_choice: str = "english",
     kyrie_choice: str = "english",
     kyrie_tagalog_slide: int = 1,
@@ -7026,6 +7027,8 @@ def generate_mass_ppt(
 
     video_cues: list[dict[str, Any]] = []
     wanted_kinds = normalize_slide_kinds(slide_kinds)
+    omit_gloria = _normalize_gloria_choice(gloria_choice) == "none"
+    omit_creed = _normalize_creed_choice(creed_choice) == "none"
 
     def _want(kind: str) -> bool:
         return wanted_kinds is None or kind in wanted_kinds
@@ -7089,7 +7092,7 @@ def generate_mass_ppt(
         _add_penitential_act_slides(prs, theme)
     if _want("kyrie") and not _use_video("kyrie", "Kyrie"):
         _add_kyrie_slide(prs, theme)
-    if _want("gloria") and not _use_video("gloria", "Gloria"):
+    if _want("gloria") and not omit_gloria and not _use_video("gloria", "Gloria"):
         _add_gloria_slides(prs, theme)
     lotw_label = "Pagpapahayag ng Salita ng Diyos" if _mass_lang() == "tagalog" else "Liturgy of the Word"
     if _want("opening_prayer"):
@@ -7204,7 +7207,7 @@ def generate_mass_ppt(
         _add_divider_cover(prs, **ctx)
 
     # --- Creed (Nicene or Apostles' — never both) ---
-    if _want("creed"):
+    if _want("creed") and not omit_creed:
         _add_creed_slides(prs, theme, creed_choice=creed_choice)
     if _want("dividers"):
         _add_divider_cover(prs, **ctx)

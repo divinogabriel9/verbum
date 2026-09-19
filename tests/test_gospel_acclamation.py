@@ -39,6 +39,21 @@ def test_extract_strips_english_wrappers():
     )
 
 
+def test_extract_strips_trailing_response_cue():
+    raw = "Open our hearts, O Lord, to listen to the words of your Son. R."
+    assert extract_gospel_acclamation_verse(raw) == (
+        "Open our hearts, O Lord, to listen to the words of your Son."
+    )
+    raw_multiline = (
+        "R. Alleluia, alleluia.\n"
+        "Open our hearts, O Lord, to listen to the words of your Son. R.\n"
+        "Alleluia, alleluia."
+    )
+    assert extract_gospel_acclamation_verse(raw_multiline) == (
+        "Open our hearts, O Lord, to listen to the words of your Son."
+    )
+
+
 def test_tagalog_gospel_intro_uses_evangelist():
     from generators.powerpoint import _format_gospel_intro, _gospel_book_for_language
     from generators.gfcc_flow_content_tagalog import GOSPEL_INTRO

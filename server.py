@@ -1624,7 +1624,12 @@ class GenerateBody(BaseModel):
     )
     creed_choice: str = Field(
         "nicene",
-        description="Creed for the Mass deck: nicene | apostles (only one is included).",
+        description="Creed for the Mass deck: nicene | apostles | none (omit Creed slides).",
+    )
+    gloria_choice: str = Field(
+        "english",
+        description="Gloria for the Mass deck: english | latin | none (omit Gloria slides).",
+        max_length=16,
     )
     our_father_choice: str = Field(
         "english",
@@ -3710,6 +3715,8 @@ async def api_design_analyze_template(
 def index(request: Request) -> Any:
     # Public marketing landing page. Signed-in visitors are bounced to /home
     # client-side (see landing.html); the app itself lives at /home and friends.
+    configured = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("APP_PUBLIC_URL") or "").strip().rstrip("/")
+    public_base_url = configured or str(request.base_url).rstrip("/")
     return templates.TemplateResponse(
         request,
         "landing.html",
@@ -3717,6 +3724,8 @@ def index(request: Request) -> Any:
             "title": "LiturgyFlow",
             "auth_enabled": auth_enabled(),
             "invite_contact_email": invite_contact_email(),
+            "public_base_url": public_base_url,
+            "canonical_url": f"{public_base_url}/",
             **_template_version_context(),
         },
     )
@@ -4847,6 +4856,7 @@ def api_generate(
             include_footer=body.include_footer,
             hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
+            gloria_choice=body.gloria_choice,
             our_father_choice=body.our_father_choice,
             kyrie_choice=body.kyrie_choice,
             kyrie_tagalog_slide=body.kyrie_tagalog_slide,
@@ -5204,6 +5214,7 @@ async def api_regenerate_pptx(
             include_footer=body.include_footer,
             hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
+            gloria_choice=body.gloria_choice,
             our_father_choice=body.our_father_choice,
             kyrie_choice=body.kyrie_choice,
             kyrie_tagalog_slide=body.kyrie_tagalog_slide,

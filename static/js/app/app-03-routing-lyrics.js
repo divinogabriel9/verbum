@@ -1977,7 +1977,176 @@
       const file = event.target.files && event.target.files[0];
       await loadLyricsFromFile(file);
       event.target.value = "";
+      closeLyricsUploadGuideModal();
     });
+
+    const LYRICS_UPLOAD_EXAMPLE_TEXT = [
+      "===SONG===",
+      "TITLE: Awit Ng Paghahangad",
+      "AUTHOR: Charlie Cenzon",
+      "SECTION: communion",
+      "MOODS: journey, reverent",
+      "LANGUAGE: Tagalog",
+      "LYRICS:",
+      "Verse 1",
+      "O Diyos, Ikaw Ang Laging Hanap",
+      "Loob Ko'y Ikaw Ang Tanging Hangad",
+      "Nauuhaw Akong Parang Tigang Na Lupa",
+      "Sa Tubig Ng 'Yong Pag-aaruga",
+      "",
+      "Verse 2",
+      "Ika'y Pagmamasdan Sa Dakong Banal",
+      "Nang Makita Ko Ang 'Yong Pagkarangal",
+      "Dadalangin Akong Nakataas Aking Kamay",
+      "Magagalak Na Aawit Ng Papuring Iaalay",
+      "",
+      "Chorus",
+      "Gunita Ko'y Ikaw Habang Nahihimlay",
+      "Pagkat Ang Tulong Mo Sa Tuwina'y Taglay",
+      "Sa Lilim Ng Iyong Mga Pakpak",
+      "Umaawit Akong Buong Galak",
+      "",
+      "Verse 3",
+      "Aking Kaluluwa'y Kumakapit Sa 'Yo",
+      "Kaligtasa'y Tiyak Kung Hawak Mo Ako",
+      "Magdiriwang Ang Hari, Ang Diyos, S'yang Dahilan",
+      "Ang Sa Iyo Ay Nangako, Galak Yaong Makamtan",
+      "",
+      "Chorus",
+      "Gunita Ko'y Ikaw Habang Nahihimlay",
+      "Pagkat Ang Tulong Mo Sa Tuwina'y Taglay",
+      "Sa Lilim Ng Iyong Mga Pakpak",
+      "",
+      "Outro",
+      "Umaawit, Umaawit",
+      "Umaawit Akong Buong Galak",
+      "===END===",
+      "",
+      "---",
+      "",
+      "===SONG===",
+      "TITLE: Another Song Title",
+      "AUTHOR: Optional Author",
+      "SECTION: entrance",
+      "MOODS: triumphant",
+      "LANGUAGE: English",
+      "LYRICS:",
+      "Verse 1",
+      "Paste your second song here…",
+      "",
+      "Chorus",
+      "…",
+      "===END===",
+    ].join("\n");
+
+    function setLyricsUploadGuideCopyStatus(text, kind) {
+      const el = $("lyrics-upload-guide-copy-status");
+      if (!el) return;
+      if (!text) {
+        el.hidden = true;
+        el.textContent = "";
+        el.className = "status lyrics-upload-guide-copy-status";
+        return;
+      }
+      el.hidden = false;
+      el.textContent = text;
+      el.className = "status lyrics-upload-guide-copy-status" + (kind ? " " + kind : "");
+    }
+
+    function closeLyricsUploadGuideModal() {
+      const drop = $("lyrics-upload-guide-drop");
+      if (drop) drop.classList.remove("is-dragover");
+      setLyricsUploadGuideCopyStatus("");
+      setUiOverlayOpen($("lyrics-upload-guide-modal"), false);
+    }
+
+    function openLyricsUploadGuideModal() {
+      const pre = $("lyrics-upload-guide-example");
+      if (pre && !pre.textContent) pre.textContent = LYRICS_UPLOAD_EXAMPLE_TEXT;
+      else if (pre) pre.textContent = LYRICS_UPLOAD_EXAMPLE_TEXT;
+      setLyricsUploadGuideCopyStatus("");
+      setUiOverlayOpen($("lyrics-upload-guide-modal"), true);
+      const browse = $("lyrics-upload-guide-browse");
+      if (browse) browse.focus();
+    }
+
+    async function copyLyricsUploadExample() {
+      const text = LYRICS_UPLOAD_EXAMPLE_TEXT;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+        }
+        setLyricsUploadGuideCopyStatus("Example copied — paste into a .txt file.", "ok");
+      } catch (_err) {
+        setLyricsUploadGuideCopyStatus("Could not copy. Select the example text manually.", "error");
+      }
+    }
+
+    function triggerLyricsFilePicker() {
+      const input = $("lyrics-file");
+      if (input) input.click();
+    }
+
+    (function bindLyricsUploadGuideModal() {
+      const openBtn = $("lyrics-drop-zone");
+      if (openBtn) {
+        openBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          openLyricsUploadGuideModal();
+        });
+      }
+      $("lyrics-upload-guide-close") && $("lyrics-upload-guide-close").addEventListener("click", closeLyricsUploadGuideModal);
+      $("lyrics-upload-guide-cancel") && $("lyrics-upload-guide-cancel").addEventListener("click", closeLyricsUploadGuideModal);
+      $("lyrics-upload-guide-backdrop") && $("lyrics-upload-guide-backdrop").addEventListener("click", closeLyricsUploadGuideModal);
+      $("lyrics-upload-guide-copy") && $("lyrics-upload-guide-copy").addEventListener("click", () => {
+        copyLyricsUploadExample();
+      });
+      $("lyrics-upload-guide-browse") && $("lyrics-upload-guide-browse").addEventListener("click", () => {
+        triggerLyricsFilePicker();
+      });
+
+      const drop = $("lyrics-upload-guide-drop");
+      if (!drop) return;
+      const prevent = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+      ["dragenter", "dragover"].forEach((name) => {
+        drop.addEventListener(name, (event) => {
+          prevent(event);
+          drop.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach((name) => {
+        drop.addEventListener(name, (event) => {
+          prevent(event);
+          if (name === "dragleave" && event.relatedTarget && drop.contains(event.relatedTarget)) return;
+          drop.classList.remove("is-dragover");
+        });
+      });
+      drop.addEventListener("drop", async (event) => {
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (!file) return;
+        await loadLyricsFromFile(file);
+        closeLyricsUploadGuideModal();
+      });
+      drop.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          triggerLyricsFilePicker();
+        }
+      });
+    })();
 
     (function bindLyricsDropZone() {
       const zone = $("lyrics-drop-zone");

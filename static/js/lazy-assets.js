@@ -4,14 +4,15 @@
 
   var pending = Object.create(null);
   var TOUR_STORAGE_KEY = "liturgyflow.tour.pptx.v1";
+  var TOUR_STORAGE_KEY_COMPOSER = "liturgyflow.tour.composer.v1";
 
   var ASSETS = {
     hls: "/static/js/hls.min.js",
     driver: "/static/js/driver.js?v=20260703",
-    tour: "/static/js/guided-tour.js?v=20260906-perf1",
+    tour: "/static/js/guided-tour.js?v=20260920f",
     driverCss: "/static/css/driver.css?v=20260703",
-    tourCss: "/static/css/guided-tour.css?v=20260703j",
-    wizard: "/static/js/mw-wizard.js?v=20260914-dd-float",
+    tourCss: "/static/css/guided-tour.css?v=20260920d",
+    wizard: "/static/js/mw-wizard.js?v=20260920-no-gloria-creed",
     wizardCss: "/static/css/mw-wizard.css?v=20260914-dd-float",
   };
 
@@ -151,7 +152,15 @@
 
   function hasCompletedTour() {
     try {
-      return localStorage.getItem(TOUR_STORAGE_KEY) === "1";
+      return !!localStorage.getItem(TOUR_STORAGE_KEY);
+    } catch (_e) {
+      return true;
+    }
+  }
+
+  function hasCompletedComposerTour() {
+    try {
+      return !!localStorage.getItem(TOUR_STORAGE_KEY_COMPOSER);
     } catch (_e) {
       return true;
     }
@@ -161,24 +170,63 @@
     return !hasCompletedTour();
   }
 
+  function shouldAutoStartComposerTour() {
+    return !hasCompletedComposerTour();
+  }
+
   function bindTourTriggers() {
-    function start(event) {
-      if (event) event.preventDefault();
+    function closeAccountMenu() {
       var panel = document.getElementById("account-menu-panel");
       var btn = document.getElementById("account-menu-btn");
       if (panel) panel.hidden = true;
       if (btn) btn.setAttribute("aria-expanded", "false");
       if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+    }
+
+    function startPptx(event) {
+      if (event) event.preventDefault();
+      closeAccountMenu();
       ensureTour().then(function (tour) {
         if (tour && typeof tour.startPptxTour === "function") tour.startPptxTour();
       });
     }
 
-    ["btn-mw-tour", "account-tour-link", "home-mass-tour-link"].forEach(function (id) {
-      var el = document.getElementById(id);
+    function startComposer(event) {
+      if (event) event.preventDefault();
+      closeAccountMenu();
+      ensureTour().then(function (tour) {
+        if (tour && typeof tour.startComposerTour === "function") tour.startComposerTour();
+      });
+    }
+
+    function startContextual(event) {
+      if (event) event.preventDefault();
+      closeAccountMenu();
+      ensureTour().then(function (tour) {
+        if (!tour) return;
+        if (typeof tour.startContextualTour === "function") {
+          tour.startContextualTour();
+          return;
+        }
+        var lyrics = document.getElementById("lyrics-page");
+        if (lyrics && lyrics.classList.contains("active") && typeof tour.startComposerTour === "function") {
+          tour.startComposerTour();
+        } else if (typeof tour.startPptxTour === "function") {
+          tour.startPptxTour();
+        }
+      });
+    }
+
+    [
+      { id: "btn-mw-tour", handler: startPptx },
+      { id: "home-mass-tour-link", handler: startPptx },
+      { id: "btn-composer-tour", handler: startComposer },
+      { id: "account-tour-link", handler: startContextual },
+    ].forEach(function (item) {
+      var el = document.getElementById(item.id);
       if (!el || el.dataset.lfTourBound === "1") return;
       el.dataset.lfTourBound = "1";
-      el.addEventListener("click", start);
+      el.addEventListener("click", item.handler);
     });
   }
 
@@ -188,8 +236,14 @@
       function (event) {
         var t = event.target;
         if (!t || !t.closest) return;
-        var link = t.closest('[data-route="/mass/builder"], #btn-mw-tour, #home-mass-tour-link');
+        var link = t.closest(
+          '[data-route="/mass/builder"], #btn-mw-tour, #home-mass-tour-link, [data-route="/library/songs"], #btn-composer-tour'
+        );
         if (!link) return;
+        if (link.matches('[data-route="/library/songs"], #btn-composer-tour')) {
+          ensureTour().catch(function () {});
+          return;
+        }
         ensureWizard().catch(function () {});
       },
       true
@@ -208,17 +262,38 @@
   global.LiturgyFlowTour = {
     __fullyLoaded: false,
     STORAGE_KEY: TOUR_STORAGE_KEY,
+    STORAGE_KEY_COMPOSER: TOUR_STORAGE_KEY_COMPOSER,
     hasCompletedTour: hasCompletedTour,
     shouldAutoStart: shouldAutoStartTour,
-    markComplete: function () {
+    shouldAutoStartComposer: shouldAutoStartComposerTour,
+    markComplete: function (kind) {
       try {
-        localStorage.setItem(TOUR_STORAGE_KEY, "1");
+        var key = kind === "composer" ? TOUR_STORAGE_KEY_COMPOSER : TOUR_STORAGE_KEY;
+        localStorage.setItem(key, "1");
       } catch (_e) { /* ignore */ }
     },
     startPptxTour: function (options) {
       return ensureTour().then(function (tour) {
         if (!tour || typeof tour.startPptxTour !== "function") return null;
         return tour.startPptxTour(options);
+      });
+    },
+    startComposerTour: function (options) {
+      return ensureTour().then(function (tour) {
+        if (!tour || typeof tour.startComposerTour !== "function") return null;
+        return tour.startComposerTour(options);
+      });
+    },
+    startContextualTour: function (options) {
+      return ensureTour().then(function (tour) {
+        if (!tour) return null;
+        if (typeof tour.startContextualTour === "function") return tour.startContextualTour(options);
+        var lyrics = document.getElementById("lyrics-page");
+        if (lyrics && lyrics.classList.contains("active") && typeof tour.startComposerTour === "function") {
+          return tour.startComposerTour(options);
+        }
+        if (typeof tour.startPptxTour === "function") return tour.startPptxTour(options);
+        return null;
       });
     },
   };

@@ -2027,7 +2027,12 @@
 
     function buildVideoReplacementsPayload() {
       const out = {};
+      const gloriaOmit = (() => {
+        const sel = $("flow-gloria-choice");
+        return !!(sel && String(sel.value || "").trim().toLowerCase() === "none");
+      })();
       MASS_SECTION_VIDEO_SLOTS.forEach((section) => {
+        if (section === "gloria" && gloriaOmit) return;
         if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
           if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return;
         } else if (!getMassSongVideoMode(section)) {
@@ -10738,7 +10743,176 @@
       const file = event.target.files && event.target.files[0];
       await loadLyricsFromFile(file);
       event.target.value = "";
+      closeLyricsUploadGuideModal();
     });
+
+    const LYRICS_UPLOAD_EXAMPLE_TEXT = [
+      "===SONG===",
+      "TITLE: Awit Ng Paghahangad",
+      "AUTHOR: Charlie Cenzon",
+      "SECTION: communion",
+      "MOODS: journey, reverent",
+      "LANGUAGE: Tagalog",
+      "LYRICS:",
+      "Verse 1",
+      "O Diyos, Ikaw Ang Laging Hanap",
+      "Loob Ko'y Ikaw Ang Tanging Hangad",
+      "Nauuhaw Akong Parang Tigang Na Lupa",
+      "Sa Tubig Ng 'Yong Pag-aaruga",
+      "",
+      "Verse 2",
+      "Ika'y Pagmamasdan Sa Dakong Banal",
+      "Nang Makita Ko Ang 'Yong Pagkarangal",
+      "Dadalangin Akong Nakataas Aking Kamay",
+      "Magagalak Na Aawit Ng Papuring Iaalay",
+      "",
+      "Chorus",
+      "Gunita Ko'y Ikaw Habang Nahihimlay",
+      "Pagkat Ang Tulong Mo Sa Tuwina'y Taglay",
+      "Sa Lilim Ng Iyong Mga Pakpak",
+      "Umaawit Akong Buong Galak",
+      "",
+      "Verse 3",
+      "Aking Kaluluwa'y Kumakapit Sa 'Yo",
+      "Kaligtasa'y Tiyak Kung Hawak Mo Ako",
+      "Magdiriwang Ang Hari, Ang Diyos, S'yang Dahilan",
+      "Ang Sa Iyo Ay Nangako, Galak Yaong Makamtan",
+      "",
+      "Chorus",
+      "Gunita Ko'y Ikaw Habang Nahihimlay",
+      "Pagkat Ang Tulong Mo Sa Tuwina'y Taglay",
+      "Sa Lilim Ng Iyong Mga Pakpak",
+      "",
+      "Outro",
+      "Umaawit, Umaawit",
+      "Umaawit Akong Buong Galak",
+      "===END===",
+      "",
+      "---",
+      "",
+      "===SONG===",
+      "TITLE: Another Song Title",
+      "AUTHOR: Optional Author",
+      "SECTION: entrance",
+      "MOODS: triumphant",
+      "LANGUAGE: English",
+      "LYRICS:",
+      "Verse 1",
+      "Paste your second song here…",
+      "",
+      "Chorus",
+      "…",
+      "===END===",
+    ].join("\n");
+
+    function setLyricsUploadGuideCopyStatus(text, kind) {
+      const el = $("lyrics-upload-guide-copy-status");
+      if (!el) return;
+      if (!text) {
+        el.hidden = true;
+        el.textContent = "";
+        el.className = "status lyrics-upload-guide-copy-status";
+        return;
+      }
+      el.hidden = false;
+      el.textContent = text;
+      el.className = "status lyrics-upload-guide-copy-status" + (kind ? " " + kind : "");
+    }
+
+    function closeLyricsUploadGuideModal() {
+      const drop = $("lyrics-upload-guide-drop");
+      if (drop) drop.classList.remove("is-dragover");
+      setLyricsUploadGuideCopyStatus("");
+      setUiOverlayOpen($("lyrics-upload-guide-modal"), false);
+    }
+
+    function openLyricsUploadGuideModal() {
+      const pre = $("lyrics-upload-guide-example");
+      if (pre && !pre.textContent) pre.textContent = LYRICS_UPLOAD_EXAMPLE_TEXT;
+      else if (pre) pre.textContent = LYRICS_UPLOAD_EXAMPLE_TEXT;
+      setLyricsUploadGuideCopyStatus("");
+      setUiOverlayOpen($("lyrics-upload-guide-modal"), true);
+      const browse = $("lyrics-upload-guide-browse");
+      if (browse) browse.focus();
+    }
+
+    async function copyLyricsUploadExample() {
+      const text = LYRICS_UPLOAD_EXAMPLE_TEXT;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+        }
+        setLyricsUploadGuideCopyStatus("Example copied — paste into a .txt file.", "ok");
+      } catch (_err) {
+        setLyricsUploadGuideCopyStatus("Could not copy. Select the example text manually.", "error");
+      }
+    }
+
+    function triggerLyricsFilePicker() {
+      const input = $("lyrics-file");
+      if (input) input.click();
+    }
+
+    (function bindLyricsUploadGuideModal() {
+      const openBtn = $("lyrics-drop-zone");
+      if (openBtn) {
+        openBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+          openLyricsUploadGuideModal();
+        });
+      }
+      $("lyrics-upload-guide-close") && $("lyrics-upload-guide-close").addEventListener("click", closeLyricsUploadGuideModal);
+      $("lyrics-upload-guide-cancel") && $("lyrics-upload-guide-cancel").addEventListener("click", closeLyricsUploadGuideModal);
+      $("lyrics-upload-guide-backdrop") && $("lyrics-upload-guide-backdrop").addEventListener("click", closeLyricsUploadGuideModal);
+      $("lyrics-upload-guide-copy") && $("lyrics-upload-guide-copy").addEventListener("click", () => {
+        copyLyricsUploadExample();
+      });
+      $("lyrics-upload-guide-browse") && $("lyrics-upload-guide-browse").addEventListener("click", () => {
+        triggerLyricsFilePicker();
+      });
+
+      const drop = $("lyrics-upload-guide-drop");
+      if (!drop) return;
+      const prevent = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+      ["dragenter", "dragover"].forEach((name) => {
+        drop.addEventListener(name, (event) => {
+          prevent(event);
+          drop.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach((name) => {
+        drop.addEventListener(name, (event) => {
+          prevent(event);
+          if (name === "dragleave" && event.relatedTarget && drop.contains(event.relatedTarget)) return;
+          drop.classList.remove("is-dragover");
+        });
+      });
+      drop.addEventListener("drop", async (event) => {
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (!file) return;
+        await loadLyricsFromFile(file);
+        closeLyricsUploadGuideModal();
+      });
+      drop.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          triggerLyricsFilePicker();
+        }
+      });
+    })();
 
     (function bindLyricsDropZone() {
       const zone = $("lyrics-drop-zone");
@@ -27082,7 +27256,15 @@
       const coCelebrant = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
       const preview = previewForMassSummary();
       const creedSel = $("flow-creed-choice");
-      const creed = creedSel && creedSel.value === "apostles" ? "Apostles' Creed" : "Nicene Creed";
+      const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
+      const creed = creedVal === "apostles"
+        ? "Apostles' Creed"
+        : (creedVal === "none" ? "No Creed" : "Nicene Creed");
+      const gloriaSel = $("flow-gloria-choice");
+      const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
+      const gloria = gloriaVal === "latin"
+        ? "Gloria · Latin"
+        : (gloriaVal === "none" ? "No Gloria" : "Gloria · English");
       const collFormatted = getFormattedCollectionAmount();
       const foodLines = getFlowFoodSponsorsLines();
       const posterOpts = readOpenAiPosterSettings();
@@ -28697,7 +28879,14 @@
           if (customSlides.length) body.custom_announcement_slides = customSlides;
         }
         const creedSel = $("flow-creed-choice");
-        body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
+        const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
+        body.creed_choice = creedVal === "apostles" ? "apostles" : (creedVal === "none" ? "none" : "nicene");
+        const gloriaSel = $("flow-gloria-choice");
+        const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
+        body.gloria_choice = gloriaVal === "latin" ? "latin" : (gloriaVal === "none" ? "none" : "english");
+        if (body.gloria_choice === "none" && window.massRiteVideoMode) {
+          window.massRiteVideoMode.gloria = false;
+        }
         const ofSel = $("flow-our-father-choice");
         const ofAllowed = ["english", "malay", "tagalog", "visaya", "korean"];
         body.our_father_choice = ofSel && ofAllowed.includes(ofSel.value) ? ofSel.value : "english";
@@ -28757,6 +28946,7 @@
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
+          gloria_choice: body.gloria_choice || "english",
           slide_kinds: body.slide_kinds || null,
           our_father_choice: body.our_father_choice || "english",
           kyrie_choice: body.kyrie_choice || "english",
@@ -28949,6 +29139,23 @@
       if (t.indexOf("alleluia") !== -1) return "Alleluia";
       if (t.indexOf("praise to you") !== -1 || t.indexOf("glory and praise") !== -1) return "Praise";
       return "";
+    }
+
+    /** Full responsorial psalm for calendar viewing (response + verses). */
+    function calPsalmFullText(data, snap) {
+      const full = String((data && data.psalm_full_text) || "").trim();
+      if (full) return full;
+      const verses = String((data && data.psalm_verses) || "").trim();
+      let response = String((data && (data.psalm_response || data.psalm_text)) || "").trim();
+      if (!response && snap) response = String(snap.psalm_refrain || "").trim();
+      if (response && !/^R\.?\s/i.test(response)) response = "R. " + response.replace(/^R\.?\s*/i, "");
+      if (verses && /^R\.?\s/i.test(verses) && (!response || verses.length > response.length + 60)) {
+        return verses;
+      }
+      if (response && verses) return response + "\n\n" + verses;
+      if (verses) return verses;
+      if (response) return response;
+      return String((snap && snap.psalm_refrain) ? ("R. " + snap.psalm_refrain) : "").trim();
     }
 
     function updateCalReadingCard(refEl, excerptEl, toggleEl, ref, body) {
@@ -29718,11 +29925,11 @@
       }
       const gospelBody = (data.gospel_text || data.gospel_quote || "").trim();
       const acclamation = (data.gospel_acclamation || snap.gospel_acclamation || "").trim();
-      const psalmBody = calExtractPsalmRefrain(data.psalm_text || "") || calExtractPsalmRefrain(snap.psalm_refrain || "");
       const psalmRef = data.psalm_reference || snap.psalm_reference || "";
+      const psalmBody = calPsalmFullText(data, snap);
       updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), data.gospel_reference, gospelBody);
       updateCalReadingCard($("cal-acclamation-ref"), $("cal-acclamation-excerpt"), document.querySelector("[data-target=\"cal-acclamation-excerpt\"]"), calAcclamationLabel(acclamation), acclamation);
-      updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), psalmRef, psalmBody ? "R. " + psalmBody : (data.psalm_text || "").trim());
+      updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), psalmRef, psalmBody);
       updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), data.first_reading_reference, data.first_reading_excerpt || "");
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), data.second_reading_reference, data.second_reading_excerpt || "");
     }

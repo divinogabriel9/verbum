@@ -4,11 +4,26 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>{{ title }} | Sunday Mass in one click</title>
-<link rel="icon" type="image/png" href="/static/brand/favicon-32x32.png?v=6" sizes="32x32"/>
-<link rel="icon" type="image/png" href="/static/brand/favicon-48x48.png?v=6" sizes="48x48"/>
-<link rel="icon" type="image/png" href="/static/brand/favicon-192x192.png?v=6" sizes="192x192"/>
-<link rel="icon" href="/favicon.ico?v=6" sizes="32x32"/>
+<meta name="application-name" content="LiturgyFlow"/>
+<meta property="og:site_name" content="LiturgyFlow"/>
+<meta property="og:title" content="LiturgyFlow"/>
+<meta property="og:type" content="website"/>
+{% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}"/>
+<meta property="og:url" content="{{ canonical_url }}"/>{% endif %}
+{# Circular favicons for Google Search (homepage only). In-app / apple-touch stay square. #}
+<link rel="icon" type="image/png" href="/static/brand/favicon-search-48x48.png?v=7" sizes="48x48"/>
+<link rel="icon" type="image/png" href="/static/brand/favicon-search-192x192.png?v=7" sizes="192x192"/>
+<link rel="icon" type="image/png" href="/static/brand/favicon-search-32x32.png?v=7" sizes="32x32"/>
 <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png?v=6"/>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "LiturgyFlow",
+  "alternateName": ["liturgyflow", "Liturgy Flow"],
+  "url": {{ (canonical_url or "https://liturgyflow.com/")|tojson }}
+}
+</script>
 <script>
   (function () {
     try {

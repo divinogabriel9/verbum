@@ -101,6 +101,48 @@
   96% { transform: rotate(0deg) scale(1); }
 }
 
+.song-composer-head__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.song-composer-head__title-row h3 {
+  margin: 0;
+}
+
+.song-composer-tour-btn {
+  margin-bottom: 0;
+  flex: 0 0 auto;
+  gap: 0;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.song-composer-tour-btn:hover,
+.song-composer-tour-btn:focus-visible {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  transform: none;
+}
+
+.song-composer-tour-btn:active {
+  transform: scale(0.96);
+}
+
+.song-composer-tour-btn span:not(.mw-tour-btn__icon) {
+  display: none;
+}
+
+.song-composer-panel--deflated .song-composer-tour-btn {
+  padding: 2px;
+}
+
 .home-mass-tour-link {
   position: absolute;
   top: var(--space-4, 16px);
@@ -238,6 +280,14 @@ body.lf-tour-active .lf-tour-popover button:active {
 
 .lf-tour-popover.lf-tour-popover--ready {
   animation: lf-tour-popover-in 200ms var(--motion-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.lf-tour-popover.lf-tour-popover--docked {
+  max-width: min(var(--lf-tour-width), calc(100vw - 24px));
+}
+
+.lf-tour-popover.lf-tour-popover--docked .driver-popover-arrow {
+  display: none;
 }
 
 .lf-tour-popover .driver-popover-arrow {

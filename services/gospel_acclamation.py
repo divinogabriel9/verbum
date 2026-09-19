@@ -20,24 +20,41 @@ _TRAILING_ALLELUIA_RE = re.compile(
     rf"(?:{_ALLELUIA_TOKEN}[\s!,.]*)+$",
     flags=re.IGNORECASE,
 )
+# Lectionary "R." / "R" response cue (leading or trailing) — not sung on the slide.
+# Require a word break so we never clip a word that merely ends in "r"/"R".
+_RESPONSE_ONLY_LINE_RE = re.compile(r"^R\.?$", flags=re.IGNORECASE)
+_LEADING_RESPONSE_RE = re.compile(r"^R\.?\s+", flags=re.IGNORECASE)
+_TRAILING_RESPONSE_RE = re.compile(r"\s+R\.?\s*$", flags=re.IGNORECASE)
+
+
+def _strip_response_cue(line: str) -> str:
+    text = (line or "").strip()
+    if not text or _RESPONSE_ONLY_LINE_RE.match(text):
+        return ""
+    text = _LEADING_RESPONSE_RE.sub("", text).strip()
+    text = _TRAILING_RESPONSE_RE.sub("", text).strip()
+    if _RESPONSE_ONLY_LINE_RE.match(text):
+        return ""
+    return text
 
 
 def extract_gospel_acclamation_verse(verse: str) -> str:
-    """Strip lectionary Alleluia wrappers; keep only the sung verse body."""
+    """Strip lectionary Alleluia wrappers and R. cues; keep only the sung verse body."""
     raw = (verse or "").strip()
     if not raw:
         return ""
-    raw = re.sub(r"^R\.?\s*", "", raw, flags=re.I).strip()
+    raw = _strip_response_cue(raw)
     kept: list[str] = []
     for ln in re.split(r"\n+", raw):
-        line = ln.strip()
+        line = _strip_response_cue(ln)
         if not line or _ALLELUIA_ONLY_LINE_RE.match(line):
             continue
         line = _LEADING_ALLELUIA_RE.sub("", line).strip()
         line = _TRAILING_ALLELUIA_RE.sub("", line).strip()
+        line = _strip_response_cue(line)
         if line and not _ALLELUIA_ONLY_LINE_RE.match(line):
             kept.append(line)
-    return "\n".join(kept).strip()
+    return _strip_response_cue("\n".join(kept))
 
 
 def wrap_gospel_acclamation_verse(verse: str, *, max_chars: int = 42) -> list[str]:

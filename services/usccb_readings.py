@@ -835,6 +835,11 @@ def _resolve_reading_body(
     return ""
 
 
+def format_psalm_text(response: str, verses: str) -> str:
+    """Build full responsorial psalm text (R. refrain + stanzas) for viewing."""
+    return _format_psalm_text(response, verses)
+
+
 def _format_psalm_text(response: str, verses: str) -> str:
     v = (verses or "").strip()
     r = (response or "").strip()

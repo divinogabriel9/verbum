@@ -28,7 +28,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260920-song-contrib1" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260920-upload-guide2" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
@@ -36,7 +36,7 @@
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260907-home-cta6" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
-  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260703j" />
+  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920d" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
   <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260914-dd-float" />
   <script src="/static/js/input-limits.js" defer></script>
@@ -1676,6 +1676,54 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="lyrics-upload-guide-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="lyrics-upload-guide-backdrop"></div>
+        <article class="ui-card ui-card--popover-safe lyrics-upload-guide-card" role="dialog" aria-labelledby="lyrics-upload-guide-heading" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="lyrics-upload-guide-heading">Upload lyrics</h3>
+              <p class="ui-card__description">Use a .txt or .rtf file. Single song or a multi-song catalog — copy the example below as your baseline.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="lyrics-upload-guide-close" aria-label="Close">×</button>
+          </header>
+          <div class="ui-card__content lyrics-upload-guide-body">
+            <div class="lyrics-upload-guide-main">
+              <div class="lyrics-upload-guide-formats" role="list">
+                <article class="lyrics-upload-guide-format" role="listitem">
+                  <h4>Single song</h4>
+                  <p>One <code>===SONG===</code> … <code>===END===</code> block with TITLE, SECTION, LANGUAGE, and LYRICS.</p>
+                </article>
+                <article class="lyrics-upload-guide-format" role="listitem">
+                  <h4>Multiple songs</h4>
+                  <p>Repeat the same block for each hymn. Separate songs with a line that is only <code>---</code>.</p>
+                </article>
+              </div>
+
+              <div class="lyrics-upload-guide-drop" id="lyrics-upload-guide-drop" tabindex="0" aria-label="Drop lyrics file here">
+                <p class="lyrics-upload-guide-drop__title">Drop a .txt or .rtf file here</p>
+                <p class="muted lyrics-upload-guide-drop__hint">or choose a file from your device</p>
+                <button type="button" class="primary" id="lyrics-upload-guide-browse">Choose file</button>
+              </div>
+            </div>
+
+            <aside class="lyrics-upload-guide-example" aria-label="Example lyrics file">
+              <div class="lyrics-upload-guide-example__head">
+                <div>
+                  <h4>Example · Awit Ng Paghahangad</h4>
+                  <p class="muted">Copy this into a .txt file, then edit for your songs.</p>
+                </div>
+                <button type="button" class="secondary mini" id="lyrics-upload-guide-copy">Copy example</button>
+              </div>
+              <pre class="lyrics-upload-guide-example__pre" id="lyrics-upload-guide-example" tabindex="0" aria-label="Example lyrics file text"></pre>
+              <p class="status lyrics-upload-guide-copy-status" id="lyrics-upload-guide-copy-status" hidden aria-live="polite"></p>
+            </aside>
+          </div>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="lyrics-upload-guide-cancel">Close</button>
+          </footer>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="media-delete-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="media-delete-backdrop"></div>
         <article class="ui-card" role="alertdialog" aria-labelledby="media-delete-title" aria-describedby="media-delete-desc" aria-modal="true">
@@ -1856,7 +1904,13 @@
             <div class="song-composer-rail">
               <div class="song-composer-rail__cluster">
                 <div class="song-composer-head__copy">
-                  <h3>Song Composer</h3>
+                  <div class="song-composer-head__title-row">
+                    <h3>Song Composer</h3>
+                    <button type="button" class="mw-tour-btn song-composer-tour-btn" id="btn-composer-tour" aria-label="Start guided tour of the Song Composer">
+                      <svg class="mw-tour-btn__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                      <span>Tour</span>
+                    </button>
+                  </div>
                   <p class="song-composer-load-status" id="song-composer-load-status" hidden aria-live="polite"></p>
                 </div>
                 <div class="song-composer-toolbar-row">
@@ -1866,9 +1920,9 @@
                   </div>
                   <div class="song-composer-toolbar-actions">
                     <button type="button" class="song-composer-add-btn" id="btn-composer-add-song">Add new songs</button>
-                    <label class="song-composer-upload-btn song-composer-upload-btn--icon" id="lyrics-drop-zone" for="lyrics-file" title="Upload .txt or .rtf — plain lyrics or Verbum multi-song catalog (===SONG===)" aria-label="Upload .txt or .rtf">
+                    <button type="button" class="song-composer-upload-btn song-composer-upload-btn--icon" id="lyrics-drop-zone" title="Upload lyrics — format guide" aria-label="Upload lyrics">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-                    </label>
+                    </button>
                   </div>
                   <input type="file" id="lyrics-file" class="lyrics-file-input" accept=".txt,.rtf,text/plain,application/rtf,text/rtf" tabindex="-1" />
                 </div>
@@ -2496,6 +2550,7 @@
                         <select id="flow-gloria-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="gloria" hidden>
                           <option value="english" selected>English</option>
                           <option value="latin">Latin</option>
+                          <option value="none">No Gloria</option>
                         </select>
                       </div>
                     </article>
@@ -2510,6 +2565,7 @@
                         <select id="flow-creed-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="creed" hidden>
                           <option value="nicene" selected>Nicene Creed</option>
                           <option value="apostles">Apostles' Creed</option>
+                          <option value="none">No Creed</option>
                         </select>
                       </div>
                     </article>
@@ -2903,7 +2959,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260914-dd-float"></script>
+      <script src="/static/js/mw-wizard.js?v=20260920-no-gloria-creed"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4502,9 +4558,9 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20260920-lyrics-sync2"></script>
+  <script src="/static/js/app.js?v=20260920-no-gloria-creed"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
-  <script src="/static/js/guided-tour.js?v=20260711a"></script>
+  <script src="/static/js/guided-tour.js?v=20260920f"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>
   <script>
     scheduleDashboardBoot();

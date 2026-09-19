@@ -15,7 +15,11 @@ from services.lectionary_service import get_liturgical_data, payload_complete
 from services.lectionary_store import get_cached
 from services.mass_language import normalize_mass_language
 from services.mass_text_format import synopsis_from_reading
-from services.usccb_readings import collect_psalm_refrain_options, repair_eaten_r_refrain
+from services.usccb_readings import (
+    collect_psalm_refrain_options,
+    format_psalm_text,
+    repair_eaten_r_refrain,
+)
 
 # Memory keys are (date, language) tuples.
 _MEMORY: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
@@ -81,8 +85,11 @@ def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
         "second_reading_excerpt": synopsis_from_reading(sr_txt, max_chars=720) if sr_txt else "",
         "psalm_text": raw_psalm,
         "psalm_verses": psalm_verses,
+        "psalm_response": psalm_resp,
         "psalm_reference": psalm_ref,
         "psalm": psalm_ref,
+        # Full responsorial text (R. refrain + stanzas) for calendar / viewing only.
+        "psalm_full_text": format_psalm_text(psalm_resp or raw_psalm, psalm_verses),
         "psalm_refrains": collect_psalm_refrain_options(
             raw_psalm,
             psalm_ref,

@@ -51,7 +51,7 @@ ENUM_FIELDS = (
 )
 
 _ALLOWED: dict[str, frozenset[Any]] = {
-    "creed_choice": frozenset({"nicene", "apostles"}),
+    "creed_choice": frozenset({"nicene", "apostles", "none"}),
     "our_father_choice": frozenset({"english", "malay", "tagalog", "visaya", "korean"}),
     "mass_language": frozenset({"english", "tagalog"}),
     "hymn_lyrics_layout": frozenset({"single", "dual"}),

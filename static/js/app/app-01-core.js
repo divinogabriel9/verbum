@@ -2027,7 +2027,12 @@
 
     function buildVideoReplacementsPayload() {
       const out = {};
+      const gloriaOmit = (() => {
+        const sel = $("flow-gloria-choice");
+        return !!(sel && String(sel.value || "").trim().toLowerCase() === "none");
+      })();
       MASS_SECTION_VIDEO_SLOTS.forEach((section) => {
+        if (section === "gloria" && gloriaOmit) return;
         if (MASS_RITE_VIDEO_MODE_SECTIONS.has(section)) {
           if (!(window.massRiteVideoMode && window.massRiteVideoMode[section])) return;
         } else if (!getMassSongVideoMode(section)) {

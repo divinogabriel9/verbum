@@ -14976,6 +14976,164 @@
       max-height: min(92vh, 900px);
       overflow: hidden;
     }
+    #lyrics-upload-guide-modal .ui-card {
+      width: min(1080px, calc(100vw - 1.5rem));
+      max-width: min(1080px, calc(100vw - 1.5rem));
+      max-height: min(94vh, 900px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #lyrics-upload-guide-modal .ui-card__content.lyrics-upload-guide-body {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.35fr);
+      gap: 0;
+      min-height: min(68vh, 640px);
+      overflow: hidden;
+      padding: 0;
+    }
+    .lyrics-upload-guide-main {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      padding: 18px 20px;
+      overflow: auto;
+      border-right: 1px solid var(--line-soft);
+    }
+    .lyrics-upload-guide-formats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .lyrics-upload-guide-format {
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface-solid));
+    }
+    .lyrics-upload-guide-format h4 {
+      margin: 0 0 6px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .lyrics-upload-guide-format p {
+      margin: 0;
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .lyrics-upload-guide-format code {
+      font-size: 0.75rem;
+      padding: 1px 5px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+      color: var(--ink);
+    }
+    .lyrics-upload-guide-example {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      padding: 16px 18px 18px;
+      background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-solid));
+      overflow: hidden;
+    }
+    .lyrics-upload-guide-example__head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex: 0 0 auto;
+    }
+    .lyrics-upload-guide-example__head h4 {
+      margin: 0 0 4px;
+      font-size: 0.9375rem;
+    }
+    .lyrics-upload-guide-example__head p {
+      margin: 0;
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+    .lyrics-upload-guide-example__pre {
+      margin: 0;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+      max-height: none;
+      padding: 14px 16px;
+      overflow: auto;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: var(--surface-solid, #fff);
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .lyrics-upload-guide-copy-status {
+      margin: 0;
+      flex: 0 0 auto;
+      font-size: 0.75rem;
+    }
+    .lyrics-upload-guide-drop {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: auto;
+      padding: 20px 16px;
+      border: 1.5px dashed color-mix(in srgb, var(--accent) 35%, var(--line));
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface-solid));
+      text-align: center;
+      transition: border-color 150ms ease, background 150ms ease;
+    }
+    .lyrics-upload-guide-drop.is-dragover {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface-solid));
+    }
+    .lyrics-upload-guide-drop__title {
+      margin: 0;
+      font-size: 0.875rem;
+      font-weight: 650;
+      color: var(--ink);
+    }
+    .lyrics-upload-guide-drop__hint {
+      margin: 0 0 6px;
+      font-size: 0.75rem;
+    }
+    @media (max-width: 860px) {
+      #lyrics-upload-guide-modal .ui-card {
+        width: min(100vw - 1rem, 720px);
+        max-height: min(96vh, 920px);
+      }
+      #lyrics-upload-guide-modal .ui-card__content.lyrics-upload-guide-body {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        overflow: auto;
+      }
+      .lyrics-upload-guide-main {
+        border-right: 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .lyrics-upload-guide-example {
+        min-height: min(48vh, 420px);
+      }
+      .lyrics-upload-guide-example__pre {
+        min-height: 280px;
+      }
+      .lyrics-upload-guide-example__head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
     #composer-new-song-modal .ui-card__content {
       display: flex;
       flex-direction: column;
@@ -18540,6 +18698,7 @@
       display: block;
       max-height: min(40vh, 16rem);
       overflow-y: auto;
+      white-space: pre-wrap;
     }
     .cal-reading-toggle {
       margin-top: 8px;

@@ -462,7 +462,14 @@
           if (customSlides.length) body.custom_announcement_slides = customSlides;
         }
         const creedSel = $("flow-creed-choice");
-        body.creed_choice = creedSel && creedSel.value === "apostles" ? "apostles" : "nicene";
+        const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
+        body.creed_choice = creedVal === "apostles" ? "apostles" : (creedVal === "none" ? "none" : "nicene");
+        const gloriaSel = $("flow-gloria-choice");
+        const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
+        body.gloria_choice = gloriaVal === "latin" ? "latin" : (gloriaVal === "none" ? "none" : "english");
+        if (body.gloria_choice === "none" && window.massRiteVideoMode) {
+          window.massRiteVideoMode.gloria = false;
+        }
         const ofSel = $("flow-our-father-choice");
         const ofAllowed = ["english", "malay", "tagalog", "visaya", "korean"];
         body.our_father_choice = ofSel && ofAllowed.includes(ofSel.value) ? ofSel.value : "english";
@@ -522,6 +529,7 @@
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
+          gloria_choice: body.gloria_choice || "english",
           slide_kinds: body.slide_kinds || null,
           our_father_choice: body.our_father_choice || "english",
           kyrie_choice: body.kyrie_choice || "english",
@@ -714,6 +722,23 @@
       if (t.indexOf("alleluia") !== -1) return "Alleluia";
       if (t.indexOf("praise to you") !== -1 || t.indexOf("glory and praise") !== -1) return "Praise";
       return "";
+    }
+
+    /** Full responsorial psalm for calendar viewing (response + verses). */
+    function calPsalmFullText(data, snap) {
+      const full = String((data && data.psalm_full_text) || "").trim();
+      if (full) return full;
+      const verses = String((data && data.psalm_verses) || "").trim();
+      let response = String((data && (data.psalm_response || data.psalm_text)) || "").trim();
+      if (!response && snap) response = String(snap.psalm_refrain || "").trim();
+      if (response && !/^R\.?\s/i.test(response)) response = "R. " + response.replace(/^R\.?\s*/i, "");
+      if (verses && /^R\.?\s/i.test(verses) && (!response || verses.length > response.length + 60)) {
+        return verses;
+      }
+      if (response && verses) return response + "\n\n" + verses;
+      if (verses) return verses;
+      if (response) return response;
+      return String((snap && snap.psalm_refrain) ? ("R. " + snap.psalm_refrain) : "").trim();
     }
 
     function updateCalReadingCard(refEl, excerptEl, toggleEl, ref, body) {
@@ -1483,11 +1508,11 @@
       }
       const gospelBody = (data.gospel_text || data.gospel_quote || "").trim();
       const acclamation = (data.gospel_acclamation || snap.gospel_acclamation || "").trim();
-      const psalmBody = calExtractPsalmRefrain(data.psalm_text || "") || calExtractPsalmRefrain(snap.psalm_refrain || "");
       const psalmRef = data.psalm_reference || snap.psalm_reference || "";
+      const psalmBody = calPsalmFullText(data, snap);
       updateCalReadingCard($("cal-gospel-ref"), $("cal-gospel-excerpt"), document.querySelector("[data-target=\"cal-gospel-excerpt\"]"), data.gospel_reference, gospelBody);
       updateCalReadingCard($("cal-acclamation-ref"), $("cal-acclamation-excerpt"), document.querySelector("[data-target=\"cal-acclamation-excerpt\"]"), calAcclamationLabel(acclamation), acclamation);
-      updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), psalmRef, psalmBody ? "R. " + psalmBody : (data.psalm_text || "").trim());
+      updateCalReadingCard($("cal-psalm-ref"), $("cal-psalm-excerpt"), document.querySelector("[data-target=\"cal-psalm-excerpt\"]"), psalmRef, psalmBody);
       updateCalReadingCard($("cal-reading1-ref"), $("cal-reading1-excerpt"), document.querySelector("[data-target=\"cal-reading1-excerpt\"]"), data.first_reading_reference, data.first_reading_excerpt || "");
       updateCalReadingCard($("cal-reading2-ref"), $("cal-reading2-excerpt"), document.querySelector("[data-target=\"cal-reading2-excerpt\"]"), data.second_reading_reference, data.second_reading_excerpt || "");
     }

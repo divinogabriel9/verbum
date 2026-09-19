@@ -976,7 +976,9 @@
             }
             function pickLang(val) {
               sel.value = val;
-              if (window.massRiteVideoMode && window.massRiteVideoMode[section]) {
+              if (val === 'none') {
+                if (window.massRiteVideoMode) window.massRiteVideoMode[section] = false;
+              } else if (window.massRiteVideoMode && window.massRiteVideoMode[section]) {
                 if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
                 window.massRiteVideoLang[section] = val;
               }
@@ -986,18 +988,19 @@
               if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
             }
             opts.forEach(function (o) {
-              var mediaKey = section && typeof window.massMediaKey === 'function'
+              var isOmit = o.value === 'none';
+              var mediaKey = (!isOmit && section && typeof window.massMediaKey === 'function')
                 ? window.massMediaKey(section, o.value)
-                : (section ? (section + '::' + o.value) : '');
-              var item = document.createElement('div'); item.className = 'mw-option';
+                : ((!isOmit && section) ? (section + '::' + o.value) : '');
+              var item = document.createElement('div'); item.className = 'mw-option' + (isOmit ? ' mw-option--omit' : '');
               item.setAttribute('role', 'radio'); item.setAttribute('tabindex', '0'); item.setAttribute('data-val', o.value);
               item.setAttribute('aria-checked', 'false');
               if (mediaKey) item.setAttribute('data-mw-media-key', mediaKey);
-              var action = (textOnly || mediaRite || mediaKey)
+              var action = (!isOmit && (textOnly || mediaRite || mediaKey))
                 ? ('<span class="mw-option__text" data-mw-text-preview role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>')
                 : '';
-              var playDd = (mediaRite && mediaKey) ? riteAudioPlayHtml(mediaKey) : '';
-              var labelHtml = (mediaRite && mediaKey) ? riteLabelLinkHtml(mediaKey) : '<span class="mw-option__label"></span>';
+              var playDd = (!isOmit && mediaRite && mediaKey) ? riteAudioPlayHtml(mediaKey) : '';
+              var labelHtml = (!isOmit && mediaRite && mediaKey) ? riteLabelLinkHtml(mediaKey) : '<span class="mw-option__label"></span>';
               item.innerHTML =
                 '<div class="mw-option__row">' +
                   '<span class="mw-option__check" aria-hidden="true"></span>' +
@@ -1005,7 +1008,7 @@
                   action +
                   playDd +
                 '</div>' +
-                (mediaRite && mediaKey
+                (!isOmit && mediaRite && mediaKey
                   ? ('<div class="mw-option__media mass-song-media-row" data-mw-media-row="' + escapeAttr(mediaKey) +
                      '" data-mw-rite-media="1" data-mw-media-section="' + escapeAttr(section) +
                      '" data-mw-media-lang="' + escapeAttr(o.value) + '"></div>')
