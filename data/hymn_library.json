@@ -1715,7 +1715,16 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-09-15T19:08:29.267844+00:00",
       "language": "Tagalog",
+      "updated_at": "2026-09-15T19:08:29.267844+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:CVu-h9RxyYY",
+        "youtube_id": "CVu-h9RxyYY",
+        "youtube_url": "https://www.youtube.com/watch?v=CVu-h9RxyYY",
+        "display_name": "Pagsibol"
+      },
       "gospel_moods": [
         "triumphant",
         "reverent"
@@ -2438,6 +2447,38 @@
         "display_name": "Pagkakaibigan · 10s",
         "duration_sec": 10
       }
+    },
+    {
+      "id": "prayer_for_generosity",
+      "title": "Prayer For Generosity",
+      "author": "",
+      "language": "English",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Verse 1\nDearest Lord, Teach Me To Be Generous\nTeach Me To Serve You As I Should\nTo Give And Not To Count The Cost\nTo Fight And Not To Heed The Wounds\nTo Toil And Not To Seek For Rest\nTo Labor And Ask Not For Reward\nSave That Of Knowing That I Do Your Most Holy Will",
+      "source": "lyrics_dashboard",
+      "added_at": "2026-09-19T12:48:25.166664+00:00",
+      "updated_at": "2026-09-19T12:48:25.166664+00:00",
+      "gospel_moods": [
+        "reverent"
+      ]
+    },
+    {
+      "id": "in_him_alone",
+      "title": "In Him Alone",
+      "author": "",
+      "language": "English",
+      "seasons": [
+        "all"
+      ],
+      "lyrics": "Verse 1\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We justified\nIn him Alone Are we Saved\n\nVerse 2\nWhat Have We To Offer\nThat does Not Fade Or Wither\nCan The World Ever Satisfy\nThe Emptiness In Our Hearts\nIn Vain We Deny\n\nVerse 3\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We Justified\nIn Him Alone Are We Saved\n\nVerse 4\nWhen Will You Cease Running\nIn Search Of Hollow Meaning\nLet His Love Feed The Hunger\nIn Your Soul Till It Overflows\nWith Joy You Yearn To Know\n\nVerse 5\nYou Might Also Like\nPlease Please Please (Clean Edit)\nSabrina Carpenter\nHead Honcho\nEminem & Ez Mil\nJuno\nSabrina Carpenter\n\nVerse 6\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\n\nVerse 7\nOoh",
+      "source": "lyrics_dashboard",
+      "added_at": "2026-09-19T12:48:26.655036+00:00",
+      "updated_at": "2026-09-19T12:48:26.655036+00:00",
+      "gospel_moods": [
+        "mercy"
+      ]
     }
   ],
   "recessional": [
