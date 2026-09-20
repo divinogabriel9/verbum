@@ -1484,6 +1484,7 @@
       if (data.pptx_url) out.push({ label: "PowerPoint", url: data.pptx_url, download: true });
       if (data.poster_url) out.push({ label: "Poster PNG", url: data.poster_url, download: true });
       if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
+      if (data.leaflet_url) out.push({ label: "Mass leaflet (A4)", url: data.leaflet_url, download: true });
       return out;
     }
 

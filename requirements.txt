@@ -3,6 +3,7 @@ uvicorn[standard]
 jinja2
 python-multipart
 python-pptx
+reportlab>=4.0.0
 requests
 python-dotenv
 certifi

@@ -259,7 +259,7 @@ def _bundle_zip_name(export_stem: str) -> str:
 
 def _collect_generation_owned_paths(result: GenerationResult) -> list[str]:
     owned: list[str] = []
-    for attr in ("pptx_path", "poster_path", "poster_ppt_path"):
+    for attr in ("pptx_path", "poster_path", "poster_ppt_path", "leaflet_path"):
         p = getattr(result, attr, None)
         if p and Path(p).is_file():
             owned.append(Path(p).name)
@@ -980,7 +980,7 @@ def _write_mass_bundle_zip(result: GenerationResult) -> Path:
     """
     out = _OUTPUT_DIR / _bundle_zip_name(result.export_stem)
     entries: list[tuple[Path, str]] = []
-    for attr in ("pptx_path", "poster_path", "poster_ppt_path"):
+    for attr in ("pptx_path", "poster_path", "poster_ppt_path", "leaflet_path"):
         p = getattr(result, attr, None)
         if p and Path(p).is_file():
             pp = Path(p)
@@ -1484,6 +1484,19 @@ class GenerateBody(BaseModel):
     include_social_exports: bool = Field(
         False,
         description="When true, also export 1080×1350 feed PNG and Instagram/Story/OG variants.",
+    )
+    include_leaflet: bool = Field(
+        False,
+        description=(
+            "When true, also export a half-fold A4 landscape Mass leaflet PDF "
+            "(duplex; fold to A5 worship aid)."
+        ),
+    )
+    leaflet_only: bool = Field(
+        False,
+        description=(
+            "When true, skip PowerPoint/poster generation and only build the half-fold A4 leaflet PDF."
+        ),
     )
     export_pdf: bool = Field(
         False,
@@ -4747,7 +4760,7 @@ def api_generate(
 
     Sync ``def`` (not async): FastAPI runs this in a worker thread so
     BaseHTTPMiddleware cannot deadlock against ``run_in_threadpool`` while the
-    UI sits at ~62%. PDF export was removed from this path entirely.
+    UI sits at ~62%. Optional half-fold A4 leaflet PDF via ``include_leaflet``.
     """
     print(f"[generate] start date={body.date!r}", flush=True)
     from services.membership_config import is_superadmin_user
@@ -4796,7 +4809,7 @@ def api_generate(
     # Prefer shared/local hero cache under the hood, but always burn weekly quota
     # so the product still feels like a paid AI generation to the user.
     reuse_poster = False
-    if body.include_ai_mass_poster:
+    if body.include_ai_mass_poster and not body.leaflet_only:
         backend = (body.ai_poster_backend or "openai").strip().lower()
         style_key = (body.ai_poster_style or "cinematic").strip() or "cinematic"
         exists_info = api_poster_exists(body.date.strip(), style_key)
@@ -4816,8 +4829,12 @@ def api_generate(
             sentence_index=body.sentence_index,
             poster_template=body.poster_template,
             include_social_exports=body.include_social_exports,
+            include_leaflet=bool(body.include_leaflet) or bool(body.leaflet_only),
+            leaflet_only=bool(body.leaflet_only),
             include_gospel_art=False,
-            include_ai_mass_poster=False if slide_kinds_payload else body.include_ai_mass_poster,
+            include_ai_mass_poster=False
+            if slide_kinds_payload or body.leaflet_only
+            else body.include_ai_mass_poster,
             ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
             ai_poster_style=body.ai_poster_style.strip() or "cinematic",
             reuse_existing_poster=reuse_poster,
@@ -4892,6 +4909,12 @@ def api_generate(
     poster_url = media_file_url(result.poster_path.name) if result.poster_path and result.poster_path.is_file() else None
     poster_ppt_url = (
         media_file_url(poster_ppt.name) if poster_ppt and Path(poster_ppt).is_file() else None
+    )
+    leaflet_path = getattr(result, "leaflet_path", None)
+    leaflet_url = (
+        media_file_url(Path(leaflet_path).name)
+        if leaflet_path and Path(leaflet_path).is_file()
+        else None
     )
     zip_url = media_file_url(bundle_rel) if zip_ready else None
 
@@ -4982,6 +5005,8 @@ def api_generate(
         out["poster_url"] = poster_url
     if poster_ppt_url:
         out["poster_ppt_url"] = poster_ppt_url
+    if leaflet_url:
+        out["leaflet_url"] = leaflet_url
     if zip_url:
         out["zip_url"] = zip_url
     cues = _slideshow_cues_payload(getattr(result, "slideshow_cues", None))

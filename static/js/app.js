@@ -17577,6 +17577,7 @@
       if (data.pptx_url) out.push({ label: "PowerPoint", url: data.pptx_url, download: true });
       if (data.poster_url) out.push({ label: "Poster PNG", url: data.poster_url, download: true });
       if (data.poster_ppt_url) out.push({ label: "Poster 16:9", url: data.poster_ppt_url, download: true });
+      if (data.leaflet_url) out.push({ label: "Mass leaflet (A4)", url: data.leaflet_url, download: true });
       return out;
     }
 
@@ -28732,7 +28733,10 @@
         return null;
       }
       const posterOpts = readOpenAiPosterSettings();
-      const useAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useAi;
+      const leafletOnly = !!o.leaflet_only;
+      const useAiPoster = leafletOnly
+        ? false
+        : (o.include_ai != null ? !!o.include_ai : posterOpts.useAi);
       const aiBackend = o.ai_poster_backend || posterOpts.backend || "openai";
       const body = {
         date,
@@ -28741,7 +28745,9 @@
         songs: selectedSongsForGenerate(),
         custom_theme: pptThemePayload(activeTheme),
         poster_template: o.poster_template || "liturgical_color",
-        include_social_exports: readSocialExportSettings(o),
+        include_social_exports: leafletOnly ? false : readSocialExportSettings(o),
+        include_leaflet: leafletOnly ? true : !!o.include_leaflet,
+        leaflet_only: leafletOnly,
         include_gospel_art: false,
         include_ai_mass_poster: useAiPoster,
         ai_poster_backend: aiBackend,
@@ -28751,17 +28757,24 @@
       if (church) body.community_name = church;
       try {
         body.hymn_typography = buildHymnTypographyPayload();
-        const receiptResult = await openMassGenerateReceiptModal(buildMassGenerateReceiptModel(o), o);
-        if (!receiptResult || !receiptResult.confirmed) {
-          return null;
-        }
-        o.openSlideshow = !!receiptResult.openSlideshow;
-        if (o.openSlideshow) {
+        if (!leafletOnly && !o.skipReceipt) {
+          const receiptResult = await openMassGenerateReceiptModal(buildMassGenerateReceiptModel(o), o);
+          if (!receiptResult || !receiptResult.confirmed) {
+            return null;
+          }
+          o.openSlideshow = !!receiptResult.openSlideshow;
+          if (o.openSlideshow) {
+            o.autoDownloadPptx = false;
+          } else if (o.autoDownloadPptx == null) {
+            o.autoDownloadPptx = true;
+          }
+          applyMassGenerateReceiptEdits();
+        } else if (leafletOnly) {
+          o.openSlideshow = false;
           o.autoDownloadPptx = false;
         } else if (o.autoDownloadPptx == null) {
           o.autoDownloadPptx = true;
         }
-        applyMassGenerateReceiptEdits();
         date = ($("mass-date") && $("mass-date").value) || o.date || date;
         const mainAfter = ($("celebrant") && $("celebrant").value.trim()) || celebrantMain;
         const coAfter = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
@@ -28770,40 +28783,42 @@
         body.celebrant = mainAfter;
         body.co_celebrant = coAfter;
         body.songs = selectedSongsForGenerate();
-        if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
+        if (!leafletOnly && !(await confirmHymnPreviewChangesBeforeGenerate())) {
           return null;
         }
-        await ensureLyricsCachedForSelectedSongs();
+        if (!leafletOnly) await ensureLyricsCachedForSelectedSongs();
 
         const divIn = $("flow-divider-poster");
         const annIn = $("flow-announcement-posters");
-        const hasUpload = !!(
+        const hasUpload = !leafletOnly && !!(
           (divIn && divIn.files && divIn.files[0]) ||
           (annIn && annIn.files && annIn.files.length)
         );
-        let genSteps = buildMassGenStepList({
-          hasUpload,
-          useAi: body.include_ai_mass_poster,
-          reusePoster: false,
-        });
+        let genSteps = leafletOnly
+          ? ["Gathering readings", "Building leaflet", "Ready"]
+          : buildMassGenStepList({
+              hasUpload,
+              useAi: body.include_ai_mass_poster,
+              reusePoster: false,
+            });
         const massGenStepIndex = (label) => genSteps.indexOf(label);
 
         setMassGenLoading(true, {
-          title: "Preparing your Sunday Mass",
+          title: leafletOnly ? "Preparing offline leaflet" : "Preparing your Sunday Mass",
           steps: genSteps,
           step: 0,
         });
         advanceMassGenStep(1);
-        advanceMassGenStep(2);
+        if (!leafletOnly) advanceMassGenStep(2);
 
         let divider_bn = null;
-        if (divIn && divIn.files && divIn.files[0]) {
+        if (!leafletOnly && divIn && divIn.files && divIn.files[0]) {
           const uploadIdx = massGenStepIndex("Uploading artwork");
           advanceMassGenStep(uploadIdx >= 0 ? uploadIdx : 3, { message: "Uploading artwork…" });
           divider_bn = await uploadMassImage(divIn.files[0], "/api/upload/mass-divider");
         }
         const ann_bns = [];
-        if (annIn && annIn.files && annIn.files.length) {
+        if (!leafletOnly && annIn && annIn.files && annIn.files.length) {
           const uploadIdx = massGenStepIndex("Uploading artwork");
           if (uploadIdx >= 0) advanceMassGenStep(uploadIdx, { message: "Uploading artwork…" });
           for (let i = 0; i < annIn.files.length; i++) {
@@ -28915,6 +28930,8 @@
         if (pendingKinds && pendingKinds.length) {
           body.slide_kinds = pendingKinds;
           body.include_ai_mass_poster = false;
+          body.include_leaflet = false;
+          body.leaflet_only = false;
         }
 
         const dupKey = "churchMediaLastGenFp";
@@ -29021,6 +29038,7 @@
           ["dl-pptx", "pptx_url"],
           ["dl-poster", "poster_url"],
           ["dl-poster-ppt", "poster_ppt_url"],
+          ["dl-leaflet", "leaflet_url"],
         ];
         linkMap.forEach(([id, key]) => {
           const el = $(id);
@@ -29050,15 +29068,33 @@
           zip_url: data.zip_url,
           pptx_url: data.pptx_url,
           poster_url: data.poster_url,
+          leaflet_url: data.leaflet_url,
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
         const wantSlideshow = !!o.openSlideshow;
         // Show success immediately; don't keep the overlay waiting on a multi‑MB blob download.
         const successUi = showMassGenSuccess(
-          wantSlideshow ? "Presentation ready." : "Presentation successfully generated.",
-          wantSlideshow ? "Opening slideshow…" : "Your PowerPoint is ready."
+          leafletOnly
+            ? "Leaflet ready."
+            : (wantSlideshow ? "Presentation ready." : "Presentation successfully generated."),
+          leafletOnly
+            ? "Your half-fold A4 PDF is ready."
+            : (wantSlideshow ? "Opening slideshow…" : "Your PowerPoint is ready.")
         );
-        if (!wantSlideshow && o.autoDownloadPptx && data.pptx_url) {
+        if (leafletOnly && data.leaflet_url) {
+          const stemName = data.export_stem || "mass_leaflet";
+          triggerBrowserDownload(data.leaflet_url, stemName + "_leaflet.pdf")
+            .then(() => {
+              statusFn("Leaflet ready. Download started.", "ok", dlMeta);
+            })
+            .catch(() => {
+              statusFn(
+                "Leaflet ready. Use the Mass leaflet download link if the file did not start automatically.",
+                "ok",
+                dlMeta
+              );
+            });
+        } else if (!wantSlideshow && o.autoDownloadPptx && data.pptx_url) {
           const stemName = data.export_stem || "mass_presentation";
           triggerBrowserDownload(data.pptx_url, stemName + ".pptx")
             .then(() => {
@@ -29075,7 +29111,7 @@
           statusFn("Presentation ready.", "ok", dlMeta);
         }
         refreshAiImageQuotaHint();
-        clearMassBuilderDraft();
+        if (!leafletOnly) clearMassBuilderDraft();
         await successUi;
         if (wantSlideshow) {
           try {
@@ -29103,6 +29139,7 @@
         }
       }
     }
+    window.runFullMassGenerate = runFullMassGenerate;
 
     function updatePosterLivePreview() {
       const frame = $("poster-live-preview");

@@ -36,9 +36,9 @@
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20260907-home-cta6" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
-  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920d" />
+  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260914-dd-float" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260920-leaflet-cta" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -1906,10 +1906,15 @@
                 <div class="song-composer-head__copy">
                   <div class="song-composer-head__title-row">
                     <h3>Song Composer</h3>
-                    <button type="button" class="mw-tour-btn song-composer-tour-btn" id="btn-composer-tour" aria-label="Start guided tour of the Song Composer">
-                      <svg class="mw-tour-btn__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                      <span>Tour</span>
-                    </button>
+                    <div class="song-composer-tour-wrap">
+                      <button type="button" class="mw-tour-btn song-composer-tour-btn" id="btn-composer-tour" aria-label="Start guided tour of the Song Composer" aria-describedby="composer-tour-hint">
+                        <svg class="mw-tour-btn__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                        <span>Tour</span>
+                      </button>
+                      <div class="song-composer-tour-hint" id="composer-tour-hint" hidden role="status">
+                        Click here for a guide
+                      </div>
+                    </div>
                   </div>
                   <p class="song-composer-load-status" id="song-composer-load-status" hidden aria-live="polite"></p>
                 </div>
@@ -2231,6 +2236,7 @@
           <a href="#" id="dl-pptx" download>PowerPoint</a>
           <a href="#" id="dl-poster" download>Poster PNG</a>
           <a href="#" id="dl-poster-ppt" download>Poster 16:9</a>
+          <a href="#" id="dl-leaflet" download>Mass leaflet (A4)</a>
           </div>
         </div>
         <div class="workspace flow-workspace flow-member-lock">
@@ -2258,6 +2264,9 @@
                 <button type="button" class="mw-btn mw-btn--ghost mw-step-head__share" id="btn-practice-share-wizard-title" hidden>
                   <svg class="mw-step-head__share-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
                   <span>Share lyrics for choir practice</span>
+                </button>
+                <button type="button" class="mw-btn mw-btn--ghost mw-step-head__leaflet" id="btn-mw-offline-leaflet" hidden>
+                  Need offline leaflet?
                 </button>
                 <p class="mw-step-head__slides" id="mw-review-slide-count" hidden aria-live="polite">
                   <span class="mw-step-head__slides-label">Slides</span>
@@ -2929,8 +2938,9 @@
                   <div class="mw-gen-wrap" id="mw-gen-wrap">
                     <button type="button" class="mw-btn mw-btn--generate" id="mw-generate" data-mw-generate hidden aria-haspopup="menu" aria-expanded="false" aria-controls="mw-gen-menu">Generate Presentation</button>
                     <div class="mw-gen-menu" id="mw-gen-menu" hidden role="menu" aria-label="Generate options">
-                      <button type="button" class="mw-gen-menu__item" role="menuitem" data-mw-gen-mode="full">Full</button>
-                      <button type="button" class="mw-gen-menu__item" role="menuitem" data-mw-gen-mode="partial">Partially</button>
+                      <button type="button" class="mw-gen-menu__item" role="menuitem" data-mw-gen-mode="full">Full presentation</button>
+                      <button type="button" class="mw-gen-menu__item" role="menuitem" data-mw-gen-mode="leaflet">Offline leaflet</button>
+                      <button type="button" class="mw-gen-menu__item mw-gen-menu__item--sa" role="menuitem" data-mw-gen-mode="partial">Partially</button>
                     </div>
                   </div>
                 </div>
@@ -2959,7 +2969,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260920-no-gloria-creed"></script>
+      <script src="/static/js/mw-wizard.js?v=20260920-leaflet-cta"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4558,9 +4568,9 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20260920-no-gloria-creed"></script>
+  <script src="/static/js/app.js?v=20260920-leaflet-cta"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
-  <script src="/static/js/guided-tour.js?v=20260920f"></script>
+  <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>
   <script>
     scheduleDashboardBoot();

@@ -124,6 +124,90 @@
   box-shadow: none;
 }
 
+.song-composer-tour-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.song-composer-tour-hint {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: max-content;
+  max-width: min(220px, 55vw);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: var(--surface-solid);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent),
+    0 8px 22px color-mix(in srgb, var(--ink) 12%, transparent);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.song-composer-tour-hint::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: var(--surface-solid);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.song-composer-tour-hint.is-visible {
+  visibility: visible;
+  animation: song-composer-tour-hint-pulse 1.8s var(--motion-ease-in-out, ease-in-out) infinite;
+}
+
+.song-composer-tour-hint.is-fading {
+  animation: song-composer-tour-hint-fade 700ms var(--motion-ease-out, ease) forwards;
+}
+
+@keyframes song-composer-tour-hint-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent),
+      0 8px 22px color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.03);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent),
+      0 10px 26px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+}
+
+@keyframes song-composer-tour-hint-fade {
+  from {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.98);
+    visibility: hidden;
+  }
+}
+
 .song-composer-tour-btn:hover,
 .song-composer-tour-btn:focus-visible {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
@@ -141,6 +225,59 @@
 
 .song-composer-panel--deflated .song-composer-tour-btn {
   padding: 2px;
+}
+
+@media (max-width: 760px) {
+  .song-composer-tour-hint {
+    left: 50%;
+    top: calc(100% + 10px);
+    transform: translateX(-50%);
+    white-space: normal;
+  }
+
+  .song-composer-tour-hint::before {
+    left: 50%;
+    top: -4px;
+    transform: translateX(-50%) rotate(135deg);
+  }
+
+  .song-composer-tour-hint.is-visible {
+    animation-name: song-composer-tour-hint-pulse-mobile;
+  }
+
+  .song-composer-tour-hint.is-fading {
+    animation-name: song-composer-tour-hint-fade-mobile;
+  }
+
+  @keyframes song-composer-tour-hint-pulse-mobile {
+    0%, 100% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.03);
+    }
+  }
+
+  @keyframes song-composer-tour-hint-fade-mobile {
+    from {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.98);
+      visibility: hidden;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .song-composer-tour-hint.is-visible {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .home-mass-tour-link {

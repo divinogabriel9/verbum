@@ -476,6 +476,7 @@ class GenerationResult:
     liturgical_color: Optional[Mapping[str, Any]] = None
     export_stem: str = ""
     include_social_exports: bool = False
+    leaflet_path: Optional[Path] = None
     slideshow_cues: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -491,6 +492,8 @@ def generate_mass_media(
     interactive_pick: bool = False,
     poster_template: str = "liturgical_color",  # deprecated — non-AI wallpapers removed; ignored
     include_social_exports: bool = False,
+    include_leaflet: bool = False,
+    leaflet_only: bool = False,
     include_gospel_art: bool = False,  # deprecated — gospel_moment PNG removed
     include_ai_mass_poster: bool = False,
     ai_poster_backend: str = "openai",
@@ -617,6 +620,12 @@ def generate_mass_media(
     if slide_kinds:
         include_ai_mass_poster = False
         include_social_exports = False
+        include_leaflet = False
+        leaflet_only = False
+    if leaflet_only:
+        include_leaflet = True
+        include_ai_mass_poster = False
+        include_social_exports = False
 
     if include_ai_mass_poster:
         if backend == "gemini":
@@ -702,6 +711,104 @@ def generate_mass_media(
             psalm_text_override=effective_psalm_override,
             refrain_index=psalm_refrain_index,
         )
+
+        def _build_leaflet_pdf() -> Optional[Path]:
+            from generators.leaflet import generate_mass_leaflet
+            from services.mass_text_format import (
+                pick_hymn_lyrics_for_slides,
+                strip_reading_verse_markers,
+            )
+
+            hymn_overrides = hymn_lyric_overrides if isinstance(hymn_lyric_overrides, Mapping) else {}
+            song_rows: list[dict[str, str]] = []
+            for label, key, sec in (
+                ("Entrance", "entrance", "entrance"),
+                ("Offertory", "offertory", "offertory"),
+                ("Communion", "communion_1", "communion"),
+                ("Communion II", "communion_2", "communion"),
+                ("Communion III", "communion_3", "communion"),
+                ("Meditation", "meditation", "meditation"),
+                ("Recessional", "recessional", "recessional"),
+            ):
+                hid = str(picks.get(key) or "").strip()
+                if not hid:
+                    continue
+                row = get_hymn(sec, hid) or {}
+                song_title = str(row.get("title") or hid).strip()
+                lib_lyrics = str(row.get("lyrics") or "").strip()
+                override = None
+                raw_ov = hymn_overrides.get(key) or hymn_overrides.get(hid)
+                if isinstance(raw_ov, Mapping):
+                    override = str(raw_ov.get("lyrics") or raw_ov.get("text") or "").strip() or None
+                elif raw_ov:
+                    override = str(raw_ov).strip() or None
+                lyrics = pick_hymn_lyrics_for_slides(lib_lyrics, override)
+                song_rows.append({"label": label, "title": song_title, "lyrics": lyrics})
+
+            ann_notes: list[str] = []
+            for row in custom_announcement_slides or []:
+                if not isinstance(row, Mapping):
+                    continue
+                line = str(row.get("title") or row.get("body") or row.get("text") or "").strip()
+                if line:
+                    ann_notes.append(line)
+
+            return generate_mass_leaflet(
+                output_path=_out / f"{stem}_leaflet.pdf",
+                title=title,
+                date=date,
+                parish_name=community_display,
+                celebrant=celebrant,
+                co_celebrant=co_celebrant,
+                season=season_lbl or season,
+                lectionary_cycle=cycle,
+                liturgical_color_name=color_name,
+                liturgical_color_hex=color_hex,
+                gospel_quote=slide_line,
+                gospel_reference=gospel_ref,
+                first_reading_ref=str(data.get("first_reading") or ""),
+                first_reading_text=strip_reading_verse_markers(
+                    str(data.get("first_reading_text") or "")
+                ),
+                psalm_ref=str(data.get("psalm") or ""),
+                psalm_text=psalm_body,
+                second_reading_ref=str(data.get("second_reading") or ""),
+                second_reading_text=strip_reading_verse_markers(
+                    str(data.get("second_reading_text") or "")
+                ),
+                gospel_text=strip_reading_verse_markers(gospel_text),
+                gospel_acclamation=str(data.get("gospel_acclamation") or ""),
+                songs=song_rows,
+                announcements=ann_notes,
+                mass_language=mass_language,
+                creed_choice=creed_choice,
+                gloria_choice=gloria_choice,
+                our_father_choice=our_father_choice,
+            )
+
+        if leaflet_only:
+            try:
+                leaflet_path = _build_leaflet_pdf()
+            except Exception as exc:
+                logger.exception("Mass leaflet generation failed")
+                return GenerationResult(ok=False, error=f"Leaflet generation failed: {exc}")
+            preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
+            return GenerationResult(
+                ok=True,
+                title=title,
+                gospel_reference=gospel_ref,
+                slide_line_preview=preview,
+                gospel_text_length=len(gospel_text),
+                liturgical_color_name=color_name,
+                liturgical_color_hex=color_hex,
+                liturgical_season_label=season_lbl,
+                selected_songs=dict(picks),
+                gospel_quote=slide_line,
+                slide_count=0,
+                liturgical_color=liturgical_color,
+                export_stem=stem,
+                leaflet_path=leaflet_path,
+            )
 
         if include_ai_mass_poster and hero_future is not None:
             try:
@@ -812,6 +919,14 @@ def generate_mass_media(
             export_social_variants(poster_path, output_dir=_out, prefix=stem)
         # include_gospel_art is ignored — non-AI gospel_moment PNG export removed.
 
+        leaflet_path: Optional[Path] = None
+        if include_leaflet:
+            try:
+                leaflet_path = _build_leaflet_pdf()
+            except Exception:
+                logger.exception("Mass leaflet generation failed")
+                leaflet_path = None
+
         preview = slide_line[:180] + ("…" if len(slide_line) > 180 else "")
 
         return GenerationResult(
@@ -832,6 +947,7 @@ def generate_mass_media(
             liturgical_color=liturgical_color,
             export_stem=stem,
             include_social_exports=include_social_exports,
+            leaflet_path=leaflet_path,
             slideshow_cues=list(slideshow_cues or []),
         )
     finally:

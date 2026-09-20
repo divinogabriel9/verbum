@@ -185,7 +185,9 @@ these via fetch — design them as empty containers), and **Endpoints** it calls
   `btn-load-flow-inline`, `btn-generate-flow-inline`.
 - **Floating dock:** `flow-dock-actions` with `btn-load-flow`, `btn-generate-flow`.
 - **Downloads (hidden anchors):** `flow-downloads-host`, `download-row`, `dl-zip`, `dl-pptx`,
-  `dl-pdf`, `dl-poster`, `dl-poster-ppt`.
+  `dl-pdf`, `dl-poster`, `dl-poster-ppt`, `dl-leaflet`.
+- **Leaflet actions:** Generate menu `data-mw-gen-mode="leaflet"`; Review title CTA
+  `btn-mw-offline-leaflet` (“Need offline leaflet?”).
 - **Overlays/modals:** `mass-gen-loader` (+ `mass-gen-loader-msg`), `mass-gen-receipt-modal`.
 - **Readings sidebar:** `flow-reading1-card`/`-ref`/`-body`, `flow-psalm-preview-card`/
   `flow-psalm-ref`/`flow-psalm-body`, `flow-reading2-*`, `flow-gospel-preview-card`/

@@ -113,6 +113,19 @@
           height: 15px;
           flex: 0 0 auto;
         }
+        .mw-step-head__leaflet {
+          flex: 0 0 auto;
+          margin: 0;
+          white-space: nowrap;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          color: var(--accent);
+          border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+        }
+        .mw-step-head__leaflet[hidden] { display: none !important; }
+        .mw-step-head__leaflet:hover {
+          background: color-mix(in srgb, var(--accent) 10%, transparent);
+        }
         .mw-step-head__slides {
           flex: 0 0 auto;
           margin: 0;
@@ -2141,7 +2154,7 @@
           border-top: 1.5px solid currentColor;
           transform: rotate(45deg) translateY(0.12em);
         }
-        body:not(.is-superadmin) .mw-gen-menu { display: none !important; }
+        body:not(.is-superadmin) .mw-gen-menu__item--sa { display: none !important; }
         .mw-gen-menu {
           position: absolute;
           left: 50%;

@@ -604,6 +604,7 @@
           ["dl-pptx", "pptx_url"],
           ["dl-poster", "poster_url"],
           ["dl-poster-ppt", "poster_ppt_url"],
+          ["dl-leaflet", "leaflet_url"],
         ];
         linkMap.forEach(([id, key]) => {
           const el = $(id);

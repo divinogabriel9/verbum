@@ -523,6 +523,8 @@
           if (practiceShareNav) setMwNavBtnVisible(practiceShareNav, n === 5);
           var practiceShareTitle = $('btn-practice-share-wizard-title');
           if (practiceShareTitle) practiceShareTitle.hidden = n !== 5;
+          var offlineLeafletBtn = $('btn-mw-offline-leaflet');
+          if (offlineLeafletBtn) offlineLeafletBtn.hidden = n !== 7;
           if (typeof window.syncMassPresentAgainUi === 'function') window.syncMassPresentAgainUi();
           else if ($('mw-present')) setMwNavBtnVisible($('mw-present'), !!window.__massPresentAvailable);
           var slideCountHost = $('mw-review-slide-count');
@@ -1526,6 +1528,21 @@
             pendingSlideKinds = null;
             var g = $('btn-generate-flow'); if (g) g.click();
           }
+          function triggerLeafletGenerate() {
+            pendingSlideKinds = null;
+            if (typeof window.runFullMassGenerate === 'function') {
+              window.runFullMassGenerate({
+                include_leaflet: true,
+                leaflet_only: true,
+                include_ai: false,
+                openSlideshow: false,
+                autoDownloadPptx: false,
+                setStatus: typeof window.setFlowStatus === 'function' ? window.setFlowStatus : undefined,
+              });
+              return;
+            }
+            triggerFullGenerate();
+          }
           function setGenMenuOpen(open) {
             var menu = $('mw-gen-menu');
             var btn = $('mw-generate');
@@ -1571,24 +1588,30 @@
           }
           if ($('mw-generate')) $('mw-generate').addEventListener('click', function (e) {
             if (validateBeforeGenerate()) return;
-            if (isSaGenerate()) {
-              e.preventDefault();
-              var menu = $('mw-gen-menu');
-              setGenMenuOpen(menu ? menu.hidden : true);
-              return;
-            }
-            triggerFullGenerate();
+            e.preventDefault();
+            var menu = $('mw-gen-menu');
+            setGenMenuOpen(menu ? menu.hidden : true);
           });
           if ($('mw-gen-menu')) $('mw-gen-menu').addEventListener('click', function (e) {
             var item = e.target.closest("[data-mw-gen-mode]");
             if (!item) return;
             setGenMenuOpen(false);
             if (validateBeforeGenerate()) return;
-            if (item.getAttribute("data-mw-gen-mode") === "partial") {
+            var mode = item.getAttribute("data-mw-gen-mode");
+            if (mode === "partial") {
+              if (!isSaGenerate()) return;
               openPartialGenModal();
               return;
             }
+            if (mode === "leaflet") {
+              triggerLeafletGenerate();
+              return;
+            }
             triggerFullGenerate();
+          });
+          if ($('btn-mw-offline-leaflet')) $('btn-mw-offline-leaflet').addEventListener('click', function () {
+            if (validateBeforeGenerate()) return;
+            triggerLeafletGenerate();
           });
           document.addEventListener("click", function (e) {
             var wrap = $('mw-gen-wrap');

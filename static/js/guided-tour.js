@@ -3,10 +3,12 @@
 
   var STORAGE_KEY = "liturgyflow.tour.pptx.v1";
   var STORAGE_KEY_COMPOSER = "liturgyflow.tour.composer.v1";
+  var STORAGE_KEY_COMPOSER_HINT = "liturgyflow.tour.composer.hint.v1";
   var activeDriver = null;
   var activeTourKind = null;
   var autoStartPending = false;
-  var autoStartComposerPending = false;
+  var composerHintPending = false;
+  var composerHintTimer = 0;
   var highlightRing = null;
   var highlightRingRaf = 0;
   var highlightRingBound = false;
@@ -279,7 +281,82 @@
   }
 
   function shouldAutoStartComposer() {
-    return !hasCompletedTour("composer");
+    return false;
+  }
+
+  function hasSeenComposerHint() {
+    try {
+      return !!localStorage.getItem(STORAGE_KEY_COMPOSER_HINT);
+    } catch (_err) {
+      return true;
+    }
+  }
+
+  function markComposerHintSeen() {
+    try {
+      localStorage.setItem(STORAGE_KEY_COMPOSER_HINT, JSON.stringify({ seenAt: Date.now() }));
+    } catch (_err) { /* ignore */ }
+  }
+
+  function shouldShowComposerHint() {
+    if (hasCompletedTour("composer")) return false;
+    return !hasSeenComposerHint();
+  }
+
+  function hideComposerTourHint(immediate) {
+    var hint = document.getElementById("composer-tour-hint");
+    if (composerHintTimer) {
+      clearTimeout(composerHintTimer);
+      composerHintTimer = 0;
+    }
+    if (!hint) return;
+    if (immediate) {
+      hint.hidden = true;
+      hint.classList.remove("is-visible", "is-fading");
+      return;
+    }
+    if (!hint.classList.contains("is-visible") && hint.hidden) return;
+    hint.classList.remove("is-visible");
+    hint.classList.add("is-fading");
+    composerHintTimer = setTimeout(function () {
+      composerHintTimer = 0;
+      hint.hidden = true;
+      hint.classList.remove("is-fading");
+    }, 720);
+  }
+
+  function showComposerTourHint() {
+    if (!shouldShowComposerHint()) return;
+    var lyricsPage = document.getElementById("lyrics-page");
+    var hint = document.getElementById("composer-tour-hint");
+    var btn = document.getElementById("btn-composer-tour");
+    if (!lyricsPage || !lyricsPage.classList.contains("active") || !hint || !btn) return;
+
+    hint.hidden = false;
+    hint.classList.remove("is-fading");
+    void hint.offsetWidth;
+    hint.classList.add("is-visible");
+    markComposerHintSeen();
+
+    if (composerHintTimer) clearTimeout(composerHintTimer);
+    composerHintTimer = setTimeout(function () {
+      composerHintTimer = 0;
+      hideComposerTourHint(false);
+    }, 4800);
+  }
+
+  function maybeShowComposerTourHint() {
+    if (!composerHintPending) return;
+    var lyricsPage = document.getElementById("lyrics-page");
+    if (!lyricsPage || !lyricsPage.classList.contains("active")) return;
+    if (!shouldShowComposerHint()) {
+      composerHintPending = false;
+      return;
+    }
+    composerHintPending = false;
+    setTimeout(function () {
+      showComposerTourHint();
+    }, 500);
   }
 
   function setComposerLibraryExpanded(expanded) {
@@ -834,6 +911,8 @@
   }
 
   function startComposerTour(options) {
+    hideComposerTourHint(true);
+    markComposerHintSeen();
     return runTour("composer", buildComposerSteps(), ensureComposerRoute, options);
   }
 
@@ -859,6 +938,8 @@
     if (composerBtn && composerBtn.dataset.lfTourBound !== "1") {
       composerBtn.dataset.lfTourBound = "1";
       composerBtn.addEventListener("click", function () {
+        hideComposerTourHint(true);
+        markComposerHintSeen();
         startComposerTour();
       });
     }
@@ -897,16 +978,6 @@
     }, 700);
   }
 
-  function maybeAutoStartComposerTour() {
-    if (!autoStartComposerPending || !shouldAutoStartComposer()) return;
-    var lyricsPage = document.getElementById("lyrics-page");
-    if (!lyricsPage || !lyricsPage.classList.contains("active")) return;
-    autoStartComposerPending = false;
-    setTimeout(function () {
-      if (shouldAutoStartComposer()) startComposerTour();
-    }, 700);
-  }
-
   function watchBuilderRoute() {
     var flowPage = document.getElementById("flow-page");
     if (!flowPage) return;
@@ -921,10 +992,10 @@
     var lyricsPage = document.getElementById("lyrics-page");
     if (!lyricsPage) return;
     var observer = new MutationObserver(function () {
-      if (lyricsPage.classList.contains("active")) maybeAutoStartComposerTour();
+      if (lyricsPage.classList.contains("active")) maybeShowComposerTourHint();
     });
     observer.observe(lyricsPage, { attributes: true, attributeFilter: ["class"] });
-    if (lyricsPage.classList.contains("active")) maybeAutoStartComposerTour();
+    if (lyricsPage.classList.contains("active")) maybeShowComposerTourHint();
   }
 
   function init() {
@@ -933,8 +1004,8 @@
       autoStartPending = true;
       watchBuilderRoute();
     }
-    if (shouldAutoStartComposer()) {
-      autoStartComposerPending = true;
+    if (shouldShowComposerHint()) {
+      composerHintPending = true;
       watchComposerRoute();
     }
   }
@@ -948,6 +1019,7 @@
     hasCompletedTour: hasCompletedTour,
     shouldAutoStart: shouldAutoStart,
     shouldAutoStartComposer: shouldAutoStartComposer,
+    shouldShowComposerHint: shouldShowComposerHint,
     STORAGE_KEY: STORAGE_KEY,
     STORAGE_KEY_COMPOSER: STORAGE_KEY_COMPOSER,
   };
