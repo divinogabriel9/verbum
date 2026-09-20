@@ -1436,7 +1436,7 @@
         try { document.dispatchEvent(new CustomEvent("mw:preview-loading")); } catch (_mwLoad) { /* ignore */ }
         const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: lang });
         if (data && data.ok !== false) {
-          data.readings_language = readingsLanguageOf(data) || lang;
+          data.readings_language = lang;
           if (readingsPayloadComplete(data) && payloadMatchesLanguage(data, lang)) {
             writeStoredReadings(d, data, lang);
           }
@@ -2031,9 +2031,21 @@
           loadSongCatalog(),
         ]);
         if (seq !== flowLoadSeq || !flowApplyIsCurrent(date, lang)) return;
-        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) return;
+        if (data && data.ok !== false) {
+          // /api/preview was called with mass_language=lang — stamp that so a
+          // bad client heuristic cannot discard a complete English payload.
+          data.readings_language = lang;
+        }
+        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) {
+          invalidateClientReadings(date);
+          const retry = await fetchPreview(date, { readingsOnly: false, forceRefresh: true, language: lang });
+          if (seq !== flowLoadSeq || !flowApplyIsCurrent(date, lang)) return;
+          if (retry && retry.ok !== false) retry.readings_language = lang;
+          if (readingsPayloadComplete(retry) && !payloadMatchesLanguage(retry, lang)) return;
+          Object.assign(data, retry || {});
+        }
         if (!auto) advanceMassGenStep(3, { message: "Preparing the Liturgy of the Word…" });
-        if (data && data.ok !== false) data.readings_language = readingsLanguageOf(data) || lang;
+        if (data && data.ok !== false) data.readings_language = lang;
         flowPreviewData = Object.assign({}, data, { __previewDate: date, readings_language: lang });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         applyLiturgicalSeasonTheme(data.season || "", data.liturgical_color || null);

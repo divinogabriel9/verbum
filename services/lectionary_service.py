@@ -359,6 +359,14 @@ def fetch_tagalog_liturgical_data(
     return payload
 
 
+def _with_english_language(payload: dict | None) -> dict | None:
+    if not payload:
+        return payload
+    out = dict(payload)
+    out["readings_language"] = "english"
+    return out
+
+
 def get_liturgical_data(
     date: str,
     *,
@@ -405,7 +413,7 @@ def get_liturgical_data(
             print(f"Lectionary cache incomplete (missing first reading or psalm refrain): {normalized}")
         elif cached is not None:
             print(f"Lectionary cache hit: {normalized}")
-            return apply_philippines_title(cached, normalized)
+            return _with_english_language(apply_philippines_title(cached, normalized))
 
     best: dict | None = cached
     for attempt in range(_MAX_FETCH_ATTEMPTS):
@@ -429,7 +437,7 @@ def get_liturgical_data(
     if best is None:
         if cached is not None:
             print(f"Lectionary live fetch failed; serving cached data: {normalized}")
-            return apply_philippines_title(cached, normalized)
+            return _with_english_language(apply_philippines_title(cached, normalized))
         return None
 
     should_write = os.environ.get("LECTIONARY_NO_WRITE_CACHE", "").strip() not in ("1", "true")
@@ -437,4 +445,4 @@ def get_liturgical_data(
         upsert(normalized, best)
         print(f"Lectionary saved to database: {db_path()}")
 
-    return apply_philippines_title(best, normalized)
+    return _with_english_language(apply_philippines_title(best, normalized))

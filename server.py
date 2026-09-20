@@ -1370,6 +1370,7 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "gospel_text": p.gospel_text,
         "gospel_acclamation": getattr(p, "gospel_acclamation", "") or "",
         "readings_complete": p.readings_complete,
+        "readings_language": getattr(p, "readings_language", None) or "english",
     }
 
 

@@ -162,7 +162,7 @@
     "psalm_ref": "Psalm 25:4-5, 6-7, 8-9",
     "second_reading_ref": "Philippians 2:1-11",
     "gospel_ref": "Matthew 21:28-32",
-    "updated_at": "2026-09-13T15:48:04.646454+00:00"
+    "updated_at": "2026-09-20T15:19:21.355545+00:00"
   },
   "2026-08-01": {
     "first_reading": "Then the priests and the prophets spoke to the princes and to all the people, saying, “This man is worthy of death; for he has prophesied against this city, as you have heard with your ears.”\nThen Jeremiah spoke to all the princes and to all the people, saying, “Yahweh sent me to prophesy against this house and against this city all the words that you have heard.\nNow therefore amend your ways and your doings, and obey Yahweh your God’s voice; then Yahweh will relent from the evil that he has pronounced against you.\nBut as for me, behold, I am in your hand. Do with me what is good and right in your eyes.\nOnly know for certain that, if you put me to death, you will bring innocent blood on yourselves, on this city, and on its inhabitants; for in truth Yahweh has sent me to you to speak all these words in your ears.”\nThen the princes and all the people said to the priests and to the prophets: “This man is not worthy of death; for he has spoken to us in the name of Yahweh our God.”\nBut the hand of Ahikam the son of Shaphan was with Jeremiah, so that they didn’t give him into the hand of the people to put him to death.",
@@ -2532,7 +2532,7 @@
     "psalm_ref": "Psalm 23: 1-3a, 3b-4, 5, 6",
     "second_reading_ref": "Ephesians 5:8-14",
     "gospel_ref": "John 9:1-41",
-    "updated_at": "2026-09-04T05:47:56.369265+00:00"
+    "updated_at": "2026-09-20T15:18:10.768645+00:00"
   },
   "2026-03-25": {
     "first_reading": "",
@@ -4348,5 +4348,20 @@
     "second_reading_ref": "Philippians 2:6-11",
     "gospel_ref": "John 3:13-17",
     "updated_at": "2026-09-13T15:16:58.472970+00:00"
+  },
+  "2026-09-21": {
+    "first_reading": "Brothers and sisters: I, a prisoner for the Lord, urge you to live in a manner worthy of the call you have received, with all humility and gentleness, with patience, bearing with one another through love, striving to preserve the unity of the Spirit through the bond of peace: one Body and one Spirit, as you were also called to the one hope of your call; one Lord, one faith, one baptism; one God and Father of all, who is over all and through all and in all. But grace was given to each of us according to the measure of Christ's gift. And he gave some as Apostles, others as prophets, others as evangelists, others as pastors and teachers, to equip the holy ones for the work of ministry, for building up the Body of Christ, until we all attain to the unity of faith and knowledge of the Son of God, to mature manhood, to the extent of the full stature of Christ.",
+    "psalm_text": "R. Their message goes out through all the earth.",
+    "psalm_response": "Their message goes out through all the earth.",
+    "psalm_verses": "Day after day they pour out speech,\nand night after night they display knowledge.\nThere is no speech nor language,\nwhere their voice is not heard.\nTheir voice has gone out through all the earth,\ntheir words to the end of the world.\nIn them he has set a tent for the sun,\nwhich is as a bridegroom coming out of his room,\nlike a strong man rejoicing to run his course.",
+    "second_reading": "",
+    "gospel": "As Jesus passed by, he saw a man named Matthew sitting at the customs post. He said to him, \"Follow me.\" And he got up and followed him. While he was at table in his house, many tax collectors and sinners came and sat with Jesus and his disciples. The Pharisees saw this and said to his disciples, \"Why does your teacher eat with tax collectors and sinners?\" He heard this and said, \"Those who are well do not need a physician, but the sick do. Go and learn the meaning of the words, I desire mercy, not sacrifice. I did not come to call the righteous but sinners.\"",
+    "gospel_acclamation": "R. Alleluia, alleluia. We praise you, O God, we acclaim you as Lord; the glorious company of Apostles praise you. R. Alleluia, alleluia.",
+    "mass_celebration": "Feast of Saint Matthew, Apostle and evangelist",
+    "first_reading_ref": "Ephesians 4:1-7, 11-13",
+    "psalm_ref": "Psalm 19:2-3, 4-5",
+    "second_reading_ref": "",
+    "gospel_ref": "Matthew 9:9-13",
+    "updated_at": "2026-09-20T15:15:12.557768+00:00"
   }
 }

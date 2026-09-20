@@ -776,16 +776,21 @@
       const raw = String(data.readings_language || "").trim().toLowerCase();
       if (raw === "tagalog" || raw === "filipino") return "tagalog";
       if (raw === "english") return "english";
+      // Heuristic fallback for older cached payloads without readings_language.
+      // Prefer clear English gospel book names before Tagalog ones — "Ezekiel"
+      // is English and must not be treated as Tagalog (that broke Mass Builder).
       const blob = [
         data.gospel_reference,
         data.first_reading_reference,
+        data.second_reading_reference,
         data.psalm_reference,
-        data.title,
       ].join(" ").toLowerCase();
-      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezekiel|filipos)\b/.test(blob)) {
+      if (/\b(matthew|mark|luke|john|psalm|isaiah|ezekiel|philippians|acts|romans|genesis|exodus|deuteronomy|wisdom|sirach|proverbs|job|jeremiah|hosea|amos|micah|zechariah|malachi|revelation|hebrews|james|peter|timothy|corinthians|galatians|ephesians|colossians|thessalonians)\b/.test(blob)) {
+        return "english";
+      }
+      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezequiel|filipos|gawa|roma|genesis|exodo)\b/.test(blob)) {
         return "tagalog";
       }
-      if (/\b(matthew|john|luke|mark|psalm)\b/.test(blob)) return "english";
       return "";
     }
 
@@ -947,7 +952,9 @@
       if (cachedReadingsForLanguage(d, other)) return;
       fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
         .then((data) => {
-          if (data && readingsPayloadComplete(data)) writeStoredReadings(d, data, other);
+          if (!data || !readingsPayloadComplete(data)) return;
+          data.readings_language = other;
+          if (payloadMatchesLanguage(data, other)) writeStoredReadings(d, data, other);
         })
         .catch(function () { /* warm cache only */ });
     }
@@ -1050,7 +1057,14 @@
       })
         .then((data) => {
           if (data && data.ok !== false) {
-            data.readings_language = readingsLanguageOf(data) || lang;
+            // Prefer the language we asked for over heuristics — backend should
+            // stamp readings_language; fall back to request lang when missing.
+            const stamped = String(data.readings_language || "").trim().toLowerCase();
+            if (stamped === "tagalog" || stamped === "english") {
+              data.readings_language = stamped;
+            } else {
+              data.readings_language = readingsLanguageOf(data) || lang;
+            }
           }
           if (payloadMatchesLanguage(data, lang)) {
             previewCache.set(readingsOnly ? readKey : fullKey, data);
@@ -25871,7 +25885,7 @@
         try { document.dispatchEvent(new CustomEvent("mw:preview-loading")); } catch (_mwLoad) { /* ignore */ }
         const data = await fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: lang });
         if (data && data.ok !== false) {
-          data.readings_language = readingsLanguageOf(data) || lang;
+          data.readings_language = lang;
           if (readingsPayloadComplete(data) && payloadMatchesLanguage(data, lang)) {
             writeStoredReadings(d, data, lang);
           }
@@ -26466,9 +26480,21 @@
           loadSongCatalog(),
         ]);
         if (seq !== flowLoadSeq || !flowApplyIsCurrent(date, lang)) return;
-        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) return;
+        if (data && data.ok !== false) {
+          // /api/preview was called with mass_language=lang — stamp that so a
+          // bad client heuristic cannot discard a complete English payload.
+          data.readings_language = lang;
+        }
+        if (readingsPayloadComplete(data) && !payloadMatchesLanguage(data, lang)) {
+          invalidateClientReadings(date);
+          const retry = await fetchPreview(date, { readingsOnly: false, forceRefresh: true, language: lang });
+          if (seq !== flowLoadSeq || !flowApplyIsCurrent(date, lang)) return;
+          if (retry && retry.ok !== false) retry.readings_language = lang;
+          if (readingsPayloadComplete(retry) && !payloadMatchesLanguage(retry, lang)) return;
+          Object.assign(data, retry || {});
+        }
         if (!auto) advanceMassGenStep(3, { message: "Preparing the Liturgy of the Word…" });
-        if (data && data.ok !== false) data.readings_language = readingsLanguageOf(data) || lang;
+        if (data && data.ok !== false) data.readings_language = lang;
         flowPreviewData = Object.assign({}, data, { __previewDate: date, readings_language: lang });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
         applyLiturgicalSeasonTheme(data.season || "", data.liturgical_color || null);
@@ -28733,10 +28759,7 @@
         return null;
       }
       const posterOpts = readOpenAiPosterSettings();
-      const leafletOnly = !!o.leaflet_only;
-      const useAiPoster = leafletOnly
-        ? false
-        : (o.include_ai != null ? !!o.include_ai : posterOpts.useAi);
+      const useAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useAi;
       const aiBackend = o.ai_poster_backend || posterOpts.backend || "openai";
       const body = {
         date,
@@ -28745,9 +28768,7 @@
         songs: selectedSongsForGenerate(),
         custom_theme: pptThemePayload(activeTheme),
         poster_template: o.poster_template || "liturgical_color",
-        include_social_exports: leafletOnly ? false : readSocialExportSettings(o),
-        include_leaflet: leafletOnly ? true : !!o.include_leaflet,
-        leaflet_only: leafletOnly,
+        include_social_exports: readSocialExportSettings(o),
         include_gospel_art: false,
         include_ai_mass_poster: useAiPoster,
         ai_poster_backend: aiBackend,
@@ -28757,24 +28778,17 @@
       if (church) body.community_name = church;
       try {
         body.hymn_typography = buildHymnTypographyPayload();
-        if (!leafletOnly && !o.skipReceipt) {
-          const receiptResult = await openMassGenerateReceiptModal(buildMassGenerateReceiptModel(o), o);
-          if (!receiptResult || !receiptResult.confirmed) {
-            return null;
-          }
-          o.openSlideshow = !!receiptResult.openSlideshow;
-          if (o.openSlideshow) {
-            o.autoDownloadPptx = false;
-          } else if (o.autoDownloadPptx == null) {
-            o.autoDownloadPptx = true;
-          }
-          applyMassGenerateReceiptEdits();
-        } else if (leafletOnly) {
-          o.openSlideshow = false;
+        const receiptResult = await openMassGenerateReceiptModal(buildMassGenerateReceiptModel(o), o);
+        if (!receiptResult || !receiptResult.confirmed) {
+          return null;
+        }
+        o.openSlideshow = !!receiptResult.openSlideshow;
+        if (o.openSlideshow) {
           o.autoDownloadPptx = false;
         } else if (o.autoDownloadPptx == null) {
           o.autoDownloadPptx = true;
         }
+        applyMassGenerateReceiptEdits();
         date = ($("mass-date") && $("mass-date").value) || o.date || date;
         const mainAfter = ($("celebrant") && $("celebrant").value.trim()) || celebrantMain;
         const coAfter = ($("co-celebrant") && $("co-celebrant").value.trim()) || "";
@@ -28783,42 +28797,40 @@
         body.celebrant = mainAfter;
         body.co_celebrant = coAfter;
         body.songs = selectedSongsForGenerate();
-        if (!leafletOnly && !(await confirmHymnPreviewChangesBeforeGenerate())) {
+        if (!(await confirmHymnPreviewChangesBeforeGenerate())) {
           return null;
         }
-        if (!leafletOnly) await ensureLyricsCachedForSelectedSongs();
+        await ensureLyricsCachedForSelectedSongs();
 
         const divIn = $("flow-divider-poster");
         const annIn = $("flow-announcement-posters");
-        const hasUpload = !leafletOnly && !!(
+        const hasUpload = !!(
           (divIn && divIn.files && divIn.files[0]) ||
           (annIn && annIn.files && annIn.files.length)
         );
-        let genSteps = leafletOnly
-          ? ["Gathering readings", "Building leaflet", "Ready"]
-          : buildMassGenStepList({
-              hasUpload,
-              useAi: body.include_ai_mass_poster,
-              reusePoster: false,
-            });
+        let genSteps = buildMassGenStepList({
+          hasUpload,
+          useAi: body.include_ai_mass_poster,
+          reusePoster: false,
+        });
         const massGenStepIndex = (label) => genSteps.indexOf(label);
 
         setMassGenLoading(true, {
-          title: leafletOnly ? "Preparing offline leaflet" : "Preparing your Sunday Mass",
+          title: "Preparing your Sunday Mass",
           steps: genSteps,
           step: 0,
         });
         advanceMassGenStep(1);
-        if (!leafletOnly) advanceMassGenStep(2);
+        advanceMassGenStep(2);
 
         let divider_bn = null;
-        if (!leafletOnly && divIn && divIn.files && divIn.files[0]) {
+        if (divIn && divIn.files && divIn.files[0]) {
           const uploadIdx = massGenStepIndex("Uploading artwork");
           advanceMassGenStep(uploadIdx >= 0 ? uploadIdx : 3, { message: "Uploading artwork…" });
           divider_bn = await uploadMassImage(divIn.files[0], "/api/upload/mass-divider");
         }
         const ann_bns = [];
-        if (!leafletOnly && annIn && annIn.files && annIn.files.length) {
+        if (annIn && annIn.files && annIn.files.length) {
           const uploadIdx = massGenStepIndex("Uploading artwork");
           if (uploadIdx >= 0) advanceMassGenStep(uploadIdx, { message: "Uploading artwork…" });
           for (let i = 0; i < annIn.files.length; i++) {
@@ -28930,8 +28942,6 @@
         if (pendingKinds && pendingKinds.length) {
           body.slide_kinds = pendingKinds;
           body.include_ai_mass_poster = false;
-          body.include_leaflet = false;
-          body.leaflet_only = false;
         }
 
         const dupKey = "churchMediaLastGenFp";
@@ -29068,33 +29078,15 @@
           zip_url: data.zip_url,
           pptx_url: data.pptx_url,
           poster_url: data.poster_url,
-          leaflet_url: data.leaflet_url,
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
         const wantSlideshow = !!o.openSlideshow;
         // Show success immediately; don't keep the overlay waiting on a multi‑MB blob download.
         const successUi = showMassGenSuccess(
-          leafletOnly
-            ? "Leaflet ready."
-            : (wantSlideshow ? "Presentation ready." : "Presentation successfully generated."),
-          leafletOnly
-            ? "Your half-fold A4 PDF is ready."
-            : (wantSlideshow ? "Opening slideshow…" : "Your PowerPoint is ready.")
+          wantSlideshow ? "Presentation ready." : "Presentation successfully generated.",
+          wantSlideshow ? "Opening slideshow…" : "Your PowerPoint is ready."
         );
-        if (leafletOnly && data.leaflet_url) {
-          const stemName = data.export_stem || "mass_leaflet";
-          triggerBrowserDownload(data.leaflet_url, stemName + "_leaflet.pdf")
-            .then(() => {
-              statusFn("Leaflet ready. Download started.", "ok", dlMeta);
-            })
-            .catch(() => {
-              statusFn(
-                "Leaflet ready. Use the Mass leaflet download link if the file did not start automatically.",
-                "ok",
-                dlMeta
-              );
-            });
-        } else if (!wantSlideshow && o.autoDownloadPptx && data.pptx_url) {
+        if (!wantSlideshow && o.autoDownloadPptx && data.pptx_url) {
           const stemName = data.export_stem || "mass_presentation";
           triggerBrowserDownload(data.pptx_url, stemName + ".pptx")
             .then(() => {
@@ -29111,7 +29103,7 @@
           statusFn("Presentation ready.", "ok", dlMeta);
         }
         refreshAiImageQuotaHint();
-        if (!leafletOnly) clearMassBuilderDraft();
+        clearMassBuilderDraft();
         await successUi;
         if (wantSlideshow) {
           try {
@@ -29139,7 +29131,6 @@
         }
       }
     }
-    window.runFullMassGenerate = runFullMassGenerate;
 
     function updatePosterLivePreview() {
       const frame = $("poster-live-preview");

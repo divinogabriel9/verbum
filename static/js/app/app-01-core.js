@@ -776,16 +776,21 @@
       const raw = String(data.readings_language || "").trim().toLowerCase();
       if (raw === "tagalog" || raw === "filipino") return "tagalog";
       if (raw === "english") return "english";
+      // Heuristic fallback for older cached payloads without readings_language.
+      // Prefer clear English gospel book names before Tagalog ones — "Ezekiel"
+      // is English and must not be treated as Tagalog (that broke Mass Builder).
       const blob = [
         data.gospel_reference,
         data.first_reading_reference,
+        data.second_reading_reference,
         data.psalm_reference,
-        data.title,
       ].join(" ").toLowerCase();
-      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezekiel|filipos)\b/.test(blob)) {
+      if (/\b(matthew|mark|luke|john|psalm|isaiah|ezekiel|philippians|acts|romans|genesis|exodus|deuteronomy|wisdom|sirach|proverbs|job|jeremiah|hosea|amos|micah|zechariah|malachi|revelation|hebrews|james|peter|timothy|corinthians|galatians|ephesians|colossians|thessalonians)\b/.test(blob)) {
+        return "english";
+      }
+      if (/\b(mateo|juan|lucas|marcos|salmo|isaias|ezequiel|filipos|gawa|roma|genesis|exodo)\b/.test(blob)) {
         return "tagalog";
       }
-      if (/\b(matthew|john|luke|mark|psalm)\b/.test(blob)) return "english";
       return "";
     }
 
@@ -947,7 +952,9 @@
       if (cachedReadingsForLanguage(d, other)) return;
       fetchPreview(d, { readingsOnly: true, forceRefresh: false, language: other })
         .then((data) => {
-          if (data && readingsPayloadComplete(data)) writeStoredReadings(d, data, other);
+          if (!data || !readingsPayloadComplete(data)) return;
+          data.readings_language = other;
+          if (payloadMatchesLanguage(data, other)) writeStoredReadings(d, data, other);
         })
         .catch(function () { /* warm cache only */ });
     }
@@ -1050,7 +1057,14 @@
       })
         .then((data) => {
           if (data && data.ok !== false) {
-            data.readings_language = readingsLanguageOf(data) || lang;
+            // Prefer the language we asked for over heuristics — backend should
+            // stamp readings_language; fall back to request lang when missing.
+            const stamped = String(data.readings_language || "").trim().toLowerCase();
+            if (stamped === "tagalog" || stamped === "english") {
+              data.readings_language = stamped;
+            } else {
+              data.readings_language = readingsLanguageOf(data) || lang;
+            }
           }
           if (payloadMatchesLanguage(data, lang)) {
             previewCache.set(readingsOnly ? readKey : fullKey, data);

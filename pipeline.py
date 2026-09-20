@@ -68,6 +68,7 @@ class PreviewPayload:
     gospel_text: str = ""
     gospel_acclamation: str = ""
     readings_complete: bool = False
+    readings_language: str = "english"
 
 
 def _merge_song_sections(
@@ -451,6 +452,7 @@ def fetch_preview(
         gospel_text=gospel_text,
         gospel_acclamation=str(data.get("gospel_acclamation") or "").strip(),
         readings_complete=payload_complete(data),
+        readings_language=str(data.get("readings_language") or lang or "english"),
     )
     _PREVIEW_CACHE[cache_key] = (now, result)
     return result
