@@ -37,7 +37,10 @@
     }
 
     function pickMoodSongsForSection(section, moodKey, count, excludeIds) {
-      const rows = (songCatalogData && songCatalogData[section]) || [];
+      const sec = String(section || "").trim().toLowerCase();
+      // Never auto-suggest Meditation catalog songs for Mass music picks.
+      if (sec === "meditation") return [];
+      const rows = (songCatalogData && songCatalogData[sec]) || [];
       if (!rows.length) return [];
       const exclude = excludeIds || new Set();
       const scored = rows.map((row) => {
@@ -88,7 +91,9 @@
     }
 
     function pickRandomSongsForSection(section, count, excludeIds) {
-      const rows = (songCatalogData && songCatalogData[section]) || [];
+      const sec = String(section || "").trim().toLowerCase();
+      if (sec === "meditation") return [];
+      const rows = (songCatalogData && songCatalogData[sec]) || [];
       if (!rows.length) return [];
       const exclude = excludeIds || new Set();
       const pool = rows.filter((row) => {
@@ -855,7 +860,7 @@
         }
         clearTimeout(massPlanSearchDebounce);
         massPlanSearchDebounce = setTimeout(() => {
-          const rows = filterMassPlanSongs(inp.value);
+          const rows = filterMassPlanSongs(inp.value, { slotKey: key });
           const wrap = inp.closest(".mass-song-plan-row__search");
           const preferred = wrap ? wrap.querySelector(".mass-song-results") : null;
           renderMassSongResults(key, rows, inp.value, preferred);
@@ -888,6 +893,14 @@
         if (prev && root.contains(prev) && !prev.classList.contains("is-disabled")) {
           const slotKey = prev.dataset.previewSlot;
           if (slotKey) openMassSongPreview(slotKey);
+          return;
+        }
+        const lyricsPreview = e.target.closest("[data-mass-song-lyrics-preview]");
+        if (lyricsPreview && root.contains(lyricsPreview) && !lyricsPreview.disabled) {
+          e.preventDefault();
+          e.stopPropagation();
+          const slotKey = lyricsPreview.getAttribute("data-mass-song-lyrics-preview");
+          if (slotKey && typeof openMassSongPreview === "function") openMassSongPreview(slotKey);
           return;
         }
         const audioBtn = e.target.closest(".mass-song-audio-btn[data-mass-song-audio]");
@@ -1004,7 +1017,7 @@
         if (!key || e.key !== "Enter") return;
         const query = String(inp.value || "").trim();
         if (!query) return;
-        const rows = filterMassPlanSongs(inp.value);
+        const rows = filterMassPlanSongs(inp.value, { slotKey: key });
         if (rows.length) return;
         e.preventDefault();
         navigateToComposerWithMassSearch(query, key, { openGoogle: true });
@@ -1024,7 +1037,7 @@
           }
         }
         closeMassSongResultPanels(key);
-        const rows = filterMassPlanSongs(inp.value);
+        const rows = filterMassPlanSongs(inp.value, { slotKey: key });
         const wrap = inp.closest(".mass-song-plan-row__search");
         const preferred = wrap ? wrap.querySelector(".mass-song-results") : null;
         renderMassSongResults(key, rows, inp.value, preferred);
@@ -1086,7 +1099,7 @@
           const wrap = box.closest(".mass-song-plan-row__search");
           const inp = wrap ? wrap.querySelector(".mass-song-search-input") : null;
           if (!inp) return;
-          renderMassSongResults(slot.key, filterMassPlanSongs(inp.value), inp.value, box);
+          renderMassSongResults(slot.key, filterMassPlanSongs(inp.value, { slotKey: slot.key }), inp.value, box);
         });
       });
     });
@@ -2695,6 +2708,7 @@
 
       if (typeof renderThemeGrid === "function") renderThemeGrid();
       if (typeof renderSongCatalog === "function") renderSongCatalog();
+      if (typeof syncSongCatalogBulkBar === "function") syncSongCatalogBulkBar();
       syncSuperadminNavVisibility();
       syncCalendarAdminVisibility();
     }

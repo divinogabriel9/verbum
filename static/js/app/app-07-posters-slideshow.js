@@ -1636,7 +1636,6 @@
     function syncRiteOptionsCollapse(root) {
       const flowPage = $("flow-page");
       if (!flowPage) return;
-      const map = readMassPinnedDefaults();
       let rites = [];
       if (root && root.classList && root.classList.contains("mw-rite")) {
         rites = [root];
@@ -1654,13 +1653,13 @@
           rite.classList.remove("mw-rite--collapse-default");
           return;
         }
-        const pinKey = riteSectionPinKey(rite);
-        const pinnedVal = pinKey ? String(map[pinKey] || "").trim() : "";
-        const collapsed = !!pinnedVal;
-        rite.classList.toggle("mw-rite--collapse-default", collapsed);
+        const hasChoice = !!optsWrap.querySelector('.mw-option[aria-checked="true"]');
+        rite.classList.toggle("mw-rite--collapse-default", hasChoice);
         optsWrap.querySelectorAll(".mw-option").forEach((opt) => {
-          const val = String(opt.getAttribute("data-val") || "");
-          opt.classList.toggle("mw-option--collapse-show", !collapsed || val === pinnedVal);
+          opt.classList.toggle(
+            "mw-option--collapse-show",
+            opt.getAttribute("aria-checked") === "true"
+          );
         });
       });
     }
@@ -2899,9 +2898,12 @@
         const datalistId = "receipt-songs-" + song.slotKey;
         const candidates = massPlanAllSongs.filter((row) => {
           if (!songMatchesPlanLangFilter(row, massSongPlanLanguage)) return false;
-          const sec = song.section;
-          if (!sec) return true;
-          return row.section === sec || (sec === "communion" && row.section === "communion");
+          const rowSec = String(row.section || "").toLowerCase();
+          const sec = String(song.section || "").toLowerCase();
+          // Never offer Meditation catalog songs for non-meditation Mass slots.
+          if (rowSec === "meditation" && sec !== "meditation") return false;
+          if (!sec) return rowSec !== "meditation";
+          return rowSec === sec || (sec === "communion" && rowSec === "communion");
         }).slice(0, 80);
         const options = candidates.map((row) =>
           "<option value=\"" + escapeHtml(row.title) + "\" data-id=\"" + escapeHtml(row.id) + "\"></option>"

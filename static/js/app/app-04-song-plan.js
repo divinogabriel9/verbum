@@ -1782,8 +1782,6 @@
     }
 
     async function openMassSongPreview(slotKey) {
-      void slotKey;
-      return;
       const id = selectedLyricsSongs[slotKey] || "";
       let row = massPlanAllSongs.find((s) => String(s.id) === String(id));
       if (!row) {

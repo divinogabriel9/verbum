@@ -315,7 +315,11 @@
           var pd = window.__mwPreviewData || null;
           if (pd && pd.season) s1 += asideRow('Season', pd.season);
           sections.push(reviewSection('Mass info', 'Step 1', s1, { step: 1 }));
-          var s2 = asideRow('Penitential Act', selText('flow-penitential-choice') || '—', 'penitential');
+          var s2 = asideRow('Penitential Act', (function () {
+            var form = selText('flow-penitential-choice') || '—';
+            var lang = selText('flow-penitential-language');
+            return lang ? (form + ' · ' + lang) : form;
+          })(), 'penitential');
           s2 += asideRow('Kyrie', riteVideoAsideLabel('kyrie', 'flow-kyrie-choice') || '—', 'kyrie');
           s2 += asideRow('Gloria', riteVideoAsideLabel('gloria', 'flow-gloria-choice') || '—', 'gloria');
           sections.push(reviewSection('Introductory rites', 'Step 2', s2, { step: 2 }));
@@ -329,8 +333,18 @@
           var gr = $('flow-gospel-ref');
           if (gr && gr.textContent && gr.textContent.trim() !== '—') s3 += asideRow('Gospel ref', gr.textContent.trim());
           sections.push(reviewSection('Liturgy of the Word', 'Step 3', s3, { step: 3 }));
-          var s4 = asideRow('Creed', selText('flow-creed-choice') || '—', 'creed');
-          s4 += asideRow('Sanctus', sanctusLabel() || '—', 'sanctus');
+          var s4 = asideRow('Creed', (function () {
+            var form = selText('flow-creed-choice') || '—';
+            var lang = selText('flow-creed-language');
+            if (!form || form === '—') return form;
+            if (String(($('flow-creed-choice') || {}).value || '') === 'none') return form;
+            return lang ? (form + ' · ' + lang) : form;
+          })(), 'creed');
+          s4 += asideRow('Sanctus', (function () {
+            var tune = sanctusLabel() || '—';
+            var lang = selText('flow-sanctus-language');
+            return lang ? (tune + ' · ' + lang) : tune;
+          })(), 'sanctus');
           s4 += asideRow('Our Father', riteVideoAsideLabel('our_father', 'flow-our-father-choice') || '—', 'our_father');
           s4 += asideRow('Lamb of God', riteVideoAsideLabel('lamb_of_god', 'flow-lamb-choice') || '—', 'lamb_of_god');
           sections.push(reviewSection('Liturgy of the Eucharist', 'Step 4', s4, { step: 4 }));
@@ -426,7 +440,7 @@
         }
         function sanctusLabel() {
           if (window.massRiteVideoMode && window.massRiteVideoMode.sanctus) {
-            return 'Video · Holy, Holy, Holy (default)';
+            return 'Video · Holy, Holy, Holy';
           }
           var c = flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"]) .mw-option__label');
           return c ? c.textContent.trim() : '';
@@ -468,12 +482,25 @@
             var gr = $('flow-gospel-ref');
             if (gr && gr.textContent && gr.textContent.trim() !== '—') rows.push(asideRow('Gospel', gr.textContent.trim()));
           } else if (n === 2) {
-            rows.push(asideRow('Penitential Act', selText('flow-penitential-choice')));
+            rows.push(asideRow('Penitential Act', (function () {
+              var form = selText('flow-penitential-choice') || '—';
+              var lang = selText('flow-penitential-language');
+              return lang ? (form + ' · ' + lang) : form;
+            })()));
             rows.push(asideRow('Kyrie', riteVideoAsideLabel('kyrie', 'flow-kyrie-choice')));
             rows.push(asideRow('Gloria', riteVideoAsideLabel('gloria', 'flow-gloria-choice')));
           } else if (n === 4) {
-            rows.push(asideRow('Creed', selText('flow-creed-choice')));
-            rows.push(asideRow('Sanctus', sanctusLabel()));
+            rows.push(asideRow('Creed', (function () {
+              var form = selText('flow-creed-choice') || '—';
+              var lang = selText('flow-creed-language');
+              if (String(($('flow-creed-choice') || {}).value || '') === 'none') return form;
+              return lang ? (form + ' · ' + lang) : form;
+            })()));
+            rows.push(asideRow('Sanctus', (function () {
+              var tune = sanctusLabel() || '—';
+              var lang = selText('flow-sanctus-language');
+              return lang ? (tune + ' · ' + lang) : tune;
+            })()));
             rows.push(asideRow('Our Father', riteVideoAsideLabel('our_father', 'flow-our-father-choice')));
             rows.push(asideRow('Lamb of God', riteVideoAsideLabel('lamb_of_god', 'flow-lamb-choice')));
           } else if (n === 6) {
@@ -500,6 +527,7 @@
         }
         function showStep(n) {
           current = n;
+          clearMissingTargetHighlight();
           setPanels(n);
           Array.prototype.forEach.call(flowPage.querySelectorAll('[data-mw-step]'), function (el) {
             el.hidden = (parseInt(el.getAttribute('data-mw-step'), 10) !== n);
@@ -564,14 +592,56 @@
         function validStep1() {
           var d = $('mass-date');
           if (!(d && d.value)) { if (d && d.focus) d.focus(); return false; }
+          var cel = $('celebrant');
+          if (!(cel && cel.value && cel.value.trim())) {
+            var display = $('celebrant-display');
+            if (display && display.focus) display.focus();
+            return false;
+          }
           return true;
         }
         function shake(el) {
           if (!el) return; var i = 0; var seq = [-4, 4, -3, 3, 0];
           (function s() { if (i >= seq.length) { el.style.transform = ''; return; } el.style.transform = 'translateX(' + seq[i++] + 'px)'; setTimeout(s, 55); })();
         }
+        function collectStepMissingOptions(step) {
+          var n = parseInt(step, 10) || current;
+          return collectMassMissingOptions().filter(function (item) {
+            return item.step === n;
+          });
+        }
+        function highlightStepMissing(missing) {
+          clearMissingTargetHighlight();
+          if (!missing || !missing.length) return null;
+          var firstTarget = null;
+          missing.forEach(function (item) {
+            var target = resolveMissingTarget(item);
+            if (!target) return;
+            target.classList.add('mw-missing-target');
+            if (!firstTarget) firstTarget = target;
+          });
+          return firstTarget;
+        }
+        function pruneMissingTargetHighlights() {
+          var still = collectStepMissingOptions(current);
+          var keep = [];
+          still.forEach(function (item) {
+            var target = resolveMissingTarget(item);
+            if (target && keep.indexOf(target) < 0) keep.push(target);
+          });
+          Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-missing-target'), function (el) {
+            if (keep.indexOf(el) < 0) el.classList.remove('mw-missing-target');
+          });
+        }
         function next() {
-          if (current === 1) { if (!validStep1()) { shake($('mw-next')); return; } ensureReadings(); }
+          var missing = collectStepMissingOptions(current);
+          if (missing.length) {
+            shake($('mw-next'));
+            var target = highlightStepMissing(missing);
+            if (target) mwReveal(target);
+            return;
+          }
+          if (current === 1) ensureReadings();
           if (current < 7) showStep(current + 1);
         }
         function back() { if (current > 1) showStep(current - 1); }
@@ -647,6 +717,15 @@
         }
         function reorderMwLanguageCards(sel, preferred) {
           if (!sel || !preferred) return false;
+          var rite = sel.closest('.mw-rite');
+          var langMenu = rite && rite.querySelector('.mw-rite-lang__menu, .mw-rite-lang .mw-kyrie-dd__menu');
+          if (langMenu) {
+            var langItem = langMenu.querySelector('[data-val="' + preferred + '"]');
+            if (!langItem) return false;
+            if (langMenu.firstElementChild === langItem) return true;
+            langMenu.insertBefore(langItem, langMenu.firstElementChild);
+            return true;
+          }
           var wrap = sel.nextElementSibling;
           if (!wrap || !wrap.classList || !wrap.classList.contains('mw-options')) return false;
           var card = wrap.querySelector('.mw-option[data-val="' + preferred + '"]');
@@ -684,8 +763,83 @@
             '</div>' +
           '</span>';
         }
+        function ritePreviewEyeHtml() {
+          return '<svg class="mw-rite-preview__icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>' +
+            '<circle cx="12" cy="12" r="3"/>' +
+          '</svg>';
+        }
+        function ritePreviewHtml(mediaKey, opts) {
+          opts = opts || {};
+          var key = escapeAttr(mediaKey || '');
+          if (opts.directText) {
+            return (
+              '<button type="button" class="mw-rite-preview__action mw-rite-preview__action--direct" ' +
+                'data-mw-text-preview data-mw-media-key="' + key + '">See text</button>'
+            );
+          }
+          var withAudio = opts.audio !== false;
+          var actions =
+            '<button type="button" class="mw-rite-preview__action" data-mw-text-preview data-mw-media-key="' + key + '">See text</button>';
+          if (withAudio) {
+            actions +=
+              '<button type="button" class="mw-rite-preview__action" data-mw-play-audio data-mw-media-slot="' + key + '">Play sound</button>';
+          }
+          return (
+            '<div class="mw-rite-preview" data-mw-rite-preview>' +
+              '<div class="mw-rite-preview__detail" aria-hidden="true">' +
+                '<span class="mw-rite-preview__actions">' + actions + '</span>' +
+              '</div>' +
+              '<button type="button" class="mw-rite-preview__btn" data-mw-rite-preview-btn aria-expanded="false" aria-label="Preview" title="Preview">' +
+                ritePreviewEyeHtml() +
+              '</button>' +
+            '</div>'
+          );
+        }
         function riteAudioPlayHtml(mediaKey) {
-          return '<button type="button" class="mw-option__text" data-mw-play-audio data-mw-media-slot="' + escapeAttr(mediaKey) + '" aria-label="Play audio preview" title="Play audio preview">▶</button>';
+          return ritePreviewHtml(mediaKey, { audio: true });
+        }
+        function closeAllRitePreviews(except) {
+          Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-rite-preview.is-open'), function (host) {
+            if (except && host === except) return;
+            if (host._mwPreviewHideTimer) {
+              clearTimeout(host._mwPreviewHideTimer);
+              host._mwPreviewHideTimer = 0;
+            }
+            host.classList.remove('is-open');
+            var btn = host.querySelector('[data-mw-rite-preview-btn]');
+            var detail = host.querySelector('.mw-rite-preview__detail');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (detail) detail.setAttribute('aria-hidden', 'true');
+          });
+        }
+        var MW_RITE_PREVIEW_HIDE_MS = 4200;
+        function scheduleRitePreviewAutoHide(host) {
+          if (!host) return;
+          if (host._mwPreviewHideTimer) clearTimeout(host._mwPreviewHideTimer);
+          host._mwPreviewHideTimer = setTimeout(function () {
+            host._mwPreviewHideTimer = 0;
+            setRitePreviewOpen(host, false);
+          }, MW_RITE_PREVIEW_HIDE_MS);
+        }
+        function setRitePreviewOpen(host, open) {
+          if (!host) return;
+          if (open) {
+            closeAllRitePreviews(host);
+            closeAllRiteLangDd();
+            closeAllRiteSettings();
+            closeAllMediaDd();
+            setKyrieTagalogMenuOpen(false);
+          } else if (host._mwPreviewHideTimer) {
+            clearTimeout(host._mwPreviewHideTimer);
+            host._mwPreviewHideTimer = 0;
+          }
+          host.classList.toggle('is-open', !!open);
+          var btn = host.querySelector('[data-mw-rite-preview-btn]');
+          var detail = host.querySelector('.mw-rite-preview__detail');
+          if (btn) btn.setAttribute('aria-expanded', String(!!open));
+          if (detail) detail.setAttribute('aria-hidden', String(!open));
+          if (open) scheduleRitePreviewAutoHide(host);
         }
         var mwFloatingMenus = [];
         function mwMenuHome(menu) {
@@ -709,7 +863,7 @@
         function mwFloatMenu(menu, trigger) {
           if (!menu || !trigger) return;
           mwMenuHome(menu);
-          var host = trigger.closest('.mw-media-dd, .mw-kyrie-dd');
+          var host = trigger.closest('.mw-media-dd, .mw-kyrie-dd, .mw-rite-lang, .mw-rite-settings');
           if (host) host._mwFloatedMenu = menu;
           if (menu.parentNode !== document.body) document.body.appendChild(menu);
           menu.hidden = false;
@@ -754,11 +908,42 @@
             if (menu) mwRestoreMenu(menu);
           });
         }
+        function closeAllRiteLangDd(except) {
+          Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-rite-lang.is-open'), function (dd) {
+            if (except && dd === except) return;
+            dd.classList.remove('is-open');
+            var btn = dd.querySelector('.mw-rite-lang__btn');
+            var menu = dd.querySelector('.mw-rite-lang__menu') || dd._mwFloatedMenu;
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (menu) mwRestoreMenu(menu);
+          });
+        }
+        function setRiteLangOpen(dd, open) {
+          if (!dd) return;
+          if (open) {
+            closeAllRiteLangDd(dd);
+            closeAllRiteSettings();
+            closeAllMediaDd();
+            closeAllRitePreviews();
+            setKyrieTagalogMenuOpen(false);
+          }
+          dd.classList.toggle('is-open', !!open);
+          var btn = dd.querySelector('.mw-rite-lang__btn');
+          var menu = dd.querySelector('.mw-rite-lang__menu') || dd._mwFloatedMenu;
+          if (btn) btn.setAttribute('aria-expanded', String(!!open));
+          if (menu) {
+            if (open) mwFloatMenu(menu, btn);
+            else mwRestoreMenu(menu);
+          }
+        }
         function setMediaDdOpen(dd, open) {
           if (!dd) return;
           if (open) {
             closeAllMediaDd(dd);
             setKyrieTagalogMenuOpen(false);
+            closeAllRiteLangDd();
+            closeAllRiteSettings();
+            closeAllRitePreviews();
           }
           dd.classList.toggle('is-open', !!open);
           var btn = dd.querySelector('[data-mw-media-dd-btn]');
@@ -826,7 +1011,11 @@
           var btn = $('mw-kyrie-tagalog-dd-btn');
           var menu = $('mw-kyrie-tagalog-dd-menu');
           if (!dd || !btn || !menu) return;
-          if (open) closeAllMediaDd();
+          if (open) {
+            closeAllMediaDd();
+            closeAllRiteLangDd();
+            closeAllRiteSettings();
+          }
           dd.classList.toggle('is-open', !!open);
           btn.setAttribute('aria-expanded', String(!!open));
           if (open) mwFloatMenu(menu, btn);
@@ -866,20 +1055,22 @@
           var slideSel = $('flow-kyrie-tagalog-slide');
           var ddBtn = $('mw-kyrie-tagalog-dd-btn');
           if (!kyrieSel || !panel) return;
+          var rite = kyrieSel.closest('.mw-rite');
+          var active = rite && rite.querySelector('[data-mw-rite-active="kyrie"]');
           var wrap = kyrieSel.nextElementSibling;
           var tagalogCard = wrap && wrap.classList && wrap.classList.contains('mw-options')
             ? wrap.querySelector('.mw-option[data-val="tagalog"]')
             : null;
-          var row = tagalogCard && tagalogCard.querySelector(':scope > .mw-option__row');
-          var label = row && row.querySelector('.mw-option__label');
+          var row = (active && active.querySelector(':scope > .mw-option > .mw-option__row'))
+            || (tagalogCard && tagalogCard.querySelector(':scope > .mw-option__row'));
+          var label = row && (row.querySelector('.mw-option__label-wrap') || row.querySelector('.mw-option__label'));
           if (label) label.insertAdjacentElement('afterend', panel);
           else if (row && panel.parentElement !== row) row.appendChild(panel);
+          else if (active && panel.parentElement !== active) active.appendChild(panel);
           else if (tagalogCard && panel.parentElement !== tagalogCard) tagalogCard.appendChild(panel);
           if (row) {
-            var textBtn = row.querySelector(':scope > [data-mw-text-preview]');
-            var audioPlay = row.querySelector(':scope > [data-mw-play-audio]');
-            if (textBtn) row.appendChild(textBtn);
-            if (audioPlay) row.appendChild(audioPlay);
+            var preview = row.querySelector(':scope > .mw-rite-preview');
+            if (preview) row.appendChild(preview);
           }
           if (kyrieSel.dataset.mwKyrieTagalogBound !== '1') {
             kyrieSel.dataset.mwKyrieTagalogBound = '1';
@@ -942,45 +1133,736 @@
               if (e.target.closest('#mw-kyrie-tagalog-dd, #mw-kyrie-tagalog-dd-menu')) return;
               setKyrieTagalogMenuOpen(false);
               if (!e.target.closest('.mw-media-dd, .mw-media-dd__menu')) closeAllMediaDd();
+              if (!e.target.closest('.mw-rite-lang, .mw-rite-lang__menu')) closeAllRiteLangDd();
+              if (!e.target.closest('.mw-rite-settings, .mw-rite-settings__pop')) closeAllRiteSettings();
             });
             document.addEventListener('keydown', function (e) {
               if (e.key === 'Escape') {
                 setKyrieTagalogMenuOpen(false);
                 closeAllMediaDd();
+                closeAllRiteLangDd();
+                closeAllRiteSettings();
               }
             });
           }
           refreshKyrieTagalogPanel();
+        }
+        function riteSettingsGearHtml() {
+          /* Lucide "settings" — https://lucide.dev/icons/settings */
+          return '<svg class="mw-rite-settings__icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>' +
+            '<circle cx="12" cy="12" r="3"/>' +
+            '</svg>';
+        }
+        function closeAllRiteSettings(except) {
+          Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-rite-settings.is-open'), function (host) {
+            if (except && host === except) return;
+            host.classList.remove('is-open');
+            var btn = host.querySelector('.mw-rite-settings__btn');
+            var pop = host.querySelector('.mw-rite-settings__pop');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (pop) pop.hidden = true;
+          });
+        }
+        function setRiteSettingsOpen(host, open) {
+          if (!host) return;
+          if (open) {
+            closeAllRiteSettings(host);
+            closeAllRiteLangDd();
+            closeAllMediaDd();
+            closeAllRitePreviews();
+            setKyrieTagalogMenuOpen(false);
+          }
+          host.classList.toggle('is-open', !!open);
+          var btn = host.querySelector('.mw-rite-settings__btn');
+          var pop = host.querySelector('.mw-rite-settings__pop');
+          if (btn) btn.setAttribute('aria-expanded', String(!!open));
+          if (pop) pop.hidden = !open;
+        }
+        function attachInlineOptionLanguages() {
+          Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-rite-lang]'), function (sel) {
+            if (sel.dataset.mwRiteLangUi === '1') return;
+            sel.dataset.mwRiteLangUi = '1';
+            var section = sel.getAttribute('data-mw-rite-lang') || '';
+            if (!section) return;
+            var opts = Array.prototype.slice.call(sel.options).filter(function (o) {
+              return o.value && !o.disabled;
+            });
+            if (!opts.length) return;
+
+            var langDd = document.createElement('div');
+            langDd.className = 'mw-rite-lang mw-rite-lang--inline mw-kyrie-dd';
+            langDd.setAttribute('data-mw-rite-lang-ui', section);
+            langDd.hidden = true;
+            var menuId = 'mw-rite-inline-lang-menu-' + section;
+            langDd.innerHTML =
+              '<button type="button" class="mw-rite-lang__btn mw-kyrie-dd__btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="' + menuId + '">' +
+                '<span class="mw-rite-lang__value"></span>' +
+              '</button>' +
+              '<div class="mw-rite-lang__menu mw-kyrie-dd__menu" id="' + menuId + '" hidden role="listbox" aria-label="Language"></div>';
+            var langBtn = langDd.querySelector('.mw-rite-lang__btn');
+            var langValue = langDd.querySelector('.mw-rite-lang__value');
+            var langMenu = langDd.querySelector('.mw-rite-lang__menu');
+
+            opts.forEach(function (o) {
+              var item = document.createElement('button');
+              item.type = 'button';
+              item.className = 'mw-rite-lang__option mw-kyrie-dd__option';
+              item.setAttribute('role', 'option');
+              item.setAttribute('data-val', o.value);
+              item.setAttribute('aria-selected', 'false');
+              item.innerHTML = '<span class="mw-kyrie-dd__name"></span>';
+              item.querySelector('.mw-kyrie-dd__name').textContent = o.textContent;
+              item.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                sel.value = item.getAttribute('data-val') || 'english';
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                syncLabel();
+                setRiteLangOpen(langDd, false);
+                if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') {
+                  window.scheduleMassBuilderDraftAutoSave();
+                }
+                if (typeof refreshContinue === 'function') refreshContinue();
+                if (typeof fillAside === 'function') fillAside(current);
+              });
+              langMenu.appendChild(item);
+            });
+
+            function optionLabel(val) {
+              var found = '';
+              Array.prototype.some.call(sel.options, function (o) {
+                if (o.value === val) { found = (o.textContent || '').trim(); return true; }
+                return false;
+              });
+              return found || val || 'English';
+            }
+
+            function syncLabel() {
+              var val = sel.value || 'english';
+              langValue.textContent = optionLabel(val);
+              langDd.classList.add('is-chosen');
+              Array.prototype.forEach.call(langMenu.querySelectorAll('[data-val]'), function (item) {
+                item.setAttribute('aria-selected', String(item.getAttribute('data-val') === val));
+              });
+            }
+
+            function findOptionsHost() {
+              var rite = sel.closest('.mw-rite');
+              if (!rite) return null;
+              if (section === 'sanctus') {
+                return rite.querySelector('.mw-options[aria-label="Sanctus tune"]')
+                  || rite.querySelector('.mw-options[data-mw-media-section="sanctus"]');
+              }
+              return rite.querySelector('.mw-options[data-mw-media-section="' + section + '"]')
+                || rite.querySelector('.mw-options[role="radiogroup"]');
+            }
+
+            function placeOnSelected() {
+              setRiteLangOpen(langDd, false);
+              var host = findOptionsHost();
+              if (!host) {
+                langDd.hidden = true;
+                if (sel.parentElement && langDd.parentElement !== sel.parentElement) {
+                  sel.parentElement.appendChild(langDd);
+                }
+                return;
+              }
+              var selected = host.querySelector(
+                '.mw-option[aria-checked="true"]:not(.mw-option--omit):not([data-val="none"]):not([data-val="__video"])'
+              );
+              if (!selected) {
+                langDd.hidden = true;
+                host.appendChild(langDd);
+                return;
+              }
+              var row = selected.querySelector('.mw-option__row');
+              var label = selected.querySelector('.mw-option__label');
+              var labelWrap = selected.querySelector('.mw-option__label-wrap');
+              langDd.hidden = false;
+              if (labelWrap) {
+                if (label && label.parentElement === labelWrap) {
+                  label.insertAdjacentElement('afterend', langDd);
+                } else {
+                  var btn = labelWrap.querySelector('.mw-option__label, [data-mw-media-dd-btn]');
+                  if (btn) btn.insertAdjacentElement('afterend', langDd);
+                  else labelWrap.appendChild(langDd);
+                }
+              } else if (label) {
+                label.insertAdjacentElement('afterend', langDd);
+              } else if (row) {
+                row.appendChild(langDd);
+              } else {
+                selected.appendChild(langDd);
+              }
+            }
+
+            langBtn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              setRiteLangOpen(langDd, !langDd.classList.contains('is-open'));
+            });
+            sel.addEventListener('change', syncLabel);
+            sel._mwPlaceInlineLang = placeOnSelected;
+            if (sel.parentElement) sel.parentElement.appendChild(langDd);
+            syncLabel();
+            placeOnSelected();
+          });
+        }
+        function syncInlineOptionLanguages(scope) {
+          var root = scope || flowPage;
+          Array.prototype.forEach.call(root.querySelectorAll('select[data-mw-rite-lang]'), function (sel) {
+            if (typeof sel._mwPlaceInlineLang === 'function') sel._mwPlaceInlineLang();
+          });
+        }
+        function syncVariantRiteLanguagesFromMass(lang) {
+          var preferred = lang === 'tagalog' ? 'tagalog' : 'english';
+          Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-rite-lang]'), function (sel) {
+            var has = Array.prototype.some.call(sel.options, function (o) {
+              return o.value === preferred && !o.disabled;
+            });
+            if (!has) return;
+            if (sel.value === preferred) {
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              return;
+            }
+            sel.value = preferred;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+          syncInlineOptionLanguages();
+        }
+        function buildLanguageRiteUi(sel, section) {
+          var rite = sel.closest('.mw-rite');
+          var opts = Array.prototype.slice.call(sel.options).filter(function (o) { return o.value && !o.disabled; });
+          if (!rite || !opts.length) return;
+          rite.classList.add('mw-rite--lang');
+          sel.selectedIndex = -1;
+          sel.style.display = 'none';
+
+          var langMenu = document.createElement('div');
+          langMenu.className = 'mw-rite-lang__menu mw-kyrie-dd__menu';
+          langMenu.id = 'mw-rite-lang-menu-' + section;
+          langMenu.hidden = true;
+          langMenu.setAttribute('role', 'listbox');
+          langMenu.setAttribute('aria-label', 'Language');
+          opts.forEach(function (o) {
+            var item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'mw-rite-lang__option mw-kyrie-dd__option';
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-val', o.value);
+            item.setAttribute('aria-selected', 'false');
+            item.innerHTML = '<span class="mw-kyrie-dd__name"></span>';
+            item.querySelector('.mw-kyrie-dd__name').textContent = o.textContent;
+            item.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              pickLang(item.getAttribute('data-val') || '');
+            });
+            langMenu.appendChild(item);
+          });
+
+          var line = document.createElement('div');
+          line.className = 'mw-option-line';
+          var active = document.createElement('div');
+          active.className = 'mw-rite-active';
+          active.setAttribute('data-mw-rite-active', section);
+          line.appendChild(active);
+
+          var pinKey = sel.id || ('flow-' + section.replace(/_/g, '-') + '-choice');
+          var pin = document.createElement('label');
+          pin.className = 'mw-default-pin mw-default-pin--rite mw-default-pin--lang';
+          pin.title = 'Use this choice as my default next time';
+          pin.setAttribute('aria-label', 'Default');
+          pin.innerHTML = riteDefaultPinHtml(pinKey, '');
+          pin.addEventListener('click', function (e) { e.stopPropagation(); });
+          line.appendChild(pin);
+          var pinInput = pin.querySelector('.mw-default-pin__input');
+          sel.insertAdjacentElement('afterend', line);
+
+          function optionLabel(val) {
+            var found = '';
+            Array.prototype.some.call(sel.options, function (o) {
+              if (o.value === val) { found = (o.textContent || '').trim(); return true; }
+              return false;
+            });
+            return found || val;
+          }
+
+          function parkOverlays() {
+            if (langMenu.parentElement && langMenu.parentElement !== sel.parentElement) {
+              sel.parentElement.appendChild(langMenu);
+              langMenu.hidden = true;
+            }
+            if (section === 'kyrie') {
+              var kyriePanel = $('mw-kyrie-tagalog');
+              if (kyriePanel && active.contains(kyriePanel) && sel.parentElement) {
+                sel.parentElement.appendChild(kyriePanel);
+              }
+            }
+          }
+
+          function bindLangTrigger(wrap) {
+            if (!wrap) return;
+            var btn = wrap.querySelector('.mw-rite-lang__btn');
+            if (!btn) return;
+            wrap.appendChild(langMenu);
+            btn.setAttribute('aria-controls', langMenu.id);
+            btn.setAttribute('aria-expanded', 'false');
+            btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              setRiteLangOpen(wrap, !wrap.classList.contains('is-open'));
+            });
+          }
+
+          function bindSettings(host, mediaKey) {
+            if (!host) return;
+            var btn = host.querySelector('.mw-rite-settings__btn');
+            var pop = host.querySelector('.mw-rite-settings__pop');
+            if (!btn || !pop) return;
+            btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              setRiteSettingsOpen(host, !host.classList.contains('is-open'));
+            });
+            Array.prototype.forEach.call(pop.querySelectorAll('[data-mw-link-media]'), function (item) {
+              item.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeAllRiteSettings();
+                var kind = item.getAttribute('data-mw-link-media');
+                if (kind && mediaKey && typeof window.openMassMediaPickModal === 'function') {
+                  window.openMassMediaPickModal(kind, mediaKey, { fromTitle: true });
+                }
+              });
+            });
+          }
+
+          function syncLangMenu() {
+            var val = sel.value || '';
+            Array.prototype.forEach.call(langMenu.querySelectorAll('[data-val]'), function (item) {
+              item.setAttribute('aria-selected', String(item.getAttribute('data-val') === val));
+            });
+            if (pinInput) pinInput.setAttribute('data-mw-default-value', val);
+          }
+
+          function renderActive() {
+            var val = sel.value || '';
+            closeAllRiteLangDd();
+            closeAllRiteSettings();
+            parkOverlays();
+            syncLangMenu();
+
+            if (val === 'none') {
+              active.innerHTML =
+                '<div class="mw-option mw-option--surface mw-option--omit" data-val="none" aria-checked="true">' +
+                  '<div class="mw-option__row">' +
+                    '<span class="mw-option__label-wrap mw-rite-lang mw-kyrie-dd is-chosen">' +
+                      '<button type="button" class="mw-option__label mw-rite-lang__btn" aria-haspopup="listbox"></button>' +
+                    '</span>' +
+                  '</div>' +
+                  '<p class="mw-rite-active__omit muted">Omitted from this Mass</p>' +
+                '</div>';
+              if (window.massRiteVideoMode) window.massRiteVideoMode[section] = false;
+              var omitBtn = active.querySelector('.mw-rite-lang__btn');
+              if (omitBtn) omitBtn.textContent = optionLabel('none');
+              bindLangTrigger(active.querySelector('.mw-rite-lang'));
+              if (section === 'kyrie') refreshKyrieTagalogPanel();
+              if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+              if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins(rite);
+              return;
+            }
+
+            var mediaKey = val && typeof window.massMediaKey === 'function'
+              ? window.massMediaKey(section, val)
+              : (val ? (section + '::' + val) : '');
+            var labelText = val ? optionLabel(val) : 'Choose language';
+            var actions = val ? ritePreviewHtml(mediaKey, { audio: true }) : '';
+            var mediaRow = val
+              ? ('<div class="mw-option__media mass-song-media-row" data-mw-media-row="' + escapeAttr(mediaKey) +
+                 '" data-mw-rite-media="1" data-mw-media-section="' + escapeAttr(section) +
+                 '" data-mw-media-lang="' + escapeAttr(val) + '"></div>')
+              : '';
+            var settings = val
+              ? ('<div class="mw-rite-settings">' +
+                   '<button type="button" class="mw-rite-settings__btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Link audio or video" title="Link audio or video">' +
+                     riteSettingsGearHtml() +
+                   '</button>' +
+                   '<div class="mw-rite-settings__pop" hidden role="dialog" aria-label="Link media">' +
+                     '<p class="mw-rite-settings__title">Link media</p>' +
+                     '<button type="button" class="mw-rite-settings__item" data-mw-link-media="audio" data-mw-media-slot="' + escapeAttr(mediaKey) + '">Link audio</button>' +
+                     '<button type="button" class="mw-rite-settings__item" data-mw-link-media="video" data-mw-media-slot="' + escapeAttr(mediaKey) + '">Link video</button>' +
+                   '</div>' +
+                 '</div>')
+              : '';
+
+            active.innerHTML =
+              '<div class="mw-option mw-option--surface' + (val ? '' : ' is-empty') + '" data-val="' + escapeAttr(val || '') + '"' +
+                (mediaKey ? ' data-mw-media-key="' + escapeAttr(mediaKey) + '"' : '') +
+                ' aria-checked="' + (val ? 'true' : 'false') + '">' +
+                '<div class="mw-option__row">' +
+                  '<span class="mw-option__label-wrap mw-rite-lang mw-kyrie-dd' + (val ? ' is-chosen' : '') + '">' +
+                    '<button type="button" class="mw-option__label mw-rite-lang__btn" aria-haspopup="listbox"></button>' +
+                  '</span>' +
+                  actions +
+                '</div>' +
+                mediaRow +
+                settings +
+              '</div>';
+
+            var langBtn = active.querySelector('.mw-rite-lang__btn');
+            if (langBtn) langBtn.textContent = labelText;
+            bindLangTrigger(active.querySelector('.mw-rite-lang'));
+
+            var textBtn = active.querySelector('[data-mw-text-preview]');
+            if (textBtn && mediaKey) {
+              textBtn.setAttribute('data-mw-media-key', mediaKey);
+              textBtn.addEventListener('click', function (e) {
+                e.stopPropagation(); e.preventDefault();
+                if (typeof window.openMassRiteTextPreview === 'function') window.openMassRiteTextPreview(mediaKey);
+              });
+              textBtn.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); textBtn.click(); }
+              });
+            }
+            if (val) bindSettings(active.querySelector('.mw-rite-settings'), mediaKey);
+            if (section === 'kyrie') ensureKyrieTagalogPanel();
+            if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+            if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins(rite);
+          }
+
+          function pickLang(val) {
+            sel.value = val;
+            if (val === 'none') {
+              if (window.massRiteVideoMode) window.massRiteVideoMode[section] = false;
+            } else if (window.massRiteVideoMode && window.massRiteVideoMode[section]) {
+              if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
+              window.massRiteVideoLang[section] = val;
+            }
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            renderActive();
+            mwAdvanceAfterPick(rite);
+            if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+            if (typeof refreshContinue === 'function') refreshContinue();
+          }
+
+          sel.addEventListener('change', function () { renderActive(); });
+          if (typeof window.registerRiteVideoSync === 'function') window.registerRiteVideoSync(section, renderActive);
+          scheduleRiteDefaultPinLabelHide(pin);
+          renderActive();
+        }
+        function buildGloriaChoiceUi(sel) {
+          var section = 'gloria';
+          var rite = sel.closest('.mw-rite');
+          if (!rite) return;
+          var langOpts = Array.prototype.slice.call(sel.options).filter(function (o) {
+            return o.value && o.value !== 'none' && !o.disabled;
+          });
+          if (!langOpts.length) return;
+
+          var wrap = document.createElement('div');
+          wrap.className = 'mw-options';
+          wrap.setAttribute('role', 'radiogroup');
+          wrap.setAttribute('data-mw-media-section', section);
+
+          var lastLang = (sel.value && sel.value !== 'none') ? sel.value : '';
+          if (!lastLang || !langOpts.some(function (o) { return o.value === lastLang; })) {
+            var preferred = preferredMassLanguageOption();
+            lastLang = langOpts.some(function (o) { return o.value === preferred; })
+              ? preferred
+              : (langOpts[0].value || 'english');
+          }
+
+          function optionLabel(val) {
+            var found = '';
+            Array.prototype.some.call(sel.options, function (o) {
+              if (o.value === val) { found = (o.textContent || '').trim(); return true; }
+              return false;
+            });
+            return found || val;
+          }
+
+          var langDd = document.createElement('div');
+          langDd.className = 'mw-rite-lang mw-rite-lang--inline mw-kyrie-dd';
+          langDd.setAttribute('data-mw-rite-lang-ui', section);
+          langDd.hidden = true;
+          var menuId = 'mw-gloria-lang-menu';
+          langDd.innerHTML =
+            '<button type="button" class="mw-rite-lang__btn mw-kyrie-dd__btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="' + menuId + '">' +
+              '<span class="mw-rite-lang__value"></span>' +
+            '</button>' +
+            '<div class="mw-rite-lang__menu mw-kyrie-dd__menu" id="' + menuId + '" hidden role="listbox" aria-label="Gloria language"></div>';
+          var langBtn = langDd.querySelector('.mw-rite-lang__btn');
+          var langValue = langDd.querySelector('.mw-rite-lang__value');
+          var langMenu = langDd.querySelector('.mw-rite-lang__menu');
+
+          langOpts.forEach(function (o) {
+            var item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'mw-rite-lang__option mw-kyrie-dd__option';
+            item.setAttribute('role', 'option');
+            item.setAttribute('data-val', o.value);
+            item.setAttribute('aria-selected', 'false');
+            item.innerHTML = '<span class="mw-kyrie-dd__name"></span>';
+            item.querySelector('.mw-kyrie-dd__name').textContent = o.textContent;
+            item.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              pickLang(o.value);
+              setRiteLangOpen(langDd, false);
+            });
+            langMenu.appendChild(item);
+          });
+
+          langBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            setRiteLangOpen(langDd, !langDd.classList.contains('is-open'));
+          });
+
+          function mediaKeyFor(lang) {
+            if (!lang || lang === 'none') return '';
+            return typeof window.massMediaKey === 'function'
+              ? window.massMediaKey(section, lang)
+              : (section + '::' + lang);
+          }
+
+          var gloriaItem = document.createElement('div');
+          gloriaItem.className = 'mw-option';
+          gloriaItem.setAttribute('role', 'radio');
+          gloriaItem.setAttribute('tabindex', '0');
+          gloriaItem.setAttribute('data-val', '__gloria');
+          gloriaItem.setAttribute('aria-checked', 'false');
+          gloriaItem.innerHTML =
+            '<div class="mw-option__row">' +
+              '<span class="mw-option__check" aria-hidden="true"></span>' +
+              '<span class="mw-option__label-wrap mw-option__label-wrap--choice">' +
+                '<span class="mw-option__label">Gloria</span>' +
+              '</span>' +
+              ritePreviewHtml('', { audio: true }) +
+            '</div>' +
+            '<div class="mw-option__media mass-song-media-row" data-mw-rite-media="1" data-mw-media-section="gloria"></div>' +
+            '<div class="mw-rite-settings">' +
+              '<button type="button" class="mw-rite-settings__btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Link audio or video" title="Link audio or video">' +
+                riteSettingsGearHtml() +
+              '</button>' +
+              '<div class="mw-rite-settings__pop" hidden role="dialog" aria-label="Link media">' +
+                '<p class="mw-rite-settings__title">Link media</p>' +
+                '<button type="button" class="mw-rite-settings__item" data-mw-link-media="audio">Link audio</button>' +
+                '<button type="button" class="mw-rite-settings__item" data-mw-link-media="video">Link video</button>' +
+              '</div>' +
+            '</div>';
+
+          var gloriaLine = document.createElement('div');
+          gloriaLine.className = 'mw-option-line';
+          gloriaLine.appendChild(gloriaItem);
+          var gloriaPin = document.createElement('label');
+          gloriaPin.className = 'mw-default-pin mw-default-pin--rite';
+          gloriaPin.title = 'Use this choice as my default next time';
+          gloriaPin.setAttribute('aria-label', 'Default');
+          gloriaPin.innerHTML = riteDefaultPinHtml(sel.id || 'flow-gloria-choice', lastLang);
+          gloriaPin.addEventListener('click', function (e) { e.stopPropagation(); });
+          gloriaLine.appendChild(gloriaPin);
+          wrap.appendChild(gloriaLine);
+
+          var noneItem = document.createElement('div');
+          noneItem.className = 'mw-option mw-option--omit';
+          noneItem.setAttribute('role', 'radio');
+          noneItem.setAttribute('tabindex', '0');
+          noneItem.setAttribute('data-val', 'none');
+          noneItem.setAttribute('aria-checked', 'false');
+          noneItem.innerHTML =
+            '<div class="mw-option__row">' +
+              '<span class="mw-option__check" aria-hidden="true"></span>' +
+              '<span class="mw-option__label-wrap mw-option__label-wrap--choice">' +
+                '<span class="mw-option__label">No Gloria</span>' +
+              '</span>' +
+            '</div>';
+          var noneLine = document.createElement('div');
+          noneLine.className = 'mw-option-line';
+          noneLine.appendChild(noneItem);
+          var nonePin = document.createElement('label');
+          nonePin.className = 'mw-default-pin mw-default-pin--rite';
+          nonePin.title = 'Use this choice as my default next time';
+          nonePin.setAttribute('aria-label', 'Default');
+          nonePin.innerHTML = riteDefaultPinHtml(sel.id || 'flow-gloria-choice', 'none');
+          nonePin.addEventListener('click', function (e) { e.stopPropagation(); });
+          noneLine.appendChild(nonePin);
+          wrap.appendChild(noneLine);
+
+          var labelWrap = gloriaItem.querySelector('.mw-option__label-wrap--choice');
+          var textBtn = gloriaItem.querySelector('[data-mw-text-preview]');
+          var playBtn = gloriaItem.querySelector('[data-mw-play-audio]');
+          var mediaRow = gloriaItem.querySelector('[data-mw-rite-media="1"]');
+          var settingsHost = gloriaItem.querySelector('.mw-rite-settings');
+          var gloriaPinInput = gloriaPin.querySelector('.mw-default-pin__input');
+
+          function syncLangMenu(lang) {
+            langValue.textContent = optionLabel(lang);
+            langDd.classList.add('is-chosen');
+            Array.prototype.forEach.call(langMenu.querySelectorAll('[data-val]'), function (item) {
+              item.setAttribute('aria-selected', String(item.getAttribute('data-val') === lang));
+            });
+          }
+
+          function syncMedia(lang) {
+            var key = mediaKeyFor(lang);
+            if (key) {
+              gloriaItem.setAttribute('data-mw-media-key', key);
+              if (mediaRow) {
+                mediaRow.setAttribute('data-mw-media-row', key);
+                mediaRow.setAttribute('data-mw-media-lang', lang);
+              }
+              if (textBtn) textBtn.setAttribute('data-mw-media-key', key);
+              if (playBtn) playBtn.setAttribute('data-mw-media-slot', key);
+              Array.prototype.forEach.call(settingsHost.querySelectorAll('[data-mw-link-media]'), function (btn) {
+                btn.setAttribute('data-mw-media-slot', key);
+              });
+            } else {
+              gloriaItem.removeAttribute('data-mw-media-key');
+            }
+          }
+
+          function sync() {
+            var val = sel.value || '';
+            var isOmit = val === 'none';
+            var isOn = !!val && !isOmit;
+            if (isOn) lastLang = val;
+            gloriaItem.setAttribute('aria-checked', String(isOn));
+            noneItem.setAttribute('aria-checked', String(isOmit));
+            setRiteLangOpen(langDd, false);
+            closeAllRiteSettings();
+            if (isOn) {
+              langDd.hidden = false;
+              if (labelWrap && langDd.parentElement !== labelWrap) {
+                labelWrap.appendChild(langDd);
+              }
+              syncLangMenu(val);
+              syncMedia(val);
+              if (gloriaPinInput) gloriaPinInput.setAttribute('data-mw-default-value', val);
+            } else {
+              langDd.hidden = true;
+              if (langDd.parentElement !== wrap) wrap.appendChild(langDd);
+              syncMedia(lastLang);
+              if (gloriaPinInput) gloriaPinInput.setAttribute('data-mw-default-value', lastLang);
+            }
+            if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+            if (typeof window.syncRiteOptionsCollapse === 'function') window.syncRiteOptionsCollapse(rite);
+            if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins(wrap);
+          }
+
+          function pickLang(val) {
+            sel.value = val;
+            if (val === 'none') {
+              if (window.massRiteVideoMode) window.massRiteVideoMode[section] = false;
+            } else {
+              lastLang = val;
+              if (window.massRiteVideoMode && window.massRiteVideoMode[section]) {
+                if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
+                window.massRiteVideoLang[section] = val;
+              }
+            }
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            sync();
+            mwAdvanceAfterPick(wrap);
+            if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') {
+              window.scheduleMassBuilderDraftAutoSave();
+            }
+            if (typeof refreshContinue === 'function') refreshContinue();
+          }
+
+          gloriaItem.addEventListener('click', function (e) {
+            if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-link-media], .mw-media-dd, .mw-rite-lang, .mw-rite-settings, .mw-rite-preview')) return;
+            pickLang(lastLang || 'english');
+          });
+          gloriaItem.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              pickLang(lastLang || 'english');
+            }
+          });
+          noneItem.addEventListener('click', function () { pickLang('none'); });
+          noneItem.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickLang('none'); }
+          });
+
+          if (textBtn) {
+            textBtn.addEventListener('click', function (e) {
+              e.stopPropagation();
+              e.preventDefault();
+              var key = gloriaItem.getAttribute('data-mw-media-key') || mediaKeyFor(lastLang);
+              if (key && typeof window.openMassRiteTextPreview === 'function') {
+                window.openMassRiteTextPreview(key);
+              }
+            });
+          }
+
+          var settingsBtn = settingsHost.querySelector('.mw-rite-settings__btn');
+          var settingsPop = settingsHost.querySelector('.mw-rite-settings__pop');
+          if (settingsBtn && settingsPop) {
+            settingsBtn.addEventListener('click', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              setRiteSettingsOpen(settingsHost, !settingsHost.classList.contains('is-open'));
+            });
+            Array.prototype.forEach.call(settingsPop.querySelectorAll('[data-mw-link-media]'), function (item) {
+              item.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeAllRiteSettings();
+                var kind = item.getAttribute('data-mw-link-media');
+                var slot = item.getAttribute('data-mw-media-slot') || mediaKeyFor(lastLang);
+                if (kind && slot && typeof window.openMassMediaPickModal === 'function') {
+                  window.openMassMediaPickModal(kind, slot, { fromTitle: true });
+                }
+              });
+            });
+          }
+
+          sel.selectedIndex = -1;
+          sel.style.display = 'none';
+          sel.insertAdjacentElement('afterend', wrap);
+          sel.addEventListener('change', function () { sync(); });
+          if (typeof window.registerRiteVideoSync === 'function') {
+            window.registerRiteVideoSync(section, sync);
+          }
+          scheduleRiteDefaultPinLabelHide(wrap);
+          sync();
         }
         function buildChoiceCards() {
           Array.prototype.forEach.call(flowPage.querySelectorAll('select[data-mw-tunes]'), function (sel) {
             if (sel.dataset.mwCards === '1') return; sel.dataset.mwCards = '1';
             var section = sel.getAttribute('data-mw-media-section') || '';
             var textOnly = section === 'penitential' || section === 'creed';
-            var mediaRite = section === 'kyrie' || section === 'gloria' || section === 'our_father' || section === 'lamb_of_god';
+            var mediaRite = section === 'kyrie' || section === 'our_father' || section === 'lamb_of_god';
+            if (section === 'gloria') {
+              buildGloriaChoiceUi(sel);
+              return;
+            }
+            if (mediaRite) {
+              buildLanguageRiteUi(sel, section);
+              return;
+            }
             var wrap = document.createElement('div'); wrap.className = 'mw-options'; wrap.setAttribute('role', 'radiogroup');
             if (section) wrap.setAttribute('data-mw-media-section', section);
             var opts = Array.prototype.slice.call(sel.options).filter(function (o) { return o.value && !o.disabled; });
             sel.selectedIndex = -1;
-            function videoModeOn() {
-              return !!(window.massRiteVideoMode && window.massRiteVideoMode[section]);
-            }
-            function videoLang() {
-              var map = window.massRiteVideoLang || {};
-              return map[section] || (opts[0] && opts[0].value) || '';
-            }
             function sync() {
+              closeAllRitePreviews();
               Array.prototype.forEach.call(wrap.querySelectorAll('.mw-option'), function (c) {
                 var v = c.getAttribute('data-val');
                 c.setAttribute('aria-checked', String(!!sel.value && sel.value === v));
               });
+              syncInlineOptionLanguages(wrap.closest('.mw-rite') || wrap);
               if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+              if (typeof window.syncRiteOptionsCollapse === 'function') window.syncRiteOptionsCollapse(wrap.closest('.mw-rite') || wrap);
             }
             function pickLang(val) {
               sel.value = val;
-              if (val === 'none') {
-                if (window.massRiteVideoMode) window.massRiteVideoMode[section] = false;
-              } else if (window.massRiteVideoMode && window.massRiteVideoMode[section]) {
+              if (val === 'none' && window.massRiteVideoMode && section) {
+                window.massRiteVideoMode[section] = false;
+              } else if (val && window.massRiteVideoMode && window.massRiteVideoMode[section]) {
                 if (!window.massRiteVideoLang) window.massRiteVideoLang = {};
                 window.massRiteVideoLang[section] = val;
               }
@@ -988,6 +1870,7 @@
               sync();
               mwAdvanceAfterPick(wrap);
               if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
+              if (typeof refreshContinue === 'function') refreshContinue();
             }
             opts.forEach(function (o) {
               var isOmit = o.value === 'none';
@@ -998,23 +1881,20 @@
               item.setAttribute('role', 'radio'); item.setAttribute('tabindex', '0'); item.setAttribute('data-val', o.value);
               item.setAttribute('aria-checked', 'false');
               if (mediaKey) item.setAttribute('data-mw-media-key', mediaKey);
-              var action = (!isOmit && (textOnly || mediaRite || mediaKey))
-                ? ('<span class="mw-option__text" data-mw-text-preview role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>')
-                : '';
-              var playDd = (!isOmit && mediaRite && mediaKey) ? riteAudioPlayHtml(mediaKey) : '';
-              var labelHtml = (!isOmit && mediaRite && mediaKey) ? riteLabelLinkHtml(mediaKey) : '<span class="mw-option__label"></span>';
+              var action = '';
+              if (!isOmit && (textOnly || mediaKey)) {
+                action = ritePreviewHtml(mediaKey, {
+                  audio: !textOnly && !!mediaKey,
+                  directText: textOnly
+                });
+              }
+              var labelHtml = '<span class="mw-option__label-wrap mw-option__label-wrap--choice"><span class="mw-option__label"></span></span>';
               item.innerHTML =
                 '<div class="mw-option__row">' +
                   '<span class="mw-option__check" aria-hidden="true"></span>' +
                   labelHtml +
                   action +
-                  playDd +
-                '</div>' +
-                (!isOmit && mediaRite && mediaKey
-                  ? ('<div class="mw-option__media mass-song-media-row" data-mw-media-row="' + escapeAttr(mediaKey) +
-                     '" data-mw-rite-media="1" data-mw-media-section="' + escapeAttr(section) +
-                     '" data-mw-media-lang="' + escapeAttr(o.value) + '"></div>')
-                  : '');
+                '</div>';
               item.querySelector('.mw-option__label').textContent = o.textContent;
               var pinKey = sel.id || (section ? ('flow-' + section.replace(/_/g, '-') + '-choice') : '');
               var line = document.createElement('div');
@@ -1041,7 +1921,7 @@
                 });
               }
               item.addEventListener('click', function (e) {
-                if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], .mw-kyrie-tagalog, .mw-kyrie-dd, .mw-media-dd')) return;
+                if (e.target.closest('[data-mw-text-preview], .mw-media-dd, .mw-rite-lang, .mw-rite-preview')) return;
                 pickLang(o.value);
               });
               item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickLang(o.value); } });
@@ -1052,7 +1932,9 @@
             sel.style.display = 'none';
             sel.insertAdjacentElement('afterend', wrap);
             sel.addEventListener('change', function () { sync(); });
-            if (typeof window.registerRiteVideoSync === 'function') window.registerRiteVideoSync(section, sync);
+            if (typeof window.registerRiteVideoSync === 'function' && section) {
+              window.registerRiteVideoSync(section, sync);
+            }
             sync();
             if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins(wrap);
           });
@@ -1134,6 +2016,7 @@
               }
             }
             if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+            syncInlineOptionLanguages(wrap.closest('.mw-rite') || wrap);
             refreshContinue();
           }
           var sanctusLine = defaultOpt && defaultOpt.closest('.mw-option-line');
@@ -1150,7 +2033,7 @@
           if (defaultOpt && defaultOpt.dataset.mwSanctusLangBound !== '1') {
             defaultOpt.dataset.mwSanctusLangBound = '1';
             defaultOpt.addEventListener('click', function (e) {
-              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], .mw-media-dd')) return;
+              if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], .mw-media-dd, .mw-rite-lang, .mw-rite-preview')) return;
               Array.prototype.forEach.call(wrap.querySelectorAll('.mw-option'), function (c) {
                 c.setAttribute('aria-checked', String(c.getAttribute('data-val') === 'default'));
               });
@@ -1456,7 +2339,11 @@
           return true;
         }
         var STEP_DONE = {
-          1: function () { var d = $('mass-date'); return !!(d && d.value); },
+          1: function () {
+            var d = $('mass-date');
+            var cel = $('celebrant');
+            return !!(d && d.value) && !!(cel && cel.value && cel.value.trim());
+          },
           2: function () {
             if (!selVal('flow-penitential-choice')) return false;
             var kOk = selVal('flow-kyrie-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.kyrie);
@@ -1470,6 +2357,9 @@
             var lOk = selVal('flow-lamb-choice') || !!(window.massRiteVideoMode && window.massRiteVideoMode.lamb_of_god);
             return oOk && lOk;
           },
+          5: function () {
+            return collectStepMissingOptions(5).length === 0;
+          },
           7: function () { return collectMassMissingOptions().length === 0; }
         };
         function stepReady(n) { return STEP_DONE[n] ? !!STEP_DONE[n]() : true; }
@@ -1477,6 +2367,7 @@
           var nb = $('mw-next'); if (nb) nb.classList.toggle('is-ready', stepReady(current));
           var g = $('mw-generate'); if (g) g.classList.toggle('is-ready', current === 7);
           if (current === 7 && collectMassMissingOptions().length === 0) clearReviewMissingHighlights();
+          pruneMissingTargetHighlights();
           fillAside(current);
         }
         function flashHint(msg) {
@@ -1699,6 +2590,7 @@
                 if (hasKyrie) kSel.value = lang;
               }
               applyMassLanguageOptionOrder(lang);
+              syncVariantRiteLanguagesFromMass(lang);
               /* re-render mw option radios driven by hidden selects */
               if (typeof window.syncMassRiteOptionRadios === 'function') window.syncMassRiteOptionRadios();
               else {
@@ -1742,6 +2634,20 @@
             if (typeof window.renderMassMediaPickList === 'function') window.renderMassMediaPickList();
           });
           flowPage.addEventListener('click', function (e) {
+            var previewBtn = e.target.closest('[data-mw-rite-preview-btn]');
+            if (previewBtn && flowPage.contains(previewBtn)) {
+              e.preventDefault();
+              e.stopPropagation();
+              var previewHost = previewBtn.closest('.mw-rite-preview');
+              setRitePreviewOpen(previewHost, !(previewHost && previewHost.classList.contains('is-open')));
+              return;
+            }
+            var previewAction = e.target.closest('.mw-rite-preview__action');
+            if (previewAction && flowPage.contains(previewAction)) {
+              var openHost = previewAction.closest('.mw-rite-preview.is-open');
+              if (openHost) scheduleRitePreviewAutoHide(openHost);
+            }
+            if (!e.target.closest('.mw-rite-preview')) closeAllRitePreviews();
             var riteModeBtn = e.target.closest('[data-mass-rite-slide-mode-val]');
             if (riteModeBtn && flowPage.contains(riteModeBtn)) {
               e.preventDefault();
@@ -1849,9 +2755,11 @@
             massDateEl.addEventListener('change', beginMwMassContextLoading);
           }
           buildChoiceCards();
+          attachInlineOptionLanguages();
           applyMassLanguageOptionOrder();
           ensureKyrieTagalogPanel();
           ensureSanctusVideoOption();
+          syncInlineOptionLanguages();
           bindMediaDropdowns(flowPage);
           scheduleRiteDefaultPinLabelHide(flowPage);
           Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-options[aria-label] .mw-option'), function (opt) {
@@ -1860,6 +2768,7 @@
             if (opt.hasAttribute('data-val') && opt.closest('select[data-mw-tunes] + .mw-options')) return;
             opt.dataset.mwWired = '1';
             function pickStandalone() {
+              closeAllRitePreviews();
               var group = opt.closest('[role="radiogroup"]');
               var section = group && group.getAttribute('data-mw-media-section');
               if (group) Array.prototype.forEach.call(group.querySelectorAll('.mw-option'), function (c) {
@@ -1872,10 +2781,11 @@
                 window.massRiteVideoLang[section] = opt.getAttribute('data-val') || 'default';
               }
               if (section && typeof window.syncRiteVideoUi === 'function') window.syncRiteVideoUi(section);
+              syncInlineOptionLanguages(group || opt);
               refreshContinue();
               mwAdvanceAfterPick(opt);
             }
-            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select, .mw-media-dd')) { e.preventDefault(); return; } pickStandalone(); });
+            opt.addEventListener('click', function (e) { if (e.target.closest('[data-mw-text-preview], [data-mw-play-audio], [data-mw-play-youtube], [data-mw-play-video], [data-mw-link-media], [data-mw-link-youtube], [data-mw-clear-youtube], [data-mass-rite-slide-mode-val], select, .mw-video-lang-select, .mw-media-dd, .mw-rite-lang, .mw-rite-preview')) { e.preventDefault(); return; } pickStandalone(); });
             opt.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickStandalone(); } });
           });
           flowPage.addEventListener('input', refreshContinue, true);

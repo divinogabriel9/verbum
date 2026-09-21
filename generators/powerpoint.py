@@ -16,10 +16,11 @@ import re
 import shutil
 import subprocess
 import tempfile
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, Iterator, List, Mapping, Optional, Tuple
 
 from lxml import etree
 from pptx import Presentation
@@ -332,6 +333,20 @@ _ACTIVE_KYRIE_TAGALOG_SLIDE = 1
 
 def _mass_lang() -> str:
     return _ACTIVE_MASS_LANG or "english"
+
+
+@contextmanager
+def _mass_lang_override(language: str | None) -> Iterator[None]:
+    """Temporarily switch deck language for one rite (penitential / creed / sanctus)."""
+    global _ACTIVE_MASS_LANG
+    prev = _ACTIVE_MASS_LANG
+    override = (language or "").strip()
+    if override:
+        _ACTIVE_MASS_LANG = normalize_mass_language(override)
+    try:
+        yield
+    finally:
+        _ACTIVE_MASS_LANG = prev
 
 
 def _use_english_rite_templates() -> bool:
@@ -6938,6 +6953,9 @@ def generate_mass_ppt(
     hymn_lyric_overrides: Optional[Mapping[str, Any]] = None,
     gospel_acclamation_verse: str = "",
     creed_choice: str = "nicene",
+    creed_language: str = "",
+    penitential_language: str = "",
+    sanctus_language: str = "",
     gloria_choice: str = "english",
     our_father_choice: str = "english",
     kyrie_choice: str = "english",
@@ -7089,7 +7107,8 @@ def generate_mass_ppt(
         else:
             _add_marked_slide(prs, intro_title, flow.SIGN_CROSS, theme)
     if _want("penitential"):
-        _add_penitential_act_slides(prs, theme)
+        with _mass_lang_override(penitential_language or None):
+            _add_penitential_act_slides(prs, theme)
     if _want("kyrie") and not _use_video("kyrie", "Kyrie"):
         _add_kyrie_slide(prs, theme)
     if _want("gloria") and not omit_gloria and not _use_video("gloria", "Gloria"):
@@ -7208,7 +7227,8 @@ def generate_mass_ppt(
 
     # --- Creed (Nicene or Apostles' — never both) ---
     if _want("creed") and not omit_creed:
-        _add_creed_slides(prs, theme, creed_choice=creed_choice)
+        with _mass_lang_override(creed_language or None):
+            _add_creed_slides(prs, theme, creed_choice=creed_choice)
     if _want("dividers"):
         _add_divider_cover(prs, **ctx)
 
@@ -7267,12 +7287,13 @@ def generate_mass_ppt(
             _add_marked_slide(prs, lote_title, flow.PREFACE_ACCLAIM, theme)
     if _want("lote_poster"):
         _add_lote_poster_slide(prs, theme, lote_poster_path)
-    sanctus_title = "Santo, Santo, Santo" if _mass_lang() == "tagalog" else "Sanctus"
     if _want("sanctus") and not _use_video("sanctus", "Sanctus"):
-        if _use_english_rite_templates() and _clone_master_section(prs, "sanctus", theme, "Sanctus"):
-            pass
-        else:
-            _add_marked_chunked(prs, sanctus_title, _prayer("holy_holy"), theme)
+        with _mass_lang_override(sanctus_language or None):
+            sanctus_title = "Santo, Santo, Santo" if _mass_lang() == "tagalog" else "Sanctus"
+            if _use_english_rite_templates() and _clone_master_section(prs, "sanctus", theme, "Sanctus"):
+                pass
+            else:
+                _add_marked_chunked(prs, sanctus_title, _prayer("holy_holy"), theme)
     if _want("lote_poster"):
         _add_lote_poster_slide(prs, theme, lote_poster_path)
     mystery_title = "Misteryo ng Pananampalataya" if _mass_lang() == "tagalog" else "The Mystery of Faith"

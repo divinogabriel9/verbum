@@ -218,8 +218,12 @@
     async function patchCatalogSongFromMetadataModal(section, id, title) {
       const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
       const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
+      const newSection = String(($("song-metadata-edit-section") && $("song-metadata-edit-section").value) || "").trim().toLowerCase();
       const gospel_moods = readSongMetadataMoodChecks();
       const patchBody = { title, author, language, gospel_moods };
+      if (newSection && newSection !== String(section || "").trim().toLowerCase()) {
+        patchBody.new_section = newSection;
+      }
       const youtube = typeof composerYoutubeRef === "function" ? composerYoutubeRef() : (composerSongMedia && composerSongMedia.audio);
       const snippet = typeof composerAudioSnippetRef === "function" ? composerAudioSnippetRef() : (composerSongMedia && composerSongMedia.preview);
       const video = composerSongMedia && composerSongMedia.video;
@@ -242,7 +246,14 @@
         const detail = data.detail || data.error || "Update failed";
         throw new Error(typeof detail === "string" ? detail : "Update failed");
       }
-      return { title, author, language, gospel_moods, data };
+      return {
+        title,
+        author,
+        language,
+        gospel_moods,
+        section: String((data && data.section) || newSection || section).trim().toLowerCase(),
+        data,
+      };
     }
 
     async function saveSongMetadataFromModal() {
@@ -278,7 +289,7 @@
         }
         setSongMetadataSaveButtonState("saving");
         try {
-          applyMetadataModalToComposerFields();
+          const applied = applyMetadataModalToComposerFields();
           if (
             intent !== "save" &&
             composerLoadedSong &&
@@ -288,18 +299,20 @@
           ) {
             const section = composerLoadedSong.section || (($("lyrics-save-section") && $("lyrics-save-section").value) || "meditation");
             const id = composerLoadedSong.id;
-            await patchCatalogSongFromMetadataModal(section, id, title);
-            composerLoadedSong = { section, id, title };
+            const patched = await patchCatalogSongFromMetadataModal(section, id, title);
+            const savedSection = patched.section || applied.section || section;
+            composerLoadedSong = { section: savedSection, id, title };
+            setComposerSongSection(savedSection);
             mergeSavedSongIntoLocalCatalog({
               id,
               title,
-              section,
+              section: savedSection,
               audio_media: composerSongMedia && composerSongMedia.audio,
               video_media: composerSongMedia && composerSongMedia.video,
               audio_preview: composerSongMedia && composerSongMedia.preview,
             });
             if (typeof syncSongMediaSurfaces === "function") {
-              syncSongMediaSurfaces(section, id, { fromComposer: true });
+              syncSongMediaSurfaces(savedSection, id, { fromComposer: true });
             }
             renderSongCatalog();
             refreshSongCatalogInBackground();
@@ -326,17 +339,23 @@
       setSongMetadataSaveButtonState("saving");
       try {
         const patched = await patchCatalogSongFromMetadataModal(section, id, title);
+        const savedSection = patched.section || section;
+        songMetaEditCtx.section = savedSection;
         mergeSavedSongIntoLocalCatalog({
           id,
           title: patched.title,
-          section,
+          section: savedSection,
           audio_media: composerSongMedia && composerSongMedia.audio,
           video_media: composerSongMedia && composerSongMedia.video,
           audio_preview: composerSongMedia && composerSongMedia.preview,
         });
         if (typeof syncSongMediaSurfaces === "function") {
-          syncSongMediaSurfaces(section, id, { fromComposer: true });
+          syncSongMediaSurfaces(savedSection, id, { fromComposer: true });
         }
+        if (composerLoadedSong && String(composerLoadedSong.id || "").trim() === String(id || "").trim()) {
+          composerLoadedSong = { section: savedSection, id, title: patched.title };
+        }
+        setComposerSongSection(savedSection);
         renderSongCatalog();
         refreshSongCatalogInBackground();
         if ($("lyrics-save-title")) $("lyrics-save-title").value = patched.title;
@@ -344,7 +363,7 @@
         setComposerSongLanguage(patched.language);
         composerGospelMoods = patched.gospel_moods.slice();
         updateLyricsComposerDetailsPreview();
-        pushSongHistory({ title: patched.title, section, id, kind: "edited" });
+        pushSongHistory({ title: patched.title, section: savedSection, id, kind: "edited" });
         playSongMetadataSaveSuccess("Updated \"" + patched.title + "\".");
         setLyricsStatus("Updated \"" + patched.title + "\".", "ok");
       } catch (err) {
@@ -394,6 +413,7 @@
             );
           });
         }
+        songCatalogSelected.delete(songCatalogSelectKey(section, id));
         if (composerLoadedSong && String(composerLoadedSong.id || "").trim() === String(id || "").trim()) {
           composerLoadedSong = null;
         }
@@ -409,6 +429,207 @@
           confirmBtn.textContent = "Delete";
         }
       }
+    }
+
+    function closeSongBulkDeleteModal() {
+      setUiOverlayOpen($("song-bulk-delete-modal"), false);
+    }
+
+    function openSongBulkDeleteConfirmModal() {
+      const items = getSongCatalogSelectedItems();
+      if (!items.length) return;
+      const desc = $("song-bulk-delete-desc");
+      if (desc) {
+        desc.textContent =
+          "Remove " + items.length + " song" + (items.length === 1 ? "" : "s") +
+          " from the global catalog? This cannot be undone.";
+      }
+      setUiOverlayOpen($("song-bulk-delete-modal"), true);
+    }
+
+    async function confirmSongBulkDeleteFromModal() {
+      if (!guardSuperadminAction()) return;
+      const items = getSongCatalogSelectedItems();
+      if (!items.length) {
+        closeSongBulkDeleteModal();
+        return;
+      }
+      const confirmBtn = $("song-bulk-delete-confirm");
+      if (confirmBtn) {
+        if (confirmBtn.disabled) return;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Deleting…";
+      }
+      try {
+        const headers = Object.assign(
+          { "Content-Type": "application/json" },
+          await catalogAuthHeaders()
+        );
+        const res = await fetch("/api/catalog/songs/bulk-delete", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            songs: items.map((item) => ({ id: item.id, section: item.section })),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = data.detail || data.error || "Delete failed";
+          throw new Error(typeof detail === "string" ? detail : "Delete failed");
+        }
+        const removed = new Set((data.removed || items.map((i) => i.id)).map((x) => String(x)));
+        if (songCatalogData) {
+          Object.keys(songCatalogData).forEach((sec) => {
+            if (!Array.isArray(songCatalogData[sec])) return;
+            songCatalogData[sec] = songCatalogData[sec].filter(
+              (row) => !removed.has(String(row.id || "").trim())
+            );
+          });
+        }
+        if (composerLoadedSong && removed.has(String(composerLoadedSong.id || "").trim())) {
+          composerLoadedSong = null;
+        }
+        clearSongCatalogSelection();
+        renderSongCatalog();
+        closeSongBulkDeleteModal();
+        refreshSongCatalogInBackground();
+        const n = removed.size;
+        const msg = "Removed " + n + " song" + (n === 1 ? "" : "s") + ".";
+        setLyricsStatus(msg, "ok");
+        if (typeof showToast === "function") showToast(msg, "ok");
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Delete";
+        }
+      }
+    }
+
+    async function moveSelectedCatalogSongs() {
+      if (!guardSuperadminAction()) return;
+      const items = getSongCatalogSelectedItems();
+      if (!items.length) return;
+      const sel = $("song-catalog-bulk-move-section");
+      const target = String((sel && sel.value) || "").trim().toLowerCase();
+      if (!target) {
+        if (typeof showToast === "function") showToast("Choose a section to move into.", "warn");
+        if (sel) sel.focus();
+        return;
+      }
+      const moveBtn = $("song-catalog-bulk-move");
+      if (moveBtn) {
+        if (moveBtn.disabled) return;
+        moveBtn.disabled = true;
+        moveBtn.textContent = "Moving…";
+      }
+      try {
+        const headers = Object.assign(
+          { "Content-Type": "application/json" },
+          await catalogAuthHeaders()
+        );
+        const res = await fetch("/api/catalog/songs/bulk-move", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            target_section: target,
+            songs: items.map((item) => ({ id: item.id, section: item.section })),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = data.detail || data.error || "Move failed";
+          throw new Error(typeof detail === "string" ? detail : "Move failed");
+        }
+        const movedIds = new Set((data.moved || []).map((m) => String(m.id || "")));
+        if (songCatalogData && movedIds.size) {
+          const movedRows = [];
+          Object.keys(songCatalogData).forEach((sec) => {
+            if (!Array.isArray(songCatalogData[sec])) return;
+            const kept = [];
+            songCatalogData[sec].forEach((row) => {
+              const rid = String(row.id || "").trim();
+              if (movedIds.has(rid)) movedRows.push(row);
+              else kept.push(row);
+            });
+            songCatalogData[sec] = kept;
+          });
+          if (!Array.isArray(songCatalogData[target])) songCatalogData[target] = [];
+          movedRows.forEach((row) => {
+            songCatalogData[target].unshift(row);
+          });
+        }
+        if (composerLoadedSong && movedIds.has(String(composerLoadedSong.id || "").trim())) {
+          composerLoadedSong = Object.assign({}, composerLoadedSong, { section: target });
+          setComposerSongSection(target);
+        }
+        clearSongCatalogSelection();
+        if (sel) sel.value = "";
+        songCatalogExpanded[target] = true;
+        renderSongCatalog();
+        refreshSongCatalogInBackground();
+        const n = (data.count != null) ? data.count : movedIds.size;
+        const msg =
+          "Moved " + n + " song" + (n === 1 ? "" : "s") +
+          " to " + songSectionLabel(target) + ".";
+        setLyricsStatus(msg, "ok");
+        if (typeof showToast === "function") showToast(msg, "ok");
+      } catch (err) {
+        setLyricsStatus(err.message || "Move failed.", "error");
+        if (typeof showToast === "function") showToast(err.message || "Move failed.", "error");
+      } finally {
+        if (moveBtn) {
+          moveBtn.disabled = false;
+          moveBtn.textContent = "Move";
+        }
+        syncSongCatalogBulkBar();
+      }
+    }
+
+    function bindSongCatalogBulkBar() {
+      const langStatsBtn = $("song-catalog-lang-stats");
+      if (langStatsBtn && langStatsBtn.dataset.bound !== "1") {
+        langStatsBtn.dataset.bound = "1";
+        langStatsBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (langStatsBtn.classList.contains("is-expanded")) {
+            collapseSongCatalogLangStats();
+          } else {
+            expandSongCatalogLangStats();
+          }
+        });
+      }
+      const bar = $("song-catalog-bulk-bar");
+      if (!bar || bar.dataset.bound === "1") return;
+      bar.dataset.bound = "1";
+      $("song-catalog-select-trigger") && $("song-catalog-select-trigger").addEventListener("click", () => {
+        if (!guardSuperadminAction()) return;
+        setSongCatalogSelectMode(!songCatalogSelectMode);
+      });
+      $("song-catalog-bulk-clear") && $("song-catalog-bulk-clear").addEventListener("click", () => {
+        clearSongCatalogSelection();
+        renderSongCatalog();
+      });
+      $("song-catalog-bulk-move") && $("song-catalog-bulk-move").addEventListener("click", () => {
+        moveSelectedCatalogSongs().catch(() => {});
+      });
+      $("song-catalog-bulk-delete") && $("song-catalog-bulk-delete").addEventListener("click", () => {
+        openSongBulkDeleteConfirmModal();
+      });
+      [
+        ["song-bulk-delete-backdrop", closeSongBulkDeleteModal],
+        ["song-bulk-delete-close", closeSongBulkDeleteModal],
+        ["song-bulk-delete-cancel", closeSongBulkDeleteModal],
+      ].forEach(([id, fn]) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", fn);
+      });
+      $("song-bulk-delete-confirm") && $("song-bulk-delete-confirm").addEventListener("click", () => {
+        confirmSongBulkDeleteFromModal().catch((err) => {
+          setLyricsStatus(err.message || "Delete failed.", "error");
+          if (typeof showToast === "function") showToast(err.message || "Delete failed.", "error");
+        });
+      });
+      syncSongCatalogBulkBar();
     }
 
     function clearSongCatalogSearch() {
@@ -775,6 +996,10 @@
         if (!row) return;
         const section = row.dataset.ssec;
         const id = row.dataset.sid;
+        if (e.target.closest(".song-row-check")) {
+          // Checkbox change handler owns selection state.
+          return;
+        }
         if (actBtn) {
           const act = actBtn.dataset.act;
           try {
@@ -806,6 +1031,23 @@
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");
         }
+      });
+      root.addEventListener("change", (e) => {
+        const selectBox = e.target.closest(".song-row-check input[type=\"checkbox\"]");
+        if (!selectBox || !root.contains(selectBox)) return;
+        const row = selectBox.closest(".song-row");
+        if (!row) return;
+        const section = row.dataset.ssec;
+        const id = row.dataset.sid;
+        const titleEl = row.querySelector(".song-row-title");
+        const title = titleEl ? titleEl.textContent.trim() : "";
+        const checked = !!selectBox.checked;
+        const checkLabel = row.querySelector(".song-row-check");
+        if (checkLabel) checkLabel.classList.toggle("is-checked", checked);
+        setSongCatalogRowSelected(section, id, title, checked);
+        row.classList.toggle("is-selected", checked);
+        syncSongCatalogBulkBar();
+        syncSongCatalogSectionSelectAll(section);
       });
       root.addEventListener("mouseover", (e) => {
         const clickable = e.target.closest(".song-row-clickable");
@@ -839,6 +1081,7 @@
     }
     bindSongCatalogRoot($("song-catalog-root"));
     bindSongCatalogRoot($("collections-catalog-root"));
+    bindSongCatalogBulkBar();
     initSongCatalogModals();
     initPracticeShareUi();
 

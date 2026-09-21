@@ -2000,57 +2000,6 @@
       ]
     },
     {
-      "id": "ama_namin_hontiveros",
-      "title": "Ama Namin (hontiveros)",
-      "author": "Eduardo Hontiveros",
-      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
-      "source": "verbum_txt_import",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-07-25T03:26:49.550651+00:00",
-      "language": "Tagalog",
-      "updated_at": "2026-07-25T03:26:49.550651+00:00",
-      "gospel_moods": [
-        "reverent",
-        "solemn"
-      ]
-    },
-    {
-      "id": "ama_namin_francisco",
-      "title": "Ama Namin (francisco)",
-      "author": "Manoling Francisco",
-      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Po Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
-      "source": "verbum_txt_import",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-07-25T03:26:49.550767+00:00",
-      "language": "Tagalog",
-      "updated_at": "2026-07-25T03:26:49.550767+00:00",
-      "gospel_moods": [
-        "reverent",
-        "solemn"
-      ]
-    },
-    {
-      "id": "ama_namin_bukas_palad",
-      "title": "Ama Namin (bukas Palad)",
-      "author": "Bukas Palad",
-      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
-      "source": "verbum_txt_import",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-07-25T03:26:49.550886+00:00",
-      "language": "Tagalog",
-      "updated_at": "2026-07-25T03:26:49.550886+00:00",
-      "gospel_moods": [
-        "reverent",
-        "mercy"
-      ]
-    },
-    {
       "id": "sapagkat_sa_yo_ang_kaharian",
       "title": "Sapagkat Sa'yo Ang Kaharian",
       "author": "Eduardo Hontiveros",
@@ -2483,14 +2432,14 @@
       "id": "in_him_alone",
       "title": "In Him Alone",
       "author": "",
-      "lyrics": "Verse 1\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We justified\nIn him Alone Are we Saved\n\nVerse 2\nWhat Have We To Offer\nThat does Not Fade Or Wither\nCan The World Ever Satisfy\nThe Emptiness In Our Hearts\nIn Vain We Deny\n\nVerse 3\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We Justified\nIn Him Alone Are We Saved\n\nVerse 4\nWhen Will You Cease Running\nIn Search Of Hollow Meaning\nLet His Love Feed The Hunger\nIn Your Soul Till It Overflows\nWith Joy You Yearn To Know\n\nVerse 5\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\n\nVerse 6\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)",
+      "lyrics": "Chorus\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We justified\nIn him Alone Are we Saved\n\nVerse 1\nWhat Have We To Offer\nThat does Not Fade Or Wither\nCan The World Ever Satisfy\nThe Emptiness In Our Hearts\nIn Vain We Deny\n\nChorus\nIn Him Alone Is Our Hope\nIn Him Alone Is Our Strength\nIn Him Alone Are We Justified\nIn Him Alone Are We Saved\n\nVerse 2\nWhen Will You Cease Running\nIn Search Of Hollow Meaning\nLet His Love Feed The Hunger\nIn Your Soul Till It Overflows\nWith Joy You Yearn To Know\n\nVerse 3\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)\n\nVerse 4\nIn Him Alone Is Our Hope (In Him Alone Is Our Hope)\nIn Him Alone Is Our Strength (Unto Him, I Pour Out My Heart)\nIn Him Alone Are We Justified (He Alone Will Save Me)\nIn Him Alone Are We Saved (With His Love And Mercy)",
       "source": "lyrics_dashboard",
       "seasons": [
         "all"
       ],
       "added_at": "2026-09-19T12:48:26.655036+00:00",
       "language": "English",
-      "updated_at": "2026-09-19T16:26:02.570911+00:00",
+      "updated_at": "2026-09-21T21:24:44.343442+00:00",
       "audio_media": {
         "source": "youtube",
         "basename": "yt:Ox_P3YmH1F8",
@@ -2859,18 +2808,6 @@
   ],
   "meditation": [
     {
-      "id": "med_pananaghoy",
-      "title": "Pananaghoy (Meditation)",
-      "lyrics": "(Add Verses When Available — Optional Post-communion Meditation.)",
-      "seasons": [
-        "all"
-      ],
-      "language": "Tagalog",
-      "gospel_moods": [
-        "reverent"
-      ]
-    },
-    {
       "id": "panginoon_maawa_ka_hontiveros",
       "title": "Panginoon, Maawa Ka (hontiveros)",
       "author": "Eduardo Hontiveros",
@@ -2987,6 +2924,57 @@
         "display_name": "Confidite Ego Vici Mundum · 10s",
         "duration_sec": 10
       }
+    },
+    {
+      "id": "ama_namin_hontiveros",
+      "title": "Ama Namin (hontiveros)",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550651+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-21T22:02:57.882222+00:00",
+      "gospel_moods": [
+        "solemn",
+        "reverent"
+      ]
+    },
+    {
+      "id": "ama_namin_francisco",
+      "title": "Ama Namin (francisco)",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Po Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550767+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-21T22:02:57.882254+00:00",
+      "gospel_moods": [
+        "reverent",
+        "solemn"
+      ]
+    },
+    {
+      "id": "ama_namin_bukas_palad",
+      "title": "Ama Namin (bukas Palad)",
+      "author": "Bukas Palad",
+      "lyrics": "Verse 1\nAma Namin, Sumasalangit Ka\nSambahin Ang Ngalan Mo\nMapasaamin Ang Kaharian Mo\nSundin Ang Loob Mo\nDito Sa Lupa Para Nang Sa Langit\n\nVerse 2\nBigyan Mo Kami Ngayon\nNg Aming Kakanin Sa Araw-araw\nAt Patawarin Mo Kami Sa Aming Mga Sala\nPara Nang Pagpapatawad Namin\nSa Nagkakasala Sa Amin\n\nVerse 3\nAt Huwag Mo Kaming Ipahintulot Sa Tukso\nAt Iadya Mo Kami Sa Lahat Ng Masama",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-25T03:26:49.550886+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-21T22:02:57.882277+00:00",
+      "gospel_moods": [
+        "reverent",
+        "mercy"
+      ]
     }
   ]
 }

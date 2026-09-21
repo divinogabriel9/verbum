@@ -865,62 +865,210 @@ def update_catalog_song(
     audio_media: Any = ...,
     video_media: Any = ...,
     audio_preview: Any = ...,
+    new_section: Optional[str] = None,
     updated_by: str | None = None,
 ) -> dict[str, Any]:
     sec = (section or "").strip().lower()
     hid = (hymn_id or "").strip()
+    target_sec = (new_section or sec).strip().lower()
+    if hid and sec not in _SECTIONS:
+        # Allow callers that only know the id — resolve section from catalog.
+        found_sec, _found = find_catalog_row_by_id(hid)
+        if found_sec:
+            sec = found_sec
     if sec not in _SECTIONS or not hid:
         return {"ok": False, "error": "Invalid section or id."}
+    if target_sec not in _SECTIONS:
+        return {"ok": False, "error": "Invalid target section."}
     data = load_catalog()
-    for item in data.get(sec) or []:
-        if str(item.get("id") or "").strip() != hid:
+    item: dict[str, Any] | None = None
+    source_sec = sec
+    for candidate in data.get(sec) or []:
+        if str(candidate.get("id") or "").strip() == hid:
+            item = candidate
+            break
+    if item is None:
+        found_sec, found_row = find_catalog_row_by_id(hid)
+        if found_sec and found_row:
+            item = found_row
+            source_sec = found_sec
+    if item is None:
+        return {"ok": False, "error": "Song not found."}
+
+    if title is not None:
+        nt = format_song_title_case(str(title))
+        if nt:
+            item["title"] = nt
+    if author is not None:
+        item["author"] = str(author).strip()
+    if lyrics is not None:
+        item["lyrics"] = polish_lyrics_text(str(lyrics))
+    if language is not None and str(language).strip():
+        item["language"] = str(language).strip()
+    if gospel_moods is not None:
+        moods = normalize_gospel_moods(gospel_moods)
+        if moods:
+            item["gospel_moods"] = moods
+        elif "gospel_moods" in item:
+            del item["gospel_moods"]
+    _apply_song_media_fields(
+        item,
+        audio_media=audio_media,
+        video_media=video_media,
+        audio_preview=audio_preview,
+    )
+    _stamp_song_timestamps(item, is_new=False)
+
+    moved = False
+    if target_sec != source_sec:
+        # Remove from every section (dedupe), then place in target.
+        for s in _SECTIONS:
+            rows = data.get(s) or []
+            data[s] = [r for r in rows if str(r.get("id") or "").strip() != hid]
+        data.setdefault(target_sec, []).append(item)
+        moved = True
+    else:
+        # Ensure the mutated dict is the one sitting in the catalog list.
+        rows = data.get(source_sec) or []
+        for idx, row in enumerate(rows):
+            if str(row.get("id") or "").strip() == hid:
+                rows[idx] = item
+                break
+
+    save_catalog(
+        data,
+        updated_by=updated_by,
+        sync_song_ids={hid},
+        sync_lyrics=lyrics is not None,
+    )
+    if lyrics is not None:
+        try:
+            from services.parish_hymn_overrides import clear_stale_overrides_for_hymns
+
+            clear_stale_overrides_for_hymns(
+                {hid},
+                newer_than=str(item.get("updated_at") or "").strip() or None,
+            )
+        except Exception:
+            pass
+    return {
+        "ok": True,
+        "section": target_sec,
+        "moved": moved,
+        "audio_media": normalize_song_media_ref(item.get("audio_media")),
+        "video_media": normalize_song_media_ref(item.get("video_media")),
+        "audio_preview": normalize_audio_preview_ref(item.get("audio_preview")),
+    }
+
+
+def move_catalog_songs(
+    items: list[dict[str, Any]],
+    *,
+    target_section: str,
+    updated_by: str | None = None,
+) -> dict[str, Any]:
+    """Move many catalog songs into ``target_section`` (superadmin bulk action)."""
+    target = (target_section or "").strip().lower()
+    if target not in _SECTIONS:
+        return {"ok": False, "error": "Invalid target section."}
+    wanted: list[str] = []
+    seen: set[str] = set()
+    for raw in items or []:
+        if not isinstance(raw, dict):
             continue
-        if title is not None:
-            nt = format_song_title_case(str(title))
-            if nt:
-                item["title"] = nt
-        if author is not None:
-            item["author"] = str(author).strip()
-        if lyrics is not None:
-            item["lyrics"] = polish_lyrics_text(str(lyrics))
-        if language is not None and str(language).strip():
-            item["language"] = str(language).strip()
-        if gospel_moods is not None:
-            moods = normalize_gospel_moods(gospel_moods)
-            if moods:
-                item["gospel_moods"] = moods
-            elif "gospel_moods" in item:
-                del item["gospel_moods"]
-        _apply_song_media_fields(
-            item,
-            audio_media=audio_media,
-            video_media=video_media,
-            audio_preview=audio_preview,
-        )
-        _stamp_song_timestamps(item, is_new=False)
+        hid = str(raw.get("id") or "").strip()
+        if not hid or hid in seen:
+            continue
+        seen.add(hid)
+        wanted.append(hid)
+    if not wanted:
+        return {"ok": False, "error": "No songs selected."}
+
+    data = load_catalog()
+    moved: list[dict[str, str]] = []
+    missing: list[str] = []
+    for hid in wanted:
+        found_sec: str | None = None
+        found_row: dict[str, Any] | None = None
+        for sec in _SECTIONS:
+            for row in data.get(sec) or []:
+                if isinstance(row, dict) and str(row.get("id") or "").strip() == hid:
+                    found_sec = sec
+                    found_row = row
+                    break
+            if found_row is not None:
+                break
+        if not found_row or not found_sec:
+            missing.append(hid)
+            continue
+        if found_sec == target:
+            continue
+        for sec in _SECTIONS:
+            rows = data.get(sec) or []
+            data[sec] = [r for r in rows if str(r.get("id") or "").strip() != hid]
+        _stamp_song_timestamps(found_row, is_new=False)
+        data.setdefault(target, []).append(found_row)
+        moved.append({"id": hid, "from": found_sec, "to": target})
+
+    if not moved and missing and len(missing) == len(wanted):
+        return {"ok": False, "error": "Songs not found.", "missing": missing}
+
+    if moved:
         save_catalog(
             data,
             updated_by=updated_by,
-            sync_song_ids={hid},
-            sync_lyrics=lyrics is not None,
+            sync_song_ids={m["id"] for m in moved},
+            sync_lyrics=False,
         )
-        if lyrics is not None:
-            try:
-                from services.parish_hymn_overrides import clear_stale_overrides_for_hymns
+    return {
+        "ok": True,
+        "moved": moved,
+        "missing": missing,
+        "target_section": target,
+        "count": len(moved),
+    }
 
-                clear_stale_overrides_for_hymns(
-                    {hid},
-                    newer_than=str(item.get("updated_at") or "").strip() or None,
-                )
-            except Exception:
-                pass
-        return {
-            "ok": True,
-            "audio_media": normalize_song_media_ref(item.get("audio_media")),
-            "video_media": normalize_song_media_ref(item.get("video_media")),
-            "audio_preview": normalize_audio_preview_ref(item.get("audio_preview")),
-        }
-    return {"ok": False, "error": "Song not found."}
+
+def delete_catalog_songs(
+    items: list[dict[str, Any]],
+    *,
+    updated_by: str | None = None,
+) -> dict[str, Any]:
+    """Delete many catalog songs by id (superadmin bulk action)."""
+    wanted: list[str] = []
+    seen: set[str] = set()
+    for raw in items or []:
+        if not isinstance(raw, dict):
+            continue
+        hid = str(raw.get("id") or "").strip()
+        if not hid or hid in seen:
+            continue
+        seen.add(hid)
+        wanted.append(hid)
+    if not wanted:
+        return {"ok": False, "error": "No songs selected."}
+
+    data = load_catalog()
+    removed: list[str] = []
+    for hid in wanted:
+        hit = False
+        for sec in _SECTIONS:
+            rows = data.get(sec) or []
+            kept = [r for r in rows if str(r.get("id") or "").strip() != hid]
+            if len(kept) != len(rows):
+                data[sec] = kept
+                hit = True
+        if hit:
+            removed.append(hid)
+    if not removed:
+        return {"ok": False, "error": "Songs not found."}
+    save_catalog(
+        data,
+        updated_by=updated_by,
+        sync_song_ids=set(),
+        delete_song_ids=set(removed),
+    )
+    return {"ok": True, "removed": removed, "count": len(removed)}
 
 
 def delete_catalog_song(

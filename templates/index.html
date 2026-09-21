@@ -28,7 +28,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260920-upload-guide2" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260922-lang-stats" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260920-leaflet-cta" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260922-sanctus-label" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -1302,6 +1302,23 @@
         </article>
       </div>
 
+      <div class="ui-overlay" id="song-bulk-delete-modal" aria-hidden="true" role="presentation">
+        <div class="ui-overlay__backdrop" id="song-bulk-delete-backdrop"></div>
+        <article class="ui-card" role="alertdialog" aria-labelledby="song-bulk-delete-title" aria-describedby="song-bulk-delete-desc" aria-modal="true">
+          <header class="ui-card__header">
+            <div class="ui-card__header-text">
+              <h3 class="ui-card__title" id="song-bulk-delete-title">Delete songs?</h3>
+              <p class="ui-card__description" id="song-bulk-delete-desc">This cannot be undone.</p>
+            </div>
+            <button type="button" class="ghost ui-card__close" id="song-bulk-delete-close" aria-label="Close">×</button>
+          </header>
+          <footer class="ui-card__footer ui-card__footer--row">
+            <button type="button" class="secondary" id="song-bulk-delete-cancel">Cancel</button>
+            <button type="button" class="primary song-delete-confirm-btn" id="song-bulk-delete-confirm">Delete</button>
+          </footer>
+        </article>
+      </div>
+
       <div class="ui-overlay" id="lyrics-clear-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="lyrics-clear-backdrop"></div>
         <article class="ui-card" role="alertdialog" aria-labelledby="lyrics-clear-title" aria-describedby="lyrics-clear-desc" aria-modal="true">
@@ -1950,7 +1967,44 @@
                 <div class="song-composer-expandable__content">
                   <div class="song-composer-main">
                     <div class="song-composer-catalog-wrap" id="song-composer-catalog-wrap">
-                      <h4 class="song-composer-catalog-label">Songs library</h4>
+                      <div class="song-composer-catalog-head" id="song-composer-catalog-head">
+                        <div class="song-composer-catalog-label-row">
+                          <h4 class="song-composer-catalog-label">Songs library</h4>
+                          <button
+                            type="button"
+                            class="song-catalog-lang-stats"
+                            id="song-catalog-lang-stats"
+                            aria-expanded="false"
+                            aria-label="Songs library count"
+                            title="Show count by language"
+                          >
+                            <span class="song-catalog-lang-stats__total" id="song-catalog-lang-stats-total">0</span>
+                            <span class="song-catalog-lang-stats__detail" id="song-catalog-lang-stats-detail" aria-hidden="true"><span></span></span>
+                          </button>
+                        </div>
+                        <button type="button" class="song-catalog-select-trigger ghost" id="song-catalog-select-trigger" hidden aria-pressed="false">
+                          Select
+                        </button>
+                      </div>
+                      <div class="song-catalog-bulk-bar" id="song-catalog-bulk-bar" hidden>
+                        <span class="song-catalog-bulk-bar__count" id="song-catalog-bulk-count">0 selected</span>
+                        <div class="song-catalog-bulk-bar__actions">
+                          <label class="song-catalog-bulk-bar__move">
+                            <span class="visually-hidden">Move to section</span>
+                            <select id="song-catalog-bulk-move-section" aria-label="Move selected songs to section">
+                              <option value="" disabled selected>Move to…</option>
+                              <option value="entrance">Entrance</option>
+                              <option value="offertory">Offertory</option>
+                              <option value="communion">Communion</option>
+                              <option value="recessional">Recessional</option>
+                              <option value="meditation">Meditation / Other</option>
+                            </select>
+                          </label>
+                          <button type="button" class="secondary" id="song-catalog-bulk-move">Move</button>
+                          <button type="button" class="primary song-catalog-bulk-delete" id="song-catalog-bulk-delete">Delete</button>
+                          <button type="button" class="ghost" id="song-catalog-bulk-clear">Clear</button>
+                        </div>
+                      </div>
                       <div class="song-catalog-panel song-composer-catalog-panel">
                         <div class="song-catalog-scroll" id="song-catalog-root"></div>
                       </div>
@@ -2511,9 +2565,13 @@
 
                 <article class="flow-bento-cell flow-setup-card2" id="mass-step-target-liturgy" data-mw-step="2" hidden>
                   <div class="flow-liturgy-parts mw-rite-grid">
-                    <article class="mw-rite" data-mw-rite>
+                    <article class="mw-rite" data-mw-rite data-mw-media-slot="penitential">
                       <div class="mw-rite__head"><span class="mw-rite__title">Penitential Act</span></div>
                       <div class="mw-rite__body">
+                        <select id="flow-penitential-language" data-mw-rite-lang="penitential" data-vb-select="off" hidden>
+                          <option value="english" selected>English</option>
+                          <option value="tagalog">Tagalog</option>
+                        </select>
                         <select id="flow-penitential-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="penitential" hidden>
                           <option value="confiteor" selected>I Confess (Confiteor)</option>
                           <option value="form-b">Form B</option>
@@ -2568,9 +2626,13 @@
 
                 <article class="flow-bento-cell flow-setup-card2" data-mw-step="4" hidden>
                   <div class="flow-liturgy-parts mw-rite-grid">
-                    <article class="mw-rite" data-mw-rite>
+                    <article class="mw-rite" data-mw-rite data-mw-media-slot="creed">
                       <div class="mw-rite__head"><span class="mw-rite__title">Creed</span></div>
                       <div class="mw-rite__body">
+                        <select id="flow-creed-language" data-mw-rite-lang="creed" data-vb-select="off" hidden>
+                          <option value="english" selected>English</option>
+                          <option value="tagalog">Tagalog</option>
+                        </select>
                         <select id="flow-creed-choice" data-mw-tunes data-vb-select="off" data-mw-media-section="creed" hidden>
                           <option value="nicene" selected>Nicene Creed</option>
                           <option value="apostles">Apostles' Creed</option>
@@ -2581,20 +2643,33 @@
                     <article class="mw-rite" data-mw-rite data-mw-placeholder data-mw-media-slot="sanctus">
                       <div class="mw-rite__head"><span class="mw-rite__title">Sanctus</span></div>
                       <div class="mw-rite__body">
+                        <select id="flow-sanctus-language" data-mw-rite-lang="sanctus" data-vb-select="off" hidden>
+                          <option value="english" selected>English</option>
+                          <option value="tagalog">Tagalog</option>
+                        </select>
                         <div class="mw-options" role="radiogroup" aria-label="Sanctus tune" data-mw-media-section="sanctus">
                           <div class="mw-option-line">
                             <div class="mw-option" role="radio" aria-checked="true" tabindex="0" data-val="default" data-mw-media-key="sanctus::default">
                               <div class="mw-option__row">
                                 <span class="mw-option__check" aria-hidden="true"></span>
                                 <span class="mw-option__label-wrap mw-media-dd mw-media-dd--link">
-                                  <button type="button" class="mw-option__label mw-media-dd__btn" data-mw-media-dd-btn="link" data-mw-media-slot="sanctus::default">Holy, Holy, Holy (default)</button>
+                                  <button type="button" class="mw-option__label mw-media-dd__btn" data-mw-media-dd-btn="link" data-mw-media-slot="sanctus::default">Holy, Holy, Holy</button>
                                   <div class="mw-media-dd__menu mw-media-dd__menu--link" hidden role="menu">
                                     <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-link-media="audio" data-mw-media-slot="sanctus::default">Link audio</button>
                                     <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-link-media="video" data-mw-media-slot="sanctus::default">Link video</button>
                                   </div>
                                 </span>
-                                <span class="mw-option__text" data-mw-text-preview data-mw-media-key="sanctus::default" role="button" tabindex="0" aria-label="Text preview" title="Text preview from slides">Aa</span>
-                                <button type="button" class="mw-option__text" data-mw-play-audio data-mw-media-slot="sanctus::default" aria-label="Play audio preview" title="Play audio preview">▶</button>
+                                <div class="mw-rite-preview" data-mw-rite-preview>
+                                  <div class="mw-rite-preview__detail" aria-hidden="true">
+                                    <span class="mw-rite-preview__actions">
+                                      <button type="button" class="mw-rite-preview__action" data-mw-text-preview data-mw-media-key="sanctus::default">See text</button>
+                                      <button type="button" class="mw-rite-preview__action" data-mw-play-audio data-mw-media-slot="sanctus::default">Play sound</button>
+                                    </span>
+                                  </div>
+                                  <button type="button" class="mw-rite-preview__btn" data-mw-rite-preview-btn aria-expanded="false" aria-label="Preview" title="Preview">
+                                    <svg class="mw-rite-preview__icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                                  </button>
+                                </div>
                               </div>
                               <div class="mw-option__media mass-song-media-row" data-mw-media-row="sanctus::default" data-mw-rite-media="1" data-mw-media-section="sanctus" data-mw-media-lang="default"></div>
                             </div>
@@ -2969,7 +3044,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260921-leaflet-dl"></script>
+      <script src="/static/js/mw-wizard.js?v=20260922-sanctus-label"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4568,7 +4643,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20260921-leaflet-dl"></script>
+  <script src="/static/js/app.js?v=20260922-sanctus-label"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>

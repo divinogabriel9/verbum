@@ -3390,8 +3390,8 @@
     function massBuilderDraftFieldIds() {
       return [
         "mass-date", "co-celebrant",
-        "flow-penitential-choice", "flow-kyrie-choice", "flow-kyrie-tagalog-slide", "flow-gloria-choice",
-        "flow-creed-choice", "flow-our-father-choice", "flow-lamb-choice",
+        "flow-penitential-choice", "flow-penitential-language", "flow-kyrie-choice", "flow-kyrie-tagalog-slide", "flow-gloria-choice",
+        "flow-creed-choice", "flow-creed-language", "flow-sanctus-language", "flow-our-father-choice", "flow-lamb-choice",
         "flow-mass-language",
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",

@@ -2182,6 +2182,15 @@
       );
     }
 
+    function massSongMediaEyeHtml() {
+      return (
+        "<svg class=\"mass-song-slide-mode__glyph\" xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
+          "<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/>" +
+          "<circle cx=\"12\" cy=\"12\" r=\"3\"/>" +
+        "</svg>"
+      );
+    }
+
     function massSongMediaRowHtml(slotKey) {
       const youtube = massSlotYoutubeRef(slotKey);
       const audioYoutube = !!youtube;
@@ -2196,7 +2205,7 @@
           "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           "title=\"Full YouTube video for choir practice (not added to the PowerPoint)\">YouTube</button>";
       const youtubeGroup =
-        "<div class=\"mw-media-group\">" +
+        "<div class=\"mw-media-group mass-song-media-card" + (audioYoutube ? " is-on" : "") + "\">" +
           audioYoutubeBtn +
           youtubePlayBtn +
         "</div>";
@@ -2211,40 +2220,47 @@
       const videoOn = !!video;
       const useVideo = getMassSongVideoMode(slotKey);
       const videoAvailable = !!(videoOn || slotHasSongVideoAvailable(slotKey));
+      const songId = selectedLyricsSongs[slotKey] || "";
+      let songRow = songId ? massPlanAllSongs.find((s) => String(s.id) === String(songId)) : null;
+      if (songId && !songRow && typeof rebuildMassPlanSongPool === "function") {
+        rebuildMassPlanSongPool();
+        songRow = massPlanAllSongs.find((s) => String(s.id) === String(songId));
+      }
+      const canPreviewLyrics = !!(songId && songRow && songRow.has_lyrics);
       const videoPlayBtn =
-        "<button type=\"button\" class=\"mw-media-play" + (videoOn ? " is-ready" : "") + "\" " +
+        "<button type=\"button\" class=\"mw-media-play mass-song-slide-mode__play" + (videoOn ? " is-ready" : "") + "\" " +
           "data-mw-play-video data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           (videoOn ? "" : "disabled ") +
           "aria-label=\"Play video preview\" " +
           "title=\"" + escapeHtml(videoOn ? ("Play " + (video.display_name || video.basename)) : (videoAvailable ? "Link or apply song video first" : "Link video first")) + "\">▶</button>";
+      const lyricsPreviewBtn =
+        "<button type=\"button\" class=\"mass-song-slide-mode__icon" + (canPreviewLyrics ? " is-ready" : "") + "\" " +
+          "data-mass-song-lyrics-preview=\"" + escapeHtml(slotKey) + "\" " +
+          (canPreviewLyrics ? "" : "disabled ") +
+          "aria-label=\"Preview lyrics\" title=\"" +
+          escapeHtml(canPreviewLyrics ? "Preview lyrics" : (songId ? "Lyrics unavailable" : "Choose a song first")) + "\">" +
+          massSongMediaEyeHtml() +
+        "</button>";
       return (
         "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
           "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this song\" " +
             "data-mass-song-slide-mode=\"" + escapeHtml(slotKey) + "\">" +
-            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
-              "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
-              "data-mass-song-slide-mode-val=\"lyrics\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
-              "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
-            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
-              "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
-              "data-mass-song-slide-mode-val=\"video\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
-              "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+            "<span class=\"mass-song-slide-mode__cell" + (!useVideo ? " is-active" : "") + "\">" +
+              "<button type=\"button\" class=\"mass-song-slide-mode__btn\" " +
+                "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
+                "data-mass-song-slide-mode-val=\"lyrics\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+                "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
+              lyricsPreviewBtn +
+            "</span>" +
+            "<span class=\"mass-song-slide-mode__cell" + (useVideo ? " is-active" : "") + "\">" +
+              "<button type=\"button\" class=\"mass-song-slide-mode__btn\" " +
+                "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
+                "data-mass-song-slide-mode-val=\"video\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+                "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+              videoPlayBtn +
+            "</span>" +
           "</div>" +
           youtubeGroup +
-          "<div class=\"mw-media-group\">" +
-            "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (videoOn ? " is-on" : "") + "\" " +
-              "data-mw-link-media=\"video\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
-              "title=\"Link an MP4. Choose Video above to use it instead of lyric slides.\">" +
-              "Video file <span class=\"mass-song-media-btn__label\">" +
-                escapeHtml(videoOn ? (video.display_name || video.basename) : (videoAvailable ? "From song…" : "Link…")) +
-              "</span></button>" +
-            videoPlayBtn +
-          "</div>" +
-          "<p class=\"mass-song-slide-mode__hint\">" +
-            (useVideo
-              ? "PowerPoint: video slide replaces lyrics."
-              : "PowerPoint: lyric slides. Audio is preview only.") +
-          "</p>" +
         "</div>"
       );
     }
@@ -2302,13 +2318,18 @@
         play.disabled = !has;
         play.classList.toggle("is-ready", has);
       });
-      document.querySelectorAll(".mw-option__row > [data-mw-play-audio]").forEach((play) => {
+      document.querySelectorAll(".mw-option__row [data-mw-play-audio]").forEach((play) => {
         const key = play.getAttribute("data-mw-media-slot") || "";
         const item = key ? getMassSectionMedia("audio", key) : null;
         const playing = !!(key && massSectionAudioPlayingSlot === key);
         play.classList.toggle("is-ready", !!item);
         play.classList.toggle("is-playing", playing);
-        play.textContent = playing ? "❚❚" : "▶";
+        play.disabled = !item && play.classList.contains("mw-rite-preview__action");
+        if (play.classList.contains("mw-rite-preview__action")) {
+          play.textContent = playing ? "Stop sound" : "Play sound";
+        } else {
+          play.textContent = playing ? "❚❚" : "▶";
+        }
         play.title = playing
           ? "Stop audio preview"
           : (item ? ("Play " + (item.display_name || item.basename)) : "Link audio from the option title first");

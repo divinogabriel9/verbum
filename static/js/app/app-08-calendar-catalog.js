@@ -464,6 +464,12 @@
         const creedSel = $("flow-creed-choice");
         const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
         body.creed_choice = creedVal === "apostles" ? "apostles" : (creedVal === "none" ? "none" : "nicene");
+        const creedLangSel = $("flow-creed-language");
+        body.creed_language = creedLangSel && creedLangSel.value === "tagalog" ? "tagalog" : "english";
+        const penLangSel = $("flow-penitential-language");
+        body.penitential_language = penLangSel && penLangSel.value === "tagalog" ? "tagalog" : "english";
+        const sanctusLangSel = $("flow-sanctus-language");
+        body.sanctus_language = sanctusLangSel && sanctusLangSel.value === "tagalog" ? "tagalog" : "english";
         const gloriaSel = $("flow-gloria-choice");
         const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
         body.gloria_choice = gloriaVal === "latin" ? "latin" : (gloriaVal === "none" ? "none" : "english");
@@ -539,6 +545,9 @@
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
+          creed_language: body.creed_language || "english",
+          penitential_language: body.penitential_language || "english",
+          sanctus_language: body.sanctus_language || "english",
           gloria_choice: body.gloria_choice || "english",
           slide_kinds: body.slide_kinds || null,
           our_father_choice: body.our_father_choice || "english",
@@ -1610,6 +1619,168 @@
     var songDetailPrefetchTimer = null;
     var lyricsAnalyzeFrame = 0;
     var songCatalogExpanded = { entrance: false, offertory: false, communion: false, recessional: false, meditation: false };
+    var songCatalogSelected = new Map(); // key: section\0id → { section, id, title }
+    var songCatalogSelectMode = false;
+    var songCatalogLangStatsCollapseTimer = 0;
+    var SONG_CATALOG_LANG_STATS_COLLAPSE_MS = 3500;
+
+    function songCatalogSelectKey(section, id) {
+      return String(section || "").trim().toLowerCase() + "\0" + String(id || "").trim();
+    }
+
+    function getSongCatalogSelectedItems() {
+      return Array.from(songCatalogSelected.values());
+    }
+
+    function clearSongCatalogSelection() {
+      songCatalogSelected.clear();
+      syncSongCatalogBulkBar();
+      document.querySelectorAll(".song-row.is-selected").forEach((el) => el.classList.remove("is-selected"));
+      document.querySelectorAll(".song-row-check").forEach((el) => el.classList.remove("is-checked"));
+      document.querySelectorAll(".song-row-check input[type=\"checkbox\"]").forEach((el) => {
+        el.checked = false;
+      });
+    }
+
+    function setSongCatalogSelectMode(on) {
+      songCatalogSelectMode = !!on;
+      if (!songCatalogSelectMode) clearSongCatalogSelection();
+      const wrap = $("song-composer-catalog-wrap");
+      if (wrap) wrap.classList.toggle("is-selecting", songCatalogSelectMode);
+      const trigger = $("song-catalog-select-trigger");
+      if (trigger) {
+        trigger.setAttribute("aria-pressed", songCatalogSelectMode ? "true" : "false");
+        trigger.textContent = songCatalogSelectMode ? "Done" : "Select";
+        trigger.classList.toggle("is-active", songCatalogSelectMode);
+      }
+      syncSongCatalogBulkBar();
+      renderSongCatalog();
+    }
+
+    function setSongCatalogRowSelected(section, id, title, selected) {
+      const sec = String(section || "").trim().toLowerCase();
+      const sid = String(id || "").trim();
+      if (!sec || !sid) return;
+      const key = songCatalogSelectKey(sec, sid);
+      if (selected) {
+        songCatalogSelected.set(key, {
+          section: sec,
+          id: sid,
+          title: String(title || "").trim(),
+        });
+      } else {
+        songCatalogSelected.delete(key);
+      }
+    }
+
+    function syncSongCatalogBulkBar() {
+      const bar = $("song-catalog-bulk-bar");
+      const countEl = $("song-catalog-bulk-count");
+      const n = songCatalogSelected.size;
+      const canEdit = !!(churchMembershipState && churchMembershipState.is_superadmin);
+      const trigger = $("song-catalog-select-trigger");
+      if (trigger) trigger.hidden = !canEdit;
+      if (bar) bar.hidden = !(canEdit && songCatalogSelectMode && n > 0);
+      if (countEl) {
+        countEl.textContent = n === 1 ? "1 selected" : (n + " selected");
+      }
+      const moveBtn = $("song-catalog-bulk-move");
+      const delBtn = $("song-catalog-bulk-delete");
+      if (moveBtn) moveBtn.disabled = n === 0;
+      if (delBtn) delBtn.disabled = n === 0;
+      syncSongCatalogLangStats();
+    }
+
+    function songCatalogLanguageLabel(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return "Unknown";
+      return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    }
+
+    function getSongCatalogLanguageStats() {
+      const counts = new Map();
+      let total = 0;
+      if (!songCatalogData) return { total: 0, parts: [] };
+      SECTION_ORDER.forEach((sec) => {
+        const rows = songCatalogData[sec.key] || [];
+        rows.forEach((row) => {
+          if (!row || !row.id) return;
+          total += 1;
+          const label = songCatalogLanguageLabel(row.language);
+          counts.set(label, (counts.get(label) || 0) + 1);
+        });
+      });
+      const parts = Array.from(counts.entries())
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([label, count]) => ({ label, count }));
+      return { total, parts };
+    }
+
+    function collapseSongCatalogLangStats() {
+      if (songCatalogLangStatsCollapseTimer) {
+        clearTimeout(songCatalogLangStatsCollapseTimer);
+        songCatalogLangStatsCollapseTimer = 0;
+      }
+      const btn = $("song-catalog-lang-stats");
+      const detail = $("song-catalog-lang-stats-detail");
+      if (btn) {
+        btn.classList.remove("is-expanded");
+        btn.setAttribute("aria-expanded", "false");
+      }
+      if (detail) detail.setAttribute("aria-hidden", "true");
+    }
+
+    function expandSongCatalogLangStats() {
+      const btn = $("song-catalog-lang-stats");
+      const detail = $("song-catalog-lang-stats-detail");
+      if (!btn || !detail) return;
+      const stats = getSongCatalogLanguageStats();
+      const inner = detail.querySelector("span") || document.createElement("span");
+      if (!inner.parentNode) detail.appendChild(inner);
+      if (!stats.parts.length) {
+        inner.textContent = "No songs";
+      } else {
+        inner.textContent = stats.parts
+          .map((p) => p.label + " " + p.count)
+          .join(" · ");
+      }
+      btn.classList.add("is-expanded");
+      btn.setAttribute("aria-expanded", "true");
+      detail.setAttribute("aria-hidden", "false");
+      if (songCatalogLangStatsCollapseTimer) clearTimeout(songCatalogLangStatsCollapseTimer);
+      songCatalogLangStatsCollapseTimer = setTimeout(() => {
+        songCatalogLangStatsCollapseTimer = 0;
+        collapseSongCatalogLangStats();
+      }, SONG_CATALOG_LANG_STATS_COLLAPSE_MS);
+    }
+
+    function syncSongCatalogLangStats() {
+      const totalEl = $("song-catalog-lang-stats-total");
+      const btn = $("song-catalog-lang-stats");
+      const stats = getSongCatalogLanguageStats();
+      if (totalEl) totalEl.textContent = String(stats.total);
+      if (btn) {
+        btn.setAttribute(
+          "aria-label",
+          stats.total === 1 ? "1 song in library" : stats.total + " songs in library"
+        );
+        btn.disabled = stats.total === 0;
+      }
+      if (btn && btn.classList.contains("is-expanded")) {
+        const detail = $("song-catalog-lang-stats-detail");
+        if (detail) {
+          const inner = detail.querySelector("span") || document.createElement("span");
+          if (!inner.parentNode) detail.appendChild(inner);
+          inner.textContent = stats.parts.length
+            ? stats.parts.map((p) => p.label + " " + p.count).join(" · ")
+            : "No songs";
+        }
+      }
+    }
+
+    function syncSongCatalogSectionSelectAll(_secKey) {
+      // Per-section select-all removed.
+    }
 
     function songDetailCacheKey(section, id) {
       return String(section || "").trim().toLowerCase() + "\0" + String(id || "").trim();
@@ -2795,39 +2966,55 @@
         return;
       }
       const visible = q ? sections.filter((s) => s.rows.length) : sections;
-      const canEditCatalog = churchMembershipState.is_superadmin;
+      const canEditCatalog = !!(churchMembershipState && churchMembershipState.is_superadmin);
+      const selecting = canEditCatalog && songCatalogSelectMode;
+      const tickSvg =
+        "<svg class=\"song-tick__icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 13l4 4L19 7\"/></svg>";
       root.innerHTML = visible.map(({ sec, allRows, rows }) => {
         const open = q ? true : songCatalogExpanded[sec.key] === true;
         const countLabel = q ? rows.length + " / " + allRows.length : String(allRows.length);
         return (
           "<div class=\"song-sec" + (q ? " song-sec-search-open" : "") + "\" data-sec=\"" + sec.key + "\">" +
-            "<button type=\"button\" class=\"song-sec-toggle\" data-sec-toggle=\"" + sec.key + "\">" +
-              "<span>" + escapeHtml(sec.label) + "</span><span>" + countLabel + "</span>" +
-            "</button>" +
+            "<div class=\"song-sec-head\">" +
+              "<button type=\"button\" class=\"song-sec-toggle\" data-sec-toggle=\"" + sec.key + "\">" +
+                "<span>" + escapeHtml(sec.label) + "</span><span>" + countLabel + "</span>" +
+              "</button>" +
+            "</div>" +
             "<div class=\"song-sec-body" + (open ? "" : " collapsed") + "\" data-sec-body=\"" + sec.key + "\">" +
-              (rows.length ? rows.map((row) => (
-                "<div class=\"song-row\" data-sid=\"" + escapeHtml(row.id) + "\" data-ssec=\"" + sec.key + "\">" +
+              (rows.length ? rows.map((row) => {
+                const selected = selecting && songCatalogSelected.has(songCatalogSelectKey(sec.key, row.id));
+                return (
+                "<div class=\"song-row" + (selected ? " is-selected" : "") + (selecting ? " song-row--selectable" : "") + "\" data-sid=\"" + escapeHtml(row.id) + "\" data-ssec=\"" + sec.key + "\">" +
+                  (selecting
+                    ? "<label class=\"song-row-check" + (selected ? " is-checked" : "") + "\">" +
+                        "<input type=\"checkbox\" class=\"song-tick__input\" data-act=\"select\" " + (selected ? "checked " : "") +
+                        "aria-label=\"Select " + escapeHtml(row.title) + "\" />" +
+                        "<span class=\"song-tick\" aria-hidden=\"true\">" + tickSvg + "</span>" +
+                      "</label>"
+                    : "") +
                   "<div class=\"song-row-clickable\" role=\"button\" tabindex=\"0\" aria-label=\"Load " + escapeHtml(row.title) + "\">" +
-                    "<div class=\"song-row-title\">" + escapeHtml(row.title) + "</div>" +
+                    "<div class=\"song-row-title-row\">" +
+                      "<div class=\"song-row-title\">" + escapeHtml(row.title) + "</div>" +
+                      ((row.audio_preview && row.audio_preview.basename) || (row.audio_media && row.audio_media.basename) || (row.video_media && row.video_media.basename)
+                        ? "<div class=\"song-row-media\" aria-label=\"Linked media\">" +
+                            (row.audio_preview && row.audio_preview.basename
+                              ? "<span class=\"song-row-media__badge song-row-media__badge--preview\" title=\"Chorus preview\">" +
+                                escapeHtml(String((row.audio_preview.duration_sec || 10) + "s")) + "</span>"
+                              : "") +
+                            (row.audio_media && row.audio_media.basename
+                              ? "<span class=\"song-row-media__badge\" title=\"Audio linked\">Audio</span>"
+                              : "") +
+                            (row.video_media && row.video_media.basename
+                              ? "<span class=\"song-row-media__badge song-row-media__badge--video\" title=\"Video linked\">Video</span>"
+                              : "") +
+                          "</div>"
+                        : "") +
+                    "</div>" +
                     "<div class=\"song-row-meta\">" +
                       (row.author ? escapeHtml(row.author) + " · " : "") +
                       escapeHtml(row.language || "") +
                       (formatGospelMoodsLabel(row.gospel_moods) ? " · " + escapeHtml(formatGospelMoodsLabel(row.gospel_moods)) : "") +
                     "</div>" +
-                    ((row.audio_preview && row.audio_preview.basename) || (row.audio_media && row.audio_media.basename) || (row.video_media && row.video_media.basename)
-                      ? "<div class=\"song-row-media\" aria-label=\"Linked media\">" +
-                          (row.audio_preview && row.audio_preview.basename
-                            ? "<span class=\"song-row-media__badge song-row-media__badge--preview\" title=\"Chorus preview\">" +
-                              escapeHtml(String((row.audio_preview.duration_sec || 10) + "s")) + "</span>"
-                            : "") +
-                          (row.audio_media && row.audio_media.basename
-                            ? "<span class=\"song-row-media__badge\" title=\"Audio linked\">Audio</span>"
-                            : "") +
-                          (row.video_media && row.video_media.basename
-                            ? "<span class=\"song-row-media__badge song-row-media__badge--video\" title=\"Video linked\">Video</span>"
-                            : "") +
-                        "</div>"
-                      : "") +
                   "</div>" +
                   ((catalogRowPreviewRef(row) || canEditCatalog)
                     ? "<div class=\"song-row-actions\">" +
@@ -2839,16 +3026,20 @@
                             "s chorus preview\" aria-label=\"Play chorus preview\">▶</button>"
                           : "") +
                         (canEditCatalog
-                          ? "<button type=\"button\" data-act=\"edit\">Edit</button>" +
-                            "<button type=\"button\" data-act=\"del\">Delete</button>"
+                          ? "<button type=\"button\" class=\"song-row-action\" data-act=\"edit\">Edit</button>" +
+                            "<span class=\"song-row-action-sep\" aria-hidden=\"true\"></span>" +
+                            "<button type=\"button\" class=\"song-row-action song-row-action--del\" data-act=\"del\">Delete</button>"
                           : "") +
                       "</div>"
                     : "") +
                 "</div>"
-              )).join("") : "<p class=\"muted\" style=\"padding:10px 14px;\">No matches.</p>") +
+              ); }).join("") : "<p class=\"muted\" style=\"padding:10px 14px;\">No matches.</p>") +
             "</div></div>"
         );
       }).join("");
+      if (root.id === "song-catalog-root") {
+        syncSongCatalogBulkBar();
+      }
     }
 
     function renderSongCatalog() {
@@ -3366,10 +3557,11 @@
       if ($("song-metadata-edit-language")) $("song-metadata-edit-language").value = s.language || "English";
       if ($("song-metadata-edit-section")) {
         $("song-metadata-edit-section").value = resolvedSec || "";
-        $("song-metadata-edit-section").disabled = true;
+        $("song-metadata-edit-section").disabled = false;
       }
       if ($("song-metadata-subtitle")) {
-        $("song-metadata-subtitle").textContent = "Editing metadata for \"" + (s.title || "Song") + "\".";
+        $("song-metadata-subtitle").textContent =
+          "Editing metadata for \"" + (s.title || "Song") + "\". Change section to move it in the library.";
       }
       setSongMetadataSaveButtonState("idle", "Save changes");
       if ($("song-metadata-save")) $("song-metadata-save").disabled = true;

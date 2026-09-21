@@ -2182,6 +2182,15 @@
       );
     }
 
+    function massSongMediaEyeHtml() {
+      return (
+        "<svg class=\"mass-song-slide-mode__glyph\" xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" +
+          "<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/>" +
+          "<circle cx=\"12\" cy=\"12\" r=\"3\"/>" +
+        "</svg>"
+      );
+    }
+
     function massSongMediaRowHtml(slotKey) {
       const youtube = massSlotYoutubeRef(slotKey);
       const audioYoutube = !!youtube;
@@ -2196,7 +2205,7 @@
           "data-mw-link-youtube data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           "title=\"Full YouTube video for choir practice (not added to the PowerPoint)\">YouTube</button>";
       const youtubeGroup =
-        "<div class=\"mw-media-group\">" +
+        "<div class=\"mw-media-group mass-song-media-card" + (audioYoutube ? " is-on" : "") + "\">" +
           audioYoutubeBtn +
           youtubePlayBtn +
         "</div>";
@@ -2211,40 +2220,47 @@
       const videoOn = !!video;
       const useVideo = getMassSongVideoMode(slotKey);
       const videoAvailable = !!(videoOn || slotHasSongVideoAvailable(slotKey));
+      const songId = selectedLyricsSongs[slotKey] || "";
+      let songRow = songId ? massPlanAllSongs.find((s) => String(s.id) === String(songId)) : null;
+      if (songId && !songRow && typeof rebuildMassPlanSongPool === "function") {
+        rebuildMassPlanSongPool();
+        songRow = massPlanAllSongs.find((s) => String(s.id) === String(songId));
+      }
+      const canPreviewLyrics = !!(songId && songRow && songRow.has_lyrics);
       const videoPlayBtn =
-        "<button type=\"button\" class=\"mw-media-play" + (videoOn ? " is-ready" : "") + "\" " +
+        "<button type=\"button\" class=\"mw-media-play mass-song-slide-mode__play" + (videoOn ? " is-ready" : "") + "\" " +
           "data-mw-play-video data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
           (videoOn ? "" : "disabled ") +
           "aria-label=\"Play video preview\" " +
           "title=\"" + escapeHtml(videoOn ? ("Play " + (video.display_name || video.basename)) : (videoAvailable ? "Link or apply song video first" : "Link video first")) + "\">▶</button>";
+      const lyricsPreviewBtn =
+        "<button type=\"button\" class=\"mass-song-slide-mode__icon" + (canPreviewLyrics ? " is-ready" : "") + "\" " +
+          "data-mass-song-lyrics-preview=\"" + escapeHtml(slotKey) + "\" " +
+          (canPreviewLyrics ? "" : "disabled ") +
+          "aria-label=\"Preview lyrics\" title=\"" +
+          escapeHtml(canPreviewLyrics ? "Preview lyrics" : (songId ? "Lyrics unavailable" : "Choose a song first")) + "\">" +
+          massSongMediaEyeHtml() +
+        "</button>";
       return (
         "<div class=\"mass-song-media-row\" data-mass-media-row=\"" + escapeHtml(slotKey) + "\">" +
           "<div class=\"mass-song-slide-mode\" role=\"radiogroup\" aria-label=\"PowerPoint slide for this song\" " +
             "data-mass-song-slide-mode=\"" + escapeHtml(slotKey) + "\">" +
-            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (!useVideo ? " is-active" : "") + "\" " +
-              "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
-              "data-mass-song-slide-mode-val=\"lyrics\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
-              "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
-            "<button type=\"button\" class=\"mass-song-slide-mode__btn" + (useVideo ? " is-active" : "") + "\" " +
-              "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
-              "data-mass-song-slide-mode-val=\"video\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
-              "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+            "<span class=\"mass-song-slide-mode__cell" + (!useVideo ? " is-active" : "") + "\">" +
+              "<button type=\"button\" class=\"mass-song-slide-mode__btn\" " +
+                "role=\"radio\" aria-checked=\"" + (!useVideo ? "true" : "false") + "\" " +
+                "data-mass-song-slide-mode-val=\"lyrics\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+                "title=\"Use lyric slides in the PowerPoint\">Lyrics</button>" +
+              lyricsPreviewBtn +
+            "</span>" +
+            "<span class=\"mass-song-slide-mode__cell" + (useVideo ? " is-active" : "") + "\">" +
+              "<button type=\"button\" class=\"mass-song-slide-mode__btn\" " +
+                "role=\"radio\" aria-checked=\"" + (useVideo ? "true" : "false") + "\" " +
+                "data-mass-song-slide-mode-val=\"video\" data-mass-song-slide-mode-slot=\"" + escapeHtml(slotKey) + "\" " +
+                "title=\"Replace lyric slides with the linked video in the PowerPoint\">Video</button>" +
+              videoPlayBtn +
+            "</span>" +
           "</div>" +
           youtubeGroup +
-          "<div class=\"mw-media-group\">" +
-            "<button type=\"button\" class=\"mass-song-media-btn mass-song-media-btn--sa" + (videoOn ? " is-on" : "") + "\" " +
-              "data-mw-link-media=\"video\" data-mw-media-slot=\"" + escapeHtml(slotKey) + "\" " +
-              "title=\"Link an MP4. Choose Video above to use it instead of lyric slides.\">" +
-              "Video file <span class=\"mass-song-media-btn__label\">" +
-                escapeHtml(videoOn ? (video.display_name || video.basename) : (videoAvailable ? "From song…" : "Link…")) +
-              "</span></button>" +
-            videoPlayBtn +
-          "</div>" +
-          "<p class=\"mass-song-slide-mode__hint\">" +
-            (useVideo
-              ? "PowerPoint: video slide replaces lyrics."
-              : "PowerPoint: lyric slides. Audio is preview only.") +
-          "</p>" +
         "</div>"
       );
     }
@@ -2302,13 +2318,18 @@
         play.disabled = !has;
         play.classList.toggle("is-ready", has);
       });
-      document.querySelectorAll(".mw-option__row > [data-mw-play-audio]").forEach((play) => {
+      document.querySelectorAll(".mw-option__row [data-mw-play-audio]").forEach((play) => {
         const key = play.getAttribute("data-mw-media-slot") || "";
         const item = key ? getMassSectionMedia("audio", key) : null;
         const playing = !!(key && massSectionAudioPlayingSlot === key);
         play.classList.toggle("is-ready", !!item);
         play.classList.toggle("is-playing", playing);
-        play.textContent = playing ? "❚❚" : "▶";
+        play.disabled = !item && play.classList.contains("mw-rite-preview__action");
+        if (play.classList.contains("mw-rite-preview__action")) {
+          play.textContent = playing ? "Stop sound" : "Play sound";
+        } else {
+          play.textContent = playing ? "❚❚" : "▶";
+        }
         play.title = playing
           ? "Stop audio preview"
           : (item ? ("Play " + (item.display_name || item.basename)) : "Link audio from the option title first");
@@ -8211,8 +8232,8 @@
     function massBuilderDraftFieldIds() {
       return [
         "mass-date", "co-celebrant",
-        "flow-penitential-choice", "flow-kyrie-choice", "flow-kyrie-tagalog-slide", "flow-gloria-choice",
-        "flow-creed-choice", "flow-our-father-choice", "flow-lamb-choice",
+        "flow-penitential-choice", "flow-penitential-language", "flow-kyrie-choice", "flow-kyrie-tagalog-slide", "flow-gloria-choice",
+        "flow-creed-choice", "flow-creed-language", "flow-sanctus-language", "flow-our-father-choice", "flow-lamb-choice",
         "flow-mass-language",
         "flow-psalm-refrain", "flow-psalm-custom", "flow-gospel-sentence", "flow-gospel-custom",
         "flow-collection-date", "flow-collection-amount", "flow-collection-currency",
@@ -10092,11 +10113,28 @@
       autoResizeLyricsMainInput();
     }
 
+    var lyricsStatusClearTimer = 0;
+    var LYRICS_STATUS_AUTO_CLEAR_MS = 3500;
+
     function setLyricsStatus(message, kind) {
       const el = $("lyrics-status");
       if (!el) return;
+      if (lyricsStatusClearTimer) {
+        clearTimeout(lyricsStatusClearTimer);
+        lyricsStatusClearTimer = 0;
+      }
       el.textContent = message || "";
       el.className = "status song-composer-status" + (kind ? " " + kind : "");
+      const text = String(message || "").trim();
+      if (text && kind === "ok") {
+        lyricsStatusClearTimer = setTimeout(() => {
+          lyricsStatusClearTimer = 0;
+          if (el.textContent === message) {
+            el.textContent = "";
+            el.className = "status song-composer-status";
+          }
+        }, LYRICS_STATUS_AUTO_CLEAR_MS);
+      }
     }
 
     function setLyricsAnalyzeHint(message, kind) {
@@ -12393,9 +12431,21 @@
       rebuildMassPlanSongPool();
     }
 
-    function filterMassPlanSongs(query) {
+    function filterMassPlanSongs(query, opts) {
+      const options = opts || {};
       const needle = (query || "").trim().toLowerCase();
+      const slotKey = String(options.slotKey || "").trim();
+      let allowMeditation = options.allowMeditation === true;
+      if (!allowMeditation && slotKey) {
+        const slotSec = String(
+          (typeof SLOT_TO_HYMN_SECTION !== "undefined" && SLOT_TO_HYMN_SECTION[slotKey]) ||
+          ((typeof lyricSongSlots !== "undefined" && lyricSongSlots.find((s) => s.key === slotKey)) || {}).section ||
+          ""
+        ).trim().toLowerCase();
+        allowMeditation = slotSec === "meditation";
+      }
       return massPlanAllSongs.filter((row) => {
+        if (!allowMeditation && String(row.section || "").toLowerCase() === "meditation") return false;
         if (!songMatchesPlanLangFilter(row, massSongPlanLanguage)) return false;
         if (!needle) return true;
         const blob = [row.title, row.author, row.language, row.section, row.id, row.source].join(" ").toLowerCase();
@@ -14283,8 +14333,6 @@
     }
 
     async function openMassSongPreview(slotKey) {
-      void slotKey;
-      return;
       const id = selectedLyricsSongs[slotKey] || "";
       let row = massPlanAllSongs.find((s) => String(s.id) === String(id));
       if (!row) {
@@ -16144,7 +16192,10 @@
     }
 
     function pickMoodSongsForSection(section, moodKey, count, excludeIds) {
-      const rows = (songCatalogData && songCatalogData[section]) || [];
+      const sec = String(section || "").trim().toLowerCase();
+      // Never auto-suggest Meditation catalog songs for Mass music picks.
+      if (sec === "meditation") return [];
+      const rows = (songCatalogData && songCatalogData[sec]) || [];
       if (!rows.length) return [];
       const exclude = excludeIds || new Set();
       const scored = rows.map((row) => {
@@ -16195,7 +16246,9 @@
     }
 
     function pickRandomSongsForSection(section, count, excludeIds) {
-      const rows = (songCatalogData && songCatalogData[section]) || [];
+      const sec = String(section || "").trim().toLowerCase();
+      if (sec === "meditation") return [];
+      const rows = (songCatalogData && songCatalogData[sec]) || [];
       if (!rows.length) return [];
       const exclude = excludeIds || new Set();
       const pool = rows.filter((row) => {
@@ -16962,7 +17015,7 @@
         }
         clearTimeout(massPlanSearchDebounce);
         massPlanSearchDebounce = setTimeout(() => {
-          const rows = filterMassPlanSongs(inp.value);
+          const rows = filterMassPlanSongs(inp.value, { slotKey: key });
           const wrap = inp.closest(".mass-song-plan-row__search");
           const preferred = wrap ? wrap.querySelector(".mass-song-results") : null;
           renderMassSongResults(key, rows, inp.value, preferred);
@@ -16995,6 +17048,14 @@
         if (prev && root.contains(prev) && !prev.classList.contains("is-disabled")) {
           const slotKey = prev.dataset.previewSlot;
           if (slotKey) openMassSongPreview(slotKey);
+          return;
+        }
+        const lyricsPreview = e.target.closest("[data-mass-song-lyrics-preview]");
+        if (lyricsPreview && root.contains(lyricsPreview) && !lyricsPreview.disabled) {
+          e.preventDefault();
+          e.stopPropagation();
+          const slotKey = lyricsPreview.getAttribute("data-mass-song-lyrics-preview");
+          if (slotKey && typeof openMassSongPreview === "function") openMassSongPreview(slotKey);
           return;
         }
         const audioBtn = e.target.closest(".mass-song-audio-btn[data-mass-song-audio]");
@@ -17111,7 +17172,7 @@
         if (!key || e.key !== "Enter") return;
         const query = String(inp.value || "").trim();
         if (!query) return;
-        const rows = filterMassPlanSongs(inp.value);
+        const rows = filterMassPlanSongs(inp.value, { slotKey: key });
         if (rows.length) return;
         e.preventDefault();
         navigateToComposerWithMassSearch(query, key, { openGoogle: true });
@@ -17131,7 +17192,7 @@
           }
         }
         closeMassSongResultPanels(key);
-        const rows = filterMassPlanSongs(inp.value);
+        const rows = filterMassPlanSongs(inp.value, { slotKey: key });
         const wrap = inp.closest(".mass-song-plan-row__search");
         const preferred = wrap ? wrap.querySelector(".mass-song-results") : null;
         renderMassSongResults(key, rows, inp.value, preferred);
@@ -17193,7 +17254,7 @@
           const wrap = box.closest(".mass-song-plan-row__search");
           const inp = wrap ? wrap.querySelector(".mass-song-search-input") : null;
           if (!inp) return;
-          renderMassSongResults(slot.key, filterMassPlanSongs(inp.value), inp.value, box);
+          renderMassSongResults(slot.key, filterMassPlanSongs(inp.value, { slotKey: slot.key }), inp.value, box);
         });
       });
     });
@@ -18802,6 +18863,7 @@
 
       if (typeof renderThemeGrid === "function") renderThemeGrid();
       if (typeof renderSongCatalog === "function") renderSongCatalog();
+      if (typeof syncSongCatalogBulkBar === "function") syncSongCatalogBulkBar();
       syncSuperadminNavVisibility();
       syncCalendarAdminVisibility();
     }
@@ -26085,7 +26147,6 @@
     function syncRiteOptionsCollapse(root) {
       const flowPage = $("flow-page");
       if (!flowPage) return;
-      const map = readMassPinnedDefaults();
       let rites = [];
       if (root && root.classList && root.classList.contains("mw-rite")) {
         rites = [root];
@@ -26103,13 +26164,13 @@
           rite.classList.remove("mw-rite--collapse-default");
           return;
         }
-        const pinKey = riteSectionPinKey(rite);
-        const pinnedVal = pinKey ? String(map[pinKey] || "").trim() : "";
-        const collapsed = !!pinnedVal;
-        rite.classList.toggle("mw-rite--collapse-default", collapsed);
+        const hasChoice = !!optsWrap.querySelector('.mw-option[aria-checked="true"]');
+        rite.classList.toggle("mw-rite--collapse-default", hasChoice);
         optsWrap.querySelectorAll(".mw-option").forEach((opt) => {
-          const val = String(opt.getAttribute("data-val") || "");
-          opt.classList.toggle("mw-option--collapse-show", !collapsed || val === pinnedVal);
+          opt.classList.toggle(
+            "mw-option--collapse-show",
+            opt.getAttribute("aria-checked") === "true"
+          );
         });
       });
     }
@@ -27348,9 +27409,12 @@
         const datalistId = "receipt-songs-" + song.slotKey;
         const candidates = massPlanAllSongs.filter((row) => {
           if (!songMatchesPlanLangFilter(row, massSongPlanLanguage)) return false;
-          const sec = song.section;
-          if (!sec) return true;
-          return row.section === sec || (sec === "communion" && row.section === "communion");
+          const rowSec = String(row.section || "").toLowerCase();
+          const sec = String(song.section || "").toLowerCase();
+          // Never offer Meditation catalog songs for non-meditation Mass slots.
+          if (rowSec === "meditation" && sec !== "meditation") return false;
+          if (!sec) return rowSec !== "meditation";
+          return rowSec === sec || (sec === "communion" && rowSec === "communion");
         }).slice(0, 80);
         const options = candidates.map((row) =>
           "<option value=\"" + escapeHtml(row.title) + "\" data-id=\"" + escapeHtml(row.id) + "\"></option>"
@@ -28908,6 +28972,12 @@
         const creedSel = $("flow-creed-choice");
         const creedVal = creedSel ? String(creedSel.value || "").trim().toLowerCase() : "";
         body.creed_choice = creedVal === "apostles" ? "apostles" : (creedVal === "none" ? "none" : "nicene");
+        const creedLangSel = $("flow-creed-language");
+        body.creed_language = creedLangSel && creedLangSel.value === "tagalog" ? "tagalog" : "english";
+        const penLangSel = $("flow-penitential-language");
+        body.penitential_language = penLangSel && penLangSel.value === "tagalog" ? "tagalog" : "english";
+        const sanctusLangSel = $("flow-sanctus-language");
+        body.sanctus_language = sanctusLangSel && sanctusLangSel.value === "tagalog" ? "tagalog" : "english";
         const gloriaSel = $("flow-gloria-choice");
         const gloriaVal = gloriaSel ? String(gloriaSel.value || "").trim().toLowerCase() : "";
         body.gloria_choice = gloriaVal === "latin" ? "latin" : (gloriaVal === "none" ? "none" : "english");
@@ -28983,6 +29053,9 @@
           sentence_index: body.sentence_index != null ? body.sentence_index : null,
           gospel_quote_override: body.gospel_quote_override || null,
           creed_choice: body.creed_choice || "nicene",
+          creed_language: body.creed_language || "english",
+          penitential_language: body.penitential_language || "english",
+          sanctus_language: body.sanctus_language || "english",
           gloria_choice: body.gloria_choice || "english",
           slide_kinds: body.slide_kinds || null,
           our_father_choice: body.our_father_choice || "english",
@@ -30054,6 +30127,168 @@
     var songDetailPrefetchTimer = null;
     var lyricsAnalyzeFrame = 0;
     var songCatalogExpanded = { entrance: false, offertory: false, communion: false, recessional: false, meditation: false };
+    var songCatalogSelected = new Map(); // key: section\0id → { section, id, title }
+    var songCatalogSelectMode = false;
+    var songCatalogLangStatsCollapseTimer = 0;
+    var SONG_CATALOG_LANG_STATS_COLLAPSE_MS = 3500;
+
+    function songCatalogSelectKey(section, id) {
+      return String(section || "").trim().toLowerCase() + "\0" + String(id || "").trim();
+    }
+
+    function getSongCatalogSelectedItems() {
+      return Array.from(songCatalogSelected.values());
+    }
+
+    function clearSongCatalogSelection() {
+      songCatalogSelected.clear();
+      syncSongCatalogBulkBar();
+      document.querySelectorAll(".song-row.is-selected").forEach((el) => el.classList.remove("is-selected"));
+      document.querySelectorAll(".song-row-check").forEach((el) => el.classList.remove("is-checked"));
+      document.querySelectorAll(".song-row-check input[type=\"checkbox\"]").forEach((el) => {
+        el.checked = false;
+      });
+    }
+
+    function setSongCatalogSelectMode(on) {
+      songCatalogSelectMode = !!on;
+      if (!songCatalogSelectMode) clearSongCatalogSelection();
+      const wrap = $("song-composer-catalog-wrap");
+      if (wrap) wrap.classList.toggle("is-selecting", songCatalogSelectMode);
+      const trigger = $("song-catalog-select-trigger");
+      if (trigger) {
+        trigger.setAttribute("aria-pressed", songCatalogSelectMode ? "true" : "false");
+        trigger.textContent = songCatalogSelectMode ? "Done" : "Select";
+        trigger.classList.toggle("is-active", songCatalogSelectMode);
+      }
+      syncSongCatalogBulkBar();
+      renderSongCatalog();
+    }
+
+    function setSongCatalogRowSelected(section, id, title, selected) {
+      const sec = String(section || "").trim().toLowerCase();
+      const sid = String(id || "").trim();
+      if (!sec || !sid) return;
+      const key = songCatalogSelectKey(sec, sid);
+      if (selected) {
+        songCatalogSelected.set(key, {
+          section: sec,
+          id: sid,
+          title: String(title || "").trim(),
+        });
+      } else {
+        songCatalogSelected.delete(key);
+      }
+    }
+
+    function syncSongCatalogBulkBar() {
+      const bar = $("song-catalog-bulk-bar");
+      const countEl = $("song-catalog-bulk-count");
+      const n = songCatalogSelected.size;
+      const canEdit = !!(churchMembershipState && churchMembershipState.is_superadmin);
+      const trigger = $("song-catalog-select-trigger");
+      if (trigger) trigger.hidden = !canEdit;
+      if (bar) bar.hidden = !(canEdit && songCatalogSelectMode && n > 0);
+      if (countEl) {
+        countEl.textContent = n === 1 ? "1 selected" : (n + " selected");
+      }
+      const moveBtn = $("song-catalog-bulk-move");
+      const delBtn = $("song-catalog-bulk-delete");
+      if (moveBtn) moveBtn.disabled = n === 0;
+      if (delBtn) delBtn.disabled = n === 0;
+      syncSongCatalogLangStats();
+    }
+
+    function songCatalogLanguageLabel(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return "Unknown";
+      return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    }
+
+    function getSongCatalogLanguageStats() {
+      const counts = new Map();
+      let total = 0;
+      if (!songCatalogData) return { total: 0, parts: [] };
+      SECTION_ORDER.forEach((sec) => {
+        const rows = songCatalogData[sec.key] || [];
+        rows.forEach((row) => {
+          if (!row || !row.id) return;
+          total += 1;
+          const label = songCatalogLanguageLabel(row.language);
+          counts.set(label, (counts.get(label) || 0) + 1);
+        });
+      });
+      const parts = Array.from(counts.entries())
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([label, count]) => ({ label, count }));
+      return { total, parts };
+    }
+
+    function collapseSongCatalogLangStats() {
+      if (songCatalogLangStatsCollapseTimer) {
+        clearTimeout(songCatalogLangStatsCollapseTimer);
+        songCatalogLangStatsCollapseTimer = 0;
+      }
+      const btn = $("song-catalog-lang-stats");
+      const detail = $("song-catalog-lang-stats-detail");
+      if (btn) {
+        btn.classList.remove("is-expanded");
+        btn.setAttribute("aria-expanded", "false");
+      }
+      if (detail) detail.setAttribute("aria-hidden", "true");
+    }
+
+    function expandSongCatalogLangStats() {
+      const btn = $("song-catalog-lang-stats");
+      const detail = $("song-catalog-lang-stats-detail");
+      if (!btn || !detail) return;
+      const stats = getSongCatalogLanguageStats();
+      const inner = detail.querySelector("span") || document.createElement("span");
+      if (!inner.parentNode) detail.appendChild(inner);
+      if (!stats.parts.length) {
+        inner.textContent = "No songs";
+      } else {
+        inner.textContent = stats.parts
+          .map((p) => p.label + " " + p.count)
+          .join(" · ");
+      }
+      btn.classList.add("is-expanded");
+      btn.setAttribute("aria-expanded", "true");
+      detail.setAttribute("aria-hidden", "false");
+      if (songCatalogLangStatsCollapseTimer) clearTimeout(songCatalogLangStatsCollapseTimer);
+      songCatalogLangStatsCollapseTimer = setTimeout(() => {
+        songCatalogLangStatsCollapseTimer = 0;
+        collapseSongCatalogLangStats();
+      }, SONG_CATALOG_LANG_STATS_COLLAPSE_MS);
+    }
+
+    function syncSongCatalogLangStats() {
+      const totalEl = $("song-catalog-lang-stats-total");
+      const btn = $("song-catalog-lang-stats");
+      const stats = getSongCatalogLanguageStats();
+      if (totalEl) totalEl.textContent = String(stats.total);
+      if (btn) {
+        btn.setAttribute(
+          "aria-label",
+          stats.total === 1 ? "1 song in library" : stats.total + " songs in library"
+        );
+        btn.disabled = stats.total === 0;
+      }
+      if (btn && btn.classList.contains("is-expanded")) {
+        const detail = $("song-catalog-lang-stats-detail");
+        if (detail) {
+          const inner = detail.querySelector("span") || document.createElement("span");
+          if (!inner.parentNode) detail.appendChild(inner);
+          inner.textContent = stats.parts.length
+            ? stats.parts.map((p) => p.label + " " + p.count).join(" · ")
+            : "No songs";
+        }
+      }
+    }
+
+    function syncSongCatalogSectionSelectAll(_secKey) {
+      // Per-section select-all removed.
+    }
 
     function songDetailCacheKey(section, id) {
       return String(section || "").trim().toLowerCase() + "\0" + String(id || "").trim();
@@ -31239,39 +31474,55 @@
         return;
       }
       const visible = q ? sections.filter((s) => s.rows.length) : sections;
-      const canEditCatalog = churchMembershipState.is_superadmin;
+      const canEditCatalog = !!(churchMembershipState && churchMembershipState.is_superadmin);
+      const selecting = canEditCatalog && songCatalogSelectMode;
+      const tickSvg =
+        "<svg class=\"song-tick__icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 13l4 4L19 7\"/></svg>";
       root.innerHTML = visible.map(({ sec, allRows, rows }) => {
         const open = q ? true : songCatalogExpanded[sec.key] === true;
         const countLabel = q ? rows.length + " / " + allRows.length : String(allRows.length);
         return (
           "<div class=\"song-sec" + (q ? " song-sec-search-open" : "") + "\" data-sec=\"" + sec.key + "\">" +
-            "<button type=\"button\" class=\"song-sec-toggle\" data-sec-toggle=\"" + sec.key + "\">" +
-              "<span>" + escapeHtml(sec.label) + "</span><span>" + countLabel + "</span>" +
-            "</button>" +
+            "<div class=\"song-sec-head\">" +
+              "<button type=\"button\" class=\"song-sec-toggle\" data-sec-toggle=\"" + sec.key + "\">" +
+                "<span>" + escapeHtml(sec.label) + "</span><span>" + countLabel + "</span>" +
+              "</button>" +
+            "</div>" +
             "<div class=\"song-sec-body" + (open ? "" : " collapsed") + "\" data-sec-body=\"" + sec.key + "\">" +
-              (rows.length ? rows.map((row) => (
-                "<div class=\"song-row\" data-sid=\"" + escapeHtml(row.id) + "\" data-ssec=\"" + sec.key + "\">" +
+              (rows.length ? rows.map((row) => {
+                const selected = selecting && songCatalogSelected.has(songCatalogSelectKey(sec.key, row.id));
+                return (
+                "<div class=\"song-row" + (selected ? " is-selected" : "") + (selecting ? " song-row--selectable" : "") + "\" data-sid=\"" + escapeHtml(row.id) + "\" data-ssec=\"" + sec.key + "\">" +
+                  (selecting
+                    ? "<label class=\"song-row-check" + (selected ? " is-checked" : "") + "\">" +
+                        "<input type=\"checkbox\" class=\"song-tick__input\" data-act=\"select\" " + (selected ? "checked " : "") +
+                        "aria-label=\"Select " + escapeHtml(row.title) + "\" />" +
+                        "<span class=\"song-tick\" aria-hidden=\"true\">" + tickSvg + "</span>" +
+                      "</label>"
+                    : "") +
                   "<div class=\"song-row-clickable\" role=\"button\" tabindex=\"0\" aria-label=\"Load " + escapeHtml(row.title) + "\">" +
-                    "<div class=\"song-row-title\">" + escapeHtml(row.title) + "</div>" +
+                    "<div class=\"song-row-title-row\">" +
+                      "<div class=\"song-row-title\">" + escapeHtml(row.title) + "</div>" +
+                      ((row.audio_preview && row.audio_preview.basename) || (row.audio_media && row.audio_media.basename) || (row.video_media && row.video_media.basename)
+                        ? "<div class=\"song-row-media\" aria-label=\"Linked media\">" +
+                            (row.audio_preview && row.audio_preview.basename
+                              ? "<span class=\"song-row-media__badge song-row-media__badge--preview\" title=\"Chorus preview\">" +
+                                escapeHtml(String((row.audio_preview.duration_sec || 10) + "s")) + "</span>"
+                              : "") +
+                            (row.audio_media && row.audio_media.basename
+                              ? "<span class=\"song-row-media__badge\" title=\"Audio linked\">Audio</span>"
+                              : "") +
+                            (row.video_media && row.video_media.basename
+                              ? "<span class=\"song-row-media__badge song-row-media__badge--video\" title=\"Video linked\">Video</span>"
+                              : "") +
+                          "</div>"
+                        : "") +
+                    "</div>" +
                     "<div class=\"song-row-meta\">" +
                       (row.author ? escapeHtml(row.author) + " · " : "") +
                       escapeHtml(row.language || "") +
                       (formatGospelMoodsLabel(row.gospel_moods) ? " · " + escapeHtml(formatGospelMoodsLabel(row.gospel_moods)) : "") +
                     "</div>" +
-                    ((row.audio_preview && row.audio_preview.basename) || (row.audio_media && row.audio_media.basename) || (row.video_media && row.video_media.basename)
-                      ? "<div class=\"song-row-media\" aria-label=\"Linked media\">" +
-                          (row.audio_preview && row.audio_preview.basename
-                            ? "<span class=\"song-row-media__badge song-row-media__badge--preview\" title=\"Chorus preview\">" +
-                              escapeHtml(String((row.audio_preview.duration_sec || 10) + "s")) + "</span>"
-                            : "") +
-                          (row.audio_media && row.audio_media.basename
-                            ? "<span class=\"song-row-media__badge\" title=\"Audio linked\">Audio</span>"
-                            : "") +
-                          (row.video_media && row.video_media.basename
-                            ? "<span class=\"song-row-media__badge song-row-media__badge--video\" title=\"Video linked\">Video</span>"
-                            : "") +
-                        "</div>"
-                      : "") +
                   "</div>" +
                   ((catalogRowPreviewRef(row) || canEditCatalog)
                     ? "<div class=\"song-row-actions\">" +
@@ -31283,16 +31534,20 @@
                             "s chorus preview\" aria-label=\"Play chorus preview\">▶</button>"
                           : "") +
                         (canEditCatalog
-                          ? "<button type=\"button\" data-act=\"edit\">Edit</button>" +
-                            "<button type=\"button\" data-act=\"del\">Delete</button>"
+                          ? "<button type=\"button\" class=\"song-row-action\" data-act=\"edit\">Edit</button>" +
+                            "<span class=\"song-row-action-sep\" aria-hidden=\"true\"></span>" +
+                            "<button type=\"button\" class=\"song-row-action song-row-action--del\" data-act=\"del\">Delete</button>"
                           : "") +
                       "</div>"
                     : "") +
                 "</div>"
-              )).join("") : "<p class=\"muted\" style=\"padding:10px 14px;\">No matches.</p>") +
+              ); }).join("") : "<p class=\"muted\" style=\"padding:10px 14px;\">No matches.</p>") +
             "</div></div>"
         );
       }).join("");
+      if (root.id === "song-catalog-root") {
+        syncSongCatalogBulkBar();
+      }
     }
 
     function renderSongCatalog() {
@@ -31810,10 +32065,11 @@
       if ($("song-metadata-edit-language")) $("song-metadata-edit-language").value = s.language || "English";
       if ($("song-metadata-edit-section")) {
         $("song-metadata-edit-section").value = resolvedSec || "";
-        $("song-metadata-edit-section").disabled = true;
+        $("song-metadata-edit-section").disabled = false;
       }
       if ($("song-metadata-subtitle")) {
-        $("song-metadata-subtitle").textContent = "Editing metadata for \"" + (s.title || "Song") + "\".";
+        $("song-metadata-subtitle").textContent =
+          "Editing metadata for \"" + (s.title || "Song") + "\". Change section to move it in the library.";
       }
       setSongMetadataSaveButtonState("idle", "Save changes");
       if ($("song-metadata-save")) $("song-metadata-save").disabled = true;
@@ -32092,8 +32348,12 @@
     async function patchCatalogSongFromMetadataModal(section, id, title) {
       const author = ($("song-metadata-edit-author") && $("song-metadata-edit-author").value.trim()) || "";
       const language = ($("song-metadata-edit-language") && $("song-metadata-edit-language").value) || "English";
+      const newSection = String(($("song-metadata-edit-section") && $("song-metadata-edit-section").value) || "").trim().toLowerCase();
       const gospel_moods = readSongMetadataMoodChecks();
       const patchBody = { title, author, language, gospel_moods };
+      if (newSection && newSection !== String(section || "").trim().toLowerCase()) {
+        patchBody.new_section = newSection;
+      }
       const youtube = typeof composerYoutubeRef === "function" ? composerYoutubeRef() : (composerSongMedia && composerSongMedia.audio);
       const snippet = typeof composerAudioSnippetRef === "function" ? composerAudioSnippetRef() : (composerSongMedia && composerSongMedia.preview);
       const video = composerSongMedia && composerSongMedia.video;
@@ -32116,7 +32376,14 @@
         const detail = data.detail || data.error || "Update failed";
         throw new Error(typeof detail === "string" ? detail : "Update failed");
       }
-      return { title, author, language, gospel_moods, data };
+      return {
+        title,
+        author,
+        language,
+        gospel_moods,
+        section: String((data && data.section) || newSection || section).trim().toLowerCase(),
+        data,
+      };
     }
 
     async function saveSongMetadataFromModal() {
@@ -32152,7 +32419,7 @@
         }
         setSongMetadataSaveButtonState("saving");
         try {
-          applyMetadataModalToComposerFields();
+          const applied = applyMetadataModalToComposerFields();
           if (
             intent !== "save" &&
             composerLoadedSong &&
@@ -32162,18 +32429,20 @@
           ) {
             const section = composerLoadedSong.section || (($("lyrics-save-section") && $("lyrics-save-section").value) || "meditation");
             const id = composerLoadedSong.id;
-            await patchCatalogSongFromMetadataModal(section, id, title);
-            composerLoadedSong = { section, id, title };
+            const patched = await patchCatalogSongFromMetadataModal(section, id, title);
+            const savedSection = patched.section || applied.section || section;
+            composerLoadedSong = { section: savedSection, id, title };
+            setComposerSongSection(savedSection);
             mergeSavedSongIntoLocalCatalog({
               id,
               title,
-              section,
+              section: savedSection,
               audio_media: composerSongMedia && composerSongMedia.audio,
               video_media: composerSongMedia && composerSongMedia.video,
               audio_preview: composerSongMedia && composerSongMedia.preview,
             });
             if (typeof syncSongMediaSurfaces === "function") {
-              syncSongMediaSurfaces(section, id, { fromComposer: true });
+              syncSongMediaSurfaces(savedSection, id, { fromComposer: true });
             }
             renderSongCatalog();
             refreshSongCatalogInBackground();
@@ -32200,17 +32469,23 @@
       setSongMetadataSaveButtonState("saving");
       try {
         const patched = await patchCatalogSongFromMetadataModal(section, id, title);
+        const savedSection = patched.section || section;
+        songMetaEditCtx.section = savedSection;
         mergeSavedSongIntoLocalCatalog({
           id,
           title: patched.title,
-          section,
+          section: savedSection,
           audio_media: composerSongMedia && composerSongMedia.audio,
           video_media: composerSongMedia && composerSongMedia.video,
           audio_preview: composerSongMedia && composerSongMedia.preview,
         });
         if (typeof syncSongMediaSurfaces === "function") {
-          syncSongMediaSurfaces(section, id, { fromComposer: true });
+          syncSongMediaSurfaces(savedSection, id, { fromComposer: true });
         }
+        if (composerLoadedSong && String(composerLoadedSong.id || "").trim() === String(id || "").trim()) {
+          composerLoadedSong = { section: savedSection, id, title: patched.title };
+        }
+        setComposerSongSection(savedSection);
         renderSongCatalog();
         refreshSongCatalogInBackground();
         if ($("lyrics-save-title")) $("lyrics-save-title").value = patched.title;
@@ -32218,7 +32493,7 @@
         setComposerSongLanguage(patched.language);
         composerGospelMoods = patched.gospel_moods.slice();
         updateLyricsComposerDetailsPreview();
-        pushSongHistory({ title: patched.title, section, id, kind: "edited" });
+        pushSongHistory({ title: patched.title, section: savedSection, id, kind: "edited" });
         playSongMetadataSaveSuccess("Updated \"" + patched.title + "\".");
         setLyricsStatus("Updated \"" + patched.title + "\".", "ok");
       } catch (err) {
@@ -32268,6 +32543,7 @@
             );
           });
         }
+        songCatalogSelected.delete(songCatalogSelectKey(section, id));
         if (composerLoadedSong && String(composerLoadedSong.id || "").trim() === String(id || "").trim()) {
           composerLoadedSong = null;
         }
@@ -32283,6 +32559,207 @@
           confirmBtn.textContent = "Delete";
         }
       }
+    }
+
+    function closeSongBulkDeleteModal() {
+      setUiOverlayOpen($("song-bulk-delete-modal"), false);
+    }
+
+    function openSongBulkDeleteConfirmModal() {
+      const items = getSongCatalogSelectedItems();
+      if (!items.length) return;
+      const desc = $("song-bulk-delete-desc");
+      if (desc) {
+        desc.textContent =
+          "Remove " + items.length + " song" + (items.length === 1 ? "" : "s") +
+          " from the global catalog? This cannot be undone.";
+      }
+      setUiOverlayOpen($("song-bulk-delete-modal"), true);
+    }
+
+    async function confirmSongBulkDeleteFromModal() {
+      if (!guardSuperadminAction()) return;
+      const items = getSongCatalogSelectedItems();
+      if (!items.length) {
+        closeSongBulkDeleteModal();
+        return;
+      }
+      const confirmBtn = $("song-bulk-delete-confirm");
+      if (confirmBtn) {
+        if (confirmBtn.disabled) return;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Deleting…";
+      }
+      try {
+        const headers = Object.assign(
+          { "Content-Type": "application/json" },
+          await catalogAuthHeaders()
+        );
+        const res = await fetch("/api/catalog/songs/bulk-delete", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            songs: items.map((item) => ({ id: item.id, section: item.section })),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = data.detail || data.error || "Delete failed";
+          throw new Error(typeof detail === "string" ? detail : "Delete failed");
+        }
+        const removed = new Set((data.removed || items.map((i) => i.id)).map((x) => String(x)));
+        if (songCatalogData) {
+          Object.keys(songCatalogData).forEach((sec) => {
+            if (!Array.isArray(songCatalogData[sec])) return;
+            songCatalogData[sec] = songCatalogData[sec].filter(
+              (row) => !removed.has(String(row.id || "").trim())
+            );
+          });
+        }
+        if (composerLoadedSong && removed.has(String(composerLoadedSong.id || "").trim())) {
+          composerLoadedSong = null;
+        }
+        clearSongCatalogSelection();
+        renderSongCatalog();
+        closeSongBulkDeleteModal();
+        refreshSongCatalogInBackground();
+        const n = removed.size;
+        const msg = "Removed " + n + " song" + (n === 1 ? "" : "s") + ".";
+        setLyricsStatus(msg, "ok");
+        if (typeof showToast === "function") showToast(msg, "ok");
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Delete";
+        }
+      }
+    }
+
+    async function moveSelectedCatalogSongs() {
+      if (!guardSuperadminAction()) return;
+      const items = getSongCatalogSelectedItems();
+      if (!items.length) return;
+      const sel = $("song-catalog-bulk-move-section");
+      const target = String((sel && sel.value) || "").trim().toLowerCase();
+      if (!target) {
+        if (typeof showToast === "function") showToast("Choose a section to move into.", "warn");
+        if (sel) sel.focus();
+        return;
+      }
+      const moveBtn = $("song-catalog-bulk-move");
+      if (moveBtn) {
+        if (moveBtn.disabled) return;
+        moveBtn.disabled = true;
+        moveBtn.textContent = "Moving…";
+      }
+      try {
+        const headers = Object.assign(
+          { "Content-Type": "application/json" },
+          await catalogAuthHeaders()
+        );
+        const res = await fetch("/api/catalog/songs/bulk-move", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            target_section: target,
+            songs: items.map((item) => ({ id: item.id, section: item.section })),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = data.detail || data.error || "Move failed";
+          throw new Error(typeof detail === "string" ? detail : "Move failed");
+        }
+        const movedIds = new Set((data.moved || []).map((m) => String(m.id || "")));
+        if (songCatalogData && movedIds.size) {
+          const movedRows = [];
+          Object.keys(songCatalogData).forEach((sec) => {
+            if (!Array.isArray(songCatalogData[sec])) return;
+            const kept = [];
+            songCatalogData[sec].forEach((row) => {
+              const rid = String(row.id || "").trim();
+              if (movedIds.has(rid)) movedRows.push(row);
+              else kept.push(row);
+            });
+            songCatalogData[sec] = kept;
+          });
+          if (!Array.isArray(songCatalogData[target])) songCatalogData[target] = [];
+          movedRows.forEach((row) => {
+            songCatalogData[target].unshift(row);
+          });
+        }
+        if (composerLoadedSong && movedIds.has(String(composerLoadedSong.id || "").trim())) {
+          composerLoadedSong = Object.assign({}, composerLoadedSong, { section: target });
+          setComposerSongSection(target);
+        }
+        clearSongCatalogSelection();
+        if (sel) sel.value = "";
+        songCatalogExpanded[target] = true;
+        renderSongCatalog();
+        refreshSongCatalogInBackground();
+        const n = (data.count != null) ? data.count : movedIds.size;
+        const msg =
+          "Moved " + n + " song" + (n === 1 ? "" : "s") +
+          " to " + songSectionLabel(target) + ".";
+        setLyricsStatus(msg, "ok");
+        if (typeof showToast === "function") showToast(msg, "ok");
+      } catch (err) {
+        setLyricsStatus(err.message || "Move failed.", "error");
+        if (typeof showToast === "function") showToast(err.message || "Move failed.", "error");
+      } finally {
+        if (moveBtn) {
+          moveBtn.disabled = false;
+          moveBtn.textContent = "Move";
+        }
+        syncSongCatalogBulkBar();
+      }
+    }
+
+    function bindSongCatalogBulkBar() {
+      const langStatsBtn = $("song-catalog-lang-stats");
+      if (langStatsBtn && langStatsBtn.dataset.bound !== "1") {
+        langStatsBtn.dataset.bound = "1";
+        langStatsBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (langStatsBtn.classList.contains("is-expanded")) {
+            collapseSongCatalogLangStats();
+          } else {
+            expandSongCatalogLangStats();
+          }
+        });
+      }
+      const bar = $("song-catalog-bulk-bar");
+      if (!bar || bar.dataset.bound === "1") return;
+      bar.dataset.bound = "1";
+      $("song-catalog-select-trigger") && $("song-catalog-select-trigger").addEventListener("click", () => {
+        if (!guardSuperadminAction()) return;
+        setSongCatalogSelectMode(!songCatalogSelectMode);
+      });
+      $("song-catalog-bulk-clear") && $("song-catalog-bulk-clear").addEventListener("click", () => {
+        clearSongCatalogSelection();
+        renderSongCatalog();
+      });
+      $("song-catalog-bulk-move") && $("song-catalog-bulk-move").addEventListener("click", () => {
+        moveSelectedCatalogSongs().catch(() => {});
+      });
+      $("song-catalog-bulk-delete") && $("song-catalog-bulk-delete").addEventListener("click", () => {
+        openSongBulkDeleteConfirmModal();
+      });
+      [
+        ["song-bulk-delete-backdrop", closeSongBulkDeleteModal],
+        ["song-bulk-delete-close", closeSongBulkDeleteModal],
+        ["song-bulk-delete-cancel", closeSongBulkDeleteModal],
+      ].forEach(([id, fn]) => {
+        const el = $(id);
+        if (el) el.addEventListener("click", fn);
+      });
+      $("song-bulk-delete-confirm") && $("song-bulk-delete-confirm").addEventListener("click", () => {
+        confirmSongBulkDeleteFromModal().catch((err) => {
+          setLyricsStatus(err.message || "Delete failed.", "error");
+          if (typeof showToast === "function") showToast(err.message || "Delete failed.", "error");
+        });
+      });
+      syncSongCatalogBulkBar();
     }
 
     function clearSongCatalogSearch() {
@@ -32649,6 +33126,10 @@
         if (!row) return;
         const section = row.dataset.ssec;
         const id = row.dataset.sid;
+        if (e.target.closest(".song-row-check")) {
+          // Checkbox change handler owns selection state.
+          return;
+        }
         if (actBtn) {
           const act = actBtn.dataset.act;
           try {
@@ -32680,6 +33161,23 @@
         } catch (err) {
           setLyricsStatus(err.message || "Could not load song.", "error");
         }
+      });
+      root.addEventListener("change", (e) => {
+        const selectBox = e.target.closest(".song-row-check input[type=\"checkbox\"]");
+        if (!selectBox || !root.contains(selectBox)) return;
+        const row = selectBox.closest(".song-row");
+        if (!row) return;
+        const section = row.dataset.ssec;
+        const id = row.dataset.sid;
+        const titleEl = row.querySelector(".song-row-title");
+        const title = titleEl ? titleEl.textContent.trim() : "";
+        const checked = !!selectBox.checked;
+        const checkLabel = row.querySelector(".song-row-check");
+        if (checkLabel) checkLabel.classList.toggle("is-checked", checked);
+        setSongCatalogRowSelected(section, id, title, checked);
+        row.classList.toggle("is-selected", checked);
+        syncSongCatalogBulkBar();
+        syncSongCatalogSectionSelectAll(section);
       });
       root.addEventListener("mouseover", (e) => {
         const clickable = e.target.closest(".song-row-clickable");
@@ -32713,6 +33211,7 @@
     }
     bindSongCatalogRoot($("song-catalog-root"));
     bindSongCatalogRoot($("collections-catalog-root"));
+    bindSongCatalogBulkBar();
     initSongCatalogModals();
     initPracticeShareUi();
 

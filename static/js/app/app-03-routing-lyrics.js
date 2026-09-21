@@ -1312,11 +1312,28 @@
       autoResizeLyricsMainInput();
     }
 
+    var lyricsStatusClearTimer = 0;
+    var LYRICS_STATUS_AUTO_CLEAR_MS = 3500;
+
     function setLyricsStatus(message, kind) {
       const el = $("lyrics-status");
       if (!el) return;
+      if (lyricsStatusClearTimer) {
+        clearTimeout(lyricsStatusClearTimer);
+        lyricsStatusClearTimer = 0;
+      }
       el.textContent = message || "";
       el.className = "status song-composer-status" + (kind ? " " + kind : "");
+      const text = String(message || "").trim();
+      if (text && kind === "ok") {
+        lyricsStatusClearTimer = setTimeout(() => {
+          lyricsStatusClearTimer = 0;
+          if (el.textContent === message) {
+            el.textContent = "";
+            el.className = "status song-composer-status";
+          }
+        }, LYRICS_STATUS_AUTO_CLEAR_MS);
+      }
     }
 
     function setLyricsAnalyzeHint(message, kind) {
@@ -3613,9 +3630,21 @@
       rebuildMassPlanSongPool();
     }
 
-    function filterMassPlanSongs(query) {
+    function filterMassPlanSongs(query, opts) {
+      const options = opts || {};
       const needle = (query || "").trim().toLowerCase();
+      const slotKey = String(options.slotKey || "").trim();
+      let allowMeditation = options.allowMeditation === true;
+      if (!allowMeditation && slotKey) {
+        const slotSec = String(
+          (typeof SLOT_TO_HYMN_SECTION !== "undefined" && SLOT_TO_HYMN_SECTION[slotKey]) ||
+          ((typeof lyricSongSlots !== "undefined" && lyricSongSlots.find((s) => s.key === slotKey)) || {}).section ||
+          ""
+        ).trim().toLowerCase();
+        allowMeditation = slotSec === "meditation";
+      }
       return massPlanAllSongs.filter((row) => {
+        if (!allowMeditation && String(row.section || "").toLowerCase() === "meditation") return false;
         if (!songMatchesPlanLangFilter(row, massSongPlanLanguage)) return false;
         if (!needle) return true;
         const blob = [row.title, row.author, row.language, row.section, row.id, row.source].join(" ").toLowerCase();

@@ -78,10 +78,12 @@ from services.song_catalog import (
     catalog_lite_response,
     catalog_whats_new,
     delete_catalog_song,
+    delete_catalog_songs,
     find_catalog_row_by_id,
     import_song_rows,
     import_titles,
     import_verbum_songs_from_txt,
+    move_catalog_songs,
     normalize_audio_preview_ref,
     normalize_song_media_ref,
     save_lyrics_song,
@@ -1640,6 +1642,21 @@ class GenerateBody(BaseModel):
         "nicene",
         description="Creed for the Mass deck: nicene | apostles | none (omit Creed slides).",
     )
+    creed_language: str = Field(
+        "english",
+        description="Language for Creed slides: english | tagalog.",
+        max_length=16,
+    )
+    penitential_language: str = Field(
+        "english",
+        description="Language for Penitential Act slides: english | tagalog.",
+        max_length=16,
+    )
+    sanctus_language: str = Field(
+        "english",
+        description="Language for Sanctus slides: english | tagalog.",
+        max_length=16,
+    )
     gloria_choice: str = Field(
         "english",
         description="Gloria for the Mass deck: english | latin | none (omit Gloria slides).",
@@ -1904,12 +1921,31 @@ class CatalogSongPatchBody(BaseModel):
         max_length=L.MAX_GOSPEL_MOODS,
         description="Gospel mood tags: triumphant, solemn, mercy, journey, reverent.",
     )
+    new_section: Optional[str] = Field(
+        None,
+        max_length=L.SECTION_KEY,
+        description="Move the song to this Mass section when set.",
+    )
     audio_media: Optional[SongMediaRefBody] = None
     video_media: Optional[SongMediaRefBody] = None
     audio_preview: Optional[dict[str, Any]] = None
     clear_audio_media: bool = False
     clear_video_media: bool = False
     clear_audio_preview: bool = False
+
+
+class CatalogSongBulkItem(BaseModel):
+    id: str = Field(..., min_length=1, max_length=120)
+    section: Optional[str] = Field(None, max_length=L.SECTION_KEY)
+
+
+class CatalogSongsBulkMoveBody(BaseModel):
+    songs: list[CatalogSongBulkItem] = Field(..., min_length=1, max_length=200)
+    target_section: str = Field(..., min_length=1, max_length=L.SECTION_KEY)
+
+
+class CatalogSongsBulkDeleteBody(BaseModel):
+    songs: list[CatalogSongBulkItem] = Field(..., min_length=1, max_length=200)
 
 
 class GenerateImageBody(BaseModel):
@@ -3677,10 +3713,40 @@ def api_patch_catalog_song(
         audio_media=audio_media,
         video_media=video_media,
         audio_preview=audio_preview,
+        new_section=body.new_section,
         updated_by=session.user.user_id if session else None,
     )
     if not res.get("ok"):
         raise HTTPException(status_code=400, detail=res.get("error") or "Update failed.")
+    return res
+
+
+@app.post("/api/catalog/songs/bulk-move")
+def api_bulk_move_catalog_songs(
+    body: CatalogSongsBulkMoveBody,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    res = move_catalog_songs(
+        [item.model_dump() for item in body.songs],
+        target_section=body.target_section,
+        updated_by=session.user.user_id if session else None,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Move failed.")
+    return res
+
+
+@app.post("/api/catalog/songs/bulk-delete")
+def api_bulk_delete_catalog_songs(
+    body: CatalogSongsBulkDeleteBody,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    res = delete_catalog_songs(
+        [item.model_dump() for item in body.songs],
+        updated_by=session.user.user_id if session else None,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error") or "Delete failed.")
     return res
 
 
@@ -4874,6 +4940,9 @@ def api_generate(
             include_footer=body.include_footer,
             hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
+            creed_language=body.creed_language,
+            penitential_language=body.penitential_language,
+            sanctus_language=body.sanctus_language,
             gloria_choice=body.gloria_choice,
             our_father_choice=body.our_father_choice,
             kyrie_choice=body.kyrie_choice,
@@ -5240,6 +5309,9 @@ async def api_regenerate_pptx(
             include_footer=body.include_footer,
             hymn_lyric_overrides=hymn_overrides,
             creed_choice=body.creed_choice,
+            creed_language=body.creed_language,
+            penitential_language=body.penitential_language,
+            sanctus_language=body.sanctus_language,
             gloria_choice=body.gloria_choice,
             our_father_choice=body.our_father_choice,
             kyrie_choice=body.kyrie_choice,

@@ -106,7 +106,10 @@ def _pick_mood_songs_for_section(
     used: set[str],
 ) -> list[dict[str, Any]]:
     """Pick hymns by gospel-mood match. Never prefers catalog order alone."""
-    rows = _filter_en_tl(section_candidates(season_key=season_key, section=section, limit=80))
+    sec = (section or "").strip().lower()
+    if sec == "meditation":
+        return []
+    rows = _filter_en_tl(section_candidates(season_key=season_key, section=sec, limit=80))
     scored: list[tuple[int, float, dict[str, Any]]] = []
     for row in rows:
         if _is_used(used, row):

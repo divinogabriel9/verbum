@@ -271,6 +271,8 @@
     var out = [];
     var seen = new Set();
     Object.keys(catalog || {}).forEach(function (sec) {
+      // Never pull Meditation catalog songs into Mass auto-suggestions.
+      if (String(sec || "").toLowerCase() === "meditation") return;
       catalogSectionRows(catalog, sec).forEach(function (row) {
         var id = String((row && row.id) || "");
         var key = id || normSongTitle(row && row.title) + "@" + sec;
@@ -283,6 +285,8 @@
   }
 
   function pickMoodSongsForSection(catalog, section, moodKey, count, excludeIds, langFilter) {
+    var sec = String(section || "").trim().toLowerCase();
+    if (sec === "meditation") return [];
     var exclude = excludeIds || new Set();
     var wanted = Math.max(1, count || 1);
     var primary = catalogSectionRows(catalog, section);

@@ -104,7 +104,7 @@ def recommend_sections(
     out: dict[str, list[dict[str, Any]]] = {}
     cap = max(3, min(per_section, 20))
 
-    for section in ("entrance", "offertory", "communion", "recessional", "meditation"):
+    for section in ("entrance", "offertory", "communion", "recessional"):
         items: list[dict[str, Any]] = [x for x in (lib.get(section) or []) if isinstance(x, dict)]
         scored: list[tuple[int, int, int, dict[str, Any]]] = []
         for idx, item in enumerate(items):
@@ -141,6 +141,8 @@ def recommend_sections(
             if len(picked) >= cap:
                 break
         out[section] = picked
+    # Meditation stays in the catalog for explicit slots; never auto-suggest it.
+    out["meditation"] = []
     return out
 
 
