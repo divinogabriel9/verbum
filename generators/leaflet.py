@@ -378,9 +378,9 @@ def _fit_cover_title_style(
     tag: str,
 ) -> ParagraphStyle:
     """Shrink the Mass title so ``Title (A)`` stays on one line in the column."""
-    s = max(0.62, min(1.0, scale))
-    target = 15.0 * s
-    floor = 8.0 * s
+    s = max(0.68, min(1.0, scale))
+    target = 16.0 * s
+    floor = 8.5 * s
     size = target
     while size > floor and pdfmetrics.stringWidth(text, bold_font, size) > max_width:
         size -= 0.2
@@ -404,7 +404,7 @@ def _styles(
     scale: float = 1.0,
 ) -> dict[str, ParagraphStyle]:
     """Build styles; ``scale`` < 1 shrinks type to fit one sheet."""
-    s = max(0.62, min(1.0, scale))
+    s = max(0.68, min(1.0, scale))
     tag = f"{int(round(s * 100)):03d}"
 
     def sz(n: float) -> float:
@@ -414,8 +414,8 @@ def _styles(
         "title": ParagraphStyle(
             f"lf_title_{tag}",
             fontName=bold_font,
-            fontSize=sz(12),
-            leading=sz(14.5),
+            fontSize=sz(13),
+            leading=sz(15.5),
             textColor=_INK,
             spaceAfter=sz(3.5),
             alignment=TA_JUSTIFY,
@@ -423,8 +423,8 @@ def _styles(
         "h": ParagraphStyle(
             f"lf_h_{tag}",
             fontName=bold_font,
-            fontSize=sz(9.5),
-            leading=sz(11.8),
+            fontSize=sz(10.5),
+            leading=sz(12.8),
             textColor=_INK,
             spaceBefore=sz(3.5),
             spaceAfter=sz(1.8),
@@ -433,8 +433,8 @@ def _styles(
         "body": ParagraphStyle(
             f"lf_body_{tag}",
             fontName=body_font,
-            fontSize=sz(9),
-            leading=sz(11.2),
+            fontSize=sz(10),
+            leading=sz(12.4),
             textColor=_INK,
             spaceAfter=sz(2),
             alignment=TA_JUSTIFY,
@@ -442,8 +442,8 @@ def _styles(
         "lyric": ParagraphStyle(
             f"lf_lyric_{tag}",
             fontName=body_font,
-            fontSize=sz(8.8),
-            leading=sz(11),
+            fontSize=sz(9.6),
+            leading=sz(12),
             textColor=_INK,
             spaceAfter=sz(1.8),
             leftIndent=0,
@@ -452,8 +452,8 @@ def _styles(
         "small": ParagraphStyle(
             f"lf_small_{tag}",
             fontName=body_font,
-            fontSize=sz(7.5),
-            leading=sz(9.4),
+            fontSize=sz(8.2),
+            leading=sz(10.2),
             textColor=_MUTED,
             spaceAfter=sz(1.5),
             alignment=TA_JUSTIFY,
@@ -461,8 +461,8 @@ def _styles(
         "response": ParagraphStyle(
             f"lf_response_{tag}",
             fontName=body_font,
-            fontSize=sz(8.8),
-            leading=sz(11),
+            fontSize=sz(9.6),
+            leading=sz(12),
             textColor=_INK,
             spaceAfter=sz(1.8),
             alignment=TA_JUSTIFY,
@@ -470,8 +470,8 @@ def _styles(
         "quote": ParagraphStyle(
             f"lf_quote_{tag}",
             fontName=italic_font,
-            fontSize=sz(10.5),
-            leading=sz(13.5),
+            fontSize=sz(11.5),
+            leading=sz(14.5),
             textColor=_INK,
             spaceBefore=sz(6),
             spaceAfter=sz(3),
@@ -481,8 +481,8 @@ def _styles(
         "center_kicker": ParagraphStyle(
             f"lf_ck_{tag}",
             fontName=bold_font,
-            fontSize=sz(11),
-            leading=sz(13.5),
+            fontSize=sz(12),
+            leading=sz(14.5),
             textColor=_MUTED,
             alignment=TA_CENTER,
             spaceAfter=sz(4),
@@ -490,8 +490,8 @@ def _styles(
         "center_title": ParagraphStyle(
             f"lf_ct_{tag}",
             fontName=bold_font,
-            fontSize=sz(15),
-            leading=sz(18),
+            fontSize=sz(16),
+            leading=sz(19),
             textColor=_INK,
             alignment=TA_CENTER,
             spaceAfter=sz(5),
@@ -499,8 +499,8 @@ def _styles(
         "center_body": ParagraphStyle(
             f"lf_cb_{tag}",
             fontName=body_font,
-            fontSize=sz(10),
-            leading=sz(13),
+            fontSize=sz(11),
+            leading=sz(14),
             textColor=_MUTED,
             alignment=TA_CENTER,
             spaceAfter=sz(3),
@@ -785,7 +785,7 @@ def _build_mass_flow(
     title_style = _fit_cover_title_style(
         display,
         styles["center_title"].fontName,
-        scale=styles["center_title"].fontSize / 15.0,
+        scale=styles["center_title"].fontSize / 16.0,
         max_width=inner_w * 0.98,
         tag=styles["center_title"].name,
     )
@@ -1061,8 +1061,8 @@ def _fit_flowables(
     Auto-adjuster: try decreasing font scale, then tighter content tiers,
     until everything paginates into ≤ 8 cells (one A4 duplex).
     """
-    # Font scales from full size down to ~62%
-    scales = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.62]
+    # Font scales from full size down to ~68% (prefer readable type)
+    scales = [1.0, 0.96, 0.92, 0.88, 0.84, 0.80, 0.76, 0.72, 0.68]
     best_cells: list[list[Any]] = []
     best_scale = 1.0
     best_tier = 0

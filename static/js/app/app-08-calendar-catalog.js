@@ -499,6 +499,16 @@
           body.slide_kinds = pendingKinds;
           body.include_ai_mass_poster = false;
         }
+        // Offline leaflet export (wizard "Offline leaflet" / Need offline leaflet?)
+        if (o.include_leaflet || o.leaflet_only) {
+          body.include_leaflet = true;
+        }
+        if (o.leaflet_only) {
+          body.leaflet_only = true;
+          body.include_leaflet = true;
+          body.include_ai_mass_poster = false;
+          body.include_social_exports = false;
+        }
 
         const dupKey = "churchMediaLastGenFp";
         const fp = JSON.stringify({
@@ -543,6 +553,8 @@
           ai_poster_backend: body.ai_poster_backend,
           ai_poster_style: body.ai_poster_style,
           include_social_exports: body.include_social_exports,
+          include_leaflet: !!body.include_leaflet,
+          leaflet_only: !!body.leaflet_only,
           custom_theme: body.custom_theme,
           include_church_logo: body.include_church_logo,
           include_church_name: body.include_church_name,
@@ -579,7 +591,10 @@
         massGenProgressState.steps = genSteps;
 
         let workIdx = massGenStepIndex("Building PowerPoint slides");
-        if (body.include_ai_mass_poster) {
+        if (body.leaflet_only) {
+          workIdx = Math.max(0, genSteps.length - 3);
+          statusFn("Building Mass leaflet PDF…", "");
+        } else if (body.include_ai_mass_poster) {
           workIdx = massGenStepIndex("Connecting to AI");
           statusFn("Creating sacred artwork and building your presentation…", "");
         } else {
@@ -588,14 +603,14 @@
         if (workIdx < 0) workIdx = Math.max(0, genSteps.length - 3);
 
         setMassGenLoading(true, {
-          title: "Preparing your Sunday Mass",
+          title: body.leaflet_only ? "Preparing your Mass leaflet" : "Preparing your Sunday Mass",
           steps: genSteps,
           step: workIdx,
         });
         startMassGenStepSimulation(workIdx + 1, body.include_ai_mass_poster ? 2800 : 2200);
         const data = await postJSON("/api/generate", body);
         clearMassGenProgressTimers();
-        advanceMassGenStep(genSteps.length - 1, { message: "Finalizing presentation…", percent: 100 });
+        advanceMassGenStep(genSteps.length - 1, { message: body.leaflet_only ? "Finalizing leaflet…" : "Finalizing presentation…", percent: 100 });
         localStorage.setItem(dupKey, fp);
         if (divIn) divIn.value = "";
         if (annIn) annIn.value = "";
@@ -634,16 +649,38 @@
           zip_url: data.zip_url,
           pptx_url: data.pptx_url,
           poster_url: data.poster_url,
+          leaflet_url: data.leaflet_url,
         });
         const dlMeta = { downloads: massGenerateDownloadLinks(data) };
-        const wantSlideshow = !!o.openSlideshow;
+        const wantSlideshow = !!o.openSlideshow && !body.leaflet_only;
+        const leafletOnly = !!body.leaflet_only;
         // Show success immediately; don't keep the overlay waiting on a multi‑MB blob download.
         const successUi = showMassGenSuccess(
-          wantSlideshow ? "Presentation ready." : "Presentation successfully generated.",
-          wantSlideshow ? "Opening slideshow…" : "Your PowerPoint is ready."
+          leafletOnly
+            ? "Leaflet ready."
+            : wantSlideshow
+              ? "Presentation ready."
+              : "Presentation successfully generated.",
+          leafletOnly
+            ? "Your Mass leaflet PDF is ready."
+            : wantSlideshow
+              ? "Opening slideshow…"
+              : "Your PowerPoint is ready."
         );
-        if (!wantSlideshow && o.autoDownloadPptx && data.pptx_url) {
-          const stemName = data.export_stem || "mass_presentation";
+        const stemName = data.export_stem || "mass_presentation";
+        if (leafletOnly && data.leaflet_url) {
+          triggerBrowserDownload(data.leaflet_url, stemName + "_leaflet.pdf")
+            .then(() => {
+              statusFn("Leaflet ready. PDF download started.", "ok", dlMeta);
+            })
+            .catch(() => {
+              statusFn(
+                "Leaflet ready. Use the Mass leaflet download link if the file did not start automatically.",
+                "ok",
+                dlMeta
+              );
+            });
+        } else if (!wantSlideshow && o.autoDownloadPptx && data.pptx_url) {
           triggerBrowserDownload(data.pptx_url, stemName + ".pptx")
             .then(() => {
               statusFn("Presentation ready. PowerPoint download started.", "ok", dlMeta);
@@ -655,8 +692,20 @@
                 dlMeta
               );
             });
+        } else if (!wantSlideshow && data.leaflet_url && (o.autoDownloadLeaflet || body.include_leaflet) && !data.pptx_url) {
+          triggerBrowserDownload(data.leaflet_url, stemName + "_leaflet.pdf")
+            .then(() => {
+              statusFn("Leaflet ready. PDF download started.", "ok", dlMeta);
+            })
+            .catch(() => {
+              statusFn(
+                "Leaflet ready. Use the Mass leaflet download link if the file did not start automatically.",
+                "ok",
+                dlMeta
+              );
+            });
         } else if (!wantSlideshow) {
-          statusFn("Presentation ready.", "ok", dlMeta);
+          statusFn(leafletOnly ? "Leaflet ready." : "Presentation ready.", "ok", dlMeta);
         }
         refreshAiImageQuotaHint();
         clearMassBuilderDraft();

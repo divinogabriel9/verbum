@@ -12,8 +12,8 @@
     tour: "/static/js/guided-tour.js?v=20260920g",
     driverCss: "/static/css/driver.css?v=20260703",
     tourCss: "/static/css/guided-tour.css?v=20260920g",
-    wizard: "/static/js/mw-wizard.js?v=20260920-no-gloria-creed",
-    wizardCss: "/static/css/mw-wizard.css?v=20260914-dd-float",
+    wizard: "/static/js/mw-wizard.js?v=20260921-leaflet-dl",
+    wizardCss: "/static/css/mw-wizard.css?v=20260920-leaflet-cta",
   };
 
   var APP_PARTS = [

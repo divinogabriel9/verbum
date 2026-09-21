@@ -1537,6 +1537,7 @@
                 include_ai: false,
                 openSlideshow: false,
                 autoDownloadPptx: false,
+                autoDownloadLeaflet: true,
                 setStatus: typeof window.setFlowStatus === 'function' ? window.setFlowStatus : undefined,
               });
               return;
