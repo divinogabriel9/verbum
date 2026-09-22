@@ -926,18 +926,6 @@
       }
     },
     {
-      "id": "doxology",
-      "title": "Doxology (Praise God from Whom All Blessings Flow)",
-      "lyrics": "Praise God, From Whom All Blessings Flow;\nPraise Him, All Creatures Here Below;\nPraise Him Above, Ye Heavenly Host;\nPraise Father, Son, And Holy Ghost. Amen.\n\nLet Earth And Heaven Adore His Name,\nAnd Every Heart His Grace Proclaim;\nWith Grateful Songs And Lifted Voice,\nWe Bless The Lord And Now Rejoice.",
-      "seasons": [
-        "all"
-      ],
-      "gospel_moods": [
-        "mercy",
-        "reverent"
-      ]
-    },
-    {
       "id": "take_my_life",
       "title": "Take My Life and Let It Be",
       "lyrics": "Take My Life And Let It Be\nConsecrated, Lord, To Thee;\nTake My Moments And My Days,\nLet Them Flow In Ceaseless Praise.\n\nTake My Hands And Let Them Move\nAt The Impulse Of Thy Love;\nTake My Feet And Let Them Be\nSwift And Beautiful For Thee.\n\nTake My Voice And Let Me Sing\nAlways, Only, For My King;\nTake My Lips And Let Them Be\nFilled With Messages From Thee.\n\nTake My Silver And My Gold,\nNot A Mite Would I Withhold;\nTake My Intellect And Use\nEvery Power As Thou Shalt Choose.\n\nTake My Will And Make It Thine,\nIt Shall Be No Longer Mine;\nTake My Heart, It Is Thine Own,\nIt Shall Be Thy Royal Throne.\n\nTake My Love; My Lord, I Pour\nAt Thy Feet Its Treasure-store;\nTake Myself, And I Will Be\nEver, Only, All For Thee.",
@@ -1099,7 +1087,14 @@
       ],
       "added_at": "2026-07-22T23:58:53.711965+00:00",
       "language": "Tagalog",
-      "updated_at": "2026-07-22T23:58:53.711965+00:00",
+      "updated_at": "2026-09-21T23:53:59.551795+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:G1JOroiCQfI",
+        "youtube_id": "G1JOroiCQfI",
+        "youtube_url": "https://www.youtube.com/watch?v=G1JOroiCQfI",
+        "display_name": "YouTube"
+      },
       "gospel_moods": [
         "reverent",
         "solemn"
@@ -1829,74 +1824,6 @@
         "display_name": "You Are Near · 10s",
         "duration_sec": 10
       }
-    },
-    {
-      "id": "santo_hontiveros",
-      "title": "Santo (hontiveros)",
-      "author": "Eduardo Hontiveros",
-      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana Sa Kaitaasan",
-      "source": "verbum_txt_import",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-07-24T17:02:49.792847+00:00",
-      "language": "Tagalog",
-      "updated_at": "2026-07-24T17:02:49.792847+00:00",
-      "gospel_moods": [
-        "triumphant",
-        "solemn"
-      ]
-    },
-    {
-      "id": "santo_francisco",
-      "title": "Santo (francisco)",
-      "author": "Manoling Francisco",
-      "lyrics": "Verse 1\nSanto, Santo, Santo\nDiyos Makapangyarihan\nPuspos Ng Luwalhati Ang Langit At Lupa\nOsana, Osana Sa Kaitaasan\n\nChorus\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana, Osana Sa Kaitaasan\nOsana, Osana Sa Kaitaasan",
-      "source": "verbum_txt_import",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-07-24T17:02:49.793046+00:00",
-      "language": "Tagalog",
-      "updated_at": "2026-07-24T17:02:49.793046+00:00",
-      "gospel_moods": [
-        "triumphant",
-        "solemn"
-      ]
-    },
-    {
-      "id": "santo_ramirez",
-      "title": "Santo (ramirez)",
-      "author": "",
-      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana, Osana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana, Osana Sa Kaitaasan",
-      "source": "verbum_txt_import",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-07-24T17:02:49.793240+00:00",
-      "language": "Tagalog",
-      "updated_at": "2026-07-24T17:02:49.793240+00:00",
-      "gospel_moods": [
-        "triumphant",
-        "solemn"
-      ]
-    },
-    {
-      "id": "santo_santo_santo_aquino",
-      "title": "Santo, Santo, Santo (aquino)",
-      "author": "Arnel Aquino",
-      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana Sa Kaitaasan",
-      "source": "verbum_txt_import",
-      "seasons": [
-        "all"
-      ],
-      "added_at": "2026-07-24T17:02:49.793444+00:00",
-      "language": "Tagalog",
-      "updated_at": "2026-07-24T17:02:49.793444+00:00",
-      "gospel_moods": [
-        "triumphant",
-        "reverent"
-      ]
     },
     {
       "id": "si_kristo_ay_namatay",
@@ -2974,6 +2901,90 @@
       "gospel_moods": [
         "reverent",
         "mercy"
+      ]
+    },
+    {
+      "id": "santo_hontiveros",
+      "title": "Santo (hontiveros)",
+      "author": "Eduardo Hontiveros",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.792847+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-21T23:48:09.231882+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "solemn"
+      ]
+    },
+    {
+      "id": "santo_francisco",
+      "title": "Santo (francisco)",
+      "author": "Manoling Francisco",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nDiyos Makapangyarihan\nPuspos Ng Luwalhati Ang Langit At Lupa\nOsana, Osana Sa Kaitaasan\n\nChorus\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana, Osana Sa Kaitaasan\nOsana, Osana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.793046+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-21T23:48:09.231923+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "solemn"
+      ]
+    },
+    {
+      "id": "santo_ramirez",
+      "title": "Santo (ramirez)",
+      "author": "",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana, Osana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana, Osana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.793240+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-21T23:48:09.231962+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "solemn"
+      ]
+    },
+    {
+      "id": "santo_santo_santo_aquino",
+      "title": "Santo, Santo, Santo (aquino)",
+      "author": "Arnel Aquino",
+      "lyrics": "Verse 1\nSanto, Santo, Santo\nPanginoong Diyos Ng Mga Hukbo\nNapupuno Ang Langit At Lupa\nNg Kadakilaan Mo\n\nChorus\nOsana Sa Kaitaasan\nPinagpala Ang Naparirito\nSa Ngalan Ng Panginoon\nOsana Sa Kaitaasan",
+      "source": "verbum_txt_import",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-07-24T17:02:49.793444+00:00",
+      "language": "Tagalog",
+      "updated_at": "2026-09-21T23:48:09.231999+00:00",
+      "gospel_moods": [
+        "triumphant",
+        "reverent"
+      ]
+    },
+    {
+      "id": "doxology",
+      "title": "Doxology (praise God From Whom All Blessings Flow)",
+      "author": "",
+      "lyrics": "Praise God, From Whom All Blessings Flow;\nPraise Him, All Creatures Here Below;\nPraise Him Above, Ye Heavenly Host;\nPraise Father, Son, And Holy Ghost. Amen.\n\nLet Earth And Heaven Adore His Name,\nAnd Every Heart His Grace Proclaim;\nWith Grateful Songs And Lifted Voice,\nWe Bless The Lord And Now Rejoice.",
+      "seasons": [
+        "all"
+      ],
+      "added_at": "2026-09-21T23:52:27.487282+00:00",
+      "language": "English",
+      "updated_at": "2026-09-21T23:52:27.487282+00:00",
+      "gospel_moods": [
+        "mercy",
+        "reverent"
       ]
     }
   ]

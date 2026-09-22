@@ -46,6 +46,15 @@ services:
         sync: false
       - key: HCAPTCHA_SECRET_KEY
         sync: false
+      # PostHog (optional) — leave unset to disable analytics
+      - key: POSTHOG_PROJECT_API_KEY
+        sync: false
+      - key: POSTHOG_HOST
+        sync: false
+      - key: POSTHOG_ENABLED
+        sync: false
+      - key: POSTHOG_SESSION_RECORDING
+        sync: false
       - key: SUPERADMIN_EMAILS
         sync: false
       - key: INVITE_ONLY_SIGNUP

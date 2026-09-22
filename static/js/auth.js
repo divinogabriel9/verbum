@@ -32,6 +32,18 @@
       state.avatarUrl = null;
       state.songContrib = null;
       state.pendingNotifications = [];
+      try {
+        if (window.LiturgyFlowAnalytics && window.LiturgyFlowAnalytics.reset) {
+          window.LiturgyFlowAnalytics.reset();
+        }
+      } catch (_e) {}
+    } else {
+      try {
+        var uid = state.user.id || state.user.user_id;
+        if (uid && window.LiturgyFlowAnalytics && window.LiturgyFlowAnalytics.identify) {
+          window.LiturgyFlowAnalytics.identify(String(uid));
+        }
+      } catch (_e) {}
     }
   }
 

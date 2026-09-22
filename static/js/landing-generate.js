@@ -59,6 +59,7 @@
     massDate: "",
     preview: null,
     songs: [],
+    includeLeaflet: false,
     generating: false,
   };
 
@@ -468,6 +469,7 @@
           celebrant: state.celebrant,
           massDate: state.massDate,
           songs: state.songs,
+          includeLeaflet: state.includeLeaflet,
         })
       );
     } catch (_e) { /* ignore */ }
@@ -478,11 +480,14 @@
       var raw = sessionStorage.getItem(STORAGE_KEY);
       if (!raw) return false;
       var draft = JSON.parse(raw);
-      if (draft.language) state.language = "english";
+      if (draft.language === "english" || draft.language === "tagalog") {
+        state.language = draft.language;
+      }
       if (draft.themeId) state.themeId = draft.themeId;
       if (draft.celebrant) state.celebrant = draft.celebrant;
       if (draft.massDate) state.massDate = draft.massDate;
       if (Array.isArray(draft.songs)) state.songs = draft.songs;
+      if (typeof draft.includeLeaflet === "boolean") state.includeLeaflet = draft.includeLeaflet;
       sessionStorage.removeItem(STORAGE_KEY);
       return true;
     } catch (_e) {
@@ -548,6 +553,8 @@
     });
     var cel = $("lf-gen-celebrant");
     if (cel && document.activeElement !== cel) cel.value = state.celebrant;
+    var leaflet = $("lf-gen-leaflet");
+    if (leaflet && document.activeElement !== leaflet) leaflet.checked = !!state.includeLeaflet;
     var dateLabel = state.massDate
       ? formatNiceDate(state.massDate)
       : "this coming Sunday";
@@ -641,6 +648,8 @@
     if (done) done.hidden = true;
     var dl = $("lf-gen-download");
     if (dl) dl.hidden = true;
+    var dlLeaflet = $("lf-gen-download-leaflet");
+    if (dlLeaflet) dlLeaflet.hidden = true;
     state.massDate = upcomingSundayISO();
     var resumed = restoreDraft();
     setStep(resumed ? 5 : 1);
@@ -667,7 +676,7 @@
 
   async function onLanguageChange(lang) {
     var next = String(lang || "").toLowerCase();
-    if (next !== "english") return;
+    if (next !== "english" && next !== "tagalog") return;
     state.language = next;
     syncFormFromState();
     if (state.step >= 4) {
@@ -737,15 +746,18 @@
 
     var cfg = landingAutoConfig(state.language);
     var theme = findTheme(state.themeId);
+    var leafletEl = $("lf-gen-leaflet");
+    state.includeLeaflet = !!(leafletEl && leafletEl.checked);
     var body = {
       date: state.massDate || upcomingSundayISO(),
       celebrant: state.celebrant,
       songs: songsToPayload(state.songs),
       custom_theme: pptThemePayload(theme),
       our_father_choice: cfg.our_father_choice,
+      include_leaflet: state.includeLeaflet,
     };
 
-    setGenerating(true, "Building your PowerPoint…");
+    setGenerating(true, state.includeLeaflet ? "Building your PowerPoint and leaflet…" : "Building your PowerPoint…");
     setStatus("");
     try {
       var data = await postJSON("/api/demo-generate", body);
@@ -761,12 +773,27 @@
           dl.href = data.pptx_url;
           dl.hidden = false;
         }
+        var dlLeaflet = $("lf-gen-download-leaflet");
+        if (dlLeaflet) {
+          if (data.leaflet_url) {
+            dlLeaflet.href = data.leaflet_url;
+            dlLeaflet.hidden = false;
+          } else {
+            dlLeaflet.hidden = true;
+          }
+        }
         var done = $("lf-gen-done");
         if (done) done.hidden = false;
         $("lf-gen-submit") && ($("lf-gen-submit").hidden = true);
         $("lf-gen-next") && ($("lf-gen-next").hidden = true);
         triggerAutoDownload(data.pptx_url, "LiturgyFlow-Mass.pptx");
+        if (data.leaflet_url) {
+          setTimeout(function () {
+            triggerAutoDownload(data.leaflet_url, "LiturgyFlow-Mass-leaflet.pdf");
+          }, 600);
+        }
         requestAnimationFrame(scrollPrimaryActionIntoView);
+        setTimeout(openAccessPopup, 900);
         return;
       }
       setStatus("Generation finished but no download link was returned.", "error");
@@ -775,22 +802,55 @@
       if (err.status === 429) {
         setStatus(
           err.message ||
-            "Free daily generate used. Request unlimited access with the form below.",
+            "Free daily generate used. Request unlimited access to keep creating Mass decks.",
           "error"
         );
-        requestAnimationFrame(scrollPrimaryActionIntoView);
+        openAccessPopup();
         return;
       }
       if (err.status === 401 || err.status === 403) {
         saveDraft();
         setStatus(
-          "Could not generate right now. Request access with the form below for full use.",
+          "Could not generate right now. Request access for full use.",
           "error"
         );
+        openAccessPopup();
         return;
       }
       setStatus(err.message || "Generation failed.", "error");
     }
+  }
+
+  function openAccessPopup() {
+    var backdrop = $("lf-access-backdrop");
+    if (!backdrop) return;
+    var form = $("lf-gen-access-form");
+    var thanks = $("lf-gen-access-thanks");
+    var errEl = $("lf-gen-access-err");
+    var btn = $("lf-gen-access-submit");
+    if (form) {
+      form.hidden = false;
+      if (!form.dataset.keepValues) form.reset();
+    }
+    if (thanks) thanks.hidden = true;
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (btn) btn.disabled = false;
+    backdrop.hidden = false;
+    document.body.classList.add("lf-access-open");
+    var nameEl = $("lf-gen-access-name");
+    if (nameEl) {
+      try { nameEl.focus(); } catch (_e) { /* ignore */ }
+    }
+  }
+
+  function closeAccessPopup() {
+    var backdrop = $("lf-access-backdrop");
+    if (!backdrop) return;
+    backdrop.hidden = true;
+    document.body.classList.remove("lf-access-open");
   }
 
   async function submitAccessRequest(e) {
@@ -832,9 +892,6 @@
       });
       form.hidden = true;
       thanks.hidden = false;
-      requestAnimationFrame(function () {
-        thanks.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      });
     } catch (err) {
       if (errEl) {
         errEl.textContent = err.message || "Could not send your request. Please try again.";
@@ -952,7 +1009,7 @@
       btn.addEventListener("click", function () {
         if (btn.disabled || btn.getAttribute("aria-disabled") === "true") return;
         var lang = btn.getAttribute("data-lf-lang");
-        if (!lang || lang === "tagalog" || lang === "malay") return;
+        if (!lang || lang === "malay") return;
         onLanguageChange(lang);
       });
     });
@@ -963,6 +1020,13 @@
         syncFormFromState();
       });
     });
+
+    var leafletToggle = $("lf-gen-leaflet");
+    if (leafletToggle) {
+      leafletToggle.addEventListener("change", function () {
+        state.includeLeaflet = !!leafletToggle.checked;
+      });
+    }
 
     var nextBtn = $("lf-gen-next");
     if (nextBtn) nextBtn.addEventListener("click", goNext);
@@ -975,6 +1039,14 @@
 
     var accessForm = $("lf-gen-access-form");
     if (accessForm) accessForm.addEventListener("submit", submitAccessRequest);
+    var accessClose = $("lf-access-close");
+    if (accessClose) accessClose.addEventListener("click", closeAccessPopup);
+    var accessBackdrop = $("lf-access-backdrop");
+    if (accessBackdrop) {
+      accessBackdrop.addEventListener("click", function (e) {
+        if (e.target === accessBackdrop) closeAccessPopup();
+      });
+    }
 
     var contactHero = $("lf-hero-contact");
     if (contactHero) {
@@ -1001,6 +1073,11 @@
 
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
+      var access = $("lf-access-backdrop");
+      if (access && !access.hidden) {
+        closeAccessPopup();
+        return;
+      }
       var contact = $("lf-contact-backdrop");
       if (contact && !contact.hidden) {
         closeContact();

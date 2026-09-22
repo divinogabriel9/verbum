@@ -1,0 +1,8 @@
+{# PostHog — only emits config + loader when enabled. Capture gated by Analytics consent. #}
+{% set _ph = get_posthog_config() %}
+{% if _ph and _ph.enabled and _ph.key %}
+<script>
+  window.__LF_POSTHOG__ = {{ _ph | tojson }};
+</script>
+<script src="/static/js/posthog-init.js?v=1" defer></script>
+{% endif %}

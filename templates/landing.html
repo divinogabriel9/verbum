@@ -232,7 +232,8 @@
         .skip-link:focus { left: 12px; top: 12px; }
 
         body.lf-gen-open,
-        body.lf-contact-open { overflow: hidden; }
+        body.lf-contact-open,
+        body.lf-access-open { overflow: hidden; }
         .lf-gen-backdrop {
             position: fixed;
             inset: 0;
@@ -561,10 +562,41 @@
         .lf-gen-status[hidden] { display: none; }
         .lf-gen-status--error { color: #ffb4ab; }
         .lf-gen-status--success { color: #a8f0c8; }
+        .lf-gen-leaflet {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 16px 0 4px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 180, 169, 0.22);
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+        }
+        .lf-gen-leaflet input {
+            margin-top: 3px;
+            flex-shrink: 0;
+            accent-color: #a10f0d;
+            width: 16px;
+            height: 16px;
+        }
+        .lf-gen-leaflet strong {
+            display: block;
+            color: #f9dcd8;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .lf-gen-leaflet__hint {
+            display: block;
+            margin-top: 4px;
+            color: #e3beb9;
+            font-size: 12px;
+            line-height: 1.4;
+        }
         .lf-gen-access {
-            margin-top: 18px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 180, 169, 0.14);
+            margin-top: 0;
+            padding-top: 0;
+            border-top: 0;
         }
         .lf-gen-access__title {
             margin: 0 0 4px;
@@ -683,8 +715,10 @@
         .lf-gen-access__err[hidden] { display: none !important; }
         .lf-gen-done { margin-top: 16px; }
         .lf-gen-download {
-            display: inline-block;
-            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 8px 8px 0 0;
             padding: 12px 24px;
             background: #a10f0d;
             color: #ffada2;
@@ -692,6 +726,33 @@
             text-decoration: none;
             font-weight: 600;
             font-size: 14px;
+        }
+        .lf-gen-download[hidden] { display: none !important; }
+        .lf-access-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 220;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(14, 8, 7, 0.72);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            animation: lf-contact-fade 260ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .lf-access-backdrop[hidden] { display: none !important; }
+        .lf-access-panel {
+            width: min(100%, 440px);
+            max-height: min(90vh, 680px);
+            overflow: auto;
+            background: rgba(30, 16, 14, 0.92);
+            border: 1px solid rgba(255, 180, 169, 0.14);
+            border-radius: 20px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+            padding: 28px 28px 24px;
+            transform-origin: center;
+            animation: lf-contact-in 260ms cubic-bezier(0.23, 1, 0.32, 1);
         }
         .lf-gen-busy {
             position: fixed;
@@ -924,10 +985,7 @@
             <p>Sets the Our Father and song recommendations. Kyrie, Gloria, Creed, and Lamb of God use standard English slides.</p>
             <div class="lf-gen-chips" role="group" aria-label="Mass language">
                 <button type="button" class="lf-gen-chip is-active" data-lf-lang="english" aria-pressed="true">English</button>
-                <button type="button" class="lf-gen-chip is-soon" data-lf-lang="tagalog" aria-pressed="false" disabled aria-disabled="true" title="Coming soon">
-                    Tagalog
-                    <span class="lf-gen-chip__soon">Coming soon</span>
-                </button>
+                <button type="button" class="lf-gen-chip" data-lf-lang="tagalog" aria-pressed="false">Tagalog</button>
                 <button type="button" class="lf-gen-chip is-soon" data-lf-lang="malay" aria-pressed="false" disabled aria-disabled="true" title="Coming soon">
                     Malay
                     <span class="lf-gen-chip__soon">Coming soon</span>
@@ -998,38 +1056,17 @@
             <p>We'll build a complete PowerPoint with readings, prayers, and hymn slides for <span id="lf-gen-date-label-2">this Sunday</span>. Free demo decks include a Liturgyflow.com watermark.</p>
             <ul class="lf-gen-songs" id="lf-gen-songs-review" aria-label="Selected songs"></ul>
             <p class="lf-gen-songs-note">Demo decks use these suggested songs. After you register, choose your own from a vast library ready to pick.</p>
+            <label class="lf-gen-leaflet" for="lf-gen-leaflet">
+                <input type="checkbox" id="lf-gen-leaflet" name="include_leaflet"/>
+                <span>
+                    <strong>Also include offline leaflet</strong>
+                    <span class="lf-gen-leaflet__hint">Half-fold A4 PDF for printing when you need paper copies.</span>
+                </span>
+            </label>
             <div class="lf-gen-done" id="lf-gen-done" hidden>
                 <p class="lf-gen-status lf-gen-status--success">Your Mass deck is ready.</p>
                 <a class="lf-gen-download" id="lf-gen-download" href="#" download hidden>Download PowerPoint</a>
-            </div>
-            <div class="lf-gen-access" id="lf-gen-access">
-                <p class="lf-gen-access__title">Want unlimited generations?</p>
-                <p class="lf-gen-access__hint">Request access for unlimited Mass decks and custom PowerPoint branding. We’ll review your request and follow up by email — this is not an instant signup.</p>
-                <form class="lf-gen-access__form" id="lf-gen-access-form" novalidate>
-                    <label>Name
-                        <input type="text" id="lf-gen-access-name" name="name" autocomplete="name" required maxlength="120" placeholder="Your name"/>
-                    </label>
-                    <label>Email
-                        <input type="email" id="lf-gen-access-email" name="email" autocomplete="email" required maxlength="320" placeholder="you@parish.org"/>
-                    </label>
-                    <label>Parish / church
-                        <input type="text" id="lf-gen-access-parish" name="parish" autocomplete="organization" required maxlength="240" placeholder="Parish or community name"/>
-                    </label>
-                    <label>Message <span style="opacity:.7">(optional)</span>
-                        <textarea id="lf-gen-access-message" name="message" maxlength="1000" placeholder="Anything we should know?"></textarea>
-                    </label>
-                    <label class="lf-consent-check">
-                        <input type="checkbox" id="lf-gen-access-privacy" name="privacy_consent" required/>
-                        <span>I agree to the <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/legal/terms" target="_blank" rel="noopener">Terms</a>.</span>
-                    </label>
-                    <p class="lf-gen-access__err" id="lf-gen-access-err" hidden></p>
-                    <div class="lf-gen-access__actions">
-                        <button type="submit" class="lf-gen-access__submit" id="lf-gen-access-submit">Request access</button>
-                    </div>
-                </form>
-                <p class="lf-gen-access__thanks" id="lf-gen-access-thanks" hidden>
-                    Thanks — we received your request. We’ll review it and email you if you’re approved.
-                </p>
+                <a class="lf-gen-download" id="lf-gen-download-leaflet" href="#" download hidden>Download leaflet PDF</a>
             </div>
         </div>
 
@@ -1039,6 +1076,43 @@
             <button type="button" class="lf-gen-btn lf-gen-btn--ghost" id="lf-gen-back" hidden>Back</button>
             <button type="button" class="lf-gen-btn lf-gen-btn--primary" id="lf-gen-next">Continue</button>
             <button type="button" class="lf-gen-btn lf-gen-btn--primary" id="lf-gen-submit" hidden>Generate</button>
+        </div>
+    </div>
+</div>
+
+<div class="lf-access-backdrop" id="lf-access-backdrop" hidden>
+    <div class="lf-access-panel" id="lf-access-modal" role="dialog" aria-modal="true" aria-labelledby="lf-access-title">
+        <header class="lf-contact-head">
+            <h2 id="lf-access-title">Want unlimited generations?</h2>
+            <button type="button" class="lf-gen-close" id="lf-access-close" aria-label="Close">×</button>
+        </header>
+        <div class="lf-gen-access" id="lf-gen-access">
+            <p class="lf-gen-access__hint">Your demo deck is ready. Request access for unlimited Mass decks and custom PowerPoint branding — we’ll review your request and follow up by email.</p>
+            <form class="lf-gen-access__form" id="lf-gen-access-form" novalidate>
+                <label>Name
+                    <input type="text" id="lf-gen-access-name" name="name" autocomplete="name" required maxlength="120" placeholder="Your name"/>
+                </label>
+                <label>Email
+                    <input type="email" id="lf-gen-access-email" name="email" autocomplete="email" required maxlength="320" placeholder="you@parish.org"/>
+                </label>
+                <label>Parish / church
+                    <input type="text" id="lf-gen-access-parish" name="parish" autocomplete="organization" required maxlength="240" placeholder="Parish or community name"/>
+                </label>
+                <label>Message <span style="opacity:.7">(optional)</span>
+                    <textarea id="lf-gen-access-message" name="message" maxlength="1000" placeholder="Anything we should know?"></textarea>
+                </label>
+                <label class="lf-consent-check">
+                    <input type="checkbox" id="lf-gen-access-privacy" name="privacy_consent" required/>
+                    <span>I agree to the <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/legal/terms" target="_blank" rel="noopener">Terms</a>.</span>
+                </label>
+                <p class="lf-gen-access__err" id="lf-gen-access-err" hidden></p>
+                <div class="lf-gen-access__actions">
+                    <button type="submit" class="lf-gen-access__submit" id="lf-gen-access-submit">Request access</button>
+                </div>
+            </form>
+            <p class="lf-gen-access__thanks" id="lf-gen-access-thanks" hidden>
+                Thanks — we received your request. We’ll review it and email you if you’re approved.
+            </p>
         </div>
     </div>
 </div>
@@ -1092,8 +1166,9 @@
     </div>
 </div>
 
-<script src="/static/js/cookie-consent.js?v=1" defer></script>
-<script src="/static/js/landing-generate.js?v=13"></script>
+<script src="/static/js/cookie-consent.js?v=2" defer></script>
+{% include "partials/posthog.html" %}
+<script src="/static/js/landing-generate.js?v=14"></script>
 <script>
   (function () {
     try {

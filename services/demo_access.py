@@ -66,9 +66,9 @@ def enforce_demo_rate_limits(request: Request) -> None:
                 status_code=429,
                 detail={
                     "message": (
-                        "Free daily generate used. Request unlimited access with the form below."
+                        "Free daily generate used. Request unlimited access to keep creating Mass decks."
                         if tier == "demo_generate"
-                        else "Too many free generates. Try again later, or request access with the form below."
+                        else "Too many free generates. Try again later, or request access."
                     ),
                     "retry_after": retry_after,
                     "tier": tier,
@@ -119,7 +119,12 @@ def validate_theme_id(theme: Optional[dict]) -> Optional[dict]:
 def mint_demo_download_token(filename: str, *, ttl_s: int = DEMO_DOWNLOAD_TTL_S) -> str:
     """Return a URL-safe token: base64(exp|name|sig)."""
     name = Path(str(filename or "")).name
-    if not name.lower().endswith(".pptx") or ".." in name or "/" in name:
+    lower = name.lower()
+    if (
+        not (lower.endswith(".pptx") or lower.endswith(".pdf"))
+        or ".." in name
+        or "/" in name
+    ):
         raise HTTPException(status_code=400, detail="Invalid demo file.")
     exp = int(time.time()) + max(60, int(ttl_s))
     payload = f"{exp}|{name}"
@@ -129,7 +134,7 @@ def mint_demo_download_token(filename: str, *, ttl_s: int = DEMO_DOWNLOAD_TTL_S)
 
 
 def resolve_demo_download_token(token: str) -> str:
-    """Validate token and return the pptx basename."""
+    """Validate token and return the download basename."""
     raw = (token or "").strip()
     if not raw:
         raise HTTPException(status_code=400, detail="Missing download token.")
@@ -141,7 +146,8 @@ def resolve_demo_download_token(token: str) -> str:
     except (ValueError, UnicodeDecodeError) as exc:
         raise HTTPException(status_code=400, detail="Invalid download token.") from exc
     name = Path(name).name
-    if not name.lower().endswith(".pptx") or ".." in name:
+    lower = name.lower()
+    if not (lower.endswith(".pptx") or lower.endswith(".pdf")) or ".." in name:
         raise HTTPException(status_code=400, detail="Invalid download token.")
     if exp < int(time.time()):
         raise HTTPException(status_code=410, detail="Download link expired. Generate again.")

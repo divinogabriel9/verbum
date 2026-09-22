@@ -1096,6 +1096,17 @@ def _finish_generation_side_effects(
                 access_token=access_token,
                 parish_id=(parish_id or "").strip() or None,
             )
+            try:
+                from services.posthog_analytics import capture_mass_generated
+
+                capture_mass_generated(
+                    user_id=user_id,
+                    mass_date=mass_date,
+                    parish_id=(parish_id or "").strip() or None,
+                    slide_count=int(result.slide_count) if result.slide_count is not None else None,
+                )
+            except Exception:
+                pass
         except Exception:
             logging.getLogger(__name__).exception(
                 "Failed to record generation_history for user_id=%s mass_date=%s",
@@ -1153,6 +1164,17 @@ templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
 _STATIC_DIR = _PROJECT / "static"
 _STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+try:
+    from services.posthog_config import public_client_config as _posthog_public_config
+
+    templates.env.globals["get_posthog_config"] = _posthog_public_config
+except Exception:  # pragma: no cover - never block boot on analytics
+
+    def _posthog_disabled():  # type: ignore[misc]
+        return None
+
+    templates.env.globals["get_posthog_config"] = _posthog_disabled
 
 
 def _template_version_context() -> dict[str, str]:
@@ -1406,6 +1428,7 @@ class DemoGenerateBody(BaseModel):
     our_father_choice: str = Field("english", max_length=16)
     custom_theme: Optional[dict[str, Any]] = None
     songs: Optional[SongSelection] = None
+    include_leaflet: bool = False
 
 
 class AccessRequestBody(BaseModel):
@@ -5188,6 +5211,7 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         creed_choice="nicene",
         our_father_choice=of_choice,
         hymn_lyrics_layout="dual",
+        include_leaflet=bool(body.include_leaflet),
     )
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
@@ -5207,6 +5231,12 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         "pptx_url": demo_download_url(pptx_name),
         **remaining_hint_after_consume(),
     }
+    leaflet_path = getattr(result, "leaflet_path", None)
+    if leaflet_path and Path(leaflet_path).is_file():
+        try:
+            out["leaflet_url"] = demo_download_url(Path(leaflet_path).name)
+        except HTTPException:
+            pass
     print(
         f"[demo-generate] done stem={result.export_stem} slides={result.slide_count}",
         flush=True,
@@ -5216,16 +5246,23 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
 
 @app.get("/api/demo-download/{token}")
 def api_demo_download(token: str) -> FileResponse:
-    """Short-lived signed download for guest demo PPTX files."""
+    """Short-lived signed download for guest demo PPTX/PDF files."""
     from services.demo_access import resolve_demo_download_token
 
     name = resolve_demo_download_token(token)
     path = resolve_under_root(_OUTPUT_DIR, name)
     if not path.is_file():
         raise HTTPException(status_code=404, detail="File not found or expired.")
+    lower = name.lower()
+    if lower.endswith(".pdf"):
+        media_type = "application/pdf"
+    else:
+        media_type = (
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        )
     return FileResponse(
         path,
-        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        media_type=media_type,
         filename=name,
     )
 

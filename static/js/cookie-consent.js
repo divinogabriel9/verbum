@@ -138,7 +138,7 @@
       catRow(
         "analytics",
         "Analytics",
-        "Optional product analytics. Currently unused — reserved if we add privacy-friendly analytics later.",
+        "Optional product analytics (PostHog) to understand feature usage. No session replay unless we enable it separately. Off unless you opt in.",
         false
       ),
       el("div", { class: "lf-consent-prefs__actions" }, [
@@ -210,7 +210,7 @@
         class: "lf-consent-banner__text",
         id: "lf-consent-desc",
         html:
-          'We use necessary cookies to run LiturgyFlow securely. Optional preferences and media embeds need your consent. See our <a href="/legal/privacy">Privacy Policy</a> and <a href="/legal/cookies">Cookie Policy</a>.',
+          'We use necessary cookies to run LiturgyFlow securely. Optional preferences, media embeds, and analytics need your consent. See our <a href="/legal/privacy">Privacy Policy</a> and <a href="/legal/cookies">Cookie Policy</a>.',
       }),
       el("div", { class: "lf-consent-banner__actions" }, [
         el("button", {
@@ -236,7 +236,7 @@
     var banner = el("div", { class: "lf-consent-banner", id: "lf-consent-banner" }, [panel]);
     document.body.appendChild(banner);
     document.getElementById("lf-consent-accept").addEventListener("click", function () {
-      writeConsent({ preferences: true, media: true, analytics: false });
+      writeConsent({ preferences: true, media: true, analytics: true });
       hideBanner();
     });
     document.getElementById("lf-consent-necessary").addEventListener("click", function () {
@@ -277,7 +277,7 @@
     openPreferences: openPrefs,
     gateMediaEmbed: gateMediaEmbed,
     acceptAll: function () {
-      return writeConsent({ preferences: true, media: true, analytics: false });
+      return writeConsent({ preferences: true, media: true, analytics: true });
     },
     necessaryOnly: function () {
       return writeConsent({ preferences: false, media: false, analytics: false });

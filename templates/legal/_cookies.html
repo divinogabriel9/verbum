@@ -25,9 +25,10 @@
   <li>YouTube privacy-enhanced embeds (<code>youtube-nocookie.com</code>) and live radio stream players.</li>
   <li>These providers may set their own cookies once loaded. We only load them after you consent to Media.</li>
 </ul>
-<h3>Analytics (optional, currently unused)</h3>
+<h3>Analytics (optional)</h3>
 <ul>
-  <li>Reserved for privacy-friendly analytics if we enable them later. Default is off.</li>
+  <li><strong>PostHog</strong> — product usage analytics (page views, feature events). Loaded only after you opt into Analytics.</li>
+  <li>Session replay is off by default. Default for Analytics is off until you Accept all or enable it in Cookie settings.</li>
 </ul>
 
 <h2>3. Third-party cookies</h2>
@@ -35,6 +36,7 @@
   <li><strong>Supabase Auth</strong> — account session (necessary when signed in).</li>
   <li><strong>hCaptcha</strong> — bot checks on authentication when enabled.</li>
   <li><strong>YouTube / stream hosts</strong> — only after Media consent.</li>
+  <li><strong>PostHog</strong> — only after Analytics consent (when configured).</li>
   <li><strong>Google Fonts</strong> — font files may be requested from Google; we minimize third-party trackers on legal pages.</li>
 </ul>
 
