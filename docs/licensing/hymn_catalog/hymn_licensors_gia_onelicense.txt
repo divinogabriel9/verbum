@@ -1,0 +1,44 @@
+GIA ONELICENSE — 7 songs
+========================================================================
+
+Eat This Bread
+  author:   (none listed)
+  licensor: GIA / OneLicense
+  note:     Jacques Berthier / Taizé
+  sections: communion
+
+How Lovely Is Your Dwelling Place
+  author:   (none listed)
+  licensor: OCP or GIA / OneLicense (verify)
+  note:     Multiple settings exist — match your lyrics to publisher
+  sections: communion
+
+I Am the Bread of Life
+  author:   (none listed)
+  licensor: GIA / OneLicense
+  note:     Suzanne Toolan
+  sections: offertory, communion
+
+Take, O Take Me As I Am
+  author:   (none listed)
+  licensor: GIA / OneLicense
+  note:     John L. Bell / Wild Goose / GIA
+  sections: offertory
+
+Taste and See
+  author:   (none listed)
+  licensor: GIA / OneLicense
+  note:     James E. Moore Jr. (verify arrangement)
+  sections: communion
+
+We Are Called
+  author:   David Haas
+  licensor: GIA / OneLicense
+  note:     GIA Publications — onelicense.net
+  sections: recessional
+
+You Are Mine
+  author:   David Haas
+  licensor: GIA / OneLicense
+  note:     GIA Publications — onelicense.net
+  sections: communion

@@ -1,0 +1,32 @@
+CCLI — 5 songs
+========================================================================
+
+Blessed Be God
+  author:   (none listed)
+  licensor: CCLI or OneLicense (verify)
+  note:     Match lyrics to publisher
+  sections: offertory
+
+Great Is Our God
+  author:   (none listed)
+  licensor: CCLI (verify)
+  note:     Contemporary worship — match lyrics on SongSelect
+  sections: entrance
+
+Here We Are
+  author:   Don Moen
+  licensor: CCLI / Integrity Music
+  note:     songselect.ccli.com
+  sections: entrance
+
+Living Sacrifice
+  author:   Chris Christian
+  licensor: CCLI
+  note:     songselect.ccli.com — verify publisher
+  sections: offertory
+
+Shine Jesus Shine
+  author:   (none listed)
+  licensor: CCLI / Make Way Music
+  note:     Graham Kendrick
+  sections: recessional
