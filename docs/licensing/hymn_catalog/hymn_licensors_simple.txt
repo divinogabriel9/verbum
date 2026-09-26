@@ -1,0 +1,126 @@
+title	author	licensor	sections
+Living Sacrifice	Chris Christian	CCLI	offertory
+Great Is Our God	(none listed)	CCLI (verify)	entrance
+Here We Are	Don Moen	CCLI / Integrity Music	entrance
+Shine Jesus Shine	(none listed)	CCLI / Make Way Music	recessional
+Blessed Be God	(none listed)	CCLI or OneLicense (verify)	offertory
+Bawat Sandali	Arturo Perez	Composer / local PH	communion
+Magsiawit Sa Panginoon	Danny Isidro	Composer / local PH	entrance
+Purihin Ang Panginoon	Fr. Leo Nilo	Composer / local PH	entrance
+Unang Alay	Rey Magnaye	Composer / local PH	offertory
+Kordero Ng Diyos (arboleda)	(none listed)	Composer / local PH (Arboleda)	communion
+Santo (ramirez)	(none listed)	Composer / local PH (Ramirez)	meditation
+Tell The World Of His Love	(none listed)	Composer / local PH (Trina Belamide)	recessional
+Alay Ng Bayan	(none listed)	Composer / local PH (verify)	offertory
+Alay Sa Diyos	(none listed)	Composer / local PH (verify)	offertory
+Amen (world Youth Day)	(none listed)	Composer / local PH (verify)	communion
+Amen (wybat)	(none listed)	Composer / local PH (verify)	communion
+Ang Tanging Alay Ko	(none listed)	Composer / local PH (verify)	offertory
+Awit Ng Pagkakaisa	(none listed)	Composer / local PH (verify)	entrance
+Isang Bansa	(none listed)	Composer / local PH (verify)	communion
+Isang Pagwiwisik (asperges Me)	(none listed)	Composer / local PH (verify)	meditation
+Kapuri-puri Ka	(none listed)	Composer / local PH (verify)	offertory
+My Heart Thanksgiving	(none listed)	Composer / local PH (verify)	recessional
+Pumasok Kayo	(none listed)	Composer / local PH (verify)	entrance
+Sumasamo Kami Sa'yo	(none listed)	Composer / local PH (verify)	offertory
+Take Oh Lord This Offering	(none listed)	Composer / local PH (verify)	offertory
+Tanggapin Mo, Panginoon	(none listed)	Composer / local PH (verify)	offertory
+Tayo'y Magpuri	(none listed)	Composer / local PH (verify)	entrance
+Tinapay At Alak Naming Hatid	(none listed)	Composer / local PH (verify)	offertory
+Alay Namin	Carlo Magno Marcelo	Composer / local PH publisher	offertory
+Kordero Ng Diyos (marcelo)	Carlo Magno Marcelo	Composer / local PH publisher	communion
+Isang Pagkain, Isang Katawan, Isang Bayan	Lucio San Pedro	Composer estate / local PH	offertory
+Eat This Bread	(none listed)	GIA / OneLicense	communion
+I Am the Bread of Life	(none listed)	GIA / OneLicense	offertory, communion
+Take, O Take Me As I Am	(none listed)	GIA / OneLicense	offertory
+Taste and See	(none listed)	GIA / OneLicense	communion
+We Are Called	David Haas	GIA / OneLicense	recessional
+You Are Mine	David Haas	GIA / OneLicense	communion
+Ama Namin (bukas Palad)	Bukas Palad	JesCom (Jesuit Communications Foundation)	meditation
+Ama Namin (francisco)	Manoling Francisco	JesCom (Jesuit Communications Foundation)	meditation
+Ama Namin (hontiveros)	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	meditation
+Amare Et Servire	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Aming Ipinahahayag	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Anima Christi	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Awit Ng Paghahangad	Charlie Cenzon	JesCom (Jesuit Communications Foundation)	communion
+Balang Araw	Manoling Francisco	JesCom (Jesuit Communications Foundation)	entrance
+Bayan, Magsiawit Na!	Arnel Aquino	JesCom (Jesuit Communications Foundation)	entrance
+Buksan Ang Aming Puso	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	entrance
+Christify	(none listed)	JesCom (Jesuit Communications Foundation)	offertory
+Confidite Ego Vici Mundum	(none listed)	JesCom (Jesuit Communications Foundation)	meditation
+Covenant Journey	(none listed)	JesCom (Jesuit Communications Foundation)	recessional
+Dakilang Amen (francisco)	Manoling Francisco	JesCom (Jesuit Communications Foundation)	communion
+Fragile Vessel	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Halina At Lumapit	(none listed)	JesCom (Jesuit Communications Foundation)	entrance
+Halina't Umawit	(none listed)	JesCom (Jesuit Communications Foundation)	entrance
+Halina, Hesus, Halina	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	entrance
+Hesus Na Aking Kapatid	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	communion
+Hesus Ng Aking Buhay	Arnel Aquino	JesCom (Jesuit Communications Foundation)	communion
+Hindi Kita Malilimutan	Manoling Francisco	JesCom (Jesuit Communications Foundation)	communion
+Humayo't Ihayag	(none listed)	JesCom (Jesuit Communications Foundation)	recessional
+I Seek You For I Thirst	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Iesu Panis Vitae	Bukas Palad Ministry	JesCom (Jesuit Communications Foundation)	communion
+In Him Alone	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Isang Pananampalataya	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	entrance
+Kaawaan Mo Kami	Arnel Aquino	JesCom (Jesuit Communications Foundation)	meditation
+Kordero Ng Diyos (aquino)	Arnel Aquino	JesCom (Jesuit Communications Foundation)	communion
+Kordero Ng Diyos (bukas Palad)	Bukas Palad	JesCom (Jesuit Communications Foundation)	communion
+Kordero Ng Diyos (francisco)	Manoling Francisco	JesCom (Jesuit Communications Foundation)	communion
+Kordero Ng Diyos (hontiveros)	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	communion
+Love Is The Answer	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Manalig Ka	Tinig San Jose	JesCom (Jesuit Communications Foundation)	communion
+Mula Sa 'yo	Manoling Francisco	JesCom (Jesuit Communications Foundation)	offertory
+Narito Ako, Panginoon	Rene San Andres	JesCom (Jesuit Communications Foundation)	offertory
+One More Gift	(none listed)	JesCom (Jesuit Communications Foundation)	offertory
+Pag-aalaala	Manoling Francisco	JesCom (Jesuit Communications Foundation)	entrance
+Paghahandog	Rene San Andres	JesCom (Jesuit Communications Foundation)	offertory
+Paghahandog Ng Sarili	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	offertory
+Pagkakaibigan	Hangad	JesCom (Jesuit Communications Foundation)	communion
+Pagsibol	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Panginoon, Maawa Ka (bukas Palad)	Bukas Palad	JesCom (Jesuit Communications Foundation)	meditation
+Panginoon, Maawa Ka (francisco)	Manoling Francisco	JesCom (Jesuit Communications Foundation)	meditation
+Panginoon, Maawa Ka (hontiveros)	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	meditation
+Prayer For Generosity	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Sa Hapag Ng Panginoon	Manoling Francisco	JesCom (Jesuit Communications Foundation)	entrance
+Sa Krus Mo At Pagkabuhay	Manoling Francisco	JesCom (Jesuit Communications Foundation)	communion
+Santo (francisco)	Manoling Francisco	JesCom (Jesuit Communications Foundation)	meditation
+Santo (hontiveros)	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	meditation
+Santo, Santo, Santo (aquino)	Arnel Aquino	JesCom (Jesuit Communications Foundation)	meditation
+Sapagkat Sa'yo Ang Kaharian	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	communion
+Si Kristo Ay Namatay	Eduardo Hontiveros	JesCom (Jesuit Communications Foundation)	communion
+Take And Receive	Bukas Palad Ministry	JesCom (Jesuit Communications Foundation)	offertory
+Tanging Yaman	Manoling Francisco	JesCom (Jesuit Communications Foundation)	offertory
+Tinapay Ng Buhay	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Your Heart Today	(none listed)	JesCom (Jesuit Communications Foundation)	communion
+Bayan, Umapaw Sa Pag-asa	Ricky Manalo	OCP / OneLicense	entrance
+Be Not Afraid	(none listed)	OCP / OneLicense	communion
+City Of God	(none listed)	OCP / OneLicense	recessional
+Gift Of Finest Wheat	(none listed)	OCP / OneLicense	offertory
+Glory and Praise to Our God	Dan Schutte	OCP / OneLicense	entrance
+Go Make a Difference	(none listed)	OCP / OneLicense	recessional
+Here I Am, Lord	(none listed)	OCP / OneLicense	entrance
+Lead Me, Lord	(none listed)	OCP / OneLicense	recessional
+Make Me a Channel of Your PEace	(none listed)	OCP / OneLicense	communion
+One Bread, One Body	(none listed)	OCP / OneLicense	offertory, communion
+Sing A New Song	(none listed)	OCP / OneLicense	entrance
+Sing To The Mountains	(none listed)	OCP / OneLicense	entrance
+Table Of Plenty	(none listed)	OCP / OneLicense	entrance
+You Are Near	Dan Schutte	OCP / OneLicense	communion
+All The Ends Of The World	(none listed)	OCP / OneLicense (verify)	recessional
+How Lovely Is Your Dwelling Place	(none listed)	OCP or GIA / OneLicense (verify)	communion
+Enter, Rejoice And Come In	(none listed)	OneLicense / publisher of record (verify)	entrance
+Let Us Break Bread Together	(none listed)	Public domain spiritual (verify arrangement)	communion
+Alleluia! Sing to Jesus	(none listed)	Public domain text (verify arrangement)	recessional
+Crown Him With Many Crowns	(none listed)	Public domain text (verify arrangement)	entrance
+Doxology (praise God From Whom All Blessings Flow)	(none listed)	Public domain text (verify arrangement)	meditation
+God of Our Fathers	(none listed)	Public domain text (verify arrangement)	recessional
+Holy, Holy, Holy	(none listed)	Public domain text (verify arrangement)	entrance
+Jesus, My Lord, My God, My All	(none listed)	Public domain text (verify arrangement)	communion
+Joyful, Joyful, We Adore Thee	(none listed)	Public domain text (verify arrangement)	entrance
+Onward, Christian Soldiers	(none listed)	Public domain text (verify arrangement)	recessional
+Praise To The Lord, The Almighty	(none listed)	Public domain text (verify arrangement)	entrance
+Soul of My Savior	(none listed)	Public domain text (verify arrangement)	communion
+Take My Life and Let It Be	(none listed)	Public domain text (verify arrangement)	offertory
+We Give Thee But Thine Own	(none listed)	Public domain text (verify arrangement)	offertory
+All Creatures Of Our God And King	(none listed)	Public domain text/tune (verify arrangement)	entrance
+To Jesus Christ, Our Sovereign King	(none listed)	WLP / OneLicense (verify)	recessional

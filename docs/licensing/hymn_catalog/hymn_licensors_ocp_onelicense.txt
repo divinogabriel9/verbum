@@ -1,0 +1,110 @@
+OCP ONELICENSE — 18 songs
+========================================================================
+
+All The Ends Of The World
+  author:   (none listed)
+  licensor: OCP / OneLicense (verify)
+  note:     Often Bob Dufford — verify version
+  sections: recessional
+
+Bayan, Umapaw Sa Pag-asa
+  author:   Ricky Manalo
+  licensor: OCP / OneLicense
+  note:     Oregon Catholic Press — onelicense.net
+  sections: entrance
+
+Be Not Afraid
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Bob Dufford, SJ
+  sections: communion
+
+City Of God
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Dan Schutte
+  sections: recessional
+
+Enter, Rejoice And Come In
+  author:   (none listed)
+  licensor: OneLicense / publisher of record (verify)
+  note:     Louise Ruspini setting common
+  sections: entrance
+
+Gift Of Finest Wheat
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Robert E. Kreutz / OCP
+  sections: offertory
+
+Glory and Praise to Our God
+  author:   Dan Schutte
+  licensor: OCP / OneLicense
+  note:     Oregon Catholic Press — onelicense.net
+  sections: entrance
+
+Go Make a Difference
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Steve Angrisano / Tom Tomaszek
+  sections: recessional
+
+Here I Am, Lord
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Dan Schutte
+  sections: entrance
+
+How Lovely Is Your Dwelling Place
+  author:   (none listed)
+  licensor: OCP or GIA / OneLicense (verify)
+  note:     Multiple settings exist — match your lyrics to publisher
+  sections: communion
+
+Lead Me, Lord
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     John D. Becker
+  sections: recessional
+
+Make Me a Channel of Your PEace
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Sebastian Temple
+  sections: communion
+
+One Bread, One Body
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     John Foley, SJ
+  sections: offertory, communion
+
+Sing A New Song
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Dan Schutte
+  sections: entrance
+
+Sing To The Mountains
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Bob Dufford, SJ
+  sections: entrance
+
+Table Of Plenty
+  author:   (none listed)
+  licensor: OCP / OneLicense
+  note:     Dan Schutte
+  sections: entrance
+
+To Jesus Christ, Our Sovereign King
+  author:   (none listed)
+  licensor: WLP / OneLicense (verify)
+  note:     Martin B. Hellriegel — often WLP/GIA
+  sections: recessional
+
+You Are Near
+  author:   Dan Schutte
+  licensor: OCP / OneLicense
+  note:     Oregon Catholic Press — onelicense.net
+  sections: communion
