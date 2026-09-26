@@ -12,8 +12,8 @@
     tour: "/static/js/guided-tour.js?v=20260920g",
     driverCss: "/static/css/driver.css?v=20260703",
     tourCss: "/static/css/guided-tour.css?v=20260920g",
-    wizard: "/static/js/mw-wizard.js?v=20260922-sanctus-label",
-    wizardCss: "/static/css/mw-wizard.css?v=20260922-sanctus-label",
+    wizard: "/static/js/mw-wizard.js?v=20260926-ai-overlay2",
+    wizardCss: "/static/css/mw-wizard.css?v=20260926-ai-overlay2",
   };
 
   var APP_PARTS = [

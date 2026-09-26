@@ -1041,12 +1041,6 @@
     if (accessForm) accessForm.addEventListener("submit", submitAccessRequest);
     var accessClose = $("lf-access-close");
     if (accessClose) accessClose.addEventListener("click", closeAccessPopup);
-    var accessBackdrop = $("lf-access-backdrop");
-    if (accessBackdrop) {
-      accessBackdrop.addEventListener("click", function (e) {
-        if (e.target === accessBackdrop) closeAccessPopup();
-      });
-    }
 
     var contactHero = $("lf-hero-contact");
     if (contactHero) {
@@ -1074,10 +1068,8 @@
     document.addEventListener("keydown", function (e) {
       if (e.key !== "Escape") return;
       var access = $("lf-access-backdrop");
-      if (access && !access.hidden) {
-        closeAccessPopup();
-        return;
-      }
+      // Access popup is X-only — Escape must not dismiss it.
+      if (access && !access.hidden) return;
       var contact = $("lf-contact-backdrop");
       if (contact && !contact.hidden) {
         closeContact();

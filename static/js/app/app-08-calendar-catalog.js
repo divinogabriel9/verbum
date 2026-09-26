@@ -314,8 +314,11 @@
         statusFn("Enter Mass date and select a celebrant in Basics before generating.", "error");
         return null;
       }
-      const posterOpts = readOpenAiPosterSettings();
-      const useAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useAi;
+        const posterOpts = readOpenAiPosterSettings();
+      const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
+        ? window.areWeeklyAiPostersReady()
+        : !!posterOpts.useAi;
+      const useAiPoster = (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi) && weeklyReady;
       const aiBackend = o.ai_poster_backend || posterOpts.backend || "openai";
       const body = {
         date,
@@ -329,6 +332,10 @@
         include_ai_mass_poster: useAiPoster,
         ai_poster_backend: aiBackend,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
+        ai_poster_transparency_pct:
+          o.ai_poster_transparency_pct != null
+            ? Number(o.ai_poster_transparency_pct)
+            : posterOpts.transparencyPct,
       };
       const church = getCommunityName();
       if (church) body.community_name = church;
@@ -501,9 +508,23 @@
         const pendingKinds = (window.MassWizard && typeof window.MassWizard.consumeSlideKinds === "function")
           ? window.MassWizard.consumeSlideKinds()
           : (o.slide_kinds || null);
+        const partialAiRaw = (window.MassWizard && typeof window.MassWizard.consumePartialIncludeAiPoster === "function")
+          ? window.MassWizard.consumePartialIncludeAiPoster()
+          : (o.include_ai != null ? !!o.include_ai : null);
         if (pendingKinds && pendingKinds.length) {
           body.slide_kinds = pendingKinds;
-          body.include_ai_mass_poster = false;
+          // Partial generate defaults to no AI art unless cover_ai is selected AND weekly set is ready.
+          const wantAi = partialAiRaw == null ? false : !!partialAiRaw;
+          const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
+            ? window.areWeeklyAiPostersReady()
+            : false;
+          body.include_ai_mass_poster = wantAi && weeklyReady;
+          if (wantAi && !weeklyReady) {
+            // Fall back: keep non-AI cover if present, drop AI cover kind.
+            body.slide_kinds = pendingKinds
+              .filter((k) => k !== "cover_ai")
+              .concat(pendingKinds.includes("cover") ? [] : ["cover"]);
+          }
         }
         // Offline leaflet export (wizard "Offline leaflet" / Need offline leaflet?)
         if (o.include_leaflet || o.leaflet_only) {

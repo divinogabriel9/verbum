@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from services.api_security import AuthSession, require_approved_membership, require_session
@@ -226,3 +226,99 @@ def register_parish_routes(app) -> None:
         if not result.get("ok"):
             raise HTTPException(status_code=400, detail=result.get("error") or "Sync failed.")
         return result
+
+    def _deck_dna_parish_id(session: Optional[AuthSession]) -> str:
+        if session and session.user and session.user.user_id:
+            try:
+                ctx = get_user_parish_context(session.user.user_id) or {}
+                pid = str(ctx.get("parish_id") or "").strip()
+                if pid:
+                    return pid
+            except Exception:
+                pass
+        profile = get_church_profile_context() or {}
+        return str(profile.get("parish_id") or "").strip() or "local"
+
+    @app.get("/api/parish/deck-dna")
+    def api_parish_deck_dna_status(
+        session: Optional[AuthSession] = Depends(require_approved_membership),
+    ) -> dict[str, Any]:
+        from services.parish_deck_dna import get_dna_status
+
+        return get_dna_status(_deck_dna_parish_id(session))
+
+    @app.get("/api/parish/deck-dna/scaffold")
+    def api_parish_deck_dna_scaffold(
+        session: Optional[AuthSession] = Depends(require_approved_membership),
+    ):
+        from fastapi.responses import FileResponse
+
+        from services.parish_deck_dna import ensure_scaffold_cached
+
+        try:
+            path = ensure_scaffold_cached()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Could not build scaffold: {exc}") from exc
+        return FileResponse(
+            path,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            filename="ParishDeckDNA_scaffold.pptx",
+        )
+
+    @app.post("/api/parish/deck-dna")
+    async def api_parish_deck_dna_upload(
+        file: UploadFile = File(...),
+        session: Optional[AuthSession] = Depends(require_approved_membership),
+    ) -> dict[str, Any]:
+        from services.parish_deck_dna import save_dna_supabase, scan_deck_dna
+
+        name = (file.filename or "").lower()
+        if not name.endswith(".pptx"):
+            raise HTTPException(status_code=400, detail="Upload a .pptx Parish Deck DNA file.")
+        raw = await file.read()
+        if len(raw) < 1024:
+            raise HTTPException(status_code=400, detail="File is too small to be a valid PPTX.")
+        if len(raw) > 80 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File must be at most 80 MB.")
+
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.NamedTemporaryFile(suffix=".pptx", delete=False) as tmp:
+            tmp.write(raw)
+            tmp_path = Path(tmp.name)
+        try:
+            scanned = scan_deck_dna(tmp_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+        if not scanned.get("ok"):
+            raise HTTPException(
+                status_code=400,
+                detail=scanned.get("error") or "DNA scan failed — check LFDNA footer labels.",
+            )
+
+        parish_id = _deck_dna_parish_id(session)
+        saved = save_dna_supabase(parish_id, raw, scanned["slide_map"])
+        return {
+            "ok": True,
+            "parish_id": parish_id,
+            "slide_map": scanned["slide_map"],
+            "slots_found": scanned.get("slots_found") or [],
+            "slide_count": scanned.get("slide_count"),
+            "notes": scanned.get("notes") or "",
+            "updated_at": saved.get("updated_at") or "",
+            "storage_path": saved.get("storage_path"),
+            "warning": saved.get("warning"),
+            "message": "Parish Deck DNA saved. New Mass decks will use your styled master.",
+        }
+
+    @app.delete("/api/parish/deck-dna")
+    def api_parish_deck_dna_clear(
+        session: Optional[AuthSession] = Depends(require_approved_membership),
+    ) -> dict[str, Any]:
+        from services.parish_deck_dna import clear_dna_supabase
+
+        parish_id = _deck_dna_parish_id(session)
+        clear_dna_supabase(parish_id)
+        return {"ok": True, "parish_id": parish_id, "message": "Parish Deck DNA cleared. Theme 1 master restored."}

@@ -369,12 +369,9 @@
           sections.push(reviewSection('Music ministry', 'Step 5', songRows, { multi: true, step: 5 }));
           var themeName = $('mw-deck-theme-name');
           var s6 = asideSongRow('Slide theme', themeName ? themeName.textContent.trim() : selText('flow-deck-theme'));
-          var aiOn = $('flow-use-ai-poster') && $('flow-use-ai-poster').checked;
-          s6 += asideRow('AI poster art', aiOn ? 'On' : 'Off');
-          if (aiOn) {
-            var styleEl = $('flow-openai-poster-style');
-            if (styleEl && styleEl.value) s6 += asideRow('AI style', selText('flow-openai-poster-style') || styleEl.value);
-          }
+          var styleEl = $('flow-openai-poster-style');
+          var styleLabel = styleEl ? (selText('flow-openai-poster-style') || styleEl.value || 'Cinematic') : 'Cinematic';
+          s6 += asideRow('Divider poster style', styleLabel);
           var collOn = $('flow-slide-mass-collection') && $('flow-slide-mass-collection').checked;
           var amt = $('flow-collection-amount');
           var cur = $('flow-collection-currency');
@@ -563,6 +560,9 @@
           }
           if (n === 6 && typeof window.ensureCollectionDefaultDate === "function") {
             window.ensureCollectionDefaultDate();
+          }
+          if (n === 6 && typeof window.refreshWeeklyStylePosters === "function") {
+            window.refreshWeeklyStylePosters();
           }
           if (n === 7) { fillReceipt(); }
           if (n === 2 || n === 4) scheduleRiteDefaultPinLabelHide(flowPage);
@@ -1152,8 +1152,35 @@
           return '<svg class="mw-rite-settings__icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
             '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>' +
             '<circle cx="12" cy="12" r="3"/>' +
-            '</svg>';
+          '</svg>';
         }
+        function placeRiteSettingsBesideVideo(root) {
+          var scope = root || flowPage;
+          if (!scope || !scope.querySelectorAll) return;
+          Array.prototype.forEach.call(
+            scope.querySelectorAll('.mw-option__media[data-mw-rite-media="1"], .mw-option .mw-rite-settings'),
+            function (el) {
+              var option = el.closest('.mw-option');
+              if (!option) return;
+              var media = option.querySelector('.mw-option__media[data-mw-rite-media="1"], .mw-option__media.mass-song-media-row');
+              var settings = option.querySelector('.mw-rite-settings');
+              if (!media && !settings) return;
+              var row = option.querySelector(':scope > .mw-option__row');
+              if (!row) return;
+              var bar = row.querySelector(':scope > .mw-rite-media-bar');
+              if (!bar) {
+                bar = document.createElement('div');
+                bar.className = 'mw-rite-media-bar';
+                var preview = row.querySelector(':scope > .mw-rite-preview');
+                if (preview) row.insertBefore(bar, preview);
+                else row.appendChild(bar);
+              }
+              if (media && media.parentElement !== bar) bar.appendChild(media);
+              if (settings && settings.parentElement !== bar) bar.appendChild(settings);
+            }
+          );
+        }
+        window.placeRiteSettingsBesideVideo = placeRiteSettingsBesideVideo;
         function closeAllRiteSettings(except) {
           Array.prototype.forEach.call(flowPage.querySelectorAll('.mw-rite-settings.is-open'), function (host) {
             if (except && host === except) return;
@@ -1505,10 +1532,11 @@
                   '<span class="mw-option__label-wrap mw-rite-lang mw-kyrie-dd' + (val ? ' is-chosen' : '') + '">' +
                     '<button type="button" class="mw-option__label mw-rite-lang__btn" aria-haspopup="listbox"></button>' +
                   '</span>' +
+                  (val
+                    ? ('<div class="mw-rite-media-bar">' + mediaRow + settings + '</div>')
+                    : '') +
                   actions +
                 '</div>' +
-                mediaRow +
-                settings +
               '</div>';
 
             var langBtn = active.querySelector('.mw-rite-lang__btn');
@@ -1529,6 +1557,7 @@
             if (val) bindSettings(active.querySelector('.mw-rite-settings'), mediaKey);
             if (section === 'kyrie') ensureKyrieTagalogPanel();
             if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+            placeRiteSettingsBesideVideo(active);
             if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins(rite);
           }
 
@@ -1640,18 +1669,20 @@
               '<span class="mw-option__label-wrap mw-option__label-wrap--choice">' +
                 '<span class="mw-option__label">Gloria</span>' +
               '</span>' +
-              ritePreviewHtml('', { audio: true }) +
-            '</div>' +
-            '<div class="mw-option__media mass-song-media-row" data-mw-rite-media="1" data-mw-media-section="gloria"></div>' +
-            '<div class="mw-rite-settings">' +
-              '<button type="button" class="mw-rite-settings__btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Link audio or video" title="Link audio or video">' +
-                riteSettingsGearHtml() +
-              '</button>' +
-              '<div class="mw-rite-settings__pop" hidden role="dialog" aria-label="Link media">' +
-                '<p class="mw-rite-settings__title">Link media</p>' +
-                '<button type="button" class="mw-rite-settings__item" data-mw-link-media="audio">Link audio</button>' +
-                '<button type="button" class="mw-rite-settings__item" data-mw-link-media="video">Link video</button>' +
+              '<div class="mw-rite-media-bar">' +
+                '<div class="mw-option__media mass-song-media-row" data-mw-rite-media="1" data-mw-media-section="gloria"></div>' +
+                '<div class="mw-rite-settings">' +
+                  '<button type="button" class="mw-rite-settings__btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Link audio or video" title="Link audio or video">' +
+                    riteSettingsGearHtml() +
+                  '</button>' +
+                  '<div class="mw-rite-settings__pop" hidden role="dialog" aria-label="Link media">' +
+                    '<p class="mw-rite-settings__title">Link media</p>' +
+                    '<button type="button" class="mw-rite-settings__item" data-mw-link-media="audio">Link audio</button>' +
+                    '<button type="button" class="mw-rite-settings__item" data-mw-link-media="video">Link video</button>' +
+                  '</div>' +
+                '</div>' +
               '</div>' +
+              ritePreviewHtml('', { audio: true }) +
             '</div>';
 
           var gloriaLine = document.createElement('div');
@@ -1748,6 +1779,7 @@
               if (gloriaPinInput) gloriaPinInput.setAttribute('data-mw-default-value', lastLang);
             }
             if (typeof window.refreshMassSectionMediaUi === 'function') window.refreshMassSectionMediaUi();
+            placeRiteSettingsBesideVideo(gloriaItem);
             if (typeof window.syncRiteOptionsCollapse === 'function') window.syncRiteOptionsCollapse(rite);
             if (typeof window.syncMassDefaultPins === 'function') window.syncMassDefaultPins(wrap);
           }
@@ -2383,9 +2415,20 @@
           if ($('mw-next')) $('mw-next').addEventListener('click', next);
           if ($('mw-back')) $('mw-back').addEventListener('click', back);
           var pendingSlideKinds = null;
+          var pendingPartialIncludeAiPoster = null;
+          var PARTIAL_POSTER_STYLES = [
+            ["cinematic", "Cinematic"],
+            ["realistic", "Realistic"],
+            ["renaissance", "Renaissance"],
+            ["stained_glass", "Stained glass"],
+            ["modern", "Modern"]
+          ];
           var SLIDE_KIND_GROUPS = [
             ["Introductory rites", [
-              ["pre_mass", "Pre-Mass"], ["cover", "Mass cover"], ["entrance", "Entrance hymn"],
+              ["pre_mass", "Pre-Mass"],
+              ["cover", "Mass cover (no AI)"],
+              ["cover_ai", "Mass cover (AI)"],
+              ["entrance", "Entrance hymn"],
               ["intro_rites", "Sign of the Cross"], ["penitential", "Penitential Act"],
               ["kyrie", "Kyrie"], ["gloria", "Gloria"], ["opening_prayer", "Opening prayer"]
             ]],
@@ -2417,10 +2460,12 @@
           }
           function triggerFullGenerate() {
             pendingSlideKinds = null;
+            pendingPartialIncludeAiPoster = null;
             var g = $('btn-generate-flow'); if (g) g.click();
           }
           function triggerLeafletGenerate() {
             pendingSlideKinds = null;
+            pendingPartialIncludeAiPoster = null;
             if (typeof window.runFullMassGenerate === 'function') {
               window.runFullMassGenerate({
                 include_leaflet: true,
@@ -2444,8 +2489,9 @@
           }
           function fillPartialGenList() {
             var host = $('mw-partial-gen-list');
-            if (!host || host.dataset.built === "1") return;
-            host.dataset.built = "1";
+            if (!host) return;
+            if (host.dataset.built === "cover-ai-v1") return;
+            host.dataset.built = "cover-ai-v1";
             var saved = [];
             try { saved = JSON.parse(sessionStorage.getItem("verbum:sa-slide-kinds") || "[]") || []; } catch (_e) { saved = []; }
             var savedSet = {};
@@ -2453,7 +2499,8 @@
             host.innerHTML = SLIDE_KIND_GROUPS.map(function (group) {
               var boxes = group[1].map(function (item) {
                 var checked = saved.length ? (savedSet[item[0]] ? " checked" : "") : " checked";
-                return "<label><input type=\"checkbox\" value=\"" + item[0] + "\"" + checked + " /> " + item[1] + "</label>";
+                var extra = item[0] === "cover_ai" ? " data-partial-cover-ai=\"1\"" : "";
+                return "<label><input type=\"checkbox\" value=\"" + item[0] + "\"" + checked + extra + " /> " + item[1] + "</label>";
               }).join("");
               return "<div class=\"mw-partial-gen__group\"><h4>" + group[0] + "</h4>" + boxes + "</div>";
             }).join("");
@@ -2471,12 +2518,113 @@
             modal.removeAttribute("data-open");
             modal.setAttribute("aria-hidden", "true");
           }
+          function closePartialPosterModal() {
+            var modal = $('mw-partial-poster-modal');
+            if (!modal) return;
+            modal.removeAttribute("data-open");
+            modal.setAttribute("aria-hidden", "true");
+          }
           function selectedPartialKinds() {
             var host = $('mw-partial-gen-list');
             if (!host) return [];
             return Array.prototype.slice.call(host.querySelectorAll("input[type=checkbox]:checked"))
               .map(function (el) { return el.value; })
               .filter(Boolean);
+          }
+          function partialMassDate() {
+            var el = $('mass-date') || $('flow-mass-date');
+            return el && el.value ? String(el.value).trim() : "";
+          }
+          function currentPartialPosterStyle() {
+            var sel = $('flow-openai-poster-style');
+            var val = sel && sel.value ? String(sel.value) : "cinematic";
+            return val === "auto" ? "cinematic" : val;
+          }
+          function applyPartialPosterStyle(styleId) {
+            var sid = String(styleId || "cinematic").trim() || "cinematic";
+            ["flow-openai-poster-style", "poster-openai-poster-style"].forEach(function (id) {
+              var el = $(id);
+              if (!el) return;
+              el.value = sid;
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+            if (typeof window.setWeeklyPosterStyle === "function") {
+              window.setWeeklyPosterStyle(sid);
+            }
+            var grid = $('mw-partial-poster-grid');
+            if (grid) {
+              grid.querySelectorAll("[data-partial-style]").forEach(function (btn) {
+                var on = btn.getAttribute("data-partial-style") === sid;
+                btn.classList.toggle("is-selected", on);
+                btn.setAttribute("aria-selected", on ? "true" : "false");
+              });
+            }
+          }
+          function fillPartialPosterGrid(items) {
+            var grid = $('mw-partial-poster-grid');
+            var hint = $('mw-partial-poster-hint');
+            if (!grid) return;
+            var list = Array.isArray(items) && items.length
+              ? items
+              : PARTIAL_POSTER_STYLES.map(function (pair) {
+                  return { id: pair[0], label: pair[1], ready: false, thumb_url: "", proxy_url: "" };
+                });
+            var pick = currentPartialPosterStyle();
+            grid.innerHTML = list.map(function (item) {
+              var id = String(item.id || "");
+              var label = String(item.label || id || "Style");
+              var ready = !!item.ready;
+              var src = String(item.thumb_url || item.proxy_url || "");
+              var img = ready && src
+                ? ("<img src=\"" + src.replace(/\"/g, "&quot;") + "\" alt=\"\" loading=\"lazy\" />")
+                : "<span class=\"mw-partial-poster__placeholder\" aria-hidden=\"true\"></span>";
+              var selected = id === pick ? " is-selected" : "";
+              return (
+                "<button type=\"button\" class=\"mw-partial-poster__card" + selected + (ready ? "" : " is-pending") + "\" " +
+                "role=\"option\" data-partial-style=\"" + id.replace(/\"/g, "") + "\" aria-selected=\"" + (id === pick ? "true" : "false") + "\">" +
+                "<span class=\"mw-partial-poster__frame\">" + img + "</span>" +
+                "<span class=\"mw-partial-poster__label\">" + label.replace(/</g, "&lt;") + "</span>" +
+                (ready ? "" : "<span class=\"mw-partial-poster__badge\">Not ready</span>") +
+                "</button>"
+              );
+            }).join("");
+            grid.querySelectorAll("[data-partial-style]").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                applyPartialPosterStyle(btn.getAttribute("data-partial-style"));
+              });
+            });
+            if (hint) {
+              var readyCount = list.filter(function (it) { return !!it.ready; }).length;
+              hint.textContent = readyCount
+                ? ("Showing " + readyCount + " of " + list.length + " weekly styles for this Sunday.")
+                : "Styles not generated yet — generate will use the shared weekly style when available.";
+            }
+            applyPartialPosterStyle(pick);
+          }
+          function openPartialPosterModal() {
+            var modal = $('mw-partial-poster-modal');
+            if (!modal) return;
+            fillPartialPosterGrid(null);
+            modal.setAttribute("data-open", "true");
+            modal.setAttribute("aria-hidden", "false");
+            var date = partialMassDate();
+            if (!date) return;
+            fetch("/api/weekly-style-posters?date=" + encodeURIComponent(date))
+              .then(function (res) { return res.json(); })
+              .then(function (data) {
+                fillPartialPosterGrid(data && data.items ? data.items : null);
+              })
+              .catch(function () { /* keep fallback cards */ });
+          }
+          function beginPartialGenerate(kinds) {
+            var includeAi = kinds.indexOf("cover_ai") >= 0;
+            try { sessionStorage.setItem("verbum:sa-slide-kinds", JSON.stringify(kinds)); } catch (_e) {}
+            try { sessionStorage.setItem("verbum:sa-partial-ai-poster", includeAi ? "1" : "0"); } catch (_e2) {}
+            pendingSlideKinds = kinds;
+            pendingPartialIncludeAiPoster = includeAi;
+            closePartialPosterModal();
+            closePartialGenModal();
+            var g = $('btn-generate-flow'); if (g) g.click();
           }
           if ($('mw-generate')) $('mw-generate').addEventListener('click', function (e) {
             if (validateBeforeGenerate()) return;
@@ -2527,10 +2675,46 @@
           if ($('mw-partial-gen-go')) $('mw-partial-gen-go').addEventListener('click', function () {
             var kinds = selectedPartialKinds();
             if (!kinds.length) return;
-            try { sessionStorage.setItem("verbum:sa-slide-kinds", JSON.stringify(kinds)); } catch (_e) {}
-            pendingSlideKinds = kinds;
-            closePartialGenModal();
-            var g = $('btn-generate-flow'); if (g) g.click();
+            if (kinds.indexOf("cover_ai") >= 0) {
+              var weeklyReady = typeof window.areWeeklyAiPostersReady === "function" && window.areWeeklyAiPostersReady();
+              if (!weeklyReady) {
+                // Fall back to non-AI cover when SA has not published the weekly set.
+                kinds = kinds.filter(function (k) { return k !== "cover_ai"; });
+                if (kinds.indexOf("cover") < 0) kinds.push("cover");
+                if (typeof window.notify === "function") {
+                  window.notify("AI posters aren't ready for this Sunday — generating non-AI cover.", "warn");
+                }
+                beginPartialGenerate(kinds);
+                return;
+              }
+              closePartialGenModal();
+              openPartialPosterModal();
+              var posterModal = $('mw-partial-poster-modal');
+              if (posterModal) posterModal.dataset.pendingKinds = JSON.stringify(kinds);
+              return;
+            }
+            beginPartialGenerate(kinds);
+          });
+          if ($('mw-partial-poster-back')) $('mw-partial-poster-back').addEventListener('click', function () {
+            closePartialPosterModal();
+            openPartialGenModal();
+          });
+          if ($('mw-partial-poster-modal')) $('mw-partial-poster-modal').addEventListener('click', function (e) {
+            if (e.target === $('mw-partial-poster-modal')) {
+              closePartialPosterModal();
+              openPartialGenModal();
+            }
+          });
+          if ($('mw-partial-poster-go')) $('mw-partial-poster-go').addEventListener('click', function () {
+            var posterModal = $('mw-partial-poster-modal');
+            var kinds = [];
+            try {
+              kinds = JSON.parse((posterModal && posterModal.dataset.pendingKinds) || "[]") || [];
+            } catch (_e) { kinds = []; }
+            if (!kinds.length) kinds = selectedPartialKinds();
+            if (!kinds.length) return;
+            if (kinds.indexOf("cover_ai") < 0) kinds.push("cover_ai");
+            beginPartialGenerate(kinds);
           });
           bindMassMissingOptionsModal();
           if ($('mw-present')) $('mw-present').addEventListener('click', function () {
@@ -2804,6 +2988,11 @@
               var kinds = pendingSlideKinds;
               pendingSlideKinds = null;
               return kinds;
+            },
+            consumePartialIncludeAiPoster: function () {
+              var v = pendingPartialIncludeAiPoster;
+              pendingPartialIncludeAiPoster = null;
+              return v;
             },
             hasProgress: function () {
               if (current > 1) return true;

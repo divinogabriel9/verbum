@@ -49,6 +49,10 @@ class PanelBox:
     width: float
     height: float
     role: str = "panel"
+    # OOXML alpha (0–100000). PNG maps this to 0–255.
+    alpha: int = 10000
+    # python-pptx rounded-rect adjustment (0–1).
+    corner_adj: float = 0.05159
 
 
 @dataclass(frozen=True)

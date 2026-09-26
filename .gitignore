@@ -12,6 +12,7 @@ data/media_ownership.json
 data/access_requests.json
 data/contact_messages.json
 data/uploads/
+data/parish_dna/
 outputs/
 readings_cache.json
 data/.content_submissions_migrated

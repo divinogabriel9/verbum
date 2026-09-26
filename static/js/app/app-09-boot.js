@@ -2466,6 +2466,7 @@
     initCreateMenu();
     initVerbumSelects();
     initDividerPosterPickers();
+    if (typeof initLookPickers === "function") initLookPickers();
     migrateLegacyAiPosterToggles();
     syncOpenAiPosterUi();
     initGlobalSearch();

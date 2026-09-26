@@ -2364,6 +2364,9 @@
         btn.setAttribute("aria-disabled", hasAudio ? "false" : "true");
       });
       if (typeof syncMassDefaultPins === "function") syncMassDefaultPins();
+      if (typeof window.placeRiteSettingsBesideVideo === "function") {
+        window.placeRiteSettingsBesideVideo();
+      }
     }
 
     function stopMassSectionAudio() {

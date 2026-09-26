@@ -208,25 +208,25 @@ DIVIDER3 = _register(
     DividerTemplate(
         id="divider3",
         name="Divider 3 · Gospel",
-        description="Sunday title and celebrant on the left, gospel quote on the right panel.",
+        description="Sunday title and celebrant in a left panel; gospel quote on the right.",
         preview="/static/images/dividers/divider3_preview.jpg",
         has_heading=True,
         boxes={
             "heading": _box(
-                "heading", 0.5636, 0.7656, 10.1891, 1.217, 40, 22, single_line=True, role="heading"
+                "heading", 0.7151, 0.7157, 9.8861, 0.8345, 40, 22, single_line=True, role="heading"
             ),
             "sunday_title": _box(
-                "sunday_title", 0.0794, 2.2647, 10.7055, 3.2565, 66, 40, role="title"
+                "sunday_title", 0.3054, 1.8015, 10.7055, 3.2565, 80, 40, role="title"
             ),
             "year_date": _box(
-                "year_date", 1.268, 5.441, 8.4535, 1.045, 43, 24, italic=True, role="year_date"
+                "year_date", 1.4314, 4.7497, 8.4535, 1.8416, 48, 24, italic=True, role="year_date"
             ),
             "celebrant_label": _box(
-                "celebrant_label", 1.8149, 6.8841, 7.206, 0.7678, 37, 37, role="label"
+                "celebrant_label", 2.0551, 6.8596, 7.206, 0.7678, 37, 37, role="label"
             ),
             "celebrant_name": _box(
                 "celebrant_name",
-                0.8102,
+                1.0763,
                 7.4732,
                 9.1636,
                 1.156,
@@ -237,17 +237,17 @@ DIVIDER3 = _register(
             ),
             "gospel_quote": _box(
                 "gospel_quote",
-                9.0733,
-                2.614,
-                11.784,
-                2.8075,
+                12.0039,
+                2.8173,
+                7.2545,
+                3.3845,
                 39,
                 36,
                 bold=False,
                 role="quote",
             ),
             "gospel_citation": _box(
-                "gospel_citation", 11.7833, 6.345, 6.364, 1.40, 35, 22, role="citation"
+                "gospel_citation", 12.4491, 7.4732, 6.364, 1.40, 35, 22, role="citation"
             ),
             "co_celebrant_label": _box(
                 "co_celebrant_label",
@@ -274,15 +274,21 @@ DIVIDER3 = _register(
             ),
         },
         panels=(
-            PanelBox(10.6545, 2.2364, 8.5455, 7.4182, role="quote_panel"),
-            PanelBox(0.5636, 0.7656, 10.1891, 1.217, role="kicker"),
+            PanelBox(
+                0.5636, 0.4605, 10.1891, 1.2744,
+                role="kicker_panel", alpha=38995, corner_adj=0.12815,
+            ),
+            PanelBox(
+                0.5636, 2.0417, 10.1891, 7.6657,
+                role="title_panel", alpha=20000, corner_adj=0.05159,
+            ),
         ),
         composition=CompositionProfile(
-            text_safe_zones={"left": 0.52, "right": 0.48, "top": 0.12, "bottom": 0.08},
-            visual_focus=(0.70, 0.45),
+            text_safe_zones={"left": 0.52, "right": 0.48, "top": 0.08, "bottom": 0.08},
+            visual_focus=(0.72, 0.45),
             subject_position="right",
-            background_complexity={"left": "low", "center": "medium", "right": "medium"},
-            brightness_preference={"left": "dark", "center": "dark", "right": "dark"},
+            background_complexity={"left": "low", "center": "medium", "right": "high"},
+            brightness_preference={"left": "dark", "center": "dark", "right": "medium"},
         ),
     )
 )

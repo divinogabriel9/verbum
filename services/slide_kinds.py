@@ -9,7 +9,8 @@ SLIDE_KIND_GROUPS: list[tuple[str, list[tuple[str, str]]]] = [
         "Introductory rites",
         [
             ("pre_mass", "Pre-Mass"),
-            ("cover", "Mass cover"),
+            ("cover", "Mass cover (no AI)"),
+            ("cover_ai", "Mass cover (AI)"),
             ("entrance", "Entrance hymn"),
             ("intro_rites", "Sign of the Cross"),
             ("penitential", "Penitential Act"),

@@ -1444,10 +1444,29 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-09-25T21:38:27.942397+00:00",
+      "updated_at": "2026-09-25T21:38:44.418649+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:b4EsaIBMp9c",
+        "youtube_id": "b4EsaIBMp9c",
+        "youtube_url": "https://www.youtube.com/watch?v=b4EsaIBMp9c",
+        "display_name": "Taste and See"
+      },
       "gospel_moods": [
         "mercy",
         "reverent"
-      ]
+      ],
+      "audio_preview": {
+        "method": "verse",
+        "source": "preview",
+        "basename": "preview_communion_taste_and_see_10.mp3",
+        "start_sec": 20.44,
+        "youtube_id": "b4EsaIBMp9c",
+        "youtube_url": "https://www.youtube.com/watch?v=b4EsaIBMp9c",
+        "display_name": "Taste and See · 10s",
+        "duration_sec": 10
+      }
     },
     {
       "id": "one_bread_communion",

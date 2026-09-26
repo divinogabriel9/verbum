@@ -3070,6 +3070,72 @@
       if (body) body.style.color = ink;
     }
 
+    function paintMiniDividerPreview(root, styleId) {
+      if (!root) return;
+      const style = findDividerStyle(styleId);
+      const id = style.id;
+      root.setAttribute("data-divider-style", id);
+      root.className = "mw-look-divider-preview deck-divider-mock";
+      if (id === "divider2") {
+        root.classList.add("deck-divider-mock--stone");
+        root.innerHTML =
+          '<img class="mw-look-divider-preview__img" src="/static/images/dividers/divider2_preview.jpg" alt="" loading="lazy" />';
+        return;
+      }
+      if (id === "divider3") {
+        root.classList.add("deck-divider-mock--gospel");
+        root.innerHTML =
+          '<span class="deck-divider-option__stripes">' +
+            '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+          "</span>" +
+          '<span class="deck-divider-mock__dark"></span>' +
+          '<span class="deck-divider-mock__stage">' +
+            '<span class="d3-panel"></span>' +
+            '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+            '<span class="d3-sunday">Sunday title</span>' +
+            '<span class="d3-year">YEAR · DATE</span>' +
+            '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+            '<span class="d3-name">Celebrant</span>' +
+            '<span class="d3-quote">“Gospel quote”</span>' +
+            '<span class="d3-cite"><span>GOSPEL</span><span>CITE</span></span>' +
+          "</span>";
+        return;
+      }
+      root.classList.add("deck-divider-mock--classic");
+      root.innerHTML =
+        '<span class="deck-divider-option__stripes">' +
+          '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+          '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+          '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+          '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+        "</span>" +
+        '<span class="deck-divider-mock__dark"></span>' +
+        '<span class="deck-divider-mock__stage">' +
+          '<span class="d1-panel"></span>' +
+          '<span class="d1-bar"></span>' +
+          '<span class="d1-label">MASS CELEBRANT</span>' +
+          '<span class="d1-name">Celebrant</span>' +
+          '<span class="d1-quote">Gospel quote</span>' +
+          '<span class="d1-title">Sunday title</span>' +
+        "</span>";
+    }
+
+    function syncLookPickerMenus() {
+      document.querySelectorAll("[data-look-picker]").forEach((picker) => {
+        const kind = picker.getAttribute("data-look-picker");
+        const menu = picker.querySelector(".poster-picker__menu");
+        if (!menu) return;
+        const selected = kind === "divider" ? activeDividerStyle : activeTheme.id;
+        menu.querySelectorAll(".poster-picker__option").forEach((opt) => {
+          const val = opt.getAttribute("data-value");
+          opt.setAttribute("aria-selected", val === selected ? "true" : "false");
+        });
+      });
+    }
+
     function updateReviewDeckThemeSummary() {
       const nameEl = $("mw-deck-theme-name");
       const noteEl = $("mw-deck-theme-note");
@@ -3081,8 +3147,123 @@
         divNote.textContent = d.name;
       }
       paintMiniDeckThemePreview($("mw-deck-theme-preview"), activeTheme);
+      paintMiniDividerPreview($("mw-deck-divider-preview"), activeDividerStyle);
       syncDeckThemeHiddenInput();
+      syncLookPickerMenus();
       if (typeof syncMassDefaultPins === "function") syncMassDefaultPins();
+    }
+
+    function lookPickerDividerOptionHtml(styleId) {
+      const id = findDividerStyle(styleId).id;
+      if (id === "divider2") {
+        return '<img class="poster-picker__option-thumb" src="/static/images/dividers/divider2_preview.jpg" alt="" loading="lazy" />';
+      }
+      if (id === "divider3") {
+        return (
+          '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--gospel">' +
+            '<span class="deck-divider-option__stripes">' +
+              '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+              '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+              '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+              '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+            "</span>" +
+            '<span class="deck-divider-mock__dark"></span>' +
+            '<span class="deck-divider-mock__stage">' +
+              '<span class="d3-panel"></span>' +
+              '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+              '<span class="d3-sunday">Sunday title</span>' +
+              '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+              '<span class="d3-name">Celebrant</span>' +
+              '<span class="d3-quote">“Gospel quote”</span>' +
+            "</span>" +
+          "</span>"
+        );
+      }
+      return (
+        '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--classic">' +
+          '<span class="deck-divider-option__stripes">' +
+            '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+          "</span>" +
+          '<span class="deck-divider-mock__dark"></span>' +
+          '<span class="deck-divider-mock__stage">' +
+            '<span class="d1-panel"></span>' +
+            '<span class="d1-bar"></span>' +
+            '<span class="d1-label">MASS CELEBRANT</span>' +
+            '<span class="d1-name">Celebrant</span>' +
+            '<span class="d1-quote">Gospel quote</span>' +
+            '<span class="d1-title">Sunday title</span>' +
+          "</span>" +
+        "</span>"
+      );
+    }
+
+    function lookPickerThemeOptionHtml(theme) {
+      const t = theme || presetThemes[0];
+      return (
+        '<div class="mw-look-preview mw-deck-theme-summary__preview" data-theme-id="' + t.id + '" style="background:' + t.bg + '">' +
+          '<div class="mw-dt-kicker" style="color:' + (t.text || t.primary) + '">Liturgy of the Word</div>' +
+          '<div class="mw-dt-title" style="color:' + (t.accent || t.text || t.primary) + '">First Reading</div>' +
+          '<div class="mw-dt-body" style="color:' + (t.text || t.primary) + '">A reading from the Book…</div>' +
+        "</div>"
+      );
+    }
+
+    function initLookPickers() {
+      document.querySelectorAll("[data-look-picker]").forEach((picker) => {
+        const kind = picker.getAttribute("data-look-picker");
+        const trigger = picker.querySelector(".poster-picker__trigger");
+        const menu = picker.querySelector(".poster-picker__menu");
+        if (!trigger || !menu || menu.dataset.lookReady === "1") return;
+        menu.dataset.lookReady = "1";
+
+        const items = kind === "divider"
+          ? ["divider1", "divider3", "divider2"].map((id) => DIVIDER_STYLES[id])
+          : presetThemes.slice();
+
+        menu.innerHTML = "";
+        items.forEach((item) => {
+          const opt = document.createElement("button");
+          opt.type = "button";
+          opt.className = "poster-picker__option poster-picker__option--look";
+          opt.setAttribute("role", "option");
+          opt.setAttribute("data-value", item.id);
+          opt.setAttribute("aria-label", item.name);
+          opt.title = item.name;
+          if (kind === "divider") {
+            opt.innerHTML =
+              lookPickerDividerOptionHtml(item.id) +
+              '<span class="poster-picker__option-caption">' + item.name + "</span>";
+          } else {
+            opt.innerHTML =
+              lookPickerThemeOptionHtml(item) +
+              '<span class="poster-picker__option-caption">' + item.name + "</span>";
+          }
+          opt.addEventListener("click", () => {
+            if (kind === "divider") setActiveDividerStyle(item.id);
+            else setActiveDeckTheme(item.id);
+            if (typeof closeAllPosterPickers === "function") closeAllPosterPickers();
+            trigger.focus();
+          });
+          menu.appendChild(opt);
+        });
+
+        trigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const opening = menu.hidden;
+          if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+          if (typeof closeAllPosterPickers === "function") closeAllPosterPickers(picker);
+          menu.hidden = !opening;
+          trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+          if (opening && typeof scrollPosterPickerMenuIntoView === "function") {
+            scrollPosterPickerMenuIntoView(menu);
+          }
+        });
+      });
+      syncLookPickerMenus();
+      paintMiniDividerPreview($("mw-deck-divider-preview"), activeDividerStyle);
     }
 
     function updateThemeIndicators() {
@@ -3283,6 +3464,7 @@
       window.getActiveDeckTheme = () => activeTheme;
       window.getActiveDividerStyle = () => activeDividerStyle;
       syncDeckThemeHiddenInput();
+      initLookPickers();
       updateReviewDeckThemeSummary();
     })();
 

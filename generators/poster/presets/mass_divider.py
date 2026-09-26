@@ -16,7 +16,7 @@ from services.mass_divider.types import SLIDE_WIDTH_IN, TextBox
 _CREAM = (250, 248, 244)
 _GOLD = (255, 234, 191)
 _QUOTE = (239, 237, 236)
-_GOSPEL = (255, 222, 158)
+_GOSPEL = (255, 192, 0)  # FFC000 — NewAiPosterFormat.pptx
 
 
 def _px(inches: float, canvas_w: int) -> int:
@@ -113,7 +113,7 @@ def _year_date_line(year_cycle: str, date_display: str) -> str:
     cycle = (year_cycle or "—").strip().upper()
     date_line = (date_display or "").strip().upper()
     if date_line:
-        return f"YEAR {cycle} | {date_line}"
+        return f"YEAR {cycle}\n{date_line}"
     return f"YEAR {cycle}"
 
 
@@ -126,7 +126,7 @@ def _citation_lines(reference: str, template_id: str) -> List[str]:
         cite = ref.upper()
         if cite.startswith("GOSPEL"):
             cite = cite.split("GOSPEL", 1)[-1].strip(" |:()")
-        return ["GOSPEL", cite or "—"]
+        return ["GOSPEL", f"({cite})" if cite else "(—)"]
     return [ref.upper()]
 
 
@@ -146,6 +146,25 @@ def render(canvas: Image.Image, ctx: RenderContext) -> Image.Image:
 
     template = get_divider_template(getattr(content, "divider_template_id", None))
     boxes = template.boxes
+    # Soft panels (Divider 3) — match MassDividerUpdate26Sept.pptx dual left panels.
+    if template.id == "divider3" and template.panels:
+        overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        odraw = ImageDraw.Draw(overlay)
+        for panel in template.panels:
+            x0 = _px(panel.left, w)
+            y0 = _px(panel.top, w)
+            x1 = x0 + _px(panel.width, w)
+            y1 = y0 + _px(panel.height, w)
+            corner = float(getattr(panel, "corner_adj", 0.05159) or 0.05159)
+            radius = max(8, int(min(x1 - x0, y1 - y0) * corner))
+            alpha_ooxml = int(getattr(panel, "alpha", 10000) or 10000)
+            a255 = max(0, min(255, int(round(alpha_ooxml / 100000 * 255))))
+            odraw.rounded_rectangle(
+                (x0, y0, x1, y1), radius=radius, fill=(0, 0, 0, a255)
+            )
+        base = canvas.convert("RGBA")
+        canvas = Image.alpha_composite(base, overlay).convert("RGB")
+        draw = ImageDraw.Draw(canvas)
     co_name = str(getattr(content, "co_celebrant_name", "") or "").strip()
     heading = str(getattr(content, "heading", "") or "").strip() or "HOLY EUCHARISTIC CELEBRATION"
 
@@ -187,6 +206,17 @@ def render(canvas: Image.Image, ctx: RenderContext) -> Image.Image:
             cite_box = TextBox(
                 "gospel_citation", cl, ct, cw, ch, 35, 22, bold=True, align="center"
             )
+            # 10% black textbox fills (AI poster) — no separate rounded squares.
+            fill_overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+            fdraw = ImageDraw.Draw(fill_overlay)
+            for box in (quote_box, cite_box):
+                x0 = _px(box.left, w)
+                y0 = _px(box.top, w)
+                x1 = x0 + _px(box.width, w)
+                y1 = y0 + _px(box.height, w)
+                fdraw.rectangle((x0, y0, x1, y1), fill=(0, 0, 0, 26))
+            canvas = Image.alpha_composite(canvas.convert("RGBA"), fill_overlay).convert("RGB")
+            draw = ImageDraw.Draw(canvas)
             _draw_block(draw, quote, quote_box, w, _QUOTE)
             _draw_block(
                 draw,

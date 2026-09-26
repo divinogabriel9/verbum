@@ -2364,6 +2364,9 @@
         btn.setAttribute("aria-disabled", hasAudio ? "false" : "true");
       });
       if (typeof syncMassDefaultPins === "function") syncMassDefaultPins();
+      if (typeof window.placeRiteSettingsBesideVideo === "function") {
+        window.placeRiteSettingsBesideVideo();
+      }
     }
 
     function stopMassSectionAudio() {
@@ -11871,6 +11874,72 @@
       if (body) body.style.color = ink;
     }
 
+    function paintMiniDividerPreview(root, styleId) {
+      if (!root) return;
+      const style = findDividerStyle(styleId);
+      const id = style.id;
+      root.setAttribute("data-divider-style", id);
+      root.className = "mw-look-divider-preview deck-divider-mock";
+      if (id === "divider2") {
+        root.classList.add("deck-divider-mock--stone");
+        root.innerHTML =
+          '<img class="mw-look-divider-preview__img" src="/static/images/dividers/divider2_preview.jpg" alt="" loading="lazy" />';
+        return;
+      }
+      if (id === "divider3") {
+        root.classList.add("deck-divider-mock--gospel");
+        root.innerHTML =
+          '<span class="deck-divider-option__stripes">' +
+            '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+          "</span>" +
+          '<span class="deck-divider-mock__dark"></span>' +
+          '<span class="deck-divider-mock__stage">' +
+            '<span class="d3-panel"></span>' +
+            '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+            '<span class="d3-sunday">Sunday title</span>' +
+            '<span class="d3-year">YEAR · DATE</span>' +
+            '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+            '<span class="d3-name">Celebrant</span>' +
+            '<span class="d3-quote">“Gospel quote”</span>' +
+            '<span class="d3-cite"><span>GOSPEL</span><span>CITE</span></span>' +
+          "</span>";
+        return;
+      }
+      root.classList.add("deck-divider-mock--classic");
+      root.innerHTML =
+        '<span class="deck-divider-option__stripes">' +
+          '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+          '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+          '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+          '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+        "</span>" +
+        '<span class="deck-divider-mock__dark"></span>' +
+        '<span class="deck-divider-mock__stage">' +
+          '<span class="d1-panel"></span>' +
+          '<span class="d1-bar"></span>' +
+          '<span class="d1-label">MASS CELEBRANT</span>' +
+          '<span class="d1-name">Celebrant</span>' +
+          '<span class="d1-quote">Gospel quote</span>' +
+          '<span class="d1-title">Sunday title</span>' +
+        "</span>";
+    }
+
+    function syncLookPickerMenus() {
+      document.querySelectorAll("[data-look-picker]").forEach((picker) => {
+        const kind = picker.getAttribute("data-look-picker");
+        const menu = picker.querySelector(".poster-picker__menu");
+        if (!menu) return;
+        const selected = kind === "divider" ? activeDividerStyle : activeTheme.id;
+        menu.querySelectorAll(".poster-picker__option").forEach((opt) => {
+          const val = opt.getAttribute("data-value");
+          opt.setAttribute("aria-selected", val === selected ? "true" : "false");
+        });
+      });
+    }
+
     function updateReviewDeckThemeSummary() {
       const nameEl = $("mw-deck-theme-name");
       const noteEl = $("mw-deck-theme-note");
@@ -11882,8 +11951,123 @@
         divNote.textContent = d.name;
       }
       paintMiniDeckThemePreview($("mw-deck-theme-preview"), activeTheme);
+      paintMiniDividerPreview($("mw-deck-divider-preview"), activeDividerStyle);
       syncDeckThemeHiddenInput();
+      syncLookPickerMenus();
       if (typeof syncMassDefaultPins === "function") syncMassDefaultPins();
+    }
+
+    function lookPickerDividerOptionHtml(styleId) {
+      const id = findDividerStyle(styleId).id;
+      if (id === "divider2") {
+        return '<img class="poster-picker__option-thumb" src="/static/images/dividers/divider2_preview.jpg" alt="" loading="lazy" />';
+      }
+      if (id === "divider3") {
+        return (
+          '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--gospel">' +
+            '<span class="deck-divider-option__stripes">' +
+              '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+              '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+              '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+              '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+            "</span>" +
+            '<span class="deck-divider-mock__dark"></span>' +
+            '<span class="deck-divider-mock__stage">' +
+              '<span class="d3-panel"></span>' +
+              '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+              '<span class="d3-sunday">Sunday title</span>' +
+              '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+              '<span class="d3-name">Celebrant</span>' +
+              '<span class="d3-quote">“Gospel quote”</span>' +
+            "</span>" +
+          "</span>"
+        );
+      }
+      return (
+        '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--classic">' +
+          '<span class="deck-divider-option__stripes">' +
+            '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="green"></span>' +
+            '<span class="deck-divider-option__stripe" data-lit="red"></span>' +
+          "</span>" +
+          '<span class="deck-divider-mock__dark"></span>' +
+          '<span class="deck-divider-mock__stage">' +
+            '<span class="d1-panel"></span>' +
+            '<span class="d1-bar"></span>' +
+            '<span class="d1-label">MASS CELEBRANT</span>' +
+            '<span class="d1-name">Celebrant</span>' +
+            '<span class="d1-quote">Gospel quote</span>' +
+            '<span class="d1-title">Sunday title</span>' +
+          "</span>" +
+        "</span>"
+      );
+    }
+
+    function lookPickerThemeOptionHtml(theme) {
+      const t = theme || presetThemes[0];
+      return (
+        '<div class="mw-look-preview mw-deck-theme-summary__preview" data-theme-id="' + t.id + '" style="background:' + t.bg + '">' +
+          '<div class="mw-dt-kicker" style="color:' + (t.text || t.primary) + '">Liturgy of the Word</div>' +
+          '<div class="mw-dt-title" style="color:' + (t.accent || t.text || t.primary) + '">First Reading</div>' +
+          '<div class="mw-dt-body" style="color:' + (t.text || t.primary) + '">A reading from the Book…</div>' +
+        "</div>"
+      );
+    }
+
+    function initLookPickers() {
+      document.querySelectorAll("[data-look-picker]").forEach((picker) => {
+        const kind = picker.getAttribute("data-look-picker");
+        const trigger = picker.querySelector(".poster-picker__trigger");
+        const menu = picker.querySelector(".poster-picker__menu");
+        if (!trigger || !menu || menu.dataset.lookReady === "1") return;
+        menu.dataset.lookReady = "1";
+
+        const items = kind === "divider"
+          ? ["divider1", "divider3", "divider2"].map((id) => DIVIDER_STYLES[id])
+          : presetThemes.slice();
+
+        menu.innerHTML = "";
+        items.forEach((item) => {
+          const opt = document.createElement("button");
+          opt.type = "button";
+          opt.className = "poster-picker__option poster-picker__option--look";
+          opt.setAttribute("role", "option");
+          opt.setAttribute("data-value", item.id);
+          opt.setAttribute("aria-label", item.name);
+          opt.title = item.name;
+          if (kind === "divider") {
+            opt.innerHTML =
+              lookPickerDividerOptionHtml(item.id) +
+              '<span class="poster-picker__option-caption">' + item.name + "</span>";
+          } else {
+            opt.innerHTML =
+              lookPickerThemeOptionHtml(item) +
+              '<span class="poster-picker__option-caption">' + item.name + "</span>";
+          }
+          opt.addEventListener("click", () => {
+            if (kind === "divider") setActiveDividerStyle(item.id);
+            else setActiveDeckTheme(item.id);
+            if (typeof closeAllPosterPickers === "function") closeAllPosterPickers();
+            trigger.focus();
+          });
+          menu.appendChild(opt);
+        });
+
+        trigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const opening = menu.hidden;
+          if (typeof closeHeaderMenus === "function") closeHeaderMenus();
+          if (typeof closeAllPosterPickers === "function") closeAllPosterPickers(picker);
+          menu.hidden = !opening;
+          trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+          if (opening && typeof scrollPosterPickerMenuIntoView === "function") {
+            scrollPosterPickerMenuIntoView(menu);
+          }
+        });
+      });
+      syncLookPickerMenus();
+      paintMiniDividerPreview($("mw-deck-divider-preview"), activeDividerStyle);
     }
 
     function updateThemeIndicators() {
@@ -12084,6 +12268,7 @@
       window.getActiveDeckTheme = () => activeTheme;
       window.getActiveDividerStyle = () => activeDividerStyle;
       syncDeckThemeHiddenInput();
+      initLookPickers();
       updateReviewDeckThemeSummary();
     })();
 
@@ -25258,6 +25443,7 @@
 
     function enhanceVerbumSelect(select) {
       if (!select || select.closest(".vb-select") || select.dataset.vbSelect === "off") return;
+      if (select.classList.contains("sr-only") || select.getAttribute("aria-hidden") === "true") return;
       if (select.classList.contains("mass-song-plan-lang-select")) return;
       const wrap = document.createElement("div");
       wrap.className = "vb-select";
@@ -25410,6 +25596,7 @@
 
     function initDividerPosterPickers() {
       document.querySelectorAll("[data-poster-picker]").forEach((picker) => {
+        if (picker.hasAttribute("data-look-picker")) return;
         const trigger = picker.querySelector(".poster-picker__trigger");
         const menu = picker.querySelector(".poster-picker__menu");
         if (!trigger || !menu) return;
@@ -27000,34 +27187,48 @@
       });
     }
 
+    function readAiPosterTransparencyPct() {
+      const el = $("flow-ai-poster-transparency");
+      if (!el) return 10;
+      let n = Number(el.value);
+      if (!Number.isFinite(n)) n = 10;
+      return Math.max(0, Math.min(10, Math.round(n)));
+    }
+
+    function syncAiPosterTransparencyLabel() {
+      const el = $("flow-ai-poster-transparency");
+      const label = $("flow-ai-poster-transparency-label");
+      if (!el) return;
+      const pct = readAiPosterTransparencyPct();
+      el.value = String(pct);
+      el.setAttribute("aria-valuenow", String(pct));
+      el.setAttribute("aria-valuetext", pct + " percent");
+      if (label) label.textContent = pct + "%";
+    }
+
     function readOpenAiPosterSettings() {
+      const styleEl = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const style = (styleEl && styleEl.value) || "cinematic";
+      const transparencyPct = readAiPosterTransparencyPct();
       if (!isFeatureEnabled("ai_image_generation")) {
         return {
           useOpenai: false,
           useGemini: false,
           useAi: false,
           backend: null,
-          style: "cinematic",
+          style,
+          transparencyPct,
         };
       }
       syncAiPosterToggleState();
-      const flowAi = $("flow-use-ai-poster");
-      const posterAi = $("poster-use-ai-poster");
-      const useAi = !!(
-        (flowAi && flowAi.checked) ||
-        (posterAi && posterAi.checked) ||
-        ($("flow-use-openai-poster") && $("flow-use-openai-poster").checked) ||
-        ($("flow-use-gemini-poster") && $("flow-use-gemini-poster").checked) ||
-        ($("poster-use-openai-poster") && $("poster-use-openai-poster").checked) ||
-        ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)
-      );
-      const styleEl = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const useAi = typeof areWeeklyAiPostersReady === "function" && areWeeklyAiPostersReady();
       return {
         useOpenai: useAi,
         useGemini: false,
         useAi,
         backend: useAi ? "openai" : null,
-        style: (styleEl && styleEl.value) || "cinematic",
+        style,
+        transparencyPct,
       };
     }
 
@@ -27043,64 +27244,48 @@
     }
 
     function migrateLegacyAiPosterToggles() {
-      const masters = ["flow-use-ai-poster", "poster-use-ai-poster"]
-        .map((id) => $(id))
-        .filter(Boolean);
-      if (!masters.length || masters.some((el) => el.checked)) return;
-      const legacyOn = [
-        "flow-use-openai-poster",
-        "flow-use-gemini-poster",
-        "poster-use-openai-poster",
-        "poster-use-gemini-poster",
-      ].some((id) => {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
         const el = $(id);
-        return !!(el && el.checked);
-      });
-      if (legacyOn) masters.forEach((el) => { el.checked = true; });
-    }
-
-    function syncAiPosterToggleState() {
-      const masters = ["flow-use-ai-poster", "poster-use-ai-poster"]
-        .map((id) => $(id))
-        .filter(Boolean);
-      // Masters are the source of truth. Never re-enable from legacy checkboxes here —
-      // that snapped the switch back On after the user turned it Off.
-      const on = masters.some((el) => el.checked);
-      masters.forEach((el) => { el.checked = on; });
-      ["flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
-        const el = $(id);
-        if (el) el.checked = on;
+        if (el) el.checked = true;
       });
       ["flow-use-gemini-poster", "poster-use-gemini-poster"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = false;
       });
-      setAiPosterSwitchLabel(on);
+    }
+
+    function syncAiPosterToggleState() {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+        const el = $(id);
+        if (el) el.checked = true;
+      });
+      ["flow-use-gemini-poster", "poster-use-gemini-poster"].forEach((id) => {
+        const el = $(id);
+        if (el) el.checked = false;
+      });
+      setAiPosterSwitchLabel(true);
     }
 
     function syncOpenAiPosterUi() {
       syncAiPosterToggleState();
-      const { useAi } = readOpenAiPosterSettings();
       const litWrap = $("poster-liturgical-template-wrap");
       if (litWrap) litWrap.hidden = true;
       ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         const field = el.closest(".field") || el.closest(".flow-setup-footer__toggle-item") || el;
-        field.style.opacity = useAi ? "1" : "0.55";
-        field.style.pointerEvents = useAi ? "" : "none";
-        field.setAttribute("aria-disabled", useAi ? "false" : "true");
+        field.style.opacity = "1";
+        field.style.pointerEvents = "";
+        field.setAttribute("aria-disabled", "false");
       });
       ["flow-openai-poster-style", "poster-openai-poster-style"].forEach((id) => {
         const el = $(id);
         if (!el) return;
-        el.disabled = !useAi;
+        el.disabled = false;
         const wrap = el.closest(".vb-select");
-        if (wrap) {
-          if (!useAi) closeVerbumSelect(wrap);
-          syncVerbumSelectTrigger(el);
-        }
+        if (wrap) syncVerbumSelectTrigger(el);
       });
+      if (typeof syncWeeklyPosterSelectionUi === "function") syncWeeklyPosterSelectionUi();
     }
 
     async function refreshAiImageQuotaHint() {
@@ -27124,7 +27309,8 @@
           el.style.color = q.allowed ? "" : "var(--warn)";
         });
         const disableAi = !q.allowed;
-        ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster", "poster-use-openai-poster", "poster-use-gemini-poster"].forEach((id) => {
+        // Keep Mass Builder weekly style path enabled; server enforces quota on generate.
+        ["poster-use-ai-poster", "poster-use-openai-poster", "poster-use-gemini-poster"].forEach((id) => {
           const el = $(id);
           if (!el) return;
           el.disabled = disableAi;
@@ -27143,8 +27329,362 @@
       ["flow-openai-poster-style", "poster-openai-poster-style", "mass-date"].forEach((id) => {
         const el = $(id);
         if (!el) return;
-        el.addEventListener("change", () => { refreshAiImageQuotaHint(); });
+        el.addEventListener("change", () => {
+          if (id === "mass-date") refreshWeeklyStylePosters();
+          syncWeeklyPosterSelectionUi();
+          void refreshAiImageQuotaHint();
+        });
       });
+      initWeeklyStylePosters();
+    }
+
+    var weeklyPosterAutoTimer = 0;
+    var weeklyPosterEnsureInflight = false;
+    var weeklyPosterCatalogState = { ready: false, sunday: "", date: "", readyCount: 0, total: 0 };
+
+    function weeklyPosterMassDate() {
+      const el = $("mass-date") || $("flow-mass-date");
+      return el && el.value ? String(el.value).trim() : "";
+    }
+
+    function formatWeeklyPosterSundayLabel(iso) {
+      const raw = String(iso || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw || "this";
+      try {
+        const d = new Date(raw + "T12:00:00");
+        if (Number.isNaN(d.getTime())) return raw;
+        return d.toLocaleDateString(undefined, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      } catch (_e) {
+        return raw;
+      }
+    }
+
+    function areWeeklyAiPostersReady() {
+      return !!weeklyPosterCatalogState.ready;
+    }
+
+    function syncWeeklyAiPosterGate(catalog) {
+      const gate = $("mw-ai-poster-gate");
+      const body = $("mw-ai-poster-body");
+      const wrap = $("flow-openai-style-wrap");
+      const msg = $("mw-ai-poster-gate-msg");
+      const tape = $("mw-ai-poster-gate-repeat");
+      const sa = isWeeklyPosterSuperadmin();
+      if (catalog && typeof catalog === "object") {
+        const ready = Number(catalog.ready_count || 0);
+        const total = Number(catalog.total || 0);
+        weeklyPosterCatalogState = {
+          ready: total > 0 && ready >= total,
+          sunday: String(catalog.sunday || ""),
+          date: String(catalog.date || weeklyPosterMassDate() || ""),
+          readyCount: ready,
+          total: total,
+        };
+      }
+      const dateLabel = formatWeeklyPosterSundayLabel(
+        weeklyPosterCatalogState.sunday || weeklyPosterCatalogState.date || weeklyPosterMassDate()
+      );
+      const unlocked = areWeeklyAiPostersReady();
+      if (gate) {
+        gate.hidden = unlocked;
+        gate.setAttribute("data-ai-ready", unlocked ? "1" : "0");
+      }
+      if (wrap) wrap.classList.toggle("is-ai-poster-locked", !unlocked);
+      const section = $("mw-ai-poster-section");
+      if (section) section.classList.toggle("is-ai-poster-locked", !unlocked);
+      if (body) {
+        body.setAttribute("aria-disabled", unlocked ? "false" : "true");
+      }
+      if (msg) {
+        msg.textContent = unlocked
+          ? ""
+          : ('AI posters aren\'t available for the "' + dateLabel + '" Mass Sunday — wait for SA.');
+      }
+      if (tape) {
+        const line = "AI POSTERS AREN'T AVAILABLE · WAIT FOR SA · ";
+        tape.textContent = line.repeat(8);
+      }
+      window.areWeeklyAiPostersReady = areWeeklyAiPostersReady;
+    }
+
+    function syncWeeklyPosterSelectionUi() {
+      const sel = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const track = $("mw-weekly-posters-track");
+      const viewport = $("mw-weekly-posters-viewport");
+      if (!track) return;
+      const val = sel ? String(sel.value || "cinematic") : "cinematic";
+      const pick = val === "auto" ? "cinematic" : val;
+      let selectedBtn = null;
+      track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+        const on = btn.getAttribute("data-weekly-style") === pick;
+        btn.classList.toggle("is-selected", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+        if (on) selectedBtn = btn;
+      });
+      if (selectedBtn && viewport) {
+        const left = selectedBtn.offsetLeft;
+        if (Math.abs(viewport.scrollLeft - left) > 4) {
+          viewport.scrollTo({ left: left, behavior: "smooth" });
+        }
+      }
+    }
+
+    function setWeeklyPosterStyle(styleId) {
+      const sid = String(styleId || "cinematic").trim() || "cinematic";
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+        const el = $(id);
+        if (el) el.checked = true;
+      });
+      ["flow-openai-poster-style", "poster-openai-poster-style"].forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        if (el.value !== sid) {
+          el.value = sid;
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        if (typeof refreshVerbumSelect === "function") refreshVerbumSelect(el);
+      });
+      syncAiPosterToggleState();
+      syncWeeklyPosterSelectionUi();
+      if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+    }
+
+    function scrollWeeklyPostersBy(dir) {
+      const viewport = $("mw-weekly-posters-viewport");
+      if (!viewport) return;
+      const delta = Math.max(1, viewport.clientWidth) * (dir < 0 ? -1 : 1);
+      viewport.scrollBy({ left: delta, behavior: "smooth" });
+    }
+
+    function stopWeeklyPosterAutoScroll() {
+      if (weeklyPosterAutoTimer) {
+        clearInterval(weeklyPosterAutoTimer);
+        weeklyPosterAutoTimer = 0;
+      }
+    }
+
+    function startWeeklyPosterAutoScroll() {
+      stopWeeklyPosterAutoScroll();
+      const host = $("mw-weekly-posters");
+      const viewport = $("mw-weekly-posters-viewport");
+      if (!host || !viewport) return;
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      weeklyPosterAutoTimer = setInterval(() => {
+        if (host.matches(":hover") || host.classList.contains("is-paused")) return;
+        const max = viewport.scrollWidth - viewport.clientWidth;
+        if (max <= 8) return;
+        if (viewport.scrollLeft >= max - 4) {
+          viewport.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          scrollWeeklyPostersBy(1);
+        }
+      }, 4200);
+    }
+
+    function renderWeeklyStylePosterCards(items) {
+      const track = $("mw-weekly-posters-track");
+      if (!track) return;
+      const list = Array.isArray(items) ? items : [];
+      track.innerHTML = list.map((item) => {
+        const id = escapeHtml(item.id || "");
+        const label = escapeHtml(item.label || item.id || "Style");
+        const ready = !!item.ready;
+        const src = escapeHtml(item.thumb_url || item.proxy_url || "");
+        const img = ready && src
+          ? ('<img class="mw-weekly-posters__img" src="' + src + '" alt="" loading="lazy" />')
+          : '<div class="mw-weekly-posters__placeholder" aria-hidden="true"></div>';
+        return (
+          '<button type="button" class="mw-weekly-posters__card' + (ready ? "" : " is-pending") + '" ' +
+            'role="option" data-weekly-style="' + id + '" aria-selected="false" title="' + label + '">' +
+            '<span class="mw-weekly-posters__frame">' + img + "</span>" +
+            '<span class="mw-weekly-posters__label">' + label + "</span>" +
+            (ready ? "" : '<span class="mw-weekly-posters__badge">Not generated yet</span>') +
+          "</button>"
+        );
+      }).join("");
+      track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!areWeeklyAiPostersReady() && !isWeeklyPosterSuperadmin()) return;
+          setWeeklyPosterStyle(btn.getAttribute("data-weekly-style"));
+          const host = $("mw-weekly-posters");
+          if (host) {
+            host.classList.add("is-paused");
+            setTimeout(() => host.classList.remove("is-paused"), 8000);
+          }
+        });
+      });
+      syncWeeklyPosterSelectionUi();
+      syncWeeklyPosterGenerateUi();
+    }
+
+    function isWeeklyPosterSuperadmin() {
+      return !!(
+        document.body.classList.contains("is-superadmin") ||
+        (typeof churchMembershipState !== "undefined" && churchMembershipState && churchMembershipState.is_superadmin)
+      );
+    }
+
+    function syncWeeklyPosterGenerateUi(catalog) {
+      const btn = $("mw-weekly-posters-generate");
+      const status = $("mw-weekly-posters-gen-status");
+      const toolbar = btn && btn.closest("[data-superadmin-only]");
+      const sa = isWeeklyPosterSuperadmin();
+      if (toolbar) toolbar.hidden = !sa;
+      if (!btn) return;
+      if (!sa) {
+        btn.hidden = true;
+        if (status) status.textContent = "";
+        return;
+      }
+      const ready = catalog ? Number(catalog.ready_count || 0) : 0;
+      const total = catalog ? Number(catalog.total || 0) : 0;
+      const missing = total > 0 ? total - ready : 5;
+      btn.hidden = false;
+      btn.disabled = !!weeklyPosterEnsureInflight || missing <= 0;
+      btn.textContent = missing <= 0
+        ? "Styles ready"
+        : (weeklyPosterEnsureInflight ? "Generating…" : ("Generate this week’s styles (" + missing + " missing)"));
+      if (status && !weeklyPosterEnsureInflight && missing <= 0) {
+        status.textContent = "Shared set is complete for this Sunday.";
+      }
+    }
+
+    async function generateWeeklyStylePosters() {
+      const date = weeklyPosterMassDate();
+      const btn = $("mw-weekly-posters-generate");
+      const status = $("mw-weekly-posters-gen-status");
+      const hint = $("mw-weekly-posters-hint");
+      if (!isWeeklyPosterSuperadmin()) return;
+      if (!date) {
+        if (status) status.textContent = "Set the Mass date first.";
+        return;
+      }
+      if (weeklyPosterEnsureInflight) return;
+      weeklyPosterEnsureInflight = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Generating…";
+      }
+      if (status) status.textContent = "Generating shared styles for all parishes…";
+      try {
+        const res = await fetch("/api/weekly-style-posters/ensure", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: date }),
+        });
+        const ensured = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error((ensured && (ensured.detail || ensured.error)) || "Generate failed");
+        }
+        const catalog = ensured.catalog || null;
+        if (catalog && catalog.items) {
+          renderWeeklyStylePosterCards(catalog.items);
+          const rc = Number(catalog.ready_count || 0);
+          const tc = Number(catalog.total || 0);
+          if (hint) {
+            hint.textContent = rc >= tc
+              ? ("Shared across all parishes · Sunday " + (catalog.sunday || date))
+              : ("Shared weekly set · " + rc + " of " + tc + " ready");
+          }
+          syncWeeklyPosterGenerateUi(catalog);
+          syncWeeklyAiPosterGate(catalog);
+        } else {
+          await refreshWeeklyStylePosters();
+        }
+        const genCount = Array.isArray(ensured.generated) ? ensured.generated.length : 0;
+        if (status) {
+          status.textContent = genCount
+            ? ("Generated " + genCount + " style" + (genCount === 1 ? "" : "s") + ".")
+            : "No new styles needed.";
+        }
+        if (typeof notify === "function") {
+          notify(genCount ? ("Weekly posters updated (" + genCount + " new).") : "Weekly posters already ready.", "ok");
+        }
+      } catch (err) {
+        if (status) status.textContent = (err && err.message) || "Generate failed";
+        if (typeof notify === "function") notify((err && err.message) || "Generate failed", "error");
+        syncWeeklyPosterGenerateUi();
+      } finally {
+        weeklyPosterEnsureInflight = false;
+      }
+    }
+
+    async function refreshWeeklyStylePosters() {
+      const date = weeklyPosterMassDate();
+      const hint = $("mw-weekly-posters-hint");
+      const track = $("mw-weekly-posters-track");
+      if (!track) return;
+      if (!date) {
+        if (hint) hint.textContent = "Set the Mass date to load this week’s shared poster styles.";
+        track.innerHTML = "";
+        syncWeeklyPosterGenerateUi();
+        syncWeeklyAiPosterGate({ ready_count: 0, total: 5, sunday: "", date: "" });
+        return;
+      }
+      try {
+        const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(date));
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error((data && data.detail) || "Load failed");
+        renderWeeklyStylePosterCards(data.items || []);
+        const ready = Number(data.ready_count || 0);
+        const total = Number(data.total || 0);
+        if (hint) {
+          hint.textContent = ready >= total && total
+            ? ("Shared across all parishes · Sunday " + (data.sunday || date))
+            : ("Shared weekly set · " + ready + " of " + total + " ready");
+        }
+        syncWeeklyPosterGenerateUi(data);
+        syncWeeklyAiPosterGate(data);
+        startWeeklyPosterAutoScroll();
+      } catch (_e) {
+        if (hint) hint.textContent = "Could not load weekly posters. You can still pick a style after AI art is on.";
+        renderWeeklyStylePosterCards([
+          { id: "cinematic", label: "Cinematic", ready: false },
+          { id: "realistic", label: "Realistic", ready: false },
+          { id: "renaissance", label: "Renaissance", ready: false },
+          { id: "stained_glass", label: "Stained Glass", ready: false },
+          { id: "modern", label: "Modern", ready: false },
+        ]);
+        syncWeeklyPosterGenerateUi();
+        syncWeeklyAiPosterGate({ ready_count: 0, total: 5, sunday: "", date: weeklyPosterMassDate() });
+      }
+    }
+
+    function initWeeklyStylePosters() {
+      const host = $("mw-weekly-posters");
+      const genBtn = $("mw-weekly-posters-generate");
+      if (genBtn && genBtn.dataset.bound !== "1") {
+        genBtn.dataset.bound = "1";
+        genBtn.addEventListener("click", () => { void generateWeeklyStylePosters(); });
+      }
+      if (!host || host.dataset.bound === "1") {
+        void refreshWeeklyStylePosters();
+        return;
+      }
+      host.dataset.bound = "1";
+      host.querySelectorAll("[data-weekly-nav]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const dir = parseInt(btn.getAttribute("data-weekly-nav") || "1", 10) || 1;
+          scrollWeeklyPostersBy(dir);
+          host.classList.add("is-paused");
+          setTimeout(() => host.classList.remove("is-paused"), 8000);
+        });
+      });
+      const viewport = $("mw-weekly-posters-viewport");
+      if (viewport) {
+        viewport.addEventListener("pointerdown", () => {
+          host.classList.add("is-paused");
+          setTimeout(() => host.classList.remove("is-paused"), 8000);
+        });
+      }
+      void refreshWeeklyStylePosters();
+      window.refreshWeeklyStylePosters = refreshWeeklyStylePosters;
+      window.setWeeklyPosterStyle = setWeeklyPosterStyle;
     }
 
     function bindOpenAiPosterControls() {
@@ -27161,6 +27701,19 @@
           if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
         });
       });
+      const transparencyEl = $("flow-ai-poster-transparency");
+      if (transparencyEl && !transparencyEl.dataset.boundTransparency) {
+        transparencyEl.dataset.boundTransparency = "1";
+        syncAiPosterTransparencyLabel();
+        transparencyEl.addEventListener("input", () => {
+          syncAiPosterTransparencyLabel();
+          if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+        });
+        transparencyEl.addEventListener("change", () => {
+          syncAiPosterTransparencyLabel();
+          if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+        });
+      }
       const textCheckboxes = ["flow-include-poster-text", "poster-include-poster-text"];
       textCheckboxes.forEach((id) => {
         const el = $(id);
@@ -28822,8 +29375,11 @@
         statusFn("Enter Mass date and select a celebrant in Basics before generating.", "error");
         return null;
       }
-      const posterOpts = readOpenAiPosterSettings();
-      const useAiPoster = o.include_ai != null ? !!o.include_ai : posterOpts.useAi;
+        const posterOpts = readOpenAiPosterSettings();
+      const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
+        ? window.areWeeklyAiPostersReady()
+        : !!posterOpts.useAi;
+      const useAiPoster = (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi) && weeklyReady;
       const aiBackend = o.ai_poster_backend || posterOpts.backend || "openai";
       const body = {
         date,
@@ -28837,6 +29393,10 @@
         include_ai_mass_poster: useAiPoster,
         ai_poster_backend: aiBackend,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
+        ai_poster_transparency_pct:
+          o.ai_poster_transparency_pct != null
+            ? Number(o.ai_poster_transparency_pct)
+            : posterOpts.transparencyPct,
       };
       const church = getCommunityName();
       if (church) body.community_name = church;
@@ -29009,9 +29569,23 @@
         const pendingKinds = (window.MassWizard && typeof window.MassWizard.consumeSlideKinds === "function")
           ? window.MassWizard.consumeSlideKinds()
           : (o.slide_kinds || null);
+        const partialAiRaw = (window.MassWizard && typeof window.MassWizard.consumePartialIncludeAiPoster === "function")
+          ? window.MassWizard.consumePartialIncludeAiPoster()
+          : (o.include_ai != null ? !!o.include_ai : null);
         if (pendingKinds && pendingKinds.length) {
           body.slide_kinds = pendingKinds;
-          body.include_ai_mass_poster = false;
+          // Partial generate defaults to no AI art unless cover_ai is selected AND weekly set is ready.
+          const wantAi = partialAiRaw == null ? false : !!partialAiRaw;
+          const weeklyReady = typeof window.areWeeklyAiPostersReady === "function"
+            ? window.areWeeklyAiPostersReady()
+            : false;
+          body.include_ai_mass_poster = wantAi && weeklyReady;
+          if (wantAi && !weeklyReady) {
+            // Fall back: keep non-AI cover if present, drop AI cover kind.
+            body.slide_kinds = pendingKinds
+              .filter((k) => k !== "cover_ai")
+              .concat(pendingKinds.includes("cover") ? [] : ["cover"]);
+          }
         }
         // Offline leaflet export (wizard "Offline leaflet" / Need offline leaflet?)
         if (o.include_leaflet || o.leaflet_only) {
@@ -34596,6 +35170,7 @@
     initCreateMenu();
     initVerbumSelects();
     initDividerPosterPickers();
+    if (typeof initLookPickers === "function") initLookPickers();
     migrateLegacyAiPosterToggles();
     syncOpenAiPosterUi();
     initGlobalSearch();

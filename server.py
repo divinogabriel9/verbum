@@ -1545,6 +1545,12 @@ class GenerateBody(BaseModel):
         max_length=L.AI_POSTER_STYLE,
         description="AI artwork style: cinematic | realistic | renaissance | stained_glass | modern | auto.",
     )
+    ai_poster_transparency_pct: float = Field(
+        10,
+        ge=0,
+        le=10,
+        description="Mass-divider AI poster fade: 0 (opaque) … 10 (softest). Applied only in the PPTX divider.",
+    )
     reuse_existing_poster: bool = Field(
         False,
         description="Server may silently reuse shared hero art for this date+style; weekly quota is still charged.",
@@ -1797,6 +1803,11 @@ class GenerateBody(BaseModel):
         self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
         div_style = str(self.divider_style or "").strip().lower()
         self.divider_style = div_style if div_style in {"divider1", "divider2", "divider3", "auto"} else "divider1"
+        try:
+            t = float(self.ai_poster_transparency_pct)
+        except (TypeError, ValueError):
+            t = 10.0
+        self.ai_poster_transparency_pct = max(0.0, min(10.0, t))
         if self.video_replacements:
             allowed = {
                 "kyrie",
@@ -2869,6 +2880,73 @@ def api_poster_exists(date: str, style: str = "cinematic") -> dict[str, Any]:
     if shared_hero_exists(date=iso, style=resolved_style):
         return {"exists": True, "source": "shared"}
     return {"exists": False, "source": None}
+
+
+@app.get("/api/weekly-style-posters")
+def api_weekly_style_posters(
+    date: str,
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Catalog of the 5 shared weekly AI style heroes for the Mass Sunday."""
+    from services.weekly_style_posters import catalog_for_date
+
+    payload = catalog_for_date(date, output_dir=_OUTPUT_DIR)
+    if not payload.get("ok"):
+        raise HTTPException(status_code=400, detail=payload.get("error") or "invalid_date")
+    return payload
+
+
+@app.get("/api/weekly-style-posters/image")
+def api_weekly_style_poster_image(
+    date: str,
+    style: str = "cinematic",
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> FileResponse:
+    """Serve a shared weekly style hero (local or downloaded from shared cache)."""
+    from services.ai_styles import resolve_ai_image_style
+    from services.weekly_style_posters import normalize_mass_date, resolve_hero_file, sunday_for_mass_date
+
+    mass = normalize_mass_date(date)
+    if not mass:
+        raise HTTPException(status_code=400, detail="invalid_date")
+    sunday = sunday_for_mass_date(mass)
+    resolved = resolve_ai_image_style((style or "cinematic").strip())
+    path = resolve_hero_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
+    if path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="poster_not_ready")
+    return FileResponse(path, media_type="image/png", filename=path.name)
+
+
+@app.post("/api/weekly-style-posters/ensure")
+async def api_weekly_style_posters_ensure(
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    """Superadmin-only: generate missing shared weekly style heroes for ``date``.
+
+    Shared across parishes via Supabase hero cache. Not auto-run for parish users yet.
+    Body or query: ``{"date":"YYYY-MM-DD"}``.
+    """
+    from services.weekly_style_posters import ensure_weekly_heroes, normalize_mass_date, weekly_style_ids
+
+    iso = normalize_mass_date(str(request.query_params.get("date") or ""))
+    if not iso:
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                iso = normalize_mass_date(str(body.get("date") or ""))
+        except Exception:
+            iso = None
+    if not iso:
+        raise HTTPException(status_code=400, detail="date is required (YYYY-MM-DD)")
+    if not (os.getenv("OPENAI_API_KEY") or "").strip():
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
+    # Always generate the full missing weekly set — never a single one-off style.
+    return ensure_weekly_heroes(
+        iso,
+        output_dir=_OUTPUT_DIR,
+        max_generate=max(1, len(weekly_style_ids())),
+    )
 
 
 def _enforce_ai_image_quota(
@@ -4896,22 +4974,47 @@ def api_generate(
         session, body.video_replacements, temp_assets=temp_assets
     )
 
-    # Prefer shared/local hero cache under the hood, but always burn weekly quota
-    # so the product still feels like a paid AI generation to the user.
+    # Prefer shared weekly heroes only — never generate a one-off poster here.
+    # If the Sunday set is not ready, fall back to non-AI dividers (no quota burn).
     reuse_poster = False
-    if body.include_ai_mass_poster and not body.leaflet_only:
-        backend = (body.ai_poster_backend or "openai").strip().lower()
-        style_key = (body.ai_poster_style or "cinematic").strip() or "cinematic"
-        exists_info = api_poster_exists(body.date.strip(), style_key)
-        reuse_poster = bool(exists_info.get("exists"))
-        _enforce_ai_image_quota(
-            session,
-            request,
-            source=f"mass-poster:{backend}",
+    include_ai = bool(body.include_ai_mass_poster) and not bool(body.leaflet_only)
+    if include_ai:
+        from services.ai_styles import resolve_ai_image_style
+        from services.weekly_style_posters import (
+            catalog_for_date,
+            normalize_mass_date,
+            style_ready,
+            sunday_for_mass_date,
         )
+
+        mass = normalize_mass_date(body.date.strip())
+        style_key = resolve_ai_image_style((body.ai_poster_style or "cinematic").strip() or "cinematic")
+        sunday = sunday_for_mass_date(mass) if mass else ""
+        catalog = catalog_for_date(mass or body.date.strip(), output_dir=_OUTPUT_DIR) if mass else {}
+        ready = int(catalog.get("ready_count") or 0)
+        total = int(catalog.get("total") or 0)
+        style_ok = bool(sunday and style_ready(sunday=sunday, style=style_key, output_dir=_OUTPUT_DIR))
+        # Require the full weekly set (all styles) before AI dividers are allowed.
+        if not (total > 0 and ready >= total and style_ok):
+            include_ai = False
+        else:
+            reuse_poster = True
+            _enforce_ai_image_quota(
+                session,
+                request,
+                source="mass-poster:weekly",
+            )
 
     try:
         print("[generate] building media…", flush=True)
+        parish_id = _session_parish_id(session) or "local"
+        parish_dna = None
+        try:
+            from services.parish_deck_dna import materialize_dna_for_generate
+
+            parish_dna = materialize_dna_for_generate(parish_id)
+        except Exception:
+            parish_dna = None
         result = generate_mass_media(
             body.date.strip(),
             body.celebrant.strip(),
@@ -4923,10 +5026,11 @@ def api_generate(
             leaflet_only=bool(body.leaflet_only),
             include_gospel_art=False,
             include_ai_mass_poster=False
-            if slide_kinds_payload or body.leaflet_only
-            else body.include_ai_mass_poster,
+            if body.leaflet_only
+            else include_ai,
             ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
             ai_poster_style=body.ai_poster_style.strip() or "cinematic",
+            ai_poster_transparency_pct=float(body.ai_poster_transparency_pct),
             reuse_existing_poster=reuse_poster,
             community_name=body.community_name.strip() if body.community_name else None,
             song_selections=song_map,
@@ -4976,6 +5080,7 @@ def api_generate(
             mass_language=body.mass_language,
             show_hymn_section_labels=bool(body.show_hymn_section_labels),
             slide_kinds=slide_kinds_payload,
+            parish_deck_dna=parish_dna,
         )
     finally:
         for p in temp_assets:
@@ -5303,6 +5408,13 @@ async def api_regenerate_pptx(
     video_paths = _materialize_video_replacements(
         session, body.video_replacements, temp_assets=temp_assets
     )
+    parish_dna = None
+    try:
+        from services.parish_deck_dna import materialize_dna_for_generate
+
+        parish_dna = materialize_dna_for_generate(_session_parish_id(session) or "local")
+    except Exception:
+        parish_dna = None
     try:
         result = await run_in_threadpool(
             regenerate_mass_pptx,
@@ -5358,6 +5470,7 @@ async def api_regenerate_pptx(
             video_replacements=video_paths or None,
             mass_language=body.mass_language,
             show_hymn_section_labels=bool(body.show_hymn_section_labels),
+            parish_deck_dna=parish_dna,
         )
     finally:
         for p in temp_assets:

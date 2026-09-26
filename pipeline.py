@@ -500,6 +500,7 @@ def generate_mass_media(
     include_ai_mass_poster: bool = False,
     ai_poster_backend: str = "openai",
     ai_poster_style: str = "cinematic",
+    ai_poster_transparency_pct: float = 10.0,
     reuse_existing_poster: bool = False,
     community_name: Optional[str] = None,
     song_selections: Optional[Mapping[str, str]] = None,
@@ -546,6 +547,7 @@ def generate_mass_media(
     mass_language: str = "english",
     show_hymn_section_labels: bool = False,
     slide_kinds: Optional[list[str]] = None,
+    parish_deck_dna: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     if community_name and str(community_name).strip():
         update_community(community_name=str(community_name).strip())
@@ -623,7 +625,7 @@ def generate_mass_media(
     hero_future = None
     compose_future = None
     if slide_kinds:
-        include_ai_mass_poster = False
+        # Partial generate may still request AI divider art via include_ai_mass_poster.
         include_social_exports = False
         include_leaflet = False
         leaflet_only = False
@@ -632,56 +634,36 @@ def generate_mass_media(
         include_ai_mass_poster = False
         include_social_exports = False
 
+    # Mass generate never creates a one-off AI poster. Only reuse shared weekly
+    # Sunday heroes prepared by superadmin; otherwise fall back to non-AI dividers.
     if include_ai_mass_poster:
-        if backend == "gemini":
-            try:
-                from services.env_config import gemini_api_key_configured, gemini_sdk_available
-
-                if not gemini_sdk_available():
-                    return GenerationResult(
-                        ok=False,
-                        error=(
-                            "The google-genai package is not installed. "
-                            "Run: pip install google-genai"
-                        ),
-                    )
-                if not gemini_api_key_configured():
-                    return GenerationResult(
-                        ok=False,
-                        error=(
-                            "GEMINI_API_KEY is required when “Generate poster with Gemini” "
-                            "is enabled. Add it in Settings."
-                        ),
-                    )
-            except ImportError:
-                if not (os.environ.get("GEMINI_API_KEY") or "").strip():
-                    return GenerationResult(
-                        ok=False,
-                        error="GEMINI_API_KEY is required when Gemini poster is enabled.",
-                    )
-        elif not (os.environ.get("OPENAI_API_KEY") or "").strip():
-            return GenerationResult(
-                ok=False,
-                error="OPENAI_API_KEY is required when “Generate poster with OpenAI” is enabled.",
+        try:
+            from services.weekly_style_posters import (
+                normalize_mass_date,
+                resolve_hero_file,
+                sunday_for_mass_date,
             )
-        from generators.ai_poster_generator import ensure_ai_hero
 
-        ai_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ai-poster")
-        print("[generate] AI hero started (overlaps lyrics + deck)", flush=True)
-        hero_future = ai_pool.submit(
-            ensure_ai_hero,
-            date,
-            style=ai_poster_style,
-            reuse_existing_hero=reuse_existing_poster,
-            gospel_quote=slide_line,
-            gospel_reference=gospel_ref,
-            liturgical_title=display_title,
-            gospel_text=gospel_text,
-            season_key=season_key,
-            image_backend=backend,
-            divider_style=layout_id,
-            analysis=gospel_analysis,
-        )
+            mass_iso = normalize_mass_date(date) or str(date or "").strip()
+            sunday = sunday_for_mass_date(mass_iso) if mass_iso else ""
+            weekly_hero = (
+                resolve_hero_file(sunday=sunday, style=ai_poster_style, output_dir=_out)
+                if sunday
+                else None
+            )
+        except Exception:
+            weekly_hero = None
+        if weekly_hero is not None and Path(weekly_hero).is_file():
+            hero_path = Path(weekly_hero)
+            print(f"[generate] reusing weekly AI hero {hero_path.name}", flush=True)
+        else:
+            include_ai_mass_poster = False
+            hero_path = None
+            logger.info(
+                "AI mass poster unavailable for %s style=%s — using non-AI dividers",
+                date,
+                ai_poster_style,
+            )
 
     # Ensure selected songs have lyrics before deck generation (best-effort auto-heal).
     try:
@@ -815,20 +797,11 @@ def generate_mass_media(
                 leaflet_path=leaflet_path,
             )
 
-        if include_ai_mass_poster and hero_future is not None:
-            try:
-                hero_path = hero_future.result()
-                print("[generate] AI hero ready — composing posters in parallel with PPTX", flush=True)
-            except Exception as exc:
-                label = "Gemini" if backend == "gemini" else "OpenAI"
-                logger.exception("%s poster generation failed", label)
-                return GenerationResult(
-                    ok=False,
-                    error=f"{label} poster generation failed: {exc}",
-                )
+        if include_ai_mass_poster and hero_path is not None:
+            print("[generate] weekly AI hero ready — composing posters in parallel with PPTX", flush=True)
             from generators.ai_poster_generator import compose_primary_posters_from_hero
 
-            assert ai_pool is not None
+            ai_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="ai-poster")
             compose_future = ai_pool.submit(
                 compose_primary_posters_from_hero,
                 date,
@@ -850,6 +823,8 @@ def generate_mass_media(
             # Non-AI liturgical/classic poster wallpapers removed — PPTX uses
             # deck themes / uploaded dividers only when AI poster is off.
             poster_path, poster_ppt_path = None, None
+            if not include_ai_mass_poster:
+                hero_path = None
 
         divider_for_ppt = _resolve_divider_poster_path(uploaded=divider_poster_path)
 
@@ -879,6 +854,7 @@ def generate_mass_media(
             liturgical_poster_png=hero_path,
             divider_poster_png=divider_for_ppt,
             divider_style=layout_id,
+            ai_poster_transparency_pct=ai_poster_transparency_pct,
             lotw_poster=lotw_poster,
             lote_poster=lote_poster,
             announcement_image_paths=announcement_image_paths,
@@ -915,6 +891,7 @@ def generate_mass_media(
             sanctus_language=sanctus_language,
             show_hymn_section_labels=show_hymn_section_labels,
             slide_kinds=slide_kinds,
+            parish_deck_dna=parish_deck_dna,
         )
 
         if compose_future is not None:
@@ -1013,6 +990,7 @@ def regenerate_mass_pptx(
     mass_language: str = "english",
     show_hymn_section_labels: bool = False,
     slide_kinds: Optional[list[str]] = None,
+    parish_deck_dna: Optional[Mapping[str, Any]] = None,
 ) -> GenerationResult:
     """Rebuild only the PowerPoint file (overwrites ``outputs/{stem}.pptx``)."""
     data = get_liturgical_data(date, language=mass_language)
@@ -1104,6 +1082,7 @@ def regenerate_mass_pptx(
         liturgical_poster_png=hero_path,
         divider_poster_png=divider_for_ppt,
         divider_style=layout_id,
+        ai_poster_transparency_pct=ai_poster_transparency_pct,
         lotw_poster=lotw_poster,
         lote_poster=lote_poster,
         announcement_image_paths=announcement_image_paths,
@@ -1140,6 +1119,7 @@ def regenerate_mass_pptx(
         sanctus_language=sanctus_language,
         show_hymn_section_labels=show_hymn_section_labels,
         slide_kinds=slide_kinds,
+        parish_deck_dna=parish_deck_dna,
     )
 
     return GenerationResult(

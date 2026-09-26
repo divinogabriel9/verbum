@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260922-sanctus-label" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260926-ai-overlay2" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -1774,6 +1774,18 @@
           </div>
         </div>
       </div>
+      <div class="mw-modal" id="mw-partial-poster-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-partial-poster-title">
+        <div class="mw-modal__card mw-partial-poster-card">
+          <h3 class="mw-modal__title" id="mw-partial-poster-title">Choose AI poster style</h3>
+          <p class="mw-modal__sub">Pick the weekly Gospel poster used as the Mass cover background, then generate.</p>
+          <div class="mw-partial-poster__grid" id="mw-partial-poster-grid" role="listbox" aria-label="AI poster styles"></div>
+          <p class="muted mw-partial-poster__hint" id="mw-partial-poster-hint" aria-live="polite"></p>
+          <div class="mw-modal__actions">
+            <button type="button" class="mw-btn mw-btn--generate" id="mw-partial-poster-go">Generate with this poster</button>
+            <button type="button" class="mw-btn mw-btn--ghost" id="mw-partial-poster-back">Back</button>
+          </div>
+        </div>
+      </div>
       <div class="mw-modal" id="flow-custom-slide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="flow-custom-slide-modal-title">
         <div class="mw-modal__card mw-custom-slide-modal__card">
           <h3 class="mw-modal__title" id="flow-custom-slide-modal-title">Add custom slide</h3>
@@ -2659,6 +2671,9 @@
                                     <button type="button" class="mw-media-dd__item" role="menuitem" data-mw-link-media="video" data-mw-media-slot="sanctus::default">Link video</button>
                                   </div>
                                 </span>
+                                <div class="mw-rite-media-bar">
+                                  <div class="mw-option__media mass-song-media-row" data-mw-media-row="sanctus::default" data-mw-rite-media="1" data-mw-media-section="sanctus" data-mw-media-lang="default"></div>
+                                </div>
                                 <div class="mw-rite-preview" data-mw-rite-preview>
                                   <div class="mw-rite-preview__detail" aria-hidden="true">
                                     <span class="mw-rite-preview__actions">
@@ -2671,7 +2686,6 @@
                                   </button>
                                 </div>
                               </div>
-                              <div class="mw-option__media mass-song-media-row" data-mw-media-row="sanctus::default" data-mw-rite-media="1" data-mw-media-section="sanctus" data-mw-media-lang="default"></div>
                             </div>
                           </div>
                         </div>
@@ -2742,84 +2756,164 @@
                 <article class="flow-bento-cell flow-setup-card2 mw-extras-block" id="mass-step-target-media" data-mw-step="6" hidden>
                   <header class="mw-extras-block__head">
                     <h3 class="mw-extras-block__title">Look &amp; posters</h3>
-                    <p class="mw-extras-block__sub muted">Slide theme, divider templates, AI art, and optional uploads.</p>
+                    <p class="mw-extras-block__sub muted">Slide theme, liturgy dividers, and this week’s shared Gospel poster styles.</p>
                   </header>
-                  <div class="mw-card mw-deck-theme" id="mw-deck-theme-card">
-                    <div class="mw-card__head">
-                      <h3>Look &amp; liturgy posters</h3>
-                      <button type="button" class="ghost mini" id="mw-deck-theme-change">Change</button>
-                    </div>
-                    <div class="mw-look-previews" id="mw-deck-theme-summary">
-                      <div class="mw-look-previews__rail">
-                        <div class="mw-look-preview mw-deck-theme-summary__preview" id="mw-deck-theme-preview" data-theme-id="theme1" aria-hidden="true">
-                          <div class="mw-dt-kicker" id="mw-deck-theme-preview-kicker">Liturgy of the Word</div>
-                          <div class="mw-dt-title" id="mw-deck-theme-preview-title">First Reading</div>
-                          <div class="mw-dt-body" id="mw-deck-theme-preview-body">A reading from the Book…</div>
+                  <div class="mw-look-top-row" id="mw-look-top-row">
+                    <div class="mw-card mw-deck-theme" id="mw-deck-theme-card">
+                      <div class="mw-card__head">
+                        <h3>Look &amp; liturgy posters</h3>
+                      </div>
+                      <button type="button" class="ghost mini sr-only" id="mw-deck-theme-change" hidden tabindex="-1">Change</button>
+                      <div class="mw-look-pickers" id="mw-deck-theme-summary">
+                        <div class="mw-look-picker">
+                          <span class="mw-look-picker__label" id="mw-deck-theme-label">Overall PowerPoint theme</span>
+                          <div
+                            class="poster-picker poster-picker--look-inline poster-picker--theme"
+                            data-poster-picker
+                            data-look-picker="theme"
+                            data-target="flow-deck-theme"
+                          >
+                            <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="mw-deck-theme-label">
+                              <div class="mw-look-preview mw-deck-theme-summary__preview" id="mw-deck-theme-preview" data-theme-id="theme1" aria-hidden="true">
+                                <div class="mw-dt-kicker" id="mw-deck-theme-preview-kicker">Liturgy of the Word</div>
+                                <div class="mw-dt-title" id="mw-deck-theme-preview-title">First Reading</div>
+                                <div class="mw-dt-body" id="mw-deck-theme-preview-body">A reading from the Book…</div>
+                              </div>
+                              <span class="poster-picker__caption" id="mw-deck-theme-name">LiturgyFlow</span>
+                              <span class="poster-picker__caret" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                              </span>
+                            </button>
+                            <div class="poster-picker__menu" role="listbox" aria-label="Overall PowerPoint theme" hidden></div>
+                          </div>
+                          <span id="mw-deck-theme-note" class="sr-only"></span>
                         </div>
-                        <div
-                          class="poster-picker poster-picker--pair poster-picker--look-inline"
-                          data-poster-picker
-                          data-pair="1"
-                          data-lotw-target="flow-lotw-poster"
-                          data-lote-target="flow-lote-poster"
-                          data-name="Liturgy divider"
-                        >
-                          <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-liturgy-poster-label">
-                            <span class="poster-picker__pair" aria-hidden="true">
-                              <span class="poster-picker__pair-item">
-                                <img class="poster-picker__current mw-look-preview" data-pair-role="lotw" src="/static/images/posters/lotw1.png" alt="" loading="lazy" />
-                                <span class="poster-picker__pair-caption">Word</span>
+                        <div class="mw-look-picker">
+                          <span class="mw-look-picker__label" id="mw-deck-divider-label">Mass divider layout</span>
+                          <div
+                            class="poster-picker poster-picker--look-inline poster-picker--divider"
+                            data-poster-picker
+                            data-look-picker="divider"
+                            data-target="flow-divider-style"
+                          >
+                            <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="mw-deck-divider-label">
+                              <span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--classic" id="mw-deck-divider-preview" data-divider-style="divider1" aria-hidden="true"></span>
+                              <span class="poster-picker__caption" id="mw-deck-divider-note">Classic</span>
+                              <span class="poster-picker__caret" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                               </span>
-                              <span class="poster-picker__pair-item">
-                                <img class="poster-picker__current mw-look-preview" data-pair-role="lote" src="/static/images/posters/lote1.png" alt="" loading="lazy" />
-                                <span class="poster-picker__pair-caption">Eucharist</span>
+                            </button>
+                            <div class="poster-picker__menu" role="listbox" aria-label="Mass divider layout" hidden></div>
+                          </div>
+                        </div>
+                        <div class="mw-look-picker">
+                          <span class="mw-look-picker__label" id="flow-liturgy-poster-label">Liturgy divider posters</span>
+                          <div
+                            class="poster-picker poster-picker--pair poster-picker--look-inline"
+                            data-poster-picker
+                            data-pair="1"
+                            data-lotw-target="flow-lotw-poster"
+                            data-lote-target="flow-lote-poster"
+                            data-name="Liturgy divider"
+                          >
+                            <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-liturgy-poster-label">
+                              <span class="poster-picker__pair" aria-hidden="true">
+                                <span class="poster-picker__pair-item">
+                                  <img class="poster-picker__current mw-look-preview" data-pair-role="lotw" src="/static/images/posters/lotw1.png" alt="" loading="lazy" />
+                                  <span class="poster-picker__pair-caption">Word</span>
+                                </span>
+                                <span class="poster-picker__pair-item">
+                                  <img class="poster-picker__current mw-look-preview" data-pair-role="lote" src="/static/images/posters/lote1.png" alt="" loading="lazy" />
+                                  <span class="poster-picker__pair-caption">Eucharist</span>
+                                </span>
                               </span>
-                            </span>
-                            <span class="poster-picker__caret" aria-hidden="true">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                            </span>
-                          </button>
-                          <div class="poster-picker__menu" role="listbox" aria-label="Liturgy divider poster pairs" hidden></div>
+                              <span class="poster-picker__caret" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                              </span>
+                            </button>
+                            <div class="poster-picker__menu" role="listbox" aria-label="Liturgy divider poster pairs" hidden></div>
+                          </div>
                         </div>
                       </div>
-                      <div class="mw-look-previews__meta">
-                        <strong id="mw-deck-theme-name">LiturgyFlow</strong>
-                        <span class="flow-poster-picker-label" id="flow-liturgy-poster-label">Liturgy divider posters</span>
-                        <span id="mw-deck-theme-note" class="sr-only"></span>
-                        <span id="mw-deck-divider-note" class="sr-only"></span>
-                      </div>
+                      <input type="hidden" id="flow-deck-theme" value="theme1" />
+                      <input type="hidden" id="flow-divider-style" value="divider1" />
+                      <input type="hidden" id="flow-lotw-poster" value="lotw1" />
+                      <input type="hidden" id="flow-lote-poster" value="lote1" />
                     </div>
-                    <input type="hidden" id="flow-deck-theme" value="theme1" />
-                    <input type="hidden" id="flow-divider-style" value="divider1" />
-                    <input type="hidden" id="flow-lotw-poster" value="lotw1" />
-                    <input type="hidden" id="flow-lote-poster" value="lote1" />
                   </div>
                   <div class="flow-setup-row flow-setup-row--poster-style">
-                    <div class="flow-poster-style">
-                      <div class="field flow-setup-footer__toggle-item" id="flow-openai-style-wrap">
-                        <label for="flow-openai-poster-style">Visual style — how Gospel-inspired artwork looks</label>
-                        <select id="flow-openai-poster-style">
+                    <div class="flow-poster-style flow-poster-style--weekly">
+                        <div class="field flow-setup-footer__toggle-item flow-poster-style__weekly-main" id="flow-openai-style-wrap">
+                        <div class="mw-ai-poster-section" id="mw-ai-poster-section">
+                        <div class="mw-weekly-posters__head">
+                          <div>
+                            <label for="flow-openai-poster-style">Weekly Gospel posters — pick a style</label>
+                            <p class="muted flow-setup-field-hint" id="mw-weekly-posters-hint">Shared across all parishes for this Sunday. Your pick becomes the Mass divider background.</p>
+                          </div>
+                          <div class="flow-setup-quota-badge">
+                            <span class="flow-setup-quota-badge__dot" aria-hidden="true"></span>
+                            <p class="ai-image-quota-hint" id="flow-ai-quota-hint" aria-live="polite"></p>
+                          </div>
+                        </div>
+                        <div class="mw-weekly-posters__toolbar" data-superadmin-only>
+                          <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-generate" hidden>
+                            Generate this week’s styles
+                          </button>
+                          <span class="muted" id="mw-weekly-posters-gen-status" aria-live="polite"></span>
+                        </div>
+                        <div class="mw-ai-poster-body" id="mw-ai-poster-body">
+                        <input type="checkbox" id="flow-use-ai-poster" class="sr-only" checked tabindex="-1" aria-hidden="true" />
+                        <input type="checkbox" id="flow-use-openai-poster" class="sr-only" checked tabindex="-1" aria-hidden="true" />
+                        <input type="checkbox" id="flow-use-gemini-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
+                        <div class="mw-weekly-posters" id="mw-weekly-posters" data-weekly-posters>
+                          <div class="mw-weekly-posters__stage">
+                            <button type="button" class="mw-weekly-posters__nav" data-weekly-nav="-1" aria-label="Previous styles">‹</button>
+                            <div class="mw-weekly-posters__viewport" id="mw-weekly-posters-viewport">
+                              <div class="mw-weekly-posters__track" id="mw-weekly-posters-track" role="listbox" aria-label="Weekly poster styles"></div>
+                            </div>
+                            <button type="button" class="mw-weekly-posters__nav" data-weekly-nav="1" aria-label="Next styles">›</button>
+                          </div>
+                        </div>
+                        <div class="mw-poster-transparency" id="mw-poster-transparency">
+                          <div class="mw-poster-transparency__row">
+                            <label for="flow-ai-poster-transparency">AI poster transparency</label>
+                            <span class="mw-poster-transparency__value" id="flow-ai-poster-transparency-label" aria-live="polite">10%</span>
+                          </div>
+                          <input
+                            type="range"
+                            id="flow-ai-poster-transparency"
+                            min="0"
+                            max="10"
+                            step="1"
+                            value="10"
+                            aria-valuemin="0"
+                            aria-valuemax="10"
+                            aria-valuenow="10"
+                            aria-valuetext="10 percent"
+                          />
+                          <div class="mw-poster-transparency__scale" aria-hidden="true">
+                            <span>0%</span>
+                            <span>10%</span>
+                          </div>
+                          <p class="muted flow-setup-field-hint">Fades the chosen poster behind Mass divider text. 0% = full strength, 10% = softest fade.</p>
+                        </div>
+                        </div>
+                        <select id="flow-openai-poster-style" class="sr-only" tabindex="-1" aria-hidden="true" data-vb-select="off">
                           <option value="auto">Auto — match the Gospel mood</option>
-                          <option value="cinematic">Cinematic</option>
+                          <option value="cinematic" selected>Cinematic</option>
                           <option value="realistic">Realistic</option>
                           <option value="renaissance">Renaissance</option>
                           <option value="stained_glass">Stained glass</option>
                           <option value="modern">Modern</option>
                         </select>
-                      </div>
-                      <div class="flow-poster-style__ai">
-                        <div class="flow-setup-quota-badge">
-                          <span class="flow-setup-quota-badge__dot" aria-hidden="true"></span>
-                          <p class="ai-image-quota-hint" id="flow-ai-quota-hint" aria-live="polite"></p>
+                        <div class="mw-ai-poster-gate" id="mw-ai-poster-gate" data-ai-ready="0" hidden>
+                          <div class="mw-ai-poster-gate__dim" aria-hidden="true"></div>
+                          <div class="mw-ai-poster-gate__tape" aria-hidden="true">
+                            <span class="mw-ai-poster-gate__repeat" id="mw-ai-poster-gate-repeat"></span>
+                          </div>
+                          <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
                         </div>
-                        <p class="flow-poster-style__ai-label">AI poster art</p>
-                        <label class="mw-switch">
-                          <input type="checkbox" id="flow-use-ai-poster" />
-                          <span class="mw-switch__track" aria-hidden="true"><span class="mw-switch__knob"></span></span>
-                          <span class="mw-switch__text">Off</span>
-                        </label>
-                        <input type="checkbox" id="flow-use-openai-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
-                        <input type="checkbox" id="flow-use-gemini-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3044,7 +3138,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260922-sanctus-label"></script>
+      <script src="/static/js/mw-wizard.js?v=20260926-ai-overlay2"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4176,6 +4270,18 @@
                   <button type="button" class="primary" id="btn-save-church-branding">Save settings</button>
                 </div>
                 <p class="status" id="settings-branding-status" aria-live="polite"></p>
+                <div class="field" id="parish-deck-dna-field">
+                  <label>Parish Deck DNA</label>
+                  <p class="muted" style="margin:0 0 10px;">Download a labeled scaffold, style fonts/sizes/backgrounds in PowerPoint, then upload. Mass dividers stay LiturgyFlow-owned. Keep the left-footer <code>LFDNA|…</code> labels.</p>
+                  <p class="muted" id="parish-deck-dna-status-text" style="margin:0 0 10px;" aria-live="polite">No custom DNA yet — Mass decks use Theme 1.</p>
+                  <div class="church-logo-upload-row" style="flex-wrap:wrap;gap:8px;">
+                    <button type="button" class="secondary" id="btn-parish-deck-dna-download" style="white-space:nowrap;">Download scaffold</button>
+                    <input type="file" id="parish-deck-dna-file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" style="flex:1;min-width:12rem;" />
+                    <button type="button" class="secondary" id="btn-parish-deck-dna-upload" style="white-space:nowrap;">Upload DNA</button>
+                    <button type="button" class="secondary" id="btn-parish-deck-dna-clear" hidden style="white-space:nowrap;">Clear DNA</button>
+                  </div>
+                  <p class="status" id="parish-deck-dna-status" aria-live="polite" style="margin-top:6px;font-size:0.85rem;"></p>
+                </div>
                 <div class="field">
                   <label for="settings-celebrant-new">Mass celebrants</label>
                   <p class="muted" style="margin:0 0 10px;">Saved to the app database. Names appear in Mass Builder → Basics.</p>
@@ -4644,7 +4750,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20260922-sanctus-label"></script>
+  <script src="/static/js/app.js?v=20260926-ai-overlay2"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>
