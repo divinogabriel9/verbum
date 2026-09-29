@@ -47,86 +47,6 @@ def _register(template: DividerTemplate) -> DividerTemplate:
     return template
 
 
-DIVIDER1 = _register(
-    DividerTemplate(
-        id="divider1",
-        name="Divider 1 · Classic",
-        description="Celebrant left, gospel quote card, bottom title bar.",
-        preview="",
-        has_heading=False,
-        boxes={
-            "celebrant_label": _box(
-                "celebrant_label", 1.405, 2.614, 4.604, 0.698, 37, 37, role="label"
-            ),
-            "celebrant_name": _box(
-                "celebrant_name",
-                0.292,
-                3.339,
-                7.206,
-                1.156,
-                61,
-                20,
-                single_line=True,
-                role="celebrant",
-            ),
-            "year_date": _box(
-                "year_date", 0.292, 4.844, 7.206, 0.95, 49, 28, italic=True, role="year_date"
-            ),
-            "co_celebrant_label": _box(
-                "co_celebrant_label",
-                1.405,
-                6.208,
-                4.604,
-                0.698,
-                37,
-                37,
-                optional=True,
-                role="label",
-            ),
-            "co_celebrant_name": _box(
-                "co_celebrant_name",
-                0.104,
-                6.966,
-                7.206,
-                1.156,
-                52,
-                20,
-                single_line=True,
-                optional=True,
-                role="co_celebrant",
-            ),
-            "gospel_quote": _box(
-                "gospel_quote",
-                7.546,
-                2.614,
-                11.784,
-                2.649,
-                39,
-                22,
-                bold=False,
-                role="quote",
-            ),
-            "gospel_citation": _box(
-                "gospel_citation", 10.256, 6.345, 6.364, 0.771, 41, 24, role="citation"
-            ),
-            "sunday_title": _box(
-                "sunday_title", 3.495, 9.199, 13.52, 1.271, 68, 32, role="title"
-            ),
-        },
-        panels=(
-            PanelBox(7.498, 1.388, 11.968, 6.702, role="quote_panel"),
-            PanelBox(0.985, 9.299, 18.03, 1.217, role="bottom_bar"),
-        ),
-        composition=CompositionProfile(
-            text_safe_zones={"left": 0.38, "right": 0.62, "bottom": 0.18},
-            visual_focus=(0.68, 0.40),
-            subject_position="right",
-            background_complexity={"left": "low", "center": "medium", "right": "medium"},
-            brightness_preference={"left": "dark", "center": "dark", "right": "dark"},
-        ),
-    )
-)
-
 DIVIDER2 = _register(
     DividerTemplate(
         id="divider2",
@@ -309,8 +229,13 @@ def resolve_divider_template_id(
     gospel_quote: str = "",
     sunday_title: str = "",
 ) -> str:
-    """Resolve a layout id. ``auto`` picks among existing templates only."""
+    """Resolve a layout id. ``auto`` picks among existing templates only.
+
+    Legacy ``divider1`` (Classic) maps to ``divider3`` — Classic was removed.
+    """
     key = str(selection or "").strip().lower() or DIVIDER_TEMPLATE_DEFAULT
+    if key == "divider1":
+        return DIVIDER_TEMPLATE_DEFAULT
     if key in _TEMPLATES:
         return key
     if key == "auto":

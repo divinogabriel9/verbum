@@ -93,7 +93,7 @@ class PosterContent:
     palette: Optional[PosterPalette] = None
     co_celebrant_name: str = ""
     heading: str = "HOLY EUCHARISTIC CELEBRATION"
-    divider_template_id: str = "divider1"
+    divider_template_id: str = "divider3"
 
     def resolved_palette(self) -> PosterPalette:
         return self.palette or palette_from_season(self.liturgical_season_key)

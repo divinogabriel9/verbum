@@ -15,8 +15,8 @@ SLIDE_HEIGHT_IN = 11.25
 ASPECT_RATIO = "16:9"
 HEADING_DEFAULT = "HOLY EUCHARISTIC CELEBRATION"
 
-DIVIDER_TEMPLATE_IDS = ("divider1", "divider2", "divider3")
-DIVIDER_TEMPLATE_DEFAULT = "divider1"
+DIVIDER_TEMPLATE_IDS = ("divider2", "divider3")
+DIVIDER_TEMPLATE_DEFAULT = "divider3"
 AI_STYLE_IDS = ("cinematic", "realistic", "renaissance", "stained_glass", "modern")
 AI_STYLE_DEFAULT = "cinematic"
 

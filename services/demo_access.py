@@ -23,6 +23,16 @@ DEMO_WATERMARK = "Liturgyflow.com"
 DEMO_DOWNLOAD_TTL_S = 30 * 60  # 30 minutes
 _ALLOWED_OUR_FATHER = frozenset({"english", "malay", "tagalog"})
 _ALLOWED_THEME_IDS = frozenset({"theme1", "theme2", "theme3"})
+_ALLOWED_MASS_LANGUAGES = frozenset({"english", "tagalog"})
+
+
+def validate_mass_language(choice: str) -> str:
+    c = str(choice or "english").strip().lower()
+    if c in {"filipino", "fil", "tl", "tgl"}:
+        c = "tagalog"
+    if c not in _ALLOWED_MASS_LANGUAGES:
+        return "english"
+    return c
 
 
 def _signing_secret() -> bytes:

@@ -2328,7 +2328,8 @@
     bindCalFetchToggleButton($("cal-admin-fetch-missing-btn"), () => fetchCalendarMonthReadings("missing"));
     bindCalFetchToggleButton($("cal-admin-fetch-month-btn"), () => {
       const source = currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
-      if (!confirm("Force-fetch all " + calendarCursor.toLocaleString(undefined, { month: "long" }) + " dates from " + source + "? Each date tries up to 3 times. Click the button again to stop.")) return;
+      const monthLabel = calendarCursor.toLocaleString(undefined, { month: "long" });
+      if (!confirm("Fetch unhealthy " + monthLabel + " dates from " + source + "? Healthy days are skipped. If you stopped earlier, this resumes from the last unfinished date. Click the button again to stop.")) return;
       fetchCalendarMonthReadings("all");
     });
     bindCalFetchToggleButton($("cal-readings-admin-fetch"), () => {

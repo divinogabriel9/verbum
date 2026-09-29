@@ -57,7 +57,7 @@ _ALLOWED: dict[str, frozenset[Any]] = {
     "hymn_lyrics_layout": frozenset({"single", "dual"}),
     "lotw_poster": frozenset({"lotw1", "lotw2", "lotw3", "lotw4"}),
     "lote_poster": frozenset({"lote1", "lote2", "lote3", "lote4"}),
-    "divider_style": frozenset({"divider1", "divider2", "divider3", "auto"}),
+    "divider_style": frozenset({"divider2", "divider3", "auto"}),
     "poster_template": frozenset({"liturgical_color", "classic_white"}),
     "include_church_logo": frozenset({True, False}),
     "include_church_name": frozenset({True, False}),
@@ -85,7 +85,7 @@ def snapshot_from_generate(
     include_footer: bool = False,
     lotw_poster: str = "lotw1",
     lote_poster: str = "lote1",
-    divider_style: str = "divider1",
+    divider_style: str = "divider3",
     poster_template: str = "liturgical_color",
     celebrant: str = "",
     season: str = "",
@@ -117,9 +117,11 @@ def snapshot_from_generate(
     lote = str(lote_poster or "lote1").strip().lower()
     if lote not in _ALLOWED["lote_poster"]:
         lote = "lote1"
-    div_style = str(divider_style or "divider1").strip().lower()
+    div_style = str(divider_style or "divider3").strip().lower()
+    if div_style == "divider1":
+        div_style = "divider3"
     if div_style not in _ALLOWED["divider_style"]:
-        div_style = "divider1"
+        div_style = "divider3"
     poster = str(poster_template or "liturgical_color").strip().lower()
     if poster not in _ALLOWED["poster_template"]:
         poster = "liturgical_color"

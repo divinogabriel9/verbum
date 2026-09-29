@@ -11781,12 +11781,12 @@
 
     // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
     // Theme 1 = LiturgyFlow (amber). Themes 2–3 are strict mono black/white.
-    // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (Gospel).
+    // Divider style is independent: divider2 (Stone & Light) | divider3 (Gospel).
+    // Legacy divider1 (Classic) maps to divider3.
     var DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
     var DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
     var DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
     var DIVIDER_STYLES = {
-      divider1: { id: "divider1", name: "Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
       divider2: { id: "divider2", name: "Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
       divider3: { id: "divider3", name: "Gospel", note: "Sunday title and celebrant on the left, gospel quote on the right panel." },
     };
@@ -11823,11 +11823,11 @@
       },
     ];
     var activeTheme = presetThemes[0];
-    var activeDividerStyle = "divider1";
+    var activeDividerStyle = "divider3";
     var customThemes = [];
     var deckThemeModalMode = "startup"; // "startup" | "review"
     var deckThemeModalPendingId = "theme1";
-    var deckDividerModalPendingId = "divider1";
+    var deckDividerModalPendingId = "divider3";
 
     function findPresetTheme(id) {
       const tid = String(id || "").trim().toLowerCase();
@@ -11836,9 +11836,9 @@
 
     function findDividerStyle(id) {
       const key = String(id || "").trim().toLowerCase();
-      // Auto was removed from the chooser; map legacy "auto" to Classic.
-      if (key === "auto") return DIVIDER_STYLES.divider1;
-      return DIVIDER_STYLES[key] || DIVIDER_STYLES.divider1;
+      // Auto / Classic (divider1) were removed; map legacy ids to Gospel.
+      if (key === "auto" || key === "divider1") return DIVIDER_STYLES.divider3;
+      return DIVIDER_STYLES[key] || DIVIDER_STYLES.divider3;
     }
 
     function pptThemePayload(theme) {
@@ -11908,7 +11908,8 @@
           "</span>";
         return;
       }
-      root.classList.add("deck-divider-mock--classic");
+      // Fallback → Gospel mock (Classic / divider1 removed).
+      root.classList.add("deck-divider-mock--gospel");
       root.innerHTML =
         '<span class="deck-divider-option__stripes">' +
           '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
@@ -11918,12 +11919,14 @@
         "</span>" +
         '<span class="deck-divider-mock__dark"></span>' +
         '<span class="deck-divider-mock__stage">' +
-          '<span class="d1-panel"></span>' +
-          '<span class="d1-bar"></span>' +
-          '<span class="d1-label">MASS CELEBRANT</span>' +
-          '<span class="d1-name">Celebrant</span>' +
-          '<span class="d1-quote">Gospel quote</span>' +
-          '<span class="d1-title">Sunday title</span>' +
+          '<span class="d3-panel"></span>' +
+          '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+          '<span class="d3-sunday">Sunday title</span>' +
+          '<span class="d3-year">YEAR · DATE</span>' +
+          '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+          '<span class="d3-name">Celebrant</span>' +
+          '<span class="d3-quote">“Gospel quote”</span>' +
+          '<span class="d3-cite"><span>GOSPEL</span><span>CITE</span></span>' +
         "</span>";
     }
 
@@ -11984,7 +11987,7 @@
         );
       }
       return (
-        '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--classic">' +
+        '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--gospel">' +
           '<span class="deck-divider-option__stripes">' +
             '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
             '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
@@ -11993,12 +11996,12 @@
           "</span>" +
           '<span class="deck-divider-mock__dark"></span>' +
           '<span class="deck-divider-mock__stage">' +
-            '<span class="d1-panel"></span>' +
-            '<span class="d1-bar"></span>' +
-            '<span class="d1-label">MASS CELEBRANT</span>' +
-            '<span class="d1-name">Celebrant</span>' +
-            '<span class="d1-quote">Gospel quote</span>' +
-            '<span class="d1-title">Sunday title</span>' +
+            '<span class="d3-panel"></span>' +
+            '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+            '<span class="d3-sunday">Sunday title</span>' +
+            '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+            '<span class="d3-name">Celebrant</span>' +
+            '<span class="d3-quote">“Gospel quote”</span>' +
           "</span>" +
         "</span>"
       );
@@ -12024,7 +12027,7 @@
         menu.dataset.lookReady = "1";
 
         const items = kind === "divider"
-          ? ["divider1", "divider3", "divider2"].map((id) => DIVIDER_STYLES[id])
+          ? ["divider3", "divider2"].map((id) => DIVIDER_STYLES[id])
           : presetThemes.slice();
 
         menu.innerHTML = "";
@@ -12151,7 +12154,7 @@
       deckThemeModalMode = o.mode === "review" ? "review" : "startup";
       const preferred = o.themeId || activeTheme.id || localStorage.getItem(DECK_THEME_DEFAULT_KEY) || "theme1";
       selectDeckThemeOption(preferred);
-      const preferredDiv = o.dividerStyle || activeDividerStyle || localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || "divider1";
+      const preferredDiv = o.dividerStyle || activeDividerStyle || localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || "divider3";
       selectDividerStyleOption(preferredDiv);
       const title = $("deck-theme-modal-title");
       const desc = $("deck-theme-modal-desc");
@@ -12187,9 +12190,9 @@
       })();
       const preferredDiv = (() => {
         try {
-          return localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || activeDividerStyle || "divider1";
+          return localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || activeDividerStyle || "divider3";
         } catch (_e3) {
-          return activeDividerStyle || "divider1";
+          return activeDividerStyle || "divider3";
         }
       })();
       setActiveDeckTheme(preferred);
@@ -27189,10 +27192,32 @@
 
     function readAiPosterTransparencyPct() {
       const el = $("flow-ai-poster-transparency");
-      if (!el) return 10;
+      if (!el) return 0;
       let n = Number(el.value);
-      if (!Number.isFinite(n)) n = 10;
+      if (!Number.isFinite(n)) n = 0;
       return Math.max(0, Math.min(10, Math.round(n)));
+    }
+
+    function syncAiPosterOpacityPreview() {
+      const preview = $("mw-poster-opacity-preview");
+      const img = $("mw-poster-opacity-preview-img");
+      if (!preview || !img) return;
+      const pct = readAiPosterTransparencyPct();
+      const selectedImg = document.querySelector(
+        "#mw-weekly-posters-track [data-weekly-style].is-selected img.mw-weekly-posters__img"
+      );
+      const src = selectedImg ? String(selectedImg.getAttribute("src") || "").trim() : "";
+      if (src) {
+        if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+        img.hidden = false;
+        preview.classList.add("is-ready");
+      } else {
+        img.removeAttribute("src");
+        img.hidden = true;
+        preview.classList.remove("is-ready");
+      }
+      // Match PPTX mapping: 0% = opaque, 10% ≈ 90% opacity.
+      img.style.opacity = String(Math.max(0, Math.min(1, 1 - pct / 100)));
     }
 
     function syncAiPosterTransparencyLabel() {
@@ -27204,6 +27229,42 @@
       el.setAttribute("aria-valuenow", String(pct));
       el.setAttribute("aria-valuetext", pct + " percent");
       if (label) label.textContent = pct + "%";
+      syncAiPosterOpacityPreview();
+    }
+
+    function bindAiPosterOpacityPreviewScrub() {
+      const stage = $("mw-poster-opacity-preview-stage");
+      const el = $("flow-ai-poster-transparency");
+      if (!stage || !el || stage.dataset.boundOpacityScrub === "1") return;
+      stage.dataset.boundOpacityScrub = "1";
+      let dragging = false;
+      const applyFromClientX = (clientX) => {
+        const rect = stage.getBoundingClientRect();
+        if (!rect.width) return;
+        const t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        // Left = 0% (opaque), right = 10% (softest).
+        el.value = String(Math.round(t * 10));
+        syncAiPosterTransparencyLabel();
+      };
+      stage.addEventListener("pointerdown", (e) => {
+        if (e.button != null && e.button !== 0) return;
+        dragging = true;
+        try { stage.setPointerCapture(e.pointerId); } catch (_err) { /* ignore */ }
+        applyFromClientX(e.clientX);
+        e.preventDefault();
+      });
+      stage.addEventListener("pointermove", (e) => {
+        if (!dragging) return;
+        applyFromClientX(e.clientX);
+      });
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        try { stage.releasePointerCapture(e.pointerId); } catch (_err) { /* ignore */ }
+        if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+      };
+      stage.addEventListener("pointerup", endDrag);
+      stage.addEventListener("pointercancel", endDrag);
     }
 
     function readOpenAiPosterSettings() {
@@ -27373,8 +27434,6 @@
       const body = $("mw-ai-poster-body");
       const wrap = $("flow-openai-style-wrap");
       const msg = $("mw-ai-poster-gate-msg");
-      const tape = $("mw-ai-poster-gate-repeat");
-      const sa = isWeeklyPosterSuperadmin();
       if (catalog && typeof catalog === "object") {
         const ready = Number(catalog.ready_count || 0);
         const total = Number(catalog.total || 0);
@@ -27405,9 +27464,10 @@
           ? ""
           : ('AI posters aren\'t available for the "' + dateLabel + '" Mass Sunday — wait for SA.');
       }
-      if (tape) {
-        const line = "AI POSTERS AREN'T AVAILABLE · WAIT FOR SA · ";
-        tape.textContent = line.repeat(8);
+      if (unlocked) {
+        startWeeklyPosterAutoScroll();
+      } else {
+        stopWeeklyPosterAutoScroll();
       }
       window.areWeeklyAiPostersReady = areWeeklyAiPostersReady;
     }
@@ -27432,6 +27492,7 @@
           viewport.scrollTo({ left: left, behavior: "smooth" });
         }
       }
+      syncAiPosterOpacityPreview();
     }
 
     function setWeeklyPosterStyle(styleId) {
@@ -27470,11 +27531,16 @@
 
     function startWeeklyPosterAutoScroll() {
       stopWeeklyPosterAutoScroll();
+      if (!areWeeklyAiPostersReady()) return;
       const host = $("mw-weekly-posters");
       const viewport = $("mw-weekly-posters-viewport");
       if (!host || !viewport) return;
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       weeklyPosterAutoTimer = setInterval(() => {
+        if (!areWeeklyAiPostersReady()) {
+          stopWeeklyPosterAutoScroll();
+          return;
+        }
         if (host.matches(":hover") || host.classList.contains("is-paused")) return;
         const max = viewport.scrollWidth - viewport.clientWidth;
         if (max <= 8) return;
@@ -27640,7 +27706,6 @@
         }
         syncWeeklyPosterGenerateUi(data);
         syncWeeklyAiPosterGate(data);
-        startWeeklyPosterAutoScroll();
       } catch (_e) {
         if (hint) hint.textContent = "Could not load weekly posters. You can still pick a style after AI art is on.";
         renderWeeklyStylePosterCards([
@@ -27705,6 +27770,7 @@
       if (transparencyEl && !transparencyEl.dataset.boundTransparency) {
         transparencyEl.dataset.boundTransparency = "1";
         syncAiPosterTransparencyLabel();
+        bindAiPosterOpacityPreviewScrub();
         transparencyEl.addEventListener("input", () => {
           syncAiPosterTransparencyLabel();
           if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
@@ -29499,10 +29565,10 @@
         activeTheme = resolvedTheme;
         body.custom_theme = pptThemePayload(resolvedTheme);
         const divStyleEl = $("flow-divider-style");
-        const divAllowed = ["divider1", "divider2", "divider3", "auto"];
+        const divAllowed = ["divider2", "divider3", "auto"];
         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
         const divHidden = (divStyleEl && divStyleEl.value) || "";
-        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider1");
+        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
         activeDividerStyle = divVal;
         if (divStyleEl) divStyleEl.value = divVal;
         body.divider_style = divVal;
@@ -29607,7 +29673,7 @@
           divider_poster_basename: body.divider_poster_basename || null,
           lotw_poster: body.lotw_poster || "lotw1",
           lote_poster: body.lote_poster || "lote1",
-          divider_style: body.divider_style || "divider1",
+          divider_style: body.divider_style || "divider3",
           announcement_basenames: body.announcement_basenames || [],
           mass_collection_amount: body.mass_collection_amount || null,
           mass_collection_currency: body.mass_collection_currency || null,
@@ -30291,9 +30357,15 @@
 
     function syncCalAdminFetchSourceLabels() {
       const source = calAdminSourceName();
+      const missingBtn = $("cal-admin-fetch-missing-btn");
+      if (missingBtn) {
+        const title = "Fetch critical/warning dates from " + source + " (skips healthy; resumes where you left off)";
+        missingBtn.dataset.defaultTitle = title;
+        if (!missingBtn.classList.contains("is-running")) missingBtn.title = title;
+      }
       const monthBtn = $("cal-admin-fetch-month-btn");
       if (monthBtn) {
-        const title = "Force live-fetch every date in this month from " + source;
+        const title = "Fetch unhealthy dates from " + source + " (skips healthy; resumes where you left off)";
         monthBtn.dataset.defaultTitle = title;
         if (!monthBtn.classList.contains("is-running")) monthBtn.title = title;
       }
@@ -30417,17 +30489,93 @@
       if (modalStatus && calAdminFetchJob.mode === "date") modalStatus.textContent = "Fetch stopped.";
     }
 
-    function calAdminDatesForMonthFetch(scope) {
+    var CAL_ADMIN_FETCH_CURSOR_KEY = "verbumCalFetchCursor";
+    var CAL_ADMIN_HEALTH_RANK = { critical: 0, warning: 1, unknown: 2 };
+
+    function calAdminFetchMonthKey() {
+      return (
+        calendarCursor.getFullYear() +
+        "-" +
+        (calendarCursor.getMonth() + 1) +
+        "-" +
+        currentCalendarLanguage()
+      );
+    }
+
+    function readCalAdminFetchCursor() {
+      try {
+        const raw = localStorage.getItem(CAL_ADMIN_FETCH_CURSOR_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return null;
+        if (parsed.monthKey !== calAdminFetchMonthKey()) return null;
+        return parsed;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function writeCalAdminFetchCursor(nextIso, scope) {
+      try {
+        if (!nextIso) {
+          localStorage.removeItem(CAL_ADMIN_FETCH_CURSOR_KEY);
+          return;
+        }
+        localStorage.setItem(
+          CAL_ADMIN_FETCH_CURSOR_KEY,
+          JSON.stringify({
+            monthKey: calAdminFetchMonthKey(),
+            nextIso: String(nextIso),
+            scope: scope || "missing",
+            updatedAt: Date.now(),
+          })
+        );
+      } catch (_e) { /* ignore */ }
+    }
+
+    function clearCalAdminFetchCursor() {
+      try {
+        localStorage.removeItem(CAL_ADMIN_FETCH_CURSOR_KEY);
+      } catch (_e) { /* ignore */ }
+    }
+
+    function calAdminDayHealth(iso) {
+      const h = String(((calendarMonthData[iso] || {}).readings_health) || "").trim().toLowerCase();
+      if (h === "healthy" || h === "warning" || h === "critical") return h;
+      return "unknown";
+    }
+
+    function calAdminDatesForMonthFetch(scope, opts) {
+      const options = opts || {};
       const y = calendarCursor.getFullYear();
       const m = calendarCursor.getMonth();
       const daysInMonth = new Date(y, m + 1, 0).getDate();
-      const out = [];
+      const candidates = [];
       for (let d = 1; d <= daysInMonth; d++) {
         const iso = formatDateInput(new Date(y, m, d));
-        const health = (calendarMonthData[iso] || {}).readings_health;
-        if (scope === "all" || health !== "healthy") out.push(iso);
+        const health = calAdminDayHealth(iso);
+        // Skip healthy — jump straight to critical / warning / incomplete.
+        if (health === "healthy") continue;
+        candidates.push({ iso, health });
       }
-      return out;
+      candidates.sort((a, b) => {
+        const ra = CAL_ADMIN_HEALTH_RANK[a.health] != null ? CAL_ADMIN_HEALTH_RANK[a.health] : 9;
+        const rb = CAL_ADMIN_HEALTH_RANK[b.health] != null ? CAL_ADMIN_HEALTH_RANK[b.health] : 9;
+        if (ra !== rb) return ra - rb;
+        return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0;
+      });
+      let out = candidates.map((row) => row.iso);
+      const cursor = options.resume === false ? null : readCalAdminFetchCursor();
+      const resumeIso = cursor && cursor.nextIso ? String(cursor.nextIso) : "";
+      let resumedFrom = "";
+      if (resumeIso && out.length) {
+        const fromCursor = out.filter((iso) => iso >= resumeIso);
+        if (fromCursor.length) {
+          out = fromCursor;
+          resumedFrom = out[0];
+        }
+      }
+      return { dates: out, resumedFrom };
     }
 
     async function postCalAdminFetchDate(iso) {
@@ -30560,42 +30708,63 @@
         notify("Another fetch is already running.", "info");
         return;
       }
-      const allDays = scope === "all";
-      const dates = calAdminDatesForMonthFetch(scope || "missing");
+      const jobScope = scope || "missing";
+      const picked = calAdminDatesForMonthFetch(jobScope);
+      const dates = picked.dates || [];
       if (!dates.length) {
+        clearCalAdminFetchCursor();
         const status = $("cal-month-status");
-        if (status) status.textContent = allDays ? "No dates in this month." : "All dates in this month look healthy.";
+        if (status) status.textContent = "All dates in this month look healthy — nothing to fetch.";
         return;
       }
-      beginCalAdminFetchJob("month", dates.length, scope || "missing");
+      beginCalAdminFetchJob("month", dates.length, jobScope);
       const status = $("cal-month-status");
+      if (status && picked.resumedFrom) {
+        status.textContent = "Resuming from " + picked.resumedFrom + " (" + dates.length + " unhealthy left)…";
+      }
       let improved = 0;
+      let lastAttempted = "";
       try {
         for (let i = 0; i < dates.length; i++) {
           if (calAdminFetchJob.cancelled) break;
           const iso = dates[i];
+          lastAttempted = iso;
+          // Persist cursor before each attempt so Stop + restart continues here.
+          writeCalAdminFetchCursor(iso, jobScope);
           calAdminFetchJob.done = i;
           updateCalAdminFetchButtons((i + 1) + "/" + dates.length + " · " + iso);
-          if (status) status.textContent = "Fetching " + iso + " (" + (i + 1) + "/" + dates.length + ")…";
-          const beforeHealth = ((calendarMonthData[iso] || {}).readings_health) || "critical";
+          if (status) {
+            status.textContent = "Fetching " + iso + " (" + (i + 1) + "/" + dates.length + " unhealthy)…";
+          }
+          const beforeHealth = calAdminDayHealth(iso);
           const result = await fetchCalAdminDateWithRetries(iso, { quietMonthStatus: true });
-          const afterHealth = ((calendarMonthData[iso] || {}).readings_health)
+          const afterHealth = calAdminDayHealth(iso)
             || ((result.data && result.data.health && result.data.health.status) || beforeHealth);
           if (afterHealth === "healthy" && beforeHealth !== "healthy") improved += 1;
           calAdminFetchJob.done = i + 1;
           updateCalAdminFetchButtons((i + 1) + "/" + dates.length + " · done " + iso);
           if (calAdminFetchJob.cancelled) break;
+          // Advance cursor to the next planned date (or clear when finishing).
+          const nextIso = i + 1 < dates.length ? dates[i + 1] : "";
+          if (nextIso) writeCalAdminFetchCursor(nextIso, jobScope);
+          else clearCalAdminFetchCursor();
           if (i < dates.length - 1) await calAdminFetchSleep(350);
         }
         const stopped = calAdminFetchJob.cancelled;
+        if (stopped && lastAttempted) {
+          writeCalAdminFetchCursor(lastAttempted, jobScope);
+        } else if (!stopped) {
+          clearCalAdminFetchCursor();
+        }
         const summary = stopped
-          ? "Fetch stopped — processed " + calAdminFetchJob.done + " of " + dates.length + ", fixed " + improved + "."
-          : "Fetch complete — processed " + dates.length + " dates, fixed " + improved + ".";
+          ? "Fetch stopped at " + (lastAttempted || "—") + " — processed " + calAdminFetchJob.done + " of " + dates.length + ", fixed " + improved + ". Next run resumes from here."
+          : "Fetch complete — processed " + dates.length + " unhealthy dates, fixed " + improved + ".";
         calendarMonthKey = "";
         await loadCalendarMonth();
         if (calReadingsAdminDate) openCalReadingsAdminModal(calReadingsAdminDate);
         finishCalAdminFetchJob(summary);
       } catch (err) {
+        if (lastAttempted) writeCalAdminFetchCursor(lastAttempted, jobScope);
         finishCalAdminFetchJob(err.message || "Fetch failed.");
       }
     }
@@ -35032,7 +35201,8 @@
     bindCalFetchToggleButton($("cal-admin-fetch-missing-btn"), () => fetchCalendarMonthReadings("missing"));
     bindCalFetchToggleButton($("cal-admin-fetch-month-btn"), () => {
       const source = currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
-      if (!confirm("Force-fetch all " + calendarCursor.toLocaleString(undefined, { month: "long" }) + " dates from " + source + "? Each date tries up to 3 times. Click the button again to stop.")) return;
+      const monthLabel = calendarCursor.toLocaleString(undefined, { month: "long" });
+      if (!confirm("Fetch unhealthy " + monthLabel + " dates from " + source + "? Healthy days are skipped. If you stopped earlier, this resumes from the last unfinished date. Click the button again to stop.")) return;
       fetchCalendarMonthReadings("all");
     });
     bindCalFetchToggleButton($("cal-readings-admin-fetch"), () => {

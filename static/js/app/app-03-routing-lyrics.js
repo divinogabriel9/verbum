@@ -2977,12 +2977,12 @@
 
     // Built-in deck themes for Mass PPTX generation (generators/powerpoint.py).
     // Theme 1 = LiturgyFlow (amber). Themes 2–3 are strict mono black/white.
-    // Divider style is independent: divider1 (classic) | divider2 (Stone & Light) | divider3 (Gospel).
+    // Divider style is independent: divider2 (Stone & Light) | divider3 (Gospel).
+    // Legacy divider1 (Classic) maps to divider3.
     var DECK_THEME_DEFAULT_KEY = "verbumDefaultDeckThemeId";
     var DECK_THEME_SESSION_KEY = "verbumDeckThemePrompted";
     var DIVIDER_STYLE_DEFAULT_KEY = "verbumDefaultDividerStyle";
     var DIVIDER_STYLES = {
-      divider1: { id: "divider1", name: "Classic", note: "Celebrant left, gospel quote card, bottom title bar." },
       divider2: { id: "divider2", name: "Stone & Light", note: "Gospel quote with citation, celebrant on the right, bold title." },
       divider3: { id: "divider3", name: "Gospel", note: "Sunday title and celebrant on the left, gospel quote on the right panel." },
     };
@@ -3019,11 +3019,11 @@
       },
     ];
     var activeTheme = presetThemes[0];
-    var activeDividerStyle = "divider1";
+    var activeDividerStyle = "divider3";
     var customThemes = [];
     var deckThemeModalMode = "startup"; // "startup" | "review"
     var deckThemeModalPendingId = "theme1";
-    var deckDividerModalPendingId = "divider1";
+    var deckDividerModalPendingId = "divider3";
 
     function findPresetTheme(id) {
       const tid = String(id || "").trim().toLowerCase();
@@ -3032,9 +3032,9 @@
 
     function findDividerStyle(id) {
       const key = String(id || "").trim().toLowerCase();
-      // Auto was removed from the chooser; map legacy "auto" to Classic.
-      if (key === "auto") return DIVIDER_STYLES.divider1;
-      return DIVIDER_STYLES[key] || DIVIDER_STYLES.divider1;
+      // Auto / Classic (divider1) were removed; map legacy ids to Gospel.
+      if (key === "auto" || key === "divider1") return DIVIDER_STYLES.divider3;
+      return DIVIDER_STYLES[key] || DIVIDER_STYLES.divider3;
     }
 
     function pptThemePayload(theme) {
@@ -3104,7 +3104,8 @@
           "</span>";
         return;
       }
-      root.classList.add("deck-divider-mock--classic");
+      // Fallback → Gospel mock (Classic / divider1 removed).
+      root.classList.add("deck-divider-mock--gospel");
       root.innerHTML =
         '<span class="deck-divider-option__stripes">' +
           '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
@@ -3114,12 +3115,14 @@
         "</span>" +
         '<span class="deck-divider-mock__dark"></span>' +
         '<span class="deck-divider-mock__stage">' +
-          '<span class="d1-panel"></span>' +
-          '<span class="d1-bar"></span>' +
-          '<span class="d1-label">MASS CELEBRANT</span>' +
-          '<span class="d1-name">Celebrant</span>' +
-          '<span class="d1-quote">Gospel quote</span>' +
-          '<span class="d1-title">Sunday title</span>' +
+          '<span class="d3-panel"></span>' +
+          '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+          '<span class="d3-sunday">Sunday title</span>' +
+          '<span class="d3-year">YEAR · DATE</span>' +
+          '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+          '<span class="d3-name">Celebrant</span>' +
+          '<span class="d3-quote">“Gospel quote”</span>' +
+          '<span class="d3-cite"><span>GOSPEL</span><span>CITE</span></span>' +
         "</span>";
     }
 
@@ -3180,7 +3183,7 @@
         );
       }
       return (
-        '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--classic">' +
+        '<span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--gospel">' +
           '<span class="deck-divider-option__stripes">' +
             '<span class="deck-divider-option__stripe" data-lit="purple"></span>' +
             '<span class="deck-divider-option__stripe" data-lit="white"></span>' +
@@ -3189,12 +3192,12 @@
           "</span>" +
           '<span class="deck-divider-mock__dark"></span>' +
           '<span class="deck-divider-mock__stage">' +
-            '<span class="d1-panel"></span>' +
-            '<span class="d1-bar"></span>' +
-            '<span class="d1-label">MASS CELEBRANT</span>' +
-            '<span class="d1-name">Celebrant</span>' +
-            '<span class="d1-quote">Gospel quote</span>' +
-            '<span class="d1-title">Sunday title</span>' +
+            '<span class="d3-panel"></span>' +
+            '<span class="d3-kicker">HOLY EUCHARISTIC CELEBRATION</span>' +
+            '<span class="d3-sunday">Sunday title</span>' +
+            '<span class="d3-label">HOLY MASS CELEBRANT:</span>' +
+            '<span class="d3-name">Celebrant</span>' +
+            '<span class="d3-quote">“Gospel quote”</span>' +
           "</span>" +
         "</span>"
       );
@@ -3220,7 +3223,7 @@
         menu.dataset.lookReady = "1";
 
         const items = kind === "divider"
-          ? ["divider1", "divider3", "divider2"].map((id) => DIVIDER_STYLES[id])
+          ? ["divider3", "divider2"].map((id) => DIVIDER_STYLES[id])
           : presetThemes.slice();
 
         menu.innerHTML = "";
@@ -3347,7 +3350,7 @@
       deckThemeModalMode = o.mode === "review" ? "review" : "startup";
       const preferred = o.themeId || activeTheme.id || localStorage.getItem(DECK_THEME_DEFAULT_KEY) || "theme1";
       selectDeckThemeOption(preferred);
-      const preferredDiv = o.dividerStyle || activeDividerStyle || localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || "divider1";
+      const preferredDiv = o.dividerStyle || activeDividerStyle || localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || "divider3";
       selectDividerStyleOption(preferredDiv);
       const title = $("deck-theme-modal-title");
       const desc = $("deck-theme-modal-desc");
@@ -3383,9 +3386,9 @@
       })();
       const preferredDiv = (() => {
         try {
-          return localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || activeDividerStyle || "divider1";
+          return localStorage.getItem(DIVIDER_STYLE_DEFAULT_KEY) || activeDividerStyle || "divider3";
         } catch (_e3) {
-          return activeDividerStyle || "divider1";
+          return activeDividerStyle || "divider3";
         }
       })();
       setActiveDeckTheme(preferred);

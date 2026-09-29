@@ -16,9 +16,10 @@ from services.mass_divider.templates import (
 from services.mass_divider.types import SLIDE_HEIGHT_IN, SLIDE_WIDTH_IN
 
 
-def test_three_templates_registered():
+def test_two_templates_registered():
     ids = {t.id for t in list_divider_templates()}
-    assert ids == {"divider1", "divider2", "divider3"}
+    assert ids == {"divider2", "divider3"}
+    assert resolve_divider_template_id("divider1") == "divider3"
 
 
 def test_boxes_stay_on_canvas():
@@ -59,7 +60,7 @@ def test_auto_layout_is_stable_for_same_mass():
     first = resolve_divider_template_id("auto", gospel_quote=quote, sunday_title=title)
     second = resolve_divider_template_id("auto", gospel_quote=quote, sunday_title=title)
     assert first == second
-    assert first in {"divider1", "divider2", "divider3"}
+    assert first in {"divider2", "divider3"}
     assert resolve_divider_template_id("divider2") == "divider2"
 
 

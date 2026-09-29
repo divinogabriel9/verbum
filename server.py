@@ -1425,6 +1425,7 @@ class DemoGenerateBody(BaseModel):
 
     date: str = Field(..., min_length=8, max_length=16)
     celebrant: str = Field(..., min_length=1, max_length=L.CELEBRANT_NAME)
+    mass_language: str = Field("english", max_length=16)
     our_father_choice: str = Field("english", max_length=16)
     custom_theme: Optional[dict[str, Any]] = None
     songs: Optional[SongSelection] = None
@@ -1546,7 +1547,7 @@ class GenerateBody(BaseModel):
         description="AI artwork style: cinematic | realistic | renaissance | stained_glass | modern | auto.",
     )
     ai_poster_transparency_pct: float = Field(
-        10,
+        0,
         ge=0,
         le=10,
         description="Mass-divider AI poster fade: 0 (opaque) … 10 (softest). Applied only in the PPTX divider.",
@@ -1574,9 +1575,9 @@ class GenerateBody(BaseModel):
         description="Liturgy of the Eucharist divider poster design: lote1 | lote2 | lote3 | lote4.",
     )
     divider_style: str = Field(
-        "divider1",
+        "divider3",
         max_length=16,
-        description="Mass divider layout: divider1 | divider2 | divider3 | auto.",
+        description="Mass divider layout: divider2 | divider3 | auto. Legacy divider1 maps to divider3.",
     )
     announcement_basenames: list[str] = Field(default_factory=list)
     mass_collection_amount: Optional[str] = Field(None, max_length=L.COLLECTION_AMOUNT)
@@ -1604,7 +1605,7 @@ class GenerateBody(BaseModel):
         description="When true, include the Food/Mass Sponsorship merienda-location slide.",
     )
     include_welcoming_newcomers_slide: bool = Field(
-        True,
+        False,
         description="When true, include the Welcoming Newcomers slide(s).",
     )
     sponsorship_contact: Optional[str] = Field(
@@ -1802,7 +1803,9 @@ class GenerateBody(BaseModel):
         lote = str(self.lote_poster or "").strip().lower()
         self.lote_poster = lote if lote in {"lote1", "lote2", "lote3", "lote4"} else "lote1"
         div_style = str(self.divider_style or "").strip().lower()
-        self.divider_style = div_style if div_style in {"divider1", "divider2", "divider3", "auto"} else "divider1"
+        if div_style == "divider1":
+            div_style = "divider3"
+        self.divider_style = div_style if div_style in {"divider2", "divider3", "auto"} else "divider3"
         try:
             t = float(self.ai_poster_transparency_pct)
         except (TypeError, ValueError):
@@ -5273,32 +5276,72 @@ def api_contact(body: ContactBody, request: Request) -> Any:
 def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
     """Guest one-click Mass PPTX from the marketing landing page.
 
-    Rate-limited per IP (1/day + burst + global ceiling). PPTX only — no AI,
-    no uploads, no parish branding. Slides carry a Liturgyflow.com watermark.
+    Rate-limited per IP (1/day + burst + global ceiling). No uploads / parish
+    branding. Slides carry a Liturgyflow.com watermark. Reuses a random weekly
+    SA AI poster when one already exists for the Sunday; otherwise gradient dividers.
     """
+    from random import choice as random_choice
+
     from services.demo_access import (
         DEMO_WATERMARK,
         demo_download_url,
         enforce_demo_rate_limits,
         remaining_hint_after_consume,
         validate_demo_date,
+        validate_mass_language,
         validate_our_father,
         validate_theme_id,
     )
+    from services.mass_language import defaults_for_mass_language
+    from services.weekly_style_posters import catalog_for_date
 
     enforce_demo_rate_limits(request)
     mass_date = validate_demo_date(body.date)
     celebrant = body.celebrant.strip()
     if not celebrant:
         raise HTTPException(status_code=400, detail="Enter the celebrant name.")
-    of_choice = validate_our_father(body.our_father_choice)
+
+    # Prefer explicit mass_language; fall back to Our Father language for older clients.
+    mass_lang = validate_mass_language(body.mass_language or body.our_father_choice)
+    lang_defaults = defaults_for_mass_language(mass_lang)
+    of_choice = validate_our_father(
+        body.our_father_choice
+        if (body.our_father_choice or "").strip()
+        else lang_defaults.get("our_father_choice", "english")
+    )
+    if mass_lang == "tagalog":
+        of_choice = "tagalog"
+    creed_choice = lang_defaults.get("creed_choice", "nicene")
+    rite_lang = "tagalog" if mass_lang == "tagalog" else "english"
+    kyrie_choice = "tagalog" if mass_lang == "tagalog" else "english"
+
     theme = validate_theme_id(body.custom_theme)
     song_map = body.songs.model_dump(exclude_none=True) if body.songs else None
     if song_map:
         song_map.pop("extra_sections", None)
         song_map.pop("meditation", None)
 
-    print(f"[demo-generate] start date={mass_date!r}", flush=True)
+    include_ai = False
+    ai_style = "cinematic"
+    try:
+        catalog = catalog_for_date(mass_date, output_dir=_OUTPUT_DIR)
+        ready = [
+            str(item.get("id") or "").strip()
+            for item in (catalog.get("items") or [])
+            if item.get("ready") and str(item.get("id") or "").strip()
+        ]
+        if ready:
+            ai_style = random_choice(ready)
+            include_ai = True
+    except Exception:
+        logger.exception("Demo weekly AI poster catalog failed; using gradient dividers")
+        include_ai = False
+
+    print(
+        f"[demo-generate] start date={mass_date!r} lang={mass_lang!r} "
+        f"ai_poster={include_ai} style={ai_style!r}",
+        flush=True,
+    )
     result = generate_mass_media(
         mass_date,
         celebrant,
@@ -5306,15 +5349,26 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         poster_template="liturgical_color",
         include_social_exports=False,
         include_gospel_art=False,
-        include_ai_mass_poster=False,
+        include_ai_mass_poster=include_ai,
+        ai_poster_style=ai_style,
+        reuse_existing_poster=True,
         song_selections=song_map,
         custom_theme=theme,
         include_church_logo=False,
         include_church_name=False,
         include_footer=True,
         footer_brand=DEMO_WATERMARK,
-        creed_choice="nicene",
+        creed_choice=creed_choice,
+        creed_language=rite_lang,
+        penitential_language=rite_lang,
+        sanctus_language=rite_lang,
+        kyrie_choice=kyrie_choice,
+        kyrie_tagalog_slide=1,
         our_father_choice=of_choice,
+        mass_language=mass_lang,
+        divider_style="divider3",
+        lotw_poster="lotw1",
+        lote_poster="lote1",
         hymn_lyrics_layout="dual",
         include_leaflet=bool(body.include_leaflet),
     )
@@ -5334,6 +5388,10 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         "selected_songs": result.selected_songs,
         "watermark": DEMO_WATERMARK,
         "pptx_url": demo_download_url(pptx_name),
+        "mass_language": mass_lang,
+        "divider_style": "divider3",
+        "ai_poster_used": include_ai,
+        "ai_poster_style": ai_style if include_ai else None,
         **remaining_hint_after_consume(),
     }
     leaflet_path = getattr(result, "leaflet_path", None)
@@ -5343,7 +5401,8 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         except HTTPException:
             pass
     print(
-        f"[demo-generate] done stem={result.export_stem} slides={result.slide_count}",
+        f"[demo-generate] done stem={result.export_stem} slides={result.slide_count} "
+        f"ai={include_ai}",
         flush=True,
     )
     return out

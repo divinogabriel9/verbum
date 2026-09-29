@@ -4290,7 +4290,7 @@ def _apply_divider_artwork(
     *,
     background_image_path: Optional[Path] = None,
     static_plate: Optional[Path] = None,
-    ai_poster_transparency_pct: float = 10.0,
+    ai_poster_transparency_pct: float = 0.0,
 ) -> str:
     """Place AI artwork, static plate, or theme fill. Returns surface kind."""
     bg = Path(background_image_path).resolve() if background_image_path else None
@@ -4445,7 +4445,7 @@ def _ai_poster_alpha_mod_from_pct(transparency_pct: float) -> Optional[int]:
     try:
         pct = float(transparency_pct)
     except (TypeError, ValueError):
-        pct = 10.0
+        pct = 0.0
     pct = max(0.0, min(10.0, pct))
     if pct <= 0.0:
         return None
@@ -4561,13 +4561,16 @@ def _divider2_gospel_citation(gospel_reference: str) -> str:
 
 
 def _divider3_date_display(date: str) -> str:
-    """Full-month date for Divider 3: ``AUGUST 16, 2026``."""
+    """Full-month date for Divider 3: ``AUGUST 16, 2026`` / ``AGOSTO 16, 2026``."""
     raw = (date or "").strip()
     if not raw:
         return ""
     for fmt in ("%Y-%m-%d", "%B %d, %Y", "%b %d, %Y", "%d %B %Y"):
         try:
             d = _dt.datetime.strptime(raw, fmt).date()
+            if _mass_lang() == "tagalog":
+                month = _TAGALOG_MONTHS[d.month - 1]
+                return f"{month} {d.day}, {d.year}"
             return f"{d.strftime('%B').upper()} {d.day}, {d.year}"
         except ValueError:
             continue
@@ -4581,7 +4584,7 @@ def _divider3_year_date_line(lectionary_cycle: str, date: str) -> str:
 
 
 def _divider3_year_date_lines(lectionary_cycle: str, date: str) -> List[str]:
-    """Two-line year/date block from NewAiPosterFormat: ``YEAR A`` / ``SEPTEMBER 20, 2026``."""
+    """Two-line year/date: ``YEAR A`` / ``SEPTEMBER 20, 2026`` (or ``TAON`` + Tagalog month)."""
     cycle = (lectionary_cycle or "—").strip().upper()
     date_line = _divider3_date_display(date)
     word = _divider_year_word()
@@ -4592,8 +4595,17 @@ def _divider3_year_date_lines(lectionary_cycle: str, date: str) -> List[str]:
 
 
 def _divider3_title_lines(mass_title: str, season: str) -> List[str]:
-    """Two-line Sunday title, e.g. ``25th Sunday`` / ``in Ordinary Time``."""
+    """Two-line Sunday title.
+
+    English: ``25th Sunday`` / ``in Ordinary Time``.
+    Tagalog: ``Ika-27 Linggo`` / ``sa Karaniwang Panahon``.
+    """
     title = sunday_title_display(mass_title, season)
+    if _mass_lang() == "tagalog":
+        m = re.match(r"^(.*?)\s+(sa\s+.+)$", title, flags=re.IGNORECASE)
+        if m and m.group(1).strip() and m.group(2).strip():
+            return [m.group(1).strip(), m.group(2).strip()]
+        return [title] if title else []
     m = re.match(r"^(.*?)\s+(in\s+.+)$", title, flags=re.IGNORECASE)
     if m and m.group(1).strip() and m.group(2).strip():
         return [m.group(1).strip(), m.group(2).strip()]
@@ -4833,7 +4845,7 @@ def _render_default_divider_cover(
     theme: SlideTheme,
     prs: Presentation,
     background_image_path: Optional[Path] = None,
-    ai_poster_transparency_pct: float = 10.0,
+    ai_poster_transparency_pct: float = 0.0,
 ) -> None:
     pal = _divider_palette(theme)
     surface = _apply_divider_artwork(
@@ -5060,7 +5072,7 @@ def _render_divider2_cover(
     theme: SlideTheme,
     prs: Presentation,
     background_image_path: Optional[Path] = None,
-    ai_poster_transparency_pct: float = 10.0,
+    ai_poster_transparency_pct: float = 0.0,
 ) -> None:
     """Quote-forward Mass divider.
 
@@ -5265,6 +5277,13 @@ _D3_TITLE_L, _D3_TITLE_T = 0.3054, 1.8015
 _D3_TITLE_W, _D3_TITLE_H = 10.7055, 3.2565
 _D3_YEAR_L, _D3_YEAR_T = 1.4314, 4.7497
 _D3_YEAR_W, _D3_YEAR_H = 8.4535, 1.8416
+# TagalogMassDivider.pptx — title + year move together (wider/lower title, lower year).
+_D3_TL_TITLE_L, _D3_TL_TITLE_T = 0.0381, 2.0085
+_D3_TL_TITLE_W, _D3_TL_TITLE_H = 11.2401, 3.2565
+_D3_TL_YEAR_L, _D3_TL_YEAR_T = 1.4314, 5.0952
+_D3_TL_YEAR_W, _D3_TL_YEAR_H = 8.4535, 1.8416
+_D3_TL_TITLE_MAX_PT = 70
+_D3_TL_YEAR_MAX_PT = 44
 _D3_LABEL_L, _D3_LABEL_T = 2.0551, 6.8596
 _D3_LABEL_W, _D3_LABEL_H = 7.2060, 0.7678
 _D3_NAME_L, _D3_NAME_T = 1.0763, 7.4732
@@ -5300,6 +5319,20 @@ _D3_QUOTE_GLOW_ALPHA = 16507
 _D3_GOSPEL_GLOW_RAD_PHOTO = 254000
 _D3_GOSPEL_GLOW_RAD_PLAIN = 63500
 _D3_GOSPEL_GLOW_ALPHA = 40000
+_TAGALOG_MONTHS = (
+    "ENERO",
+    "PEBRERO",
+    "MARSO",
+    "ABRIL",
+    "MAYO",
+    "HUNYO",
+    "HULYO",
+    "AGOSTO",
+    "SETYEMBRE",
+    "OKTUBRE",
+    "NOBYEMBRE",
+    "DISYEMBRE",
+)
 
 
 def _divider3_panel_inner_width() -> float:
@@ -5380,7 +5413,7 @@ def _render_divider3_cover(
     theme: SlideTheme,
     prs: Presentation,
     background_image_path: Optional[Path] = None,
-    ai_poster_transparency_pct: float = 10.0,
+    ai_poster_transparency_pct: float = 0.0,
 ) -> None:
     """Title-left Mass divider (MassDividerUpdate26Sept).
 
@@ -5468,12 +5501,23 @@ def _render_divider3_cover(
     )
 
     title_lines = _divider3_title_lines(mass_title, season)
+    is_tl = _mass_lang() == "tagalog"
+    title_l = _D3_TL_TITLE_L if is_tl else _D3_TITLE_L
+    title_t = _D3_TL_TITLE_T if is_tl else _D3_TITLE_T
+    title_w = _D3_TL_TITLE_W if is_tl else _D3_TITLE_W
+    title_h = _D3_TL_TITLE_H if is_tl else _D3_TITLE_H
+    title_max_pt = _D3_TL_TITLE_MAX_PT if is_tl else _D3_TITLE_MAX_PT
+    year_l = _D3_TL_YEAR_L if is_tl else _D3_YEAR_L
+    year_t = _D3_TL_YEAR_T if is_tl else _D3_YEAR_T
+    year_w = _D3_TL_YEAR_W if is_tl else _D3_YEAR_W
+    year_h = _D3_TL_YEAR_H if is_tl else _D3_YEAR_H
+    year_max_pt = _D3_TL_YEAR_MAX_PT if is_tl else _D3_YEAR_MAX_PT
     title_pt = _divider_fit_font_pt(
         title_lines,
-        width_in=_D3_TITLE_W,
-        height_in=_D3_TITLE_H,
-        max_pt=_D3_TITLE_MAX_PT,
-        min_pt=40,
+        width_in=title_w,
+        height_in=title_h,
+        max_pt=title_max_pt,
+        min_pt=36 if is_tl else 40,
     )
     title_style = {
         "size_pt": title_pt,
@@ -5490,10 +5534,10 @@ def _render_divider3_cover(
         title_line_styles.append((line, st))
     _divider_add_textbox(
         slide,
-        left=Inches(_D3_TITLE_L),
-        top=Inches(_D3_TITLE_T),
-        width=Inches(_D3_TITLE_W),
-        height=Inches(_D3_TITLE_H),
+        left=Inches(title_l),
+        top=Inches(title_t),
+        width=Inches(title_w),
+        height=Inches(title_h),
         lines=title_line_styles,
         anchor_middle=True,
     )
@@ -5501,9 +5545,9 @@ def _render_divider3_cover(
     year_lines = _divider3_year_date_lines(lectionary_cycle, date)
     year_pt = _divider_fit_font_pt(
         year_lines,
-        width_in=_D3_YEAR_W,
-        height_in=_D3_YEAR_H,
-        max_pt=_D3_YEAR_MAX_PT,
+        width_in=year_w,
+        height_in=year_h,
+        max_pt=year_max_pt,
         min_pt=24,
     )
     year_style = {
@@ -5514,10 +5558,10 @@ def _render_divider3_cover(
     }
     _divider_add_textbox(
         slide,
-        left=Inches(_D3_YEAR_L),
-        top=Inches(_D3_YEAR_T),
-        width=Inches(_D3_YEAR_W),
-        height=Inches(_D3_YEAR_H),
+        left=Inches(year_l),
+        top=Inches(year_t),
+        width=Inches(year_w),
+        height=Inches(year_h),
         lines=[(line, year_style) for line in year_lines],
         anchor_middle=True,
     )
@@ -5661,7 +5705,7 @@ def _add_divider_cover(
     background_image_path: Optional[Path] = None,
     divider_poster_path: Optional[Path] = None,
     divider_style: str = _DIVIDER_STYLE_DEFAULT,
-    ai_poster_transparency_pct: float = 10.0,
+    ai_poster_transparency_pct: float = 0.0,
 ) -> None:
     slide = prs.slides.add_slide(_layout_blank(prs))
 
@@ -5723,7 +5767,8 @@ def _add_divider_cover(
         )
         return
 
-    _render_default_divider_cover(
+    # Legacy divider1 (Classic) and unknown ids → Gospel layout (divider3).
+    _render_divider3_cover(
         slide,
         celebrant=celebrant,
         co_celebrant=co_celebrant,
@@ -7198,7 +7243,7 @@ def generate_mass_ppt(
     liturgical_poster_png: Optional[Path] = None,
     divider_poster_png: Optional[Path] = None,
     divider_style: str = _DIVIDER_STYLE_DEFAULT,
-    ai_poster_transparency_pct: float = 10.0,
+    ai_poster_transparency_pct: float = 0.0,
     lotw_poster: str = _LOTW_POSTER_DEFAULT,
     lote_poster: str = _LOTE_POSTER_DEFAULT,
     announcement_image_paths: Optional[List[Path]] = None,
@@ -7210,7 +7255,7 @@ def generate_mass_ppt(
     include_food_sponsor_slide: bool = False,
     include_sponsorship_contact_slide: bool = False,
     include_merienda_location_slide: bool = False,
-    include_welcoming_newcomers_slide: bool = True,
+    include_welcoming_newcomers_slide: bool = False,
     sponsorship_contact: str = "",
     merienda_location: str = "",
     announcement_bg_colors: Optional[Mapping[str, Any]] = None,
@@ -7343,7 +7388,7 @@ def _generate_mass_ppt_inner(
     liturgical_poster_png: Optional[Path] = None,
     divider_poster_png: Optional[Path] = None,
     divider_style: str = _DIVIDER_STYLE_DEFAULT,
-    ai_poster_transparency_pct: float = 10.0,
+    ai_poster_transparency_pct: float = 0.0,
     lotw_poster: str = _LOTW_POSTER_DEFAULT,
     lote_poster: str = _LOTE_POSTER_DEFAULT,
     announcement_image_paths: Optional[List[Path]] = None,
@@ -7355,7 +7400,7 @@ def _generate_mass_ppt_inner(
     include_food_sponsor_slide: bool = False,
     include_sponsorship_contact_slide: bool = False,
     include_merienda_location_slide: bool = False,
-    include_welcoming_newcomers_slide: bool = True,
+    include_welcoming_newcomers_slide: bool = False,
     sponsorship_contact: str = "",
     merienda_location: str = "",
     announcement_bg_colors: Optional[Mapping[str, Any]] = None,

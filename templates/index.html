@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260926-ai-overlay2" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20260930-opacity-preview" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -788,29 +788,7 @@
             <div class="deck-divider-picker" id="deck-divider-picker">
               <p class="deck-divider-picker__label" id="deck-divider-picker-label">Mass divider layout</p>
               <div class="deck-divider-grid" id="deck-divider-grid" role="radiogroup" aria-labelledby="deck-divider-picker-label">
-                <button type="button" class="deck-divider-option is-selected" role="radio" aria-checked="true" data-divider-style="divider1" id="deck-divider-opt-divider1" aria-label="Classic">
-                  <span class="deck-divider-option__preview deck-divider-mock deck-divider-mock--classic" aria-hidden="true">
-                    <span class="deck-divider-option__stripes">
-                      <span class="deck-divider-option__stripe" data-lit="purple"></span>
-                      <span class="deck-divider-option__stripe" data-lit="white"></span>
-                      <span class="deck-divider-option__stripe" data-lit="green"></span>
-                      <span class="deck-divider-option__stripe" data-lit="red"></span>
-                    </span>
-                    <span class="deck-divider-mock__dark"></span>
-                    <span class="deck-divider-mock__stage">
-                      <span class="d1-panel"></span>
-                      <span class="d1-bar"></span>
-                      <span class="d1-label">MASS CELEBRANT:</span>
-                      <span class="d1-name">Divino Gabriel</span>
-                      <span class="d1-year">YEAR A · AUGUST 16, 2026</span>
-                      <span class="d1-quote">“O woman, great is your faith!”</span>
-                      <span class="d1-cite">GOSPEL (MATTHEW 15:21–28)</span>
-                      <span class="d1-title">20th Sunday in Ordinary Time</span>
-                    </span>
-                  </span>
-                  <span class="deck-divider-option__name">Classic</span>
-                </button>
-                <button type="button" class="deck-divider-option" role="radio" aria-checked="false" data-divider-style="divider3" id="deck-divider-opt-divider3" aria-label="Gospel">
+                <button type="button" class="deck-divider-option is-selected" role="radio" aria-checked="true" data-divider-style="divider3" id="deck-divider-opt-divider3" aria-label="Gospel">
                   <span class="deck-divider-option__preview deck-divider-mock deck-divider-mock--gospel" aria-hidden="true">
                     <span class="deck-divider-option__stripes">
                       <span class="deck-divider-option__stripe" data-lit="purple"></span>
@@ -2443,7 +2421,7 @@
                 <article class="flow-bento-cell flow-setup-card2 mw-extras-block" id="mass-step-target-stewardship" data-mw-step="6" hidden>
                   <div class="mw-announcement-slides" id="flow-announcement-slides">
                     <div class="mw-announcement-option mw-announcement-option--plain">
-                      <input type="checkbox" id="flow-slide-welcoming-newcomers" checked />
+                      <input type="checkbox" id="flow-slide-welcoming-newcomers" />
                       <label class="mw-announcement-option__text" for="flow-slide-welcoming-newcomers">
                         <strong>Welcoming Newcomers</strong>
                           <span class="muted">Welcome slide for first-time visitors</span>
@@ -2797,7 +2775,7 @@
                             data-target="flow-divider-style"
                           >
                             <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="mw-deck-divider-label">
-                              <span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--classic" id="mw-deck-divider-preview" data-divider-style="divider1" aria-hidden="true"></span>
+                              <span class="mw-look-divider-preview deck-divider-mock deck-divider-mock--gospel" id="mw-deck-divider-preview" data-divider-style="divider3" aria-hidden="true"></span>
                               <span class="poster-picker__caption" id="mw-deck-divider-note">Classic</span>
                               <span class="poster-picker__caret" aria-hidden="true">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -2836,7 +2814,7 @@
                         </div>
                       </div>
                       <input type="hidden" id="flow-deck-theme" value="theme1" />
-                      <input type="hidden" id="flow-divider-style" value="divider1" />
+                      <input type="hidden" id="flow-divider-style" value="divider3" />
                       <input type="hidden" id="flow-lotw-poster" value="lotw1" />
                       <input type="hidden" id="flow-lote-poster" value="lote1" />
                     </div>
@@ -2875,9 +2853,20 @@
                           </div>
                         </div>
                         <div class="mw-poster-transparency" id="mw-poster-transparency">
+                          <div class="mw-poster-opacity-preview" id="mw-poster-opacity-preview">
+                            <div class="mw-poster-opacity-preview__stage" id="mw-poster-opacity-preview-stage">
+                              <img class="mw-poster-opacity-preview__img" id="mw-poster-opacity-preview-img" alt="" hidden />
+                              <div class="mw-poster-opacity-preview__placeholder" id="mw-poster-opacity-preview-ph" aria-hidden="true"></div>
+                              <div class="mw-poster-opacity-preview__copy" aria-hidden="true">
+                                <span class="mw-poster-opacity-preview__kicker">Mass divider</span>
+                                <span class="mw-poster-opacity-preview__title">Liturgy of the Word</span>
+                              </div>
+                            </div>
+                            <p class="muted mw-poster-opacity-preview__hint">Live preview — drag left/right or use the slider</p>
+                          </div>
                           <div class="mw-poster-transparency__row">
                             <label for="flow-ai-poster-transparency">AI poster transparency</label>
-                            <span class="mw-poster-transparency__value" id="flow-ai-poster-transparency-label" aria-live="polite">10%</span>
+                            <span class="mw-poster-transparency__value" id="flow-ai-poster-transparency-label" aria-live="polite">0%</span>
                           </div>
                           <input
                             type="range"
@@ -2885,11 +2874,11 @@
                             min="0"
                             max="10"
                             step="1"
-                            value="10"
+                            value="0"
                             aria-valuemin="0"
                             aria-valuemax="10"
-                            aria-valuenow="10"
-                            aria-valuetext="10 percent"
+                            aria-valuenow="0"
+                            aria-valuetext="0 percent"
                           />
                           <div class="mw-poster-transparency__scale" aria-hidden="true">
                             <span>0%</span>
@@ -2907,10 +2896,6 @@
                           <option value="modern">Modern</option>
                         </select>
                         <div class="mw-ai-poster-gate" id="mw-ai-poster-gate" data-ai-ready="0" hidden>
-                          <div class="mw-ai-poster-gate__dim" aria-hidden="true"></div>
-                          <div class="mw-ai-poster-gate__tape" aria-hidden="true">
-                            <span class="mw-ai-poster-gate__repeat" id="mw-ai-poster-gate-repeat"></span>
-                          </div>
                           <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
                         </div>
                         </div>
@@ -3138,7 +3123,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20260926-ai-overlay2"></script>
+      <script src="/static/js/mw-wizard.js?v=20260930-opacity-preview"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3272,7 +3257,7 @@
                   <option value="english">English</option>
                   <option value="tagalog">Tagalog</option>
                 </select>
-                <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-missing-btn" hidden data-default-title="Live-fetch dates in this month that are missing or incomplete" title="Live-fetch dates in this month that are missing or incomplete">
+                <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-missing-btn" hidden data-default-title="Fetch critical/warning dates in this month (skips healthy; resumes where you left off)" title="Fetch critical/warning dates in this month (skips healthy; resumes where you left off)">
                   <span class="cal-fetch-btn__idle">Fetch missing</span>
                   <span class="cal-fetch-btn__running" hidden>
                     <span class="cal-fetch-btn__spinner" aria-hidden="true"></span>
@@ -3280,7 +3265,7 @@
                     <span class="cal-fetch-btn__meta"></span>
                   </span>
                 </button>
-                <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-month-btn" hidden data-default-title="Force live-fetch every date in this month from USCCB" title="Force live-fetch every date in this month from USCCB">
+                <button type="button" class="secondary cal-fetch-btn cal-fetch-btn--toolbar" id="cal-admin-fetch-month-btn" hidden data-default-title="Fetch all unhealthy dates in this month (skips healthy; resumes where you left off)" title="Fetch all unhealthy dates in this month (skips healthy; resumes where you left off)">
                   <span class="cal-fetch-btn__idle">Fetch month</span>
                   <span class="cal-fetch-btn__running" hidden>
                     <span class="cal-fetch-btn__spinner" aria-hidden="true"></span>
@@ -4750,7 +4735,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20260926-ai-overlay2"></script>
+  <script src="/static/js/app.js?v=20260930-opacity-preview"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>

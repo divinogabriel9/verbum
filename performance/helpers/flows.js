@@ -191,7 +191,7 @@ export function sundayMassPipeline(token, church) {
       ai_poster_backend: church.ai_poster_backend || 'openai',
       ai_poster_style: church.ai_poster_style || 'cinematic',
       reuse_existing_poster: true,
-      divider_style: church.divider_style || 'divider1',
+      divider_style: church.divider_style || 'divider3',
       lotw_poster: church.lotw_poster || 'lotw1',
       lote_poster: church.lote_poster || 'lote1',
       creed_choice: church.creed_choice || 'nicene',

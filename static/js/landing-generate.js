@@ -151,11 +151,13 @@
 
   function landingAutoConfig(language) {
     var lang = String(language || "english").toLowerCase();
+    var isTagalog = lang === "tagalog";
     return {
-      our_father_choice: lang,
-      creed_choice: "nicene",
-      songLanguageFilter:
-        lang === "tagalog" ? "Tagalog" : lang === "malay" ? "English" : "English",
+      mass_language: isTagalog ? "tagalog" : "english",
+      our_father_choice: isTagalog ? "tagalog" : "english",
+      creed_choice: isTagalog ? "apostles" : "nicene",
+      kyrie_choice: isTagalog ? "tagalog" : "english",
+      songLanguageFilter: isTagalog ? "Tagalog" : "English",
       hymn_lyrics_layout: "dual",
       poster_template: "liturgical_color",
       include_gospel_art: false,
@@ -165,6 +167,7 @@
       include_church_name: false,
       lotw_poster: "lotw1",
       lote_poster: "lote1",
+      divider_style: "divider3",
     };
   }
 
@@ -452,6 +455,7 @@
     var data = await postJSON("/api/preview", {
       date: state.massDate,
       readings_only: false,
+      mass_language: state.language === "tagalog" ? "tagalog" : "english",
     });
     if (!data.ok) throw new Error(data.error || "Could not load readings.");
     state.preview = data;
@@ -753,6 +757,7 @@
       celebrant: state.celebrant,
       songs: songsToPayload(state.songs),
       custom_theme: pptThemePayload(theme),
+      mass_language: cfg.mass_language,
       our_father_choice: cfg.our_father_choice,
       include_leaflet: state.includeLeaflet,
     };

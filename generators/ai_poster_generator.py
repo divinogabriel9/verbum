@@ -69,7 +69,7 @@ def _build_mass_poster_master(
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
     image_backend: str = "openai",
-    divider_style: str = "divider1",
+    divider_style: str = "divider3",
     analysis: Optional[GospelVisualAnalysis] = None,
 ) -> tuple[Image.Image, Path, str]:
     """Liturgical load, AI hero (visual only), composited with template text."""
@@ -167,7 +167,7 @@ def ensure_ai_hero(
     gospel_text: str = "",
     season_key: str = "ordinary_time",
     image_backend: str = "openai",
-    divider_style: str = "divider1",
+    divider_style: str = "divider3",
     analysis: Optional[GospelVisualAnalysis] = None,
 ) -> Path:
     """Generate (or reuse) the artwork-only hero PNG. Safe to run in a worker thread.
@@ -234,7 +234,7 @@ def compose_primary_posters_from_hero(
     lectionary_cycle: str = "",
     season: str = "",
     season_key: str = "ordinary_time",
-    divider_style: str = "divider1",
+    divider_style: str = "divider3",
     include_social_exports: bool = False,
 ) -> Tuple[Optional[Path], Path]:
     """Overlay LiturgyFlow type on an existing hero. CPU-only — overlap with PPTX build."""
@@ -291,7 +291,7 @@ def generate_primary_openai_posters(
     gospel_reference: Optional[str] = None,
     liturgical_title: Optional[str] = None,
     image_backend: str = "openai",
-    divider_style: str = "divider1",
+    divider_style: str = "divider3",
     co_celebrant_name: Optional[str] = None,
     analysis: Optional[GospelVisualAnalysis] = None,
 ) -> Tuple[Optional[Path], Path, Path]:

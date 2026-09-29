@@ -120,8 +120,6 @@ def _year_date_line(year_cycle: str, date_display: str) -> str:
 def _citation_lines(reference: str, template_id: str) -> List[str]:
     ref = (reference or "").strip() or "—"
     ref = ref.replace("-", "–")
-    if template_id == "divider1":
-        return [f"GOSPEL ({ref.upper()})"]
     if template_id == "divider3":
         cite = ref.upper()
         if cite.startswith("GOSPEL"):

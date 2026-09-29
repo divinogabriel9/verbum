@@ -2493,10 +2493,32 @@
 
     function readAiPosterTransparencyPct() {
       const el = $("flow-ai-poster-transparency");
-      if (!el) return 10;
+      if (!el) return 0;
       let n = Number(el.value);
-      if (!Number.isFinite(n)) n = 10;
+      if (!Number.isFinite(n)) n = 0;
       return Math.max(0, Math.min(10, Math.round(n)));
+    }
+
+    function syncAiPosterOpacityPreview() {
+      const preview = $("mw-poster-opacity-preview");
+      const img = $("mw-poster-opacity-preview-img");
+      if (!preview || !img) return;
+      const pct = readAiPosterTransparencyPct();
+      const selectedImg = document.querySelector(
+        "#mw-weekly-posters-track [data-weekly-style].is-selected img.mw-weekly-posters__img"
+      );
+      const src = selectedImg ? String(selectedImg.getAttribute("src") || "").trim() : "";
+      if (src) {
+        if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+        img.hidden = false;
+        preview.classList.add("is-ready");
+      } else {
+        img.removeAttribute("src");
+        img.hidden = true;
+        preview.classList.remove("is-ready");
+      }
+      // Match PPTX mapping: 0% = opaque, 10% ≈ 90% opacity.
+      img.style.opacity = String(Math.max(0, Math.min(1, 1 - pct / 100)));
     }
 
     function syncAiPosterTransparencyLabel() {
@@ -2508,6 +2530,42 @@
       el.setAttribute("aria-valuenow", String(pct));
       el.setAttribute("aria-valuetext", pct + " percent");
       if (label) label.textContent = pct + "%";
+      syncAiPosterOpacityPreview();
+    }
+
+    function bindAiPosterOpacityPreviewScrub() {
+      const stage = $("mw-poster-opacity-preview-stage");
+      const el = $("flow-ai-poster-transparency");
+      if (!stage || !el || stage.dataset.boundOpacityScrub === "1") return;
+      stage.dataset.boundOpacityScrub = "1";
+      let dragging = false;
+      const applyFromClientX = (clientX) => {
+        const rect = stage.getBoundingClientRect();
+        if (!rect.width) return;
+        const t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        // Left = 0% (opaque), right = 10% (softest).
+        el.value = String(Math.round(t * 10));
+        syncAiPosterTransparencyLabel();
+      };
+      stage.addEventListener("pointerdown", (e) => {
+        if (e.button != null && e.button !== 0) return;
+        dragging = true;
+        try { stage.setPointerCapture(e.pointerId); } catch (_err) { /* ignore */ }
+        applyFromClientX(e.clientX);
+        e.preventDefault();
+      });
+      stage.addEventListener("pointermove", (e) => {
+        if (!dragging) return;
+        applyFromClientX(e.clientX);
+      });
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        try { stage.releasePointerCapture(e.pointerId); } catch (_err) { /* ignore */ }
+        if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+      };
+      stage.addEventListener("pointerup", endDrag);
+      stage.addEventListener("pointercancel", endDrag);
     }
 
     function readOpenAiPosterSettings() {
@@ -2677,8 +2735,6 @@
       const body = $("mw-ai-poster-body");
       const wrap = $("flow-openai-style-wrap");
       const msg = $("mw-ai-poster-gate-msg");
-      const tape = $("mw-ai-poster-gate-repeat");
-      const sa = isWeeklyPosterSuperadmin();
       if (catalog && typeof catalog === "object") {
         const ready = Number(catalog.ready_count || 0);
         const total = Number(catalog.total || 0);
@@ -2709,9 +2765,10 @@
           ? ""
           : ('AI posters aren\'t available for the "' + dateLabel + '" Mass Sunday — wait for SA.');
       }
-      if (tape) {
-        const line = "AI POSTERS AREN'T AVAILABLE · WAIT FOR SA · ";
-        tape.textContent = line.repeat(8);
+      if (unlocked) {
+        startWeeklyPosterAutoScroll();
+      } else {
+        stopWeeklyPosterAutoScroll();
       }
       window.areWeeklyAiPostersReady = areWeeklyAiPostersReady;
     }
@@ -2736,6 +2793,7 @@
           viewport.scrollTo({ left: left, behavior: "smooth" });
         }
       }
+      syncAiPosterOpacityPreview();
     }
 
     function setWeeklyPosterStyle(styleId) {
@@ -2774,11 +2832,16 @@
 
     function startWeeklyPosterAutoScroll() {
       stopWeeklyPosterAutoScroll();
+      if (!areWeeklyAiPostersReady()) return;
       const host = $("mw-weekly-posters");
       const viewport = $("mw-weekly-posters-viewport");
       if (!host || !viewport) return;
       if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       weeklyPosterAutoTimer = setInterval(() => {
+        if (!areWeeklyAiPostersReady()) {
+          stopWeeklyPosterAutoScroll();
+          return;
+        }
         if (host.matches(":hover") || host.classList.contains("is-paused")) return;
         const max = viewport.scrollWidth - viewport.clientWidth;
         if (max <= 8) return;
@@ -2944,7 +3007,6 @@
         }
         syncWeeklyPosterGenerateUi(data);
         syncWeeklyAiPosterGate(data);
-        startWeeklyPosterAutoScroll();
       } catch (_e) {
         if (hint) hint.textContent = "Could not load weekly posters. You can still pick a style after AI art is on.";
         renderWeeklyStylePosterCards([
@@ -3009,6 +3071,7 @@
       if (transparencyEl && !transparencyEl.dataset.boundTransparency) {
         transparencyEl.dataset.boundTransparency = "1";
         syncAiPosterTransparencyLabel();
+        bindAiPosterOpacityPreviewScrub();
         transparencyEl.addEventListener("input", () => {
           syncAiPosterTransparencyLabel();
           if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();

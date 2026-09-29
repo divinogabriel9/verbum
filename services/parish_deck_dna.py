@@ -62,7 +62,7 @@ DNA_SLOTS: tuple[DnaSlot, ...] = (
     DnaSlot("lamb_of_god", "Lamb of God", True),
     DnaSlot("communion_rite", "Communion Rite", True),
     DnaSlot("post_communion", "Post-Communion Prayer", False, optional_extras=1),
-    DnaSlot("welcoming_newcomers", "Welcoming Newcomers", True),
+    DnaSlot("welcoming_newcomers", "Welcoming Newcomers", False),
     DnaSlot("mass_collection", "Mass Collection", True),
     DnaSlot("confession", "Sacrament of Confession", True),
     DnaSlot("final_blessing", "Final Blessing", True),

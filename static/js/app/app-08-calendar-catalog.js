@@ -438,10 +438,10 @@
         activeTheme = resolvedTheme;
         body.custom_theme = pptThemePayload(resolvedTheme);
         const divStyleEl = $("flow-divider-style");
-        const divAllowed = ["divider1", "divider2", "divider3", "auto"];
+        const divAllowed = ["divider2", "divider3", "auto"];
         const divLive = (typeof activeDividerStyle === "string" && activeDividerStyle) || "";
         const divHidden = (divStyleEl && divStyleEl.value) || "";
-        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider1");
+        const divVal = divAllowed.includes(divLive) ? divLive : (divAllowed.includes(divHidden) ? divHidden : "divider3");
         activeDividerStyle = divVal;
         if (divStyleEl) divStyleEl.value = divVal;
         body.divider_style = divVal;
@@ -546,7 +546,7 @@
           divider_poster_basename: body.divider_poster_basename || null,
           lotw_poster: body.lotw_poster || "lotw1",
           lote_poster: body.lote_poster || "lote1",
-          divider_style: body.divider_style || "divider1",
+          divider_style: body.divider_style || "divider3",
           announcement_basenames: body.announcement_basenames || [],
           mass_collection_amount: body.mass_collection_amount || null,
           mass_collection_currency: body.mass_collection_currency || null,
@@ -1230,9 +1230,15 @@
 
     function syncCalAdminFetchSourceLabels() {
       const source = calAdminSourceName();
+      const missingBtn = $("cal-admin-fetch-missing-btn");
+      if (missingBtn) {
+        const title = "Fetch critical/warning dates from " + source + " (skips healthy; resumes where you left off)";
+        missingBtn.dataset.defaultTitle = title;
+        if (!missingBtn.classList.contains("is-running")) missingBtn.title = title;
+      }
       const monthBtn = $("cal-admin-fetch-month-btn");
       if (monthBtn) {
-        const title = "Force live-fetch every date in this month from " + source;
+        const title = "Fetch unhealthy dates from " + source + " (skips healthy; resumes where you left off)";
         monthBtn.dataset.defaultTitle = title;
         if (!monthBtn.classList.contains("is-running")) monthBtn.title = title;
       }
@@ -1356,17 +1362,93 @@
       if (modalStatus && calAdminFetchJob.mode === "date") modalStatus.textContent = "Fetch stopped.";
     }
 
-    function calAdminDatesForMonthFetch(scope) {
+    var CAL_ADMIN_FETCH_CURSOR_KEY = "verbumCalFetchCursor";
+    var CAL_ADMIN_HEALTH_RANK = { critical: 0, warning: 1, unknown: 2 };
+
+    function calAdminFetchMonthKey() {
+      return (
+        calendarCursor.getFullYear() +
+        "-" +
+        (calendarCursor.getMonth() + 1) +
+        "-" +
+        currentCalendarLanguage()
+      );
+    }
+
+    function readCalAdminFetchCursor() {
+      try {
+        const raw = localStorage.getItem(CAL_ADMIN_FETCH_CURSOR_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return null;
+        if (parsed.monthKey !== calAdminFetchMonthKey()) return null;
+        return parsed;
+      } catch (_e) {
+        return null;
+      }
+    }
+
+    function writeCalAdminFetchCursor(nextIso, scope) {
+      try {
+        if (!nextIso) {
+          localStorage.removeItem(CAL_ADMIN_FETCH_CURSOR_KEY);
+          return;
+        }
+        localStorage.setItem(
+          CAL_ADMIN_FETCH_CURSOR_KEY,
+          JSON.stringify({
+            monthKey: calAdminFetchMonthKey(),
+            nextIso: String(nextIso),
+            scope: scope || "missing",
+            updatedAt: Date.now(),
+          })
+        );
+      } catch (_e) { /* ignore */ }
+    }
+
+    function clearCalAdminFetchCursor() {
+      try {
+        localStorage.removeItem(CAL_ADMIN_FETCH_CURSOR_KEY);
+      } catch (_e) { /* ignore */ }
+    }
+
+    function calAdminDayHealth(iso) {
+      const h = String(((calendarMonthData[iso] || {}).readings_health) || "").trim().toLowerCase();
+      if (h === "healthy" || h === "warning" || h === "critical") return h;
+      return "unknown";
+    }
+
+    function calAdminDatesForMonthFetch(scope, opts) {
+      const options = opts || {};
       const y = calendarCursor.getFullYear();
       const m = calendarCursor.getMonth();
       const daysInMonth = new Date(y, m + 1, 0).getDate();
-      const out = [];
+      const candidates = [];
       for (let d = 1; d <= daysInMonth; d++) {
         const iso = formatDateInput(new Date(y, m, d));
-        const health = (calendarMonthData[iso] || {}).readings_health;
-        if (scope === "all" || health !== "healthy") out.push(iso);
+        const health = calAdminDayHealth(iso);
+        // Skip healthy — jump straight to critical / warning / incomplete.
+        if (health === "healthy") continue;
+        candidates.push({ iso, health });
       }
-      return out;
+      candidates.sort((a, b) => {
+        const ra = CAL_ADMIN_HEALTH_RANK[a.health] != null ? CAL_ADMIN_HEALTH_RANK[a.health] : 9;
+        const rb = CAL_ADMIN_HEALTH_RANK[b.health] != null ? CAL_ADMIN_HEALTH_RANK[b.health] : 9;
+        if (ra !== rb) return ra - rb;
+        return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : 0;
+      });
+      let out = candidates.map((row) => row.iso);
+      const cursor = options.resume === false ? null : readCalAdminFetchCursor();
+      const resumeIso = cursor && cursor.nextIso ? String(cursor.nextIso) : "";
+      let resumedFrom = "";
+      if (resumeIso && out.length) {
+        const fromCursor = out.filter((iso) => iso >= resumeIso);
+        if (fromCursor.length) {
+          out = fromCursor;
+          resumedFrom = out[0];
+        }
+      }
+      return { dates: out, resumedFrom };
     }
 
     async function postCalAdminFetchDate(iso) {
@@ -1499,42 +1581,63 @@
         notify("Another fetch is already running.", "info");
         return;
       }
-      const allDays = scope === "all";
-      const dates = calAdminDatesForMonthFetch(scope || "missing");
+      const jobScope = scope || "missing";
+      const picked = calAdminDatesForMonthFetch(jobScope);
+      const dates = picked.dates || [];
       if (!dates.length) {
+        clearCalAdminFetchCursor();
         const status = $("cal-month-status");
-        if (status) status.textContent = allDays ? "No dates in this month." : "All dates in this month look healthy.";
+        if (status) status.textContent = "All dates in this month look healthy — nothing to fetch.";
         return;
       }
-      beginCalAdminFetchJob("month", dates.length, scope || "missing");
+      beginCalAdminFetchJob("month", dates.length, jobScope);
       const status = $("cal-month-status");
+      if (status && picked.resumedFrom) {
+        status.textContent = "Resuming from " + picked.resumedFrom + " (" + dates.length + " unhealthy left)…";
+      }
       let improved = 0;
+      let lastAttempted = "";
       try {
         for (let i = 0; i < dates.length; i++) {
           if (calAdminFetchJob.cancelled) break;
           const iso = dates[i];
+          lastAttempted = iso;
+          // Persist cursor before each attempt so Stop + restart continues here.
+          writeCalAdminFetchCursor(iso, jobScope);
           calAdminFetchJob.done = i;
           updateCalAdminFetchButtons((i + 1) + "/" + dates.length + " · " + iso);
-          if (status) status.textContent = "Fetching " + iso + " (" + (i + 1) + "/" + dates.length + ")…";
-          const beforeHealth = ((calendarMonthData[iso] || {}).readings_health) || "critical";
+          if (status) {
+            status.textContent = "Fetching " + iso + " (" + (i + 1) + "/" + dates.length + " unhealthy)…";
+          }
+          const beforeHealth = calAdminDayHealth(iso);
           const result = await fetchCalAdminDateWithRetries(iso, { quietMonthStatus: true });
-          const afterHealth = ((calendarMonthData[iso] || {}).readings_health)
+          const afterHealth = calAdminDayHealth(iso)
             || ((result.data && result.data.health && result.data.health.status) || beforeHealth);
           if (afterHealth === "healthy" && beforeHealth !== "healthy") improved += 1;
           calAdminFetchJob.done = i + 1;
           updateCalAdminFetchButtons((i + 1) + "/" + dates.length + " · done " + iso);
           if (calAdminFetchJob.cancelled) break;
+          // Advance cursor to the next planned date (or clear when finishing).
+          const nextIso = i + 1 < dates.length ? dates[i + 1] : "";
+          if (nextIso) writeCalAdminFetchCursor(nextIso, jobScope);
+          else clearCalAdminFetchCursor();
           if (i < dates.length - 1) await calAdminFetchSleep(350);
         }
         const stopped = calAdminFetchJob.cancelled;
+        if (stopped && lastAttempted) {
+          writeCalAdminFetchCursor(lastAttempted, jobScope);
+        } else if (!stopped) {
+          clearCalAdminFetchCursor();
+        }
         const summary = stopped
-          ? "Fetch stopped — processed " + calAdminFetchJob.done + " of " + dates.length + ", fixed " + improved + "."
-          : "Fetch complete — processed " + dates.length + " dates, fixed " + improved + ".";
+          ? "Fetch stopped at " + (lastAttempted || "—") + " — processed " + calAdminFetchJob.done + " of " + dates.length + ", fixed " + improved + ". Next run resumes from here."
+          : "Fetch complete — processed " + dates.length + " unhealthy dates, fixed " + improved + ".";
         calendarMonthKey = "";
         await loadCalendarMonth();
         if (calReadingsAdminDate) openCalReadingsAdminModal(calReadingsAdminDate);
         finishCalAdminFetchJob(summary);
       } catch (err) {
+        if (lastAttempted) writeCalAdminFetchCursor(lastAttempted, jobScope);
         finishCalAdminFetchJob(err.message || "Fetch failed.");
       }
     }
