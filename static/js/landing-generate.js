@@ -165,8 +165,8 @@
       include_social_exports: false,
       include_church_logo: false,
       include_church_name: false,
-      lotw_poster: "lotw1",
-      lote_poster: "lote1",
+      lotw_poster: "lotw3",
+      lote_poster: "lote3",
       divider_style: "divider3",
     };
   }

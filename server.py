@@ -5368,8 +5368,8 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         our_father_choice=of_choice,
         mass_language=mass_lang,
         divider_style="divider3",
-        lotw_poster="lotw1",
-        lote_poster="lote1",
+        lotw_poster="lotw3",
+        lote_poster="lote3",
         hymn_lyrics_layout="dual",
         include_leaflet=bool(body.include_leaflet),
     )
