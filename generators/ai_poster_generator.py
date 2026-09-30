@@ -33,7 +33,7 @@ from generators.poster.primitives import callout_from_quote
 from services.ai_styles import resolve_ai_image_style, resolve_style_for_generation
 from services.community_config import get_community_name
 from services.gospel_visual_prompt import build_visual_scene_line
-from services.gospel_quote_extractor import first_sentence_slide_quote, split_slide_sentences
+from services.gospel_quote_extractor import preferred_slide_quote, split_slide_sentences
 from services.lectionary_service import get_liturgical_data
 from services.liturgical_calendar import get_liturgical_color
 from services.mass_divider.fields import resolve_mass_divider_fields
@@ -86,13 +86,13 @@ def _build_mass_poster_master(
     base_quote = gospel_slide or gospel_full
     sentences = split_slide_sentences(base_quote)
     default_quote = (
-        sentences[0]
-        if sentences
-        else first_sentence_slide_quote(base_quote)
+        preferred_slide_quote(base_quote)
         if base_quote
         else gospel_ref
     )
-    quote_for_poster = (gospel_quote or "").strip() or default_quote
+    if not default_quote and sentences:
+        default_quote = sentences[0]
+    quote_for_poster = (gospel_quote or "").strip() or default_quote or gospel_ref
 
     title = str(data.get("title") or "Sunday Mass Celebration")
     community = get_community_name()

@@ -2990,6 +2990,30 @@
       refreshVerbumSelect(sel);
     }
 
+    function preferredGospelSentenceIndex(sents) {
+      const n = Array.isArray(sents) ? sents.length : 0;
+      if (n <= 1) return 0;
+      const lengths = sents.map((s) => String(s || "").length);
+      const maxLen = Math.max.apply(null, lengths);
+      const allSame = lengths.every((len) => len === maxLen);
+      const allowed = (i) => allSame || lengths[i] < maxLen;
+      if (n >= 3) {
+        const mid = Math.floor(n / 2);
+        if (allowed(mid)) return mid;
+        for (let delta = 1; delta < n; delta += 1) {
+          const left = mid - delta;
+          const right = mid + delta;
+          if (left >= 0 && allowed(left)) return left;
+          if (right < n && allowed(right)) return right;
+        }
+        return mid;
+      }
+      for (let i = 0; i < n; i += 1) {
+        if (allowed(i)) return i;
+      }
+      return 0;
+    }
+
     function populateGospelSentenceSelect(data) {
       const sel = $("flow-gospel-sentence");
       if (!sel) return;
@@ -3010,6 +3034,11 @@
         o.textContent = formatSlidePickLabel(s, i, sents.length);
         sel.appendChild(o);
       });
+      let preferred = Number(data.preferred_sentence_index);
+      if (!Number.isInteger(preferred) || preferred < 0 || preferred >= sents.length) {
+        preferred = preferredGospelSentenceIndex(sents);
+      }
+      sel.value = String(preferred);
       refreshVerbumSelect(sel);
     }
 

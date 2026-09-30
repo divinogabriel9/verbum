@@ -233,6 +233,61 @@ def first_sentence_slide_quote(text: str) -> str:
     return _normalize_typography(text or "").strip()
 
 
+def preferred_slide_sentence_index(sentences: List[str]) -> int:
+    """Index for Mass-divider auto-pick.
+
+    - With 3+ verses: prefer the middle option.
+    - Never auto-pick the uniquely longest verse (too long for the divider).
+    - With 2 verses: pick the shorter one.
+    """
+    n = len(sentences)
+    if n <= 0:
+        return 0
+    if n == 1:
+        return 0
+
+    lengths = [len(s or "") for s in sentences]
+    max_len = max(lengths)
+    all_same = all(length == max_len for length in lengths)
+
+    def allowed(i: int) -> bool:
+        if all_same:
+            return True
+        return lengths[i] < max_len
+
+    if n >= 3:
+        mid = n // 2
+        if allowed(mid):
+            return mid
+        for delta in range(1, n):
+            for idx in (mid - delta, mid + delta):
+                if 0 <= idx < n and allowed(idx):
+                    return idx
+        return mid
+
+    for i in range(n):
+        if allowed(i):
+            return i
+    return 0
+
+
+def preferred_slide_sentence(sentences: List[str]) -> str:
+    if not sentences:
+        return ""
+    idx = preferred_slide_sentence_index(sentences)
+    if 0 <= idx < len(sentences):
+        return sentences[idx]
+    return sentences[0]
+
+
+def preferred_slide_quote(text: str) -> str:
+    """Default Mass-divider / demo gospel line (middle when 3+, never longest)."""
+    sents = split_slide_sentences(text)
+    if sents:
+        return preferred_slide_sentence(sents)
+    return _normalize_typography(text or "").strip()
+
+
 def pick_sentence_interactive(sentences: List[str]) -> str:
     """Ask the user which sentence to put on the slide."""
     if not sentences:

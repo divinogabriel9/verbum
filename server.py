@@ -1378,6 +1378,7 @@ def _preview_to_json(p: PreviewPayload) -> dict[str, Any]:
         "gospel_text_length": p.gospel_text_length,
         "sentences": p.sentences,
         "sentence_count": len(p.sentences),
+        "preferred_sentence_index": int(getattr(p, "preferred_sentence_index", 0) or 0),
         "quote_attribution": p.quote_attribution,
         "songs_by_section": p.songs_by_section,
         "gospel_quote": p.gospel_quote,

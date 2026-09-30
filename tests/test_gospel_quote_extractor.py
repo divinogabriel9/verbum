@@ -8,6 +8,8 @@ from pathlib import Path
 from services.gospel_quote_extractor import (
     extract_gospel_slide_quote,
     first_sentence_slide_quote,
+    preferred_slide_sentence,
+    preferred_slide_sentence_index,
     split_slide_sentences,
 )
 
@@ -89,6 +91,34 @@ def test_closed_quotes_are_not_merged_into_one_speech():
 def test_first_sentence_follows_extracted_quote():
     quote = extract_gospel_slide_quote(_TAGALOG_VINEYARD, max_chars=300)
     assert first_sentence_slide_quote(quote).startswith("Ang paghahari ng Diyos")
+
+
+def test_preferred_picks_middle_when_three_or_more():
+    sents = [
+        "Short one.",
+        "A medium-length verse about the kingdom.",
+        "This is the uniquely longest verse used only as a trap option for the picker.",
+    ]
+    assert preferred_slide_sentence_index(sents) == 1
+    assert preferred_slide_sentence(sents) == sents[1]
+
+
+def test_preferred_never_picks_longest_even_if_middle():
+    sents = [
+        "Alpha short.",
+        "This middle option is deliberately the longest sentence of the three options available.",
+        "Beta mid.",
+    ]
+    idx = preferred_slide_sentence_index(sents)
+    assert idx != 1
+    assert sents[idx] != max(sents, key=len)
+    assert idx in (0, 2)
+
+
+def test_preferred_with_two_picks_shorter():
+    sents = ["Short.", "Much longer second option for the divider."]
+    assert preferred_slide_sentence_index(sents) == 0
+    assert preferred_slide_sentence(sents) == "Short."
 
 
 def test_cached_2026_09_20_tagalog_matches_english_opening():

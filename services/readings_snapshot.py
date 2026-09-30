@@ -7,7 +7,8 @@ from typing import Any, Optional
 
 from services.gospel_quote_extractor import (
     extract_gospel_slide_quote,
-    first_sentence_slide_quote,
+    preferred_slide_quote,
+    preferred_slide_sentence_index,
     split_slide_sentences,
 )
 from services.liturgical_calendar import get_liturgical_color
@@ -76,8 +77,9 @@ def _build_payload(d: str, data: dict[str, Any]) -> dict[str, Any]:
         "gospel_text_length": len(gospel_text),
         "sentences": sentences,
         "sentence_count": len(sentences),
+        "preferred_sentence_index": preferred_slide_sentence_index(sentences) if sentences else 0,
         "quote_attribution": data.get("quote_attribution"),
-        "gospel_quote": (first_sentence_slide_quote(base_quote) or "").strip(),
+        "gospel_quote": (preferred_slide_quote(base_quote) or "").strip(),
         "gospel_synopsis": synopsis_from_reading(gospel_text, max_chars=320) if gospel_text else "",
         "first_reading_reference": str(data.get("first_reading") or "").strip(),
         "first_reading_excerpt": synopsis_from_reading(fr_txt, max_chars=720) if fr_txt else "",

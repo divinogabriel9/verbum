@@ -17,7 +17,8 @@ from generators.poster_generator import (
 from generators.powerpoint import generate_mass_ppt
 from services.community_config import get_community_name, update_community
 from services.gospel_quote_extractor import (
-    first_sentence_slide_quote,
+    preferred_slide_quote,
+    preferred_slide_sentence_index,
     pick_sentence_interactive,
     split_slide_sentences,
 )
@@ -52,6 +53,7 @@ class PreviewPayload:
     liturgical_color: Optional[Mapping[str, Any]] = None
     gospel_text_length: int = 0
     sentences: list[str] = field(default_factory=list)
+    preferred_sentence_index: int = 0
     quote_attribution: Optional[str] = None
     songs_by_section: dict[str, list[dict[str, str]]] = field(default_factory=dict)
     gospel_quote: str = ""
@@ -227,7 +229,7 @@ def resolve_slide_line(
     interactive_pick: bool = False,
     gospel_quote_override: Optional[str] = None,
 ) -> str:
-    """Pick the short line for slides (first sentence by default, or chosen index / override / CLI prompt)."""
+    """Pick the short line for slides (middle when 3+, never longest, or chosen index / override / CLI prompt)."""
     ovr = (gospel_quote_override or "").strip()
     if ovr:
         return ovr
@@ -237,7 +239,7 @@ def resolve_slide_line(
         return sentences[sentence_index]
     if interactive_pick and len(sentences) > 1:
         return pick_sentence_interactive(sentences)
-    return first_sentence_slide_quote(base_quote)
+    return preferred_slide_quote(base_quote)
 
 
 def _dedupe_song_ids_across_sections(sel: Mapping[str, Any]) -> dict[str, Any]:
@@ -406,7 +408,7 @@ def fetch_preview(
                 row["language"] = str(row.get("language") or "")
                 row["has_lyrics"] = bool(row.get("has_lyrics", False))
         by_sec = _merge_song_sections(by_sec_base, by_sec_web, cap=10)
-        g_quote_preview = (first_sentence_slide_quote(base_quote) or "").strip()
+        g_quote_preview = (preferred_slide_quote(base_quote) or "").strip()
         mood_preview = {
             "season": data.get("season") or season_key,
             "title": data.get("title") or "",
@@ -415,7 +417,7 @@ def fetch_preview(
             "gospel_quote": g_quote_preview,
         }
         default_picks = default_song_selections_for_preview(season_key, mood_preview)
-    g_quote_preview = (first_sentence_slide_quote(base_quote) or "").strip()
+    g_quote_preview = (preferred_slide_quote(base_quote) or "").strip()
     est_slides = 78 + min(12, len(sentences))
     fr_txt = data.get("first_reading_text") or ""
     sr_txt = data.get("second_reading_text") or ""
@@ -436,6 +438,7 @@ def fetch_preview(
         liturgical_color=liturgical_color,
         gospel_text_length=len(gospel_text),
         sentences=sentences,
+        preferred_sentence_index=preferred_slide_sentence_index(sentences) if sentences else 0,
         quote_attribution=data.get("quote_attribution"),
         songs_by_section=by_sec,
         gospel_quote=g_quote_preview,

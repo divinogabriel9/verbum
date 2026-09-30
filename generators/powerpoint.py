@@ -4598,11 +4598,12 @@ def _divider3_title_lines(mass_title: str, season: str) -> List[str]:
     """Two-line Sunday title.
 
     English: ``25th Sunday`` / ``in Ordinary Time``.
-    Tagalog: ``Ika-27 Linggo`` / ``sa Karaniwang Panahon``.
+    Tagalog: ``Ika-27 Linggo sa`` / ``Karaniwang Panahon``.
     """
     title = sunday_title_display(mass_title, season)
     if _mass_lang() == "tagalog":
-        m = re.match(r"^(.*?)\s+(sa\s+.+)$", title, flags=re.IGNORECASE)
+        # Keep ``sa`` on the first line (TagalogMassDivider.pptx).
+        m = re.match(r"^(.*?\ssa)\s+(.+)$", title, flags=re.IGNORECASE)
         if m and m.group(1).strip() and m.group(2).strip():
             return [m.group(1).strip(), m.group(2).strip()]
         return [title] if title else []
