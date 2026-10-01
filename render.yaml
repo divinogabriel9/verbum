@@ -22,6 +22,11 @@ services:
       # Optional human label (e.g. 2026.07.12) shown alongside the short SHA in the UI.
       - key: APP_VERSION
         sync: false
+      # Free-tier RAM is tight; enable memory hygiene (lower preview DPI, aggressive GC).
+      - key: MEMORY_CONSTRAINED
+        value: "1"
+      - key: PPT_PREVIEW_SCALE
+        value: "0.85"
       # Render injects RENDER_EXTERNAL_URL; auth_config uses it when APP_PUBLIC_URL is unset.
       - key: REDIS_URL
         fromService:

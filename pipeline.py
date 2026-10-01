@@ -329,6 +329,27 @@ _PREVIEW_CACHE_VERSION = 3
 _PREVIEW_CACHE: dict[tuple, tuple[float, PreviewPayload]] = {}
 _PREVIEW_CACHE_TTL_S = 600.0
 _PREVIEW_INCOMPLETE_TTL_S = 15.0
+_PREVIEW_CACHE_MAX = 24
+
+
+def prune_preview_cache() -> None:
+    """Drop expired / excess preview payloads (unbounded growth → OOM)."""
+    now = time.monotonic()
+    for key in list(_PREVIEW_CACHE):
+        cached = _PREVIEW_CACHE.get(key)
+        if not cached:
+            continue
+        age = now - cached[0]
+        complete = cached[1].readings_complete
+        ttl = _PREVIEW_CACHE_TTL_S if complete else _PREVIEW_INCOMPLETE_TTL_S
+        if age >= ttl:
+            del _PREVIEW_CACHE[key]
+    if len(_PREVIEW_CACHE) <= _PREVIEW_CACHE_MAX:
+        return
+    # Drop oldest first.
+    ordered = sorted(_PREVIEW_CACHE.items(), key=lambda item: item[1][0])
+    for key, _ in ordered[: max(0, len(ordered) - _PREVIEW_CACHE_MAX)]:
+        _PREVIEW_CACHE.pop(key, None)
 
 
 def invalidate_preview_cache(date: str | None = None, language: str | None = None) -> None:
@@ -458,6 +479,8 @@ def fetch_preview(
         readings_language=str(data.get("readings_language") or lang or "english"),
     )
     _PREVIEW_CACHE[cache_key] = (now, result)
+    if len(_PREVIEW_CACHE) > _PREVIEW_CACHE_MAX:
+        prune_preview_cache()
     return result
 
 
@@ -941,6 +964,12 @@ def generate_mass_media(
     finally:
         if ai_pool is not None:
             ai_pool.shutdown(wait=True)
+        try:
+            from services.memory_guard import release_after_heavy_job
+
+            release_after_heavy_job("mass-generate")
+        except Exception:
+            logger.debug("post-generate memory release failed", exc_info=True)
 
 
 def regenerate_mass_pptx(
@@ -1124,6 +1153,13 @@ def regenerate_mass_pptx(
         slide_kinds=slide_kinds,
         parish_deck_dna=parish_deck_dna,
     )
+
+    try:
+        from services.memory_guard import release_after_heavy_job
+
+        release_after_heavy_job("regenerate-pptx")
+    except Exception:
+        logger.debug("post-regenerate memory release failed", exc_info=True)
 
     return GenerationResult(
         ok=True,

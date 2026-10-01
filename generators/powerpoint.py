@@ -354,6 +354,32 @@ _lotw_title_template: Optional[Presentation] = None
 _gospel_acclamation_template: Optional[Presentation] = None
 _apostles_creed_template: Optional[Presentation] = None
 _nicene_creed_template: Optional[Presentation] = None
+# Cap parish DNA Presentation cache — each entry can be tens of MiB in RAM.
+_MASTER_TEMPLATES_BY_PATH_MAX = 1
+
+
+def clear_presentation_caches() -> None:
+    """Drop cached python-pptx Presentation objects so RSS can fall after generate.
+
+    Templates are re-loaded on the next deck build. Holding every section template
+    forever is the main reason small Render instances OOM → Bad Gateway.
+    """
+    global _master_template, _reference_mass_deck
+    global _lamb_of_god_template, _sign_of_peace_template, _gloria_template
+    global _kyrie_template, _kyrie_tagalog_template, _lotw_title_template
+    global _gospel_acclamation_template, _apostles_creed_template, _nicene_creed_template
+    _master_template = None
+    _reference_mass_deck = None
+    _lamb_of_god_template = None
+    _sign_of_peace_template = None
+    _gloria_template = None
+    _kyrie_template = None
+    _kyrie_tagalog_template = None
+    _lotw_title_template = None
+    _gospel_acclamation_template = None
+    _apostles_creed_template = None
+    _nicene_creed_template = None
+    _master_templates_by_path.clear()
 
 
 @dataclass(frozen=True)
@@ -1722,6 +1748,8 @@ def _load_master_template() -> Optional[Presentation]:
         if cached is not None:
             return cached
         tpl = Presentation(str(ref_path))
+        if len(_master_templates_by_path) >= _MASTER_TEMPLATES_BY_PATH_MAX:
+            _master_templates_by_path.clear()
         _master_templates_by_path[key] = tpl
         return tpl
     if _master_template is not None:
@@ -2312,14 +2340,14 @@ def _lotw_title_template_path() -> Optional[Path]:
 
 
 def _load_lotw_title_template() -> Optional[Presentation]:
+    """Load LOTW title deck without permanent cache (file is ~8MB compressed)."""
     global _lotw_title_template
-    if _lotw_title_template is not None:
-        return _lotw_title_template
     ref_path = _lotw_title_template_path()
     if not ref_path:
         return None
-    _lotw_title_template = Presentation(str(ref_path))
-    return _lotw_title_template
+    # Do not keep this Presentation around — it is the largest reference deck.
+    _lotw_title_template = None
+    return Presentation(str(ref_path))
 
 
 def _resolve_bundled_poster(
@@ -8043,4 +8071,9 @@ def _generate_mass_ppt_inner(
 
     print(f"✅ PowerPoint created: {out} ({n_slides} slides)")
     _SHOW_HYMN_SECTION_LABELS = False
+    # Drop the in-memory deck tree before returning (save already flushed to disk).
+    try:
+        del prs
+    except Exception:
+        pass
     return n_slides, out, staged_cues

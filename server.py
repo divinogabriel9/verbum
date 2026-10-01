@@ -1305,6 +1305,27 @@ def _bootstrap_superadmin_roles() -> None:
         except Exception as exc:
             print(f"[Verbum] Superadmin bootstrap skipped: {exc}")
 
+    try:
+        from services.memory_guard import (
+            cleanup_temp_profiles,
+            prune_outputs,
+            release_presentation_caches,
+            rss_mb,
+        )
+
+        n_out = prune_outputs(keep_newest=6)
+        n_tmp = cleanup_temp_profiles()
+        release_presentation_caches()
+        rss = rss_mb()
+        print(
+            f"[Verbum] Memory hygiene on startup: pruned {n_out} outputs, "
+            f"{n_tmp} temp dirs"
+            + (f", RSS={rss:.0f}MiB" if rss is not None else ""),
+            flush=True,
+        )
+    except Exception as exc:
+        print(f"[Verbum] Memory hygiene skipped: {exc}")
+
     import threading
     from datetime import date, timedelta
 
@@ -2270,6 +2291,13 @@ def _continue_slideshow_render(
             _slideshow_job["status"] = "error"
             _slideshow_job["complete"] = True
             _slideshow_job["error"] = str(exc) or "Slideshow render failed."
+    finally:
+        try:
+            from services.memory_guard import release_after_heavy_job
+
+            release_after_heavy_job("ppt-slideshow-bg")
+        except Exception:
+            pass
 
 
 @app.post("/api/ppt-preview/refresh")
@@ -2295,11 +2323,22 @@ def api_ppt_preview_refresh(
             p.unlink(missing_ok=True)
 
     quality = ((body.quality if body else None) or "preview").strip().lower()
-    # 1.25 ≈ projector-friendly 1080p-class; faster than 2.0 for Theme Lab too.
-    scale = 1.25
-    png_paths, pdf_msg = render_ppt_preview_pngs(
-        ppt, _PREVIEW_DIR, soffice_bin=soffice, scale=scale, image_format="png"
-    )
+    from services.memory_guard import heavy_job, preview_raster_scale
+
+    # 1.25 ≈ projector-friendly; constrained hosts use a lower scale to avoid OOM.
+    scale = preview_raster_scale(1.25)
+    try:
+        with heavy_job("ppt-preview-refresh"):
+            png_paths, pdf_msg = render_ppt_preview_pngs(
+                ppt, _PREVIEW_DIR, soffice_bin=soffice, scale=scale, image_format="png"
+            )
+    except TimeoutError as exc:
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": _extract_ppt_text_slides(ppt),
+            "message": str(exc),
+        }
     if not png_paths:
         return {
             "ok": True,
@@ -2381,7 +2420,9 @@ def api_ppt_preview_slideshow_start(
         }
 
     quality = ((body.quality if body else None) or "presentation").strip().lower()
-    scale = 1.25
+    from services.memory_guard import preview_raster_scale
+
+    scale = preview_raster_scale(1.25)
     image_format = "jpeg"
     first_batch = 2
 
@@ -2404,14 +2445,48 @@ def api_ppt_preview_slideshow_start(
             }
         )
 
-    first_paths, pdf_path, total, pdf_msg = begin_progressive_ppt_preview(
-        ppt,
-        _PREVIEW_DIR,
-        soffice_bin=soffice,
-        scale=scale,
-        image_format=image_format,
-        first_batch=first_batch,
-    )
+    first_paths, pdf_path, total, pdf_msg = (None, None, 0, "")
+    from services.memory_guard import heavy_job
+
+    try:
+        with heavy_job("ppt-preview-slideshow"):
+            first_paths, pdf_path, total, pdf_msg = begin_progressive_ppt_preview(
+                ppt,
+                _PREVIEW_DIR,
+                soffice_bin=soffice,
+                scale=scale,
+                image_format=image_format,
+                first_batch=first_batch,
+            )
+    except TimeoutError as exc:
+        text_slides = _extract_ppt_text_slides(ppt)
+        with _slideshow_job_lock:
+            if _slideshow_job.get("generation") == generation:
+                _slideshow_job.update(
+                    {
+                        "status": "done",
+                        "mode": "text",
+                        "total": len(text_slides),
+                        "ready": len(text_slides),
+                        "complete": True,
+                        "message": str(exc),
+                        "pptx_name": ppt_name,
+                        "pptx_mtime": ppt_mtime,
+                    }
+                )
+        return {
+            "ok": True,
+            "mode": "text",
+            "slides": text_slides,
+            "ready": len(text_slides),
+            "total": len(text_slides),
+            "complete": True,
+            "status": "done",
+            "message": str(exc),
+            "pptx_name": ppt_name,
+            "pptx_mtime": ppt_mtime,
+            "stale": False,
+        }
 
     if not first_paths or pdf_path is None:
         text_slides = _extract_ppt_text_slides(ppt)
@@ -5019,73 +5094,79 @@ def api_generate(
             parish_dna = materialize_dna_for_generate(parish_id)
         except Exception:
             parish_dna = None
-        result = generate_mass_media(
-            body.date.strip(),
-            body.celebrant.strip(),
-            co_celebrant=(body.co_celebrant or "").strip(),
-            sentence_index=body.sentence_index,
-            poster_template=body.poster_template,
-            include_social_exports=body.include_social_exports,
-            include_leaflet=bool(body.include_leaflet) or bool(body.leaflet_only),
-            leaflet_only=bool(body.leaflet_only),
-            include_gospel_art=False,
-            include_ai_mass_poster=False
-            if body.leaflet_only
-            else include_ai,
-            ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
-            ai_poster_style=body.ai_poster_style.strip() or "cinematic",
-            ai_poster_transparency_pct=float(body.ai_poster_transparency_pct),
-            reuse_existing_poster=reuse_poster,
-            community_name=body.community_name.strip() if body.community_name else None,
-            song_selections=song_map,
-            custom_theme=body.custom_theme,
-            divider_poster_path=divider_path,
-            divider_style=body.divider_style,
-            lotw_poster=body.lotw_poster,
-            lote_poster=body.lote_poster,
-            announcement_image_paths=ann_paths or None,
-            mass_collection_amount=body.mass_collection_amount.strip() if body.mass_collection_amount else None,
-            mass_collection_date_label=body.mass_collection_date_label.strip()
-            if body.mass_collection_date_label
-            else None,
-            mass_collection_currency=body.mass_collection_currency.strip().upper()
-            if body.mass_collection_currency
-            else "PHP",
-            food_sponsors=sponsors or None,
-            include_mass_collection_slide=bool(body.include_mass_collection_slide),
-            include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
-            include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
-            include_merienda_location_slide=bool(body.include_merienda_location_slide),
-            include_welcoming_newcomers_slide=bool(body.include_welcoming_newcomers_slide),
-            sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
-            merienda_location=(body.merienda_location or "").strip() or None,
-            announcement_bg_colors=body.announcement_bg_colors,
-            custom_announcement_slides=body.custom_announcement_slides or None,
-            psalm_text_override=psalm_override,
-            psalm_refrain_index=body.psalm_refrain_index,
-            psalm_response_override=(body.psalm_response_override or "").strip() or None,
-            gospel_quote_override=gospel_override,
-            hymn_typography=body.hymn_typography,
-            include_church_logo=body.include_church_logo,
-            include_church_name=body.include_church_name,
-            include_footer=body.include_footer,
-            hymn_lyric_overrides=hymn_overrides,
-            creed_choice=body.creed_choice,
-            creed_language=body.creed_language,
-            penitential_language=body.penitential_language,
-            sanctus_language=body.sanctus_language,
-            gloria_choice=body.gloria_choice,
-            our_father_choice=body.our_father_choice,
-            kyrie_choice=body.kyrie_choice,
-            kyrie_tagalog_slide=body.kyrie_tagalog_slide,
-            hymn_lyrics_layout=body.hymn_lyrics_layout,
-            hymn_layout_overrides=body.hymn_layout_overrides,
-            video_replacements=video_paths or None,
-            mass_language=body.mass_language,
-            show_hymn_section_labels=bool(body.show_hymn_section_labels),
-            slide_kinds=slide_kinds_payload,
-            parish_deck_dna=parish_dna,
-        )
+        from services.memory_guard import heavy_job
+
+        try:
+            with heavy_job("api-generate"):
+                result = generate_mass_media(
+                    body.date.strip(),
+                    body.celebrant.strip(),
+                    co_celebrant=(body.co_celebrant or "").strip(),
+                    sentence_index=body.sentence_index,
+                    poster_template=body.poster_template,
+                    include_social_exports=body.include_social_exports,
+                    include_leaflet=bool(body.include_leaflet) or bool(body.leaflet_only),
+                    leaflet_only=bool(body.leaflet_only),
+                    include_gospel_art=False,
+                    include_ai_mass_poster=False
+                    if body.leaflet_only
+                    else include_ai,
+                    ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
+                    ai_poster_style=body.ai_poster_style.strip() or "cinematic",
+                    ai_poster_transparency_pct=float(body.ai_poster_transparency_pct),
+                    reuse_existing_poster=reuse_poster,
+                    community_name=body.community_name.strip() if body.community_name else None,
+                    song_selections=song_map,
+                    custom_theme=body.custom_theme,
+                    divider_poster_path=divider_path,
+                    divider_style=body.divider_style,
+                    lotw_poster=body.lotw_poster,
+                    lote_poster=body.lote_poster,
+                    announcement_image_paths=ann_paths or None,
+                    mass_collection_amount=body.mass_collection_amount.strip() if body.mass_collection_amount else None,
+                    mass_collection_date_label=body.mass_collection_date_label.strip()
+                    if body.mass_collection_date_label
+                    else None,
+                    mass_collection_currency=body.mass_collection_currency.strip().upper()
+                    if body.mass_collection_currency
+                    else "PHP",
+                    food_sponsors=sponsors or None,
+                    include_mass_collection_slide=bool(body.include_mass_collection_slide),
+                    include_food_sponsor_slide=bool(body.include_food_sponsor_slide),
+                    include_sponsorship_contact_slide=bool(body.include_sponsorship_contact_slide),
+                    include_merienda_location_slide=bool(body.include_merienda_location_slide),
+                    include_welcoming_newcomers_slide=bool(body.include_welcoming_newcomers_slide),
+                    sponsorship_contact=(body.sponsorship_contact or "").strip() or None,
+                    merienda_location=(body.merienda_location or "").strip() or None,
+                    announcement_bg_colors=body.announcement_bg_colors,
+                    custom_announcement_slides=body.custom_announcement_slides or None,
+                    psalm_text_override=psalm_override,
+                    psalm_refrain_index=body.psalm_refrain_index,
+                    psalm_response_override=(body.psalm_response_override or "").strip() or None,
+                    gospel_quote_override=gospel_override,
+                    hymn_typography=body.hymn_typography,
+                    include_church_logo=body.include_church_logo,
+                    include_church_name=body.include_church_name,
+                    include_footer=body.include_footer,
+                    hymn_lyric_overrides=hymn_overrides,
+                    creed_choice=body.creed_choice,
+                    creed_language=body.creed_language,
+                    penitential_language=body.penitential_language,
+                    sanctus_language=body.sanctus_language,
+                    gloria_choice=body.gloria_choice,
+                    our_father_choice=body.our_father_choice,
+                    kyrie_choice=body.kyrie_choice,
+                    kyrie_tagalog_slide=body.kyrie_tagalog_slide,
+                    hymn_lyrics_layout=body.hymn_lyrics_layout,
+                    hymn_layout_overrides=body.hymn_layout_overrides,
+                    video_replacements=video_paths or None,
+                    mass_language=body.mass_language,
+                    show_hymn_section_labels=bool(body.show_hymn_section_labels),
+                    slide_kinds=slide_kinds_payload,
+                    parish_deck_dna=parish_dna,
+                )
+        except TimeoutError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     finally:
         for p in temp_assets:
             p.unlink(missing_ok=True)
@@ -5343,36 +5424,42 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         f"ai_poster={include_ai} style={ai_style!r}",
         flush=True,
     )
-    result = generate_mass_media(
-        mass_date,
-        celebrant,
-        co_celebrant="",
-        poster_template="liturgical_color",
-        include_social_exports=False,
-        include_gospel_art=False,
-        include_ai_mass_poster=include_ai,
-        ai_poster_style=ai_style,
-        reuse_existing_poster=True,
-        song_selections=song_map,
-        custom_theme=theme,
-        include_church_logo=False,
-        include_church_name=False,
-        include_footer=True,
-        footer_brand=DEMO_WATERMARK,
-        creed_choice=creed_choice,
-        creed_language=rite_lang,
-        penitential_language=rite_lang,
-        sanctus_language=rite_lang,
-        kyrie_choice=kyrie_choice,
-        kyrie_tagalog_slide=1,
-        our_father_choice=of_choice,
-        mass_language=mass_lang,
-        divider_style="divider3",
-        lotw_poster="lotw3",
-        lote_poster="lote3",
-        hymn_lyrics_layout="dual",
-        include_leaflet=bool(body.include_leaflet),
-    )
+    from services.memory_guard import heavy_job
+
+    try:
+        with heavy_job("demo-generate"):
+            result = generate_mass_media(
+                mass_date,
+                celebrant,
+                co_celebrant="",
+                poster_template="liturgical_color",
+                include_social_exports=False,
+                include_gospel_art=False,
+                include_ai_mass_poster=include_ai,
+                ai_poster_style=ai_style,
+                reuse_existing_poster=True,
+                song_selections=song_map,
+                custom_theme=theme,
+                include_church_logo=False,
+                include_church_name=False,
+                include_footer=True,
+                footer_brand=DEMO_WATERMARK,
+                creed_choice=creed_choice,
+                creed_language=rite_lang,
+                penitential_language=rite_lang,
+                sanctus_language=rite_lang,
+                kyrie_choice=kyrie_choice,
+                kyrie_tagalog_slide=1,
+                our_father_choice=of_choice,
+                mass_language=mass_lang,
+                divider_style="divider3",
+                lotw_poster="lotw3",
+                lote_poster="lote3",
+                hymn_lyrics_layout="dual",
+                include_leaflet=bool(body.include_leaflet),
+            )
+    except TimeoutError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
     if not result.pptx_path or not result.pptx_path.is_file():
