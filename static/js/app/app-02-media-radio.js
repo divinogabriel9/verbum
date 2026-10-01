@@ -3416,6 +3416,22 @@
       return !!flowPage.querySelector('.mw-options[aria-label="Sanctus tune"] .mw-option[aria-checked="true"]:not([data-val="__video"])');
     }
 
+    function liturgyPosterThumbUrl(id) {
+      const sid = String(id || "").replace(/\.png$/i, "").trim();
+      if (!sid) return "";
+      return "/static/images/posters/thumbs/" + encodeURIComponent(sid) + ".webp";
+    }
+
+    function preloadLiturgyPosterThumbs() {
+      for (let n = 1; n <= 4; n += 1) {
+        ["lotw" + n, "lote" + n].forEach((id) => {
+          const img = new Image();
+          img.decoding = "async";
+          img.src = liturgyPosterThumbUrl(id);
+        });
+      }
+    }
+
     function restoreMassBuilderPosterPicker(targetId, value) {
       const target = $(targetId);
       if (!target || !value) return;
@@ -3434,7 +3450,7 @@
       if (!picker) return;
       const current = picker.querySelector(".poster-picker__current");
       const menu = picker.querySelector(".poster-picker__menu");
-      if (current) current.src = "/static/images/posters/" + value + ".png";
+      if (current) current.src = liturgyPosterThumbUrl(value);
       if (menu) {
         menu.querySelectorAll(".poster-picker__option").forEach((opt) => {
           opt.setAttribute("aria-selected", opt.getAttribute("data-value") === value ? "true" : "false");
@@ -3468,8 +3484,8 @@
       }
       const lotwImg = picker.querySelector('.poster-picker__current[data-pair-role="lotw"]');
       const loteImg = picker.querySelector('.poster-picker__current[data-pair-role="lote"]');
-      if (lotwImg) lotwImg.src = "/static/images/posters/" + lotwId + ".png";
-      if (loteImg) loteImg.src = "/static/images/posters/" + loteId + ".png";
+      if (lotwImg) lotwImg.src = liturgyPosterThumbUrl(lotwId);
+      if (loteImg) loteImg.src = liturgyPosterThumbUrl(loteId);
       const menu = picker.querySelector(".poster-picker__menu");
       if (menu) {
         menu.querySelectorAll(".poster-picker__option").forEach((opt) => {

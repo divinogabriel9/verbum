@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261001-gospel-mid" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261001-carousel-opacity" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -2797,11 +2797,11 @@
                             <button type="button" class="poster-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="flow-liturgy-poster-label">
                               <span class="poster-picker__pair" aria-hidden="true">
                                 <span class="poster-picker__pair-item">
-                                  <img class="poster-picker__current mw-look-preview" data-pair-role="lotw" src="/static/images/posters/lotw1.png" alt="" loading="lazy" />
+                                  <img class="poster-picker__current mw-look-preview" data-pair-role="lotw" src="/static/images/posters/thumbs/lotw1.webp" alt="" decoding="async" fetchpriority="low" />
                                   <span class="poster-picker__pair-caption">Word</span>
                                 </span>
                                 <span class="poster-picker__pair-item">
-                                  <img class="poster-picker__current mw-look-preview" data-pair-role="lote" src="/static/images/posters/lote1.png" alt="" loading="lazy" />
+                                  <img class="poster-picker__current mw-look-preview" data-pair-role="lote" src="/static/images/posters/thumbs/lote1.webp" alt="" decoding="async" fetchpriority="low" />
                                   <span class="poster-picker__pair-caption">Eucharist</span>
                                 </span>
                               </span>
@@ -2850,20 +2850,13 @@
                               <div class="mw-weekly-posters__track" id="mw-weekly-posters-track" role="listbox" aria-label="Weekly poster styles"></div>
                             </div>
                             <button type="button" class="mw-weekly-posters__nav" data-weekly-nav="1" aria-label="Next styles">›</button>
+                            <div class="mw-weekly-posters__divider-overlay" aria-hidden="true">
+                              <span class="mw-weekly-posters__divider-kicker">Mass divider</span>
+                              <span class="mw-weekly-posters__divider-title">Liturgy of the Word</span>
+                            </div>
                           </div>
                         </div>
                         <div class="mw-poster-transparency" id="mw-poster-transparency">
-                          <div class="mw-poster-opacity-preview" id="mw-poster-opacity-preview">
-                            <div class="mw-poster-opacity-preview__stage" id="mw-poster-opacity-preview-stage">
-                              <img class="mw-poster-opacity-preview__img" id="mw-poster-opacity-preview-img" alt="" hidden />
-                              <div class="mw-poster-opacity-preview__placeholder" id="mw-poster-opacity-preview-ph" aria-hidden="true"></div>
-                              <div class="mw-poster-opacity-preview__copy" aria-hidden="true">
-                                <span class="mw-poster-opacity-preview__kicker">Mass divider</span>
-                                <span class="mw-poster-opacity-preview__title">Liturgy of the Word</span>
-                              </div>
-                            </div>
-                            <p class="muted mw-poster-opacity-preview__hint">Live preview — drag left/right or use the slider</p>
-                          </div>
                           <div class="mw-poster-transparency__row">
                             <label for="flow-ai-poster-transparency">AI poster transparency</label>
                             <span class="mw-poster-transparency__value" id="flow-ai-poster-transparency-label" aria-live="polite">0%</span>
@@ -2884,7 +2877,7 @@
                             <span>0%</span>
                             <span>10%</span>
                           </div>
-                          <p class="muted flow-setup-field-hint">Fades the chosen poster behind Mass divider text. 0% = full strength, 10% = softest fade.</p>
+                          <p class="muted flow-setup-field-hint">Fades the carousel poster behind divider text. 0% = full strength, 10% = softest fade.</p>
                         </div>
                         </div>
                         <select id="flow-openai-poster-style" class="sr-only" tabindex="-1" aria-hidden="true" data-vb-select="off">
@@ -3123,7 +3116,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261001-gospel-mid"></script>
+      <script src="/static/js/mw-wizard.js?v=20261001-carousel-opacity"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4735,7 +4728,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261001-gospel-mid"></script>
+  <script src="/static/js/app.js?v=20261001-carousel-opacity"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>

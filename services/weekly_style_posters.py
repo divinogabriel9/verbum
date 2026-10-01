@@ -91,8 +91,100 @@ def resolve_hero_file(*, sunday: str, style: str, output_dir: Path) -> Optional[
     return resolve_cached_hero_path(path, date=sunday, style=style)
 
 
+def shared_ui_thumb_relative_path(date: str, style: str) -> str:
+    iso = (date or "").strip()
+    resolved = resolve_ai_image_style(style)
+    return f"shared/ai-heroes/{iso}_{resolved}_hero_ui720.webp"
+
+
+def try_upload_shared_ui_thumb(thumb_path: Path, *, date: str, style: str) -> bool:
+    if not thumb_path.is_file():
+        return False
+    try:
+        from services.ai_hero_cache import shared_cache_ready
+        from services.storage_assets import upload_shared_asset
+
+        if not shared_cache_ready():
+            return False
+        upload_shared_asset(
+            relative_path=shared_ui_thumb_relative_path(date, style),
+            raw=thumb_path.read_bytes(),
+            content_type="image/webp",
+            upsert=True,
+        )
+        return True
+    except Exception:
+        logger.debug("weekly UI thumb upload failed", exc_info=True)
+        return False
+
+
 def signed_or_proxy_thumb_url(*, sunday: str, style: str) -> str:
-    """Prefer a signed Supabase URL; fall back to app proxy path."""
+    """UI thumb URL safe for ``<img src>`` (signed when possible).
+
+    Bearer tokens are not sent on raw image tags, so prefer signed Supabase URLs.
+    Fall back to the auth-gated app proxy (JS hydrates those via fetch).
+    """
+    resolved = resolve_ai_image_style(style)
+    proxy = f"/api/weekly-style-posters/image?date={sunday}&style={resolved}&variant=thumb"
+    try:
+        from services.ai_hero_cache import shared_cache_ready, shared_hero_relative_path
+        from services.storage_assets import shared_asset_exists, signed_service_asset_url
+
+        if shared_cache_ready():
+            thumb_remote = shared_ui_thumb_relative_path(sunday, resolved)
+            if shared_asset_exists(relative_path=thumb_remote):
+                url = signed_service_asset_url(path=thumb_remote, expires_in=3600)
+                if url:
+                    return url
+            full_remote = shared_hero_relative_path(sunday, resolved)
+            if shared_asset_exists(relative_path=full_remote):
+                url = signed_service_asset_url(path=full_remote, expires_in=3600)
+                if url:
+                    return url
+    except Exception:
+        logger.debug("weekly poster signed URL failed for %s %s", sunday, style, exc_info=True)
+    return proxy
+
+
+def ui_thumb_path(hero_path: Path, *, max_w: int = 720) -> Path:
+    return hero_path.with_name(f"{hero_path.stem}_ui{int(max_w)}.webp")
+
+
+def ensure_ui_thumb(
+    hero_path: Path,
+    *,
+    max_w: int = 720,
+    sunday: str = "",
+    style: str = "",
+) -> Path:
+    """Create/return a small WebP beside the hero for picker/carousel use."""
+    thumb = ui_thumb_path(hero_path, max_w=max_w)
+    created = False
+    try:
+        if thumb.is_file() and thumb.stat().st_mtime >= hero_path.stat().st_mtime:
+            pass
+        else:
+            from PIL import Image
+
+            with Image.open(hero_path) as im:
+                rgb = im.convert("RGB")
+                w, h = rgb.size
+                if w > max_w:
+                    nh = int(round(h * (max_w / float(w))))
+                    rgb = rgb.resize((max_w, nh), Image.Resampling.LANCZOS)
+                thumb.parent.mkdir(parents=True, exist_ok=True)
+                rgb.save(thumb, "WEBP", quality=72, method=4)
+            created = True
+    except Exception:
+        logger.debug("weekly UI thumb failed for %s", hero_path, exc_info=True)
+        return hero_path
+    if (created or thumb.is_file()) and sunday and style:
+        try_upload_shared_ui_thumb(thumb, date=sunday, style=style)
+    return thumb if thumb.is_file() else hero_path
+
+
+def full_or_proxy_hero_url(*, sunday: str, style: str) -> str:
+    """Prefer a signed Supabase URL for full heroes; fall back to app proxy."""
     resolved = resolve_ai_image_style(style)
     proxy = f"/api/weekly-style-posters/image?date={sunday}&style={resolved}"
     try:
@@ -123,7 +215,8 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
                 "label": weekly_style_label(sid),
                 "ready": ready,
                 "thumb_url": signed_or_proxy_thumb_url(sunday=sunday, style=sid) if ready else "",
-                "proxy_url": f"/api/weekly-style-posters/image?date={sunday}&style={sid}",
+                "proxy_url": f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb",
+                "full_url": full_or_proxy_hero_url(sunday=sunday, style=sid) if ready else "",
             }
         )
     return {

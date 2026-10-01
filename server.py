@@ -2979,11 +2979,21 @@ def api_weekly_style_posters(
 def api_weekly_style_poster_image(
     date: str,
     style: str = "cinematic",
+    variant: str = "full",
     _session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> FileResponse:
-    """Serve a shared weekly style hero (local or downloaded from shared cache)."""
+    """Serve a shared weekly style hero (local or downloaded from shared cache).
+
+    ``variant=thumb`` returns a small WebP for the Mass Builder carousel/picker.
+    Full PNG stays used for PPTX generation.
+    """
     from services.ai_styles import resolve_ai_image_style
-    from services.weekly_style_posters import normalize_mass_date, resolve_hero_file, sunday_for_mass_date
+    from services.weekly_style_posters import (
+        ensure_ui_thumb,
+        normalize_mass_date,
+        resolve_hero_file,
+        sunday_for_mass_date,
+    )
 
     mass = normalize_mass_date(date)
     if not mass:
@@ -2993,7 +3003,15 @@ def api_weekly_style_poster_image(
     path = resolve_hero_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
     if path is None or not path.is_file():
         raise HTTPException(status_code=404, detail="poster_not_ready")
-    return FileResponse(path, media_type="image/png", filename=path.name)
+    want_thumb = str(variant or "full").strip().lower() in {"thumb", "ui", "preview"}
+    media = "image/png"
+    headers = {"Cache-Control": "public, max-age=86400"}
+    if want_thumb:
+        path = ensure_ui_thumb(path, sunday=sunday, style=resolved)
+        if path.suffix.lower() == ".webp":
+            media = "image/webp"
+        headers = {"Cache-Control": "public, max-age=604800, immutable"}
+    return FileResponse(path, media_type=media, filename=path.name, headers=headers)
 
 
 @app.post("/api/weekly-style-posters/ensure")

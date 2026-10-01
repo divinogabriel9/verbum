@@ -3709,6 +3709,7 @@
           display: block;
           margin-top: 12px;
           width: 100%;
+          --mw-ai-poster-opacity: 1;
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__stage {
           position: relative;
@@ -3869,6 +3870,8 @@
           height: 100%;
           object-fit: cover;
           display: block;
+          opacity: var(--mw-ai-poster-opacity, 1);
+          transition: opacity 0.12s ease;
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__placeholder {
           width: 100%;
@@ -3891,54 +3894,12 @@
           border-radius: 12px;
           background: color-mix(in srgb, var(--surface, #fff) 92%, var(--ink) 8%);
         }
-        body.mw-on .mw-poster-opacity-preview {
-          margin: 0 0 12px;
-        }
-        body.mw-on .mw-poster-opacity-preview__stage {
-          position: relative;
-          aspect-ratio: 16 / 9;
-          width: 100%;
-          max-width: 420px;
-          border-radius: 12px;
-          overflow: hidden;
-          background:
-            linear-gradient(135deg, #2a2a2a 0%, #141414 100%);
-          cursor: ew-resize;
-          touch-action: none;
-          user-select: none;
-          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
-        }
-        body.mw-on .mw-poster-opacity-preview__img,
-        body.mw-on .mw-poster-opacity-preview__placeholder {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-          pointer-events: none;
-          transition: opacity 0.12s ease;
-        }
-        body.mw-on .mw-poster-opacity-preview__placeholder {
-          background:
-            repeating-linear-gradient(
-              -45deg,
-              color-mix(in srgb, #fff 8%, transparent) 0 10px,
-              color-mix(in srgb, #fff 3%, transparent) 10px 20px
-            );
-        }
-        body.mw-on .mw-poster-opacity-preview__img[hidden] {
-          display: none;
-        }
-        body.mw-on .mw-poster-opacity-preview.is-ready .mw-poster-opacity-preview__placeholder {
-          display: none;
-        }
-        body.mw-on .mw-poster-opacity-preview__copy {
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__divider-overlay {
           position: absolute;
           left: 50%;
           top: 50%;
           transform: translate(-50%, -50%);
-          z-index: 2;
+          z-index: 4;
           display: grid;
           gap: 6px;
           justify-items: center;
@@ -3951,22 +3912,18 @@
           backdrop-filter: blur(2px);
           pointer-events: none;
         }
-        body.mw-on .mw-poster-opacity-preview__kicker {
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__divider-kicker {
           font-size: 0.68rem;
           letter-spacing: 0.14em;
           text-transform: uppercase;
           color: color-mix(in srgb, #fff 78%, transparent);
           font-weight: 650;
         }
-        body.mw-on .mw-poster-opacity-preview__title {
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__divider-title {
           font-size: clamp(0.95rem, 2.4vw, 1.2rem);
           font-weight: 750;
           color: #fff;
           line-height: 1.2;
-        }
-        body.mw-on .mw-poster-opacity-preview__hint {
-          margin: 8px 0 0;
-          font-size: var(--mw-type-fine, 0.75rem);
         }
         body.mw-on .mw-poster-transparency__row {
           display: flex;

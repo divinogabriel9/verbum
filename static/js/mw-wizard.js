@@ -517,6 +517,9 @@
           }
           var sponsorsWrap = $('mw-aside-sponsors');
           if (sponsorsWrap) sponsorsWrap.hidden = n !== 6;
+          if (n === 6 && typeof window.preloadExtrasPosterAssets === "function") {
+            window.preloadExtrasPosterAssets();
+          }
           if (n === 6 && typeof window.syncFoodSponsorsListHost === 'function') window.syncFoodSponsorsListHost();
           if (illus && ASIDE_ART[n]) {
             illus.style.backgroundImage = 'linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 8%, transparent), color-mix(in srgb, var(--surface-solid) 82%, transparent)), url("' + ASIDE_ART[n] + '")';
