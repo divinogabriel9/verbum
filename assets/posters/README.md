@@ -11,9 +11,7 @@ Re-export:
 
 ```bash
 google-chrome --headless=new --no-sandbox --disable-gpu --hide-scrollbars \
-  --window-size=1680,1100 --virtual-time-budget=8000 \
-  --screenshot=/tmp/pricing-poster.png \
-  "file://$(pwd)/docs/presentations/pricing-poster-free-vs-paid.html"
-ffmpeg -y -i /tmp/pricing-poster.png -vf "crop=1600:1000:40:24" \
-  assets/posters/pricing-poster-free-vs-paid.png
+  --window-size=1600,1000 --virtual-time-budget=8000 \
+  --screenshot=assets/posters/pricing-poster-free-vs-paid.png \
+  "file://$(pwd)/docs/presentations/pricing-poster-free-vs-paid.html?export=1"
 ```
