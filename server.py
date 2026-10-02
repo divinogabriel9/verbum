@@ -201,6 +201,7 @@ from services.storage_assets import (
 )
 from routes.admin import register_admin_routes
 from routes.auth import register_auth_routes
+from routes.billing import register_billing_routes
 from routes.distribution import register_distribution_routes
 from routes.email_jobs import register_email_job_routes
 from routes.readings_jobs import register_readings_job_routes
@@ -1200,6 +1201,7 @@ register_auth_routes(app, templates)
 register_admin_routes(app)
 register_distribution_routes(app)
 register_parish_routes(app)
+register_billing_routes(app)
 register_email_job_routes(app)
 register_readings_job_routes(app)
 register_security_middleware(app)
@@ -1512,7 +1514,7 @@ class PreviewBody(BaseModel):
     )
     mass_language: str = Field(
         "english",
-        description="Readings language: english (USCCB) | tagalog (Awit at Papuri).",
+        description="Readings language: english | tagalog.",
         max_length=16,
     )
 
@@ -1561,7 +1563,7 @@ class GenerateBody(BaseModel):
     )
     ai_poster_backend: str = Field(
         "openai",
-        description="openai | gemini — which API generates the hero art when include_ai_mass_poster is true.",
+        description="Server-selected image backend (client may omit or send ai).",
     )
     ai_poster_style: str = Field(
         "cinematic",
@@ -4881,8 +4883,8 @@ def api_calendar_month(
 ) -> Any:
     """Lightweight per-day summaries for the liturgical calendar grid.
 
-    ``lang=tagalog`` uses Awit at Papuri titles/snippets; ``english`` uses
-    USCCB/lectionary cache plus Philippines Proper day titles.
+    ``lang=tagalog`` uses Tagalog titles/snippets; ``english`` uses the
+    English lectionary cache plus Philippines Proper day titles.
     """
     try:
         return fetch_calendar_month(year, month, language=lang)
@@ -4901,7 +4903,7 @@ def api_readings(
 
     Public liturgical data — anonymous-friendly, mirroring ``POST /api/preview``
     so the home dashboard loads readings before/without sign-in.
-    ``lang=tagalog`` pulls Awit at Papuri Tagalog reading texts.
+    ``lang=tagalog`` pulls Tagalog reading texts.
     """
     payload, from_cache = readings_snapshot(
         date.strip(), force_refresh=refresh, language=lang
@@ -5129,7 +5131,11 @@ def api_generate(
                     include_ai_mass_poster=False
                     if body.leaflet_only
                     else include_ai,
-                    ai_poster_backend=(body.ai_poster_backend or "openai").strip().lower(),
+                    ai_poster_backend=(
+                        "openai"
+                        if (body.ai_poster_backend or "").strip().lower() in ("", "ai", "auto", "default")
+                        else (body.ai_poster_backend or "openai").strip().lower()
+                    ),
                     ai_poster_style=body.ai_poster_style.strip() or "cinematic",
                     ai_poster_transparency_pct=float(body.ai_poster_transparency_pct),
                     reuse_existing_poster=reuse_poster,
@@ -5511,6 +5517,21 @@ def api_demo_generate(body: DemoGenerateBody, request: Request) -> Any:
         f"ai={include_ai}",
         flush=True,
     )
+    try:
+        from services.demo_analytics import record_demo_generation
+
+        record_demo_generation(
+            request,
+            mass_date=mass_date,
+            mass_language=mass_lang,
+            celebrant=celebrant,
+            slide_count=int(result.slide_count or 0),
+            include_leaflet=bool(body.include_leaflet),
+            ai_poster_used=include_ai,
+            export_stem=str(result.export_stem or ""),
+        )
+    except Exception:
+        logger.exception("Demo analytics recording failed")
     return out
 
 

@@ -2592,7 +2592,7 @@
     }
 
     function readOpenAiPosterSettings() {
-      const styleEl = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const styleEl = $("flow-ai-poster-style") || $("poster-ai-poster-style");
       const style = (styleEl && styleEl.value) || "cinematic";
       const transparencyPct = readAiPosterTransparencyPct();
       if (!isFeatureEnabled("ai_image_generation")) {
@@ -2611,7 +2611,8 @@
         useOpenai: useAi,
         useGemini: false,
         useAi,
-        backend: useAi ? "openai" : null,
+        // Provider is server-selected; do not advertise openai/gemini to the client payload.
+        backend: useAi ? "ai" : null,
         style,
         transparencyPct,
       };
@@ -2629,22 +2630,22 @@
     }
 
     function migrateLegacyAiPosterToggles() {
-      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-ai-poster-legacy", "poster-use-ai-poster-legacy"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = true;
       });
-      ["flow-use-gemini-poster", "poster-use-gemini-poster"].forEach((id) => {
+      ["flow-use-ai-poster-alt", "poster-use-ai-poster-alt"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = false;
       });
     }
 
     function syncAiPosterToggleState() {
-      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-ai-poster-legacy", "poster-use-ai-poster-legacy"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = true;
       });
-      ["flow-use-gemini-poster", "poster-use-gemini-poster"].forEach((id) => {
+      ["flow-use-ai-poster-alt", "poster-use-ai-poster-alt"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = false;
       });
@@ -2655,7 +2656,7 @@
       syncAiPosterToggleState();
       const litWrap = $("poster-liturgical-template-wrap");
       if (litWrap) litWrap.hidden = true;
-      ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
+      ["flow-ai-poster-style-wrap", "poster-ai-poster-style-wrap"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         const field = el.closest(".field") || el.closest(".flow-setup-footer__toggle-item") || el;
@@ -2663,7 +2664,7 @@
         field.style.pointerEvents = "";
         field.setAttribute("aria-disabled", "false");
       });
-      ["flow-openai-poster-style", "poster-openai-poster-style"].forEach((id) => {
+      ["flow-ai-poster-style", "poster-ai-poster-style"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         el.disabled = false;
@@ -2695,7 +2696,7 @@
         });
         const disableAi = !q.allowed;
         // Keep Mass Builder weekly style path enabled; server enforces quota on generate.
-        ["poster-use-ai-poster", "poster-use-openai-poster", "poster-use-gemini-poster"].forEach((id) => {
+        ["poster-use-ai-poster", "poster-use-ai-poster-legacy", "poster-use-ai-poster-alt"].forEach((id) => {
           const el = $(id);
           if (!el) return;
           el.disabled = disableAi;
@@ -2711,7 +2712,7 @@
     function bindAiPosterQuotaStyleWatch() {
       if (window.__aiQuotaStyleBound) return;
       window.__aiQuotaStyleBound = true;
-      ["flow-openai-poster-style", "poster-openai-poster-style", "mass-date"].forEach((id) => {
+      ["flow-ai-poster-style", "poster-ai-poster-style", "mass-date"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         el.addEventListener("change", () => {
@@ -2756,7 +2757,7 @@
     function syncWeeklyAiPosterGate(catalog) {
       const gate = $("mw-ai-poster-gate");
       const body = $("mw-ai-poster-body");
-      const wrap = $("flow-openai-style-wrap");
+      const wrap = $("flow-ai-poster-style-wrap");
       const msg = $("mw-ai-poster-gate-msg");
       if (catalog && typeof catalog === "object") {
         const ready = Number(catalog.ready_count || 0);
@@ -2797,7 +2798,7 @@
     }
 
     function syncWeeklyPosterSelectionUi() {
-      const sel = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
       const track = $("mw-weekly-posters-track");
       const viewport = $("mw-weekly-posters-viewport");
       if (!track) return;
@@ -2821,11 +2822,11 @@
 
     function setWeeklyPosterStyle(styleId) {
       const sid = String(styleId || "cinematic").trim() || "cinematic";
-      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-ai-poster-legacy", "poster-use-ai-poster-legacy"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = true;
       });
-      ["flow-openai-poster-style", "poster-openai-poster-style"].forEach((id) => {
+      ["flow-ai-poster-style", "poster-ai-poster-style"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         if (el.value !== sid) {
@@ -2968,7 +2969,7 @@
         ? "Styles ready"
         : (weeklyPosterEnsureInflight ? "Generating…" : ("Generate this week’s styles (" + missing + " missing)"));
       if (status && !weeklyPosterEnsureInflight && missing <= 0) {
-        status.textContent = "Shared set is complete for this Sunday.";
+        status.textContent = "Poster styles are ready for this Mass.";
       }
     }
 
@@ -2988,7 +2989,7 @@
         btn.disabled = true;
         btn.textContent = "Generating…";
       }
-      if (status) status.textContent = "Generating shared styles for all parishes…";
+      if (status) status.textContent = "Generating poster styles…";
       try {
         const res = await fetch("/api/weekly-style-posters/ensure", {
           method: "POST",
@@ -3006,8 +3007,8 @@
           const tc = Number(catalog.total || 0);
           if (hint) {
             hint.textContent = rc >= tc
-              ? ("Shared across all parishes · Sunday " + (catalog.sunday || date))
-              : ("Shared weekly set · " + rc + " of " + tc + " ready");
+              ? "Your pick becomes the Mass divider background."
+              : (rc + " of " + tc + " styles ready — pick one when available.");
           }
           syncWeeklyPosterGenerateUi(catalog);
           syncWeeklyAiPosterGate(catalog);
@@ -3041,7 +3042,7 @@
       if (!track) return;
       if (!date) {
         weeklyPosterCatalogFp = "";
-        if (hint) hint.textContent = "Set the Mass date to load this week’s shared poster styles.";
+        if (hint) hint.textContent = "Set the Mass date to load this week’s poster styles.";
         track.innerHTML = "";
         syncWeeklyPosterGenerateUi();
         syncWeeklyAiPosterGate({ ready_count: 0, total: 5, sunday: "", date: "" });
@@ -3062,8 +3063,8 @@
         const total = Number(data.total || 0);
         if (hint) {
           hint.textContent = ready >= total && total
-            ? ("Shared across all parishes · Sunday " + (data.sunday || date))
-            : ("Shared weekly set · " + ready + " of " + total + " ready");
+            ? "Your pick becomes the Mass divider background."
+            : (ready + " of " + total + " styles ready — pick one when available.");
         }
         syncWeeklyPosterGenerateUi(data);
         syncWeeklyAiPosterGate(data);
@@ -3158,7 +3159,7 @@
           });
         });
       });
-      const styles = ["flow-openai-poster-style", "poster-openai-poster-style"];
+      const styles = ["flow-ai-poster-style", "poster-ai-poster-style"];
       styles.forEach((id) => {
         const el = $(id);
         if (!el) return;
@@ -3371,7 +3372,7 @@
         collection: collFormatted || "",
         foodSponsors: foodLines,
         aiPoster: useAiPoster,
-        aiBackend: o.ai_poster_backend || posterOpts.backend || "openai",
+        aiBackend: o.ai_poster_backend || posterOpts.backend || "ai",
         songs,
         missingLyricsCount: songs.filter((s) => s.missingLyrics).length,
         selectedSongCount: songs.filter((s) => s.id).length,

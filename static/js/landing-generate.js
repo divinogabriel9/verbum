@@ -768,6 +768,18 @@
       var data = await postJSON("/api/demo-generate", body);
       setGenerating(false);
       if (data.pptx_url) {
+        try {
+          if (window.LiturgyFlowAnalytics && typeof window.LiturgyFlowAnalytics.capture === "function") {
+            window.LiturgyFlowAnalytics.capture("demo_deck_generated", {
+              mass_date: body.date,
+              mass_language: body.mass_language,
+              include_leaflet: !!body.include_leaflet,
+              slide_count: data.slide_count || null,
+              ai_poster_used: !!data.ai_poster_used,
+              source: "landing",
+            });
+          }
+        } catch (_analyticsErr) {}
         var readyMsg = "Your Mass deck is ready. Download started.";
         if (data.watermark) {
           readyMsg += " Watermark: " + data.watermark;

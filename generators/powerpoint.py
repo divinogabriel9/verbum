@@ -1,5 +1,5 @@
 """
-GFCC-style full Mass deck (community footer, poster dividers). Readings from API/USCCB.
+GFCC-style full Mass deck (community footer, poster dividers). Readings from API/cache.
 
 1920×1080 landscape. Slide fill uses the liturgical calendar color; body/muted/emphasis
 text colors are chosen for contrast (never matching the background).
@@ -7472,8 +7472,8 @@ def _generate_mass_ppt_inner(
         g_line = g_line[: quote_max_chars - 1].rstrip() + "\u2026"
 
     unavail = (
-        "Full text was not loaded from bible.usccb.org. "
-        "Open today’s readings for this date and paste if needed."
+        "Full reading text was not loaded for this date. "
+        "Open today’s readings and paste if needed."
     )
 
     ctx = dict(

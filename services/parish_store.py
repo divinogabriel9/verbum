@@ -49,6 +49,11 @@ def _shape_church_context(
         "membership_status": parish.get("membership_status") or "draft",
         "community_name_locked_at": parish.get("community_name_locked_at"),
         "logo_locked_at": parish.get("logo_locked_at"),
+        "stripe_customer_id": parish.get("stripe_customer_id"),
+        "stripe_subscription_id": parish.get("stripe_subscription_id"),
+        "stripe_subscription_status": parish.get("stripe_subscription_status"),
+        "stripe_price_id": parish.get("stripe_price_id"),
+        "stripe_current_period_end": parish.get("stripe_current_period_end"),
         "created_at": parish.get("created_at"),
         "updated_at": parish.get("updated_at"),
     }

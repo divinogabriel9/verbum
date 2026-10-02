@@ -12,8 +12,8 @@
     tour: "/static/js/guided-tour.js?v=20260920g",
     driverCss: "/static/css/driver.css?v=20260703",
     tourCss: "/static/css/guided-tour.css?v=20260920g",
-    wizard: "/static/js/mw-wizard.js?v=20261002-draft-songs",
-    wizardCss: "/static/css/mw-wizard.css?v=20261002-draft-songs",
+    wizard: "/static/js/mw-wizard.js?v=20261003-scrub-readings",
+    wizardCss: "/static/css/mw-wizard.css?v=20261003-scrub-readings",
   };
 
   var APP_PARTS = [

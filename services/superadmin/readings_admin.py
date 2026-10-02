@@ -334,7 +334,7 @@ def fetch_readings_admin_date(date: str, language: str = "english") -> dict[str,
         "before": before["status"],
         "after": after["status"],
         "error": error,
-        "source": "awit_at_papuri" if lang == "tagalog" else "usccb",
+        "source": "tagalog" if lang == "tagalog" else "english",
     }
     return detail
 

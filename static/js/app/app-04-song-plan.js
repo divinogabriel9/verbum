@@ -253,8 +253,7 @@
             : "";
           const meta = escapeHtml(row.section || "library") +
               (row.author ? " · " + escapeHtml(row.author) : "") +
-              (row.language ? " · " + escapeHtml(row.language) : "") +
-            (row.source === "web" ? " · web hint" : "");
+              (row.language ? " · " + escapeHtml(row.language) : "");
           return (
             "<li><button type=\"button\" class=\"" + rowCls + "\" role=\"option\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
               "<span class=\"vb-dropdown-item__label\"><strong>" + escapeHtml(row.title) + "</strong>" +

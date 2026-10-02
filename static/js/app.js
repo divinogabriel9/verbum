@@ -7640,6 +7640,7 @@
       "/design/templates": "Poster and slide template reference.",
       "/settings/account": "Your profile picture and account details.",
       "/settings/church": "Community name and parish logo.",
+      "/settings/billing": "Parish subscription and billing.",
       "/settings/team": "Invite and manage your parish media team.",
       "/settings/app": "Light/dark mode, accent colors, and visual style.",
       "/superadmin": "Platform mission control — superadmin only.",
@@ -7659,6 +7660,7 @@
       "/design/templates": ["Design", "Templates"],
       "/settings/account": ["Settings", "Account"],
       "/settings/church": ["Settings", "Church Profile"],
+      "/settings/billing": ["Settings", "Billing"],
       "/settings/team": ["Settings", "Parish Team"],
       "/settings/app": ["Settings", "Appearance"],
       "/superadmin": ["Superadmin"],
@@ -8124,7 +8126,7 @@
     }
 
     function isSettingsRoute(route) {
-      return route === "/settings/account" || route === "/settings/church" || route === "/settings/team" || route === "/settings/app";
+      return route === "/settings/account" || route === "/settings/church" || route === "/settings/billing" || route === "/settings/team" || route === "/settings/app";
     }
 
     var lastNonSettingsRoute = "/home";
@@ -8248,8 +8250,8 @@
         "flow-slide-bg-contact", "flow-slide-bg-contact-hex",
         "flow-slide-bg-merienda", "flow-slide-bg-merienda-hex",
         "flow-sponsorship-contact", "flow-merienda-location",
-        "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
-        "flow-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster",
+        "flow-lotw-poster", "flow-lote-poster", "flow-ai-poster-style",
+        "flow-use-ai-poster", "flow-use-ai-poster-legacy", "flow-use-ai-poster-alt",
         "flow-include-social-exports", "flow-deck-theme", "flow-divider-style",
       ];
     }
@@ -8634,6 +8636,13 @@
       }
       try {
       const f = draft.fields;
+      // Migrate legacy provider-branded field ids from older drafts.
+      if (f["flow-openai-poster-style"] != null && f["flow-ai-poster-style"] == null) {
+        f["flow-ai-poster-style"] = f["flow-openai-poster-style"];
+      }
+      if (f["flow-use-openai-poster"] != null && f["flow-use-ai-poster"] == null) {
+        f["flow-use-ai-poster"] = f["flow-use-openai-poster"];
+      }
       const savedSongs = draft.selectedLyricsSongs ? Object.assign({}, draft.selectedLyricsSongs) : null;
       const savedSlots = Array.isArray(draft.lyricSongSlots) ? JSON.parse(JSON.stringify(draft.lyricSongSlots)) : null;
       const savedPsalmCustom = f["flow-psalm-custom"] || "";
@@ -8813,6 +8822,7 @@
       const panelForRoute = {
         "/settings/account": "account",
         "/settings/church": "church",
+        "/settings/billing": "billing",
         "/settings/team": "team",
         "/settings/app": "appearance",
       };
@@ -8908,6 +8918,7 @@
         refreshCommunity();
         if (typeof syncSettingsAccountPanel === "function") syncSettingsAccountPanel();
         if (r === "/settings/team" && typeof loadSettingsParishTeam === "function") loadSettingsParishTeam();
+        if (r === "/settings/billing" && typeof loadSettingsBilling === "function") loadSettingsBilling();
         if (window.__scrollToLiveRadio) {
           window.__scrollToLiveRadio = false;
           requestAnimationFrame(() => {
@@ -12728,7 +12739,7 @@
           if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(key);
           return;
         }
-        titleEl.textContent = rowData ? rowData.title : id;
+        titleEl.textContent = rowData ? (rowData.title || "Selected song") : "Selected song";
         titleEl.classList.add("has-selection");
         titleEl.classList.remove("is-empty");
         if (statusEl) {
@@ -13032,8 +13043,7 @@
             : "";
           const meta = escapeHtml(row.section || "library") +
               (row.author ? " · " + escapeHtml(row.author) : "") +
-              (row.language ? " · " + escapeHtml(row.language) : "") +
-            (row.source === "web" ? " · web hint" : "");
+              (row.language ? " · " + escapeHtml(row.language) : "");
           return (
             "<li><button type=\"button\" class=\"" + rowCls + "\" role=\"option\" data-pick-slot=\"" + escapeHtml(key) + "\" data-pick-id=\"" + escapeHtml(row.id) + "\">" +
               "<span class=\"vb-dropdown-item__label\"><strong>" + escapeHtml(row.title) + "</strong>" +
@@ -18904,16 +18914,211 @@
       });
     }
 
+    var billingUiState = {
+      billing_enabled: false,
+      has_paid_access: false,
+      can_start_checkout: false,
+      can_manage_billing: false,
+      stripe_subscription_status: "",
+      plan_interval: "",
+      plan_currency: "",
+      stripe_current_period_end: null,
+      trial_days: 14,
+    };
+
+    function billingCurrencyPref() {
+      try {
+        return (localStorage.getItem("liturgyflow.billing.currency") || "usd").toLowerCase();
+      } catch (_e) {
+        return "usd";
+      }
+    }
+
+    function setBillingCurrencyPref(cur) {
+      try {
+        localStorage.setItem("liturgyflow.billing.currency", (cur || "usd").toLowerCase());
+      } catch (_e) { /* ignore */ }
+    }
+
+    async function startBillingCheckout(interval, currency) {
+      const statusEl = $("settings-billing-status");
+      if (statusEl) {
+        statusEl.hidden = false;
+        statusEl.className = "status";
+        statusEl.textContent = "Opening Stripe Checkout…";
+      }
+      try {
+        const data = await postJSON("/api/billing/checkout", {
+          interval: interval,
+          currency: currency,
+        });
+        if (data && data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        throw new Error("Checkout URL missing.");
+      } catch (err) {
+        if (statusEl) {
+          statusEl.className = "status error";
+          statusEl.textContent = (err && err.message) || "Could not start checkout.";
+        }
+        if (typeof showToast === "function") {
+          showToast((err && err.message) || "Checkout failed", "error");
+        }
+      }
+    }
+
+    async function openBillingPortal() {
+      const statusEl = $("settings-billing-status");
+      try {
+        const data = await postJSON("/api/billing/portal", {});
+        if (data && data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        throw new Error("Portal URL missing.");
+      } catch (err) {
+        if (statusEl) {
+          statusEl.hidden = false;
+          statusEl.className = "status error";
+          statusEl.textContent = (err && err.message) || "Could not open billing portal.";
+        }
+      }
+    }
+
+    function renderBillingPlanList(catalog) {
+      const list = $("settings-billing-plan-list");
+      if (!list) return;
+      const currency = ($("settings-billing-currency") && $("settings-billing-currency").value) || "usd";
+      const intervals = (catalog && catalog.intervals) || [];
+      const canCheckout = !!billingUiState.can_start_checkout
+        && (churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin);
+      list.innerHTML = "";
+      intervals.forEach((row) => {
+        const price = (row.prices || []).find((p) => p.currency === currency) || (row.prices || [])[0];
+        const amount = (price && price.amount_display) || "—";
+        const ready = !!(price && price.price_id);
+        const item = document.createElement("div");
+        item.className = "settings-billing-plan";
+        item.setAttribute("role", "listitem");
+        item.innerHTML =
+          "<div class=\"settings-billing-plan__copy\">" +
+          "<strong>" + escapeHtml(row.label || row.interval) + "</strong>" +
+          "<span class=\"muted\">" + escapeHtml(amount) + " · " + escapeHtml(row.billing_hint || "") + "</span>" +
+          "</div>";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "primary";
+        btn.textContent = canCheckout && ready ? "Start 14-day trial" : (ready ? "President only" : "Unavailable");
+        btn.disabled = !(canCheckout && ready);
+        btn.addEventListener("click", () => startBillingCheckout(row.interval, currency));
+        item.appendChild(btn);
+        list.appendChild(item);
+      });
+    }
+
+    async function loadSettingsBilling() {
+      const statusEl = $("settings-billing-status");
+      const summary = $("settings-billing-summary");
+      const summaryText = $("settings-billing-summary-text");
+      const plans = $("settings-billing-plans");
+      const hint = $("settings-billing-hint");
+      const currencySel = $("settings-billing-currency");
+      if (currencySel && !currencySel.dataset.bound) {
+        currencySel.value = billingCurrencyPref();
+        currencySel.addEventListener("change", () => {
+          setBillingCurrencyPref(currencySel.value);
+          loadSettingsBilling();
+        });
+        currencySel.dataset.bound = "1";
+      }
+      const portalBtn = $("btn-billing-portal");
+      if (portalBtn && !portalBtn.dataset.bound) {
+        portalBtn.addEventListener("click", openBillingPortal);
+        portalBtn.dataset.bound = "1";
+      }
+
+      try {
+        const params = new URLSearchParams(window.location.search || "");
+        if (params.get("checkout") === "success" && statusEl) {
+          statusEl.hidden = false;
+          statusEl.className = "status ok";
+          statusEl.textContent = "Checkout complete — activating your parish trial…";
+        } else if (params.get("checkout") === "cancel" && statusEl) {
+          statusEl.hidden = false;
+          statusEl.className = "status";
+          statusEl.textContent = "Checkout canceled. You can start a trial anytime.";
+        }
+
+        const statusData = await getJSON("/api/billing/status");
+        const billing = (statusData && statusData.billing) || {};
+        billingUiState = Object.assign({}, billingUiState, billing);
+        if (statusData.membership) syncMembershipUi(statusData.membership);
+
+        const cur = (currencySel && currencySel.value) || billingCurrencyPref();
+        const catalog = await getJSON("/api/billing/catalog?currency=" + encodeURIComponent(cur));
+
+        if (!billing.billing_enabled) {
+          if (plans) plans.hidden = true;
+          if (summary) summary.hidden = true;
+          if (hint) {
+            hint.hidden = false;
+            hint.textContent = "Billing is not configured on this server yet.";
+          }
+          return;
+        }
+        if (hint) hint.hidden = true;
+
+        const paid = !!billing.has_paid_access && !!billing.stripe_subscription_status;
+        if (summary) summary.hidden = !paid && !billing.can_manage_billing;
+        if (summaryText) {
+          const bits = [];
+          if (billing.stripe_subscription_status) {
+            bits.push("Status: " + billing.stripe_subscription_status);
+          }
+          if (billing.plan_interval) {
+            bits.push("Plan: " + billing.plan_interval + (billing.plan_currency ? " (" + billing.plan_currency.toUpperCase() + ")" : ""));
+          }
+          if (billing.stripe_current_period_end) {
+            bits.push("Renews / ends: " + String(billing.stripe_current_period_end).slice(0, 10));
+          }
+          summaryText.textContent = bits.join(" · ") || "Subscription on file.";
+        }
+        if (portalBtn) {
+          portalBtn.hidden = !billing.can_manage_billing
+            || !(churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin);
+        }
+        if (plans) plans.hidden = !!billing.has_paid_access && !billing.can_start_checkout;
+        renderBillingPlanList(catalog);
+
+        if (params.get("checkout") && window.history && window.history.replaceState) {
+          window.history.replaceState({}, "", "/settings/billing");
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.hidden = false;
+          statusEl.className = "status error";
+          statusEl.textContent = (err && err.message) || "Could not load billing.";
+        }
+      }
+    }
+
     function syncGlobalMembershipBanner(data) {
       const state = data || churchMembershipState;
       const status = (state.membership_status || "draft").toLowerCase();
+      const billing = state.billing || billingUiState || {};
+      const billingOn = !!billing.billing_enabled;
       const banners = [$("home-membership-banner"), $("flow-membership-banner")];
       let html = "";
       let cls = "app-membership-banner";
       let show = false;
 
       if (!state.is_superadmin && !state.can_use_full_app) {
-        if (status === "pending" || status === "draft") {
+        if (billingOn) {
+          show = true;
+          cls += " is-pending";
+          html = "Start your parish’s <strong>14-day free trial</strong> under <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a> to unlock Mass generation.";
+        } else if (status === "pending" || status === "draft") {
           // Pending-approval users get the welcome + tour popups instead of a global banner.
           show = false;
           maybeShowMembershipWelcome(state);
@@ -18922,7 +19127,7 @@
           cls += " is-error";
           html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> or contact the administrator.";
         }
-      } else if (status === "pending") {
+      } else if (status === "pending" && !billingOn) {
         show = true;
         cls += " is-pending";
         html = "Your parish membership is pending approval. <a href=\"/settings/church\" data-route=\"/settings/church\">Open Church Profile</a>";
@@ -18952,6 +19157,10 @@
 
     function syncMembershipUi(data) {
       if (!data) return;
+      const billing = data.billing || {};
+      if (billing && typeof billing === "object") {
+        billingUiState = Object.assign({}, billingUiState, billing);
+      }
       churchMembershipState = {
         membership_status: data.membership_status || "draft",
         community_name_locked: !!data.community_name_locked,
@@ -18970,13 +19179,19 @@
         parish_role: (data.parish_role || "").toLowerCase(),
         parish_id: data.parish_id || "",
         user_id: data.user_id || churchMembershipState.user_id || "",
+        billing: billingUiState,
       };
 
       const teamNav = $("settings-nav-team");
       const teamModalTab = $("settings-modal-tab-team");
+      const billingNav = $("settings-nav-billing");
+      const billingModalTab = $("settings-modal-tab-billing");
       const showTeam = churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin;
+      const showBilling = !!billingUiState.billing_enabled && !!churchMembershipState.parish_id;
       if (teamNav) teamNav.hidden = !showTeam;
       if (teamModalTab) teamModalTab.hidden = !showTeam;
+      if (billingNav) billingNav.hidden = !showBilling;
+      if (billingModalTab) billingModalTab.hidden = !showBilling;
 
       const nameInput = $("settings-church-name");
       const nameHint = $("settings-church-name-hint");
@@ -19027,14 +19242,22 @@
         if (churchMembershipState.is_superadmin) {
           msg = "Superadmin account — full access to Mass generation, songs, and parish settings.";
           cls = "status ok";
-        } else if (status === "pending") {
+        } else if (billingUiState.billing_enabled && !churchMembershipState.can_use_full_app) {
+          msg = "Start a 14-day parish trial under Billing to unlock Mass generation and shared catalog submissions.";
+          cls = "status";
+        } else if (billingUiState.billing_enabled && billingUiState.stripe_subscription_status === "trialing") {
+          msg = "Parish trial active — full access unlocked. Manage your plan under Billing.";
+          cls = "status ok";
+        } else if (status === "pending" && !billingUiState.billing_enabled) {
           msg = "Your parish membership is pending superadmin approval. Song saves and priest submissions unlock after approval.";
           cls = "status";
         } else if (status === "rejected") {
           msg = "Your parish membership was not approved. Contact the site administrator if you believe this is an error.";
           cls = "status error";
         } else if (status === "draft" && canName) {
-          msg = "Enter your parish name and optional logo, then submit once. Name and logo cannot be changed later; a superadmin will confirm your membership.";
+          msg = billingUiState.billing_enabled
+            ? "Enter your parish name and optional logo, then start a 14-day trial under Billing."
+            : "Enter your parish name and optional logo, then submit once. Name and logo cannot be changed later; a superadmin will confirm your membership.";
           cls = "status";
         } else if (canSubmitPriest && churchMembershipState.can_use_full_app) {
           msg = "Approved parish member — you can save songs and submit priest names for the shared catalog.";
@@ -19050,7 +19273,7 @@
         }
       }
 
-      syncGlobalMembershipBanner(data);
+      syncGlobalMembershipBanner(churchMembershipState);
 
       bindPendingSuperadminUnlock();
       syncSuperadminNavVisibility();
@@ -19119,7 +19342,11 @@
         const btn = $(id);
         if (!btn) return;
         btn.disabled = !canGen;
-        btn.title = canGen ? "" : "Mass generation requires approved parish membership.";
+        btn.title = canGen
+          ? ""
+          : (billingUiState && billingUiState.billing_enabled
+            ? "Start a parish trial under Settings → Billing to generate Mass media."
+            : "Mass generation requires approved parish membership.");
       });
     }
 
@@ -20320,14 +20547,12 @@
     function applyAppVersionLabelLocalTime() {
       const el = $("app-version-label");
       if (!el) return;
-      const metaVer = document.querySelector('meta[name="lf-app-version"]');
-      const metaAt = document.querySelector('meta[name="lf-built-at"]');
-      const version = (metaVer && metaVer.getAttribute("content")) || "";
-      const iso = (el.getAttribute("data-built-at") || (metaAt && metaAt.getAttribute("content")) || "").trim();
-      if (!version) return;
-      const when = iso ? saFormatLocalDateTime(iso, "") : "";
-      el.textContent = when ? ("v " + version + " · " + when) : ("v " + version);
-      if (iso) el.setAttribute("title", "Deployed " + when + " (local time)");
+      // Do not surface deploy/build fingerprints in the parish UI.
+      el.hidden = true;
+      el.setAttribute("aria-hidden", "true");
+      el.textContent = "";
+      el.removeAttribute("data-built-at");
+      el.removeAttribute("title");
     }
 
     function saFormatLocalDate(iso, fallback) {
@@ -21222,10 +21447,13 @@
       const signupsWrap = $("sa-analytics-signups-wrap");
       const practiceWrap = $("sa-analytics-practice-wrap");
       const parishesWrap = $("sa-analytics-parishes-wrap");
+      const demosWrap = $("sa-analytics-demos-wrap");
+      const demoCountryWrap = $("sa-analytics-demo-country-wrap");
+      const demoBrandWrap = $("sa-analytics-demo-brand-wrap");
       const statusEl = $("sa-analytics-status");
       const daysEl = $("sa-analytics-days");
       const days = daysEl ? parseInt(daysEl.value, 10) || 14 : 14;
-      if (statsEl) statsEl.innerHTML = Array(4).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
+      if (statsEl) statsEl.innerHTML = Array(5).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
       try {
         const data = await saFetchAdmin("/api/admin/analytics?days=" + days);
         const s = data.summary || {};
@@ -21233,6 +21461,7 @@
           statsEl.innerHTML = [
             saRenderStatCard("Generations (period)", s.generations_in_period),
             saRenderStatCard("Signups (period)", s.signups_in_period),
+            saRenderStatCard("Landing demos (period)", s.demo_generations_in_period),
             saRenderStatCard("Practice online today", s.practice_unique_today),
             saRenderStatCard("Active parishes (7d)", s.active_parishes_7d),
           ].join("");
@@ -21255,6 +21484,25 @@
         const parishRows = (data.top_parishes || []).map((row) => (
           "<tr><td>" + escapeHtml(row.community_name || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
         ));
+        const demoRows = (data.demo_recent || []).slice(0, 40).map((row) => {
+          const when = String(row.created_at || "").replace("T", " ").slice(0, 16) || "—";
+          const place = [row.country, row.region].filter(Boolean).join(" / ") || "—";
+          const device = [row.device_brand, row.device_class, row.os_name].filter(Boolean).join(" · ") || "—";
+          return (
+            "<tr><td>" + escapeHtml(when) + "</td>" +
+            "<td><code style=\"font-size:0.75rem;\">" + escapeHtml(row.client_ip || "—") + "</code></td>" +
+            "<td>" + escapeHtml(place) + "</td>" +
+            "<td>" + escapeHtml(device) + "</td>" +
+            "<td>" + escapeHtml(row.mass_date || "—") + "</td>" +
+            "<td>" + escapeHtml(row.mass_language || "—") + "</td></tr>"
+          );
+        });
+        const demoCountryRows = (data.demo_by_country || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.country || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        ));
+        const demoBrandRows = (data.demo_by_brand || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.brand || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        ));
         if (practiceWrap) {
           practiceWrap.innerHTML = saRenderTable(
             ["Date", "Online", "Shares"],
@@ -21265,6 +21513,19 @@
         if (gensWrap) gensWrap.innerHTML = saRenderTable(["Date", "Count"], genRows, "No generations in period.");
         if (signupsWrap) signupsWrap.innerHTML = saRenderTable(["Date", "Count"], signupRows, "No signups in period.");
         if (parishesWrap) parishesWrap.innerHTML = saRenderTable(["Parish", "Generations"], parishRows, "No parish activity.");
+        if (demosWrap) {
+          demosWrap.innerHTML = saRenderTable(
+            ["When (UTC)", "IP", "Country", "Device", "Mass date", "Lang"],
+            demoRows,
+            "No landing demos in period."
+          );
+        }
+        if (demoCountryWrap) {
+          demoCountryWrap.innerHTML = saRenderTable(["Country", "Count"], demoCountryRows, "No country data yet.");
+        }
+        if (demoBrandWrap) {
+          demoBrandWrap.innerHTML = saRenderTable(["Brand", "Count"], demoBrandRows, "No device brand data yet.");
+        }
         if (statusEl) {
           statusEl.textContent = (s.period_start && s.period_end)
             ? ("Period " + s.period_start + " → " + s.period_end + " (UTC)")
@@ -21405,12 +21666,12 @@
       const aiControls = [
         "flow-use-ai-poster",
         "poster-use-ai-poster",
-        "flow-use-openai-poster",
-        "flow-use-gemini-poster",
-        "poster-use-openai-poster",
-        "poster-use-gemini-poster",
-        "flow-openai-poster-style",
-        "poster-openai-poster-style",
+        "flow-use-ai-poster-legacy",
+        "flow-use-ai-poster-alt",
+        "poster-use-ai-poster-legacy",
+        "poster-use-ai-poster-alt",
+        "flow-ai-poster-style",
+        "poster-ai-poster-style",
       ];
       aiControls.forEach((id) => {
         const el = $(id);
@@ -21420,7 +21681,7 @@
         const label = el.closest("label");
         if (label) setFeatureFlagDisabled(label, !aiOn);
       });
-      ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
+      ["flow-ai-poster-style-wrap", "poster-ai-poster-style-wrap"].forEach((id) => {
         const wrap = $(id);
         if (wrap) setFeatureFlagDisabled(wrap, !aiOn);
       });
@@ -21963,7 +22224,7 @@
       const prefer = (preferEl && preferEl.value) || "active";
       const confirmMsg = prefer === "local"
         ? "Publish hymn_library.json to Supabase? This overwrites the remote global catalog."
-        : "Republish the active hymn catalog to Supabase for all parishes?";
+        : "Republish the active hymn catalog for all churches?";
       if (!confirm(confirmMsg)) return;
       if (statusEl) { statusEl.textContent = "Syncing catalog to Supabase…"; statusEl.className = "status"; }
       if (btn) btn.disabled = true;
@@ -22120,7 +22381,7 @@
           candidates.push({
             section: String(song.section),
             id: String(song.id),
-            title: String(song.title || song.id).trim() || String(song.id),
+            title: String(song.title || "Song").trim() || "Song",
             youtube_url: url,
           });
         });
@@ -25260,6 +25521,7 @@
       { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
       { id: "page-account", label: "Account", hint: "Page", group: "Pages", route: "/settings/account", keywords: ["account", "profile", "picture", "avatar", "photo"] },
       { id: "page-church", label: "Church Profile", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },
+      { id: "page-billing", label: "Billing", hint: "Page", group: "Pages", route: "/settings/billing", keywords: ["billing", "subscription", "stripe", "trial", "plan", "payment"] },
       { id: "page-appearance", label: "Appearance", hint: "Page", group: "Pages", route: "/settings/app", keywords: ["appearance", "dark", "light", "theme", "settings"] },
       { id: "act-event", label: "Create event", hint: "Action", group: "Actions", action: "create-event", keywords: ["event", "create", "schedule"] },
       { id: "act-pptx", label: "Generate PPTX", hint: "Action", group: "Actions", action: "generate-pptx", keywords: ["generate", "pptx", "package", "export"] },
@@ -27377,7 +27639,7 @@
     }
 
     function readOpenAiPosterSettings() {
-      const styleEl = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const styleEl = $("flow-ai-poster-style") || $("poster-ai-poster-style");
       const style = (styleEl && styleEl.value) || "cinematic";
       const transparencyPct = readAiPosterTransparencyPct();
       if (!isFeatureEnabled("ai_image_generation")) {
@@ -27396,7 +27658,8 @@
         useOpenai: useAi,
         useGemini: false,
         useAi,
-        backend: useAi ? "openai" : null,
+        // Provider is server-selected; do not advertise openai/gemini to the client payload.
+        backend: useAi ? "ai" : null,
         style,
         transparencyPct,
       };
@@ -27414,22 +27677,22 @@
     }
 
     function migrateLegacyAiPosterToggles() {
-      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-ai-poster-legacy", "poster-use-ai-poster-legacy"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = true;
       });
-      ["flow-use-gemini-poster", "poster-use-gemini-poster"].forEach((id) => {
+      ["flow-use-ai-poster-alt", "poster-use-ai-poster-alt"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = false;
       });
     }
 
     function syncAiPosterToggleState() {
-      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-ai-poster-legacy", "poster-use-ai-poster-legacy"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = true;
       });
-      ["flow-use-gemini-poster", "poster-use-gemini-poster"].forEach((id) => {
+      ["flow-use-ai-poster-alt", "poster-use-ai-poster-alt"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = false;
       });
@@ -27440,7 +27703,7 @@
       syncAiPosterToggleState();
       const litWrap = $("poster-liturgical-template-wrap");
       if (litWrap) litWrap.hidden = true;
-      ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
+      ["flow-ai-poster-style-wrap", "poster-ai-poster-style-wrap"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         const field = el.closest(".field") || el.closest(".flow-setup-footer__toggle-item") || el;
@@ -27448,7 +27711,7 @@
         field.style.pointerEvents = "";
         field.setAttribute("aria-disabled", "false");
       });
-      ["flow-openai-poster-style", "poster-openai-poster-style"].forEach((id) => {
+      ["flow-ai-poster-style", "poster-ai-poster-style"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         el.disabled = false;
@@ -27480,7 +27743,7 @@
         });
         const disableAi = !q.allowed;
         // Keep Mass Builder weekly style path enabled; server enforces quota on generate.
-        ["poster-use-ai-poster", "poster-use-openai-poster", "poster-use-gemini-poster"].forEach((id) => {
+        ["poster-use-ai-poster", "poster-use-ai-poster-legacy", "poster-use-ai-poster-alt"].forEach((id) => {
           const el = $(id);
           if (!el) return;
           el.disabled = disableAi;
@@ -27496,7 +27759,7 @@
     function bindAiPosterQuotaStyleWatch() {
       if (window.__aiQuotaStyleBound) return;
       window.__aiQuotaStyleBound = true;
-      ["flow-openai-poster-style", "poster-openai-poster-style", "mass-date"].forEach((id) => {
+      ["flow-ai-poster-style", "poster-ai-poster-style", "mass-date"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         el.addEventListener("change", () => {
@@ -27541,7 +27804,7 @@
     function syncWeeklyAiPosterGate(catalog) {
       const gate = $("mw-ai-poster-gate");
       const body = $("mw-ai-poster-body");
-      const wrap = $("flow-openai-style-wrap");
+      const wrap = $("flow-ai-poster-style-wrap");
       const msg = $("mw-ai-poster-gate-msg");
       if (catalog && typeof catalog === "object") {
         const ready = Number(catalog.ready_count || 0);
@@ -27582,7 +27845,7 @@
     }
 
     function syncWeeklyPosterSelectionUi() {
-      const sel = $("flow-openai-poster-style") || $("poster-openai-poster-style");
+      const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
       const track = $("mw-weekly-posters-track");
       const viewport = $("mw-weekly-posters-viewport");
       if (!track) return;
@@ -27606,11 +27869,11 @@
 
     function setWeeklyPosterStyle(styleId) {
       const sid = String(styleId || "cinematic").trim() || "cinematic";
-      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-openai-poster", "poster-use-openai-poster"].forEach((id) => {
+      ["flow-use-ai-poster", "poster-use-ai-poster", "flow-use-ai-poster-legacy", "poster-use-ai-poster-legacy"].forEach((id) => {
         const el = $(id);
         if (el) el.checked = true;
       });
-      ["flow-openai-poster-style", "poster-openai-poster-style"].forEach((id) => {
+      ["flow-ai-poster-style", "poster-ai-poster-style"].forEach((id) => {
         const el = $(id);
         if (!el) return;
         if (el.value !== sid) {
@@ -27753,7 +28016,7 @@
         ? "Styles ready"
         : (weeklyPosterEnsureInflight ? "Generating…" : ("Generate this week’s styles (" + missing + " missing)"));
       if (status && !weeklyPosterEnsureInflight && missing <= 0) {
-        status.textContent = "Shared set is complete for this Sunday.";
+        status.textContent = "Poster styles are ready for this Mass.";
       }
     }
 
@@ -27773,7 +28036,7 @@
         btn.disabled = true;
         btn.textContent = "Generating…";
       }
-      if (status) status.textContent = "Generating shared styles for all parishes…";
+      if (status) status.textContent = "Generating poster styles…";
       try {
         const res = await fetch("/api/weekly-style-posters/ensure", {
           method: "POST",
@@ -27791,8 +28054,8 @@
           const tc = Number(catalog.total || 0);
           if (hint) {
             hint.textContent = rc >= tc
-              ? ("Shared across all parishes · Sunday " + (catalog.sunday || date))
-              : ("Shared weekly set · " + rc + " of " + tc + " ready");
+              ? "Your pick becomes the Mass divider background."
+              : (rc + " of " + tc + " styles ready — pick one when available.");
           }
           syncWeeklyPosterGenerateUi(catalog);
           syncWeeklyAiPosterGate(catalog);
@@ -27826,7 +28089,7 @@
       if (!track) return;
       if (!date) {
         weeklyPosterCatalogFp = "";
-        if (hint) hint.textContent = "Set the Mass date to load this week’s shared poster styles.";
+        if (hint) hint.textContent = "Set the Mass date to load this week’s poster styles.";
         track.innerHTML = "";
         syncWeeklyPosterGenerateUi();
         syncWeeklyAiPosterGate({ ready_count: 0, total: 5, sunday: "", date: "" });
@@ -27847,8 +28110,8 @@
         const total = Number(data.total || 0);
         if (hint) {
           hint.textContent = ready >= total && total
-            ? ("Shared across all parishes · Sunday " + (data.sunday || date))
-            : ("Shared weekly set · " + ready + " of " + total + " ready");
+            ? "Your pick becomes the Mass divider background."
+            : (ready + " of " + total + " styles ready — pick one when available.");
         }
         syncWeeklyPosterGenerateUi(data);
         syncWeeklyAiPosterGate(data);
@@ -27943,7 +28206,7 @@
           });
         });
       });
-      const styles = ["flow-openai-poster-style", "poster-openai-poster-style"];
+      const styles = ["flow-ai-poster-style", "poster-ai-poster-style"];
       styles.forEach((id) => {
         const el = $(id);
         if (!el) return;
@@ -28156,7 +28419,7 @@
         collection: collFormatted || "",
         foodSponsors: foodLines,
         aiPoster: useAiPoster,
-        aiBackend: o.ai_poster_backend || posterOpts.backend || "openai",
+        aiBackend: o.ai_poster_backend || posterOpts.backend || "ai",
         songs,
         missingLyricsCount: songs.filter((s) => s.missingLyrics).length,
         selectedSongCount: songs.filter((s) => s.id).length,
@@ -29598,7 +29861,6 @@
         ? window.areWeeklyAiPostersReady()
         : !!posterOpts.useAi;
       const useAiPoster = (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi) && weeklyReady;
-      const aiBackend = o.ai_poster_backend || posterOpts.backend || "openai";
       const body = {
         date,
         celebrant: celebrantMain,
@@ -29609,7 +29871,6 @@
         include_social_exports: readSocialExportSettings(o),
         include_gospel_art: false,
         include_ai_mass_poster: useAiPoster,
-        ai_poster_backend: aiBackend,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
         ai_poster_transparency_pct:
           o.ai_poster_transparency_pct != null
@@ -29859,7 +30120,6 @@
           show_hymn_section_labels: !!body.show_hymn_section_labels,
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
-          ai_poster_backend: body.ai_poster_backend,
           ai_poster_style: body.ai_poster_style,
           include_social_exports: body.include_social_exports,
           include_leaflet: !!body.include_leaflet,
@@ -30193,7 +30453,7 @@
         if (!res.ok) throw new Error(data.detail || data.error || "Could not load month");
         calendarMonthData = data.days || {};
         calendarMonthKey = key;
-        if (status) status.textContent = lang === "tagalog" ? "Tagalog · Awit at Papuri" : "English · Philippines Proper";
+        if (status) status.textContent = lang === "tagalog" ? "Tagalog readings" : "English · Philippines Proper";
       } catch (err) {
         calendarMonthData = {};
         calendarMonthKey = "";
@@ -30372,7 +30632,7 @@
     function playCalReadingsAdminSaveAnimation(iso, opts) {
       const options = opts || {};
       const holdMs = typeof options.holdMs === "number" ? options.holdMs : 700;
-      const message = options.message || "Saved — applies to all parishes.";
+      const message = options.message || "Saved — applies globally.";
       const showOverlay = options.overlay !== false;
       const saveBtn = $("cal-readings-admin-save");
       const statusEl = $("cal-readings-admin-status");
@@ -30473,7 +30733,7 @@
           });
         } else {
           playCalReadingsAdminSaveAnimation(savedIso, {
-            message: "Saved — applies to all parishes.",
+            message: "Saved — applies globally.",
             holdMs: 700,
             overlay: true,
           });
@@ -30504,7 +30764,7 @@
     ];
 
     function calAdminSourceName() {
-      return currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+      return currentCalendarLanguage() === "tagalog" ? "Tagalog readings" : "English readings";
     }
 
     function syncCalAdminFetchSourceLabels() {
@@ -30812,13 +31072,10 @@
         return "Stopped after " + CAL_ADMIN_MAX_FETCH_ATTEMPTS + " attempts — still " + after + ". Edit manually or try later.";
       }
       if (fetchMeta.error) return "Fetch failed: " + fetchMeta.error;
-      const source = fetchMeta.source === "awit_at_papuri" || currentCalendarLanguage() === "tagalog"
-        ? "Awit at Papuri"
-        : "USCCB";
-      if (after === "healthy" && before !== after) return "Fetched from " + source + " — now healthy.";
-      if (after === "healthy") return "Fetched from " + source + " — readings look complete.";
-      if (fetchMeta.fetched) return "Fetched from " + source + " — still " + after + " (bot block or partial data).";
-      return "Could not fetch from " + source + ". Try again later.";
+      if (after === "healthy" && before !== after) return "Live fetch complete — now healthy.";
+      if (after === "healthy") return "Live fetch complete — readings look complete.";
+      if (fetchMeta.fetched) return "Live fetch finished — still " + after + " (partial data). Try again later.";
+      return "Could not refresh readings. Try again later.";
     }
 
     async function fetchCalReadingsAdminDate(iso, opts) {
@@ -34666,11 +34923,10 @@
         include_social: isFeatureEnabled("social_poster_export") && $("poster-include-social").checked,
         include_ai: isFeatureEnabled("ai_image_generation") && !!(
           ($("poster-use-ai-poster") && $("poster-use-ai-poster").checked) ||
-          ($("poster-use-openai-poster") && $("poster-use-openai-poster").checked) ||
-          ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)
+          ($("poster-use-ai-poster-legacy") && $("poster-use-ai-poster-legacy").checked) ||
+          ($("poster-use-ai-poster-alt") && $("poster-use-ai-poster-alt").checked)
         ),
-        ai_poster_backend: "openai",
-        ai_poster_style: $("poster-openai-poster-style").value,
+        ai_poster_style: (($("poster-ai-poster-style") || {}).value) || "cinematic",
         downloadRowId: "poster-download-row",
         links: [
           ["poster-dl-zip", "zip_url"],
@@ -35352,7 +35608,7 @@
 
     bindCalFetchToggleButton($("cal-admin-fetch-missing-btn"), () => fetchCalendarMonthReadings("missing"));
     bindCalFetchToggleButton($("cal-admin-fetch-month-btn"), () => {
-      const source = currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+      const source = calAdminSourceName();
       const monthLabel = calendarCursor.toLocaleString(undefined, { month: "long" });
       if (!confirm("Fetch unhealthy " + monthLabel + " dates from " + source + "? Healthy days are skipped. If you stopped earlier, this resumes from the last unfinished date. Click the button again to stop.")) return;
       fetchCalendarMonthReadings("all");

@@ -1622,28 +1622,28 @@
       "seasons": [
         "all"
       ],
+      "added_at": "2026-10-01T23:52:38.629023+00:00",
       "language": "Mix",
+      "updated_at": "2026-10-01T23:52:59.720496+00:00",
+      "audio_media": {
+        "source": "youtube",
+        "basename": "yt:o0FzbpI7u1Y",
+        "youtube_id": "o0FzbpI7u1Y",
+        "youtube_url": "https://www.youtube.com/watch?v=o0FzbpI7u1Y",
+        "display_name": "Iesu Panis Vitae"
+      },
       "gospel_moods": [
         "reverent"
       ],
-      "audio_media": {
-        "basename": "yt:o0FzbpI7u1Y",
-        "display_name": "Iesu Panis Vitae",
-        "source": "youtube",
-        "youtube_id": "o0FzbpI7u1Y",
-        "youtube_url": "https://www.youtube.com/watch?v=o0FzbpI7u1Y"
-      },
-      "added_at": "2026-10-01T23:52:38.629023+00:00",
-      "updated_at": "2026-10-01T23:52:59.720496+00:00",
       "audio_preview": {
-        "basename": "preview_communion_iesu_panis_vitae_10.mp3",
-        "display_name": "Iesu Panis Vitae · 10s",
-        "duration_sec": 10,
-        "start_sec": 22.26,
-        "source": "preview",
         "method": "chorus",
+        "source": "preview",
+        "basename": "preview_communion_iesu_panis_vitae_10.mp3",
+        "start_sec": 22.26,
         "youtube_id": "o0FzbpI7u1Y",
-        "youtube_url": "https://www.youtube.com/watch?v=o0FzbpI7u1Y"
+        "youtube_url": "https://www.youtube.com/watch?v=o0FzbpI7u1Y",
+        "display_name": "Iesu Panis Vitae · 10s",
+        "duration_sec": 10
       }
     },
     {

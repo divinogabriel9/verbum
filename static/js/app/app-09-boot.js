@@ -1641,11 +1641,10 @@
         include_social: isFeatureEnabled("social_poster_export") && $("poster-include-social").checked,
         include_ai: isFeatureEnabled("ai_image_generation") && !!(
           ($("poster-use-ai-poster") && $("poster-use-ai-poster").checked) ||
-          ($("poster-use-openai-poster") && $("poster-use-openai-poster").checked) ||
-          ($("poster-use-gemini-poster") && $("poster-use-gemini-poster").checked)
+          ($("poster-use-ai-poster-legacy") && $("poster-use-ai-poster-legacy").checked) ||
+          ($("poster-use-ai-poster-alt") && $("poster-use-ai-poster-alt").checked)
         ),
-        ai_poster_backend: "openai",
-        ai_poster_style: $("poster-openai-poster-style").value,
+        ai_poster_style: (($("poster-ai-poster-style") || {}).value) || "cinematic",
         downloadRowId: "poster-download-row",
         links: [
           ["poster-dl-zip", "zip_url"],
@@ -2327,7 +2326,7 @@
 
     bindCalFetchToggleButton($("cal-admin-fetch-missing-btn"), () => fetchCalendarMonthReadings("missing"));
     bindCalFetchToggleButton($("cal-admin-fetch-month-btn"), () => {
-      const source = currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+      const source = calAdminSourceName();
       const monthLabel = calendarCursor.toLocaleString(undefined, { month: "long" });
       if (!confirm("Fetch unhealthy " + monthLabel + " dates from " + source + "? Healthy days are skipped. If you stopped earlier, this resumes from the last unfinished date. Click the button again to stop.")) return;
       fetchCalendarMonthReadings("all");

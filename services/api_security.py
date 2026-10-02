@@ -140,6 +140,49 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
         church, user=session.user, profile_role=profile_role
     ):
         return session
+
+    # Billing webhooks may have just activated access; refresh past the 90s auth cache.
+    try:
+        from services.stripe_billing import billing_enabled
+
+        if billing_enabled() and session.user.user_id:
+            from services.parish_store import get_user_parish_context
+
+            fresh = await run_in_threadpool(
+                get_user_parish_context,
+                session.user.user_id,
+                access_token=session.token,
+            )
+            if fresh is not None:
+                set_church_profile(fresh)
+                church = fresh
+                _store_auth_context(session.token, session, church)
+                if membership_allows_full_access(
+                    church, user=session.user, profile_role=profile_role
+                ):
+                    return session
+    except Exception:
+        pass
+
+    try:
+        from services.stripe_billing import billing_enabled
+
+        if billing_enabled():
+            sub = ((church or {}).get("stripe_subscription_status") or "").strip().lower()
+            if sub in {"canceled", "unpaid", "incomplete_expired"}:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Parish subscription is inactive. Renew under Settings → Billing.",
+                )
+            raise HTTPException(
+                status_code=403,
+                detail="Start a 14-day parish trial under Settings → Billing to unlock the app.",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
     status = ((church or {}).get("membership_status") or "draft").strip().lower()
     if status == "pending":
         raise HTTPException(

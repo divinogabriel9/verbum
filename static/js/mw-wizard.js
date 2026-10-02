@@ -356,7 +356,7 @@
                 if (!song.id) return;
                 var sectionLabel = (typeof receiptSlotShortLabel === 'function' ? receiptSlotShortLabel(song) : '') || song.label || 'Song';
                 sectionLabel = String(sectionLabel).replace(/\s+song\b/gi, '').trim() || 'Song';
-                songRows += asideSongRow(sectionLabel, song.title || song.id || '—', 'song:' + song.slotKey);
+                songRows += asideSongRow(sectionLabel, song.title || 'Selected song', 'song:' + song.slotKey);
               });
             } catch (e) { /* optional */ }
           }

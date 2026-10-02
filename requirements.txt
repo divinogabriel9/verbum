@@ -21,3 +21,4 @@ yt-dlp>=2024.8.0
 youtube-transcript-api>=0.6.3
 sentry-sdk[fastapi]>=2.0.0
 posthog>=3.0.0
+stripe>=15.4.0

@@ -3884,7 +3884,7 @@
           if (typeof updateMassSongPreviewButton === "function") updateMassSongPreviewButton(key);
           return;
         }
-        titleEl.textContent = rowData ? rowData.title : id;
+        titleEl.textContent = rowData ? (rowData.title || "Selected song") : "Selected song";
         titleEl.classList.add("has-selection");
         titleEl.classList.remove("is-empty");
         if (statusEl) {

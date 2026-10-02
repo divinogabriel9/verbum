@@ -40,6 +40,17 @@ def membership_allows_full_access(
         return True
     if not church_row:
         return False
+
+    # Stripe pay-to-unlock (per parish). When billing is off, fall back to
+    # manual membership_status approval.
+    try:
+        from services.stripe_billing import billing_enabled, parish_has_paid_access
+
+        if billing_enabled():
+            return parish_has_paid_access(church_row)
+    except Exception:
+        pass
+
     status = (church_row.get("membership_status") or "draft").strip().lower()
     return status == "approved"
 
@@ -93,6 +104,14 @@ def membership_payload(
         and status == "approved"
         and locked
     )
+    billing: dict[str, Any] = {}
+    try:
+        from services.stripe_billing import billing_payload
+
+        billing = billing_payload(row)
+    except Exception:
+        billing = {"billing_enabled": False}
+
     return {
         "membership_status": status,
         "community_name_locked": locked,
@@ -107,6 +126,7 @@ def membership_payload(
         "is_superadmin": superadmin,
         "role": (role or "member").strip().lower(),
         "parish_role": parish_role,
-        "parish_id": row.get("parish_id"),
+        "parish_id": row.get("parish_id") or row.get("id"),
         "user_id": user.user_id if user else None,
+        "billing": billing,
     }

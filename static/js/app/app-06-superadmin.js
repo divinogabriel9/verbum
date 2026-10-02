@@ -604,10 +604,13 @@
       const signupsWrap = $("sa-analytics-signups-wrap");
       const practiceWrap = $("sa-analytics-practice-wrap");
       const parishesWrap = $("sa-analytics-parishes-wrap");
+      const demosWrap = $("sa-analytics-demos-wrap");
+      const demoCountryWrap = $("sa-analytics-demo-country-wrap");
+      const demoBrandWrap = $("sa-analytics-demo-brand-wrap");
       const statusEl = $("sa-analytics-status");
       const daysEl = $("sa-analytics-days");
       const days = daysEl ? parseInt(daysEl.value, 10) || 14 : 14;
-      if (statsEl) statsEl.innerHTML = Array(4).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
+      if (statsEl) statsEl.innerHTML = Array(5).fill("<div class=\"sa-stat sa-skeleton\"></div>").join("");
       try {
         const data = await saFetchAdmin("/api/admin/analytics?days=" + days);
         const s = data.summary || {};
@@ -615,6 +618,7 @@
           statsEl.innerHTML = [
             saRenderStatCard("Generations (period)", s.generations_in_period),
             saRenderStatCard("Signups (period)", s.signups_in_period),
+            saRenderStatCard("Landing demos (period)", s.demo_generations_in_period),
             saRenderStatCard("Practice online today", s.practice_unique_today),
             saRenderStatCard("Active parishes (7d)", s.active_parishes_7d),
           ].join("");
@@ -637,6 +641,25 @@
         const parishRows = (data.top_parishes || []).map((row) => (
           "<tr><td>" + escapeHtml(row.community_name || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
         ));
+        const demoRows = (data.demo_recent || []).slice(0, 40).map((row) => {
+          const when = String(row.created_at || "").replace("T", " ").slice(0, 16) || "—";
+          const place = [row.country, row.region].filter(Boolean).join(" / ") || "—";
+          const device = [row.device_brand, row.device_class, row.os_name].filter(Boolean).join(" · ") || "—";
+          return (
+            "<tr><td>" + escapeHtml(when) + "</td>" +
+            "<td><code style=\"font-size:0.75rem;\">" + escapeHtml(row.client_ip || "—") + "</code></td>" +
+            "<td>" + escapeHtml(place) + "</td>" +
+            "<td>" + escapeHtml(device) + "</td>" +
+            "<td>" + escapeHtml(row.mass_date || "—") + "</td>" +
+            "<td>" + escapeHtml(row.mass_language || "—") + "</td></tr>"
+          );
+        });
+        const demoCountryRows = (data.demo_by_country || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.country || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        ));
+        const demoBrandRows = (data.demo_by_brand || []).map((row) => (
+          "<tr><td>" + escapeHtml(row.brand || "—") + "</td><td>" + escapeHtml(String(row.count != null ? row.count : 0)) + "</td></tr>"
+        ));
         if (practiceWrap) {
           practiceWrap.innerHTML = saRenderTable(
             ["Date", "Online", "Shares"],
@@ -647,6 +670,19 @@
         if (gensWrap) gensWrap.innerHTML = saRenderTable(["Date", "Count"], genRows, "No generations in period.");
         if (signupsWrap) signupsWrap.innerHTML = saRenderTable(["Date", "Count"], signupRows, "No signups in period.");
         if (parishesWrap) parishesWrap.innerHTML = saRenderTable(["Parish", "Generations"], parishRows, "No parish activity.");
+        if (demosWrap) {
+          demosWrap.innerHTML = saRenderTable(
+            ["When (UTC)", "IP", "Country", "Device", "Mass date", "Lang"],
+            demoRows,
+            "No landing demos in period."
+          );
+        }
+        if (demoCountryWrap) {
+          demoCountryWrap.innerHTML = saRenderTable(["Country", "Count"], demoCountryRows, "No country data yet.");
+        }
+        if (demoBrandWrap) {
+          demoBrandWrap.innerHTML = saRenderTable(["Brand", "Count"], demoBrandRows, "No device brand data yet.");
+        }
         if (statusEl) {
           statusEl.textContent = (s.period_start && s.period_end)
             ? ("Period " + s.period_start + " → " + s.period_end + " (UTC)")
@@ -787,12 +823,12 @@
       const aiControls = [
         "flow-use-ai-poster",
         "poster-use-ai-poster",
-        "flow-use-openai-poster",
-        "flow-use-gemini-poster",
-        "poster-use-openai-poster",
-        "poster-use-gemini-poster",
-        "flow-openai-poster-style",
-        "poster-openai-poster-style",
+        "flow-use-ai-poster-legacy",
+        "flow-use-ai-poster-alt",
+        "poster-use-ai-poster-legacy",
+        "poster-use-ai-poster-alt",
+        "flow-ai-poster-style",
+        "poster-ai-poster-style",
       ];
       aiControls.forEach((id) => {
         const el = $(id);
@@ -802,7 +838,7 @@
         const label = el.closest("label");
         if (label) setFeatureFlagDisabled(label, !aiOn);
       });
-      ["flow-openai-style-wrap", "poster-openai-style-wrap"].forEach((id) => {
+      ["flow-ai-poster-style-wrap", "poster-ai-poster-style-wrap"].forEach((id) => {
         const wrap = $(id);
         if (wrap) setFeatureFlagDisabled(wrap, !aiOn);
       });
@@ -1345,7 +1381,7 @@
       const prefer = (preferEl && preferEl.value) || "active";
       const confirmMsg = prefer === "local"
         ? "Publish hymn_library.json to Supabase? This overwrites the remote global catalog."
-        : "Republish the active hymn catalog to Supabase for all parishes?";
+        : "Republish the active hymn catalog for all churches?";
       if (!confirm(confirmMsg)) return;
       if (statusEl) { statusEl.textContent = "Syncing catalog to Supabase…"; statusEl.className = "status"; }
       if (btn) btn.disabled = true;
@@ -1502,7 +1538,7 @@
           candidates.push({
             section: String(song.section),
             id: String(song.id),
-            title: String(song.title || song.id).trim() || String(song.id),
+            title: String(song.title || "Song").trim() || "Song",
             youtube_url: url,
           });
         });

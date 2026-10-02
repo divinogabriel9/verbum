@@ -19,7 +19,27 @@ def _day_key(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%d")
 
 
+def _demo_analytics_block(*, days: int) -> dict[str, Any]:
+    try:
+        from services.demo_analytics import list_demo_generations
+
+        return list_demo_generations(days=days, limit=100)
+    except Exception:
+        return {
+            "recent": [],
+            "by_day": [],
+            "by_country": [],
+            "by_brand": [],
+            "summary": {
+                "demo_generations_in_period": 0,
+                "demo_generations_today": 0,
+            },
+        }
+
+
 def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
+    demo = _demo_analytics_block(days=days)
+    demo_summary = demo.get("summary") or {}
     if not supabase_enabled():
         practice_online = get_practice_online_by_day(days=days)
         return {
@@ -29,6 +49,10 @@ def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
             "signups_by_day": [],
             "practice_online_by_day": practice_online,
             "top_parishes": [],
+            "demo_generations_by_day": demo.get("by_day") or [],
+            "demo_by_country": demo.get("by_country") or [],
+            "demo_by_brand": demo.get("by_brand") or [],
+            "demo_recent": demo.get("recent") or [],
             "summary": {
                 "practice_online_days": len(practice_online),
                 "practice_unique_today": (
@@ -36,6 +60,10 @@ def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
                     if practice_online and practice_online[0].get("date") == _day_key(_utc_now())
                     else 0
                 ),
+                "demo_generations_in_period": int(
+                    demo_summary.get("demo_generations_in_period") or 0
+                ),
+                "demo_generations_today": int(demo_summary.get("demo_generations_today") or 0),
             },
         }
 
@@ -185,6 +213,10 @@ def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
         "signups_by_day": signups_series,
         "practice_online_by_day": practice_online,
         "top_parishes": top_parishes,
+        "demo_generations_by_day": demo.get("by_day") or [],
+        "demo_by_country": demo.get("by_country") or [],
+        "demo_by_brand": demo.get("by_brand") or [],
+        "demo_recent": demo.get("recent") or [],
         "summary": {
             "generations_in_period": total_generations,
             "signups_in_period": total_signups,
@@ -193,6 +225,10 @@ def build_analytics_payload(*, days: int = 14) -> dict[str, Any]:
             "active_parishes_7d": len(active_parish_ids),
             "practice_online_days": len(practice_online),
             "practice_unique_today": practice_unique_today,
+            "demo_generations_in_period": int(
+                demo_summary.get("demo_generations_in_period") or 0
+            ),
+            "demo_generations_today": int(demo_summary.get("demo_generations_today") or 0),
             "period_start": day_labels[0] if day_labels else None,
             "period_end": day_labels[-1] if day_labels else None,
         },

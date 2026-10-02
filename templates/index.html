@@ -4,9 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{{ title }}</title>
-  <meta name="lf-app-version" content="{{ app_version|default('dev') }}" />
-  {% if git_commit_short %}<meta name="lf-git-commit" content="{{ git_commit_short }}" />{% endif %}
-  {% if built_at %}<meta name="lf-built-at" content="{{ built_at }}" />{% endif %}
   <link rel="icon" type="image/png" href="/static/brand/favicon-32x32.png?v=6" sizes="32x32" />
   <link rel="icon" type="image/png" href="/static/brand/favicon-48x48.png?v=6" sizes="48x48" />
   <link rel="icon" type="image/png" href="/static/brand/favicon-192x192.png?v=6" sizes="192x192" />
@@ -28,7 +25,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20260922-lang-stats" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-stripe-billing" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
@@ -38,7 +35,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261002-draft-songs" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261003-scrub-readings" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -360,7 +357,7 @@
                     <span class="vb-dropdown-item__label">Sign out</span>
                   </button>
                 </div>
-                <p class="account-menu-version" id="app-version-label" title="Deployed build version">{% if built_at %} data-built-at="{{ built_at }}"{% endif %}>v {{ app_version|default('…') }}{% if built_at_display %} · {{ built_at_display }}{% endif %}</p>
+                <p class="account-menu-version" id="app-version-label" hidden aria-hidden="true"></p>
               </div>
             </div>
           </div>
@@ -2821,12 +2818,12 @@
                   </div>
                   <div class="flow-setup-row flow-setup-row--poster-style">
                     <div class="flow-poster-style flow-poster-style--weekly">
-                        <div class="field flow-setup-footer__toggle-item flow-poster-style__weekly-main" id="flow-openai-style-wrap">
+                        <div class="field flow-setup-footer__toggle-item flow-poster-style__weekly-main" id="flow-ai-poster-style-wrap">
                         <div class="mw-ai-poster-section" id="mw-ai-poster-section">
                         <div class="mw-weekly-posters__head">
                           <div>
-                            <label for="flow-openai-poster-style">Weekly Gospel posters — pick a style</label>
-                            <p class="muted flow-setup-field-hint" id="mw-weekly-posters-hint">Shared across all parishes for this Sunday. Your pick becomes the Mass divider background.</p>
+                            <label for="flow-ai-poster-style">Weekly Gospel posters — pick a style</label>
+                            <p class="muted flow-setup-field-hint" id="mw-weekly-posters-hint">Your pick becomes the Mass divider background.</p>
                           </div>
                           <div class="flow-setup-quota-badge">
                             <span class="flow-setup-quota-badge__dot" aria-hidden="true"></span>
@@ -2841,8 +2838,8 @@
                         </div>
                         <div class="mw-ai-poster-body" id="mw-ai-poster-body">
                         <input type="checkbox" id="flow-use-ai-poster" class="sr-only" checked tabindex="-1" aria-hidden="true" />
-                        <input type="checkbox" id="flow-use-openai-poster" class="sr-only" checked tabindex="-1" aria-hidden="true" />
-                        <input type="checkbox" id="flow-use-gemini-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
+                        <input type="checkbox" id="flow-use-ai-poster-legacy" class="sr-only" checked tabindex="-1" aria-hidden="true" />
+                        <input type="checkbox" id="flow-use-ai-poster-alt" class="sr-only" tabindex="-1" aria-hidden="true" />
                         <div class="mw-weekly-posters" id="mw-weekly-posters" data-weekly-posters>
                           <div class="mw-weekly-posters__stage">
                             <button type="button" class="mw-weekly-posters__nav" data-weekly-nav="-1" aria-label="Previous styles">‹</button>
@@ -2876,7 +2873,7 @@
                           <p class="muted flow-setup-field-hint">Fades the carousel poster behind divider text. 0% = full strength, 10% = softest fade.</p>
                         </div>
                         </div>
-                        <select id="flow-openai-poster-style" class="sr-only" tabindex="-1" aria-hidden="true" data-vb-select="off">
+                        <select id="flow-ai-poster-style" class="sr-only" tabindex="-1" aria-hidden="true" data-vb-select="off">
                           <option value="auto">Auto — match the Gospel mood</option>
                           <option value="cinematic" selected>Cinematic</option>
                           <option value="realistic">Realistic</option>
@@ -3046,12 +3043,6 @@
                   </div>
                 </div>
                 </section>
-                <div class="mass-summary-plan-legacy" hidden aria-hidden="true">
-                  <dd id="flow-reading-loaded">—</dd>
-                  <div class="mass-summary-progress" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" id="mass-summary-progress">
-                    <div class="mass-summary-progress__fill" id="mass-summary-progress-fill"></div>
-                  </div>
-                </div>
                 <nav class="mass-summary-links" aria-label="Song plan shortcuts" hidden>
                   <button type="button" class="mass-summary-link mass-summary-link--btn" id="btn-practice-share">Share for choir practice</button>
                   <a href="/settings/app" data-route="/settings/app" class="mass-summary-link">Preferences</a>
@@ -3112,7 +3103,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261002-draft-songs"></script>
+      <script src="/static/js/mw-wizard.js?v=20261003-scrub-readings"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3267,7 +3258,7 @@
                 <button type="button" class="secondary" id="cal-next" aria-label="Next month">→</button>
               </div>
             </div>
-            <p class="cal-admin-banner" id="cal-admin-banner" hidden>Superadmin readings cache — health badges and edits apply globally to all parishes.</p>
+            <p class="cal-admin-banner" id="cal-admin-banner" hidden>Superadmin readings cache — health badges and edits apply globally.</p>
             <div class="calendar-grid" id="cal-dow-row"></div>
             <div class="calendar-grid" id="cal-grid" style="margin-top:6px;"></div>
             <p class="muted" id="cal-month-status" style="margin:10px 0 0;font-size:0.78rem;" aria-live="polite"></p>
@@ -3322,7 +3313,7 @@
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="cal-readings-admin-title">Readings cache</h3>
-              <p class="ui-card__description" id="cal-readings-admin-subtitle">Global data for all parishes</p>
+              <p class="ui-card__description" id="cal-readings-admin-subtitle">Global liturgical readings data</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="cal-readings-admin-close" aria-label="Close">×</button>
           </header>
@@ -3373,7 +3364,7 @@
             <div class="cal-admin-save-overlay__panel" id="cal-admin-save-overlay-loading">
               <div class="cal-admin-save-overlay__spinner" aria-hidden="true"></div>
               <h3 class="cal-admin-save-overlay__title">Saving readings…</h3>
-              <p class="cal-admin-save-overlay__desc">Updating the global cache for all parishes.</p>
+              <p class="cal-admin-save-overlay__desc">Updating the global readings cache.</p>
             </div>
             <div class="cal-admin-save-overlay__panel" id="cal-admin-save-overlay-success" hidden>
               <div class="cal-admin-save-overlay__check" aria-hidden="true">
@@ -3397,8 +3388,8 @@
                 Saved
               </span>
             </button>
-            <button type="button" class="secondary cal-fetch-btn" id="cal-readings-admin-fetch" hidden data-default-title="Force live-fetch from USCCB" title="Force live-fetch from USCCB">
-              <span class="cal-fetch-btn__idle">Fetch from USCCB</span>
+            <button type="button" class="secondary cal-fetch-btn" id="cal-readings-admin-fetch" hidden data-default-title="Force live-fetch of readings" title="Force live-fetch of readings">
+              <span class="cal-fetch-btn__idle">Fetch readings</span>
               <span class="cal-fetch-btn__running" hidden>
                 <span class="cal-fetch-btn__spinner" aria-hidden="true"></span>
                 <span class="cal-fetch-btn__label">Stop</span>
@@ -3425,9 +3416,9 @@
               <label for="poster-gospel-quote">Gospel quote (one line)</label>
               <textarea id="poster-gospel-quote" rows="3" maxlength="2000" placeholder="Short line for the poster"></textarea>
             </div>
-            <div class="field" id="poster-openai-style-wrap">
-              <label for="poster-openai-poster-style">Visual style — how Gospel-inspired artwork looks</label>
-              <select id="poster-openai-poster-style">
+            <div class="field" id="poster-ai-poster-style-wrap">
+              <label for="poster-ai-poster-style">Visual style — how Gospel-inspired artwork looks</label>
+              <select id="poster-ai-poster-style">
                 <option value="auto">Auto — match the Gospel mood</option>
                 <option value="cinematic">Cinematic — epic biblical scene, volumetric light</option>
                 <option value="realistic">Realistic — cinematic photography, dramatic lighting</option>
@@ -3454,8 +3445,8 @@
                 <span class="mw-switch__text">AI poster art · Off</span>
               </label>
               <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Full-bleed Gospel art for this Sunday. Uses weekly AI generation quota.</p>
-              <input type="checkbox" id="poster-use-openai-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
-              <input type="checkbox" id="poster-use-gemini-poster" class="sr-only" tabindex="-1" aria-hidden="true" />
+              <input type="checkbox" id="poster-use-ai-poster-legacy" class="sr-only" tabindex="-1" aria-hidden="true" />
+              <input type="checkbox" id="poster-use-ai-poster-alt" class="sr-only" tabindex="-1" aria-hidden="true" />
             </div>
             <p class="muted ai-image-quota-hint" id="poster-ai-quota-hint" style="margin:0 0 12px;font-size:0.78rem;" aria-live="polite"></p>
             <div class="actions">
@@ -3590,7 +3581,7 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Analytics</h3>
-                  <p>Generations, signups, practice online, and parish activity (UTC).</p>
+                  <p>Generations, signups, practice online, landing demos, and parish activity (UTC).</p>
                 </div>
               </header>
               <div class="sa-toolbar">
@@ -3622,6 +3613,22 @@
                   <div class="sa-section sa-section--flush">
                     <h4 class="settings-admin-subhead">Top parishes (period)</h4>
                     <div class="sa-table-wrap" id="sa-analytics-parishes-wrap"></div>
+                  </div>
+                </div>
+                <div class="sa-analytics-row">
+                  <div class="sa-section sa-section--flush">
+                    <h4 class="settings-admin-subhead">Landing demos (recent)</h4>
+                    <div class="sa-table-wrap" id="sa-analytics-demos-wrap"></div>
+                  </div>
+                </div>
+                <div class="sa-analytics-row sa-analytics-row--days">
+                  <div class="sa-section sa-section--flush">
+                    <h4 class="settings-admin-subhead">Demo by country</h4>
+                    <div class="sa-table-wrap" id="sa-analytics-demo-country-wrap"></div>
+                  </div>
+                  <div class="sa-section sa-section--flush">
+                    <h4 class="settings-admin-subhead">Demo by device brand</h4>
+                    <div class="sa-table-wrap" id="sa-analytics-demo-brand-wrap"></div>
                   </div>
                 </div>
               </div>
@@ -3807,10 +3814,10 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Song catalog</h3>
-                  <p>Global hymn library — shared across all parishes via Supabase.</p>
+                  <p>Global hymn library for the platform catalog.</p>
                 </div>
               </header>
-              <p class="muted" style="font-size:0.86rem;">Add or edit lyrics in Song Library (superadmin saves publish directly). Use sync below to republish the catalog to Supabase if parishes are not seeing your latest changes.</p>
+              <p class="muted" style="font-size:0.86rem;">Add or edit lyrics in Song Library (superadmin saves publish directly). Use sync below to republish the catalog if churches are not seeing your latest changes.</p>
               <div id="sa-hymn-catalog-grid" class="sa-stat-grid" aria-live="polite"></div>
               <h4 class="settings-admin-subhead">Sections</h4>
               <div class="sa-table-wrap" id="sa-hymn-catalog-sections-wrap" aria-live="polite">
@@ -3875,7 +3882,7 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Readings cache</h3>
-                  <p>USCCB / Bible readings stored locally per date.</p>
+                  <p>Daily Mass readings stored locally per date.</p>
                 </div>
               </header>
               <p class="muted" id="sa-readings-cache-summary">Loading…</p>
@@ -4103,6 +4110,7 @@
             <h2 class="settings-modal-tabs__title" id="settings-modal-tabs-title">Settings</h2>
             <a class="settings-modal-tab" href="/settings/account" data-route="/settings/account">Account</a>
             <a class="settings-modal-tab" href="/settings/church" data-route="/settings/church">Church Profile</a>
+            <a class="settings-modal-tab" href="/settings/billing" data-route="/settings/billing" id="settings-modal-tab-billing" hidden>Billing</a>
             <a class="settings-modal-tab" href="/settings/team" data-route="/settings/team" id="settings-modal-tab-team" hidden>Parish Team</a>
             <a class="settings-modal-tab" href="/settings/app" data-route="/settings/app">Appearance</a>
           </nav>
@@ -4129,6 +4137,12 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
                   </span>
                   Church Profile
+                </a>
+                <a class="settings-sidebar-link" href="/settings/billing" data-route="/settings/billing" id="settings-nav-billing" hidden>
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                  </span>
+                  Billing
                 </a>
                 <a class="settings-sidebar-link" href="/settings/team" data-route="/settings/team" id="settings-nav-team" hidden>
                   <span class="settings-sidebar-link__icon" aria-hidden="true">
@@ -4191,6 +4205,37 @@
                 </div>
                 <p class="status" id="avatar-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
               </div>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-billing" data-settings-panel="billing" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Billing</h3>
+                  <p>Parish subscription — 14-day trial, then choose a plan.</p>
+                </div>
+              </header>
+              <div id="settings-billing-status" class="status" hidden aria-live="polite"></div>
+              <div class="field" id="settings-billing-summary" hidden>
+                <label>Current plan</label>
+                <p class="muted" id="settings-billing-summary-text" style="margin:0;"></p>
+                <div class="actions" style="margin-top:12px;">
+                  <button type="button" class="secondary" id="btn-billing-portal">Manage billing</button>
+                </div>
+              </div>
+              <div class="field" id="settings-billing-plans">
+                <label for="settings-billing-currency">Currency</label>
+                <select id="settings-billing-currency" aria-label="Billing currency">
+                  <option value="usd">USD</option>
+                  <option value="php">PHP</option>
+                  <option value="myr">MYR</option>
+                  <option value="krw">KRW</option>
+                </select>
+                <p class="muted" style="margin:8px 0 12px;font-size:0.85rem;">All plans include a 14-day trial. You’ll enter a payment method at checkout; you won’t be charged until the trial ends.</p>
+                <div id="settings-billing-plan-list" class="settings-billing-plan-list" role="list"></div>
+              </div>
+              <p class="muted" id="settings-billing-hint" style="margin-top:8px;font-size:0.85rem;" hidden></p>
             </article>
             <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church" hidden>
               <header class="flow-bento-cell__head home-card-head">
@@ -4724,7 +4769,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261002-draft-songs"></script>
+  <script src="/static/js/app.js?v=20261003-stripe-billing"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>

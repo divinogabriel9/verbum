@@ -5650,6 +5650,40 @@
       letter-spacing: var(--tracking-caption);
       color: var(--muted);
     }
+    .settings-billing-plan-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .settings-billing-plan {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 10px;
+      background: var(--surface, #fff);
+    }
+    .settings-billing-plan__copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .settings-billing-plan__copy strong {
+      font-size: 0.95rem;
+    }
+    .settings-billing-plan .primary {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    @media (max-width: 560px) {
+      .settings-billing-plan {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
     /* Appearance settings — compact density for more options on screen */
     .settings-layout #settings-panel-app.flow-bento-cell {
       padding: var(--space-2) var(--space-3);

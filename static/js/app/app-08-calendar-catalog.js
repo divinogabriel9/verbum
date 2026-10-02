@@ -319,7 +319,6 @@
         ? window.areWeeklyAiPostersReady()
         : !!posterOpts.useAi;
       const useAiPoster = (o.include_ai != null ? !!o.include_ai : !!posterOpts.useAi) && weeklyReady;
-      const aiBackend = o.ai_poster_backend || posterOpts.backend || "openai";
       const body = {
         date,
         celebrant: celebrantMain,
@@ -330,7 +329,6 @@
         include_social_exports: readSocialExportSettings(o),
         include_gospel_art: false,
         include_ai_mass_poster: useAiPoster,
-        ai_poster_backend: aiBackend,
         ai_poster_style: o.ai_poster_style || posterOpts.style,
         ai_poster_transparency_pct:
           o.ai_poster_transparency_pct != null
@@ -580,7 +578,6 @@
           show_hymn_section_labels: !!body.show_hymn_section_labels,
           poster_template: body.poster_template,
           include_ai_mass_poster: body.include_ai_mass_poster,
-          ai_poster_backend: body.ai_poster_backend,
           ai_poster_style: body.ai_poster_style,
           include_social_exports: body.include_social_exports,
           include_leaflet: !!body.include_leaflet,
@@ -914,7 +911,7 @@
         if (!res.ok) throw new Error(data.detail || data.error || "Could not load month");
         calendarMonthData = data.days || {};
         calendarMonthKey = key;
-        if (status) status.textContent = lang === "tagalog" ? "Tagalog · Awit at Papuri" : "English · Philippines Proper";
+        if (status) status.textContent = lang === "tagalog" ? "Tagalog readings" : "English · Philippines Proper";
       } catch (err) {
         calendarMonthData = {};
         calendarMonthKey = "";
@@ -1093,7 +1090,7 @@
     function playCalReadingsAdminSaveAnimation(iso, opts) {
       const options = opts || {};
       const holdMs = typeof options.holdMs === "number" ? options.holdMs : 700;
-      const message = options.message || "Saved — applies to all parishes.";
+      const message = options.message || "Saved — applies globally.";
       const showOverlay = options.overlay !== false;
       const saveBtn = $("cal-readings-admin-save");
       const statusEl = $("cal-readings-admin-status");
@@ -1194,7 +1191,7 @@
           });
         } else {
           playCalReadingsAdminSaveAnimation(savedIso, {
-            message: "Saved — applies to all parishes.",
+            message: "Saved — applies globally.",
             holdMs: 700,
             overlay: true,
           });
@@ -1225,7 +1222,7 @@
     ];
 
     function calAdminSourceName() {
-      return currentCalendarLanguage() === "tagalog" ? "Awit at Papuri" : "USCCB";
+      return currentCalendarLanguage() === "tagalog" ? "Tagalog readings" : "English readings";
     }
 
     function syncCalAdminFetchSourceLabels() {
@@ -1533,13 +1530,10 @@
         return "Stopped after " + CAL_ADMIN_MAX_FETCH_ATTEMPTS + " attempts — still " + after + ". Edit manually or try later.";
       }
       if (fetchMeta.error) return "Fetch failed: " + fetchMeta.error;
-      const source = fetchMeta.source === "awit_at_papuri" || currentCalendarLanguage() === "tagalog"
-        ? "Awit at Papuri"
-        : "USCCB";
-      if (after === "healthy" && before !== after) return "Fetched from " + source + " — now healthy.";
-      if (after === "healthy") return "Fetched from " + source + " — readings look complete.";
-      if (fetchMeta.fetched) return "Fetched from " + source + " — still " + after + " (bot block or partial data).";
-      return "Could not fetch from " + source + ". Try again later.";
+      if (after === "healthy" && before !== after) return "Live fetch complete — now healthy.";
+      if (after === "healthy") return "Live fetch complete — readings look complete.";
+      if (fetchMeta.fetched) return "Live fetch finished — still " + after + " (partial data). Try again later.";
+      return "Could not refresh readings. Try again later.";
     }
 
     async function fetchCalReadingsAdminDate(iso, opts) {

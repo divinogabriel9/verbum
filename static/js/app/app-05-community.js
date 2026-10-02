@@ -3923,14 +3923,12 @@
     function applyAppVersionLabelLocalTime() {
       const el = $("app-version-label");
       if (!el) return;
-      const metaVer = document.querySelector('meta[name="lf-app-version"]');
-      const metaAt = document.querySelector('meta[name="lf-built-at"]');
-      const version = (metaVer && metaVer.getAttribute("content")) || "";
-      const iso = (el.getAttribute("data-built-at") || (metaAt && metaAt.getAttribute("content")) || "").trim();
-      if (!version) return;
-      const when = iso ? saFormatLocalDateTime(iso, "") : "";
-      el.textContent = when ? ("v " + version + " · " + when) : ("v " + version);
-      if (iso) el.setAttribute("title", "Deployed " + when + " (local time)");
+      // Do not surface deploy/build fingerprints in the parish UI.
+      el.hidden = true;
+      el.setAttribute("aria-hidden", "true");
+      el.textContent = "";
+      el.removeAttribute("data-built-at");
+      el.removeAttribute("title");
     }
 
     function saFormatLocalDate(iso, fallback) {

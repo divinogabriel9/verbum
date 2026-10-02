@@ -60,6 +60,48 @@ services:
         sync: false
       - key: POSTHOG_SESSION_RECORDING
         sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_BILLING_ENABLED
+        sync: false
+      - key: STRIPE_AUTOMATIC_TAX
+        value: "0"
+      - key: STRIPE_PRICE_MONTHLY_USD
+        sync: false
+      - key: STRIPE_PRICE_MONTHLY_KRW
+        sync: false
+      - key: STRIPE_PRICE_MONTHLY_PHP
+        sync: false
+      - key: STRIPE_PRICE_MONTHLY_MYR
+        sync: false
+      - key: STRIPE_PRICE_QUARTERLY_USD
+        sync: false
+      - key: STRIPE_PRICE_QUARTERLY_KRW
+        sync: false
+      - key: STRIPE_PRICE_QUARTERLY_PHP
+        sync: false
+      - key: STRIPE_PRICE_QUARTERLY_MYR
+        sync: false
+      - key: STRIPE_PRICE_SEMIANNUAL_USD
+        sync: false
+      - key: STRIPE_PRICE_SEMIANNUAL_KRW
+        sync: false
+      - key: STRIPE_PRICE_SEMIANNUAL_PHP
+        sync: false
+      - key: STRIPE_PRICE_SEMIANNUAL_MYR
+        sync: false
+      - key: STRIPE_PRICE_ANNUAL_USD
+        sync: false
+      - key: STRIPE_PRICE_ANNUAL_KRW
+        sync: false
+      - key: STRIPE_PRICE_ANNUAL_PHP
+        sync: false
+      - key: STRIPE_PRICE_ANNUAL_MYR
+        sync: false
       - key: SUPERADMIN_EMAILS
         sync: false
       - key: INVITE_ONLY_SIGNUP

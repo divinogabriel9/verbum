@@ -294,6 +294,30 @@ def alert_access_request(
     )
 
 
+def alert_demo_generation(
+    *,
+    client_ip: str,
+    country: str,
+    device_brand: str,
+    mass_date: str,
+    mass_language: str,
+) -> AdminAlertResult:
+    """Telegram-only ping when a landing guest generates a demo deck."""
+    return safe_emit_admin_alert(
+        "demo_generation",
+        title="Landing demo generate",
+        subtitle="Guest built a Mass deck from the marketing page.",
+        lines=[
+            f"IP: {client_ip}" if client_ip else "",
+            f"Country: {country}" if country else "",
+            f"Device: {device_brand}" if device_brand else "",
+            f"Mass date: {mass_date}" if mass_date else "",
+            f"Language: {mass_language}" if mass_language else "",
+        ],
+        send_email_alert=False,
+    )
+
+
 def alert_contact_message(
     *,
     name: str,

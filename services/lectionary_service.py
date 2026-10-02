@@ -231,32 +231,30 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
                 _page, http_err = get_usccb_soup((source_url or "").strip())
                 if http_err == 403:
                     print(
-                        "⚠️ bible.usccb.org returned HTTP 403 (often antivirus/VPN/firewall)."
-                        " Disable blocking or open USCCB in a browser to copy readings."
+                        "⚠️ Readings host returned HTTP 403 (often antivirus/VPN/firewall)."
+                        " Disable blocking or paste readings manually."
                     )
                 elif http_err == USCCB_HTTP_CHALLENGE:
                     print(
-                        "⚠️ bible.usccb.org returned a bot-check page (\"Checking connection\") "
+                        "⚠️ Readings host returned a bot-check page "
                         "instead of readings. Server/datacenter IPs are often blocked — "
                         "try locally, use a VPN, or paste readings manually."
                     )
                 elif http_err:
                     print(
-                        f"⚠️ bible.usccb.org HTTP {http_err}: readings text could not be downloaded."
+                        f"⚠️ Readings host HTTP {http_err}: readings text could not be downloaded."
                     )
                 else:
                     print(
-                        "⚠️ USCCB responded but readings could not be resolved. "
-                        "References may still be filled from the lectionary API + Bible API."
+                        "⚠️ Readings host responded but texts could not be resolved. "
+                        "References may still be filled from the lectionary + scripture APIs."
                     )
 
         if gospel_reference_looks_like_citation_only(gospel_reference, gospel_text):
             alt_text = fetch_world_english_gospel(gospel_reference)
             if alt_text:
                 gospel_text = alt_text
-                quote_attribution = (
-                    "Below: World English Bible (WEB) fallback — verify NABRE on bible.usccb.org."
-                )
+                quote_attribution = None
             else:
                 gospel_text = gospel_reference.strip()
 
@@ -288,7 +286,8 @@ def fetch_liturgical_data_live(date: str, *, use_readings_cache: bool = True) ->
             "gospel_text": gospel_text,
             "gospel_acclamation": (blocks.get("gospel_acclamation") or "").strip(),
             "gospel_slide_quote": gospel_slide_quote,
-            "source": source_url,
+            # Do not expose upstream readings URLs / provider names to clients.
+            "source": "",
             "quote_attribution": quote_attribution,
         }
 
@@ -303,7 +302,7 @@ def fetch_tagalog_liturgical_data(
     use_readings_cache: bool = True,
     force_refresh: bool = False,
 ) -> dict | None:
-    """Liturgical payload with Tagalog reading texts from Awit at Papuri."""
+    """Liturgical payload with Tagalog reading texts."""
     from services.awit_at_papuri_readings import fetch_tagalog_readings_for_date
     from services.liturgical_calendar import get_liturgical_color
 
@@ -351,11 +350,12 @@ def fetch_tagalog_liturgical_data(
         "gospel_text": gospel_text,
         "gospel_acclamation": (blocks.get("gospel_acclamation") or "").strip(),
         "gospel_slide_quote": gospel_slide_quote,
-        "source": (blocks.get("source_url") or "").strip(),
-        "quote_attribution": "Mga pagbasa: Awit at Papuri (Tagalog).",
+        # Do not expose upstream readings URLs / provider names to clients.
+        "source": "",
+        "quote_attribution": None,
         "readings_language": "tagalog",
     }
-    # Keep Awit celebration titles in Tagalog mode — do not overlay English PH Proper names.
+    # Keep Tagalog celebration titles — do not overlay English PH Proper names.
     return payload
 
 

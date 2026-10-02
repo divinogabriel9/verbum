@@ -2795,6 +2795,7 @@
       "/design/templates": "Poster and slide template reference.",
       "/settings/account": "Your profile picture and account details.",
       "/settings/church": "Community name and parish logo.",
+      "/settings/billing": "Parish subscription and billing.",
       "/settings/team": "Invite and manage your parish media team.",
       "/settings/app": "Light/dark mode, accent colors, and visual style.",
       "/superadmin": "Platform mission control — superadmin only.",
@@ -2814,6 +2815,7 @@
       "/design/templates": ["Design", "Templates"],
       "/settings/account": ["Settings", "Account"],
       "/settings/church": ["Settings", "Church Profile"],
+      "/settings/billing": ["Settings", "Billing"],
       "/settings/team": ["Settings", "Parish Team"],
       "/settings/app": ["Settings", "Appearance"],
       "/superadmin": ["Superadmin"],
@@ -3279,7 +3281,7 @@
     }
 
     function isSettingsRoute(route) {
-      return route === "/settings/account" || route === "/settings/church" || route === "/settings/team" || route === "/settings/app";
+      return route === "/settings/account" || route === "/settings/church" || route === "/settings/billing" || route === "/settings/team" || route === "/settings/app";
     }
 
     var lastNonSettingsRoute = "/home";
@@ -3403,8 +3405,8 @@
         "flow-slide-bg-contact", "flow-slide-bg-contact-hex",
         "flow-slide-bg-merienda", "flow-slide-bg-merienda-hex",
         "flow-sponsorship-contact", "flow-merienda-location",
-        "flow-lotw-poster", "flow-lote-poster", "flow-openai-poster-style",
-        "flow-use-ai-poster", "flow-use-openai-poster", "flow-use-gemini-poster",
+        "flow-lotw-poster", "flow-lote-poster", "flow-ai-poster-style",
+        "flow-use-ai-poster", "flow-use-ai-poster-legacy", "flow-use-ai-poster-alt",
         "flow-include-social-exports", "flow-deck-theme", "flow-divider-style",
       ];
     }
@@ -3789,6 +3791,13 @@
       }
       try {
       const f = draft.fields;
+      // Migrate legacy provider-branded field ids from older drafts.
+      if (f["flow-openai-poster-style"] != null && f["flow-ai-poster-style"] == null) {
+        f["flow-ai-poster-style"] = f["flow-openai-poster-style"];
+      }
+      if (f["flow-use-openai-poster"] != null && f["flow-use-ai-poster"] == null) {
+        f["flow-use-ai-poster"] = f["flow-use-openai-poster"];
+      }
       const savedSongs = draft.selectedLyricsSongs ? Object.assign({}, draft.selectedLyricsSongs) : null;
       const savedSlots = Array.isArray(draft.lyricSongSlots) ? JSON.parse(JSON.stringify(draft.lyricSongSlots)) : null;
       const savedPsalmCustom = f["flow-psalm-custom"] || "";
@@ -3968,6 +3977,7 @@
       const panelForRoute = {
         "/settings/account": "account",
         "/settings/church": "church",
+        "/settings/billing": "billing",
         "/settings/team": "team",
         "/settings/app": "appearance",
       };
