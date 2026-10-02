@@ -302,7 +302,25 @@ def create_checkout_session(
         params["customer_update"] = {"address": "auto", "name": "auto"}
 
     client = get_stripe_client()
-    session = client.v1.checkout.sessions.create(params)
+    try:
+        session = client.v1.checkout.sessions.create(params)
+    except Exception as exc:
+        msg = str(getattr(exc, "user", None) or exc)
+        # Common misconfig: live key + test Price IDs (or the reverse).
+        if "No such price" in msg:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Stripe Price ID is not valid for the configured API key "
+                    "(live/test mismatch). Update STRIPE_PRICE_* env vars to match "
+                    "the same mode as STRIPE_SECRET_KEY."
+                ),
+            ) from exc
+        logger.exception("Stripe Checkout Session create failed")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Stripe Checkout failed: {msg[:240]}",
+        ) from exc
     url = getattr(session, "url", None)
     if not url:
         raise HTTPException(status_code=502, detail="Stripe Checkout did not return a URL.")
