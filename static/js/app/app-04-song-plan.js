@@ -2981,11 +2981,20 @@
 
     async function hydratePracticeShareSelections(targetDate) {
       const date = String(targetDate || upcomingSundayISO()).trim();
+      const dateEl = $("mass-date");
+      const prevDate = dateEl ? (dateEl.value || "").trim() : "";
+      const liveHasSongs = HOME_SONG_SLOTS.some((slot) => !!(selectedLyricsSongs[slot.key] || "").trim());
+      const keepLivePicks = prevDate === date && liveHasSongs;
+
       ensurePracticeShareMassDate(date);
+
+      // Prefer songs already set in Mass Builder for this date. Only fill gaps
+      // from draft / seasonal defaults — never wipe the live plan on "New share".
       const draft = readMassBuilderDraft();
       const draftDate = (draft && (draft.previewDate || (draft.fields && draft.fields["mass-date"]))) || "";
       if (draft && draft.selectedLyricsSongs && String(draftDate) === date) {
         HOME_SONG_SLOTS.forEach((slot) => {
+          if (keepLivePicks && (selectedLyricsSongs[slot.key] || "").trim()) return;
           const id = draft.selectedLyricsSongs[slot.key];
           if (id) selectedLyricsSongs[slot.key] = id;
         });
@@ -3057,15 +3066,18 @@
       if (status) { status.hidden = true; status.textContent = ""; }
       if (continueBtn) continueBtn.disabled = true;
       practiceShareExcludedSlots = new Set();
-      const targetDate = (opts.date && /^\d{4}-\d{2}-\d{2}$/.test(String(opts.date).trim()))
-        ? String(opts.date).trim()
-        : upcomingSundayISO();
+      const dateEl = $("mass-date");
+      const currentDate = dateEl ? (dateEl.value || "").trim() : "";
+      const optDate = opts.date ? String(opts.date).trim() : "";
+      const targetDate = (optDate && /^\d{4}-\d{2}-\d{2}$/.test(optDate))
+        ? optDate
+        : (currentDate || upcomingSundayISO());
       const date = await hydratePracticeShareSelections(targetDate);
       const available = renderPracticeShareSongPlan();
       const sub = $("practice-share-sections-sub");
       if (sub) {
         sub.textContent = available
-          ? ("Pick or change songs for " + date + ", then share an open practice link.")
+          ? ("Using your Mass songs for " + date + ". Adjust if needed, then share.")
           : "Search and pick songs for each section, then share.";
       }
       if (continueBtn) continueBtn.disabled = available === 0;
@@ -3435,7 +3447,9 @@
 
     function startNewPracticeShareFromHistory() {
       closePracticeShareHistoryModal();
-      openPracticeShareSectionsModal();
+      const dateEl = $("mass-date");
+      const date = dateEl ? (dateEl.value || "").trim() : "";
+      openPracticeShareSectionsModal(date ? { date: date } : undefined);
     }
 
     function initPracticeShareUi() {

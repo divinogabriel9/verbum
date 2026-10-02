@@ -3530,7 +3530,20 @@
         customAnnouncementSlides: typeof getFlowCustomSlidesPayload === "function" ? getFlowCustomSlidesPayload() : [],
         announcementBgColors: typeof getAnnouncementBgColors === "function" ? getAnnouncementBgColors() : null,
         lyricSongSlots: JSON.parse(JSON.stringify(lyricSongSlots)),
-        selectedLyricsSongs: Object.assign({}, selectedLyricsSongs),
+        selectedLyricsSongs: (function () {
+          const out = {};
+          const src = selectedLyricsSongs || {};
+          Object.keys(src).forEach((key) => {
+            out[key] = String(src[key] || "").trim();
+          });
+          (lyricSongSlots || []).forEach((slot) => {
+            if (!slot || !slot.key) return;
+            if (!Object.prototype.hasOwnProperty.call(out, slot.key)) {
+              out[slot.key] = String(src[slot.key] || "").trim();
+            }
+          });
+          return out;
+        })(),
         massCommunionCount: massCommunionCount,
         massCustomSlotSeq: massCustomSlotSeq,
         massSongPlanLanguage: massSongPlanLanguage,
@@ -3580,6 +3593,7 @@
     }
 
     function saveMassBuilderDraft(options) {
+      if (massDraftRestoring) return false;
       if (!massBuilderHasDraftableProgress()) return false;
       const opts = options || {};
       const next = collectMassBuilderDraft();
@@ -3605,6 +3619,7 @@
     }
 
     function scheduleMassBuilderDraftAutoSave() {
+      if (massDraftRestoring) return;
       if (normalizeRoute(currentRoute()) !== "/mass/builder") return;
       if (!massBuilderHasDraftableProgress()) return;
       const existing = readMassBuilderDraft();
@@ -3612,6 +3627,7 @@
       if (massDraftAutoSaveTimer) window.clearTimeout(massDraftAutoSaveTimer);
       massDraftAutoSaveTimer = window.setTimeout(() => {
         massDraftAutoSaveTimer = null;
+        if (massDraftRestoring) return;
         saveMassBuilderDraft({ toast: true });
       }, 15000);
     }
@@ -3767,6 +3783,10 @@
     async function restoreMassBuilderDraft(draft) {
       if (!draft || !draft.fields) return;
       massDraftRestoring = true;
+      if (massDraftAutoSaveTimer) {
+        window.clearTimeout(massDraftAutoSaveTimer);
+        massDraftAutoSaveTimer = null;
+      }
       try {
       const f = draft.fields;
       const savedSongs = draft.selectedLyricsSongs ? Object.assign({}, draft.selectedLyricsSongs) : null;
@@ -3851,17 +3871,21 @@
       if (date && typeof loadFlowData === "function") {
         await loadFlowData(true);
       }
-      if (savedSongs) selectedLyricsSongs = savedSongs;
-      if (savedSlots) lyricSongSlots = savedSlots;
+      if (savedSongs) selectedLyricsSongs = Object.assign({}, savedSongs);
+      if (savedSlots) lyricSongSlots = JSON.parse(JSON.stringify(savedSlots));
       if (typeof applyCommunionCountFromSlotsOrDraft === "function") {
         applyCommunionCountFromSlotsOrDraft(draft);
       }
+      // Trust the draft song plan exactly — never re-seed mood/catalog defaults
+      // over songs the user already saved (that was swapping picks on resume).
+      if (savedSongs) selectedLyricsSongs = Object.assign({}, savedSongs);
+      if (savedSlots) lyricSongSlots = JSON.parse(JSON.stringify(savedSlots));
       if (savedPsalmCustom) setMassBuilderFieldValue("flow-psalm-custom", savedPsalmCustom);
       else if (savedPsalmRefrain !== "" && savedPsalmRefrain != null) setMassBuilderFieldValue("flow-psalm-refrain", savedPsalmRefrain);
       if (savedGospelCustom) setMassBuilderFieldValue("flow-gospel-custom", savedGospelCustom);
       else if (savedGospelSentence !== "" && savedGospelSentence != null) setMassBuilderFieldValue("flow-gospel-sentence", savedGospelSentence);
-      // Replace sticky first-in-section / legacy first-song drafts with gospel-mood picks.
-      if (typeof songPlanNeedsMoodReload === "function" && songPlanNeedsMoodReload()) {
+      // Migrate only ancient sticky drafts that never stored an explicit plan.
+      if (!savedSongs && typeof songPlanLooksLikeLegacyFirstDefaults === "function" && songPlanLooksLikeLegacyFirstDefaults()) {
         if (typeof applyGospelMoodDefaultsToSongPlan === "function") applyGospelMoodDefaultsToSongPlan();
       }
       if (typeof renderMassSongPlan === "function") renderMassSongPlan();

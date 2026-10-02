@@ -2130,10 +2130,8 @@
         if (seasonEl) seasonEl.textContent = season;
         songOptionsBySection = data.songs_by_section || songOptionsBySection;
         if (!massDraftRestoring) {
-          // Permanent sticky-song fix: do NOT rebuild the 5 hymn picks on every
-          // date change. Only seed when the plan is empty or clearly stuck on
-          // legacy/catalog-head defaults. Habits fill empty slots only (see
-          // applyMassHabitSuggestions) unless Quick Mass is used.
+          // Seed hymns only when the plan is empty or still on the known legacy
+          // sticky set. Never overwrite an explicit draft / user plan.
           const hasSongPlan = typeof HOME_SONG_SLOTS !== "undefined" && HOME_SONG_SLOTS.some(function (slot) {
             return !!(selectedLyricsSongs[slot.key] || "").trim();
           });

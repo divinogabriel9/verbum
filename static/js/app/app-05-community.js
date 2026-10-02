@@ -316,7 +316,10 @@
     }
 
     function songPlanNeedsMoodReload() {
-      return songPlanLooksLikeCatalogHead() || songPlanLooksLikeLegacyFirstDefaults();
+      // Only the known legacy sticky set — not "catalog head". Users often
+      // intentionally pick first-in-section songs; treating those as stuck
+      // wiped draft restores and re-saved the wrong plan.
+      return songPlanLooksLikeLegacyFirstDefaults();
     }
 
     function applySongSelectionsToPlan(selections) {

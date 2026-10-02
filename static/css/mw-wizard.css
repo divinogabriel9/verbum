@@ -3894,37 +3894,6 @@
           border-radius: 12px;
           background: color-mix(in srgb, var(--surface, #fff) 92%, var(--ink) 8%);
         }
-        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__divider-overlay {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 4;
-          display: grid;
-          gap: 6px;
-          justify-items: center;
-          text-align: center;
-          padding: 14px 18px;
-          min-width: min(70%, 220px);
-          border-radius: 10px;
-          background: color-mix(in srgb, #0b0b0b 58%, transparent);
-          border: 1px solid color-mix(in srgb, #fff 18%, transparent);
-          backdrop-filter: blur(2px);
-          pointer-events: none;
-        }
-        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__divider-kicker {
-          font-size: 0.68rem;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: color-mix(in srgb, #fff 78%, transparent);
-          font-weight: 650;
-        }
-        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__divider-title {
-          font-size: clamp(0.95rem, 2.4vw, 1.2rem);
-          font-weight: 750;
-          color: #fff;
-          line-height: 1.2;
-        }
         body.mw-on .mw-poster-transparency__row {
           display: flex;
           align-items: baseline;

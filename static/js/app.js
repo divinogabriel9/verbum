@@ -8375,7 +8375,20 @@
         customAnnouncementSlides: typeof getFlowCustomSlidesPayload === "function" ? getFlowCustomSlidesPayload() : [],
         announcementBgColors: typeof getAnnouncementBgColors === "function" ? getAnnouncementBgColors() : null,
         lyricSongSlots: JSON.parse(JSON.stringify(lyricSongSlots)),
-        selectedLyricsSongs: Object.assign({}, selectedLyricsSongs),
+        selectedLyricsSongs: (function () {
+          const out = {};
+          const src = selectedLyricsSongs || {};
+          Object.keys(src).forEach((key) => {
+            out[key] = String(src[key] || "").trim();
+          });
+          (lyricSongSlots || []).forEach((slot) => {
+            if (!slot || !slot.key) return;
+            if (!Object.prototype.hasOwnProperty.call(out, slot.key)) {
+              out[slot.key] = String(src[slot.key] || "").trim();
+            }
+          });
+          return out;
+        })(),
         massCommunionCount: massCommunionCount,
         massCustomSlotSeq: massCustomSlotSeq,
         massSongPlanLanguage: massSongPlanLanguage,
@@ -8425,6 +8438,7 @@
     }
 
     function saveMassBuilderDraft(options) {
+      if (massDraftRestoring) return false;
       if (!massBuilderHasDraftableProgress()) return false;
       const opts = options || {};
       const next = collectMassBuilderDraft();
@@ -8450,6 +8464,7 @@
     }
 
     function scheduleMassBuilderDraftAutoSave() {
+      if (massDraftRestoring) return;
       if (normalizeRoute(currentRoute()) !== "/mass/builder") return;
       if (!massBuilderHasDraftableProgress()) return;
       const existing = readMassBuilderDraft();
@@ -8457,6 +8472,7 @@
       if (massDraftAutoSaveTimer) window.clearTimeout(massDraftAutoSaveTimer);
       massDraftAutoSaveTimer = window.setTimeout(() => {
         massDraftAutoSaveTimer = null;
+        if (massDraftRestoring) return;
         saveMassBuilderDraft({ toast: true });
       }, 15000);
     }
@@ -8612,6 +8628,10 @@
     async function restoreMassBuilderDraft(draft) {
       if (!draft || !draft.fields) return;
       massDraftRestoring = true;
+      if (massDraftAutoSaveTimer) {
+        window.clearTimeout(massDraftAutoSaveTimer);
+        massDraftAutoSaveTimer = null;
+      }
       try {
       const f = draft.fields;
       const savedSongs = draft.selectedLyricsSongs ? Object.assign({}, draft.selectedLyricsSongs) : null;
@@ -8696,17 +8716,21 @@
       if (date && typeof loadFlowData === "function") {
         await loadFlowData(true);
       }
-      if (savedSongs) selectedLyricsSongs = savedSongs;
-      if (savedSlots) lyricSongSlots = savedSlots;
+      if (savedSongs) selectedLyricsSongs = Object.assign({}, savedSongs);
+      if (savedSlots) lyricSongSlots = JSON.parse(JSON.stringify(savedSlots));
       if (typeof applyCommunionCountFromSlotsOrDraft === "function") {
         applyCommunionCountFromSlotsOrDraft(draft);
       }
+      // Trust the draft song plan exactly — never re-seed mood/catalog defaults
+      // over songs the user already saved (that was swapping picks on resume).
+      if (savedSongs) selectedLyricsSongs = Object.assign({}, savedSongs);
+      if (savedSlots) lyricSongSlots = JSON.parse(JSON.stringify(savedSlots));
       if (savedPsalmCustom) setMassBuilderFieldValue("flow-psalm-custom", savedPsalmCustom);
       else if (savedPsalmRefrain !== "" && savedPsalmRefrain != null) setMassBuilderFieldValue("flow-psalm-refrain", savedPsalmRefrain);
       if (savedGospelCustom) setMassBuilderFieldValue("flow-gospel-custom", savedGospelCustom);
       else if (savedGospelSentence !== "" && savedGospelSentence != null) setMassBuilderFieldValue("flow-gospel-sentence", savedGospelSentence);
-      // Replace sticky first-in-section / legacy first-song drafts with gospel-mood picks.
-      if (typeof songPlanNeedsMoodReload === "function" && songPlanNeedsMoodReload()) {
+      // Migrate only ancient sticky drafts that never stored an explicit plan.
+      if (!savedSongs && typeof songPlanLooksLikeLegacyFirstDefaults === "function" && songPlanLooksLikeLegacyFirstDefaults()) {
         if (typeof applyGospelMoodDefaultsToSongPlan === "function") applyGospelMoodDefaultsToSongPlan();
       }
       if (typeof renderMassSongPlan === "function") renderMassSongPlan();
@@ -15736,11 +15760,20 @@
 
     async function hydratePracticeShareSelections(targetDate) {
       const date = String(targetDate || upcomingSundayISO()).trim();
+      const dateEl = $("mass-date");
+      const prevDate = dateEl ? (dateEl.value || "").trim() : "";
+      const liveHasSongs = HOME_SONG_SLOTS.some((slot) => !!(selectedLyricsSongs[slot.key] || "").trim());
+      const keepLivePicks = prevDate === date && liveHasSongs;
+
       ensurePracticeShareMassDate(date);
+
+      // Prefer songs already set in Mass Builder for this date. Only fill gaps
+      // from draft / seasonal defaults — never wipe the live plan on "New share".
       const draft = readMassBuilderDraft();
       const draftDate = (draft && (draft.previewDate || (draft.fields && draft.fields["mass-date"]))) || "";
       if (draft && draft.selectedLyricsSongs && String(draftDate) === date) {
         HOME_SONG_SLOTS.forEach((slot) => {
+          if (keepLivePicks && (selectedLyricsSongs[slot.key] || "").trim()) return;
           const id = draft.selectedLyricsSongs[slot.key];
           if (id) selectedLyricsSongs[slot.key] = id;
         });
@@ -15812,15 +15845,18 @@
       if (status) { status.hidden = true; status.textContent = ""; }
       if (continueBtn) continueBtn.disabled = true;
       practiceShareExcludedSlots = new Set();
-      const targetDate = (opts.date && /^\d{4}-\d{2}-\d{2}$/.test(String(opts.date).trim()))
-        ? String(opts.date).trim()
-        : upcomingSundayISO();
+      const dateEl = $("mass-date");
+      const currentDate = dateEl ? (dateEl.value || "").trim() : "";
+      const optDate = opts.date ? String(opts.date).trim() : "";
+      const targetDate = (optDate && /^\d{4}-\d{2}-\d{2}$/.test(optDate))
+        ? optDate
+        : (currentDate || upcomingSundayISO());
       const date = await hydratePracticeShareSelections(targetDate);
       const available = renderPracticeShareSongPlan();
       const sub = $("practice-share-sections-sub");
       if (sub) {
         sub.textContent = available
-          ? ("Pick or change songs for " + date + ", then share an open practice link.")
+          ? ("Using your Mass songs for " + date + ". Adjust if needed, then share.")
           : "Search and pick songs for each section, then share.";
       }
       if (continueBtn) continueBtn.disabled = available === 0;
@@ -16190,7 +16226,9 @@
 
     function startNewPracticeShareFromHistory() {
       closePracticeShareHistoryModal();
-      openPracticeShareSectionsModal();
+      const dateEl = $("mass-date");
+      const date = dateEl ? (dateEl.value || "").trim() : "";
+      openPracticeShareSectionsModal(date ? { date: date } : undefined);
     }
 
     function initPracticeShareUi() {
@@ -16675,7 +16713,10 @@
     }
 
     function songPlanNeedsMoodReload() {
-      return songPlanLooksLikeCatalogHead() || songPlanLooksLikeLegacyFirstDefaults();
+      // Only the known legacy sticky set — not "catalog head". Users often
+      // intentionally pick first-in-section songs; treating those as stuck
+      // wiped draft restores and re-saved the wrong plan.
+      return songPlanLooksLikeLegacyFirstDefaults();
     }
 
     function applySongSelectionsToPlan(selections) {
@@ -26874,10 +26915,8 @@
         if (seasonEl) seasonEl.textContent = season;
         songOptionsBySection = data.songs_by_section || songOptionsBySection;
         if (!massDraftRestoring) {
-          // Permanent sticky-song fix: do NOT rebuild the 5 hymn picks on every
-          // date change. Only seed when the plan is empty or clearly stuck on
-          // legacy/catalog-head defaults. Habits fill empty slots only (see
-          // applyMassHabitSuggestions) unless Quick Mass is used.
+          // Seed hymns only when the plan is empty or still on the known legacy
+          // sticky set. Never overwrite an explicit draft / user plan.
           const hasSongPlan = typeof HOME_SONG_SLOTS !== "undefined" && HOME_SONG_SLOTS.some(function (slot) {
             return !!(selectedLyricsSongs[slot.key] || "").trim();
           });
