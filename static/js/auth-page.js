@@ -2076,8 +2076,7 @@
                     await consumeInvite(pendingInvite, earlyTok);
                   }
                   await submitOnboardingComplete(earlyTok, details);
-                  setMobileWelcomePending();
-                  window.location.href = "/home?welcome=1";
+                  redirectAfterAuth();
                 } catch (err) {
                   showError((err && err.message) || "Could not complete signup.");
                 } finally {
@@ -2200,14 +2199,7 @@
                 await consumeInvite(pendingInvite, token);
               }
               await submitOnboardingComplete(token, details);
-              setMobileWelcomePending();
-              try {
-                const next = new URL(cfg.after_sign_up_url || "/home", window.location.origin);
-                next.searchParams.set("welcome", "1");
-                window.location.href = next.pathname + next.search + next.hash;
-              } catch (_e) {
-                window.location.href = "/home?welcome=1";
-              }
+              redirectAfterAuth();
             } catch (err) {
               showError((err && err.message) || "Could not complete signup.");
             } finally {
@@ -2282,14 +2274,22 @@
                   await consumeInvite(inviteToken, data.session.access_token);
                 }
                 await submitOnboardingComplete(data.session.access_token, details);
-                setMobileWelcomePending();
+                const dest = resolvePostAuthUrl();
                 try {
-                  const next = new URL(cfg.after_sign_up_url || "/home", window.location.origin);
-                  next.searchParams.set("welcome", "1");
-                  await navigateKeepingCaptcha(next.pathname + next.search + next.hash);
+                  const next = new URL(dest, window.location.origin);
+                  const intent = (next.searchParams.get("intent") || "").trim().toLowerCase();
+                  const signupIntent = (
+                    new URLSearchParams(window.location.search).get("intent") || ""
+                  )
+                    .trim()
+                    .toLowerCase();
+                  if (intent !== "billing" && signupIntent !== "billing") {
+                    setMobileWelcomePending();
+                  }
                 } catch (_e) {
-                  await navigateKeepingCaptcha("/home?welcome=1");
+                  setMobileWelcomePending();
                 }
+                await navigateKeepingCaptcha(dest);
                 return;
               }
               // Email confirmation path — no session yet; close the overlay.
