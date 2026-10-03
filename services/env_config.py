@@ -35,6 +35,15 @@ def load_project_dotenv() -> None:
     else:
         load_dotenv(override=True)
     load_gemini_dotenv()
+    # macOS python.org builds often lack system CA certs; urllib/PyJWKClient then
+    # fail SSL when fetching Supabase JWKS. Point SSL at certifi when available.
+    if not (os.environ.get("SSL_CERT_FILE") or "").strip():
+        try:
+            import certifi
+
+            os.environ["SSL_CERT_FILE"] = certifi.where()
+        except Exception:
+            pass
 
 
 def get_gemini_api_key() -> str:

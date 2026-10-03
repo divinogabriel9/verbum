@@ -25,7 +25,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-billing-ui2" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-settings-type" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261003-scrub-readings" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261003-no-quota-hint" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -974,7 +974,7 @@
           <header class="ui-card__header">
             <div class="ui-card__header-text">
               <h3 class="ui-card__title" id="practice-share-history-title">Choir practice shares</h3>
-              <p class="ui-card__description" id="practice-share-history-sub">Reopen an active link, or review expired shares.</p>
+              <p class="ui-card__description" id="practice-share-history-sub">Grouped by Mass date — tap a day to expand.</p>
             </div>
             <button type="button" class="ghost ui-card__close" id="practice-share-history-close" aria-label="Close">×</button>
           </header>
@@ -2825,10 +2825,6 @@
                             <label for="flow-ai-poster-style">Weekly Gospel posters — pick a style</label>
                             <p class="muted flow-setup-field-hint" id="mw-weekly-posters-hint">Your pick becomes the Mass divider background.</p>
                           </div>
-                          <div class="flow-setup-quota-badge">
-                            <span class="flow-setup-quota-badge__dot" aria-hidden="true"></span>
-                            <p class="ai-image-quota-hint" id="flow-ai-quota-hint" aria-live="polite"></p>
-                          </div>
                         </div>
                         <div class="mw-weekly-posters__toolbar" data-superadmin-only>
                           <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-generate" hidden>
@@ -3103,7 +3099,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261003-scrub-readings"></script>
+      <script src="/static/js/mw-wizard.js?v=20261003-no-quota-hint"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3444,11 +3440,10 @@
                 <span class="mw-switch__track" aria-hidden="true"><span class="mw-switch__knob"></span></span>
                 <span class="mw-switch__text">AI poster art · Off</span>
               </label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Full-bleed Gospel art for this Sunday. Uses weekly AI generation quota.</p>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Full-bleed Gospel art for this Sunday.</p>
               <input type="checkbox" id="poster-use-ai-poster-legacy" class="sr-only" tabindex="-1" aria-hidden="true" />
               <input type="checkbox" id="poster-use-ai-poster-alt" class="sr-only" tabindex="-1" aria-hidden="true" />
             </div>
-            <p class="muted ai-image-quota-hint" id="poster-ai-quota-hint" style="margin:0 0 12px;font-size:0.78rem;" aria-live="polite"></p>
             <div class="actions">
               <button type="button" class="secondary" id="btn-poster-sync">Sync from Mass Builder</button>
               <button type="button" class="uiverse-btn uiverse-btn--orange btn-xl" id="btn-poster-generate"><div class="button-outer"><div class="button-inner"><span>Generate poster package</span></div></div></button>
@@ -4246,7 +4241,7 @@
                     </select>
                   </label>
                 </div>
-                <div id="settings-billing-plan-list" class="settings-billing-plan-list" role="list"></div>
+                <div id="settings-billing-plan-list" class="settings-billing-plan-list" role="listbox" aria-label="Subscription plans"></div>
               </div>
               <p class="muted settings-billing-hint" id="settings-billing-hint" hidden></p>
             </article>
@@ -4672,6 +4667,9 @@
   <div class="mass-gen-loader" id="mass-gen-loader" aria-hidden="true" aria-live="polite" role="status">
     <div class="mass-gen-loader__panel">
       <div class="mass-gen-loader__card">
+        <button type="button" class="mass-gen-loader__minimize" id="mass-gen-loader-minimize" aria-label="Minimize" title="Minimize">
+          <span aria-hidden="true">─</span>
+        </button>
         <div class="loader-wrapper">
           <div class="mass-gen-loader__success-badge" id="mass-gen-loader-success" aria-hidden="true">✓</div>
           <div class="loader-halo"></div>
@@ -4685,17 +4683,30 @@
           </div>
         </div>
         <h2 class="mass-gen-loader__title" id="mass-gen-loader-title">Preparing your Sunday Mass</h2>
-        <ul class="mass-gen-loader__steps" id="mass-gen-loader-steps" role="list" aria-label="Progress"></ul>
+        <ul class="mass-gen-loader__steps" id="mass-gen-loader-steps" role="list" aria-label="Current step"></ul>
         <div class="mass-gen-loader__pct-wrap" id="mass-gen-loader-pct-wrap" hidden>
           <div class="mass-gen-loader__pct-bar" aria-hidden="true"><div class="mass-gen-loader__pct-fill" id="mass-gen-loader-pct-fill"></div></div>
           <span class="mass-gen-loader__pct-label" id="mass-gen-loader-pct-label"></span>
         </div>
-        <p class="mass-gen-loader__msg" id="mass-gen-loader-msg">Building PowerPoint slides…</p>
+        <p class="mass-gen-loader__msg" id="mass-gen-loader-msg">This may take a moment…</p>
         <div class="mass-gen-loader__error" id="mass-gen-loader-error" hidden>
           <p class="mass-gen-loader__error-msg" id="mass-gen-loader-error-msg"></p>
           <button type="button" class="secondary mass-gen-loader__retry" id="mass-gen-loader-retry">Retry</button>
         </div>
       </div>
+    </div>
+    <div class="mass-gen-loader__dock" id="mass-gen-loader-dock" hidden>
+      <button type="button" class="mass-gen-loader__dock-btn" id="mass-gen-loader-dock-expand" aria-label="Expand progress">
+        <span class="mass-gen-loader__dock-ring" aria-hidden="true">
+          <span class="mass-gen-loader__dock-spin"></span>
+          <span class="mass-gen-loader__dock-pct" id="mass-gen-loader-dock-pct">0%</span>
+          <span class="mass-gen-loader__dock-check" id="mass-gen-loader-dock-check">✓</span>
+        </span>
+        <span class="mass-gen-loader__dock-copy">
+          <span class="mass-gen-loader__dock-title" id="mass-gen-loader-dock-title">Preparing…</span>
+          <span class="mass-gen-loader__dock-sub" id="mass-gen-loader-dock-sub">This may take a moment…</span>
+        </span>
+      </button>
     </div>
   </div>
 
@@ -4704,8 +4715,8 @@
     <article class="ui-card ui-card--gen-receipt" role="dialog" aria-labelledby="mass-gen-receipt-title" aria-describedby="mass-gen-receipt-desc" aria-modal="true">
       <header class="ui-card__header">
         <div class="ui-card__header-text">
-          <h3 class="ui-card__title" id="mass-gen-receipt-title">Package summary</h3>
-          <p class="ui-card__description" id="mass-gen-receipt-desc">Review before continuing. Choose Generate for a PowerPoint download, or Slideshow to present in the browser.</p>
+          <h3 class="ui-card__title" id="mass-gen-receipt-title">Your Mass package</h3>
+          <p class="ui-card__description" id="mass-gen-receipt-desc">A quick look before you continue — generate a PowerPoint, or open Slideshow in the browser.</p>
         </div>
         <button type="button" class="ghost ui-card__close" id="mass-gen-receipt-close" aria-label="Close">×</button>
       </header>
@@ -4782,10 +4793,10 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261003-billing-ui2"></script>
+  <script src="/static/js/app.js?v=20261003-billing-sub-card"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
-  <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>
+  <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>
   <script>
     scheduleDashboardBoot();
   </script>

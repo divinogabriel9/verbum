@@ -11,6 +11,78 @@ from typing import Any, Optional
 INTERVALS: tuple[str, ...] = ("monthly", "quarterly", "semiannual", "annual")
 CURRENCIES: tuple[str, ...] = ("krw", "php", "myr", "usd")
 
+# Signup / parish registration country → local Stripe currency.
+_COUNTRY_CURRENCY: dict[str, str] = {
+    "KR": "krw",
+    "PH": "php",
+    "MY": "myr",
+}
+
+# Longest-prefix dial codes used to recover country from E.164 phones.
+_DIAL_TO_COUNTRY: tuple[tuple[str, str], ...] = (
+    ("+971", "AE"),
+    ("+966", "SA"),
+    ("+886", "TW"),
+    ("+852", "HK"),
+    ("+974", "QA"),
+    ("+965", "KW"),
+    ("+973", "BH"),
+    ("+353", "IE"),
+    ("+351", "PT"),
+    ("+82", "KR"),
+    ("+63", "PH"),
+    ("+60", "MY"),
+    ("+81", "JP"),
+    ("+65", "SG"),
+    ("+61", "AU"),
+    ("+64", "NZ"),
+    ("+91", "IN"),
+    ("+86", "CN"),
+    ("+84", "VN"),
+    ("+66", "TH"),
+    ("+62", "ID"),
+    ("+55", "BR"),
+    ("+52", "MX"),
+    ("+49", "DE"),
+    ("+44", "GB"),
+    ("+43", "AT"),
+    ("+41", "CH"),
+    ("+39", "IT"),
+    ("+34", "ES"),
+    ("+33", "FR"),
+    ("+32", "BE"),
+    ("+31", "NL"),
+    ("+48", "PL"),
+    ("+1", "US"),
+)
+
+
+def normalize_country_code(value: str | None) -> str:
+    code = (value or "").strip().upper()
+    if len(code) == 2 and code.isalpha():
+        return code
+    return ""
+
+
+def currency_for_country_code(country_code: str | None) -> str:
+    """Map parish registration country to billing currency (default USD)."""
+    code = normalize_country_code(country_code)
+    return _COUNTRY_CURRENCY.get(code, "usd")
+
+
+def country_code_from_phone(phone: str | None) -> str:
+    """Best-effort ISO country from an E.164 phone number."""
+    raw = (phone or "").strip()
+    if not raw:
+        return ""
+    if not raw.startswith("+"):
+        digits = "".join(ch for ch in raw if ch.isdigit())
+        raw = ("+" + digits) if digits else ""
+    for dial, iso in sorted(_DIAL_TO_COUNTRY, key=lambda item: len(item[0]), reverse=True):
+        if raw.startswith(dial):
+            return iso
+    return ""
+
 # Public parish pricing (publisher deck). Stripe unit amounts live in bootstrap script.
 _DISPLAY: dict[str, dict[str, str]] = {
     "monthly": {

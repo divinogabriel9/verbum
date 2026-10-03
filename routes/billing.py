@@ -9,7 +9,7 @@ from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from services.api_security import AuthSession, require_session
-from services.billing_catalog import CURRENCIES, INTERVALS, catalog_payload
+from services.billing_catalog import CURRENCIES, INTERVALS, catalog_payload, currency_for_country_code
 from services.membership_config import is_superadmin_user, membership_payload
 from services.stripe_billing import (
     billing_enabled,
@@ -18,6 +18,7 @@ from services.stripe_billing import (
     create_checkout_session,
     create_portal_session,
     process_webhook_event,
+    resolve_parish_country_code,
 )
 from services.user_church_context import get_church_profile_context, set_church_profile
 
@@ -29,6 +30,28 @@ class CheckoutBody(BaseModel):
     currency: Literal["krw", "php", "myr", "usd"] = "usd"
 
 
+def _user_can_manage_parish_billing(
+    *,
+    session: AuthSession,
+    ctx: dict[str, Any],
+) -> bool:
+    """President, superadmin, or sole active member of the parish."""
+    if is_superadmin_user(session.user):
+        return True
+    role = (ctx.get("parish_role") or "").strip().lower()
+    if role == "president":
+        return True
+    parish_id = str(ctx.get("parish_id") or ctx.get("id") or "").strip()
+    if not parish_id:
+        return False
+    try:
+        from services.parish_store import count_active_members
+
+        return count_active_members(parish_id) <= 1
+    except Exception:
+        return False
+
+
 def _require_parish_billing_manager(session: AuthSession) -> dict[str, Any]:
     ctx = get_church_profile_context() or {}
     parish_id = str(ctx.get("parish_id") or ctx.get("id") or "").strip()
@@ -37,15 +60,12 @@ def _require_parish_billing_manager(session: AuthSession) -> dict[str, Any]:
             status_code=400,
             detail="Create your parish profile before starting billing.",
         )
-    if is_superadmin_user(session.user):
+    if _user_can_manage_parish_billing(session=session, ctx=ctx):
         return ctx
-    role = (ctx.get("parish_role") or "").strip().lower()
-    if role != "president":
-        raise HTTPException(
-            status_code=403,
-            detail="Only the parish president can manage billing.",
-        )
-    return ctx
+    raise HTTPException(
+        status_code=403,
+        detail="Only the parish president can manage billing (unless you are the only member).",
+    )
 
 
 def register_billing_routes(app) -> None:
@@ -63,6 +83,7 @@ def register_billing_routes(app) -> None:
         session: AuthSession = Depends(require_session),
     ) -> dict[str, Any]:
         from services.parish_store import get_parish_by_id, get_user_parish_context
+        from services.supabase_client import get_service_client, supabase_enabled
 
         ctx = get_user_parish_context(session.user.user_id, access_token=session.token)
         if ctx and ctx.get("parish_id"):
@@ -80,8 +101,45 @@ def register_billing_routes(app) -> None:
                 ctx = shaped
         else:
             ctx = get_church_profile_context()
-        billing = billing_payload(ctx)
+
+        fallback_phone = ""
+        try:
+            if supabase_enabled():
+                prof = (
+                    get_service_client()
+                    .table("profiles")
+                    .select("phone")
+                    .eq("id", session.user.user_id)
+                    .limit(1)
+                    .execute()
+                )
+                rows = prof.data or []
+                if rows:
+                    fallback_phone = str(rows[0].get("phone") or "")
+        except Exception:
+            fallback_phone = ""
+
+        billing = billing_payload(ctx, fallback_phone=fallback_phone)
+        # Backfill parish country from signup phone when missing (older parishes).
+        parish_id = str((ctx or {}).get("parish_id") or (ctx or {}).get("id") or "").strip()
+        if (
+            parish_id
+            and billing.get("parish_country")
+            and not (ctx or {}).get("country_code")
+            and supabase_enabled()
+        ):
+            try:
+                get_service_client().table("parishes").update(
+                    {"country_code": billing["parish_country"]}
+                ).eq("id", parish_id).execute()
+            except Exception:
+                pass
+
         membership = membership_payload(ctx, user=session.user)
+        can_manage = _user_can_manage_parish_billing(
+            session=session, ctx=ctx or {}
+        )
+        billing["can_manage_parish_billing"] = can_manage
         return {
             "ok": True,
             "billing": billing,
@@ -99,6 +157,12 @@ def register_billing_routes(app) -> None:
         parish_id = str(ctx.get("parish_id") or ctx.get("id") or "")
         interval = body.interval
         currency = body.currency
+        # Non-superadmins are locked to the parish registration country currency.
+        if not is_superadmin_user(session.user):
+            from services.parish_store import get_parish_by_id
+
+            parish = get_parish_by_id(parish_id) or ctx
+            currency = currency_for_country_code(resolve_parish_country_code(parish))
         if interval not in INTERVALS or currency not in CURRENCIES:
             raise HTTPException(status_code=400, detail="Invalid plan selection.")
         return create_checkout_session(

@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import Annotated, Any, Optional
 
 import jwt
 from fastapi import Depends, Header, HTTPException
-from jwt import PyJWKClient
-from jwt.exceptions import PyJWKClientConnectionError, PyJWTError
+from jwt.exceptions import PyJWTError
 
 from services.auth_config import (
     auth_enabled,
+    supabase_anon_key,
     supabase_client_key,
     supabase_jwt_secret,
     supabase_url,
 )
+
+logger = logging.getLogger(__name__)
 
 _DECODE_OPTIONS = {
     "verify_aud": True,
@@ -24,6 +27,10 @@ _DECODE_OPTIONS = {
     "verify_signature": True,
     "require": ["exp", "sub"],
 }
+
+# JWKS cache: avoid per-request network + urllib SSL issues on macOS Python.
+_JWKS_CACHE: dict[str, Any] = {"url": "", "fetched_at": 0.0, "keys": []}
+_JWKS_TTL_SEC = 600.0
 
 
 @dataclass(frozen=True)
@@ -36,13 +43,59 @@ class AuthUser:
     role: str = "member"
 
 
-@lru_cache(maxsize=4)
-def _jwks_client_for(url: str) -> PyJWKClient:
-    return PyJWKClient(
-        f"{url.rstrip('/')}/auth/v1/.well-known/jwks.json",
-        cache_keys=True,
-        lifespan=600,
-    )
+def _api_key_for_auth() -> str:
+    """Prefer legacy anon JWT for Auth REST; publishable key is also accepted."""
+    return supabase_anon_key() or supabase_client_key()
+
+
+def _fetch_jwks(force: bool = False) -> list[dict[str, Any]]:
+    import requests
+
+    base = supabase_url()
+    if not base:
+        raise HTTPException(status_code=503, detail="Supabase Auth is not configured.")
+
+    now = time.time()
+    if (
+        not force
+        and _JWKS_CACHE["keys"]
+        and _JWKS_CACHE["url"] == base
+        and (now - float(_JWKS_CACHE["fetched_at"])) < _JWKS_TTL_SEC
+    ):
+        return list(_JWKS_CACHE["keys"])
+
+    api_key = _api_key_for_auth()
+    headers = {"apikey": api_key, "Authorization": f"Bearer {api_key}"} if api_key else {}
+    try:
+        resp = requests.get(
+            f"{base.rstrip('/')}/auth/v1/.well-known/jwks.json",
+            headers=headers,
+            timeout=8,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not reach Supabase JWKS to verify session.",
+        ) from exc
+
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not load Supabase signing keys.",
+        )
+
+    data = resp.json() if resp.content else {}
+    keys = data.get("keys") if isinstance(data, dict) else None
+    if not isinstance(keys, list) or not keys:
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase JWKS returned no signing keys.",
+        )
+
+    _JWKS_CACHE["url"] = base
+    _JWKS_CACHE["fetched_at"] = now
+    _JWKS_CACHE["keys"] = keys
+    return list(keys)
 
 
 def _decode_hs256(token: str, secret: str) -> dict[str, Any]:
@@ -57,18 +110,40 @@ def _decode_hs256(token: str, secret: str) -> dict[str, Any]:
 
 
 def _decode_asymmetric(token: str, alg: str) -> dict[str, Any]:
-    base = supabase_url()
-    if not base:
-        raise HTTPException(status_code=503, detail="Supabase Auth is not configured.")
-    signing_key = _jwks_client_for(base).get_signing_key_from_jwt(token)
-    return jwt.decode(
-        token,
-        signing_key.key,
-        algorithms=[alg],
-        audience="authenticated",
-        leeway=10,
-        options=_DECODE_OPTIONS,
-    )
+    """Verify ES256 (etc.) access tokens using JWKS fetched via requests/certifi."""
+    try:
+        header = jwt.get_unverified_header(token)
+    except PyJWTError as exc:
+        raise HTTPException(status_code=401, detail="Invalid or expired session.") from exc
+
+    kid = str(header.get("kid") or "").strip()
+    keys = _fetch_jwks(force=False)
+    matching = [k for k in keys if not kid or str(k.get("kid") or "") == kid]
+    if not matching:
+        keys = _fetch_jwks(force=True)
+        matching = [k for k in keys if not kid or str(k.get("kid") or "") == kid]
+    if not matching:
+        raise HTTPException(status_code=401, detail="Invalid or expired session.")
+
+    last_err: Exception | None = None
+    for jwk in matching:
+        try:
+            key = jwt.PyJWK.from_dict(jwk).key
+            return jwt.decode(
+                token,
+                key=key,
+                algorithms=[alg],
+                audience="authenticated",
+                leeway=10,
+                options=_DECODE_OPTIONS,
+            )
+        except Exception as exc:  # noqa: BLE001 — try next key / fall through
+            last_err = exc
+            continue
+
+    if isinstance(last_err, PyJWTError):
+        raise last_err
+    raise HTTPException(status_code=401, detail="Invalid or expired session.") from last_err
 
 
 def _verify_via_auth_server(token: str) -> dict[str, Any]:
@@ -76,7 +151,7 @@ def _verify_via_auth_server(token: str) -> dict[str, Any]:
     import requests
 
     base = supabase_url()
-    api_key = supabase_client_key()
+    api_key = _api_key_for_auth()
     if not base or not api_key:
         raise HTTPException(status_code=503, detail="Supabase Auth is not configured.")
 
@@ -87,7 +162,7 @@ def _verify_via_auth_server(token: str) -> dict[str, Any]:
                 "Authorization": f"Bearer {token}",
                 "apikey": api_key,
             },
-            timeout=10,
+            timeout=8,
         )
     except requests.RequestException as exc:
         raise HTTPException(
@@ -144,7 +219,18 @@ def verify_supabase_token(token: str) -> AuthUser:
             # Modern Supabase projects sign user access tokens with ES256 (JWKS).
             try:
                 payload = _decode_asymmetric(raw, alg)
-            except (PyJWTError, PyJWKClientConnectionError, OSError):
+            except HTTPException:
+                raise
+            except PyJWTError as exc:
+                # Bad/expired signature — do not pay for a remote Auth round-trip.
+                raise HTTPException(
+                    status_code=401, detail="Invalid or expired session."
+                ) from exc
+            except Exception:
+                logger.warning(
+                    "Local JWKS verify failed; falling back to Auth server",
+                    exc_info=True,
+                )
                 payload = _verify_via_auth_server(raw)
     except HTTPException:
         raise

@@ -1760,7 +1760,7 @@
       try {
         advanceMassGenStep(1, { message: "Reading file…" });
         const text = await file.text();
-        advanceMassGenStep(2, { message: "Detecting metadata…" });
+        advanceMassGenStep(2, { message: "Organizing song details…" });
 
         const nameLower = String(file.name || "").toLowerCase();
         const isRtf = nameLower.endsWith(".rtf") || /^\s*\{\\rtf/i.test(text);

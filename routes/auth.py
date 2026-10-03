@@ -50,6 +50,7 @@ class OnboardingCompleteBody(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=80)
     phone: str = Field(..., min_length=8, max_length=32)
     community_name: str = Field(..., min_length=2, max_length=120)
+    country_code: str = Field("", max_length=2)
     ministry_role: str = Field(..., min_length=2, max_length=40)
     ministry_role_other: str = Field("", max_length=60)
     preferred_language: str = Field("", max_length=40)
@@ -249,6 +250,7 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
             last_name=body.last_name,
             phone=body.phone,
             community_name=body.community_name,
+            country_code=body.country_code,
             ministry_role=body.ministry_role,
             ministry_role_other=body.ministry_role_other,
             preferred_language=body.preferred_language,

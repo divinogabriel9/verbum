@@ -44,6 +44,7 @@ def _shape_church_context(
         "member_id": member_id,
         "user_id": user_id,
         "community_name": parish.get("community_name") or "",
+        "country_code": (parish.get("country_code") or "").strip().upper() or None,
         "logo_path": parish.get("logo_path"),
         "celebrant_names": parish.get("celebrant_names") or [],
         "membership_status": parish.get("membership_status") or "draft",

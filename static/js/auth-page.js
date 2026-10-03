@@ -1656,6 +1656,8 @@
         const lastName = ($("auth-last-name") && $("auth-last-name").value.trim()) || "";
         const national = ($("auth-phone") && $("auth-phone").value.trim()) || "";
         const countryCode = (($("auth-phone-country") && $("auth-phone-country").value) || "").trim();
+        const countryOpt = countryByCode(countryCode);
+        const countryIso = (countryOpt && countryOpt.iso) || "";
         const phoneNational = national.replace(/\D/g, "");
         let phone = "";
         if (phoneNational) {
@@ -1679,6 +1681,7 @@
           middleName,
           lastName,
           countryCode,
+          countryIso,
           phoneNational,
           phone,
           churchName,
@@ -1712,6 +1715,7 @@
             last_name: details.lastName,
             phone: details.phone,
             community_name: details.churchName,
+            country_code: details.countryIso || "",
             ministry_role: details.ministryRole,
             ministry_role_other: details.ministryRoleOther,
             survey_sources: details.surveySources,
@@ -2262,6 +2266,7 @@
                     middle_name: details.middleName || undefined,
                     last_name: details.lastName || undefined,
                     community_name: details.churchName || undefined,
+                    country_code: details.countryIso || undefined,
                     phone: details.phone || undefined,
                     ministry_role: details.ministryRole || undefined,
                     ministry_role_other: details.ministryRoleOther || undefined,

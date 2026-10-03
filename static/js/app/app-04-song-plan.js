@@ -2719,13 +2719,17 @@
       const host = $("practice-share-history-list");
       if (!host) return;
       practiceShareHistoryCache = Array.isArray(shares) ? shares.slice() : [];
-      const active = practiceShareHistoryCache.filter((s) => s && s.status === "active");
-      const expired = practiceShareHistoryCache.filter((s) => s && s.status !== "active");
 
-      if (!active.length && !expired.length) {
+      if (!practiceShareHistoryCache.length) {
         host.innerHTML = '<p class="practice-share-history-empty">No practice shares yet. Create one to freeze lyrics for your choir.</p>';
         stopPracticeShareHistoryCountdown();
         return;
+      }
+
+      function isShareActive(share) {
+        if (!share || share.status !== "active") return false;
+        const expiresMs = share.expires_at ? new Date(share.expires_at).getTime() : 0;
+        return !expiresMs || expiresMs > Date.now();
       }
 
       function itemHtml(share, isActive) {
@@ -2755,51 +2759,94 @@
         );
       }
 
+      const byDate = new Map();
+      practiceShareHistoryCache.forEach((share) => {
+        if (!share) return;
+        const key = String(share.mass_date || "").trim() || "unknown";
+        if (!byDate.has(key)) byDate.set(key, []);
+        byDate.get(key).push(share);
+      });
+      const dateKeys = Array.from(byDate.keys()).sort((a, b) => {
+        if (a === "unknown") return 1;
+        if (b === "unknown") return -1;
+        return b.localeCompare(a);
+      });
+
       let html = "";
-      if (active.length) {
-        html += '<section class="practice-share-history-section"><h4 class="practice-share-history-section__title">Active</h4><ul class="practice-share-history-items">';
-        active.forEach((s) => { html += itemHtml(s, true); });
-        html += "</ul></section>";
-      }
-      if (expired.length) {
-        html += '<section class="practice-share-history-section"><h4 class="practice-share-history-section__title">Expired</h4><ul class="practice-share-history-items">';
-        expired.forEach((s) => { html += itemHtml(s, false); });
-        html += "</ul></section>";
-      }
+      let anyActive = false;
+      dateKeys.forEach((dateKey, index) => {
+        const group = byDate.get(dateKey) || [];
+        group.sort((a, b) => {
+          const aActive = isShareActive(a) ? 1 : 0;
+          const bActive = isShareActive(b) ? 1 : 0;
+          if (aActive !== bActive) return bActive - aActive;
+          return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+        });
+        const activeCount = group.filter(isShareActive).length;
+        if (activeCount) anyActive = true;
+        const open = activeCount > 0 || index === 0;
+        const label = dateKey === "unknown"
+          ? "Undated"
+          : (formatPracticeMassDate(dateKey) || dateKey);
+        const countLabel = group.length + " share" + (group.length === 1 ? "" : "s");
+        const liveLabel = activeCount ? (activeCount + " active") : "";
+        html +=
+          '<section class="practice-share-history-accordion' + (open ? " is-open" : "") +
+          '" data-practice-date="' + dateKey.replace(/"/g, "&quot;") + '">' +
+          '<button type="button" class="practice-share-history-accordion__head" data-practice-accordion-toggle aria-expanded="' +
+          (open ? "true" : "false") + '">' +
+          '<span class="practice-share-history-accordion__chevron" aria-hidden="true"></span>' +
+          '<span class="practice-share-history-accordion__label"></span>' +
+          '<span class="practice-share-history-accordion__meta">' +
+          (liveLabel ? ('<span class="practice-share-history-accordion__live">' + liveLabel + "</span>") : "") +
+          '<span class="practice-share-history-accordion__count">' + countLabel + "</span>" +
+          "</span></button>" +
+          '<div class="practice-share-history-accordion__body"' + (open ? "" : " hidden") + ">" +
+          '<ul class="practice-share-history-items">';
+        group.forEach((s) => { html += itemHtml(s, isShareActive(s)); });
+        html += "</ul></div></section>";
+      });
       host.innerHTML = html;
 
-      // Set text via textContent to avoid HTML injection from titles
+      Array.from(host.querySelectorAll(".practice-share-history-accordion")).forEach((section) => {
+        const dateKey = section.getAttribute("data-practice-date") || "";
+        const labelEl = section.querySelector(".practice-share-history-accordion__label");
+        if (!labelEl) return;
+        labelEl.textContent = dateKey === "unknown"
+          ? "Undated"
+          : (formatPracticeMassDate(dateKey) || dateKey);
+      });
+
       Array.from(host.querySelectorAll(".practice-share-history-item")).forEach((btn) => {
         const token = btn.getAttribute("data-practice-token") || "";
         const share = practiceShareHistoryCache.find((s) => String(s.token || "") === token);
         if (!share) return;
         const titleEl = btn.querySelector(".practice-share-history-item__title");
         const metaEl = btn.querySelector(".practice-share-history-item__meta");
-        if (titleEl) titleEl.textContent = String(share.mass_title || "").trim() || ("Mass · " + formatPracticeMassDate(share.mass_date));
+        if (titleEl) {
+          titleEl.textContent = String(share.mass_title || "").trim() || "Mass lyrics";
+        }
         if (metaEl) {
-          const dateLabel = formatPracticeMassDate(share.mass_date);
           const songCount = Number(share.song_count || 0);
           const visitors = Number(share.unique_visitors || 0);
-          const active = Number(share.active_now || 0);
+          const online = Number(share.active_now || 0);
           const visitBits = [];
           if (visitors > 0) {
             visitBits.push(visitors + " visitor" + (visitors === 1 ? "" : "s"));
           }
-          if (active > 0) {
-            visitBits.push(active + " online");
+          if (online > 0) {
+            visitBits.push(online + " online");
           }
           metaEl.textContent = [
-            dateLabel,
             songCount ? (songCount + " song" + (songCount === 1 ? "" : "s")) : "",
             visitBits.join(" · "),
           ].filter(Boolean).join(" · ");
         }
       });
 
-      if (active.length) startPracticeShareHistoryCountdown();
+      if (anyActive) startPracticeShareHistoryCountdown();
       else stopPracticeShareHistoryCountdown();
     }
-
     async function fetchRecentPracticeShares() {
       if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
@@ -2941,6 +2988,18 @@
     }
 
     function onPracticeShareHistoryClick(e) {
+      const toggle = e.target && e.target.closest ? e.target.closest("[data-practice-accordion-toggle]") : null;
+      if (toggle) {
+        e.preventDefault();
+        const section = toggle.closest(".practice-share-history-accordion");
+        if (!section) return;
+        const body = section.querySelector(".practice-share-history-accordion__body");
+        const open = !section.classList.contains("is-open");
+        section.classList.toggle("is-open", open);
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        if (body) body.hidden = !open;
+        return;
+      }
       const expireBtn = e.target && e.target.closest ? e.target.closest("[data-practice-expire]") : null;
       if (expireBtn) {
         e.preventDefault();

@@ -843,12 +843,8 @@
         if (wrap) setFeatureFlagDisabled(wrap, !aiOn);
       });
       const aiHosts = [
-        $("flow-ai-quota-hint") && (
-          $("flow-ai-quota-hint").closest(".flow-poster-style__ai") ||
-          $("flow-ai-quota-hint").closest(".flow-setup-footer") ||
-          $("flow-ai-quota-hint").parentElement
-        ),
-        $("poster-ai-quota-hint") && $("poster-ai-quota-hint").parentElement,
+        $("flow-ai-poster-style-wrap"),
+        $("poster-ai-poster-style-wrap") || $("poster-use-ai-poster") && $("poster-use-ai-poster").closest(".field"),
       ];
       aiHosts.forEach((host, idx) => {
         if (!host) return;

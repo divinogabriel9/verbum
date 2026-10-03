@@ -10615,7 +10615,7 @@
       try {
         advanceMassGenStep(1, { message: "Reading file…" });
         const text = await file.text();
-        advanceMassGenStep(2, { message: "Detecting metadata…" });
+        advanceMassGenStep(2, { message: "Organizing song details…" });
 
         const nameLower = String(file.name || "").toLowerCase();
         const isRtf = nameLower.endsWith(".rtf") || /^\s*\{\\rtf/i.test(text);
@@ -15509,13 +15509,17 @@
       const host = $("practice-share-history-list");
       if (!host) return;
       practiceShareHistoryCache = Array.isArray(shares) ? shares.slice() : [];
-      const active = practiceShareHistoryCache.filter((s) => s && s.status === "active");
-      const expired = practiceShareHistoryCache.filter((s) => s && s.status !== "active");
 
-      if (!active.length && !expired.length) {
+      if (!practiceShareHistoryCache.length) {
         host.innerHTML = '<p class="practice-share-history-empty">No practice shares yet. Create one to freeze lyrics for your choir.</p>';
         stopPracticeShareHistoryCountdown();
         return;
+      }
+
+      function isShareActive(share) {
+        if (!share || share.status !== "active") return false;
+        const expiresMs = share.expires_at ? new Date(share.expires_at).getTime() : 0;
+        return !expiresMs || expiresMs > Date.now();
       }
 
       function itemHtml(share, isActive) {
@@ -15545,51 +15549,94 @@
         );
       }
 
+      const byDate = new Map();
+      practiceShareHistoryCache.forEach((share) => {
+        if (!share) return;
+        const key = String(share.mass_date || "").trim() || "unknown";
+        if (!byDate.has(key)) byDate.set(key, []);
+        byDate.get(key).push(share);
+      });
+      const dateKeys = Array.from(byDate.keys()).sort((a, b) => {
+        if (a === "unknown") return 1;
+        if (b === "unknown") return -1;
+        return b.localeCompare(a);
+      });
+
       let html = "";
-      if (active.length) {
-        html += '<section class="practice-share-history-section"><h4 class="practice-share-history-section__title">Active</h4><ul class="practice-share-history-items">';
-        active.forEach((s) => { html += itemHtml(s, true); });
-        html += "</ul></section>";
-      }
-      if (expired.length) {
-        html += '<section class="practice-share-history-section"><h4 class="practice-share-history-section__title">Expired</h4><ul class="practice-share-history-items">';
-        expired.forEach((s) => { html += itemHtml(s, false); });
-        html += "</ul></section>";
-      }
+      let anyActive = false;
+      dateKeys.forEach((dateKey, index) => {
+        const group = byDate.get(dateKey) || [];
+        group.sort((a, b) => {
+          const aActive = isShareActive(a) ? 1 : 0;
+          const bActive = isShareActive(b) ? 1 : 0;
+          if (aActive !== bActive) return bActive - aActive;
+          return String(b.created_at || "").localeCompare(String(a.created_at || ""));
+        });
+        const activeCount = group.filter(isShareActive).length;
+        if (activeCount) anyActive = true;
+        const open = activeCount > 0 || index === 0;
+        const label = dateKey === "unknown"
+          ? "Undated"
+          : (formatPracticeMassDate(dateKey) || dateKey);
+        const countLabel = group.length + " share" + (group.length === 1 ? "" : "s");
+        const liveLabel = activeCount ? (activeCount + " active") : "";
+        html +=
+          '<section class="practice-share-history-accordion' + (open ? " is-open" : "") +
+          '" data-practice-date="' + dateKey.replace(/"/g, "&quot;") + '">' +
+          '<button type="button" class="practice-share-history-accordion__head" data-practice-accordion-toggle aria-expanded="' +
+          (open ? "true" : "false") + '">' +
+          '<span class="practice-share-history-accordion__chevron" aria-hidden="true"></span>' +
+          '<span class="practice-share-history-accordion__label"></span>' +
+          '<span class="practice-share-history-accordion__meta">' +
+          (liveLabel ? ('<span class="practice-share-history-accordion__live">' + liveLabel + "</span>") : "") +
+          '<span class="practice-share-history-accordion__count">' + countLabel + "</span>" +
+          "</span></button>" +
+          '<div class="practice-share-history-accordion__body"' + (open ? "" : " hidden") + ">" +
+          '<ul class="practice-share-history-items">';
+        group.forEach((s) => { html += itemHtml(s, isShareActive(s)); });
+        html += "</ul></div></section>";
+      });
       host.innerHTML = html;
 
-      // Set text via textContent to avoid HTML injection from titles
+      Array.from(host.querySelectorAll(".practice-share-history-accordion")).forEach((section) => {
+        const dateKey = section.getAttribute("data-practice-date") || "";
+        const labelEl = section.querySelector(".practice-share-history-accordion__label");
+        if (!labelEl) return;
+        labelEl.textContent = dateKey === "unknown"
+          ? "Undated"
+          : (formatPracticeMassDate(dateKey) || dateKey);
+      });
+
       Array.from(host.querySelectorAll(".practice-share-history-item")).forEach((btn) => {
         const token = btn.getAttribute("data-practice-token") || "";
         const share = practiceShareHistoryCache.find((s) => String(s.token || "") === token);
         if (!share) return;
         const titleEl = btn.querySelector(".practice-share-history-item__title");
         const metaEl = btn.querySelector(".practice-share-history-item__meta");
-        if (titleEl) titleEl.textContent = String(share.mass_title || "").trim() || ("Mass · " + formatPracticeMassDate(share.mass_date));
+        if (titleEl) {
+          titleEl.textContent = String(share.mass_title || "").trim() || "Mass lyrics";
+        }
         if (metaEl) {
-          const dateLabel = formatPracticeMassDate(share.mass_date);
           const songCount = Number(share.song_count || 0);
           const visitors = Number(share.unique_visitors || 0);
-          const active = Number(share.active_now || 0);
+          const online = Number(share.active_now || 0);
           const visitBits = [];
           if (visitors > 0) {
             visitBits.push(visitors + " visitor" + (visitors === 1 ? "" : "s"));
           }
-          if (active > 0) {
-            visitBits.push(active + " online");
+          if (online > 0) {
+            visitBits.push(online + " online");
           }
           metaEl.textContent = [
-            dateLabel,
             songCount ? (songCount + " song" + (songCount === 1 ? "" : "s")) : "",
             visitBits.join(" · "),
           ].filter(Boolean).join(" · ");
         }
       });
 
-      if (active.length) startPracticeShareHistoryCountdown();
+      if (anyActive) startPracticeShareHistoryCountdown();
       else stopPracticeShareHistoryCountdown();
     }
-
     async function fetchRecentPracticeShares() {
       if (window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
         await window.VerbumAuth.waitUntilReady();
@@ -15731,6 +15778,18 @@
     }
 
     function onPracticeShareHistoryClick(e) {
+      const toggle = e.target && e.target.closest ? e.target.closest("[data-practice-accordion-toggle]") : null;
+      if (toggle) {
+        e.preventDefault();
+        const section = toggle.closest(".practice-share-history-accordion");
+        if (!section) return;
+        const body = section.querySelector(".practice-share-history-accordion__body");
+        const open = !section.classList.contains("is-open");
+        section.classList.toggle("is-open", open);
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        if (body) body.hidden = !open;
+        return;
+      }
       const expireBtn = e.target && e.target.closest ? e.target.closest("[data-practice-expire]") : null;
       if (expireBtn) {
         e.preventDefault();
@@ -18919,9 +18978,12 @@
       has_paid_access: false,
       can_start_checkout: false,
       can_manage_billing: false,
+      can_manage_parish_billing: false,
       stripe_subscription_status: "",
       plan_interval: "",
       plan_currency: "",
+      display_currency: "usd",
+      parish_country: "",
       stripe_current_period_end: null,
       trial_days: 14,
     };
@@ -18974,8 +19036,9 @@
         throw new Error("Checkout URL missing.");
       } catch (err) {
         if (statusEl) {
+          statusEl.hidden = false;
           statusEl.className = "status error";
-          statusEl.textContent = (err && err.message) || "Could not start checkout.";
+          statusEl.textContent = (err && err.message) || "Checkout failed.";
         }
         if (typeof showToast === "function") {
           showToast((err && err.message) || "Checkout failed", "error");
@@ -19001,14 +19064,47 @@
       }
     }
 
+    function syncBillingSubscribeButton() {
+      const canCheckout = !!billingUiState.can_start_checkout
+        && !!billingUiState.can_manage_parish_billing;
+      const selected = (billingUiState._selectedInterval || "").trim();
+      const ready = !!selected && !!billingUiState._selectedReady;
+      const list = $("settings-billing-plan-list");
+      if (!list) return;
+      list.querySelectorAll(".settings-billing-plan").forEach((el) => {
+        const btn = el.querySelector(".settings-billing-plan__subscribe");
+        if (!btn) return;
+        const isSel = el.getAttribute("data-interval") === selected;
+        btn.hidden = !isSel;
+        btn.disabled = !(isSel && canCheckout && ready);
+        btn.textContent = canCheckout
+          ? "Subscribe"
+          : (ready ? "President or sole member only" : "Subscribe");
+      });
+    }
+
+    function selectBillingPlan(interval, ready) {
+      billingUiState._selectedInterval = interval || "";
+      billingUiState._selectedReady = !!ready;
+      const list = $("settings-billing-plan-list");
+      if (list) {
+        list.querySelectorAll(".settings-billing-plan").forEach((el) => {
+          const isSel = el.getAttribute("data-interval") === interval;
+          el.classList.toggle("is-selected", isSel);
+          el.setAttribute("aria-selected", isSel ? "true" : "false");
+        });
+      }
+      syncBillingSubscribeButton();
+    }
+
     function renderBillingPlanList(catalog) {
       const list = $("settings-billing-plan-list");
       if (!list) return;
       const currency = ($("settings-billing-currency") && $("settings-billing-currency").value) || "usd";
       const intervals = (catalog && catalog.intervals) || [];
-      const canCheckout = !!billingUiState.can_start_checkout
-        && (churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin);
+      const prevSelected = (billingUiState._selectedInterval || "").trim();
       list.innerHTML = "";
+      let restoredReady = false;
       intervals.forEach((row) => {
         const price = (row.prices || []).find((p) => p.currency === currency) || (row.prices || [])[0];
         const amount = (price && price.amount_display) || "—";
@@ -19016,8 +19112,13 @@
         const featured = row.interval === "annual";
         const item = document.createElement("div");
         item.className = "settings-billing-plan" + (featured ? " is-featured" : "");
-        item.setAttribute("role", "listitem");
+        item.setAttribute("role", "option");
+        item.setAttribute("tabindex", ready ? "0" : "-1");
+        item.setAttribute("data-interval", row.interval || "");
+        item.setAttribute("aria-selected", "false");
+        if (!ready) item.setAttribute("aria-disabled", "true");
         item.innerHTML =
+          "<div class=\"settings-billing-plan__main\">" +
           "<div class=\"settings-billing-plan__copy\">" +
           "<div class=\"settings-billing-plan__label-row\">" +
           "<strong>" + escapeHtml(row.label || row.interval) + "</strong>" +
@@ -19025,16 +19126,41 @@
           "</div>" +
           "<span class=\"settings-billing-plan__price\">" + escapeHtml(amount) + "</span>" +
           "<span class=\"settings-billing-plan__hint\">" + escapeHtml(row.billing_hint || "") + "</span>" +
-          "</div>";
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "primary";
-        btn.textContent = canCheckout && ready ? "Start 14-day trial" : (ready ? "President only" : "Unavailable");
-        btn.disabled = !(canCheckout && ready);
-        btn.addEventListener("click", () => startBillingCheckout(row.interval, currency));
-        item.appendChild(btn);
+          "</div>" +
+          "<span class=\"settings-billing-plan__check\" aria-hidden=\"true\"></span>" +
+          "</div>" +
+          "<button type=\"button\" class=\"primary settings-billing-plan__subscribe\" hidden>Subscribe</button>";
+        const pick = () => {
+          if (!ready) return;
+          selectBillingPlan(row.interval, ready);
+        };
+        item.addEventListener("click", (e) => {
+          if (e.target && e.target.closest && e.target.closest(".settings-billing-plan__subscribe")) return;
+          pick();
+        });
+        item.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            pick();
+          }
+        });
+        const subBtn = item.querySelector(".settings-billing-plan__subscribe");
+        if (subBtn) {
+          subBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const cur = ($("settings-billing-currency") && $("settings-billing-currency").value) || "usd";
+            startBillingCheckout(row.interval, cur);
+          });
+        }
+        if (prevSelected && prevSelected === row.interval && ready) restoredReady = true;
         list.appendChild(item);
       });
+      if (prevSelected && restoredReady) selectBillingPlan(prevSelected, true);
+      else {
+        billingUiState._selectedInterval = "";
+        billingUiState._selectedReady = false;
+        syncBillingSubscribeButton();
+      }
     }
 
     function formatBillingIntervalLabel(interval) {
@@ -19057,6 +19183,14 @@
       return s.replace(/_/g, " ");
     }
 
+    function syncBillingNavVisibility() {
+      const billingNav = $("settings-nav-billing");
+      const billingModalTab = $("settings-modal-tab-billing");
+      const showBilling = !!billingUiState.billing_enabled && !!churchMembershipState.parish_id;
+      if (billingNav) billingNav.hidden = !showBilling;
+      if (billingModalTab) billingModalTab.hidden = !showBilling;
+    }
+
     async function loadSettingsBilling() {
       const statusEl = $("settings-billing-status");
       const summary = $("settings-billing-summary");
@@ -19064,17 +19198,17 @@
       const plans = $("settings-billing-plans");
       const hint = $("settings-billing-hint");
       const currencySel = $("settings-billing-currency");
+      const currencyWrap = currencySel
+        ? (currencySel.closest(".settings-billing-currency") || currencySel.parentElement)
+        : null;
       const params = new URLSearchParams(window.location.search || "");
       const planParam = (params.get("plan") || "").trim().toLowerCase();
       const currencyParam = (params.get("currency") || "").trim().toLowerCase();
       const autostart = params.get("autostart") === "1";
-      if (currencyParam && currencySel) {
-        currencySel.value = currencyParam;
-        setBillingCurrencyPref(currencyParam);
-      }
+      const isSa = !!(churchMembershipState && churchMembershipState.is_superadmin);
       if (currencySel && !currencySel.dataset.bound) {
-        if (!currencySel.value) currencySel.value = billingCurrencyPref();
         currencySel.addEventListener("change", () => {
+          if (!(churchMembershipState && churchMembershipState.is_superadmin)) return;
           setBillingCurrencyPref(currencySel.value);
           loadSettingsBilling();
         });
@@ -19101,8 +19235,25 @@
         const billing = (statusData && statusData.billing) || {};
         billingUiState = Object.assign({}, billingUiState, billing);
         if (statusData.membership) syncMembershipUi(statusData.membership);
+        else syncBillingNavVisibility();
 
-        const cur = (currencySel && currencySel.value) || billingCurrencyPref();
+        const parishCurrency = String(billing.display_currency || "").toLowerCase();
+        const validCurrency = { usd: 1, krw: 1, php: 1, myr: 1 };
+        let cur = parishCurrency && validCurrency[parishCurrency] ? parishCurrency : "usd";
+        if (isSa) {
+          if (currencyParam && validCurrency[currencyParam]) {
+            cur = currencyParam;
+            setBillingCurrencyPref(cur);
+          } else {
+            const pref = billingCurrencyPref();
+            if (pref && validCurrency[pref]) cur = pref;
+          }
+          if (currencySel) currencySel.value = cur;
+          if (currencyWrap) currencyWrap.hidden = false;
+        } else {
+          if (currencySel) currencySel.value = cur;
+          if (currencyWrap) currencyWrap.hidden = true;
+        }
         const catalog = await getJSON("/api/billing/catalog?currency=" + encodeURIComponent(cur));
 
         if (!billing.billing_enabled) {
@@ -19155,16 +19306,17 @@
         }
         if (portalBtn) {
           portalBtn.hidden = !billing.can_manage_billing
-            || !(churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin);
+            || !billing.can_manage_parish_billing;
         }
         if (plans) plans.hidden = !!billing.has_paid_access && !billing.can_start_checkout;
+        const validIntervals = { monthly: 1, quarterly: 1, semiannual: 1, annual: 1 };
+        if (validIntervals[planParam]) billingUiState._selectedInterval = planParam;
         renderBillingPlanList(catalog);
 
         const canAutostart = autostart
           && !!billing.can_start_checkout
-          && (churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin)
+          && !!billing.can_manage_parish_billing
           && !billingUiState._autostartDone;
-        const validIntervals = { monthly: 1, quarterly: 1, semiannual: 1, annual: 1 };
         const startInterval = validIntervals[planParam] ? planParam : "monthly";
         if (canAutostart) {
           billingUiState._autostartDone = true;
@@ -19191,13 +19343,13 @@
     function syncGlobalMembershipBanner(data) {
       const state = data || churchMembershipState;
       const status = (state.membership_status || "draft").toLowerCase();
-      const billing = state.billing || billingUiState || {};
-      const billingOn = !!billing.billing_enabled;
       const banners = [$("home-membership-banner"), $("flow-membership-banner")];
       let html = "";
       let cls = "app-membership-banner";
       let show = false;
 
+      const billing = state.billing || billingUiState || {};
+      const billingOn = !!billing.billing_enabled;
       if (!state.is_superadmin && !state.can_use_full_app) {
         if (billingOn) {
           show = true;
@@ -19269,14 +19421,10 @@
 
       const teamNav = $("settings-nav-team");
       const teamModalTab = $("settings-modal-tab-team");
-      const billingNav = $("settings-nav-billing");
-      const billingModalTab = $("settings-modal-tab-billing");
       const showTeam = churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin;
-      const showBilling = !!billingUiState.billing_enabled && !!churchMembershipState.parish_id;
       if (teamNav) teamNav.hidden = !showTeam;
       if (teamModalTab) teamModalTab.hidden = !showTeam;
-      if (billingNav) billingNav.hidden = !showBilling;
-      if (billingModalTab) billingModalTab.hidden = !showBilling;
+      syncBillingNavVisibility();
 
       const nameInput = $("settings-church-name");
       const nameHint = $("settings-church-name-hint");
@@ -19327,22 +19475,14 @@
         if (churchMembershipState.is_superadmin) {
           msg = "Superadmin account — full access to Mass generation, songs, and parish settings.";
           cls = "status ok";
-        } else if (billingUiState.billing_enabled && !churchMembershipState.can_use_full_app) {
-          msg = "Start a 14-day parish trial under Billing to unlock Mass generation and shared catalog submissions.";
-          cls = "status";
-        } else if (billingUiState.billing_enabled && billingUiState.stripe_subscription_status === "trialing") {
-          msg = "Parish trial active — full access unlocked. Manage your plan under Billing.";
-          cls = "status ok";
-        } else if (status === "pending" && !billingUiState.billing_enabled) {
+        } else if (status === "pending") {
           msg = "Your parish membership is pending superadmin approval. Song saves and priest submissions unlock after approval.";
           cls = "status";
         } else if (status === "rejected") {
           msg = "Your parish membership was not approved. Contact the site administrator if you believe this is an error.";
           cls = "status error";
         } else if (status === "draft" && canName) {
-          msg = billingUiState.billing_enabled
-            ? "Enter your parish name and optional logo, then start a 14-day trial under Billing."
-            : "Enter your parish name and optional logo, then submit once. Name and logo cannot be changed later; a superadmin will confirm your membership.";
+          msg = "Enter your parish name and optional logo, then submit once. Name and logo cannot be changed later; a superadmin will confirm your membership.";
           cls = "status";
         } else if (canSubmitPriest && churchMembershipState.can_use_full_app) {
           msg = "Approved parish member — you can save songs and submit priest names for the shared catalog.";
@@ -19358,7 +19498,7 @@
         }
       }
 
-      syncGlobalMembershipBanner(churchMembershipState);
+      syncGlobalMembershipBanner(data);
 
       bindPendingSuperadminUnlock();
       syncSuperadminNavVisibility();
@@ -19428,11 +19568,7 @@
         const btn = $(id);
         if (!btn) return;
         btn.disabled = !canGen;
-        btn.title = canGen
-          ? ""
-          : (billingUiState && billingUiState.billing_enabled
-            ? "Start a parish trial under Settings → Billing to generate Mass media."
-            : "Mass generation requires approved parish membership.");
+        btn.title = canGen ? "" : "Mass generation requires approved parish membership.";
       });
     }
 
@@ -21784,12 +21920,8 @@
         if (wrap) setFeatureFlagDisabled(wrap, !aiOn);
       });
       const aiHosts = [
-        $("flow-ai-quota-hint") && (
-          $("flow-ai-quota-hint").closest(".flow-poster-style__ai") ||
-          $("flow-ai-quota-hint").closest(".flow-setup-footer") ||
-          $("flow-ai-quota-hint").parentElement
-        ),
-        $("poster-ai-quota-hint") && $("poster-ai-quota-hint").parentElement,
+        $("flow-ai-poster-style-wrap"),
+        $("poster-ai-poster-style-wrap") || $("poster-use-ai-poster") && $("poster-use-ai-poster").closest(".field"),
       ];
       aiHosts.forEach((host, idx) => {
         if (!host) return;
@@ -25619,7 +25751,6 @@
       { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
       { id: "page-account", label: "Account", hint: "Page", group: "Pages", route: "/settings/account", keywords: ["account", "profile", "picture", "avatar", "photo"] },
       { id: "page-church", label: "Church Profile", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },
-      { id: "page-billing", label: "Billing", hint: "Page", group: "Pages", route: "/settings/billing", keywords: ["billing", "subscription", "stripe", "trial", "plan", "payment"] },
       { id: "page-appearance", label: "Appearance", hint: "Page", group: "Pages", route: "/settings/app", keywords: ["appearance", "dark", "light", "theme", "settings"] },
       { id: "act-event", label: "Create event", hint: "Action", group: "Actions", action: "create-event", keywords: ["event", "create", "schedule"] },
       { id: "act-pptx", label: "Generate PPTX", hint: "Action", group: "Actions", action: "generate-pptx", keywords: ["generate", "pptx", "package", "export"] },
@@ -27245,7 +27376,7 @@
         moodList.innerHTML = massMoodPickSkeletonHtml(massMoodPickSelections.length || 5);
       }
       try {
-        if (!auto) advanceMassGenStep(2, { message: "Retrieving official readings…" });
+        if (!auto) advanceMassGenStep(2, { message: "Loading the readings…" });
         const [data] = await Promise.all([
           fetchPreview(date, { readingsOnly: false, forceRefresh, language: lang }),
           loadSongCatalog(),
@@ -27264,7 +27395,7 @@
           if (readingsPayloadComplete(retry) && !payloadMatchesLanguage(retry, lang)) return;
           Object.assign(data, retry || {});
         }
-        if (!auto) advanceMassGenStep(3, { message: "Preparing the Liturgy of the Word…" });
+        if (!auto) advanceMassGenStep(3, { message: "Ready for the Word…" });
         if (data && data.ok !== false) data.readings_language = lang;
         flowPreviewData = Object.assign({}, data, { __previewDate: date, readings_language: lang });
         window.__liturgicalPresetId = liturgicalPresetIdFromSeason(data.season || "");
@@ -27420,72 +27551,67 @@
       simTimer: null,
       errored: false,
       onRetry: null,
+      minimized: false,
+      percent: null,
+      statusText: "",
+      titleText: "",
     };
 
     var MASS_GEN_STEP_SETS = {
       standard: [
-        "Validating liturgical information",
-        "Loading liturgical calendar",
-        "Fetching Sunday readings",
-        "Building PowerPoint slides",
-        "Applying presentation preset",
-        "Optimizing typography",
-        "Finalizing presentation",
+        "Gathering Mass details",
+        "Setting the liturgical day",
+        "Arranging the readings",
+        "Composing your presentation",
+        "Polishing the slides",
+        "Almost ready",
       ],
       withUpload: [
-        "Validating liturgical information",
-        "Loading liturgical calendar",
-        "Fetching Sunday readings",
-        "Uploading artwork",
-        "Building PowerPoint slides",
-        "Applying presentation preset",
-        "Optimizing typography",
-        "Finalizing presentation",
+        "Gathering Mass details",
+        "Setting the liturgical day",
+        "Arranging the readings",
+        "Adding your artwork",
+        "Composing your presentation",
+        "Polishing the slides",
+        "Almost ready",
       ],
       withAi: [
-        "Validating liturgical information",
-        "Loading liturgical calendar",
-        "Fetching Sunday readings",
-        "Understanding the Gospel",
-        "Connecting to AI",
-        "Creating the artwork",
-        "Composing your Mass Divider",
-        "Building PowerPoint slides",
-        "Checking typography",
-        "Finalizing your poster",
+        "Gathering Mass details",
+        "Setting the liturgical day",
+        "Arranging the readings",
+        "Preparing Mass visuals",
+        "Composing your presentation",
+        "Polishing the slides",
+        "Almost ready",
       ],
       withAiUpload: [
-        "Validating liturgical information",
-        "Loading liturgical calendar",
-        "Fetching Sunday readings",
-        "Uploading artwork",
-        "Understanding the Gospel",
-        "Connecting to AI",
-        "Creating the artwork",
-        "Composing your Mass Divider",
-        "Building PowerPoint slides",
-        "Checking typography",
-        "Finalizing your poster",
+        "Gathering Mass details",
+        "Setting the liturgical day",
+        "Arranging the readings",
+        "Adding your artwork",
+        "Preparing Mass visuals",
+        "Composing your presentation",
+        "Polishing the slides",
+        "Almost ready",
       ],
       reusePoster: [
-        "Validating liturgical information",
-        "Loading liturgical calendar",
-        "Fetching Sunday readings",
+        "Gathering Mass details",
+        "Setting the liturgical day",
+        "Arranging the readings",
         "Applying saved artwork",
-        "Building PowerPoint slides",
-        "Applying presentation preset",
-        "Finalizing presentation",
+        "Composing your presentation",
+        "Almost ready",
       ],
       readings: [
-        "Loading liturgical calendar",
-        "Finding the selected Mass",
-        "Retrieving official readings",
-        "Preparing the Liturgy of the Word",
+        "Setting the liturgical day",
+        "Finding this Mass",
+        "Loading the readings",
+        "Ready for the Word",
       ],
       lyricsImport: [
         "Uploading lyrics",
-        "Reading file",
-        "Detecting metadata",
+        "Reading your file",
+        "Organizing song details",
         "Separating verses",
       ],
     };
@@ -27508,30 +27634,84 @@
       }
     }
 
+    function syncMassGenDock() {
+      const dock = $("mass-gen-loader-dock");
+      const pctEl = $("mass-gen-loader-dock-pct");
+      const titleEl = $("mass-gen-loader-dock-title");
+      const subEl = $("mass-gen-loader-dock-sub");
+      const expandBtn = $("mass-gen-loader-dock-expand");
+      if (!dock) return;
+      const overlay = $("mass-gen-loader");
+      const isSuccess = !!(overlay && overlay.classList.contains("is-success"));
+      const pct = massGenProgressState.percent;
+      if (pctEl) {
+        pctEl.textContent = pct == null || Number.isNaN(pct) ? "…" : Math.round(pct) + "%";
+      }
+      const stepLabel =
+        (massGenProgressState.steps && massGenProgressState.steps[massGenProgressState.current]) ||
+        massGenProgressState.titleText ||
+        "Preparing…";
+      if (titleEl) {
+        titleEl.textContent = isSuccess
+          ? (massGenProgressState.titleText || "Ready")
+          : stepLabel;
+      }
+      if (subEl) {
+        subEl.textContent = isSuccess
+          ? (massGenProgressState.statusText || "Your presentation is ready.")
+          : (massGenProgressState.statusText || "This may take a moment…");
+      }
+      if (expandBtn) {
+        expandBtn.setAttribute(
+          "aria-label",
+          isSuccess ? "Dismiss" : "Expand progress"
+        );
+      }
+      dock.hidden = !(overlay && overlay.classList.contains("is-minimized"));
+    }
+
+    function setMassGenMinimized(minimized) {
+      const overlay = $("mass-gen-loader");
+      if (!overlay) return;
+      const next = !!minimized;
+      massGenProgressState.minimized = next;
+      overlay.classList.toggle("is-minimized", next);
+      if (next) {
+        document.body.style.overflow = "";
+        syncMassGenDock();
+      } else if (overlay.classList.contains("visible") && !overlay.classList.contains("is-success")) {
+        document.body.style.overflow = "hidden";
+        const dock = $("mass-gen-loader-dock");
+        if (dock) dock.hidden = true;
+      } else {
+        syncMassGenDock();
+      }
+    }
+
     function renderMassGenSteps(steps, activeIndex, failedIndex) {
       const list = $("mass-gen-loader-steps");
       if (!list) return;
       const items = steps || [];
-      list.innerHTML = items.map((label, i) => {
-        let state = "is-pending";
-        let icon = '<span class="mass-gen-loader__step-icon" aria-hidden="true">○</span>';
-        if (failedIndex != null && i === failedIndex) {
-          state = "is-failed";
-          icon = '<span class="mass-gen-loader__step-icon" aria-hidden="true">✕</span>';
-        } else if (i < activeIndex) {
-          state = "is-done";
-          icon = '<span class="mass-gen-loader__step-icon" aria-hidden="true">✓</span>';
-        } else if (i === activeIndex) {
-          state = "is-active";
-          icon = '<span class="mass-gen-loader__step-icon" aria-hidden="true"><span class="mass-gen-loader__step-spinner"></span></span>';
-        }
-        return (
-          '<li class="mass-gen-loader__step ' + state + '" role="listitem">' +
-            icon +
-            '<span class="mass-gen-loader__step-label">' + escapeHtml(label) + "</span>" +
-          "</li>"
-        );
-      }).join("");
+      // Show only the active (or failed) beat — avoid listing the full pipeline.
+      let focus = activeIndex;
+      if (failedIndex != null && failedIndex >= 0) focus = failedIndex;
+      if (focus == null || focus < 0) focus = 0;
+      if (focus >= items.length) focus = Math.max(0, items.length - 1);
+      const label = items[focus] || "";
+      if (!label) {
+        list.innerHTML = "";
+        return;
+      }
+      const failed = failedIndex != null && focus === failedIndex;
+      const state = failed ? "is-failed" : "is-active";
+      const icon = failed
+        ? '<span class="mass-gen-loader__step-icon" aria-hidden="true">✕</span>'
+        : '<span class="mass-gen-loader__step-icon" aria-hidden="true"><span class="mass-gen-loader__step-spinner"></span></span>';
+      list.innerHTML =
+        '<li class="mass-gen-loader__step ' + state + '" role="listitem">' +
+          icon +
+          '<span class="mass-gen-loader__step-label">' + escapeHtml(label) + "</span>" +
+        "</li>";
     }
 
     function updateMassGenPercent(percent) {
@@ -27541,12 +27721,16 @@
       if (!wrap || !fill) return;
       if (percent == null || Number.isNaN(percent)) {
         wrap.hidden = true;
+        massGenProgressState.percent = null;
+        syncMassGenDock();
         return;
       }
       const pct = Math.max(0, Math.min(100, Math.round(percent)));
+      massGenProgressState.percent = pct;
       wrap.hidden = false;
       fill.style.width = pct + "%";
       if (label) label.textContent = pct + "%";
+      syncMassGenDock();
     }
 
     function massGenPercentFromStep(activeIndex, total) {
@@ -27562,18 +27746,26 @@
       massGenProgressState.steps = steps;
       massGenProgressState.current = idx;
       renderMassGenSteps(steps, idx, o.failedIndex);
-      if (o.message) {
-        const msgEl = $("mass-gen-loader-msg");
-        if (msgEl) msgEl.textContent = o.message;
-      } else {
-        const msgEl = $("mass-gen-loader-msg");
-        if (msgEl && steps[idx]) msgEl.textContent = steps[idx] + "…";
+      const msgEl = $("mass-gen-loader-msg");
+      let statusText = "This may take a moment…";
+      if (msgEl) {
+        const beat = steps[idx] || "";
+        const incoming = String(o.message || "").trim();
+        const same =
+          !incoming ||
+          incoming === beat ||
+          incoming === beat + "…" ||
+          incoming.replace(/…$/, "") === beat;
+        statusText = same ? "This may take a moment…" : incoming;
+        msgEl.textContent = statusText;
       }
+      massGenProgressState.statusText = statusText;
       if (o.percent != null) {
         updateMassGenPercent(o.percent);
       } else {
         updateMassGenPercent(massGenPercentFromStep(idx, steps.length));
       }
+      syncMassGenDock();
     }
 
     function startMassGenStepSimulation(fromIndex, paceMs) {
@@ -27597,6 +27789,7 @@
       if (!overlay) return;
       massGenProgressState.errored = true;
       massGenProgressState.onRetry = typeof onRetry === "function" ? onRetry : null;
+      setMassGenMinimized(false);
       overlay.classList.add("visible", "is-error");
       overlay.classList.remove("is-success");
       overlay.setAttribute("aria-hidden", "false");
@@ -27604,9 +27797,11 @@
       clearMassGenProgressTimers();
       const title = $("mass-gen-loader-title");
       if (title) title.textContent = "Something went wrong";
+      massGenProgressState.titleText = "Something went wrong";
       renderMassGenSteps(massGenProgressState.steps, massGenProgressState.current, failedStepIndex != null ? failedStepIndex : massGenProgressState.current);
       const msgEl = $("mass-gen-loader-msg");
       if (msgEl) msgEl.textContent = "";
+      massGenProgressState.statusText = message || "We could not finish this step.";
       const errWrap = $("mass-gen-loader-error");
       const errMsg = $("mass-gen-loader-error-msg");
       if (errWrap) errWrap.hidden = false;
@@ -27618,14 +27813,21 @@
       const overlay = $("mass-gen-loader");
       if (!overlay) return;
       clearMassGenProgressTimers();
-      overlay.classList.add("is-success");
+      massGenProgressState.titleText = title || "Presentation successfully generated.";
+      massGenProgressState.statusText = subtitle || "Your PowerPoint is ready.";
+      massGenProgressState.percent = 100;
+      overlay.classList.add("visible", "is-success");
       overlay.classList.remove("is-error");
+      overlay.setAttribute("aria-hidden", "false");
       const titleEl = $("mass-gen-loader-title");
-      if (titleEl) titleEl.textContent = title || "Presentation successfully generated.";
+      if (titleEl) titleEl.textContent = massGenProgressState.titleText;
       const msgEl = $("mass-gen-loader-msg");
-      if (msgEl) msgEl.textContent = subtitle || "Your PowerPoint is ready.";
+      if (msgEl) msgEl.textContent = massGenProgressState.statusText;
       updateMassGenPercent(100);
-      await new Promise((resolve) => setTimeout(resolve, 1400));
+      // Always land success in the bottom-right dock.
+      setMassGenMinimized(true);
+      syncMassGenDock();
+      await new Promise((resolve) => setTimeout(resolve, 2200));
     }
 
     function setMassGenLoading(active, messageOrOpts) {
@@ -27635,25 +27837,35 @@
         clearMassGenProgressTimers();
         massGenProgressState.errored = false;
         massGenProgressState.onRetry = null;
-        overlay.classList.remove("visible", "is-success", "is-error");
+        massGenProgressState.minimized = false;
+        massGenProgressState.percent = null;
+        massGenProgressState.statusText = "";
+        massGenProgressState.titleText = "";
+        overlay.classList.remove("visible", "is-success", "is-error", "is-minimized");
         overlay.setAttribute("aria-hidden", "true");
         document.body.style.overflow = "";
         const errWrap = $("mass-gen-loader-error");
         if (errWrap) errWrap.hidden = true;
+        const dock = $("mass-gen-loader-dock");
+        if (dock) dock.hidden = true;
         updateMassGenPercent(null);
         return;
       }
       const opts = typeof messageOrOpts === "string" ? { message: messageOrOpts } : (messageOrOpts || {});
       massGenProgressState.errored = false;
+      massGenProgressState.minimized = false;
       overlay.classList.add("visible");
-      overlay.classList.remove("is-success", "is-error");
+      overlay.classList.remove("is-success", "is-error", "is-minimized");
       overlay.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
+      const dock = $("mass-gen-loader-dock");
+      if (dock) dock.hidden = true;
       const errWrap = $("mass-gen-loader-error");
       if (errWrap) errWrap.hidden = true;
       if (opts.title) {
         const titleEl = $("mass-gen-loader-title");
         if (titleEl) titleEl.textContent = opts.title;
+        massGenProgressState.titleText = opts.title;
       }
       if (opts.steps) {
         massGenProgressState.steps = opts.steps.slice();
@@ -27668,20 +27880,44 @@
       } else if (opts.message) {
         const msgEl = $("mass-gen-loader-msg");
         if (msgEl) msgEl.textContent = opts.message;
+        massGenProgressState.statusText = opts.message;
+        syncMassGenDock();
       }
       if (opts.percent != null && opts.step == null) {
         updateMassGenPercent(opts.percent);
       }
     }
 
-    (function bindMassGenLoaderRetry() {
-      const btn = $("mass-gen-loader-retry");
-      if (!btn) return;
-      btn.addEventListener("click", () => {
-        const retry = massGenProgressState.onRetry;
-        setMassGenLoading(false);
-        if (retry) retry();
-      });
+    (function bindMassGenLoaderChrome() {
+      const minimizeBtn = $("mass-gen-loader-minimize");
+      if (minimizeBtn) {
+        minimizeBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setMassGenMinimized(true);
+        });
+      }
+      const expandBtn = $("mass-gen-loader-dock-expand");
+      if (expandBtn) {
+        expandBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const overlay = $("mass-gen-loader");
+          if (overlay && overlay.classList.contains("is-success")) {
+            setMassGenLoading(false);
+            return;
+          }
+          setMassGenMinimized(false);
+        });
+      }
+      const retryBtn = $("mass-gen-loader-retry");
+      if (retryBtn) {
+        retryBtn.addEventListener("click", () => {
+          const retry = massGenProgressState.onRetry;
+          setMassGenLoading(false);
+          if (retry) retry();
+        });
+      }
     })();
 
     function readSocialExportSettings(o) {
@@ -27820,25 +28056,10 @@
     }
 
     async function refreshAiImageQuotaHint() {
-      const nodes = document.querySelectorAll(".ai-image-quota-hint");
-      if (!nodes.length) return;
+      // Quota is enforced server-side; do not surface remaining counts in the UI.
       try {
         const res = await fetch("/api/image-quota");
         const q = await res.json();
-        nodes.forEach((el) => {
-          const compact = el.closest(".flow-setup-quota-badge");
-          const rem = (q.remaining != null ? q.remaining : "?");
-          const lim = (q.limit != null ? q.limit : "?");
-          const msg = q.allowed
-            ? (compact
-              ? (rem + " left this week")
-              : (rem + " of " + lim + " AI poster generation" + (lim === 1 ? "" : "s") + " left this week."))
-            : (compact
-              ? ("Weekly limit reached (" + lim + "/wk)")
-              : ("Weekly AI image limit reached (" + lim + "/week UTC). Use the liturgical template, or try again next week."));
-          el.textContent = msg;
-          el.style.color = q.allowed ? "" : "var(--warn)";
-        });
         const disableAi = !q.allowed;
         // Keep Mass Builder weekly style path enabled; server enforces quota on generate.
         ["poster-use-ai-poster", "poster-use-ai-poster-legacy", "poster-use-ai-poster-alt"].forEach((id) => {
@@ -27849,7 +28070,7 @@
         });
         syncOpenAiPosterUi();
       } catch (_e) {
-        nodes.forEach((el) => { el.textContent = ""; });
+        /* ignore */
       }
     }
 
@@ -28345,7 +28566,7 @@
     function receiptFootnote(model) {
       const parts = [];
       if (model.collection) parts.push(model.collection);
-      if (model.aiPoster) parts.push("AI poster");
+      if (model.aiPoster) parts.push("Gospel artwork");
       if (model.creed) parts.push(model.creed);
       return parts.join(" · ");
     }
@@ -28357,7 +28578,6 @@
       return (
         "<div class=\"" + cls + "\">" +
           "<span class=\"mass-gen-receipt__line-label\">" + escapeHtml(label) + "</span>" +
-          "<span class=\"mass-gen-receipt__line-dots\" aria-hidden=\"true\"></span>" +
           "<span class=\"mass-gen-receipt__line-value\">" + escapeHtml(display + suffix) + "</span>" +
         "</div>"
       );
@@ -28366,7 +28586,7 @@
     function renderMassGenerateReceiptView(model) {
       const alertHtml = model.missingLyricsCount > 0
         ? "<div class=\"mass-gen-receipt__alert\" role=\"alert\">" +
-            escapeHtml(model.missingLyricsCount + " missing lyrics") +
+            escapeHtml(model.missingLyricsCount + " song" + (model.missingLyricsCount === 1 ? "" : "s") + " still need lyrics") +
           "</div>"
         : "";
       const selectedSongs = model.songs.filter((s) => s.id);
@@ -28380,15 +28600,21 @@
       const foot = receiptFootnote(model);
       return (
         alertHtml +
-        "<div class=\"mass-gen-receipt__meta\">" +
+        "<div class=\"mass-gen-receipt__hero\">" +
+          "<p class=\"mass-gen-receipt__kicker\">This Mass</p>" +
           "<p class=\"mass-gen-receipt__title\">" + escapeHtml(formatMassSummaryDate(model.date)) + "</p>" +
           "<p class=\"mass-gen-receipt__sub\">" + escapeHtml(receiptCelebrantDisplay(model)) + "</p>" +
           (model.gospelRef ? "<p class=\"mass-gen-receipt__stamp\">" + escapeHtml(model.gospelRef) + "</p>" : "") +
         "</div>" +
-        receiptViewLine("Mass", model.massTitle, false) +
-        songLines +
-        (foot ? "<p class=\"mass-gen-receipt__foot\">" + escapeHtml(foot) + "</p>" : "") +
-        "<p class=\"mass-gen-receipt__foot\">" + model.selectedSongCount + " song" + (model.selectedSongCount === 1 ? "" : "s") + "</p>"
+        "<div class=\"mass-gen-receipt__block\">" +
+          "<p class=\"mass-gen-receipt__block-label\">Celebration</p>" +
+          receiptViewLine("Title", model.massTitle, false) +
+        "</div>" +
+        "<div class=\"mass-gen-receipt__block\">" +
+          "<p class=\"mass-gen-receipt__block-label\">Music · " + model.selectedSongCount + "</p>" +
+          songLines +
+        "</div>" +
+        (foot ? "<p class=\"mass-gen-receipt__foot\">" + escapeHtml(foot) + "</p>" : "")
       );
     }
 
@@ -30026,14 +30252,14 @@
 
         let divider_bn = null;
         if (divIn && divIn.files && divIn.files[0]) {
-          const uploadIdx = massGenStepIndex("Uploading artwork");
-          advanceMassGenStep(uploadIdx >= 0 ? uploadIdx : 3, { message: "Uploading artwork…" });
+          const uploadIdx = massGenStepIndex("Adding your artwork");
+          advanceMassGenStep(uploadIdx >= 0 ? uploadIdx : 3, { message: "Adding your artwork…" });
           divider_bn = await uploadMassImage(divIn.files[0], "/api/upload/mass-divider");
         }
         const ann_bns = [];
         if (annIn && annIn.files && annIn.files.length) {
-          const uploadIdx = massGenStepIndex("Uploading artwork");
-          if (uploadIdx >= 0) advanceMassGenStep(uploadIdx, { message: "Uploading artwork…" });
+          const uploadIdx = massGenStepIndex("Adding your artwork");
+          if (uploadIdx >= 0) advanceMassGenStep(uploadIdx, { message: "Adding your artwork…" });
           for (let i = 0; i < annIn.files.length; i++) {
             ann_bns.push(await uploadMassImage(annIn.files[i], "/api/upload/announcement-slide"));
           }
@@ -30257,15 +30483,15 @@
         });
         massGenProgressState.steps = genSteps;
 
-        let workIdx = massGenStepIndex("Building PowerPoint slides");
+        let workIdx = massGenStepIndex("Composing your presentation");
         if (body.leaflet_only) {
           workIdx = Math.max(0, genSteps.length - 3);
-          statusFn("Building Mass leaflet PDF…", "");
+          statusFn("Building Mass leaflet…", "");
         } else if (body.include_ai_mass_poster) {
-          workIdx = massGenStepIndex("Connecting to AI");
-          statusFn("Creating sacred artwork and building your presentation…", "");
+          workIdx = massGenStepIndex("Preparing Mass visuals");
+          statusFn("Preparing Mass visuals and your presentation…", "");
         } else {
-          statusFn("Building PowerPoint slides…", "");
+          statusFn("Composing your presentation…", "");
         }
         if (workIdx < 0) workIdx = Math.max(0, genSteps.length - 3);
 
@@ -30277,7 +30503,7 @@
         startMassGenStepSimulation(workIdx + 1, body.include_ai_mass_poster ? 2800 : 2200);
         const data = await postJSON("/api/generate", body);
         clearMassGenProgressTimers();
-        advanceMassGenStep(genSteps.length - 1, { message: body.leaflet_only ? "Finalizing leaflet…" : "Finalizing presentation…", percent: 100 });
+        advanceMassGenStep(genSteps.length - 1, { message: body.leaflet_only ? "Almost ready…" : "Almost ready…", percent: 100 });
         localStorage.setItem(dupKey, fp);
         if (divIn) divIn.value = "";
         if (annIn) annIn.value = "";

@@ -191,18 +191,64 @@
     return state.supabase;
   }
 
+  function tokenExpiresAtMs(token) {
+    if (!token || typeof token !== "string") return 0;
+    try {
+      const parts = token.split(".");
+      if (parts.length < 2) return 0;
+      const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const pad = b64.length % 4 === 0 ? "" : "=".repeat(4 - (b64.length % 4));
+      const json = atob(b64 + pad);
+      const payload = JSON.parse(json);
+      const exp = Number(payload && payload.exp);
+      return Number.isFinite(exp) ? exp * 1000 : 0;
+    } catch (_err) {
+      return 0;
+    }
+  }
+
+  function isAccessTokenFresh(token, skewMs) {
+    const expMs = tokenExpiresAtMs(token);
+    if (!expMs) return false;
+    const skew = typeof skewMs === "number" ? skewMs : 60 * 1000;
+    return expMs - skew > Date.now();
+  }
+
+  let sessionTokenInflight = null;
+
   async function getSessionToken() {
-    await ensureSupabase();
-    if (!state.supabase) return null;
-    if (!state.hydrated) {
-      await waitForInitialSession(state.supabase);
-    }
-    if (state.cachedToken) {
-      return state.cachedToken;
-    }
-    const { data } = await state.supabase.auth.getSession();
-    applySession(data.session || null);
-    return state.cachedToken;
+    if (sessionTokenInflight) return sessionTokenInflight;
+    sessionTokenInflight = (async () => {
+      await ensureSupabase();
+      if (!state.supabase) return null;
+      if (!state.hydrated) {
+        await waitForInitialSession(state.supabase);
+      }
+      // Fast path: reuse a still-valid access token.
+      if (state.cachedToken && isAccessTokenFresh(state.cachedToken)) {
+        return state.cachedToken;
+      }
+      // getSession() lets supabase-js refresh when needed (single place).
+      const { data, error } = await state.supabase.auth.getSession();
+      if (!error && data && data.session) {
+        applySession(data.session);
+        if (state.cachedToken && isAccessTokenFresh(state.cachedToken, 15 * 1000)) {
+          return state.cachedToken;
+        }
+      }
+      const { data: refreshed, error: refreshErr } = await state.supabase.auth.refreshSession();
+      if (!refreshErr && refreshed && refreshed.session) {
+        applySession(refreshed.session);
+        return state.cachedToken;
+      }
+      // Refresh failed — keep whatever session we have; do not wipe UI mid-request.
+      return state.cachedToken && isAccessTokenFresh(state.cachedToken, 0)
+        ? state.cachedToken
+        : null;
+    })().finally(() => {
+      sessionTokenInflight = null;
+    });
+    return sessionTokenInflight;
   }
 
   async function refreshSession() {
@@ -210,12 +256,11 @@
     if (!state.supabase) return null;
     const { data, error } = await state.supabase.auth.refreshSession();
     if (!error && data.session) {
-      state.session = data.session;
-      state.user = data.session.user || null;
+      applySession(data.session);
       updateAccountMenuDisplay();
       return data.session.access_token || null;
     }
-    return getSessionToken();
+    return null;
   }
 
   async function getAuthHeaders(extra) {
@@ -224,10 +269,6 @@
       const cfg = await loadConfig();
       if (!cfg.auth_enabled) return headers;
     } else if (!state.config.auth_enabled) {
-      return headers;
-    }
-    if (state.cachedToken) {
-      headers.Authorization = "Bearer " + state.cachedToken;
       return headers;
     }
     const token = await getSessionToken();
@@ -288,7 +329,7 @@
     return ((init && init.method) || "GET").toUpperCase();
   }
 
-  /** Read-only liturgy endpoints — do not block on Supabase session hydration. */
+  /** Endpoints that may run without a session (do not reject fetch when logged out). */
   function isPublicApiRequest(input, init) {
     const raw = resolveRequestUrl(input);
     if (!raw.includes("/api/")) return false;
@@ -299,7 +340,24 @@
       path = raw.split("?")[0];
     }
     const method = resolveRequestMethod(init);
-    if (method === "POST" && path === "/api/preview") return false;
+    if (method === "GET" || method === "HEAD") {
+      if (
+        path === "/api/auth/config" ||
+        path === "/api/auth/me" ||
+        path === "/api/input-limits" ||
+        path === "/api/feature-flags" ||
+        path === "/api/platform/announcement" ||
+        path === "/api/catholic-news" ||
+        path === "/api/wyd-news" ||
+        path === "/api/ewtn/radio" ||
+        path === "/api/image-quota" ||
+        path === "/api/calendar/month" ||
+        path.startsWith("/api/gospel-image/")
+      ) {
+        return true;
+      }
+    }
+    if (method === "POST" && path === "/api/preview") return true;
     return false;
   }
 
@@ -307,6 +365,16 @@
     if (window.__verbumFetchPatched) return;
     window.__verbumFetchPatched = true;
     const nativeFetch = window.fetch.bind(window);
+    let refreshInflight = null;
+
+    async function refreshAccessTokenOnce() {
+      if (!refreshInflight) {
+        refreshInflight = refreshSession().finally(() => {
+          refreshInflight = null;
+        });
+      }
+      return refreshInflight;
+    }
 
     window.fetch = async function verbumFetch(input, init) {
       const cfg = state.config;
@@ -316,25 +384,44 @@
 
       const nextInit = init ? { ...init } : {};
       const headers = new Headers(nextInit.headers || {});
+      const alreadyRetried = !!(init && init.__verbumAuthRetry);
 
       if (isPublicApiRequest(input, init)) {
-        if (state.cachedToken && !headers.has("Authorization")) {
+        if (state.cachedToken && isAccessTokenFresh(state.cachedToken) && !headers.has("Authorization")) {
           headers.set("Authorization", "Bearer " + state.cachedToken);
         }
         nextInit.headers = headers;
         return nativeFetch(input, nextInit);
       }
 
-      const token = await getSessionToken();
+      let token = null;
+      try {
+        token = await getSessionToken();
+      } catch (_err) {
+        token = state.cachedToken || null;
+      }
       if (!token) {
         return Promise.reject(new Error("Sign in required."));
       }
 
-      if (!headers.has("Authorization")) {
-        headers.set("Authorization", "Bearer " + token);
-      }
+      headers.set("Authorization", "Bearer " + token);
       nextInit.headers = headers;
-      return nativeFetch(input, nextInit);
+      const response = await nativeFetch(input, nextInit);
+      if (response.status !== 401 || alreadyRetried) {
+        return response;
+      }
+
+      const refreshed = await refreshAccessTokenOnce();
+      if (!refreshed) {
+        return response;
+      }
+      const retryHeaders = new Headers(nextInit.headers || {});
+      retryHeaders.set("Authorization", "Bearer " + refreshed);
+      return nativeFetch(input, {
+        ...nextInit,
+        headers: retryHeaders,
+        __verbumAuthRetry: true,
+      });
     };
   }
 

@@ -3791,7 +3791,7 @@ iframe {
     border-radius: 0 !important;
     box-shadow: none !important;
     animation: none !important;
-    grid-template-columns: minmax(0, 112px) minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 148px) minmax(0, 1fr) !important;
   }
 
   #settings-page .settings-modal-close {

@@ -15,7 +15,10 @@ from fastapi import HTTPException
 from services.auth_config import app_public_url
 from services.billing_catalog import (
     TRIAL_DAYS,
+    country_code_from_phone,
+    currency_for_country_code,
     lookup_plan_for_price,
+    normalize_country_code,
     resolve_price_id,
 )
 from services.parish_store import get_parish_by_id
@@ -112,13 +115,31 @@ def parish_has_paid_access(parish_row: Optional[dict[str, Any]]) -> bool:
     return False
 
 
-def billing_payload(parish_row: Optional[dict[str, Any]]) -> dict[str, Any]:
+def resolve_parish_country_code(
+    parish_row: Optional[dict[str, Any]],
+    *,
+    fallback_phone: str | None = None,
+) -> str:
+    """Parish registration country, with optional phone fallback for older rows."""
+    row = parish_row or {}
+    code = normalize_country_code(row.get("country_code"))
+    if code:
+        return code
+    return country_code_from_phone(fallback_phone or "")
+
+
+def billing_payload(
+    parish_row: Optional[dict[str, Any]],
+    *,
+    fallback_phone: str | None = None,
+) -> dict[str, Any]:
     row = parish_row or {}
     sub_status = _clean(row.get("stripe_subscription_status")).lower() or None
     price_id = _clean(row.get("stripe_price_id")) or None
     plan = lookup_plan_for_price(price_id) if price_id else None
     enabled = billing_enabled()
     paid = parish_has_paid_access(row) if enabled else None
+    parish_country = resolve_parish_country_code(row, fallback_phone=fallback_phone)
     return {
         "billing_enabled": enabled,
         "publishable_key": stripe_publishable_key() or None,
@@ -130,6 +151,8 @@ def billing_payload(parish_row: Optional[dict[str, Any]]) -> dict[str, Any]:
         "stripe_current_period_end": row.get("stripe_current_period_end"),
         "plan_interval": plan[0] if plan else None,
         "plan_currency": plan[1] if plan else None,
+        "parish_country": parish_country or None,
+        "display_currency": currency_for_country_code(parish_country),
         "has_paid_access": paid if enabled else True,
         "can_start_checkout": enabled and not (sub_status in PAID_ACCESS_STATUSES),
         "can_manage_billing": enabled and bool(_clean(row.get("stripe_customer_id"))),

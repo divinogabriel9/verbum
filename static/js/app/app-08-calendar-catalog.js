@@ -386,14 +386,14 @@
 
         let divider_bn = null;
         if (divIn && divIn.files && divIn.files[0]) {
-          const uploadIdx = massGenStepIndex("Uploading artwork");
-          advanceMassGenStep(uploadIdx >= 0 ? uploadIdx : 3, { message: "Uploading artwork…" });
+          const uploadIdx = massGenStepIndex("Adding your artwork");
+          advanceMassGenStep(uploadIdx >= 0 ? uploadIdx : 3, { message: "Adding your artwork…" });
           divider_bn = await uploadMassImage(divIn.files[0], "/api/upload/mass-divider");
         }
         const ann_bns = [];
         if (annIn && annIn.files && annIn.files.length) {
-          const uploadIdx = massGenStepIndex("Uploading artwork");
-          if (uploadIdx >= 0) advanceMassGenStep(uploadIdx, { message: "Uploading artwork…" });
+          const uploadIdx = massGenStepIndex("Adding your artwork");
+          if (uploadIdx >= 0) advanceMassGenStep(uploadIdx, { message: "Adding your artwork…" });
           for (let i = 0; i < annIn.files.length; i++) {
             ann_bns.push(await uploadMassImage(annIn.files[i], "/api/upload/announcement-slide"));
           }
@@ -617,15 +617,15 @@
         });
         massGenProgressState.steps = genSteps;
 
-        let workIdx = massGenStepIndex("Building PowerPoint slides");
+        let workIdx = massGenStepIndex("Composing your presentation");
         if (body.leaflet_only) {
           workIdx = Math.max(0, genSteps.length - 3);
-          statusFn("Building Mass leaflet PDF…", "");
+          statusFn("Building Mass leaflet…", "");
         } else if (body.include_ai_mass_poster) {
-          workIdx = massGenStepIndex("Connecting to AI");
-          statusFn("Creating sacred artwork and building your presentation…", "");
+          workIdx = massGenStepIndex("Preparing Mass visuals");
+          statusFn("Preparing Mass visuals and your presentation…", "");
         } else {
-          statusFn("Building PowerPoint slides…", "");
+          statusFn("Composing your presentation…", "");
         }
         if (workIdx < 0) workIdx = Math.max(0, genSteps.length - 3);
 
@@ -637,7 +637,7 @@
         startMassGenStepSimulation(workIdx + 1, body.include_ai_mass_poster ? 2800 : 2200);
         const data = await postJSON("/api/generate", body);
         clearMassGenProgressTimers();
-        advanceMassGenStep(genSteps.length - 1, { message: body.leaflet_only ? "Finalizing leaflet…" : "Finalizing presentation…", percent: 100 });
+        advanceMassGenStep(genSteps.length - 1, { message: body.leaflet_only ? "Almost ready…" : "Almost ready…", percent: 100 });
         localStorage.setItem(dupKey, fp);
         if (divIn) divIn.value = "";
         if (annIn) annIn.value = "";

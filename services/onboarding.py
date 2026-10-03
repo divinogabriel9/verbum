@@ -212,6 +212,7 @@ def complete_onboarding(
     last_name: str = "",
     phone: str = "",
     community_name: str,
+    country_code: str = "",
     ministry_role: str,
     ministry_role_other: str = "",
     preferred_language: str = "",
@@ -221,6 +222,11 @@ def complete_onboarding(
     survey_source_other: str = "",
 ) -> dict[str, Any]:
     """Persist signup details + survey and mark onboarding complete."""
+    from services.billing_catalog import (
+        country_code_from_phone,
+        normalize_country_code,
+    )
+
     uid = (user_id or "").strip()
     if not uid or not access_token:
         raise HTTPException(status_code=401, detail="Sign in required.")
@@ -232,6 +238,7 @@ def complete_onboarding(
     last = (last_name or "").strip()
     phone_clean = (phone or "").strip()
     church = (community_name or "").strip()
+    country = normalize_country_code(country_code)
     role = (ministry_role or "").strip().lower()
     role_other = (ministry_role_other or "").strip()
     language = (preferred_language or "").strip().lower()
@@ -293,12 +300,29 @@ def complete_onboarding(
         phone_clean = "+" + phone_clean.lstrip("+")
     if phone_clean and len(phone_clean) > 32:
         phone_clean = phone_clean[:32]
+    if not country:
+        country = country_code_from_phone(phone_clean)
 
     status = get_onboarding_status(uid, access_token=access_token)
     if status.get("onboarding_completed"):
         return {"ok": True, "already_complete": True, **status}
 
     church_ctx = _ensure_parish_named(uid, church, access_token=access_token)
+    parish_id = str((church_ctx or {}).get("parish_id") or (church_ctx or {}).get("id") or "").strip()
+    if parish_id and country:
+        try:
+            svc = get_service_client()
+            updated = (
+                svc.table("parishes")
+                .update({"country_code": country, "updated_at": _now_iso()})
+                .eq("id", parish_id)
+                .execute()
+            )
+            if updated.data:
+                church_ctx = dict(church_ctx or {})
+                church_ctx["country_code"] = country
+        except Exception as country_exc:
+            logger.warning("Could not save parish country_code: %s", country_exc)
 
     client = get_user_client(access_token)
     now = _now_iso()
