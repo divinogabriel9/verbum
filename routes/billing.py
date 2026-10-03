@@ -9,7 +9,7 @@ from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from services.api_security import AuthSession, require_session
-from services.billing_catalog import CURRENCIES, INTERVALS, catalog_payload, currency_for_country_code
+from services.billing_catalog import CURRENCIES, INTERVALS, catalog_payload
 from services.membership_config import is_superadmin_user, membership_payload
 from services.stripe_billing import (
     billing_enabled,
@@ -18,7 +18,6 @@ from services.stripe_billing import (
     create_checkout_session,
     create_portal_session,
     process_webhook_event,
-    resolve_parish_country_code,
 )
 from services.user_church_context import get_church_profile_context, set_church_profile
 
@@ -156,13 +155,7 @@ def register_billing_routes(app) -> None:
         ctx = _require_parish_billing_manager(session)
         parish_id = str(ctx.get("parish_id") or ctx.get("id") or "")
         interval = body.interval
-        currency = body.currency
-        # Non-superadmins are locked to the parish registration country currency.
-        if not is_superadmin_user(session.user):
-            from services.parish_store import get_parish_by_id
-
-            parish = get_parish_by_id(parish_id) or ctx
-            currency = currency_for_country_code(resolve_parish_country_code(parish))
+        currency = (body.currency or "").strip().lower()
         if interval not in INTERVALS or currency not in CURRENCIES:
             raise HTTPException(status_code=400, detail="Invalid plan selection.")
         return create_checkout_session(
