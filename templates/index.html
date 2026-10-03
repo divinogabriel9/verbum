@@ -73,13 +73,13 @@
       display: none !important;
     }
   </style>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261004-cta-poster-loading2" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261004-apostle-cartoons" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20261004-liturgy-curated" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261004-simple-pills" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261004-radio-notif-badges" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
@@ -4248,20 +4248,26 @@
                     <div class="profile-avatar-wrap" id="profile-avatar-wrap">
                       <button type="button" class="church-logo-avatar profile-avatar" id="profile-avatar-btn" aria-label="Preview profile picture">
                         <img class="church-logo-avatar__img" id="profile-avatar-img" alt="" hidden />
-                        <span class="church-logo-avatar__placeholder" id="profile-avatar-placeholder" aria-hidden="true">+</span>
+                        <span class="church-logo-avatar__placeholder" id="profile-avatar-placeholder" aria-hidden="true">?</span>
                       </button>
                       <button type="button" class="profile-avatar-add" id="profile-avatar-add" aria-label="Change profile picture" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-avatar-menu">+</button>
                       <div class="profile-avatar-menu" id="profile-avatar-menu" role="menu" hidden>
+                        <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="apostles">Choose apostle</button>
+                        <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="random">Surprise me</button>
                         <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="upload">Upload photo</button>
-                        <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="generate">Use generated avatar</button>
                       </div>
                       <input type="file" id="profile-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
                     </div>
                     <div class="church-identity-row__name">
+                      <p class="settings-avatar-apostle-name" id="settings-avatar-apostle-name">—</p>
                       <p class="settings-account-meta" id="settings-account-name">—</p>
                       <p class="settings-account-meta" id="settings-account-email" style="margin-top:4px;">—</p>
                       <p class="settings-account-contrib" id="settings-account-contrib" hidden></p>
                     </div>
+                  </div>
+                  <div class="apostle-avatar-picker" id="apostle-avatar-picker" hidden>
+                    <p class="muted" style="margin:0 0 10px;font-size:0.85rem;">Pick one of the Twelve Apostles.</p>
+                    <div class="apostle-avatar-grid" id="apostle-avatar-grid" role="listbox" aria-label="Apostle avatars"></div>
                   </div>
                   <p class="status" id="avatar-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
                 </div>
@@ -4961,7 +4967,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261004-cta-poster-loading2"></script>
+  <script src="/static/js/app.js?v=20261004-apostle-cartoons"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

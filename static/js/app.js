@@ -18781,10 +18781,19 @@
       }
     }
 
-    function updateProfileAvatar(avatarUrl) {
+    function setSettingsApostleName(name) {
+      const el = $("settings-avatar-apostle-name");
+      if (!el) return;
+      const label = String(name || "").trim();
+      el.textContent = label || "Choose an apostle";
+    }
+
+    function updateProfileAvatar(avatarUrl, meta) {
       const btn = $("profile-avatar-btn");
       const img = $("profile-avatar-img");
       const ph = $("profile-avatar-placeholder");
+      const apostleName = meta && (meta.apostle_name || meta.apostleName);
+      const apostleId = meta && (meta.apostle_id || meta.apostleId);
       if (avatarUrl) {
         currentAvatarPreviewUrl = avatarUrl;
         const applySrc = (src) => {
@@ -18817,20 +18826,35 @@
         }
         if (ph) {
           ph.hidden = false;
-          const auth = window.VerbumAuth;
-          const user = auth && auth.getUser ? auth.getUser() : null;
-          const initial = ((auth && auth.getUserFirstName && auth.getUserFirstName(user)) || (user && user.email) || "?").charAt(0).toUpperCase();
-          ph.textContent = initial || "?";
+          ph.textContent = "?";
         }
         if (btn) {
           btn.disabled = false;
           btn.setAttribute("aria-label", "Change profile picture");
         }
       }
+      if (apostleName) setSettingsApostleName(apostleName);
+      else if (avatarUrl && String(avatarUrl).indexOf("/static/avatars/apostles/") !== -1) {
+        // Keep existing apostle name if only URL refreshed.
+        const auth = window.VerbumAuth;
+        setSettingsApostleName(auth && auth.getApostleName ? auth.getApostleName() : "");
+      } else if (avatarUrl) {
+        setSettingsApostleName("Custom photo");
+      } else {
+        setSettingsApostleName("");
+      }
       if (window.VerbumAuth && typeof window.VerbumAuth.setAvatarUrl === "function") {
-        window.VerbumAuth.setAvatarUrl(avatarUrl || "");
+        window.VerbumAuth.setAvatarUrl(avatarUrl || "", {
+          apostle_id: apostleId || null,
+          apostle_name: apostleName || (avatarUrl && String(avatarUrl).indexOf("/static/avatars/apostles/") !== -1
+            ? (window.VerbumAuth.getApostleName && window.VerbumAuth.getApostleName())
+            : null),
+        });
       }
       if (typeof updateAccountMenuDisplay === "function") updateAccountMenuDisplay();
+      if (typeof markApostlePickerSelection === "function") {
+        markApostlePickerSelection(apostleId || (window.VerbumAuth && window.VerbumAuth.getApostleId && window.VerbumAuth.getApostleId()));
+      }
     }
 
     function syncSettingsAccountPanel() {
@@ -18951,10 +18975,17 @@
         }
       } catch (_e) { /* ignore */ }
       const avatarUrl = (auth && auth.getAvatarUrl ? auth.getAvatarUrl() : "") || (profile && profile.avatar_url) || "";
+      const apostleMeta = {
+        apostle_id: (auth && auth.getApostleId ? auth.getApostleId() : "") || (profile && profile.apostle_id) || null,
+        apostle_name: (auth && auth.getApostleName ? auth.getApostleName() : "") || (profile && profile.apostle_name) || null,
+      };
       if (avatarUrl && avatarUrl !== currentAvatarPreviewUrl) {
-        updateProfileAvatar(avatarUrl);
+        updateProfileAvatar(avatarUrl, apostleMeta);
       } else if (!avatarUrl && !currentAvatarPreviewUrl) {
-        updateProfileAvatar("");
+        updateProfileAvatar("", null);
+      } else {
+        setSettingsApostleName(apostleMeta.apostle_name || (avatarUrl ? "Custom photo" : ""));
+        if (typeof markApostlePickerSelection === "function") markApostlePickerSelection(apostleMeta.apostle_id);
       }
     }
 
@@ -35321,6 +35352,8 @@
       if (currentLogoPreviewUrl) openLogoPreviewModal("logo");
     });
 
+    var apostleAvatarCatalog = null;
+
     function setProfileAvatarMenuOpen(open) {
       const menu = $("profile-avatar-menu");
       const addBtn = $("profile-avatar-add");
@@ -35339,50 +35372,79 @@
       setProfileAvatarMenuOpen(!!(menu && menu.hidden));
     }
 
-    function hashStringToHue(str) {
-      let h = 0;
-      const s = String(str || "verbum");
-      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-      return h % 360;
+    function setApostlePickerOpen(open) {
+      const picker = $("apostle-avatar-picker");
+      if (!picker) return;
+      picker.hidden = !open;
     }
 
-    function buildGeneratedAvatarFile() {
-      const auth = window.VerbumAuth;
-      const user = auth && auth.getUser ? auth.getUser() : null;
-      const profile = auth && auth.getProfile ? auth.getProfile() : null;
-      const first = (auth && auth.getUserFirstName ? auth.getUserFirstName(user) : "") || "";
-      const email = (profile && profile.email) || (user && user.email) || "";
-      const seed = email || first || (user && user.id) || "verbum";
-      const initial = (first || email || "?").charAt(0).toUpperCase();
-      const hue = hashStringToHue(seed + ":" + Date.now().toString(36).slice(-3));
-      const size = 256;
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      const grad = ctx.createLinearGradient(0, 0, size, size);
-      grad.addColorStop(0, "hsl(" + hue + " 42% 42%)");
-      grad.addColorStop(1, "hsl(" + ((hue + 28) % 360) + " 48% 28%)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, size, size);
-      ctx.fillStyle = "rgba(255,255,255,0.12)";
-      ctx.beginPath();
-      ctx.arc(size * 0.78, size * 0.22, size * 0.34, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#fff";
-      ctx.font = "700 " + Math.round(size * 0.42) + "px Georgia, 'Times New Roman', serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(initial, size / 2, size / 2 + 4);
-      return new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error("Could not generate avatar."));
-            return;
-          }
-          resolve(new File([blob], "generated-avatar.png", { type: "image/png" }));
-        }, "image/png");
+    function markApostlePickerSelection(apostleId) {
+      const grid = $("apostle-avatar-grid");
+      if (!grid) return;
+      const key = String(apostleId || "");
+      grid.querySelectorAll(".apostle-avatar-option").forEach((btn) => {
+        btn.classList.toggle("is-selected", btn.getAttribute("data-apostle-id") === key);
       });
+    }
+
+    async function loadApostleAvatarCatalog() {
+      if (apostleAvatarCatalog) return apostleAvatarCatalog;
+      const res = await fetch("/api/profile/apostle-avatars");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Could not load apostle avatars.");
+      apostleAvatarCatalog = Array.isArray(data.avatars) ? data.avatars : [];
+      return apostleAvatarCatalog;
+    }
+
+    async function renderApostleAvatarPicker() {
+      const grid = $("apostle-avatar-grid");
+      if (!grid) return;
+      const avatars = await loadApostleAvatarCatalog();
+      const selected = window.VerbumAuth && window.VerbumAuth.getApostleId
+        ? window.VerbumAuth.getApostleId()
+        : "";
+      grid.innerHTML = avatars.map((a) => {
+        const id = escapeHtml(a.id || "");
+        const name = escapeHtml(a.name || "");
+        const src = escapeHtml(a.path || "");
+        const sel = a.id === selected ? " is-selected" : "";
+        return (
+          "<button type=\"button\" class=\"apostle-avatar-option" + sel + "\" role=\"option\" " +
+          "data-apostle-id=\"" + id + "\" aria-label=\"" + name + "\">" +
+          "<img class=\"apostle-avatar-option__img\" src=\"" + src + "\" alt=\"\" width=\"48\" height=\"48\" loading=\"lazy\" />" +
+          "<span class=\"apostle-avatar-option__name\">" + name + "</span>" +
+          "</button>"
+        );
+      }).join("");
+    }
+
+    async function saveApostleAvatar(apostleId) {
+      const statusEl = $("avatar-status");
+      const addBtn = $("profile-avatar-add");
+      if (statusEl) {
+        statusEl.textContent = "Saving profile picture…";
+        statusEl.className = "status";
+      }
+      if (addBtn) addBtn.disabled = true;
+      try {
+        const data = await postJSON("/api/profile/apostle-avatar", { apostle_id: apostleId });
+        updateProfileAvatar(data.avatar_url || "", {
+          apostle_id: data.apostle_id || null,
+          apostle_name: data.apostle_name || null,
+        });
+        markApostlePickerSelection(data.apostle_id || "");
+        if (statusEl) {
+          statusEl.textContent = data.message || "Profile picture saved.";
+          statusEl.className = "status ok";
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = (err && err.message) || "Could not save profile picture.";
+          statusEl.className = "status error";
+        }
+      } finally {
+        if (addBtn) addBtn.disabled = false;
+      }
     }
 
     async function uploadProfileAvatar(file) {
@@ -35414,7 +35476,8 @@
           );
         }
         const url = data && data.avatar_url ? String(data.avatar_url) : "";
-        updateProfileAvatar(url);
+        updateProfileAvatar(url, { apostle_id: null, apostle_name: null });
+        setApostlePickerOpen(false);
         if (statusEl) {
           statusEl.textContent = (data && data.message) || "Profile photo saved.";
           statusEl.className = "status ok";
@@ -35453,22 +35516,30 @@
         if (input) input.click();
         return;
       }
-      if (action === "generate") {
-        const statusEl = $("avatar-status");
+      if (action === "random") {
+        await saveApostleAvatar("random");
+        return;
+      }
+      if (action === "apostles") {
         try {
-          if (statusEl) {
-            statusEl.textContent = "Generating avatar…";
-            statusEl.className = "status";
-          }
-          const file = await buildGeneratedAvatarFile();
-          await uploadProfileAvatar(file);
+          await renderApostleAvatarPicker();
+          setApostlePickerOpen(true);
         } catch (err) {
+          const statusEl = $("avatar-status");
           if (statusEl) {
-            statusEl.textContent = (err && err.message) || "Could not generate avatar.";
+            statusEl.textContent = (err && err.message) || "Could not open apostle picker.";
             statusEl.className = "status error";
           }
         }
       }
+    });
+
+    $("apostle-avatar-grid") && $("apostle-avatar-grid").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-apostle-id]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-apostle-id");
+      if (!id) return;
+      await saveApostleAvatar(id);
     });
 
     $("profile-avatar-file") && $("profile-avatar-file").addEventListener("change", (event) => {
@@ -35482,7 +35553,10 @@
       setProfileAvatarMenuOpen(false);
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") setProfileAvatarMenuOpen(false);
+      if (e.key === "Escape") {
+        setProfileAvatarMenuOpen(false);
+        setApostlePickerOpen(false);
+      }
     });
 
     $("btn-upload-logo").addEventListener("click", () => {

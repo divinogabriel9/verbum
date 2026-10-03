@@ -2201,10 +2201,19 @@
       }
     }
 
-    function updateProfileAvatar(avatarUrl) {
+    function setSettingsApostleName(name) {
+      const el = $("settings-avatar-apostle-name");
+      if (!el) return;
+      const label = String(name || "").trim();
+      el.textContent = label || "Choose an apostle";
+    }
+
+    function updateProfileAvatar(avatarUrl, meta) {
       const btn = $("profile-avatar-btn");
       const img = $("profile-avatar-img");
       const ph = $("profile-avatar-placeholder");
+      const apostleName = meta && (meta.apostle_name || meta.apostleName);
+      const apostleId = meta && (meta.apostle_id || meta.apostleId);
       if (avatarUrl) {
         currentAvatarPreviewUrl = avatarUrl;
         const applySrc = (src) => {
@@ -2237,20 +2246,35 @@
         }
         if (ph) {
           ph.hidden = false;
-          const auth = window.VerbumAuth;
-          const user = auth && auth.getUser ? auth.getUser() : null;
-          const initial = ((auth && auth.getUserFirstName && auth.getUserFirstName(user)) || (user && user.email) || "?").charAt(0).toUpperCase();
-          ph.textContent = initial || "?";
+          ph.textContent = "?";
         }
         if (btn) {
           btn.disabled = false;
           btn.setAttribute("aria-label", "Change profile picture");
         }
       }
+      if (apostleName) setSettingsApostleName(apostleName);
+      else if (avatarUrl && String(avatarUrl).indexOf("/static/avatars/apostles/") !== -1) {
+        // Keep existing apostle name if only URL refreshed.
+        const auth = window.VerbumAuth;
+        setSettingsApostleName(auth && auth.getApostleName ? auth.getApostleName() : "");
+      } else if (avatarUrl) {
+        setSettingsApostleName("Custom photo");
+      } else {
+        setSettingsApostleName("");
+      }
       if (window.VerbumAuth && typeof window.VerbumAuth.setAvatarUrl === "function") {
-        window.VerbumAuth.setAvatarUrl(avatarUrl || "");
+        window.VerbumAuth.setAvatarUrl(avatarUrl || "", {
+          apostle_id: apostleId || null,
+          apostle_name: apostleName || (avatarUrl && String(avatarUrl).indexOf("/static/avatars/apostles/") !== -1
+            ? (window.VerbumAuth.getApostleName && window.VerbumAuth.getApostleName())
+            : null),
+        });
       }
       if (typeof updateAccountMenuDisplay === "function") updateAccountMenuDisplay();
+      if (typeof markApostlePickerSelection === "function") {
+        markApostlePickerSelection(apostleId || (window.VerbumAuth && window.VerbumAuth.getApostleId && window.VerbumAuth.getApostleId()));
+      }
     }
 
     function syncSettingsAccountPanel() {
@@ -2371,10 +2395,17 @@
         }
       } catch (_e) { /* ignore */ }
       const avatarUrl = (auth && auth.getAvatarUrl ? auth.getAvatarUrl() : "") || (profile && profile.avatar_url) || "";
+      const apostleMeta = {
+        apostle_id: (auth && auth.getApostleId ? auth.getApostleId() : "") || (profile && profile.apostle_id) || null,
+        apostle_name: (auth && auth.getApostleName ? auth.getApostleName() : "") || (profile && profile.apostle_name) || null,
+      };
       if (avatarUrl && avatarUrl !== currentAvatarPreviewUrl) {
-        updateProfileAvatar(avatarUrl);
+        updateProfileAvatar(avatarUrl, apostleMeta);
       } else if (!avatarUrl && !currentAvatarPreviewUrl) {
-        updateProfileAvatar("");
+        updateProfileAvatar("", null);
+      } else {
+        setSettingsApostleName(apostleMeta.apostle_name || (avatarUrl ? "Custom photo" : ""));
+        if (typeof markApostlePickerSelection === "function") markApostlePickerSelection(apostleMeta.apostle_id);
       }
     }
 

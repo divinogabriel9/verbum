@@ -1,0 +1,62 @@
+[
+  {
+    "id": "peter",
+    "name": "Peter",
+    "path": "/static/avatars/apostles/peter.webp"
+  },
+  {
+    "id": "andrew",
+    "name": "Andrew",
+    "path": "/static/avatars/apostles/andrew.webp"
+  },
+  {
+    "id": "james",
+    "name": "James the Greater",
+    "path": "/static/avatars/apostles/james.webp"
+  },
+  {
+    "id": "john",
+    "name": "John",
+    "path": "/static/avatars/apostles/john.webp"
+  },
+  {
+    "id": "philip",
+    "name": "Philip",
+    "path": "/static/avatars/apostles/philip.webp"
+  },
+  {
+    "id": "bartholomew",
+    "name": "Bartholomew",
+    "path": "/static/avatars/apostles/bartholomew.webp"
+  },
+  {
+    "id": "thomas",
+    "name": "Thomas",
+    "path": "/static/avatars/apostles/thomas.webp"
+  },
+  {
+    "id": "matthew",
+    "name": "Matthew",
+    "path": "/static/avatars/apostles/matthew.webp"
+  },
+  {
+    "id": "james-less",
+    "name": "James the Less",
+    "path": "/static/avatars/apostles/james-less.webp"
+  },
+  {
+    "id": "jude",
+    "name": "Jude",
+    "path": "/static/avatars/apostles/jude.webp"
+  },
+  {
+    "id": "simon",
+    "name": "Simon",
+    "path": "/static/avatars/apostles/simon.webp"
+  },
+  {
+    "id": "matthias",
+    "name": "Matthias",
+    "path": "/static/avatars/apostles/matthias.webp"
+  }
+]

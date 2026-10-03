@@ -3322,20 +3322,22 @@ iframe {
   .notif-badge--nav {
     position: absolute;
     top: 2px;
-    right: 4px;
+    right: 10px;
     left: auto;
     z-index: 3;
-    min-width: 17px;
-    height: 17px;
+    min-width: 16px;
+    height: 16px;
     padding: 0 4px;
-    font-size: 0.625rem;
+    font-size: 0.6rem;
     font-weight: 700;
-    line-height: 17px;
+    letter-spacing: -0.02em;
+    line-height: 16px;
     text-align: center;
     border-radius: 999px;
-    background: var(--liturgical-accent, #a10f0d);
+    background: #e11d48;
     color: #fff;
     border: 2px solid var(--surface-solid, #fff);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
     pointer-events: none;
   }
 

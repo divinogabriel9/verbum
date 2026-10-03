@@ -11,6 +11,8 @@
     communityPayload: null,
     membership: null,
     avatarUrl: null,
+    apostleId: null,
+    apostleName: null,
     songContrib: null,
     pendingNotifications: [],
     cachedToken: null,
@@ -30,6 +32,8 @@
       state.communityPayload = null;
       state.membership = null;
       state.avatarUrl = null;
+      state.apostleId = null;
+      state.apostleName = null;
       state.songContrib = null;
       state.pendingNotifications = [];
       try {
@@ -579,8 +583,12 @@
           email: data.email || user.email || null,
           role: data.role || (data.profile && data.profile.role) || "member",
           avatar_url: data.avatar_url || data.image_url || null,
+          apostle_id: data.apostle_id || null,
+          apostle_name: data.apostle_name || null,
         };
         state.avatarUrl = data.avatar_url || data.image_url || null;
+        state.apostleId = data.apostle_id || null;
+        state.apostleName = data.apostle_name || null;
         if (data.membership) {
           state.membership = data.membership;
         }
@@ -695,19 +703,23 @@
       state.user || (state.session && state.session.user ? state.session.user : null);
 
     const setAvatarVisual = (initial, photoUrl) => {
-      const letter = ((initial || "A").charAt(0) || "A").toUpperCase();
-      if (avatarInitial) avatarInitial.textContent = letter;
-      else if (avatar && !avatarImg) avatar.textContent = letter;
       if (avatarImg) {
         if (photoUrl) {
           avatarImg.src = photoUrl;
           avatarImg.hidden = false;
           if (avatarInitial) avatarInitial.hidden = true;
-        } else {
-          avatarImg.removeAttribute("src");
-          avatarImg.hidden = true;
-          if (avatarInitial) avatarInitial.hidden = false;
+          return;
         }
+        avatarImg.removeAttribute("src");
+        avatarImg.hidden = true;
+      }
+      // Letters only as a last-resort fallback when no avatar image is available.
+      const letter = ((initial || "A").charAt(0) || "A").toUpperCase();
+      if (avatarInitial) {
+        avatarInitial.textContent = letter;
+        avatarInitial.hidden = false;
+      } else if (avatar && !avatarImg) {
+        avatar.textContent = letter;
       }
     };
 
@@ -792,6 +804,8 @@
     state.profile = null;
     state.churchProfile = null;
     state.avatarUrl = null;
+    state.apostleId = null;
+    state.apostleName = null;
     state.churchProfile = null;
     state.communityPayload = null;
     state.songContrib = null;
@@ -880,9 +894,34 @@
       state.pendingNotifications = [];
     },
     getAvatarUrl: () => state.avatarUrl || (state.profile && state.profile.avatar_url) || null,
-    setAvatarUrl: (url) => {
+    getApostleId: () => state.apostleId || (state.profile && state.profile.apostle_id) || null,
+    getApostleName: () => state.apostleName || (state.profile && state.profile.apostle_name) || null,
+    setAvatarUrl: (url, meta) => {
       state.avatarUrl = url || null;
       if (state.profile) state.profile.avatar_url = url || null;
+      if (meta && typeof meta === "object") {
+        state.apostleId = meta.apostle_id || meta.apostleId || null;
+        state.apostleName = meta.apostle_name || meta.apostleName || null;
+        if (state.profile) {
+          state.profile.apostle_id = state.apostleId;
+          state.profile.apostle_name = state.apostleName;
+        }
+      } else if (!url) {
+        state.apostleId = null;
+        state.apostleName = null;
+        if (state.profile) {
+          state.profile.apostle_id = null;
+          state.profile.apostle_name = null;
+        }
+      } else if (url && String(url).indexOf("/static/avatars/apostles/") === -1) {
+        // Custom uploaded photo — clear apostle label.
+        state.apostleId = null;
+        state.apostleName = null;
+        if (state.profile) {
+          state.profile.apostle_id = null;
+          state.profile.apostle_name = null;
+        }
+      }
       updateAccountMenuDisplay();
     },
     getChurchProfile: () => state.churchProfile,

@@ -3370,6 +3370,51 @@ async def api_upload_logo(
     return out
 
 
+class ApostleAvatarBody(BaseModel):
+    apostle_id: str = Field(..., min_length=2, max_length=40)
+
+
+@app.get("/api/profile/apostle-avatars")
+def api_list_apostle_avatars() -> dict[str, Any]:
+    from services.apostle_avatars import list_apostle_avatars
+
+    return {"ok": True, "avatars": list_apostle_avatars()}
+
+
+@app.post("/api/profile/apostle-avatar")
+def api_set_apostle_avatar(
+    body: ApostleAvatarBody,
+    session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """Set the user's profile pill to a cartoon apostle face."""
+    if not session:
+        raise HTTPException(status_code=401, detail="Sign in required.")
+    if not supabase_enabled():
+        raise HTTPException(status_code=503, detail="Profile photos require sign-in.")
+    from services.apostle_avatars import apostle_by_id, random_apostle_for_user
+    from services.supabase_client import update_profile_avatar
+
+    key = (body.apostle_id or "").strip().lower()
+    if key in {"random", "surprise", "auto"}:
+        chosen = random_apostle_for_user(session.user.user_id + ":" + str(uuid.uuid4())[:8])
+    else:
+        chosen = apostle_by_id(key)
+    if not chosen:
+        raise HTTPException(status_code=400, detail="Unknown apostle avatar.")
+    update_profile_avatar(
+        session.user.user_id,
+        chosen["token"],
+        access_token=session.token,
+    )
+    return {
+        "ok": True,
+        "avatar_url": chosen["path"],
+        "apostle_id": chosen["id"],
+        "apostle_name": chosen["name"],
+        "message": f"Profile picture set to {chosen['name']}.",
+    }
+
+
 @app.post("/api/upload-avatar")
 async def api_upload_avatar(
     file: UploadFile = File(...),

@@ -171,12 +171,28 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                     church, user=user, profile_role=profile_role
                 )
 
-                # Prefer stored avatar path (signed) over OAuth metadata image.
+                # Prefer stored avatar (apostle cartoon / static / signed) over OAuth image.
+                from services.apostle_avatars import (
+                    apostle_from_avatar_value,
+                    random_apostle_for_user,
+                )
+                from services.supabase_client import update_profile_avatar
+
                 avatar_raw = str((profile_row or {}).get("avatar_url") or "").strip()
+                apostle = apostle_from_avatar_value(avatar_raw)
                 avatar_url: Optional[str] = None
-                if avatar_raw.startswith("http://") or avatar_raw.startswith("https://"):
+                apostle_id: Optional[str] = None
+                apostle_name: Optional[str] = None
+
+                if apostle:
+                    avatar_url = apostle["path"]
+                    apostle_id = apostle["id"]
+                    apostle_name = apostle["name"]
+                elif avatar_raw.startswith("http://") or avatar_raw.startswith("https://"):
                     avatar_url = avatar_raw
-                elif avatar_raw and not avatar_raw.startswith("/"):
+                elif avatar_raw.startswith("/static/"):
+                    avatar_url = avatar_raw
+                elif avatar_raw:
                     try:
                         from services.storage_assets import signed_asset_url
 
@@ -185,10 +201,29 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                         )
                     except Exception:
                         avatar_url = None
+
+                # No photo yet → assign a deterministic apostle cartoon for profile pills.
                 if not avatar_url:
-                    avatar_url = user.image_url
+                    assigned = random_apostle_for_user(user.user_id)
+                    try:
+                        update_profile_avatar(
+                            user.user_id,
+                            assigned["token"],
+                            access_token=session.token,
+                        )
+                        if isinstance(profile_row, dict):
+                            profile_row["avatar_url"] = assigned["token"]
+                            payload["profile"] = profile_row
+                    except Exception:
+                        pass
+                    avatar_url = assigned["path"]
+                    apostle_id = assigned["id"]
+                    apostle_name = assigned["name"]
+
                 payload["avatar_url"] = avatar_url
                 payload["image_url"] = avatar_url or user.image_url
+                payload["apostle_id"] = apostle_id
+                payload["apostle_name"] = apostle_name
                 from services.onboarding import profile_onboarding_complete
 
                 payload["onboarding_completed"] = profile_onboarding_complete(
