@@ -340,13 +340,52 @@ def create_portal_session(*, parish_id: str) -> dict[str, Any]:
             detail="No Stripe customer for this parish. Start a trial first.",
         )
     base = _public_base_url()
+    params: dict[str, Any] = {
+        "customer": customer_id,
+        "return_url": f"{base}/settings/billing",
+    }
+    # Optional: Dashboard → Settings → Billing → Customer portal configuration id.
+    config_id = _clean(os.environ.get("STRIPE_PORTAL_CONFIGURATION_ID"))
+    if config_id:
+        params["configuration"] = config_id
+
     client = get_stripe_client()
-    portal = client.v1.billing_portal.sessions.create(
-        {
-            "customer": customer_id,
-            "return_url": f"{base}/settings/billing",
-        }
-    )
+    try:
+        portal = client.v1.billing_portal.sessions.create(params)
+    except Exception as exc:
+        msg = str(getattr(exc, "user_message", None) or getattr(exc, "user", None) or exc)
+        low = msg.lower()
+        logger.exception("Stripe Customer Portal session create failed")
+        if "no configuration" in low or "default configuration" in low or "portal configuration" in low:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Stripe Customer Portal is not configured yet. "
+                    "Open Stripe Dashboard → Settings → Billing → Customer portal, "
+                    "save a configuration (live mode), then try again."
+                ),
+            ) from exc
+        if "permission" in low or "restricted" in low or "oauth" in low:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Stripe API key cannot open the Customer Portal. "
+                    "Ensure the restricted key allows Billing Portal write, "
+                    "or use a secret key with portal access."
+                ),
+            ) from exc
+        if "no such customer" in low:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Stripe customer was not found for this API key "
+                    "(live/test mismatch). Start a new trial with the current key."
+                ),
+            ) from exc
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not open billing portal: {msg[:240]}",
+        ) from exc
     url = getattr(portal, "url", None)
     if not url:
         raise HTTPException(status_code=502, detail="Stripe Portal did not return a URL.")

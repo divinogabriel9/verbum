@@ -25,7 +25,7 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-stripe-billing" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-billing-ui2" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
@@ -4213,29 +4213,42 @@
                 </span>
                 <div class="home-card-head__text">
                   <h3>Billing</h3>
-                  <p>Parish subscription — 14-day trial, then choose a plan.</p>
+                  <p>Parish subscription with a 14-day free trial.</p>
                 </div>
               </header>
-              <div id="settings-billing-status" class="status" hidden aria-live="polite"></div>
-              <div class="field" id="settings-billing-summary" hidden>
-                <label>Current plan</label>
-                <p class="muted" id="settings-billing-summary-text" style="margin:0;"></p>
-                <div class="actions" style="margin-top:12px;">
+              <div id="settings-billing-status" class="status settings-billing-status" hidden aria-live="polite"></div>
+              <div class="settings-billing-summary" id="settings-billing-summary" hidden>
+                <div class="settings-billing-summary__top">
+                  <div>
+                    <span class="settings-billing-summary__eyebrow">Current plan</span>
+                    <p class="settings-billing-summary__title" id="settings-billing-summary-title">Subscription</p>
+                    <p class="settings-billing-summary__meta muted" id="settings-billing-summary-text"></p>
+                  </div>
+                  <span class="settings-billing-badge" id="settings-billing-badge" hidden></span>
+                </div>
+                <div class="settings-billing-summary__actions actions">
                   <button type="button" class="secondary" id="btn-billing-portal">Manage billing</button>
                 </div>
               </div>
-              <div class="field" id="settings-billing-plans">
-                <label for="settings-billing-currency">Currency</label>
-                <select id="settings-billing-currency" aria-label="Billing currency">
-                  <option value="usd">USD</option>
-                  <option value="krw">KRW</option>
-                  <option value="php">PHP</option>
-                  <option value="myr">MYR</option>
-                </select>
-                <p class="muted" style="margin:8px 0 12px;font-size:0.85rem;">All plans include a 14-day trial. You’ll enter a payment method at checkout; you won’t be charged until the trial ends.</p>
+              <div class="settings-billing-plans" id="settings-billing-plans">
+                <div class="settings-billing-plans__toolbar">
+                  <div class="settings-billing-plans__intro">
+                    <h4 class="settings-billing-plans__heading">Choose a plan</h4>
+                    <p class="muted settings-billing-plans__note">All plans include a 14-day trial. You won’t be charged until it ends.</p>
+                  </div>
+                  <label class="settings-billing-currency">
+                    <span class="settings-billing-currency__label">Currency</span>
+                    <select id="settings-billing-currency" aria-label="Billing currency">
+                      <option value="usd">USD</option>
+                      <option value="krw">KRW</option>
+                      <option value="php">PHP</option>
+                      <option value="myr">MYR</option>
+                    </select>
+                  </label>
+                </div>
                 <div id="settings-billing-plan-list" class="settings-billing-plan-list" role="list"></div>
               </div>
-              <p class="muted" id="settings-billing-hint" style="margin-top:8px;font-size:0.85rem;" hidden></p>
+              <p class="muted settings-billing-hint" id="settings-billing-hint" hidden></p>
             </article>
             <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church" hidden>
               <header class="flow-bento-cell__head home-card-head">
@@ -4769,7 +4782,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261003-stripe-billing"></script>
+  <script src="/static/js/app.js?v=20261003-billing-ui2"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20260920-song-contrib1"></script>

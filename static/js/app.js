@@ -19013,13 +19013,18 @@
         const price = (row.prices || []).find((p) => p.currency === currency) || (row.prices || [])[0];
         const amount = (price && price.amount_display) || "—";
         const ready = !!(price && price.price_id);
+        const featured = row.interval === "annual";
         const item = document.createElement("div");
-        item.className = "settings-billing-plan";
+        item.className = "settings-billing-plan" + (featured ? " is-featured" : "");
         item.setAttribute("role", "listitem");
         item.innerHTML =
           "<div class=\"settings-billing-plan__copy\">" +
+          "<div class=\"settings-billing-plan__label-row\">" +
           "<strong>" + escapeHtml(row.label || row.interval) + "</strong>" +
-          "<span class=\"muted\">" + escapeHtml(amount) + " · " + escapeHtml(row.billing_hint || "") + "</span>" +
+          (featured ? "<span class=\"settings-billing-plan__pill\">Best value</span>" : "") +
+          "</div>" +
+          "<span class=\"settings-billing-plan__price\">" + escapeHtml(amount) + "</span>" +
+          "<span class=\"settings-billing-plan__hint\">" + escapeHtml(row.billing_hint || "") + "</span>" +
           "</div>";
         const btn = document.createElement("button");
         btn.type = "button";
@@ -19030,6 +19035,26 @@
         item.appendChild(btn);
         list.appendChild(item);
       });
+    }
+
+    function formatBillingIntervalLabel(interval) {
+      const map = {
+        monthly: "Monthly",
+        quarterly: "3-month",
+        semiannual: "6-month",
+        annual: "Annual",
+      };
+      return map[String(interval || "").toLowerCase()] || (interval || "Subscription");
+    }
+
+    function formatBillingStatusLabel(status) {
+      const s = String(status || "").toLowerCase();
+      if (s === "trialing") return "Trial";
+      if (s === "active") return "Active";
+      if (s === "past_due") return "Past due";
+      if (s === "canceled" || s === "cancelled") return "Canceled";
+      if (!s) return "";
+      return s.replace(/_/g, " ");
     }
 
     async function loadSettingsBilling() {
@@ -19093,18 +19118,40 @@
 
         const paid = !!billing.has_paid_access && !!billing.stripe_subscription_status;
         if (summary) summary.hidden = !paid && !billing.can_manage_billing;
+        const summaryTitle = $("settings-billing-summary-title");
+        const badge = $("settings-billing-badge");
+        if (summaryTitle) {
+          const planLabel = formatBillingIntervalLabel(billing.plan_interval);
+          const curLabel = billing.plan_currency
+            ? " · " + String(billing.plan_currency).toUpperCase()
+            : "";
+          summaryTitle.textContent = billing.plan_interval
+            ? planLabel + " plan" + curLabel
+            : "Subscription on file";
+        }
+        if (badge) {
+          const statusLabel = formatBillingStatusLabel(billing.stripe_subscription_status);
+          if (statusLabel) {
+            badge.hidden = false;
+            badge.textContent = statusLabel;
+            badge.className = "settings-billing-badge is-" + String(billing.stripe_subscription_status || "").toLowerCase();
+          } else {
+            badge.hidden = true;
+            badge.textContent = "";
+            badge.className = "settings-billing-badge";
+          }
+        }
         if (summaryText) {
           const bits = [];
-          if (billing.stripe_subscription_status) {
-            bits.push("Status: " + billing.stripe_subscription_status);
-          }
-          if (billing.plan_interval) {
-            bits.push("Plan: " + billing.plan_interval + (billing.plan_currency ? " (" + billing.plan_currency.toUpperCase() + ")" : ""));
-          }
           if (billing.stripe_current_period_end) {
-            bits.push("Renews / ends: " + String(billing.stripe_current_period_end).slice(0, 10));
+            const end = String(billing.stripe_current_period_end).slice(0, 10);
+            const isTrial = String(billing.stripe_subscription_status || "").toLowerCase() === "trialing";
+            bits.push((isTrial ? "Trial ends " : "Renews ") + end);
           }
-          summaryText.textContent = bits.join(" · ") || "Subscription on file.";
+          if (!bits.length && billing.stripe_subscription_status) {
+            bits.push("Status: " + formatBillingStatusLabel(billing.stripe_subscription_status));
+          }
+          summaryText.textContent = bits.join(" · ") || "You can update payment method or cancel anytime.";
         }
         if (portalBtn) {
           portalBtn.hidden = !billing.can_manage_billing
