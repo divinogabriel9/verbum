@@ -83,6 +83,86 @@
       z-index: 2;
       width: min(100%, 420px);
     }
+    /* Signup has more fields — wider card so it isn’t a tall skinny stack */
+    body.auth-mode-signup {
+      overflow-x: hidden;
+      overflow-y: auto;
+      align-content: center;
+    }
+    body.auth-mode-signup .auth-shell-wrap {
+      width: min(100%, 540px);
+    }
+    body.auth-mode-signup .auth-shell {
+      --auth-title-size: 1.5rem;
+      --auth-label-size: 0.8rem;
+      --auth-input-size: 0.95rem;
+      --auth-muted-size: 0.8rem;
+      --auth-btn-size: 0.95rem;
+      padding: 18px 22px 16px;
+      font-size: 16px;
+    }
+    body.auth-mode-signup .auth-brand {
+      margin-bottom: 8px;
+    }
+    body.auth-mode-signup .auth-brand__icon {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 6px;
+    }
+    body.auth-mode-signup .auth-brand h1.wordmark {
+      font-size: var(--auth-title-size);
+    }
+    body.auth-mode-signup .auth-brand #auth-subtitle,
+    body.auth-mode-signup .auth-brand p {
+      font-size: var(--auth-muted-size);
+    }
+    body.auth-mode-signup .field {
+      margin-bottom: 8px;
+    }
+    body.auth-mode-signup .field label,
+    body.auth-mode-signup .field .field-label {
+      margin-bottom: 4px;
+      font-size: var(--auth-label-size);
+    }
+    body.auth-mode-signup .field input:not([type="checkbox"]):not([type="radio"]),
+    body.auth-mode-signup .field select.auth-select,
+    body.auth-mode-signup .auth-vb-select__trigger,
+    body.auth-mode-signup .auth-country-chip__label,
+    body.auth-mode-signup .auth-phone-combined #auth-phone,
+    body.auth-mode-signup .auth-phone-combined .auth-phone-code-display {
+      font-size: var(--auth-input-size);
+    }
+    body.auth-mode-signup .auth-submit,
+    body.auth-mode-signup .auth-secondary,
+    body.auth-mode-signup .auth-oauth-btn {
+      font-size: var(--auth-btn-size);
+    }
+    body.auth-mode-signup .auth-check,
+    body.auth-mode-signup .auth-legal-consent,
+    body.auth-mode-signup .auth-field-error,
+    body.auth-mode-signup .auth-footer,
+    body.auth-mode-signup #auth-google-hint,
+    body.auth-mode-signup #auth-church-name-hint {
+      font-size: var(--auth-muted-size) !important;
+    }
+    body.auth-mode-signup .auth-divider {
+      font-size: var(--auth-muted-size);
+    }
+    @media (min-width: 520px) {
+      body.auth-mode-signup .field-row--names {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      body.auth-mode-signup .field-row--contact {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 10px;
+        align-items: start;
+      }
+      body.auth-mode-signup .field-row--contact > .field {
+        margin-bottom: 8px;
+      }
+    }
     .auth-shell {
       /* Force a bright card even when the page theme is dark */
       --bg: #f7f0ee;
@@ -285,6 +365,9 @@
       letter-spacing: 0.02em;
       flex-shrink: 0;
     }
+    .auth-phone-combined .auth-phone-code-display[hidden] {
+      display: none !important;
+    }
     .auth-phone-combined #auth-phone {
       flex: 1;
       min-width: 0;
@@ -295,7 +378,10 @@
       background: transparent !important;
       box-shadow: none !important;
       outline: none !important;
-      padding: 8px 12px 8px 4px;
+      padding: 8px 12px;
+    }
+    .auth-phone-combined:has(.auth-phone-code-display:not([hidden])) #auth-phone {
+      padding-left: 4px;
     }
     .auth-field-error {
       display: none;
@@ -319,6 +405,7 @@
       color: #8b1a18;
     }
     .field.is-invalid input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    .field.is-invalid .auth-password-wrap input,
     .field.is-invalid .auth-vb-select__trigger,
     .field.is-invalid .auth-country-chip,
     .field.is-invalid #auth-country-filter,
@@ -575,6 +662,10 @@
     }
     @media (max-width: 420px) {
       .field-row { grid-template-columns: 1fr; }
+      body.auth-mode-signup .field-row--names,
+      body.auth-mode-signup .field-row--contact {
+        grid-template-columns: 1fr;
+      }
       .auth-check-grid { grid-template-columns: 1fr; }
     }
     #auth-survey-other-wrap[hidden],
@@ -718,6 +809,52 @@
       background: linear-gradient(180deg, #ffffff 0%, #faf5f3 100%);
       color: var(--ink);
       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(61, 44, 42, 0.04);
+    }
+    .auth-password-wrap {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      width: 100%;
+    }
+    .auth-password-wrap input {
+      padding-right: 44px;
+    }
+    .auth-password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 6px;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+    }
+    .auth-password-toggle:hover {
+      color: var(--ink);
+      background: rgba(61, 44, 42, 0.06);
+    }
+    .auth-password-toggle:focus-visible {
+      outline: 2px solid var(--accent, #a10f0d);
+      outline-offset: 1px;
+    }
+    .auth-password-toggle svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+    .auth-password-toggle__hide[hidden],
+    .auth-password-toggle__show[hidden] {
+      display: none !important;
+    }
+    .field.is-invalid .auth-password-wrap input {
+      border-color: #c45c4a;
     }
     .field input:not([type="checkbox"]):not([type="radio"]):focus,
     .field select.auth-select:focus {
@@ -882,7 +1019,7 @@
   </style>
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
 </head>
-<body>
+<body class="{% if mode == 'sign-up' %}auth-mode-signup{% endif %}">
   <a class="skip-link" href="#auth-form" style="position:absolute;left:-999px;top:0;z-index:10000;background:var(--accent);color:#fff;padding:8px 12px;">Skip to form</a>
   <div class="auth-shell-wrap">
   <div class="auth-shell">
@@ -951,7 +1088,14 @@
       <div id="auth-signup-fields" hidden>
         <div class="auth-steps" id="auth-steps">
           <div class="auth-step is-active" id="auth-step-1" data-step="1">
-            <div class="field-row">
+            <div class="field">
+              <label for="auth-church-name">Church/Community Name</label>
+              <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="Gwangju Filipino Catholic Community" />
+              <p class="muted" id="auth-church-name-hint" style="margin:6px 0 0;font-size:0.8rem;color:var(--muted);" hidden>Your administrator sets the parish name on the invite link.</p>
+            </div>
+          </div>
+          <div class="auth-step" id="auth-step-2" data-step="2" hidden>
+            <div class="field-row field-row--names">
               <div class="field">
                 <label for="auth-first-name">First Name</label>
                 <input type="text" id="auth-first-name" autocomplete="given-name" maxlength="80" inputmode="text" pattern="[A-Za-zÀ-ÿ' .\-]+" />
@@ -961,37 +1105,35 @@
                 <input type="text" id="auth-last-name" autocomplete="family-name" maxlength="80" inputmode="text" pattern="[A-Za-zÀ-ÿ' .\-]+" />
               </div>
             </div>
-            <div class="field">
-              <label for="auth-middle-name">Middle Name <span style="font-weight:400;color:var(--muted);">(Optional)</span></label>
-              <input type="text" id="auth-middle-name" autocomplete="additional-name" maxlength="80" inputmode="text" pattern="[A-Za-zÀ-ÿ' .\-]*" />
-            </div>
-            <div class="field">
-              <label for="auth-country-filter">Country</label>
-              <div class="auth-country-picker" id="auth-country-picker">
-                <div class="auth-country-chip" id="auth-country-chip" hidden>
-                  <span class="auth-flag" id="auth-country-chip-flag" aria-hidden="true"></span>
-                  <span class="auth-country-chip__label" id="auth-country-chip-label"></span>
-                  <button type="button" class="auth-country-chip__clear" id="auth-country-clear" aria-label="Clear country">&times;</button>
+            <div class="field-row--contact">
+              <div class="field">
+                <label for="auth-country-filter">Country</label>
+                <div class="auth-country-picker" id="auth-country-picker">
+                  <div class="auth-country-chip" id="auth-country-chip" hidden>
+                    <span class="auth-flag" id="auth-country-chip-flag" aria-hidden="true"></span>
+                    <span class="auth-country-chip__label" id="auth-country-chip-label"></span>
+                    <button type="button" class="auth-country-chip__clear" id="auth-country-clear" aria-label="Clear country">&times;</button>
+                  </div>
+                  <input
+                    type="text"
+                    id="auth-country-filter"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="Where Are You From?"
+                    aria-autocomplete="list"
+                    aria-controls="auth-country-menu"
+                    aria-expanded="false"
+                  />
+                  <ul class="auth-dropdown-panel" id="auth-country-menu" role="listbox" hidden></ul>
+                  <input type="hidden" id="auth-phone-country" value="" />
                 </div>
-                <input
-                  type="text"
-                  id="auth-country-filter"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="Where Are You From?"
-                  aria-autocomplete="list"
-                  aria-controls="auth-country-menu"
-                  aria-expanded="false"
-                />
-                <ul class="auth-dropdown-panel" id="auth-country-menu" role="listbox" hidden></ul>
-                <input type="hidden" id="auth-phone-country" value="" />
               </div>
-            </div>
-            <div class="field">
-              <label for="auth-phone">Phone Number</label>
-              <div class="auth-phone-combined" id="auth-phone-combined">
-                <span class="auth-phone-code-display" id="auth-phone-code-display">+</span>
-                <input type="tel" id="auth-phone" autocomplete="tel-national" inputmode="numeric" pattern="[0-9\s\-()]*" maxlength="20" placeholder="Mobile Number" />
+              <div class="field">
+                <label for="auth-phone">Phone Number</label>
+                <div class="auth-phone-combined" id="auth-phone-combined">
+                  <span class="auth-phone-code-display" id="auth-phone-code-display" hidden></span>
+                  <input type="tel" id="auth-phone" autocomplete="tel-national" inputmode="numeric" pattern="[0-9\s\-()]*" maxlength="20" placeholder="Mobile Number" />
+                </div>
               </div>
             </div>
             <div class="field">
@@ -1026,12 +1168,7 @@
               <input type="text" id="auth-role-other" maxlength="60" placeholder="Liturgy Coordinator" />
             </div>
           </div>
-          <div class="auth-step" id="auth-step-2" data-step="2" hidden>
-            <div class="field">
-              <label for="auth-church-name">Church/Community Name</label>
-              <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="Gwangju Filipino Catholic Community" />
-              <p class="muted" id="auth-church-name-hint" style="margin:6px 0 0;font-size:0.8rem;color:var(--muted);" hidden>Your administrator sets the parish name on the invite link.</p>
-            </div>
+          <div class="auth-step" id="auth-step-3" data-step="3" hidden>
             <div class="field">
               <span class="field-label" id="auth-survey-label" style="display:block;font-size:0.8rem;font-weight:500;margin-bottom:5px;color:var(--ink);">How Did You Hear About LiturgyFlow?</span>
               <div class="auth-check-grid" role="group" aria-labelledby="auth-survey-label" id="auth-survey-sources">
@@ -1054,13 +1191,45 @@
       <div id="auth-credentials-fields">
         <div class="field">
           <label for="auth-email">Email</label>
-          <input type="email" id="auth-email" autocomplete="email" required maxlength="320" />
+          <input type="email" id="auth-email" autocomplete="email" required maxlength="320" placeholder="name@gmail.com" inputmode="email" />
         </div>
         <div class="field">
           <label for="auth-password">Password</label>
-          <input type="password" id="auth-password" autocomplete="{% if mode == 'sign-up' %}new-password{% else %}current-password{% endif %}" required minlength="8" maxlength="128" />
+          <div class="auth-password-wrap">
+            <input type="password" id="auth-password" autocomplete="{% if mode == 'sign-up' %}new-password{% else %}current-password{% endif %}" required minlength="8" maxlength="128" />
+            <button type="button" class="auth-password-toggle" id="auth-password-toggle" aria-label="Show password" aria-pressed="false" title="Show password">
+              <svg class="auth-password-toggle__show" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg class="auth-password-toggle__hide" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" hidden>
+                <path d="M3 3l18 18"/>
+                <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+                <path d="M9.9 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a18.3 18.3 0 0 1-2.2 3.2"/>
+                <path d="M6.1 6.1C4 7.8 2.5 10 2 12c0 0 3.5 7 10 7a10.4 10.4 0 0 0 4.2-.9"/>
+              </svg>
+            </button>
+          </div>
         </div>
         {% if mode == "sign-up" %}
+        <div class="field" id="auth-password-confirm-field">
+          <label for="auth-password-confirm">Confirm Password</label>
+          <div class="auth-password-wrap">
+            <input type="password" id="auth-password-confirm" autocomplete="new-password" required minlength="8" maxlength="128" />
+            <button type="button" class="auth-password-toggle" id="auth-password-confirm-toggle" aria-label="Show password" aria-pressed="false" title="Show password">
+              <svg class="auth-password-toggle__show" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg class="auth-password-toggle__hide" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" hidden>
+                <path d="M3 3l18 18"/>
+                <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+                <path d="M9.9 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a18.3 18.3 0 0 1-2.2 3.2"/>
+                <path d="M6.1 6.1C4 7.8 2.5 10 2 12c0 0 3.5 7 10 7a10.4 10.4 0 0 0 4.2-.9"/>
+              </svg>
+            </button>
+          </div>
+        </div>
         <label class="auth-check auth-legal-consent" id="auth-legal-consent-wrap" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0 4px;font-size:0.82rem;line-height:1.4;color:var(--muted);">
           <input type="checkbox" id="auth-privacy-consent" name="privacy_consent" required style="margin-top:3px;flex-shrink:0;" />
           <span>I agree to the <a href="/legal/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a>, and I understand I am responsible for hymn and image copyright licenses for my parish.</span>
@@ -1171,6 +1340,6 @@
   </script>
   <script src="/static/js/cookie-consent.js?v=2" defer></script>
   {% include "partials/posthog.html" %}
-  <script src="/static/js/auth-page.js?v=20260906-hcaptcha8" defer></script>
+  <script src="/static/js/auth-page.js?v=20261003-signup3b" defer></script>
 </body>
 </html>

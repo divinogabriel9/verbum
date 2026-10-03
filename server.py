@@ -1166,6 +1166,42 @@ _STATIC_DIR = _PROJECT / "static"
 _STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
+
+@app.exception_handler(Exception)
+async def _ops_unhandled_exception_handler(request: Request, exc: Exception):
+    """Alert operators on unexpected 500s.
+
+    FastAPI keeps more-specific handlers for HTTPException / validation errors;
+    this catch-all is only for truly unhandled exceptions.
+    """
+    from fastapi.exceptions import RequestValidationError
+    from fastapi.responses import JSONResponse
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+
+    # Never convert framework-handled exceptions into generic 500 alerts.
+    if isinstance(exc, RequestValidationError):
+        return JSONResponse(status_code=422, content={"detail": exc.errors()})
+    if isinstance(exc, (HTTPException, StarletteHTTPException)):
+        status = int(getattr(exc, "status_code", 500) or 500)
+        detail = getattr(exc, "detail", "Error")
+        return JSONResponse(status_code=status, content={"detail": detail})
+
+    path = str(getattr(request.url, "path", "") or "")
+    if path not in {"/health", "/favicon.ico"} and not path.startswith("/static/"):
+        try:
+            from services.admin_alerts import alert_server_crash_bg
+
+            alert_server_crash_bg(
+                path=path,
+                method=str(getattr(request, "method", "") or ""),
+                status_code=500,
+                error=f"{type(exc).__name__}: {exc}",
+            )
+        except Exception:
+            pass
+    logger.exception("Unhandled server error on %s %s", getattr(request, "method", ""), path)
+    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+
 try:
     from services.posthog_config import public_client_config as _posthog_public_config
 
@@ -3991,22 +4027,83 @@ async def api_design_analyze_template(
     return result
 
 
+def _public_billing_page_context(request: Request) -> dict[str, Any]:
+    """Shared context for landing + /pricing (billing flags + local currency)."""
+    configured = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("APP_PUBLIC_URL") or "").strip().rstrip("/")
+    public_base_url = configured or str(request.base_url).rstrip("/")
+    billing_on = False
+    try:
+        from services.stripe_billing import billing_enabled as _billing_enabled
+
+        billing_on = bool(_billing_enabled())
+    except Exception:
+        billing_on = False
+    country = ""
+    try:
+        from services.user_presence import country_from_request_headers
+
+        country = (country_from_request_headers(request.headers) or "").strip().upper()
+    except Exception:
+        country = ""
+    # Local currency from CDN country, else Accept-Language hints (no geo IP lookup).
+    accept_lang = (request.headers.get("accept-language") or "").lower()
+
+    def _lang_hints(*needles: str) -> bool:
+        for needle in needles:
+            if (
+                accept_lang.startswith(needle)
+                or f",{needle}" in accept_lang
+                or f";{needle}" in accept_lang
+            ):
+                return True
+        return False
+
+    if country == "KR" or (not country and _lang_hints("ko")):
+        pricing_currency = "krw"
+    elif country == "PH" or (not country and _lang_hints("fil", "tl", "en-ph")):
+        pricing_currency = "php"
+    elif country == "MY" or (not country and _lang_hints("ms", "en-my")):
+        pricing_currency = "myr"
+    else:
+        pricing_currency = "usd"
+    return {
+        "auth_enabled": auth_enabled(),
+        "invite_contact_email": invite_contact_email(),
+        "public_base_url": public_base_url,
+        "billing_enabled": billing_on,
+        "pricing_country": country,
+        "pricing_currency": pricing_currency,
+        **_template_version_context(),
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> Any:
     # Public marketing landing page. Signed-in visitors are bounced to /home
     # client-side (see landing.html); the app itself lives at /home and friends.
-    configured = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("APP_PUBLIC_URL") or "").strip().rstrip("/")
-    public_base_url = configured or str(request.base_url).rstrip("/")
+    ctx = _public_billing_page_context(request)
     return templates.TemplateResponse(
         request,
         "landing.html",
         {
             "title": "LiturgyFlow",
-            "auth_enabled": auth_enabled(),
-            "invite_contact_email": invite_contact_email(),
-            "public_base_url": public_base_url,
-            "canonical_url": f"{public_base_url}/",
-            **_template_version_context(),
+            "canonical_url": f"{ctx['public_base_url']}/",
+            **ctx,
+        },
+    )
+
+
+@app.get("/pricing", response_class=HTMLResponse)
+def pricing_page(request: Request) -> Any:
+    """Public parish pricing — separate from the landing hero."""
+    ctx = _public_billing_page_context(request)
+    return templates.TemplateResponse(
+        request,
+        "pricing.html",
+        {
+            "title": "Pricing · LiturgyFlow",
+            "canonical_url": f"{ctx['public_base_url']}/pricing",
+            **ctx,
         },
     )
 
@@ -5190,11 +5287,49 @@ def api_generate(
                     parish_deck_dna=parish_dna,
                 )
         except TimeoutError as exc:
+            try:
+                from services.admin_alerts import alert_mass_generate_failed_bg
+
+                alert_mass_generate_failed_bg(
+                    email=(session.user.email if session else "") or "",
+                    parish=(body.community_name or "").strip(),
+                    mass_date=body.date.strip(),
+                    error=str(exc),
+                    source="app",
+                )
+            except Exception:
+                pass
             raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except Exception as exc:
+            try:
+                from services.admin_alerts import alert_mass_generate_failed_bg
+
+                alert_mass_generate_failed_bg(
+                    email=(session.user.email if session else "") or "",
+                    parish=(body.community_name or "").strip(),
+                    mass_date=body.date.strip(),
+                    error=str(exc),
+                    source="app",
+                )
+            except Exception:
+                pass
+            raise
     finally:
         for p in temp_assets:
             p.unlink(missing_ok=True)
     if not result.ok:
+        try:
+            from services.admin_alerts import alert_mass_generate_failed_bg
+
+            alert_mass_generate_failed_bg(
+                email=(session.user.email if session else "") or "",
+                parish=(body.community_name or "").strip(),
+                mass_date=body.date.strip(),
+                error=result.error or "Generation failed.",
+                source="app",
+            )
+        except Exception:
+            pass
         raise HTTPException(status_code=400, detail=result.error or "Generation failed.")
 
     print("[generate] ppt ready — returning URLs (zip/upload in background)", flush=True)
@@ -5293,6 +5428,43 @@ def api_generate(
             "habit_snapshot": habit_snapshot,
         },
     )
+
+    try:
+        from services.admin_alerts import alert_mass_generated_bg
+
+        parish_label = (body.community_name or "").strip()
+        if not parish_label and parish_id:
+            try:
+                from services.parish_store import get_parish_by_id
+
+                parish_row = get_parish_by_id(parish_id) or {}
+                parish_label = str(
+                    parish_row.get("community_name") or parish_row.get("name") or ""
+                ).strip()
+            except Exception:
+                parish_label = ""
+        alert_mass_generated_bg(
+            email=(session.user.email if session else "") or "",
+            name=(
+                " ".join(
+                    p
+                    for p in (
+                        getattr(session.user, "first_name", "") if session else "",
+                        getattr(session.user, "last_name", "") if session else "",
+                    )
+                    if p
+                ).strip()
+                if session
+                else ""
+            ),
+            parish=parish_label,
+            mass_date=body.date.strip(),
+            slide_count=int(result.slide_count) if result.slide_count is not None else None,
+            title=str(result.title or ""),
+            source="app",
+        )
+    except Exception:
+        logger.warning("Mass generate ops alert failed", exc_info=True)
 
     out: dict[str, Any] = {
         "ok": True,

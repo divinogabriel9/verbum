@@ -819,7 +819,9 @@
       if (err.status === 429) {
         setStatus(
           err.message ||
-            "Free daily generate used. Request unlimited access to keep creating Mass decks.",
+            (billingEnabled()
+              ? "Free daily generate used. Create your church account to start a 14-day trial."
+              : "Free daily generate used. Request unlimited access to keep creating Mass decks."),
           "error"
         );
         openAccessPopup();
@@ -828,7 +830,9 @@
       if (err.status === 401 || err.status === 403) {
         saveDraft();
         setStatus(
-          "Could not generate right now. Request access for full use.",
+          billingEnabled()
+            ? "Could not generate right now. Create your church account to unlock full use."
+            : "Could not generate right now. Request access for full use.",
           "error"
         );
         openAccessPopup();
@@ -838,25 +842,50 @@
     }
   }
 
+  function billingEnabled() {
+    return !!(window.__LF_BILLING__ && window.__LF_BILLING__.enabled);
+  }
+
   function openAccessPopup() {
     var backdrop = $("lf-access-backdrop");
     if (!backdrop) return;
+    var billingBlock = $("lf-gen-access-billing");
+    var requestBlock = $("lf-gen-access-request");
     var form = $("lf-gen-access-form");
     var thanks = $("lf-gen-access-thanks");
     var errEl = $("lf-gen-access-err");
     var btn = $("lf-gen-access-submit");
-    if (form) {
-      form.hidden = false;
-      if (!form.dataset.keepValues) form.reset();
+    var title = $("lf-access-title");
+    var useBilling = billingEnabled();
+
+    if (billingBlock) billingBlock.hidden = !useBilling;
+    if (requestBlock) requestBlock.hidden = !!useBilling;
+    if (title) {
+      title.textContent = useBilling ? "Start your parish trial" : "Want unlimited generations?";
     }
-    if (thanks) thanks.hidden = true;
-    if (errEl) {
-      errEl.hidden = true;
-      errEl.textContent = "";
+
+    if (!useBilling) {
+      if (form) {
+        form.hidden = false;
+        if (!form.dataset.keepValues) form.reset();
+      }
+      if (thanks) thanks.hidden = true;
+      if (errEl) {
+        errEl.hidden = true;
+        errEl.textContent = "";
+      }
+      if (btn) btn.disabled = false;
     }
-    if (btn) btn.disabled = false;
+
     backdrop.hidden = false;
     document.body.classList.add("lf-access-open");
+    if (useBilling) {
+      var signup = $("lf-gen-access-signup");
+      if (signup) {
+        try { signup.focus(); } catch (_e) { /* ignore */ }
+      }
+      return;
+    }
     var nameEl = $("lf-gen-access-name");
     if (nameEl) {
       try { nameEl.focus(); } catch (_e) { /* ignore */ }

@@ -18928,10 +18928,25 @@
 
     function billingCurrencyPref() {
       try {
-        return (localStorage.getItem("liturgyflow.billing.currency") || "usd").toLowerCase();
-      } catch (_e) {
-        return "usd";
-      }
+        var saved = (localStorage.getItem("liturgyflow.billing.currency") || "").toLowerCase();
+        if (saved === "krw" || saved === "php" || saved === "myr" || saved === "usd") return saved;
+      } catch (_e) { /* ignore */ }
+      try {
+        var lang = (navigator.language || "").toLowerCase();
+        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+        if (lang === "ko" || lang.indexOf("ko-") === 0 || tz === "Asia/Seoul") return "krw";
+        if (
+          lang === "fil" || lang.indexOf("fil-") === 0
+          || lang === "tl" || lang.indexOf("tl-") === 0
+          || lang === "en-ph" || tz === "Asia/Manila"
+        ) return "php";
+        if (
+          lang === "ms" || lang.indexOf("ms-") === 0
+          || lang === "en-my"
+          || tz === "Asia/Kuala_Lumpur" || tz === "Asia/Kuching"
+        ) return "myr";
+      } catch (_e2) { /* ignore */ }
+      return "usd";
     }
 
     function setBillingCurrencyPref(cur) {
@@ -19024,8 +19039,16 @@
       const plans = $("settings-billing-plans");
       const hint = $("settings-billing-hint");
       const currencySel = $("settings-billing-currency");
+      const params = new URLSearchParams(window.location.search || "");
+      const planParam = (params.get("plan") || "").trim().toLowerCase();
+      const currencyParam = (params.get("currency") || "").trim().toLowerCase();
+      const autostart = params.get("autostart") === "1";
+      if (currencyParam && currencySel) {
+        currencySel.value = currencyParam;
+        setBillingCurrencyPref(currencyParam);
+      }
       if (currencySel && !currencySel.dataset.bound) {
-        currencySel.value = billingCurrencyPref();
+        if (!currencySel.value) currencySel.value = billingCurrencyPref();
         currencySel.addEventListener("change", () => {
           setBillingCurrencyPref(currencySel.value);
           loadSettingsBilling();
@@ -19039,7 +19062,6 @@
       }
 
       try {
-        const params = new URLSearchParams(window.location.search || "");
         if (params.get("checkout") === "success" && statusEl) {
           statusEl.hidden = false;
           statusEl.className = "status ok";
@@ -19091,7 +19113,23 @@
         if (plans) plans.hidden = !!billing.has_paid_access && !billing.can_start_checkout;
         renderBillingPlanList(catalog);
 
-        if (params.get("checkout") && window.history && window.history.replaceState) {
+        const canAutostart = autostart
+          && !!billing.can_start_checkout
+          && (churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin)
+          && !billingUiState._autostartDone;
+        const validIntervals = { monthly: 1, quarterly: 1, semiannual: 1, annual: 1 };
+        const startInterval = validIntervals[planParam] ? planParam : "monthly";
+        if (canAutostart) {
+          billingUiState._autostartDone = true;
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, "", "/settings/billing");
+          }
+          await startBillingCheckout(startInterval, cur);
+          return;
+        }
+
+        if ((params.get("checkout") || planParam || currencyParam || autostart)
+          && window.history && window.history.replaceState) {
           window.history.replaceState({}, "", "/settings/billing");
         }
       } catch (err) {
@@ -19303,6 +19341,7 @@
       const canFull = !!churchMembershipState.can_use_full_app;
       document.body.classList.toggle("is-superadmin", sa);
       document.body.classList.toggle("is-limited-member", !canFull);
+      if (typeof applyAppVersionLabelLocalTime === "function") applyAppVersionLabelLocalTime();
       if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
 
       const flowPage = $("flow-page");
@@ -20547,12 +20586,24 @@
     function applyAppVersionLabelLocalTime() {
       const el = $("app-version-label");
       if (!el) return;
-      // Do not surface deploy/build fingerprints in the parish UI.
-      el.hidden = true;
-      el.setAttribute("aria-hidden", "true");
-      el.textContent = "";
+      const release = (el.getAttribute("data-app-version") || "").trim()
+        || (el.textContent || "").replace(/^v\s*/i, "").split("·")[0].trim();
+      if (!release) {
+        el.hidden = true;
+        el.setAttribute("aria-hidden", "true");
+        el.textContent = "";
+        el.removeAttribute("title");
+        return;
+      }
+      // Git SHA is for superadmins only — never show deploy fingerprints to parish users.
+      const isSa = !!(churchMembershipState && churchMembershipState.is_superadmin);
+      const git = isSa ? (el.getAttribute("data-git-commit") || "").trim() : "";
+      el.textContent = git ? ("v " + release + " · " + git) : ("v " + release);
+      el.hidden = false;
+      el.setAttribute("aria-hidden", "false");
+      if (git) el.title = "Release " + release + " · git " + git;
+      else el.removeAttribute("title");
       el.removeAttribute("data-built-at");
-      el.removeAttribute("title");
     }
 
     function saFormatLocalDate(iso, fallback) {

@@ -922,8 +922,60 @@
         }
         .lf-contact-err[hidden] { display: none !important; }
 
+        .lf-hero__nav-link {
+            color: #e3beb9;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 14px;
+            border-radius: 999px;
+            transition: background 150ms cubic-bezier(0.25, 0.1, 0.25, 1), color 150ms;
+        }
+        .lf-hero__nav-link:hover { background: rgba(255, 255, 255, 0.05); color: #f9dcd8; }
+        .lf-pricing__cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+            text-decoration: none;
+            background: #a10f0d;
+            color: #ffada2;
+            font-size: 14px;
+            font-weight: 650;
+            letter-spacing: 0.04em;
+            padding: 16px 28px;
+            border-radius: 999px;
+            border: 0;
+            cursor: pointer;
+            box-shadow: 0 0 28px rgba(161, 15, 13, 0.35);
+            transition: transform 100ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 150ms;
+        }
+        .lf-pricing__cta:hover { box-shadow: 0 0 40px rgba(161, 15, 13, 0.5); }
+        .lf-pricing__cta:active { transform: scale(0.97); }
+        .lf-gen-access__billing[hidden],
+        .lf-gen-access__form[hidden],
+        .lf-gen-access__thanks[hidden] { display: none !important; }
+        .lf-gen-access__billing-actions {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .lf-gen-access__billing-actions .lf-pricing__cta { margin-top: 0; }
+        .lf-gen-access__secondary {
+            text-align: center;
+            font-size: 0.88rem;
+            color: #e3beb9;
+        }
+        .lf-gen-access__secondary a { color: #ffb4a9; }
+
+        @media (max-width: 720px) {
+            .lf-hero__nav { padding: 18px 16px; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
-            .lf-hero__cta, .lf-gen-chip, .lf-gen-theme, .lf-hero__contact, .lf-contact-submit { transition: none; }
+            .lf-hero__cta, .lf-gen-chip, .lf-gen-theme, .lf-hero__contact, .lf-contact-submit,
+            .lf-pricing__cta { transition: none; }
             .lf-gen-busy__spinner, .lf-contact-backdrop, .lf-contact-panel,
             .lf-gen-access__submit, .lf-gen-access__submit::before { animation: none; }
         }
@@ -938,6 +990,7 @@
             <span class="wordmark text-2xl"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
         </a>
         <div class="lf-hero__actions">
+            <a href="/pricing" class="lf-hero__nav-link">Pricing</a>
             <button type="button" class="lf-hero__contact" id="lf-hero-contact">Contact</button>
             <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin" id="lf-hero-signin">Sign in</a>
         </div>
@@ -1087,32 +1140,41 @@
             <button type="button" class="lf-gen-close" id="lf-access-close" aria-label="Close">×</button>
         </header>
         <div class="lf-gen-access" id="lf-gen-access">
-            <p class="lf-gen-access__hint">Your demo deck is ready. Request access for unlimited Mass decks and custom PowerPoint branding — we’ll review your request and follow up by email.</p>
-            <form class="lf-gen-access__form" id="lf-gen-access-form" novalidate>
-                <label>Name
-                    <input type="text" id="lf-gen-access-name" name="name" autocomplete="name" required maxlength="120" placeholder="Your name"/>
-                </label>
-                <label>Email
-                    <input type="email" id="lf-gen-access-email" name="email" autocomplete="email" required maxlength="320" placeholder="you@parish.org"/>
-                </label>
-                <label>Parish / church
-                    <input type="text" id="lf-gen-access-parish" name="parish" autocomplete="organization" required maxlength="240" placeholder="Parish or community name"/>
-                </label>
-                <label>Message <span style="opacity:.7">(optional)</span>
-                    <textarea id="lf-gen-access-message" name="message" maxlength="1000" placeholder="Anything we should know?"></textarea>
-                </label>
-                <label class="lf-consent-check">
-                    <input type="checkbox" id="lf-gen-access-privacy" name="privacy_consent" required/>
-                    <span>I agree to the <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/legal/terms" target="_blank" rel="noopener">Terms</a>.</span>
-                </label>
-                <p class="lf-gen-access__err" id="lf-gen-access-err" hidden></p>
-                <div class="lf-gen-access__actions">
-                    <button type="submit" class="lf-gen-access__submit" id="lf-gen-access-submit">Request access</button>
+            <div class="lf-gen-access__billing" id="lf-gen-access-billing" {% if not billing_enabled %}hidden{% endif %}>
+                <p class="lf-gen-access__hint">Your demo deck is ready. Create your church account to start a 14-day free trial — unlimited Mass decks, parish branding, and the full song library.</p>
+                <div class="lf-gen-access__billing-actions">
+                    <a class="lf-pricing__cta" id="lf-gen-access-signup" href="/sign-up?intent=billing&amp;redirect_url=%2Fsettings%2Fbilling%3Fautostart%3D1">Create church account &amp; start trial</a>
+                    <p class="lf-gen-access__secondary">Want to compare plans first? <a href="/pricing" id="lf-gen-access-see-pricing">See pricing</a></p>
                 </div>
-            </form>
-            <p class="lf-gen-access__thanks" id="lf-gen-access-thanks" hidden>
-                Thanks — we received your request. We’ll review it and email you if you’re approved.
-            </p>
+            </div>
+            <div id="lf-gen-access-request" {% if billing_enabled %}hidden{% endif %}>
+                <p class="lf-gen-access__hint">Your demo deck is ready. Request access for unlimited Mass decks and custom PowerPoint branding — we’ll review your request and follow up by email.</p>
+                <form class="lf-gen-access__form" id="lf-gen-access-form" novalidate>
+                    <label>Name
+                        <input type="text" id="lf-gen-access-name" name="name" autocomplete="name" required maxlength="120" placeholder="Your name"/>
+                    </label>
+                    <label>Email
+                        <input type="email" id="lf-gen-access-email" name="email" autocomplete="email" required maxlength="320" placeholder="you@parish.org"/>
+                    </label>
+                    <label>Parish / church
+                        <input type="text" id="lf-gen-access-parish" name="parish" autocomplete="organization" required maxlength="240" placeholder="Parish or community name"/>
+                    </label>
+                    <label>Message <span style="opacity:.7">(optional)</span>
+                        <textarea id="lf-gen-access-message" name="message" maxlength="1000" placeholder="Anything we should know?"></textarea>
+                    </label>
+                    <label class="lf-consent-check">
+                        <input type="checkbox" id="lf-gen-access-privacy" name="privacy_consent" required/>
+                        <span>I agree to the <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/legal/terms" target="_blank" rel="noopener">Terms</a>.</span>
+                    </label>
+                    <p class="lf-gen-access__err" id="lf-gen-access-err" hidden></p>
+                    <div class="lf-gen-access__actions">
+                        <button type="submit" class="lf-gen-access__submit" id="lf-gen-access-submit">Request access</button>
+                    </div>
+                </form>
+                <p class="lf-gen-access__thanks" id="lf-gen-access-thanks" hidden>
+                    Thanks — we received your request. We’ll review it and email you if you’re approved.
+                </p>
+            </div>
         </div>
     </div>
 </div>
@@ -1166,9 +1228,18 @@
     </div>
 </div>
 
+<script>
+  window.__LF_BILLING__ = {{ {
+    "enabled": billing_enabled if billing_enabled is defined else false,
+    "trial_days": 14,
+    "currency": pricing_currency if pricing_currency is defined else "usd",
+    "country": pricing_country if pricing_country is defined else ""
+  } | tojson }};
+</script>
 <script src="/static/js/cookie-consent.js?v=2" defer></script>
 {% include "partials/posthog.html" %}
-<script src="/static/js/landing-generate.js?v=17"></script>
+<script src="/static/js/landing-generate.js?v=18"></script>
+<script src="/static/js/landing-pricing.js?v=5"></script>
 <script>
   (function () {
     try {
@@ -1181,6 +1252,7 @@
         }
       }
       if (!hasSession) return;
+      window.__LF_SIGNED_IN__ = true;
       var link = document.getElementById("lf-hero-signin");
       if (link) {
         link.href = "/home";

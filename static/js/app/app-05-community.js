@@ -2683,6 +2683,7 @@
       const canFull = !!churchMembershipState.can_use_full_app;
       document.body.classList.toggle("is-superadmin", sa);
       document.body.classList.toggle("is-limited-member", !canFull);
+      if (typeof applyAppVersionLabelLocalTime === "function") applyAppVersionLabelLocalTime();
       if (typeof refreshMassSectionMediaUi === "function") refreshMassSectionMediaUi();
 
       const flowPage = $("flow-page");
@@ -3923,12 +3924,24 @@
     function applyAppVersionLabelLocalTime() {
       const el = $("app-version-label");
       if (!el) return;
-      // Do not surface deploy/build fingerprints in the parish UI.
-      el.hidden = true;
-      el.setAttribute("aria-hidden", "true");
-      el.textContent = "";
+      const release = (el.getAttribute("data-app-version") || "").trim()
+        || (el.textContent || "").replace(/^v\s*/i, "").split("·")[0].trim();
+      if (!release) {
+        el.hidden = true;
+        el.setAttribute("aria-hidden", "true");
+        el.textContent = "";
+        el.removeAttribute("title");
+        return;
+      }
+      // Git SHA is for superadmins only — never show deploy fingerprints to parish users.
+      const isSa = !!(churchMembershipState && churchMembershipState.is_superadmin);
+      const git = isSa ? (el.getAttribute("data-git-commit") || "").trim() : "";
+      el.textContent = git ? ("v " + release + " · " + git) : ("v " + release);
+      el.hidden = false;
+      el.setAttribute("aria-hidden", "false");
+      if (git) el.title = "Release " + release + " · git " + git;
+      else el.removeAttribute("title");
       el.removeAttribute("data-built-at");
-      el.removeAttribute("title");
     }
 
     function saFormatLocalDate(iso, fallback) {

@@ -1,8 +1,18 @@
-"""Resolve deploy / git version for health checks and UI."""
+"""Resolve product release version plus deploy/git identity for health and UI.
+
+Product versioning (file: VERSION at repo root):
+  - Format: MAJOR.MINOR starting at 1.0 (e.g. 1.0, 1.1, 2.0)
+  - Minor bump (1.0 → 1.1): incremental / non-breaking updates
+  - Major bump (1.x → 2.0): only when explicitly requested as a major update
+
+APP_VERSION env may override the VERSION file when it looks like MAJOR.MINOR.
+Git SHAs remain separate (git_commit*) and are not used as the public label.
+"""
 
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -10,8 +20,10 @@ from pathlib import Path
 from typing import Any
 
 _PROJECT = Path(__file__).resolve().parents[1]
+_VERSION_FILE = _PROJECT / "VERSION"
 _BUILD_VERSION_FILE = _PROJECT / ".build-version"
 _BUILD_TIME_FILE = _PROJECT / ".build-time"
+_RELEASE_RE = re.compile(r"^\d+\.\d+$")
 
 
 def _clean(value: str | None) -> str:
@@ -33,6 +45,21 @@ def _read_first_line(path: Path) -> str:
         return _clean(text.splitlines()[0] if text else "")
     except OSError:
         return ""
+
+
+def _is_release_version(value: str) -> bool:
+    return bool(_RELEASE_RE.match(_clean(value)))
+
+
+def _resolve_release_version() -> tuple[str, str]:
+    """Return (MAJOR.MINOR, source). Defaults to 1.0 if nothing is set."""
+    env_ver = _clean(os.environ.get("APP_VERSION"))
+    if _is_release_version(env_ver):
+        return env_ver, "app_version"
+    file_ver = _read_first_line(_VERSION_FILE)
+    if _is_release_version(file_ver):
+        return file_ver, "version_file"
+    return "1.0", "fallback"
 
 
 def _git_output(*args: str) -> str:
@@ -105,51 +132,47 @@ def _resolve_built_at() -> tuple[str, str]:
 @lru_cache(maxsize=1)
 def get_version_info() -> dict[str, Any]:
     """Return version fields for the running process (stable per deploy)."""
-    explicit = _clean(os.environ.get("APP_VERSION"))
+    release, release_source = _resolve_release_version()
+
+    env_ver = _clean(os.environ.get("APP_VERSION"))
+    # Legacy: APP_VERSION sometimes held a commit SHA instead of a release label.
+    legacy_sha = env_ver if env_ver and not _is_release_version(env_ver) else ""
+
     commit = (
         _clean(os.environ.get("RENDER_GIT_COMMIT"))
         or _clean(os.environ.get("GIT_COMMIT"))
         or _clean(os.environ.get("SOURCE_VERSION"))
         or _read_first_line(_BUILD_VERSION_FILE)
+        or legacy_sha
         or _git_output("rev-parse", "HEAD")
     )
-    if not commit and explicit:
-        # APP_VERSION alone may be a commit SHA from an older deploy setup.
-        commit = explicit
 
     short = _short_sha(commit)
     branch = _clean(os.environ.get("RENDER_GIT_BRANCH")) or _clean(os.environ.get("GIT_BRANCH"))
 
-    if explicit and short and explicit.lower() not in {commit.lower(), short.lower()}:
-        label = f"{explicit} ({short})"
-    elif explicit:
-        label = explicit
-    elif short:
-        label = short
-    else:
-        label = "dev"
-
     if _clean(os.environ.get("RENDER_GIT_COMMIT")):
-        source = "render"
-    elif explicit:
-        source = "app_version"
+        commit_source = "render"
+    elif legacy_sha:
+        commit_source = "app_version"
     elif _read_first_line(_BUILD_VERSION_FILE):
-        source = "build_file"
+        commit_source = "build_file"
     elif short:
-        source = "git"
+        commit_source = "git"
     else:
-        source = "fallback"
+        commit_source = "fallback"
 
     built_at, built_at_source = _resolve_built_at()
     built_at_display = _format_display(built_at) if built_at else ""
 
     return {
-        "version": label,
-        "app_version": explicit or label,
+        "version": release,
+        "app_version": release,
+        "release_source": release_source,
         "git_commit": commit or None,
         "git_commit_short": short or None,
         "git_branch": branch or None,
-        "source": source,
+        "source": release_source,
+        "commit_source": commit_source,
         "built_at": built_at or None,
         "built_at_display": built_at_display or None,
         "built_at_source": built_at_source or None,
@@ -157,4 +180,4 @@ def get_version_info() -> dict[str, Any]:
 
 
 def get_app_version() -> str:
-    return str(get_version_info().get("version") or "dev")
+    return str(get_version_info().get("version") or "1.0")

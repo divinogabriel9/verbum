@@ -357,7 +357,7 @@
                     <span class="vb-dropdown-item__label">Sign out</span>
                   </button>
                 </div>
-                <p class="account-menu-version" id="app-version-label" hidden aria-hidden="true"></p>
+                <p class="account-menu-version" id="app-version-label" data-app-version="{{ app_version or '' }}" data-git-commit="{{ git_commit_short or '' }}"{% if app_version %}{% else %} hidden aria-hidden="true"{% endif %}>{% if app_version %}v {{ app_version }}{% endif %}</p>
               </div>
             </div>
           </div>
@@ -4228,9 +4228,9 @@
                 <label for="settings-billing-currency">Currency</label>
                 <select id="settings-billing-currency" aria-label="Billing currency">
                   <option value="usd">USD</option>
+                  <option value="krw">KRW</option>
                   <option value="php">PHP</option>
                   <option value="myr">MYR</option>
-                  <option value="krw">KRW</option>
                 </select>
                 <p class="muted" style="margin:8px 0 12px;font-size:0.85rem;">All plans include a 14-day trial. You’ll enter a payment method at checkout; you won’t be charged until the trial ends.</p>
                 <div id="settings-billing-plan-list" class="settings-billing-plan-list" role="list"></div>

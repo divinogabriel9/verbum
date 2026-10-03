@@ -450,15 +450,31 @@ def process_webhook_event(event: Any) -> dict[str, Any]:
     etype = _clean(getattr(event, "type", None))
     data_object = getattr(getattr(event, "data", None), "object", None)
     parish_id: Optional[str] = None
+    status = ""
+    customer_email = ""
+    amount_label = ""
 
     if etype == "checkout.session.completed":
         parish_id = handle_checkout_session_completed(data_object)
+        status = _clean(getattr(data_object, "payment_status", None)) or "completed"
+        details = getattr(data_object, "customer_details", None)
+        customer_email = _clean(getattr(details, "email", None) if details is not None else None)
+        if not customer_email:
+            customer_email = _clean(getattr(data_object, "customer_email", None))
+        amount_total = getattr(data_object, "amount_total", None)
+        currency = _clean(getattr(data_object, "currency", None)).upper()
+        if amount_total is not None:
+            try:
+                amount_label = f"{currency} {float(amount_total) / 100:.2f}".strip()
+            except Exception:
+                amount_label = str(amount_total)
     elif etype in {
         "customer.subscription.created",
         "customer.subscription.updated",
         "customer.subscription.deleted",
     }:
         parish_id = sync_subscription_object(data_object)
+        status = _clean(getattr(data_object, "status", None))
     elif etype in {"invoice.paid", "invoice.payment_failed"}:
         subscription = getattr(data_object, "subscription", None)
         if hasattr(subscription, "id"):
@@ -467,7 +483,46 @@ def process_webhook_event(event: Any) -> dict[str, Any]:
             client = get_stripe_client()
             sub = client.v1.subscriptions.retrieve(str(subscription))
             parish_id = sync_subscription_object(sub)
+            status = _clean(getattr(sub, "status", None))
+        customer_email = _clean(getattr(data_object, "customer_email", None))
+        amount_paid = getattr(data_object, "amount_paid", None)
+        currency = _clean(getattr(data_object, "currency", None)).upper()
+        if amount_paid is not None:
+            try:
+                amount_label = f"{currency} {float(amount_paid) / 100:.2f}".strip()
+            except Exception:
+                amount_label = str(amount_paid)
+        if not status:
+            status = "paid" if etype == "invoice.paid" else "payment_failed"
     else:
         logger.info("Ignoring Stripe event type %s", etype)
+        return {"ok": True, "type": etype, "parish_id": parish_id}
+
+    if etype in {
+        "checkout.session.completed",
+        "customer.subscription.created",
+        "customer.subscription.updated",
+        "customer.subscription.deleted",
+        "invoice.paid",
+        "invoice.payment_failed",
+    }:
+        try:
+            from services.admin_alerts import alert_payment_event_bg
+            from services.parish_store import get_parish_by_id
+
+            parish_name = ""
+            if parish_id:
+                parish = get_parish_by_id(parish_id) or {}
+                parish_name = str(parish.get("community_name") or parish.get("name") or "").strip()
+            alert_payment_event_bg(
+                event_type=etype,
+                parish=parish_name,
+                parish_id=parish_id or "",
+                status=status,
+                email=customer_email,
+                amount_label=amount_label,
+            )
+        except Exception:
+            logger.warning("Payment ops alert failed", exc_info=True)
 
     return {"ok": True, "type": etype, "parish_id": parish_id}

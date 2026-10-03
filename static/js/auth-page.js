@@ -544,8 +544,13 @@
           if (intent === "practice-lyrics") {
             next.pathname = "/mass/builder";
           }
-          // Email CTAs already have a destination — skip the mobile welcome popup.
-          if (intent !== "practice-share" && intent !== "generate" && intent !== "practice-lyrics") {
+          // Email / billing CTAs already have a destination — skip the mobile welcome popup.
+          if (
+            intent !== "practice-share" &&
+            intent !== "generate" &&
+            intent !== "practice-lyrics" &&
+            intent !== "billing"
+          ) {
             next.searchParams.set("welcome", "1");
           }
           return next.pathname + next.search + next.hash;
@@ -571,7 +576,18 @@
         try {
           const next = new URL(dest, window.location.origin);
           const intent = (next.searchParams.get("intent") || "").trim().toLowerCase();
-          if (intent !== "practice-share" && intent !== "generate" && intent !== "practice-lyrics") {
+          const signupIntent = (
+            new URLSearchParams(window.location.search).get("intent") || ""
+          )
+            .trim()
+            .toLowerCase();
+          if (
+            intent !== "practice-share" &&
+            intent !== "generate" &&
+            intent !== "practice-lyrics" &&
+            intent !== "billing" &&
+            signupIntent !== "billing"
+          ) {
             setMobileWelcomePending();
           }
         } catch (_e) {
@@ -619,12 +635,11 @@
             if (opt) setSelectedCountry(opt);
             else {
               const hidden = $("auth-phone-country");
-              const display = $("auth-phone-code-display");
               if (hidden) hidden.value = parsed.country;
-              if (display) display.textContent = parsed.country;
             }
           }
           if (phone && !phone.value) phone.value = parsed.national;
+          syncPhoneCodeDisplay();
         }
         setRoleOtherVisibility();
         if (churchInput && !churchInput.value) {
@@ -777,16 +792,36 @@
         return bestScore > 0 ? best : null;
       }
 
-      function applyCountryDial(opt) {
+      function syncPhoneCodeDisplay() {
         const hidden = $("auth-phone-country");
         const display = $("auth-phone-code-display");
+        const phone = $("auth-phone");
+        if (!display) return;
+        const code = String((hidden && hidden.value) || "").trim();
+        const hasDigits = !!(phone && String(phone.value || "").replace(/\D/g, ""));
+        if (code) {
+          display.textContent = code;
+          display.hidden = false;
+          return;
+        }
+        if (hasDigits) {
+          display.textContent = "+";
+          display.hidden = false;
+          return;
+        }
+        display.textContent = "";
+        display.hidden = true;
+      }
+
+      function applyCountryDial(opt) {
+        const hidden = $("auth-phone-country");
         if (!opt) {
           if (hidden) hidden.value = "";
-          if (display) display.textContent = "+";
+          syncPhoneCodeDisplay();
           return;
         }
         if (hidden) hidden.value = opt.code;
-        if (display) display.textContent = opt.code;
+        syncPhoneCodeDisplay();
       }
 
       function showCountryChip(opt) {
@@ -962,15 +997,15 @@
       function applyDefaultPhoneCountry() {
         /* Do not auto-select a country — user must choose one. */
         const hidden = $("auth-phone-country");
-        const display = $("auth-phone-code-display");
         if (hidden && !(hidden.value || "").trim()) {
-          if (display) display.textContent = "+";
+          syncPhoneCodeDisplay();
           hideCountryChip();
           const filter = $("auth-country-filter");
           if (filter) filter.value = "";
         } else if (hidden && (hidden.value || "").trim()) {
           const existing = countryByCode(hidden.value);
           if (existing) setSelectedCountry(existing);
+          else syncPhoneCodeDisplay();
         }
       }
 
@@ -981,6 +1016,7 @@
         phone.addEventListener("input", function () {
           const cleaned = phone.value.replace(/[^\d\s\-()]/g, "");
           if (cleaned !== phone.value) phone.value = cleaned;
+          syncPhoneCodeDisplay();
         });
         phone.addEventListener("keypress", function (e) {
           if (e.ctrlKey || e.metaKey || e.altKey || !e.key || e.key.length !== 1) return;
@@ -1213,17 +1249,36 @@
         return /^[\p{L}][\p{L}\s'\-.]*$/u.test(clean);
       }
 
+      function isAllowedSignupEmail(email) {
+        const value = String(email || "").trim().toLowerCase();
+        if (!value || value.indexOf("@") < 0) return false;
+        // Must be a real address: local@domain.tld (gmail or any other @domain).
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return false;
+        const domain = value.split("@").pop() || "";
+        if (domain === "gmail.com" || domain === "googlemail.com") return true;
+        return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(domain);
+      }
+
       let signupStep = 1;
       let stepAnimating = false;
+
+      function stepEl(n) {
+        return $("auth-step-" + n);
+      }
+
+      function clampSignupStep(step) {
+        const n = Number(step) || 1;
+        if (n <= 1) return 1;
+        if (n >= 3) return 3;
+        return 2;
+      }
 
       function lockStepsHeight() {
         const stage = $("auth-form-stage");
         const wrap = $("auth-steps");
-        const step1 = $("auth-step-1");
-        const step2 = $("auth-step-2");
         if (stage) stage.style.minHeight = "";
         if (!wrap) return;
-        const active = signupStep === 2 ? step2 : step1;
+        const active = stepEl(signupStep);
         if (!active || active.hidden) {
           wrap.style.minHeight = "";
           return;
@@ -1257,63 +1312,57 @@
           stepNav.hidden = false;
           stepNav.classList.toggle("is-step1", signupStep === 1);
         }
-        if (backBtn) backBtn.hidden = signupStep !== 2;
-        if (nextBtn) nextBtn.hidden = signupStep !== 1;
+        if (backBtn) backBtn.hidden = signupStep === 1;
+        if (nextBtn) nextBtn.hidden = signupStep === 3;
         if (submitBtn) {
-          submitBtn.hidden = signupStep !== 2;
+          submitBtn.hidden = signupStep !== 3;
           submitBtn.textContent = onboardingMode ? "Complete signup" : "Create account";
         }
         if (creds) {
           if (onboardingMode) creds.hidden = true;
-          else creds.hidden = signupStep !== 2;
+          else creds.hidden = signupStep !== 1;
         }
       }
 
       function setSignupStep(step, options) {
         const opts = options || {};
-        const next = step === 2 ? 2 : 1;
-        const step1 = $("auth-step-1");
-        const step2 = $("auth-step-2");
+        const next = clampSignupStep(step);
         const onboardingMode = form && form.dataset.onboardingMode === "1";
         const multiStep = mode === "sign-up" || onboardingMode;
         const animate = !!opts.animate && multiStep && !stepAnimating && signupStep !== next;
 
+        function paintSteps(activeStep) {
+          [1, 2, 3].forEach(function (n) {
+            const el = stepEl(n);
+            if (!el) return;
+            const on = activeStep === n;
+            el.hidden = !on;
+            el.classList.toggle("is-active", on);
+            el.classList.remove("is-animating", "is-leave-next", "is-leave-back", "is-enter-next", "is-enter-back");
+          });
+        }
+
         if (!multiStep) {
           signupStep = 1;
-          if (step1) {
-            step1.hidden = true;
-            step1.classList.remove("is-active");
-          }
-          if (step2) {
-            step2.hidden = true;
-            step2.classList.remove("is-active");
-          }
+          paintSteps(0);
           applyStepChrome();
           return;
         }
 
         if (!animate) {
           signupStep = next;
-          if (step1) {
-            step1.hidden = signupStep !== 1;
-            step1.classList.toggle("is-active", signupStep === 1);
-            step1.classList.remove("is-animating", "is-leave-next", "is-leave-back", "is-enter-next", "is-enter-back");
-          }
-          if (step2) {
-            step2.hidden = signupStep !== 2;
-            step2.classList.toggle("is-active", signupStep === 2);
-            step2.classList.remove("is-animating", "is-leave-next", "is-leave-back", "is-enter-next", "is-enter-back");
-          }
+          paintSteps(signupStep);
           applyStepChrome();
           lockStepsHeight();
           return;
         }
 
         const from = signupStep;
-        const leaving = from === 1 ? step1 : step2;
-        const entering = next === 1 ? step1 : step2;
+        const leaving = stepEl(from);
+        const entering = stepEl(next);
         if (!leaving || !entering) {
           signupStep = next;
+          paintSteps(signupStep);
           applyStepChrome();
           return;
         }
@@ -1392,7 +1441,61 @@
         } catch (_e2) { /* ignore */ }
       }
 
+      function validateCredentialsFields(opts) {
+        const options = opts || {};
+        if (!options.skipClear) clearFieldErrors();
+        let firstMsg = "";
+        function fail(id, msg) {
+          setFieldError(id, msg);
+          if (!firstMsg) firstMsg = msg;
+        }
+        const email = ($("auth-email") && $("auth-email").value.trim()) || "";
+        const password = ($("auth-password") && $("auth-password").value) || "";
+        const confirm = ($("auth-password-confirm") && $("auth-password-confirm").value) || "";
+        if (!email) fail("auth-email", "Email is required.");
+        else if (!isAllowedSignupEmail(email)) {
+          fail("auth-email", "Use a Gmail address (@gmail.com) or another valid email with @.");
+        }
+        if (!password) fail("auth-password", "Password is required.");
+        else if (password.length < 8) fail("auth-password", "Password must be at least 8 characters.");
+        if ($("auth-password-confirm")) {
+          if (!confirm) fail("auth-password-confirm", "Please confirm your password.");
+          else if (password && confirm !== password) {
+            fail("auth-password-confirm", "Passwords do not match.");
+          }
+        }
+        if (firstMsg && !options.skipFocus) focusFirstInvalid();
+        return firstMsg;
+      }
+
       function validateStep1(opts) {
+        const options = opts || {};
+        if (!options.skipClear) clearFieldErrors();
+        const details = collectSignupDetails();
+        const onboardingMode = form && form.dataset.onboardingMode === "1";
+        let firstMsg = "";
+        function fail(id, msg) {
+          setFieldError(id, msg);
+          if (!firstMsg) firstMsg = msg;
+        }
+        if (!details.churchName || details.churchName.length < 2) {
+          fail("auth-church-name", "Church/Community Name is required.");
+        }
+        if (!onboardingMode && mode === "sign-up") {
+          const credErr = validateCredentialsFields({ skipClear: true, skipFocus: true });
+          if (credErr && !firstMsg) firstMsg = credErr;
+          const consent = $("auth-privacy-consent");
+          if (consent && !consent.checked) {
+            showError("Please agree to the Terms of Service and Privacy Policy to create an account.");
+            if (!firstMsg) firstMsg = "Please agree to the Terms of Service and Privacy Policy.";
+            try { consent.focus(); } catch (_e) {}
+          }
+        }
+        if (firstMsg && !options.skipFocus) focusFirstInvalid();
+        return firstMsg;
+      }
+
+      function validateStep2(opts) {
         const options = opts || {};
         if (!options.skipClear) clearFieldErrors();
         const details = collectSignupDetails();
@@ -1420,7 +1523,7 @@
         return firstMsg;
       }
 
-      function validateStep2(opts) {
+      function validateStep3(opts) {
         const options = opts || {};
         if (!options.skipClear) clearFieldErrors();
         const details = collectSignupDetails();
@@ -1428,9 +1531,6 @@
         function fail(id, msg) {
           setFieldError(id, msg);
           if (!firstMsg) firstMsg = msg;
-        }
-        if (!details.churchName || details.churchName.length < 2) {
-          fail("auth-church-name", "Church/Community Name is required.");
         }
         if (!details.surveySources.length) {
           fail("auth-survey-sources", "Please tell us how you heard about LiturgyFlow.");
@@ -1442,6 +1542,29 @@
         return firstMsg;
       }
 
+      function bindPasswordToggles() {
+        [
+          ["auth-password-toggle", "auth-password"],
+          ["auth-password-confirm-toggle", "auth-password-confirm"],
+        ].forEach(function (pair) {
+          const btn = $(pair[0]);
+          const input = $(pair[1]);
+          if (!btn || !input || btn.dataset.bound) return;
+          btn.dataset.bound = "1";
+          btn.addEventListener("click", function () {
+            const show = input.type === "password";
+            input.type = show ? "text" : "password";
+            btn.setAttribute("aria-pressed", show ? "true" : "false");
+            btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+            btn.title = show ? "Hide password" : "Show password";
+            const iconShow = btn.querySelector(".auth-password-toggle__show");
+            const iconHide = btn.querySelector(".auth-password-toggle__hide");
+            if (iconShow) iconShow.hidden = show;
+            if (iconHide) iconHide.hidden = !show;
+          });
+        });
+      }
+
       function bindStepNav() {
         const nextBtn = $("auth-step-next");
         const backBtn = $("auth-step-back");
@@ -1449,9 +1572,18 @@
           nextBtn.dataset.bound = "1";
           nextBtn.addEventListener("click", function () {
             showError("");
-            const err = validateStep1();
-            if (err) return;
-            setSignupStep(2, { animate: true });
+            if (signupStep === 1) {
+              const err = validateStep1();
+              if (err) return;
+              setSignupStep(2, { animate: true });
+              return;
+            }
+            if (signupStep === 2) {
+              const err = validateStep2();
+              if (err) return;
+              setSignupStep(3, { animate: true });
+              return;
+            }
           });
         }
         if (backBtn && !backBtn.dataset.bound) {
@@ -1459,7 +1591,8 @@
           backBtn.addEventListener("click", function () {
             showError("");
             clearFieldErrors();
-            setSignupStep(1, { animate: true });
+            if (signupStep <= 1) return;
+            setSignupStep(signupStep - 1, { animate: true });
           });
         }
         bindPhoneCountryInput();
@@ -1467,8 +1600,9 @@
         bindRoleSelect();
         bindSurveyChecks();
         bindLetterOnlyNames();
+        bindPasswordToggles();
         setRoleOtherVisibility();
-        ["auth-first-name", "auth-middle-name", "auth-last-name", "auth-phone", "auth-role-other", "auth-church-name", "auth-survey-other", "auth-country-filter"].forEach(function (id) {
+        ["auth-first-name", "auth-middle-name", "auth-last-name", "auth-phone", "auth-role-other", "auth-church-name", "auth-survey-other", "auth-country-filter", "auth-password", "auth-password-confirm", "auth-email"].forEach(function (id) {
           const el = $(id);
           if (!el || el.dataset.clearErrBound) return;
           el.dataset.clearErrBound = "1";
@@ -1559,7 +1693,8 @@
         clearFieldErrors();
         const e1 = validateStep1({ skipClear: true, skipFocus: true });
         const e2 = validateStep2({ skipClear: true, skipFocus: true });
-        const msg = e1 || e2;
+        const e3 = validateStep3({ skipClear: true, skipFocus: true });
+        const msg = e1 || e2 || e3;
         if (msg) focusFirstInvalid();
         return msg;
       }
@@ -1830,6 +1965,17 @@
           bindStepNav();
           setSignupStep(1);
           lockStepsHeight();
+          try {
+            const signupIntent = (
+              new URLSearchParams(window.location.search).get("intent") || ""
+            )
+              .trim()
+              .toLowerCase();
+            const subtitleEl = $("auth-subtitle");
+            if (signupIntent === "billing" && subtitleEl) {
+              subtitleEl.textContent = "Register your church, then start your free trial.";
+            }
+          } catch (_intentErr) { /* ignore */ }
         } else {
           setSignupStep(1);
         }
@@ -1842,6 +1988,7 @@
         }
 
         bindOAuthButtons();
+        bindPasswordToggles();
       }
 
       function setAuthSubmitting(busy) {
@@ -1907,10 +2054,16 @@
               form.addEventListener("submit", async (e) => {
                 e.preventDefault();
                 showError("");
-                if (signupStep !== 2) {
+                if (signupStep === 1) {
                   const err = validateStep1();
                   if (err) return;
                   setSignupStep(2);
+                  return;
+                }
+                if (signupStep === 2) {
+                  const err = validateStep2();
+                  if (err) return;
+                  setSignupStep(3);
                   return;
                 }
                 const details = collectSignupDetails();
@@ -2018,10 +2171,16 @@
           const onboardingMode = form.dataset.onboardingMode === "1";
 
           if (onboardingMode || mode === "sign-up") {
-            if (signupStep !== 2) {
+            if (signupStep === 1) {
               const err = validateStep1();
               if (err) return;
               setSignupStep(2, { animate: true });
+              return;
+            }
+            if (signupStep === 2) {
+              const err = validateStep2();
+              if (err) return;
+              setSignupStep(3, { animate: true });
               return;
             }
             const detailErr = validateSignupDetails(details);
@@ -2057,13 +2216,18 @@
             return;
           }
 
-          if (!email || !password) {
-            showError("Email and password are required.");
-            return;
-          }
-          if (password.length < 8) {
-            showError("Password must be at least 8 characters.");
-            return;
+          if (mode === "sign-up") {
+            const credErr = validateCredentialsFields({ skipClear: true });
+            if (credErr) return;
+          } else {
+            if (!email || !password) {
+              showError("Email and password are required.");
+              return;
+            }
+            if (password.length < 8) {
+              showError("Password must be at least 8 characters.");
+              return;
+            }
           }
           if (mode === "sign-up" && inviteOnly && !inviteToken) {
             showError("A valid invitation link is required to create an account.");

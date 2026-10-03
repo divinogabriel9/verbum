@@ -218,10 +218,54 @@ def record_heartbeat(
     try:
         from services.supabase_client import get_service_client
 
-        get_service_client().table("profiles").update(patch).eq("id", uid).execute()
+        client = get_service_client()
+        prior = (
+            client.table("profiles")
+            .select("email, first_name, last_name, last_seen_at")
+            .eq("id", uid)
+            .limit(1)
+            .execute()
+        )
+        prior_row = (prior.data or [None])[0] or {}
+        client.table("profiles").update(patch).eq("id", uid).execute()
     except Exception as exc:
         logger.warning("presence heartbeat failed for %s: %s", uid, exc)
         return {"ok": False, "error": str(exc)[:120]}
+
+    try:
+        previous_seen = prior_row.get("last_seen_at")
+        should_alert = True
+        if previous_seen:
+            try:
+                prev_dt = datetime.fromisoformat(str(previous_seen).replace("Z", "+00:00"))
+                if prev_dt.tzinfo is None:
+                    prev_dt = prev_dt.replace(tzinfo=timezone.utc)
+                # Treat a fresh heartbeat after being gone 45+ minutes as a login/session resume.
+                should_alert = (now - prev_dt).total_seconds() >= 45 * 60
+            except Exception:
+                should_alert = True
+        if should_alert:
+            from services.admin_alerts import alert_user_login_bg
+
+            parish_name = ""
+            try:
+                from services.parish_store import get_user_parish_context
+
+                ctx = get_user_parish_context(uid)
+                parish_name = str((ctx or {}).get("community_name") or "").strip()
+            except Exception:
+                parish_name = ""
+            first = str(prior_row.get("first_name") or "").strip()
+            last = str(prior_row.get("last_name") or "").strip()
+            alert_user_login_bg(
+                user_id=uid,
+                email=str(prior_row.get("email") or "").strip(),
+                name=" ".join(p for p in (first, last) if p).strip(),
+                parish=parish_name,
+                country=country_n or "",
+            )
+    except Exception as exc:
+        logger.warning("login alert failed for %s: %s", uid, exc)
 
     return {
         "ok": True,

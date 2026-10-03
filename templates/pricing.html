@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pricing · LiturgyFlow</title>
+<meta name="application-name" content="LiturgyFlow"/>
+<meta property="og:site_name" content="LiturgyFlow"/>
+<meta property="og:title" content="LiturgyFlow Pricing"/>
+<meta property="og:type" content="website"/>
+{% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}"/>
+<meta property="og:url" content="{{ canonical_url }}"/>{% endif %}
+<link rel="icon" type="image/png" href="/static/brand/favicon-search-48x48.png?v=7" sizes="48x48"/>
+<link rel="icon" type="image/png" href="/static/brand/favicon-search-192x192.png?v=7" sizes="192x192"/>
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png?v=6"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&amp;family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500;1,600&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/static/css/landing.css?v=2"/>
+<link rel="stylesheet" href="/static/css/cookie-consent.css?v=1"/>
+<style>
+  :root { --ease-out: cubic-bezier(0.23, 1, 0.32, 1); }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: #1e100e;
+    color: #f9dcd8;
+  }
+  .wordmark { display: inline-flex; align-items: baseline; line-height: 1; white-space: nowrap; transform: translateX(-0.065em); letter-spacing: 0; }
+  .wordmark__liturgy { font-family: "Times New Roman", Times, "Liberation Serif", serif; font-weight: 400; font-style: normal; color: #F5F5F7; letter-spacing: -0.02em; }
+  .wordmark__flow { font-family: "Playfair Display", Georgia, serif; font-weight: 500; font-style: italic; color: #ffb4a9; margin-left: -0.16em; font-size: 1.08em; letter-spacing: -0.03em; transform: translateY(0.02em); }
+  ::selection { background: #a10f0d; color: #fff; }
+
+  .lf-page {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(161, 15, 13, 0.22) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 80% 100%, rgba(255, 180, 169, 0.08) 0%, transparent 50%),
+      #1e100e;
+  }
+
+  /* Match landing hero chrome */
+  .lf-hero__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 40px;
+    max-width: 1440px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+  .lf-hero__brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .lf-hero__brand img { width: 32px; height: 32px; border-radius: 8px; }
+  .lf-hero__actions { display: flex; align-items: center; gap: 4px; }
+  .lf-hero__nav-link {
+    color: #e3beb9;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 999px;
+    transition: background 150ms cubic-bezier(0.25, 0.1, 0.25, 1), color 150ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .lf-hero__nav-link:hover { background: rgba(255, 255, 255, 0.05); color: #f9dcd8; }
+  .lf-hero__nav-link.is-active { color: #ffb4a9; }
+  .lf-hero__signin {
+    color: #f9dcd8;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border: 1px solid rgba(170, 137, 132, 0.35);
+    border-radius: 999px;
+    transition: background 0.2s;
+  }
+  .lf-hero__signin:hover { background: rgba(255, 255, 255, 0.05); }
+
+  .lf-pricing {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0 40px;
+  }
+  .lf-pricing__inner {
+    flex: 1;
+    min-height: 0;
+    max-width: 1180px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 28px;
+    padding-bottom: 8px;
+  }
+  .lf-pricing__head { text-align: center; flex-shrink: 0; }
+  .lf-pricing__kicker {
+    margin: 0 0 16px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #ffb4a9;
+    font-weight: 500;
+  }
+  .lf-pricing__title {
+    margin: 0;
+    font-size: clamp(2rem, 5.5vw, 3.25rem);
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #f9dcd8;
+  }
+
+  /* Free | Plans (center) | Premium */
+  .lf-pricing__grid {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+  @media (min-width: 960px) {
+    .lf-pricing__grid {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
+      gap: 28px;
+      align-items: center;
+    }
+  }
+
+  .lf-pricing__tier,
+  .lf-pricing__plans-wrap {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .lf-pricing__tier {
+    position: relative;
+    z-index: 0;
+    padding: 20px 18px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 180, 169, 0.12);
+    background: rgba(0, 0, 0, 0.14);
+    transform: translateY(0) scale(1);
+    transform-origin: center center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition:
+      transform 320ms cubic-bezier(0.25, 0.1, 0.25, 1),
+      box-shadow 320ms cubic-bezier(0.25, 0.1, 0.25, 1),
+      border-color 160ms cubic-bezier(0.25, 0.1, 0.25, 1),
+      background 160ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .lf-pricing__tier:hover {
+    z-index: 2;
+    transform: translateY(-4px) scale(1.006);
+    border-color: rgba(255, 180, 169, 0.28);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14), 0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+  .lf-pricing__tier:active {
+    transform: translateY(-2px) scale(0.992);
+    transition-duration: 120ms;
+  }
+  .lf-pricing__tier--premium {
+    border-color: rgba(161, 15, 13, 0.4);
+    background: rgba(161, 15, 13, 0.12);
+  }
+  .lf-pricing__tier--premium:hover {
+    border-color: rgba(161, 15, 13, 0.65);
+    box-shadow: 0 2px 4px rgba(161, 15, 13, 0.18), 0 14px 32px rgba(161, 15, 13, 0.28);
+  }
+  .lf-pricing__tier h2,
+  .lf-pricing__plans-head h2 {
+    margin: 0 0 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #ffb4a9;
+  }
+  .lf-pricing__tier-price {
+    margin: -6px 0 14px;
+    font-size: 0.9rem;
+    color: #e3beb9;
+  }
+  .lf-pricing__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+  .lf-pricing__list li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 0.88rem;
+    line-height: 1.35;
+    color: #f9dcd8;
+  }
+  .lf-pricing__list li::before {
+    content: "";
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    margin-top: 0.45em;
+    border-radius: 50%;
+    background: #a10f0d;
+    box-shadow: 0 0 0 3px rgba(161, 15, 13, 0.25);
+  }
+  .lf-pricing__tier--free .lf-pricing__list li::before {
+    background: rgba(227, 190, 185, 0.55);
+    box-shadow: none;
+  }
+  .lf-pricing__plans-wrap {
+    justify-content: center;
+  }
+
+  .lf-pricing__plans {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .lf-pricing__plan {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 180, 169, 0.14);
+    background: rgba(0, 0, 0, 0.18);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transform: translateY(0) scale(1);
+    transform-origin: center center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition:
+      transform 320ms cubic-bezier(0.25, 0.1, 0.25, 1),
+      box-shadow 320ms cubic-bezier(0.25, 0.1, 0.25, 1),
+      border-color 160ms var(--ease-out),
+      background 160ms var(--ease-out);
+  }
+  .lf-pricing__plan:hover {
+    z-index: 2;
+    transform: translateY(-4px) scale(1.006);
+    border-color: rgba(255, 180, 169, 0.28);
+    background: rgba(0, 0, 0, 0.28);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14), 0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+  .lf-pricing__plan:active {
+    transform: translateY(-2px) scale(0.992);
+    transition-duration: 120ms;
+  }
+  .lf-pricing__plan.is-selected {
+    border-color: rgba(161, 15, 13, 0.75);
+    background: rgba(161, 15, 13, 0.22);
+    box-shadow: 0 0 0 1px rgba(161, 15, 13, 0.35);
+  }
+  .lf-pricing__plan.is-selected:hover {
+    border-color: rgba(161, 15, 13, 0.85);
+    box-shadow: 0 2px 4px rgba(161, 15, 13, 0.18), 0 14px 32px rgba(161, 15, 13, 0.28);
+  }
+  .lf-pricing__plan-copy { min-width: 0; }
+  .lf-pricing__plan-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 650;
+    color: #f9dcd8;
+  }
+  .lf-pricing__badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ffada2;
+    background: rgba(161, 15, 13, 0.45);
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .lf-pricing__plan-meta {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: #e3beb9;
+  }
+  .lf-pricing__plan-amount {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffb4a9;
+    white-space: nowrap;
+  }
+  .lf-pricing__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    text-decoration: none;
+    appearance: none;
+    border: none;
+    background: #a10f0d;
+    color: #ffada2;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 18px 48px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 0 32px rgba(161, 15, 13, 0.45);
+    transition: transform 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
+  }
+  .lf-pricing__cta:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 48px rgba(161, 15, 13, 0.55);
+  }
+  .lf-pricing__cta:active { transform: scale(0.98); }
+  .lf-pricing__note {
+    margin: 14px 0 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: rgba(227, 190, 185, 0.75);
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .lf-pricing__note a { color: #ffb4a9; }
+  .lf-pricing__status {
+    margin: 0 0 8px;
+    font-size: 0.88rem;
+    color: #e3beb9;
+  }
+  .lf-pricing__status[hidden] { display: none !important; }
+
+  .lf-site-foot {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    padding: 24px;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(227, 190, 185, 0.6);
+  }
+  .lf-hero__legal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 12px;
+  }
+  .lf-hero__copy { color: rgba(227, 190, 185, 0.6); white-space: nowrap; }
+  .lf-hero__legal a {
+    color: rgba(227, 190, 185, 0.75);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .lf-hero__legal a:hover {
+    color: #ffb4a9;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .lf-hero__foot-link {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-size: 13px;
+    color: #ffb4a9;
+    cursor: pointer;
+  }
+  .lf-hero__foot-link:hover {
+    color: #f9dcd8;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (max-width: 959px) {
+    .lf-pricing__grid {
+      grid-template-areas:
+        "plans"
+        "free"
+        "premium";
+    }
+    .lf-pricing__tier--free { grid-area: free; }
+    .lf-pricing__plans-wrap { grid-area: plans; }
+    .lf-pricing__tier--premium { grid-area: premium; }
+  }
+  @media (max-width: 720px) {
+    .lf-hero__nav { padding: 18px 16px; }
+    .lf-pricing { padding: 0 16px; }
+    .lf-pricing__title { font-size: clamp(1.65rem, 7vw, 2.25rem); }
+    .lf-pricing__plan-meta { display: none; }
+    .lf-pricing__cta { padding: 16px 28px; letter-spacing: 0.04em; }
+    .lf-page { overflow: auto; height: auto; max-height: none; min-height: 100dvh; }
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    z-index: 10000;
+    background: #a10f0d;
+    color: #fff;
+    padding: 8px 12px;
+    text-decoration: none;
+  }
+  .skip-link:focus { left: 12px; top: 12px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lf-pricing__cta, .lf-hero__nav-link,
+    .lf-pricing__plan, .lf-pricing__plan:hover, .lf-pricing__plan:active,
+    .lf-pricing__tier, .lf-pricing__tier:hover, .lf-pricing__tier:active {
+      transition: none;
+      transform: none;
+    }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#lf-pricing-title">Skip to content</a>
+<div class="lf-page">
+  <header class="lf-hero__nav">
+    <a href="/" class="lf-hero__brand" aria-label="LiturgyFlow home">
+      <img src="/static/brand/app-icon.png?v=5" alt="" width="32" height="32"/>
+      <span class="wordmark text-2xl"><span class="wordmark__liturgy">Liturgy</span><span class="wordmark__flow">Flow</span></span>
+    </a>
+    <div class="lf-hero__actions">
+      <a href="/" class="lf-hero__nav-link">Home</a>
+      <a href="/pricing" class="lf-hero__nav-link is-active" aria-current="page">Pricing</a>
+      <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin" id="lf-hero-signin">Sign in</a>
+    </div>
+  </header>
+
+  <main class="lf-pricing" id="pricing" aria-labelledby="lf-pricing-title">
+    <div class="lf-pricing__inner">
+      <header class="lf-pricing__head">
+        <p class="lf-pricing__kicker">Parish plans</p>
+        <h1 class="lf-pricing__title" id="lf-pricing-title">One parish subscription. Everything for Sunday.</h1>
+      </header>
+      <div class="lf-pricing__grid">
+        <aside class="lf-pricing__tier lf-pricing__tier--free" aria-labelledby="lf-pricing-free-title">
+          <h2 id="lf-pricing-free-title">Free</h2>
+          <p class="lf-pricing__tier-price">Get started with LiturgyFlow</p>
+          <ul class="lf-pricing__list">
+            <li>Guided Mass Builder</li>
+            <li>Try Mass Generate (limited)</li>
+            <li>Sunday readings &amp; rites</li>
+            <li>Basic themes</li>
+            <li>A4 Mass Leaflet (when available)</li>
+            <li>Mass PowerPoint (limited: 4/month)</li>
+            <li>Download PPTX (LiturgyFlow watermark)</li>
+            <li>Share Choir Lyrics (2 sessions)</li>
+            <li>Basic song collections &amp; suggestions</li>
+          </ul>
+        </aside>
+
+        <div class="lf-pricing__plans-wrap">
+          <div class="lf-pricing__plans-head">
+            <h2>Choose a billing period</h2>
+          </div>
+          <p class="lf-pricing__status" id="lf-pricing-status" hidden></p>
+          <div class="lf-pricing__plans" id="lf-pricing-plans" role="listbox" aria-label="Billing period"></div>
+          <a class="lf-pricing__cta" id="lf-pricing-cta" href="/sign-up?intent=billing&amp;redirect_url=%2Fsettings%2Fbilling%3Fautostart%3D1">Start free trial</a>
+          <p class="lf-pricing__note"><a href="/sign-in?redirect_url=%2Fsettings%2Fbilling">Already have an account? Sign in</a></p>
+        </div>
+
+        <aside class="lf-pricing__tier lf-pricing__tier--premium" aria-labelledby="lf-pricing-premium-title">
+          <h2 id="lf-pricing-premium-title">Premium</h2>
+          <p class="lf-pricing__tier-price">All Free features, plus</p>
+          <ul class="lf-pricing__list">
+            <li>Unlimited Mass generation</li>
+            <li>Complete Mass PowerPoint</li>
+            <li>Custom church template (Parish Deck DNA)</li>
+            <li>Mass divider posters (LOTW + LOTE)</li>
+            <li>Full song library + lyrics editor</li>
+            <li>Unlimited choir practice links</li>
+            <li>Parish branding &amp; team workspace</li>
+            <li>Curated Gospel &amp; Mass artwork</li>
+            <li>Projection remote &amp; full calendar</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="lf-site-foot">
+    <nav class="lf-hero__legal" aria-label="Legal">
+      <span class="lf-hero__copy">© 2026 LiturgyFlow{% if app_version %} · v {{ app_version }}{% endif %}</span>
+      <a href="/legal/privacy">Privacy</a>
+      <a href="/legal/terms">Terms</a>
+      <a href="/legal/cookies">Cookies</a>
+      <a href="/legal/refund">Refunds</a>
+      <button type="button" class="lf-hero__foot-link" data-lf-consent-manage>Cookie settings</button>
+    </nav>
+  </footer>
+</div>
+
+<script>
+  window.__LF_BILLING__ = {{ {
+    "enabled": billing_enabled if billing_enabled is defined else false,
+    "trial_days": 14,
+    "currency": pricing_currency if pricing_currency is defined else "usd",
+    "country": pricing_country if pricing_country is defined else ""
+  } | tojson }};
+</script>
+<script src="/static/js/cookie-consent.js?v=2" defer></script>
+{% include "partials/posthog.html" %}
+<script src="/static/js/landing-pricing.js?v=5"></script>
+<script>
+  (function () {
+    try {
+      var hasSession = false;
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("sb-") === 0 && k.indexOf("-auth-token") === k.length - 11) {
+          var raw = localStorage.getItem(k);
+          if (raw && raw !== "null") { hasSession = true; break; }
+        }
+      }
+      if (!hasSession) return;
+      window.__LF_SIGNED_IN__ = true;
+      var link = document.getElementById("lf-hero-signin");
+      if (link) {
+        link.href = "/home";
+        link.textContent = "Open app";
+      }
+    } catch (_e) { /* ignore */ }
+  })();
+</script>
+</body></html>

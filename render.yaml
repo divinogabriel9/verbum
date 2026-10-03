@@ -19,7 +19,7 @@ services:
     autoDeployTrigger: commit
     envVars:
       # Deploy identity: Render sets RENDER_GIT_COMMIT / RENDER_GIT_BRANCH automatically.
-      # Optional human label (e.g. 2026.07.12) shown alongside the short SHA in the UI.
+      # Optional product release override (MAJOR.MINOR, e.g. 1.0). Defaults to repo VERSION file.
       - key: APP_VERSION
         sync: false
       # Free-tier RAM is tight; enable memory hygiene (lower preview DPI, aggressive GC).
