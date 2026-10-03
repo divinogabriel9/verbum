@@ -99,7 +99,8 @@
       input.checked = locked ? true : !!current[id];
       input.disabled = !!locked;
       input.setAttribute("data-consent-cat", id);
-      var label = el("label", { class: "lf-consent-switch", for: "lf-consent-" + id }, [input]);
+      var label = el("label", { class: "lf-consent-switch" }, [input]);
+      label.setAttribute("for", "lf-consent-" + id);
       return el("div", { class: "lf-consent-cat" }, [
         el("div", { class: "lf-consent-cat__row" }, [
           el("div", null, [
@@ -158,48 +159,115 @@
     ]);
   }
 
+  function syncStaticPrefsInputs(current) {
+    var prefs = document.getElementById("lf-consent-preferences");
+    var media = document.getElementById("lf-consent-media");
+    var analytics = document.getElementById("lf-consent-analytics");
+    if (prefs) prefs.checked = !!current.preferences;
+    if (media) media.checked = !!current.media;
+    if (analytics) analytics.checked = !!current.analytics;
+  }
+
+  function wireStaticPrefsOnce(panel) {
+    if (!panel || panel.getAttribute("data-lf-wired") === "1") return;
+    panel.setAttribute("data-lf-wired", "1");
+    panel.addEventListener("click", function (ev) {
+      if (ev.target === panel) closePrefs();
+    });
+    var cancel = document.getElementById("lf-consent-prefs-cancel");
+    var save = document.getElementById("lf-consent-prefs-save");
+    if (cancel) {
+      cancel.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        closePrefs();
+      });
+    }
+    if (save) {
+      save.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        writeConsent({
+          preferences: !!(document.getElementById("lf-consent-preferences") || {}).checked,
+          media: !!(document.getElementById("lf-consent-media") || {}).checked,
+          analytics: !!(document.getElementById("lf-consent-analytics") || {}).checked,
+        });
+        hideBanner();
+        closePrefs();
+      });
+    }
+  }
+
+  function showPrefsPanel(panel) {
+    if (!panel) return;
+    panel.hidden = false;
+    panel.classList.add("is-open");
+    panel.removeAttribute("hidden");
+  }
+
   function closePrefs() {
     var prefs = document.getElementById("lf-consent-prefs");
-    if (prefs) prefs.hidden = true;
+    if (!prefs) return;
+    prefs.classList.remove("is-open");
+    prefs.hidden = true;
+    try {
+      if (typeof prefs.close === "function" && prefs.open) prefs.close();
+    } catch (_e) { /* ignore */ }
+    prefs.removeAttribute("open");
+    if (prefs.getAttribute("data-lf-consent-static") !== "1") {
+      prefs.remove();
+    }
   }
 
   function openPrefs() {
-    var existing = document.getElementById("lf-consent-prefs");
-    if (existing) existing.remove();
-    var current = readConsent() || DEFAULTS;
-    var overlay = el(
-      "div",
-      {
-        class: "lf-consent-prefs",
-        id: "lf-consent-prefs",
-        role: "dialog",
-        "aria-modal": "true",
-        "aria-labelledby": "lf-consent-prefs-title",
-      },
-      [buildPrefsCard(current)]
-    );
-    document.body.appendChild(overlay);
-
-    overlay.addEventListener("click", function (ev) {
-      if (ev.target === overlay) closePrefs();
-    });
-    document.getElementById("lf-consent-prefs-cancel").addEventListener("click", closePrefs);
-    document.getElementById("lf-consent-prefs-save").addEventListener("click", function () {
-      var prefs = {
-        preferences: !!(document.getElementById("lf-consent-preferences") || {}).checked,
-        media: !!(document.getElementById("lf-consent-media") || {}).checked,
-        analytics: !!(document.getElementById("lf-consent-analytics") || {}).checked,
-      };
-      writeConsent(prefs);
-      hideBanner();
-      closePrefs();
-    });
-    document.getElementById("lf-consent-prefs-save").focus();
+    try {
+      var current = readConsent() || DEFAULTS;
+      var existing = document.getElementById("lf-consent-prefs");
+      if (existing && existing.getAttribute("data-lf-consent-static") === "1") {
+        syncStaticPrefsInputs(current);
+        wireStaticPrefsOnce(existing);
+        showPrefsPanel(existing);
+        return;
+      }
+      if (existing) existing.remove();
+      var panel = el(
+        "div",
+        {
+          class: "lf-consent-prefs is-open",
+          id: "lf-consent-prefs",
+          role: "dialog",
+          "aria-modal": "true",
+          "aria-labelledby": "lf-consent-prefs-title",
+        },
+        [buildPrefsCard(current)]
+      );
+      document.body.appendChild(panel);
+      panel.addEventListener("click", function (ev) {
+        if (ev.target === panel) closePrefs();
+      });
+      document.getElementById("lf-consent-prefs-cancel").addEventListener("click", closePrefs);
+      document.getElementById("lf-consent-prefs-save").addEventListener("click", function () {
+        writeConsent({
+          preferences: !!(document.getElementById("lf-consent-preferences") || {}).checked,
+          media: !!(document.getElementById("lf-consent-media") || {}).checked,
+          analytics: !!(document.getElementById("lf-consent-analytics") || {}).checked,
+        });
+        hideBanner();
+        closePrefs();
+      });
+      try {
+        document.getElementById("lf-consent-prefs-save").focus();
+      } catch (_e2) { /* ignore */ }
+    } catch (err) {
+      if (typeof console !== "undefined" && console.error) {
+        console.error("[LiturgyFlowConsent] openPrefs failed", err);
+      }
+      window.location.href = "/legal/cookies";
+    }
   }
 
   function hideBanner() {
     var banner = document.getElementById("lf-consent-banner");
     if (banner) banner.hidden = true;
+    document.documentElement.classList.remove("lf-consent-banner-open");
   }
 
   function showBanner() {
@@ -235,6 +303,7 @@
     ]);
     var banner = el("div", { class: "lf-consent-banner", id: "lf-consent-banner" }, [panel]);
     document.body.appendChild(banner);
+    document.documentElement.classList.add("lf-consent-banner-open");
     document.getElementById("lf-consent-accept").addEventListener("click", function () {
       writeConsent({ preferences: true, media: true, analytics: true });
       hideBanner();
@@ -254,21 +323,47 @@
     return false;
   }
 
+  function onManageClick(ev) {
+    if (ev) {
+      ev.preventDefault();
+      if (ev.stopPropagation) ev.stopPropagation();
+    }
+    openPrefs();
+    return false;
+  }
+
+  function bindManageButtons(root) {
+    var scope = root || document;
+    var nodes = scope.querySelectorAll("[data-lf-consent-manage]");
+    for (var i = 0; i < nodes.length; i++) {
+      var btn = nodes[i];
+      if (btn.getAttribute("data-lf-consent-bound") === "1") continue;
+      btn.setAttribute("data-lf-consent-bound", "1");
+      btn.addEventListener("click", onManageClick);
+    }
+  }
+
   function init() {
     window.__LF_CONSENT__ = readConsent();
     if (!window.__LF_CONSENT__ || !window.__LF_CONSENT__.decidedAt) {
       showBanner();
     }
 
-    document.addEventListener("click", function (ev) {
-      var t = ev.target;
-      if (!t || !t.closest) return;
-      var btn = t.closest("[data-lf-consent-manage]");
-      if (btn) {
-        ev.preventDefault();
-        openPrefs();
-      }
-    });
+    bindManageButtons(document);
+
+    document.addEventListener(
+      "click",
+      function (ev) {
+        var t = ev.target;
+        if (!t) return;
+        if (t.nodeType === 3) t = t.parentElement;
+        if (!t || !t.closest) return;
+        var btn = t.closest("[data-lf-consent-manage]");
+        if (!btn) return;
+        onManageClick(ev);
+      },
+      true
+    );
   }
 
   window.LiturgyFlowConsent = {
@@ -276,12 +371,19 @@
     has: hasCategory,
     openPreferences: openPrefs,
     gateMediaEmbed: gateMediaEmbed,
+    _write: writeConsent,
     acceptAll: function () {
       return writeConsent({ preferences: true, media: true, analytics: true });
     },
     necessaryOnly: function () {
       return writeConsent({ preferences: false, media: false, analytics: false });
     },
+  };
+  // Global alias for inline onclick fallbacks
+  window.openLiturgyFlowCookieSettings = function (ev) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    openPrefs();
+    return false;
   };
 
   if (document.readyState === "loading") {

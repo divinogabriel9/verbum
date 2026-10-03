@@ -19,8 +19,20 @@
   pointer-events: none;
 }
 
+/* Sit above the landing footer so Cookie settings stays clickable */
+html.lf-consent-banner-open .lf-consent-banner {
+  bottom: 64px;
+}
+
 .lf-consent-banner[hidden] {
   display: none !important;
+}
+
+html.lf-consent-banner-open body {
+  padding-bottom: 0;
+}
+html.lf-consent-banner-open .lf-hero {
+  padding-bottom: 0;
 }
 
 .lf-consent-banner__panel {
@@ -104,47 +116,63 @@
 .lf-consent-prefs {
   position: fixed;
   inset: 0;
-  z-index: 10060;
-  display: flex;
-  align-items: flex-end;
+  z-index: 2147483000;
+  display: none;
+  align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.55);
+  margin: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.72);
+  color: inherit;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.lf-consent-prefs[hidden] {
+.lf-consent-prefs.is-open,
+.lf-consent-prefs[open] {
+  display: flex !important;
+}
+
+.lf-consent-prefs[hidden]:not(.is-open) {
   display: none !important;
+}
+
+.lf-consent-prefs::backdrop {
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .lf-consent-prefs__card {
   width: min(100%, 520px);
   max-height: min(88vh, 640px);
   overflow: auto;
-  background: var(--lf-consent-panel);
-  color: var(--lf-consent-fg);
-  border: 1px solid var(--lf-consent-border);
+  background: #fff8f6;
+  color: #3d2c2a;
+  border: 1px solid rgba(61, 44, 42, 0.16);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
 }
 
 .lf-consent-prefs__card h2 {
   margin: 0 0 8px;
   font-size: 1.15rem;
+  color: #3d2c2a;
 }
 
 .lf-consent-prefs__card > p {
   margin: 0 0 16px;
-  color: var(--lf-consent-muted);
+  color: #6b534e;
   font-size: 0.875rem;
   line-height: 1.45;
 }
 
 .lf-consent-cat {
-  border: 1px solid var(--lf-consent-border);
+  border: 1px solid rgba(61, 44, 42, 0.14);
   border-radius: 12px;
   padding: 12px 14px;
   margin: 0 0 10px;
+  background: #fff;
 }
 
 .lf-consent-cat__row {
@@ -158,11 +186,12 @@
   display: block;
   font-size: 0.92rem;
   margin-bottom: 4px;
+  color: #3d2c2a;
 }
 
 .lf-consent-cat__row p {
   margin: 0;
-  color: var(--lf-consent-muted);
+  color: #6b534e;
   font-size: 0.8rem;
   line-height: 1.4;
 }
@@ -185,6 +214,16 @@
   margin-top: 16px;
 }
 
+.lf-consent-prefs__actions .lf-consent-btn--ghost {
+  color: #3d2c2a;
+  border-color: rgba(61, 44, 42, 0.22);
+}
+
+.lf-consent-prefs__actions .lf-consent-btn--ghost:hover {
+  border-color: rgba(61, 44, 42, 0.4);
+  background: rgba(61, 44, 42, 0.04);
+}
+
 .lf-consent-manage {
   appearance: none;
   border: 0;
@@ -204,7 +243,8 @@
 }
 
 @media (min-width: 720px) {
-  .lf-consent-prefs {
+  .lf-consent-prefs.is-open,
+  .lf-consent-prefs[open] {
     align-items: center;
   }
 }

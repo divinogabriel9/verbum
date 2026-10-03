@@ -27,7 +27,7 @@
   </script>
   <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-settings-tabs-bright" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
-  <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
+  <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
@@ -4458,7 +4458,7 @@
                   <span class="settings-privacy-link__label">Accessibility</span>
                   <span class="settings-privacy-link__hint">Our accessibility commitments</span>
                 </a>
-                <button type="button" class="settings-privacy-link" role="listitem" data-lf-consent-manage>
+                <button type="button" class="settings-privacy-link" role="listitem" data-lf-consent-manage onclick="if(window.openLiturgyFlowCookieSettings){window.openLiturgyFlowCookieSettings();return false;}">
                   <span class="settings-privacy-link__label">Cookie settings</span>
                   <span class="settings-privacy-link__hint">Manage consent preferences</span>
                 </button>
@@ -4814,7 +4814,7 @@
     </div>
   </div>
 
-  <script src="/static/js/cookie-consent.js?v=2"></script>
+  <script src="/static/js/cookie-consent.js?v=20261004-panel"></script>
   {% include "partials/posthog.html" %}
   <script src="/static/webpptx/webpptx.js?v=20260913-webpptx2"></script>
   <script>

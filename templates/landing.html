@@ -42,7 +42,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&amp;family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500;1,600&amp;display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/static/css/landing.css?v=2"/>
-<link rel="stylesheet" href="/static/css/cookie-consent.css?v=1"/>
+<link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel"/>
 <style>
         body { font-family: "Inter", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
         .wordmark { display: inline-flex; align-items: baseline; line-height: 1; white-space: nowrap; transform: translateX(-0.065em); letter-spacing: 0; }
@@ -187,6 +187,7 @@
             font-size: 13px;
             color: #ffb4a9;
             cursor: pointer;
+            text-decoration: none;
         }
         .lf-hero__foot-link:hover {
             color: #f9dcd8;
@@ -203,10 +204,11 @@
         }
         .lf-hero__copy {
             position: absolute;
-            right: 14px;
+            right: max(12px, env(safe-area-inset-right, 0px));
             top: 50%;
             transform: translateY(-50%);
-            z-index: 2;
+            z-index: 3;
+            margin: 0;
             color: rgba(227, 190, 185, 0.55);
             font-size: 12px;
             letter-spacing: 0.06em;
@@ -997,12 +999,22 @@
             .lf-hero__nav { padding: 18px 16px; }
             .lf-hero__copy {
                 position: static;
+                order: 4;
                 transform: none;
                 writing-mode: horizontal-tb;
+                text-align: center;
                 letter-spacing: 0.01em;
-                margin: 0 auto 4px;
+                margin: 8px auto 0;
+                padding-bottom: 8px;
                 pointer-events: auto;
             }
+            .lf-hero {
+                display: flex;
+                flex-direction: column;
+            }
+            .lf-hero__nav { order: 1; }
+            .lf-hero__main { order: 2; }
+            .lf-hero__foot { order: 3; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1029,6 +1041,8 @@
         </div>
     </header>
 
+    <p class="lf-hero__copy">© 2026 LiturgyFlow · v {{ app_version or "1.0" }}</p>
+
     <main class="lf-hero__main" id="lf-hero-main">
         <p class="lf-hero__kicker">Sunday Mass presentations</p>
         <h1 class="lf-hero__title">What if you could create Sunday Mass in just one click?</h1>
@@ -1037,7 +1051,6 @@
     </main>
 
     <footer class="lf-hero__foot">
-        <p class="lf-hero__copy">© 2026 LiturgyFlow · v {{ app_version or "1.0" }}</p>
         <nav class="lf-hero__legal" aria-label="Legal">
             <a href="/legal/privacy">Privacy</a>
             <a href="/legal/terms">Terms</a>
@@ -1045,11 +1058,150 @@
             <a href="/legal/copyright">Copyright</a>
             <a href="/legal/refund">Refunds</a>
             <a href="/legal/accessibility">Accessibility</a>
-            <button type="button" class="lf-hero__foot-link" data-lf-consent-manage>Cookie settings</button>
+            <a href="/legal/cookies" class="lf-hero__foot-link" id="lf-cookie-settings" data-lf-consent-manage>Cookie settings</a>
             <button type="button" class="lf-hero__foot-link" id="lf-foot-contact">Contact us</button>
         </nav>
     </footer>
 </div>
+
+<div id="lf-consent-prefs" class="lf-consent-prefs" data-lf-consent-static="1" hidden role="dialog" aria-modal="true" aria-labelledby="lf-consent-prefs-title">
+  <div class="lf-consent-prefs__card">
+    <h2 id="lf-consent-prefs-title">Privacy preferences</h2>
+    <p>We use necessary cookies to keep you signed in and secure. Optional categories need your consent. You can change this anytime.</p>
+    <div class="lf-consent-cat">
+      <div class="lf-consent-cat__row">
+        <div>
+          <strong>Necessary</strong>
+          <p>Sign-in, security, rate limiting, and practice-share unlock cookies. Always on.</p>
+        </div>
+        <label class="lf-consent-switch"><input type="checkbox" id="lf-consent-necessary" checked disabled /></label>
+      </div>
+    </div>
+    <div class="lf-consent-cat">
+      <div class="lf-consent-cat__row">
+        <div>
+          <strong>Preferences</strong>
+          <p>Remember theme, song-plan language, and UI layout choices on this device.</p>
+        </div>
+        <label class="lf-consent-switch"><input type="checkbox" id="lf-consent-preferences" class="lf-consent-switch-input" data-consent-cat="preferences" /></label>
+      </div>
+    </div>
+    <div class="lf-consent-cat">
+      <div class="lf-consent-cat__row">
+        <div>
+          <strong>Media embeds</strong>
+          <p>Load YouTube / radio embeds. These third parties may set their own cookies.</p>
+        </div>
+        <label class="lf-consent-switch"><input type="checkbox" id="lf-consent-media" class="lf-consent-switch-input" data-consent-cat="media" /></label>
+      </div>
+    </div>
+    <div class="lf-consent-cat">
+      <div class="lf-consent-cat__row">
+        <div>
+          <strong>Analytics</strong>
+          <p>Optional product analytics (PostHog) to understand feature usage. Off unless you opt in.</p>
+        </div>
+        <label class="lf-consent-switch"><input type="checkbox" id="lf-consent-analytics" class="lf-consent-switch-input" data-consent-cat="analytics" /></label>
+      </div>
+    </div>
+    <div class="lf-consent-prefs__actions">
+      <button type="button" class="lf-consent-btn lf-consent-btn--ghost" id="lf-consent-prefs-cancel">Cancel</button>
+      <button type="button" class="lf-consent-btn lf-consent-btn--primary" id="lf-consent-prefs-save">Save choices</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  function openCookiePrefs(ev) {
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    var d = document.getElementById("lf-consent-prefs");
+    if (!d) {
+      window.location.href = "/legal/cookies";
+      return false;
+    }
+    // Sync toggles from saved consent when available
+    try {
+      var c = (window.LiturgyFlowConsent && window.LiturgyFlowConsent.get && window.LiturgyFlowConsent.get()) || null;
+      if (c) {
+        var p = document.getElementById("lf-consent-preferences");
+        var m = document.getElementById("lf-consent-media");
+        var a = document.getElementById("lf-consent-analytics");
+        if (p) p.checked = !!c.preferences;
+        if (m) m.checked = !!c.media;
+        if (a) a.checked = !!c.analytics;
+      }
+    } catch (_e) {}
+    d.hidden = false;
+    d.classList.add("is-open");
+    return false;
+  }
+  function closeCookiePrefs() {
+    var d = document.getElementById("lf-consent-prefs");
+    if (!d) return;
+    d.classList.remove("is-open");
+    d.hidden = true;
+  }
+  window.openLiturgyFlowCookieSettings = openCookiePrefs;
+  window.closeLiturgyFlowCookieSettings = closeCookiePrefs;
+  function bind() {
+    var btn = document.getElementById("lf-cookie-settings");
+    if (btn && btn.getAttribute("data-lf-inline-bound") !== "1") {
+      btn.setAttribute("data-lf-inline-bound", "1");
+      btn.addEventListener("click", openCookiePrefs);
+    }
+    var cancel = document.getElementById("lf-consent-prefs-cancel");
+    var save = document.getElementById("lf-consent-prefs-save");
+    var panel = document.getElementById("lf-consent-prefs");
+    if (cancel && cancel.getAttribute("data-lf-inline-bound") !== "1") {
+      cancel.setAttribute("data-lf-inline-bound", "1");
+      cancel.addEventListener("click", function (e) {
+        e.preventDefault();
+        closeCookiePrefs();
+      });
+    }
+    if (save && save.getAttribute("data-lf-inline-bound") !== "1") {
+      save.setAttribute("data-lf-inline-bound", "1");
+      save.addEventListener("click", function (e) {
+        e.preventDefault();
+        var payload = {
+          preferences: !!(document.getElementById("lf-consent-preferences") || {}).checked,
+          media: !!(document.getElementById("lf-consent-media") || {}).checked,
+          analytics: !!(document.getElementById("lf-consent-analytics") || {}).checked,
+        };
+        try {
+          if (window.LiturgyFlowConsent && typeof window.LiturgyFlowConsent._write === "function") {
+            window.LiturgyFlowConsent._write(payload);
+          } else {
+            localStorage.setItem("lf_consent_v1", JSON.stringify({
+              version: 1,
+              necessary: true,
+              preferences: !!payload.preferences,
+              media: !!payload.media,
+              analytics: !!payload.analytics,
+              decidedAt: new Date().toISOString(),
+            }));
+          }
+        } catch (_e2) {}
+        var banner = document.getElementById("lf-consent-banner");
+        if (banner) banner.hidden = true;
+        document.documentElement.classList.remove("lf-consent-banner-open");
+        closeCookiePrefs();
+      });
+    }
+    if (panel && panel.getAttribute("data-lf-inline-bound") !== "1") {
+      panel.setAttribute("data-lf-inline-bound", "1");
+      panel.addEventListener("click", function (e) {
+        if (e.target === panel) closeCookiePrefs();
+      });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+  else bind();
+})();
+</script>
 
 <div class="lf-gen-backdrop" id="lf-gen-backdrop" hidden>
     <div class="lf-gen-panel" id="lf-gen-modal" role="dialog" aria-modal="true" aria-labelledby="lf-gen-title">
@@ -1269,7 +1421,7 @@
     "country": pricing_country if pricing_country is defined else ""
   } | tojson }};
 </script>
-<script src="/static/js/cookie-consent.js?v=2" defer></script>
+<script src="/static/js/cookie-consent.js?v=20261004-panel"></script>
 {% include "partials/posthog.html" %}
 <script src="/static/js/landing-generate.js?v=18"></script>
 <script src="/static/js/landing-pricing.js?v=5"></script>

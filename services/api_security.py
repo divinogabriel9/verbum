@@ -400,6 +400,8 @@ def _build_csp() -> str:
             "font-src 'self' https://fonts.gstatic.com data:",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://hcaptcha.com https://*.hcaptcha.com",
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com",
+            "script-src-attr 'unsafe-inline'",
+            "script-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://hcaptcha.com https://*.hcaptcha.com",
             "worker-src 'self' blob:",
             # YouTube practice-audio preview + hCaptcha challenge iframe.
             "frame-src 'self' https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://hcaptcha.com https://*.hcaptcha.com",
