@@ -2799,6 +2799,7 @@
       "/settings/billing": "Parish subscription and billing.",
       "/settings/team": "Invite and manage your parish media team.",
       "/settings/app": "Light/dark mode, accent colors, and visual style.",
+      "/settings/privacy": "Policies, cookies, and data requests.",
       "/superadmin": "Platform mission control — superadmin only.",
     };
 
@@ -2820,6 +2821,7 @@
       "/settings/billing": ["Settings", "Billing"],
       "/settings/team": ["Settings", "Parish Team"],
       "/settings/app": ["Settings", "Appearance"],
+      "/settings/privacy": ["Settings", "Privacy & legal"],
       "/superadmin": ["Superadmin"],
     };
 
@@ -3289,7 +3291,7 @@
     }
 
     function isSettingsRoute(route) {
-      return route === "/settings/account" || route === "/settings/church" || route === "/settings/billing" || route === "/settings/team" || route === "/settings/app";
+      return route === "/settings/account" || route === "/settings/church" || route === "/settings/billing" || route === "/settings/team" || route === "/settings/app" || route === "/settings/privacy";
     }
 
     var lastNonSettingsRoute = "/home";
@@ -3988,6 +3990,7 @@
         "/settings/billing": "billing",
         "/settings/team": "team",
         "/settings/app": "appearance",
+        "/settings/privacy": "privacy",
       };
       const activeKey = panelForRoute[route] || "account";
       document.querySelectorAll(".settings-panel").forEach((panel) => {

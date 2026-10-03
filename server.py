@@ -4173,6 +4173,7 @@ def cookies_redirect() -> Any:
 @app.get("/settings/church", response_class=HTMLResponse)
 @app.get("/settings/billing", response_class=HTMLResponse)
 @app.get("/settings/app", response_class=HTMLResponse)
+@app.get("/settings/privacy", response_class=HTMLResponse)
 @app.get("/settings/team", response_class=HTMLResponse)
 @app.get("/superadmin", response_class=HTMLResponse)
 @app.get("/lyrics-dashboard", response_class=HTMLResponse)

@@ -105,7 +105,7 @@ services:
       - key: SUPERADMIN_EMAILS
         sync: false
       - key: INVITE_ONLY_SIGNUP
-        value: "1"
+        value: "0"
       - key: INVITE_CONTACT_EMAIL
         sync: false
       - key: ACCESS_REQUEST_TO

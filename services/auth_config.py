@@ -91,13 +91,18 @@ def supabase_enabled() -> bool:
 
 
 def invite_only_signup() -> bool:
-    """When true, /sign-up requires a valid ?invite= token."""
+    """When true, /sign-up requires a valid ?invite= token.
+
+    When false (default for self-serve), anyone can create an account, and
+    invite links still work — they prefill parish details and are consumed on
+    signup. Set ``INVITE_ONLY_SIGNUP=1`` to lock registration to invites only.
+    """
     explicit = _clean(os.environ.get("INVITE_ONLY_SIGNUP")).lower()
     if explicit in {"1", "true", "yes", "on"}:
         return True
     if explicit in {"0", "false", "no", "off"}:
         return False
-    return auth_required()
+    return False
 
 
 def invite_contact_email() -> str:

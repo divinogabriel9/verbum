@@ -288,18 +288,30 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
 
     @app.get("/api/auth/invite/validate")
     def api_validate_invite(token: str = "") -> dict[str, Any]:
-        if not invite_only_signup():
+        tok = (token or "").strip()
+        invite_required = invite_only_signup()
+        if not tok:
+            if invite_required:
+                return {
+                    "ok": False,
+                    "invite_required": True,
+                    "error": "Invite required.",
+                }
             return {"ok": True, "invite_required": False}
-        row = validate_invite_token(token)
+        row = validate_invite_token(tok)
         if not row:
-            return {"ok": False, "invite_required": True, "error": "Invalid or expired invite."}
+            return {
+                "ok": False,
+                "invite_required": invite_required,
+                "error": "Invalid or expired invite.",
+            }
         email = (row.get("email") or "").strip()
         community_name = (row.get("community_name") or "").strip()
         invite_role = (row.get("invite_role") or "president").strip().lower()
         parish_id = str(row.get("parish_id") or "").strip()
         return {
             "ok": True,
-            "invite_required": True,
+            "invite_required": invite_required,
             "email_locked": bool(email),
             "email": email or None,
             "community_name": community_name or None,
@@ -313,11 +325,12 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
         body: InviteConsumeBody,
         session: AuthSession = Depends(require_session),
     ) -> dict[str, Any]:
-        if not invite_only_signup():
+        tok = (body.token or "").strip()
+        if not tok:
             return {"ok": True, "skipped": True}
         try:
             row = consume_invite(
-                body.token.strip(),
+                tok,
                 accepted_by_user_id=session.user.user_id,
                 access_token=session.token,
             )
@@ -350,18 +363,19 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 detail="Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY (or SUPABASE_ANON_KEY), and SUPABASE_JWT_SECRET to enable sign-up.",
             )
         token = (request.query_params.get("invite") or "").strip()
-        invite_valid = False
+        invite_valid = not invite_only_signup()
         invite_email: Optional[str] = None
         invite_community_name: Optional[str] = None
-        if invite_only_signup():
-            if token:
-                row = validate_invite_token(token)
-                if row:
-                    invite_valid = True
-                    invite_email = (row.get("email") or "").strip() or None
-                    invite_community_name = (row.get("community_name") or "").strip() or None
-        else:
-            invite_valid = True
+        invite_token_out = ""
+        if token:
+            row = validate_invite_token(token)
+            if row:
+                invite_valid = True
+                invite_token_out = token
+                invite_email = (row.get("email") or "").strip() or None
+                invite_community_name = (row.get("community_name") or "").strip() or None
+            elif invite_only_signup():
+                invite_valid = False
 
         return templates.TemplateResponse(
             request,
@@ -370,7 +384,7 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 mode="sign-up",
                 title="Create account · LiturgyFlow",
                 subtitle="Complete your LiturgyFlow account",
-                invite_token=token if invite_valid and token else "",
+                invite_token=invite_token_out,
                 invite_valid=invite_valid,
                 invite_email=invite_email,
                 invite_community_name=invite_community_name,

@@ -25,13 +25,13 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-settings-type" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-settings-tabs-bright" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=1" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261003-scroll-fix" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261003-settings-split-glass" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
@@ -4080,6 +4080,7 @@
             <a class="settings-modal-tab" href="/settings/billing" data-route="/settings/billing" id="settings-modal-tab-billing" hidden>Billing</a>
             <a class="settings-modal-tab" href="/settings/team" data-route="/settings/team" id="settings-modal-tab-team" hidden>Parish Team</a>
             <a class="settings-modal-tab" href="/settings/app" data-route="/settings/app">Appearance</a>
+            <a class="settings-modal-tab" href="/settings/privacy" data-route="/settings/privacy">Privacy &amp; legal</a>
           </nav>
           <aside class="settings-nav-card song-plan-summary" aria-labelledby="settings-nav-heading">
             <div class="flow-bento-cell settings-nav-card__inner">
@@ -4122,6 +4123,12 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
                   </span>
                   Appearance &amp; theme
+                </a>
+                <a class="settings-sidebar-link" href="/settings/privacy" data-route="/settings/privacy">
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                  </span>
+                  Privacy &amp; legal
                 </a>
               </nav>
             </div>
@@ -4188,7 +4195,7 @@
                 <div class="settings-billing-summary__top">
                   <div>
                     <span class="settings-billing-summary__eyebrow">Current plan</span>
-                    <p class="settings-billing-summary__title" id="settings-billing-summary-title">Subscription</p>
+                    <p class="settings-billing-summary__title" id="settings-billing-summary-title">Free Tier</p>
                     <p class="settings-billing-summary__meta muted" id="settings-billing-summary-text"></p>
                   </div>
                   <span class="settings-billing-badge" id="settings-billing-badge" hidden></span>
@@ -4399,21 +4406,6 @@
 
                 <hr class="settings-divider" />
 
-                <h3>Privacy &amp; legal</h3>
-                <p class="muted">Review policies, manage cookies, or request access to your data. Image and hymn copyrights remain your parish’s responsibility — see Copyright &amp; IP.</p>
-                <div class="app-legal-footer" style="margin:8px 0 0;padding-top:0;border:0;">
-                  <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a>
-                  <a href="/legal/terms" target="_blank" rel="noopener">Terms</a>
-                  <a href="/legal/cookies" target="_blank" rel="noopener">Cookies</a>
-                  <a href="/legal/copyright" target="_blank" rel="noopener">Copyright &amp; IP</a>
-                  <a href="/legal/refund" target="_blank" rel="noopener">Refunds</a>
-                  <a href="/legal/accessibility" target="_blank" rel="noopener">Accessibility</a>
-                  <button type="button" data-lf-consent-manage>Cookie settings</button>
-                  <a href="/?contact=1&amp;topic=privacy" target="_blank" rel="noopener">Data / GDPR request</a>
-                </div>
-
-                <hr class="settings-divider" />
-
                 <section id="settings-live-radio">
                   <h3>Catholic Live Radio</h3>
                   <p class="muted">Default station for the Live Radio pill in the header. Only stations with an in-browser stream can play from the mini player.</p>
@@ -4429,6 +4421,52 @@
                   <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
                   <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
                 </div>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-privacy" data-settings-panel="privacy" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Privacy &amp; legal</h3>
+                  <p>Policies, cookies, and data requests for your parish account.</p>
+                </div>
+              </header>
+              <p class="muted">Review policies, manage cookies, or request access to your data. Image and hymn copyrights remain your parish’s responsibility — see Copyright &amp; IP.</p>
+              <div class="settings-privacy-links" role="list">
+                <a class="settings-privacy-link" role="listitem" href="/legal/privacy" target="_blank" rel="noopener">
+                  <span class="settings-privacy-link__label">Privacy Policy</span>
+                  <span class="settings-privacy-link__hint">How we handle parish and account data</span>
+                </a>
+                <a class="settings-privacy-link" role="listitem" href="/legal/terms" target="_blank" rel="noopener">
+                  <span class="settings-privacy-link__label">Terms of Service</span>
+                  <span class="settings-privacy-link__hint">Rules for using LiturgyFlow</span>
+                </a>
+                <a class="settings-privacy-link" role="listitem" href="/legal/cookies" target="_blank" rel="noopener">
+                  <span class="settings-privacy-link__label">Cookies</span>
+                  <span class="settings-privacy-link__hint">Cookie types and preferences</span>
+                </a>
+                <a class="settings-privacy-link" role="listitem" href="/legal/copyright" target="_blank" rel="noopener">
+                  <span class="settings-privacy-link__label">Copyright &amp; IP</span>
+                  <span class="settings-privacy-link__hint">Image and hymn licensing responsibilities</span>
+                </a>
+                <a class="settings-privacy-link" role="listitem" href="/legal/refund" target="_blank" rel="noopener">
+                  <span class="settings-privacy-link__label">Refunds</span>
+                  <span class="settings-privacy-link__hint">Billing and refund policy</span>
+                </a>
+                <a class="settings-privacy-link" role="listitem" href="/legal/accessibility" target="_blank" rel="noopener">
+                  <span class="settings-privacy-link__label">Accessibility</span>
+                  <span class="settings-privacy-link__hint">Our accessibility commitments</span>
+                </a>
+                <button type="button" class="settings-privacy-link" role="listitem" data-lf-consent-manage>
+                  <span class="settings-privacy-link__label">Cookie settings</span>
+                  <span class="settings-privacy-link__hint">Manage consent preferences</span>
+                </button>
+                <a class="settings-privacy-link" role="listitem" href="/?contact=1&amp;topic=privacy" target="_blank" rel="noopener">
+                  <span class="settings-privacy-link__label">Data / GDPR request</span>
+                  <span class="settings-privacy-link__hint">Access, export, or delete your data</span>
+                </a>
+              </div>
             </article>
           </div>
         </div>
@@ -4601,6 +4639,12 @@
             </span>
             <span>Appearance</span>
           </a>
+          <a class="app-more-sheet__link nav-link" data-route="/settings/privacy" href="/settings/privacy">
+            <span class="app-more-sheet__link-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+            </span>
+            <span>Privacy &amp; legal</span>
+          </a>
         </div>
       </nav>
     </div>
@@ -4620,6 +4664,7 @@
         <option value="/settings/account">Account</option>
         <option value="/settings/church">Church Profile</option>
         <option value="/settings/app">Appearance &amp; theme</option>
+        <option value="/settings/privacy">Privacy &amp; legal</option>
       </select>
     </div>
     <div class="app-bottom-right" id="app-bottom-right">
@@ -4777,7 +4822,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261003-mass-first"></script>
+  <script src="/static/js/app.js?v=20261003-privacy-tab"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

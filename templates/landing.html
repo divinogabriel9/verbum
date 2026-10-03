@@ -51,6 +51,7 @@
         ::selection { background: #a10f0d; color: #fff; }
 
         .lf-hero {
+            position: relative;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -95,12 +96,24 @@
             text-decoration: none;
             font-size: 14px;
             font-weight: 500;
-            padding: 10px 20px;
-            border: 1px solid rgba(170, 137, 132, 0.35);
+            padding: 10px 16px;
             border-radius: 999px;
-            transition: background 0.2s;
+            transition: background 0.2s, color 0.2s;
         }
-        .lf-hero__signin:hover { background: rgba(255, 255, 255, 0.05); }
+        .lf-hero__signin:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .lf-hero__signup {
+            color: #3d2c2a;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 650;
+            padding: 10px 20px;
+            border-radius: 999px;
+            background: #ffb4a9;
+            border: 1px solid transparent;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .lf-hero__signup:hover { background: #ffc5bc; }
+        .lf-hero__signup:active { transform: scale(0.97); }
         .lf-hero__main {
             flex: 1;
             display: flex;
@@ -189,8 +202,19 @@
             gap: 6px 12px;
         }
         .lf-hero__copy {
-            color: rgba(227, 190, 185, 0.6);
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            color: rgba(227, 190, 185, 0.55);
+            font-size: 12px;
+            letter-spacing: 0.06em;
             white-space: nowrap;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            pointer-events: none;
+            user-select: none;
         }
         .lf-hero__legal a {
             color: rgba(227, 190, 185, 0.75);
@@ -971,6 +995,14 @@
 
         @media (max-width: 720px) {
             .lf-hero__nav { padding: 18px 16px; }
+            .lf-hero__copy {
+                position: static;
+                transform: none;
+                writing-mode: horizontal-tb;
+                letter-spacing: 0.01em;
+                margin: 0 auto 4px;
+                pointer-events: auto;
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -993,6 +1025,7 @@
             <a href="/pricing" class="lf-hero__nav-link">Pricing</a>
             <button type="button" class="lf-hero__contact" id="lf-hero-contact">Contact</button>
             <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin" id="lf-hero-signin">Sign in</a>
+            <a href="/sign-up" class="lf-hero__signup" id="lf-hero-signup">Sign up</a>
         </div>
     </header>
 
@@ -1004,8 +1037,8 @@
     </main>
 
     <footer class="lf-hero__foot">
+        <p class="lf-hero__copy">© 2026 LiturgyFlow · v {{ app_version or "1.0" }}</p>
         <nav class="lf-hero__legal" aria-label="Legal">
-            <span class="lf-hero__copy">© 2026 LiturgyFlow{% if app_version %} · v {{ app_version }}{% endif %}</span>
             <a href="/legal/privacy">Privacy</a>
             <a href="/legal/terms">Terms</a>
             <a href="/legal/cookies">Cookies</a>

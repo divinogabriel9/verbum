@@ -5492,12 +5492,15 @@
       max-height: min(86dvh, 820px);
       margin: 0;
       overflow: hidden;
-      background: var(--surface-solid);
+      background: transparent;
       border: 1px solid var(--card-border);
       border-radius: 20px;
       box-shadow: 0 30px 70px -18px rgba(8, 7, 18, .5), 0 10px 28px -10px rgba(8, 7, 18, .38);
       padding: 0;
       animation: vb-settings-card-in var(--motion-duration-base, .2s) var(--motion-ease-out, ease) both;
+    }
+    html[data-theme="dark"] #settings-page .settings-layout {
+      box-shadow: 0 30px 70px -18px rgba(0, 0, 0, .55), 0 10px 28px -10px rgba(0, 0, 0, .4);
     }
     #settings-page .settings-nav-card { display: none !important; }
     #settings-page .settings-main {
@@ -5518,6 +5521,12 @@
       font-size: 1rem;
       line-height: 1.5;
       color: var(--ink);
+      background: var(--surface-solid);
+      border: none;
+      border-radius: 0 20px 20px 0;
+    }
+    html[data-theme="dark"] #settings-page .settings-main {
+      background: var(--surface-solid);
     }
     #settings-page .settings-main .field label,
     #settings-page .settings-main label {
@@ -5623,10 +5632,45 @@
       max-height: 100%;
       overflow-x: hidden;
       overflow-y: auto;
-      border-radius: 0;
-      background: color-mix(in srgb, var(--surface-2) 42%, var(--surface-solid));
+      border-radius: 20px 0 0 20px;
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, #ffffff 82%, transparent) 0%,
+          color-mix(in srgb, #ffffff 68%, transparent) 100%);
       border: none;
-      border-right: 1px solid var(--line-soft);
+      border-right: 1px solid color-mix(in srgb, var(--line) 36%, transparent);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.92) inset,
+        inset -1px 0 0 rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(28px) saturate(1.35) brightness(1.08);
+      -webkit-backdrop-filter: blur(28px) saturate(1.35) brightness(1.08);
+    }
+    html[data-theme="dark"] .settings-modal-tabs {
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, var(--bg-top) 62%, transparent) 0%,
+          color-mix(in srgb, var(--bg-top) 48%, transparent) 100%);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+      border-right-color: color-mix(in srgb, var(--line) 42%, transparent);
+      backdrop-filter: blur(28px) saturate(1.2) brightness(1.04);
+      -webkit-backdrop-filter: blur(28px) saturate(1.2) brightness(1.04);
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .settings-modal-tabs {
+        background: color-mix(in srgb, #fff 92%, var(--surface-2));
+      }
+      html[data-theme="dark"] .settings-modal-tabs {
+        background: color-mix(in srgb, var(--bg-top) 90%, transparent);
+      }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .settings-modal-tabs {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: color-mix(in srgb, var(--surface-2) 28%, #fff);
+        border-right-color: var(--line-soft);
+        box-shadow: none;
+      }
     }
     .settings-modal-tabs__title {
       margin: 0 0 14px;
@@ -5715,34 +5759,124 @@
       letter-spacing: -0.01em;
       color: var(--muted);
     }
+    /* Billing panel — accent atmosphere */
+    #settings-panel-billing.settings-panel.flow-bento-cell {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: clamp(16px, 2vw, 22px) !important;
+      border-radius: 16px;
+      border: 1px solid color-mix(in srgb, var(--accent, #a10f0d) 16%, var(--line, #E2E8F0)) !important;
+      background:
+        radial-gradient(ellipse 90% 70% at 0% 0%,
+          color-mix(in srgb, var(--accent, #a10f0d) 18%, transparent) 0%,
+          transparent 58%),
+        radial-gradient(ellipse 70% 60% at 100% 8%,
+          color-mix(in srgb, var(--wb-petal, #C1A3A1) 28%, transparent) 0%,
+          transparent 55%),
+        radial-gradient(ellipse 80% 55% at 85% 100%,
+          color-mix(in srgb, var(--accent, #a10f0d) 12%, transparent) 0%,
+          transparent 60%),
+        linear-gradient(165deg,
+          color-mix(in srgb, var(--accent, #a10f0d) 7%, #fff) 0%,
+          color-mix(in srgb, var(--wb-frost, #E6DFD9) 55%, #fff) 42%,
+          #fff 100%) !important;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 10px 28px rgba(161, 15, 13, 0.06) !important;
+    }
+    #settings-panel-billing.settings-panel.flow-bento-cell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 78%,
+          color-mix(in srgb, var(--accent, #a10f0d) 10%, transparent) 0%,
+          transparent 42%),
+        linear-gradient(115deg,
+          transparent 0%,
+          color-mix(in srgb, var(--accent, #a10f0d) 5%, transparent) 48%,
+          transparent 72%);
+      opacity: 0.9;
+    }
+    #settings-panel-billing.settings-panel.flow-bento-cell::after {
+      content: "";
+      position: absolute;
+      top: -18%;
+      right: -8%;
+      width: min(280px, 46%);
+      height: min(280px, 46%);
+      z-index: 0;
+      pointer-events: none;
+      border-radius: 50%;
+      background: radial-gradient(circle,
+        color-mix(in srgb, var(--accent, #a10f0d) 16%, transparent) 0%,
+        transparent 70%);
+      filter: blur(2px);
+    }
+    #settings-panel-billing > * {
+      position: relative;
+      z-index: 1;
+    }
+    #settings-panel-billing .home-card-head__icon {
+      background: color-mix(in srgb, var(--accent, #a10f0d) 14%, #fff);
+      color: var(--accent, #a10f0d);
+      border: 1px solid color-mix(in srgb, var(--accent, #a10f0d) 20%, transparent);
+    }
+    #settings-panel-billing .settings-billing-summary {
+      background:
+        linear-gradient(180deg,
+          color-mix(in srgb, #fff 88%, var(--accent, #a10f0d)) 0%,
+          #fff 100%);
+      backdrop-filter: blur(6px);
+    }
+    #settings-panel-billing .settings-billing-plan {
+      background: color-mix(in srgb, #fff 92%, transparent);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+    }
+    #settings-page .settings-layout #settings-panel-billing.settings-panel.flow-bento-cell:hover {
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 10px 28px rgba(161, 15, 13, 0.06) !important;
+      transform: none;
+    }
     .settings-billing-status {
       margin: 0 0 12px;
     }
     .settings-billing-summary {
-      display: grid;
-      gap: 14px;
-      margin: 0 0 18px;
-      padding: 16px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px 16px;
+      margin: 0 0 14px;
+      padding: 10px 14px;
       border: 1px solid color-mix(in srgb, var(--accent, #a10f0d) 18%, var(--border, #e8d5d1));
-      border-radius: 14px;
+      border-radius: 12px;
       background:
         linear-gradient(180deg, color-mix(in srgb, var(--accent, #a10f0d) 6%, #fff) 0%, var(--surface, #fff) 70%);
       box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
     }
     .settings-billing-summary__top {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px 12px;
+      flex: 1 1 220px;
+      min-width: 0;
     }
     .settings-billing-summary__eyebrow {
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 1px;
       font-size: 0.8125rem;
       font-weight: 650;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted);
+      line-height: 1.2;
     }
     .settings-billing-summary__title {
       margin: 0;
@@ -5750,19 +5884,19 @@
       font-size: 1.25rem;
       font-weight: 700;
       color: var(--ink, #3d2c2a);
-      line-height: 1.25;
+      line-height: 1.2;
       letter-spacing: -0.02em;
     }
     .settings-billing-summary__meta {
-      margin: 6px 0 0;
+      margin: 2px 0 0;
       font-size: 0.975rem;
-      line-height: 1.45;
+      line-height: 1.35;
     }
     .settings-billing-badge {
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
-      padding: 4px 10px;
+      padding: 3px 9px;
       border-radius: 999px;
       font-size: 0.72rem;
       font-weight: 700;
@@ -5785,6 +5919,10 @@
     }
     .settings-billing-summary__actions {
       margin: 0;
+      flex: 0 0 auto;
+    }
+    .settings-billing-summary__actions .secondary {
+      padding: 8px 14px;
     }
     .settings-billing-plans__toolbar {
       display: flex;
@@ -5828,14 +5966,18 @@
     }
     .settings-billing-plan-list {
       display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
+      align-items: stretch;
     }
     .settings-billing-plan {
       display: flex;
       flex-direction: column;
       gap: 12px;
       width: 100%;
-      padding: 14px 16px;
+      min-width: 0;
+      height: 100%;
+      padding: 14px 14px 12px;
       border: 1px solid var(--border, #e8d5d1);
       border-radius: 14px;
       background: var(--surface, #fff);
@@ -5871,20 +6013,23 @@
     }
     .settings-billing-plan__main {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 14px;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-width: 0;
     }
     .settings-billing-plan__copy {
       display: flex;
       flex-direction: column;
       gap: 4px;
       min-width: 0;
+      flex: 1 1 auto;
     }
     .settings-billing-plan__label-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
     .settings-billing-plan__copy strong {
@@ -5898,17 +6043,19 @@
       letter-spacing: -0.02em;
       color: var(--ink, #3d2c2a);
       font-variant-numeric: tabular-nums;
+      line-height: 1.2;
     }
     .settings-billing-plan__hint {
       font-size: 0.82rem;
       color: var(--muted);
+      line-height: 1.3;
     }
     .settings-billing-plan__pill {
       display: inline-flex;
       align-items: center;
-      padding: 2px 8px;
+      padding: 2px 7px;
       border-radius: 999px;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: 700;
       letter-spacing: 0.03em;
       text-transform: uppercase;
@@ -5917,8 +6064,9 @@
     }
     .settings-billing-plan__check {
       flex-shrink: 0;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
+      margin-top: 1px;
       border-radius: 999px;
       border: 1.5px solid var(--border, #e8d5d1);
       background: #fff;
@@ -5932,36 +6080,105 @@
     .settings-billing-plan.is-selected .settings-billing-plan__check::after {
       content: "";
       position: absolute;
-      left: 7px;
-      top: 3px;
+      left: 6px;
+      top: 2px;
       width: 5px;
-      height: 10px;
+      height: 9px;
       border: solid #fff;
       border-width: 0 2px 2px 0;
       transform: rotate(45deg);
     }
     .settings-billing-plan__subscribe {
       align-self: stretch;
-      min-height: 40px;
-      padding-inline: 14px;
+      width: 100%;
+      min-height: 38px;
+      margin-top: auto;
+      padding-inline: 10px;
       border-radius: 10px;
       white-space: nowrap;
     }
+    .settings-billing-plan:not(.is-selected) .settings-billing-plan__subscribe,
+    .settings-billing-plan__subscribe[hidden] {
+      display: none !important;
+    }
+    .settings-billing-plan.is-selected .settings-billing-plan__subscribe:not([hidden]) {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
     .settings-billing-plan__subscribe:active {
       transform: scale(0.97);
+    }
+    @media (max-width: 900px) {
+      .settings-billing-plan-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
     @media (max-width: 640px) {
       .settings-billing-plans__toolbar {
         flex-direction: column;
         align-items: stretch;
       }
-      .settings-billing-summary__top {
-        flex-direction: column;
+      .settings-billing-plan-list {
+        grid-template-columns: 1fr;
+      }
+      .settings-billing-summary {
+        align-items: flex-start;
+      }
+      .settings-billing-summary__actions {
+        width: 100%;
+      }
+      .settings-billing-summary__actions .secondary {
+        width: 100%;
       }
     }
     /* Appearance settings — readable type (matches other settings panels) */
     .settings-layout #settings-panel-app.flow-bento-cell {
       padding: 0;
+    }
+    #settings-panel-privacy .settings-privacy-links {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    #settings-panel-privacy .settings-privacy-link {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      width: 100%;
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid color-mix(in srgb, var(--line, #E2E8F0) 90%, transparent);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
+      color: inherit;
+      text-align: left;
+      text-decoration: none;
+      font: inherit;
+      cursor: pointer;
+      transition:
+        border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        background 160ms cubic-bezier(0.23, 1, 0.32, 1),
+        transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    #settings-panel-privacy .settings-privacy-link:hover {
+      border-color: color-mix(in srgb, var(--accent, #a10f0d) 28%, var(--line, #E2E8F0));
+      background: color-mix(in srgb, #fff 88%, var(--accent, #a10f0d));
+      transform: translateY(-1px);
+    }
+    #settings-panel-privacy .settings-privacy-link:active {
+      transform: scale(0.99);
+    }
+    #settings-panel-privacy .settings-privacy-link__label {
+      font-size: 0.98rem;
+      font-weight: 650;
+      color: var(--ink, #15333D);
+    }
+    #settings-panel-privacy .settings-privacy-link__hint {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.35;
     }
     #settings-panel-app .home-card-head {
       margin-bottom: var(--space-2);

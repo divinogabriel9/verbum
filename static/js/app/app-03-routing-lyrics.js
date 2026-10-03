@@ -64,6 +64,7 @@
         refreshCommunity();
         if (typeof syncSettingsAccountPanel === "function") syncSettingsAccountPanel();
         if (r === "/settings/team" && typeof loadSettingsParishTeam === "function") loadSettingsParishTeam();
+        if (r === "/settings/billing" && typeof loadSettingsBilling === "function") loadSettingsBilling();
         if (window.__scrollToLiveRadio) {
           window.__scrollToLiveRadio = false;
           requestAnimationFrame(() => {

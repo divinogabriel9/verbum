@@ -1962,6 +1962,41 @@
           facebookLabel.textContent = mode === "sign-up" ? "Sign up with Facebook" : "Continue with Facebook";
         }
 
+        const signupBtn = $("auth-signin-signup-btn");
+        const signupLink = $("auth-signin-signup-link");
+        const openSignup = mode === "sign-in" && !cfg.invite_only_signup;
+        const signupHref = (function () {
+          try {
+            const params = new URLSearchParams(window.location.search);
+            params.delete("code");
+            params.delete("error");
+            params.delete("error_description");
+            params.delete("error_code");
+            params.delete("switch");
+            const qs = params.toString();
+            return "/sign-up" + (qs ? "?" + qs : "");
+          } catch (_e) {
+            return "/sign-up";
+          }
+        })();
+        if (signupBtn) {
+          signupBtn.hidden = !openSignup;
+          signupBtn.style.display = openSignup ? "block" : "none";
+          signupBtn.href = signupHref;
+        }
+        if (signupLink) signupLink.href = signupHref;
+        if (footer && mode === "sign-in") {
+          if (openSignup) {
+            footer.innerHTML =
+              'Don’t have an account? <a href="' +
+              signupHref +
+              '" id="auth-signin-signup-link">Sign up</a>';
+          } else {
+            footer.innerHTML =
+              'Need access? <a href="/?contact=1&topic=access">Contact Us</a>';
+          }
+        }
+
         if (mode === "sign-up") {
           applyInviteChurchName(inviteCommunityName);
           bindPhoneCountryInput();

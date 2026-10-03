@@ -431,6 +431,7 @@
       { id: "page-account", label: "Account", hint: "Page", group: "Pages", route: "/settings/account", keywords: ["account", "profile", "picture", "avatar", "photo"] },
       { id: "page-church", label: "Church Profile", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },
       { id: "page-appearance", label: "Appearance", hint: "Page", group: "Pages", route: "/settings/app", keywords: ["appearance", "dark", "light", "theme", "settings"] },
+      { id: "page-privacy", label: "Privacy & legal", hint: "Page", group: "Pages", route: "/settings/privacy", keywords: ["privacy", "legal", "cookies", "terms", "gdpr", "copyright"] },
       { id: "act-event", label: "Create event", hint: "Action", group: "Actions", action: "create-event", keywords: ["event", "create", "schedule"] },
       { id: "act-pptx", label: "Generate PPTX", hint: "Action", group: "Actions", action: "generate-pptx", keywords: ["generate", "pptx", "package", "export"] },
       { id: "act-readings", label: "Load readings", hint: "Action", group: "Actions", action: "load-readings", keywords: ["readings", "load", "refresh"] },

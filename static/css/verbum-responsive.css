@@ -3981,10 +3981,13 @@ iframe {
 
   #settings-page .settings-main {
     padding: calc(env(safe-area-inset-top, 0px) + 44px) 16px 16px !important;
+    border-radius: 0 !important;
+    background: var(--surface-solid) !important;
   }
 
   #settings-page .settings-modal-tabs {
     padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+    border-radius: 0 !important;
   }
 
   #settings-page .settings-layout .settings-panel.flow-bento-cell {
@@ -5405,8 +5408,7 @@ iframe {
   }
 
   .settings-billing-plan-list {
-    display: flex;
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 10px;
   }
 

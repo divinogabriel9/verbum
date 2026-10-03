@@ -74,12 +74,24 @@
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    padding: 10px 20px;
-    border: 1px solid rgba(170, 137, 132, 0.35);
+    padding: 10px 16px;
     border-radius: 999px;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
   }
-  .lf-hero__signin:hover { background: rgba(255, 255, 255, 0.05); }
+  .lf-hero__signin:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+  .lf-hero__signup {
+    color: #3d2c2a;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 650;
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: #ffb4a9;
+    border: 1px solid transparent;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .lf-hero__signup:hover { background: #ffc5bc; }
+  .lf-hero__signup:active { transform: scale(0.97); }
 
   .lf-pricing {
     flex: 1;
@@ -496,6 +508,7 @@
       <a href="/" class="lf-hero__nav-link">Home</a>
       <a href="/pricing" class="lf-hero__nav-link is-active" aria-current="page">Pricing</a>
       <a href="/sign-in?redirect_url=%2Fhome" class="lf-hero__signin" id="lf-hero-signin">Sign in</a>
+      <a href="/sign-up" class="lf-hero__signup" id="lf-hero-signup">Sign up</a>
     </div>
   </header>
 

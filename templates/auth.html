@@ -1350,9 +1350,17 @@
       </p>
     </div>
 
+    <a
+      class="auth-secondary"
+      id="auth-signin-signup-btn"
+      href="/sign-up"
+      {% if mode != "sign-in" %}hidden{% endif %}
+      style="text-align:center;text-decoration:none;display:{% if mode == 'sign-in' %}block{% else %}none{% endif %};margin-top:12px;"
+    >Create account</a>
+
     <p class="auth-footer" id="auth-footer">
       {% if mode == "sign-in" %}
-        Need access? <a href="/?contact=1&topic=access">Contact Us</a>
+        Don’t have an account? <a href="/sign-up" id="auth-signin-signup-link">Sign up</a>
       {% else %}
         Already have an account? <a href="/sign-in">Sign in</a>
       {% endif %}
@@ -1390,6 +1398,6 @@
   </script>
   <script src="/static/js/cookie-consent.js?v=2" defer></script>
   {% include "partials/posthog.html" %}
-  <script src="/static/js/auth-page.js?v=20261003-parish-country" defer></script>
+  <script src="/static/js/auth-page.js?v=20261003-signin-signup" defer></script>
 </body>
 </html>
