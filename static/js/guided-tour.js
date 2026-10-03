@@ -584,7 +584,7 @@
         element: "#celebrant-picker-trigger",
         popover: {
           title: "Mass celebrant",
-          description: "Select who is presiding. Add celebrant names in Settings → Church Profile if the list is empty.",
+          description: "Select who is presiding. Add celebrant names in Settings → Parish if the list is empty.",
           side: "right",
           align: "start",
         },

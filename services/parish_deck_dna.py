@@ -212,7 +212,7 @@ def build_scaffold_pptx(*, dest: Optional[Path] = None) -> Path:
         "   (e.g. Opening Prayer may be 1–3 slides).",
         "4. Do NOT reorder different sections (First Reading must stay before Psalm, etc.).",
         "5. Mass dividers (LOTW / LOTE posters) are LiturgyFlow-owned — not in this file.",
-        "6. Upload the finished .pptx in Settings → Church Profile → Parish Deck DNA.",
+        "6. Upload the finished .pptx in Settings → Parish → Parish Deck DNA.",
         "",
         "REQUIRED slides must remain. OPTIONAL slides may be deleted.",
     ]

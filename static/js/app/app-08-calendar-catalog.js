@@ -753,7 +753,7 @@
         return data;
       } catch (error) {
         clearMassGenProgressTimers();
-        const friendly = error.message || "We could not finish generating your presentation.";
+        const friendly = sanitizePublicError(error && error.message) || "We could not finish generating your presentation.";
         statusFn(friendly, "error");
         showMassGenError(friendly, massGenProgressState.current, () => runFullMassGenerate(o));
         return null;

@@ -1,12 +1,14 @@
-"""Weekly limit for paid AI image generation (OpenAI / Gemini).
+"""Weekly poster-generation allowance (free tier) vs unlimited for paid parishes.
 
-Shared Sunday hero cache may avoid a paid image-API call, but product quota
-is still reserved so users experience a weekly generation budget.
+Shared Sunday hero cache may avoid a paid image-API call, but free-tier product
+quota is still reserved so the weekly allowance is experienced fairly.
+Subscribed (paid) parishes are unlimited.
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -18,22 +20,26 @@ from fastapi import HTTPException, Request
 from services.api_security import AuthSession
 from services.redis_client import get_redis
 
+logger = logging.getLogger(__name__)
+
 _DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 _DB_PATH = _DATA_DIR / "app.sqlite"
 _KEY_PREFIX = "verbum:quota:image:"
 
-_daily_fallback = max(1, int(os.environ.get("IMAGE_GENERATION_DAILY_LIMIT", "1")))
-WEEKLY_IMAGE_LIMIT = max(
+# Free tier: 4 curated poster uses per ISO week (UTC). Paid = unlimited.
+FREE_WEEKLY_IMAGE_LIMIT = max(
     1,
-    int(
-        os.environ.get(
-            "IMAGE_GENERATION_WEEKLY_LIMIT",
-            str(max(_daily_fallback * 7, 5)),
-        )
-    ),
+    int(os.environ.get("IMAGE_GENERATION_WEEKLY_LIMIT", "4")),
 )
-# Backward-compatible alias for admin / health probes.
-DAILY_IMAGE_LIMIT = WEEKLY_IMAGE_LIMIT
+# Backward-compatible aliases for admin / health probes (free-tier cap).
+WEEKLY_IMAGE_LIMIT = FREE_WEEKLY_IMAGE_LIMIT
+DAILY_IMAGE_LIMIT = FREE_WEEKLY_IMAGE_LIMIT
+
+_FREE_LIMIT_DETAIL = (
+    f"You've reached this week's free poster allowance "
+    f"({FREE_WEEKLY_IMAGE_LIMIT} per week). "
+    "Subscribe for unlimited beautifully curated posters, or try again next week."
+)
 
 
 def _utc_now() -> datetime:
@@ -72,10 +78,53 @@ def _quota_key(subject: str, usage_period: str) -> str:
     return f"{_KEY_PREFIX}{subject}:{usage_period}"
 
 
-def _quota_status_from_used(used: int, period: str) -> dict[str, Any]:
-    remaining = max(0, WEEKLY_IMAGE_LIMIT - used)
+def session_has_unlimited_image_quota(session: Optional[AuthSession]) -> bool:
+    """Paid subscribers (and superadmins) are not metered. Free tier is."""
+    user = getattr(session, "user", None) if session else None
+    if user is not None:
+        try:
+            from services.membership_config import is_superadmin_user
+
+            if is_superadmin_user(user):
+                return True
+        except Exception:
+            pass
+    try:
+        from services.stripe_billing import billing_enabled, parish_has_paid_access
+        from services.user_church_context import get_church_profile_context
+
+        if not billing_enabled():
+            # Billing off (local/dev): no product metering.
+            return True
+        ctx = get_church_profile_context()
+        if parish_has_paid_access(ctx):
+            return True
+    except Exception:
+        logger.debug("unlimited image quota check failed", exc_info=True)
+    return False
+
+
+def _quota_status_from_used(
+    used: int,
+    period: str,
+    *,
+    unlimited: bool = False,
+) -> dict[str, Any]:
+    if unlimited:
+        return {
+            "limit": None,
+            "used": used,
+            "remaining": None,
+            "resets_on": _week_resets_on_label(),
+            "period": period,
+            "period_label": "week",
+            "timezone": "UTC",
+            "allowed": True,
+            "unlimited": True,
+        }
+    remaining = max(0, FREE_WEEKLY_IMAGE_LIMIT - used)
     return {
-        "limit": WEEKLY_IMAGE_LIMIT,
+        "limit": FREE_WEEKLY_IMAGE_LIMIT,
         "used": used,
         "remaining": remaining,
         "resets_on": _week_resets_on_label(),
@@ -83,6 +132,7 @@ def _quota_status_from_used(used: int, period: str) -> dict[str, Any]:
         "period_label": "week",
         "timezone": "UTC",
         "allowed": remaining > 0,
+        "unlimited": False,
     }
 
 
@@ -130,7 +180,12 @@ def resolve_subject(
     return "local:anonymous"
 
 
-def _get_quota_status_sqlite(subject: str, period: str) -> dict[str, Any]:
+def _get_quota_status_sqlite(
+    subject: str,
+    period: str,
+    *,
+    unlimited: bool = False,
+) -> dict[str, Any]:
     with _connect() as conn:
         row = conn.execute(
             """
@@ -141,21 +196,26 @@ def _get_quota_status_sqlite(subject: str, period: str) -> dict[str, Any]:
             (subject, period),
         ).fetchone()
     used = int(row["generation_count"]) if row else 0
-    return _quota_status_from_used(used, period)
+    return _quota_status_from_used(used, period, unlimited=unlimited)
 
 
-def _get_quota_status_redis(subject: str, period: str) -> dict[str, Any]:
+def _get_quota_status_redis(
+    subject: str,
+    period: str,
+    *,
+    unlimited: bool = False,
+) -> dict[str, Any]:
     client = get_redis()
     if client is None:
-        return _get_quota_status_sqlite(subject, period)
+        return _get_quota_status_sqlite(subject, period, unlimited=unlimited)
     raw = client.get(_quota_key(subject, period))
     used = int(raw) if raw else 0
-    return _quota_status_from_used(used, period)
+    return _quota_status_from_used(used, period, unlimited=unlimited)
 
 
-def get_quota_status(subject: str) -> dict[str, Any]:
+def get_quota_status(subject: str, *, unlimited: bool = False) -> dict[str, Any]:
     period = _utc_week_id()
-    return _get_quota_status_redis(subject, period)
+    return _get_quota_status_redis(subject, period, unlimited=unlimited)
 
 
 def quota_status_payload(
@@ -163,7 +223,8 @@ def quota_status_payload(
     request: Optional[Request] = None,
 ) -> dict[str, Any]:
     subject = resolve_subject(session, request)
-    status = get_quota_status(subject)
+    unlimited = session_has_unlimited_image_quota(session)
+    status = get_quota_status(subject, unlimited=unlimited)
     scope = "anonymous"
     parish_id: str | None = None
     if subject.startswith("parish:"):
@@ -183,7 +244,13 @@ def quota_status_payload(
     }
 
 
-def _reserve_quota_sqlite(subject: str, *, source: str, period: str) -> dict[str, Any]:
+def _reserve_quota_sqlite(
+    subject: str,
+    *,
+    source: str,
+    period: str,
+    unlimited: bool = False,
+) -> dict[str, Any]:
     now = _utc_now().isoformat()
 
     with _connect() as conn:
@@ -197,16 +264,9 @@ def _reserve_quota_sqlite(subject: str, *, source: str, period: str) -> dict[str
             (subject, period),
         ).fetchone()
         used = int(row["generation_count"]) if row else 0
-        if used >= WEEKLY_IMAGE_LIMIT:
+        if not unlimited and used >= FREE_WEEKLY_IMAGE_LIMIT:
             conn.execute("ROLLBACK")
-            raise HTTPException(
-                status_code=429,
-                detail=(
-                    f"Weekly AI image limit reached ({WEEKLY_IMAGE_LIMIT} per week, UTC). "
-                    "Reuse a cached Sunday style, disable AI poster for the liturgical "
-                    "template, or try again next week."
-                ),
-            )
+            raise HTTPException(status_code=429, detail=_FREE_LIMIT_DETAIL)
         if row:
             conn.execute(
                 """
@@ -229,29 +289,30 @@ def _reserve_quota_sqlite(subject: str, *, source: str, period: str) -> dict[str
             )
         conn.commit()
 
-    return get_quota_status(subject)
+    return get_quota_status(subject, unlimited=unlimited)
 
 
-def _reserve_quota_redis(subject: str, *, source: str, period: str) -> dict[str, Any]:
+def _reserve_quota_redis(
+    subject: str,
+    *,
+    source: str,
+    period: str,
+    unlimited: bool = False,
+) -> dict[str, Any]:
     client = get_redis()
     if client is None:
-        return _reserve_quota_sqlite(subject, source=source, period=period)
+        return _reserve_quota_sqlite(
+            subject, source=source, period=period, unlimited=unlimited
+        )
 
     key = _quota_key(subject, period)
     try:
         count = int(client.incr(key))
         if count == 1:
             client.expireat(key, _utc_week_end_timestamp())
-        if count > WEEKLY_IMAGE_LIMIT:
+        if not unlimited and count > FREE_WEEKLY_IMAGE_LIMIT:
             client.decr(key)
-            raise HTTPException(
-                status_code=429,
-                detail=(
-                    f"Weekly AI image limit reached ({WEEKLY_IMAGE_LIMIT} per week, UTC). "
-                    "Reuse a cached Sunday style, disable AI poster for the liturgical "
-                    "template, or try again next week."
-                ),
-            )
+            raise HTTPException(status_code=429, detail=_FREE_LIMIT_DETAIL)
         meta_key = f"{key}:meta"
         client.hset(
             meta_key,
@@ -264,19 +325,25 @@ def _reserve_quota_redis(subject: str, *, source: str, period: str) -> dict[str,
     except HTTPException:
         raise
     except Exception:
-        return _reserve_quota_sqlite(subject, source=source, period=period)
+        return _reserve_quota_sqlite(
+            subject, source=source, period=period, unlimited=unlimited
+        )
 
-    return _quota_status_from_used(count, period)
+    return _quota_status_from_used(count, period, unlimited=unlimited)
 
 
 def reserve_daily_image_generation(
     subject: str,
     *,
     source: str,
+    unlimited: bool = False,
 ) -> dict[str, Any]:
-    """Reserve one weekly slot before calling an image API. Raises 429 when exhausted.
+    """Reserve one weekly slot before applying a curated poster. Raises 429 when free tier is exhausted.
 
-    Name kept for callers; period is ISO week UTC.
+    Name kept for callers; period is ISO week UTC. Paid / unlimited subjects are
+    still counted for admin stats but never blocked.
     """
     period = _utc_week_id()
-    return _reserve_quota_redis(subject, source=source, period=period)
+    return _reserve_quota_redis(
+        subject, source=source, period=period, unlimited=unlimited
+    )

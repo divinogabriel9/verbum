@@ -1734,7 +1734,7 @@
         const used = q.used || 0;
         const remaining = q.remaining != null ? q.remaining : "?";
         if (q.scope === "parish") {
-          el.textContent = "Your parish pool this week (UTC): " + remaining + " of " + limit + " AI image" + (limit === 1 ? "" : "s") + " remaining · " + used + " used · shared by all parish members.";
+          el.textContent = "Your parish pool this week (UTC): " + remaining + " of " + limit + " poster" + (limit === 1 ? "" : "s") + " remaining · " + used + " used · shared by all parish members.";
         } else {
           el.textContent = "Weekly limit: " + limit + " · Used: " + used + " · Remaining: " + remaining + " (UTC week).";
         }
@@ -1763,7 +1763,7 @@
         st.page = meta.page;
         const summary = $("sa-ai-quota-summary");
         if (summary && data.date) {
-          summary.textContent = "This week (UTC " + data.date + "): " + (data.total_used || 0) + " AI image" + ((data.total_used || 0) === 1 ? "" : "s") + " across " + (data.parish_count || data.total || items.length) + " parish" + ((data.parish_count || data.total || items.length) === 1 ? "" : "es") + " · " + (data.limit_per_parish || "?") + " per parish per week.";
+          summary.textContent = "This week (UTC " + data.date + "): " + (data.total_used || 0) + " poster" + ((data.total_used || 0) === 1 ? "" : "s") + " across " + (data.parish_count || data.total || items.length) + " parish" + ((data.parish_count || data.total || items.length) === 1 ? "" : "es") + " · " + (data.limit_per_parish || "?") + " free-tier per parish per week.";
         }
         if (!items.length) {
           body.innerHTML = "<tr><td colspan=\"4\" class=\"muted\">No parish usage recorded today.</td></tr>";

@@ -2018,8 +2018,6 @@ html[data-theme="dark"] .lyric-block.type-outro .vb-select--pill .vb-select__tri
 .flow-setup-col__title,
 .mass-summary-progress-label,
 .mass-song-plan-lang-field label,
-.liturgical-countdown-item__label,
-.liturgical-indicator-panel__title,
 .vb-dropdown-group-label,
 .global-search-group-label {
   font-size: var(--type-fine) !important;
@@ -2028,6 +2026,26 @@ html[data-theme="dark"] .lyric-block.type-outro .vb-select--pill .vb-select__tri
   text-transform: none !important;
   line-height: var(--leading-caption) !important;
   color: var(--muted) !important;
+}
+
+.liturgical-countdown-item__label {
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+  color: var(--muted) !important;
+}
+
+.liturgical-indicator-panel__title,
+.liturgical-indicator-panel__head h3 {
+  font-family: var(--font-display);
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  text-transform: none !important;
+  line-height: 1.25 !important;
+  color: var(--ink) !important;
 }
 
 .flow-bento-cell__head h3,

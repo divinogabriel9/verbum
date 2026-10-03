@@ -3532,19 +3532,45 @@ iframe {
   }
 
   body.mobile-chrome-tabs #today-page .liturgical-indicator-panel.today-page-panel {
-    padding: 0 4px 8px;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    border: none;
   }
 
-  body.mobile-chrome-tabs #today-page .liturgical-indicator-panel__title {
-    display: none;
+  body.mobile-chrome-tabs #today-page .liturgical-indicator-panel__head {
+    display: none !important;
   }
 
-  /* Liturgy list — FB plain rows, no chips/pills */
+  body.mobile-chrome-tabs #today-page .liturgical-indicator-panel__body {
+    padding: 0 0 8px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body.mobile-chrome-tabs #today-page .liturgical-countdown-list {
+    gap: 0;
+  }
+
+  /* Liturgy list — FB plain rows on Today; keep curated cards in header dropdown */
   body.mobile-chrome-tabs #today-page .liturgical-countdown-item {
+    display: block;
     padding: 12px 16px;
     border-radius: 0;
     background: transparent;
+    border: none;
     border-bottom: 1px solid var(--line-soft);
+    gap: 0;
+  }
+
+  body.mobile-chrome-tabs #today-page .liturgical-countdown-item:hover {
+    background: transparent;
+    border-color: transparent;
+    transform: none;
+  }
+
+  body.mobile-chrome-tabs #today-page .liturgical-countdown-item__mark {
+    display: none;
   }
 
   body.mobile-chrome-tabs #today-page .liturgical-countdown-item__label {
@@ -3565,6 +3591,13 @@ iframe {
   body.mobile-chrome-tabs #today-page .liturgical-countdown-item__sub {
     font-size: 0.8125rem;
     margin-top: 2px;
+  }
+
+  body.mobile-chrome-tabs #today-page .liturgical-panel-events-section {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
   }
 
   body.mobile-chrome-tabs #today-page .liturgical-panel-event {
@@ -3591,6 +3624,9 @@ iframe {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 0 0 16px;
+    gap: 0;
+    max-height: none;
+    display: block;
   }
 
   body.mobile-chrome-tabs #today-page .notification-feed,
@@ -3599,9 +3635,18 @@ iframe {
     gap: 0;
   }
 
-  body.mobile-chrome-tabs #today-page #notification-empty {
-    padding: 20px 16px;
-    font-size: 0.9375rem;
+  body.mobile-chrome-tabs #today-page .notif-empty {
+    margin: 16px;
+    border-radius: 16px;
+    padding: 28px 18px;
+  }
+
+  body.mobile-chrome-tabs #today-page .notif-empty__title {
+    font-size: 1rem;
+  }
+
+  body.mobile-chrome-tabs #today-page .notif-empty__copy {
+    font-size: 0.84rem;
   }
 
   /* Facebook-style notification rows */
@@ -3611,6 +3656,8 @@ iframe {
     border-radius: 0;
     border-bottom: 1px solid var(--line-soft);
     background: #fff;
+    box-shadow: none;
+    opacity: 1;
   }
 
   html[data-theme="dark"] body.mobile-chrome-tabs #today-page .notification-item {
@@ -3623,6 +3670,12 @@ iframe {
 
   html[data-theme="dark"] body.mobile-chrome-tabs #today-page .notification-item.is-unread {
     background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 12%, var(--surface-solid));
+  }
+
+  body.mobile-chrome-tabs #today-page .notification-item:hover,
+  body.mobile-chrome-tabs #today-page .notification-item:active {
+    transform: none;
+    border-color: transparent;
   }
 
   body.mobile-chrome-tabs #today-page .notification-item__row {
@@ -3661,6 +3714,10 @@ iframe {
     min-width: 0;
   }
 
+  body.mobile-chrome-tabs #today-page .notification-item__meta {
+    margin-bottom: 2px;
+  }
+
   body.mobile-chrome-tabs #today-page .notification-item__msg {
     margin: 0;
     font-size: 0.9375rem;
@@ -3670,10 +3727,14 @@ iframe {
   }
 
   body.mobile-chrome-tabs #today-page .notification-item__time {
-    margin: 4px 0 0;
+    margin: 0;
     font-size: 0.8125rem;
     font-weight: 500;
     color: var(--muted);
+  }
+
+  body.mobile-chrome-tabs #today-page .notification-item__pip {
+    margin-top: 14px;
   }
 
   body.mobile-chrome-tabs #today-page .notification-item__links {
@@ -3683,18 +3744,18 @@ iframe {
 
   body.mobile-chrome-tabs #today-page .notification-item__links a {
     font-size: 0.8125rem;
-    border-radius: 6px;
+    border-radius: 999px;
     padding: 6px 10px;
   }
 
   body.mobile-chrome-tabs #today-page .sa-notif-section {
-    margin: 0;
-    padding: 0;
-    border: none;
+    margin: 12px 12px 0;
+    padding: 10px;
+    border-radius: 14px;
   }
 
   body.mobile-chrome-tabs #today-page .sa-notif-section__head {
-    padding: 10px 16px 4px;
+    padding: 0 2px 4px;
   }
 
   /* Mass Builder — full bleed, flat setup (no nested cards) */

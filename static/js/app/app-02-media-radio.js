@@ -2795,10 +2795,11 @@
       "/design/theme-lab": "Liturgical themes and custom slide styling.",
       "/design/templates": "Poster and slide template reference.",
       "/settings/account": "Your profile picture and account details.",
-      "/settings/church": "Community name and parish logo.",
+      "/settings/church": "Parish identity, branding, and celebrants.",
       "/settings/billing": "Parish subscription and billing.",
       "/settings/team": "Invite and manage your parish media team.",
       "/settings/app": "Light/dark mode, accent colors, and visual style.",
+      "/settings/preferences": "Navigation, Home news, radio, and shortcuts.",
       "/settings/privacy": "Policies, cookies, and data requests.",
       "/superadmin": "Platform mission control — superadmin only.",
     };
@@ -2817,10 +2818,11 @@
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
       "/settings/account": ["Settings", "Account"],
-      "/settings/church": ["Settings", "Church Profile"],
+      "/settings/church": ["Settings", "Parish"],
       "/settings/billing": ["Settings", "Billing"],
-      "/settings/team": ["Settings", "Parish Team"],
+      "/settings/team": ["Settings", "Team"],
       "/settings/app": ["Settings", "Appearance"],
+      "/settings/preferences": ["Settings", "Preferences"],
       "/settings/privacy": ["Settings", "Privacy & legal"],
       "/superadmin": ["Superadmin"],
     };
@@ -3291,7 +3293,7 @@
     }
 
     function isSettingsRoute(route) {
-      return route === "/settings/account" || route === "/settings/church" || route === "/settings/billing" || route === "/settings/team" || route === "/settings/app" || route === "/settings/privacy";
+      return route === "/settings/account" || route === "/settings/church" || route === "/settings/billing" || route === "/settings/team" || route === "/settings/app" || route === "/settings/preferences" || route === "/settings/privacy";
     }
 
     var lastNonSettingsRoute = "/home";
@@ -3990,6 +3992,7 @@
         "/settings/billing": "billing",
         "/settings/team": "team",
         "/settings/app": "appearance",
+        "/settings/preferences": "preferences",
         "/settings/privacy": "privacy",
       };
       const activeKey = panelForRoute[route] || "account";

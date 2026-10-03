@@ -67,3 +67,4 @@ Also: UI redesign of the Mass Builder into a step-by-step **wizard**, now built 
 - Python: type hints, `from __future__ import annotations`, dataclasses for payloads, module logger via `logging.getLogger(__name__)`.
 - Keep changes minimal and scoped; don't add narration comments.
 - New service logic → `services/`; new media output logic → `generators/`; new HTTP routes → `routes/` or `server.py`.
+- **UI copy:** Never add obvious metadata subtitles that only restate what the title/control already means (e.g. notification panel sub "Recent updates from…", "at a glance" under Liturgical calendar). Prefer a clear title alone. Keep decorative chrome (circle+dot marks, glow pips, tinted season pills) simple — plain rows and quiet chips over ornamental pills.

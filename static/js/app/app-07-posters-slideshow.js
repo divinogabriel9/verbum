@@ -429,8 +429,9 @@
       { id: "page-theme", label: "Theme Lab", hint: "Page", group: "Pages", route: "/design/theme-lab", keywords: ["design", "theme", "style", "color"] },
       { id: "page-templates", label: "Templates", hint: "Page", group: "Pages", route: "/design/templates", keywords: ["template", "layout"] },
       { id: "page-account", label: "Account", hint: "Page", group: "Pages", route: "/settings/account", keywords: ["account", "profile", "picture", "avatar", "photo"] },
-      { id: "page-church", label: "Church Profile", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },
+      { id: "page-church", label: "Parish", hint: "Page", group: "Pages", route: "/settings/church", keywords: ["church", "profile", "logo", "parish", "community"] },
       { id: "page-appearance", label: "Appearance", hint: "Page", group: "Pages", route: "/settings/app", keywords: ["appearance", "dark", "light", "theme", "settings"] },
+      { id: "page-preferences", label: "Preferences", hint: "Page", group: "Pages", route: "/settings/preferences", keywords: ["preferences", "navigation", "news", "radio", "settings"] },
       { id: "page-privacy", label: "Privacy & legal", hint: "Page", group: "Pages", route: "/settings/privacy", keywords: ["privacy", "legal", "cookies", "terms", "gdpr", "copyright"] },
       { id: "act-event", label: "Create event", hint: "Action", group: "Actions", action: "create-event", keywords: ["event", "create", "schedule"] },
       { id: "act-pptx", label: "Generate PPTX", hint: "Action", group: "Actions", action: "generate-pptx", keywords: ["generate", "pptx", "package", "export"] },
@@ -1154,10 +1155,310 @@
       }
     }
 
-    function refreshHomeMassCard() {
+    function refreshHomeMassCard(opts) {
       if (!$("home-mass-card")) return;
       populateHomeMassSnippet("next", upcomingSundayISO());
       populateHomeMassSnippet("last", lastSundayISO());
+      void refreshHomeMassCtaPosterBg(opts);
+    }
+
+    var HOME_CTA_POSTER_STYLE_KEY = "home_cta_weekly_poster_style";
+    var HOME_CTA_POSTER_FADE_MS = 900;
+    var HOME_CTA_POSTER_AUTO_MS = 9000;
+    var homeCtaPosterBgInflight = null;
+    var homeCtaPosterState = {
+      sunday: "",
+      items: [],
+      index: 0,
+      layer: 0,
+      timer: null,
+      fading: false,
+      navBound: false,
+    };
+
+    function homeCtaPosterLayers() {
+      const card = $("home-mass-card");
+      if (!card) return [];
+      return Array.prototype.slice.call(card.querySelectorAll(".redesign-mass-bg--layer"));
+    }
+
+    function rememberHomeCtaPosterStyle(styleId) {
+      try { localStorage.setItem(HOME_CTA_POSTER_STYLE_KEY, String(styleId || "")); } catch (_e) { /* ignore */ }
+    }
+
+    function lastHomeCtaPosterStyle() {
+      try { return String(localStorage.getItem(HOME_CTA_POSTER_STYLE_KEY) || "").trim(); } catch (_e) { return ""; }
+    }
+
+    function stopHomeCtaPosterAutoplay() {
+      if (homeCtaPosterState.timer) {
+        clearInterval(homeCtaPosterState.timer);
+        homeCtaPosterState.timer = null;
+      }
+    }
+
+    function startHomeCtaPosterAutoplay() {
+      stopHomeCtaPosterAutoplay();
+      if (homeCtaPosterState.items.length < 2) return;
+      homeCtaPosterState.timer = setInterval(() => {
+        void showHomeCtaPosterAt(homeCtaPosterState.index + 1, { animate: true, source: "auto" });
+      }, HOME_CTA_POSTER_AUTO_MS);
+    }
+
+    function syncHomeCtaPosterNav() {
+      const nav = $("home-mass-poster-nav");
+      const label = $("home-mass-poster-style-label");
+      const item = homeCtaPosterState.items[homeCtaPosterState.index];
+      if (!nav) return;
+      if (!item || homeCtaPosterState.items.length < 1) {
+        nav.hidden = true;
+        return;
+      }
+      nav.hidden = false;
+      if (label) label.textContent = String(item.label || item.id || "Poster");
+    }
+
+    function bindHomeCtaPosterNav() {
+      if (homeCtaPosterState.navBound) return;
+      const prev = $("home-mass-poster-prev");
+      const next = $("home-mass-poster-next");
+      if (!prev || !next) return;
+      homeCtaPosterState.navBound = true;
+      prev.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void showHomeCtaPosterAt(homeCtaPosterState.index - 1, { animate: true, source: "manual" });
+      });
+      next.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void showHomeCtaPosterAt(homeCtaPosterState.index + 1, { animate: true, source: "manual" });
+      });
+    }
+
+    function clearHomeMassCtaPosterBg() {
+      stopHomeCtaPosterAutoplay();
+      const card = $("home-mass-card");
+      const layers = homeCtaPosterLayers();
+      const nav = $("home-mass-poster-nav");
+      if (card) {
+        card.classList.remove("has-poster-bg");
+        card.removeAttribute("data-home-poster-style");
+      }
+      layers.forEach((bg, i) => {
+        bg.style.backgroundImage = "";
+        bg.removeAttribute("data-poster-url");
+        bg.classList.toggle("is-visible", i === 0);
+      });
+      if (nav) nav.hidden = true;
+      homeCtaPosterState = Object.assign(homeCtaPosterState, {
+        sunday: "",
+        items: [],
+        index: 0,
+        layer: 0,
+        fading: false,
+      });
+    }
+
+    function preloadHomeCtaPosterUrl(url) {
+      return new Promise((resolve) => {
+        if (!url) { resolve(false); return; }
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    }
+
+    async function resolveHomeCtaPosterItem(item) {
+      if (!item) return null;
+      if (item._resolvedUrl) return item;
+      const full = String(item.full_url || "").trim();
+      const card = String(item.card_url || "").trim();
+      const cardProxy = card || (item.id
+        ? ("/api/weekly-style-posters/image?date=" + encodeURIComponent(homeCtaPosterState.sunday || "") + "&style=" + encodeURIComponent(item.id) + "&variant=card")
+        : "");
+      // Prefer HTTPS signed assets in CSS directly (no JS blob hydrate) — sharp + fast CDN load.
+      // Fall back to sharp 1600px card WebP, never the tiny 720 picker thumb.
+      const candidates = [];
+      if (/^https?:\/\//i.test(full)) candidates.push(full);
+      if (/^https?:\/\//i.test(card)) candidates.push(card);
+      if (cardProxy) candidates.push(cardProxy);
+      if (full) candidates.push(full);
+      const seen = {};
+      const urls = [];
+      candidates.forEach((u) => {
+        const key = String(u || "").trim();
+        if (!key || seen[key]) return;
+        seen[key] = true;
+        urls.push(key);
+      });
+      for (let i = 0; i < urls.length; i++) {
+        const raw = urls[i];
+        try {
+          let resolved = raw;
+          if (raw.startsWith("/api/")) {
+            resolved = await hydrateWeeklyPosterUrl(raw);
+          } else if (!/^https?:\/\//i.test(raw)) {
+            continue;
+          }
+          if (!resolved) continue;
+          item._resolvedUrl = resolved;
+          item._rawUrl = raw;
+          return item;
+        } catch (_e) {
+          /* try next candidate */
+        }
+      }
+      return null;
+    }
+
+    async function showHomeCtaPosterAt(nextIndex, opts) {
+      const card = $("home-mass-card");
+      const layers = homeCtaPosterLayers();
+      const items = homeCtaPosterState.items;
+      if (!card || layers.length < 1 || !items.length) return false;
+      const animate = !(opts && opts.animate === false);
+      const total = items.length;
+      const index = ((Number(nextIndex) % total) + total) % total;
+      if (homeCtaPosterState.fading && animate) return false;
+      if (index === homeCtaPosterState.index && card.classList.contains("has-poster-bg") && animate) {
+        return true;
+      }
+      const item = await resolveHomeCtaPosterItem(items[index]);
+      if (!item || !item._resolvedUrl) return false;
+
+      const incoming = layers[homeCtaPosterState.layer === 0 ? 1 % layers.length : 0];
+      const outgoing = layers[homeCtaPosterState.layer] || layers[0];
+      const targetLayer = layers.length > 1 ? incoming : outgoing;
+
+      targetLayer.style.backgroundImage = 'url("' + item._resolvedUrl.replace(/"/g, '\\"') + '")';
+      targetLayer.setAttribute("data-poster-url", item._rawUrl || "");
+
+      if (animate && layers.length > 1 && outgoing !== targetLayer) {
+        homeCtaPosterState.fading = true;
+        targetLayer.classList.add("is-visible");
+        outgoing.classList.remove("is-visible");
+        homeCtaPosterState.layer = Number(targetLayer.getAttribute("data-rmc-bg-layer") || 0);
+        window.setTimeout(() => { homeCtaPosterState.fading = false; }, HOME_CTA_POSTER_FADE_MS);
+      } else {
+        layers.forEach((bg) => bg.classList.toggle("is-visible", bg === targetLayer));
+        homeCtaPosterState.layer = Number(targetLayer.getAttribute("data-rmc-bg-layer") || 0);
+      }
+
+      card.classList.add("has-poster-bg");
+      card.setAttribute("data-home-poster-style", String(item.id || ""));
+      homeCtaPosterState.index = index;
+      rememberHomeCtaPosterStyle(item.id);
+      syncHomeCtaPosterNav();
+
+      if (opts && opts.source === "manual") startHomeCtaPosterAutoplay();
+      return true;
+    }
+
+    function pickInitialHomeCtaPosterIndex(items) {
+      if (!items.length) return 0;
+      const last = lastHomeCtaPosterStyle();
+      if (items.length === 1) return 0;
+      const pool = [];
+      items.forEach((it, i) => {
+        if (String(it.id) !== last) pool.push(i);
+      });
+      const choices = pool.length ? pool : items.map((_, i) => i);
+      return choices[Math.floor(Math.random() * choices.length)] || 0;
+    }
+
+    async function refreshHomeMassCtaPosterBg(opts) {
+      const card = $("home-mass-card");
+      if (!card) return;
+      bindHomeCtaPosterNav();
+      const forceReload = !!(opts && opts.forceReload);
+      const sunday = typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "";
+      if (!sunday) {
+        clearHomeMassCtaPosterBg();
+        return;
+      }
+      if (
+        !forceReload &&
+        homeCtaPosterState.sunday === sunday &&
+        homeCtaPosterState.items.length &&
+        card.classList.contains("has-poster-bg")
+      ) {
+        startHomeCtaPosterAutoplay();
+        syncHomeCtaPosterNav();
+        return;
+      }
+      if (homeCtaPosterBgInflight) return homeCtaPosterBgInflight;
+      homeCtaPosterBgInflight = (async () => {
+        try {
+          if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
+            await window.VerbumAuth.waitUntilReady(4000);
+          }
+          const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+            ? await window.VerbumAuth.getAuthHeaders()
+            : {};
+          const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
+            headers: headers,
+            credentials: "same-origin",
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+            return;
+          }
+          const ready = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
+          if (!ready.length) {
+            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+            return;
+          }
+
+          homeCtaPosterState.sunday = sunday;
+          homeCtaPosterState.items = ready.map((it) => Object.assign({}, it));
+
+          const startIndex = pickInitialHomeCtaPosterIndex(homeCtaPosterState.items);
+          // Resolve preferred first, but race the rest so a faster thumb can still paint quickly.
+          const preferred = resolveHomeCtaPosterItem(homeCtaPosterState.items[startIndex]);
+          homeCtaPosterState.items.forEach((it, i) => {
+            if (i === startIndex) return;
+            void resolveHomeCtaPosterItem(it);
+          });
+          let first = await preferred;
+          if (!first) {
+            for (let i = 0; i < homeCtaPosterState.items.length; i++) {
+              if (i === startIndex) continue;
+              first = await resolveHomeCtaPosterItem(homeCtaPosterState.items[i]);
+              if (first) {
+                await showHomeCtaPosterAt(i, { animate: false, source: "boot" });
+                startHomeCtaPosterAutoplay();
+                return;
+              }
+            }
+            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+            return;
+          }
+          await showHomeCtaPosterAt(startIndex, { animate: false, source: "boot" });
+          // Decode remaining thumbs in the background for smooth fades.
+          homeCtaPosterState.items.forEach((it) => {
+            if (it && it._resolvedUrl) void preloadHomeCtaPosterUrl(it._resolvedUrl);
+          });
+          startHomeCtaPosterAutoplay();
+        } catch (_e) {
+          if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+        } finally {
+          homeCtaPosterBgInflight = null;
+        }
+      })();
+      return homeCtaPosterBgInflight;
+    }
+    window.refreshHomeMassCtaPosterBg = refreshHomeMassCtaPosterBg;
+    if (!window.__homeCtaPosterAuthHook) {
+      window.__homeCtaPosterAuthHook = true;
+      window.addEventListener("verbum:auth-ready", () => {
+        void refreshHomeMassCtaPosterBg();
+      });
+      if (window.VerbumAuth && window.VerbumAuth.isReady && window.VerbumAuth.isReady()) {
+        void refreshHomeMassCtaPosterBg();
+      }
     }
 
     var HOME_SONG_SLOTS = [
@@ -2687,7 +2988,7 @@
       const posterInput = $("poster-use-ai-poster");
       const posterLabel = posterInput && posterInput.closest("label");
       const posterText = posterLabel && posterLabel.querySelector(".mw-switch__text");
-      if (posterText) posterText.textContent = on ? "AI poster art · On" : "AI poster art · Off";
+      if (posterText) posterText.textContent = on ? "Beautifully curated poster · On" : "Beautifully curated poster · Off";
     }
 
     function migrateLegacyAiPosterToggles() {
@@ -2833,7 +3134,7 @@
       if (msg) {
         msg.textContent = unlocked
           ? ""
-          : ('AI posters aren\'t available for the "' + dateLabel + '" Mass Sunday — wait for SA.');
+          : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Please check back soon.');
       }
       if (unlocked) {
         startWeeklyPosterAutoScroll();
@@ -3115,7 +3416,7 @@
         syncWeeklyPosterGenerateUi(data);
         syncWeeklyAiPosterGate(data);
       } catch (_e) {
-        if (hint) hint.textContent = "Could not load weekly posters. You can still pick a style after AI art is on.";
+        if (hint) hint.textContent = "Could not load weekly posters. You can still pick a style once they are ready.";
         renderWeeklyStylePosterCards([
           { id: "cinematic", label: "Cinematic", ready: false },
           { id: "realistic", label: "Realistic", ready: false },
@@ -3246,7 +3547,7 @@
     function receiptFootnote(model) {
       const parts = [];
       if (model.collection) parts.push(model.collection);
-      if (model.aiPoster) parts.push("Gospel artwork");
+      if (model.aiPoster) parts.push("Beautifully curated poster");
       if (model.creed) parts.push(model.creed);
       return parts.join(" · ");
     }

@@ -25,15 +25,15 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261003-settings-tabs-bright" />
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261004-cta-frost-dark" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
-  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
+  <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20261004-liturgy-curated" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261003-settings-split-glass" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261004-simple-pills" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
-  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
+  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-frost" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
   <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261003-no-quota-hint" />
   <script src="/static/js/input-limits.js" defer></script>
@@ -227,34 +227,54 @@
                 <svg class="liturgical-indicator__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </button>
               <div class="vb-dropdown-panel vb-dropdown-panel--right vb-dropdown-panel--wide liturgical-indicator-panel" id="liturgical-indicator-panel" role="dialog" aria-labelledby="liturgical-panel-title" hidden>
-              <p class="liturgical-indicator-panel__title" id="liturgical-panel-title">Countdowns</p>
-              <ul class="liturgical-countdown-list">
-                <li class="liturgical-countdown-item">
-                  <span class="liturgical-countdown-item__label">Next Sunday</span>
-                  <strong class="liturgical-countdown-item__value" id="liturgical-countdown-sunday">—</strong>
-                  <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-date">—</span>
-                </li>
-                <li class="liturgical-countdown-item">
-                  <span class="liturgical-countdown-item__label" id="liturgical-countdown-next-season-label">Next season</span>
-                  <strong class="liturgical-countdown-item__value" id="liturgical-countdown-next-season-sundays">—</strong>
-                  <span class="liturgical-countdown-item__sub" id="liturgical-countdown-next-season-sub">—</span>
-                </li>
-                <li class="liturgical-countdown-item liturgical-countdown-item--events" id="liturgical-countdown-item-events" hidden>
-                    <div class="liturgical-panel-events-section liturgical-panel-events-section--ongoing" id="liturgical-panel-events-ongoing-section" hidden>
-                      <span class="liturgical-panel-events-section__label">Ongoing</span>
-                      <ul class="liturgical-panel-events" id="liturgical-panel-events-ongoing" aria-live="polite"></ul>
-                    </div>
-                    <div class="liturgical-panel-events-section liturgical-panel-events-section--upcoming" id="liturgical-panel-events-upcoming-section" hidden>
-                      <span class="liturgical-panel-events-section__label">Upcoming event</span>
-                      <ul class="liturgical-panel-events" id="liturgical-panel-events-upcoming" aria-live="polite"></ul>
-                    </div>
-                </li>
-                <li class="liturgical-countdown-item">
-                  <span class="liturgical-countdown-item__label">World Youth Day 2027</span>
-                  <span class="liturgical-countdown-item__sub">Seoul · 3 Aug 2027</span>
-                  <strong class="liturgical-countdown-item__value" id="liturgical-countdown-wyd">—</strong>
-                </li>
-              </ul>
+                <div class="liturgical-indicator-panel__head">
+                  <div class="liturgical-indicator-panel__head-copy">
+                    <h3 id="liturgical-panel-title">Liturgical calendar</h3>
+                  </div>
+                </div>
+                <div class="liturgical-indicator-panel__body">
+                  <ul class="liturgical-countdown-list">
+                    <li class="liturgical-countdown-item liturgical-countdown-item--sunday">
+                      <div class="liturgical-countdown-item__body">
+                        <div class="liturgical-countdown-item__meta">
+                          <span class="liturgical-countdown-item__label">Next Sunday</span>
+                        </div>
+                        <strong class="liturgical-countdown-item__value" id="liturgical-countdown-sunday">—</strong>
+                        <span class="liturgical-countdown-item__sub" id="liturgical-countdown-sunday-date">—</span>
+                      </div>
+                    </li>
+                    <li class="liturgical-countdown-item">
+                      <div class="liturgical-countdown-item__body">
+                        <div class="liturgical-countdown-item__meta">
+                          <span class="liturgical-countdown-item__label" id="liturgical-countdown-next-season-label">Next season</span>
+                        </div>
+                        <strong class="liturgical-countdown-item__value" id="liturgical-countdown-next-season-sundays">—</strong>
+                        <span class="liturgical-countdown-item__sub" id="liturgical-countdown-next-season-sub">—</span>
+                      </div>
+                    </li>
+                    <li class="liturgical-countdown-item liturgical-countdown-item--events" id="liturgical-countdown-item-events" hidden>
+                      <div class="liturgical-countdown-item__body liturgical-countdown-item__body--stack">
+                        <div class="liturgical-panel-events-section liturgical-panel-events-section--ongoing" id="liturgical-panel-events-ongoing-section" hidden>
+                          <span class="liturgical-panel-events-section__label">Ongoing</span>
+                          <ul class="liturgical-panel-events" id="liturgical-panel-events-ongoing" aria-live="polite"></ul>
+                        </div>
+                        <div class="liturgical-panel-events-section liturgical-panel-events-section--upcoming" id="liturgical-panel-events-upcoming-section" hidden>
+                          <span class="liturgical-panel-events-section__label">Upcoming event</span>
+                          <ul class="liturgical-panel-events" id="liturgical-panel-events-upcoming" aria-live="polite"></ul>
+                        </div>
+                      </div>
+                    </li>
+                    <li class="liturgical-countdown-item liturgical-countdown-item--wyd">
+                      <div class="liturgical-countdown-item__body">
+                        <div class="liturgical-countdown-item__meta">
+                          <span class="liturgical-countdown-item__label">World Youth Day 2027</span>
+                        </div>
+                        <strong class="liturgical-countdown-item__value" id="liturgical-countdown-wyd">—</strong>
+                        <span class="liturgical-countdown-item__sub">Seoul · 3 Aug 2027</span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
             <div class="notif-wrap">
@@ -264,18 +284,22 @@
               </button>
               <div class="vb-dropdown-panel vb-dropdown-panel--right vb-dropdown-panel--wide notif-panel" id="notif-panel" role="dialog" aria-labelledby="notif-panel-title" hidden>
                 <div class="notif-panel__head">
-                  <h3 id="notif-panel-title">Notifications</h3>
-                  <button type="button" class="secondary" id="btn-clear-notifications">Clear all</button>
+                  <div class="notif-panel__head-copy">
+                    <h3 id="notif-panel-title">Notifications</h3>
+                  </div>
+                  <button type="button" class="notif-panel__clear" id="btn-clear-notifications">Clear all</button>
                 </div>
                 <div class="notif-panel__body">
                   <div id="sa-notif-section" class="sa-notif-section" hidden>
                     <div class="sa-notif-section__head">
-                      <h4>Superadmin notifications</h4>
-                      <span class="muted" id="sa-notif-count" style="font-size:0.78rem;"></span>
+                      <h4>Needs review</h4>
+                      <span class="sa-notif-count" id="sa-notif-count"></span>
                     </div>
                     <ul class="sa-notif-feed" id="sa-notif-feed" aria-live="polite"></ul>
                   </div>
-                  <p class="muted" id="notification-empty">No notifications yet.</p>
+                  <div class="notif-empty" id="notification-empty">
+                    <p class="notif-empty__title">You're all caught up</p>
+                  </div>
                   <ul class="notification-feed" id="notification-feed" aria-live="polite"></ul>
                 </div>
               </div>
@@ -449,7 +473,15 @@
           <div class="app-membership-banner" id="home-membership-banner" hidden aria-live="polite"></div>
           <div class="home-bento-grid">
             <section class="flow-bento-cell home-bento-cell--mass redesign-mass-card" id="home-mass-card" aria-labelledby="home-mass-heading">
-              <div class="redesign-mass-bg" aria-hidden="true"></div>
+              <div class="redesign-mass-bg-stack" aria-hidden="true">
+                <div class="redesign-mass-bg redesign-mass-bg--layer is-visible" data-rmc-bg-layer="0"></div>
+                <div class="redesign-mass-bg redesign-mass-bg--layer" data-rmc-bg-layer="1"></div>
+              </div>
+              <div class="home-mass-poster-nav" id="home-mass-poster-nav" hidden>
+                <button type="button" class="home-mass-poster-nav__btn" id="home-mass-poster-prev" aria-label="Previous poster style">←</button>
+                <span class="home-mass-poster-nav__label" id="home-mass-poster-style-label">Realistic</span>
+                <button type="button" class="home-mass-poster-nav__btn" id="home-mass-poster-next" aria-label="Next poster style">→</button>
+              </div>
               <div class="redesign-mass-inner">
                 <div class="home-mass-tour-banner" id="home-mass-tour-banner">
                   <button type="button" class="home-mass-tour-link" id="home-mass-tour-link">New here? Take the 7-step tour</button>
@@ -1695,9 +1727,9 @@
       </div>
       <div class="mw-modal" id="mw-partial-poster-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mw-partial-poster-title">
         <div class="mw-modal__card mw-partial-poster-card">
-          <h3 class="mw-modal__title" id="mw-partial-poster-title">Choose AI poster style</h3>
+          <h3 class="mw-modal__title" id="mw-partial-poster-title">Choose a poster style</h3>
           <p class="mw-modal__sub">Pick the weekly Gospel poster used as the Mass cover background, then generate.</p>
-          <div class="mw-partial-poster__grid" id="mw-partial-poster-grid" role="listbox" aria-label="AI poster styles"></div>
+          <div class="mw-partial-poster__grid" id="mw-partial-poster-grid" role="listbox" aria-label="Poster styles"></div>
           <p class="muted mw-partial-poster__hint" id="mw-partial-poster-hint" aria-live="polite"></p>
           <div class="mw-modal__actions">
             <button type="button" class="mw-btn mw-btn--generate" id="mw-partial-poster-go">Generate with this poster</button>
@@ -2341,7 +2373,7 @@
                           </button>
                           <div class="celebrant-picker__panel vb-dropdown-panel" id="celebrant-picker-panel" role="listbox" aria-labelledby="celebrant-label" hidden>
                             <ul class="vb-dropdown-list celebrant-picker__list" id="celebrant-list"></ul>
-                            <p class="vb-dropdown-empty celebrant-picker__empty" id="celebrant-picker-empty" hidden>No celebrants saved — add names in Settings → Church Profile.</p>
+                            <p class="vb-dropdown-empty celebrant-picker__empty" id="celebrant-picker-empty" hidden>No celebrants saved — add names in Settings → Parish.</p>
                           </div>
                           <input type="hidden" id="celebrant" value="" aria-describedby="celebrant-hint" />
                         </div>
@@ -2819,7 +2851,7 @@
                         </div>
                         <div class="mw-poster-transparency" id="mw-poster-transparency">
                           <div class="mw-poster-transparency__row">
-                            <label for="flow-ai-poster-transparency">AI poster transparency</label>
+                            <label for="flow-ai-poster-transparency">Poster transparency</label>
                             <span class="mw-poster-transparency__value" id="flow-ai-poster-transparency-label" aria-live="polite">0%</span>
                           </div>
                           <input
@@ -3013,7 +3045,7 @@
                 </section>
                 <nav class="mass-summary-links" aria-label="Song plan shortcuts" hidden>
                   <button type="button" class="mass-summary-link mass-summary-link--btn" id="btn-practice-share">Share for choir practice</button>
-                  <a href="/settings/app" data-route="/settings/app" class="mass-summary-link">Preferences</a>
+                  <a href="/settings/preferences" data-route="/settings/preferences" class="mass-summary-link">Preferences</a>
                   <a href="/library/songs" data-route="/library/songs" class="mass-summary-link">Song library</a>
                 </nav>
                 </div>
@@ -3071,7 +3103,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261003-scroll-dash"></script>
+      <script src="/static/js/mw-wizard.js?v=20261004-poster-quota"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3378,7 +3410,7 @@
             <div class="field">
               <label for="poster-celebrant">Celebrant</label>
               <input type="text" id="poster-celebrant" placeholder="Synced from Mass Builder" maxlength="200" />
-              <p class="muted" style="margin:6px 0 0;font-size:var(--text-sm);">Uses the celebrant from Mass Builder. Manage the list in Settings → Church Profile.</p>
+              <p class="muted" style="margin:6px 0 0;font-size:var(--text-sm);">Uses the celebrant from Mass Builder. Manage the list in Settings → Parish.</p>
             </div>
             <div class="field">
               <label for="poster-gospel-quote">Gospel quote (one line)</label>
@@ -3404,13 +3436,13 @@
             </div>
             <div class="field">
               <label><input type="checkbox" id="poster-include-social" /> Include Instagram / social poster sizes</label>
-              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Off by default. Requires AI poster art on for social sizes.</p>
+              <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Off by default. Requires a beautifully curated poster for social sizes.</p>
             </div>
             <div class="field">
               <label class="mw-switch">
                 <input type="checkbox" id="poster-use-ai-poster" />
                 <span class="mw-switch__track" aria-hidden="true"><span class="mw-switch__knob"></span></span>
-                <span class="mw-switch__text">AI poster art · Off</span>
+                <span class="mw-switch__text">Beautifully curated poster · Off</span>
               </label>
               <p class="muted" style="margin:6px 0 0;font-size:0.78rem;">Full-bleed Gospel art for this Sunday.</p>
               <input type="checkbox" id="poster-use-ai-poster-legacy" class="sr-only" tabindex="-1" aria-hidden="true" />
@@ -3537,7 +3569,7 @@
                   <a class="primary" href="/admin/distribution" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Distribution CRM</a>
                   <button type="button" class="secondary" id="sa-btn-goto-membership">Approvals</button>
                   <button type="button" class="secondary" data-sa-panel-jump="analytics">Analytics</button>
-                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">AI &amp; quota</button>
+                  <button type="button" class="secondary" data-sa-panel-jump="system-ai">Posters &amp; quota</button>
                   <button type="button" class="secondary" data-sa-panel-jump="content-songs">Song catalog</button>
                 </div>
               </div>
@@ -3881,12 +3913,12 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>AI &amp; weekly quota</h3>
-                  <p>Gemini integration and daily image generation limits.</p>
+                  <p>Poster generation settings and free-tier weekly limits.</p>
                 </div>
               </header>
               <p class="muted" id="sa-ai-quota-summary">Loading quota…</p>
               <div class="sa-table-wrap" id="sa-parish-quota-wrap">
-                <table class="sa-table" id="sa-parish-quota-table" aria-label="Per-parish AI image quota this week">
+                <table class="sa-table" id="sa-parish-quota-table" aria-label="Per-parish poster quota this week">
                   <thead>
                     <tr>
                       <th scope="col">Parish</th>
@@ -4076,10 +4108,11 @@
           <nav class="settings-modal-tabs" id="settings-modal-tabs" aria-label="Settings sections">
             <h2 class="settings-modal-tabs__title" id="settings-modal-tabs-title">Settings</h2>
             <a class="settings-modal-tab" href="/settings/account" data-route="/settings/account">Account</a>
-            <a class="settings-modal-tab" href="/settings/church" data-route="/settings/church">Church Profile</a>
+            <a class="settings-modal-tab" href="/settings/church" data-route="/settings/church">Parish</a>
+            <a class="settings-modal-tab" href="/settings/team" data-route="/settings/team" id="settings-modal-tab-team" hidden>Team</a>
             <a class="settings-modal-tab" href="/settings/billing" data-route="/settings/billing" id="settings-modal-tab-billing" hidden>Billing</a>
-            <a class="settings-modal-tab" href="/settings/team" data-route="/settings/team" id="settings-modal-tab-team" hidden>Parish Team</a>
             <a class="settings-modal-tab" href="/settings/app" data-route="/settings/app">Appearance</a>
+            <a class="settings-modal-tab" href="/settings/preferences" data-route="/settings/preferences">Preferences</a>
             <a class="settings-modal-tab" href="/settings/privacy" data-route="/settings/privacy">Privacy &amp; legal</a>
           </nav>
           <aside class="settings-nav-card song-plan-summary" aria-labelledby="settings-nav-heading">
@@ -4090,7 +4123,7 @@
                 </span>
                 <div class="home-card-head__text">
                   <h3 id="settings-nav-heading">Settings</h3>
-                  <p>Parish profile and app appearance</p>
+                  <p>Account, parish, and app preferences</p>
                 </div>
               </header>
               <nav class="settings-nav-list" id="settings-sidebar-nav" aria-label="Settings navigation">
@@ -4104,7 +4137,13 @@
                   <span class="settings-sidebar-link__icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
                   </span>
-                  Church Profile
+                  Parish
+                </a>
+                <a class="settings-sidebar-link" href="/settings/team" data-route="/settings/team" id="settings-nav-team" hidden>
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </span>
+                  Team
                 </a>
                 <a class="settings-sidebar-link" href="/settings/billing" data-route="/settings/billing" id="settings-nav-billing" hidden>
                   <span class="settings-sidebar-link__icon" aria-hidden="true">
@@ -4112,17 +4151,17 @@
                   </span>
                   Billing
                 </a>
-                <a class="settings-sidebar-link" href="/settings/team" data-route="/settings/team" id="settings-nav-team" hidden>
-                  <span class="settings-sidebar-link__icon" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  </span>
-                  Parish Team
-                </a>
                 <a class="settings-sidebar-link" href="/settings/app" data-route="/settings/app">
                   <span class="settings-sidebar-link__icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
                   </span>
-                  Appearance &amp; theme
+                  Appearance
+                </a>
+                <a class="settings-sidebar-link" href="/settings/preferences" data-route="/settings/preferences">
+                  <span class="settings-sidebar-link__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></svg>
+                  </span>
+                  Preferences
                 </a>
                 <a class="settings-sidebar-link" href="/settings/privacy" data-route="/settings/privacy">
                   <span class="settings-sidebar-link__icon" aria-hidden="true">
@@ -4142,43 +4181,177 @@
                 </span>
                 <div class="home-card-head__text">
                   <h3>Account</h3>
-                  <p>Your personal profile photo shown in the header menu.</p>
+                  <p>Your personal profile and linked sign-in methods.</p>
                 </div>
               </header>
-              <div class="field">
-                <label>Profile picture</label>
-                <div class="church-identity-row">
-                  <div class="profile-avatar-wrap" id="profile-avatar-wrap">
-                    <button type="button" class="church-logo-avatar profile-avatar" id="profile-avatar-btn" aria-label="Preview profile picture">
-                      <img class="church-logo-avatar__img" id="profile-avatar-img" alt="" hidden />
-                      <span class="church-logo-avatar__placeholder" id="profile-avatar-placeholder" aria-hidden="true">+</span>
-                    </button>
-                    <button type="button" class="profile-avatar-add" id="profile-avatar-add" aria-label="Change profile picture" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-avatar-menu">+</button>
-                    <div class="profile-avatar-menu" id="profile-avatar-menu" role="menu" hidden>
-                      <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="upload">Upload photo</button>
-                      <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="generate">Use generated avatar</button>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Profile</h4>
+                <p class="muted settings-section__lead">Shown in the header menu — separate from the parish logo.</p>
+                <div class="field">
+                  <label>Profile picture</label>
+                  <div class="church-identity-row">
+                    <div class="profile-avatar-wrap" id="profile-avatar-wrap">
+                      <button type="button" class="church-logo-avatar profile-avatar" id="profile-avatar-btn" aria-label="Preview profile picture">
+                        <img class="church-logo-avatar__img" id="profile-avatar-img" alt="" hidden />
+                        <span class="church-logo-avatar__placeholder" id="profile-avatar-placeholder" aria-hidden="true">+</span>
+                      </button>
+                      <button type="button" class="profile-avatar-add" id="profile-avatar-add" aria-label="Change profile picture" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-avatar-menu">+</button>
+                      <div class="profile-avatar-menu" id="profile-avatar-menu" role="menu" hidden>
+                        <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="upload">Upload photo</button>
+                        <button type="button" class="profile-avatar-menu__item" role="menuitem" data-avatar-action="generate">Use generated avatar</button>
+                      </div>
+                      <input type="file" id="profile-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
                     </div>
-                    <input type="file" id="profile-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+                    <div class="church-identity-row__name">
+                      <p class="settings-account-meta" id="settings-account-name">—</p>
+                      <p class="settings-account-meta" id="settings-account-email" style="margin-top:4px;">—</p>
+                      <p class="settings-account-contrib" id="settings-account-contrib" hidden></p>
+                    </div>
                   </div>
-                  <div class="church-identity-row__name">
-                    <p class="settings-account-meta" id="settings-account-name">—</p>
-                    <p class="settings-account-meta" id="settings-account-email" style="margin-top:4px;">—</p>
-                    <p class="settings-account-contrib" id="settings-account-contrib" hidden></p>
-                    <div class="settings-account-social" id="settings-account-social" style="margin-top:12px;">
-                      <div class="settings-account-google" id="settings-account-google" style="margin-bottom:12px;">
-                        <p class="muted" id="settings-account-google-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Google connection…</p>
-                        <button type="button" class="secondary" id="settings-connect-google" hidden>Connect Google login</button>
-                      </div>
-                      <div class="settings-account-facebook" id="settings-account-facebook">
-                        <p class="muted" id="settings-account-facebook-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Facebook connection…</p>
-                        <button type="button" class="secondary" id="settings-connect-facebook" hidden>Connect Facebook login</button>
-                      </div>
-                    </div>
-                    <p class="muted" style="margin-top:8px;font-size:0.85rem;">This is your photo — separate from the parish logo on Church Profile.</p>
+                  <p class="status" id="avatar-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
+                </div>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Connected logins</h4>
+                <p class="muted settings-section__lead">Link social providers for faster sign-in.</p>
+                <div class="settings-account-social" id="settings-account-social">
+                  <div class="settings-account-google" id="settings-account-google" style="margin-bottom:12px;">
+                    <p class="muted" id="settings-account-google-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Google connection…</p>
+                    <button type="button" class="secondary" id="settings-connect-google" hidden>Connect Google login</button>
+                  </div>
+                  <div class="settings-account-facebook" id="settings-account-facebook">
+                    <p class="muted" id="settings-account-facebook-status" style="margin:0 0 8px;font-size:0.85rem;">Checking Facebook connection…</p>
+                    <button type="button" class="secondary" id="settings-connect-facebook" hidden>Connect Facebook login</button>
                   </div>
                 </div>
-                <p class="status" id="avatar-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
-              </div>
+              </section>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Parish</h3>
+                  <p>Workspace identity used across Mass media and posters.</p>
+                </div>
+              </header>
+              <div id="settings-membership-banner" class="status" hidden aria-live="polite"></div>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Identity</h4>
+                <p class="muted settings-section__lead">Parish name and logo shown on generated media.</p>
+                <div class="field">
+                  <label>Parish identity</label>
+                  <div class="church-identity-row">
+                    <button type="button" class="church-logo-avatar" id="church-logo-avatar" aria-label="Preview church logo" disabled>
+                      <img class="church-logo-avatar__img" id="church-logo-avatar-img" alt="" hidden />
+                      <span class="church-logo-avatar__placeholder" id="church-logo-avatar-placeholder" aria-hidden="true">+</span>
+                    </button>
+                    <div class="church-identity-row__name">
+                      <label for="settings-church-name" class="sr-only">Parish / community name</label>
+                      <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" autocomplete="organization" />
+                      <p class="muted" id="settings-church-name-hint" style="margin-top:6px;font-size:0.85rem;" hidden>Parish name is locked after submission. Presidents can request a rename for superadmin approval.</p>
+                      <p class="muted" id="settings-church-logo-hint" style="margin-top:4px;font-size:0.85rem;" hidden>Logo is locked after submission and cannot be changed.</p>
+                      <p class="muted" style="margin-top:6px;font-size:0.85rem;">Square tile = parish logo (not your profile picture).</p>
+                      <button type="button" class="secondary" id="btn-request-parish-rename" style="margin-top:10px;" hidden>Request name change</button>
+                    </div>
+                  </div>
+                  <div class="church-logo-upload-row" id="church-logo-upload-row">
+                    <input type="file" id="church-logo" accept="image/png,image/jpeg,image/webp,image/gif" style="flex: 1;" />
+                    <button type="button" class="secondary" id="btn-upload-logo" style="white-space: nowrap;">Upload logo</button>
+                  </div>
+                  <p class="status" id="logo-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
+                </div>
+                <div class="actions">
+                  <button type="button" class="primary" id="btn-submit-parish-name" hidden>Submit parish profile</button>
+                  <button type="button" class="primary" id="btn-save-community-api" hidden>Save church profile</button>
+                </div>
+                <p class="status" id="settings-church-status" aria-live="polite"></p>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Media branding</h4>
+                <p class="muted settings-section__lead">What appears on posters and decks for this parish.</p>
+                <div class="field">
+                  <label>Poster branding</label>
+                  <p class="muted" style="margin:0 0 10px;">Include these on generated Mass posters.</p>
+                  <div class="settings-branding-toggles" role="group" aria-label="Poster branding">
+                    <label><input type="checkbox" id="flow-include-church-logo" /> Parish logo</label>
+                    <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Developer options</label>
+                  <p class="muted" style="margin:0 0 10px;">Advanced toggles for debugging the generated deck.</p>
+                  <div class="settings-branding-toggles" role="group" aria-label="Developer options">
+                    <label><input type="checkbox" id="flow-show-footer" /> Show slide footer (the small bottom tag)</label>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button type="button" class="primary" id="btn-save-church-branding">Save settings</button>
+                </div>
+                <p class="status" id="settings-branding-status" aria-live="polite"></p>
+                <div class="field" id="parish-deck-dna-field">
+                  <label>Parish Deck DNA</label>
+                  <p class="muted" style="margin:0 0 10px;">Download a labeled scaffold, style fonts/sizes/backgrounds in PowerPoint, then upload. Mass dividers stay LiturgyFlow-owned. Keep the left-footer <code>LFDNA|…</code> labels.</p>
+                  <p class="muted" id="parish-deck-dna-status-text" style="margin:0 0 10px;" aria-live="polite">No custom DNA yet — Mass decks use Theme 1.</p>
+                  <div class="church-logo-upload-row" style="flex-wrap:wrap;gap:8px;">
+                    <button type="button" class="secondary" id="btn-parish-deck-dna-download" style="white-space:nowrap;">Download scaffold</button>
+                    <input type="file" id="parish-deck-dna-file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" style="flex:1;min-width:12rem;" />
+                    <button type="button" class="secondary" id="btn-parish-deck-dna-upload" style="white-space:nowrap;">Upload DNA</button>
+                    <button type="button" class="secondary" id="btn-parish-deck-dna-clear" hidden style="white-space:nowrap;">Clear DNA</button>
+                  </div>
+                  <p class="status" id="parish-deck-dna-status" aria-live="polite" style="margin-top:6px;font-size:0.85rem;"></p>
+                </div>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Celebrants</h4>
+                <p class="muted settings-section__lead">Names appear in Mass Builder → Basics.</p>
+                <div class="field">
+                  <label for="settings-celebrant-new">Mass celebrants</label>
+                  <ul class="celebrant-settings-list" id="settings-celebrant-list" aria-live="polite"></ul>
+                  <div class="flow-input-group">
+                    <input type="text" id="settings-celebrant-new" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
+                    <button type="button" class="secondary" id="btn-settings-celebrant-add">Add</button>
+                  </div>
+                </div>
+              </section>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-team" data-settings-panel="team" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Team</h3>
+                  <p>Invite media teammates to join your parish.</p>
+                </div>
+              </header>
+              <p class="muted" id="settings-team-capacity" aria-live="polite"></p>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Members</h4>
+                <ul class="celebrant-settings-list" id="settings-team-members" aria-live="polite"></ul>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Invite media teammate</h4>
+                <div class="field">
+                  <label for="settings-team-invite-email">Email (optional lock)</label>
+                  <input type="email" id="settings-team-invite-email" placeholder="media@parish.org" maxlength="320" autocomplete="off" />
+                </div>
+                <div class="actions">
+                  <button type="button" class="primary" id="settings-team-create-invite">Create invite link</button>
+                  <button type="button" class="secondary" id="settings-team-refresh">Refresh</button>
+                </div>
+                <p class="status" id="settings-team-status" aria-live="polite"></p>
+                <div class="field" id="settings-team-url-wrap" hidden>
+                  <label for="settings-team-invite-url">Latest invite URL</label>
+                  <input type="text" id="settings-team-invite-url" readonly />
+                  <button type="button" class="secondary" id="settings-team-copy-url" style="margin-top:8px;">Copy link</button>
+                </div>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Pending invites</h4>
+                <ul class="celebrant-settings-list" id="settings-team-invites" aria-live="polite"></ul>
+              </section>
             </article>
             <article class="settings-panel flow-bento-cell" id="settings-panel-billing" data-settings-panel="billing" hidden>
               <header class="flow-bento-cell__head home-card-head">
@@ -4224,144 +4397,37 @@
               </div>
               <p class="muted settings-billing-hint" id="settings-billing-hint" hidden></p>
             </article>
-            <article class="settings-panel flow-bento-cell" id="settings-panel-church" data-settings-panel="church" hidden>
-              <header class="flow-bento-cell__head home-card-head">
-                <span class="home-card-head__icon" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9h4"/><path d="M12 7v5"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9"/><path d="M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14"/></svg>
-                </span>
-                <div class="home-card-head__text">
-                  <h3>Church Profile</h3>
-                  <p>Community name, celebrants, and logo used across Mass media.</p>
-                </div>
-              </header>
-                <div id="settings-membership-banner" class="status" hidden aria-live="polite"></div>
-                <div class="field">
-                  <label>Parish identity</label>
-                  <div class="church-identity-row">
-                    <button type="button" class="church-logo-avatar" id="church-logo-avatar" aria-label="Preview church logo" disabled>
-                      <img class="church-logo-avatar__img" id="church-logo-avatar-img" alt="" hidden />
-                      <span class="church-logo-avatar__placeholder" id="church-logo-avatar-placeholder" aria-hidden="true">+</span>
-                    </button>
-                    <div class="church-identity-row__name">
-                      <label for="settings-church-name" class="sr-only">Parish / community name</label>
-                      <input type="text" id="settings-church-name" placeholder="Parish or community name" maxlength="240" autocomplete="organization" />
-                      <p class="muted" id="settings-church-name-hint" style="margin-top:6px;font-size:0.85rem;" hidden>Parish name is locked after submission. Presidents can request a rename for superadmin approval.</p>
-                      <p class="muted" id="settings-church-logo-hint" style="margin-top:4px;font-size:0.85rem;" hidden>Logo is locked after submission and cannot be changed.</p>
-                      <p class="muted" style="margin-top:6px;font-size:0.85rem;">Square tile = parish logo (not your profile picture).</p>
-                      <button type="button" class="secondary" id="btn-request-parish-rename" style="margin-top:10px;" hidden>Request name change</button>
-                    </div>
-                  </div>
-                  <div class="church-logo-upload-row" id="church-logo-upload-row">
-                    <input type="file" id="church-logo" accept="image/png,image/jpeg,image/webp,image/gif" style="flex: 1;" />
-                    <button type="button" class="secondary" id="btn-upload-logo" style="white-space: nowrap;">Upload logo</button>
-                  </div>
-                  <p class="status" id="logo-status" aria-live="polite" style="margin-top: 4px; font-size: 0.85rem;"></p>
-                </div>
-                <div class="field">
-                  <label>Poster branding</label>
-                  <p class="muted" style="margin:0 0 10px;">Include these on generated Mass posters.</p>
-                  <div class="settings-branding-toggles" role="group" aria-label="Poster branding">
-                    <label><input type="checkbox" id="flow-include-church-logo" /> Parish logo</label>
-                    <label><input type="checkbox" id="flow-include-church-name" /> Parish name</label>
-                  </div>
-                </div>
-                <div class="field">
-                  <label>Developer options</label>
-                  <p class="muted" style="margin:0 0 10px;">Advanced toggles for debugging the generated deck.</p>
-                  <div class="settings-branding-toggles" role="group" aria-label="Developer options">
-                    <label><input type="checkbox" id="flow-show-footer" /> Show slide footer (the small bottom tag)</label>
-                  </div>
-                </div>
-                <div class="actions">
-                  <button type="button" class="primary" id="btn-save-church-branding">Save settings</button>
-                </div>
-                <p class="status" id="settings-branding-status" aria-live="polite"></p>
-                <div class="field" id="parish-deck-dna-field">
-                  <label>Parish Deck DNA</label>
-                  <p class="muted" style="margin:0 0 10px;">Download a labeled scaffold, style fonts/sizes/backgrounds in PowerPoint, then upload. Mass dividers stay LiturgyFlow-owned. Keep the left-footer <code>LFDNA|…</code> labels.</p>
-                  <p class="muted" id="parish-deck-dna-status-text" style="margin:0 0 10px;" aria-live="polite">No custom DNA yet — Mass decks use Theme 1.</p>
-                  <div class="church-logo-upload-row" style="flex-wrap:wrap;gap:8px;">
-                    <button type="button" class="secondary" id="btn-parish-deck-dna-download" style="white-space:nowrap;">Download scaffold</button>
-                    <input type="file" id="parish-deck-dna-file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" style="flex:1;min-width:12rem;" />
-                    <button type="button" class="secondary" id="btn-parish-deck-dna-upload" style="white-space:nowrap;">Upload DNA</button>
-                    <button type="button" class="secondary" id="btn-parish-deck-dna-clear" hidden style="white-space:nowrap;">Clear DNA</button>
-                  </div>
-                  <p class="status" id="parish-deck-dna-status" aria-live="polite" style="margin-top:6px;font-size:0.85rem;"></p>
-                </div>
-                <div class="field">
-                  <label for="settings-celebrant-new">Mass celebrants</label>
-                  <p class="muted" style="margin:0 0 10px;">Saved to the app database. Names appear in Mass Builder → Basics.</p>
-                  <ul class="celebrant-settings-list" id="settings-celebrant-list" aria-live="polite"></ul>
-                  <div class="flow-input-group">
-                    <input type="text" id="settings-celebrant-new" placeholder="e.g. Fr. John Smith" maxlength="200" autocomplete="name" />
-                    <button type="button" class="secondary" id="btn-settings-celebrant-add">Add</button>
-                  </div>
-                </div>
-                <div class="actions">
-                  <button type="button" class="primary" id="btn-submit-parish-name" hidden>Submit parish profile</button>
-                  <button type="button" class="primary" id="btn-save-community-api" hidden>Save church profile</button>
-                </div>
-                <p class="status" id="settings-church-status" aria-live="polite"></p>
-            </article>
-            <article class="settings-panel flow-bento-cell" id="settings-panel-team" data-settings-panel="team" hidden>
-              <header class="flow-bento-cell__head home-card-head">
-                <span class="home-card-head__icon" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </span>
-                <div class="home-card-head__text">
-                  <h3>Parish Team</h3>
-                  <p>Invite media teammates to create an account and join your parish (parish name is set automatically).</p>
-                </div>
-              </header>
-              <p class="muted" id="settings-team-capacity" aria-live="polite"></p>
-              <h4 class="settings-admin-subhead">Members</h4>
-              <ul class="celebrant-settings-list" id="settings-team-members" aria-live="polite"></ul>
-              <h4 class="settings-admin-subhead">Invite media teammate</h4>
-              <div class="field">
-                <label for="settings-team-invite-email">Email (optional lock)</label>
-                <input type="email" id="settings-team-invite-email" placeholder="media@parish.org" maxlength="320" autocomplete="off" />
-              </div>
-              <div class="actions">
-                <button type="button" class="primary" id="settings-team-create-invite">Create invite link</button>
-                <button type="button" class="secondary" id="settings-team-refresh">Refresh</button>
-              </div>
-              <p class="status" id="settings-team-status" aria-live="polite"></p>
-              <div class="field" id="settings-team-url-wrap" hidden>
-                <label for="settings-team-invite-url">Latest invite URL</label>
-                <input type="text" id="settings-team-invite-url" readonly />
-                <button type="button" class="secondary" id="settings-team-copy-url" style="margin-top:8px;">Copy link</button>
-              </div>
-              <h4 class="settings-admin-subhead">Pending invites</h4>
-              <ul class="celebrant-settings-list" id="settings-team-invites" aria-live="polite"></ul>
-            </article>
             <article class="settings-panel flow-bento-cell" id="settings-panel-app" data-settings-panel="appearance" hidden>
               <header class="flow-bento-cell__head home-card-head">
                 <span class="home-card-head__icon" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
                 </span>
                 <div class="home-card-head__text">
-                  <h3>Appearance &amp; theme</h3>
-                  <p>Light, Supabase-style dark, true-black OLED, or match your device.</p>
+                  <h3>Appearance</h3>
+                  <p>Theme and accent color for the app chrome.</p>
                 </div>
               </header>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Color theme</h4>
+                <p class="muted settings-section__lead">Light, dark, OLED black, or match your device.</p>
                 <div class="theme-preference-row" role="radiogroup" aria-label="Color theme">
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="light" /> Light</label>
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="dark" /> Dark</label>
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="oled" /> OLED</label>
                   <label class="theme-pref-option"><input type="radio" name="theme-preference" value="system" checked /> System</label>
                 </div>
-
-                <h3>Header toggle dark mode</h3>
-                <p class="muted">When you use the sun/moon button in the top bar, which dark theme should it switch to?</p>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Header toggle dark mode</h4>
+                <p class="muted settings-section__lead">When you use the sun/moon button in the top bar, which dark theme should it switch to?</p>
                 <div class="theme-preference-row" role="radiogroup" aria-label="Header toggle dark mode">
                   <label class="theme-pref-option"><input type="radio" name="toggle-dark-preference" value="dark" checked /> Dark</label>
                   <label class="theme-pref-option"><input type="radio" name="toggle-dark-preference" value="oled" /> OLED</label>
                 </div>
-
-                <hr class="settings-divider" />
-
-                <h3>Accent color</h3>
-                <p class="muted">App chrome follows the Verbum icon color by default. Liturgical green appears only on the Ordinary Time season pill in the header.</p>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Accent color</h4>
+                <p class="muted settings-section__lead">App chrome follows the Verbum icon color by default. Liturgical green appears only on the Ordinary Time season pill in the header.</p>
                 <div class="accent-preset-row" role="group" aria-label="Accent presets">
                   <button type="button" class="accent-swatch" data-accent="#a10f0d" data-accent-glow="#b91c1c" data-accent-default="1" title="Verbum app icon" style="background: linear-gradient(135deg, #a10f0d, #b91c1c);"></button>
                   <button type="button" class="accent-swatch" data-accent="#166534" data-accent-glow="#4ADE80" title="Ordinary Time — liturgical green" style="background: linear-gradient(135deg, #166534, #4ADE80);"></button>
@@ -4371,11 +4437,26 @@
                   <input type="color" id="app-accent-color" value="#a10f0d" aria-label="Custom accent color" />
                   <button type="button" class="secondary" id="btn-reset-accent">Reset to app default</button>
                 </div>
-
-                <hr class="settings-divider" />
-
-                <h3>Home news card</h3>
-                <p class="muted">Show world Catholic headlines beside the Sunday Gospel on Home. Refreshes each time you open Home.</p>
+              </section>
+            </article>
+            <article class="settings-panel flow-bento-cell" id="settings-panel-preferences" data-settings-panel="preferences" hidden>
+              <header class="flow-bento-cell__head home-card-head">
+                <span class="home-card-head__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></svg>
+                </span>
+                <div class="home-card-head__text">
+                  <h3>Preferences</h3>
+                  <p>How the app behaves — navigation, Home, and media shortcuts.</p>
+                </div>
+              </header>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Navigation tabs</h4>
+                <p class="muted settings-section__lead">Home, Mass, Lyrics Library, and Media are always visible. Turn on optional tabs below — your choices are remembered.</p>
+                <div class="settings-nav-tabs-list" id="settings-nav-tabs-list" role="group" aria-label="Visible navigation tabs"></div>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Home news card</h4>
+                <p class="muted settings-section__lead">Show world Catholic headlines beside the Sunday Gospel on Home. Refreshes each time you open Home.</p>
                 <label class="toggle">
                   <input type="checkbox" id="settings-home-news-enabled" checked />
                   Show news card on Home
@@ -4388,39 +4469,32 @@
                   <input type="checkbox" id="settings-home-news-cna" checked />
                   Catholic News Agency
                 </label>
-
-                <hr class="settings-divider" />
-
-                <h3>Song library updates</h3>
-                <p class="muted">Optionally show a popup after sign-in with newly added songs and recent lyric updates. Off by default.</p>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Song library updates</h4>
+                <p class="muted settings-section__lead">Optionally show a popup after sign-in with newly added songs and recent lyric updates. Off by default.</p>
                 <label class="toggle">
                   <input type="checkbox" id="settings-songs-whats-new-popup" />
                   Show &ldquo;What&apos;s new&rdquo; song popup after login
                 </label>
-
-                <hr class="settings-divider" />
-
-                <h3>Navigation tabs</h3>
-                <p class="muted">Home, Mass, Lyrics Library, and Media are always visible. Turn on optional tabs below to add them to your navigation — your choices are remembered for next time.</p>
-                <div class="settings-nav-tabs-list" id="settings-nav-tabs-list" role="group" aria-label="Visible navigation tabs"></div>
-
-                <hr class="settings-divider" />
-
-                <section id="settings-live-radio">
-                  <h3>Catholic Live Radio</h3>
-                  <p class="muted">Default station for the Live Radio pill in the header. Only stations with an in-browser stream can play from the mini player.</p>
-                  <div class="field">
-                    <label for="settings-radio-select">Default station</label>
-                    <select id="settings-radio-select" aria-label="Default radio station"></select>
-                  </div>
-                  <p class="status" id="settings-radio-status" aria-live="polite"></p>
-                </section>
-
-                <p class="muted settings-footnote">Use <strong>Mass Builder</strong> for hymns and exports, and <strong>Theme Lab</strong> for slide colors and typography.</p>
+              </section>
+              <section class="settings-section" id="settings-live-radio">
+                <h4 class="settings-section__title">Catholic Live Radio</h4>
+                <p class="muted settings-section__lead">Default station for the Live Radio pill in the header. Only stations with an in-browser stream can play from the mini player.</p>
+                <div class="field">
+                  <label for="settings-radio-select">Default station</label>
+                  <select id="settings-radio-select" aria-label="Default radio station"></select>
+                </div>
+                <p class="status" id="settings-radio-status" aria-live="polite"></p>
+              </section>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Shortcuts</h4>
+                <p class="muted settings-section__lead">Jump to Mass Builder for hymns and exports, or Theme Lab for slide colors and typography.</p>
                 <div class="actions">
                   <button type="button" class="secondary" id="btn-app-open-mass">Open Mass Builder</button>
                   <button type="button" class="secondary" id="btn-app-open-theme">Open Theme Lab</button>
                 </div>
+              </section>
             </article>
             <article class="settings-panel flow-bento-cell" id="settings-panel-privacy" data-settings-panel="privacy" hidden>
               <header class="flow-bento-cell__head home-card-head">
@@ -4429,44 +4503,47 @@
                 </span>
                 <div class="home-card-head__text">
                   <h3>Privacy &amp; legal</h3>
-                  <p>Policies, cookies, and data requests for your parish account.</p>
+                  <p>Policies, cookies, and data requests.</p>
                 </div>
               </header>
-              <p class="muted">Review policies, manage cookies, or request access to your data. Image and hymn copyrights remain your parish’s responsibility — see Copyright &amp; IP.</p>
-              <div class="settings-privacy-links" role="list">
-                <a class="settings-privacy-link" role="listitem" href="/legal/privacy" target="_blank" rel="noopener">
-                  <span class="settings-privacy-link__label">Privacy Policy</span>
-                  <span class="settings-privacy-link__hint">How we handle parish and account data</span>
-                </a>
-                <a class="settings-privacy-link" role="listitem" href="/legal/terms" target="_blank" rel="noopener">
-                  <span class="settings-privacy-link__label">Terms of Service</span>
-                  <span class="settings-privacy-link__hint">Rules for using LiturgyFlow</span>
-                </a>
-                <a class="settings-privacy-link" role="listitem" href="/legal/cookies" target="_blank" rel="noopener">
-                  <span class="settings-privacy-link__label">Cookies</span>
-                  <span class="settings-privacy-link__hint">Cookie types and preferences</span>
-                </a>
-                <a class="settings-privacy-link" role="listitem" href="/legal/copyright" target="_blank" rel="noopener">
-                  <span class="settings-privacy-link__label">Copyright &amp; IP</span>
-                  <span class="settings-privacy-link__hint">Image and hymn licensing responsibilities</span>
-                </a>
-                <a class="settings-privacy-link" role="listitem" href="/legal/refund" target="_blank" rel="noopener">
-                  <span class="settings-privacy-link__label">Refunds</span>
-                  <span class="settings-privacy-link__hint">Billing and refund policy</span>
-                </a>
-                <a class="settings-privacy-link" role="listitem" href="/legal/accessibility" target="_blank" rel="noopener">
-                  <span class="settings-privacy-link__label">Accessibility</span>
-                  <span class="settings-privacy-link__hint">Our accessibility commitments</span>
-                </a>
-                <button type="button" class="settings-privacy-link" role="listitem" data-lf-consent-manage onclick="if(window.openLiturgyFlowCookieSettings){window.openLiturgyFlowCookieSettings();return false;}">
-                  <span class="settings-privacy-link__label">Cookie settings</span>
-                  <span class="settings-privacy-link__hint">Manage consent preferences</span>
-                </button>
-                <a class="settings-privacy-link" role="listitem" href="/?contact=1&amp;topic=privacy" target="_blank" rel="noopener">
-                  <span class="settings-privacy-link__label">Data / GDPR request</span>
-                  <span class="settings-privacy-link__hint">Access, export, or delete your data</span>
-                </a>
-              </div>
+              <section class="settings-section">
+                <h4 class="settings-section__title">Policies &amp; requests</h4>
+                <p class="muted settings-section__lead">Review policies, manage cookies, or request access to your data. Image and hymn copyrights remain your parish’s responsibility — see Copyright &amp; IP.</p>
+                <div class="settings-privacy-links" role="list">
+                  <a class="settings-privacy-link" role="listitem" href="/legal/privacy" target="_blank" rel="noopener">
+                    <span class="settings-privacy-link__label">Privacy Policy</span>
+                    <span class="settings-privacy-link__hint">How we handle parish and account data</span>
+                  </a>
+                  <a class="settings-privacy-link" role="listitem" href="/legal/terms" target="_blank" rel="noopener">
+                    <span class="settings-privacy-link__label">Terms of Service</span>
+                    <span class="settings-privacy-link__hint">Rules for using LiturgyFlow</span>
+                  </a>
+                  <a class="settings-privacy-link" role="listitem" href="/legal/cookies" target="_blank" rel="noopener">
+                    <span class="settings-privacy-link__label">Cookies</span>
+                    <span class="settings-privacy-link__hint">Cookie types and preferences</span>
+                  </a>
+                  <a class="settings-privacy-link" role="listitem" href="/legal/copyright" target="_blank" rel="noopener">
+                    <span class="settings-privacy-link__label">Copyright &amp; IP</span>
+                    <span class="settings-privacy-link__hint">Image and hymn licensing responsibilities</span>
+                  </a>
+                  <a class="settings-privacy-link" role="listitem" href="/legal/refund" target="_blank" rel="noopener">
+                    <span class="settings-privacy-link__label">Refunds</span>
+                    <span class="settings-privacy-link__hint">Billing and refund policy</span>
+                  </a>
+                  <a class="settings-privacy-link" role="listitem" href="/legal/accessibility" target="_blank" rel="noopener">
+                    <span class="settings-privacy-link__label">Accessibility</span>
+                    <span class="settings-privacy-link__hint">Our accessibility commitments</span>
+                  </a>
+                  <button type="button" class="settings-privacy-link" role="listitem" data-lf-consent-manage onclick="if(window.openLiturgyFlowCookieSettings){window.openLiturgyFlowCookieSettings();return false;}">
+                    <span class="settings-privacy-link__label">Cookie settings</span>
+                    <span class="settings-privacy-link__hint">Manage consent preferences</span>
+                  </button>
+                  <a class="settings-privacy-link" role="listitem" href="/?contact=1&amp;topic=privacy" target="_blank" rel="noopener">
+                    <span class="settings-privacy-link__label">Data / GDPR request</span>
+                    <span class="settings-privacy-link__hint">Access, export, or delete your data</span>
+                  </a>
+                </div>
+              </section>
             </article>
           </div>
         </div>
@@ -4631,13 +4708,19 @@
             <span class="app-more-sheet__link-icon" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </span>
-            <span>Church Profile</span>
+            <span>Parish</span>
           </a>
           <a class="app-more-sheet__link nav-link" data-route="/settings/app" href="/settings/app">
             <span class="app-more-sheet__link-icon" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
             </span>
             <span>Appearance</span>
+          </a>
+          <a class="app-more-sheet__link nav-link" data-route="/settings/preferences" href="/settings/preferences">
+            <span class="app-more-sheet__link-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></svg>
+            </span>
+            <span>Preferences</span>
           </a>
           <a class="app-more-sheet__link nav-link" data-route="/settings/privacy" href="/settings/privacy">
             <span class="app-more-sheet__link-icon" aria-hidden="true">
@@ -4662,8 +4745,9 @@
         <option value="/design/theme-lab" data-nav-tab="design">Theme Lab</option>
         <option value="/design/templates" data-nav-tab="design">Templates</option>
         <option value="/settings/account">Account</option>
-        <option value="/settings/church">Church Profile</option>
-        <option value="/settings/app">Appearance &amp; theme</option>
+        <option value="/settings/church">Parish</option>
+        <option value="/settings/app">Appearance</option>
+        <option value="/settings/preferences">Preferences</option>
         <option value="/settings/privacy">Privacy &amp; legal</option>
       </select>
     </div>
@@ -4822,7 +4906,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261003-checkout-success"></script>
+  <script src="/static/js/app.js?v=20261004-cta-poster-sharp"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

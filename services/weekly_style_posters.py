@@ -97,7 +97,13 @@ def shared_ui_thumb_relative_path(date: str, style: str) -> str:
     return f"shared/ai-heroes/{iso}_{resolved}_hero_ui720.webp"
 
 
-def try_upload_shared_ui_thumb(thumb_path: Path, *, date: str, style: str) -> bool:
+def shared_ui_card_relative_path(date: str, style: str) -> str:
+    iso = (date or "").strip()
+    resolved = resolve_ai_image_style(style)
+    return f"shared/ai-heroes/{iso}_{resolved}_hero_ui1600.webp"
+
+
+def try_upload_shared_ui_thumb(thumb_path: Path, *, date: str, style: str, max_w: int = 720) -> bool:
     if not thumb_path.is_file():
         return False
     try:
@@ -106,8 +112,13 @@ def try_upload_shared_ui_thumb(thumb_path: Path, *, date: str, style: str) -> bo
 
         if not shared_cache_ready():
             return False
+        remote = (
+            shared_ui_card_relative_path(date, style)
+            if int(max_w) >= 1200
+            else shared_ui_thumb_relative_path(date, style)
+        )
         upload_shared_asset(
-            relative_path=shared_ui_thumb_relative_path(date, style),
+            relative_path=remote,
             raw=thumb_path.read_bytes(),
             content_type="image/webp",
             upsert=True,
@@ -123,22 +134,19 @@ def signed_or_proxy_thumb_url(*, sunday: str, style: str) -> str:
 
     Bearer tokens are not sent on raw image tags, so prefer signed Supabase URLs.
     Fall back to the auth-gated app proxy (JS hydrates those via fetch).
+
+    Never return the full hero as a "thumb" — home CTA and pickers expect a small WebP.
     """
     resolved = resolve_ai_image_style(style)
     proxy = f"/api/weekly-style-posters/image?date={sunday}&style={resolved}&variant=thumb"
     try:
-        from services.ai_hero_cache import shared_cache_ready, shared_hero_relative_path
+        from services.ai_hero_cache import shared_cache_ready
         from services.storage_assets import shared_asset_exists, signed_service_asset_url
 
         if shared_cache_ready():
             thumb_remote = shared_ui_thumb_relative_path(sunday, resolved)
             if shared_asset_exists(relative_path=thumb_remote):
                 url = signed_service_asset_url(path=thumb_remote, expires_in=3600)
-                if url:
-                    return url
-            full_remote = shared_hero_relative_path(sunday, resolved)
-            if shared_asset_exists(relative_path=full_remote):
-                url = signed_service_asset_url(path=full_remote, expires_in=3600)
                 if url:
                     return url
     except Exception:
@@ -156,8 +164,9 @@ def ensure_ui_thumb(
     max_w: int = 720,
     sunday: str = "",
     style: str = "",
+    quality: int = 70,
 ) -> Path:
-    """Create/return a small WebP beside the hero for picker/carousel use."""
+    """Create/return a WebP beside the hero for UI use (picker or CTA card)."""
     thumb = ui_thumb_path(hero_path, max_w=max_w)
     created = False
     try:
@@ -173,14 +182,84 @@ def ensure_ui_thumb(
                     nh = int(round(h * (max_w / float(w))))
                     rgb = rgb.resize((max_w, nh), Image.Resampling.LANCZOS)
                 thumb.parent.mkdir(parents=True, exist_ok=True)
-                rgb.save(thumb, "WEBP", quality=72, method=4)
+                # method=2 is much faster than 4 — home CTA first paint depends on this.
+                rgb.save(thumb, "WEBP", quality=int(quality), method=2)
             created = True
     except Exception:
         logger.debug("weekly UI thumb failed for %s", hero_path, exc_info=True)
         return hero_path
     if (created or thumb.is_file()) and sunday and style:
-        try_upload_shared_ui_thumb(thumb, date=sunday, style=style)
+        try_upload_shared_ui_thumb(thumb, date=sunday, style=style, max_w=max_w)
     return thumb if thumb.is_file() else hero_path
+
+
+def resolve_ui_thumb_file(
+    *,
+    sunday: str,
+    style: str,
+    output_dir: Path,
+    max_w: int = 720,
+    quality: int = 70,
+) -> Optional[Path]:
+    """Prefer an existing/shared UI WebP; only fall back to full-hero conversion."""
+    resolved = resolve_ai_image_style(style)
+    hero_local = local_hero_path(output_dir, sunday=sunday, style=resolved)
+    thumb_local = ui_thumb_path(hero_local, max_w=max_w)
+    if thumb_local.is_file():
+        return thumb_local
+    try:
+        from services.ai_hero_cache import shared_cache_ready
+        from services.storage_assets import download_service_asset
+
+        if shared_cache_ready():
+            remote = (
+                shared_ui_card_relative_path(sunday, resolved)
+                if int(max_w) >= 1200
+                else shared_ui_thumb_relative_path(sunday, resolved)
+            )
+            raw = download_service_asset(path=remote)
+            if raw:
+                thumb_local.parent.mkdir(parents=True, exist_ok=True)
+                thumb_local.write_bytes(raw)
+                if thumb_local.is_file():
+                    return thumb_local
+    except Exception:
+        logger.debug("shared UI thumb download failed for %s %s", sunday, style, exc_info=True)
+    hero = resolve_hero_file(sunday=sunday, style=resolved, output_dir=output_dir)
+    if hero is None or not hero.is_file():
+        return None
+    out = ensure_ui_thumb(hero, sunday=sunday, style=resolved, max_w=max_w, quality=quality)
+    return out if out.is_file() else None
+
+
+def resolve_ui_card_file(*, sunday: str, style: str, output_dir: Path) -> Optional[Path]:
+    """Sharp home-CTA WebP (~1600px) — much smaller than full PNG, not blurry on the card."""
+    return resolve_ui_thumb_file(
+        sunday=sunday,
+        style=style,
+        output_dir=output_dir,
+        max_w=1600,
+        quality=84,
+    )
+
+
+def signed_or_proxy_card_url(*, sunday: str, style: str) -> str:
+    """Home CTA / large preview URL — prefer signed 1600 WebP, else auth proxy."""
+    resolved = resolve_ai_image_style(style)
+    proxy = f"/api/weekly-style-posters/image?date={sunday}&style={resolved}&variant=card"
+    try:
+        from services.ai_hero_cache import shared_cache_ready
+        from services.storage_assets import shared_asset_exists, signed_service_asset_url
+
+        if shared_cache_ready():
+            card_remote = shared_ui_card_relative_path(sunday, resolved)
+            if shared_asset_exists(relative_path=card_remote):
+                url = signed_service_asset_url(path=card_remote, expires_in=3600)
+                if url:
+                    return url
+    except Exception:
+        logger.debug("weekly card signed URL failed for %s %s", sunday, style, exc_info=True)
+    return proxy
 
 
 def full_or_proxy_hero_url(*, sunday: str, style: str) -> str:
@@ -215,6 +294,7 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
                 "label": weekly_style_label(sid),
                 "ready": ready,
                 "thumb_url": signed_or_proxy_thumb_url(sunday=sunday, style=sid) if ready else "",
+                "card_url": signed_or_proxy_card_url(sunday=sunday, style=sid) if ready else "",
                 "proxy_url": f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb",
                 "full_url": full_or_proxy_hero_url(sunday=sunday, style=sid) if ready else "",
             }
@@ -286,6 +366,14 @@ def ensure_weekly_heroes(
         except Exception as exc:
             logger.warning("weekly hero ensure failed %s %s: %s", sunday, sid, exc)
             errors.append({"style": sid, "error": str(exc)[:200]})
+
+    # Warm picker thumbs + sharp CTA cards so first home paint is not a full-PNG download.
+    for sid in weekly_style_ids():
+        try:
+            resolve_ui_thumb_file(sunday=sunday, style=sid, output_dir=output_dir)
+            resolve_ui_card_file(sunday=sunday, style=sid, output_dir=output_dir)
+        except Exception:
+            logger.debug("weekly UI asset warm failed %s %s", sunday, sid, exc_info=True)
 
     return {
         "ok": True,

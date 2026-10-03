@@ -686,6 +686,37 @@
     window.getPracticeDeviceId = getPracticeDeviceId;
     window.practiceDeviceHeaders = practiceDeviceHeaders;
 
+    function sanitizePublicError(raw) {
+      let text = "";
+      if (typeof raw === "string") text = raw;
+      else if (raw && typeof raw === "object") {
+        if (typeof raw.msg === "string") text = raw.msg;
+        else if (typeof raw.message === "string") text = raw.message;
+        else if (Array.isArray(raw)) {
+          text = raw.map((item) => (item && (item.msg || item.message)) || "").filter(Boolean).join(" ");
+        } else {
+          try { text = JSON.stringify(raw); } catch (_e) { text = ""; }
+        }
+      } else if (raw != null) text = String(raw);
+      text = String(text || "").trim();
+      if (!text) return "Something went wrong. Please try again.";
+      const lower = text.toLowerCase();
+      const leaksSecret =
+        /openai|gemini|api[_ -]?key|huggingface|anthropic|sk-[a-z0-9]|aiza|bearer\s+[a-z0-9]|traceback|sqlalchemy|psycopg|redis\.exceptions|supabase/i.test(text);
+      const mentionsPipeline =
+        /\bai\s+(image|poster|art)\b|weekly ai|connecting to ai|image generation failed|generator\.py|providers?/i.test(lower);
+      if (/limit reached|quota|allowance|429/.test(lower) || (mentionsPipeline && /limit|week|remaining/.test(lower))) {
+        return "You've reached this week's free poster allowance. Subscribe for unlimited beautifully curated posters, or try again next week.";
+      }
+      if (leaksSecret || mentionsPipeline) {
+        return "We couldn't prepare the poster right now. Please try again shortly.";
+      }
+      // Avoid dumping huge internal payloads into the UI.
+      if (text.length > 280) return "Something went wrong. Please try again.";
+      return text;
+    }
+    window.sanitizePublicError = sanitizePublicError;
+
     var postJSON = async (url, body, opts) => {
       const skipAuthWait = !!(opts && opts.skipAuthWait);
       if (!skipAuthWait && window.VerbumAuth && window.VerbumAuth.waitUntilReady) {
@@ -719,7 +750,7 @@
           window.VerbumAuth.redirectToSignIn();
         }
         const message = data.detail || data.error || res.statusText;
-        throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+        throw new Error(sanitizePublicError(message));
       }
       return data;
     };
@@ -738,7 +769,7 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const message = data.detail || data.error || res.statusText;
-        throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+        throw new Error(sanitizePublicError(message));
       }
       return data;
     };

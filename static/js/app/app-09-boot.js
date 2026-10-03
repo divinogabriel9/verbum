@@ -2440,6 +2440,8 @@
     applyMassPinnedDefaults();
     syncMassDefaultPins($("flow-page"));
     if (typeof consumeEmailDeepLinkIntent === "function") consumeEmailDeepLinkIntent();
+    // Load home CTA posters first so the Mass card paints with art ASAP.
+    if (typeof refreshHomeMassCtaPosterBg === "function") void refreshHomeMassCtaPosterBg();
     showRoute(currentRoute(), true);
     renderLyrics({ writeBack: false });
     setLyricsAnalyzeOverlay("idle");

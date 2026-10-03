@@ -3027,9 +3027,10 @@ def api_weekly_style_poster_image(
     """
     from services.ai_styles import resolve_ai_image_style
     from services.weekly_style_posters import (
-        ensure_ui_thumb,
         normalize_mass_date,
         resolve_hero_file,
+        resolve_ui_card_file,
+        resolve_ui_thumb_file,
         sunday_for_mass_date,
     )
 
@@ -3038,17 +3039,26 @@ def api_weekly_style_poster_image(
         raise HTTPException(status_code=400, detail="invalid_date")
     sunday = sunday_for_mass_date(mass)
     resolved = resolve_ai_image_style((style or "cinematic").strip())
-    path = resolve_hero_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
-    if path is None or not path.is_file():
-        raise HTTPException(status_code=404, detail="poster_not_ready")
-    want_thumb = str(variant or "full").strip().lower() in {"thumb", "ui", "preview"}
+    variant_key = str(variant or "full").strip().lower()
+    want_thumb = variant_key in {"thumb", "ui", "preview"}
+    want_card = variant_key in {"card", "cta", "home"}
     media = "image/png"
     headers = {"Cache-Control": "public, max-age=86400"}
-    if want_thumb:
-        path = ensure_ui_thumb(path, sunday=sunday, style=resolved)
+    if want_thumb or want_card:
+        path = (
+            resolve_ui_card_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
+            if want_card
+            else resolve_ui_thumb_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
+        )
+        if path is None or not path.is_file():
+            raise HTTPException(status_code=404, detail="poster_not_ready")
         if path.suffix.lower() == ".webp":
             media = "image/webp"
         headers = {"Cache-Control": "public, max-age=604800, immutable"}
+        return FileResponse(path, media_type=media, filename=path.name, headers=headers)
+    path = resolve_hero_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
+    if path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="poster_not_ready")
     return FileResponse(path, media_type=media, filename=path.name, headers=headers)
 
 
@@ -3075,7 +3085,10 @@ async def api_weekly_style_posters_ensure(
     if not iso:
         raise HTTPException(status_code=400, detail="date is required (YYYY-MM-DD)")
     if not (os.getenv("OPENAI_API_KEY") or "").strip():
-        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
+        raise HTTPException(
+            status_code=503,
+            detail="Poster creation is temporarily unavailable. Please try again later.",
+        )
     # Always generate the full missing weekly set — never a single one-off style.
     return ensure_weekly_heroes(
         iso,
@@ -3090,8 +3103,11 @@ def _enforce_ai_image_quota(
     *,
     source: str,
 ) -> dict[str, Any]:
+    from services.image_generation_quota import session_has_unlimited_image_quota
+
     subject = resolve_subject(session, request)
-    return reserve_daily_image_generation(subject, source=source)
+    unlimited = session_has_unlimited_image_quota(session)
+    return reserve_daily_image_generation(subject, source=source, unlimited=unlimited)
 
 
 @app.post("/generate-image", response_model=GenerateImageResponse)
@@ -3105,7 +3121,10 @@ def generate_image(
     from generators.ai_image_generator import generate_openai_poster
 
     if not (os.getenv("OPENAI_API_KEY") or "").strip():
-        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not configured.")
+        raise HTTPException(
+            status_code=503,
+            detail="Poster creation is temporarily unavailable. Please try again later.",
+        )
 
     prompt = body.prompt.strip()
     if not prompt:
@@ -3117,9 +3136,17 @@ def generate_image(
     try:
         saved = generate_openai_poster(prompt, output_path=poster_path)
     except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        logger.exception("Poster create failed (runtime)")
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't create that poster right now. Please try again.",
+        ) from exc
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Image generation failed: {exc}") from exc
+        logger.exception("Poster create failed")
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't create that poster right now. Please try again.",
+        ) from exc
 
     raw = saved.read_bytes()
     return GenerateImageResponse(
@@ -4173,6 +4200,7 @@ def cookies_redirect() -> Any:
 @app.get("/settings/church", response_class=HTMLResponse)
 @app.get("/settings/billing", response_class=HTMLResponse)
 @app.get("/settings/app", response_class=HTMLResponse)
+@app.get("/settings/preferences", response_class=HTMLResponse)
 @app.get("/settings/privacy", response_class=HTMLResponse)
 @app.get("/settings/team", response_class=HTMLResponse)
 @app.get("/superadmin", response_class=HTMLResponse)

@@ -1258,6 +1258,12 @@
       });
     }
 
+    function notificationKindLabel(kind) {
+      if (kind === "ok") return "Ready";
+      if (kind === "error") return "Needs attention";
+      return "Update";
+    }
+
     function renderNotificationFeed() {
       const feed = $("notification-feed");
       const empty = $("notification-empty");
@@ -1265,30 +1271,34 @@
       feed.innerHTML = "";
       const hasSa = typeof renderSaApprovalNotifSection === "function" && renderSaApprovalNotifSection();
       if (!appNotifications.length && !hasSa) {
-        if (empty) empty.style.display = "";
+        if (empty) empty.hidden = false;
         updateNotifBadge();
         return;
       }
-      if (empty) empty.style.display = appNotifications.length ? "none" : (hasSa ? "none" : "");
+      if (empty) empty.hidden = !!(appNotifications.length || hasSa);
       appNotifications.forEach((item) => {
+        const kind = item.kind === "ok" || item.kind === "error" ? item.kind : "info";
         const li = document.createElement("li");
-        li.className = "notification-item notification-item--" + (item.kind || "info") + (item.seen ? " is-seen" : " is-unread");
+        li.className = "notification-item notification-item--" + kind + (item.seen ? " is-seen" : " is-unread");
         const row = document.createElement("div");
         row.className = "notification-item__row";
-        const avatar = document.createElement("span");
-        avatar.className = "notification-item__avatar";
-        avatar.setAttribute("aria-hidden", "true");
-        avatar.textContent = (item.kind === "ok" ? "✓" : item.kind === "error" ? "!" : "•");
         const body = document.createElement("div");
         body.className = "notification-item__body";
+        const meta = document.createElement("div");
+        meta.className = "notification-item__meta";
+        const kindEl = document.createElement("span");
+        kindEl.className = "notification-item__kind";
+        kindEl.textContent = notificationKindLabel(kind);
+        const time = document.createElement("span");
+        time.className = "notification-item__time";
+        time.textContent = formatNotificationTime(item.at);
+        meta.appendChild(kindEl);
+        meta.appendChild(time);
+        body.appendChild(meta);
         const msg = document.createElement("p");
         msg.className = "notification-item__msg";
         msg.textContent = item.message || "";
         body.appendChild(msg);
-        const time = document.createElement("p");
-        time.className = "notification-item__time";
-        time.textContent = formatNotificationTime(item.at);
-        body.appendChild(time);
         if (item.downloads && item.downloads.length) {
           const links = document.createElement("div");
           links.className = "notification-item__links";
@@ -1302,7 +1312,6 @@
           });
           if (links.childNodes.length) body.appendChild(links);
         }
-        row.appendChild(avatar);
         row.appendChild(body);
         li.appendChild(row);
         feed.appendChild(li);
@@ -1536,7 +1545,7 @@
     }
 
     function syncChurchFieldsFromSettings() {
-      /* church name is managed in Settings → Church Profile */
+      /* church name is managed in Settings → Parish */
     }
 
     var celebrantNamesCache = [];
@@ -2941,19 +2950,19 @@
         } else if (status === "rejected") {
           show = true;
           cls += " is-error";
-          html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> or contact the administrator.";
+          html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Parish</a> or contact the administrator.";
         }
       } else if (status === "pending" && !billingOn) {
         show = true;
         cls += " is-pending";
-        html = "Your parish membership is pending approval. <a href=\"/settings/church\" data-route=\"/settings/church\">Open Church Profile</a>";
+        html = "Your parish membership is pending approval. <a href=\"/settings/church\" data-route=\"/settings/church\">Open Parish</a>";
       } else if (status === "rejected") {
         show = true;
         cls += " is-error";
-        html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> or contact the administrator.";
+        html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Parish</a> or contact the administrator.";
       } else if (status === "draft" && state.can_edit_parish_name) {
         show = true;
-        html = "Submit your parish name and optional logo in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a>.";
+        html = "Submit your parish name and optional logo in <a href=\"/settings/church\" data-route=\"/settings/church\">Parish</a>.";
       }
 
       banners.forEach((el) => {
@@ -4408,7 +4417,7 @@
           saRenderStatCard("Approved parishes", c.parishes_approved),
           saRenderStatCard("Pending parishes", c.parishes_pending),
           saRenderStatCard("Generations today", c.generations_today),
-          saRenderStatCard("AI images today", c.ai_images_today),
+          saRenderStatCard("Posters today", c.ai_images_today),
           saRenderStatCard("Pending songs", c.pending_songs, (c.pending_priests || 0) + " priests pending"),
           saRenderStatCard("Supabase", c.supabase_ok ? "OK" : "Off", c.supabase_ok ? "Connected" : "Not configured"),
           saRenderStatCard("Redis", c.redis_ok ? "OK" : "Off"),

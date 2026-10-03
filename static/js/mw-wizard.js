@@ -2888,7 +2888,7 @@
                 kinds = kinds.filter(function (k) { return k !== "cover_ai"; });
                 if (kinds.indexOf("cover") < 0) kinds.push("cover");
                 if (typeof window.notify === "function") {
-                  window.notify("AI posters aren't ready for this Sunday — generating non-AI cover.", "warn");
+                  window.notify("Beautifully curated posters aren't ready for this Sunday — using a classic cover instead.", "warn");
                 }
                 beginPartialGenerate(kinds);
                 return;

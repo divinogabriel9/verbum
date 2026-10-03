@@ -1686,7 +1686,7 @@
           position: static;
           transform: none;
           white-space: nowrap;
-          pointer-events: none;
+            pointer-events: none;
           max-width: 5.5rem;
           overflow: visible;
           font-weight: 500;
@@ -1701,7 +1701,7 @@
         }
         .mw-default-pin--rite:hover .mw-default-pin__text,
         .mw-default-pin--rite:focus-within .mw-default-pin__text {
-          opacity: 1;
+            opacity: 1;
           max-width: 5.5rem;
           overflow: visible;
         }
@@ -2934,7 +2934,7 @@
           body.mw-on #mw-generate { min-width: 0; flex: 1 1 auto; }
           body.mw-on #mw-habits-banner:not([hidden]) .mw-habits-banner__text p {
             display: none;
-          }
+        }
         }
         /* Keep Continue / Generate always on-screen; dim when step incomplete */
         body.mw-on #mw-next,
