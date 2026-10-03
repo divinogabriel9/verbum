@@ -1236,6 +1236,19 @@
       });
     }
 
+    function setHomeCtaPosterLoading(on) {
+      const card = $("home-mass-card");
+      if (!card) return;
+      card.classList.toggle("is-poster-loading", !!on);
+      const el = $("home-mass-poster-loading");
+      if (el) {
+        el.hidden = !on;
+        el.setAttribute("aria-busy", on ? "true" : "false");
+      }
+      const veil = $("home-mass-poster-loading-veil");
+      if (veil) veil.hidden = !on;
+    }
+
     function clearHomeMassCtaPosterBg() {
       stopHomeCtaPosterAutoplay();
       const card = $("home-mass-card");
@@ -1243,6 +1256,7 @@
       const nav = $("home-mass-poster-nav");
       if (card) {
         card.classList.remove("has-poster-bg");
+        card.classList.remove("is-poster-loading");
         card.removeAttribute("data-home-poster-style");
       }
       layers.forEach((bg, i) => {
@@ -1251,6 +1265,13 @@
         bg.classList.toggle("is-visible", i === 0);
       });
       if (nav) nav.hidden = true;
+      const loading = $("home-mass-poster-loading");
+      if (loading) {
+        loading.hidden = true;
+        loading.setAttribute("aria-busy", "false");
+      }
+      const veil = $("home-mass-poster-loading-veil");
+      if (veil) veil.hidden = true;
       homeCtaPosterState = Object.assign(homeCtaPosterState, {
         sunday: "",
         items: [],
@@ -1352,6 +1373,12 @@
       rememberHomeCtaPosterStyle(item.id);
       syncHomeCtaPosterNav();
 
+      // Wait for the image to decode before dropping the loading veil.
+      if (!(opts && opts.animate)) {
+        await preloadHomeCtaPosterUrl(item._resolvedUrl);
+        setHomeCtaPosterLoading(false);
+      }
+
       if (opts && opts.source === "manual") startHomeCtaPosterAutoplay();
       return true;
     }
@@ -1384,11 +1411,13 @@
         homeCtaPosterState.items.length &&
         card.classList.contains("has-poster-bg")
       ) {
+        setHomeCtaPosterLoading(false);
         startHomeCtaPosterAutoplay();
         syncHomeCtaPosterNav();
         return;
       }
       if (homeCtaPosterBgInflight) return homeCtaPosterBgInflight;
+      if (!card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(true);
       homeCtaPosterBgInflight = (async () => {
         try {
           if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
@@ -1416,7 +1445,7 @@
           homeCtaPosterState.items = ready.map((it) => Object.assign({}, it));
 
           const startIndex = pickInitialHomeCtaPosterIndex(homeCtaPosterState.items);
-          // Resolve preferred first, but race the rest so a faster thumb can still paint quickly.
+          // Resolve preferred first, but race the rest so a faster asset can still paint quickly.
           const preferred = resolveHomeCtaPosterItem(homeCtaPosterState.items[startIndex]);
           homeCtaPosterState.items.forEach((it, i) => {
             if (i === startIndex) return;
@@ -1437,7 +1466,7 @@
             return;
           }
           await showHomeCtaPosterAt(startIndex, { animate: false, source: "boot" });
-          // Decode remaining thumbs in the background for smooth fades.
+          // Decode remaining assets in the background for smooth fades.
           homeCtaPosterState.items.forEach((it) => {
             if (it && it._resolvedUrl) void preloadHomeCtaPosterUrl(it._resolvedUrl);
           });
@@ -1446,6 +1475,7 @@
           if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
         } finally {
           homeCtaPosterBgInflight = null;
+          if (card.classList.contains("has-poster-bg")) setHomeCtaPosterLoading(false);
         }
       })();
       return homeCtaPosterBgInflight;

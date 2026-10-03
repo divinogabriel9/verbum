@@ -25,7 +25,55 @@
       } catch (_e) { /* ignore */ }
     })();
   </script>
-  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261004-cta-frost-dark" />
+  <style id="home-cta-poster-loading-critical">
+    /* First-paint: hide missal + use poster loading chrome before verbum-app.css arrives */
+    #home-mass-card.is-poster-loading {
+      --rmc-ink-strong: #f5f5f5;
+      --rmc-ink-body: #e0e0e0;
+      --rmc-ink-muted: #b0b0b0;
+      background: #14161c !important;
+      color: #f5f5f5;
+    }
+    #home-mass-card.is-poster-loading .redesign-mass-bg--layer,
+    #home-mass-card.is-poster-loading::before,
+    #home-mass-card.is-poster-loading::after {
+      display: none !important;
+      opacity: 0 !important;
+    }
+    #home-mass-card.is-poster-loading .rmc-hero-title,
+    #home-mass-card.is-poster-loading .rmc-welcome,
+    #home-mass-card.is-poster-loading .rmc-stat__value,
+    #home-mass-card.is-poster-loading .rmc-hero-sub,
+    #home-mass-card.is-poster-loading .rmc-cta-meta,
+    #home-mass-card.is-poster-loading .rmc-cta-secondary,
+    #home-mass-card.is-poster-loading .rmc-stat__label,
+    #home-mass-card.is-poster-loading .rmc-stat__sub {
+      color: #f5f5f5 !important;
+    }
+    #home-mass-poster-loading-veil {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      border-radius: inherit;
+      background: linear-gradient(125deg, rgba(18, 20, 28, 0.94), rgba(22, 18, 26, 0.9));
+    }
+    #home-mass-poster-loading {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      pointer-events: none;
+    }
+    #home-mass-card:not(.is-poster-loading) #home-mass-poster-loading-veil,
+    #home-mass-card:not(.is-poster-loading) #home-mass-poster-loading,
+    #home-mass-poster-loading-veil[hidden],
+    #home-mass-poster-loading[hidden] {
+      display: none !important;
+    }
+  </style>
+  <link rel="stylesheet" href="/static/css/verbum-app.css?v=20261004-cta-poster-loading2" />
   <link rel="stylesheet" href="/static/webpptx/webpptx.css?v=20260913-webpptx2" />
   <link rel="stylesheet" href="/static/css/cookie-consent.css?v=20261004-panel" />
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20261004-liturgy-curated" />
@@ -33,7 +81,7 @@
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
   <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261004-simple-pills" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
-  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-frost" />
+  <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
   <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261003-no-quota-hint" />
   <script src="/static/js/input-limits.js" defer></script>
@@ -472,10 +520,17 @@
           <div class="app-platform-banner" id="home-platform-banner" hidden aria-live="polite"></div>
           <div class="app-membership-banner" id="home-membership-banner" hidden aria-live="polite"></div>
           <div class="home-bento-grid">
-            <section class="flow-bento-cell home-bento-cell--mass redesign-mass-card" id="home-mass-card" aria-labelledby="home-mass-heading">
+            <section class="flow-bento-cell home-bento-cell--mass redesign-mass-card is-poster-loading" id="home-mass-card" aria-labelledby="home-mass-heading">
               <div class="redesign-mass-bg-stack" aria-hidden="true">
                 <div class="redesign-mass-bg redesign-mass-bg--layer is-visible" data-rmc-bg-layer="0"></div>
                 <div class="redesign-mass-bg redesign-mass-bg--layer" data-rmc-bg-layer="1"></div>
+              </div>
+              <div class="home-mass-poster-loading-veil" id="home-mass-poster-loading-veil" aria-hidden="true"></div>
+              <div class="home-mass-poster-loading" id="home-mass-poster-loading" aria-live="polite" aria-busy="true">
+                <span class="home-mass-poster-loading__badge">
+                  <span class="home-mass-poster-loading__pulse" aria-hidden="true"></span>
+                  <span class="home-mass-poster-loading__label">Loading this week poster…</span>
+                </span>
               </div>
               <div class="home-mass-poster-nav" id="home-mass-poster-nav" hidden>
                 <button type="button" class="home-mass-poster-nav__btn" id="home-mass-poster-prev" aria-label="Previous poster style">←</button>
@@ -4906,7 +4961,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261004-cta-poster-sharp"></script>
+  <script src="/static/js/app.js?v=20261004-cta-poster-loading2"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

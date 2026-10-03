@@ -336,7 +336,8 @@ html[data-theme="dark"] .home-mass-tour-link:hover {
 }
 
 /* Poster CTA in light mode — match dark frosted tour chip */
-.redesign-mass-card.has-poster-bg .home-mass-tour-link {
+.redesign-mass-card.has-poster-bg .home-mass-tour-link,
+.redesign-mass-card.is-poster-loading .home-mass-tour-link {
   border-color: color-mix(in srgb, var(--liturgical-glow) 28%, rgba(255, 255, 255, 0.14));
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
   color: color-mix(in srgb, var(--liturgical-glow) 70%, #f8ead0);
@@ -345,12 +346,14 @@ html[data-theme="dark"] .home-mass-tour-link:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-.redesign-mass-card.has-poster-bg .home-mass-tour-link:hover {
+.redesign-mass-card.has-poster-bg .home-mass-tour-link:hover,
+.redesign-mass-card.is-poster-loading .home-mass-tour-link:hover {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
   color: color-mix(in srgb, var(--liturgical-glow) 85%, #fff8ec);
 }
 
-.redesign-mass-card.has-poster-bg .home-mass-tour-dismiss {
+.redesign-mass-card.has-poster-bg .home-mass-tour-dismiss,
+.redesign-mass-card.is-poster-loading .home-mass-tour-dismiss {
   border-color: rgba(255, 255, 255, 0.16);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
   color: color-mix(in srgb, var(--liturgical-glow) 70%, #f8ead0);
