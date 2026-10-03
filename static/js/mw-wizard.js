@@ -94,6 +94,102 @@
         };
         var current = 1;
         var progItems = Array.prototype.slice.call(document.querySelectorAll('#mw-progress .mw-progress__item'));
+        var scrollNextLock = false;
+        var scrollNextStepEnteredAt = 0;
+        var scrollNextLastY = 0;
+
+        function isMobileMwScrollNav() {
+          return !!(window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+        }
+
+        function scrollStepToTop(opts) {
+          opts = opts || {};
+          scrollNextStepEnteredAt = Date.now();
+          scrollNextLastY = 0;
+          var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+          document.body.classList.remove('mw-step-scroll-cont', 'mw-step-enter');
+
+          if (!isMobileMwScrollNav()) {
+            var w = $('mw-wizard');
+            if (w && w.scrollIntoView) {
+              try { w.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); }
+              catch (e) { try { w.scrollIntoView(); } catch (e2) {} }
+            }
+            return;
+          }
+
+          // Pin instantly — never smooth-scroll the window (that fights the step motion)
+          try { window.scrollTo(0, 0); } catch (e3) { try { window.scrollTo(0, 0); } catch (e4) {} }
+
+          if (reduce || !opts.continuous) return;
+
+          // One continuous “keep scrolling” motion: next step rises into place
+          window.requestAnimationFrame(function () {
+            void document.body.offsetWidth;
+            document.body.classList.add('mw-step-scroll-cont');
+            window.setTimeout(function () {
+              document.body.classList.remove('mw-step-scroll-cont');
+            }, 640);
+          });
+        }
+
+        function isNearPageBottom() {
+          var y = window.scrollY || document.documentElement.scrollTop || 0;
+          var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+          var docH = Math.max(
+            document.documentElement.scrollHeight || 0,
+            document.body ? document.body.scrollHeight : 0
+          );
+          return (y + vh) >= (docH - 48);
+        }
+
+        function tryAdvanceFromScrollNext() {
+          if (!isMobileMwScrollNav() || current >= 7 || scrollNextLock) return;
+          // Ignore fires right after a step change / programmatic scroll-to-top
+          if (Date.now() - scrollNextStepEnteredAt < 700) return;
+          if ((window.scrollY || document.documentElement.scrollTop || 0) < 48) return;
+          if (!isNearPageBottom()) return;
+
+          var missing = collectStepMissingOptions(current);
+          if (missing.length) {
+            scrollNextLock = true;
+            var target = highlightStepMissing(missing);
+            if (target) mwReveal(target);
+            else {
+              try { window.scrollBy({ top: -140, behavior: 'smooth' }); }
+              catch (e) { window.scrollBy(0, -140); }
+            }
+            window.setTimeout(function () { scrollNextLock = false; }, 900);
+            return;
+          }
+
+          scrollNextLock = true;
+          if (current === 1) ensureReadings();
+          if (current < 7) showStep(current + 1, { viaScroll: true });
+          window.setTimeout(function () { scrollNextLock = false; }, 700);
+        }
+
+        function initScrollNextNav() {
+          if (window.__mwScrollNextBound) return;
+          window.__mwScrollNextBound = true;
+          var ticking = false;
+          window.addEventListener('scroll', function () {
+            if (ticking) return;
+            ticking = true;
+            window.requestAnimationFrame(function () {
+              ticking = false;
+              if (!isMobileMwScrollNav() || current >= 7 || scrollNextLock) {
+                scrollNextLastY = window.scrollY || document.documentElement.scrollTop || 0;
+                return;
+              }
+              var y = window.scrollY || document.documentElement.scrollTop || 0;
+              // Only advance while the user is scrolling downward
+              if (y > scrollNextLastY + 2) tryAdvanceFromScrollNext();
+              scrollNextLastY = y;
+            });
+          }, { passive: true });
+        }
 
         function setPanels(step) {
           var songs = step === 5;
@@ -525,7 +621,10 @@
             illus.style.backgroundImage = 'linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 8%, transparent), color-mix(in srgb, var(--surface-solid) 82%, transparent)), url("' + ASIDE_ART[n] + '")';
           }
         }
-        function showStep(n) {
+        function showStep(n, opts) {
+          opts = opts || {};
+          var prev = current;
+          var viaScroll = !!(opts.viaScroll && isMobileMwScrollNav() && n === prev + 1);
           current = n;
           clearMissingTargetHighlight();
           setPanels(n);
@@ -587,9 +686,10 @@
             wiz.classList.toggle('is-music-step', n === 5);
             wiz.classList.toggle('is-review-step', n === 7);
           }
-          restartAnim(n === 5 ? $('flow-panel-songs') : $('flow-panel-setup'));
+          // Skip panel fade/slide — it fights the continuous scroll transition
+          if (!viaScroll) restartAnim(n === 5 ? $('flow-panel-songs') : $('flow-panel-setup'));
           refreshContinue();
-          var w = $('mw-wizard'); if (w && w.scrollIntoView) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          scrollStepToTop({ continuous: viaScroll });
           if (typeof window.scheduleMassBuilderDraftAutoSave === 'function') window.scheduleMassBuilderDraftAutoSave();
         }
         function validStep1() {
@@ -1996,7 +2096,7 @@
             if (next) { mwReveal(next); return; }
           }
           var nb = $('mw-next');
-          if (nb && !nb.hidden) mwReveal(nb);
+          if (nb && !nb.hidden && !isMobileMwScrollNav()) mwReveal(nb);
         }
         function selVal(id) { var s = $(id); return !!(s && s.value); }
         function sanctusPicked() {
@@ -2417,6 +2517,7 @@
           document.body.classList.add('mw-on');
           if ($('mw-next')) $('mw-next').addEventListener('click', next);
           if ($('mw-back')) $('mw-back').addEventListener('click', back);
+          initScrollNextNav();
           var pendingSlideKinds = null;
           var pendingPartialIncludeAiPoster = null;
           var PARTIAL_POSTER_STYLES = [

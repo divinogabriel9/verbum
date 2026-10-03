@@ -3048,6 +3048,15 @@
       sheet.querySelectorAll(".app-more-sheet__link[data-route]").forEach((link) => {
         link.addEventListener("click", () => closeAppMoreSheet());
       });
+      const practiceBtn = $("app-bottom-nav-practice");
+      if (practiceBtn && practiceBtn.dataset.bound !== "1") {
+        practiceBtn.dataset.bound = "1";
+        practiceBtn.addEventListener("click", () => {
+          closeAppMoreSheet();
+          if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
+          else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
+        });
+      }
     }
 
     function initSongPlanSummaryCollapse() {

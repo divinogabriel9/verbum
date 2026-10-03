@@ -130,68 +130,85 @@ iframe {
     scroll-padding-top: var(--app-header-offset, calc(var(--app-header-stack) + var(--safe-top)));
   }
 
-  /* Duplicate nav: desktop header hidden, mobile bottom bar visible */
+  /* Duplicate nav: desktop header hidden, floating mobile dock visible */
   .app-nav--desktop {
     display: none !important;
   }
 
+  :root {
+    --app-bottom-nav-height: 64px;
+    --app-bottom-nav-offset: calc(var(--app-bottom-nav-height) + var(--safe-bottom) + 18px);
+  }
+
+  body.mobile-float-nav,
+  body.has-bottom-nav {
+    --app-bottom-nav-height: 64px;
+    --app-bottom-nav-offset: calc(var(--app-bottom-nav-height) + var(--safe-bottom) + 18px);
+  }
+
+  /* Facebook-style floating capsule dock */
   .app-bottom-nav {
-    display: flex;
+    display: flex !important;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: stretch;
-    justify-content: flex-start;
-    gap: 0;
-    position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    z-index: 1;
-    width: 100%;
-    min-height: 52px;
-    height: 52px;
-    padding: 0;
-    border: none;
-    border-bottom: 1px solid var(--line-soft);
-    background: var(--surface-solid);
-    box-shadow: none;
+    justify-content: space-around;
+    gap: 2px;
+    position: fixed;
+    left: max(12px, var(--safe-left));
+    right: max(12px, var(--safe-right));
+    bottom: calc(10px + var(--safe-bottom));
+    z-index: 48;
+    width: auto;
+    min-height: 64px;
+    height: 64px;
+    padding: 6px 8px;
+    border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    border-radius: 28px;
+    background: color-mix(in srgb, var(--surface-solid) 86%, transparent);
+    backdrop-filter: saturate(1.4) blur(18px);
+    -webkit-backdrop-filter: saturate(1.4) blur(18px);
+    box-shadow:
+      0 8px 28px color-mix(in srgb, var(--ink) 16%, transparent),
+      0 1px 0 color-mix(in srgb, #fff 40%, transparent) inset;
     box-sizing: border-box;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow: visible;
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease;
+    will-change: transform;
+  }
+
+  /* FB-style: hide dock while scrolling down; restore on scroll up */
+  body.bottom-nav-scroll-away:not(.bottom-nav-sheet-open) .app-bottom-nav {
+    transform: translateY(calc(100% + 28px));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  html[data-theme="dark"] .app-bottom-nav {
+    background: color-mix(in srgb, var(--surface-solid) 78%, transparent);
+    border-color: color-mix(in srgb, #fff 10%, transparent);
+    box-shadow:
+      0 10px 32px color-mix(in srgb, #000 45%, transparent),
+      0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset;
   }
 
   .app-bottom-nav::-webkit-scrollbar {
     display: none;
   }
 
-  .app-header__nav-row {
-    width: 100%;
-    flex: 0 0 auto;
-    background: var(--surface-solid);
-    display: block !important;
-    min-height: 52px;
-    padding: 0;
-    margin: 0;
-    max-width: none;
-    border-top: none;
-  }
-
+  .app-header__nav-row,
   body.mobile-top-nav .app-header__nav-row,
   body.mobile-chrome-tabs .app-header__nav-row {
-    display: block !important;
-  }
-
-  body.mobile-top-nav .app-bottom-nav,
-  body.mobile-chrome-tabs .app-bottom-nav,
-  .app-header__nav-row .app-bottom-nav {
-    display: flex !important;
+    display: none !important;
   }
 
   body.mobile-top-nav {
-    --app-bottom-nav-height: 0px;
-    --app-bottom-nav-offset: var(--safe-bottom);
+    --app-bottom-nav-height: 64px;
+    --app-bottom-nav-offset: calc(var(--app-bottom-nav-height) + var(--safe-bottom) + 18px);
+  }
+
+  .dashboard {
+    padding-bottom: calc(var(--app-bottom-nav-offset) + var(--space-3)) !important;
   }
 
   /* Header icon buttons — circles, not ovals/pills */
@@ -220,9 +237,9 @@ iframe {
   .app-bottom-nav .nav-link {
     position: relative;
     z-index: 0;
-    flex: 1 0 auto;
+    flex: 1 1 0;
     width: auto;
-    min-width: 64px;
+    min-width: 0;
     max-width: none;
     display: flex;
     flex-direction: column;
@@ -231,12 +248,12 @@ iframe {
     gap: 2px;
     min-height: 52px;
     height: 52px;
-    padding: 6px 10px 4px;
+    padding: 4px 6px;
     margin: 0;
     border: none;
-    border-radius: 0;
+    border-radius: 20px;
     font-size: 0.625rem;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.1;
     color: var(--muted);
@@ -247,16 +264,27 @@ iframe {
     text-overflow: ellipsis;
     box-shadow: none;
     transform: none;
-    touch-action: none;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
     transition:
-      color var(--motion-duration-fast) var(--motion-ease-hover),
-      background var(--motion-duration-fast) var(--motion-ease-hover);
+      color 160ms cubic-bezier(0.22, 1, 0.36, 1),
+      background 160ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .app-bottom-nav .nav-link:active {
+    transform: scale(0.94);
   }
 
   .app-bottom-nav .nav-link.active {
-    background: transparent !important;
+    background: color-mix(in srgb, var(--liturgical-accent, #a10f0d) 12%, transparent) !important;
+    color: var(--liturgical-accent, #a10f0d);
   }
 
   .app-bottom-nav .nav-link.active::after {
@@ -319,14 +347,19 @@ iframe {
   }
 
   .app-bottom-nav .nav-link .nav-label {
-    display: none !important;
+    display: block !important;
+    font-size: 0.625rem;
+    font-weight: 650;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* Active: icon color only — no faded pill / underline */
+  /* Active: soft fill + accent icon */
   .app-bottom-nav .nav-link.active {
     color: var(--liturgical-accent, #a10f0d);
-    font-weight: 500;
-    background: transparent !important;
+    font-weight: 650;
   }
 
   .app-bottom-nav .nav-link.active .app-bottom-nav__svg-icon {
@@ -2357,8 +2390,9 @@ iframe {
     --layout-gap: 16px;
     --card-padding: 20px;
 
-    /* Top tab bar lives in header; bottom offset is safe-area only */
-    --app-bottom-nav-height: 0px;
+    /* Floating bottom dock */
+    --app-bottom-nav-height: 64px;
+    --app-bottom-nav-offset: calc(var(--app-bottom-nav-height) + var(--safe-bottom) + 18px);
   }
 
   html {
@@ -2457,21 +2491,19 @@ iframe {
     line-height: 1rem;
   }
 
-  /* Top tab bar — FB-style under ticker */
+  /* Floating dock sizing (keep capsule styles from earlier block) */
   .app-bottom-nav {
-    min-height: 52px;
-    height: 52px;
-    align-items: stretch;
-    padding: 0;
+    min-height: 64px;
+    height: 64px;
   }
 
   .app-bottom-nav .nav-link {
     font-size: var(--type-fine);
     line-height: 1.1;
-    font-weight: 500;
+    font-weight: 650;
     min-height: 52px;
     gap: 2px;
-    padding: 6px 10px 4px;
+    padding: 4px 6px;
   }
 
   .app-bottom-nav .nav-link .nav-icon,
@@ -3667,6 +3699,7 @@ iframe {
   body.mw-on {
     --mw-pad-x: 16px;
     --mw-type-display: clamp(1.5rem, 5.5vw, 2rem);
+    --mw-mobile-rail-w: 44px;
   }
 
   body.mw-on #flow-page.active {
@@ -3689,27 +3722,155 @@ iframe {
     padding-right: 0 !important;
   }
 
-  body.mw-on .mw-progress {
-    padding: 8px 10px;
-    gap: 2px;
-    border-bottom: 1px solid var(--line-soft);
+  /* Sticky left step rail (1–7) — always visible for thumb navigation */
+  body.mw-on .mw-progress-bar {
+    position: fixed !important;
+    left: max(2px, var(--safe-left));
+    top: calc(var(--app-header-offset, 72px) + 6px);
+    bottom: calc(var(--app-bottom-nav-offset) + 58px);
+    z-index: 42;
+    width: var(--mw-mobile-rail-w);
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 4px 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    pointer-events: none;
   }
 
-  body.mw-on .mw-progress__dot {
-    width: 22px;
-    height: 22px;
-    font-size: 0.625rem;
-    border-width: 1px;
+  body.mw-on .mw-progress-bar .mw-tour-btn,
+  body.mw-on .mw-progress-bar .mw-quick-mass-btn {
+    display: none !important;
   }
 
-  body.mw-on .mw-progress__item:not(:last-child)::after {
-    width: 10px;
-    margin: 0 1px;
+  body.mw-on .mw-progress-bar .mw-progress,
+  body.mw-on #mw-progress {
+    pointer-events: auto;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    overflow: visible;
+    padding: 0 !important;
+    border: none !important;
+    border-bottom: none !important;
+    background: transparent;
+  }
+
+  body.mw-on #mw-progress .mw-progress__item {
+    position: relative;
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 5px 0;
+    opacity: 0.45;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.mw-on #mw-progress .mw-progress__item.is-active,
+  body.mw-on #mw-progress .mw-progress__item.is-done {
+    opacity: 1;
+  }
+
+  body.mw-on #mw-progress .mw-progress__label {
+    display: none !important;
+  }
+
+  body.mw-on #mw-progress .mw-progress__dot {
+    width: 28px;
+    height: 28px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    border-width: 1.5px;
+    background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 10%, transparent);
+  }
+
+  body.mw-on #mw-progress .mw-progress__item.is-active .mw-progress__dot {
+    background: var(--accent, #a10f0d);
+    color: var(--on-accent, #fff);
+    border-color: var(--accent, #a10f0d);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #a10f0d) 22%, transparent);
+  }
+
+  body.mw-on #mw-progress .mw-progress__item.is-done .mw-progress__dot {
+    background: color-mix(in srgb, var(--accent, #a10f0d) 14%, var(--surface-solid));
+    color: var(--accent, #a10f0d);
+    border-color: color-mix(in srgb, var(--accent, #a10f0d) 40%, transparent);
+  }
+
+  body.mw-on #mw-progress .mw-progress__item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 14px);
+    width: 2px;
+    height: 8px;
+    margin: 0;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: var(--line-soft, var(--line));
+  }
+
+  body.mw-on #mw-progress .mw-progress__item.is-done:not(:last-child)::after {
+    background: color-mix(in srgb, var(--accent, #a10f0d) 45%, transparent);
+  }
+
+  /* Content clears the left step rail (single inset on shell children) */
+  body.mw-on #mw-wizard.mw .mw-shell > *:not(.mw-progress-bar):not(.mw-nav) {
+    padding-left: calc(var(--mw-mobile-rail-w) + 4px) !important;
+    box-sizing: border-box;
   }
 
   body.mw-on .mw-step-head {
-    padding: 14px var(--mw-pad-x) 6px;
+    padding-top: 14px;
+    padding-right: var(--mw-pad-x);
+    padding-bottom: 6px;
     max-width: none;
+  }
+
+  /* Mobile: no Next/Back footer — scroll-to-bottom advances */
+  body.mw-on .mw-nav {
+    display: none !important;
+  }
+
+  /* Extra bottom room so scroll-to-end can fire without a visible cue */
+  body.mw-on #mw-wizard.mw .mw-shell {
+    padding-bottom: calc(18vh + var(--safe-bottom)) !important;
+  }
+
+  /*
+   * Continuous scroll advance: pin window to top instantly, then one transform
+   * so the next step feels like the same downward scroll continuing.
+   * Transform only (no opacity) — avoid fading which reads as a jump cut.
+   */
+  body.mw-step-scroll-cont.mw-on #mw-wizard .mw-shell > *:not(.mw-progress-bar):not(.mw-nav) {
+    animation: mw-scroll-cont 560ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    will-change: transform;
+  }
+
+  @keyframes mw-scroll-cont {
+    from { transform: translate3d(0, 32vh, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.mw-step-scroll-cont.mw-on #mw-wizard .mw-shell > *:not(.mw-progress-bar):not(.mw-nav) {
+      animation: none !important;
+    }
   }
 
   body.mw-on .mw-step-head__title {
@@ -3884,7 +4045,7 @@ iframe {
     background: transparent;
   }
 
-  /* Keep interactive / content inner cards as real cards */
+  /* Minimal mobile: strip nested card chrome; keep only interactive field outlines */
   .mass-song-plan-card,
   .mass-song-slot,
   .reading-preview-card,
@@ -3895,26 +4056,48 @@ iframe {
   .cal-detail-panel,
   .new-songs-card,
   .collections-hub,
-  body.mw-on .mw-rite:not(.flow-setup-card2) {
-    background: var(--surface-solid);
-    border: 1px solid var(--line-soft);
-    border-radius: 12px;
-    box-shadow: none;
+  body.mw-on .mw-rite:not(.flow-setup-card2),
+  .lyrics-details-summary,
+  .home-bento-cell--mass,
+  #home-page.active .home-bento-grid .flow-bento-cell {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
   body.mw-on .flow-setup-card2,
   body.mw-on .flow-setup-bento .flow-bento-cell,
   body.mw-on #mw-wizard.mw .mw-card,
-  body.mw-on #mw-wizard.mw .mw-rite {
-    background: transparent !important;
-    border-color: transparent !important;
-  }
-
+  body.mw-on #mw-wizard.mw .mw-rite,
   body.mw-on .mass-song-plan-card,
   body.mw-on .reading-preview-card {
-    background: var(--surface-solid) !important;
-    border: 1px solid var(--line-soft) !important;
-    border-radius: 12px !important;
+    background: transparent !important;
+    border: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Interactive fields keep a light outline */
+  .mass-song-search-input,
+  .lyric-block__ta,
+  #lyrics-input,
+  .lyrics-editor-main,
+  .vb-select__trigger,
+  input[type="text"],
+  input[type="search"],
+  textarea,
+  select {
+    border-radius: 12px;
+  }
+
+  /* Mass mobile = draft-first; generate PPTX on computer */
+  #btn-generate-flow,
+  #btn-generate-flow-inline,
+  #mw-generate,
+  #mw-gen-wrap,
+  body.flow-dock-visible .flow-dock-float .uiverse-btn--generate {
+    display: none !important;
   }
 
   /* Disable header bottom sheets for moved panels */
@@ -4956,5 +5139,32 @@ iframe {
 @media (min-width: 769px) {
   #mobile-welcome-modal {
     display: none !important;
+  }
+}
+
+/* In-app billing — mobile scroll / stacked Free vs Paid feel */
+@media (max-width: 768px) {
+  .settings-billing-plans__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .settings-billing-plan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .settings-billing-plan {
+    min-height: 64px;
+    border-radius: 14px;
+  }
+
+  .settings-billing-summary {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
   }
 }

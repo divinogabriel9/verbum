@@ -111,7 +111,10 @@
       initMobileChromeRestore();
       const mobile = isMobileChromeLayout();
       document.body.classList.toggle("mobile-chrome-tabs", mobile);
-      document.body.classList.toggle("mobile-top-nav", mobile);
+      document.body.classList.toggle("mobile-top-nav", false);
+      document.body.classList.toggle("has-bottom-nav", mobile);
+      document.body.classList.toggle("mobile-float-nav", mobile);
+      if (!mobile) document.body.classList.remove("bottom-nav-scroll-away");
 
       const menuBtn = $("app-header-menu-btn");
       if (menuBtn) menuBtn.hidden = !mobile;
@@ -164,12 +167,20 @@
           tickerRow.hidden = false;
           tickerRow.setAttribute("aria-hidden", "false");
         }
-        if (nav && navRow) {
-          navRow.appendChild(nav);
-          navRow.hidden = false;
-          navRow.removeAttribute("hidden");
-          navRow.setAttribute("aria-hidden", "false");
-          navRow.style.display = "block";
+        // Keep floating bottom dock in its original parent (not header)
+        if (nav && mobileChromeRestore.navParent && nav.parentElement !== mobileChromeRestore.navParent) {
+          if (mobileChromeRestore.navNext && mobileChromeRestore.navNext.parentElement === mobileChromeRestore.navParent) {
+            mobileChromeRestore.navParent.insertBefore(nav, mobileChromeRestore.navNext);
+          } else {
+            mobileChromeRestore.navParent.appendChild(nav);
+          }
+        }
+        if (navRow) {
+          navRow.hidden = true;
+          navRow.setAttribute("aria-hidden", "true");
+          navRow.style.display = "none";
+        }
+        if (nav) {
           nav.hidden = false;
           nav.style.display = "flex";
         }
@@ -251,17 +262,71 @@
       syncNotificationsAccordionHeader();
     }
 
+    function setBottomNavScrollAway(hidden) {
+      document.body.classList.toggle("bottom-nav-scroll-away", !!hidden);
+    }
+
+    function initMobileFloatNavScroll() {
+      if (window.__verbumFloatNavScrollBound) return;
+      window.__verbumFloatNavScrollBound = true;
+      var lastY = window.scrollY || document.documentElement.scrollTop || 0;
+      var ticking = false;
+      var THRESHOLD = 10;
+
+      function onScrollFrame() {
+        ticking = false;
+        if (!isMobileChromeLayout()) {
+          setBottomNavScrollAway(false);
+          lastY = window.scrollY || document.documentElement.scrollTop || 0;
+          return;
+        }
+        // Sheet / overlay modes own the dock; don't fight them
+        if (document.body.classList.contains("bottom-nav-sheet-open")) {
+          lastY = window.scrollY || document.documentElement.scrollTop || 0;
+          return;
+        }
+        var y = window.scrollY || document.documentElement.scrollTop || 0;
+        var delta = y - lastY;
+        if (y <= 24) {
+          setBottomNavScrollAway(false);
+        } else if (delta > THRESHOLD) {
+          // Scrolling down the page → hide dock (FB)
+          setBottomNavScrollAway(true);
+        } else if (delta < -THRESHOLD) {
+          // Scrolling up → show dock
+          setBottomNavScrollAway(false);
+        }
+        lastY = y;
+      }
+
+      window.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(onScrollFrame);
+      }, { passive: true });
+
+      // Touchend near bottom edge can restore dock if user stalls
+      document.addEventListener("touchstart", function () {
+        if (!isMobileChromeLayout()) return;
+        if (document.body.classList.contains("bottom-nav-sheet-open")) return;
+        // Keep lastY fresh so a direction change after pause is responsive
+        lastY = window.scrollY || document.documentElement.scrollTop || 0;
+      }, { passive: true });
+    }
+
     function initMobileChromeLayout() {
       syncMobileChromeLayout();
+      initMobileFloatNavScroll();
       window.addEventListener("resize", () => {
         syncMobileChromeLayout();
         if (typeof applyNavTabVisibility === "function") applyNavTabVisibility();
+        if (!isMobileChromeLayout()) setBottomNavScrollAway(false);
       }, { passive: true });
     }
 
     var MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
-    var MOBILE_NAV_DEFAULT_ORDER = ["/home", "/mass/builder", "/library/songs", "/notifications"];
-    var MOBILE_NAV_LOCKED = new Set(["/home", "/mass/builder", "/library/songs"]);
+    var MOBILE_NAV_DEFAULT_ORDER = ["/library/songs", "/mass/builder"];
+    var MOBILE_NAV_LOCKED = new Set(["/library/songs", "/mass/builder"]);
     var mobileNavDragBound = false;
     var mobileNavDragState = null;
 
@@ -269,7 +334,10 @@
       const t = String(text || "").trim();
       const map = {
         "Mass setup": "Mass",
-        "Lyrics Library": "Library",
+        "Mass draft": "Mass",
+        "Lyrics Library": "Songs",
+        "Songs": "Songs",
+        "Choir practice": "Practice",
         "Notifications": "Alerts",
         "Liturgical Calendar": "Calendar",
         "Theme Lab": "Design",
@@ -379,36 +447,24 @@
         createSlot.hidden = true;
         createSlot.setAttribute("aria-hidden", "true");
       }
-      let order = getMobileNavOrder().filter((route) => {
-        const tabId = typeof routeToNavTabId === "function" ? routeToNavTabId(route) : null;
-        if (tabId === "notifications") return true;
-        if (MOBILE_NAV_LOCKED.has(route)) return true;
-        // Pinned Extras routes stay in the bar even if optional desktop tabs are off
-        if (typeof isDrawerNavRoute === "function" && isDrawerNavRoute(route)) return true;
-        if (tabId && typeof isNavTabVisible === "function" && !isNavTabVisible(tabId)) {
-          return false;
-        }
-        return true;
-      });
-      if (!order.length) order = MOBILE_NAV_DEFAULT_ORDER.slice();
-      const links = [];
-      order.forEach((route) => {
-        const link = ensureMobileNavLink(route);
-        if (link) links.push(link);
-      });
-      const kept = new Set(links);
+      // Fixed mobile dock: Songs · Practice · Mass · More
+      const songs = nav.querySelector('.nav-link[data-route="/library/songs"]');
+      const practice = nav.querySelector('[data-nav-action="practice-share"]');
+      const mass = nav.querySelector('.nav-link[data-route="/mass/builder"]');
+      const more = $("app-bottom-nav-more");
+      const primary = [songs, practice, mass, more].filter(Boolean);
+      const primarySet = new Set(primary);
       Array.from(nav.querySelectorAll(".nav-link")).forEach((el) => {
-        if (!kept.has(el)) {
-          if (el.classList.contains("nav-link--pinned")) el.remove();
-          else el.hidden = true;
+        if (primarySet.has(el)) {
+          el.hidden = false;
+          return;
         }
+        if (el.classList.contains("nav-link--pinned")) el.remove();
+        else el.hidden = true;
       });
-      links.forEach((link) => {
-        link.hidden = false;
-        nav.appendChild(link);
-      });
+      primary.forEach((el) => nav.appendChild(el));
       if (createSlot) nav.appendChild(createSlot);
-      saveMobileNavOrder(links.map((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "")).filter(Boolean));
+      saveMobileNavOrder(["/library/songs", "/mass/builder"]);
       syncAppHeaderOffset();
     }
 
@@ -7893,6 +7949,15 @@
       sheet.querySelectorAll(".app-more-sheet__link[data-route]").forEach((link) => {
         link.addEventListener("click", () => closeAppMoreSheet());
       });
+      const practiceBtn = $("app-bottom-nav-practice");
+      if (practiceBtn && practiceBtn.dataset.bound !== "1") {
+        practiceBtn.dataset.bound = "1";
+        practiceBtn.addEventListener("click", () => {
+          closeAppMoreSheet();
+          if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
+          else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
+        });
+      }
     }
 
     function initSongPlanSummaryCollapse() {
@@ -8918,7 +8983,6 @@
         refreshCommunity();
         if (typeof syncSettingsAccountPanel === "function") syncSettingsAccountPanel();
         if (r === "/settings/team" && typeof loadSettingsParishTeam === "function") loadSettingsParishTeam();
-        if (r === "/settings/billing" && typeof loadSettingsBilling === "function") loadSettingsBilling();
         if (window.__scrollToLiveRadio) {
           window.__scrollToLiveRadio = false;
           requestAnimationFrame(() => {
@@ -18973,373 +19037,6 @@
       });
     }
 
-    var billingUiState = {
-      billing_enabled: false,
-      has_paid_access: false,
-      can_start_checkout: false,
-      can_manage_billing: false,
-      can_manage_parish_billing: false,
-      stripe_subscription_status: "",
-      plan_interval: "",
-      plan_currency: "",
-      display_currency: "usd",
-      parish_country: "",
-      stripe_current_period_end: null,
-      trial_days: 14,
-    };
-
-    function billingCurrencyPref() {
-      try {
-        var saved = (localStorage.getItem("liturgyflow.billing.currency") || "").toLowerCase();
-        if (saved === "krw" || saved === "php" || saved === "myr" || saved === "usd") return saved;
-      } catch (_e) { /* ignore */ }
-      try {
-        var lang = (navigator.language || "").toLowerCase();
-        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-        if (lang === "ko" || lang.indexOf("ko-") === 0 || tz === "Asia/Seoul") return "krw";
-        if (
-          lang === "fil" || lang.indexOf("fil-") === 0
-          || lang === "tl" || lang.indexOf("tl-") === 0
-          || lang === "en-ph" || tz === "Asia/Manila"
-        ) return "php";
-        if (
-          lang === "ms" || lang.indexOf("ms-") === 0
-          || lang === "en-my"
-          || tz === "Asia/Kuala_Lumpur" || tz === "Asia/Kuching"
-        ) return "myr";
-      } catch (_e2) { /* ignore */ }
-      return "usd";
-    }
-
-    function setBillingCurrencyPref(cur) {
-      try {
-        localStorage.setItem("liturgyflow.billing.currency", (cur || "usd").toLowerCase());
-      } catch (_e) { /* ignore */ }
-    }
-
-    async function startBillingCheckout(interval, currency) {
-      const statusEl = $("settings-billing-status");
-      if (statusEl) {
-        statusEl.hidden = false;
-        statusEl.className = "status";
-        statusEl.textContent = "Opening Stripe Checkout…";
-      }
-      try {
-        const data = await postJSON("/api/billing/checkout", {
-          interval: interval,
-          currency: currency,
-        });
-        if (data && data.url) {
-          window.location.href = data.url;
-          return;
-        }
-        throw new Error("Checkout URL missing.");
-      } catch (err) {
-        if (statusEl) {
-          statusEl.hidden = false;
-          statusEl.className = "status error";
-          statusEl.textContent = (err && err.message) || "Checkout failed.";
-        }
-        if (typeof showToast === "function") {
-          showToast((err && err.message) || "Checkout failed", "error");
-        }
-      }
-    }
-
-    async function openBillingPortal() {
-      const statusEl = $("settings-billing-status");
-      try {
-        const data = await postJSON("/api/billing/portal", {});
-        if (data && data.url) {
-          window.location.href = data.url;
-          return;
-        }
-        throw new Error("Portal URL missing.");
-      } catch (err) {
-        if (statusEl) {
-          statusEl.hidden = false;
-          statusEl.className = "status error";
-          statusEl.textContent = (err && err.message) || "Could not open billing portal.";
-        }
-      }
-    }
-
-    function syncBillingSubscribeButton() {
-      const canCheckout = !!billingUiState.can_start_checkout
-        && !!billingUiState.can_manage_parish_billing;
-      const selected = (billingUiState._selectedInterval || "").trim();
-      const ready = !!selected && !!billingUiState._selectedReady;
-      const list = $("settings-billing-plan-list");
-      if (!list) return;
-      list.querySelectorAll(".settings-billing-plan").forEach((el) => {
-        const btn = el.querySelector(".settings-billing-plan__subscribe");
-        if (!btn) return;
-        const isSel = el.getAttribute("data-interval") === selected;
-        btn.hidden = !isSel;
-        btn.disabled = !(isSel && canCheckout && ready);
-        btn.textContent = canCheckout
-          ? "Subscribe"
-          : (ready ? "President or sole member only" : "Subscribe");
-      });
-    }
-
-    function selectBillingPlan(interval, ready) {
-      billingUiState._selectedInterval = interval || "";
-      billingUiState._selectedReady = !!ready;
-      const list = $("settings-billing-plan-list");
-      if (list) {
-        list.querySelectorAll(".settings-billing-plan").forEach((el) => {
-          const isSel = el.getAttribute("data-interval") === interval;
-          el.classList.toggle("is-selected", isSel);
-          el.setAttribute("aria-selected", isSel ? "true" : "false");
-        });
-      }
-      syncBillingSubscribeButton();
-    }
-
-    function renderBillingPlanList(catalog) {
-      const list = $("settings-billing-plan-list");
-      if (!list) return;
-      const currency = ($("settings-billing-currency") && $("settings-billing-currency").value) || "usd";
-      const intervals = (catalog && catalog.intervals) || [];
-      const prevSelected = (billingUiState._selectedInterval || "").trim();
-      list.innerHTML = "";
-      let restoredReady = false;
-      intervals.forEach((row) => {
-        const price = (row.prices || []).find((p) => p.currency === currency) || (row.prices || [])[0];
-        const amount = (price && price.amount_display) || "—";
-        const ready = !!(price && price.price_id);
-        const featured = row.interval === "annual";
-        const item = document.createElement("div");
-        item.className = "settings-billing-plan" + (featured ? " is-featured" : "");
-        item.setAttribute("role", "option");
-        item.setAttribute("tabindex", ready ? "0" : "-1");
-        item.setAttribute("data-interval", row.interval || "");
-        item.setAttribute("aria-selected", "false");
-        if (!ready) item.setAttribute("aria-disabled", "true");
-        item.innerHTML =
-          "<div class=\"settings-billing-plan__main\">" +
-          "<div class=\"settings-billing-plan__copy\">" +
-          "<div class=\"settings-billing-plan__label-row\">" +
-          "<strong>" + escapeHtml(row.label || row.interval) + "</strong>" +
-          (featured ? "<span class=\"settings-billing-plan__pill\">Best value</span>" : "") +
-          "</div>" +
-          "<span class=\"settings-billing-plan__price\">" + escapeHtml(amount) + "</span>" +
-          "<span class=\"settings-billing-plan__hint\">" + escapeHtml(row.billing_hint || "") + "</span>" +
-          "</div>" +
-          "<span class=\"settings-billing-plan__check\" aria-hidden=\"true\"></span>" +
-          "</div>" +
-          "<button type=\"button\" class=\"primary settings-billing-plan__subscribe\" hidden>Subscribe</button>";
-        const pick = () => {
-          if (!ready) return;
-          selectBillingPlan(row.interval, ready);
-        };
-        item.addEventListener("click", (e) => {
-          if (e.target && e.target.closest && e.target.closest(".settings-billing-plan__subscribe")) return;
-          pick();
-        });
-        item.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            pick();
-          }
-        });
-        const subBtn = item.querySelector(".settings-billing-plan__subscribe");
-        if (subBtn) {
-          subBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const cur = ($("settings-billing-currency") && $("settings-billing-currency").value) || "usd";
-            startBillingCheckout(row.interval, cur);
-          });
-        }
-        if (prevSelected && prevSelected === row.interval && ready) restoredReady = true;
-        list.appendChild(item);
-      });
-      if (prevSelected && restoredReady) selectBillingPlan(prevSelected, true);
-      else {
-        billingUiState._selectedInterval = "";
-        billingUiState._selectedReady = false;
-        syncBillingSubscribeButton();
-      }
-    }
-
-    function formatBillingIntervalLabel(interval) {
-      const map = {
-        monthly: "Monthly",
-        quarterly: "3-month",
-        semiannual: "6-month",
-        annual: "Annual",
-      };
-      return map[String(interval || "").toLowerCase()] || (interval || "Subscription");
-    }
-
-    function formatBillingStatusLabel(status) {
-      const s = String(status || "").toLowerCase();
-      if (s === "trialing") return "Trial";
-      if (s === "active") return "Active";
-      if (s === "past_due") return "Past due";
-      if (s === "canceled" || s === "cancelled") return "Canceled";
-      if (!s) return "";
-      return s.replace(/_/g, " ");
-    }
-
-    function syncBillingNavVisibility() {
-      const billingNav = $("settings-nav-billing");
-      const billingModalTab = $("settings-modal-tab-billing");
-      const showBilling = !!billingUiState.billing_enabled && !!churchMembershipState.parish_id;
-      if (billingNav) billingNav.hidden = !showBilling;
-      if (billingModalTab) billingModalTab.hidden = !showBilling;
-    }
-
-    async function loadSettingsBilling() {
-      const statusEl = $("settings-billing-status");
-      const summary = $("settings-billing-summary");
-      const summaryText = $("settings-billing-summary-text");
-      const plans = $("settings-billing-plans");
-      const hint = $("settings-billing-hint");
-      const currencySel = $("settings-billing-currency");
-      const currencyWrap = currencySel
-        ? (currencySel.closest(".settings-billing-currency") || currencySel.parentElement)
-        : null;
-      const params = new URLSearchParams(window.location.search || "");
-      const planParam = (params.get("plan") || "").trim().toLowerCase();
-      const currencyParam = (params.get("currency") || "").trim().toLowerCase();
-      const autostart = params.get("autostart") === "1";
-      const isSa = !!(churchMembershipState && churchMembershipState.is_superadmin);
-      if (currencySel && !currencySel.dataset.bound) {
-        currencySel.addEventListener("change", () => {
-          if (!(churchMembershipState && churchMembershipState.is_superadmin)) return;
-          setBillingCurrencyPref(currencySel.value);
-          loadSettingsBilling();
-        });
-        currencySel.dataset.bound = "1";
-      }
-      const portalBtn = $("btn-billing-portal");
-      if (portalBtn && !portalBtn.dataset.bound) {
-        portalBtn.addEventListener("click", openBillingPortal);
-        portalBtn.dataset.bound = "1";
-      }
-
-      try {
-        if (params.get("checkout") === "success" && statusEl) {
-          statusEl.hidden = false;
-          statusEl.className = "status ok";
-          statusEl.textContent = "Checkout complete — activating your parish trial…";
-        } else if (params.get("checkout") === "cancel" && statusEl) {
-          statusEl.hidden = false;
-          statusEl.className = "status";
-          statusEl.textContent = "Checkout canceled. You can start a trial anytime.";
-        }
-
-        const statusData = await getJSON("/api/billing/status");
-        const billing = (statusData && statusData.billing) || {};
-        billingUiState = Object.assign({}, billingUiState, billing);
-        if (statusData.membership) syncMembershipUi(statusData.membership);
-        else syncBillingNavVisibility();
-
-        const parishCurrency = String(billing.display_currency || "").toLowerCase();
-        const validCurrency = { usd: 1, krw: 1, php: 1, myr: 1 };
-        let cur = parishCurrency && validCurrency[parishCurrency] ? parishCurrency : "usd";
-        if (isSa) {
-          if (currencyParam && validCurrency[currencyParam]) {
-            cur = currencyParam;
-            setBillingCurrencyPref(cur);
-          } else {
-            const pref = billingCurrencyPref();
-            if (pref && validCurrency[pref]) cur = pref;
-          }
-          if (currencySel) currencySel.value = cur;
-          if (currencyWrap) currencyWrap.hidden = false;
-        } else {
-          if (currencySel) currencySel.value = cur;
-          if (currencyWrap) currencyWrap.hidden = true;
-        }
-        const catalog = await getJSON("/api/billing/catalog?currency=" + encodeURIComponent(cur));
-
-        if (!billing.billing_enabled) {
-          if (plans) plans.hidden = true;
-          if (summary) summary.hidden = true;
-          if (hint) {
-            hint.hidden = false;
-            hint.textContent = "Billing is not configured on this server yet.";
-          }
-          return;
-        }
-        if (hint) hint.hidden = true;
-
-        const paid = !!billing.has_paid_access && !!billing.stripe_subscription_status;
-        if (summary) summary.hidden = !paid && !billing.can_manage_billing;
-        const summaryTitle = $("settings-billing-summary-title");
-        const badge = $("settings-billing-badge");
-        if (summaryTitle) {
-          const planLabel = formatBillingIntervalLabel(billing.plan_interval);
-          const curLabel = billing.plan_currency
-            ? " · " + String(billing.plan_currency).toUpperCase()
-            : "";
-          summaryTitle.textContent = billing.plan_interval
-            ? planLabel + " plan" + curLabel
-            : "Subscription on file";
-        }
-        if (badge) {
-          const statusLabel = formatBillingStatusLabel(billing.stripe_subscription_status);
-          if (statusLabel) {
-            badge.hidden = false;
-            badge.textContent = statusLabel;
-            badge.className = "settings-billing-badge is-" + String(billing.stripe_subscription_status || "").toLowerCase();
-          } else {
-            badge.hidden = true;
-            badge.textContent = "";
-            badge.className = "settings-billing-badge";
-          }
-        }
-        if (summaryText) {
-          const bits = [];
-          if (billing.stripe_current_period_end) {
-            const end = String(billing.stripe_current_period_end).slice(0, 10);
-            const isTrial = String(billing.stripe_subscription_status || "").toLowerCase() === "trialing";
-            bits.push((isTrial ? "Trial ends " : "Renews ") + end);
-          }
-          if (!bits.length && billing.stripe_subscription_status) {
-            bits.push("Status: " + formatBillingStatusLabel(billing.stripe_subscription_status));
-          }
-          summaryText.textContent = bits.join(" · ") || "You can update payment method or cancel anytime.";
-        }
-        if (portalBtn) {
-          portalBtn.hidden = !billing.can_manage_billing
-            || !billing.can_manage_parish_billing;
-        }
-        if (plans) plans.hidden = !!billing.has_paid_access && !billing.can_start_checkout;
-        const validIntervals = { monthly: 1, quarterly: 1, semiannual: 1, annual: 1 };
-        if (validIntervals[planParam]) billingUiState._selectedInterval = planParam;
-        renderBillingPlanList(catalog);
-
-        const canAutostart = autostart
-          && !!billing.can_start_checkout
-          && !!billing.can_manage_parish_billing
-          && !billingUiState._autostartDone;
-        const startInterval = validIntervals[planParam] ? planParam : "monthly";
-        if (canAutostart) {
-          billingUiState._autostartDone = true;
-          if (window.history && window.history.replaceState) {
-            window.history.replaceState({}, "", "/settings/billing");
-          }
-          await startBillingCheckout(startInterval, cur);
-          return;
-        }
-
-        if ((params.get("checkout") || planParam || currencyParam || autostart)
-          && window.history && window.history.replaceState) {
-          window.history.replaceState({}, "", "/settings/billing");
-        }
-      } catch (err) {
-        if (statusEl) {
-          statusEl.hidden = false;
-          statusEl.className = "status error";
-          statusEl.textContent = (err && err.message) || "Could not load billing.";
-        }
-      }
-    }
-
     function syncGlobalMembershipBanner(data) {
       const state = data || churchMembershipState;
       const status = (state.membership_status || "draft").toLowerCase();
@@ -19348,14 +19045,8 @@
       let cls = "app-membership-banner";
       let show = false;
 
-      const billing = state.billing || billingUiState || {};
-      const billingOn = !!billing.billing_enabled;
       if (!state.is_superadmin && !state.can_use_full_app) {
-        if (billingOn) {
-          show = true;
-          cls += " is-pending";
-          html = "Start your parish’s <strong>14-day free trial</strong> under <a href=\"/settings/billing\" data-route=\"/settings/billing\">Settings → Billing</a> to unlock Mass generation.";
-        } else if (status === "pending" || status === "draft") {
+        if (status === "pending" || status === "draft") {
           // Pending-approval users get the welcome + tour popups instead of a global banner.
           show = false;
           maybeShowMembershipWelcome(state);
@@ -19364,7 +19055,7 @@
           cls += " is-error";
           html = "Your parish membership was not approved. Review your profile in <a href=\"/settings/church\" data-route=\"/settings/church\">Church Profile</a> or contact the administrator.";
         }
-      } else if (status === "pending" && !billingOn) {
+      } else if (status === "pending") {
         show = true;
         cls += " is-pending";
         html = "Your parish membership is pending approval. <a href=\"/settings/church\" data-route=\"/settings/church\">Open Church Profile</a>";
@@ -19394,10 +19085,6 @@
 
     function syncMembershipUi(data) {
       if (!data) return;
-      const billing = data.billing || {};
-      if (billing && typeof billing === "object") {
-        billingUiState = Object.assign({}, billingUiState, billing);
-      }
       churchMembershipState = {
         membership_status: data.membership_status || "draft",
         community_name_locked: !!data.community_name_locked,
@@ -19416,7 +19103,6 @@
         parish_role: (data.parish_role || "").toLowerCase(),
         parish_id: data.parish_id || "",
         user_id: data.user_id || churchMembershipState.user_id || "",
-        billing: billingUiState,
       };
 
       const teamNav = $("settings-nav-team");
@@ -19424,7 +19110,6 @@
       const showTeam = churchMembershipState.parish_role === "president" || churchMembershipState.is_superadmin;
       if (teamNav) teamNav.hidden = !showTeam;
       if (teamModalTab) teamModalTab.hidden = !showTeam;
-      syncBillingNavVisibility();
 
       const nameInput = $("settings-church-name");
       const nameHint = $("settings-church-name-hint");

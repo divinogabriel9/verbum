@@ -111,7 +111,10 @@
       initMobileChromeRestore();
       const mobile = isMobileChromeLayout();
       document.body.classList.toggle("mobile-chrome-tabs", mobile);
-      document.body.classList.toggle("mobile-top-nav", mobile);
+      document.body.classList.toggle("mobile-top-nav", false);
+      document.body.classList.toggle("has-bottom-nav", mobile);
+      document.body.classList.toggle("mobile-float-nav", mobile);
+      if (!mobile) document.body.classList.remove("bottom-nav-scroll-away");
 
       const menuBtn = $("app-header-menu-btn");
       if (menuBtn) menuBtn.hidden = !mobile;
@@ -164,12 +167,20 @@
           tickerRow.hidden = false;
           tickerRow.setAttribute("aria-hidden", "false");
         }
-        if (nav && navRow) {
-          navRow.appendChild(nav);
-          navRow.hidden = false;
-          navRow.removeAttribute("hidden");
-          navRow.setAttribute("aria-hidden", "false");
-          navRow.style.display = "block";
+        // Keep floating bottom dock in its original parent (not header)
+        if (nav && mobileChromeRestore.navParent && nav.parentElement !== mobileChromeRestore.navParent) {
+          if (mobileChromeRestore.navNext && mobileChromeRestore.navNext.parentElement === mobileChromeRestore.navParent) {
+            mobileChromeRestore.navParent.insertBefore(nav, mobileChromeRestore.navNext);
+          } else {
+            mobileChromeRestore.navParent.appendChild(nav);
+          }
+        }
+        if (navRow) {
+          navRow.hidden = true;
+          navRow.setAttribute("aria-hidden", "true");
+          navRow.style.display = "none";
+        }
+        if (nav) {
           nav.hidden = false;
           nav.style.display = "flex";
         }
@@ -251,17 +262,71 @@
       syncNotificationsAccordionHeader();
     }
 
+    function setBottomNavScrollAway(hidden) {
+      document.body.classList.toggle("bottom-nav-scroll-away", !!hidden);
+    }
+
+    function initMobileFloatNavScroll() {
+      if (window.__verbumFloatNavScrollBound) return;
+      window.__verbumFloatNavScrollBound = true;
+      var lastY = window.scrollY || document.documentElement.scrollTop || 0;
+      var ticking = false;
+      var THRESHOLD = 10;
+
+      function onScrollFrame() {
+        ticking = false;
+        if (!isMobileChromeLayout()) {
+          setBottomNavScrollAway(false);
+          lastY = window.scrollY || document.documentElement.scrollTop || 0;
+          return;
+        }
+        // Sheet / overlay modes own the dock; don't fight them
+        if (document.body.classList.contains("bottom-nav-sheet-open")) {
+          lastY = window.scrollY || document.documentElement.scrollTop || 0;
+          return;
+        }
+        var y = window.scrollY || document.documentElement.scrollTop || 0;
+        var delta = y - lastY;
+        if (y <= 24) {
+          setBottomNavScrollAway(false);
+        } else if (delta > THRESHOLD) {
+          // Scrolling down the page → hide dock (FB)
+          setBottomNavScrollAway(true);
+        } else if (delta < -THRESHOLD) {
+          // Scrolling up → show dock
+          setBottomNavScrollAway(false);
+        }
+        lastY = y;
+      }
+
+      window.addEventListener("scroll", function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(onScrollFrame);
+      }, { passive: true });
+
+      // Touchend near bottom edge can restore dock if user stalls
+      document.addEventListener("touchstart", function () {
+        if (!isMobileChromeLayout()) return;
+        if (document.body.classList.contains("bottom-nav-sheet-open")) return;
+        // Keep lastY fresh so a direction change after pause is responsive
+        lastY = window.scrollY || document.documentElement.scrollTop || 0;
+      }, { passive: true });
+    }
+
     function initMobileChromeLayout() {
       syncMobileChromeLayout();
+      initMobileFloatNavScroll();
       window.addEventListener("resize", () => {
         syncMobileChromeLayout();
         if (typeof applyNavTabVisibility === "function") applyNavTabVisibility();
+        if (!isMobileChromeLayout()) setBottomNavScrollAway(false);
       }, { passive: true });
     }
 
     var MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
-    var MOBILE_NAV_DEFAULT_ORDER = ["/home", "/mass/builder", "/library/songs", "/notifications"];
-    var MOBILE_NAV_LOCKED = new Set(["/home", "/mass/builder", "/library/songs"]);
+    var MOBILE_NAV_DEFAULT_ORDER = ["/library/songs", "/mass/builder"];
+    var MOBILE_NAV_LOCKED = new Set(["/library/songs", "/mass/builder"]);
     var mobileNavDragBound = false;
     var mobileNavDragState = null;
 
@@ -269,7 +334,10 @@
       const t = String(text || "").trim();
       const map = {
         "Mass setup": "Mass",
-        "Lyrics Library": "Library",
+        "Mass draft": "Mass",
+        "Lyrics Library": "Songs",
+        "Songs": "Songs",
+        "Choir practice": "Practice",
         "Notifications": "Alerts",
         "Liturgical Calendar": "Calendar",
         "Theme Lab": "Design",
@@ -379,36 +447,24 @@
         createSlot.hidden = true;
         createSlot.setAttribute("aria-hidden", "true");
       }
-      let order = getMobileNavOrder().filter((route) => {
-        const tabId = typeof routeToNavTabId === "function" ? routeToNavTabId(route) : null;
-        if (tabId === "notifications") return true;
-        if (MOBILE_NAV_LOCKED.has(route)) return true;
-        // Pinned Extras routes stay in the bar even if optional desktop tabs are off
-        if (typeof isDrawerNavRoute === "function" && isDrawerNavRoute(route)) return true;
-        if (tabId && typeof isNavTabVisible === "function" && !isNavTabVisible(tabId)) {
-          return false;
-        }
-        return true;
-      });
-      if (!order.length) order = MOBILE_NAV_DEFAULT_ORDER.slice();
-      const links = [];
-      order.forEach((route) => {
-        const link = ensureMobileNavLink(route);
-        if (link) links.push(link);
-      });
-      const kept = new Set(links);
+      // Fixed mobile dock: Songs · Practice · Mass · More
+      const songs = nav.querySelector('.nav-link[data-route="/library/songs"]');
+      const practice = nav.querySelector('[data-nav-action="practice-share"]');
+      const mass = nav.querySelector('.nav-link[data-route="/mass/builder"]');
+      const more = $("app-bottom-nav-more");
+      const primary = [songs, practice, mass, more].filter(Boolean);
+      const primarySet = new Set(primary);
       Array.from(nav.querySelectorAll(".nav-link")).forEach((el) => {
-        if (!kept.has(el)) {
-          if (el.classList.contains("nav-link--pinned")) el.remove();
-          else el.hidden = true;
+        if (primarySet.has(el)) {
+          el.hidden = false;
+          return;
         }
+        if (el.classList.contains("nav-link--pinned")) el.remove();
+        else el.hidden = true;
       });
-      links.forEach((link) => {
-        link.hidden = false;
-        nav.appendChild(link);
-      });
+      primary.forEach((el) => nav.appendChild(el));
       if (createSlot) nav.appendChild(createSlot);
-      saveMobileNavOrder(links.map((el) => normalizeRoute(el.getAttribute("href") || el.dataset.route || "")).filter(Boolean));
+      saveMobileNavOrder(["/library/songs", "/mass/builder"]);
       syncAppHeaderOffset();
     }
 

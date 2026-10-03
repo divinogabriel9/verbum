@@ -399,21 +399,67 @@
   @media (max-width: 959px) {
     .lf-pricing__grid {
       grid-template-areas:
-        "plans"
         "free"
-        "premium";
+        "premium"
+        "plans";
     }
     .lf-pricing__tier--free { grid-area: free; }
     .lf-pricing__plans-wrap { grid-area: plans; }
     .lf-pricing__tier--premium { grid-area: premium; }
   }
   @media (max-width: 720px) {
+    html, body { overflow: auto; height: auto; }
+    .lf-page {
+      overflow: auto;
+      height: auto;
+      max-height: none;
+      min-height: 100dvh;
+    }
+    .lf-pricing {
+      overflow: visible;
+      flex: none;
+      padding: 0 16px 24px;
+    }
+    .lf-pricing__inner {
+      flex: none;
+      justify-content: flex-start;
+      gap: 18px;
+      padding: 8px 0 32px;
+    }
+    .lf-pricing__grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .lf-pricing__tier,
+    .lf-pricing__plans-wrap {
+      flex: none;
+    }
+    /* Scroll order: Free → Premium → Plans (DOM has Plans before Premium) */
+    .lf-pricing__tier--free { order: 1; }
+    .lf-pricing__tier--premium { order: 2; }
+    .lf-pricing__plans-wrap { order: 3; }
+    .lf-pricing__plans {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      grid-template-rows: none;
+    }
+    .lf-pricing__plan {
+      min-height: 56px;
+    }
+    .lf-pricing__plan-meta { display: block; }
     .lf-hero__nav { padding: 18px 16px; }
-    .lf-pricing { padding: 0 16px; }
     .lf-pricing__title { font-size: clamp(1.65rem, 7vw, 2.25rem); }
-    .lf-pricing__plan-meta { display: none; }
-    .lf-pricing__cta { padding: 16px 28px; letter-spacing: 0.04em; }
-    .lf-page { overflow: auto; height: auto; max-height: none; min-height: 100dvh; }
+    .lf-pricing__cta {
+      position: sticky;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      z-index: 2;
+      padding: 16px 28px;
+      letter-spacing: 0.04em;
+      margin-top: 12px;
+    }
+    .lf-hero__nav-link { display: none; }
   }
 
   .skip-link {
