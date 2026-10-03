@@ -943,14 +943,6 @@ def _build_mass_flow(
         story, styles, by.get("recessional"), "Recessional",
         lyric_chars=lyric_chars, titles_only=titles_only,
     )
-    _add(
-        story,
-        _P(
-            _esc(parish or "Thank you for worshipping with us.")
-            + " Please take a moment of silence and greet one another in peace.",
-            styles["body"],
-        ),
-    )
     max_notes = int(cfg.get("max_notes") or 0)
     if max_notes > 0 and not cfg.get("drop_announcements"):
         notes = [_clean_space(str(a)) for a in announcements if _clean_space(str(a or ""))]
@@ -958,7 +950,6 @@ def _build_mass_flow(
             _heading(story, styles, "Parish notes")
             for note in notes[:max_notes]:
                 _add(story, _P(f"• {_esc(_clip(note, 120))}", styles["body"]))
-    _add(story, _P("Generated with LiturgyFlow", styles["small"]))
     return story
 
 
@@ -1136,6 +1127,21 @@ def _draw_cell(
         y -= h
 
 
+def _draw_end_credit(c: Canvas, col_index: int = COLS - 1) -> None:
+    """Pin credit to the bottom of the last column (4th), not under song lyrics."""
+    x0, y0 = _cell_origin(col_index)
+    c.setFillColor(_MUTED)
+    try:
+        c.setFont(_ACTIVE_ITALIC if _ACTIVE_ITALIC else "Times-Italic", 6.5)
+    except Exception:
+        c.setFont("Helvetica-Oblique", 6.5)
+    c.drawCentredString(
+        x0 + CELL_W / 2,
+        y0 + max(2.0 * mm, MARGIN * 0.55),
+        "Generated with LiturgyFlow.com",
+    )
+
+
 def generate_mass_leaflet(
     *,
     output_path: Path,
@@ -1254,6 +1260,8 @@ def generate_mass_leaflet(
                 cell_no=cell_i + 1,
                 cell_total=total,
             )
+        # Bottom of the 4th (last) column on the back — end of the leaflet
+        _draw_end_credit(c, COLS - 1)
         c.showPage()
 
     c.save()

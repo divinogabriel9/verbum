@@ -1159,7 +1159,17 @@ def _spawn_daemon(target, *, name: str, kwargs: dict[str, Any]) -> None:
     threading.Thread(target=target, kwargs=kwargs, name=name, daemon=True).start()
 
 
-app = FastAPI(title="LiturgyFlow", version=get_app_version())
+# Hide OpenAPI /docs in production so the attack surface isn't advertised.
+_docs_url = None if is_production_runtime() else "/docs"
+_redoc_url = None if is_production_runtime() else "/redoc"
+_openapi_url = None if is_production_runtime() else "/openapi.json"
+app = FastAPI(
+    title="LiturgyFlow",
+    version=get_app_version(),
+    docs_url=_docs_url,
+    redoc_url=_redoc_url,
+    openapi_url=_openapi_url,
+)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 templates = Jinja2Templates(directory=str(_PROJECT / "templates"))
 _STATIC_DIR = _PROJECT / "static"
@@ -3250,11 +3260,10 @@ def api_set_community_profile(
 def api_get_gemini_api_key_status(
     _session: Optional[AuthSession] = Depends(require_superadmin),
 ) -> dict[str, Any]:
-    from services.env_config import gemini_api_key_configured, gemini_api_key_hint
+    """Status only — never return the key (or a suffix) to the browser."""
+    from services.env_config import gemini_api_key_configured
 
-    configured = gemini_api_key_configured()
-    hint = gemini_api_key_hint() if configured else None
-    return {"configured": configured, "key_hint": hint}
+    return {"configured": gemini_api_key_configured(), "key_hint": None}
 
 
 @app.post("/api/settings/gemini-api-key")
@@ -3262,7 +3271,7 @@ def api_save_gemini_api_key(
     body: GeminiApiKeyBody,
     _session: Optional[AuthSession] = Depends(require_superadmin),
 ) -> dict[str, Any]:
-    from services.env_config import gemini_api_key_hint, save_gemini_api_key
+    from services.env_config import save_gemini_api_key
 
     try:
         save_gemini_api_key(body.api_key.strip())
@@ -3271,7 +3280,8 @@ def api_save_gemini_api_key(
     return {
         "ok": True,
         "configured": True,
-        "key_hint": gemini_api_key_hint(),
+        # Do not echo any fragment of the key back over the wire.
+        "key_hint": None,
         "key_format_warning": (
             None
             if body.api_key.strip().startswith("AIza")

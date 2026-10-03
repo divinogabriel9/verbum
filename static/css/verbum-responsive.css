@@ -3321,24 +3321,29 @@ iframe {
 
   .notif-badge--nav {
     position: absolute;
-    top: 2px;
-    right: 10px;
+    top: 1px;
+    right: 8px;
     left: auto;
     z-index: 3;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    line-height: 1;
     text-align: center;
     border-radius: 999px;
-    background: #e11d48;
+    background: #dc2626;
     color: #fff;
     border: 2px solid var(--surface-solid, #fff);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     pointer-events: none;
+    -webkit-font-smoothing: antialiased;
   }
 
   #app-bottom-nav-notifications {
