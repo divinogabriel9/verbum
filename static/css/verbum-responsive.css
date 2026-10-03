@@ -146,6 +146,16 @@ iframe {
     --app-bottom-nav-offset: calc(var(--app-bottom-nav-height) + var(--safe-bottom) + 18px);
   }
 
+  /* Old peek chevron / swipe zone — disabled (floating dock is always available) */
+  .app-bottom-nav-peek,
+  .app-bottom-nav-gesture,
+  body.bottom-nav-sheet-open.bottom-nav-collapsed .app-bottom-nav-peek,
+  body.bottom-nav-sheet-open.bottom-nav-collapsed .app-bottom-nav-gesture {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+
   /* Facebook-style floating capsule dock */
   .app-bottom-nav {
     display: flex !important;
@@ -1200,19 +1210,19 @@ iframe {
   }
 
   /* Practice share section cards — section · title on one row; delete pinned right */
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-root {
+  #practice-share-sections-ui .mass-song-plan-root {
     gap: 6px;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-slot {
+  #practice-share-sections-ui .mass-song-plan-card,
+  #practice-share-sections-ui .mass-song-slot {
     border-radius: 8px;
     border: 1px solid var(--line-soft);
     background: var(--surface-solid);
     overflow: visible;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__row {
+  #practice-share-sections-ui .mass-song-plan-card__row {
     display: flex;
     align-items: flex-start;
     gap: 0;
@@ -1220,12 +1230,12 @@ iframe {
     min-width: 0;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__drag,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__num {
+  #practice-share-sections-ui .mass-song-plan-card__drag,
+  #practice-share-sections-ui .mass-song-plan-card__num {
     display: none;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__core {
+  #practice-share-sections-ui .mass-song-plan-card__core {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -1233,7 +1243,7 @@ iframe {
     gap: 6px;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__top {
+  #practice-share-sections-ui .mass-song-plan-card__top {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) 40px;
     align-items: center;
@@ -1241,8 +1251,8 @@ iframe {
     min-width: 0;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part-input {
+  #practice-share-sections-ui .mass-song-plan-card__part,
+  #practice-share-sections-ui .mass-song-plan-card__part-input {
     grid-column: 1;
     flex: none;
     width: auto;
@@ -1264,25 +1274,25 @@ iframe {
     white-space: nowrap;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part::after {
+  #practice-share-sections-ui .mass-song-plan-card__part::after {
     content: "·";
     margin-left: 6px;
     color: color-mix(in srgb, var(--muted) 55%, transparent);
     font-weight: 400;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part-input {
+  #practice-share-sections-ui .mass-song-plan-card__part-input {
     border-bottom-color: var(--line-soft);
     color: var(--ink);
     max-width: 4.75rem;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__part-input:focus {
+  #practice-share-sections-ui .mass-song-plan-card__part-input:focus {
     outline: none;
     border-bottom-color: color-mix(in srgb, var(--good) 55%, var(--line));
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title-wrap {
+  #practice-share-sections-ui .mass-song-plan-card__title-wrap {
     grid-column: 2;
     flex: none;
     width: auto;
@@ -1291,15 +1301,15 @@ iframe {
     overflow: hidden;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title-picked {
+  #practice-share-sections-ui .mass-song-plan-card__title-picked {
     display: block;
     width: 100%;
     min-width: 0;
     overflow: hidden;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title-picked .mass-song-plan-card__title {
+  #practice-share-sections-ui .mass-song-plan-card__title,
+  #practice-share-sections-ui .mass-song-plan-card__title-picked .mass-song-plan-card__title {
     display: block;
     width: max-content;
     max-width: none;
@@ -1314,30 +1324,30 @@ iframe {
     transform: translateX(0);
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card:not(.is-title-marquee) .mass-song-plan-card__title {
+  #practice-share-sections-ui .mass-song-plan-card:not(.is-title-marquee) .mass-song-plan-card__title {
     width: 100%;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title.has-selection {
+  #practice-share-sections-ui .mass-song-plan-card__title.has-selection {
     color: var(--good);
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title.is-empty {
+  #practice-share-sections-ui .mass-song-plan-card__title.is-empty {
     color: var(--muted);
     width: 100%;
     max-width: 100%;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__badge,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__meta,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__clear-x {
+  #practice-share-sections-ui .mass-song-plan-card__badge,
+  #practice-share-sections-ui .mass-song-plan-card__meta,
+  #practice-share-sections-ui .mass-song-plan-card__clear-x {
     display: none !important;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__actions {
+  #practice-share-sections-ui .mass-song-plan-card__actions {
     grid-column: 3;
     display: flex !important;
     align-items: center;
@@ -1352,7 +1362,7 @@ iframe {
     opacity: 1 !important;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__btn--delete {
+  #practice-share-sections-ui .mass-song-plan-card__btn--delete {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
@@ -1370,7 +1380,7 @@ iframe {
     opacity: 1 !important;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__btn--delete svg {
+  #practice-share-sections-ui .mass-song-plan-card__btn--delete svg {
     display: block !important;
     width: 18px !important;
     height: 18px !important;
@@ -1379,33 +1389,33 @@ iframe {
     stroke: currentColor;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-search-input {
+  #practice-share-sections-ui .mass-song-search-input {
     min-height: 44px;
     padding: 8px 12px;
     width: 100%;
     box-sizing: border-box;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search {
+  #practice-share-sections-ui .mass-song-plan-row__search {
     position: relative;
     width: 100%;
     min-width: 0;
     z-index: 1;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card.is-results-open,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card:focus-within {
+  #practice-share-sections-ui .mass-song-plan-card.is-results-open,
+  #practice-share-sections-ui .mass-song-plan-card:focus-within {
     z-index: 8;
     overflow: visible;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card.is-results-open .mass-song-plan-row__search,
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card:focus-within .mass-song-plan-row__search {
+  #practice-share-sections-ui .mass-song-plan-card.is-results-open .mass-song-plan-row__search,
+  #practice-share-sections-ui .mass-song-plan-card:focus-within .mass-song-plan-row__search {
     z-index: 9;
   }
 
   /* Keep search results in document flow so the sheet scroll area doesn't clip them */
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results {
+  #practice-share-sections-ui .mass-song-plan-row__search .mass-song-results {
     position: static !important;
     top: auto !important;
     left: auto !important;
@@ -1423,7 +1433,7 @@ iframe {
     transform: none !important;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results[hidden] {
+  #practice-share-sections-ui .mass-song-plan-row__search .mass-song-results[hidden] {
     display: none !important;
     margin: 0 !important;
     max-height: 0 !important;
@@ -1432,22 +1442,20 @@ iframe {
     padding: 0 !important;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results:not([hidden]),
-  #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-row__search .mass-song-results.is-open {
+  #practice-share-sections-ui .mass-song-plan-row__search .mass-song-results:not([hidden]),
+  #practice-share-sections-ui .mass-song-plan-row__search .mass-song-results.is-open {
     display: flex !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
   }
 
-  #practice-share-sections-modal .practice-share-card--plan .ui-card__content,
-  #practice-share-sections-modal.ui-overlay .ui-card.practice-share-card--plan .ui-card__content {
+  #practice-share-sections-ui .practice-share-sections-ui__body, #practice-share-page .practice-share-page__body {
     overflow-x: hidden;
-    overflow-y: auto;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #practice-share-sections-modal .practice-share-card--plan .mass-song-plan-card__title {
+    #practice-share-sections-ui .mass-song-plan-card__title {
       transform: none !important;
       transition: none !important;
     }
@@ -3693,7 +3701,8 @@ iframe {
   .dashboard:has(#flow-page.active) {
     padding-left: 0;
     padding-right: 0;
-    padding-bottom: 0;
+    /* Override generic .dashboard padding-bottom !important — kills stacked dead space */
+    padding-bottom: 0 !important;
   }
 
   body.mw-on {
@@ -3847,9 +3856,19 @@ iframe {
     display: none !important;
   }
 
-  /* Extra bottom room so scroll-to-end can fire without a visible cue */
-  body.mw-on #mw-wizard.mw .mw-shell {
-    padding-bottom: calc(18vh + var(--safe-bottom)) !important;
+  /* Kill mw-wizard.css padding reserved for the (now hidden) Next/Back dock */
+  body.mw-on:has(#flow-page.active) #mw-wizard,
+  body.mw-on:has(#flow-page.active):has(#mw-habits-banner:not([hidden])) #mw-wizard {
+    padding-bottom: 0 !important;
+  }
+
+  /*
+   * Keep just enough scroll room for next/back gestures without the old 18vh void.
+   * min-height guarantees ~120px of travel even on short steps.
+   */
+  body.mw-on:has(#flow-page.active) #mw-wizard.mw .mw-shell {
+    min-height: calc(100dvh - var(--app-header-offset, 72px) + 120px);
+    padding-bottom: calc(var(--app-bottom-nav-offset) + 72px) !important;
   }
 
   /*
@@ -5136,8 +5155,243 @@ iframe {
   }
 }
 
+/* Practice share — mobile page tab / desktop modal card (shared UI) */
+#practice-share-sections-ui[hidden] {
+  display: none !important;
+}
+
+.practice-share-sections-ui {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.practice-share-sections-ui__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: start;
+  gap: 8px 10px;
+}
+
+.practice-share-sections-ui__titles {
+  min-width: 0;
+  grid-column: 1;
+}
+
+.practice-share-page__kicker {
+  margin: 0 0 2px;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.practice-share-sections-ui__title {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.practice-share-sections-ui__sub {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.practice-share-sections-ui__history {
+  grid-column: 2;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.practice-share-sections-ui__close {
+  grid-column: 3;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.practice-share-plan-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#practice-share-sections-ui .mass-song-plan-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.practice-share-page__add {
+  align-self: flex-start;
+  min-height: 40px;
+  margin: 2px 0 0;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: var(--accent, #a10f0d);
+  font-weight: 650;
+  font-size: 0.875rem;
+}
+
+.practice-share-page__status {
+  margin: 10px 0 0;
+}
+
+.practice-share-sections-ui__footer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.practice-share-sections-ui__footer .primary {
+  flex: 1 1 auto;
+  min-height: 48px;
+  border-radius: 14px;
+  font-weight: 650;
+}
+
+.practice-share-sections-ui__cancel {
+  flex: 0 0 auto;
+  min-height: 48px;
+  border-radius: 14px;
+}
+
+/* Desktop: classic modal card chrome */
 @media (min-width: 769px) {
-  #mobile-welcome-modal {
+  #practice-share-page {
+    display: none !important;
+  }
+
+  #practice-share-modal-host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  body.practice-share-ui-desktop #practice-share-sections-ui {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  body.practice-share-ui-desktop .practice-share-sections-ui__head {
+    flex-shrink: 0;
+    padding: 18px 20px 0;
+    border: none;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  body.practice-share-ui-desktop .practice-share-page__kicker {
+    display: none;
+  }
+
+  body.practice-share-ui-desktop .practice-share-sections-ui__title {
+    font-size: 1.125rem;
+  }
+
+  body.practice-share-ui-desktop .practice-share-sections-ui__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.practice-share-ui-desktop .practice-share-sections-ui__footer {
+    flex-shrink: 0;
+    padding: 12px 20px 16px;
+    border-top: 1px solid var(--line-soft);
+    justify-content: flex-end;
+  }
+
+  body.practice-share-ui-desktop .practice-share-sections-ui__footer .primary {
+    flex: 0 0 auto;
+    min-width: 140px;
+  }
+
+  body.practice-share-ui-desktop .practice-share-sections-ui__history {
+    display: none;
+  }
+}
+
+/* Mobile: full-page tab */
+@media (max-width: 768px) {
+  #practice-share-page.active {
+    padding: 0 !important;
+  }
+
+  #practice-share-page-host.practice-share-page,
+  body.practice-share-ui-mobile #practice-share-page-host {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - var(--app-header-offset, 72px) - var(--app-bottom-nav-offset, 72px));
+  }
+
+  body.practice-share-ui-mobile #practice-share-sections-ui {
+    flex: 1;
+    min-height: 0;
+  }
+
+  body.practice-share-ui-mobile .practice-share-sections-ui__head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding: 12px 14px 10px;
+    background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  body.practice-share-ui-mobile .practice-share-sections-ui__close,
+  body.practice-share-ui-mobile .practice-share-sections-ui__cancel {
+    display: none !important;
+  }
+
+  body.practice-share-ui-mobile .practice-share-sections-ui__body {
+    flex: 1 1 auto;
+    padding: 10px 14px 6px;
+  }
+
+  body.practice-share-ui-mobile .practice-share-sections-ui__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    padding: 10px 14px calc(12px + var(--app-bottom-nav-offset, 72px));
+    background: linear-gradient(180deg, transparent, var(--surface-solid) 28%);
+    border-top: 1px solid var(--line-soft);
+  }
+
+  body.practice-share-ui-mobile .practice-share-sections-ui__footer .primary {
+    width: 100%;
+  }
+
+  #practice-share-sections-ui .mass-song-media-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  /* Sections picker is a page tab on mobile — hide the modal shell */
+  #practice-share-sections-modal.ui-overlay {
     display: none !important;
   }
 }

@@ -102,6 +102,42 @@
           return !!(window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
         }
 
+        function isMassWizardRouteActive() {
+          if (!isMobileMwScrollNav()) return false;
+          if (!document.body.classList.contains('mw-on')) return false;
+          var flow = $('flow-page');
+          if (flow && flow.classList.contains('active')) return true;
+          try {
+            var path = (window.location && window.location.pathname) || '';
+            return path === '/mass/builder' || path.indexOf('/mass/builder') === 0;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        function massWizardScrollRoot() {
+          // App content scrolls inside .dashboard (overflow-y: auto), not the window.
+          var dash = document.querySelector('.dashboard');
+          if (dash) return dash;
+          return document.scrollingElement || document.documentElement || document.body;
+        }
+
+        function scrollRootTo(y) {
+          var root = massWizardScrollRoot();
+          try {
+            if (root === document.body || root === document.documentElement || root === document.scrollingElement) {
+              window.scrollTo(0, y);
+            } else if (typeof root.scrollTo === 'function') {
+              root.scrollTo(0, y);
+            } else {
+              root.scrollTop = y;
+            }
+          } catch (e) {
+            try { root.scrollTop = y; } catch (e2) {}
+          }
+          try { window.scrollTo(0, 0); } catch (e3) {}
+        }
+
         function scrollStepToTop(opts) {
           opts = opts || {};
           scrollNextStepEnteredAt = Date.now();
@@ -119,8 +155,8 @@
             return;
           }
 
-          // Pin instantly — never smooth-scroll the window (that fights the step motion)
-          try { window.scrollTo(0, 0); } catch (e3) { try { window.scrollTo(0, 0); } catch (e4) {} }
+          // Pin instantly — never smooth-scroll (that fights the step motion)
+          scrollRootTo(0);
 
           if (reduce || !opts.continuous) return;
 
@@ -134,39 +170,53 @@
           });
         }
 
-        function isNearPageBottom() {
-          var y = window.scrollY || document.documentElement.scrollTop || 0;
-          var vh = window.innerHeight || document.documentElement.clientHeight || 0;
-          var docH = Math.max(
-            document.documentElement.scrollHeight || 0,
-            document.body ? document.body.scrollHeight : 0
-          );
-          return (y + vh) >= (docH - 48);
+        function pageScrollMetrics() {
+          var root = massWizardScrollRoot();
+          var y = root.scrollTop || 0;
+          var vh = root.clientHeight || window.innerHeight || 0;
+          var docH = root.scrollHeight || 0;
+          var maxY = Math.max(0, docH - vh);
+          return { root: root, y: y, vh: vh, docH: docH, maxY: maxY };
         }
 
-        function tryAdvanceFromScrollNext() {
-          if (!isMobileMwScrollNav() || current >= 7 || scrollNextLock) return;
-          // Ignore fires right after a step change / programmatic scroll-to-top
+        function isNearPageBottom() {
+          var m = pageScrollMetrics();
+          return m.y >= Math.max(0, m.maxY - 96);
+        }
+
+        function isNearPageTop() {
+          return pageScrollMetrics().y <= 64;
+        }
+
+        function tryNextFromScrollDown(opts) {
+          opts = opts || {};
+          if (!isMassWizardRouteActive() || current >= 7 || scrollNextLock) return;
           if (Date.now() - scrollNextStepEnteredAt < 700) return;
-          if ((window.scrollY || document.documentElement.scrollTop || 0) < 48) return;
+          var m = pageScrollMetrics();
+          // Tall pages: ignore tiny bounces near the top.
+          if (m.maxY >= 96 && m.y < 36) return;
+          // Short pages: require an intentional swipe (scroll barely moves).
+          if (m.maxY < 96 && !opts.fromTouch) return;
           if (!isNearPageBottom()) return;
 
-          var missing = collectStepMissingOptions(current);
-          if (missing.length) {
-            scrollNextLock = true;
-            var target = highlightStepMissing(missing);
-            if (target) mwReveal(target);
-            else {
-              try { window.scrollBy({ top: -140, behavior: 'smooth' }); }
-              catch (e) { window.scrollBy(0, -140); }
-            }
-            window.setTimeout(function () { scrollNextLock = false; }, 900);
-            return;
-          }
-
+          // Draft-first: scroll advances freely. Generate / Next still validate.
           scrollNextLock = true;
           if (current === 1) ensureReadings();
           if (current < 7) showStep(current + 1, { viaScroll: true });
+          window.setTimeout(function () { scrollNextLock = false; }, 700);
+        }
+
+        function tryBackFromScrollUp(opts) {
+          opts = opts || {};
+          if (!isMassWizardRouteActive() || current <= 1 || scrollNextLock) return;
+          if (Date.now() - scrollNextStepEnteredAt < 700) return;
+          if (!isNearPageTop()) return;
+          var m = pageScrollMetrics();
+          // Already pinned at top: scroll events can't go negative — need a swipe.
+          if (m.maxY < 96 && m.y <= 2 && !opts.fromTouch) return;
+
+          scrollNextLock = true;
+          showStep(current - 1, { viaScroll: true });
           window.setTimeout(function () { scrollNextLock = false; }, 700);
         }
 
@@ -174,20 +224,72 @@
           if (window.__mwScrollNextBound) return;
           window.__mwScrollNextBound = true;
           var ticking = false;
-          window.addEventListener('scroll', function () {
+          var touchStartY = null;
+          var touchStartScrollY = 0;
+          var boundRoot = null;
+
+          function onScroll() {
             if (ticking) return;
             ticking = true;
             window.requestAnimationFrame(function () {
               ticking = false;
-              if (!isMobileMwScrollNav() || current >= 7 || scrollNextLock) {
-                scrollNextLastY = window.scrollY || document.documentElement.scrollTop || 0;
+              var m = pageScrollMetrics();
+              if (!isMassWizardRouteActive() || scrollNextLock) {
+                scrollNextLastY = m.y;
                 return;
               }
-              var y = window.scrollY || document.documentElement.scrollTop || 0;
-              // Only advance while the user is scrolling downward
-              if (y > scrollNextLastY + 2) tryAdvanceFromScrollNext();
-              scrollNextLastY = y;
+              if (m.y > scrollNextLastY + 2) tryNextFromScrollDown();
+              else if (m.y < scrollNextLastY - 2) tryBackFromScrollUp();
+              scrollNextLastY = m.y;
             });
+          }
+
+          function bindScrollRoot() {
+            var root = massWizardScrollRoot();
+            if (!root || root === boundRoot) return;
+            if (boundRoot) {
+              try { boundRoot.removeEventListener('scroll', onScroll); } catch (e) {}
+            }
+            boundRoot = root;
+            // Prefer .dashboard scroll; window is only a fallback when it is the root.
+            if (boundRoot === document.body || boundRoot === document.documentElement || boundRoot === document.scrollingElement) {
+              window.addEventListener('scroll', onScroll, { passive: true });
+            } else {
+              boundRoot.addEventListener('scroll', onScroll, { passive: true });
+            }
+          }
+
+          bindScrollRoot();
+          window.addEventListener('resize', bindScrollRoot, { passive: true });
+
+          // Edge swipes when the page can't scroll further (short steps / iOS rubber-band)
+          window.addEventListener('touchstart', function (e) {
+            if (!isMassWizardRouteActive() || !e.touches || !e.touches.length) return;
+            bindScrollRoot();
+            touchStartY = e.touches[0].clientY;
+            touchStartScrollY = pageScrollMetrics().y;
+          }, { passive: true });
+
+          window.addEventListener('touchend', function (e) {
+            if (!isMassWizardRouteActive() || touchStartY == null || scrollNextLock) {
+              touchStartY = null;
+              return;
+            }
+            var endY = (e.changedTouches && e.changedTouches[0])
+              ? e.changedTouches[0].clientY
+              : touchStartY;
+            var dy = endY - touchStartY;
+            touchStartY = null;
+            var m = pageScrollMetrics();
+            // Finger pulls down near top → scroll-up / back
+            if (dy > 72 && touchStartScrollY <= 64 && m.y <= 64) {
+              tryBackFromScrollUp({ fromTouch: true });
+              return;
+            }
+            // Finger pulls up near bottom (or short page) → scroll-down / next
+            if (dy < -72 && (m.maxY < 96 || touchStartScrollY >= Math.max(0, m.maxY - 96))) {
+              tryNextFromScrollDown({ fromTouch: true });
+            }
           }, { passive: true });
         }
 

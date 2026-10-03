@@ -4165,6 +4165,7 @@ def cookies_redirect() -> Any:
 @app.get("/media/presentation", response_class=HTMLResponse)
 @app.get("/media/history", response_class=HTMLResponse)
 @app.get("/library/songs", response_class=HTMLResponse)
+@app.get("/library/practice", response_class=HTMLResponse)
 @app.get("/library/collections", response_class=HTMLResponse)
 @app.get("/design/theme-lab", response_class=HTMLResponse)
 @app.get("/design/templates", response_class=HTMLResponse)

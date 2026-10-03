@@ -12,18 +12,12 @@
     }
 
     function closeMobileWelcomeModal() {
-      setUiOverlayOpen($("mobile-welcome-modal"), false);
+      const modal = $("mobile-welcome-modal");
+      if (modal) setUiOverlayOpen(modal, false);
     }
 
     function openMobileWelcomeModal() {
-      const modal = $("mobile-welcome-modal");
-      const titleEl = $("mobile-welcome-title");
-      if (!modal || !titleEl) return;
-      const name = getMobileWelcomeDisplayName();
-      titleEl.textContent = name
-        ? "Hi " + name + ", what do you want to do today?"
-        : "Hi! What do you want to do today?";
-      setUiOverlayOpen(modal, true);
+      /* Mobile welcome card removed. */
     }
 
     function clearMobileWelcomeUrlFlag() {
@@ -65,52 +59,13 @@
     }
 
     function maybeShowMobileWelcomeModal() {
-      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
-      if (mobileWelcomeShownThisLoad) return;
-      if (!isMobileChromeLayout()) return;
-      if (window.__VERBUM_AUTH_GATE__) {
-        const auth = window.VerbumAuth;
-        if (!auth || !auth.getUser || !auth.getUser()) {
-          // Keep the pending flag; retry once auth/user is ready.
-          if (hasMobileWelcomePending()) {
-            setTimeout(maybeShowMobileWelcomeModal, 400);
-          }
-          return;
-        }
-      }
-      if (!consumeMobileWelcomePending()) return;
-      mobileWelcomeShownThisLoad = true;
-      requestAnimationFrame(() => {
-        setTimeout(() => openMobileWelcomeModal(), 160);
-      });
+      // Mobile welcome card removed — clear any leftover pending flag.
+      try { sessionStorage.removeItem(MOBILE_WELCOME_PENDING_KEY); } catch (_e) { /* ignore */ }
+      clearMobileWelcomeUrlFlag();
     }
 
     function initMobileWelcomeModal() {
-      const modal = $("mobile-welcome-modal");
-      if (!modal || modal.dataset.bound === "1") return;
-      modal.dataset.bound = "1";
-      const backdrop = $("mobile-welcome-backdrop");
-      if (backdrop) backdrop.addEventListener("click", closeMobileWelcomeModal);
-      modal.querySelectorAll("[data-mobile-welcome-action]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const action = btn.getAttribute("data-mobile-welcome-action");
-          closeMobileWelcomeModal();
-          if (action === "mass-pptx") {
-            showRoute("/mass/builder");
-          } else if (action === "choir-practice") {
-            if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
-            else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
-          } else if (action === "add-song") {
-            showRoute("/library/songs");
-          }
-        });
-      });
-      document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape") return;
-        if (modal.classList.contains("is-open")) closeMobileWelcomeModal();
-        const whatsNew = $("songs-whats-new-modal");
-        if (whatsNew && whatsNew.classList.contains("is-open")) closeSongsWhatsNewModal();
-      });
+      /* Mobile welcome card removed. */
     }
 
     var SONGS_WHATS_NEW_SKIP_KEY = "verbum:songs-whats-new-skip-day";

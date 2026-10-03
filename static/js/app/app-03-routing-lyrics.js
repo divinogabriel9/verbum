@@ -75,6 +75,26 @@
       if (r === "/superadmin") {
         if (typeof initSuperadminPage === "function") initSuperadminPage();
       }
+      if (r === "/library/practice") {
+        const opts = window.__practiceShareHydrateOpts || {};
+        window.__practiceShareHydrateOpts = null;
+        // Desktop has no Practice tab — use classic modal instead
+        if (typeof isMobileChromeLayout === "function" && !isMobileChromeLayout()) {
+          const fallback = lastNonSettingsRoute && lastNonSettingsRoute !== "/library/practice"
+            ? lastNonSettingsRoute
+            : "/home";
+          if (typeof showRoute === "function") showRoute(fallback, true);
+          if (typeof openPracticeShareSectionsModal === "function") {
+            openPracticeShareSectionsModal(opts);
+          }
+          return;
+        }
+        if (typeof hydratePracticeSharePage === "function") {
+          hydratePracticeSharePage(opts).catch(() => {});
+        } else if (typeof openPracticeShareSectionsModal === "function") {
+          openPracticeShareSectionsModal(opts);
+        }
+      }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/mass/builder") {
         const runMassBuilderRoute = () => {

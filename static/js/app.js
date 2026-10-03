@@ -325,8 +325,8 @@
     }
 
     var MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
-    var MOBILE_NAV_DEFAULT_ORDER = ["/library/songs", "/mass/builder"];
-    var MOBILE_NAV_LOCKED = new Set(["/library/songs", "/mass/builder"]);
+    var MOBILE_NAV_DEFAULT_ORDER = ["/mass/builder", "/library/songs"];
+    var MOBILE_NAV_LOCKED = new Set(["/mass/builder", "/library/songs"]);
     var mobileNavDragBound = false;
     var mobileNavDragState = null;
 
@@ -447,12 +447,12 @@
         createSlot.hidden = true;
         createSlot.setAttribute("aria-hidden", "true");
       }
-      // Fixed mobile dock: Songs · Practice · Mass · More
-      const songs = nav.querySelector('.nav-link[data-route="/library/songs"]');
-      const practice = nav.querySelector('[data-nav-action="practice-share"]');
+      // Fixed mobile dock: Mass · Songs · Practice · More
       const mass = nav.querySelector('.nav-link[data-route="/mass/builder"]');
+      const songs = nav.querySelector('.nav-link[data-route="/library/songs"]');
+      const practice = nav.querySelector('.nav-link[data-route="/library/practice"]') || $("app-bottom-nav-practice");
       const more = $("app-bottom-nav-more");
-      const primary = [songs, practice, mass, more].filter(Boolean);
+      const primary = [mass, songs, practice, more].filter(Boolean);
       const primarySet = new Set(primary);
       Array.from(nav.querySelectorAll(".nav-link")).forEach((el) => {
         if (primarySet.has(el)) {
@@ -464,7 +464,7 @@
       });
       primary.forEach((el) => nav.appendChild(el));
       if (createSlot) nav.appendChild(createSlot);
-      saveMobileNavOrder(["/library/songs", "/mass/builder"]);
+      saveMobileNavOrder(["/mass/builder", "/library/songs"]);
       syncAppHeaderOffset();
     }
 
@@ -1314,6 +1314,8 @@
       if (r === "/radio") return "radio";
       if (r === "/mass/calendar") return "calendar";
       if (r.startsWith("/mass/")) return "mass";
+      // Practice is a primary mobile dock tab — not settings-gated (gating sent users to Home)
+      if (r === "/library/practice") return null;
       if (r.startsWith("/library/")) return "library";
       if (r.startsWith("/media/")) return "media";
       if (r.startsWith("/design/")) return "design";
@@ -1375,6 +1377,7 @@
 
     function shouldBlockHiddenNavRoute(route) {
       const r = normalizeRoute(route || "");
+      if (r === "/library/practice") return false;
       const tabId = routeToNavTabId(r);
       if (!tabId || isNavTabVisible(tabId) || isSettingsRoute(r)) return false;
       // On mobile, Extras is the access path for drawer pages — never bounce those to Home
@@ -7691,6 +7694,7 @@
       "/media/posters": "Poster and social graphic configuration.",
       "/media/history": "Recent downloads from this browser.",
       "/library/songs": "Song library and lyrics structuring.",
+      "/library/practice": "Share choir practice lyrics with a link.",
       "/library/collections": "Song collections for seasons and events.",
       "/design/theme-lab": "Liturgical themes and custom slide styling.",
       "/design/templates": "Poster and slide template reference.",
@@ -7711,6 +7715,7 @@
       "/media/history": ["Posters", "History"],
       "/radio": ["Media"],
       "/library/songs": ["Lyrics Library", "Songs"],
+      "/library/practice": ["Practice", "Share lyrics"],
       "/library/collections": ["Lyrics Library", "Collections"],
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
@@ -7805,8 +7810,13 @@
       if (exact && route === exact) return true;
       const prefix = link.dataset.routePrefix;
       if (prefix && route.startsWith(prefix)) {
-        const exclude = link.dataset.routeExclude;
-        if (exclude && route === exclude) return false;
+        const exclude = link.dataset.routeExclude || "";
+        if (exclude) {
+          const banned = exclude.split(",").map((s) => s.trim()).filter(Boolean);
+          if (banned.indexOf(route) >= 0) return false;
+        }
+        // Practice is its own tab — never light up Songs for it
+        if (prefix === "/library" && route === "/library/practice") return false;
         return true;
       }
       return false;
@@ -7949,15 +7959,7 @@
       sheet.querySelectorAll(".app-more-sheet__link[data-route]").forEach((link) => {
         link.addEventListener("click", () => closeAppMoreSheet());
       });
-      const practiceBtn = $("app-bottom-nav-practice");
-      if (practiceBtn && practiceBtn.dataset.bound !== "1") {
-        practiceBtn.dataset.bound = "1";
-        practiceBtn.addEventListener("click", () => {
-          closeAppMoreSheet();
-          if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
-          else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
-        });
-      }
+      // Practice tab is a normal SPA route (/library/practice) — no modal opener.
     }
 
     function initSongPlanSummaryCollapse() {
@@ -8993,6 +8995,26 @@
       }
       if (r === "/superadmin") {
         if (typeof initSuperadminPage === "function") initSuperadminPage();
+      }
+      if (r === "/library/practice") {
+        const opts = window.__practiceShareHydrateOpts || {};
+        window.__practiceShareHydrateOpts = null;
+        // Desktop has no Practice tab — use classic modal instead
+        if (typeof isMobileChromeLayout === "function" && !isMobileChromeLayout()) {
+          const fallback = lastNonSettingsRoute && lastNonSettingsRoute !== "/library/practice"
+            ? lastNonSettingsRoute
+            : "/home";
+          if (typeof showRoute === "function") showRoute(fallback, true);
+          if (typeof openPracticeShareSectionsModal === "function") {
+            openPracticeShareSectionsModal(opts);
+          }
+          return;
+        }
+        if (typeof hydratePracticeSharePage === "function") {
+          hydratePracticeSharePage(opts).catch(() => {});
+        } else if (typeof openPracticeShareSectionsModal === "function") {
+          openPracticeShareSectionsModal(opts);
+        }
       }
       if (!replaceOnly && normalizeRoute(window.location.pathname) !== r) history.pushState({}, "", r);
       if (r === "/mass/builder") {
@@ -12859,7 +12881,7 @@
 
 /* ==== app-04-song-plan.js ==== */
     function setupPracticeShareTitleMarquee(card) {
-      if (!card || !card.closest("#practice-share-sections-modal")) return;
+      if (!card || !card.closest("#practice-share-sections-ui, #practice-share-song-plan")) return;
       const wrap = card.querySelector(".mass-song-plan-card__title-wrap");
       const titleEl = card.querySelector(".mass-song-plan-card__title");
       if (!wrap || !titleEl) return;
@@ -14899,7 +14921,7 @@
       updateMassSongAddButton();
       renderMassSummarySidebar();
       renderFlowSongCount();
-      if ($("practice-share-sections-modal") && $("practice-share-sections-modal").classList.contains("is-open")) {
+      if (isPracticeShareSectionsOpen()) {
         renderPracticeShareSongPlan({ skipMassSync: true });
       }
       if (typeof syncMassDefaultPins === "function") syncMassDefaultPins($("mass-song-plan"));
@@ -14934,19 +14956,70 @@
       return available;
     }
 
+    function isPracticeShareMobileUi() {
+      return typeof isMobileChromeLayout === "function" && isMobileChromeLayout();
+    }
+
+    function syncPracticeShareUiHost() {
+      const ui = $("practice-share-sections-ui");
+      const pageHost = $("practice-share-page-host");
+      const modalHost = $("practice-share-modal-host");
+      if (!ui) return;
+      const mobile = isPracticeShareMobileUi();
+      const wasMobile = document.body.classList.contains("practice-share-ui-mobile");
+      const host = mobile ? pageHost : modalHost;
+      if (host && ui.parentElement !== host) host.appendChild(ui);
+      ui.hidden = false;
+      document.body.classList.toggle("practice-share-ui-mobile", mobile);
+      document.body.classList.toggle("practice-share-ui-desktop", !mobile);
+
+      // Crossing the breakpoint: page tab ↔ classic modal
+      const onPracticeRoute = typeof currentRoute === "function"
+        && normalizeRoute(currentRoute()) === "/library/practice";
+      const modal = $("practice-share-sections-modal");
+      const modalOpen = !!(modal && modal.classList.contains("is-open"));
+      if (wasMobile && !mobile && onPracticeRoute) {
+        const fallback = (typeof lastNonSettingsRoute === "string"
+          && lastNonSettingsRoute
+          && lastNonSettingsRoute !== "/library/practice")
+          ? lastNonSettingsRoute
+          : "/home";
+        if (typeof showRoute === "function") showRoute(fallback, true);
+        setUiOverlayOpen(modal, true);
+        syncPracticeShareBottomNavChrome();
+      } else if (!wasMobile && mobile && modalOpen) {
+        setUiOverlayOpen(modal, false);
+        if (typeof showRoute === "function") {
+          window.__practiceShareHydrateOpts = window.__practiceShareHydrateOpts || {};
+          showRoute("/library/practice");
+        }
+      }
+    }
+
+    function isPracticeShareSectionsOpen() {
+      if (isPracticeShareMobileUi()) {
+        return typeof currentRoute === "function" && normalizeRoute(currentRoute()) === "/library/practice";
+      }
+      const modal = $("practice-share-sections-modal");
+      return !!(modal && modal.classList.contains("is-open"));
+    }
+
     function syncPracticeShareContinueEnabled() {
       const continueBtn = $("practice-share-sections-continue");
       if (!continueBtn) return;
-      const modal = $("practice-share-sections-modal");
-      if (!modal || !modal.classList.contains("is-open")) return;
+      if (!isPracticeShareSectionsOpen()) return;
       const available = practiceShareVisibleSlots()
         .filter((slot) => !!(selectedLyricsSongs[slot.key] || "").trim()).length;
       continueBtn.disabled = available === 0;
     }
 
     function practiceShareScrollHost() {
-      const card = document.querySelector("#practice-share-sections-modal .practice-share-card--plan");
-      return card ? card.querySelector(".ui-card__content") : null;
+      if (!isPracticeShareMobileUi()) {
+        const card = document.querySelector("#practice-share-sections-modal .practice-share-card--plan");
+        const body = card && card.querySelector(".practice-share-sections-ui__body");
+        return body || card || document.scrollingElement || document.documentElement;
+      }
+      return document.scrollingElement || document.documentElement;
     }
 
     function scrollPracticeShareSectionIntoView(slotKey, opts) {
@@ -15320,127 +15393,37 @@
     }
 
     function collapsePracticeShareBottomNav() {
-      if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
+      /* Old peek-chevron hide/show removed — floating dock handles itself. */
       clearPracticeShareNavHideTimer();
-      document.body.classList.add("bottom-nav-collapsed");
+      document.body.classList.remove("bottom-nav-collapsed", "bottom-nav-autohide");
       const peek = $("app-bottom-nav-peek");
-      if (peek) {
-        peek.hidden = false;
-        peek.setAttribute("aria-expanded", "false");
-        peek.setAttribute("aria-label", "Show navigation");
-      }
+      if (peek) peek.hidden = true;
       const gesture = $("app-bottom-nav-gesture");
-      if (gesture) gesture.hidden = false;
+      if (gesture) gesture.hidden = true;
     }
 
     function schedulePracticeShareNavAutoHide() {
       clearPracticeShareNavHideTimer();
-      if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
-      if (document.body.classList.contains("bottom-nav-collapsed")) return;
-      // Restart CSS countdown bar
-      void document.body.offsetWidth;
-      document.body.classList.add("bottom-nav-autohide");
-      practiceShareNavHideTimer = setTimeout(() => {
-        practiceShareNavHideTimer = null;
-        collapsePracticeShareBottomNav();
-      }, PRACTICE_SHARE_NAV_HIDE_MS);
+      document.body.classList.remove("bottom-nav-autohide");
     }
 
     function syncPracticeShareBottomNavChrome() {
       const peek = $("app-bottom-nav-peek");
       const gesture = $("app-bottom-nav-gesture");
       clearPracticeShareNavHideTimer();
-      if (!isMobileChromeLayout()) {
-        document.body.classList.remove("bottom-nav-sheet-open", "bottom-nav-collapsed");
-        if (peek) peek.hidden = true;
-        if (gesture) gesture.hidden = true;
-        return;
-      }
-      const open = isPracticeShareSheetOpen();
-      document.body.classList.toggle("bottom-nav-sheet-open", open);
-      if (open) {
-        document.body.classList.add("bottom-nav-collapsed");
-        if (peek) {
-          peek.hidden = false;
-          peek.setAttribute("aria-expanded", "false");
-          peek.setAttribute("aria-label", "Show navigation");
-        }
-        if (gesture) gesture.hidden = false;
-      } else {
-        document.body.classList.remove("bottom-nav-collapsed");
-        if (peek) peek.hidden = true;
-        if (gesture) gesture.hidden = true;
-      }
+      document.body.classList.remove("bottom-nav-sheet-open", "bottom-nav-collapsed", "bottom-nav-autohide");
+      if (peek) peek.hidden = true;
+      if (gesture) gesture.hidden = true;
     }
 
     function expandPracticeShareBottomNav() {
-      if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
-      document.body.classList.remove("bottom-nav-collapsed");
-      const peek = $("app-bottom-nav-peek");
-      if (peek) {
-        peek.hidden = true;
-        peek.setAttribute("aria-expanded", "true");
-      }
-      const gesture = $("app-bottom-nav-gesture");
-      if (gesture) gesture.hidden = true;
-      schedulePracticeShareNavAutoHide();
+      syncPracticeShareBottomNavChrome();
     }
 
     function initPracticeShareBottomNavGestures() {
-      if (practiceShareNavGesture) return;
-      const zone = $("app-bottom-nav-gesture");
-      const nav = $("app-bottom-nav");
-      let startY = 0;
-      let startX = 0;
-      let tracking = false;
-
-      function touchPoint(e) {
-        if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0];
-        if (e.touches && e.touches[0]) return e.touches[0];
-        return e;
-      }
-
-      function onStart(e) {
-        if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
-        const t = touchPoint(e);
-        startY = t.clientY;
-        startX = t.clientX;
-        tracking = true;
-      }
-
-      function onEnd(e) {
-        if (!tracking) return;
-        tracking = false;
-        if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
-        const t = touchPoint(e);
-        const dy = t.clientY - startY;
-        const dx = Math.abs(t.clientX - startX);
-        if (dx > 56) return;
-        const collapsed = document.body.classList.contains("bottom-nav-collapsed");
-        if (collapsed && dy < -28) {
-          expandPracticeShareBottomNav();
-        } else if (!collapsed && dy > 28) {
-          collapsePracticeShareBottomNav();
-        }
-      }
-
-      if (zone) {
-        zone.addEventListener("touchstart", onStart, { passive: true });
-        zone.addEventListener("touchend", onEnd, { passive: true });
-        zone.addEventListener("touchcancel", () => { tracking = false; }, { passive: true });
-      }
-      if (nav) {
-        nav.addEventListener("touchstart", (e) => {
-          if (!document.body.classList.contains("bottom-nav-sheet-open")) return;
-          onStart(e);
-          if (!document.body.classList.contains("bottom-nav-collapsed")) {
-            schedulePracticeShareNavAutoHide();
-          }
-        }, { passive: true });
-        nav.addEventListener("touchend", onEnd, { passive: true });
-        nav.addEventListener("touchcancel", () => { tracking = false; }, { passive: true });
-      }
+      // Peek chevron / swipe-to-hide removed with the floating dock.
       practiceShareNavGesture = true;
+      syncPracticeShareBottomNavChrome();
     }
 
     function closePracticeShareModal() {
@@ -15454,9 +15437,8 @@
       opts = opts || {};
       closeMassSongResultPanels();
       clearPracticeShareDropdownPad();
-      const card = document.querySelector("#practice-share-sections-modal .ui-card");
-      if (card) card.classList.remove("ui-card--popover-open");
-      setUiOverlayOpen($("practice-share-sections-modal"), false);
+      const modal = $("practice-share-sections-modal");
+      if (modal) setUiOverlayOpen(modal, false);
       if (!opts.skipNavSync) syncPracticeShareBottomNavChrome();
     }
 
@@ -15967,12 +15949,13 @@
       return renderPracticeShareSongPlan();
     }
 
-    async function openPracticeShareSectionsModal(opts) {
+    async function hydratePracticeSharePage(opts) {
       if (!isFeatureEnabled("choir_practice_shares")) {
         notify(FEATURE_OFF_HINT, "info");
         return;
       }
       opts = opts || {};
+      syncPracticeShareUiHost();
       const status = $("practice-share-sections-status");
       const continueBtn = $("practice-share-sections-continue");
       if (status) { status.hidden = true; status.textContent = ""; }
@@ -15995,9 +15978,33 @@
       if (continueBtn) continueBtn.disabled = available === 0;
       closeMassSongResultPanels();
       clearPracticeShareDropdownPad();
-      setUiOverlayOpen($("practice-share-sections-modal"), true);
       syncPracticeShareBottomNavChrome();
       syncPracticeShareContinueEnabled();
+    }
+
+    async function openPracticeShareSectionsModal(opts) {
+      opts = opts || {};
+      if (!isFeatureEnabled("choir_practice_shares")) {
+        notify(FEATURE_OFF_HINT, "info");
+        return;
+      }
+      syncPracticeShareUiHost();
+      if (isPracticeShareMobileUi()) {
+        if (typeof currentRoute === "function" && normalizeRoute(currentRoute()) === "/library/practice") {
+          await hydratePracticeSharePage(opts);
+          return;
+        }
+        if (typeof showRoute === "function") {
+          window.__practiceShareHydrateOpts = opts;
+          showRoute("/library/practice");
+          return;
+        }
+        await hydratePracticeSharePage(opts);
+        return;
+      }
+      await hydratePracticeSharePage(opts);
+      setUiOverlayOpen($("practice-share-sections-modal"), true);
+      syncPracticeShareBottomNavChrome();
     }
 
     function continuePracticeShareFromSections() {
@@ -16371,7 +16378,8 @@
         ["btn-practice-share-toolbar", () => openPracticeShareHistoryModal()],
         ["btn-practice-share-wizard", () => openPracticeShareHistoryModal()],
         ["btn-practice-share-wizard-title", () => openPracticeShareHistoryModal()],
-        ["btn-home-practice-share", () => openPracticeShareHistoryModal()],
+        ["btn-home-practice-share", () => openPracticeShareSectionsModal()],
+        ["practice-share-page-history", () => openPracticeShareHistoryModal()],
         ["practice-share-history-backdrop", closePracticeShareHistoryModal],
         ["practice-share-history-close", closePracticeShareHistoryModal],
         ["practice-share-history-cancel", closePracticeShareHistoryModal],
@@ -16387,12 +16395,15 @@
         ["practice-share-backdrop", closePracticeShareModal],
         ["practice-share-close", closePracticeShareModal],
         ["practice-share-cancel", closePracticeShareModal],
-        ["app-bottom-nav-peek", expandPracticeShareBottomNav],
       ].forEach(([id, fn]) => {
         const el = $(id);
         if (el) el.addEventListener("click", fn);
       });
       initPracticeShareBottomNavGestures();
+      syncPracticeShareUiHost();
+      window.addEventListener("resize", () => {
+        syncPracticeShareUiHost();
+      }, { passive: true });
       const historyList = $("practice-share-history-list");
       if (historyList) historyList.addEventListener("click", onPracticeShareHistoryClick);
       $("practice-share-generate") && $("practice-share-generate").addEventListener("click", () => {
@@ -24973,18 +24984,12 @@
     }
 
     function closeMobileWelcomeModal() {
-      setUiOverlayOpen($("mobile-welcome-modal"), false);
+      const modal = $("mobile-welcome-modal");
+      if (modal) setUiOverlayOpen(modal, false);
     }
 
     function openMobileWelcomeModal() {
-      const modal = $("mobile-welcome-modal");
-      const titleEl = $("mobile-welcome-title");
-      if (!modal || !titleEl) return;
-      const name = getMobileWelcomeDisplayName();
-      titleEl.textContent = name
-        ? "Hi " + name + ", what do you want to do today?"
-        : "Hi! What do you want to do today?";
-      setUiOverlayOpen(modal, true);
+      /* Mobile welcome card removed. */
     }
 
     function clearMobileWelcomeUrlFlag() {
@@ -25026,52 +25031,13 @@
     }
 
     function maybeShowMobileWelcomeModal() {
-      if (typeof shouldSkipStartupPopups === "function" && shouldSkipStartupPopups()) return;
-      if (mobileWelcomeShownThisLoad) return;
-      if (!isMobileChromeLayout()) return;
-      if (window.__VERBUM_AUTH_GATE__) {
-        const auth = window.VerbumAuth;
-        if (!auth || !auth.getUser || !auth.getUser()) {
-          // Keep the pending flag; retry once auth/user is ready.
-          if (hasMobileWelcomePending()) {
-            setTimeout(maybeShowMobileWelcomeModal, 400);
-          }
-          return;
-        }
-      }
-      if (!consumeMobileWelcomePending()) return;
-      mobileWelcomeShownThisLoad = true;
-      requestAnimationFrame(() => {
-        setTimeout(() => openMobileWelcomeModal(), 160);
-      });
+      // Mobile welcome card removed — clear any leftover pending flag.
+      try { sessionStorage.removeItem(MOBILE_WELCOME_PENDING_KEY); } catch (_e) { /* ignore */ }
+      clearMobileWelcomeUrlFlag();
     }
 
     function initMobileWelcomeModal() {
-      const modal = $("mobile-welcome-modal");
-      if (!modal || modal.dataset.bound === "1") return;
-      modal.dataset.bound = "1";
-      const backdrop = $("mobile-welcome-backdrop");
-      if (backdrop) backdrop.addEventListener("click", closeMobileWelcomeModal);
-      modal.querySelectorAll("[data-mobile-welcome-action]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const action = btn.getAttribute("data-mobile-welcome-action");
-          closeMobileWelcomeModal();
-          if (action === "mass-pptx") {
-            showRoute("/mass/builder");
-          } else if (action === "choir-practice") {
-            if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
-            else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
-          } else if (action === "add-song") {
-            showRoute("/library/songs");
-          }
-        });
-      });
-      document.addEventListener("keydown", (e) => {
-        if (e.key !== "Escape") return;
-        if (modal.classList.contains("is-open")) closeMobileWelcomeModal();
-        const whatsNew = $("songs-whats-new-modal");
-        if (whatsNew && whatsNew.classList.contains("is-open")) closeSongsWhatsNewModal();
-      });
+      /* Mobile welcome card removed. */
     }
 
     var SONGS_WHATS_NEW_SKIP_KEY = "verbum:songs-whats-new-skip-day";

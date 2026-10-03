@@ -325,8 +325,8 @@
     }
 
     var MOBILE_NAV_ORDER_KEY = "verbumMobileNavOrder";
-    var MOBILE_NAV_DEFAULT_ORDER = ["/library/songs", "/mass/builder"];
-    var MOBILE_NAV_LOCKED = new Set(["/library/songs", "/mass/builder"]);
+    var MOBILE_NAV_DEFAULT_ORDER = ["/mass/builder", "/library/songs"];
+    var MOBILE_NAV_LOCKED = new Set(["/mass/builder", "/library/songs"]);
     var mobileNavDragBound = false;
     var mobileNavDragState = null;
 
@@ -447,12 +447,12 @@
         createSlot.hidden = true;
         createSlot.setAttribute("aria-hidden", "true");
       }
-      // Fixed mobile dock: Songs · Practice · Mass · More
-      const songs = nav.querySelector('.nav-link[data-route="/library/songs"]');
-      const practice = nav.querySelector('[data-nav-action="practice-share"]');
+      // Fixed mobile dock: Mass · Songs · Practice · More
       const mass = nav.querySelector('.nav-link[data-route="/mass/builder"]');
+      const songs = nav.querySelector('.nav-link[data-route="/library/songs"]');
+      const practice = nav.querySelector('.nav-link[data-route="/library/practice"]') || $("app-bottom-nav-practice");
       const more = $("app-bottom-nav-more");
-      const primary = [songs, practice, mass, more].filter(Boolean);
+      const primary = [mass, songs, practice, more].filter(Boolean);
       const primarySet = new Set(primary);
       Array.from(nav.querySelectorAll(".nav-link")).forEach((el) => {
         if (primarySet.has(el)) {
@@ -464,7 +464,7 @@
       });
       primary.forEach((el) => nav.appendChild(el));
       if (createSlot) nav.appendChild(createSlot);
-      saveMobileNavOrder(["/library/songs", "/mass/builder"]);
+      saveMobileNavOrder(["/mass/builder", "/library/songs"]);
       syncAppHeaderOffset();
     }
 
@@ -1314,6 +1314,8 @@
       if (r === "/radio") return "radio";
       if (r === "/mass/calendar") return "calendar";
       if (r.startsWith("/mass/")) return "mass";
+      // Practice is a primary mobile dock tab — not settings-gated (gating sent users to Home)
+      if (r === "/library/practice") return null;
       if (r.startsWith("/library/")) return "library";
       if (r.startsWith("/media/")) return "media";
       if (r.startsWith("/design/")) return "design";
@@ -1375,6 +1377,7 @@
 
     function shouldBlockHiddenNavRoute(route) {
       const r = normalizeRoute(route || "");
+      if (r === "/library/practice") return false;
       const tabId = routeToNavTabId(r);
       if (!tabId || isNavTabVisible(tabId) || isSettingsRoute(r)) return false;
       // On mobile, Extras is the access path for drawer pages — never bounce those to Home

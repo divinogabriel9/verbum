@@ -2790,6 +2790,7 @@
       "/media/posters": "Poster and social graphic configuration.",
       "/media/history": "Recent downloads from this browser.",
       "/library/songs": "Song library and lyrics structuring.",
+      "/library/practice": "Share choir practice lyrics with a link.",
       "/library/collections": "Song collections for seasons and events.",
       "/design/theme-lab": "Liturgical themes and custom slide styling.",
       "/design/templates": "Poster and slide template reference.",
@@ -2810,6 +2811,7 @@
       "/media/history": ["Posters", "History"],
       "/radio": ["Media"],
       "/library/songs": ["Lyrics Library", "Songs"],
+      "/library/practice": ["Practice", "Share lyrics"],
       "/library/collections": ["Lyrics Library", "Collections"],
       "/design/theme-lab": ["Design", "Theme Lab"],
       "/design/templates": ["Design", "Templates"],
@@ -2904,8 +2906,13 @@
       if (exact && route === exact) return true;
       const prefix = link.dataset.routePrefix;
       if (prefix && route.startsWith(prefix)) {
-        const exclude = link.dataset.routeExclude;
-        if (exclude && route === exclude) return false;
+        const exclude = link.dataset.routeExclude || "";
+        if (exclude) {
+          const banned = exclude.split(",").map((s) => s.trim()).filter(Boolean);
+          if (banned.indexOf(route) >= 0) return false;
+        }
+        // Practice is its own tab — never light up Songs for it
+        if (prefix === "/library" && route === "/library/practice") return false;
         return true;
       }
       return false;
@@ -3048,15 +3055,7 @@
       sheet.querySelectorAll(".app-more-sheet__link[data-route]").forEach((link) => {
         link.addEventListener("click", () => closeAppMoreSheet());
       });
-      const practiceBtn = $("app-bottom-nav-practice");
-      if (practiceBtn && practiceBtn.dataset.bound !== "1") {
-        practiceBtn.dataset.bound = "1";
-        practiceBtn.addEventListener("click", () => {
-          closeAppMoreSheet();
-          if (typeof openPracticeShareSectionsModal === "function") openPracticeShareSectionsModal();
-          else if (typeof openPracticeShareModal === "function") openPracticeShareModal();
-        });
-      }
+      // Practice tab is a normal SPA route (/library/practice) — no modal opener.
     }
 
     function initSongPlanSummaryCollapse() {

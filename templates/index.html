@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="/static/css/verbum-design-system.css?v=20260725" />
   <link rel="stylesheet" href="/static/css/emil-motion.css?v=20260612" />
   <link rel="stylesheet" href="/static/css/verbum-layout-overrides.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261003-mw-scroll3" />
+  <link rel="stylesheet" href="/static/css/verbum-responsive.css?v=20261003-scroll-fix" />
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20260920g" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
@@ -1020,27 +1020,11 @@
         </article>
       </div>
 
+      <!-- Desktop: card modal. Mobile: content is moved into #practice-share-page -->
       <div class="ui-overlay" id="practice-share-sections-modal" aria-hidden="true" role="presentation">
         <div class="ui-overlay__backdrop" id="practice-share-sections-backdrop"></div>
         <article class="ui-card practice-share-card practice-share-card--plan" role="dialog" aria-labelledby="practice-share-sections-title" aria-modal="true">
-          <header class="ui-card__header">
-            <div class="ui-card__header-text">
-              <h3 class="ui-card__title" id="practice-share-sections-title">Share lyrics for choir</h3>
-              <p class="ui-card__description" id="practice-share-sections-sub">Pick songs for each Mass section, then share a practice link.</p>
-            </div>
-            <button type="button" class="ghost ui-card__close" id="practice-share-sections-close" aria-label="Close">×</button>
-          </header>
-          <div class="ui-card__content practice-share-body">
-            <div class="practice-share-plan-wrap">
-              <div id="practice-share-song-plan" class="mass-song-plan-root" role="region" aria-label="Choir practice song sections"></div>
-              <button type="button" class="mass-song-add-custom" id="practice-share-add-section">+ Add section</button>
-            </div>
-            <p class="status error" id="practice-share-sections-status" hidden aria-live="polite"></p>
-          </div>
-          <footer class="ui-card__footer ui-card__footer--row" id="practice-share-sections-footer">
-            <button type="button" class="secondary" id="practice-share-sections-cancel">Cancel</button>
-            <button type="button" class="primary" id="practice-share-sections-continue">Share</button>
-          </footer>
+          <div id="practice-share-modal-host"></div>
         </article>
       </div>
 
@@ -1455,46 +1439,6 @@
               <button type="button" class="primary" id="songs-whats-new-next">Next</button>
             </div>
           </footer>
-        </article>
-      </div>
-
-      <div class="ui-overlay" id="mobile-welcome-modal" aria-hidden="true" role="presentation">
-        <div class="ui-overlay__backdrop" id="mobile-welcome-backdrop"></div>
-        <article class="ui-card mobile-welcome-card" role="dialog" aria-labelledby="mobile-welcome-title" aria-modal="true">
-          <header class="ui-card__header mobile-welcome-card__header">
-            <div class="ui-card__header-text">
-              <h3 class="ui-card__title" id="mobile-welcome-title">Hi! What do you want to do today?</h3>
-            </div>
-          </header>
-          <div class="ui-card__content mobile-welcome-actions">
-            <button type="button" class="mobile-welcome-action" data-mobile-welcome-action="mass-pptx">
-              <span class="mobile-welcome-action__icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-              </span>
-              <span class="mobile-welcome-action__text">
-                <strong>Plan Mass draft</strong>
-                <span class="muted">7 steps — finish PPTX on computer</span>
-              </span>
-            </button>
-            <button type="button" class="mobile-welcome-action" data-mobile-welcome-action="choir-practice">
-              <span class="mobile-welcome-action__icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
-              </span>
-              <span class="mobile-welcome-action__text">
-                <strong>Practicing choir</strong>
-                <span class="muted">Share lyrics for rehearsal</span>
-              </span>
-            </button>
-            <button type="button" class="mobile-welcome-action" data-mobile-welcome-action="add-song">
-              <span class="mobile-welcome-action__icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v6"/><path d="m9 9 3-3 3 3"/></svg>
-              </span>
-              <span class="mobile-welcome-action__text">
-                <strong>Add song to our song library</strong>
-                <span class="muted">Compose or import lyrics</span>
-              </span>
-            </button>
-          </div>
         </article>
       </div>
 
@@ -2178,6 +2122,34 @@
           </div>
         </div>
       </section>
+
+      <section class="page" id="practice-share-page" data-route="/library/practice">
+        <div class="practice-share-page" id="practice-share-page-host"></div>
+      </section>
+
+      <!-- Shared share-lyrics UI: parked in page (mobile) or modal (desktop) -->
+      <div id="practice-share-sections-ui" class="practice-share-sections-ui" hidden>
+        <header class="practice-share-sections-ui__head">
+          <div class="practice-share-sections-ui__titles">
+            <p class="practice-share-page__kicker">Choir practice</p>
+            <h2 class="practice-share-sections-ui__title" id="practice-share-sections-title">Share lyrics</h2>
+            <p class="practice-share-sections-ui__sub" id="practice-share-sections-sub">Pick songs for each Mass section, then share a practice link.</p>
+          </div>
+          <button type="button" class="secondary practice-share-sections-ui__history" id="practice-share-page-history">Past shares</button>
+          <button type="button" class="ghost practice-share-sections-ui__close" id="practice-share-sections-close" aria-label="Close">×</button>
+        </header>
+        <div class="practice-share-sections-ui__body">
+          <div class="practice-share-plan-wrap">
+            <div id="practice-share-song-plan" class="mass-song-plan-root" role="region" aria-label="Choir practice song sections"></div>
+            <button type="button" class="mass-song-add-custom practice-share-page__add" id="practice-share-add-section">+ Add section</button>
+          </div>
+          <p class="status error practice-share-page__status" id="practice-share-sections-status" hidden aria-live="polite"></p>
+        </div>
+        <footer class="practice-share-sections-ui__footer" id="practice-share-sections-footer">
+          <button type="button" class="secondary practice-share-sections-ui__cancel" id="practice-share-sections-cancel">Cancel</button>
+          <button type="button" class="primary" id="practice-share-sections-continue">Share</button>
+        </footer>
+      </div>
 
       <section class="page" id="theme-page" data-route="/design/theme-lab">
         <div class="theme-lab-layout">
@@ -3099,7 +3071,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261003-mw-scroll3"></script>
+      <script src="/static/js/mw-wizard.js?v=20261003-scroll-dash"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -4533,17 +4505,17 @@
       <button type="button" class="composer-yt-dock__resize" id="composer-youtube-dock-resize" title="Resize" aria-label="Resize mini player"></button>
     </aside>
     <nav class="app-bottom-nav app-nav--mobile" id="app-bottom-nav" aria-label="Main navigation">
-      <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" href="/library/songs" aria-label="Songs">
-        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
-        <span class="nav-label">Songs</span>
-      </a>
-      <button type="button" class="nav-link" data-nav-action="practice-share" id="app-bottom-nav-practice" aria-label="Choir practice">
-        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
-        <span class="nav-label">Practice</span>
-      </button>
       <a class="nav-link" data-nav-tab="mass" data-route="/mass/builder" data-route-prefix="/mass" data-route-exclude="/mass/calendar" href="/mass/builder" aria-label="Mass draft">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v6"/><path d="m9 9 3-3 3 3"/></svg>
         <span class="nav-label">Mass</span>
+      </a>
+      <a class="nav-link" data-nav-tab="library" data-route="/library/songs" data-route-prefix="/library" data-route-exclude="/library/practice" href="/library/songs" aria-label="Songs">
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></svg>
+        <span class="nav-label">Songs</span>
+      </a>
+      <a class="nav-link" data-nav-tab="practice" data-route="/library/practice" href="/library/practice" id="app-bottom-nav-practice" aria-label="Share lyrics">
+        <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+        <span class="nav-label">Practice</span>
       </a>
       <button type="button" class="nav-link" id="app-bottom-nav-more" aria-label="More" aria-expanded="false" aria-controls="app-more-sheet" data-nav-action="more">
         <svg class="nav-icon app-bottom-nav__svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg>
@@ -4558,10 +4530,8 @@
       </a>
       <div class="app-bottom-nav__create-slot" id="bottom-nav-create-host" hidden aria-hidden="true"></div>
     </nav>
-    <button type="button" class="app-bottom-nav-peek" id="app-bottom-nav-peek" hidden aria-label="Show navigation" aria-controls="app-bottom-nav" aria-expanded="false">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
-    </button>
-    <div class="app-bottom-nav-gesture" id="app-bottom-nav-gesture" hidden aria-hidden="true"></div>
+    <button type="button" class="app-bottom-nav-peek" id="app-bottom-nav-peek" hidden aria-hidden="true" aria-label="Show navigation" style="display:none"></button>
+    <div class="app-bottom-nav-gesture" id="app-bottom-nav-gesture" hidden aria-hidden="true" style="display:none"></div>
     <div class="ui-overlay ui-overlay--more-sheet" id="app-more-sheet" aria-hidden="true" role="presentation">
       <div class="ui-overlay__backdrop" id="app-more-sheet-backdrop"></div>
       <nav class="ui-card ui-card--more-sheet" role="dialog" aria-labelledby="app-more-sheet-title" aria-modal="true">
@@ -4807,7 +4777,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261003-mw-scroll2"></script>
+  <script src="/static/js/app.js?v=20261003-mass-first"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>
