@@ -2527,6 +2527,10 @@
         var saved = (localStorage.getItem("liturgyflow.billing.currency") || "").toLowerCase();
         if (saved === "krw" || saved === "php" || saved === "myr" || saved === "usd") return saved;
       } catch (_e) { /* ignore */ }
+      return "";
+    }
+
+    function billingCurrencyLocaleGuess() {
       try {
         var lang = (navigator.language || "").toLowerCase();
         var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
@@ -2542,13 +2546,29 @@
           || tz === "Asia/Kuala_Lumpur" || tz === "Asia/Kuching"
         ) return "myr";
       } catch (_e2) { /* ignore */ }
-      return "usd";
+      return "";
     }
 
     function setBillingCurrencyPref(cur) {
       try {
         localStorage.setItem("liturgyflow.billing.currency", (cur || "usd").toLowerCase());
       } catch (_e) { /* ignore */ }
+    }
+
+    function resolveBillingCurrency(billing, currencyParam) {
+      const valid = { usd: 1, krw: 1, php: 1, myr: 1 };
+      const param = String(currencyParam || "").toLowerCase();
+      if (param && valid[param]) {
+        setBillingCurrencyPref(param);
+        return param;
+      }
+      const pref = billingCurrencyPref();
+      if (pref && valid[pref]) return pref;
+      const parish = String((billing && billing.display_currency) || "").toLowerCase();
+      if (parish && valid[parish]) return parish;
+      const guess = billingCurrencyLocaleGuess();
+      if (guess && valid[guess]) return guess;
+      return "usd";
     }
 
     async function startBillingCheckout(interval, currency) {
@@ -2754,11 +2774,10 @@
       const planParam = (params.get("plan") || "").trim().toLowerCase();
       const currencyParam = (params.get("currency") || "").trim().toLowerCase();
       const autostart = params.get("autostart") === "1";
-      const isSa = !!(churchMembershipState && churchMembershipState.is_superadmin);
       if (currencySel && !currencySel.dataset.bound) {
         currencySel.addEventListener("change", () => {
-          if (!(churchMembershipState && churchMembershipState.is_superadmin)) return;
-          setBillingCurrencyPref(currencySel.value);
+          const next = String(currencySel.value || "usd").toLowerCase();
+          setBillingCurrencyPref(next);
           loadSettingsBilling();
         });
         currencySel.dataset.bound = "1";
@@ -2786,22 +2805,11 @@
         if (statusData.membership) syncMembershipUi(statusData.membership);
         else syncBillingNavVisibility();
 
-        const parishCurrency = String(billing.display_currency || "").toLowerCase();
-        const validCurrency = { usd: 1, krw: 1, php: 1, myr: 1 };
-        let cur = parishCurrency && validCurrency[parishCurrency] ? parishCurrency : "usd";
-        if (isSa) {
-          if (currencyParam && validCurrency[currencyParam]) {
-            cur = currencyParam;
-            setBillingCurrencyPref(cur);
-          } else {
-            const pref = billingCurrencyPref();
-            if (pref && validCurrency[pref]) cur = pref;
-          }
-          if (currencySel) currencySel.value = cur;
-          if (currencyWrap) currencyWrap.hidden = false;
-        } else {
-          if (currencySel) currencySel.value = cur;
-          if (currencyWrap) currencyWrap.hidden = true;
+        const cur = resolveBillingCurrency(billing, currencyParam);
+        if (currencySel) currencySel.value = cur;
+        // Show currency picker whenever plan cards are available to choose.
+        if (currencyWrap) {
+          currencyWrap.hidden = !!billing.has_paid_access && !billing.can_start_checkout;
         }
         const catalog = await getJSON("/api/billing/catalog?currency=" + encodeURIComponent(cur));
 
