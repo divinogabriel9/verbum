@@ -19334,22 +19334,50 @@
       }
 
       try {
-        if (params.get("checkout") === "success" && statusEl) {
-          statusEl.hidden = false;
-          statusEl.className = "status ok";
-          statusEl.textContent = "Checkout complete — activating your parish trial…";
-        } else if (params.get("checkout") === "cancel" && statusEl) {
+        const checkoutResult = (params.get("checkout") || "").trim().toLowerCase();
+        if (checkoutResult === "cancel" && statusEl) {
           statusEl.hidden = false;
           statusEl.className = "status";
           statusEl.textContent = "Checkout canceled. You can start a trial anytime.";
         }
 
-        const statusData = await getJSON("/api/billing/status");
-        const billing = (statusData && statusData.billing) || {};
+        let statusData = await getJSON("/api/billing/status");
+        let billing = (statusData && statusData.billing) || {};
+
+        // After Stripe Checkout, webhook may lag — retry briefly until access unlocks.
+        if (checkoutResult === "success") {
+          for (let i = 0; i < 4; i++) {
+            const unlocked = !!billing.has_paid_access && !!billing.stripe_subscription_status;
+            if (unlocked) break;
+            await new Promise((r) => setTimeout(r, 700));
+            statusData = await getJSON("/api/billing/status");
+            billing = (statusData && statusData.billing) || {};
+          }
+        }
+
         billingUiState = Object.assign({}, billingUiState, billing);
         if (statusData.membership) syncMembershipUi(statusData.membership);
         else syncBillingNavVisibility();
 
+        if (checkoutResult === "success" && statusEl) {
+          const unlocked = !!billing.has_paid_access && !!billing.stripe_subscription_status;
+          const isTrial = String(billing.stripe_subscription_status || "").toLowerCase() === "trialing";
+          statusEl.hidden = false;
+          statusEl.className = "status ok";
+          statusEl.textContent = unlocked
+            ? (isTrial
+              ? "Success — your 14-day trial is active."
+              : "Success — your subscription is active.")
+            : "Success — subscription received. Your plan will appear in a moment.";
+          if (typeof showToast === "function") {
+            showToast(
+              unlocked
+                ? (isTrial ? "Trial started successfully" : "Subscription successful")
+                : "Subscription successful",
+              "success"
+            );
+          }
+        }
         const cur = resolveBillingCurrency(billing, currencyParam);
         if (currencySel) currencySel.value = cur;
         // Show currency picker whenever plan cards are available to choose.
