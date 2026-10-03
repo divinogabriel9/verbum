@@ -766,7 +766,7 @@
       max-width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 1.15rem;
+      gap: 0.95rem;
     }
     .practice-lyric-block {
       margin: 0;
@@ -801,12 +801,15 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 0.15em;
+      gap: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
     }
     .practice-lyric-line {
       margin: 0;
-      padding: 0.08em 0.45em;
-      border-radius: 7px;
+      padding: 0.14em 0.6em;
+      border-radius: 0;
       white-space: pre-wrap;
       word-wrap: break-word;
       overflow-wrap: anywhere;
@@ -817,14 +820,14 @@
       letter-spacing: 0.01em;
       color: var(--ink);
       background: var(--line-highlight);
-      box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent);
+      box-shadow: none;
     }
     .practice-lyric-line--blank {
-      background: transparent;
+      background: color-mix(in srgb, var(--bg) 72%, transparent);
       box-shadow: none;
-      min-height: 0.55em;
-      padding-top: 0;
-      padding-bottom: 0;
+      min-height: 0.42em;
+      padding-top: 0.1em;
+      padding-bottom: 0.1em;
     }
     .practice-lyric-block--chorus .practice-lyric-line:not(.practice-lyric-line--man):not(.practice-lyric-line--woman):not(.practice-lyric-line--blank),
     .practice-lyric-block--refrain .practice-lyric-line:not(.practice-lyric-line--man):not(.practice-lyric-line--woman):not(.practice-lyric-line--blank) {
