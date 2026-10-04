@@ -50,7 +50,8 @@ _COMPOSITION_RULES_FULL_BLEED = (
     "16:9 PowerPoint widescreen landscape, ultra high quality, presentation-ready, "
     "full-bleed edge-to-edge biblical scene filling the entire frame, "
     "rich detail corner to corner, no empty margins, no letterboxing, "
-    "subject centered with cinematic depth, emotionally uplifting worship atmosphere"
+    "story-specific blocking and pose unique to this Gospel, cinematic depth, "
+    "avoid a default standing open-arm Jesus with a semicircle of disciples"
 )
 
 _COMPOSITION_RULES_WITH_TEXT = _COMPOSITION_RULES_FULL_BLEED  # unused; kept for import stability

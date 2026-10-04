@@ -80,6 +80,11 @@
     }
     if (!churchInput) return;
     churchInput.value = inviteCommunityName;
+    const modeEl = $("auth-parish-mode");
+    const joinEl = $("auth-join-parish-id");
+    const results = $("auth-parish-search-results");
+    const choice = $("auth-parish-choice");
+    const selected = $("auth-parish-selected");
     if (inviteOnly && inviteToken) {
       churchInput.readOnly = true;
       churchInput.setAttribute("aria-readonly", "true");
@@ -96,7 +101,20 @@
       churchInput.readOnly = false;
       churchInput.removeAttribute("aria-readonly");
       churchInput.tabIndex = 0;
-      churchInput.placeholder = "Gwangju Filipino Catholic Community";
+      churchInput.placeholder = "Search or type your parish name";
+    }
+    if (inviteCommunityName) {
+      if (modeEl) modeEl.value = "create";
+      if (joinEl) joinEl.value = "";
+      if (results) {
+        results.hidden = true;
+        results.innerHTML = "";
+      }
+      if (choice) choice.hidden = true;
+      if (selected) {
+        selected.hidden = false;
+        selected.textContent = "Invite parish: " + inviteCommunityName;
+      }
     }
   }
 
@@ -1231,6 +1249,179 @@
         setSurveyOtherVisibility();
       }
 
+      let parishSearchTimer = null;
+      let parishSearchResults = [];
+
+      function setParishSelection(mode, parishId, label) {
+        const modeEl = $("auth-parish-mode");
+        const joinEl = $("auth-join-parish-id");
+        const selected = $("auth-parish-selected");
+        const choice = $("auth-parish-choice");
+        if (modeEl) modeEl.value = mode || "create";
+        if (joinEl) joinEl.value = parishId || "";
+        if (choice) choice.hidden = true;
+        if (selected) {
+          selected.hidden = !label;
+          selected.textContent = label || "";
+        }
+      }
+
+      function renderParishSearchResults(rows, query) {
+        const box = $("auth-parish-search-results");
+        const choice = $("auth-parish-choice");
+        const joinBtn = $("auth-parish-join-btn");
+        const createBtn = $("auth-parish-create-btn");
+        const label = $("auth-parish-choice-label");
+        if (!box) return;
+        parishSearchResults = Array.isArray(rows) ? rows.slice() : [];
+        if (!parishSearchResults.length) {
+          box.hidden = true;
+          box.innerHTML = "";
+        } else {
+          box.hidden = false;
+          box.innerHTML = parishSearchResults
+            .map(function (row) {
+              const seats = Number(row.seats_remaining);
+              const meta =
+                (row.membership_status === "approved" ? "Approved" : "Pending") +
+                " · " +
+                (row.member_count || 0) +
+                " member" +
+                (row.member_count === 1 ? "" : "s") +
+                (Number.isFinite(seats) ? " · " + seats + " seat" + (seats === 1 ? "" : "s") + " left" : "");
+              return (
+                '<button type="button" class="auth-parish-result" data-parish-id="' +
+                escapeHtml(row.id || "") +
+                '"><span class="auth-parish-result__name">' +
+                escapeHtml(row.community_name || "") +
+                '</span><span class="auth-parish-result__meta">' +
+                escapeHtml(meta) +
+                "</span></button>"
+              );
+            })
+            .join("");
+          box.querySelectorAll(".auth-parish-result").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              const id = btn.getAttribute("data-parish-id") || "";
+              const row = parishSearchResults.find(function (r) {
+                return String(r.id) === String(id);
+              });
+              if (!row) return;
+              box.querySelectorAll(".auth-parish-result").forEach(function (el) {
+                el.classList.toggle("is-selected", el === btn);
+              });
+              if (choice) choice.hidden = false;
+              if (label) {
+                label.textContent =
+                  "Join “" + (row.community_name || "this parish") + "” as media, or create a differently named parish.";
+              }
+              if (joinBtn) {
+                joinBtn.hidden = false;
+                joinBtn.onclick = function () {
+                  setParishSelection(
+                    "join",
+                    row.id,
+                    "Joining: " + (row.community_name || "") + " (request as media)"
+                  );
+                };
+              }
+              if (createBtn) {
+                createBtn.hidden = !!row.exact_match;
+                createBtn.onclick = function () {
+                  const typed = ($("auth-church-name") && $("auth-church-name").value.trim()) || "";
+                  setParishSelection("create", "", "Creating new parish: " + typed);
+                };
+              }
+            });
+          });
+        }
+        const q = (query || "").trim();
+        const exact = parishSearchResults.some(function (r) {
+          return r.exact_match;
+        });
+        if (choice && q.length >= 2) {
+          if (!parishSearchResults.length) {
+            choice.hidden = false;
+            if (label) label.textContent = "No matching parish found. Create “" + q + "” as a new parish?";
+            if (joinBtn) joinBtn.hidden = true;
+            if (createBtn) {
+              createBtn.hidden = false;
+              createBtn.onclick = function () {
+                setParishSelection("create", "", "Creating new parish: " + q);
+              };
+            }
+          } else if (exact) {
+            // Keep choice visible after selecting a row; hide create for exact matches.
+            if (createBtn) createBtn.hidden = true;
+          } else {
+            choice.hidden = false;
+            if (label && (!label.textContent || label.textContent.indexOf("Join") !== 0)) {
+              label.textContent = "Select a match to join, or create “" + q + "” as a new parish.";
+            }
+            if (createBtn) {
+              createBtn.hidden = false;
+              createBtn.onclick = function () {
+                setParishSelection("create", "", "Creating new parish: " + q);
+              };
+            }
+          }
+        }
+      }
+
+      async function runParishSearch(query, accessToken) {
+        const q = (query || "").trim();
+        if (q.length < 2) {
+          renderParishSearchResults([], q);
+          return;
+        }
+        try {
+          const headers = {};
+          if (accessToken) headers.Authorization = "Bearer " + accessToken;
+          const res = await fetch(
+            "/api/auth/parishes/search?q=" + encodeURIComponent(q),
+            { headers }
+          );
+          const data = await res.json().catch(function () {
+            return {};
+          });
+          if (!res.ok) {
+            renderParishSearchResults([], q);
+            return;
+          }
+          renderParishSearchResults(data.results || [], q);
+        } catch (_err) {
+          renderParishSearchResults([], q);
+        }
+      }
+
+      function bindParishSearch() {
+        const input = $("auth-church-name");
+        if (!input || input.dataset.parishSearchBound) return;
+        input.dataset.parishSearchBound = "1";
+        input.addEventListener("input", function () {
+          if (input.readOnly) return;
+          setParishSelection("", "", "");
+          const modeEl = $("auth-parish-mode");
+          if (modeEl) modeEl.value = "";
+          const q = input.value.trim();
+          if (parishSearchTimer) clearTimeout(parishSearchTimer);
+          parishSearchTimer = setTimeout(function () {
+            const token =
+              (form && form.dataset.accessToken) ||
+              "";
+            runParishSearch(q, token);
+          }, 280);
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
       function bindLetterOnlyNames() {
         ["auth-first-name", "auth-middle-name", "auth-last-name"].forEach(function (id) {
           const el = $(id);
@@ -1478,8 +1669,17 @@
           setFieldError(id, msg);
           if (!firstMsg) firstMsg = msg;
         }
+        const inviteLocked = !!(inviteCommunityName || "").trim();
         if (!details.churchName || details.churchName.length < 2) {
           fail("auth-church-name", "Church/Community Name is required.");
+        } else if (!inviteLocked) {
+          if (details.parishMode === "join" && !details.joinParishId) {
+            fail("auth-church-name", "Select a parish, then tap Request to join.");
+          } else if (details.parishMode !== "join" && details.parishMode !== "create") {
+            fail("auth-church-name", "Choose Request to join or Create new parish.");
+          } else if (details.parishMode === "create" && !details.parishChoiceConfirmed) {
+            fail("auth-church-name", "Tap Create new parish to confirm, or join a match below.");
+          }
         }
         if (!onboardingMode && mode === "sign-up") {
           const credErr = validateCredentialsFields({ skipClear: true, skipFocus: true });
@@ -1599,6 +1799,7 @@
         bindPhoneDigitsOnly();
         bindRoleSelect();
         bindSurveyChecks();
+        bindParishSearch();
         bindLetterOnlyNames();
         bindPasswordToggles();
         setRoleOtherVisibility();
@@ -1672,6 +1873,10 @@
           ($("auth-church-name") && $("auth-church-name").value.trim()) ||
           ""
         ).trim();
+        const parishMode = (($("auth-parish-mode") && $("auth-parish-mode").value) || "create").trim();
+        const joinParishId = (($("auth-join-parish-id") && $("auth-join-parish-id").value) || "").trim();
+        const selectedEl = $("auth-parish-selected");
+        const parishChoiceConfirmed = !!(selectedEl && !selectedEl.hidden && (selectedEl.textContent || "").trim());
         const ministryRole = ($("auth-ministry-role") && $("auth-ministry-role").value) || "";
         const ministryRoleOther = ($("auth-role-other") && $("auth-role-other").value.trim()) || "";
         const surveySources = selectedSurveySources();
@@ -1685,6 +1890,9 @@
           phoneNational,
           phone,
           churchName,
+          parishMode,
+          joinParishId,
+          parishChoiceConfirmed,
           ministryRole,
           ministryRoleOther,
           surveySources,
@@ -1720,6 +1928,8 @@
             ministry_role_other: details.ministryRoleOther,
             survey_sources: details.surveySources,
             survey_source_other: details.surveyOther,
+            parish_mode: details.parishMode || "create",
+            join_parish_id: details.joinParishId || "",
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -2064,7 +2274,15 @@
         const continueBtn = $("auth-continue-btn");
         if (continueBtn && !continueBtn.dataset.bound) {
           continueBtn.dataset.bound = "1";
-          continueBtn.addEventListener("click", redirectAfterAuth);
+          continueBtn.addEventListener("click", async () => {
+            const { data } = await client.auth.getSession();
+            const sess = data && data.session ? data.session : null;
+            if (sess && sess.access_token) {
+              await finishAuthWithSession(sess);
+              return;
+            }
+            redirectAfterAuth();
+          });
         }
       }
 

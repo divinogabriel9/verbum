@@ -81,6 +81,27 @@ async def require_session(request: Request) -> Optional[AuthSession]:
     return session
 
 
+async def require_onboarded_session(request: Request) -> Optional[AuthSession]:
+    """Require a signed-in user who finished the mandatory signup form."""
+    from starlette.concurrency import run_in_threadpool
+
+    from services.onboarding import require_profile_onboarding_complete
+    from services.supabase_client import get_profile
+
+    session = await require_session(request)
+    if not auth_enabled() or not session:
+        return session
+    if (session.user.role or "").strip().lower() == "superadmin":
+        return session
+    profile_row = await run_in_threadpool(
+        get_profile, session.user.user_id, access_token=session.token
+    )
+    if ((profile_row or {}).get("role") or "").strip().lower() == "superadmin":
+        return session
+    require_profile_onboarding_complete(profile_row)
+    return session
+
+
 async def require_session_when_auth(request: Request) -> Optional[AuthSession]:
     """Require a session when auth is enabled; otherwise allow anonymous use."""
     if auth_misconfigured():
@@ -109,6 +130,7 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
 
     church = get_church_profile_context()
     profile_role = session.user.role
+    profile_row: dict[str, Any] = {}
     # Middleware may skip Supabase on lightweight GETs; load membership here if needed.
     if church is None:
         try:
@@ -135,6 +157,22 @@ async def require_approved_membership(request: Request) -> Optional[AuthSession]
             _store_auth_context(session.token, session, church)
         except Exception:
             church = get_church_profile_context()
+    else:
+        try:
+            profile_row = await run_in_threadpool(
+                get_profile, session.user.user_id, access_token=session.token
+            ) or {}
+            profile_role = (
+                profile_row.get("role") or session.user.role or "member"
+            ).strip().lower()
+        except Exception:
+            profile_row = {}
+
+    # Signup form is mandatory for every non-superadmin account.
+    if profile_role != "superadmin" and (session.user.role or "") != "superadmin":
+        from services.onboarding import require_profile_onboarding_complete
+
+        require_profile_onboarding_complete(profile_row or None)
 
     if membership_allows_full_access(
         church, user=session.user, profile_role=profile_role

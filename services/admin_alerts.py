@@ -252,6 +252,29 @@ def emit_admin_alert_bg(kind: str, **kwargs: Any) -> None:
 # ── Convenience helpers for call sites ──────────────────────────────────────
 
 
+def alert_new_signup(
+    *,
+    name: str,
+    email: str,
+    provider: str = "",
+    parish: str = "",
+) -> AdminAlertResult:
+    """Account created (OAuth/email) — before the mandatory onboarding form."""
+    lines = [
+        f"Name: {name}" if name else "",
+        f"Email: {email}" if email else "",
+        f"Sign-up method: {provider}" if provider else "",
+        f"Parish: {parish}" if parish else "Parish: (not set yet — onboarding pending)",
+        "Status: Account created; onboarding form not completed yet.",
+    ]
+    return safe_emit_admin_alert(
+        "new_signup",
+        title="New signup",
+        subtitle="Someone created an account (form still required).",
+        lines=lines,
+    )
+
+
 def alert_registration(
     *,
     name: str,
@@ -268,8 +291,27 @@ def alert_registration(
     return safe_emit_admin_alert(
         "registration",
         title="New registration",
-        subtitle="A parish signup is awaiting approval.",
+        subtitle="Onboarding form submitted — parish awaiting approval.",
         lines=lines,
+    )
+
+
+def alert_parish_join_request(
+    *,
+    name: str,
+    email: str,
+    parish: str,
+) -> AdminAlertResult:
+    return safe_emit_admin_alert(
+        "parish_join",
+        title="Parish join request",
+        subtitle="Someone asked to join an existing parish as media.",
+        lines=[
+            f"Name: {name}" if name else "",
+            f"Email: {email}" if email else "",
+            f"Parish: {parish}" if parish else "",
+            "Role if approved: media",
+        ],
     )
 
 

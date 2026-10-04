@@ -1244,7 +1244,11 @@
         }
         listEl.innerHTML = invites.map((row) => {
           const email = escapeHtml(row.email || "Any email");
-          const parish = escapeHtml(row.community_name || "—");
+          const hasParish = !!(row.community_name || "").trim() || !!(row.parish_id || "").trim();
+          const parish = escapeHtml(
+            (row.community_name || "").trim() ||
+              (hasParish ? "—" : "Invitee will enter parish name")
+          );
           const role = escapeHtml(row.invite_role || "president");
           const url = escapeHtml(row.invite_url || "");
           const exp = escapeHtml(saFormatLocalDate(row.expires_at));
@@ -1292,15 +1296,7 @@
         body.parish_id = parishId;
         body.invite_role = roleEl ? roleEl.value : "media";
       } else {
-        const parishName = parishEl && parishEl.value.trim ? parishEl.value.trim() : "";
-        if (!parishName) {
-          if (statusEl) {
-            statusEl.textContent = "Enter the new parish name for this invite.";
-            statusEl.className = "status error";
-          }
-          return;
-        }
-        body.community_name = parishName;
+        // New parish lead: no parish name required — invitee types it at signup.
         body.invite_role = "president";
       }
       if (statusEl) { statusEl.textContent = "Creating invite…"; statusEl.className = "status"; }
@@ -1314,7 +1310,9 @@
         if (urlWrap) urlWrap.hidden = !url;
         if (urlInput) urlInput.value = url;
         if (statusEl) {
-          statusEl.textContent = "Invite created. Copy the link and send it to the new user.";
+          statusEl.textContent = mode === "new"
+            ? "Invite created. Send the link — they will enter the parish name at signup."
+            : "Invite created. Copy the link and send it to the new user.";
           statusEl.className = "status ok";
         }
         if (parishEl) parishEl.value = "";

@@ -711,6 +711,7 @@
       if (select.classList.contains("lyric-block__pill-select")) wrap.classList.add("vb-select--pill");
       if (select.classList.contains("flow-slide-pick-select")) wrap.classList.add("vb-select--slide-pick");
       if (select.classList.contains("mass-song-plan-lang-select")) wrap.classList.add("vb-select--sm");
+      if (select.classList.contains("mw-weekly-posters__select")) wrap.classList.add("vb-select--weekly");
       if (select.classList.contains("route-switcher")) {
         wrap.classList.add("vb-select--sm", "vb-select--drop-up");
       }
@@ -874,6 +875,7 @@
     var weeklyThumbBlobCache = Object.create(null);
     var weeklyPosterRefreshInflight = null;
     var weeklyPosterCatalogFp = "";
+    var weeklyPosterItemsFp = "";
 
     function preloadWeeklyPosterThumbs(items) {
       (Array.isArray(items) ? items : []).forEach((item) => {
@@ -907,22 +909,39 @@
       await Promise.all(Array.prototype.map.call(imgs, async (img) => {
         const src = img.getAttribute("data-weekly-src") || "";
         const full = img.getAttribute("data-weekly-full") || "";
-        try {
-          const resolved = await hydrateWeeklyPosterUrl(src);
-          if (resolved) {
+        const proxy = img.getAttribute("data-weekly-proxy") || "";
+        const tryUrls = [src, proxy, full].filter((u, i, arr) => u && arr.indexOf(u) === i);
+        let ok = false;
+        for (let i = 0; i < tryUrls.length; i += 1) {
+          const candidate = tryUrls[i];
+          try {
+            const resolved = await hydrateWeeklyPosterUrl(candidate);
+            if (!resolved) continue;
+            // For signed https URLs, confirm the image actually paints.
+            if (!String(resolved).startsWith("/api/") && !String(resolved).startsWith("blob:")) {
+              await new Promise((resolve, reject) => {
+                const probe = new Image();
+                probe.onload = () => resolve();
+                probe.onerror = () => reject(new Error("img_load_failed"));
+                probe.src = resolved;
+              });
+            }
             img.src = resolved;
             img.setAttribute("data-weekly-hydrated", "1");
+            ok = true;
+            break;
+          } catch (_e) {
+            /* try next candidate */
           }
-        } catch (_e) {
-          if (full) {
-            try {
-              const resolvedFull = await hydrateWeeklyPosterUrl(full);
-              if (resolvedFull) {
-                img.src = resolvedFull;
-                img.setAttribute("data-weekly-hydrated", "1");
-              }
-            } catch (_e2) { /* keep placeholder */ }
-          }
+        }
+        if (!ok && proxy && proxy !== src) {
+          try {
+            const resolvedProxy = await hydrateWeeklyPosterUrl(proxy);
+            if (resolvedProxy) {
+              img.src = resolvedProxy;
+              img.setAttribute("data-weekly-hydrated", "1");
+            }
+          } catch (_e3) { /* keep placeholder */ }
         }
       }));
       if (typeof syncAiPosterOpacityPreview === "function") syncAiPosterOpacityPreview();
@@ -1166,6 +1185,7 @@
     var HOME_CTA_POSTER_FADE_MS = 900;
     var HOME_CTA_POSTER_AUTO_MS = 9000;
     var homeCtaPosterBgInflight = null;
+    var homeCtaPosterSyncingFromHome = false;
     var homeCtaPosterState = {
       sunday: "",
       items: [],
@@ -1174,12 +1194,20 @@
       timer: null,
       fading: false,
       navBound: false,
+      activeVersion: 0,
     };
 
     function homeCtaPosterLayers() {
       const card = $("home-mass-card");
       if (!card) return [];
       return Array.prototype.slice.call(card.querySelectorAll(".redesign-mass-bg--layer"));
+    }
+
+    function activeExtrasPosterStyleId() {
+      const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
+      const raw = sel ? String(sel.value || "").trim() : "";
+      if (!raw || raw === "auto") return "";
+      return raw;
     }
 
     function rememberHomeCtaPosterStyle(styleId) {
@@ -1198,11 +1226,8 @@
     }
 
     function startHomeCtaPosterAutoplay() {
+      // Home CTA follows the Extras-selected style — no independent carousel autoplay.
       stopHomeCtaPosterAutoplay();
-      if (homeCtaPosterState.items.length < 2) return;
-      homeCtaPosterState.timer = setInterval(() => {
-        void showHomeCtaPosterAt(homeCtaPosterState.index + 1, { animate: true, source: "auto" });
-      }, HOME_CTA_POSTER_AUTO_MS);
     }
 
     function syncHomeCtaPosterNav() {
@@ -1235,6 +1260,31 @@
         void showHomeCtaPosterAt(homeCtaPosterState.index + 1, { animate: true, source: "manual" });
       });
     }
+
+    async function syncHomeCtaPosterToExtrasStyle(styleId, opts) {
+      const sid = String(styleId || activeExtrasPosterStyleId() || "").trim();
+      if (!sid || sid === "auto") return false;
+      const card = $("home-mass-card");
+      if (!card) return false;
+      if (!homeCtaPosterState.items.length || !card.classList.contains("has-poster-bg")) {
+        await refreshHomeMassCtaPosterBg(Object.assign({}, opts || {}, { preferStyle: sid }));
+        return true;
+      }
+      const idx = homeCtaPosterState.items.findIndex((it) => String(it.id) === sid);
+      if (idx < 0) {
+        await refreshHomeMassCtaPosterBg(Object.assign({}, opts || {}, { forceReload: true, preferStyle: sid }));
+        return true;
+      }
+      if (idx === homeCtaPosterState.index && card.classList.contains("has-poster-bg")) {
+        syncHomeCtaPosterNav();
+        return true;
+      }
+      return showHomeCtaPosterAt(idx, {
+        animate: !(opts && opts.animate === false),
+        source: "extras",
+      });
+    }
+    window.syncHomeCtaPosterToExtrasStyle = syncHomeCtaPosterToExtrasStyle;
 
     function setHomeCtaPosterLoading(on) {
       const card = $("home-mass-card");
@@ -1278,6 +1328,7 @@
         index: 0,
         layer: 0,
         fading: false,
+        activeVersion: 0,
       });
     }
 
@@ -1373,6 +1424,12 @@
       rememberHomeCtaPosterStyle(item.id);
       syncHomeCtaPosterNav();
 
+      // Keep Extras style picker in sync when the home CTA nav changes style.
+      if ((opts && opts.source === "manual") && typeof setWeeklyPosterStyle === "function") {
+        homeCtaPosterSyncingFromHome = true;
+        try { setWeeklyPosterStyle(item.id); } finally { homeCtaPosterSyncingFromHome = false; }
+      }
+
       // Wait for the image to decode before dropping the loading veil.
       if (!(opts && opts.animate)) {
         await preloadHomeCtaPosterUrl(item._resolvedUrl);
@@ -1383,27 +1440,44 @@
       return true;
     }
 
-    function pickInitialHomeCtaPosterIndex(items) {
+    function pickInitialHomeCtaPosterIndex(items, preferStyle) {
       if (!items.length) return 0;
+      const want = String(preferStyle || activeExtrasPosterStyleId() || "").trim();
+      if (want && want !== "auto") {
+        const idx = items.findIndex((it) => String(it.id) === want);
+        if (idx >= 0) return idx;
+      }
       const last = lastHomeCtaPosterStyle();
-      if (items.length === 1) return 0;
-      const pool = [];
-      items.forEach((it, i) => {
-        if (String(it.id) !== last) pool.push(i);
-      });
-      const choices = pool.length ? pool : items.map((_, i) => i);
-      return choices[Math.floor(Math.random() * choices.length)] || 0;
+      if (last) {
+        const idx = items.findIndex((it) => String(it.id) === last);
+        if (idx >= 0) return idx;
+      }
+      return 0;
     }
 
     async function refreshHomeMassCtaPosterBg(opts) {
       const card = $("home-mass-card");
       if (!card) return;
       bindHomeCtaPosterNav();
-      const forceReload = !!(opts && opts.forceReload);
+      let forceReload = !!(opts && opts.forceReload);
+      const preferStyle = String((opts && opts.preferStyle) || activeExtrasPosterStyleId() || "").trim();
       const sunday = typeof upcomingSundayISO === "function" ? upcomingSundayISO() : "";
+      const activeVer = Number(
+        (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
+          ? (weeklyPosterVersionState.active || 0)
+          : 0
+      );
       if (!sunday) {
         clearHomeMassCtaPosterBg();
         return;
+      }
+      if (
+        !forceReload &&
+        activeVer &&
+        homeCtaPosterState.activeVersion &&
+        homeCtaPosterState.activeVersion !== activeVer
+      ) {
+        forceReload = true;
       }
       if (
         !forceReload &&
@@ -1411,6 +1485,12 @@
         homeCtaPosterState.items.length &&
         card.classList.contains("has-poster-bg")
       ) {
+        if (preferStyle) {
+          const idx = homeCtaPosterState.items.findIndex((it) => String(it.id) === preferStyle);
+          if (idx >= 0 && idx !== homeCtaPosterState.index) {
+            await showHomeCtaPosterAt(idx, { animate: false, source: "extras" });
+          }
+        }
         setHomeCtaPosterLoading(false);
         startHomeCtaPosterAutoplay();
         syncHomeCtaPosterNav();
@@ -1423,28 +1503,52 @@
           if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
             await window.VerbumAuth.waitUntilReady(4000);
           }
-          const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
-            ? await window.VerbumAuth.getAuthHeaders()
-            : {};
-          const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
-            headers: headers,
-            credentials: "same-origin",
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data.ok) {
-            if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
-            return;
+          // Prefer the Extras active version archive when known (matches what Step 6 shows).
+          let ready = [];
+          try {
+            if (typeof weeklyPosterViewCatalogForActiveVersion === "function") {
+              const view = weeklyPosterViewCatalogForActiveVersion();
+              if (view && Array.isArray(view.items)) {
+                ready = view.items.filter((it) => it && it.id && it.ready);
+              }
+            }
+          } catch (_eView) { /* fall through to API catalog */ }
+
+          if (!ready.length) {
+            const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+              ? await window.VerbumAuth.getAuthHeaders()
+              : {};
+            const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(sunday), {
+              headers: headers,
+              credentials: "same-origin",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.ok) {
+              if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
+              return;
+            }
+            if (data.versions && typeof syncWeeklyPosterVersionUi === "function") {
+              try { syncWeeklyPosterVersionUi(data.versions); } catch (_eVer) { /* ignore */ }
+            }
+            ready = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
           }
-          const ready = (Array.isArray(data.items) ? data.items : []).filter((it) => it && it.id && it.ready);
           if (!ready.length) {
             if (!card.classList.contains("has-poster-bg")) clearHomeMassCtaPosterBg();
             return;
           }
 
-          homeCtaPosterState.sunday = sunday;
-          homeCtaPosterState.items = ready.map((it) => Object.assign({}, it));
+          // Bust resolved URL cache when version flips so the new active set paints.
+          ready = ready.map((it) => Object.assign({}, it, { _resolvedUrl: "", _rawUrl: "" }));
 
-          const startIndex = pickInitialHomeCtaPosterIndex(homeCtaPosterState.items);
+          homeCtaPosterState.sunday = sunday;
+          homeCtaPosterState.items = ready;
+          homeCtaPosterState.activeVersion = Number(
+            (typeof weeklyPosterVersionState !== "undefined" && weeklyPosterVersionState)
+              ? (weeklyPosterVersionState.active || activeVer || 0)
+              : activeVer
+          );
+
+          const startIndex = pickInitialHomeCtaPosterIndex(homeCtaPosterState.items, preferStyle);
           // Resolve preferred first, but race the rest so a faster asset can still paint quickly.
           const preferred = resolveHomeCtaPosterItem(homeCtaPosterState.items[startIndex]);
           homeCtaPosterState.items.forEach((it, i) => {
@@ -2985,7 +3089,7 @@
 
     function readOpenAiPosterSettings() {
       const styleEl = $("flow-ai-poster-style") || $("poster-ai-poster-style");
-      const style = (styleEl && styleEl.value) || "cinematic";
+      let style = (styleEl && styleEl.value) || "cinematic";
       const transparencyPct = readAiPosterTransparencyPct();
       if (!isFeatureEnabled("ai_image_generation")) {
         return {
@@ -2999,6 +3103,13 @@
       }
       syncAiPosterToggleState();
       const useAi = typeof areWeeklyAiPostersReady === "function" && areWeeklyAiPostersReady();
+      if (useAi) {
+        const readyStyle = ensureReadyWeeklyPosterStyle();
+        if (readyStyle) style = readyStyle;
+        else if (style === "auto") style = "cinematic";
+      } else if (style === "auto") {
+        style = "cinematic";
+      }
       return {
         useOpenai: useAi,
         useGemini: false,
@@ -3093,7 +3204,7 @@
         const el = $(id);
         if (!el) return;
         el.addEventListener("change", () => {
-          if (id === "mass-date") refreshWeeklyStylePosters();
+          if (id === "mass-date") scheduleWeeklyStylePosterRefresh({ force: true });
           syncWeeklyPosterSelectionUi();
           void refreshAiImageQuotaHint();
         });
@@ -3103,11 +3214,22 @@
 
     var weeklyPosterAutoTimer = 0;
     var weeklyPosterEnsureInflight = false;
+    var weeklyPosterForceInflight = false;
+    var weeklyPosterUnlockReadyChecks = false;
+    var weeklyPosterRefreshToken = 0;
+    var weeklyPosterRefreshDate = "";
+    var weeklyPosterRefreshTimer = 0;
+    var weeklyPosterVersionState = { sunday: "", active: 0, versions: [], sundays: [] };
     var weeklyPosterCatalogState = { ready: false, sunday: "", date: "", readyCount: 0, total: 0 };
 
     function weeklyPosterMassDate() {
       const el = $("mass-date") || $("flow-mass-date");
-      return el && el.value ? String(el.value).trim() : "";
+      const fromMass = el && el.value ? String(el.value).trim() : "";
+      if (fromMass) return fromMass;
+      // Fallback: Sunday dropdown (SA browsing) — never invent today's date.
+      const sunSel = $("mw-weekly-posters-sunday");
+      const fromSun = sunSel && sunSel.value ? String(sunSel.value).trim() : "";
+      return fromSun;
     }
 
     function formatWeeklyPosterSundayLabel(iso) {
@@ -3131,22 +3253,121 @@
       return !!weeklyPosterCatalogState.ready;
     }
 
+    /** First carousel card that is ready (not pending), or "". */
+    function firstReadyWeeklyPosterStyleId() {
+      const track = $("mw-weekly-posters-track");
+      if (!track) return "";
+      const btn = track.querySelector(".mw-weekly-posters__card:not(.is-pending)");
+      return btn ? String(btn.getAttribute("data-weekly-style") || "").trim() : "";
+    }
+
+    /**
+     * Keep the hidden style select on a ready style. Defaults (cinematic / auto) often
+     * point at a pending card when only a partial weekly set exists.
+     */
+    function ensureReadyWeeklyPosterStyle() {
+      if (!areWeeklyAiPostersReady()) return "";
+      const sel = $("flow-ai-poster-style") || $("poster-ai-poster-style");
+      const track = $("mw-weekly-posters-track");
+      const cur = sel ? String(sel.value || "").trim() : "";
+      const curBtn = track && cur && cur !== "auto"
+        ? track.querySelector('[data-weekly-style="' + cur + '"]')
+        : null;
+      const curReady = !!(curBtn && !curBtn.classList.contains("is-pending"));
+      if (curReady) return cur;
+      const sid = firstReadyWeeklyPosterStyleId();
+      if (sid && typeof setWeeklyPosterStyle === "function") setWeeklyPosterStyle(sid);
+      return sid;
+    }
+
+    function syncWeeklyPosterDateIndicator(catalog) {
+      const el = $("mw-weekly-posters-date");
+      if (!el) return;
+      const sunday = String(
+        (catalog && catalog.sunday) ||
+        weeklyPosterCatalogState.sunday ||
+        weeklyPosterCatalogState.date ||
+        weeklyPosterMassDate() ||
+        ""
+      ).trim();
+      if (!sunday) {
+        el.hidden = true;
+        el.textContent = "";
+        return;
+      }
+      el.hidden = false;
+      el.textContent = "Mass Sunday · " + formatWeeklyPosterSundayLabel(sunday);
+    }
+
+    function setWeeklyPosterProgress(state) {
+      const wrap = $("mw-weekly-posters-progress");
+      const label = $("mw-weekly-posters-progress-label");
+      const pctEl = $("mw-weekly-posters-progress-pct");
+      const fill = $("mw-weekly-posters-progress-fill");
+      const track = $("mw-weekly-posters-progress-track");
+      const host = $("mw-weekly-posters");
+      if (!wrap) return;
+      if (!state || !state.active) {
+        wrap.hidden = true;
+        wrap.classList.remove("is-active");
+        if (host) host.classList.remove("is-generating");
+        if (fill) fill.style.width = "0%";
+        if (track) track.setAttribute("aria-valuenow", "0");
+        if (pctEl) pctEl.textContent = "0%";
+        if (label) label.textContent = "Generating…";
+        return;
+      }
+      const total = Math.max(1, Number(state.total || 5));
+      const index = Math.max(0, Math.min(total, Number(state.index || 0)));
+      const pct = Math.max(0, Math.min(100, Math.round(Number(state.pct != null ? state.pct : ((index / total) * 100)))));
+      const styleLabel = String(state.styleLabel || state.styleId || "style").trim();
+      const dateLabel = String(state.dateLabel || "").trim();
+      wrap.hidden = false;
+      wrap.classList.add("is-active");
+      if (host) host.classList.add("is-generating");
+      if (fill) fill.style.width = pct + "%";
+      if (track) track.setAttribute("aria-valuenow", String(pct));
+      if (pctEl) pctEl.textContent = pct + "%";
+      if (label) {
+        const step = state.phase === "done"
+          ? ("Done — " + total + "/" + total + " posters")
+          : ("Generating " + Math.min(total, Math.max(1, index)) + "/" + total + " · " + styleLabel);
+        label.textContent = dateLabel ? (step + " · " + dateLabel) : step;
+      }
+    }
+
+    function markWeeklyPosterCardLoading(styleId, on) {
+      const track = $("mw-weekly-posters-track");
+      if (!track) return;
+      track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+        const match = btn.getAttribute("data-weekly-style") === styleId;
+        btn.classList.toggle("is-loading", !!(on && match));
+        if (!on) btn.classList.remove("is-loading");
+      });
+    }
+
     function syncWeeklyAiPosterGate(catalog) {
       const gate = $("mw-ai-poster-gate");
       const body = $("mw-ai-poster-body");
       const wrap = $("flow-ai-poster-style-wrap");
       const msg = $("mw-ai-poster-gate-msg");
       if (catalog && typeof catalog === "object") {
-        const ready = Number(catalog.ready_count || 0);
-        const total = Number(catalog.total || 0);
+        const items = Array.isArray(catalog.items) ? catalog.items : [];
+        const readyFromItems = items.filter((it) => it && it.ready).length;
+        const ready = Number(
+          catalog.ready_count != null ? catalog.ready_count : readyFromItems
+        ) || readyFromItems;
+        const total = Number(catalog.total || items.length || 5);
         weeklyPosterCatalogState = {
-          ready: total > 0 && ready >= total,
+          // Unlock as soon as any style is ready so partial sets are selectable.
+          ready: ready >= 1,
           sunday: String(catalog.sunday || ""),
           date: String(catalog.date || weeklyPosterMassDate() || ""),
           readyCount: ready,
           total: total,
         };
       }
+      syncWeeklyPosterDateIndicator(catalog);
       const dateLabel = formatWeeklyPosterSundayLabel(
         weeklyPosterCatalogState.sunday || weeklyPosterCatalogState.date || weeklyPosterMassDate()
       );
@@ -3164,10 +3385,15 @@
       if (msg) {
         msg.textContent = unlocked
           ? ""
-          : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Please check back soon.');
+          : (
+            isWeeklyPosterSuperadmin()
+              ? ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Use “Generate this week’s styles” above the carousel.')
+              : ('Beautifully curated posters aren\'t ready for the "' + dateLabel + '" Mass Sunday yet. Please check back soon.')
+          );
       }
       if (unlocked) {
         startWeeklyPosterAutoScroll();
+        ensureReadyWeeklyPosterStyle();
       } else {
         stopWeeklyPosterAutoScroll();
       }
@@ -3179,8 +3405,24 @@
       const track = $("mw-weekly-posters-track");
       const viewport = $("mw-weekly-posters-viewport");
       if (!track) return;
-      const val = sel ? String(sel.value || "cinematic") : "cinematic";
-      const pick = val === "auto" ? "cinematic" : val;
+      let val = sel ? String(sel.value || "cinematic") : "cinematic";
+      let pick = val === "auto" ? "cinematic" : val;
+      let pickBtn = track.querySelector('[data-weekly-style="' + pick + '"]');
+      // Never leave a pending (not-yet-generated) style selected.
+      if (!pickBtn || pickBtn.classList.contains("is-pending")) {
+        const readyId = firstReadyWeeklyPosterStyleId();
+        if (readyId) {
+          pick = readyId;
+          if (sel && sel.value !== readyId) {
+            sel.value = readyId;
+            ["flow-ai-poster-style", "poster-ai-poster-style"].forEach((id) => {
+              const el = $(id);
+              if (el && el.value !== readyId) el.value = readyId;
+            });
+          }
+          pickBtn = track.querySelector('[data-weekly-style="' + pick + '"]');
+        }
+      }
       let selectedBtn = null;
       track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
         const on = btn.getAttribute("data-weekly-style") === pick;
@@ -3188,7 +3430,7 @@
         btn.setAttribute("aria-selected", on ? "true" : "false");
         if (on) selectedBtn = btn;
       });
-      if (selectedBtn && viewport) {
+      if (selectedBtn && viewport && !selectedBtn.classList.contains("is-pending")) {
         const left = selectedBtn.offsetLeft;
         if (Math.abs(viewport.scrollLeft - left) > 4) {
           viewport.scrollTo({ left: left, behavior: "smooth" });
@@ -3215,6 +3457,9 @@
       syncAiPosterToggleState();
       syncWeeklyPosterSelectionUi();
       if (typeof scheduleMassBuilderDraftAutoSave === "function") scheduleMassBuilderDraftAutoSave();
+      if (!homeCtaPosterSyncingFromHome && typeof syncHomeCtaPosterToExtrasStyle === "function") {
+        void syncHomeCtaPosterToExtrasStyle(sid);
+      }
     }
 
     function scrollWeeklyPostersBy(dir) {
@@ -3263,31 +3508,34 @@
         (it && it.ready) ? "1" : "0",
         String((it && (it.thumb_url || it.proxy_url)) || ""),
       ].join("|")).join(";");
-      if (fp && fp === weeklyPosterCatalogFp && track.querySelector(".mw-weekly-posters__card")) {
+      if (fp && fp === weeklyPosterItemsFp && track.querySelector(".mw-weekly-posters__card")) {
         syncWeeklyPosterSelectionUi();
         syncWeeklyPosterGenerateUi();
         return;
       }
-      weeklyPosterCatalogFp = fp;
+      weeklyPosterItemsFp = fp;
       track.innerHTML = list.map((item) => {
         const id = escapeHtml(item.id || "");
         const label = escapeHtml(item.label || item.id || "Style");
         const ready = !!item.ready;
+        const rawProxy = String(item.proxy_url || "").trim();
+        // Prefer same-origin proxy after generate (fresh + auth-hydrated). Signed URLs
+        // are fine for first paint when they work, but must not skip hydrate forever.
         const rawSrc = String(item.thumb_url || item.proxy_url || "").trim();
         const rawFull = String(item.full_url || "").trim();
         const src = escapeHtml(rawSrc);
         const full = escapeHtml(rawFull);
+        const proxy = escapeHtml(rawProxy || (rawSrc.startsWith("/api/") ? rawSrc : ""));
         const needsAuthHydrate = rawSrc.startsWith("/api/");
         const cached = needsAuthHydrate ? weeklyThumbBlobCache[rawSrc] : "";
         // Never put bare /api/ in src — browser can't send Bearer and it 401-loops.
-        const initialSrc = ready
-          ? (cached || (!needsAuthHydrate ? rawSrc : ""))
-          : "";
+        // Do not mark signed HTTPS as hydrated until hydrateWeeklyPosterCardImages confirms load.
+        const initialSrc = ready ? (cached || "") : "";
         const img = ready && src
           ? (
             '<img class="mw-weekly-posters__img" alt="" decoding="async" loading="eager" ' +
-            'data-weekly-src="' + src + '" data-weekly-full="' + full + '"' +
-            (cached || !needsAuthHydrate ? ' data-weekly-hydrated="1"' : "") +
+            'data-weekly-src="' + src + '" data-weekly-full="' + full + '" data-weekly-proxy="' + proxy + '"' +
+            (cached ? ' data-weekly-hydrated="1"' : "") +
             (initialSrc ? (' src="' + escapeHtml(initialSrc) + '"') : "") +
             " />"
           )
@@ -3303,6 +3551,7 @@
       }).join("");
       track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
         btn.addEventListener("click", () => {
+          if (btn.classList.contains("is-pending")) return;
           if (!areWeeklyAiPostersReady() && !isWeeklyPosterSuperadmin()) return;
           setWeeklyPosterStyle(btn.getAttribute("data-weekly-style"));
           const host = $("mw-weekly-posters");
@@ -3325,128 +3574,970 @@
       );
     }
 
-    function syncWeeklyPosterGenerateUi(catalog) {
-      const btn = $("mw-weekly-posters-generate");
-      const status = $("mw-weekly-posters-gen-status");
-      const toolbar = btn && btn.closest("[data-superadmin-only]");
-      const sa = isWeeklyPosterSuperadmin();
-      if (toolbar) toolbar.hidden = !sa;
-      if (!btn) return;
-      if (!sa) {
-        btn.hidden = true;
-        if (status) status.textContent = "";
+    function weeklyPosterEsc(value) {
+      if (typeof escapeHtml === "function") return escapeHtml(value);
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function normalizeWeeklyVersionsPayload(payload) {
+      if (!payload) return null;
+      // Full versions_payload object
+      if (!Array.isArray(payload) && typeof payload === "object") {
+        if (Array.isArray(payload.versions) || Array.isArray(payload.sundays) || payload.sunday || payload.active_version != null) {
+          return {
+            sunday: String(payload.sunday || weeklyPosterCatalogState.sunday || weeklyPosterMassDate() || ""),
+            active_version: Number(payload.active_version || 0),
+            versions: Array.isArray(payload.versions) ? payload.versions : [],
+            sundays: (Array.isArray(payload.sundays) && payload.sundays.length)
+              ? payload.sundays
+              : (weeklyPosterVersionState.sundays || []),
+          };
+        }
+      }
+      // Accidentally passed the inner versions array
+      if (Array.isArray(payload)) {
+        return {
+          sunday: String(weeklyPosterCatalogState.sunday || weeklyPosterMassDate() || ""),
+          active_version: Number(weeklyPosterVersionState.active || 0),
+          versions: payload,
+          sundays: weeklyPosterVersionState.sundays || [],
+        };
+      }
+      return null;
+    }
+
+    function syncWeeklyPosterSelectUi(select) {
+      if (!select) return;
+      delete select.dataset.vbSelect;
+      if (typeof refreshVerbumSelect === "function") {
+        refreshVerbumSelect(select);
         return;
       }
-      const ready = catalog ? Number(catalog.ready_count || 0) : 0;
-      const total = catalog ? Number(catalog.total || 0) : 0;
-      const missing = total > 0 ? total - ready : 5;
-      btn.hidden = false;
-      btn.disabled = !!weeklyPosterEnsureInflight || missing <= 0;
-      btn.textContent = missing <= 0
-        ? "Styles ready"
-        : (weeklyPosterEnsureInflight ? "Generating…" : ("Generate this week’s styles (" + missing + " missing)"));
-      if (status && !weeklyPosterEnsureInflight && missing <= 0) {
-        status.textContent = "Poster styles are ready for this Mass.";
+      if (typeof enhanceVerbumSelect === "function") enhanceVerbumSelect(select);
+    }
+
+    function syncWeeklyPosterVersionUi(payload) {
+      const sunSel = $("mw-weekly-posters-sunday");
+      const verSel = $("mw-weekly-posters-version");
+      const sunField = $("mw-weekly-posters-sunday-field");
+      const verField = $("mw-weekly-posters-version-field");
+      const sa = isWeeklyPosterSuperadmin();
+      const normalized = normalizeWeeklyVersionsPayload(payload);
+      if (normalized) {
+        weeklyPosterVersionState = {
+          sunday: normalized.sunday,
+          active: normalized.active_version,
+          versions: normalized.versions,
+          sundays: normalized.sundays,
+        };
+      }
+      if (!sa) {
+        if (sunField) sunField.hidden = true;
+        if (verField) verField.hidden = true;
+        return;
+      }
+      const massDate = weeklyPosterMassDate();
+      const currentSunday = String(
+        weeklyPosterVersionState.sunday ||
+        weeklyPosterCatalogState.sunday ||
+        massDate ||
+        ""
+      );
+      const sundays = listWeeklyPosterSundayOptions(currentSunday);
+      if (sunField) {
+        sunField.hidden = false;
+        sunField.removeAttribute("hidden");
+      }
+      if (verField) {
+        verField.hidden = false;
+        verField.removeAttribute("hidden");
+      }
+      if (sunSel) {
+        const prev = String(sunSel.value || "");
+        const opts = sundays.length
+          ? sundays
+          : (currentSunday ? [{ sunday: currentSunday, version_count: (weeklyPosterVersionState.versions || []).length }] : []);
+        sunSel.innerHTML = opts.length
+          ? opts.map((s) => {
+            const label = formatWeeklyPosterSundayLabel(s.sunday) +
+              (s.version_count ? (" · " + s.version_count + " ver") : "");
+            const selected = s.sunday === currentSunday ? " selected" : "";
+            return '<option value="' + weeklyPosterEsc(s.sunday) + '"' + selected + ">" + weeklyPosterEsc(label) + "</option>";
+          }).join("")
+          : '<option value="">Set Mass date in Step 1</option>';
+        sunSel.disabled = opts.length <= 0 || !!weeklyPosterEnsureInflight;
+        if (currentSunday) {
+          try { sunSel.value = currentSunday; } catch (_e) { /* ignore */ }
+        }
+        if (!sunSel.value && prev) {
+          try { sunSel.value = prev; } catch (_e2) { /* ignore */ }
+        }
+        syncWeeklyPosterSelectUi(sunSel);
+      }
+      if (verSel) {
+        const versions = weeklyPosterVersionState.versions || [];
+        if (!versions.length) {
+          verSel.innerHTML = '<option value="">No versions yet</option>';
+          verSel.disabled = true;
+        } else {
+          verSel.disabled = !!weeklyPosterEnsureInflight;
+          verSel.innerHTML = versions.map((v) => {
+            const num = Number(v.version || 0);
+            const active = !!v.active || num === Number(weeklyPosterVersionState.active || 0);
+            const status = String(v.status || "").toLowerCase();
+            const styles = Array.isArray(v.styles) ? v.styles : [];
+            const styleCount = Number(v.style_count != null ? v.style_count : styles.length) || 0;
+            // Prefer server label (includes style names for partial sets).
+            let label = String(v.label || ("v" + num)).trim();
+            if (!label.includes("·") && styleCount > 0 && styleCount < 5) {
+              label = "v" + num + " · " + styleCount + "/5";
+            }
+            const bits = [label];
+            if (active) bits.push("active");
+            else if (status && status !== "ready" && label.indexOf(status) < 0) bits.push(status);
+            return '<option value="' + num + '"' + (active ? " selected" : "") + ">" +
+              weeklyPosterEsc(bits.join(" · ")) + "</option>";
+          }).join("");
+          const active = String(weeklyPosterVersionState.active || versions[0].version || "");
+          if (active) {
+            try { verSel.value = active; } catch (_e3) { /* ignore */ }
+          }
+        }
+        syncWeeklyPosterSelectUi(verSel);
       }
     }
 
-    async function generateWeeklyStylePosters() {
+    function listWeeklyPosterSundayOptions(currentSunday) {
+      const map = Object.create(null);
+      (weeklyPosterVersionState.sundays || []).forEach((s) => {
+        if (!s || !s.sunday) return;
+        map[s.sunday] = {
+          sunday: String(s.sunday),
+          version_count: Number(s.version_count || (s.versions && s.versions.length) || 0),
+        };
+      });
+      const mass = weeklyPosterMassDate();
+      const cur = String(currentSunday || mass || "").trim();
+      if (cur && !map[cur]) map[cur] = { sunday: cur, version_count: (weeklyPosterVersionState.versions || []).length };
+      if (mass && !map[mass]) map[mass] = { sunday: mass, version_count: 0 };
+      return Object.keys(map).sort().reverse().map((k) => map[k]);
+    }
+
+    async function loadWeeklyPosterVersions(date) {
+      const iso = String(date || weeklyPosterMassDate() || "").trim();
+      if (!iso || !isWeeklyPosterSuperadmin()) {
+        syncWeeklyPosterVersionUi({ sunday: iso, active_version: 0, versions: [], sundays: [] });
+        return null;
+      }
+      try {
+        const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
+          ? await window.VerbumAuth.getAuthHeaders()
+          : {};
+        const res = await fetch("/api/weekly-style-posters/versions?date=" + encodeURIComponent(iso), {
+          headers: headers,
+          credentials: "same-origin",
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error((data && data.detail) || "versions_failed");
+        syncWeeklyPosterVersionUi(data);
+        preloadWeeklyPosterVersionThumbs(data.versions || []);
+        return data;
+      } catch (_e) {
+        syncWeeklyPosterVersionUi({
+          sunday: iso,
+          active_version: weeklyPosterVersionState.active || 0,
+          versions: weeklyPosterVersionState.versions || [],
+          sundays: weeklyPosterVersionState.sundays || [],
+        });
+        return null;
+      }
+    }
+
+    function weeklyPosterVersionCatalogItems(version) {
+      const ver = Number(version || 0);
+      const sunday = String(
+        weeklyPosterVersionState.sunday ||
+        weeklyPosterCatalogState.sunday ||
+        weeklyPosterCatalogState.date ||
+        weeklyPosterMassDate() ||
+        ""
+      ).trim();
+      const defaults = [
+        { id: "cinematic", label: "Cinematic" },
+        { id: "realistic", label: "Realistic" },
+        { id: "renaissance", label: "Renaissance" },
+        { id: "stained_glass", label: "Stained Glass" },
+        { id: "modern", label: "Modern" },
+      ];
+      if (!sunday || !ver) {
+        return defaults.map((d) => ({ id: d.id, label: d.label, ready: false }));
+      }
+      const meta = (weeklyPosterVersionState.versions || []).find(
+        (v) => Number((v && v.version) || 0) === ver
+      );
+      const owned = Object.create(null);
+      const styleList = meta && Array.isArray(meta.styles) ? meta.styles : null;
+      // Unknown ownership (full set) → assume ready; partial → only listed styles.
+      if (styleList) {
+        styleList.forEach((sid) => { owned[String(sid)] = true; });
+      }
+      const partial = !!(meta && (meta.complete === false || String(meta.status || "").toLowerCase() === "partial" || (styleList && styleList.length > 0 && styleList.length < defaults.length)));
+      return defaults.map((d) => {
+        const ready = styleList ? !!owned[d.id] : !partial;
+        const base =
+          "/api/weekly-style-posters/image?date=" +
+          encodeURIComponent(sunday) +
+          "&style=" +
+          encodeURIComponent(d.id) +
+          "&version=" +
+          encodeURIComponent(String(ver));
+        return {
+          id: d.id,
+          label: d.label,
+          ready: ready,
+          thumb_url: ready ? (base + "&variant=thumb") : "",
+          card_url: ready ? (base + "&variant=card") : "",
+          proxy_url: base + "&variant=thumb",
+          full_url: ready ? base : "",
+        };
+      });
+    }
+
+    var weeklyPosterVersionPreloadKey = "";
+    var weeklyPosterVersionPreloadQueue = [];
+    var weeklyPosterVersionPreloadBusy = 0;
+
+    function preloadWeeklyPosterVersionThumbs(versions) {
+      const list = Array.isArray(versions) ? versions : (weeklyPosterVersionState.versions || []);
+      const sunday = String(
+        weeklyPosterVersionState.sunday ||
+        weeklyPosterCatalogState.sunday ||
+        weeklyPosterMassDate() ||
+        ""
+      ).trim();
+      if (!sunday || !list.length) return;
+      const active = Number(weeklyPosterVersionState.active || 0);
+      const key = sunday + ":" + active + ":" + list.map((v) => Number((v && v.version) || 0)).join(",");
+      if (key === weeklyPosterVersionPreloadKey) return;
+      weeklyPosterVersionPreloadKey = key;
+      // Warm only non-active archives, a few at a time (avoid API 429 storms).
+      const urls = [];
+      list.forEach((v) => {
+        const num = Number((v && v.version) || 0);
+        if (!num || num === active) return;
+        weeklyPosterVersionCatalogItems(num).forEach((it) => {
+          const src = String((it && (it.thumb_url || it.proxy_url)) || "").trim();
+          if (src && src.startsWith("/api/") && !weeklyThumbBlobCache[src]) urls.push(src);
+        });
+      });
+      weeklyPosterVersionPreloadQueue = urls;
+      const pump = () => {
+        while (weeklyPosterVersionPreloadBusy < 2 && weeklyPosterVersionPreloadQueue.length) {
+          const src = weeklyPosterVersionPreloadQueue.shift();
+          weeklyPosterVersionPreloadBusy += 1;
+          hydrateWeeklyPosterUrl(src)
+            .catch(() => {})
+            .finally(() => {
+              weeklyPosterVersionPreloadBusy = Math.max(0, weeklyPosterVersionPreloadBusy - 1);
+              pump();
+            });
+        }
+      };
+      pump();
+    }
+
+    async function activateWeeklyPosterVersion(version) {
+      const date = weeklyPosterMassDate();
+      const ver = Number(version || 0);
+      const status = $("mw-weekly-posters-gen-status");
+      const verSel = $("mw-weekly-posters-version");
+      if (!isWeeklyPosterSuperadmin() || !date || !ver) return;
+      if (weeklyPosterEnsureInflight) return;
+      if (Number(weeklyPosterVersionState.active || 0) === ver) return;
+      const prevActive = Number(weeklyPosterVersionState.active || 0);
+      const prevVersions = (weeklyPosterVersionState.versions || []).slice();
+      // Drop unversioned active thumbs — they reuse one cache key across versions.
+      const sundayKey = String(
+        weeklyPosterVersionState.sunday || weeklyPosterCatalogState.sunday || date || ""
+      ).trim();
+      clearWeeklyPosterThumbCache({ sunday: sundayKey, unversionedOnly: true });
+      // Instant paint from archived version URLs only (never hybrid active files).
+      syncWeeklyPosterVersionUi({
+        sunday: weeklyPosterVersionState.sunday || weeklyPosterCatalogState.sunday || date,
+        active_version: ver,
+        versions: (weeklyPosterVersionState.versions || []).map((v) => ({
+          ...v,
+          active: Number(v.version || 0) === ver,
+        })),
+        sundays: weeklyPosterVersionState.sundays || [],
+      });
+      const optimistic = weeklyPosterVersionCatalogItems(ver);
+      weeklyPosterItemsFp = "";
+      renderWeeklyStylePosterCards(optimistic);
+      const optimisticReady = optimistic.filter((it) => it && it.ready).length;
+      syncWeeklyPosterGenerateUi({
+        items: optimistic,
+        ready_count: optimisticReady,
+        total: 5,
+        sunday: weeklyPosterCatalogState.sunday || date,
+        date: date,
+      });
+      weeklyPosterEnsureInflight = true;
+      if (verSel) verSel.disabled = true;
+      if (status) status.textContent = "Switching to v" + ver + "…";
+      try {
+        const headers = { "Content-Type": "application/json" };
+        if (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function") {
+          Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+        }
+        const res = await fetch("/api/weekly-style-posters/activate", {
+          method: "POST",
+          headers: headers,
+          credentials: "same-origin",
+          body: JSON.stringify({ date: date, version: ver }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error((data && data.detail) || "Activate failed");
+        if (data.versions) syncWeeklyPosterVersionUi(data.versions);
+        // Always re-render from versioned archive URLs for the selected version.
+        const view = weeklyPosterViewCatalogForActiveVersion()
+          || (data.catalog && data.catalog.items ? data.catalog : null);
+        if (view && view.items) {
+          weeklyPosterItemsFp = "";
+          renderWeeklyStylePosterCards(view.items);
+          syncWeeklyPosterGenerateUi(view);
+          syncWeeklyAiPosterGate(view);
+          syncWeeklyPosterDateIndicator(view);
+        }
+        if (status) status.textContent = "Active poster set: v" + ver + ".";
+        if (typeof refreshHomeMassCtaPosterBg === "function") {
+          void refreshHomeMassCtaPosterBg({ forceReload: true });
+        }
+      } catch (err) {
+        if (status) status.textContent = (err && err.message) || "Could not switch version";
+        if (typeof notify === "function") notify((err && err.message) || "Could not switch version", "error");
+        // Revert UI to previous active version.
+        syncWeeklyPosterVersionUi({
+          sunday: weeklyPosterVersionState.sunday || date,
+          active_version: prevActive,
+          versions: prevVersions,
+          sundays: weeklyPosterVersionState.sundays || [],
+        });
+        if (prevActive) {
+          weeklyPosterItemsFp = "";
+          renderWeeklyStylePosterCards(weeklyPosterVersionCatalogItems(prevActive));
+        }
+        if (verSel && prevActive) {
+          try { verSel.value = String(prevActive); } catch (_e) { /* ignore */ }
+        }
+      } finally {
+        weeklyPosterEnsureInflight = false;
+        syncWeeklyPosterGenerateUi();
+      }
+    }
+
+    function weeklyPosterActiveVersionMeta() {
+      const active = Number(weeklyPosterVersionState.active || 0);
+      if (!active) return null;
+      const hit = (weeklyPosterVersionState.versions || []).find(
+        (v) => Number((v && v.version) || 0) === active
+      );
+      return hit || null;
+    }
+
+    function weeklyPosterVersionIsPartial(meta) {
+      if (!meta) return false;
+      const styles = Array.isArray(meta.styles) ? meta.styles : [];
+      if (meta.complete === false) return true;
+      if (String(meta.status || "").toLowerCase() === "partial") return true;
+      if (String(meta.status || "").toLowerCase() === "generating") return true;
+      return styles.length > 0 && styles.length < 5;
+    }
+
+    function weeklyPosterReadyStyleMap(catalog) {
+      const ready = Object.create(null);
+      // Partial active version: only styles archived in that version count as
+      // "already generated". Active disk heroes may still hold older-version art.
+      const meta = weeklyPosterActiveVersionMeta();
+      if (meta && weeklyPosterVersionIsPartial(meta)) {
+        (Array.isArray(meta.styles) ? meta.styles : []).forEach((sid) => {
+          const id = String(sid || "").trim();
+          if (id) ready[id] = true;
+        });
+        return ready;
+      }
+      const items = catalog && Array.isArray(catalog.items) ? catalog.items : null;
+      if (items) {
+        items.forEach((it) => {
+          const id = String((it && it.id) || "").trim();
+          if (id && it.ready) ready[id] = true;
+        });
+        return ready;
+      }
+      const track = $("mw-weekly-posters-track");
+      if (track) {
+        track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+          const id = String(btn.getAttribute("data-weekly-style") || "").trim();
+          if (id && !btn.classList.contains("is-pending")) ready[id] = true;
+        });
+      }
+      return ready;
+    }
+
+    function applyWeeklyPosterVersionReadyOverlay(catalog) {
+      if (!catalog || typeof catalog !== "object") return catalog;
+      const meta = weeklyPosterActiveVersionMeta();
+      if (!meta || !weeklyPosterVersionIsPartial(meta)) return catalog;
+      const owned = Object.create(null);
+      (Array.isArray(meta.styles) ? meta.styles : []).forEach((sid) => {
+        owned[String(sid || "").trim()] = true;
+      });
+      const ver = Number(meta.version || 0);
+      const sunday = String(
+        weeklyPosterVersionState.sunday ||
+        catalog.sunday ||
+        weeklyPosterCatalogState.sunday ||
+        weeklyPosterMassDate() ||
+        ""
+      ).trim();
+      const defaults = ["cinematic", "realistic", "renaissance", "stained_glass", "modern"];
+      const byId = Object.create(null);
+      (Array.isArray(catalog.items) ? catalog.items : []).forEach((it) => {
+        if (it && it.id) byId[String(it.id)] = it;
+      });
+      const items = defaults.map((id) => {
+        const prev = byId[id] || { id: id, label: id.replace(/_/g, " ") };
+        const isReady = !!owned[id];
+        const base = sunday && ver
+          ? (
+            "/api/weekly-style-posters/image?date=" +
+            encodeURIComponent(sunday) +
+            "&style=" +
+            encodeURIComponent(id) +
+            "&version=" +
+            encodeURIComponent(String(ver))
+          )
+          : "";
+        return {
+          id: id,
+          label: prev.label || id,
+          ready: isReady,
+          thumb_url: isReady && base ? (base + "&variant=thumb") : (isReady ? String(prev.thumb_url || "") : ""),
+          card_url: isReady && base ? (base + "&variant=card") : (isReady ? String(prev.card_url || "") : ""),
+          proxy_url: base ? (base + "&variant=thumb") : String(prev.proxy_url || ""),
+          full_url: isReady && base ? base : (isReady ? String(prev.full_url || "") : ""),
+        };
+      });
+      return Object.assign({}, catalog, {
+        items: items,
+        ready_count: items.filter((it) => it.ready).length,
+        total: items.length,
+      });
+    }
+
+    function weeklyPosterCheckedStyleIds() {
+      const boxes = document.querySelectorAll('#mw-weekly-posters-style-checks input[name="mw-weekly-gen-style"]');
+      const out = [];
+      boxes.forEach((box) => {
+        if (!box.checked || box.disabled) return;
+        const id = String(box.value || "").trim();
+        if (id && out.indexOf(id) < 0) out.push(id);
+      });
+      return out;
+    }
+
+    function syncWeeklyPosterStyleCheckState(catalog) {
+      const host = $("mw-weekly-posters-style-checks");
+      if (!host) return;
+      const readyMap = weeklyPosterReadyStyleMap(catalog);
+      const inflight = !!weeklyPosterEnsureInflight;
+      // New-version flow unlocks already-generated styles so they can be remade.
+      const unlockReady = !!weeklyPosterUnlockReadyChecks || !!weeklyPosterForceInflight;
+      host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+        const id = String(box.value || "").trim();
+        const isReady = !!readyMap[id];
+        const label = box.closest(".mw-weekly-posters__style-check");
+        const disable = inflight || (isReady && !unlockReady);
+        box.disabled = disable;
+        if (isReady && !unlockReady) {
+          box.checked = false;
+          if (label) label.classList.add("is-ready");
+        } else if (label) {
+          label.classList.remove("is-ready");
+        }
+      });
+    }
+
+    function bindWeeklyPosterStyleChecks() {
+      const host = $("mw-weekly-posters-style-checks");
+      if (!host || host.dataset.bound === "1") return;
+      host.dataset.bound = "1";
+      host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+        box.addEventListener("change", () => { syncWeeklyPosterGenerateUi(); });
+      });
+    }
+
+    function syncWeeklyPosterGenerateUi(catalog) {
+      const btn = $("mw-weekly-posters-generate");
+      const regenBtn = $("mw-weekly-posters-regenerate");
+      const status = $("mw-weekly-posters-gen-status");
+      const checks = $("mw-weekly-posters-style-checks");
+      const toolbar = (btn || regenBtn) && (btn || regenBtn).closest("[data-superadmin-only]");
+      const sa = isWeeklyPosterSuperadmin();
+      bindWeeklyPosterStyleChecks();
+      if (toolbar) toolbar.hidden = !sa;
+      if (checks) {
+        checks.hidden = !sa;
+        if (sa) checks.removeAttribute("hidden");
+      }
+      if (!sa) {
+        if (btn) btn.hidden = true;
+        if (regenBtn) regenBtn.hidden = true;
+        if (status) status.textContent = "";
+        syncWeeklyPosterVersionUi();
+        return;
+      }
+      const overlayCatalog = applyWeeklyPosterVersionReadyOverlay(catalog || null);
+      syncWeeklyPosterStyleCheckState(overlayCatalog);
+      const readyMap = weeklyPosterReadyStyleMap(overlayCatalog);
+      const ready = Object.keys(readyMap).length;
+      const total = 5;
+      const missing = Math.max(0, total - ready);
+      const picked = weeklyPosterCheckedStyleIds();
+      const pickCount = picked.length;
+      const inflight = !!weeklyPosterEnsureInflight;
+      if (btn) {
+        btn.hidden = false;
+        btn.disabled = inflight || pickCount <= 0 || missing <= 0;
+        if (inflight && !weeklyPosterForceInflight) {
+          btn.textContent = "Generating…";
+        } else if (missing <= 0) {
+          btn.textContent = "Styles ready";
+        } else if (pickCount <= 0) {
+          btn.textContent = "Select styles to generate";
+        } else {
+          btn.textContent = "Generate " + pickCount + " style" + (pickCount === 1 ? "" : "s");
+        }
+      }
+      if (regenBtn) {
+        // New version is available once a baseline exists (or while generating).
+        const hasVersions = (weeklyPosterVersionState.versions || []).length > 0 || ready > 0;
+        regenBtn.hidden = !hasVersions && missing > 0;
+        regenBtn.disabled = inflight;
+        if (weeklyPosterForceInflight) {
+          regenBtn.textContent = "Generating new version…";
+        } else {
+          regenBtn.textContent = "Generate new version";
+        }
+      }
+      const verSel = $("mw-weekly-posters-version");
+      const sunSel = $("mw-weekly-posters-sunday");
+      if (verSel) verSel.disabled = inflight || !(weeklyPosterVersionState.versions || []).length;
+      if (sunSel) sunSel.disabled = inflight;
+      if (status && !inflight && missing <= 0) {
+        const active = Number(weeklyPosterVersionState.active || 0);
+        status.textContent = active
+          ? ("Poster styles ready · active v" + active + ". Use New version to regenerate.")
+          : "Poster styles are ready. Use New version to regenerate.";
+      } else if (status && !inflight && weeklyPosterVersionIsPartial(weeklyPosterActiveVersionMeta())) {
+        const active = Number(weeklyPosterVersionState.active || 0);
+        status.textContent = pickCount > 0
+          ? ("Continue v" + active + ": " + picked.join(", ").replace(/_/g, " ") + ".")
+          : ("v" + active + " is partial (" + ready + "/" + total + "). Check styles still to generate.");
+      } else if (status && !inflight && pickCount <= 0) {
+        status.textContent = "Check one or more ungenerated styles.";
+      } else if (status && !inflight && pickCount > 0) {
+        status.textContent = "Selected: " + picked.join(", ").replace(/_/g, " ") + ".";
+      }
+      syncWeeklyPosterVersionUi();
+    }
+
+    function weeklyPosterStyleQueue(force) {
+      const defaults = [
+        { id: "cinematic", label: "Cinematic" },
+        { id: "realistic", label: "Realistic" },
+        { id: "renaissance", label: "Renaissance" },
+        { id: "stained_glass", label: "Stained Glass" },
+        { id: "modern", label: "Modern" },
+      ];
+      const track = $("mw-weekly-posters-track");
+      const fromDom = [];
+      if (track) {
+        track.querySelectorAll("[data-weekly-style]").forEach((btn) => {
+          const id = String(btn.getAttribute("data-weekly-style") || "").trim();
+          if (!id) return;
+          const labelEl = btn.querySelector(".mw-weekly-posters__label");
+          const label = labelEl ? String(labelEl.textContent || "").trim() : id;
+          const ready = !btn.classList.contains("is-pending");
+          fromDom.push({ id: id, label: label || id, ready: ready });
+        });
+      }
+      let list = fromDom.length ? fromDom : defaults.map((d) => ({ id: d.id, label: d.label, ready: false }));
+      const checked = weeklyPosterCheckedStyleIds();
+      if (checked.length) {
+        const allow = Object.create(null);
+        checked.forEach((id) => { allow[id] = true; });
+        list = list.filter((it) => allow[it.id]);
+        // Keep checkbox order.
+        list.sort((a, b) => checked.indexOf(a.id) - checked.indexOf(b.id));
+      }
+      if (!force) list = list.filter((it) => !it.ready);
+      return list;
+    }
+
+    function clearWeeklyPosterThumbCache(opts) {
+      const options = opts && typeof opts === "object" ? opts : {};
+      const sunday = String(options.sunday || "").trim();
+      const unversionedOnly = !!options.unversionedOnly;
+      Object.keys(weeklyThumbBlobCache).forEach((k) => {
+        const key = String(k || "");
+        if (sunday && key.indexOf("date=" + encodeURIComponent(sunday)) < 0 && key.indexOf("date=" + sunday) < 0) {
+          return;
+        }
+        if (unversionedOnly && /[?&]version=\d+/.test(key)) return;
+        try {
+          const u = weeklyThumbBlobCache[k];
+          if (u && String(u).indexOf("blob:") === 0) URL.revokeObjectURL(u);
+        } catch (_e) {}
+        delete weeklyThumbBlobCache[k];
+      });
+      if (!unversionedOnly) {
+        weeklyPosterCatalogFp = "";
+        weeklyPosterItemsFp = "";
+      }
+    }
+
+    function weeklyPosterViewCatalogForActiveVersion() {
+      const active = Number(weeklyPosterVersionState.active || 0);
+      if (!active || !(weeklyPosterVersionState.versions || []).length) return null;
+      const items = weeklyPosterVersionCatalogItems(active);
+      const ready = items.filter((it) => it && it.ready).length;
+      return {
+        ok: true,
+        items: items,
+        ready_count: ready,
+        total: 5,
+        sunday: weeklyPosterVersionState.sunday || weeklyPosterCatalogState.sunday || weeklyPosterMassDate(),
+        date: weeklyPosterCatalogState.date || weeklyPosterMassDate(),
+      };
+    }
+
+    async function generateWeeklyStylePosters(opts) {
+      const options = opts && typeof opts === "object" ? opts : {};
+      const force = !!options.force;
+      const newVersion = !!(options.newVersion || force);
       const date = weeklyPosterMassDate();
       const btn = $("mw-weekly-posters-generate");
+      const regenBtn = $("mw-weekly-posters-regenerate");
       const status = $("mw-weekly-posters-gen-status");
       const hint = $("mw-weekly-posters-hint");
       if (!isWeeklyPosterSuperadmin()) return;
       if (!date) {
-        if (status) status.textContent = "Set the Mass date first.";
+        if (status) status.textContent = "Set the Mass date first (Step 1).";
+        syncWeeklyPosterDateIndicator({ sunday: "", date: "" });
         return;
       }
       if (weeklyPosterEnsureInflight) return;
+      const sundayLabel = formatWeeklyPosterSundayLabel(
+        weeklyPosterCatalogState.sunday || weeklyPosterCatalogState.date || date
+      );
+      if (newVersion) {
+        // Unlock greyed (already generated) styles so the user can choose what to remake.
+        weeklyPosterUnlockReadyChecks = true;
+        const host = $("mw-weekly-posters-style-checks");
+        if (host) {
+          host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+            box.disabled = false;
+            const label = box.closest(".mw-weekly-posters__style-check");
+            if (label) label.classList.remove("is-ready");
+          });
+          if (!weeklyPosterCheckedStyleIds().length) {
+            host.querySelectorAll('input[name="mw-weekly-gen-style"]').forEach((box) => {
+              box.checked = true;
+            });
+          }
+        }
+        syncWeeklyPosterGenerateUi();
+      }
+      const picked = weeklyPosterCheckedStyleIds();
+      if (!picked.length) {
+        weeklyPosterUnlockReadyChecks = false;
+        if (status) status.textContent = "Check one or more styles to generate.";
+        syncWeeklyPosterGenerateUi();
+        return;
+      }
+      const partial = picked.length < 5;
+      const activeMeta = weeklyPosterActiveVersionMeta();
+      const continuingPartial = !newVersion && weeklyPosterVersionIsPartial(activeMeta);
+      if (newVersion) {
+        const nextHint = (weeklyPosterVersionState.versions || []).length
+          ? ("v" + ((Number(weeklyPosterVersionState.active) || (weeklyPosterVersionState.versions || []).length) + 1))
+          : "v1";
+        const countNote = partial
+          ? ("\n\nOnly checked styles will generate: " + picked.join(", ").replace(/_/g, " ") + ".")
+          : "";
+        const ok = window.confirm(
+          "Generate a new poster version (" + nextHint + ") for " + sundayLabel + "?\n\n"
+          + "Older versions stay available in the Version dropdown."
+          + countNote
+        );
+        if (!ok) {
+          weeklyPosterUnlockReadyChecks = false;
+          syncWeeklyPosterGenerateUi();
+          return;
+        }
+      }
+      // Partial selection / continue-partial always regenerates checked styles.
+      const queue = weeklyPosterStyleQueue(newVersion || partial || continuingPartial);
+      if (!queue.length) {
+        if (status) status.textContent = "Poster styles are already ready for " + sundayLabel + ".";
+        setWeeklyPosterProgress(null);
+        return;
+      }
       weeklyPosterEnsureInflight = true;
+      weeklyPosterForceInflight = newVersion;
       if (btn) {
         btn.disabled = true;
-        btn.textContent = "Generating…";
+        if (!newVersion) btn.textContent = "Generating…";
       }
-      if (status) status.textContent = "Generating poster styles…";
+      if (regenBtn) {
+        regenBtn.disabled = true;
+        if (newVersion) regenBtn.textContent = "Generating new version…";
+      }
+      let genCount = 0;
+      let lastCatalog = null;
+      let batchVersion = null;
+      const total = queue.length;
       try {
-        const res = await fetch("/api/weekly-style-posters/ensure", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ date: date }),
-        });
-        const ensured = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error((ensured && (ensured.detail || ensured.error)) || "Generate failed");
+        if (window.VerbumAuth && typeof window.VerbumAuth.waitUntilReady === "function") {
+          await window.VerbumAuth.waitUntilReady(4000);
         }
-        const catalog = ensured.catalog || null;
-        if (catalog && catalog.items) {
-          renderWeeklyStylePosterCards(catalog.items);
-          const rc = Number(catalog.ready_count || 0);
-          const tc = Number(catalog.total || 0);
-          if (hint) {
-            hint.textContent = rc >= tc
-              ? "Your pick becomes the Mass divider background."
-              : (rc + " of " + tc + " styles ready — pick one when available.");
+        const headers = { "Content-Type": "application/json" };
+        if (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function") {
+          Object.assign(headers, await window.VerbumAuth.getAuthHeaders());
+        }
+        for (let i = 0; i < queue.length; i += 1) {
+          const item = queue[i];
+          const step = i + 1;
+          const pct = Math.round(((step - 1) / total) * 100);
+          markWeeklyPosterCardLoading(item.id, true);
+          setWeeklyPosterProgress({
+            active: true,
+            index: step,
+            total: total,
+            pct: pct,
+            styleId: item.id,
+            styleLabel: item.label,
+            dateLabel: sundayLabel,
+          });
+          if (status) {
+            status.textContent = (newVersion ? "New version" : "Generating")
+              + " " + step + "/" + total + " · " + item.label
+              + " · " + sundayLabel;
           }
-          syncWeeklyPosterGenerateUi(catalog);
-          syncWeeklyAiPosterGate(catalog);
-        } else {
-          await refreshWeeklyStylePosters();
+          const body = { date: date, style: item.id };
+          if (newVersion) {
+            body.force = true;
+            body.new_version = true;
+            if (batchVersion) body.version = batchVersion;
+          } else if (continuingPartial && activeMeta) {
+            // Finish styles still missing from the active partial version (e.g. v3).
+            body.force = true;
+            body.new_version = true;
+            body.version = batchVersion || Number(activeMeta.version || 0);
+          } else if (partial) {
+            // Prompt test: overwrite the checked styles without allocating a full new version.
+            body.force = true;
+            body.overwrite_only = true;
+          }
+          const res = await fetch("/api/weekly-style-posters/ensure", {
+            method: "POST",
+            headers: headers,
+            credentials: "same-origin",
+            body: JSON.stringify(body),
+          });
+          const ensured = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const detail = ensured && (ensured.detail || ensured.error);
+            const msg = typeof sanitizePublicError === "function"
+              ? sanitizePublicError(detail || ("Generate failed (" + res.status + ")"))
+              : (typeof detail === "string" ? detail : ("Generate failed (" + res.status + ")"));
+            throw new Error(msg);
+          }
+          if (ensured.version != null && batchVersion == null) {
+            batchVersion = Number(ensured.version) || null;
+          }
+          if (ensured.versions) syncWeeklyPosterVersionUi(ensured.versions);
+          if (Array.isArray(ensured.generated)) genCount += ensured.generated.length;
+          clearWeeklyPosterThumbCache({
+            sunday: String(
+              (ensured.catalog && (ensured.catalog.sunday || ensured.catalog.date))
+              || weeklyPosterCatalogState.sunday
+              || date
+              || ""
+            ).trim(),
+          });
+          const catalog = weeklyPosterViewCatalogForActiveVersion()
+            || applyWeeklyPosterVersionReadyOverlay(ensured.catalog || null)
+            || ensured.catalog
+            || null;
+          if (catalog && catalog.items) {
+            lastCatalog = catalog;
+            renderWeeklyStylePosterCards(catalog.items);
+            const rc = Number(catalog.ready_count || 0);
+            const tc = Number(catalog.total || 5);
+            if (hint) {
+              hint.textContent = rc >= tc
+                ? "Your pick becomes the Mass divider background."
+                : (rc + " of " + tc + " styles ready — pick one when available.");
+            }
+            syncWeeklyPosterGenerateUi(catalog);
+            syncWeeklyAiPosterGate(catalog);
+          }
+          markWeeklyPosterCardLoading(item.id, false);
+          setWeeklyPosterProgress({
+            active: true,
+            index: step,
+            total: total,
+            pct: Math.round((step / total) * 100),
+            styleId: item.id,
+            styleLabel: item.label,
+            dateLabel: sundayLabel,
+            phase: step >= total ? "done" : "running",
+          });
         }
-        const genCount = Array.isArray(ensured.generated) ? ensured.generated.length : 0;
+        if (!lastCatalog) await refreshWeeklyStylePosters({ force: true });
+        else await loadWeeklyPosterVersions(date);
+        const verLabel = batchVersion ? ("v" + batchVersion) : "";
         if (status) {
-          status.textContent = genCount
-            ? ("Generated " + genCount + " style" + (genCount === 1 ? "" : "s") + ".")
-            : "No new styles needed.";
+          status.textContent = newVersion
+            ? (genCount
+              ? ("Created " + (verLabel || "new version") + " (" + genCount + " styles) for " + sundayLabel + ".")
+              : ("New version finished for " + sundayLabel + "."))
+            : (genCount
+              ? ("Generated " + genCount + " style" + (genCount === 1 ? "" : "s") + " for " + sundayLabel + ".")
+              : ("No new styles needed for " + sundayLabel + "."));
         }
         if (typeof notify === "function") {
-          notify(genCount ? ("Weekly posters updated (" + genCount + " new).") : "Weekly posters already ready.", "ok");
+          notify(
+            newVersion
+              ? (genCount ? ("Poster " + (verLabel || "version") + " ready for " + sundayLabel + ".") : "New version finished.")
+              : (genCount ? ("Weekly posters updated (" + genCount + " new) for " + sundayLabel + ".") : "Weekly posters already ready."),
+            "ok"
+          );
         }
       } catch (err) {
-        if (status) status.textContent = (err && err.message) || "Generate failed";
-        if (typeof notify === "function") notify((err && err.message) || "Generate failed", "error");
+        markWeeklyPosterCardLoading("", false);
+        if (status) status.textContent = (err && err.message) || (newVersion ? "New version failed" : "Generate failed");
+        if (typeof notify === "function") notify((err && err.message) || (newVersion ? "New version failed" : "Generate failed"), "error");
         syncWeeklyPosterGenerateUi();
       } finally {
         weeklyPosterEnsureInflight = false;
+        weeklyPosterForceInflight = false;
+        weeklyPosterUnlockReadyChecks = false;
+        markWeeklyPosterCardLoading("", false);
+        setTimeout(() => setWeeklyPosterProgress(null), 900);
+        syncWeeklyPosterGenerateUi(
+          weeklyPosterCatalogState.total
+            ? {
+              ready_count: weeklyPosterCatalogState.readyCount,
+              total: weeklyPosterCatalogState.total,
+              sunday: weeklyPosterCatalogState.sunday,
+              date: weeklyPosterCatalogState.date,
+            }
+            : undefined
+        );
       }
     }
 
-    async function refreshWeeklyStylePosters() {
-      if (weeklyPosterRefreshInflight) return weeklyPosterRefreshInflight;
-      weeklyPosterRefreshInflight = (async () => {
+    function scheduleWeeklyStylePosterRefresh(opts) {
+      const options = opts && typeof opts === "object" ? opts : {};
+      if (weeklyPosterRefreshTimer) {
+        try { clearTimeout(weeklyPosterRefreshTimer); } catch (_e) { /* ignore */ }
+      }
+      weeklyPosterRefreshTimer = setTimeout(() => {
+        weeklyPosterRefreshTimer = 0;
+        void refreshWeeklyStylePosters(options);
+      }, options.force ? 40 : 160);
+    }
+
+    async function refreshWeeklyStylePosters(opts) {
+      const options = opts && typeof opts === "object" ? opts : {};
+      const force = !!options.force;
       const date = weeklyPosterMassDate();
+      // If a refresh for this same date is already running, reuse it.
+      // If the date changed (or force), wait out the stale one then reload.
+      if (weeklyPosterRefreshInflight) {
+        if (!force && weeklyPosterRefreshDate === date) return weeklyPosterRefreshInflight;
+        try { await weeklyPosterRefreshInflight; } catch (_e) { /* ignore */ }
+      }
+      const token = ++weeklyPosterRefreshToken;
+      weeklyPosterRefreshDate = date;
+      weeklyPosterRefreshInflight = (async () => {
       const hint = $("mw-weekly-posters-hint");
       const track = $("mw-weekly-posters-track");
       if (!track) return;
-      if (!date) {
+      const dateNow = weeklyPosterMassDate();
+      weeklyPosterRefreshDate = dateNow;
+      syncWeeklyPosterDateIndicator({ sunday: dateNow, date: dateNow });
+      if (!dateNow) {
         weeklyPosterCatalogFp = "";
-        if (hint) hint.textContent = "Set the Mass date to load this week’s poster styles.";
+        if (hint) hint.textContent = "Set the Mass date in Step 1 to load this week’s poster styles.";
         track.innerHTML = "";
         syncWeeklyPosterGenerateUi();
         syncWeeklyAiPosterGate({ ready_count: 0, total: 5, sunday: "", date: "" });
+        syncWeeklyPosterDateIndicator({ sunday: "", date: "" });
         return;
       }
       try {
         const headers = (window.VerbumAuth && typeof window.VerbumAuth.getAuthHeaders === "function")
           ? await window.VerbumAuth.getAuthHeaders()
           : {};
-        const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(date), {
+        const res = await fetch("/api/weekly-style-posters?date=" + encodeURIComponent(dateNow), {
           headers: headers,
           credentials: "same-origin",
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) throw new Error((data && data.detail) || "Load failed");
-        renderWeeklyStylePosterCards(data.items || []);
-        const ready = Number(data.ready_count || 0);
-        const total = Number(data.total || 0);
+        // Drop stale responses if a newer refresh started or the Mass date changed.
+        if (token !== weeklyPosterRefreshToken || weeklyPosterMassDate() !== dateNow) return;
+        if (data.versions) syncWeeklyPosterVersionUi(data.versions);
+        else await loadWeeklyPosterVersions(dateNow);
+        // Prefer pure versioned archive previews when a version is selected —
+        // never show hybrid active files (partial v3 over leftover v2).
+        const view = weeklyPosterViewCatalogForActiveVersion()
+          || applyWeeklyPosterVersionReadyOverlay(data)
+          || data;
+        const sundayKey = String(view.sunday || dateNow);
+        const activeVer = Number(weeklyPosterVersionState.active || (view.versions && view.versions.active_version) || 0);
+        const ready = Number(view.ready_count || 0);
+        const total = Number(view.total || 0);
+        const fp = [sundayKey, activeVer, ready, total, (weeklyPosterActiveVersionMeta() && weeklyPosterActiveVersionMeta().styles || []).join(",")].join("|");
+        const sundayChanged = sundayKey !== String(weeklyPosterCatalogState.sunday || "");
+        if (!force && fp === weeklyPosterCatalogFp && track.querySelector("[data-weekly-style]")) {
+          syncWeeklyPosterGenerateUi(view);
+          syncWeeklyAiPosterGate(view);
+          syncWeeklyPosterDateIndicator(view);
+          return;
+        }
+        weeklyPosterCatalogFp = fp;
+        if (force || sundayChanged) clearWeeklyPosterThumbCache({ sunday: sundayKey });
+        renderWeeklyStylePosterCards(view.items || []);
         if (hint) {
           hint.textContent = ready >= total && total
             ? "Your pick becomes the Mass divider background."
             : (ready + " of " + total + " styles ready — pick one when available.");
         }
-        syncWeeklyPosterGenerateUi(data);
-        syncWeeklyAiPosterGate(data);
+        syncWeeklyPosterGenerateUi(view);
+        syncWeeklyAiPosterGate(view);
+        syncWeeklyPosterDateIndicator(view);
       } catch (_e) {
-        if (hint) hint.textContent = "Could not load weekly posters. You can still pick a style once they are ready.";
+        if (token !== weeklyPosterRefreshToken || weeklyPosterMassDate() !== dateNow) return;
+        if (hint) hint.textContent = "Could not load weekly posters for " + formatWeeklyPosterSundayLabel(dateNow) + ".";
         renderWeeklyStylePosterCards([
           { id: "cinematic", label: "Cinematic", ready: false },
           { id: "realistic", label: "Realistic", ready: false },
@@ -3455,21 +4546,52 @@
           { id: "modern", label: "Modern", ready: false },
         ]);
         syncWeeklyPosterGenerateUi();
-        syncWeeklyAiPosterGate({ ready_count: 0, total: 5, sunday: "", date: weeklyPosterMassDate() });
+        syncWeeklyAiPosterGate({ ready_count: 0, total: 5, sunday: dateNow, date: dateNow });
+        syncWeeklyPosterDateIndicator({ sunday: dateNow, date: dateNow });
       }
-      })().finally(() => { weeklyPosterRefreshInflight = null; });
+      })().finally(() => {
+        if (token === weeklyPosterRefreshToken) weeklyPosterRefreshInflight = null;
+      });
       return weeklyPosterRefreshInflight;
     }
 
     function initWeeklyStylePosters() {
       const host = $("mw-weekly-posters");
       const genBtn = $("mw-weekly-posters-generate");
+      const regenBtn = $("mw-weekly-posters-regenerate");
+      const verSel = $("mw-weekly-posters-version");
+      const sunSel = $("mw-weekly-posters-sunday");
       if (genBtn && genBtn.dataset.bound !== "1") {
         genBtn.dataset.bound = "1";
         genBtn.addEventListener("click", () => { void generateWeeklyStylePosters(); });
       }
+      if (regenBtn && regenBtn.dataset.bound !== "1") {
+        regenBtn.dataset.bound = "1";
+        regenBtn.addEventListener("click", () => { void generateWeeklyStylePosters({ newVersion: true }); });
+      }
+      if (verSel && verSel.dataset.bound !== "1") {
+        verSel.dataset.bound = "1";
+        verSel.addEventListener("change", () => {
+          void activateWeeklyPosterVersion(verSel.value);
+        });
+      }
+      if (sunSel && sunSel.dataset.bound !== "1") {
+        sunSel.dataset.bound = "1";
+        sunSel.addEventListener("change", () => {
+          const iso = String(sunSel.value || "").trim();
+          const massEl = $("mass-date");
+          if (iso && massEl && massEl.value !== iso) {
+            massEl.value = iso;
+            massEl.dispatchEvent(new Event("change", { bubbles: true }));
+            if (typeof syncMassDatePickerByInputId === "function") syncMassDatePickerByInputId("mass-date");
+          }
+          scheduleWeeklyStylePosterRefresh({ force: true });
+        });
+      }
+      window.refreshWeeklyStylePosters = refreshWeeklyStylePosters;
+      window.scheduleWeeklyStylePosterRefresh = scheduleWeeklyStylePosterRefresh;
       if (!host || host.dataset.bound === "1") {
-        void refreshWeeklyStylePosters();
+        scheduleWeeklyStylePosterRefresh({ force: true });
         return;
       }
       host.dataset.bound = "1";
@@ -3488,8 +4610,7 @@
           setTimeout(() => host.classList.remove("is-paused"), 8000);
         });
       }
-      void refreshWeeklyStylePosters();
-      window.refreshWeeklyStylePosters = refreshWeeklyStylePosters;
+      scheduleWeeklyStylePosterRefresh();
       window.setWeeklyPosterStyle = setWeeklyPosterStyle;
       window.preloadExtrasPosterAssets = function preloadExtrasPosterAssets() {
         // Liturgy thumbs only — do not re-fetch weekly catalog here.
@@ -3545,6 +4666,9 @@
             const other = $(oid);
             if (other) other.value = el.value;
           });
+          if (!homeCtaPosterSyncingFromHome && typeof syncHomeCtaPosterToExtrasStyle === "function") {
+            void syncHomeCtaPosterToExtrasStyle(el.value);
+          }
         });
       });
       migrateLegacyAiPosterToggles();

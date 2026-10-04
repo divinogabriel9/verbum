@@ -14,7 +14,23 @@ _NEGATIVE = (
     "readable text, letters, words, typography, captions, subtitles, speech bubbles, "
     "Bible verse written on image, scripture text overlay, title card, fake poster text, "
     "misspelled words, garbled text, movie poster text, watermark, logo, UI, "
-    "solid color only, empty scene, deformed hands, extra limbs, low quality, blurry"
+    "solid color only, empty scene, deformed hands, extra limbs, low quality, blurry, "
+    "generic standing open-arm Jesus, stock Sunday-school teaching pose, identical pose "
+    "reused across unrelated Gospel scenes"
+)
+
+_ANTI_SAMENESS = (
+    "VARIETY RULE: Stage THIS Gospel's unique narrative beat. Prefer story-specific props, "
+    "secondary characters, spatial relationships, and body language from the reading. "
+    "Do not default to a standing frontal Jesus with open arms and a semicircle of disciples "
+    "unless that is literally the pericope."
+)
+
+_DECISIVE_MOMENT = (
+    "DECISIVE MOMENT: Paint ONE climax beat unique to this pericope — the turning action, "
+    "confrontation, miracle, recognition, judgment, or mercy received. "
+    "Do not settle for a soft establishing shot of the setting alone, "
+    "an empty banquet hall, or a generic outdoor teaching circle."
 )
 
 
@@ -28,8 +44,9 @@ def composition_prompt_lines(profile: CompositionProfile) -> list[str]:
     lines = [
         f"{profile.aspect_ratio} PowerPoint widescreen landscape, ultra high quality, "
         "presentation-ready, full-bleed edge-to-edge biblical scene, no letterboxing.",
-        f"Place the main visual subject toward the {subject} of the frame "
-        f"(focal point near {int(fx * 100)}% from the left, {int(fy * 100)}% from the top).",
+        f"Keep the primary narrative beat toward the {subject} of the frame "
+        f"(focal point near {int(fx * 100)}% from the left, {int(fy * 100)}% from the top), "
+        "but vary pose, scale, and blocking so weeks do not look like costume changes on one stance.",
     ]
     if left >= 0.2:
         complexity = profile.background_complexity.get("left", "low")
@@ -66,26 +83,40 @@ def build_background_prompt(
     """Artwork-only prompt. Never include Mass copy, names, dates, or citations."""
     tones = ", ".join(analysis.emotional_tone[:3]) or "reverent"
     secondaries = ", ".join(analysis.secondary_themes[:3])
+    # Narrative climax first — style chrome after — so the model does not overfit stock poses.
     parts = [
-        "Generate a cinematic biblical illustration BACKGROUND for a church presentation slide.",
+        "Generate a biblical illustration BACKGROUND for a church presentation slide.",
         NO_TEXT_EXCLUSIONS,
-        f"STYLE: {style.label}. {style.prompt}".rstrip(".") + ".",
+        _ANTI_SAMENESS,
+        _DECISIVE_MOMENT,
+        f"NARRATIVE BEAT (must be visually specific to THIS Gospel): {analysis.visual_concept}.",
     ]
-    if style.avoid:
-        parts.append(f"Avoid: {style.avoid}.")
+    if analysis.action:
+        parts.append(f"ACTION & GESTURE: {analysis.action}.")
+    parts.append(f"FOCAL SUBJECT: {analysis.focal_subject}.")
+    if analysis.supporting_figures:
+        parts.append(f"SUPPORTING FIGURES / PROPS: {analysis.supporting_figures}.")
+    parts.append(f"ENVIRONMENT: {analysis.environment}.")
+    if analysis.camera:
+        parts.append(f"CAMERA & BLOCKING: {analysis.camera}.")
     parts.extend(
         [
             f"Primary spiritual theme: {analysis.primary_theme}.",
             f"Secondary themes: {secondaries}." if secondaries else "",
             f"Emotional tone: {tones}.",
-            f"Visual concept: {analysis.visual_concept}.",
             f"Visual metaphor: {analysis.visual_metaphor}.",
-            f"Focal subject: {analysis.focal_subject}.",
-            f"Environment: {analysis.environment}.",
         ]
     )
+    if analysis.must_avoid:
+        parts.append(f"Must avoid: {analysis.must_avoid}.")
+    parts.append(f"STYLE: {style.label}. {style.prompt}".rstrip(".") + ".")
+    if style.avoid:
+        parts.append(f"Avoid: {style.avoid}.")
     parts.extend(composition_prompt_lines(profile))
-    parts.append("Focus on visual storytelling and worship atmosphere.")
+    parts.append(
+        "Focus on the decisive visual storytelling unique to this Gospel moment, "
+        "readable in one glance as THIS Sunday's reading."
+    )
     return " ".join(p for p in parts if p)
 
 

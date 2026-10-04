@@ -3645,6 +3645,10 @@
           isolation: isolate;
           border-radius: 14px;
         }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-body {
+          position: relative;
+          isolation: isolate;
+        }
         body.mw-on .mw-step-canvas.is-extras-step .mw-ai-poster-gate {
           position: absolute;
           inset: 0;
@@ -3673,7 +3677,10 @@
           border-radius: 10px;
           pointer-events: none;
         }
-        body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-ai-poster-section > :not(.mw-ai-poster-gate):not(.mw-weekly-posters__toolbar),
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked .mw-ai-poster-body > :not(.mw-ai-poster-gate),
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked > .vb-select,
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked .mw-ai-poster-section .vb-select,
+        body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-ai-poster-body > :not(.mw-ai-poster-gate),
         body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked > .vb-select,
         body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-ai-poster-section .vb-select {
           opacity: 0.45;
@@ -3681,12 +3688,22 @@
           pointer-events: none;
           user-select: none;
         }
+        /* SA generate control must stay clickable while styles are locked. */
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__toolbar[data-superadmin-only],
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked .mw-weekly-posters__toolbar[data-superadmin-only],
         body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-weekly-posters__toolbar[data-superadmin-only] {
           position: relative;
           z-index: 45;
           pointer-events: auto;
           opacity: 1;
           filter: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step #flow-ai-poster-style-wrap.is-ai-poster-locked .mw-weekly-posters__toolbar .mw-btn,
+        body.mw-on .mw-step-canvas.is-extras-step #flow-openai-style-wrap.is-ai-poster-locked .mw-weekly-posters__toolbar .mw-btn {
+          pointer-events: auto;
+          opacity: 1;
+          filter: none;
+          cursor: pointer;
         }
         body.mw-on .mw-step-canvas.is-extras-step .flow-poster-style--weekly {
           display: block;
@@ -3732,6 +3749,220 @@
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__toolbar .mw-btn {
           font-size: 0.8rem;
           padding: 7px 12px;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field {
+          display: inline-flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 6px;
+          min-width: 12.5rem;
+          max-width: 18rem;
+          flex: 0 1 16rem;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-checks {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          margin: 0;
+          padding: 0;
+          border: 0;
+          min-width: 0;
+          flex: 1 1 100%;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-checks[hidden] {
+          display: none !important;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-checks legend {
+          padding: 0;
+          margin: 0;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-check-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-check {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin: 0;
+          padding: 6px 10px;
+          border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+          border-radius: 999px;
+          background: #fff;
+          font-size: 0.76rem;
+          font-weight: 600;
+          color: var(--ink);
+          cursor: pointer;
+          user-select: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-check:has(input:checked) {
+          border-color: color-mix(in srgb, var(--accent, #8a6a3a) 55%, transparent);
+          background: color-mix(in srgb, var(--accent, #8a6a3a) 12%, #fff);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-check:has(input:disabled),
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-check.is-ready {
+          opacity: 0.45;
+          cursor: not-allowed;
+          background: color-mix(in srgb, var(--ink) 6%, #fff);
+          border-color: color-mix(in srgb, var(--ink) 10%, transparent);
+          color: color-mix(in srgb, var(--ink) 45%, transparent);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-check input {
+          margin: 0;
+          accent-color: var(--accent, #8a6a3a);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__style-check input:disabled {
+          cursor: not-allowed;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field[hidden] {
+          display: none !important;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-label {
+          display: block;
+          margin: 0;
+          font-size: var(--mw-type-fine, var(--type-fine, 0.75rem));
+          font-weight: 600;
+          letter-spacing: -0.01em;
+          text-transform: none;
+          color: var(--muted, #5C6B75);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select,
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select--weekly {
+          width: 100%;
+          max-width: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__trigger {
+          min-height: var(--mw-control-h, 44px);
+          padding: 0 var(--mw-control-pad-x, 14px);
+          border-radius: var(--mw-control-radius, 12px);
+          border: 1px solid var(--card-border, #E4E9EF);
+          background: var(--surface-solid, #fff);
+          color: var(--ink, #15333D);
+          font-size: var(--mw-type-caption, var(--type-helper, 0.875rem));
+          font-weight: 500;
+          letter-spacing: -0.016em;
+          box-shadow: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__trigger:hover {
+          border-color: color-mix(in srgb, var(--ink, #15333D) 22%, var(--card-border, #E4E9EF));
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__trigger:focus-visible,
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__trigger[aria-expanded="true"] {
+          border-color: color-mix(in srgb, var(--good, #a10f0d) 45%, var(--card-border, #E4E9EF));
+          outline: 2px solid color-mix(in srgb, var(--good, #a10f0d) 22%, transparent);
+          outline-offset: 1px;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__trigger:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__value {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__value.is-placeholder {
+          color: var(--muted, #5C6B75);
+          font-weight: 400;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__chevron {
+          width: 16px;
+          height: 16px;
+          flex: 0 0 auto;
+          color: var(--muted, #5C6B75);
+          opacity: 0.9;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-select__panel {
+          z-index: 40;
+          min-width: 100%;
+          max-width: min(22rem, 92vw);
+          border-radius: var(--mw-control-radius, 12px);
+          border: 1px solid var(--card-border, #E4E9EF);
+          box-shadow: var(--shadow-large, 0 18px 40px rgba(21, 51, 61, 0.12));
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-dropdown-item {
+          font-size: var(--mw-type-caption, var(--type-helper, 0.875rem));
+          font-weight: 500;
+          letter-spacing: -0.016em;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__version-field .vb-dropdown-item.is-active {
+          color: var(--good, #a10f0d);
+        }
+        /* Fallback if vb-select has not enhanced yet */
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__select:not(.vb-select__native) {
+          box-sizing: border-box;
+          display: block;
+          width: 100%;
+          min-height: var(--mw-control-h, 44px);
+          padding: 0 var(--mw-control-pad-x, 14px);
+          border-radius: var(--mw-control-radius, 12px);
+          border: 1px solid var(--card-border, #E4E9EF);
+          background: var(--surface-solid, #fff);
+          color: var(--ink, #15333D);
+          font-size: var(--mw-type-caption, var(--type-helper, 0.875rem));
+          font-weight: 500;
+          letter-spacing: -0.016em;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__date {
+          margin: 6px 0 0;
+          font-size: 0.82rem;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          color: color-mix(in srgb, var(--ink) 72%, transparent);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__progress {
+          margin: 10px 0 4px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+          background: color-mix(in srgb, var(--accent) 7%, transparent);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__progress-top {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          font-size: 0.8rem;
+          color: color-mix(in srgb, var(--ink) 82%, transparent);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__progress-label {
+          flex: 1 1 auto;
+          min-width: 0;
+          line-height: 1.35;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__progress-pct {
+          font-variant-numeric: tabular-nums;
+          font-weight: 700;
+          color: var(--accent);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__spinner {
+          width: 14px;
+          height: 14px;
+          border-radius: 999px;
+          border: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
+          border-top-color: var(--accent);
+          flex: 0 0 auto;
+          animation: mw-weekly-spin 0.7s linear infinite;
+        }
+        @keyframes mw-weekly-spin {
+          to { transform: rotate(360deg); }
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__progress-track {
+          height: 6px;
+          border-radius: 999px;
+          background: color-mix(in srgb, var(--ink) 10%, transparent);
+          overflow: hidden;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__progress-fill {
+          height: 100%;
+          width: 0%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 75%, #fff), var(--accent));
+          transition: width 0.35s ease;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters.is-generating {
+          opacity: 0.98;
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__nav {
           position: absolute;
@@ -3835,6 +4066,41 @@
           border-radius: 14px;
           overflow: hidden;
           background: color-mix(in srgb, var(--ink) 8%, transparent);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          border-radius: 14px;
+          background:
+            linear-gradient(110deg, transparent 30%, color-mix(in srgb, #fff 28%, transparent) 48%, transparent 66%),
+            color-mix(in srgb, #000 28%, transparent);
+          background-size: 180% 100%, auto;
+          animation: mw-weekly-shimmer 1.1s ease-in-out infinite;
+          pointer-events: none;
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading.is-selected .mw-weekly-posters__frame::after {
+          box-shadow: inset 0 0 0 3px var(--accent);
+        }
+        body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__card.is-loading .mw-weekly-posters__frame::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 22px;
+          height: 22px;
+          margin: -11px 0 0 -11px;
+          border-radius: 999px;
+          border: 2px solid color-mix(in srgb, #fff 35%, transparent);
+          border-top-color: #fff;
+          z-index: 2;
+          animation: mw-weekly-spin 0.7s linear infinite;
+          pointer-events: none;
+        }
+        @keyframes mw-weekly-shimmer {
+          0% { background-position: 120% 0, 0 0; }
+          100% { background-position: -60% 0, 0 0; }
         }
         body.mw-on .mw-step-canvas.is-extras-step .mw-weekly-posters__label {
           position: absolute;

@@ -763,10 +763,11 @@ def register_admin_routes(app) -> None:
     ) -> dict[str, Any]:
         parish_id = (body.parish_id or "").strip() or None
         community_name = (body.community_name or "").strip()
-        if not parish_id and not community_name:
+        role = (body.invite_role or "president").strip().lower()
+        if not parish_id and role == "media":
             raise HTTPException(
                 status_code=400,
-                detail="Provide parish_id for an existing parish or community_name for a new parish.",
+                detail="Select an approved parish for media team invites.",
             )
         try:
             row = create_invite(
@@ -775,7 +776,7 @@ def register_admin_routes(app) -> None:
                 note=body.note,
                 community_name=community_name or None,
                 parish_id=parish_id,
-                invite_role=body.invite_role,
+                invite_role=role,
                 ttl_days=body.ttl_days,
             )
         except ValueError as exc:
@@ -882,6 +883,58 @@ def register_admin_routes(app) -> None:
             },
         )
         return {"ok": True, "church_profile": row, "emailed": emailed}
+
+    @app.get("/api/admin/parish-joins/pending")
+    def api_pending_parish_joins(
+        _session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        from services.parish_join import list_pending_join_requests
+
+        return {"ok": True, "pending": list_pending_join_requests()}
+
+    @app.post("/api/admin/parish-joins/{request_id}/approve")
+    def api_approve_parish_join(
+        request_id: str,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        from services.parish_join import resolve_join_request
+
+        result = resolve_join_request(
+            request_id, approve=True, actor_user_id=session.user.user_id
+        )
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="approve",
+            entity_type="parish_join",
+            entity_id=request_id,
+            detail={
+                "community_name": result.get("community_name"),
+                "status": "approved",
+            },
+        )
+        return result
+
+    @app.post("/api/admin/parish-joins/{request_id}/reject")
+    def api_reject_parish_join(
+        request_id: str,
+        session: AuthSession = Depends(require_superadmin),
+    ) -> dict[str, Any]:
+        from services.parish_join import resolve_join_request
+
+        result = resolve_join_request(
+            request_id, approve=False, actor_user_id=session.user.user_id
+        )
+        log_admin_action(
+            actor_user_id=session.user.user_id,
+            action="reject",
+            entity_type="parish_join",
+            entity_id=request_id,
+            detail={
+                "community_name": result.get("community_name"),
+                "status": "rejected",
+            },
+        )
+        return result
 
     @app.get("/api/admin/submissions/songs/pending")
     def api_pending_song_submissions(

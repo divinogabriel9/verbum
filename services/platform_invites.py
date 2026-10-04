@@ -93,17 +93,17 @@ def create_invite(
         clean_name = (parish.get("community_name") or clean_name).strip()
         if not clean_name:
             raise ValueError("Parish name could not be resolved.")
-    elif not clean_name:
-        raise ValueError("Parish name is required for new parish invites.")
     elif role == "media":
         raise ValueError("parish_id is required for media invites.")
+    # New-parish president invites: parish name is optional. The invitee types it
+    # during onboarding; superadmin can rename/verify spelling later.
     expires_at = (_now() + timedelta(days=max(1, min(ttl_days, 90)))).isoformat()
     token = secrets.token_urlsafe(32)
     payload: dict[str, Any] = {
         "token": token,
         "email": clean_email,
         "note": (note or "").strip() or None,
-        "community_name": clean_name,
+        "community_name": clean_name or None,
         "invite_role": role,
         "expires_at": expires_at,
     }

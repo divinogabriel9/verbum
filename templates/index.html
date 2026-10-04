@@ -83,7 +83,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261003-no-quota-hint" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261005-weekly-select1" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -2883,13 +2883,53 @@
                           <div>
                             <label for="flow-ai-poster-style">Weekly Gospel posters — pick a style</label>
                             <p class="muted flow-setup-field-hint" id="mw-weekly-posters-hint">Your pick becomes the Mass divider background.</p>
+                            <p class="mw-weekly-posters__date" id="mw-weekly-posters-date" hidden></p>
                           </div>
                         </div>
                         <div class="mw-weekly-posters__toolbar" data-superadmin-only>
+                          <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-sunday-field" hidden>
+                            <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-sunday">Sunday</label>
+                            <select id="mw-weekly-posters-sunday" class="mw-weekly-posters__select" aria-label="Poster Mass Sunday"></select>
+                          </div>
+                          <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-version-field" hidden>
+                            <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-version">Version</label>
+                            <select id="mw-weekly-posters-version" class="mw-weekly-posters__select" aria-label="Poster version"></select>
+                          </div>
+                          <fieldset class="mw-weekly-posters__style-checks" id="mw-weekly-posters-style-checks" data-superadmin-only hidden>
+                            <legend class="mw-weekly-posters__version-label">Styles to generate</legend>
+                            <div class="mw-weekly-posters__style-check-list">
+                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="cinematic" checked /><span>Cinematic</span></label>
+                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="realistic" checked /><span>Realistic</span></label>
+                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="renaissance" checked /><span>Renaissance</span></label>
+                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="stained_glass" checked /><span>Stained Glass</span></label>
+                              <label class="mw-weekly-posters__style-check"><input type="checkbox" name="mw-weekly-gen-style" value="modern" checked /><span>Modern</span></label>
+                            </div>
+                          </fieldset>
                           <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-generate" hidden>
                             Generate this week’s styles
                           </button>
+                          <button type="button" class="mw-btn mw-btn--soft" id="mw-weekly-posters-regenerate" hidden title="Create a new version (v2, v3…) without deleting older ones">
+                            Generate new version
+                          </button>
                           <span class="muted" id="mw-weekly-posters-gen-status" aria-live="polite"></span>
+                        </div>
+                        <div class="mw-weekly-posters__progress" id="mw-weekly-posters-progress" hidden>
+                          <div class="mw-weekly-posters__progress-top">
+                            <span class="mw-weekly-posters__spinner" aria-hidden="true"></span>
+                            <span class="mw-weekly-posters__progress-label" id="mw-weekly-posters-progress-label">Generating…</span>
+                            <span class="mw-weekly-posters__progress-pct" id="mw-weekly-posters-progress-pct">0%</span>
+                          </div>
+                          <div
+                            class="mw-weekly-posters__progress-track"
+                            id="mw-weekly-posters-progress-track"
+                            role="progressbar"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0"
+                            aria-labelledby="mw-weekly-posters-progress-label"
+                          >
+                            <div class="mw-weekly-posters__progress-fill" id="mw-weekly-posters-progress-fill"></div>
+                          </div>
                         </div>
                         <div class="mw-ai-poster-body" id="mw-ai-poster-body">
                         <input type="checkbox" id="flow-use-ai-poster" class="sr-only" checked tabindex="-1" aria-hidden="true" />
@@ -2927,6 +2967,9 @@
                           </div>
                           <p class="muted flow-setup-field-hint">Fades the carousel poster behind divider text. 0% = full strength, 10% = softest fade.</p>
                         </div>
+                        <div class="mw-ai-poster-gate" id="mw-ai-poster-gate" data-ai-ready="0" hidden>
+                          <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
+                        </div>
                         </div>
                         <select id="flow-ai-poster-style" class="sr-only" tabindex="-1" aria-hidden="true" data-vb-select="off">
                           <option value="auto">Auto — match the Gospel mood</option>
@@ -2936,9 +2979,6 @@
                           <option value="stained_glass">Stained glass</option>
                           <option value="modern">Modern</option>
                         </select>
-                        <div class="mw-ai-poster-gate" id="mw-ai-poster-gate" data-ai-ready="0" hidden>
-                          <p class="mw-ai-poster-gate__msg" id="mw-ai-poster-gate-msg" role="status"></p>
-                        </div>
                         </div>
                       </div>
                     </div>
@@ -3158,7 +3198,7 @@
 
       </section>
 
-      <script src="/static/js/mw-wizard.js?v=20261004-poster-quota"></script>
+      <script src="/static/js/mw-wizard.js?v=20261004-weekly-versions2"></script>
 
       <section class="page" id="radio-page" data-route="/radio">
         <div class="workspace media-hub-workspace">
@@ -3789,7 +3829,7 @@
               <header class="flow-bento-cell__head home-card-head">
                 <div class="home-card-head__text">
                   <h3>Account invites</h3>
-                  <p>Invite a new president (new parish) or add a president/media teammate to an approved parish.</p>
+                  <p>Invite a new parish lead, or add a president/media teammate to an approved parish. New leads type their parish name at signup — you can rename/verify spelling in Parishes.</p>
                 </div>
               </header>
               <div class="sa-section">
@@ -3798,7 +3838,7 @@
                   <span class="field-label">Invite type</span>
                   <div class="sa-quick-actions" role="radiogroup" aria-label="Invite type" style="margin-top:6px;">
                     <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-existing" value="existing" checked /> Existing parish</label>
-                    <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-new" value="new" /> New parish</label>
+                    <label class="sa-chip-label"><input type="radio" name="sa-invite-mode" id="sa-invite-mode-new" value="new" /> New parish lead</label>
                   </div>
                 </div>
                 <div id="sa-invite-existing-wrap">
@@ -3818,10 +3858,10 @@
                   </div>
                 </div>
                 <div id="sa-invite-new-wrap" hidden>
-                  <div class="field">
-                    <label for="sa-invite-parish-name">New parish name</label>
-                    <input type="text" id="sa-invite-parish-name" maxlength="120" placeholder="e.g. St. Mary's Parish" autocomplete="organization" />
-                  </div>
+                  <p class="muted" style="margin:0 0 8px;font-size:0.86rem;">
+                    Send the link only. The invitee enters their parish name during signup (create or join). You can correct spelling later under Parishes.
+                  </p>
+                  <input type="hidden" id="sa-invite-parish-name" value="" />
                 </div>
                 <div class="field">
                   <label for="sa-invite-email">Email (optional lock)</label>
@@ -4967,7 +5007,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261004-apostle-cartoons"></script>
+  <script src="/static/js/app.js?v=20261005-partial-style-pick"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

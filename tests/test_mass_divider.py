@@ -112,10 +112,67 @@ def test_gospel_analysis_canaanite_woman():
         "visual_metaphor",
         "focal_subject",
         "environment",
+        "action",
+        "camera",
+        "must_avoid",
     ):
         assert payload[key]
     assert "faith" in analysis.primary_theme.lower() or "woman" in analysis.visual_concept.lower()
     assert "Christ" in analysis.visual_concept or "Christ" in analysis.focal_subject
+    assert "kneel" in analysis.action.lower() or "woman" in analysis.focal_subject.lower()
+    assert "tyre" in analysis.environment.lower() or "sidon" in analysis.environment.lower()
+
+
+def test_gospel_analysis_sower_differs_from_storm():
+    sower = analyze_gospel_visual(
+        sunday_title="15th Sunday in Ordinary Time",
+        gospel_reference="Matthew 13:1-23",
+        gospel_text="A sower went out to sow. Some seed fell on the path, some on rocky ground, some among thorns, and some on good soil.",
+        gospel_quote="A sower went out to sow.",
+        season_key="ordinary_time",
+    )
+    storm = analyze_gospel_visual(
+        sunday_title="12th Sunday in Ordinary Time",
+        gospel_reference="Mark 4:35-41",
+        gospel_text="A great storm of wind arose, and the waves beat into the boat. He rebuked the wind and said Peace! Be still!",
+        gospel_quote="Peace! Be still!",
+        season_key="ordinary_time",
+    )
+    assert sower.visual_concept != storm.visual_concept
+    assert sower.action != storm.action
+    assert sower.environment != storm.environment
+    assert "sower" in sower.visual_concept.lower() or "seed" in sower.visual_concept.lower()
+    assert "boat" in storm.visual_concept.lower() or "storm" in storm.visual_concept.lower() or "sea" in storm.environment.lower()
+
+
+def test_gospel_analysis_wedding_feast_uses_judgment_climax():
+    analysis = analyze_gospel_visual(
+        sunday_title="28th Sunday in Ordinary Time",
+        gospel_reference="Matthew 22:1-14",
+        gospel_text=(
+            "The kingdom of heaven may be likened to a king who gave a wedding feast for his son. "
+            "The servants went out into the streets and gathered all they found, bad and good alike, "
+            "and the hall was filled with guests. But when the king came in to meet the guests, "
+            "he saw a man there not dressed in a wedding garment. Then the king said to his attendants, "
+            "Bind his hands and feet, and cast him into the darkness outside, where there will be "
+            "wailing and grinding of teeth. Many are invited, but few are chosen."
+        ),
+        gospel_quote="Many are invited, but few are chosen.",
+        season_key="ordinary_time",
+    )
+    blob = " ".join(
+        [
+            analysis.visual_concept,
+            analysis.action,
+            analysis.focal_subject,
+            analysis.environment,
+            analysis.visual_metaphor,
+        ]
+    ).lower()
+    assert "garment" in blob or "king" in blob
+    assert "dark" in blob or "judgment" in analysis.action.lower() or "attend" in blob
+    assert "arriving" not in analysis.visual_concept.lower()
+    assert "outer darkness" in analysis.visual_metaphor.lower() or "unready" in analysis.visual_metaphor.lower()
 
 
 def test_prompt_is_artwork_only():
@@ -139,8 +196,13 @@ def test_prompt_is_artwork_only():
     assert "20th sunday" not in prompt
     assert "text-safe" in prompt
     assert "cinematic" in prompt
+    assert "narrative beat" in prompt
+    assert "decisive moment" in prompt
+    assert "action & gesture" in prompt
+    assert "open arms" in prompt or "open-arm" in prompt
+    assert prompt.index("narrative beat") < prompt.index("style:")
     assert "letters" in negative_prompt()
-
+    assert "open-arm" in negative_prompt() or "open arms" in negative_prompt()
 
 def test_style_json_loads_structured_entries():
     prompts = load_style_prompts()

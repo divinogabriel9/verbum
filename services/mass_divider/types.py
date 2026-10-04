@@ -116,6 +116,10 @@ class GospelVisualAnalysis:
     visual_metaphor: str
     focal_subject: str
     environment: str
+    action: str = ""
+    camera: str = ""
+    supporting_figures: str = ""
+    must_avoid: str = ""
     recommended_style: str = AI_STYLE_DEFAULT
     mood_key: str = "reverent"
 
@@ -128,6 +132,10 @@ class GospelVisualAnalysis:
             "visual_metaphor": self.visual_metaphor,
             "focal_subject": self.focal_subject,
             "environment": self.environment,
+            "action": self.action,
+            "camera": self.camera,
+            "supporting_figures": self.supporting_figures,
+            "must_avoid": self.must_avoid,
             "recommended_style": self.recommended_style,
             "mood_key": self.mood_key,
         }

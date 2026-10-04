@@ -61,6 +61,143 @@ def profile_onboarding_complete(profile: Optional[dict[str, Any]]) -> bool:
     return False
 
 
+def require_profile_onboarding_complete(profile: Optional[dict[str, Any]]) -> None:
+    """Raise 403 when the mandatory signup form has not been submitted."""
+    if profile_onboarding_complete(profile):
+        return
+    raise HTTPException(
+        status_code=403,
+        detail="Complete the signup form before using LiturgyFlow.",
+    )
+
+
+def _auth_signup_provider(user_id: str) -> str:
+    """Best-effort Auth provider label (google / email / …)."""
+    uid = (user_id or "").strip()
+    if not uid:
+        return ""
+    try:
+        svc = get_service_client()
+        res = svc.auth.admin.get_user_by_id(uid)
+        user = getattr(res, "user", None) or res
+        app_meta = getattr(user, "app_metadata", None)
+        if app_meta is None and isinstance(user, dict):
+            app_meta = user.get("app_metadata")
+        if not isinstance(app_meta, dict):
+            app_meta = {}
+        providers = app_meta.get("providers") or []
+        if isinstance(providers, list) and providers:
+            return ",".join(str(p) for p in providers if p)
+        provider = str(app_meta.get("provider") or "").strip()
+        return provider
+    except Exception:
+        logger.debug("Could not resolve auth provider for %s", uid, exc_info=True)
+        return ""
+
+
+def maybe_alert_new_signup(
+    user_id: str,
+    *,
+    email: str = "",
+    display_name: str = "",
+    profile: Optional[dict[str, Any]] = None,
+) -> bool:
+    """Alert operators once when a new Auth user first hits the app.
+
+    Claim is atomic via ``signup_alerted_at`` so Google/email signups notify
+    even before the mandatory onboarding form is filled.
+    """
+    uid = (user_id or "").strip()
+    if not uid or not supabase_enabled():
+        return False
+    row = profile if isinstance(profile, dict) else get_profile(uid)
+    if not row:
+        return False
+    if row.get("signup_alerted_at"):
+        return False
+
+    now = _now_iso()
+    try:
+        svc = get_service_client()
+        claimed = (
+            svc.table("profiles")
+            .update({"signup_alerted_at": now, "updated_at": now})
+            .eq("id", uid)
+            .is_("signup_alerted_at", "null")
+            .execute()
+        )
+        if not (claimed.data or []):
+            return False
+    except Exception:
+        logger.warning("Could not claim signup alert for %s", uid, exc_info=True)
+        return False
+
+    provider = _auth_signup_provider(uid)
+    name = (display_name or "").strip()
+    if not name:
+        name = " ".join(
+            p
+            for p in (
+                (row.get("first_name") or "").strip(),
+                (row.get("middle_name") or "").strip(),
+                (row.get("last_name") or "").strip(),
+            )
+            if p
+        ).strip()
+    mail = (email or row.get("email") or "").strip()
+    parish = ""
+    try:
+        from services.parish_store import get_user_parish_context
+
+        ctx = get_user_parish_context(uid)
+        parish = str((ctx or {}).get("community_name") or "").strip()
+    except Exception:
+        parish = ""
+
+    try:
+        from services.admin_alerts import alert_new_signup
+
+        alert_new_signup(
+            name=name or "(no name yet)",
+            email=mail,
+            provider=provider or "unknown",
+            parish=parish,
+        )
+    except Exception as exc:
+        logger.warning("New signup alert failed for %s: %s", uid, exc)
+    return True
+
+
+def maybe_alert_new_signup_bg(
+    user_id: str,
+    *,
+    email: str = "",
+    display_name: str = "",
+    profile: Optional[dict[str, Any]] = None,
+) -> None:
+    import threading
+
+    def _run() -> None:
+        maybe_alert_new_signup(
+            user_id,
+            email=email,
+            display_name=display_name,
+            profile=profile,
+        )
+
+    try:
+        threading.Thread(
+            target=_run, name=f"signup-alert-{user_id[:8]}", daemon=True
+        ).start()
+    except Exception:
+        maybe_alert_new_signup(
+            user_id,
+            email=email,
+            display_name=display_name,
+            profile=profile,
+        )
+
+
 def get_onboarding_status(
     user_id: str, *, access_token: Optional[str] = None
 ) -> dict[str, Any]:
@@ -211,7 +348,7 @@ def complete_onboarding(
     middle_name: str = "",
     last_name: str = "",
     phone: str = "",
-    community_name: str,
+    community_name: str = "",
     country_code: str = "",
     ministry_role: str,
     ministry_role_other: str = "",
@@ -220,12 +357,15 @@ def complete_onboarding(
     survey_sources: Optional[list[str]] = None,
     survey_source: str = "",
     survey_source_other: str = "",
+    parish_mode: str = "create",
+    join_parish_id: str = "",
 ) -> dict[str, Any]:
     """Persist signup details + survey and mark onboarding complete."""
     from services.billing_catalog import (
         country_code_from_phone,
         normalize_country_code,
     )
+    from services.parish_join import create_join_request, create_parish_for_onboarding
 
     uid = (user_id or "").strip()
     if not uid or not access_token:
@@ -238,6 +378,12 @@ def complete_onboarding(
     last = (last_name or "").strip()
     phone_clean = (phone or "").strip()
     church = (community_name or "").strip()
+    mode = (parish_mode or "create").strip().lower()
+    join_id = (join_parish_id or "").strip()
+    if mode not in {"create", "join"}:
+        raise HTTPException(
+            status_code=400, detail="Choose Create new parish or Join existing parish."
+        )
     country = normalize_country_code(country_code)
     role = (ministry_role or "").strip().lower()
     role_other = (ministry_role_other or "").strip()
@@ -271,7 +417,10 @@ def complete_onboarding(
     digits_only = "".join(ch for ch in phone_clean if ch.isdigit())
     if len(digits_only) < 8:
         raise HTTPException(status_code=400, detail="Please enter a valid phone number.")
-    if len(church) < 2:
+    if mode == "join":
+        if not join_id:
+            raise HTTPException(status_code=400, detail="Select a parish to join.")
+    elif len(church) < 2:
         raise HTTPException(status_code=400, detail="Church/Community Name is required.")
     if role not in MINISTRY_ROLES:
         raise HTTPException(status_code=400, detail="Please select your parish role.")
@@ -307,22 +456,21 @@ def complete_onboarding(
     if status.get("onboarding_completed"):
         return {"ok": True, "already_complete": True, **status}
 
-    church_ctx = _ensure_parish_named(uid, church, access_token=access_token)
-    parish_id = str((church_ctx or {}).get("parish_id") or (church_ctx or {}).get("id") or "").strip()
-    if parish_id and country:
-        try:
-            svc = get_service_client()
-            updated = (
-                svc.table("parishes")
-                .update({"country_code": country, "updated_at": _now_iso()})
-                .eq("id", parish_id)
-                .execute()
-            )
-            if updated.data:
-                church_ctx = dict(church_ctx or {})
-                church_ctx["country_code"] = country
-        except Exception as country_exc:
-            logger.warning("Could not save parish country_code: %s", country_exc)
+    join_payload: dict[str, Any] | None = None
+    from services.parish_store import get_user_parish_context
+
+    existing_ctx = get_user_parish_context(uid, access_token=access_token)
+    invite_locked = bool(
+        existing_ctx
+        and existing_ctx.get("community_name_locked_at")
+        and (existing_ctx.get("community_name") or "").strip()
+    )
+    if invite_locked:
+        # Platform/parish invite already attached this user — keep that parish.
+        church_ctx = existing_ctx
+        mode = "invite"
+    else:
+        church_ctx = existing_ctx or {}
 
     client = get_user_client(access_token)
     now = _now_iso()
@@ -333,7 +481,6 @@ def complete_onboarding(
         "phone": phone_clean,
         "ministry_role": role,
         "ministry_role_other": role_other[:60] if role_other else None,
-        "onboarding_completed_at": now,
         "updated_at": now,
     }
     if language:
@@ -377,29 +524,81 @@ def complete_onboarding(
             status_code=500, detail="Could not save signup survey."
         ) from exc
 
-    try:
-        from services.admin_alerts import alert_registration
+    display_name = " ".join(p for p in (first, middle, last) if p).strip()
+    if not invite_locked:
+        if mode == "join":
+            join_payload = create_join_request(
+                uid,
+                join_id,
+                display_name=display_name,
+                email=str((profile_row or {}).get("email") or ""),
+            )
+            church_ctx = join_payload.get("church_profile") or {}
+            if church and not (church_ctx.get("community_name") or "").strip():
+                church_ctx = dict(church_ctx)
+                church_ctx["community_name"] = church
+        else:
+            created = create_parish_for_onboarding(uid, church)
+            church_ctx = created.get("church_profile") or {}
 
-        display_name = " ".join(p for p in (first, middle, last) if p).strip()
-        parish_label = str(
-            (church_ctx or {}).get("community_name") or church or ""
-        ).strip()
-        role_label = role_other if role == "other" and role_other else role
-        alert_registration(
-            name=display_name,
-            email=str((profile_row or {}).get("email") or "").strip(),
-            parish=parish_label,
-            role=role_label,
+    parish_id = str((church_ctx or {}).get("parish_id") or (church_ctx or {}).get("id") or "").strip()
+    if parish_id and country and mode == "create":
+        try:
+            svc = get_service_client()
+            updated = (
+                svc.table("parishes")
+                .update({"country_code": country, "updated_at": _now_iso()})
+                .eq("id", parish_id)
+                .execute()
+            )
+            if updated.data:
+                church_ctx = dict(church_ctx or {})
+                church_ctx["country_code"] = country
+        except Exception as country_exc:
+            logger.warning("Could not save parish country_code: %s", country_exc)
+
+    try:
+        svc = get_service_client()
+        done = (
+            svc.table("profiles")
+            .update({"onboarding_completed_at": now, "updated_at": now})
+            .eq("id", uid)
+            .execute()
         )
+        if done.data:
+            profile_row = done.data[0]
     except Exception as exc:
-        logger.warning("Registration alert failed: %s", exc)
+        logger.exception("Could not mark onboarding complete")
+        raise HTTPException(
+            status_code=500, detail="Could not finish signup."
+        ) from exc
+
+    # Join path already emits alert_parish_join_request; create path needs SA approval alert.
+    if mode == "create":
+        try:
+            from services.admin_alerts import alert_registration
+
+            parish_label = str(
+                (church_ctx or {}).get("community_name") or church or ""
+            ).strip()
+            role_label = role_other if role == "other" and role_other else role
+            alert_registration(
+                name=display_name,
+                email=str((profile_row or {}).get("email") or "").strip(),
+                parish=parish_label,
+                role=f"{role_label} · creating parish (president)",
+            )
+        except Exception as exc:
+            logger.warning("Registration alert failed: %s", exc)
 
     return {
         "ok": True,
         "already_complete": False,
         "needs_onboarding": False,
         "onboarding_completed": True,
+        "parish_mode": mode,
         "profile": profile_row,
         "church_profile": church_ctx,
+        "join_request": (join_payload or {}).get("join_request") if join_payload else None,
         "survey": survey_row,
     }

@@ -164,6 +164,8 @@ _EXEMPT_PREFIXES = (
     "/static/",
     "/favicon",
     "/api/internal/",
+    # Auth-gated local WebP/PNG serve — Extras preloads many thumbs at once.
+    "/api/weekly-style-posters/image",
 )
 
 

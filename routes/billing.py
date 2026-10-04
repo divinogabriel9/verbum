@@ -8,7 +8,7 @@ from typing import Any, Literal, Optional
 from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from services.api_security import AuthSession, require_session
+from services.api_security import AuthSession, require_onboarded_session
 from services.billing_catalog import CURRENCIES, INTERVALS, catalog_payload
 from services.membership_config import is_superadmin_user, membership_payload
 from services.stripe_billing import (
@@ -79,7 +79,7 @@ def register_billing_routes(app) -> None:
 
     @app.get("/api/billing/status")
     def api_billing_status(
-        session: AuthSession = Depends(require_session),
+        session: AuthSession = Depends(require_onboarded_session),
     ) -> dict[str, Any]:
         from services.parish_store import get_parish_by_id, get_user_parish_context
         from services.supabase_client import get_service_client, supabase_enabled
@@ -150,7 +150,7 @@ def register_billing_routes(app) -> None:
     @app.post("/api/billing/checkout")
     def api_billing_checkout(
         body: CheckoutBody,
-        session: AuthSession = Depends(require_session),
+        session: AuthSession = Depends(require_onboarded_session),
     ) -> dict[str, Any]:
         ctx = _require_parish_billing_manager(session)
         parish_id = str(ctx.get("parish_id") or ctx.get("id") or "")
@@ -168,7 +168,7 @@ def register_billing_routes(app) -> None:
 
     @app.post("/api/billing/portal")
     def api_billing_portal(
-        session: AuthSession = Depends(require_session),
+        session: AuthSession = Depends(require_onboarded_session),
     ) -> dict[str, Any]:
         ctx = _require_parish_billing_manager(session)
         parish_id = str(ctx.get("parish_id") or ctx.get("id") or "")

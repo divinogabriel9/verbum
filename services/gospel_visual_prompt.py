@@ -84,16 +84,86 @@ def _looks_like_spoken_transcript(s: str) -> bool:
     return any(head.startswith(p) for p in _TRANSCRIPT_PREFIXES)
 
 
+# Used only when we have almost no liturgical cues — still avoid the stock open-arm pose.
 _SAFE_SCENE_FALLBACK = (
-    "Jesus Christ among his disciples in ancient Palestine, teaching outdoors, "
-    "group gathered close together, warm daylight, expressive biblical robes"
+    "a concrete Gospel encounter told through gesture, place, and relationship — "
+    "not a generic outdoor teaching circle"
+)
+
+# Dialogue-heavy pericopes → visual icons (never paste speech; models paint fake subtitles).
+_PARABLE_VISUALS: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("sower", "seed fell", "rocky ground", "among thorns", "good soil"),
+     "a sower casting seed across path, rocks, thorns, and rich soil on a hillside"),
+    (("mustard seed", "birds of the air"),
+     "tiny mustard seed in an open palm before a large sheltering shrub with nesting birds"),
+    (("vine", "branches", "vinedresser"),
+     "living vineyard vine with fruitful branches under a vinedresser's tending hands"),
+    (("wedding feast", "wedding banquet", "marriage feast", "wedding garment"),
+     "king confronting a silent guest without a wedding garment in a lamp-lit banquet hall, attendants turning him toward the dark doorway outside"),
+    (("ten virgins", "wise virgins", "foolish virgins"),
+     "wise virgins with bright lamps and foolish virgins with empty lamps as the bridegroom arrives at night"),
+    (("five talents", "buried it in the ground", "ten minas", "wicked lazy"),
+     "a master reckoning accounts as one servant returns a single buried coin"),
+    (("eleventh hour", "denarius a day", "hired laborers for his vineyard"),
+     "equal denarii paid at the vineyard gate while early workers protest"),
+    (("went up to the temple to pray", "be merciful to me a sinner", "pharisee and the tax collector"),
+     "proud Pharisee praying upright while a tax collector bows beating his breast"),
+    (("sheep and the goats", "least of these", "when did we see you hungry"),
+     "Christ separating a crowd — mercy given on one side, indifference turning away on the other"),
+    (("samaritan", "bandits", "half-dead"),
+     "a Samaritan kneeling to bind a wounded traveler's wounds on a lonely road"),
+    (("prodigal",),
+     "a father running to embrace his returning son on a dusty estate road"),
+    (("lost sheep", "good shepherd", "ninety-nine"),
+     "a shepherd carrying a lamb across rocky pasture at dusk"),
+    (("render to caesar", "denarius", "whose image", "tribute"),
+     "hands holding up a denarius between Christ and questioners in the temple courts"),
+    (("blessed are", "poor in spirit", "beatitude"),
+     "Christ seated on a hillside teaching a crowd seated on the slope below"),
+    (("wash", "feet", "basin"),
+     "Christ kneeling with basin and towel washing a disciple's feet"),
+    (("tax collector", "zacchaeus", "sycamore"),
+     "Zacchaeus in a sycamore as Christ looks up and calls him down"),
+    (("martha", "mary", "better part"),
+     "Mary seated listening at Christ's feet while Martha pauses mid-service"),
+    (("children", "little children", "become like"),
+     "Christ seated welcoming little children brought close to him"),
+    (("send", "two by two", "harvest is abundant", "laborers are few"),
+     "Christ sending pairs of disciples outward along diverging village roads"),
+    (("lazarus", "come out"),
+     "Lazarus stepping from a tomb as Christ calls him forth"),
+    (("transfigur", "dazzling white", "moses and elijah"),
+     "Christ radiant on a mountain peak with Moses and Elijah in glory"),
+    (("emmaus", "eyes were opened"),
+     "Christ breaking bread at a wayside table as two disciples recognize him"),
+    (("blind", "bartimaeus", "receive your sight"),
+     "Christ touching the eyes of a kneeling blind man by the roadside"),
+    (("paralyt", "mat"),
+     "a healed man rising and rolling his mat while Christ gestures him forward"),
+    (("storm", "waves", "boat", "be still"),
+     "Christ calming violent waves from a small fishing boat"),
+    (("loaves", "fishes", "five thousand"),
+     "Christ blessing bread and fish as baskets pass through a hillside crowd"),
 )
 
 
-def _visual_line_from_feast_and_ref(title: str, ref: str) -> str:
-    t = title.strip() or "Sunday Mass"
-    return f"{t}, sacred Gospel scene ({ref}): {_SAFE_SCENE_FALLBACK}"
+def _parable_visual_from_blob(blob: str) -> str:
+    for keys, visual in _PARABLE_VISUALS:
+        if any(k in blob for k in keys):
+            return visual
+    return ""
 
+
+def _visual_line_from_feast_and_ref(title: str, ref: str, gospel_plaintext: str = "") -> str:
+    t = title.strip() or "Sunday Mass"
+    blob = f"{t} {ref} {gospel_plaintext}".lower()
+    parable = _parable_visual_from_blob(blob)
+    if parable:
+        return f"{t}, sacred Gospel scene ({ref}): {parable}"
+    return (
+        f"{t} ({ref}): story-specific Gospel encounter through gesture, place, "
+        "and relationship — not a generic outdoor teaching circle"
+    )
 
 _WEAK_TAIL = frozenset(
     {
@@ -147,6 +217,13 @@ def build_visual_scene_line(
     ref = (gospel_reference or "").strip() or "the Gospel"
     body = _flatten(gospel_plaintext or "")
 
+    # Prefer parable / pericope icons before any dialogue excerpt (avoids fake subtitles
+    # and the old "Jesus teaching outdoors" sameness).
+    parable = _parable_visual_from_blob(f"{title} {ref} {body}".lower())
+    if parable:
+        out = f"{title}, {parable}" if title else parable
+        return out[:max_chars] if len(out) > max_chars else out
+
     if not body:
         if title:
             return f"{title}, sacred moment from {ref}"
@@ -155,7 +232,7 @@ def build_visual_scene_line(
     body = _strip_speech_introducers(body)
     words = _strip_leading_verse_tokens(body.split())
     if not words:
-        return _visual_line_from_feast_and_ref(title, ref)
+        return _visual_line_from_feast_and_ref(title, ref, gospel_plaintext)
 
     chunk = _drop_weak_trailing_words(words[:max_words])
     phrase = " ".join(chunk)
@@ -164,9 +241,8 @@ def build_visual_scene_line(
         phrase = " ".join(words[:max_words])
 
     if _looks_like_spoken_transcript(phrase):
-        out = _visual_line_from_feast_and_ref(title, ref)
+        out = _visual_line_from_feast_and_ref(title, ref, gospel_plaintext)
         return out[:max_chars] if len(out) > max_chars else out
-
     if len(phrase) > max_chars:
         phrase = phrase[: max_chars - 1].rsplit(" ", 1)[0]
 

@@ -765,8 +765,13 @@
           if (n === 6 && typeof window.ensureCollectionDefaultDate === "function") {
             window.ensureCollectionDefaultDate();
           }
-          if (n === 6 && typeof window.refreshWeeklyStylePosters === "function") {
-            window.refreshWeeklyStylePosters();
+          if (n === 6) {
+            // Debounced force refresh so Step 6 doesn't stack catalog calls.
+            if (typeof window.scheduleWeeklyStylePosterRefresh === "function") {
+              window.scheduleWeeklyStylePosterRefresh({ force: true });
+            } else if (typeof window.refreshWeeklyStylePosters === "function") {
+              window.refreshWeeklyStylePosters({ force: true });
+            }
           }
           if (n === 7) { fillReceipt(); }
           if (n === 2 || n === 4) scheduleRiteDefaultPinLabelHide(flowPage);

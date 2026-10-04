@@ -719,7 +719,41 @@
       .auth-check-grid { grid-template-columns: 1fr; }
     }
     #auth-survey-other-wrap[hidden],
-    #auth-role-other-wrap[hidden] { display: none !important; }
+    #auth-role-other-wrap[hidden],
+    #auth-parish-search-results[hidden],
+    #auth-parish-choice[hidden],
+    #auth-parish-selected[hidden] { display: none !important; }
+    .auth-parish-results {
+      margin-top: 8px;
+      border: 1px solid rgba(28, 25, 23, 0.12);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .auth-parish-result {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border: 0;
+      border-bottom: 1px solid rgba(28, 25, 23, 0.08);
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+    }
+    .auth-parish-result:last-child { border-bottom: 0; }
+    .auth-parish-result:hover,
+    .auth-parish-result.is-selected { background: rgba(161, 15, 13, 0.06); }
+    .auth-parish-result__name { display: block; font-weight: 600; font-size: 0.92rem; }
+    .auth-parish-result__meta { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--muted); }
+    .auth-parish-choice__actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .auth-parish-choice__actions .auth-submit,
+    .auth-parish-choice__actions .auth-secondary { margin-top: 0; width: 100%; }
     .auth-nav-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1140,8 +1174,19 @@
           <div class="auth-step is-active" id="auth-step-1" data-step="1">
             <div class="field">
               <label for="auth-church-name">Church/Community Name</label>
-              <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="Gwangju Filipino Catholic Community" />
+              <input type="text" id="auth-church-name" autocomplete="organization" maxlength="120" placeholder="Search or type your parish name" />
               <p class="muted" id="auth-church-name-hint" style="margin:6px 0 0;font-size:0.8rem;color:var(--muted);" hidden>Your administrator sets the parish name on the invite link.</p>
+              <input type="hidden" id="auth-parish-mode" value="create" />
+              <input type="hidden" id="auth-join-parish-id" value="" />
+              <div id="auth-parish-search-results" class="auth-parish-results" hidden></div>
+              <div id="auth-parish-choice" class="auth-parish-choice" hidden>
+                <p class="muted" id="auth-parish-choice-label" style="margin:8px 0 6px;font-size:0.82rem;"></p>
+                <div class="auth-parish-choice__actions">
+                  <button type="button" class="auth-secondary" id="auth-parish-join-btn" hidden>Request to join</button>
+                  <button type="button" class="auth-submit" id="auth-parish-create-btn" hidden>Create new parish</button>
+                </div>
+              </div>
+              <p class="muted" id="auth-parish-selected" style="margin:8px 0 0;font-size:0.82rem;" hidden></p>
             </div>
           </div>
           <div class="auth-step" id="auth-step-2" data-step="2" hidden>
@@ -1398,6 +1443,6 @@
   </script>
   <script src="/static/js/cookie-consent.js?v=20261004-panel" defer></script>
   {% include "partials/posthog.html" %}
-  <script src="/static/js/auth-page.js?v=20261003-signin-signup" defer></script>
+  <script src="/static/js/auth-page.js?v=20261004-parish-join" defer></script>
 </body>
 </html>

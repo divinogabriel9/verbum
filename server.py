@@ -3028,20 +3028,24 @@ def api_weekly_style_poster_image(
     date: str,
     style: str = "cinematic",
     variant: str = "full",
+    version: Optional[int] = None,
     _session: Optional[AuthSession] = Depends(require_session_when_auth),
 ) -> FileResponse:
     """Serve a shared weekly style hero (local or downloaded from shared cache).
 
     ``variant=thumb`` returns a small WebP for the Mass Builder carousel/picker.
+    Optional ``version`` serves an archived ``*_hero_vN`` set (instant version preview).
     Full PNG stays used for PPTX generation.
     """
     from services.ai_styles import resolve_ai_image_style
     from services.weekly_style_posters import (
+        ensure_ui_thumb,
         normalize_mass_date,
         resolve_hero_file,
         resolve_ui_card_file,
         resolve_ui_thumb_file,
         sunday_for_mass_date,
+        ui_thumb_path,
     )
 
     mass = normalize_mass_date(date)
@@ -3054,6 +3058,34 @@ def api_weekly_style_poster_image(
     want_card = variant_key in {"card", "cta", "home"}
     media = "image/png"
     headers = {"Cache-Control": "public, max-age=86400"}
+    version_no = 0
+    try:
+        if version is not None:
+            version_no = int(version)
+    except (TypeError, ValueError):
+        version_no = 0
+    if version_no > 0:
+        from services.weekly_poster_versions import versioned_hero_path
+
+        hero = versioned_hero_path(
+            _OUTPUT_DIR, sunday=sunday, style=resolved, version=version_no
+        )
+        if not hero.is_file():
+            raise HTTPException(status_code=404, detail="poster_not_ready")
+        if want_thumb or want_card:
+            max_w = 1600 if want_card else 720
+            path = ui_thumb_path(hero, max_w=max_w)
+            if not path.is_file():
+                path = ensure_ui_thumb(
+                    hero, sunday=sunday, style=resolved, max_w=max_w, quality=70
+                )
+            if path is None or not path.is_file():
+                raise HTTPException(status_code=404, detail="poster_not_ready")
+            if path.suffix.lower() == ".webp":
+                media = "image/webp"
+            headers = {"Cache-Control": "public, max-age=604800, immutable"}
+            return FileResponse(path, media_type=media, filename=path.name, headers=headers)
+        return FileResponse(hero, media_type=media, filename=hero.name, headers=headers)
     if want_thumb or want_card:
         path = (
             resolve_ui_card_file(sunday=sunday, style=resolved, output_dir=_OUTPUT_DIR)
@@ -3077,21 +3109,73 @@ async def api_weekly_style_posters_ensure(
     request: Request,
     session: Optional[AuthSession] = Depends(require_superadmin),
 ) -> dict[str, Any]:
-    """Superadmin-only: generate missing shared weekly style heroes for ``date``.
+    """Superadmin-only: generate shared weekly style heroes for ``date``.
 
     Shared across parishes via Supabase hero cache. Not auto-run for parish users yet.
-    Body or query: ``{"date":"YYYY-MM-DD"}``.
+    Body/query: ``date``, optional ``force`` / ``regenerate``, optional ``style`` or
+    ``styles`` (one or more of the weekly set) for 1/N progress from the client.
     """
+    from services.ai_styles import resolve_ai_image_style
     from services.weekly_style_posters import ensure_weekly_heroes, normalize_mass_date, weekly_style_ids
 
+    def _truthy(raw: object) -> bool:
+        if isinstance(raw, bool):
+            return raw
+        return str(raw or "").strip().lower() in {"1", "true", "yes", "on", "force", "regenerate"}
+
+    def _styles_from(raw: object) -> list[str]:
+        if raw is None:
+            return []
+        if isinstance(raw, str):
+            parts = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
+        elif isinstance(raw, (list, tuple)):
+            parts = [str(p).strip() for p in raw if str(p).strip()]
+        else:
+            parts = []
+        allowed = set(weekly_style_ids())
+        out: list[str] = []
+        for part in parts:
+            key = resolve_ai_image_style(part)
+            if key in allowed and key not in out:
+                out.append(key)
+        return out
+
     iso = normalize_mass_date(str(request.query_params.get("date") or ""))
+    force = _truthy(request.query_params.get("force") or request.query_params.get("regenerate"))
+    new_version = _truthy(request.query_params.get("new_version"))
+    style_filter = _styles_from(request.query_params.get("style") or request.query_params.get("styles"))
+    version_raw = request.query_params.get("version")
+    body: dict[str, Any] = {}
+    try:
+        parsed = await request.json()
+        if isinstance(parsed, dict):
+            body = parsed
+    except Exception:
+        body = {}
     if not iso:
-        try:
-            body = await request.json()
-            if isinstance(body, dict):
-                iso = normalize_mass_date(str(body.get("date") or ""))
-        except Exception:
-            iso = None
+        iso = normalize_mass_date(str(body.get("date") or ""))
+    if not force:
+        force = _truthy(body.get("force") if "force" in body else body.get("regenerate"))
+    if not new_version:
+        new_version = _truthy(body.get("new_version"))
+    overwrite_only = _truthy(request.query_params.get("overwrite_only") or request.query_params.get("test"))
+    if not overwrite_only:
+        overwrite_only = _truthy(body.get("overwrite_only") if "overwrite_only" in body else body.get("test"))
+    if not style_filter:
+        style_filter = _styles_from(body.get("styles") if body.get("styles") is not None else body.get("style"))
+    if version_raw is None and body.get("version") is not None:
+        version_raw = body.get("version")
+    version_no: Optional[int] = None
+    try:
+        if version_raw is not None and str(version_raw).strip() != "":
+            version_no = int(version_raw)
+    except (TypeError, ValueError):
+        version_no = None
+    if new_version:
+        force = True
+        overwrite_only = False
+    if overwrite_only:
+        force = True
     if not iso:
         raise HTTPException(status_code=400, detail="date is required (YYYY-MM-DD)")
     if not (os.getenv("OPENAI_API_KEY") or "").strip():
@@ -3099,12 +3183,224 @@ async def api_weekly_style_posters_ensure(
             status_code=503,
             detail="Poster creation is temporarily unavailable. Please try again later.",
         )
-    # Always generate the full missing weekly set — never a single one-off style.
-    return ensure_weekly_heroes(
+    actor = ""
+    try:
+        actor = ((session.user.email if session and session.user else "") or "").strip()
+    except Exception:
+        actor = ""
+    logger.info(
+        "[weekly-ensure] start date=%s force=%s new_version=%s overwrite_only=%s version=%s styles=%s actor=%s",
+        iso,
+        force,
+        new_version,
+        overwrite_only,
+        version_no,
+        style_filter or "all",
+        actor or "unknown",
+    )
+    print(
+        f"[weekly-ensure] start date={iso!r} force={force} new_version={new_version} "
+        f"overwrite_only={overwrite_only} version={version_no!r} styles={style_filter or 'all'!r} "
+        f"actor={actor or 'unknown'!r}",
+        flush=True,
+    )
+    # Prefer one style per request when the client drives 1/N progress.
+    max_gen = 1 if style_filter else max(1, len(weekly_style_ids()))
+    if style_filter:
+        max_gen = max(1, len(style_filter))
+    result = ensure_weekly_heroes(
         iso,
         output_dir=_OUTPUT_DIR,
-        max_generate=max(1, len(weekly_style_ids())),
+        max_generate=max_gen,
+        force=force,
+        styles=style_filter or None,
+        version=version_no,
+        new_version=new_version,
+        overwrite_only=overwrite_only,
     )
+    sunday = str((result or {}).get("sunday") or iso)
+    generated = list((result or {}).get("generated") or [])
+    skipped = list((result or {}).get("skipped") or [])
+    errors = list((result or {}).get("errors") or [])
+    logger.info(
+        "[weekly-ensure] done sunday=%s force=%s styles=%s actor=%s generated=%s skipped=%s errors=%s",
+        sunday,
+        force,
+        style_filter or "all",
+        actor or "unknown",
+        generated,
+        skipped,
+        len(errors),
+    )
+    print(
+        f"[weekly-ensure] done sunday={sunday!r} force={force} styles={style_filter or 'all'!r} "
+        f"actor={actor or 'unknown'!r} generated={generated} skipped={len(skipped)} errors={len(errors)}",
+        flush=True,
+    )
+    return result
+
+
+@app.get("/api/weekly-style-posters/versions")
+def api_weekly_style_poster_versions(
+    date: str = "",
+    _session: Optional[AuthSession] = Depends(require_session_when_auth),
+) -> dict[str, Any]:
+    """List poster versions (v1/v2…) for a Mass Sunday, plus Sundays that have posters."""
+    from services.weekly_poster_versions import list_sundays_with_posters, versions_payload
+    from services.weekly_style_posters import normalize_mass_date, sunday_for_mass_date
+
+    iso = normalize_mass_date(date)
+    if iso:
+        sunday = sunday_for_mass_date(iso)
+        return versions_payload(_OUTPUT_DIR, sunday=sunday)
+    return {"ok": True, "sunday": "", "active_version": 0, "versions": [], "sundays": list_sundays_with_posters(_OUTPUT_DIR)}
+
+
+@app.post("/api/weekly-style-posters/activate")
+async def api_weekly_style_poster_activate(
+    request: Request,
+    session: Optional[AuthSession] = Depends(require_superadmin),
+) -> dict[str, Any]:
+    """Superadmin: switch the active weekly poster version for a Mass Sunday."""
+    from services.weekly_poster_versions import (
+        format_version_label,
+        load_manifest,
+        promote_version_to_active,
+        version_complete,
+        version_styles_on_disk,
+        versioned_hero_path,
+    )
+    from services.weekly_style_posters import (
+        normalize_mass_date,
+        sunday_for_mass_date,
+        weekly_style_ids,
+        weekly_style_label,
+    )
+
+    iso = normalize_mass_date(str(request.query_params.get("date") or ""))
+    version_raw = request.query_params.get("version")
+    try:
+        body = await request.json()
+        if isinstance(body, dict):
+            if not iso:
+                iso = normalize_mass_date(str(body.get("date") or ""))
+            if version_raw is None:
+                version_raw = body.get("version")
+    except Exception:
+        pass
+    if not iso:
+        raise HTTPException(status_code=400, detail="date is required (YYYY-MM-DD)")
+    try:
+        version_no = int(version_raw)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="version is required")
+    sunday = sunday_for_mass_date(iso)
+    # Local copy only — no shared uploads / PIL re-encodes / catalog reconcile.
+    result = promote_version_to_active(
+        _OUTPUT_DIR, sunday=sunday, version=version_no, sync_shared=False
+    )
+    if not result.get("promoted"):
+        raise HTTPException(status_code=404, detail="version_not_found")
+    actor = ""
+    try:
+        actor = ((session.user.email if session and session.user else "") or "").strip()
+    except Exception:
+        actor = ""
+    logger.info(
+        "[weekly-activate] sunday=%s version=%s actor=%s promoted=%s",
+        sunday,
+        version_no,
+        actor or "unknown",
+        result.get("promoted"),
+    )
+    # Point UI at archived version URLs — only styles that exist for this version.
+    owned = set(version_styles_on_disk(_OUTPUT_DIR, sunday=sunday, version=version_no))
+    items: list[dict[str, Any]] = []
+    for sid in weekly_style_ids():
+        ready = sid in owned and versioned_hero_path(
+            _OUTPUT_DIR, sunday=sunday, style=sid, version=version_no
+        ).is_file()
+        base = (
+            f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
+            f"&version={version_no}"
+        )
+        items.append(
+            {
+                "id": sid,
+                "label": weekly_style_label(sid),
+                "ready": ready,
+                "thumb_url": f"{base}&variant=thumb" if ready else "",
+                "card_url": f"{base}&variant=card" if ready else "",
+                "proxy_url": f"{base}&variant=thumb",
+                "full_url": base if ready else "",
+            }
+        )
+    manifest = result.get("manifest") or load_manifest(_OUTPUT_DIR, sunday=sunday)
+    versions = {
+        "ok": True,
+        "sunday": sunday,
+        "active_version": int(manifest.get("active_version") or version_no),
+        "versions": [
+            {
+                "version": int(v.get("version") or 0),
+                "label": format_version_label(
+                    int(v.get("version") or 0),
+                    version_styles_on_disk(
+                        _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                    )
+                    or list(v.get("styles") or []),
+                ),
+                "created_at": str(v.get("created_at") or ""),
+                "status": (
+                    "ready"
+                    if version_complete(
+                        _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                    )
+                    else (
+                        "partial"
+                        if version_styles_on_disk(
+                            _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                        )
+                        else "generating"
+                    )
+                ),
+                "styles": version_styles_on_disk(
+                    _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                )
+                or list(v.get("styles") or []),
+                "style_count": len(
+                    version_styles_on_disk(
+                        _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                    )
+                    or list(v.get("styles") or [])
+                ),
+                "active": int(v.get("version") or 0)
+                == int(manifest.get("active_version") or version_no),
+                "complete": version_complete(
+                    _OUTPUT_DIR, sunday=sunday, version=int(v.get("version") or 0)
+                ),
+            }
+            for v in (manifest.get("versions") or [])
+            if isinstance(v, dict) and int(v.get("version") or 0) > 0
+        ],
+        # Client already has the Sundays list; skip disk scan on the hot path.
+        "sundays": [],
+    }
+    return {
+        "ok": True,
+        "sunday": sunday,
+        "version": version_no,
+        "promoted": result.get("promoted") or [],
+        "catalog": {
+            "ok": True,
+            "date": iso,
+            "sunday": sunday,
+            "items": items,
+            "ready_count": len(items),
+            "total": len(items),
+        },
+        "versions": versions,
+    }
 
 
 def _enforce_ai_image_quota(
@@ -5257,9 +5553,11 @@ def api_generate(
     )
 
     # Prefer shared weekly heroes only — never generate a one-off poster here.
-    # If the Sunday set is not ready, fall back to non-AI dividers (no quota burn).
+    # Partial weeks are fine: reuse the requested style when ready, else any ready
+    # style. If nothing is ready, fall back to non-AI dividers (no quota burn).
     reuse_poster = False
     include_ai = bool(body.include_ai_mass_poster) and not bool(body.leaflet_only)
+    resolved_ai_style = (body.ai_poster_style or "cinematic").strip() or "cinematic"
     if include_ai:
         from services.ai_styles import resolve_ai_image_style
         from services.weekly_style_posters import (
@@ -5270,22 +5568,35 @@ def api_generate(
         )
 
         mass = normalize_mass_date(body.date.strip())
-        style_key = resolve_ai_image_style((body.ai_poster_style or "cinematic").strip() or "cinematic")
+        style_key = resolve_ai_image_style(resolved_ai_style)
         sunday = sunday_for_mass_date(mass) if mass else ""
         catalog = catalog_for_date(mass or body.date.strip(), output_dir=_OUTPUT_DIR) if mass else {}
-        ready = int(catalog.get("ready_count") or 0)
-        total = int(catalog.get("total") or 0)
+        ready_ids = [
+            str(item.get("id") or "").strip()
+            for item in (catalog.get("items") or [])
+            if item.get("ready") and str(item.get("id") or "").strip()
+        ]
         style_ok = bool(sunday and style_ready(sunday=sunday, style=style_key, output_dir=_OUTPUT_DIR))
-        # Require the full weekly set (all styles) before AI dividers are allowed.
-        if not (total > 0 and ready >= total and style_ok):
-            include_ai = False
-        else:
+        if style_ok:
+            resolved_ai_style = style_key
             reuse_poster = True
             _enforce_ai_image_quota(
                 session,
                 request,
                 source="mass-poster:weekly",
             )
+        elif ready_ids and sunday:
+            # Requested style (often cinematic default) not ready yet — use a ready one.
+            fallback = ready_ids[0]
+            resolved_ai_style = fallback
+            reuse_poster = True
+            _enforce_ai_image_quota(
+                session,
+                request,
+                source="mass-poster:weekly",
+            )
+        else:
+            include_ai = False
 
     try:
         print("[generate] building media…", flush=True)
@@ -5319,7 +5630,7 @@ def api_generate(
                         if (body.ai_poster_backend or "").strip().lower() in ("", "ai", "auto", "default")
                         else (body.ai_poster_backend or "openai").strip().lower()
                     ),
-                    ai_poster_style=body.ai_poster_style.strip() or "cinematic",
+                    ai_poster_style=resolved_ai_style,
                     ai_poster_transparency_pct=float(body.ai_poster_transparency_pct),
                     reuse_existing_poster=reuse_poster,
                     community_name=body.community_name.strip() if body.community_name else None,

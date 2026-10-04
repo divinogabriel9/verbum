@@ -49,7 +49,7 @@ class OnboardingCompleteBody(BaseModel):
     middle_name: str = Field("", max_length=80)
     last_name: str = Field(..., min_length=1, max_length=80)
     phone: str = Field(..., min_length=8, max_length=32)
-    community_name: str = Field(..., min_length=2, max_length=120)
+    community_name: str = Field("", max_length=120)
     country_code: str = Field("", max_length=2)
     ministry_role: str = Field(..., min_length=2, max_length=40)
     ministry_role_other: str = Field("", max_length=60)
@@ -58,6 +58,8 @@ class OnboardingCompleteBody(BaseModel):
     survey_sources: list[str] = Field(default_factory=list)
     survey_source: str = Field("", max_length=200)
     survey_source_other: str = Field("", max_length=240)
+    parish_mode: str = Field("create", max_length=16)
+    join_parish_id: str = Field("", max_length=64)
 
 
 def _auth_page_context(
@@ -224,12 +226,30 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
                 payload["image_url"] = avatar_url or user.image_url
                 payload["apostle_id"] = apostle_id
                 payload["apostle_name"] = apostle_name
-                from services.onboarding import profile_onboarding_complete
+                from services.onboarding import (
+                    maybe_alert_new_signup_bg,
+                    profile_onboarding_complete,
+                )
 
                 payload["onboarding_completed"] = profile_onboarding_complete(
                     profile_row
                 )
                 payload["needs_onboarding"] = not payload["onboarding_completed"]
+                if profile_row and not profile_row.get("signup_alerted_at"):
+                    display = " ".join(
+                        p
+                        for p in (
+                            (user.first_name or "").strip(),
+                            (user.last_name or "").strip(),
+                        )
+                        if p
+                    ).strip()
+                    maybe_alert_new_signup_bg(
+                        user.user_id,
+                        email=str(user.email or profile_row.get("email") or ""),
+                        display_name=display,
+                        profile=profile_row,
+                    )
                 try:
                     from services.pending_submissions import count_approved_songs_for_user
                     from services.user_notifications import list_unseen_user_notifications
@@ -269,6 +289,17 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
             session.user.user_id, access_token=session.token
         )
 
+    @app.get("/api/auth/parishes/search")
+    def api_auth_parish_search(
+        q: str = "",
+        session: AuthSession = Depends(require_session),
+    ) -> dict[str, Any]:
+        from services.parish_join import search_parishes
+
+        _ = session  # auth required
+        query = (q or "").strip()
+        return {"ok": True, "query": query, "results": search_parishes(query)}
+
     @app.post("/api/auth/onboarding/complete")
     def api_auth_onboarding_complete(
         body: OnboardingCompleteBody,
@@ -293,6 +324,8 @@ def register_auth_routes(app, templates: Jinja2Templates) -> None:
             survey_sources=body.survey_sources,
             survey_source=body.survey_source,
             survey_source_other=body.survey_source_other,
+            parish_mode=body.parish_mode,
+            join_parish_id=body.join_parish_id,
         )
         church = result.get("church_profile")
         if isinstance(church, dict):

@@ -262,22 +262,35 @@ def notify_platform_invite(
     invite_role: str = "president",
     note: str = "",
 ) -> EmailResult:
-    parish = (community_name or "").strip() or "a parish"
+    parish = (community_name or "").strip()
     role = (invite_role or "president").strip().lower()
     role_label = "media teammate" if role == "media" else "parish lead"
     url = (invite_url or "").strip() or invite_signup_url("")
     helper = (note or "").strip()[:160]
+    if parish:
+        subject = f"You're invited to LiturgyFlow — {parish}"
+        subtitle = f"Join {parish} as a {role_label}."
+        text = f"You're invited as a {role_label} for {parish}.\n{url}\n"
+        preheader = f"Join {parish}"
+    else:
+        subject = "You're invited to LiturgyFlow"
+        subtitle = f"Create your parish account as a {role_label}."
+        text = (
+            f"You're invited to LiturgyFlow as a {role_label}. "
+            f"You'll enter your parish name when you sign up.\n{url}\n"
+        )
+        preheader = "You're invited to LiturgyFlow"
     return send_email(
         to=email,
-        subject=f"You're invited to LiturgyFlow — {parish}",
-        text=f"You're invited as a {role_label} for {parish}.\n{url}\n",
+        subject=subject,
+        text=text,
         html=wrap_html(
             title="You’re invited",
-            subtitle=f"Join {parish} as a {role_label}.",
+            subtitle=subtitle,
             cta_label="Accept invite",
             cta_url=url,
             helper=helper,
-            preheader=f"Join {parish}",
+            preheader=preheader,
         ),
     )
 

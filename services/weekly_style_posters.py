@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Optional
@@ -83,6 +84,20 @@ def style_ready(*, sunday: str, style: str, output_dir: Path) -> bool:
     except Exception:
         return False
 
+
+def clear_local_weekly_style(*, sunday: str, style: str, output_dir: Path) -> None:
+    """Remove local hero + UI derivatives so a force regenerate cannot reuse stale files."""
+    hero = local_hero_path(output_dir, sunday=sunday, style=style)
+    for path in (
+        hero,
+        ui_thumb_path(hero, max_w=720),
+        ui_thumb_path(hero, max_w=1600),
+    ):
+        try:
+            if path.is_file():
+                path.unlink()
+        except OSError:
+            logger.debug("weekly local clear failed for %s", path, exc_info=True)
 
 def resolve_hero_file(*, sunday: str, style: str, output_dir: Path) -> Optional[Path]:
     from services.ai_hero_cache import resolve_cached_hero_path
@@ -205,7 +220,19 @@ def resolve_ui_thumb_file(
     resolved = resolve_ai_image_style(style)
     hero_local = local_hero_path(output_dir, sunday=sunday, style=resolved)
     thumb_local = ui_thumb_path(hero_local, max_w=max_w)
+    hero = hero_local if hero_local.is_file() else resolve_hero_file(
+        sunday=sunday, style=resolved, output_dir=output_dir
+    )
     if thumb_local.is_file():
+        # Rebuild when the hero is newer (regenerate left a stale shared/local WebP).
+        try:
+            if hero is not None and hero.is_file() and thumb_local.stat().st_mtime < hero.stat().st_mtime:
+                out = ensure_ui_thumb(
+                    hero, sunday=sunday, style=resolved, max_w=max_w, quality=quality
+                )
+                return out if out.is_file() else thumb_local
+        except OSError:
+            pass
         return thumb_local
     try:
         from services.ai_hero_cache import shared_cache_ready
@@ -222,10 +249,26 @@ def resolve_ui_thumb_file(
                 thumb_local.parent.mkdir(parents=True, exist_ok=True)
                 thumb_local.write_bytes(raw)
                 if thumb_local.is_file():
+                    # If hero is newer than the downloaded shared thumb, rebuild.
+                    try:
+                        if (
+                            hero is not None
+                            and hero.is_file()
+                            and thumb_local.stat().st_mtime < hero.stat().st_mtime
+                        ):
+                            out = ensure_ui_thumb(
+                                hero,
+                                sunday=sunday,
+                                style=resolved,
+                                max_w=max_w,
+                                quality=quality,
+                            )
+                            return out if out.is_file() else thumb_local
+                    except OSError:
+                        pass
                     return thumb_local
     except Exception:
         logger.debug("shared UI thumb download failed for %s %s", sunday, style, exc_info=True)
-    hero = resolve_hero_file(sunday=sunday, style=resolved, output_dir=output_dir)
     if hero is None or not hero.is_file():
         return None
     out = ensure_ui_thumb(hero, sunday=sunday, style=resolved, max_w=max_w, quality=quality)
@@ -241,6 +284,45 @@ def resolve_ui_card_file(*, sunday: str, style: str, output_dir: Path) -> Option
         max_w=1600,
         quality=84,
     )
+
+
+def rebuild_ui_derivatives(*, sunday: str, style: str, output_dir: Path) -> None:
+    """Force-rebuild picker/CTA WebPs from the current hero and upsert shared copies.
+
+    Needed after regenerate: local thumbs are cleared, but stale shared WebPs would
+    otherwise be re-downloaded and keep showing the old artwork.
+    """
+    resolved = resolve_ai_image_style(style)
+    hero = resolve_hero_file(sunday=sunday, style=resolved, output_dir=output_dir)
+    if hero is None or not hero.is_file():
+        return
+    for max_w, quality in ((720, 70), (1600, 84)):
+        thumb = ui_thumb_path(hero, max_w=max_w)
+        try:
+            if thumb.is_file():
+                thumb.unlink()
+        except OSError:
+            logger.debug("weekly UI rebuild unlink failed for %s", thumb, exc_info=True)
+        ensure_ui_thumb(
+            hero,
+            sunday=sunday,
+            style=resolved,
+            max_w=max_w,
+            quality=quality,
+        )
+
+
+def _with_cache_bust(url: str, bust: str) -> str:
+    """Append ``v=`` only to same-origin proxy URLs — never mutate signed HTTPS URLs."""
+    raw = (url or "").strip()
+    if not raw or not bust:
+        return raw
+    if not raw.startswith("/api/"):
+        return raw
+    sep = "&" if "?" in raw else "?"
+    if f"{sep}v=" in raw or raw.endswith(f"v={bust}") or f"?v=" in raw:
+        return raw
+    return f"{raw}{sep}v={bust}"
 
 
 def signed_or_proxy_card_url(*, sunday: str, style: str) -> str:
@@ -287,18 +369,37 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
     sunday = sunday_for_mass_date(mass)
     items: list[dict[str, Any]] = []
     for sid in weekly_style_ids():
-        ready = style_ready(sunday=sunday, style=sid, output_dir=output_dir)
+        # Local-only readiness for the catalog — shared-cache HEAD checks and signed
+        # URL minting made Extras feel stuck on every Step 6 visit.
+        ready = local_hero_path(output_dir, sunday=sunday, style=sid).is_file()
+        proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb"
+        card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card"
+        full_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
         items.append(
             {
                 "id": sid,
                 "label": weekly_style_label(sid),
                 "ready": ready,
-                "thumb_url": signed_or_proxy_thumb_url(sunday=sunday, style=sid) if ready else "",
-                "card_url": signed_or_proxy_card_url(sunday=sunday, style=sid) if ready else "",
-                "proxy_url": f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb",
-                "full_url": full_or_proxy_hero_url(sunday=sunday, style=sid) if ready else "",
+                "thumb_url": proxy if ready else "",
+                "card_url": card_proxy if ready else "",
+                "proxy_url": proxy,
+                "full_url": full_proxy if ready else "",
             }
         )
+    versions: dict[str, Any] = {}
+    try:
+        from services.weekly_poster_versions import versions_payload
+
+        versions = versions_payload(output_dir, sunday=sunday)
+    except Exception:
+        logger.debug("weekly versions payload failed for %s", sunday, exc_info=True)
+        versions = {
+            "ok": True,
+            "sunday": sunday,
+            "active_version": 0,
+            "versions": [],
+            "sundays": [],
+        }
     return {
         "ok": True,
         "date": mass,
@@ -306,7 +407,24 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
         "items": items,
         "ready_count": sum(1 for it in items if it["ready"]),
         "total": len(items),
+        "versions": versions,
     }
+
+
+def _normalize_style_filter(styles: Optional[list[str] | tuple[str, ...] | str]) -> list[str]:
+    """Return requested weekly style ids (subset of the fixed weekly set), or []."""
+    allowed = weekly_style_ids()
+    raw: list[str] = []
+    if isinstance(styles, str):
+        raw = [styles]
+    elif isinstance(styles, (list, tuple)):
+        raw = [str(s) for s in styles]
+    out: list[str] = []
+    for item in raw:
+        key = resolve_ai_image_style((item or "").strip())
+        if key in allowed and key not in out:
+            out.append(key)
+    return out
 
 
 def ensure_weekly_heroes(
@@ -315,8 +433,20 @@ def ensure_weekly_heroes(
     output_dir: Path,
     image_backend: str = "openai",
     max_generate: int = 5,
+    force: bool = False,
+    styles: Optional[list[str] | tuple[str, ...] | str] = None,
+    version: Optional[int] = None,
+    new_version: bool = False,
+    overwrite_only: bool = False,
 ) -> dict[str, Any]:
-    """Generate missing shared heroes for the Sunday of ``iso`` (up to ``max_generate``)."""
+    """Generate shared heroes for the Sunday of ``iso`` (up to ``max_generate``).
+
+    When ``new_version`` / ``force`` is true, skip cache hits and (unless
+    ``overwrite_only``) allocate a versioned set (v1, v2, …).
+    ``overwrite_only`` is for prompt tests: regenerate selected styles in place
+    without creating a new version row.
+    Pass ``styles`` to generate only those style ids (enables 1/N client progress).
+    """
     mass = normalize_mass_date(iso)
     if not mass:
         return {"ok": False, "error": "invalid_date", "generated": [], "skipped": []}
@@ -324,10 +454,60 @@ def ensure_weekly_heroes(
     generated: list[str] = []
     skipped: list[str] = []
     errors: list[dict[str, str]] = []
+    wanted = _normalize_style_filter(styles)
+    queue = wanted or weekly_style_ids()
+    overwrite_only = bool(overwrite_only)
+    regenerate = bool(force or new_version or overwrite_only)
+    # Prompt-test path: rewrite active heroes only — do not allocate vN.
+    allocate_version = bool(new_version) or (bool(force) and not overwrite_only)
+    version_no: Optional[int] = None
+    try:
+        version_no = int(version) if version is not None else None
+    except (TypeError, ValueError):
+        version_no = None
 
     from generators.ai_poster_generator import ensure_ai_hero
     from services.lectionary_service import get_liturgical_data
+    from services.weekly_poster_versions import (
+        begin_new_version,
+        ensure_baseline_version_from_active,
+        record_style_in_version,
+        versions_payload,
+    )
 
+    # Preserve any existing active set as v1 before the first "new version" run.
+    ensure_baseline_version_from_active(
+        output_dir, sunday=sunday, allow_download=bool(regenerate)
+    )
+    # Allocate a version only once per batch — client must reuse ``version`` on later styles.
+    if allocate_version and version_no is None:
+        begun = begin_new_version(output_dir, sunday=sunday)
+        version_no = int(begun.get("version") or 1)
+    elif allocate_version and version_no is not None:
+        # Continue an in-flight batch: keep the target version row without reallocating.
+        from services.weekly_poster_versions import load_manifest, save_manifest
+
+        manifest = load_manifest(output_dir, sunday=sunday)
+        versions = list(manifest.get("versions") or [])
+        if not any(int(v.get("version") or 0) == int(version_no) for v in versions):
+            from datetime import datetime, timezone
+
+            from services.weekly_poster_versions import format_version_label
+
+            versions.append(
+                {
+                    "version": int(version_no),
+                    "created_at": datetime.now(timezone.utc)
+                    .replace(microsecond=0)
+                    .isoformat()
+                    .replace("+00:00", "Z"),
+                    "label": format_version_label(int(version_no), []),
+                    "styles": [],
+                    "status": "generating",
+                }
+            )
+            manifest["versions"] = versions
+            save_manifest(output_dir, sunday=sunday, manifest=manifest)
     data = get_liturgical_data(sunday) or {}
     title = str(data.get("title") or "Sunday Mass").replace(" Celebration", "").strip() or "Sunday Mass"
     gospel_ref = str(data.get("gospel_reference") or "Gospel").strip()
@@ -343,18 +523,20 @@ def ensure_weekly_heroes(
     except Exception:
         pass
 
-    for sid in weekly_style_ids():
+    for sid in queue:
         if len(generated) >= max_generate:
             skipped.append(sid)
             continue
-        if style_ready(sunday=sunday, style=sid, output_dir=output_dir):
+        if not regenerate and style_ready(sunday=sunday, style=sid, output_dir=output_dir):
             skipped.append(sid)
             continue
         try:
+            if regenerate:
+                clear_local_weekly_style(sunday=sunday, style=sid, output_dir=output_dir)
             ensure_ai_hero(
                 sunday,
                 style=sid,
-                reuse_existing_hero=True,
+                reuse_existing_hero=not regenerate,
                 gospel_quote=gospel_quote,
                 gospel_reference=gospel_ref,
                 liturgical_title=title,
@@ -363,23 +545,102 @@ def ensure_weekly_heroes(
                 image_backend=image_backend,
             )
             generated.append(sid)
+            if version_no and allocate_version:
+                record_style_in_version(
+                    output_dir, sunday=sunday, version=int(version_no), style=sid
+                )
         except Exception as exc:
             logger.warning("weekly hero ensure failed %s %s: %s", sunday, sid, exc)
             errors.append({"style": sid, "error": str(exc)[:200]})
 
-    # Warm picker thumbs + sharp CTA cards so first home paint is not a full-PNG download.
-    for sid in weekly_style_ids():
+    # Rebuild UI derivatives for freshly generated heroes so shared thumbs match.
+    for sid in generated:
+        try:
+            rebuild_ui_derivatives(sunday=sunday, style=sid, output_dir=output_dir)
+        except Exception:
+            logger.debug("weekly UI rebuild failed %s %s", sunday, sid, exc_info=True)
+
+    # Warm any styles that were already ready (no generate this call).
+    for sid in queue:
+        if sid in generated:
+            continue
         try:
             resolve_ui_thumb_file(sunday=sunday, style=sid, output_dir=output_dir)
             resolve_ui_card_file(sunday=sunday, style=sid, output_dir=output_dir)
         except Exception:
             logger.debug("weekly UI asset warm failed %s %s", sunday, sid, exc_info=True)
 
+    # First-time fill (no version requested): snapshot as v1 when the full set is ready.
+    if not regenerate:
+        ready_all = all(
+            style_ready(sunday=sunday, style=sid, output_dir=output_dir)
+            for sid in weekly_style_ids()
+        )
+        if ready_all:
+            ensure_baseline_version_from_active(
+                output_dir, sunday=sunday, allow_download=False
+            )
+    elif allocate_version and version_no:
+        from services.weekly_poster_versions import finalize_version, version_complete
+
+        # Activate even for partial sets so Extras unlocks after generating 1+ styles.
+        finalize_version(
+            output_dir,
+            sunday=sunday,
+            version=int(version_no),
+            styles=list(generated) or list(queue),
+            activate=True,
+        )
+        if version_complete(output_dir, sunday=sunday, version=int(version_no)):
+            from services.weekly_poster_versions import promote_version_to_active
+
+            try:
+                promote_version_to_active(
+                    output_dir,
+                    sunday=sunday,
+                    version=int(version_no),
+                    sync_shared=False,
+                )
+            except Exception:
+                logger.debug(
+                    "weekly partial/full promote skipped %s v%s",
+                    sunday,
+                    version_no,
+                    exc_info=True,
+                )
+
+    catalog = catalog_for_date(mass, output_dir=output_dir)
+    if generated:
+        # Prefer auth-gated proxy URLs with a bust so the client always hydrates
+        # fresh local bytes (signed URLs must not be mutated — it breaks the signature).
+        bust = str(int(time.time()))
+        touch = set(generated)
+        for item in catalog.get("items") or []:
+            if not isinstance(item, dict):
+                continue
+            sid = str(item.get("id") or "")
+            if sid not in touch:
+                continue
+            proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb"
+            card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card"
+            full_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
+            item["thumb_url"] = _with_cache_bust(proxy, bust)
+            item["card_url"] = _with_cache_bust(card_proxy, bust)
+            item["proxy_url"] = _with_cache_bust(proxy, bust)
+            item["full_url"] = _with_cache_bust(full_proxy, bust)
+
+    versions = versions_payload(output_dir, sunday=sunday)
     return {
         "ok": True,
         "sunday": sunday,
         "generated": generated,
         "skipped": skipped,
         "errors": errors,
-        "catalog": catalog_for_date(mass, output_dir=output_dir),
+        "force": bool(force),
+        "new_version": bool(new_version),
+        "overwrite_only": bool(overwrite_only),
+        "version": version_no if allocate_version else None,
+        "styles": list(queue),
+        "catalog": catalog,
+        "versions": versions,
     }

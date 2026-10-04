@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from services.auth_config import supabase_enabled
+from services.parish_join import list_pending_join_requests
 from services.pending_submissions import (
     list_pending_parish_renames,
     list_pending_priests,
@@ -16,6 +17,8 @@ from services.supabase_client import list_pending_memberships
 def _kind_label(kind: str) -> str:
     return {
         "membership": "Parish membership",
+        "parish_joins": "Parish join request",
+        "parish_join": "Parish join request",
         "songs": "Song submission",
         "song": "Song submission",
         "priests": "Priest name",
@@ -52,6 +55,29 @@ def build_approvals_inbox() -> dict[str, Any]:
                     "kind_label": _kind_label("membership"),
                 }
             )
+
+    try:
+        pending_joins = list_pending_join_requests() if supabase_enabled() else []
+    except Exception:
+        pending_joins = []
+    for row in pending_joins:
+        rid = str(row.get("id") or "").strip()
+        if not rid:
+            continue
+        prof = row.get("profile") or {}
+        items.append(
+            {
+                "id": f"parish_join:{rid}",
+                "kind": "parish_joins",
+                "entity_id": rid,
+                "title": (row.get("community_name") or "Parish").strip() or "Parish",
+                "subtitle": (prof.get("email") or row.get("user_id") or "").strip(),
+                "detail": "Join request as media teammate",
+                "created_at": row.get("created_at") or row.get("updated_at") or "",
+                "panel": "membership",
+                "kind_label": _kind_label("parish_joins"),
+            }
+        )
 
     for row in list_pending_songs():
         rid = str(row.get("id") or "").strip()
@@ -133,6 +159,7 @@ def build_approvals_inbox() -> dict[str, Any]:
         "pending_count": len(items),
         "counts": {
             "membership": sum(1 for i in items if i.get("kind") == "membership"),
+            "parish_joins": sum(1 for i in items if i.get("kind") == "parish_joins"),
             "songs": sum(1 for i in items if i.get("kind") == "songs"),
             "priests": sum(1 for i in items if i.get("kind") == "priests"),
             "parish_names": sum(1 for i in items if i.get("kind") == "parish_names"),

@@ -3622,12 +3622,35 @@
       });
     }
 
+    async function actOnParishJoin(requestId, action) {
+      if (!requestId) return;
+      const headers = await adminAuthHeaders();
+      const res = await fetch(
+        "/api/admin/parish-joins/" + encodeURIComponent(requestId) + "/" + action,
+        { method: "POST", headers }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Join request action failed.");
+      const inboxItem = (saApprovalInbox || []).find(
+        (row) => row.kind === "parish_joins" && String(row.entity_id) === String(requestId)
+      );
+      if (inboxItem) markSaApprovalDone(inboxItem, action);
+      notify(
+        action === "approve" ? "Join request approved." : "Join request rejected.",
+        "ok"
+      );
+      if (typeof refreshSaApprovalInbox === "function") await refreshSaApprovalInbox(false);
+      if (normalizeRoute(currentRoute()) === "/superadmin") loadSaDashboard();
+    }
+
     async function runSaApprovalAction(kind, entityId, action, itemId, btnEl) {
       if (!kind || !entityId || !action) return;
       if (btnEl) btnEl.disabled = true;
       try {
         if (kind === "membership") {
           await actOnMembership(entityId, action);
+        } else if (kind === "parish_joins") {
+          await actOnParishJoin(entityId, action);
         } else {
           await actOnSubmission(kind, entityId, action);
         }
