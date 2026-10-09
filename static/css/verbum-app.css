@@ -7188,9 +7188,7 @@
       mix-blend-mode: normal;
       filter: none;
       background-size: cover;
-      /* Anchor top-right so the burned-in brand stamp sits under the poster nav
-         (center crop was hiding the mark on tall Home CTA cards). */
-      background-position: right top;
+      background-position: center;
       background-repeat: no-repeat;
       transform: translate3d(0, 0, 0);
       transition: none;
