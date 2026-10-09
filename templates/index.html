@@ -99,7 +99,7 @@
   <link rel="stylesheet" href="/static/css/driver.css?v=20260703" />
   <link rel="stylesheet" href="/static/css/guided-tour.css?v=20261004-cta-tour-loading" />
   <link rel="stylesheet" href="/static/css/verbum-lyric-toolbar-fix.css?v=20260903" />
-  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261010-unlock-chip" />
+  <link rel="stylesheet" href="/static/css/mw-wizard.css?v=20261010-sa-poster-cal" />
   <script src="/static/js/input-limits.js" defer></script>
   <script src="/static/js/hls.min.js" defer></script>
   {% if auth_enabled %}
@@ -4265,9 +4265,14 @@
               <p class="muted" style="margin:0 0 12px;">Browse a Mass Sunday, generate styles, then set the active version. That set becomes what churches see in Extras and on the home CTA.</p>
               <div class="sa-weekly-posters" id="sa-weekly-posters-host">
                 <div class="mw-weekly-posters__toolbar" id="mw-weekly-posters-toolbar">
-                  <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-sunday-field">
-                    <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-sunday">Sunday</label>
-                    <select id="mw-weekly-posters-sunday" class="mw-weekly-posters__select" aria-label="Poster Mass Sunday"></select>
+                  <div class="mw-weekly-posters__version-field mw-weekly-posters__cal-field" id="mw-weekly-posters-sunday-field">
+                    <span class="mw-weekly-posters__version-label" id="mw-weekly-posters-sunday-label">Mass Sunday</span>
+                    <input type="hidden" id="mw-weekly-posters-sunday" value="" aria-labelledby="mw-weekly-posters-sunday-label" />
+                    <div class="sa-poster-cal" id="sa-poster-cal" role="group" aria-labelledby="mw-weekly-posters-sunday-label"></div>
+                    <p class="sa-poster-cal__legend muted">
+                      <span class="sa-poster-cal__dot" aria-hidden="true"></span>
+                      Dot = posters exist for that Sunday
+                    </p>
                   </div>
                   <div class="mw-weekly-posters__version-field" id="mw-weekly-posters-version-field">
                     <label class="mw-weekly-posters__version-label" for="mw-weekly-posters-version">Version</label>
@@ -5364,7 +5369,7 @@
       window.WebPptx.setAssetBase("/static/webpptx");
     }
   </script>
-  <script src="/static/js/app.js?v=20261010-free-tier-readonly"></script>
+  <script src="/static/js/app.js?v=20261010-sa-poster-cal"></script>
   <script src="/static/js/driver.js?v=20260703"></script>
   <script src="/static/js/guided-tour.js?v=20260920g"></script>
   <script src="/static/js/auth.js?v=20261003-token-refresh2"></script>

@@ -12,21 +12,21 @@
     tour: "/static/js/guided-tour.js?v=20260920g",
     driverCss: "/static/css/driver.css?v=20260703",
     tourCss: "/static/css/guided-tour.css?v=20260920g",
-    wizard: "/static/js/mw-wizard.js?v=20261010-yt-link-sa3",
-    wizardCss: "/static/css/mw-wizard.css?v=20261010-yt-link-sa3",
+    wizard: "/static/js/mw-wizard.js?v=20261010-sa-poster-cal",
+    wizardCss: "/static/css/mw-wizard.css?v=20261010-sa-poster-cal",
   };
 
   var APP_PARTS = [
-    "/static/js/app/app-01-core.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-02-media-radio.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-03-routing-lyrics.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-04-song-plan.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-05-community.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-06-superadmin.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-07-posters-slideshow.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-08-calendar-catalog.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-09-boot.js?v=20261010-yt-link-sa3",
-    "/static/js/app/app-10-themes.js?v=20261010-yt-link-sa3",
+    "/static/js/app/app-01-core.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-02-media-radio.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-03-routing-lyrics.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-04-song-plan.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-05-community.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-06-superadmin.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-07-posters-slideshow.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-08-calendar-catalog.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-09-boot.js?v=20261010-sa-poster-cal",
+    "/static/js/app/app-10-themes.js?v=20261010-sa-poster-cal",
   ];
 
   function loadScript(src) {

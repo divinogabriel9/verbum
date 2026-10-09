@@ -5045,6 +5045,9 @@
       else if (saState.panel === "system-ai") { refreshGeminiSettings(); loadSaAiQuotaSummary(); loadSaParishQuotaTable(); }
       else if (saState.panel === "system-gospel-posters") {
         if (typeof initWeeklyStylePosters === "function") initWeeklyStylePosters();
+        if (typeof syncWeeklyPosterVersionUi === "function") {
+          syncWeeklyPosterVersionUi(null);
+        }
         if (typeof scheduleWeeklyStylePosterRefresh === "function") {
           scheduleWeeklyStylePosterRefresh({ force: true });
         }

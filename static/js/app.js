@@ -21882,6 +21882,9 @@
       else if (saState.panel === "system-ai") { refreshGeminiSettings(); loadSaAiQuotaSummary(); loadSaParishQuotaTable(); }
       else if (saState.panel === "system-gospel-posters") {
         if (typeof initWeeklyStylePosters === "function") initWeeklyStylePosters();
+        if (typeof syncWeeklyPosterVersionUi === "function") {
+          syncWeeklyPosterVersionUi(null);
+        }
         if (typeof scheduleWeeklyStylePosterRefresh === "function") {
           scheduleWeeklyStylePosterRefresh({ force: true });
         }
@@ -30104,6 +30107,7 @@
     var weeklyPosterRefreshTimer = 0;
     var weeklyPosterVersionState = { sunday: "", active: 0, versions: [], sundays: [] };
     var weeklyPosterCatalogState = { ready: false, sunday: "", date: "", readyCount: 0, total: 0 };
+    var weeklyPosterCalState = { month: null };
 
     function weeklyPosterSaPanelOpen() {
       const page = $("superadmin-page");
@@ -30814,12 +30818,148 @@
       if (typeof enhanceVerbumSelect === "function") enhanceVerbumSelect(select);
     }
 
+    function sundayIsoForDate(iso) {
+      const raw = String(iso || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return "";
+      try {
+        const d = new Date(raw + "T12:00:00");
+        if (Number.isNaN(d.getTime())) return "";
+        const day = d.getDay(); // 0 = Sunday
+        if (day !== 0) d.setDate(d.getDate() - day);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return y + "-" + m + "-" + dd;
+      } catch (_e) {
+        return "";
+      }
+    }
+
+    function weeklyPosterSundayHasPosters(iso) {
+      const sunday = sundayIsoForDate(iso) || String(iso || "").trim();
+      if (!sunday) return false;
+      const hit = (weeklyPosterVersionState.sundays || []).find(
+        (s) => s && String(s.sunday || "") === sunday
+      );
+      if (hit) return Number(hit.version_count || (hit.versions && hit.versions.length) || 0) > 0;
+      if (sunday === String(weeklyPosterVersionState.sunday || "") &&
+          (weeklyPosterVersionState.versions || []).length > 0) {
+        return true;
+      }
+      return false;
+    }
+
+    function renderSaPosterCalendar() {
+      const host = $("sa-poster-cal");
+      const sunInput = $("mw-weekly-posters-sunday");
+      if (!host) return;
+      const selected = String(
+        (sunInput && sunInput.value) ||
+        weeklyPosterVersionState.sunday ||
+        weeklyPosterCatalogState.sunday ||
+        weeklyPosterMassDate() ||
+        ""
+      ).trim();
+      const selectedSunday = sundayIsoForDate(selected) || selected;
+      let monthAnchor = weeklyPosterCalState.month;
+      if (!(monthAnchor instanceof Date) || Number.isNaN(monthAnchor.getTime())) {
+        const seed = selectedSunday
+          ? new Date(selectedSunday + "T12:00:00")
+          : new Date();
+        monthAnchor = new Date(seed.getFullYear(), seed.getMonth(), 1);
+        weeklyPosterCalState.month = monthAnchor;
+      }
+      const year = monthAnchor.getFullYear();
+      const month = monthAnchor.getMonth();
+      const monthLabel = monthAnchor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+      const today = (typeof formatDateInput === "function")
+        ? formatDateInput(new Date())
+        : new Date().toISOString().slice(0, 10);
+      const firstDow = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const dows = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+      let html = "<div class=\"sa-poster-cal__nav\">" +
+        "<button type=\"button\" class=\"ghost mini\" data-sa-poster-cal-nav=\"-1\" aria-label=\"Previous month\">‹</button>" +
+        "<span class=\"sa-poster-cal__month\">" + weeklyPosterEsc(monthLabel) + "</span>" +
+        "<button type=\"button\" class=\"ghost mini\" data-sa-poster-cal-nav=\"1\" aria-label=\"Next month\">›</button>" +
+        "</div><div class=\"sa-poster-cal__grid\" role=\"grid\" aria-label=\"Poster Mass Sundays\">";
+      dows.forEach((d) => { html += "<span class=\"sa-poster-cal__dow\" role=\"columnheader\">" + d + "</span>"; });
+      for (let i = 0; i < firstDow; i++) html += "<span class=\"sa-poster-cal__pad\" aria-hidden=\"true\"></span>";
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(year, month, day);
+        const iso = (typeof formatDateInput === "function")
+          ? formatDateInput(d)
+          : (year + "-" + String(month + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0"));
+        const isSunday = d.getDay() === 0;
+        const sundayIso = isSunday ? iso : sundayIsoForDate(iso);
+        const hasPoster = isSunday && weeklyPosterSundayHasPosters(sundayIso);
+        let cls = "sa-poster-cal__day";
+        if (isSunday) cls += " is-sunday";
+        else cls += " is-weekday";
+        if (iso === today) cls += " is-today";
+        if (sundayIso && sundayIso === selectedSunday) cls += " is-selected";
+        if (hasPoster) cls += " has-poster";
+        const title = isSunday
+          ? (formatWeeklyPosterSundayLabel(iso) + (hasPoster ? " · posters ready" : " · no posters yet"))
+          : ("Week of " + formatWeeklyPosterSundayLabel(sundayIso));
+        html += "<button type=\"button\" class=\"" + cls + "\" data-sa-poster-cal-day=\"" +
+          weeklyPosterEsc(iso) + "\" title=\"" + weeklyPosterEsc(title) + "\" aria-label=\"" +
+          weeklyPosterEsc(title) + "\">" +
+          "<span class=\"sa-poster-cal__num\">" + day + "</span>" +
+          (hasPoster ? "<span class=\"sa-poster-cal__dot\" aria-hidden=\"true\"></span>" : "") +
+          "</button>";
+      }
+      html += "</div>";
+      host.innerHTML = html;
+    }
+
+    function setSaPosterCalendarSunday(iso, opts) {
+      const options = opts || {};
+      const sunday = sundayIsoForDate(iso) || String(iso || "").trim();
+      if (!sunday) return;
+      const sunInput = $("mw-weekly-posters-sunday");
+      if (sunInput) sunInput.value = sunday;
+      try {
+        const d = new Date(sunday + "T12:00:00");
+        if (!Number.isNaN(d.getTime())) {
+          weeklyPosterCalState.month = new Date(d.getFullYear(), d.getMonth(), 1);
+        }
+      } catch (_e) { /* ignore */ }
+      renderSaPosterCalendar();
+      if (options.refresh !== false && typeof scheduleWeeklyStylePosterRefresh === "function") {
+        scheduleWeeklyStylePosterRefresh({ force: true });
+      }
+    }
+
+    function initSaPosterCalendar() {
+      const host = $("sa-poster-cal");
+      if (!host || host.dataset.bound === "1") return;
+      host.dataset.bound = "1";
+      host.addEventListener("click", (e) => {
+        const nav = e.target.closest("[data-sa-poster-cal-nav]");
+        if (nav) {
+          e.preventDefault();
+          const dir = parseInt(nav.getAttribute("data-sa-poster-cal-nav") || "0", 10) || 0;
+          const cur = weeklyPosterCalState.month instanceof Date
+            ? weeklyPosterCalState.month
+            : new Date();
+          weeklyPosterCalState.month = new Date(cur.getFullYear(), cur.getMonth() + dir, 1);
+          renderSaPosterCalendar();
+          return;
+        }
+        const dayBtn = e.target.closest("[data-sa-poster-cal-day]");
+        if (!dayBtn) return;
+        e.preventDefault();
+        setSaPosterCalendarSunday(dayBtn.getAttribute("data-sa-poster-cal-day"));
+      });
+    }
+
     function syncWeeklyPosterVersionUi(payload) {
       const sunSel = $("mw-weekly-posters-sunday");
       const verSel = $("mw-weekly-posters-version");
       const sunField = $("mw-weekly-posters-sunday-field");
       const verField = $("mw-weekly-posters-version-field");
-      const sa = isWeeklyPosterSuperadmin();
+      const sa = isWeeklyPosterSuperadmin() || weeklyPosterSaPanelOpen();
       const normalized = normalizeWeeklyVersionsPayload(payload);
       if (normalized) {
         weeklyPosterVersionState = {
@@ -30835,13 +30975,17 @@
         return;
       }
       const massDate = weeklyPosterMassDate();
-      const currentSunday = String(
+      const currentSunday = sundayIsoForDate(
+        weeklyPosterVersionState.sunday ||
+        weeklyPosterCatalogState.sunday ||
+        massDate ||
+        ""
+      ) || String(
         weeklyPosterVersionState.sunday ||
         weeklyPosterCatalogState.sunday ||
         massDate ||
         ""
       );
-      const sundays = listWeeklyPosterSundayOptions(currentSunday);
       if (sunField) {
         sunField.hidden = false;
         sunField.removeAttribute("hidden");
@@ -30851,26 +30995,10 @@
         verField.removeAttribute("hidden");
       }
       if (sunSel) {
-        const prev = String(sunSel.value || "");
-        const opts = sundays.length
-          ? sundays
-          : (currentSunday ? [{ sunday: currentSunday, version_count: (weeklyPosterVersionState.versions || []).length }] : []);
-        sunSel.innerHTML = opts.length
-          ? opts.map((s) => {
-            const label = formatWeeklyPosterSundayLabel(s.sunday) +
-              (s.version_count ? (" · " + s.version_count + " ver") : "");
-            const selected = s.sunday === currentSunday ? " selected" : "";
-            return '<option value="' + weeklyPosterEsc(s.sunday) + '"' + selected + ">" + weeklyPosterEsc(label) + "</option>";
-          }).join("")
-          : '<option value="">Set Mass date in Step 1</option>';
-        sunSel.disabled = opts.length <= 0 || !!weeklyPosterEnsureInflight;
-        if (currentSunday) {
-          try { sunSel.value = currentSunday; } catch (_e) { /* ignore */ }
-        }
-        if (!sunSel.value && prev) {
-          try { sunSel.value = prev; } catch (_e2) { /* ignore */ }
-        }
-        syncWeeklyPosterSelectUi(sunSel);
+        if (currentSunday) sunSel.value = currentSunday;
+        else if (!sunSel.value && massDate) sunSel.value = sundayIsoForDate(massDate) || massDate;
+        initSaPosterCalendar();
+        renderSaPosterCalendar();
       }
       if (verSel) {
         const versions = weeklyPosterVersionState.versions || [];
@@ -31948,12 +32076,19 @@
           void activateWeeklyPosterVersion(verSel.value);
         });
       }
+      initSaPosterCalendar();
       if (sunSel && sunSel.dataset.bound !== "1") {
         sunSel.dataset.bound = "1";
         sunSel.addEventListener("change", () => {
           // Browse catalog for this Sunday without rewriting the Mass builder date.
+          renderSaPosterCalendar();
           scheduleWeeklyStylePosterRefresh({ force: true });
         });
+      }
+      if (weeklyPosterSaPanelOpen()) {
+        const seed = String((sunSel && sunSel.value) || weeklyPosterMassDate() || "").trim();
+        if (seed && sunSel && !sunSel.value) sunSel.value = sundayIsoForDate(seed) || seed;
+        renderSaPosterCalendar();
       }
       if (openSa && openSa.dataset.bound !== "1") {
         openSa.dataset.bound = "1";
@@ -31972,6 +32107,8 @@
       window.scheduleWeeklyStylePosterRefresh = scheduleWeeklyStylePosterRefresh;
       window.setWeeklyPosterStyle = setWeeklyPosterStyle;
       window.syncWeeklyAiPosterGate = syncWeeklyAiPosterGate;
+      window.syncWeeklyPosterVersionUi = syncWeeklyPosterVersionUi;
+      window.renderSaPosterCalendar = renderSaPosterCalendar;
       window.preloadExtrasPosterAssets = function preloadExtrasPosterAssets() {
         preloadLiturgyPosterThumbs();
       };
