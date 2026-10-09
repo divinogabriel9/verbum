@@ -294,11 +294,14 @@ def apply_home_cta_watermark(rgb_image):
     chip_draw = ImageDraw.Draw(chip)
 
     # Soft dark pill so the mark reads on light or busy art without a hard bar.
-    chip_draw.rounded_rectangle(
-        (0, 0, chip_w - 1, chip_h - 1),
-        radius=chip_h // 2,
-        fill=(0, 0, 0, 78),
-    )
+    try:
+        chip_draw.rounded_rectangle(
+            (0, 0, chip_w - 1, chip_h - 1),
+            radius=chip_h // 2,
+            fill=(0, 0, 0, 78),
+        )
+    except Exception:
+        chip_draw.rectangle((0, 0, chip_w - 1, chip_h - 1), fill=(0, 0, 0, 78))
 
     logo_path = Path(__file__).resolve().parents[1] / "static" / "brand" / "app-icon.png"
     x_cursor = 7
@@ -357,7 +360,8 @@ def apply_home_cta_watermark(rgb_image):
             cw = edge_font_size // 2
         cursor_x += cw + tracking
     # writing-mode: vertical-rl → rotate so copy reads top→bottom on the right edge.
-    edge = strip.rotate(-90, expand=True, resample=Image.Resampling.BICUBIC)
+    resample = getattr(getattr(Image, "Resampling", Image), "BICUBIC", Image.BICUBIC)
+    edge = strip.rotate(-90, expand=True, resample=resample)
     ew, eh = edge.size
     ex = max(0, w - ew - max(10, pad // 2))
     ey = max(0, (h - eh) // 2)
@@ -401,6 +405,33 @@ def ensure_ui_thumb(
     return thumb if thumb.is_file() else hero_path
 
 
+def _burn_ui_card_watermark(
+    source: Path,
+    wm_path: Path,
+    *,
+    sunday: str = "",
+    style: str = "",
+    quality: int = 82,
+) -> Optional[Path]:
+    """Watermark ``source`` (clean WebP/PNG) → ``wm_path``. Never raises."""
+    try:
+        from PIL import Image
+
+        with Image.open(source) as im:
+            marked = apply_home_cta_watermark(im.convert("RGB"))
+            wm_path.parent.mkdir(parents=True, exist_ok=True)
+            marked.save(wm_path, "WEBP", quality=int(quality), method=2)
+        if wm_path.is_file():
+            if sunday and style:
+                try_upload_shared_ui_card_wm(wm_path, date=sunday, style=style)
+            return wm_path
+    except Exception:
+        logger.warning(
+            "weekly UI card watermark failed for %s", source, exc_info=True
+        )
+    return None
+
+
 def ensure_ui_card_watermarked(
     hero_path: Path,
     *,
@@ -411,28 +442,39 @@ def ensure_ui_card_watermarked(
     """Create/return the Home-CTA watermarked 1600 WebP (burned-in brand)."""
     wm = ui_card_wm_path(hero_path)
     try:
-        if wm.is_file() and wm.stat().st_mtime >= hero_path.stat().st_mtime:
+        if (
+            wm.is_file()
+            and hero_path.is_file()
+            and wm.stat().st_mtime >= hero_path.stat().st_mtime
+        ):
             if sunday and style:
                 try_upload_shared_ui_card_wm(wm, date=sunday, style=style)
             return wm
-        from PIL import Image
-
-        # Build from a sharp resized RGB, then burn watermark.
-        clean = ensure_ui_thumb(
-            hero_path, max_w=1600, sunday=sunday, style=style, quality=84
+        if wm.is_file() and not hero_path.is_file():
+            return wm
+        # Prefer a lightweight 1600 WebP; fall back to the hero PNG.
+        clean = (
+            ensure_ui_thumb(
+                hero_path, max_w=1600, sunday=sunday, style=style, quality=84
+            )
+            if hero_path.is_file()
+            else hero_path
         )
         source = clean if clean.is_file() else hero_path
-        with Image.open(source) as im:
-            rgb = im.convert("RGB")
-            marked = apply_home_cta_watermark(rgb)
-            wm.parent.mkdir(parents=True, exist_ok=True)
-            marked.save(wm, "WEBP", quality=int(quality), method=2)
+        out = _burn_ui_card_watermark(
+            source, wm, sunday=sunday, style=style, quality=quality
+        )
+        if out is not None:
+            return out
     except Exception:
-        logger.debug("weekly UI card watermark failed for %s", hero_path, exc_info=True)
-        # Fall back to clean card rather than blocking Home.
-        return ensure_ui_thumb(hero_path, max_w=1600, sunday=sunday, style=style, quality=84)
-    if wm.is_file() and sunday and style:
-        try_upload_shared_ui_card_wm(wm, date=sunday, style=style)
+        logger.warning(
+            "weekly UI card watermark failed for %s", hero_path, exc_info=True
+        )
+    # Fall back to clean card rather than blocking Home.
+    if hero_path.is_file():
+        return ensure_ui_thumb(
+            hero_path, max_w=1600, sunday=sunday, style=style, quality=84
+        )
     return wm if wm.is_file() else hero_path
 
 
@@ -448,13 +490,12 @@ def resolve_ui_thumb_file(
     resolved = resolve_ai_image_style(style)
     hero_local = local_hero_path(output_dir, sunday=sunday, style=resolved)
     thumb_local = ui_thumb_path(hero_local, max_w=max_w)
-    hero = hero_local if hero_local.is_file() else resolve_hero_file(
-        sunday=sunday, style=resolved, output_dir=output_dir
-    )
+    # Do not eagerly download the full PNG — shared WebPs are enough for UI.
+    hero: Optional[Path] = hero_local if hero_local.is_file() else None
     if thumb_local.is_file():
-        # Rebuild when the hero is newer (regenerate left a stale shared/local WebP).
+        # Rebuild when the local hero is newer (regenerate left a stale WebP).
         try:
-            if hero is not None and hero.is_file() and thumb_local.stat().st_mtime < hero.stat().st_mtime:
+            if hero is not None and thumb_local.stat().st_mtime < hero.stat().st_mtime:
                 out = ensure_ui_thumb(
                     hero, sunday=sunday, style=resolved, max_w=max_w, quality=quality
                 )
@@ -477,26 +518,13 @@ def resolve_ui_thumb_file(
                 thumb_local.parent.mkdir(parents=True, exist_ok=True)
                 thumb_local.write_bytes(raw)
                 if thumb_local.is_file():
-                    # If hero is newer than the downloaded shared thumb, rebuild.
-                    try:
-                        if (
-                            hero is not None
-                            and hero.is_file()
-                            and thumb_local.stat().st_mtime < hero.stat().st_mtime
-                        ):
-                            out = ensure_ui_thumb(
-                                hero,
-                                sunday=sunday,
-                                style=resolved,
-                                max_w=max_w,
-                                quality=quality,
-                            )
-                            return out if out.is_file() else thumb_local
-                    except OSError:
-                        pass
                     return thumb_local
     except Exception:
         logger.debug("shared UI thumb download failed for %s %s", sunday, style, exc_info=True)
+    if hero is None:
+        hero = resolve_hero_file(
+            sunday=sunday, style=resolved, output_dir=output_dir
+        )
     if hero is None or not hero.is_file():
         return None
     out = ensure_ui_thumb(hero, sunday=sunday, style=resolved, max_w=max_w, quality=quality)
@@ -506,52 +534,85 @@ def resolve_ui_thumb_file(
 def resolve_ui_card_file(*, sunday: str, style: str, output_dir: Path) -> Optional[Path]:
     """Home-CTA WebP (~1600px) with burned-in LiturgyFlow watermark.
 
-    Clean masters stay available via ``variant=full`` / thumb; Home must never
-    paint the unprotected full hero as a CSS background.
+    Production-safe path: prefer shared/local watermarked card, else watermark the
+    shared clean ``*_ui1600.webp`` (no full PNG download). Full hero is last resort
+    — downloading/decoding PNG on Render often OOMs or times out after deploys.
     """
     resolved = resolve_ai_image_style(style)
     hero_local = local_hero_path(output_dir, sunday=sunday, style=resolved)
     wm_local = ui_card_wm_path(hero_local)
-    hero = hero_local if hero_local.is_file() else resolve_hero_file(
-        sunday=sunday, style=resolved, output_dir=output_dir
-    )
+    clean_local = ui_thumb_path(hero_local, max_w=1600)
+
     if wm_local.is_file():
-        try:
-            if hero is not None and hero.is_file() and wm_local.stat().st_mtime < hero.stat().st_mtime:
-                out = ensure_ui_card_watermarked(hero, sunday=sunday, style=resolved)
-                return out if out.is_file() else wm_local
-        except OSError:
-            pass
         return wm_local
+
     try:
         from services.ai_hero_cache import shared_cache_ready
         from services.storage_assets import download_service_asset
 
         if shared_cache_ready():
-            raw = download_service_asset(path=shared_ui_card_wm_relative_path(sunday, resolved))
+            raw = download_service_asset(
+                path=shared_ui_card_wm_relative_path(sunday, resolved)
+            )
             if raw:
                 wm_local.parent.mkdir(parents=True, exist_ok=True)
                 wm_local.write_bytes(raw)
                 if wm_local.is_file():
-                    try:
-                        if (
-                            hero is not None
-                            and hero.is_file()
-                            and wm_local.stat().st_mtime < hero.stat().st_mtime
-                        ):
-                            out = ensure_ui_card_watermarked(
-                                hero, sunday=sunday, style=resolved
-                            )
-                            return out if out.is_file() else wm_local
-                    except OSError:
-                        pass
                     return wm_local
     except Exception:
-        logger.debug("shared UI card wm download failed for %s %s", sunday, style, exc_info=True)
-    if hero is None or not hero.is_file():
+        logger.debug(
+            "shared UI card wm download failed for %s %s", sunday, style, exc_info=True
+        )
+
+    # Lightweight source: local/shared clean 1600 — same asset Home used pre-watermark.
+    source: Optional[Path] = clean_local if clean_local.is_file() else None
+    if source is None:
+        try:
+            from services.ai_hero_cache import shared_cache_ready
+            from services.storage_assets import download_service_asset
+
+            if shared_cache_ready():
+                raw = download_service_asset(
+                    path=shared_ui_card_relative_path(sunday, resolved)
+                )
+                if raw:
+                    clean_local.parent.mkdir(parents=True, exist_ok=True)
+                    clean_local.write_bytes(raw)
+                    if clean_local.is_file():
+                        source = clean_local
+        except Exception:
+            logger.debug(
+                "shared clean card download failed for %s %s",
+                sunday,
+                style,
+                exc_info=True,
+            )
+
+    if source is None:
+        # Last resort: pull full PNG (heavy on Render).
+        hero = (
+            hero_local
+            if hero_local.is_file()
+            else resolve_hero_file(
+                sunday=sunday, style=resolved, output_dir=output_dir
+            )
+        )
+        if hero is not None and hero.is_file():
+            clean = ensure_ui_thumb(
+                hero, sunday=sunday, style=resolved, max_w=1600, quality=84
+            )
+            source = clean if clean.is_file() else hero
+
+    if source is None or not source.is_file():
         return None
-    out = ensure_ui_card_watermarked(hero, sunday=sunday, style=resolved)
-    return out if out.is_file() else None
+
+    out = _burn_ui_card_watermark(
+        source, wm_local, sunday=sunday, style=resolved, quality=82
+    )
+    if out is not None and out.is_file():
+        return out
+    # Never blank the Home CTA — serve clean card if burn-in fails.
+    return source if source.is_file() else None
 
 
 def rebuild_ui_derivatives(*, sunday: str, style: str, output_dir: Path) -> None:
@@ -644,9 +705,9 @@ def catalog_for_date(iso: str, *, output_dir: Path) -> dict[str, Any]:
     sunday = sunday_for_mass_date(mass)
     items: list[dict[str, Any]] = []
     for sid in weekly_style_ids():
-        # Local-only readiness for the catalog — shared-cache HEAD checks and signed
-        # URL minting made Extras feel stuck on every Step 6 visit.
-        ready = local_hero_path(output_dir, sunday=sunday, style=sid).is_file()
+        # Local disk is ephemeral on Render — also treat shared-cache hits as ready
+        # so Home CTA / Extras keep working after deploys without regenerating.
+        ready = style_ready(sunday=sunday, style=sid, output_dir=output_dir)
         proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=thumb"
         card_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}&variant=card&mark=3"
         full_proxy = f"/api/weekly-style-posters/image?date={sunday}&style={sid}"
